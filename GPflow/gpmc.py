@@ -1,4 +1,3 @@
-from . import slinalg
 import numpy as np
 from .model import GPModel
 from .param import Param
@@ -41,7 +40,7 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = slinalg.cholesky(K)
+        L = tf.cholesky(K)
         F = L.dot(self.V) + self.mean_function(self.X)
 
         return self.likelihood.logp(F, self.Y).sum()
