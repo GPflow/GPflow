@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 from .model import GPModel
 from .param import Param
 import densities
@@ -29,7 +30,7 @@ class GPMC(GPModel):
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
         self.V = Param(np.zeros((self.num_data, self.num_latent)))
-        self.V.prior = Gaussian(0, 1)
+        self.V.prior = Gaussian(0., 1.)
 
 
     def build_likelihood(self):
@@ -41,9 +42,9 @@ class GPMC(GPModel):
         """
         K = self.kern.K(self.X)
         L = tf.cholesky(K)
-        F = L.dot(self.V) + self.mean_function(self.X)
+        F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
-        return self.likelihood.logp(F, self.Y).sum()
+        return tf.reduce_sum(self.likelihood.logp(F, self.Y))
 
     def build_predict(self, Xnew):
         """

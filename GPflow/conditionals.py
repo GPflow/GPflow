@@ -36,8 +36,8 @@ def gp_predict(Xnew, X, kern, F):
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
-    A = tf.user_ops.solve(Lm, Kmn, 'lower')
-    B = tf.user_ops.solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
+    A = tf.user_ops.triangular_solve(Lm, Kmn, 'lower')
+    B = tf.user_ops.triangular_solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), F)
@@ -80,8 +80,8 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt):
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
-    A = tf.user_ops.solve(Lm, Kmn, 'lower')
-    B = tf.user_ops.solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
+    A = tf.user_ops.triangular_solve(Lm, Kmn, 'lower')
+    B = tf.user_ops.triangular_solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), q_mu)
@@ -128,8 +128,8 @@ def gp_predict(Xnew, X, kern, F):
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
-    A = tf.user_ops.solve(Lm, Kmn, 'lower')
-    B = tf.user_ops.solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
+    A = tf.user_ops.triangular_solve(Lm, Kmn, 'lower')
+    B = tf.user_ops.triangular_solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(B.T, F)
@@ -178,7 +178,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt):
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
-    A = tf.user_ops.solve(Lm, Kmn, 'lower')
+    A = tf.user_ops.triangular_solve(Lm, Kmn, 'lower')
 
     #construct the mean and variance of q(f)
     fmean = tf.matmul(tf.transpose(A), q_mu)
@@ -230,10 +230,10 @@ def gp_predict_whitened(Xnew, X, kern, V):
     Kx = kern.K(X, Xnew)
     K = kern.K(X)
     L = tf.cholesky(K)
-    A = tf.user_ops.solve(L, Kx, 'lower')
-    fmean = A.T.dot(V)
+    A = tf.user_ops.triangular_solve(L, Kx, 'lower')
+    fmean = tf.matmul(tf.transpose(A), V)
     fvar = Kd - tf.reduce_sum(tf.square(A), 0)
-    return fmean, fvar[:,None] * tf.ones((V.shape[1],))
+    return fmean, tf.expand_dims(fvar, 1) * tf.ones_like(V[0,:])
 
 
 

@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 from .model import GPModel
 from .param import Param
 from .conditionals import gp_predict_whitened
@@ -40,7 +41,7 @@ class SGPMC(GPModel):
         self.num_latent = num_latent or Y.shape[1]
         self.Z = Z # Z is not a parameter!
         self.V = Param(np.zeros((self.num_inducing, self.num_latent)))
-        self.V.prior = Gaussian(0, 1)
+        self.V.prior = Gaussian(0., 1.)
 
     def build_likelihood(self):
         """
@@ -49,7 +50,7 @@ class SGPMC(GPModel):
         #get the (marginals of) q(f): exactly predicting!
         fmean, fvar = gp_predict_whitened(self.X, self.Z, self.kern, self.V)
         fmean += self.mean_function(self.X)
-        return self.likelihood.variational_expectations(fmean, fvar, self.Y).sum()
+        return tf.reduce_sum( self.likelihood.variational_expectations(fmean, fvar, self.Y) )
 
     def build_predict(self, Xnew):
         """

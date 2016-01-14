@@ -57,9 +57,9 @@ class Bias(Static):
     """
     def K(self, X, X2=None):
         if X2 is None:
-            return self.variance * tf.ones((X.shape[0], X.shape[0]))
+            return self.variance * tf.ones((X.shape[0], X.shape[0]), tf.float64)
         else:
-            return self.variance * tf.ones((X.shape[0], X2.shape[0]))
+            return self.variance * tf.ones((X.shape[0], X2.shape[0]), tf.float64)
 
 
 class Stationary(Kern):
