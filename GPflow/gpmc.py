@@ -1,0 +1,62 @@
+from . import slinalg
+import numpy as np
+from .model import GPModel
+from .param import Param
+import densities
+from .conditionals import gp_predict_whitened
+from .priors import Gaussian
+from .mean_functions import Zero
+
+class GPMC(GPModel):
+    def __init__(self, X, Y, kern, likelihood, mean_function=Zero(), num_latent=None):
+        """
+        X is a data matrix, size N x D
+        Y is a data matrix, size N x R
+        kern, likelihood, mean_function are appropriate GPt objects
+
+        This is a vanilla implementation of a GP with a non-Gaussian
+        likelihood. The latent function values are represented by centered
+        (whitened) variables, so
+
+            v ~ N(0, I)
+            f = Lv + m(x)
+
+        with
+
+            L L^T = K
+        
+        """
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
+        self.num_data = X.shape[0]
+        self.num_latent = num_latent or Y.shape[1]
+        self.V = Param(np.zeros((self.num_data, self.num_latent)))
+        self.V.prior = Gaussian(0, 1)
+
+
+    def build_likelihood(self):
+        """
+        Construct a tf function to compute the likelihood of a general GP model.
+
+            \log p(Y, V | theta).
+
+        """
+        K = self.kern.K(self.X)
+        L = slinalg.cholesky(K)
+        F = L.dot(self.V) + self.mean_function(self.X)
+
+        return self.likelihood.logp(F, self.Y).sum()
+
+    def build_predict(self, Xnew):
+        """
+        Xnew is a data matrix, point at which we want to predict
+
+        This method computes
+
+            p(F* | (F=LV) )
+
+        where F* are points on the GP at Xnew, F=LV are points on the GP at X, 
+
+        """
+        mu, var = gp_predict_whitened(Xnew, self.X, self.kern, self.V)
+        return mu + self.mean_function(Xnew), var
+
