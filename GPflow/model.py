@@ -93,6 +93,8 @@ class Model(Parameterized):
             f = self.build_likelihood() + self.build_prior()
             g, = tf.gradients(f, self._free_vars)
 
+        minusF = tf.neg( f, name = 'objective' )
+        minusG = tf.neg( g, name = 'grad_objective' )
         #initialize variables. I confess I don;t understand what this does - JH
         init = tf.initialize_all_variables()
         self._session.run(init)
@@ -101,7 +103,7 @@ class Model(Parameterized):
         print("compiling tensorflow function...")
         sys.stdout.flush()
         def obj(x):
-            return self._session.run([-f,-g], feed_dict={self._free_vars: x})
+            return self._session.run([minusF,minusG], feed_dict={self._free_vars: x})
         self._objective = obj
         print("done")
         sys.stdout.flush()
