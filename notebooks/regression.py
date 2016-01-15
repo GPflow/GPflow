@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 import cProfile
 
 def outputGraph( model, dirName, fileName ):
+    model._compile()
     if not( os.path.isdir(dirName) ):
         os.mkdir(dirName)
     fullFileName = os.path.join( dirName, fileName )
