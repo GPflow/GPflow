@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tf_hacks import eye
 import numpy as np
 from param import Param, Parameterized
 import transforms
@@ -46,9 +47,9 @@ class White(Static):
     """
     def K(self, X, X2=None):
         if X2 is None:
-            return self.variance * tf.eye(X.get_shape()[0])
+            return self.variance * eye(tf.shape(X)[0])
         else:
-            return self.variance * tf.zeros((X.shape[0], X2.shape[0]))
+            return tf.zeros(tf.pack([tf.shape(X)[0], tf.shape(X2)[0]]), tf.float64)
 
 
 class Bias(Static):
@@ -57,9 +58,9 @@ class Bias(Static):
     """
     def K(self, X, X2=None):
         if X2 is None:
-            return self.variance * tf.ones((X.shape[0], X.shape[0]), tf.float64)
+            return self.variance * tf.ones(tf.pack([tf.shape(X)[0], tf.shape(X)[0]]), tf.float64)
         else:
-            return self.variance * tf.ones((X.shape[0], X2.shape[0]), tf.float64)
+            return self.variance * tf.ones(tf.pack([tf.shape(X)[0], tf.shape(X2)[0]]), tf.float64)
 
 
 class Stationary(Kern):

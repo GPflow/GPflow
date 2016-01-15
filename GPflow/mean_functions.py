@@ -19,7 +19,7 @@ class MeanFunction(Parameterized):
     
 class Zero(MeanFunction):
     def __call__(self, X):
-        return tf.zeros((X.shape[0], 1), dtype='float64')
+        return tf.zeros(tf.pack([tf.shape(X)[0], 1]), dtype='float64')
 
 
 class Linear(MeanFunction):
