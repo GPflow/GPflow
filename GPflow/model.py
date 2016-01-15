@@ -78,7 +78,7 @@ class Model(Parameterized):
         Parameterized.__init__(self)
         self._name = name
         self._needs_recompile = True
-        self._free_vars = tf.placeholder('float64')
+        self._free_vars = tf.placeholder('float64', name='free_vars')
         self._session = tf.Session()
 
     @property
