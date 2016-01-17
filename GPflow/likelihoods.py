@@ -128,13 +128,13 @@ class Likelihood(Parameterized):
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
         gh_x, gh_w = np.polynomial.hermite.hermgauss(20)
-        gh_w /= np.sqrt(np.pi)
+        gh_x = gh_x.reshape(1,-1)
+        gh_w = gh_w.reshape(-1,1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1,)) for e in Fmu, Fvar, Y]
-        X = gh_x[None,:]*tf.sqrt(2.*Fvar[:,None]) + Fmu[:,None]
-        logp = self.logp(X, Y[:,None])
-        return logp.dot(gh_w).reshape(shape)
-
+        Fmu, Fvar, Y = [tf.reshape(e, (-1,1)) for e in Fmu, Fvar, Y]
+        X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
+        logp = self.logp(X, Y)
+        return tf.reshape(tf.matmul(logp, gh_w), shape)
 
 class Gaussian(Likelihood):
     def __init__(self):
@@ -176,7 +176,7 @@ class Poisson(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return Y*Fmu - tf.exp(Fmu + Fvar/2) - tf.gammaln(Y+1)
+            return Y*Fmu - tf.exp(Fmu + Fvar/2) - tf.user_ops.log_gamma(Y+1)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
@@ -230,7 +230,7 @@ class Bernoulli(Likelihood):
 
     def conditional_variance(self, F):
         p = self.invlink(F)
-        return p - p**2
+        return p - tf.square(p)
 
 
 

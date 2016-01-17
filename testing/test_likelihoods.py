@@ -1,8 +1,7 @@
 import GPflow
+import tensorflow as tf
 import numpy as np
 import unittest
-from theano import tensor as tt
-import theano
 
 class TestPredictConditional(unittest.TestCase):
     """
@@ -27,16 +26,16 @@ class TestPredictConditional(unittest.TestCase):
                     self.failUnless(np.allclose(l.predict_mean_and_var(self.F, self.F * 0)[0], l.conditional_mean(self.F)))
                 continue
             with l.tf_mode():
-                mu1 = theano.function([self.x], l.conditional_mean(self.F), on_unused_input='ignore')(l.get_free_state())
-                mu2, _ = theano.function([self.x], l.predict_mean_and_var(self.F, self.F * 0), on_unused_input='ignore')(l.get_free_state())
+                mu1 = tf.Session().run(l.conditional_mean(self.F), feed_dict={self.x: l.get_free_state()})
+                mu2, _ = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0), feed_dict={self.x: l.get_free_state()})
             self.failUnless(np.allclose(mu1, mu2, 1e-6, 1e-6))
 
 
     def test_variance(self):
         for l in self.liks:
             with l.tf_mode():
-                v1 = theano.function([self.x], l.conditional_variance(self.F), on_unused_input='ignore')(l.get_free_state())
-                v2 = theano.function([self.x], l.predict_mean_and_var(self.F, self.F * 0)[1], on_unused_input='ignore')(l.get_free_state())
+                v1 = tf.Session().run(l.conditional_variance(self.F), feed_dict={self.x: l.get_free_state()})
+                v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state()})
             self.failUnless(np.allclose(v1, v2, 1e-6, 1e-6))
 
 class TestQuadrature(unittest.TestCase):
@@ -56,21 +55,15 @@ class TestQuadrature(unittest.TestCase):
                 if l.variational_expectations.__func__ is not GPflow.likelihoods.Likelihood.variational_expectations.__func__]
         for l in liks:
             x_data = l.get_free_state()
-            #make parameters if needed
-            if len(x_data):
-                x = tf.placeholder('float64')
-                l.make_tf_array(x)
+            x = tf.placeholder('float64')
+            l.make_tf_array(x)
             #'build' the functions
             with l.tf_mode():
                 F1 = l.variational_expectations(self.Fmu, self.Fvar, self.Y)
                 F2 = GPflow.likelihoods.Likelihood.variational_expectations(l, self.Fmu, self.Fvar, self.Y)
             #compile and run the functions:
-            if len(x_data):    
-                F1 = theano.function([x], F1)(x_data)
-                F2 = theano.function([x], F2)(x_data)
-            else:
-                F1 = theano.function([], F1)()
-                F2 = theano.function([], F2)()
+            F1 = tf.Session().run(F1, feed_dict={x: x_data})
+            F2 = tf.Session().run(F2, feed_dict={x: x_data})
             self.failUnless(np.allclose(F1, F2, 1e-6, 1e-6))
 
     def test_pred_density(self):
@@ -80,32 +73,16 @@ class TestQuadrature(unittest.TestCase):
         for l in liks:
             x_data = l.get_free_state()
             #make parameters if needed
-            if len(x_data):
-                x = tf.placeholder('float64')
-                l.make_tf_array(x)
+            x = tf.placeholder('float64')
+            l.make_tf_array(x)
             #'build' the functions
             with l.tf_mode():
                 F1 = l.predict_density(self.Fmu, self.Fvar, self.Y)
                 F2 = GPflow.likelihoods.Likelihood.predict_density(l, self.Fmu, self.Fvar, self.Y)
             #compile and run the functions:
-            if len(x_data):    
-                F1 = theano.function([x], F1)(x_data)
-                F2 = theano.function([x], F2)(x_data)
-            else:
-                F1 = theano.function([], F1)()
-                F2 = theano.function([], F2)()
+            F1 = tf.Session().run(F1, feed_dict={x: x_data})
+            F2 = tf.Session().run(F2, feed_dict={x: x_data})
             self.failUnless(np.allclose(F1, F2, 1e-6, 1e-6))
-
-
-
-
-
-
-        
-
-
-        
-    
 
 
 if __name__ == "__main__":
