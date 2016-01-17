@@ -35,22 +35,25 @@ class Transform(object):
 
 
 class Identity(Transform):
+    def tf_forward(self, x):
+        return tf.identity(x)
     def forward(self, x):
         return x
-    def tf_forward(self, x):
-        return x
-    def tf_log_jacobian(self, x):
-        return 0
     def backward(self, y):
         return y
+    def tf_log_jacobian(self, x):
+        return 0.0
     def __str__(self):
         return '(none)'
 
 
 class Exp(Transform):
-    tf_forward = tf.exp
-    forward = np.exp
-    backward = np.log
+    def tf_forward(self, x):
+        return tf.exp(x)
+    def forward(self, x):
+        return np.exp(x)
+    def backward(self, y):
+        return np.log(y)
     def tf_log_jacobian(self, x):
         return tf.reduce_sum(x)
     def __str__(self):
@@ -66,9 +69,9 @@ class Log1pe(Transform):
     x is a free variable, y is always positive.
     """
     def forward(self, x):
-        return np.log( 1 + np.exp(x) )
+        return np.log( 1. + np.exp(x) )
     def tf_forward(self, x):
-        return tf.log( 1 + tf.exp(x) )
+        return tf.log( 1. + tf.exp(x) )
     def tf_log_jacobian(self, x):
         return -tf.reduce_sum(tf.log(1 + tf.exp(-x)))
     def backward(self, y):
