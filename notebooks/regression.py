@@ -1,7 +1,18 @@
 import GPflow
+import tensorflow as tf
+import os
 import numpy as np
 from matplotlib import pyplot as plt
 import cProfile
+
+def outputGraph( model, dirName, fileName ):
+    model._compile()
+    if not( os.path.isdir(dirName) ):
+        os.mkdir(dirName)
+    fullFileName = os.path.join( dirName, fileName )
+    if os.path.isfile( fullFileName ):
+        os.remove( fullFileName )
+    tf.train.write_graph(model._session.graph_def, dirName+'/', fileName, as_text=False)
 
 # build a very simple data set:
 def getData():
@@ -85,18 +96,25 @@ def plotSamples( X, Y, m, samples ):
 def showAllPlots():
     plt.show()
 
-def runExperiments(plotting=True):
+def runExperiments(plotting=True,outputGraphs=False):
     X,Y = getData()
     if plotting:
         plotData(X,Y)
     m = getRegressionModel(X,Y)
+    if outputGraphs:
+        modelDir = 'models'
+        outputGraph( m, modelDir, 'pointHypers' )
     optimizeModel(m)
     if plotting:
         plotOptimizationResult(X,Y,m)
     setModelPriors( m )
+    if outputGraphs:
+        outputGraph( m, modelDir, 'bayesHypers' )
     samples = getSamples( m )
     if plotting:
         plotSamples( X, Y, m,  samples )
         showAllPlots()
 
-cProfile.run('runExperiments(plotting=False)')
+if __name__ == '__main__':
+    runExperiments()
+    #cProfile.run( 'runExperiments( plotting=False )' )
