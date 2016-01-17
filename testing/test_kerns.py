@@ -1,8 +1,7 @@
-import theano
 import GPflow
+import tensorflow as tf
 import numpy as np
 import unittest
-from theano import tensor as tt
 
 
 class TestKernSymmetry(unittest.TestCase):
@@ -18,9 +17,9 @@ class TestKernSymmetry(unittest.TestCase):
         X_data = self.rng.randn(10,1)
         for k in kernels:
             with k.tf_mode():
-                Errors = theano.function([X, x_free],
-                            k.K(X) - k.K(X, X)
-                            )(X_data, k.get_free_state())
+                Errors = tf.Session().run(
+                            k.K(X) - k.K(X, X),
+                            feed_dict={x_free:k.get_free_state(), X:X_data})
                 self.failUnless(np.allclose(Errors, 0))
 
 
@@ -32,9 +31,9 @@ class TestKernSymmetry(unittest.TestCase):
         X_data = self.rng.randn(10,5)
         for k in kernels:
             with k.tf_mode():
-                Errors = theano.function([X, x_free],
-                            k.K(X) - k.K(X, X)
-                            )(X_data, k.get_free_state())
+                Errors = tf.Session().run(
+                            k.K(X) - k.K(X, X),
+                            feed_dict={x_free:k.get_free_state(), X:X_data})
                 self.failUnless(np.allclose(Errors, 0))
 
 
@@ -58,7 +57,7 @@ class TestAdd(unittest.TestCase):
         X_data = self.rng.randn(10,1)
         for k in [self.rbf, self.lin, self.k]:
             with k.tf_mode():
-                k._K = theano.function([x_free, X], k.K(X))(k.get_free_state(), X_data)
+                k._K = tf.Session().run(k.K(X), feed_dict={x_free:k.get_free_state(), X:X_data})
 
         self.failUnless(np.allclose(self.rbf._K + self.lin._K, self.k._K))
 
@@ -71,7 +70,7 @@ class TestAdd(unittest.TestCase):
         Z_data = self.rng.randn(12,1)
         for k in [self.rbf, self.lin, self.k]:
             with k.tf_mode():
-                k._K = theano.function([x_free, X, Z], k.K(X, Z))(k.get_free_state(), X_data, Z_data)
+                k._K = tf.Session().run(k.K(X), feed_dict={x_free:k.get_free_state(), X:X_data, Z:Z_data})
 
         self.failUnless(np.allclose(self.rbf._K + self.lin._K, self.k._K))
 
@@ -91,8 +90,8 @@ class TestWhite(unittest.TestCase):
         X = tf.placeholder('float64')
         X_data = self.rng.randn(10,1)
         with self.k.tf_mode():
-            K_sym = theano.function([x_free, X], self.k.K(X))(self.k.get_free_state(), X_data)
-            K_asym = theano.function([x_free, X], self.k.K(X, X))(self.k.get_free_state(), X_data)
+            K_sym = tf.Session().run(self.k.K(X), feed_dict={x_free:self.k.get_free_state(), X:X_data})
+            K_asym = tf.Session().run(self.k.K(X, X), feed_dict={x_free:self.k.get_free_state(), X:X_data})
 
         self.failIf(np.allclose(K_sym, K_asym))
 
@@ -123,10 +122,10 @@ class TestSlice(unittest.TestCase):
                     self.k1.make_tf_array(self.x_free)
                     self.k2.make_tf_array(self.x_free)
                     self.k3.make_tf_array(self.x_free)
-                    K1 = theano.function([self.X, self.x_free], self.k1.K(self.X))(X, np.ones(2))
-                    K2 = theano.function([self.X, self.x_free], self.k2.K(self.X))(X, np.ones(2))
-                    K3 = theano.function([self.X, self.x_free], self.k3.K(self.X))(X[:,:1], np.ones(2))
-                    K4 = theano.function([self.X, self.x_free], self.k3.K(self.X))(X[:,1:], np.ones(2))
+                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X:X, self.x_free:np.ones(2)})
+                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X:X, self.x_free:np.ones(2)})
+                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,:1], self.x_free:np.ones(2)})
+                    K4 = tf.Session().run(self.k4.K(self.X), feed_dict={self.X:X[:,1:], self.x_free:np.ones(2)})
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
 
