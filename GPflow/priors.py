@@ -21,7 +21,7 @@ class Prior(Parameterized):
 class Gaussian(Prior):
     def __init__(self, mu, var):
         Prior.__init__(self)
-        self.mu, self.var = np.atleast_1d(mu), np.atleast_1d(var)
+        self.mu, self.var = np.atleast_1d(np.array(mu, np.float64)), np.atleast_1d(np.array(var, np.float64))
     def logp(self, x):
         return tf.reduce_sum(densities.gaussian(x, self.mu, self.var))
     def __str__(self):
@@ -30,7 +30,7 @@ class Gaussian(Prior):
 class Gamma(Prior):
     def __init__(self, shape, scale):
         Prior.__init__(self)
-        self.shape, self.scale = np.atleast_1d(shape), np.atleast_1d(scale)
+        self.shape, self.scale = np.atleast_1d(np.array(shape, np.float64)), np.atleast_1d(np.array(scale, np.float64))
     def logp(self, x):
         return tf.reduce_sum(densities.gamma(self.shape, self.scale, x))
     def __str__(self):
