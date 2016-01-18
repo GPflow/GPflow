@@ -31,7 +31,7 @@ class VGP(GPModel):
 
         The posterior approximation is
 
-        q(f) = N(f | K alpha, [K^-1 + diag(lambda**2)]^-1)
+        q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1)
 
         """
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
@@ -48,28 +48,30 @@ class VGP(GPModel):
 
             E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
         with
-            q(f) = N(f | K alpha, [K^-1 + diag(lambda**2)]^-1)
+            q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1)
         """
         K = self.kern.K(self.X)
         f_mean = tf.matmul(K, self.q_alpha) + self.mean_function(self.X)
-        #for each of the dat dimensions (columns of Y), find the diagonal of the
+        #for each of the data-dimensions (columns of Y), find the diagonal of the
         #variance, and also relevant parts of the KL.
-        def f(b):
-            A = eye(self.num_data) + K*b[:, None]*b[None,:]
+        f_var, A_logdet, trAi = [], tf.zeros(1, tf.float64), tf.zeros(1, tf.float64)
+        for d in range(self.num_latent):
+            b = self.q_lambda[:,d]
+            B = tf.expand_dims(b, 1)
+            A = eye(self.num_data) + K*B*tf.transpose(B)
             L = tf.cholesky(A)
             Li = tf.user_ops.triangular_solve(L, eye(self.num_data), 'lower')
             LiBi = Li / b
             #full_sigma:return tf.diag(b**-2) - LiBi.T.dot(LiBi)
-            sigma_diag =  b**-2 - tf.reduce_sum(tf.square(LiBi),0)
-            A_logdet = 2*tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
-            trAi = tf.reduce_sum(tf.square(Li))
-            return sigma_diag, A_logdet, trAi
-        (f_var, A_logdet, trAi), _ = theano.scan(f, self.q_lambda.T)
-        f_var = tf.transpose(f_var) #scan loops the other way.
+            f_var.append(1./tf.square(b) - tf.reduce_sum(tf.square(LiBi),0))
+            A_logdet += 2*tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
+            trAi += tf.reduce_sum(tf.square(Li))
 
-        KL = 0.5*(tf.reduce_sum(A_logdet) + tf.reduce_sum(trAi) - self.num_data*self.num_latent + tf.reduce_sum(f_mean*self.q_alpha))
+        f_var = tf.transpose(tf.pack(f_var))
 
-        return self.likelihood.variational_expectations(f_mean, f_var, self.Y).sum() - KL
+        KL = 0.5*(A_logdet + trAi - self.num_data*self.num_latent + tf.reduce_sum(f_mean*self.q_alpha))
+
+        return tf.reduce_sum(self.likelihood.variational_expectations(f_mean, f_var, self.Y)) - KL
     
     def build_predict(self, Xnew):
         """
@@ -92,11 +94,13 @@ class VGP(GPModel):
         f_mean = tf.matmul(Kx, self.q_alpha) + self.mean_function(Xnew)
 
         #predictive var
-        def v(b):
-            A = K + tf.user_ops.get_diag(1./tf.square(b))
+        f_var = []
+        for d in range(self.num_latent):
+            b = self.q_lambda[:,d]
+            A = K + tf.diag(1./tf.square(b))
             L = tf.cholesky(A)
             LiKx = tf.user_ops.triangular_solve(L, tf.transpose(Kx), 'lower')
-            return Kd - tf.reduce_sum(tf.square(LiKx),0)
-        f_var, _ = theano.scan(v, self.q_lambda.T)
+            f_var.append( Kd - tf.reduce_sum(tf.square(LiKx),0) )
+        f_var = tf.pack(f_var)
         return f_mean, tf.transpose(f_var)
 
