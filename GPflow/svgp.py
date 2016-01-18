@@ -57,7 +57,7 @@ class SVGP(GPModel):
             else:
                 #here we loop through all the independent columns, extracting the triangular part. 
                 for d in range(self.num_latent):
-                    L = tf.user_ops.triangle(self.q_sqrt[d,:,:], 'lower')
+                    L = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
                     KL += -tf.reduce_sum(tf.log(tf.user_ops.get_diag(L))) + 0.5*tf.reduce_sum(tf.square(L))
             fmean, fvar = conditionals.gaussian_gp_predict_whitened(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt)
         else:
@@ -72,7 +72,7 @@ class SVGP(GPModel):
                 KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1) * tf.square(self.q_sqrt))
             else:
                 for d in range(self.num_latent):
-                    L = tf.user_ops.triangle(self.q_sqrt[d,:,:], 'lower')
+                    L = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
                     S = tf.matmul(L, tf.transpose(L))
                     KL += -tf.reduce_sum(tf.log(tf.user_ops.get_diag(L))) + 0.5*tf.reduce_sum(S * K_inv)
             fmean, fvar = conditionals.gaussian_gp_predict(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt)
