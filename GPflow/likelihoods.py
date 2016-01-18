@@ -104,6 +104,7 @@ class Likelihood(Parameterized):
         shape = tf.shape(Fmu)
         Fmu, Fvar, Y = [tf.reshape(e, (-1,1)) for e in Fmu, Fvar, Y]
         X = gh_x[None,:] * tf.sqrt(2.0 * Fvar) + Fmu
+        Y = tf.tile(Y, [1, 20]) # broadcast Y to match X
         logp = self.logp(X, Y)
         return tf.reshape(tf.log(tf.matmul(tf.exp(logp), gh_w)), shape)
 
@@ -133,6 +134,7 @@ class Likelihood(Parameterized):
         shape = tf.shape(Fmu)
         Fmu, Fvar, Y = [tf.reshape(e, (-1,1)) for e in Fmu, Fvar, Y]
         X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
+        Y = tf.tile(Y, [1, 20]) # broadcast Y to match X
         logp = self.logp(X, Y)
         return tf.reshape(tf.matmul(logp, gh_w), shape)
 
