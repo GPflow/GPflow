@@ -71,11 +71,10 @@ class SVGP(GPModel):
                 KL += -tf.reduce_sum(tf.log(self.q_sqrt))
                 KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1) * tf.square(self.q_sqrt))
             else:
-                def f(w):
-                    R = tf.triu(w)
-                    S_q = tf.matmul(tf.transpose(R), R)
-                    return -tf.reduce_sum(tf.log(tf.user_ops.get_diag(R))) + 0.5*tf.reduce_sum(S_q * K_inv)
-                KL += theano.scan(f, self.q_sqrt.swapaxes(0,2))[0].sum()
+                for d in range(self.num_latent):
+                    L = tf.user_ops.triangle(self.q_sqrt[d,:,:], 'lower')
+                    S = tf.matmul(L, tf.transpose(L))
+                    KL += -tf.reduce_sum(tf.log(tf.user_ops.get_diag(L))) + 0.5*tf.reduce_sum(S * K_inv)
             fmean, fvar = conditionals.gaussian_gp_predict(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt)
 
 
