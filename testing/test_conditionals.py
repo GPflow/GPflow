@@ -30,6 +30,15 @@ class DiagsTest(unittest.TestCase):
         self.sqrt_data = self.rng.randn(3,2)
         self.Xs_data = self.rng.randn(50,1)
 
+        self.feed_dict = {
+            self.X:self.X_data,
+            self.Xs:self.Xs_data,
+            self.mu:self.mu_data,
+            self.sqrt:self.sqrt_data,
+            self.free_x:self.free_x_data}
+
+
+        #the chols are diagonal matrices, with the same entries as the diag representation.
         self.chol = theano.scan(lambda x : tf.diag(x), self.sqrt.T)[0].swapaxes(0,2)
 
     def test_whiten(self):
@@ -37,13 +46,8 @@ class DiagsTest(unittest.TestCase):
             Fstar_mean_1, Fstar_var_1 = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, self.mu, self.sqrt)
             Fstar_mean_2, Fstar_var_2 = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, self.mu, self.chol)
             
-        mean_diff = theano.function([self.X, self.Xs, self.mu, self.sqrt, self.free_x],
-                                Fstar_mean_1 - Fstar_mean_2, on_unused_input='ignore')(
-                                        self.X_data, self.Xs_data, self.mu_data, self.sqrt_data, self.free_x_data)
-
-        var_diff = theano.function([self.X, self.Xs, self.mu, self.sqrt, self.free_x],
-                                Fstar_var_1 - Fstar_var_2, on_unused_input='ignore')(
-                                        self.X_data, self.Xs_data, self.mu_data, self.sqrt_data, self.free_x_data)
+        mean_diff = tf.Session().run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
+        var_diff = tf.Session().run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
 
         self.failUnless(np.allclose(mean_diff, 0))
         self.failUnless(np.allclose(var_diff, 0))
@@ -54,24 +58,11 @@ class DiagsTest(unittest.TestCase):
             Fstar_mean_1, Fstar_var_1 = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.sqrt)
             Fstar_mean_2, Fstar_var_2 = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.chol)
             
-        mean_diff = theano.function([self.X, self.Xs, self.mu, self.sqrt, self.free_x],
-                                Fstar_mean_1 - Fstar_mean_2, on_unused_input='ignore')(
-                                        self.X_data, self.Xs_data, self.mu_data, self.sqrt_data, self.free_x_data)
-
-        var_diff = theano.function([self.X, self.Xs, self.mu, self.sqrt, self.free_x],
-                                Fstar_var_1 - Fstar_var_2, on_unused_input='ignore')(
-                                        self.X_data, self.Xs_data, self.mu_data, self.sqrt_data, self.free_x_data)
+        mean_diff = tf.Session().run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
+        var_diff = tf.Session().run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
 
         self.failUnless(np.allclose(mean_diff, 0))
         self.failUnless(np.allclose(var_diff, 0))
-
-
-
-
-
-
-
-
 
 
 class WhitenTest(unittest.TestCase):
@@ -93,6 +84,12 @@ class WhitenTest(unittest.TestCase):
         self.F_data = self.rng.randn(3,1)
         self.Xs_data = self.rng.randn(50,1)
 
+        self.feed_dict = {
+                self.free_x:self.free_x_data,
+                self.X:self.X_data,
+                self.F:self.F_data,
+                self.Xs:self.Xs_data}
+
     def test_whiten(self):
         """
         make sure that predicting using the whitened representation is the
@@ -107,9 +104,9 @@ class WhitenTest(unittest.TestCase):
             Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gp_predict_whitened(self.Xs, self.X, self.k, V)
 
 
-        mean_difference = theano.function([self.free_x, self.X, self.F, self.Xs], Fstar_w_mean - Fstar_mean)(self.free_x_data, self.X_data, self.F_data, self.Xs_data)
-        var_difference = theano.function([self.free_x, self.X, self.F, self.Xs], Fstar_w_var - Fstar_var)(self.free_x_data, self.X_data, self.F_data, self.Xs_data)
-                
+        mean_difference = tf.Session().run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
+        var_difference = tf.Session().run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
+
         self.failUnless(np.all(np.abs(mean_difference) < 1e-2))
         self.failUnless(np.all(np.abs(var_difference) < 1e-2))
 
@@ -119,6 +116,7 @@ class WhitenTestGaussian(WhitenTest):
         WhitenTest.setUp(self)
         self.F_sqrt = tf.placeholder('float64')
         self.F_sqrt_data = self.rng.randn(3,1)
+        self.feed_dict[self.F_sqrt] = self.F_sqrt_data
 
     def test_whiten(self):
         """
@@ -137,12 +135,8 @@ class WhitenTestGaussian(WhitenTest):
             Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt)
 
 
-        mean_difference = theano.function([
-                            self.free_x, self.X, self.F, self.Xs],
-                            Fstar_w_mean - Fstar_mean)(self.free_x_data, self.X_data, self.F_data, self.Xs_data)
-        var_difference = theano.function([
-                            self.free_x, self.X, self.Xs, self.F_sqrt],
-                            Fstar_w_var - Fstar_var)(self.free_x_data, self.X_data, self.Xs_data, self.F_sqrt_data)
+        mean_difference = tf.Session().run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
+        var_difference = tf.Session().run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
 
         self.failUnless(np.all(np.abs(mean_difference) < 1e-2))
         self.failUnless(np.all(np.abs(var_difference) < 1e-2))
