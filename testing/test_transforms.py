@@ -24,15 +24,19 @@ class TransformTests(unittest.TestCase):
         for x in xs_np:
             self.failUnless(np.allclose(x, self.x_np))
 
-#    def test_logjac(self):
-#        #TODO: there is no jacobian: work out how to deal with this.  (Needs loop?)
-#        jacs = [tf.jacobian(t.tf_forward(self.x), self.x) for t in self.transforms]
-#        tf_jacs = [tf.log(tf.det(j)) for j in jacs]
-#        hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms]
-#
-#        for j1, j2 in zip(tf_jacs, hand_jacs):
-#            self.failUnless(np.allclose(self.session.run(j1, feed_dict={self.x:self.x_np}),
-#                                        self.session.run(j2, feed_dict={self.x:self.x_np}))
+    def test_logjac(self):
+        """
+        We have hand-crafted the log-jacobians for speed. Check they're correct wrt a tensorflow derived version
+        """
+        #there is no jacobian: loop manually
+        def jacobian(f):
+            return tf.pack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
+        tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms]
+        hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms]
+
+        for j1, j2 in zip(tf_jacs, hand_jacs):
+            self.failUnless(np.allclose(self.session.run(j1, feed_dict={self.x:self.x_np}),
+                                        self.session.run(j2, feed_dict={self.x:self.x_np})))
 
     
 

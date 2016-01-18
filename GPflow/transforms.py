@@ -42,7 +42,7 @@ class Identity(Transform):
     def backward(self, y):
         return y
     def tf_log_jacobian(self, x):
-        return 0.0
+        return 0.0 * x # ensure correct shape
     def __str__(self):
         return '(none)'
 
@@ -71,9 +71,10 @@ class Log1pe(Transform):
     def forward(self, x):
         return np.log( 1. + np.exp(x) )
     def tf_forward(self, x):
-        return tf.log( 1. + tf.exp(x) )
+        one = 0. * x + 1. # ensures shape
+        return tf.log( one + tf.exp(x) )
     def tf_log_jacobian(self, x):
-        return -tf.reduce_sum(tf.log(1 + tf.exp(-x)))
+        return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
     def backward(self, y):
         return np.log(np.exp(y) - np.ones(1))
     def __str__(self):
