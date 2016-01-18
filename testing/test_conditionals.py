@@ -11,12 +11,13 @@ class DiagsTest(unittest.TestCase):
     Here we make sure the behaviours overlap.
     """
     def setUp(self):
+        self.num_latent = 2
         self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
         self.k.k2.variance = 0.01
         self.X = tf.placeholder('float64')
         self.mu = tf.placeholder('float64')
         self.Xs = tf.placeholder('float64')
-        self.sqrt = tf.placeholder('float64')
+        self.sqrt = tf.placeholder('float64', shape=[3, self.num_latent])
 
         #make tf array shenanigans
         self.free_x = tf.placeholder('float64')
@@ -24,7 +25,6 @@ class DiagsTest(unittest.TestCase):
 
         self.free_x_data = self.k.get_free_state()
         # NB. with too many random data, numerics suffer
-        self.num_latent = 2
         self.rng = np.random.RandomState(0)
         self.X_data = self.rng.randn(3,1)
         self.mu_data = self.rng.randn(3,self.num_latent)
@@ -141,6 +141,7 @@ class WhitenTestGaussian(WhitenTest):
         var_difference = tf.Session().run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
 
         self.failUnless(np.all(np.abs(mean_difference) < 1e-2))
+        print 'var_diff', var_difference
         self.failUnless(np.all(np.abs(var_difference) < 1e-2))
 
        

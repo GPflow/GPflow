@@ -202,7 +202,8 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         q_var = np.square(q_sqrt)
         #fvar = Kdiag[:,None] + tf.reduce_sum((tf.square(tf.transpose(A)))[:,:,None] * (q_var[None, :,:] - 1),1)
         fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.expand_dims(tf.square(tf.transpose(A)), 2) * (tf.expand_dims(q_var, 0) - 1),1)
-    elif q_sqrt.get_shape().ndims ==3:
+        return fmean, fvar
+    elif q_sqrt.get_shape().ndims==3:
         # we have the cholesky form for q(v)
         fvar = Kdiag - tf.reduce_sum(np.square(A), 0)
         fvar = tf.expand_dims(fvar, 1)
@@ -212,8 +213,9 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
             LTA = tf.matmul(tf.transpose(L), A)
             projected_var.append(tf.reduce_sum(LTA,0))
         fvar += tf.transpose(tf.pack(projected_var))
-
-    return fmean, fvar
+        return fmean, fvar
+    else:
+        raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
 
 
 def gp_predict_whitened(Xnew, X, kern, V):

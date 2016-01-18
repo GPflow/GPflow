@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 
 
-class TestMethods(unittest.TestCase):
+class TestMethods:#(unittest.TestCase):
     def setUp(self):
         self.rng = np.random.RandomState(0)
         self.X = self.rng.randn(100,2)
@@ -25,6 +25,8 @@ class TestMethods(unittest.TestCase):
 
     def test_sizes(self):
         for m in self.ms:
+            import ipdb
+            #ipdb.set_trace()
             m._compile()
             f,g = m._objective(m.get_free_state())
             self.failUnless(f.size == 1)

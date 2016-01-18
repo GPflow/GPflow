@@ -54,7 +54,7 @@ class VGP(GPModel):
         f_mean = tf.matmul(K, self.q_alpha) + self.mean_function(self.X)
         #for each of the data-dimensions (columns of Y), find the diagonal of the
         #variance, and also relevant parts of the KL.
-        f_var, A_logdet, trAi = [], tf.zeros(1, tf.float64), tf.zeros(1, tf.float64)
+        f_var, A_logdet, trAi = [], tf.zeros((1,), tf.float64), tf.zeros((1,), tf.float64)
         for d in range(self.num_latent):
             b = self.q_lambda[:,d]
             B = tf.expand_dims(b, 1)
