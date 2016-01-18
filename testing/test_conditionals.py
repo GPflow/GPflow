@@ -1,8 +1,8 @@
 import GPflow
-import theano
+import tensorflow as tf
+from GPflow.tf_hacks import eye
 import numpy as np
 import unittest
-from theano import tensor as tt
 
 class DiagsTest(unittest.TestCase):
     """
@@ -18,7 +18,7 @@ class DiagsTest(unittest.TestCase):
         self.Xs = tf.placeholder('float64')
         self.sqrt = tf.placeholder('float64')
 
-        #make theano array shenanigans
+        #make tf array shenanigans
         self.free_x = tf.placeholder('float64')
         self.k.make_tf_array(self.free_x)
 
@@ -82,7 +82,7 @@ class WhitenTest(unittest.TestCase):
         self.F = tf.placeholder('float64')
         self.Xs = tf.placeholder('float64')
 
-        #make theano array shenanigans
+        #make tf array shenanigans
         self.free_x = tf.placeholder('float64')
         self.k.make_tf_array(self.free_x)
 
@@ -101,8 +101,8 @@ class WhitenTest(unittest.TestCase):
         
         with self.k.tf_mode():
             K = self.k.K(self.X)
-            L = GPflow.slinalg.cholesky(K)
-            V = GPflow.slinalg.Solve('lower_triangular')(L, self.F)
+            L = tf.cholesky(K)
+            V = tf.user_ops.triangular_solve(L, self.F, 'lower')
             Fstar_mean, Fstar_var = GPflow.conditionals.gp_predict(self.Xs, self.X, self.k, self.F)
             Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gp_predict_whitened(self.Xs, self.X, self.k, V)
 
@@ -127,11 +127,11 @@ class WhitenTestGaussian(WhitenTest):
         """
         with self.k.tf_mode():
             K = self.k.K(self.X)
-            L = GPflow.slinalg.cholesky(K)
-            V = GPflow.slinalg.Solve('lower_triangular')(L, self.F)
-            Li = GPflow.slinalg.Solve('lower_triangular')(L, eye(3))
-            V_var = (Li.dot(tf.diag(self.F_sqrt.flatten()**2)).dot(Li.T))
-            V_sqrt = GPflow.slinalg.cholesky(V_var)[:,:,None]
+            L = tf.cholesky(K)
+            V = tf.user_ops.triangular_solve(L, self.F, 'lower')
+            Li = tf.user_ops.triangular_solve(L, eye(3), 'lower')
+            V_var = tf.matmul( tf.matmul(Li, tf.diag(tf.square(tf.reshape(self.F_sqrt, (-1,))))), tf.transpose(Li))
+            V_sqrt = tf.expand_dims(tf.cholesky(V_var) ,2)
 
             Fstar_mean, Fstar_var = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt)
             Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt)

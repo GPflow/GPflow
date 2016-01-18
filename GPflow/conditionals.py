@@ -29,7 +29,7 @@ def gp_predict(Xnew, X, kern, F):
     """
  
     #compute kernel stuff
-    num_data = X.shape[0]
+    num_data = tf.shape(X)[0]
     Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + eye(num_data)*1e-4
@@ -41,7 +41,8 @@ def gp_predict(Xnew, X, kern, F):
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), F)
-    fvar = Kdiag[:,None] - tf.reduce_sum(tf.square(A), 0)[:,None]
+    fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
+    fvar = tf.expand_dims(fvar, 1)
 
     return fmean, fvar
 
@@ -73,7 +74,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt):
     """
  
     #compute kernel stuff
-    num_data = X.shape[0]
+    num_data = tf.shape(X)[0]
     Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + eye(num_data)*1e-4
@@ -85,7 +86,8 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt):
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), q_mu)
-    fvar = Kdiag[:,None] - tf.reduce_sum(tf.square(A), 0)[:,None]
+    fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
+    fvar = tf.expand_dims(fvar, 1)
     if q_sqrt.get_shape().ndims==2:
         #we hae a diagonal form for q(f)
         fvar += tf.reduce_sum(tf.square(tf.transpose(B)[:,:,None] * q_sqrt[None,:,:]),1)
@@ -96,7 +98,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt):
             WB = tf.matmul(W, B)
             return tf.reduce_sum(tf.square(WB), 0)
         projected_var, _ = theano.scan(f, q_sqrt.swapaxes(0,2))
-        fvar += projected_var.T
+        fvar += tf.transpose(projected_var)
 
     return fmean, fvar
 
@@ -121,7 +123,7 @@ def gp_predict(Xnew, X, kern, F):
     """
  
     #compute kernel stuff
-    num_data = X.shape[0]
+    num_data = tf.shape(X)[0]
     Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + eye(num_data)*1e-4
@@ -132,8 +134,9 @@ def gp_predict(Xnew, X, kern, F):
     B = tf.user_ops.triangular_solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
 
     #construct the mean and variance of q(f*)
-    fmean = tf.matmul(B.T, F)
-    fvar = Kdiag[:,None] - tf.reduce_sum(tf.square(A), 0)[:,None]
+    fmean = tf.matmul(tf.transpose(B), F)
+    fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
+    fvar = tf.expand_dims(fvar, 1)
 
     return fmean, fvar
 
@@ -171,7 +174,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt):
     """
  
     #compute kernel stuff
-    num_data = X.shape[0]
+    num_data = tf.shape(X)[0]
     Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + eye(num_data)*1e-4
@@ -189,13 +192,14 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt):
         fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.reshape(tf.square(tf.transpose(A)), )[:,:,None] * (q_var[None, :,:] - 1),1)
     elif q_sqrt.get_shape().ndims ==3:
         # we have the cholesky form for q(v)
-        fvar = Kdiag[:,None] - tf.reduce_sum(np.square(A), 0)[:,None]
+        fvar = Kdiag - tf.reduce_sum(np.square(A), 0)
+        fvar = tf.expand_dims(fvar, 1)
         def f(w):
             R = tf.triu(w)
             RA = tf.matmul(R, A)
             return tf.square(RA).sum(0)
         projected_var, _ = theano.scan(f, q_sqrt.swapaxes(0,2))
-        fvar += projected_var.T
+        fvar += tf.transpose(projected_var)
 
     return fmean, fvar
 
