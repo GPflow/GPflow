@@ -24,10 +24,11 @@ class DiagsTest(unittest.TestCase):
 
         self.free_x_data = self.k.get_free_state()
         # NB. with too many random data, numerics suffer
+        self.num_latent = 2
         self.rng = np.random.RandomState(0)
         self.X_data = self.rng.randn(3,1)
-        self.mu_data = self.rng.randn(3,2)
-        self.sqrt_data = self.rng.randn(3,2)
+        self.mu_data = self.rng.randn(3,self.num_latent)
+        self.sqrt_data = self.rng.randn(3,self.num_latent)
         self.Xs_data = self.rng.randn(50,1)
 
         self.feed_dict = {
@@ -39,12 +40,13 @@ class DiagsTest(unittest.TestCase):
 
 
         #the chols are diagonal matrices, with the same entries as the diag representation.
-        self.chol = theano.scan(lambda x : tf.diag(x), self.sqrt.T)[0].swapaxes(0,2)
+        self.chol = tf.pack([tf.diag(self.sqrt[:,i]) for i in range(self.num_latent)])
+        self.chol = tf.transpose(self.chol, perm=[1,2,0])
 
     def test_whiten(self):
         with self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, self.mu, self.sqrt)
-            Fstar_mean_2, Fstar_var_2 = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, self.mu, self.chol)
+            Fstar_mean_1, Fstar_var_1 = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
+            Fstar_mean_2, Fstar_var_2 = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
             
         mean_diff = tf.Session().run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
         var_diff = tf.Session().run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
@@ -55,8 +57,8 @@ class DiagsTest(unittest.TestCase):
 
     def test_nonwhiten(self):
         with self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.sqrt)
-            Fstar_mean_2, Fstar_var_2 = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.chol)
+            Fstar_mean_1, Fstar_var_1 = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
+            Fstar_mean_2, Fstar_var_2 = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
             
         mean_diff = tf.Session().run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
         var_diff = tf.Session().run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
@@ -131,8 +133,8 @@ class WhitenTestGaussian(WhitenTest):
             V_var = tf.matmul( tf.matmul(Li, tf.diag(tf.square(tf.reshape(self.F_sqrt, (-1,))))), tf.transpose(Li))
             V_sqrt = tf.expand_dims(tf.cholesky(V_var) ,2)
 
-            Fstar_mean, Fstar_var = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt)
-            Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt)
+            Fstar_mean, Fstar_var = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt, 1)
+            Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt, 1)
 
 
         mean_difference = tf.Session().run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
