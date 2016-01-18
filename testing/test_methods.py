@@ -1,9 +1,7 @@
-import theano
-theano.config.on_unused_input = 'ignore'
 import GPflow
+import tensorflow as tf
 import numpy as np
 import unittest
-from theano import tensor as tt
 
 
 class TestMethods(unittest.TestCase):

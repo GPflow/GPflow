@@ -90,7 +90,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt):
     fvar = tf.expand_dims(fvar, 1)
     if q_sqrt.get_shape().ndims==2:
         #we hae a diagonal form for q(f)
-        fvar += tf.reduce_sum(tf.square(tf.transpose(B)[:,:,None] * q_sqrt[None,:,:]),1)
+        fvar += tf.reduce_sum(tf.square(tf.expand_dims(tf.transpose(B), 2) * tf.expand_dims(q_sqrt, 0)),1)
     elif q_sqrt.get_shape().ndims==3:
         # we have the cholesky form for q(v)
         def f(w):
@@ -189,7 +189,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt):
         #we hae a diagonal form for q(v)
         q_var = np.square(q_sqrt)
         #fvar = Kdiag[:,None] + tf.reduce_sum((tf.square(tf.transpose(A)))[:,:,None] * (q_var[None, :,:] - 1),1)
-        fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.reshape(tf.square(tf.transpose(A)), )[:,:,None] * (q_var[None, :,:] - 1),1)
+        fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.expand_dims(tf.square(tf.transpose(A)), 2) * (tf.expand_dims(q_var, 0) - 1),1)
     elif q_sqrt.get_shape().ndims ==3:
         # we have the cholesky form for q(v)
         fvar = Kdiag - tf.reduce_sum(np.square(A), 0)

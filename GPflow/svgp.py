@@ -70,7 +70,7 @@ class SVGP(GPModel):
             K_inv = tf.user_ops.triangular_solve(tf.transpose(L), L_inv, 'upper')
             if self.q_diag:
                 KL += -tf.reduce_sum(tf.log(self.q_sqrt))
-                KL += 0.5 * tf.reduce_sum(tf.user_ops.get_diag(K_inv)[:,None] * tf.square(self.q_sqrt))
+                KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1) * tf.square(self.q_sqrt))
             else:
                 def f(w):
                     R = tf.triu(w)
@@ -82,7 +82,7 @@ class SVGP(GPModel):
 
         #add in mean function:
         fmean += self.mean_function(self.X)
-        return self.likelihood.variational_expectations(fmean, fvar, self.Y).sum() - KL
+        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y)) - KL
 
     def build_predict(self, Xnew):
         if self.whiten:
