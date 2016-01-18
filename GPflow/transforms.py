@@ -22,8 +22,8 @@ class Transform(object):
         Return the log jacobian of the tf_forward mapping. 
 
         Note that we *could* do this using a tf manipluation of
-        self.tf_forward, but tensorflow may have difficult collapsing that
-        graph (it includes a scan).  We do this in the tests to make sure the
+        self.tf_forward, but tensorflow may have difficulty: it doesn't have a
+        jacaobian at time of writing.  We do this in the tests to make sure the
         implementation is correct.
         """
         raise NotImplementedError

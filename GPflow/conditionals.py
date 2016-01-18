@@ -47,7 +47,7 @@ def gp_predict(Xnew, X, kern, F):
     return fmean, fvar
 
 
-def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt):
+def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
     """
     Given an (approximate) posterior (via q_mu, q_sqrt) to the GP at the points
     X, produce the mean and variance of the GP at the points Xnew.
@@ -66,6 +66,12 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt):
     X are inducing points, size M x D
     q_mu are variational means, size M x K
     q_sqrt are variational standard-deviations or Cholesky matrices,, size M x K or M x M x K
+    num_columns is the number of columns in q_mu. 
+
+    Note (and TODO):
+        At the moment, num_columns only gets used for the q_sqrt.ndim==3 case,
+        and it tells use the value of q_sqrt.shape()[2]. We need to find a way
+        to get this from the tf graph. 
 
     See also:
         gp_predict -- where there is no uncertainty in F (TODO)
@@ -93,12 +99,12 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt):
         fvar += tf.reduce_sum(tf.square(tf.expand_dims(tf.transpose(B), 2) * tf.expand_dims(q_sqrt, 0)),1)
     elif q_sqrt.get_shape().ndims==3:
         # we have the cholesky form for q(v)
-        def f(w):
-            W = tf.triu(w)
-            WB = tf.matmul(W, B)
-            return tf.reduce_sum(tf.square(WB), 0)
-        projected_var, _ = theano.scan(f, q_sqrt.swapaxes(0,2))
-        fvar += tf.transpose(projected_var)
+        projected_var = []
+        for d in range(num_columns):
+            L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
+            LTB = tf.matmul(tf.transpose(L), B)
+            projected_var.append(tf.reduce_sum(LTB,0))
+        fvar += tf.transpose(tf.pack(projected_var))
 
     return fmean, fvar
 
@@ -141,7 +147,7 @@ def gp_predict(Xnew, X, kern, F):
     return fmean, fvar
 
 
-def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt):
+def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
     """
     Given an (approximate) posterior (via q_mu, q_sqrt) to the GP at the points
     X, produce the mean and variance of the GP at the points Xnew.
@@ -166,6 +172,12 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt):
     X are data points, size M x D
     q_mu are variational means, size M x K
     q_sqrt are variational standard-deviations or Cholesky matrices,, size M x K or M x M x K
+
+    Note (and TODO):
+        At the moment, num_columns only gets used for the q_sqrt.ndim==3 case,
+        and it tells use the value of q_sqrt.shape()[2]. We need to find a way
+        to get this from the tf graph. 
+
 
     See also:
         gp_predict_whitened -- where there is no uncertainty in V
@@ -194,12 +206,12 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt):
         # we have the cholesky form for q(v)
         fvar = Kdiag - tf.reduce_sum(np.square(A), 0)
         fvar = tf.expand_dims(fvar, 1)
-        def f(w):
-            R = tf.triu(w)
-            RA = tf.matmul(R, A)
-            return tf.square(RA).sum(0)
-        projected_var, _ = theano.scan(f, q_sqrt.swapaxes(0,2))
-        fvar += tf.transpose(projected_var)
+        projected_var = []
+        for d in range(num_columns):
+            L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
+            LTA = tf.matmul(tf.transpose(L), A)
+            projected_var.append(tf.reduce_sum(LTA,0))
+        fvar += tf.transpose(tf.pack(projected_var))
 
     return fmean, fvar
 
