@@ -147,13 +147,13 @@ class Gaussian(Likelihood):
         return densities.gaussian(F, Y, self.variance)
 
     def conditional_mean(self, F):
-        return F
+        return tf.identity(F)
 
     def conditional_variance(self, F):
         return tf.ones_like(F) * self.variance
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        return Fmu, Fvar + self.variance
+        return tf.identity(Fmu), Fvar + self.variance
     
     def predict_density(self, Fmu, Fvar, Y):
         return densities.gaussian(Fmu, Y, Fvar + self.variance)

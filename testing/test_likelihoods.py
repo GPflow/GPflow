@@ -15,27 +15,22 @@ class TestPredictConditional(unittest.TestCase):
         for l in self.liks:
             l.make_tf_array(self.x)
 
-        self.F = np.random.randn(10,1)
+        self.F = tf.placeholder(tf.float64)
+        self.F_data = np.random.randn(10,1)
 
     def test_mean(self):
         for l in self.liks:
-            if isinstance(l, GPflow.likelihoods.Gaussian):
-                #there's nothing to compile for a Gaussian.
-                self.failUnless(np.allclose(l.conditional_mean(self.F), self.F))
-                with l.tf_mode():
-                    self.failUnless(np.allclose(l.predict_mean_and_var(self.F, self.F * 0)[0], l.conditional_mean(self.F)))
-                continue
             with l.tf_mode():
-                mu1 = tf.Session().run(l.conditional_mean(self.F), feed_dict={self.x: l.get_free_state()})
-                mu2, _ = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0), feed_dict={self.x: l.get_free_state()})
+                mu1 = tf.Session().run(l.conditional_mean(self.F), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
+                mu2, _ = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
             self.failUnless(np.allclose(mu1, mu2, 1e-6, 1e-6))
 
 
     def test_variance(self):
         for l in self.liks:
             with l.tf_mode():
-                v1 = tf.Session().run(l.conditional_variance(self.F), feed_dict={self.x: l.get_free_state()})
-                v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state()})
+                v1 = tf.Session().run(l.conditional_variance(self.F), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
+                v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
             self.failUnless(np.allclose(v1, v2, 1e-6, 1e-6))
 
 class TestQuadrature(unittest.TestCase):
