@@ -183,40 +183,34 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
     """
-    _tf_predict_f = None
-    _tf_predict_y = None
-    _tf_predict_density = None
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
         self.X, self.Y, self.kern, self.likelihood, self.mean_function = X, Y, kern, likelihood, mean_function
         Model.__init__(self, name)
+
     def build_predict(self):
         raise NotImplementedError
+
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points Xnew
         """
-        if self._tf_predict_f is None:
-            # we have to compile this function. TODO: recompile if the likelihood changes?
-            tf_Xnew = tf.placeholder('float64')
-            with self.tf_mode():
-                pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
-                self._tf_predict_f = lambda Xnew_data, x : self._session.run([pred_f_mean, pred_f_var],
-                        feed_dict={self._free_vars:x, tf_Xnew:Xnew_data })
-        return self._tf_predict_f(Xnew, self.get_free_state())
-            
+        self._compile()
+        tf_Xnew = tf.placeholder('float64')
+        with self.tf_mode():
+            pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
+        return self._session.run([pred_f_mean, pred_f_var],
+                                 feed_dict={self._free_vars:self.get_free_state(), tf_Xnew:Xnew })
+
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
         """
-        if self._tf_predict_y is None:
-            # we have to compile this function. TODO: recompile if the likelihood changes?
-            tf_Xnew = tf.placeholder('float64')
-            with self.tf_mode():
-                pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
-                pred_y_mean, pred_y_var = self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
-            self._tf_predict_y = lambda Xnew_data, x : self._session.run([pred_y_mean, pred_y_var],
-                                        feed_dict={self._free_vars:x, tf_Xnew:Xnew_data })
-        return self._tf_predict_y(Xnew, self.get_free_state())
+        tf_Xnew = tf.placeholder('float64')
+        with self.tf_mode():
+            pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
+            pred_y_mean, pred_y_var = self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
+        return self._session.run([pred_y_mean, pred_y_var],
+                                 feed_dict={self._free_vars:self.get_free_state(), tf_Xnew:Xnew })
 
     def predict_density(self, Xnew, Ynew):
         """
@@ -226,16 +220,15 @@ class GPModel(Model):
         ignoring correlations between them. The result is a matrix the same
         shape as Ynew containing the log densities.
         """
-        if self._tf_predict_density is None:
-            # we have to compile this function. TODO: recompile if the likelihood changes?
-            tf_Xnew = tf.placeholder('float64')
-            tf_Ynew = tf.placeholder('float64')
-            with self.tf_mode():
-                pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
-                pred_y_density = self.likelihood.predict_density(pred_f_mean, pred_f_var, tf_Ynew)
-            self._tf_predict_density = lambda Xnew_data, Ynew_data, x : self._session.run(pred_y_density,
-                                    feed_dict={self._free_vars:x, tf_Xnew:Xnew_data, tf_Ynew:Ynew_data })
-        return self._tf_predict_density(Xnew, Ynew, self.get_free_state())
+        tf_Xnew = tf.placeholder('float64')
+        tf_Ynew = tf.placeholder('float64')
+        with self.tf_mode():
+            pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
+            pred_y_density = self.likelihood.predict_density(pred_f_mean, pred_f_var, tf_Ynew)
+        return self._session.run(pred_y_density,
+                                 feed_dict={self._free_vars:self.get_free_state(),
+                                            tf_Xnew:Xnew,
+                                            tf_Ynew:Ynew })
 
 
 
