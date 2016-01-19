@@ -103,7 +103,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         for d in range(num_columns):
             L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
             LTB = tf.matmul(tf.transpose(L), B)
-            projected_var.append(tf.reduce_sum(LTB,0))
+            projected_var.append(tf.reduce_sum(tf.square(LTB),0))
         fvar += tf.transpose(tf.pack(projected_var))
 
     return fmean, fvar
@@ -173,7 +173,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         for d in range(num_columns):
             L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
             LTA = tf.matmul(tf.transpose(L), A)
-            projected_var.append(tf.reduce_sum(LTA,0))
+            projected_var.append(tf.reduce_sum(tf.square(LTA),0))
         fvar += tf.transpose(tf.pack(projected_var))
         return fmean, fvar
     else:
