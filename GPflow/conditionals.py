@@ -74,7 +74,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         to get this from the tf graph. 
 
     See also:
-        gp_predict -- where there is no uncertainty in F (TODO)
+        gp_predict -- where there is no uncertainty in F
         gaussian_gp_predict_whitened -- the same, but with whitening (centering) the f variables
 
     """
@@ -105,44 +105,6 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
             LTB = tf.matmul(tf.transpose(L), B)
             projected_var.append(tf.reduce_sum(LTB,0))
         fvar += tf.transpose(tf.pack(projected_var))
-
-    return fmean, fvar
-
-def gp_predict(Xnew, X, kern, F):
-    """
-    Given F, representing the GP at the points X, produce the mean and variance
-    of the GP at the points Xnew.
-
-    We assume K independent GPs, represented by the columns of F 
-    . 
-    This function computes the Gaussian conditional
-        p(F* | F) 
-
-    Xnew is a data matrix, size N x D
-    X are inducing points, size M x D
-    F are function values , size M x K
-
-    See also:
-        gp_predict_whitened -- where F is rotated into V (F = LV)
-        gaussian_gp_predict -- similar, but with uncertainty in F
-
-    """
- 
-    #compute kernel stuff
-    num_data = tf.shape(X)[0]
-    Kdiag = kern.Kdiag(Xnew)
-    Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data)*1e-4
-    Lm = tf.cholesky(Kmm)
-
-    #this is O(N M^2)
-    A = tf.user_ops.triangular_solve(Lm, Kmn, 'lower')
-    B = tf.user_ops.triangular_solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
-
-    #construct the mean and variance of q(f*)
-    fmean = tf.matmul(tf.transpose(B), F)
-    fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
-    fvar = tf.expand_dims(fvar, 1)
 
     return fmean, fvar
 
