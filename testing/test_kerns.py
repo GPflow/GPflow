@@ -109,9 +109,6 @@ class TestSlice(unittest.TestCase):
 
         #make kernel functions in python
         self.x_free = tf.placeholder('float64')
-        self.k1.make_tf_array(self.x_free)
-        self.k2.make_tf_array(self.x_free)
-
 
     def test(self):
         X = self.rng.randn(20,2)
@@ -125,7 +122,7 @@ class TestSlice(unittest.TestCase):
                     K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X:X, self.x_free:np.ones(2)})
                     K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X:X, self.x_free:np.ones(2)})
                     K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,:1], self.x_free:np.ones(2)})
-                    K4 = tf.Session().run(self.k4.K(self.X), feed_dict={self.X:X[:,1:], self.x_free:np.ones(2)})
+                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,1:], self.x_free:np.ones(2)})
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
 

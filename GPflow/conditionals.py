@@ -32,7 +32,7 @@ def gp_predict(Xnew, X, kern, F):
     num_data = tf.shape(X)[0]
     Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data)*1e-4
+    Kmm = kern.K(X) + eye(num_data)*1e-6
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
@@ -83,7 +83,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
     num_data = tf.shape(X)[0]
     Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data)*1e-4
+    Kmm = kern.K(X) + eye(num_data)*1e-6
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
@@ -151,7 +151,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
     num_data = tf.shape(X)[0]
     Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data)*1e-4
+    Kmm = kern.K(X) + eye(num_data)*1e-6
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)

@@ -10,7 +10,7 @@ class Kern(Parameterized):
     generic '_slice' function to implement them.
 
     input dim is an integer
-    active dims is a (slice | tf integer array | numpy integer array)
+    active dims is a (slice | iterable of integers | None)
     """
     def __init__(self, input_dim, active_dims=None):
         Parameterized.__init__(self)
@@ -19,11 +19,19 @@ class Kern(Parameterized):
             self.active_dims = slice(input_dim)
         else:
             self.active_dims = active_dims
+
     def _slice(self, X, X2):
-        X = X[:,self.active_dims]
-        if X2 is not None:
-            X2 = X2[:,self.active_dims]
-        return X, X2    
+        if isinstance(self.active_dims, slice):
+            X = X[:,self.active_dims]
+            if X2 is not None:
+                X2 = X2[:,self.active_dims]
+            return X, X2    
+        else: # TODO: when tf can do fancy indexing, use that.
+            X = tf.transpose(tf.pack([X[:,i] for i in self.active_dims]))
+            if X2 is not None:
+                X2 = tf.transpose(tf.pack([X2[:,i] for i in self.active_dims]))
+            return X, X2    
+
     def __add__(self, other):
         return Add(self, other)
 
