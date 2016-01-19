@@ -16,6 +16,16 @@ def exponential(lamb, y):
 def gamma(shape, scale, x):
     return -shape * tf.log(scale) - tf.user_ops.log_gamma(shape) + (shape - 1) * tf.log(x) - x / scale
 
+def student_t(x, mean, scale, deg_free):
+    const = tf.user_ops.log_gamma((deg_free + 1.) * 0.5)\
+          - tf.user_ops.log_gamma(deg_free * 0.5)\
+          - 0.5*(tf.log(tf.square(scale)) + tf.log(deg_free) + np.log(np.pi))
+    const = tf.cast(const, tf.float64)
+    return const - 0.5*(deg_free + 1.)*tf.log(1. + (1./deg_free)*(tf.square((F-Y)/scale)))
+           
+
+
+
 def multivariate_normal(x, mu, L):
     """
     L is the Cholesky decomposition of the covaraince.

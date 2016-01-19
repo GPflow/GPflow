@@ -42,7 +42,7 @@ class Identity(Transform):
     def backward(self, y):
         return y
     def tf_log_jacobian(self, x):
-        return 0.0 * x # ensure correct shape
+        return tf.zeros((1,), tf.float64)
     def __str__(self):
         return '(none)'
 

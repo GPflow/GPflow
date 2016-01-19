@@ -204,8 +204,25 @@ class Exponential(Likelihood):
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
     
+class StudentT(Likelihood):
+    def __init__(self, deg_free=3.0):
+        Likelihood.__init__(self)
+        self.deg_free = deg_free
+        self.scale = Param(1.0, transforms.positive)
+    
+    def logp(self, F, Y):
+        return densities.student_t(Y, F, self.scale, self.deg_free)
+
+    def conditional_mean(self, F):
+        return tf.identity(F)
+
+    def conditional_variance(self, F):
+        return F*0.0 + (self.deg_free / (self.deg_free - 2.0))
+
+
 def probit(x):
     return 0.5*(1.0+tf.erf(x/np.sqrt(2.0))) * (1-2e-3) + 1e-3
+
 
 class Bernoulli(Likelihood):
     def __init__(self, invlink=probit):
