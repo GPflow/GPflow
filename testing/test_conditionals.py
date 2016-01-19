@@ -117,7 +117,7 @@ class WhitenTestGaussian(WhitenTest):
     def setUp(self):
         WhitenTest.setUp(self)
         self.F_sqrt = tf.placeholder('float64')
-        self.F_sqrt_data = self.rng.randn(3,1)
+        self.F_sqrt_data = self.rng.rand(3,1)
         self.feed_dict[self.F_sqrt] = self.F_sqrt_data
 
     def test_whiten(self):

@@ -67,17 +67,17 @@ class SVGP(GPModel):
             alpha = tf.user_ops.triangular_solve(L, self.q_mu, 'lower')
             KL = 0.5*tf.reduce_sum(tf.square(alpha)) - 0.5*self.num_inducing*self.num_latent +\
                  self.num_latent * tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
-            L_inv = tf.user_ops.triangular_solve(L, eye(self.num_inducing), 'lower')
-            K_inv = tf.user_ops.triangular_solve(tf.transpose(L), L_inv, 'upper')
             if self.q_diag:
+                L_inv = tf.user_ops.triangular_solve(L, eye(self.num_inducing), 'lower')
+                K_inv = tf.user_ops.triangular_solve(tf.transpose(L), L_inv, 'upper')
                 KL -= tf.reduce_sum(tf.log(self.q_sqrt))
                 KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1) * tf.square(self.q_sqrt))
             else:
                 for d in range(self.num_latent):
-                    L = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
-                    S = tf.matmul(L, tf.transpose(L))
-                    KL -= tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
-                    KL += 0.5*tf.reduce_sum(S * K_inv)
+                    Lq = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
+                    KL -= tf.reduce_sum(tf.log(tf.user_ops.get_diag(Lq)))
+                    LiLq = tf.user_ops.triangular_solve(L, Lq, 'lower')
+                    KL += 0.5*tf.reduce_sum(tf.square(tf.user_ops.get_diag(LiLq)))
             fmean, fvar = conditionals.gaussian_gp_predict(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
 
 
