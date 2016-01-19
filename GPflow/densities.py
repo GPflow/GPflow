@@ -17,11 +17,11 @@ def gamma(shape, scale, x):
     return -shape * tf.log(scale) - tf.user_ops.log_gamma(shape) + (shape - 1) * tf.log(x) - x / scale
 
 def student_t(x, mean, scale, deg_free):
-    const = tf.user_ops.log_gamma((deg_free + 1.) * 0.5)\
-          - tf.user_ops.log_gamma(deg_free * 0.5)\
-          - 0.5*(tf.log(tf.square(scale)) + tf.log(deg_free) + np.log(np.pi))
+    const = tf.user_ops.log_gamma(tf.cast((deg_free + 1.) * 0.5, tf.float64))\
+          - tf.user_ops.log_gamma(tf.cast(deg_free * 0.5, tf.float64))\
+          - 0.5*(tf.log(tf.square(scale)) + tf.cast(tf.log(deg_free), tf.float64) + np.log(np.pi))
     const = tf.cast(const, tf.float64)
-    return const - 0.5*(deg_free + 1.)*tf.log(1. + (1./deg_free)*(tf.square((F-Y)/scale)))
+    return const - 0.5*(deg_free + 1.)*tf.log(1. + (1./deg_free)*(tf.square((x-mean)/scale)))
            
 
 

@@ -113,6 +113,47 @@ class TestSVGP(unittest.TestCase):
         m2.q_mu = qmean
         self.failUnless(np.allclose(m1._objective(m1.get_free_state())[0], m2._objective(m2.get_free_state())[0]))
 
+class TestSparseMCMC(unittest.TestCase):
+    """
+    This test makes sure that when the inducing points are the same as the data
+    points, the sparse mcmc is the same as full mcmc
+    """
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(10,1)
+        Y = rng.randn(10,1)
+        v_vals = rng.randn(10,1)
+
+        l = GPflow.likelihoods.StudentT()
+        self.m1 = GPflow.gpmc.GPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=l)
+        self.m2 = GPflow.sgpmc.SGPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=l, Z=X.copy())
+
+        self.m1.V = v_vals
+        self.m2.V = v_vals.copy()
+        self.m1.kern.lengthscale = .8
+        self.m2.kern.lengthscale = .8
+        self.m1.kern.variance = 4.2
+        self.m2.kern.variance = 4.2
+
+        self.m1._compile()
+        self.m2._compile()
+
+    def test_likelihoods(self):
+        f1, _ = self.m1._objective(self.m1.get_free_state())
+        f2, _ = self.m2._objective(self.m2.get_free_state())
+        self.failUnless(np.allclose(f1, f2))
+
+    def test_gradients(self):
+        #the parameters might not be in the same order, so sort the gradients before checking they're the same
+        _, g1 = self.m1._objective(self.m1.get_free_state())
+        _, g2 = self.m2._objective(self.m2.get_free_state())
+        g1 = np.sort(g1)
+        g2 = np.sort(g2)
+        self.failUnless(np.allclose(g1, g2))
+
+
+
+
 
 
 
