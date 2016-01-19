@@ -1,7 +1,6 @@
 from __future__ import print_function
 from .param import Param, Parameterized
 from scipy.optimize import minimize
-from scipy.linalg import LinAlgError
 import numpy as np
 import tensorflow as tf
 import hmc
@@ -11,8 +10,6 @@ class ObjectiveWrapper(object):
     """
     A simple class to wrap the objective function in order to make it more robust. 
 
-    LinAlgErrors are caught and the optimizer is 'coaxed' away from that region. 
-
     The previosly seen state is cached so that we can easily acess it if the
     model crashes.
     """
@@ -21,12 +18,7 @@ class ObjectiveWrapper(object):
         self._objective = objective
         self._previous_f = np.inf
     def __call__(self, x):
-        try:
-            f, g = self._objective(x)
-            #print(f)
-        except (LinAlgError):
-            print("Warning: caught LinAlg Error")
-            return self._previous_f + 1e3, np.zeros_like(x)
+        f, g = self._objective(x)
         g_is_fin = np.isfinite(g)
         if np.all(g_is_fin):
             self._previous_x = x # store the last know good value
