@@ -11,7 +11,7 @@ class GLM(GPModel):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
-        kern, likelihood are appropriate GPt objects
+        kern, likelihood are appropriate GPflow objects
 
         we construct a set on linear weights, size D x R
 

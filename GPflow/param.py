@@ -45,8 +45,8 @@ class Param(Parentable):
     numpy.ndarray.  Changing the value of the Param is as simple as assignment
     (once the Param is part of a model). Example:
 
-    >>> m = GPt.model.Model()
-    >>> m.p = GPt.param.Param(1.0)
+    >>> m = GPflow.model.Model()
+    >>> m.p = GPflow.param.Param(1.0)
     >>> print(m)
     model.p transform:(none) prior:None
     [ 1.]
@@ -65,13 +65,13 @@ class Param(Parentable):
     
     transforms between self._array and the free state. 
 
-    To apply a transform to the Param, simply set the transform atribute with a GPt.transforms object
-    >>> m = GPt.model.Model()
-    >>> m.p = GPt.param.Param(1.0)
+    To apply a transform to the Param, simply set the transform atribute with a GPflow.transforms object
+    >>> m = GPflow.model.Model()
+    >>> m.p = GPflow.param.Param(1.0)
     >>> print(m)
     model.p transform:(none) prior:None
     [ 1.]
-    >>> m.p.transform = GPt.transforms.Exp()
+    >>> m.p.transform = GPflow.transforms.Exp()
     >>> print(m)
     model.p transform:+ve prior:None
     [ 1.]
@@ -85,8 +85,8 @@ class Param(Parentable):
     the sense that fixes tkae priority over transforms, so unfixing a parameter
     is as simple as setting the flag. Example:
 
-    >>> p = Param(1.0, transform=GPt.transforms.positive)
-    >>> m = GPt.model.Model()
+    >>> p = Param(1.0, transform=GPflow.transforms.positive)
+    >>> m = GPflow.model.Model()
     >>> m.p = p # the model has a sinlge parameter, constrained to be +ve
     >>> m.p.fixed = True # the model now has no free parameters
     >>> m.p.fixed = False # the model has a sinlge parameter, constrained to be +ve

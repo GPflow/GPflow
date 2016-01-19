@@ -8,7 +8,7 @@ class MeanFunction(Parameterized):
     The base mean function class.
 
     To implement a mean funcion, write the __call__ method. This takes a 
-    tensor X and returns a tensor m(X). In accordance with the GPt
+    tensor X and returns a tensor m(X). In accordance with the GPflow
     standard, each row of X represents one datum, and each row of Y is computed
     independently for each row of X. 
 

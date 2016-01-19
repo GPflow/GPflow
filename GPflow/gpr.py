@@ -10,9 +10,9 @@ class GPR(GPModel):
     def __init__(self, X, Y, kern, mean_function=Zero()):
         """
         X is a data matrix, size N x D
-        Y is a data matrix, size N x multivariate_norma is an appropriate GPt object
+        Y is a data matrix, size N x multivariate_norma is an appropriate GPflow object
 
-        kern, mean_function are appropriate GPt objects
+        kern, mean_function are appropriate GPflow objects
 
         This is a vanilla implementation of a GP regression with a Gaussian
         likelihood. 
