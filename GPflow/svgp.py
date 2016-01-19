@@ -55,10 +55,12 @@ class SVGP(GPModel):
             if self.q_diag:
                 KL += -tf.reduce_sum(tf.log(self.q_sqrt)) + 0.5*tf.reduce_sum(tf.square(self.q_sqrt))
             else:
-                #here we loop through all the independent columns, extracting the triangular part. 
+                #here we loop through all the independent functions, extracting the triangular part. 
                 for d in range(self.num_latent):
                     L = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
-                    KL += -tf.reduce_sum(tf.log(tf.user_ops.get_diag(L))) + 0.5*tf.reduce_sum(tf.square(L))
+                    Ldiag = tf.user_ops.get_diag(L)
+                    KL -= tf.reduce_sum(tf.log(Ldiag))
+                    KL += 0.5*tf.reduce_sum(tf.square(Ldiag))
             fmean, fvar = conditionals.gaussian_gp_predict_whitened(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
         else:
             L = tf.cholesky(self.kern.K(self.Z) + eye(self.num_inducing) * 1e-4)
@@ -68,13 +70,14 @@ class SVGP(GPModel):
             L_inv = tf.user_ops.triangular_solve(L, eye(self.num_inducing), 'lower')
             K_inv = tf.user_ops.triangular_solve(tf.transpose(L), L_inv, 'upper')
             if self.q_diag:
-                KL += -tf.reduce_sum(tf.log(self.q_sqrt))
+                KL -= tf.reduce_sum(tf.log(self.q_sqrt))
                 KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1) * tf.square(self.q_sqrt))
             else:
                 for d in range(self.num_latent):
                     L = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
                     S = tf.matmul(L, tf.transpose(L))
-                    KL += -tf.reduce_sum(tf.log(tf.user_ops.get_diag(L))) + 0.5*tf.reduce_sum(S * K_inv)
+                    KL -= -tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
+                    KL += 0.5*tf.reduce_sum(S * K_inv)
             fmean, fvar = conditionals.gaussian_gp_predict(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
 
 
