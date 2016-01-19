@@ -63,7 +63,7 @@ class SVGP(GPModel):
                     KL += 0.5*tf.reduce_sum(tf.square(Ldiag))
             fmean, fvar = conditionals.gaussian_gp_predict_whitened(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
         else:
-            L = tf.cholesky(self.kern.K(self.Z) + eye(self.num_inducing) * 1e-4)
+            L = tf.cholesky(self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6)
             alpha = tf.user_ops.triangular_solve(L, self.q_mu, 'lower')
             KL = 0.5*tf.reduce_sum(tf.square(alpha)) - 0.5*self.num_inducing*self.num_latent +\
                  self.num_latent * tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
@@ -76,7 +76,7 @@ class SVGP(GPModel):
                 for d in range(self.num_latent):
                     L = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
                     S = tf.matmul(L, tf.transpose(L))
-                    KL -= -tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
+                    KL -= tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
                     KL += 0.5*tf.reduce_sum(S * K_inv)
             fmean, fvar = conditionals.gaussian_gp_predict(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
 

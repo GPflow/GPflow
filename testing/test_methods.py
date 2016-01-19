@@ -86,10 +86,22 @@ class TestSVGP(unittest.TestCase):
         self.failUnless(np.allclose(m1._objective(m1.get_free_state())[0], m2._objective(m2.get_free_state())[0]))
 
     def test_notwhite(self):
-        m1 = GPflow.svgp.SVGP(self.X, self.Y, kern=GPflow.kernels.RBF(1)+GPflow.kernels.White(1), likelihood=GPflow.likelihoods.Exponential(),
-                           Z=self.Z, q_diag=True, whiten=False)
-        m2 = GPflow.svgp.SVGP(self.X, self.Y, kern=GPflow.kernels.RBF(1)+GPflow.kernels.White(1), likelihood=GPflow.likelihoods.Exponential(),
-                           Z=self.Z, q_diag=False, whiten=False)
+        m1 = GPflow.svgp.SVGP(self.X,
+                              self.Y,
+                              kern=GPflow.kernels.RBF(1) + \
+                                   GPflow.kernels.White(1),
+                              likelihood=GPflow.likelihoods.Exponential(),
+                              Z=self.Z,
+                              q_diag=True,
+                              whiten=False)
+        m2 = GPflow.svgp.SVGP(self.X,
+                              self.Y,
+                              kern=GPflow.kernels.RBF(1) + \
+                                   GPflow.kernels.White(1),
+                              likelihood=GPflow.likelihoods.Exponential(),
+                              Z=self.Z,
+                              q_diag=False,
+                              whiten=False)
         m1._compile()
         m2._compile()
 
