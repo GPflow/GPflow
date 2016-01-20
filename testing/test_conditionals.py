@@ -71,9 +71,11 @@ class WhitenTest(unittest.TestCase):
     def setUp(self):
         self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
         self.k.k2.variance = 0.01
-        self.X = tf.placeholder('float64')
-        self.F = tf.placeholder('float64')
-        self.Xs = tf.placeholder('float64')
+        self.num_data = 10
+        self.num_test_data = 100
+        self.X = tf.placeholder('float64', [self.num_data, 1])
+        self.F = tf.placeholder('float64', [self.num_data, 1])
+        self.Xs = tf.placeholder('float64', [self.num_test_data, 1])
 
         #make tf array shenanigans
         self.free_x = tf.placeholder('float64')
@@ -82,9 +84,9 @@ class WhitenTest(unittest.TestCase):
         self.free_x_data = self.k.get_free_state()
         # NB. with too many random data, numerics suffer
         self.rng = np.random.RandomState(0)
-        self.X_data = self.rng.randn(3,1)
-        self.F_data = self.rng.randn(3,1)
-        self.Xs_data = self.rng.randn(50,1)
+        self.X_data = self.rng.randn(self.num_data, 1)
+        self.F_data = self.rng.randn(self.num_data, 1)
+        self.Xs_data = self.rng.randn(self.num_test_data,1)
 
         self.feed_dict = {
                 self.free_x:self.free_x_data,
@@ -109,15 +111,15 @@ class WhitenTest(unittest.TestCase):
         mean_difference = tf.Session().run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
         var_difference = tf.Session().run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
 
-        self.failUnless(np.all(np.abs(mean_difference) < 1e-2))
-        self.failUnless(np.all(np.abs(var_difference) < 1e-2))
+        self.failUnless(np.all(np.abs(mean_difference) < 1e-4))
+        self.failUnless(np.all(np.abs(var_difference) < 1e-4))
 
 
 class WhitenTestGaussian(WhitenTest):
     def setUp(self):
         WhitenTest.setUp(self)
-        self.F_sqrt = tf.placeholder('float64')
-        self.F_sqrt_data = self.rng.rand(3,1)
+        self.F_sqrt = tf.placeholder('float64', [self.num_data, 1])
+        self.F_sqrt_data = self.rng.rand(self.num_data,1)
         self.feed_dict[self.F_sqrt] = self.F_sqrt_data
 
     def test_whiten(self):
@@ -129,9 +131,8 @@ class WhitenTestGaussian(WhitenTest):
             K = self.k.K(self.X)
             L = tf.cholesky(K)
             V = tf.user_ops.triangular_solve(L, self.F, 'lower')
-            Li = tf.user_ops.triangular_solve(L, eye(3), 'lower')
-            V_var = tf.matmul( tf.matmul(Li, tf.diag(tf.square(tf.reshape(self.F_sqrt, (-1,))))), tf.transpose(Li))
-            V_sqrt = tf.expand_dims(tf.cholesky(V_var) ,2)
+            V_chol = tf.user_ops.triangular_solve(L, tf.diag(self.F_sqrt[:,0]), 'lower')
+            V_sqrt = tf.expand_dims(V_chol, 2)
 
             Fstar_mean, Fstar_var = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt, 1)
             Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt, 1)
@@ -140,9 +141,8 @@ class WhitenTestGaussian(WhitenTest):
         mean_difference = tf.Session().run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
         var_difference = tf.Session().run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
 
-        self.failUnless(np.all(np.abs(mean_difference) < 1e-2))
-        print 'var_diff', var_difference
-        self.failUnless(np.all(np.abs(var_difference) < 1e-2))
+        self.failUnless(np.all(np.abs(mean_difference) < 1e-4))
+        self.failUnless(np.all(np.abs(var_difference) < 1e-4))
 
        
 

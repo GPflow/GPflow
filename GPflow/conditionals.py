@@ -96,7 +96,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
     fvar = tf.expand_dims(fvar, 1)
     if q_sqrt.get_shape().ndims==2:
         #we hae a diagonal form for q(f)
-        fvar += tf.reduce_sum(tf.square(tf.expand_dims(tf.transpose(B), 2) * tf.expand_dims(q_sqrt, 0)),1)
+        fvar = fvar + tf.reduce_sum(tf.square(tf.expand_dims(tf.transpose(B), 2) * tf.expand_dims(q_sqrt, 0)),1)
     elif q_sqrt.get_shape().ndims==3:
         # we have the cholesky form for q(v)
         projected_var = []
@@ -104,7 +104,9 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
             L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
             LTB = tf.matmul(tf.transpose(L), B)
             projected_var.append(tf.reduce_sum(tf.square(LTB),0))
-        fvar += tf.transpose(tf.pack(projected_var))
+        fvar = fvar + tf.transpose(tf.pack(projected_var))
+    else:
+        raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
 
     return fmean, fvar
 
@@ -163,18 +165,17 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         #we hae a diagonal form for q(v)
         q_var = np.square(q_sqrt)
         #fvar = Kdiag[:,None] + tf.reduce_sum((tf.square(tf.transpose(A)))[:,:,None] * (q_var[None, :,:] - 1),1)
-        fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.expand_dims(tf.square(tf.transpose(A)), 2) * (tf.expand_dims(q_var, 0) - 1),1)
+        fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.expand_dims(tf.square(tf.transpose(A)), 2) * (tf.expand_dims(q_var, 0) - 1.0),1)
         return fmean, fvar
     elif q_sqrt.get_shape().ndims==3:
         # we have the cholesky form for q(v)
         fvar = Kdiag - tf.reduce_sum(np.square(A), 0)
-        fvar = tf.expand_dims(fvar, 1)
         projected_var = []
         for d in range(num_columns):
             L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
             LTA = tf.matmul(tf.transpose(L), A)
-            projected_var.append(tf.reduce_sum(tf.square(LTA),0))
-        fvar += tf.transpose(tf.pack(projected_var))
+            projected_var.append(fvar + tf.reduce_sum(tf.square(LTA),0))
+        fvar = tf.transpose(tf.pack(projected_var))
         return fmean, fvar
     else:
         raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
