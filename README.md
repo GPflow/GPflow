@@ -1,6 +1,6 @@
 # GPflow
 
-GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow) by James Hensman and Alexander G. de G. Matthews. 
+GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow) by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
 
 
 # Install
