@@ -26,7 +26,7 @@ GPflow has origins in [GPy](github.com/sheffieldml/gpy), and much of the interfa
 
  -  GPflow attempts to leverage tensorflow for faster/bigger computation
  -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
- -  GPflow focusses on variational inference and MCMC  -- there is to expectation propagation or Laplace approximation.
+ -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
  -  GPflow does not do latent variable models (GPLVMs).
  -  GPflow does not have any plotting functionality.
  -  GPflow is not meant as a tool to teach about GPs. [GPy is much better at that](http://gpss.cc). 
