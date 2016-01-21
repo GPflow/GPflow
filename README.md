@@ -24,7 +24,7 @@ GPflow is a pure python library for now, so you could just add it to your path (
 
 # What's the difference between GPy and GPflow?
 
-GPflow has origins in [GPy](http://github.com/sheffieldml/gpy), and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
+GPflow has origins in [GPy](http://github.com/sheffieldml/gpy) by the [GPy contributors](https://github.com/SheffieldML/GPy/graphs/contributors), and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
 
  -  GPflow attempts to leverage tensorflow for faster/bigger computation
  -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
