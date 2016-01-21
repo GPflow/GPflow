@@ -6,7 +6,7 @@ GPflow is a package for building Gaussian process models in python, using [Tenso
 # Install
 
 ### 1) Install tensorflow fork.
-To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. You'll need to install our [fork](github.com/GPflow/tensorflow), by building the pip package. You will also need [Bazel](http://bazel.io/). The sequence of commands is:
+To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. You'll need to install our [fork](https://github.com/GPflow/GPflow), by building the pip package. You will also need [Bazel](http://bazel.io/). The sequence of commands is:
 
 ```
 pip remove tensorflow
