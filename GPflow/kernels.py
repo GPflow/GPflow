@@ -35,15 +35,18 @@ class Kern(Parameterized):
     def __add__(self, other):
         return Add(self, other)
 
+    def __mul__(self, other):
+        return Prod(self, other)
+
 
 class Static(Kern):
     """
     Kernels who don't depend on the value of the inputs are 'Static'.  The only
     parameter is a variance.
     """
-    def __init__(self, input_dim, active_dims=None):
+    def __init__(self, input_dim, variance=1.0, active_dims=None):
         Kern.__init__(self, input_dim, active_dims)
-        self.variance = Param(1., transforms.positive)
+        self.variance = Param(variance, transforms.positive)
     def Kdiag(self, X):
         zeros = X[:,0]*0 
         return zeros + self.variance
@@ -81,14 +84,28 @@ class Stationary(Kern):
     Determination'. This means that the kernel has one lengthscale per
     dimension, otherwise the kernel is isotropic (has a single lengthscale). 
     """
-    def __init__(self, input_dim, active_dims=None, ARD=False):
+    def __init__(self, input_dim, variance=1.0, lengthscales=None, active_dims=None, ARD=False):
+        """
+        input_dim is the dimension of the input to the kernel
+        variance is the (initial) value for the variance parameter
+        lengthscales is the initial value for the lengthscales parameter
+         --defaults to 1.0 (ARD=False) or np.ones(input_dim) (ARD=True).
+        active_dims is a list of length input_dim which controls thwich columns of X are used.
+        ARD specified whether the kernel has one lengthscale per dimension (ARD=True) or a single lengthscale (ARD=False).
+        """
         Kern.__init__(self, input_dim, active_dims)
-        self.variance = Param(1., transforms.positive)
+        self.variance = Param(variance, transforms.positive)
         if ARD:
-            self.lengthscales = Param(np.ones(self.input_dim), transforms.positive)
+            if lengthscales is None:
+                lengthscales = np.ones(input_dim)
+            else:
+                lengthscales = lengthscales * np.ones(input_dim) # accepts float or array
+            self.lengthscales = Param(lengthscales, transforms.positive)
             self.ARD = True
         else:
-            self.lengthscales = Param(np.ones(1), transforms.positive)
+            if lengthscales is None:
+                lengthscales = 1.0
+            self.lengthscales = Param(lengthscales, transforms.positive)
             self.ARD = False
 
     def square_dist(self, X, X2):
@@ -123,13 +140,19 @@ class Linear(Kern):
     """
     The linear kernel
     """
-    def __init__(self, input_dim, active_dims=None, ARD=False):
+    def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=False):
+        """
+        input_dim is the dimension of the input to the kernel
+        variance is the (initial) value for the variance parameter(s)
+         -- if ARD=True, there is one variance per input
+        active_dims is a list of length input_dim which controls which columns of X are used.
+        """
         Kern.__init__(self, input_dim, active_dims)
         self.ARD = ARD
         if ARD:
-            self.variance = Param(np.ones(self.input_dim), transforms.positive)
+            self.variance = Param(np.ones(self.input_dim)*variance, transforms.positive)
         else:
-            self.variance = Param(np.ones(1), transforms.positive)
+            self.variance = Param(variance, transforms.positive)
         self.parameters = [self.variance]    
 
     def K(self, X, X2=None):
@@ -198,7 +221,7 @@ class Add(Kern):
     Add two kernels together.
 
     NB. We don't add multiple kernels, prefering to nest instances of this
-    object. Hopefully Theano should take care of any efficiency issues.
+    object. Hopefully tensorflow should take care of any efficiency issues.
     """
     def __init__(self, k1, k2):
         assert isinstance(k1, Kern) and isinstance(k2, Kern), "can only add Kern instances"
@@ -208,5 +231,19 @@ class Add(Kern):
         return self.k1.K(X, X2) + self.k2.K(X, X2)
     def Kdiag(self, X):
         return self.k1.Kdiag(X) + self.k2.Kdiag(X)
+
+
+class Prod(Kern):
+    """
+    Multiply two kernels together.
+    """
+    def __init__(self, k1, k2):
+        assert isinstance(k1, Kern) and isinstance(k2, Kern), "can only add Kern instances"
+        Kern.__init__(self, input_dim=max(k1.input_dim, k2.input_dim))
+        self.k1, self.k2 = k1, k2
+    def K(self, X, X2=None):
+        return self.k1.K(X, X2) * self.k2.K(X, X2)
+    def Kdiag(self, X):
+        return self.k1.Kdiag(X) * self.k2.Kdiag(X)
 
 

@@ -126,8 +126,66 @@ class TestSlice(unittest.TestCase):
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
 
+class TestProd(unittest.TestCase):
+    def setUp(self):
+        self.k1 = GPflow.kernels.Matern32(2)
+        self.k2 = GPflow.kernels.Matern52(2, lengthscales=0.3)
+        self.k3 = self.k1 * self.k2
+        self.x_free = tf.placeholder(tf.float64)
+        self.X = tf.placeholder(tf.float64, [30,2])
+        self.X_data = np.random.randn(30,2)
 
-        
+
+    def test_prod(self):
+        with self.k1.tf_mode():
+            with self.k2.tf_mode():
+                with self.k3.tf_mode():
+
+                    self.k1.make_tf_array(self.x_free)
+                    K1 = self.k1.K(self.X)
+                    K1 = tf.Session().run(K1, feed_dict={self.X:self.X_data, self.x_free:self.k1.get_free_state()})
+
+                    self.k2.make_tf_array(self.x_free)
+                    K2 = self.k2.K(self.X)
+                    K2 = tf.Session().run(K2, feed_dict={self.X:self.X_data, self.x_free:self.k2.get_free_state()})
+
+                    self.k3.make_tf_array(self.x_free)
+                    K3 = self.k3.K(self.X)
+                    K3 = tf.Session().run(K3, feed_dict={self.X:self.X_data, self.x_free:self.k3.get_free_state()})
+        self.failUnless(np.allclose(K1 * K2, K3))
+
+
+
+class TestARDActiveProd(unittest.TestCase):
+    def setUp(self):
+        self.rng = np.random.RandomState(0)
+
+        #k3 = k1 * k2
+        self.k1 = GPflow.kernels.RBF(3, active_dims=[0, 1, 3], ARD=True)
+        self.k2 = GPflow.kernels.RBF(1, active_dims=[2], ARD=True)
+        self.k3 = GPflow.kernels.RBF(4, ARD=True)
+        self.k1.lengthscales = np.array([3.4, 4.5, 5.6])
+        self.k2.lengthscales = 6.7
+        self.k3.lengthscales = np.array([3.4, 4.5, 6.7,  5.6])
+        self.k3a = self.k1 * self.k2
+
+        #make kernel functions in python
+        self.x_free = tf.placeholder('float64')
+        self.k3.make_tf_array(self.x_free)
+        self.k3a.make_tf_array(self.x_free)
+        self.X = tf.placeholder('float64', [50, 4])
+        self.X_data = np.random.randn(50,4)
+
+    def test(self):
+        with self.k3.tf_mode():
+            with self.k3a.tf_mode():
+                K1 = self.k3.K(self.X)
+                K2 = self.k3a.K(self.X)
+                K1 = tf.Session().run(K1, feed_dict={self.X:self.X_data, self.x_free:self.k3.get_free_state()})
+                K2 = tf.Session().run(K2, feed_dict={self.X:self.X_data, self.x_free:self.k3a.get_free_state()})
+
+        self.failUnless(np.allclose(K1 , K2))
+
 
 
 
