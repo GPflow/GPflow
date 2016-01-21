@@ -10,7 +10,7 @@ To make Gaussian processes work, we've had to add some extra functionality to Te
 
 ```
 pip remove tensorflow
-git clone github.com/tensorflow/tensorflow
+git clone github.com/gpflow/tensorflow
 cd tensorflow
 bazel build -c opt //tensorflow/tools/pip_package:build_pip_package
 bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
