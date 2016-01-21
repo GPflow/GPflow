@@ -22,7 +22,7 @@ GPflow is a pure python library for now, so you could just add it to your path (
 
 # What's the difference between GPy and GPflow?
 
-GPflow has origins in [GPy](github.com/sheffieldml/gpy), and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
+GPflow has origins in [GPy](http://github.com/sheffieldml/gpy), and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
 
  -  GPflow attempts to leverage tensorflow for faster/bigger computation
  -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
@@ -38,7 +38,7 @@ GPflow has a slew of kernels that cam be combined in a similar way to GPy ([see 
 For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum liklelihood or MCMC for the covariance function parameters ([notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/regression.ipynb)).
 
 #### MCMC
-For non-Gaussian likelohoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/Sparse%20mcmc%20demo.ipynb)introduces the interface.
+For non-Gaussian likelohoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/Sparse%20mcmc%20demo.ipynb) introduces the interface.
 
 #### Variational inference
 It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. All of the sparse methods in GPflow are solidified in [4]. 
