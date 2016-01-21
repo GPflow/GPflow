@@ -13,9 +13,9 @@ def gp_predict(Xnew, X, kern, F):
     Given F, representing the GP at the points X, produce the mean and variance
     of the GP at the points Xnew.
 
-    We assume K independent GPs, represented by the columns of F 
-    . 
-    This function computes the Gaussian conditional
+    We assume K independent GPs, represented by the columns of F. This function
+    computes the Gaussian conditional
+
         p(F* | F) 
 
     Xnew is a data matrix, size N x D
@@ -75,7 +75,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
 
     See also:
         gp_predict -- where there is no uncertainty in F
-        gaussian_gp_predict_whitened -- the same, but with whitening (centering) the f variables
+        gaussian_gp_predict_whitened -- the same, but with whitening (centering) the F variables
 
     """
  
@@ -189,13 +189,13 @@ def gp_predict_whitened(Xnew, X, kern, V):
     The GP has been centered (whitened) so that 
 
         p(v) = N( 0, I)
-        f = L v
+        f = L v ,
 
     and so
 
         p(f) = N(0, LL^T) = N(0, K).
 
-    We assume K independent GPs, represented by the columns of V. The GP consitional is:
+    We assume K independent GPs, represented by the columns of V. The GP conditional is:
     
         p(F*[:,i] | V[:,i]) = N (K_{*f} L^{-T} V[:,i],  K_{**} - K_{*f}L^{-1} L^{-T} K_{f*})
 
@@ -205,7 +205,7 @@ def gp_predict_whitened(Xnew, X, kern, V):
 
     See also:
         gaussian_gp_predict_whitened -- where there is no uncertainty in V
-        gp_predict -- without the whitening (TODO)
+        gp_predict -- same, without the whitening
     """
     Kd = kern.Kdiag(Xnew)
     Kx = kern.K(X, Xnew)
