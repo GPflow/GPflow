@@ -12,6 +12,7 @@ To make Gaussian processes work, we've had to add some extra functionality to Te
 pip remove tensorflow
 git clone --recurse-submodules github.com/gpflow/tensorflow
 cd tensorflow
+./configure 
 bazel build -c opt //tensorflow/tools/pip_package:build_pip_package
 bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
 pip install /tmp/tensorflow_pkg/<package name>
