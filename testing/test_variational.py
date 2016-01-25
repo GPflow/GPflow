@@ -76,8 +76,7 @@ class VariationalTest(unittest.TestCase):
                 with model.tf_mode():
                     model_likelihood_function = model.build_likelihood()
                 model_likelihood = model_likelihood_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 
-                #embed()
-                #self.failUnless( np.abs( model_likelihood - log_marginal_likelihood ) < 1e-4 )
+                self.failUnless( np.abs( model_likelihood - log_marginal_likelihood ) < 1e-4 )
 
 if __name__ == "__main__":
     unittest.main()
