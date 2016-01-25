@@ -43,12 +43,8 @@ class SVGP(GPModel):
         else:
             self.q_sqrt = Param(np.array([np.eye(self.num_inducing) for _ in range(self.num_latent)]).swapaxes(0,2))
 
-    def build_likelihood(self):
-        """
-        This gives a variational bound on the model likelihood.
-
-        There are four possible cases here, all combinations of True/False for self.whiten and self.q_diag.
-        """
+    def build_prior_KL(self):
+        
         if self.whiten:
             #First compute KL[q(v) || p(v)]] for each column of v
             KL = 0.5*tf.reduce_sum(tf.square(self.q_mu)) - 0.5*self.num_inducing*self.num_latent
@@ -61,7 +57,6 @@ class SVGP(GPModel):
                     Ldiag = tf.user_ops.get_diag(L)
                     KL -= tf.reduce_sum(tf.log(Ldiag))
                     KL += 0.5*tf.reduce_sum(tf.square(Ldiag))
-            fmean, fvar = conditionals.gaussian_gp_predict_whitened(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
         else:
             L = tf.cholesky(self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6)
             alpha = tf.user_ops.triangular_solve(L, self.q_mu, 'lower')
@@ -78,12 +73,33 @@ class SVGP(GPModel):
                     KL -= tf.reduce_sum(tf.log(tf.user_ops.get_diag(Lq)))
                     LiLq = tf.user_ops.triangular_solve(L, Lq, 'lower')
                     KL += 0.5*tf.reduce_sum(tf.square(tf.user_ops.get_diag(LiLq)))
-            fmean, fvar = conditionals.gaussian_gp_predict(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
+        
+        return KL
 
 
-        #add in mean function:
+    def build_likelihood(self):
+        """
+        This gives a variational bound on the model likelihood.
+
+        There are four possible cases here, all combinations of True/False for self.whiten and self.q_diag.
+        """
+
+        #Get prior KL.
+        KL  = self.build_prior_KL()
+    
+        #Get conditionals
+        if self.whiten:
+            fmean, fvar = conditionals.gaussian_gp_predict_whitened(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
+        else:
+            fmean, fvar = conditionals.gaussian_gp_predict(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)            
+
+        #add in mean function to conditionals.
         fmean += self.mean_function(self.X)
-        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y)) - KL
+        
+        #Get variational expectations.
+        variational_expectations = self.likelihood.variational_expectations(fmean, fvar, self.Y)
+        
+        return tf.reduce_sum(variational_expectations) - KL
 
     def build_predict(self, Xnew):
         if self.whiten:
