@@ -4,6 +4,7 @@ from GPflow.tf_hacks import eye
 import numpy as np
 import unittest
 from IPython import embed
+from reference import *
 
 def referenceUnivariateLogMarginalLikelihood( y, K, noiseVariance ):
     return -0.5 * y * y / ( K + noiseVariance ) - 0.5 * np.log( K + noiseVariance ) - 0.5 * np.log( np.pi * 2. )
@@ -23,28 +24,19 @@ def referenceMultivariatePriorKL( meanA, covA, meanB, covB ):
     #... 0.5 * ( Tr( covB^{-1} covA) + (meanB - meanA)^T covB^{-1} (meanB - meanA) - K + log( det( covB ) ) - log ( det( covA ) ) )
     K = covA.shape[0]
     traceTerm = 0.5 * np.trace( np.linalg.solve( covB, covA ) )
+    print "Reference trace term ", traceTerm
     delta = meanB - meanA 
     mahalanobisTerm = 0.5 * np.dot( delta.T, np.linalg.solve( covB, delta ) )
     constantTerm = -0.5 * K
-    logDeterminantTerm = 0.5*(np.linalg.slogdet( covB )[1] - np.linalg.slogdet( covA )[1] )
-    return traceTerm + mahalanobisTerm + constantTerm + logDeterminantTerm
+    priorLogDeterminantTerm = 0.5*np.linalg.slogdet( covB )[1]
+    variationalLogDeterminantTerm = -0.5 * np.linalg.slogdet( covA )[1] 
+    return traceTerm + mahalanobisTerm + constantTerm + priorLogDeterminantTerm + variationalLogDeterminantTerm
 
-def kernel(kernelVariance=1):
+def kernel(kernelVariance=1,lengthScale=1.):
     kern = GPflow.kernels.RBF(1)
     kern.variance = kernelVariance
+    kern.lengthscales = lengthScale
     return kern
-
-def referenceRbfKernel( X, lengthScale, signalVariance ):
-    (nDataPoints, inputDimensions ) = X.shape
-    kernel = np.zeros( (nDataPoints, nDataPoints ) )
-    for row_index in range( nDataPoints ):
-        for column_index in range( nDataPoints ):
-            vecA = X[row_index,:]
-            vecB = X[column_index,:]
-            delta = vecA - vecB
-            distanceSquared = np.dot( delta.T, delta )
-            kernel[row_index, column_index ] = signalVariance * np.exp( -0.5*distanceSquared / lengthScale** 2)
-    return kernel
 
 class VariationalUnivariateTest(unittest.TestCase):
     def setUp(self):
@@ -135,7 +127,7 @@ class VariationalMultivariateTest(unittest.TestCase):
 
 
     def getModel( self, is_diagonal, is_whitened  ):
-        model = GPflow.svgp.SVGP( X=self.X, Y=self.Y, kern=kernel(kernelVariance=self.signalVariance), likelihood=self.lik, Z=self.Z, q_diag = is_diagonal, whiten = is_whitened ) 
+        model = GPflow.svgp.SVGP( X=self.X, Y=self.Y, kern=kernel(kernelVariance=self.signalVariance,lengthScale=self.lengthScale), likelihood=self.lik, Z=self.Z, q_diag = is_diagonal, whiten = is_whitened ) 
         if is_diagonal:
             model.q_sqrt = self.q_sqrt_diag
         else:
@@ -155,17 +147,26 @@ class VariationalMultivariateTest(unittest.TestCase):
         self.failUnless( np.abs( univariate_KL - multivariate_KL ) < 1e-4 )  
         
     def test_prior_KL_fullQ( self ):
-        model = self.getModel( False, True )
         covQ = np.dot( self.q_sqrt_full, self.q_sqrt_full.T )
-        cov_prior = referenceRbfKernel( self.X, self.lengthScale, self.signalVariance )
         mean_prior = np.zeros( ( self.nDimensions, 1 ) )
-        referenceKL = referenceMultivariatePriorKL( self.q_mean, covQ, mean_prior, cov_prior )
+
+        for is_whitened in [True]:
+            print "is_whitened ", is_whitened
+            model = self.getModel( False, is_whitened )
+
+            if is_whitened:
+                cov_prior = np.eye( self.nDimensions )
+            else:
+                cov_prior = referenceRbfKernel( self.X, self.lengthScale, self.signalVariance )
         
-        #now get test KL.
-        with model.tf_mode():
-            prior_KL_function = model.build_prior_KL()
-        test_prior_KL = prior_KL_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 
-        self.failUnless( np.abs( referenceKL - test_prior_KL ) < 1e-4 )        
+
+            referenceKL = referenceMultivariatePriorKL( self.q_mean, covQ, mean_prior, cov_prior )
+            #now get test KL.
+            with model.tf_mode():
+                prior_KL_function = model.build_prior_KL()
+            test_prior_KL = prior_KL_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 
+            print "np.abs( referenceKL - test_prior_KL ) ", np.abs( referenceKL - test_prior_KL )
+            self.failUnless( np.abs( referenceKL - test_prior_KL ) < 1e-4 )        
         
 if __name__ == "__main__":
     unittest.main()
