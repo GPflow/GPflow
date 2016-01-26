@@ -22,7 +22,7 @@ def kernel(kernelVariance=1):
     kern.variance = kernelVariance
     return kern
 
-class VariationalTest(unittest.TestCase):
+class VariationalUnivariateTest(unittest.TestCase):
     def setUp(self):
         #def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(), num_latent=None, q_diag=False, whiten=True):
         self.y_real = 2.
