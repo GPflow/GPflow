@@ -26,7 +26,7 @@ def referenceMultivariatePriorKL( meanA, covA, meanB, covB ):
     delta = meanB - meanA 
     mahalanobisTerm = 0.5 * np.dot( delta.T, np.linalg.solve( covB, delta ) )
     constantTerm = -0.5 * K
-    logDeterminantTerm = np.linalg.slogdet( covB )[1] - np.linalg.slogdet( covA )[1] 
+    logDeterminantTerm = 0.5*(np.linalg.slogdet( covB )[1] - np.linalg.slogdet( covA )[1] )
     return traceTerm + mahalanobisTerm + constantTerm + logDeterminantTerm
 
 def kernel(kernelVariance=1):
@@ -143,6 +143,16 @@ class VariationalMultivariateTest(unittest.TestCase):
         model.q_mu =  self.q_mean
         model.make_tf_array(model._free_vars)    
         return model 
+    
+    def test_refrence_implementation_consistency( self ):
+        rng = np.random.RandomState(10)
+        qMean = rng.randn()
+        qCov = rng.rand()
+        pMean = rng.rand()
+        pCov = rng.rand()
+        univariate_KL = referenceUnivariatePriorKL( qMean, pMean, qCov, pCov )
+        multivariate_KL = referenceMultivariatePriorKL( np.array( [[qMean]] ), np.array( [[qCov]]), np.array( [[pMean]] ), np.array( [[pCov]] ) )  
+        self.failUnless( np.abs( univariate_KL - multivariate_KL ) < 1e-4 )  
         
     def test_prior_KL_fullQ( self ):
         model = self.getModel( False, True )
