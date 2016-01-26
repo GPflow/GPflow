@@ -17,10 +17,34 @@ def referenceUnivariatePriorKL( meanA, meanB, varA, varB ):
     #KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and qB are univariate normal distributions.
     return 0.5 * ( np.log( varB ) - np.log( varA) - 1. + varA/varB + (meanB-meanA) * (meanB - meanA) / varB )
 
+def referenceMultivariatePriorKL( meanA, covA, meanB, covB ):
+    #KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and aB are K dimensional multivariate normal distributions.
+    #Analytically tractable and equal to...
+    #... 0.5 * ( Tr( covB^{-1} covA) + (meanB - meanA)^T covB^{-1} (meanB - meanA) - K + log( det( covB ) ) - log ( det( covA ) ) )
+    K = covA.shape[0]
+    traceTerm = 0.5 * np.trace( np.linalg.solve( covB, covA ) )
+    delta = meanB - meanA 
+    mahalanobisTerm = 0.5 * np.dot( delta.T, np.linalg.solve( covB, delta ) )
+    constantTerm = -0.5 * K
+    logDeterminantTerm = np.linalg.slogdet( covB )[1] - np.linalg.slogdet( covA )[1] 
+    return traceTerm + mahalanobisTerm + constantTerm + logDeterminantTerm
+
 def kernel(kernelVariance=1):
     kern = GPflow.kernels.RBF(1)
     kern.variance = kernelVariance
     return kern
+
+def referenceRbfKernel( X, lengthScale, signalVariance ):
+    (nDataPoints, inputDimensions ) = X.shape
+    kernel = np.zeros( (nDataPoints, nDataPoints ) )
+    for row_index in range( nDataPoints ):
+        for column_index in range( nDataPoints ):
+            vecA = kernel[row_index,:]
+            vecB = kernel[column_index,:]
+            delta = vecA - vecB
+            distanceSquared = np.dot( delta.T, delta )
+            kernel[row_index, column_index ] = signalVariance * np.exp( -0.5*distanceSquared / lengthScale** 2)
+    return kernel
 
 class VariationalUnivariateTest(unittest.TestCase):
     def setUp(self):
@@ -92,6 +116,47 @@ class VariationalUnivariateTest(unittest.TestCase):
                 self.failUnless( np.abs( mean_value - self.posteriorMean ) < 1e-4 )
                 self.failUnless( np.abs( var_value - self.posteriorVariance ) < 1e-4 )
 
+class VariationalMultivariateTest(unittest.TestCase):
+    def setUp( self ):
+        self.nDimensions = 3
+        self.rng = np.random.RandomState(1)
+        self.Y = self.rng.randn( self.nDimensions, 1 )
+        self.X = self.rng.randn( self.nDimensions, 1 )
+        self.Z = self.X.copy()
+        self.noiseVariance = 0.5
+        self.signalVariance = 1.5
+        self.lengthScale = 1.7
+        self.oneLatentFunction = 1
+        self.lik = GPflow.likelihoods.Gaussian()
+        self.lik.variance = self.noiseVariance        
+        self.q_mean = self.rng.randn( self.nDimensions, self.oneLatentFunction )
+        self.q_sqrt_diag = self.rng.rand( self.nDimensions, self.oneLatentFunction )
+        self.q_sqrt_full = np.tril( self.rng.rand( self.nDimensions, self.nDimensions ) )
+
+
+    def getModel( self, is_diagonal, is_whitened  ):
+        model = GPflow.svgp.SVGP( X=self.X, Y=self.Y, kern=kernel(kernelVariance=self.signalVariance), likelihood=self.lik, Z=self.Z, q_diag = is_diagonal, whiten = is_whitened ) 
+        if is_diagonal:
+            model.q_sqrt = self.q_sqrt_diag
+        else:
+            model.q_sqrt = self.q_sqrt_full[:,:,None]
+        model.q_mu =  self.q_mean
+        model.make_tf_array(model._free_vars)    
+        return model 
+        
+    def test_prior_KL_fullQ( self ):
+        model = self.getModel( False, True )
+        covQ = np.dot( self.q_sqrt_full, self.q_sqrt_full.T )
+        cov_prior = referenceRbfKernel( self.X, self.lengthScale, self.signalVariance )
+        mean_prior = np.zeros( ( self.nDimensions, 1 ) )
+        referenceKL = referenceMultivariatePriorKL( self.q_mean, covQ, mean_prior, cov_prior )
+        
+        #now get test KL.
+        with model.tf_mode():
+            prior_KL_function = model.build_prior_KL()
+        test_prior_KL = prior_KL_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 
+        self.failUnless( np.abs( referenceKL - test_prior_KL ) < 1e-4 )        
+        
 if __name__ == "__main__":
     unittest.main()
 
