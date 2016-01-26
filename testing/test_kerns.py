@@ -21,8 +21,6 @@ class TestRbf(unittest.TestCase):
         
         with kernel.tf_mode():
             gram_matrix = tf.Session().run( kernel.K(X) , feed_dict={x_free:kernel.get_free_state(), X:X_data})
-        print "gram_matrix ", gram_matrix
-        print "reference_gram_matrix ", reference_gram_matrix
         self.failUnless(np.allclose(gram_matrix-reference_gram_matrix, 0))
 
 class TestKernSymmetry(unittest.TestCase):

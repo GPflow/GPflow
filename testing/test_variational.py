@@ -24,7 +24,6 @@ def referenceMultivariatePriorKL( meanA, covA, meanB, covB ):
     #... 0.5 * ( Tr( covB^{-1} covA) + (meanB - meanA)^T covB^{-1} (meanB - meanA) - K + log( det( covB ) ) - log ( det( covA ) ) )
     K = covA.shape[0]
     traceTerm = 0.5 * np.trace( np.linalg.solve( covB, covA ) )
-    print "Reference trace term ", traceTerm
     delta = meanB - meanA 
     mahalanobisTerm = 0.5 * np.dot( delta.T, np.linalg.solve( covB, delta ) )
     constantTerm = -0.5 * K
@@ -150,8 +149,7 @@ class VariationalMultivariateTest(unittest.TestCase):
         covQ = np.dot( self.q_sqrt_full, self.q_sqrt_full.T )
         mean_prior = np.zeros( ( self.nDimensions, 1 ) )
 
-        for is_whitened in [True]:
-            print "is_whitened ", is_whitened
+        for is_whitened in [True,False]:
             model = self.getModel( False, is_whitened )
 
             if is_whitened:
@@ -165,7 +163,6 @@ class VariationalMultivariateTest(unittest.TestCase):
             with model.tf_mode():
                 prior_KL_function = model.build_prior_KL()
             test_prior_KL = prior_KL_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 
-            print "np.abs( referenceKL - test_prior_KL ) ", np.abs( referenceKL - test_prior_KL )
             self.failUnless( np.abs( referenceKL - test_prior_KL ) < 1e-4 )        
         
 if __name__ == "__main__":
