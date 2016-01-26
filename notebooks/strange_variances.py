@@ -14,11 +14,13 @@ def kernel():
 plt.plot(X, Y, 'kx')
 
 m2 = GPflow.vgp.VGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian())
+m3 = GPflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
 m4 = GPflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
 
+m3.Z.fixed = True
 m4.Z.fixed = True
 
-model_list = [m2,m4]
+model_list = [m2,m3,m4]
 
 for m in model_list:
     m.kern.lengthscales.fixed = True
@@ -26,6 +28,7 @@ for m in model_list:
     m.likelihood.variance.fixed = True
 
 m2.optimize(max_iters=100000)
+m3.optimize(max_iters=100000)
 m4.optimize(max_iters=100000)
 
 xx = np.linspace(-1, 11, 100)[:,None]
@@ -37,6 +40,7 @@ def plot(m, color='b'):
 
 plt.figure(figsize=(12,8))
 plot(m2, 'r')
+plot(m3, 'g')
 plot(m4, 'y')
 plt.plot(X, Y, 'kx')
 embed()
