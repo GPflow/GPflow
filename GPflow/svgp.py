@@ -8,7 +8,6 @@ from .mean_functions import Zero
 from tf_hacks import eye
 
 
-
 class SVGP(GPModel):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
@@ -47,32 +46,33 @@ class SVGP(GPModel):
         
         if self.whiten:
             #First compute KL[q(v) || p(v)]] for each column of v
-            KL = 0.5*tf.reduce_sum(tf.square(self.q_mu)) - 0.5*self.num_inducing*self.num_latent
+            KL = 0.5*tf.reduce_sum(tf.square(self.q_mu)) #Mahalanobis term
+            KL -= 0.5*self.num_inducing*self.num_latent #Constant term.
             if self.q_diag:
-                KL += -tf.reduce_sum(tf.log(self.q_sqrt)) + 0.5*tf.reduce_sum(tf.square(self.q_sqrt))
+                KL += -0.5*tf.reduce_sum(tf.log(tf.square(self.q_sqrt))) + 0.5*tf.reduce_sum(tf.square(self.q_sqrt))
             else:
                 #here we loop through all the independent functions, extracting the triangular part. 
                 for d in range(self.num_latent):
-                    L = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
-                    Ldiag = tf.user_ops.get_diag(L)
-                    KL -= tf.reduce_sum(tf.log(Ldiag))
-                    KL += 0.5*tf.reduce_sum(tf.square(Ldiag))
+                    Lq = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
+                    KL -= 0.5*tf.reduce_sum(tf.log(tf.square(tf.user_ops.get_diag(Lq)))) #Log determinant of q covariance.
+                    KL +=  0.5*tf.reduce_sum(tf.square(Lq))  #Trace term.
         else:
             L = tf.cholesky(self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6)
             alpha = tf.user_ops.triangular_solve(L, self.q_mu, 'lower')
-            KL = 0.5*tf.reduce_sum(tf.square(alpha)) - 0.5*self.num_inducing*self.num_latent +\
-                 self.num_latent * tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
+            KL = 0.5*tf.reduce_sum(tf.square(alpha)) #Mahalanobis term.
+            KL += self.num_latent * 0.5*tf.reduce_sum(tf.log(tf.square(tf.user_ops.get_diag(L) ))) #Prior log determinant term.
+            KL -= 0.5*self.num_inducing*self.num_latent
             if self.q_diag:
                 L_inv = tf.user_ops.triangular_solve(L, eye(self.num_inducing), 'lower')
                 K_inv = tf.user_ops.triangular_solve(tf.transpose(L), L_inv, 'upper')
-                KL -= tf.reduce_sum(tf.log(self.q_sqrt))
-                KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1) * tf.square(self.q_sqrt))
+                KL -= 0.5*tf.reduce_sum(tf.log(tf.square(self.q_sqrt))) #Log determinant of q covariance. 
+                KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1) * tf.square(self.q_sqrt)) #Trace term.
             else:
                 for d in range(self.num_latent):
                     Lq = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
-                    KL -= tf.reduce_sum(tf.log(tf.user_ops.get_diag(Lq)))
+                    KL+= -0.5*tf.reduce_sum(tf.log(tf.square(tf.user_ops.get_diag(Lq)))) #Log determinant of q covariance. 
                     LiLq = tf.user_ops.triangular_solve(L, Lq, 'lower')
-                    KL += 0.5*tf.reduce_sum(tf.square(tf.user_ops.get_diag(LiLq)))
+                    KL += 0.5*tf.reduce_sum(tf.square(LiLq)) #Trace term
         
         return KL
 
