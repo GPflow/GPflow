@@ -2,7 +2,28 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
+from reference import *
 
+class TestRbf(unittest.TestCase):
+    def test_1d(self):
+        lengthScale = 1.4
+        variance = 2.3
+        kernel = GPflow.kernels.RBF(1)
+        kernel.lengthscales = lengthScale
+        kernel.variance = variance
+        rng = np.random.RandomState(1)
+        
+        x_free = tf.placeholder('float64')
+        kernel.make_tf_array(x_free)
+        X = tf.placeholder('float64')
+        X_data = rng.randn( 3, 1 )
+        reference_gram_matrix =  referenceRbfKernel(X_data, lengthScale, variance)
+        
+        with kernel.tf_mode():
+            gram_matrix = tf.Session().run( kernel.K(X) , feed_dict={x_free:kernel.get_free_state(), X:X_data})
+        print "gram_matrix ", gram_matrix
+        print "reference_gram_matrix ", reference_gram_matrix
+        self.failUnless(np.allclose(gram_matrix-reference_gram_matrix, 0))
 
 class TestKernSymmetry(unittest.TestCase):
     def setUp(self):
