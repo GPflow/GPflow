@@ -18,7 +18,7 @@ def referenceUnivariatePriorKL( meanA, meanB, varA, varB ):
     return 0.5 * ( np.log( varB ) - np.log( varA) - 1. + varA/varB + (meanB-meanA) * (meanB - meanA) / varB )
 
 def kernel(kernelVariance=1):
-    kern = GPflow.kernels.White(1)
+    kern = GPflow.kernels.RBF(1)
     kern.variance = kernelVariance
     return kern
 
@@ -86,7 +86,7 @@ class VariationalTest(unittest.TestCase):
                     if is_whitened:
                         fmean_func, fvar_func = GPflow.conditionals.gaussian_gp_predict_whitened(self.X, self.Z, model.kern, model.q_mu, model.q_sqrt, self.oneLatentFunction )
                     else:
-                        fmean_func, fvar_func = GPflow.conditionals.gaussian_gp_predict(self.X, self.Z, model.kern, model.q_mu, model.q_sqrt, self.self.oneLatentFunction)  
+                        fmean_func, fvar_func = GPflow.conditionals.gaussian_gp_predict(self.X, self.Z, model.kern, model.q_mu, model.q_sqrt, self.oneLatentFunction)  
                 mean_value = fmean_func.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } )[0,0] 
                 var_value = fvar_func.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } )[0,0] 
                 self.failUnless( np.abs( mean_value - self.posteriorMean ) < 1e-4 )
