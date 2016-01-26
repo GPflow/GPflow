@@ -3,8 +3,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from IPython import embed
 
-nPoints = 15
-rng =np.random.RandomState(1)
+nPoints = 3
+rng =np.random.RandomState(4)
 X = np.atleast_2d( rng.rand(nPoints)*10 ).T
 Y = np.sin(X) + 0.9 * np.cos(X*1.6) + np.random.randn(*X.shape)* 0.8
 
@@ -13,33 +13,22 @@ def kernel():
 
 plt.plot(X, Y, 'kx')
 
-m1 = GPflow.gpr.GPR(X, Y, kern=kernel() )
 m2 = GPflow.vgp.VGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian())
-m3 = GPflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False)
 m4 = GPflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
 
-m3.Z.fixed = True
 m4.Z.fixed = True
 
-model_list = [m1,m2,m3,m4]
+model_list = [m2,m4]
 
 for m in model_list:
     m.kern.lengthscales.fixed = True
     m.kern.variance.fixed = True
     m.likelihood.variance.fixed = True
 
-#m1.optimize()
-#m1._compile()
-m2.optimize(max_iters=10000,verbose=False)
-#m3.optimize(max_iters=100,verbose=False)
-m4.optimize(max_iters=10000,verbose=False)
-
-
+m2.optimize(max_iters=100000)
+m4.optimize(max_iters=100000)
 
 xx = np.linspace(-1, 11, 100)[:,None]
-
-#print "m1 ", m1
-#print "m4 ", m4
 
 def plot(m, color='b'):
     mu, var = m.predict_y(xx)
@@ -47,9 +36,7 @@ def plot(m, color='b'):
     plt.plot(xx, mu+ 2*np.sqrt(var), color, xx, mu-2*np.sqrt(var), color, lw=1)
 
 plt.figure(figsize=(12,8))
-#plot(m1, 'b.')
 plot(m2, 'r')
-#plot(m3, 'g')
 plot(m4, 'y')
 plt.plot(X, Y, 'kx')
 embed()
