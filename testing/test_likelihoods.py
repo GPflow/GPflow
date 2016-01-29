@@ -42,6 +42,7 @@ class TestQuadrature(unittest.TestCase):
 
         self.rng = np.random.RandomState()
         self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2)
+        self.Y = self.Y**2
         self.Fvar = 0.01 * self.Fvar **2
 
     def test_var_exp(self):

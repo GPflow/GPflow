@@ -5,16 +5,16 @@ def gaussian(x, mu, var):
     return -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(var) - 0.5 * tf.square(mu-x)/var
 
 def bernoulli(p, y):
-    return tf.log(tf.select(tf.equal(y,1), p, 1-p))
+    return tf.log(tf.select(tf.equal(y, 1), p, 1-p))
 
 def poisson(lamb, y):
-    return y * tf.log(lamb) - lamb - tf.user_ops.log_gamma(y+1)
+    return y * tf.log(lamb) - lamb - tf.user_ops.log_gamma(y + 1.)
 
 def exponential(lamb, y):
     return - y/lamb - tf.log(lamb)
 
 def gamma(shape, scale, x):
-    return -shape * tf.log(scale) - tf.user_ops.log_gamma(shape) + (shape - 1) * tf.log(x) - x / scale
+    return -shape * tf.log(scale) - tf.user_ops.log_gamma(shape) + (shape - 1.) * tf.log(x) - x / scale
 
 def student_t(x, mean, scale, deg_free):
     const = tf.user_ops.log_gamma(tf.cast((deg_free + 1.) * 0.5, tf.float64))\

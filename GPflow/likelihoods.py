@@ -251,6 +251,32 @@ class Bernoulli(Likelihood):
         p = self.invlink(F)
         return p - tf.square(p)
 
+class Gamma(Likelihood):
+    """
+    Use the transformed GP to give the *scale* (inverse rate) of the Gamma
+    """
+    def __init__(self, invlink=tf.exp):
+        Likelihood.__init__(self)
+        self.invlink = invlink
+        self.shape = Param(1.0, transforms.positive)
+
+    def logp(self, F, Y):
+        return densities.gamma(self.shape, self.invlink(F), Y)
+
+    def conditional_mean(self, F):
+        return self.shape * self.invlink(F)
+
+    def conditional_variance(self, F):
+        scale = self.invlink(F)
+        return self.shape * tf.square(scale)
+
+    def variational_expectations(self, Fmu, Fvar, Y):
+        if self.invlink is tf.exp:
+            ##return -shape * tf.log(scale) - tf.user_ops.log_gamma(shape) + (shape - 1.) * tf.log(x) - x / scale
+            return -self.shape * Fmu - tf.user_ops.log_gamma(self.shape) + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar/2.)
+        else:
+            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+
 
 
 
