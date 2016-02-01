@@ -22,6 +22,15 @@ def student_t(x, mean, scale, deg_free):
           - 0.5*(tf.log(tf.square(scale)) + tf.cast(tf.log(deg_free), tf.float64) + np.log(np.pi))
     const = tf.cast(const, tf.float64)
     return const - 0.5*(deg_free + 1.)*tf.log(1. + (1./deg_free)*(tf.square((x-mean)/scale)))
+
+def beta(alpha, beta, y):
+    #need to clip y, since log of 0 is nan...
+    y = tf.clip_by_value(y, 1e-6, 1-1e-6)
+    return (alpha - 1.) * tf.log(y) + (beta - 1.) * tf.log(1. - y) \
+            + tf.user_ops.log_gamma(alpha + beta)\
+            - tf.user_ops.log_gamma(alpha)\
+            - tf.user_ops.log_gamma(beta)
+
            
 
 

@@ -278,6 +278,41 @@ class Gamma(Likelihood):
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
 
+class Beta(Likelihood):
+    """
+    This uses a reparameterization of the Beta density. We have the mean of the
+    Beta distribution given by the transformed process:
+
+        m = sigma(f)
+    
+    and a scale parameter. The familiar alpha, beta parameters are given by
+
+        m     = alpha / (alpha + beta)
+        scale = alpha + beta
+    
+    so:
+        alpha = scale * m
+        beta  = scale * (1-m)
+    """
+    def __init__(self, invlink=probit, scale=1.0):
+        Likelihood.__init__(self)
+        self.scale = Param(scale, transforms.positive)
+        self.invlink = invlink
+    
+    def logp(self, F, Y):
+        mean = self.invlink(F)
+        alpha = mean * self.scale
+        beta = self.scale - alpha
+        return densities.beta(alpha, beta, Y)
+
+    def conditional_mean(self, F):
+        return self.invlink(F)
+
+    def conditional_variance(self, F):
+        mean = self.invlink(F)
+        return (mean - tf.square(mean)) / (self.scale + 1.)
+
+
 
 
 
