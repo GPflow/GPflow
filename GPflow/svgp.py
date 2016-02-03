@@ -6,6 +6,7 @@ import transforms
 import conditionals
 from .mean_functions import Zero
 from tf_hacks import eye
+import kullback_leiblers
 
 
 class SVGP(GPModel):
@@ -43,45 +44,23 @@ class SVGP(GPModel):
             self.q_sqrt = Param(np.array([np.eye(self.num_inducing) for _ in range(self.num_latent)]).swapaxes(0,2))
 
     def build_prior_KL(self):
-        
         if self.whiten:
-            #First compute KL[q(v) || p(v)]] for each column of v
-            KL = 0.5*tf.reduce_sum(tf.square(self.q_mu)) #Mahalanobis term
-            KL -= 0.5*self.num_inducing*self.num_latent #Constant term.
             if self.q_diag:
-                KL += -0.5*tf.reduce_sum(tf.log(tf.square(self.q_sqrt))) + 0.5*tf.reduce_sum(tf.square(self.q_sqrt))
+                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu, self.q_sqrt, self.num_latent)
             else:
-                #here we loop through all the independent functions, extracting the triangular part. 
-                for d in range(self.num_latent):
-                    Lq = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
-                    KL -= 0.5*tf.reduce_sum(tf.log(tf.square(tf.user_ops.get_diag(Lq)))) #Log determinant of q covariance.
-                    KL +=  0.5*tf.reduce_sum(tf.square(Lq))  #Trace term.
+                KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt, self.num_latent)
         else:
-            L = tf.cholesky(self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6)
-            alpha = tf.user_ops.triangular_solve(L, self.q_mu, 'lower')
-            KL = 0.5*tf.reduce_sum(tf.square(alpha)) #Mahalanobis term.
-            KL += self.num_latent * 0.5*tf.reduce_sum(tf.log(tf.square(tf.user_ops.get_diag(L) ))) #Prior log determinant term.
-            KL -= 0.5*self.num_inducing*self.num_latent
+            K = self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6
             if self.q_diag:
-                L_inv = tf.user_ops.triangular_solve(L, eye(self.num_inducing), 'lower')
-                K_inv = tf.user_ops.triangular_solve(tf.transpose(L), L_inv, 'upper')
-                KL -= 0.5*tf.reduce_sum(tf.log(tf.square(self.q_sqrt))) #Log determinant of q covariance. 
-                KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1) * tf.square(self.q_sqrt)) #Trace term.
+                KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K, self.num_latent)
             else:
-                for d in range(self.num_latent):
-                    Lq = tf.user_ops.triangle(self.q_sqrt[:,:,d], 'lower')
-                    KL+= -0.5*tf.reduce_sum(tf.log(tf.square(tf.user_ops.get_diag(Lq)))) #Log determinant of q covariance. 
-                    LiLq = tf.user_ops.triangular_solve(L, Lq, 'lower')
-                    KL += 0.5*tf.reduce_sum(tf.square(LiLq)) #Trace term
-        
+                KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K, self.num_latent)
         return KL
 
 
     def build_likelihood(self):
         """
         This gives a variational bound on the model likelihood.
-
-        There are four possible cases here, all combinations of True/False for self.whiten and self.q_diag.
         """
 
         #Get prior KL.
