@@ -16,14 +16,14 @@ EITHER:
 The sequence of commands for Linux is:
 
 ```
-pip remove tensorflow
+pip uninstall tensorflow
 pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.1/linux/tensorflow-0.6.0-py2-none-any.whl
 ```
 
 The sequence of commands for Mac OS is:
 
 ```
-pip remove tensorflow
+pip uninstall tensorflow
 http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.1/osx/tensorflow-0.6.0-py2-none-any.whl
 ```
 
@@ -34,7 +34,7 @@ OR:
 You will also need [Bazel](http://bazel.io/). The sequence of commands is:
 
 ```
-pip remove tensorflow
+pip uninstall tensorflow
 git clone --recurse-submodules github.com/gpflow/tensorflow
 cd tensorflow
 ./configure 
