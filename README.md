@@ -5,11 +5,36 @@ GPflow is a package for building Gaussian process models in python, using [Tenso
 
 # Install
 
-### 1) Install tensorflow fork.
-To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. You'll need to install our [fork](https://github.com/GPflow/tensorflow), by building the pip package. You will also need [Bazel](http://bazel.io/). The sequence of commands is:
+## 1) Install Tensorflow fork
+
+To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. You'll need to install our [fork](https://github.com/GPflow/tensorflow). If you are already using tensorflow be aware that changing to our fork may change how it works for you.
+
+EITHER:
+
+### 1a) Install Tensorflow fork using Pip. Best option for most users.
+
+The sequence of commands for Linux is:
 
 ```
-pip remove tensorflow
+pip uninstall tensorflow
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.1/linux/tensorflow-0.6.0-py2-none-any.whl
+```
+
+The sequence of commands for Mac OS is:
+
+```
+pip uninstall tensorflow
+http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.1/osx/tensorflow-0.6.0-py2-none-any.whl
+```
+
+OR:
+
+### 1b) Install Tensorflow fork from sources.
+
+You will also need [Bazel](http://bazel.io/). The sequence of commands is:
+
+```
+pip uninstall tensorflow
 git clone --recurse-submodules github.com/gpflow/tensorflow
 cd tensorflow
 ./configure 
@@ -20,7 +45,7 @@ pip install /tmp/tensorflow_pkg/<package name>
 
 For more information see [this page](https://www.tensorflow.org/versions/master/get_started/os_setup.html#installing-from-sources).
 
-### 2) install package
+## 2) install package
 GPflow is a pure python library for now, so you could just add it to your path (we use `python setup.py develop`) or try an install `python setup.py install` (untested). 
 
 # What's the difference between GPy and GPflow?
