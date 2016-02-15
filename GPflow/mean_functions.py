@@ -48,5 +48,5 @@ class Constant(MeanFunction):
         MeanFunction.__init__(self)
         self.c = Param(c)
     def __call__(self, X):
-        return tf.repeat(self.c.reshape(1,-1), X.shape[0], axis=0)
+        return self.c#tf.tile(tf.reshape(self.c, (1,-1)), [X.shape[0], 1])
 

@@ -13,16 +13,14 @@ class ObjectiveWrapper(object):
     The previosly seen state is cached so that we can easily acess it if the
     model crashes.
     """
-    _previous = None
+    _previous_x = None
     def __init__(self, objective):
         self._objective = objective
-        self._previous_f = np.inf
     def __call__(self, x):
         f, g = self._objective(x)
         g_is_fin = np.isfinite(g)
         if np.all(g_is_fin):
-            self._previous_x = x # store the last know good value
-            self._previous_f = f
+            self._previous_x = x # store the last known good value
             return f, g
         else:
             print("Warning: inf or nan in gradient: replacing with zeros")
@@ -148,7 +146,7 @@ class Model(Parameterized):
                         options=options)
         except (KeyboardInterrupt): # pragma: no cover
             print("Caught KeyboardInterrupt, setting model with most recent state.")
-            self.set_state(obj._previous)
+            self.set_state(obj._previous_x)
             return None 
 
         print("optimization terminated, setting model state")
