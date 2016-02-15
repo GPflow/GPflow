@@ -46,7 +46,7 @@ pip install /tmp/tensorflow_pkg/<package name>
 For more information see [this page](https://www.tensorflow.org/versions/master/get_started/os_setup.html#installing-from-sources).
 
 ## 2) install package
-GPflow is a pure python library for now, so you could just add it to your path (we use `python setup.py develop`) or try an install `python setup.py install` (untested). 
+GPflow is a pure python library for now, so you could just add it to your path (we use `python setup.py develop`) or try an install `python setup.py install` (untested). You can run the tests with `python setup.py test`.
 
 # What's the difference between GPy and GPflow?
 
@@ -60,7 +60,7 @@ GPflow has origins in [GPy](http://github.com/sheffieldml/gpy) by the [GPy contr
  -  GPflow is not meant as a tool to teach about GPs. [GPy is much better at that](http://gpss.cc). 
 
 # What models are implemented?
-GPflow has a slew of kernels that cam be combined in a similar way to GPy ([see this tutorial](https://github.com/SheffieldML/notebook/blob/master/GPy/basic_kernels.ipynb)). As for inference, the options are currently:
+GPflow has a slew of kernels that can be combined in a similar way to GPy ([see this tutorial](https://github.com/SheffieldML/notebook/blob/master/GPy/basic_kernels.ipynb)). As for inference, the options are currently:
 
 #### Regression
 For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum liklelihood or MCMC for the covariance function parameters ([notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/regression.ipynb)).
@@ -71,6 +71,8 @@ For non-Gaussian likelohoods, GPflow has a model that can jointly sample over th
 #### Variational inference
 It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. All of the sparse methods in GPflow are solidified in [4]. 
 
+
+### References
 [1] MCMC for Variationally Sparse Gaussian Processes
 J Hensman, A G de G Matthews, M Filippone, Z Ghahramani
 Advances in Neural Information Processing Systems, 1639-1647
