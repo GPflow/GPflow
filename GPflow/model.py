@@ -58,7 +58,7 @@ class AutoFlow:
     >>> x_tf = tf.placeholder(tf.float64)
     >>> y_tf = tf.placeholder(tf.float64)
     >>> with m.tf_mode():
-            graph = tf.foo(m.baz, x_tf, y_tf)
+    >>>     graph = tf.foo(m.baz, x_tf, y_tf)
     >>> result = m._session.run(graph, feed_dict={x_tf:x, y_tf:y, m._free_vars:m.get_free_state()})
 
     Not only is the syntax cleaner, but multiple calls to the method will
@@ -73,7 +73,9 @@ class AutoFlow:
             graph_name = '_' + tf_method.__name__ + '_graph'
             if not hasattr(instance, graph_name):
                 with instance.tf_mode():
-                    setattr(instance, graph_name, tf_method(instance, *self.tf_args))
+                    instance.make_tf_array(instance._free_vars)
+                    graph = tf_method(instance, *self.tf_args)
+                    setattr(instance, graph_name, graph)
             feed_dict = dict(zip(self.tf_args, np_args))
             feed_dict[instance._free_vars] = instance.get_free_state()
             graph = getattr(instance, graph_name)
@@ -130,6 +132,7 @@ class Model(Parameterized):
     @property
     def name(self):
         return self._name
+
     def _compile(self):
         """
         compile the tensorflow function "self._objective"
@@ -141,6 +144,7 @@ class Model(Parameterized):
 
         minusF = tf.neg( f, name = 'objective' )
         minusG = tf.neg( g, name = 'grad_objective' )
+
         #initialize variables. I confess I don;t understand what this does - JH
         init = tf.initialize_all_variables()
         self._session.run(init)
@@ -154,6 +158,13 @@ class Model(Parameterized):
         print("done")
         sys.stdout.flush()
         self._needs_recompile = False
+
+    def __setattr__(self, key, value):
+        Parameterized.__setattr__(self, key, value)
+        #delete any AutoFlow related graphs
+        if key=='_needs_recompile' and value:
+            for key in filter(lambda x : x[0]=='_' and x[-6:]=='_graph', dir(self)):
+                delattr(self, key)
 
     def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False):
         """
