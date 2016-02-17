@@ -400,6 +400,7 @@ class ParamList(Parameterized):
         Parameterized.__init__(self)
         for item in list_of_params:
             assert isinstance(item, (Param, Parameterized))
+            item._parent = self
         self._list = list_of_params
 
     @property
@@ -419,7 +420,7 @@ class ParamList(Parameterized):
         return o
 
     def append(self, item):
-        assert isinstance(item, (Param, Parameterized)), "this object of for containing parameters"
+        assert isinstance(item, (Param, Parameterized)), "this object is for containing parameters"
         item._parent = self
         self.sorted_params.append(item)
 
