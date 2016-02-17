@@ -25,6 +25,8 @@ class Parentable(object):
         """to get the name of this object, have a look at what our _parent has called us"""
         if self._parent is None:
             return 'unnamed'
+        if isinstance(self._parent, ParamList):
+            return 'item%i'%self._parent._list.index(self)
         matches = [key for key, value in self._parent.__dict__.items() if value is self]
         if len(matches) == 0:
             raise ValueError, "mis-specified parent. This param's _parent does not contain a reference to it."
@@ -108,6 +110,7 @@ class Param(Parentable):
 
     """
     def __init__(self, array, transform=transforms.Identity()):
+        Parentable.__init__(self)
         self._array = np.asarray(np.atleast_1d(array), dtype=np.float64)
         self.transform = transform
         self.prior = None
@@ -224,6 +227,7 @@ class Parameterized(Parentable):
     of the tree's parameters (whilst in tf_mode!).
     """
     def __init__(self):
+        Parentable.__init__(self)
         self._tf_mode = False
 
     def __getattribute__(self, key):
@@ -386,3 +390,42 @@ class Parameterized(Parentable):
 
         html.append("</table>")
         return ''.join(html) 
+
+
+class ParamList(Parameterized):
+    """
+    A list of parameters.
+    """
+    def __init__(self, list_of_params=[]):
+        Parameterized.__init__(self)
+        for item in list_of_params:
+            assert isinstance(item, (Param, Parameterized))
+        self._list = list_of_params
+
+    @property
+    def sorted_params(self):
+        return self._list
+
+    def __getitem__(self, key):
+        """
+        If tf mode is off, this simply returns the corresponding Param . 
+
+        If tf mode is on, all items will appear as their tf
+        representations.
+        """
+        o = self.sorted_params[key]
+        if isinstance(o, Param) and self._tf_mode:
+            return o._tf_array
+        return o
+
+    def append(self, item):
+        assert isinstance(item, (Param, Parameterized)), "this object of for containing parameters"
+        item._parent = self
+        self.sorted_params.append(item)
+
+    def __setitem__(self, key, value):
+        """
+        It's not possible to assign to things in the list, but it is possbile
+        to set their values by assignment.
+        """
+        self.sorted_params[key]._array[...] = value
