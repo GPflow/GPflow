@@ -88,3 +88,7 @@ Proceedings of AISTATS 18, 2015
 [4] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
 A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
 Proceedings of AISTATS 19, 2016
+
+### Acknowledgements
+
+James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grant EP/I036575/1.
