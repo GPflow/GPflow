@@ -31,7 +31,7 @@ OR:
 
 ### 1b) Install Tensorflow fork from sources.
 
-You will need [Bazel](http://bazel.io/). You will also need to install [Boost](http://www.boost.org/) this can usually be done using the command "apt-get install libboost-all-dev" on Linux or "brew install boost" for Mac OS.
+You will need [Bazel](http://bazel.io/). You will also need to install [Boost](http://www.boost.org/). This can usually be done using the command "apt-get install libboost-all-dev" on Linux or "brew install boost" for Mac OS.
 
 The sequence of commands is:
 
