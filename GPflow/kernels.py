@@ -33,7 +33,7 @@ class Kern(Parameterized):
             return X, X2    
 
     def __add__(self, other):
-        return Add(self, other)
+        return Add([self, other])
 
     def __mul__(self, other):
         return Prod(self, other)
@@ -216,22 +216,56 @@ class Cosine(Stationary):
         return self.variance * tf.cos(r)
 
 
+def uniquify(strings):
+    """
+    Taks a list of strings and number any duplicates
+    """
+    d, r = {}, []
+    for s in strings:
+
+        #remove trailing digit(s):
+        while s[-1].isdigit():
+            s = s[:-1]
+
+        #count duplicates in a dictionary
+        if s in d:
+            d[s] += 1
+            s += str(d[s])
+        else:
+            d[s] = 0
+        r.append(s)
+    return r
+
+
+
 class Add(Kern):
     """
-    Add two kernels together.
+    Add  a list of kernels together.
 
-    NB. We don't add multiple kernels, prefering to nest instances of this
-    object. Hopefully tensorflow should take care of any efficiency issues.
+    The names of the kernels are generated from their class names.
     """
-    def __init__(self, k1, k2):
-        assert isinstance(k1, Kern) and isinstance(k2, Kern), "can only add Kern instances"
-        Kern.__init__(self, input_dim=max(k1.input_dim, k2.input_dim))
-        self.k1, self.k2 = k1, k2
-    def K(self, X, X2=None):
-        return self.k1.K(X, X2) + self.k2.K(X, X2)
-    def Kdiag(self, X):
-        return self.k1.Kdiag(X) + self.k2.Kdiag(X)
+    def __init__(self, kern_list):
+        for k in kern_list:
+            assert isinstance(k, Kern), "can only add Kern instances"
+        Kern.__init__(self, input_dim=np.max([k.input_dim for k in kern_list]))
 
+        #add kernels to a list, flattening out instances of Add kerns therein.
+        self.kern_list = []
+        for k in kern_list:
+            if isinstance(k, Add):
+                self.kern_list.extend(k.kern_list)
+            else:
+                self.kern_list.append(k)
+
+        #generate a set of suitable names and add the kernels as atributes of this one.
+        names = uniquify([k.__class__.__name__.lower() for k in self.kern_list])
+        [setattr(self, name, k) for name, k in zip(names, self.kern_list)]
+
+    def K(self, X, X2=None):
+        return reduce(tf.add, [k.K(X, X2) for k in self.kern_list])
+
+    def Kdiag(self, X):
+        return reduce(tf.add, [k.Kdiag(X) for k in self.kern_list])
 
 class Prod(Kern):
     """
