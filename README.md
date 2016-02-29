@@ -17,14 +17,14 @@ The sequence of commands for Linux is:
 
 ```
 pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.1/linux/tensorflow-0.6.0-py2-none-any.whl
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.2/linux/tensorflow-0.6.0-py2-none-any.whl
 ```
 
 The sequence of commands for Mac OS is:
 
 ```
 pip uninstall tensorflow
-http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.1/osx/tensorflow-0.6.0-py2-none-any.whl
+http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.2/osx/tensorflow-0.6.0-py2-none-any.whl
 ```
 
 OR:
