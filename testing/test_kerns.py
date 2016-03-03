@@ -208,6 +208,60 @@ class TestARDActiveProd(unittest.TestCase):
 
 
 
+class TestKernNaming(unittest.TestCase):
+    def test_no_nesting_1(self):
+        k1 = GPflow.kernels.RBF(1)
+        k2 = GPflow.kernels.Linear(2)
+        k3 = k1 + k2
+        k4 = GPflow.kernels.Matern32(1)
+        k5 = k3 + k4
+        self.failUnless(k5.rbf is k1)
+        self.failUnless(k5.linear is k2)
+        self.failUnless(k5.matern32 is k4)
+
+
+    def test_no_nesting_2(self):
+        k1 = GPflow.kernels.RBF(1) + \
+             GPflow.kernels.Linear(2)
+
+        k2 = GPflow.kernels.Matern32(1) + \
+             GPflow.kernels.Matern52(2)
+        k = k1 + k2
+        self.failUnless(hasattr(k, 'rbf'))
+        self.failUnless(hasattr(k, 'linear'))
+        self.failUnless(hasattr(k, 'matern32'))
+        self.failUnless(hasattr(k, 'matern52'))
+
+
+    def test_simple(self):
+        k1 = GPflow.kernels.RBF(1)
+        k2 = GPflow.kernels.Linear(2)
+        k = k1 + k2
+        self.failUnless(k.rbf is k1)
+        self.failUnless(k.linear is k2)
+
+
+    def test_duplicates_1(self):
+        k1 = GPflow.kernels.Matern32(1)
+        k2 = GPflow.kernels.Matern32(43)
+        k = k1 + k2
+        self.failUnless(k.matern32_1 is k1)
+        self.failUnless(k.matern32_2 is k2)
+
+    def test_duplicates_2(self):
+        k1 = GPflow.kernels.Matern32(1)
+        k2 = GPflow.kernels.Matern32(2)
+        k3 = GPflow.kernels.Matern32(3)
+        k = k1 + k2 + k3
+        self.failUnless(k.matern32_1 is k1)
+        self.failUnless(k.matern32_2 is k2)
+        self.failUnless(k.matern32_3 is k3)
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
