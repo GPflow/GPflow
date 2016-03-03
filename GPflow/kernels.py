@@ -298,10 +298,10 @@ class Prod(Kern):
         [setattr(self, name, k) for name, k in zip(names, self.kern_list)]
 
     def K(self, X, X2=None):
-        return reduce(tf.prod, [k.K(X, X2) for k in self.kern_list])
+        return reduce(tf.mul, [k.K(X, X2) for k in self.kern_list])
 
     def Kdiag(self, X):
-        return reduce(tf.prod, [k.Kdiag(X) for k in self.kern_list])
+        return reduce(tf.mul, [k.Kdiag(X) for k in self.kern_list])
 
 
 
