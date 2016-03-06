@@ -1,6 +1,8 @@
+from __future__ import absolute_import
 import numpy as np
-from tf_hacks import eye
+from .tf_hacks import eye
 import tensorflow as tf
+from six.moves import range
 
 """
 This file contains functions which compute tensorflow expressions for GP prediction
@@ -106,7 +108,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
             projected_var.append(tf.reduce_sum(tf.square(LTB),0))
         fvar = fvar + tf.transpose(tf.pack(projected_var))
     else:
-        raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+        raise ValueError("Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims))
 
     return fmean, fvar
 
@@ -178,7 +180,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         fvar = tf.transpose(tf.pack(projected_var))
         return fmean, fvar
     else:
-        raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+        raise ValueError("Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims))
 
 
 def gp_predict_whitened(Xnew, X, kern, V):

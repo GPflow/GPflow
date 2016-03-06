@@ -1,5 +1,7 @@
+from __future__ import absolute_import
 import tensorflow as tf
 from .tf_hacks import eye
+from six.moves import range
 
 def gauss_kl_white(q_mu, q_sqrt, num_latent):
     """

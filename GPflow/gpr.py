@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 import tensorflow as tf
 from .model import GPModel
 from .param import Param
 from .densities import multivariate_normal
 from .mean_functions import Zero
-import likelihoods
-from tf_hacks import eye
+from . import likelihoods
+from .tf_hacks import eye
 
 class GPR(GPModel):
     def __init__(self, X, Y, kern, mean_function=Zero()):

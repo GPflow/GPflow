@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from param import Param, Parameterized
-import transforms
+from .param import Param, Parameterized
+from . import transforms
 
 class MeanFunction(Parameterized):
     """
@@ -15,7 +16,7 @@ class MeanFunction(Parameterized):
     MeanFunction classes can have parameters, see the Linear class for an example.
     """
     def __call__(self, X):
-        raise NotImplementedError, "Implement the __call__ method for this mean function"
+        raise NotImplementedError("Implement the __call__ method for this mean function")
     
 class Zero(MeanFunction):
     def __call__(self, X):
