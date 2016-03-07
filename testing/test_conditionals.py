@@ -13,7 +13,7 @@ class DiagsTest(unittest.TestCase):
     def setUp(self):
         self.num_latent = 2
         self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
-        self.k.k2.variance = 0.01
+        self.k.white.variance = 0.01
         self.X = tf.placeholder('float64')
         self.mu = tf.placeholder('float64')
         self.Xs = tf.placeholder('float64')
@@ -70,7 +70,7 @@ class DiagsTest(unittest.TestCase):
 class WhitenTest(unittest.TestCase):
     def setUp(self):
         self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
-        self.k.k2.variance = 0.01
+        self.k.white.variance = 0.01
         self.num_data = 10
         self.num_test_data = 100
         self.X = tf.placeholder('float64', [self.num_data, 1])
