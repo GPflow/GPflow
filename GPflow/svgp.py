@@ -1,14 +1,12 @@
-from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .param import Param
+from param import Param
 from .model import GPModel
-from . import transforms
-from . import conditionals
+import transforms
+import conditionals
 from .mean_functions import Zero
-from .tf_hacks import eye
-from . import kullback_leiblers
-from six.moves import range
+from tf_hacks import eye
+import kullback_leiblers
 
 
 class SVGP(GPModel):

@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 from .model import GPModel

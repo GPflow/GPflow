@@ -1,9 +1,8 @@
-from __future__ import absolute_import
 import tensorflow as tf
-from .tf_hacks import eye
+from tf_hacks import eye
 import numpy as np
-from .param import Param, Parameterized
-from . import transforms
+from param import Param, Parameterized
+import transforms
 
 class Kern(Parameterized):
     """

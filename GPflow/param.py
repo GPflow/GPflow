@@ -1,7 +1,6 @@
-from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
-from . import transforms
+import transforms
 from contextlib import contextmanager
 
 recompile_keys = ['prior', 'transform', 'fixed'] # when one of these attributes is set, notify a recompilation
@@ -28,9 +27,9 @@ class Parentable(object):
             return 'unnamed'
         matches = [key for key, value in self._parent.__dict__.items() if value is self]
         if len(matches) == 0:
-            raise ValueError("mis-specified parent. This param's _parent does not contain a reference to it.")
+            raise ValueError, "mis-specified parent. This param's _parent does not contain a reference to it."
         if len(matches) > 1:
-            raise ValueError("This param appears to be doubly referenced by a parent")
+            raise ValueError, "This param appears to be doubly referenced by a parent"
         return matches [0]
 
 
@@ -166,7 +165,7 @@ class Param(Parentable):
         if self.prior is None:
             return 0
         elif self._tf_array is None:
-            raise ValueError("tensorflow array has not been initialized")
+            raise ValueError, "tensorflow array has not been initialized"
         else:
             return self.prior.logp(self._tf_array) + self._log_jacobian
 
@@ -262,7 +261,7 @@ class Parameterized(Parentable):
         """
 
         #set the _array value of child nodes instead of standard assignment.
-        if key in list(self.__dict__.keys()):
+        if key in self.__dict__.keys():
             p = getattr(self, key)
             if isinstance(p, Param):
                 p._array[...] = value

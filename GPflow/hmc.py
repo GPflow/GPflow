@@ -1,7 +1,5 @@
 from __future__ import division, print_function
-from __future__ import absolute_import
 import numpy as np
-from six.moves import range
 
 
 def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False, thin=1, burn=0, RNG=np.random.RandomState(0)):

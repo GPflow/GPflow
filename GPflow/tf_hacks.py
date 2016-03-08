@@ -4,7 +4,6 @@ A collection of hacks for tensorflow.
 hopefully we can remove these as the library matures
 """
 
-from __future__ import absolute_import
 import tensorflow as tf
 
 def eye(N):

@@ -1,12 +1,10 @@
-from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .param import Param
-from .model import GPModel
-from . import transforms
+from param import Param
+from model import GPModel
+import transforms
 from .mean_functions import Zero
-from .tf_hacks import eye
-from six.moves import range
+from tf_hacks import eye
 
 class VGP(GPModel):
     def __init__(self, X, Y, kern, likelihood, mean_function=Zero(), num_latent=None):

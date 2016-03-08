@@ -1,12 +1,10 @@
 from __future__ import print_function
-from __future__ import absolute_import
 from .param import Param, Parameterized
 from scipy.optimize import minimize
 import numpy as np
 import tensorflow as tf
-from . import hmc
+import hmc
 import sys
-from six.moves import zip
 
 class ObjectiveWrapper(object):
     """
@@ -78,7 +76,7 @@ class AutoFlow:
                     instance.make_tf_array(instance._free_vars)
                     graph = tf_method(instance, *self.tf_args)
                     setattr(instance, graph_name, graph)
-            feed_dict = dict(list(zip(self.tf_args, np_args)))
+            feed_dict = dict(zip(self.tf_args, np_args))
             feed_dict[instance._free_vars] = instance.get_free_state()
             graph = getattr(instance, graph_name)
             return instance._session.run(graph, feed_dict=feed_dict)
@@ -165,7 +163,7 @@ class Model(Parameterized):
         Parameterized.__setattr__(self, key, value)
         #delete any AutoFlow related graphs
         if key=='_needs_recompile' and value:
-            for key in [x for x in dir(self) if x[0]=='_' and x[-6:]=='_graph']:
+            for key in filter(lambda x : x[0]=='_' and x[-6:]=='_graph', dir(self)):
                 delattr(self, key)
 
     def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False):

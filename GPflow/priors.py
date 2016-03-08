@@ -1,8 +1,7 @@
-from __future__ import absolute_import
-from . import densities
+import densities
 import tensorflow as tf
 import numpy as np
-from .param import Parameterized
+from param import Parameterized
 
 class Prior(Parameterized):
     def logp(self, x):

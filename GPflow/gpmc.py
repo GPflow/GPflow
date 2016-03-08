@@ -1,9 +1,8 @@
-from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 from .model import GPModel
 from .param import Param
-from . import densities
+import densities
 from .conditionals import gp_predict_whitened
 from .priors import Gaussian
 from .mean_functions import Zero
