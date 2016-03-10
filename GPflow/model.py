@@ -1,6 +1,6 @@
 from __future__ import print_function
 from .param import Param, Parameterized
-from scipy.optimize import minimize
+from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
 import hmc
@@ -128,15 +128,17 @@ class Model(Parameterized):
         self._needs_recompile = True
         self._free_vars = tf.placeholder('float64', name='free_vars')
         self._session = tf.Session()
+        self._free_vars = None
 
     @property
     def name(self):
         return self._name
 
-    def _compile(self):
+    def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
         """
+        self._free_vars = tf.Variable(self.get_free_state())
         self.make_tf_array(self._free_vars)
         with self.tf_mode():
             f = self.build_likelihood() + self.build_prior()
@@ -145,7 +147,12 @@ class Model(Parameterized):
         self._minusF = tf.neg( f, name = 'objective' )
         self._minusG = tf.neg( g, name = 'grad_objective' )
 
-        #initialize variables. I confess I don;t understand what this does - JH
+        # The optimiser needs to be part of the computational graph, and needs
+        # to be initialised before tf.initialise_all_variables() is called.
+        if optimizer is None:
+            opt_step = None
+        else:
+            opt_step = optimizer.minimize(self._minusF, var_list=[self._free_vars])
         init = tf.initialize_all_variables()
         self._session.run(init)
 
@@ -158,6 +165,8 @@ class Model(Parameterized):
         print("done")
         sys.stdout.flush()
         self._needs_recompile = False
+
+        return opt_step
 
     def __setattr__(self, key, value):
         Parameterized.__setattr__(self, key, value)
@@ -174,7 +183,43 @@ class Model(Parameterized):
             self._compile()
         return hmc.sample_HMC(self._objective, num_samples, Lmax, epsilon, x0=self.get_free_state(), verbose=verbose)
 
-    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
+    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, calc_feed_dict=None, **kw):
+        if type(method) is str:
+            return self._optimize_np(method, callback, max_iters, **kw)
+        else:
+            return self._optimize_tf(method, callback, max_iters, calc_feed_dict, **kw)
+
+    def _optimize_tf(self, method, callback, max_iters, calc_feed_dict):
+        opt_step = self._compile(optimizer=method)
+
+        try:
+            iteration = 0
+            while iteration < max_iters:
+                if calc_feed_dict is None:
+                    feed_dict = {}
+                else:
+                    feed_dict = calc_feed_dict()
+                self._session.run(opt_step, feed_dict=feed_dict)
+                if callback is not None:
+                    callback(self._session.run(self._free_vars))
+                iteration += 1
+        except KeyboardInterrupt:
+            print("Caught KeyboardInterrupt, setting model with most recent state.")
+            self.set_state(self._session.run(self._free_vars))
+            return None
+
+        final_x = self._session.run(self._free_vars)
+        self.set_state(final_x)
+        fun, jac = self._objective(final_x)
+        r = OptimizeResult(x=final_x,
+                           success=True,
+                           message="Finished iterations.",
+                           fun=fun,
+                           jac=jac,
+                           status="Finished iterations.")
+        return r
+
+    def _optimize_np(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
         """
         Optimize the model to find the maximum likelihood  or MAP point. Here
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
@@ -248,20 +293,29 @@ class GPModel(Model):
         self.Y = tf.Variable(self.dY)
         self.minibatch = minibatch
 
-    def _compile(self):
+    def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
         """
-        Model._compile(self)
+        opt_step = Model._compile(self, optimizer)
         def obj(x):
-            # ss = np.random.permutation(len(self.dX))[:self.minibatch]
+            ss = np.random.permutation(len(self.dX))[:self.minibatch]
             # This is much faster than above, and for N >> minibatch, it doesn't make much difference. This actually
-            # becomes the limit when N is around 10**6, which isn't uncommon when using SVI.
-            ss = np.random.randint(len(self.dX), size=self.minibatch)
+            # becomes the limit when N is around 10**6, which isn't uncommon when using SVI. But it's not good for
+            # sanity when setting the minibatch to the total size of the dataset...
+            # ss = np.random.randint(len(self.dX), size=self.minibatch)
             return self._session.run([self._minusF, self._minusG], feed_dict={self._free_vars: x,
                                                                               self.X: self.dX[ss, :],
                                                                               self.Y: self.dY[ss, :]})
         self._objective = obj
+        return opt_step
+
+    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
+        def calc_feed_dict():
+            ss = np.random.randint(len(self.dX), size=self.minibatch)
+            return {self.X: self.dX[ss, :], self.Y: self.dY[ss, :]}
+
+        return Model.optimize(self, method, callback, max_iters, calc_feed_dict, **kw)
 
     def build_predict(self):
         raise NotImplementedError
