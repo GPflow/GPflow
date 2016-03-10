@@ -1,32 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import os
-import sys
 from setuptools import setup, Extension
+import re
 import numpy as np
 
 
-#Mac OS X Clang doesn't support OpenMP at the current time.
-#This detects if we are building on a Mac
-def ismac():
-    return sys.platform[:6] == 'darwin'
-
-if ismac():
-    compile_flags = [ '-O3', ]
-    link_args = []
+#load version form _version.py
+VERSIONFILE = "GPflow/_version.py"
+verstrline = open(VERSIONFILE, "rt").read()
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VSRE, verstrline, re.M)
+if mo:
+    verstr = mo.group(1)
 else:
-    compile_flags = [ '-fopenmp', '-O3', ]
-    link_args = ['-lgomp']
+    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 setup(name = 'GPflow',
-      version = "0.0.1",
+      version = verstr,
       author = "James Hensman, Alex Matthews",
       author_email = "james.hensman@gmail.com",
       description = ("Gaussian process methods in tensorflow"),
       license = "BSD 3-clause",
       keywords = "machine-learning gaussian-processes kernels tensorflow",
-      url = "none yet",
+      url = "http://github.com/gpflow/gpflow",
       ext_modules = [],
       packages = ["GPflow"],
       package_dir={'GPflow': 'GPflow'},
