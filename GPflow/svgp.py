@@ -77,8 +77,9 @@ class SVGP(GPModel):
         
         #Get variational expectations.
         variational_expectations = self.likelihood.variational_expectations(fmean, fvar, self.Y)
-        
-        return tf.reduce_sum(variational_expectations) - KL
+
+        minibatch_scale = len(self.dX) / tf.cast(tf.shape(self.X)[0], tf.float64)
+        return tf.reduce_sum(variational_expectations) * minibatch_scale - KL
 
     def build_predict(self, Xnew):
         if self.whiten:
