@@ -50,8 +50,8 @@ class GPR(GPModel):
         Kx = self.kern.K(self.X, Xnew)
         K = self.kern.K(self.X) + eye(self.num_data) * self.likelihood.variance
         L = tf.cholesky(K)
-        A = tf.user_ops.triangular_solve(L, Kx, 'lower')
-        V = tf.user_ops.triangular_solve(L, self.Y - self.mean_function(self.X), 'lower')
+        A = tf.matrix_triangular_solve(L, Kx, lower=True)
+        V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X), lower=True)
         fmean = tf.matmul(tf.transpose(A), V) + self.mean_function(Xnew)
         fvar = Kd - tf.reduce_sum(tf.square(A), reduction_indices=0)
         return fmean, tf.tile(tf.reshape(fvar, (-1,1)), [1, self.Y.shape[1]])

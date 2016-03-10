@@ -36,8 +36,8 @@ def gp_predict(Xnew, X, kern, F):
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
-    A = tf.user_ops.triangular_solve(Lm, Kmn, 'lower')
-    B = tf.user_ops.triangular_solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
+    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
+    B = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False) # B is Kmm^{-1} Kmn
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), F)
@@ -87,8 +87,8 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
-    A = tf.user_ops.triangular_solve(Lm, Kmn, 'lower')
-    B = tf.user_ops.triangular_solve(tf.transpose(Lm), A, 'upper') # B is Kmm^{-1} Kmn
+    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
+    B = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False) # B is Kmm^{-1} Kmn
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), q_mu)
@@ -157,7 +157,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
     Lm = tf.cholesky(Kmm)
 
     #this is O(N M^2)
-    A = tf.user_ops.triangular_solve(Lm, Kmn, 'lower')
+    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
 
     #construct the mean and variance of q(f)
     fmean = tf.matmul(tf.transpose(A), q_mu)
@@ -211,7 +211,7 @@ def gp_predict_whitened(Xnew, X, kern, V):
     Kx = kern.K(X, Xnew)
     K = kern.K(X)
     L = tf.cholesky(K)
-    A = tf.user_ops.triangular_solve(L, Kx, 'lower')
+    A = tf.matrix_triangular_solve(L, Kx, lower=True)
     fmean = tf.matmul(tf.transpose(A), V)
     fvar = Kd - tf.reduce_sum(tf.square(A), 0)
     return fmean, tf.expand_dims(fvar, 1) * tf.ones_like(V[0,:])

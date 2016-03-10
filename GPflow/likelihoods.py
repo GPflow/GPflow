@@ -179,7 +179,7 @@ class Poisson(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return Y*Fmu - tf.exp(Fmu + Fvar/2) - tf.user_ops.log_gamma(Y+1)
+            return Y*Fmu - tf.exp(Fmu + Fvar/2) - tf.lgamma(Y+1)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
@@ -273,8 +273,8 @@ class Gamma(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            ##return -shape * tf.log(scale) - tf.user_ops.log_gamma(shape) + (shape - 1.) * tf.log(x) - x / scale
-            return -self.shape * Fmu - tf.user_ops.log_gamma(self.shape) + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar/2.)
+            ##return -shape * tf.log(scale) - tf.lgamma(shape) + (shape - 1.) * tf.log(x) - x / scale
+            return -self.shape * Fmu - tf.lgamma(self.shape) + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar/2.)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
