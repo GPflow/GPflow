@@ -48,7 +48,7 @@ def multivariate_normal(x, mu, L):
     num_col = 1 if tf.rank(x)==1 else tf.shape(x)[1]
     #TODO: this call to get_diag relies on x being a numpy object (ie. having a shape)
     ret =  - 0.5 * tf.cast(tf.size(x), tf.float64) * np.log(2 * np.pi) 
-    ret += - tf.cast(num_col, tf.float64) * tf.reduce_sum(tf.log(tf.diag_part(L)))
+    ret += - tf.cast(num_col, tf.float64) * tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
     ret += - 0.5 * tf.reduce_sum(tf.square(alpha))
     return ret
 

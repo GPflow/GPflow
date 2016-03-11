@@ -64,7 +64,7 @@ class VGP(GPModel):
             LiBi = Li / b
             #full_sigma:return tf.diag(b**-2) - LiBi.T.dot(LiBi)
             f_var.append(1./tf.square(b) - tf.reduce_sum(tf.square(LiBi),0))
-            A_logdet += 2*tf.reduce_sum(tf.log(tf.diag_part(L)))
+            A_logdet += 2*tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
             trAi += tf.reduce_sum(tf.square(Li))
 
         f_var = tf.transpose(tf.pack(f_var))
