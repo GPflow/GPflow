@@ -241,11 +241,11 @@ class GPModel(Model):
     data via self.predict_density.
     """
     def __init__(self, X, Y, kern, likelihood, mean_function, minibatch=None, name='model'):
-        self.dX, self.dY, self.kern, self.likelihood, self.mean_function = X, Y, kern, likelihood, mean_function
+        self.X, self.Y, self.kern, self.likelihood, self.mean_function = X, Y, kern, likelihood, mean_function
         Model.__init__(self, name)
 
-        self.X = tf.Variable(self.dX)
-        self.Y = tf.Variable(self.dY)
+        self._tfX = tf.Variable(self.X, name="tfX")  # When using minibatches, use _tfX variable
+        self._tfY = tf.Variable(self.Y, name="tfY")
         self.minibatch = minibatch
 
     def _compile(self):
@@ -254,13 +254,15 @@ class GPModel(Model):
         """
         Model._compile(self)
         def obj(x):
-            # ss = np.random.permutation(len(self.dX))[:self.minibatch]
-            # This is much faster than above, and for N >> minibatch, it doesn't make much difference. This actually
-            # becomes the limit when N is around 10**6, which isn't uncommon when using SVI.
-            ss = np.random.randint(len(self.dX), size=self.minibatch)
+            if self.minibatch / float(len(self.X)) > 0.5:
+                ss = np.random.permutation(len(self.X))[:self.minibatch]
+            else:
+                # This is much faster than above, and for N >> minibatch, it doesn't make much difference. This actually
+                # becomes the limit when N is around 10**6, which isn't uncommon when using SVI.
+                ss = np.random.randint(len(self.X), size=self.minibatch)
             return self._session.run([self._minusF, self._minusG], feed_dict={self._free_vars: x,
-                                                                              self.X: self.dX[ss, :],
-                                                                              self.Y: self.dY[ss, :]})
+                                                                              self._tfX: self.X[ss, :],
+                                                                              self._tfY: self.Y[ss, :]})
         self._objective = obj
 
     def build_predict(self):
@@ -297,7 +299,7 @@ class GPModel(Model):
     @property
     def minibatch(self):
         if self._minibatch is None:
-            return len(self.dX)
+            return len(self.X)
         else:
             return self._minibatch
 

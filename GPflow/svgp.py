@@ -68,17 +68,17 @@ class SVGP(GPModel):
     
         #Get conditionals
         if self.whiten:
-            fmean, fvar = conditionals.gaussian_gp_predict_whitened(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
+            fmean, fvar = conditionals.gaussian_gp_predict_whitened(self._tfX, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
         else:
-            fmean, fvar = conditionals.gaussian_gp_predict(self.X, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)            
+            fmean, fvar = conditionals.gaussian_gp_predict(self._tfX, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
 
         #add in mean function to conditionals.
-        fmean += self.mean_function(self.X)
+        fmean += self.mean_function(self._tfX)
         
         #Get variational expectations.
-        variational_expectations = self.likelihood.variational_expectations(fmean, fvar, self.Y)
+        variational_expectations = self.likelihood.variational_expectations(fmean, fvar, self._tfY)
 
-        minibatch_scale = len(self.dX) / tf.cast(tf.shape(self.X)[0], tf.float64)
+        minibatch_scale = len(self.X) / tf.cast(tf.shape(self._tfX)[0], tf.float64)
         return tf.reduce_sum(variational_expectations) * minibatch_scale - KL
 
     def build_predict(self, Xnew):
