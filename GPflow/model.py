@@ -197,12 +197,40 @@ class Model(Parameterized):
         return hmc.sample_HMC(self._objective, num_samples, Lmax, epsilon, x0=self.get_free_state(), verbose=verbose)
 
     def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, calc_feed_dict=None, **kw):
+        """
+        Optimize the model by maximizing the likelihood (possibly with the
+        priors also) with respect to any free variables. 
+
+        method can be one of:
+            a string, corresponding to a valid scipy.minimize optimizer
+            a tensorflow optimizer (e.g. tf.optimize.AdaGrad)
+
+        The callback function is execteud by assing the current vale of self.get_free_state()
+
+        max_iters defines the maximum number of iterations
+
+        calc_feed_dict is an optional function which returns a dictionary
+        (suitable for tf.Session.run's feed_dict argument)
+
+        In the case of the scipy optimization routines, any additional keyword
+        arguments are passed through. 
+
+        KeyboardInterrupts are caught and the model is set to the most recent
+        value tried by the optimization routine. 
+
+        This method returns the results of the call to optimize.minimize, or a
+        similar object in the tensorflow case.
+        """
+
         if type(method) is str:
             return self._optimize_np(method, callback, max_iters, **kw)
         else:
             return self._optimize_tf(method, callback, max_iters, calc_feed_dict, **kw)
 
     def _optimize_tf(self, method, callback, max_iters, calc_feed_dict):
+        """
+        Optimize the model using a tensorflow optimizer. see self.optimize()
+        """
         opt_step = self._compile(optimizer=method)
 
         try:
@@ -238,13 +266,7 @@ class Model(Parameterized):
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
         through as `options`. 
 
-        KeyboardInterrupts are caught and the model is set to the most recent
-        value tried by the optimization routine. 
-
-        LinAlgErrors are caught and the optimizer is 'coaxed' away from that
-        region by returning a low likelihood value.
-
-        This method returns the results of the call to optimize.minimize. 
+        self.self.optimize()
         """
         if self._needs_recompile:
             self._compile()
