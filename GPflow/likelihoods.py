@@ -317,6 +317,118 @@ class Beta(Likelihood):
 
 
 
+class RobustMax(object):
+    """
+    This class represent a multi-class inverse-link function. Given a vector
+    f=[f_1, f_2, ... f_k], the result of the mapping is
+
+    y = [y_1 ... y_k]
+
+    with 
+
+    y_i = (1-eps)  i == argmax(f)
+          1/(k-1)  otherwise.
+
+
+    """
+    def __init__(self, num_classes, epsilon=1e-3):
+        self.epsilon = epsilon
+        self.num_classes = num_classes
+
+    def __call__(self, F):
+        i = tf.argmax(F, 1)
+        return tf.one_hot(i, self.num_classes, 1.-self.epsilon, self.epsilon/(self.num_classes-1))
+
+    def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
+        #work out what the mean and variance is of the indicated latent function.
+        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), tf.float64)
+        mu_selected = tf.reduce_sum(oh_on * mu, 1)
+        var_selected = tf.reduce_sum(oh_on * var, 1)
+
+        #generate Gauss Hermite grid
+        X = tf.reshape(mu_selected, (-1,1))  + gh_x * tf.reshape(tf.sqrt(2 * var_selected), (-1,1))
+
+        #compute the CDF of the Gaussian between the latent functions and the grid (includeing the selected function)
+        dist = (tf.expand_dims(X, 1) - tf.expand_dims(mu, 2) ) / tf.expand_dims(tf.sqrt(var), 2)
+        cdfs = 0.5 * ( 1.0 + tf.erf(dist/np.sqrt(2.0)))
+
+        #clip the cdfs to try to prevent over/under flow
+        cdfs = cdfs * (1-2e-4) + 1e-4
+
+        #blank out all the distances on the selected latent function
+        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), tf.float64)
+        cdfs = cdfs *tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
+
+        #take the product over the latnet functions, and the sum over the GH grid.
+        return tf.matmul(tf.reduce_prod(cdfs, 1) , tf.reshape(gh_w/np.sqrt(np.pi), (-1,1)) )
+
+
+class MultiClass(Likelihood):
+    def __init__(self, num_classes, inv_link=None):
+        """
+        A likelihood that can do multi-way classification. We use the softmax and
+        RobustMax inverse-link functions, defaulting to RobustMax
+
+        Valid choices of inv_link are
+           - an instance of RobustMax
+           - tf.nn.softmax
+        """
+        Likelihood.__init__(self)
+        self.num_classes = num_classes
+        if inv_link is None:
+            inv_link = RobustMax(self.num_classes)
+            self.inv_link = inv_link
+            
+
+    def logp(self, F, Y):
+        if isinstance(self.inv_link, RobustMax):
+            hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
+            yes = tf.ones(tf.shape(Y), dtype=tf.float64) - self.inv_link.epsilon
+            no =  tf.zeros(tf.shape(Y), dtype=tf.float64) + self.inv_link.epsilon/(self.num_classes -1.)
+            p = tf.select(hits, yes, no)
+            return tf.log(p)
+        elif self.inv_link is tf.nn.softmax:
+            return -tf.nn.softmax_cross_entropy_with_logits(tf.cast(F, tf.float32), tf.one_hot(tf.reshape(y, (-1,)), self.num_classes, 1., 0.))
+
+    def variational_expectations(self, Fmu, Fvar, Y):
+        if isinstance(self.inv_link, RobustMax):
+            gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
+            p = self.inv_link.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+            return p * np.log(1-self.inv_link.epsilon) + (1.-p) * np.log(self.inv_link.epsilon/(self.num_classes -1))
+        else:
+            raise NotImplementedError
+
+    def predict_mean_and_var(self, Fmu, Fvar):
+        if isinstance(self.inv_link, RobustMax):
+            gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
+
+            ps = tf.pack([tf.reshape(
+                self.inv_link.prob_is_largest(
+                    tf.fill(tf.pack([tf.shape(Fmu)[0],1]), np.array(i, dtype=np.int64)),
+                    Fmu, Fvar, gh_x, gh_w)
+                , (-1,)) for i in range(self.num_classes)])
+            ps = tf.transpose(ps)
+            return ps, ps - tf.square(ps)
+        else:
+            raise NotImplementedError
+
+    def predict_density(self, Fmu, Fvar, Y):
+        if isinstance(self.inv_link, RobustMax):
+            p = self.inv_link.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+            return p * (1-self.inv_link.epsilon) + (1. - p) * (self.inv_link.epsilon/(self.num_classes -1))
+        else:
+            raise NotImplementedError
+
+    def conditional_mean(self, F):
+        return self.invlink(F)
+
+    def conditional_variance(self, F):
+        p = self.conditional_mean(F)
+        return p - tf.square(p)
+
+
+
+
 
 
 
