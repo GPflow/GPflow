@@ -320,38 +320,9 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
     """
-    def __init__(self, X, Y, kern, likelihood, mean_function, minibatch=None, name='model'):
+    def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
         self.X, self.Y, self.kern, self.likelihood, self.mean_function = X, Y, kern, likelihood, mean_function
         Model.__init__(self, name)
-
-        self._tfX = tf.Variable(self.X, name="tfX")  # When using minibatches, use _tfX variable
-        self._tfY = tf.Variable(self.Y, name="tfY")
-        self.minibatch = minibatch
-
-    def _compile(self, optimizer=None):
-        """
-        compile the tensorflow function "self._objective"
-        """
-        opt_step = Model._compile(self, optimizer)
-        def obj(x):
-            if self.minibatch / float(len(self.X)) > 0.5:
-                ss = np.random.permutation(len(self.X))[:self.minibatch]
-            else:
-                # This is much faster than above, and for N >> minibatch, it doesn't make much difference. This actually
-                # becomes the limit when N is around 10**6, which isn't uncommon when using SVI.
-                ss = np.random.randint(len(self.X), size=self.minibatch)
-            return self._session.run([self._minusF, self._minusG], feed_dict={self._free_vars: x,
-                                                                              self._tfX: self.X[ss, :],
-                                                                              self._tfY: self.Y[ss, :]})
-        self._objective = obj
-        return opt_step
-
-    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
-        def calc_feed_dict():
-            ss = np.random.randint(len(self.dX), size=self.minibatch)
-            return {self.X: self.dX[ss, :], self.Y: self.dY[ss, :]}
-
-        return Model.optimize(self, method, callback, max_iters, calc_feed_dict, **kw)
 
     def build_predict(self):
         raise NotImplementedError
@@ -383,17 +354,6 @@ class GPModel(Model):
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
-
-    @property
-    def minibatch(self):
-        if self._minibatch is None:
-            return len(self.X)
-        else:
-            return self._minibatch
-
-    @minibatch.setter
-    def minibatch(self, val):
-        self._minibatch = val
 
 
 

@@ -21,7 +21,7 @@ class SVGP(GPModel):
     }
 
     """
-    def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(), num_latent=None, q_diag=False, whiten=True):
+    def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(), num_latent=None, q_diag=False, whiten=True, minibatch=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -37,11 +37,28 @@ class SVGP(GPModel):
         self.num_latent = num_latent or Y.shape[1]
         self.num_inducing = Z.shape[0]
 
+        #these variables used for minibatching
+        self._tfX = tf.Variable(self.X, name="tfX")
+        self._tfY = tf.Variable(self.Y, name="tfY")
+        self.minibatch = minibatch
+
+
         self.q_mu = Param(np.zeros((self.num_inducing, self.num_latent)))
         if self.q_diag:
             self.q_sqrt = Param(np.ones((self.num_inducing, self.num_latent)), transforms.positive)
         else:
             self.q_sqrt = Param(np.array([np.eye(self.num_inducing) for _ in range(self.num_latent)]).swapaxes(0,2))
+
+    @property
+    def minibatch(self):
+        if self._minibatch is None:
+            return len(self.X)
+        else:
+            return self._minibatch
+
+    @minibatch.setter
+    def minibatch(self, val):
+        self._minibatch = val
 
     def build_prior_KL(self):
         if self.whiten:
@@ -57,6 +74,30 @@ class SVGP(GPModel):
                 KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K, self.num_latent)
         return KL
 
+    def _compile(self, optimizer=None):
+        """
+        compile the tensorflow function "self._objective"
+        """
+        opt_step = GPModel._compile(self, optimizer)
+        def obj(x):
+            if self.minibatch / float(len(self.X)) > 0.5:
+                ss = np.random.permutation(len(self.X))[:self.minibatch]
+            else:
+                # This is much faster than above, and for N >> minibatch, it doesn't make much difference. This actually
+                # becomes the limit when N is around 10**6, which isn't uncommon when using SVI.
+                ss = np.random.randint(len(self.X), size=self.minibatch)
+            return self._session.run([self._minusF, self._minusG], feed_dict={self._free_vars: x,
+                                                                              self._tfX: self.X[ss, :],
+                                                                              self._tfY: self.Y[ss, :]})
+        self._objective = obj
+        return opt_step
+
+    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
+        def calc_feed_dict():
+            ss = np.random.randint(len(self.dX), size=self.minibatch)
+            return {self.X: self.dX[ss, :], self.Y: self.dY[ss, :]}
+
+        return GPModel.optimize(self, method, callback, max_iters, calc_feed_dict, **kw)
 
     def build_likelihood(self):
         """
