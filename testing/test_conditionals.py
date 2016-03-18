@@ -103,7 +103,7 @@ class WhitenTest(unittest.TestCase):
         with self.k.tf_mode():
             K = self.k.K(self.X)
             L = tf.cholesky(K)
-            V = tf.user_ops.triangular_solve(L, self.F, 'lower')
+            V = tf.matrix_triangular_solve(L, self.F, lower=True)
             Fstar_mean, Fstar_var = GPflow.conditionals.gp_predict(self.Xs, self.X, self.k, self.F)
             Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gp_predict_whitened(self.Xs, self.X, self.k, V)
 
@@ -130,8 +130,8 @@ class WhitenTestGaussian(WhitenTest):
         with self.k.tf_mode():
             K = self.k.K(self.X)
             L = tf.cholesky(K)
-            V = tf.user_ops.triangular_solve(L, self.F, 'lower')
-            V_chol = tf.user_ops.triangular_solve(L, tf.diag(self.F_sqrt[:,0]), 'lower')
+            V = tf.matrix_triangular_solve(L, self.F, lower=True)
+            V_chol = tf.matrix_triangular_solve(L, tf.diag(self.F_sqrt[:,0]), lower=True)
             V_sqrt = tf.expand_dims(V_chol, 2)
 
             Fstar_mean, Fstar_var = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt, 1)

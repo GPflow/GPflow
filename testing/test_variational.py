@@ -88,6 +88,7 @@ class VariationalUnivariateTest(unittest.TestCase):
         for is_diagonal in [True,False]:
             for is_whitened in [True,False]:
                 model = self.get_model( is_diagonal, is_whitened )
+                model._compile()
                 with model.tf_mode():
                     model_likelihood_function = model.build_likelihood()
                 model_likelihood = model_likelihood_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 

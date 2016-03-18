@@ -1,7 +1,7 @@
 # GPflow
 
-GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow). It was written by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
-
+GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
+The full list of contributors (in alphabetical order) is James Hensman, Alexander G. de G. Matthews and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
 # Install
 
@@ -17,14 +17,14 @@ The sequence of commands for Linux is:
 
 ```
 pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.2/linux/tensorflow-0.6.0-py2-none-any.whl
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.3/linux/tensorflow-0.7.1-py2-none-any.whl
 ```
 
 The sequence of commands for Mac OS is:
 
 ```
 pip uninstall tensorflow
-http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.2/osx/tensorflow-0.6.0-py2-none-any.whl
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.3/osx/tensorflow-0.7.1-py2-none-any.whl
 ```
 
 OR:
