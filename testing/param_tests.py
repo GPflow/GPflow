@@ -233,6 +233,17 @@ class TestParamList(unittest.TestCase):
         with self.assertRaises(AssertionError):
             l.append('foo')
 
+    def test_with_parameterized(self):
+        pzd = GPflow.param.Parameterized()
+        p = GPflow.param.Param(1.2)
+        pzd.p = p
+        l = GPflow.param.ParamList([pzd])
+
+        #test assignment:
+        l[0].p = 5
+        self.failUnless( l.get_free_state()==5 )
+
+
     def test_in_model(self):
 
         class Foo(GPflow.model.Model):
