@@ -26,6 +26,64 @@ class ObjectiveWrapper(object):
             print("Warning: inf or nan in gradient: replacing with zeros")
             return f, np.where(g_is_fin, g, 0.)
 
+
+from functools import wraps
+class AutoFlow:
+    """
+    This decorator-class is designed for use on methods of the Model class (below). 
+
+    The idea is that methods that compute relevant quantities of the model
+    (such as predictions) can define a tf graph which we automatically run when
+    the (decorated) function is called.
+
+    The syntax looks like:
+
+    >>> class MyModel(Model):
+    >>>   
+    >>>   @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.float64))
+    >>>   def my_method(self, x, y):
+    >>>       #compute something, returning a tf graph.
+    >>>       return tf.foo(self.baz, x, y)
+
+    >>> m = MyModel()
+    >>> x = np.random.randn(3,1)
+    >>> y = np.random.randn(3,1)
+    >>> result = my_method(x, y)
+
+    Now the output of the method call is the _result_ of the computation, equivalent to
+
+    >>> m = MyModel()
+    >>> x = np.random.randn(3,1)
+    >>> y = np.random.randn(3,1)
+    >>> x_tf = tf.placeholder(tf.float64)
+    >>> y_tf = tf.placeholder(tf.float64)
+    >>> with m.tf_mode():
+    >>>     graph = tf.foo(m.baz, x_tf, y_tf)
+    >>> result = m._session.run(graph, feed_dict={x_tf:x, y_tf:y, m._free_vars:m.get_free_state()})
+
+    Not only is the syntax cleaner, but multiple calls to the method will
+    result in the graph being constructed only once. 
+
+    """
+    def __init__(self, *tf_args):
+        self.tf_args = tf_args
+    def __call__(self, tf_method):
+        @wraps(tf_method)
+        def runnable(instance, *np_args):
+            graph_name = '_' + tf_method.__name__ + '_graph'
+            if not hasattr(instance, graph_name):
+                with instance.tf_mode():
+                    instance.make_tf_array(instance._free_vars)
+                    graph = tf_method(instance, *self.tf_args)
+                    setattr(instance, graph_name, graph)
+            feed_dict = dict(zip(self.tf_args, np_args))
+            feed_dict[instance._free_vars] = instance.get_free_state()
+            graph = getattr(instance, graph_name)
+            return instance._session.run(graph, feed_dict=feed_dict)
+        return runnable
+    
+
+
 class Model(Parameterized):
     """
     The Model base class. 
@@ -74,6 +132,7 @@ class Model(Parameterized):
     @property
     def name(self):
         return self._name
+
     def _compile(self):
         """
         compile the tensorflow function "self._objective"
@@ -85,6 +144,7 @@ class Model(Parameterized):
 
         minusF = tf.neg( f, name = 'objective' )
         minusG = tf.neg( g, name = 'grad_objective' )
+
         #initialize variables. I confess I don;t understand what this does - JH
         init = tf.initialize_all_variables()
         self._session.run(init)
@@ -98,6 +158,13 @@ class Model(Parameterized):
         print("done")
         sys.stdout.flush()
         self._needs_recompile = False
+
+    def __setattr__(self, key, value):
+        Parameterized.__setattr__(self, key, value)
+        #delete any AutoFlow related graphs
+        if key=='_needs_recompile' and value:
+            for key in filter(lambda x : x[0]=='_' and x[-6:]=='_graph', dir(self)):
+                delattr(self, key)
 
     def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False):
         """
@@ -180,28 +247,23 @@ class GPModel(Model):
     def build_predict(self):
         raise NotImplementedError
 
+    @AutoFlow(tf.placeholder(tf.float64))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points Xnew
         """
-        self._compile()
-        tf_Xnew = tf.placeholder('float64')
-        with self.tf_mode():
-            pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
-        return self._session.run([pred_f_mean, pred_f_var],
-                                 feed_dict={self._free_vars:self.get_free_state(), tf_Xnew:Xnew })
+        return self.build_predict(Xnew)
 
+    @AutoFlow(tf.placeholder(tf.float64))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
         """
-        tf_Xnew = tf.placeholder('float64')
-        with self.tf_mode():
-            pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
-            pred_y_mean, pred_y_var = self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
-        return self._session.run([pred_y_mean, pred_y_var],
-                                 feed_dict={self._free_vars:self.get_free_state(), tf_Xnew:Xnew })
+        pred_f_mean, pred_f_var = self.build_predict(Xnew)
+        return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
+
+    @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.float64))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew
@@ -210,15 +272,8 @@ class GPModel(Model):
         ignoring correlations between them. The result is a matrix the same
         shape as Ynew containing the log densities.
         """
-        tf_Xnew = tf.placeholder('float64')
-        tf_Ynew = tf.placeholder('float64')
-        with self.tf_mode():
-            pred_f_mean, pred_f_var = self.build_predict(tf_Xnew)
-            pred_y_density = self.likelihood.predict_density(pred_f_mean, pred_f_var, tf_Ynew)
-        return self._session.run(pred_y_density,
-                                 feed_dict={self._free_vars:self.get_free_state(),
-                                            tf_Xnew:Xnew,
-                                            tf_Ynew:Ynew })
+        pred_f_mean, pred_f_var = self.build_predict(Xnew)
+        return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
 
 
 

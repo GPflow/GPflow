@@ -17,21 +17,23 @@ The sequence of commands for Linux is:
 
 ```
 pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.1/linux/tensorflow-0.6.0-py2-none-any.whl
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.2/linux/tensorflow-0.6.0-py2-none-any.whl
 ```
 
 The sequence of commands for Mac OS is:
 
 ```
 pip uninstall tensorflow
-http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.1/osx/tensorflow-0.6.0-py2-none-any.whl
+http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.2/osx/tensorflow-0.6.0-py2-none-any.whl
 ```
 
 OR:
 
 ### 1b) Install Tensorflow fork from sources.
 
-You will also need [Bazel](http://bazel.io/). The sequence of commands is:
+You will need [Bazel](http://bazel.io/). You will also need to install [Boost](http://www.boost.org/). This can usually be done using the command "apt-get install libboost-all-dev" on Linux or "brew install boost" for Mac OS.
+
+The sequence of commands is:
 
 ```
 pip uninstall tensorflow
@@ -88,3 +90,7 @@ Proceedings of AISTATS 18, 2015
 [4] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
 A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
 Proceedings of AISTATS 19, 2016
+
+### Acknowledgements
+
+James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grant EP/I036575/1.
