@@ -394,7 +394,39 @@ class Parameterized(Parentable):
 
 class ParamList(Parameterized):
     """
-    A list of parameters.
+    A list of parameters. This allows us to store parameters in a list whilst
+    making them 'visible' to the GPflow machinery. 
+
+    The correct usage is
+
+    >>> my_list = GPflow.param.ParamList([Param1, Param2])
+
+    You can then iterate through the list. For example, to compute the sum:
+    >>> my_sum = reduce(tf.add, my_list)
+
+    or the sum of the squares:
+    >>> rmse = tf.sqrt(reduce(tf.add, map(tf.square, my_list)))
+
+    You can append things:
+    >>> my_list.append(GPflow.kernels.RBF(1))
+
+    but only if the are Parameters (or Parameterized objects). You can set the
+    value of Parameters in the list:
+
+    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
+    >>> print my_list
+    unnamed.item0 transform:(none) prior:None
+    [ 2.]
+    >>> my_list[0] = 12
+    >>> print my_list
+    unnamed.item0 transform:(none) prior:None
+    [ 12.]
+
+    But you can't change elements of the list by assignment:
+    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
+    >>> new_param = GPflow.param.Param(4)
+    >>> my_list[0] = new_param # raises exception
+
     """
     def __init__(self, list_of_params=[]):
         Parameterized.__init__(self)
