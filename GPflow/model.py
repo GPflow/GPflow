@@ -1,6 +1,6 @@
 from __future__ import print_function
 from .param import Param, Parameterized
-from scipy.optimize import minimize
+from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
 import hmc
@@ -133,19 +133,39 @@ class Model(Parameterized):
     def name(self):
         return self._name
 
-    def _compile(self):
+    def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
         """
+        # Make float32 hack
+        float32_hack = False
+        if optimizer is not None:
+            if tf.float64 not in optimizer._valid_dtypes() and tf.float32 in optimizer._valid_dtypes():
+                print("Using float32 hack for Tensorflow optimizers...")
+                float32_hack = True
+
+        self._free_vars = tf.Variable(self.get_free_state())
+        if float32_hack:
+            self._free_vars32 = tf.Variable(self.get_free_state().astype(np.float32))
+            self._free_vars = tf.cast(self._free_vars32, tf.float64)
+
         self.make_tf_array(self._free_vars)
         with self.tf_mode():
             f = self.build_likelihood() + self.build_prior()
             g, = tf.gradients(f, self._free_vars)
 
-        minusF = tf.neg( f, name = 'objective' )
-        minusG = tf.neg( g, name = 'grad_objective' )
+        self._minusF = tf.neg( f, name = 'objective' )
+        self._minusG = tf.neg( g, name = 'grad_objective' )
 
-        #initialize variables. I confess I don;t understand what this does - JH
+        # The optimiser needs to be part of the computational graph, and needs
+        # to be initialised before tf.initialise_all_variables() is called.
+        if optimizer is None:
+            opt_step = None
+        else:
+            if float32_hack:
+                opt_step = optimizer.minimize(tf.cast(self._minusF, tf.float32), var_list=[self._free_vars32])
+            else:
+                opt_step = optimizer.minimize(self._minusF, var_list=[self._free_vars])
         init = tf.initialize_all_variables()
         self._session.run(init)
 
@@ -153,11 +173,13 @@ class Model(Parameterized):
         print("compiling tensorflow function...")
         sys.stdout.flush()
         def obj(x):
-            return self._session.run([minusF,minusG], feed_dict={self._free_vars: x})
+            return self._session.run([self._minusF, self._minusG], feed_dict={self._free_vars: x})
         self._objective = obj
         print("done")
         sys.stdout.flush()
         self._needs_recompile = False
+
+        return opt_step
 
     def __setattr__(self, key, value):
         Parameterized.__setattr__(self, key, value)
@@ -174,19 +196,77 @@ class Model(Parameterized):
             self._compile()
         return hmc.sample_HMC(self._objective, num_samples, Lmax, epsilon, x0=self.get_free_state(), verbose=verbose)
 
-    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
+    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, calc_feed_dict=None, **kw):
+        """
+        Optimize the model by maximizing the likelihood (possibly with the
+        priors also) with respect to any free variables. 
+
+        method can be one of:
+            a string, corresponding to a valid scipy.minimize optimizer
+            a tensorflow optimizer (e.g. tf.optimize.AdaGrad)
+
+        The callback function is execteud by assing the current vale of self.get_free_state()
+
+        max_iters defines the maximum number of iterations
+
+        calc_feed_dict is an optional function which returns a dictionary
+        (suitable for tf.Session.run's feed_dict argument)
+
+        In the case of the scipy optimization routines, any additional keyword
+        arguments are passed through. 
+
+        KeyboardInterrupts are caught and the model is set to the most recent
+        value tried by the optimization routine. 
+
+        This method returns the results of the call to optimize.minimize, or a
+        similar object in the tensorflow case.
+        """
+
+        if type(method) is str:
+            return self._optimize_np(method, callback, max_iters, **kw)
+        else:
+            return self._optimize_tf(method, callback, max_iters, calc_feed_dict, **kw)
+
+    def _optimize_tf(self, method, callback, max_iters, calc_feed_dict):
+        """
+        Optimize the model using a tensorflow optimizer. see self.optimize()
+        """
+        opt_step = self._compile(optimizer=method)
+
+        try:
+            iteration = 0
+            while iteration < max_iters:
+                if calc_feed_dict is None:
+                    feed_dict = {}
+                else:
+                    feed_dict = calc_feed_dict()
+                self._session.run(opt_step, feed_dict=feed_dict)
+                if callback is not None:
+                    callback(self._session.run(self._free_vars))
+                iteration += 1
+        except KeyboardInterrupt:
+            print("Caught KeyboardInterrupt, setting model with most recent state.")
+            self.set_state(self._session.run(self._free_vars))
+            return None
+
+        final_x = self._session.run(self._free_vars)
+        self.set_state(final_x)
+        fun, jac = self._objective(final_x)
+        r = OptimizeResult(x=final_x,
+                           success=True,
+                           message="Finished iterations.",
+                           fun=fun,
+                           jac=jac,
+                           status="Finished iterations.")
+        return r
+
+    def _optimize_np(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
         """
         Optimize the model to find the maximum likelihood  or MAP point. Here
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
         through as `options`. 
 
-        KeyboardInterrupts are caught and the model is set to the most recent
-        value tried by the optimization routine. 
-
-        LinAlgErrors are caught and the optimizer is 'coaxed' away from that
-        region by returning a low likelihood value.
-
-        This method returns the results of the call to optimize.minimize. 
+        self.self.optimize()
         """
         if self._needs_recompile:
             self._compile()

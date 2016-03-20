@@ -60,7 +60,7 @@ class VGP(GPModel):
             B = tf.expand_dims(b, 1)
             A = eye(self.num_data) + K*B*tf.transpose(B)
             L = tf.cholesky(A)
-            Li = tf.user_ops.triangular_solve(L, eye(self.num_data), 'lower')
+            Li = tf.matrix_triangular_solve(L, eye(self.num_data), lower=True)
             LiBi = Li / b
             #full_sigma:return tf.diag(b**-2) - LiBi.T.dot(LiBi)
             f_var.append(1./tf.square(b) - tf.reduce_sum(tf.square(LiBi),0))
@@ -99,7 +99,7 @@ class VGP(GPModel):
             b = self.q_lambda[:,d]
             A = K + tf.diag(1./tf.square(b))
             L = tf.cholesky(A)
-            LiKx = tf.user_ops.triangular_solve(L, tf.transpose(Kx), 'lower')
+            LiKx = tf.matrix_triangular_solve(L, tf.transpose(Kx), lower=True)
             f_var.append( Kd - tf.reduce_sum(tf.square(LiKx),0) )
         f_var = tf.pack(f_var)
         return f_mean, tf.transpose(f_var)

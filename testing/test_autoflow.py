@@ -37,8 +37,8 @@ class TestAdd(unittest.TestCase):
         self.m = AddModel()
         self.m._compile()
         rng = np.random.RandomState(0)
-        self.x = np.random.randn(10,20)
-        self.y = np.random.randn(10,20)
+        self.x = rng.randn(10,20)
+        self.y = rng.randn(10,20)
     def test_add(self):
         self.failUnless(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
 
