@@ -8,8 +8,20 @@ from . import likelihoods
 from .tf_hacks import eye
 
 class SGPR(GPModel):
+
     def __init__(self, X, Y, kern, Z, mean_function=Zero()):
         """
+        This Sparse Variational GP regression. The key reference is
+
+        @inproceedings{titsias2009variational,
+          title={Variational learning of inducing variables in sparse Gaussian processes},
+          author={Titsias, Michalis K},
+          booktitle={International Conference on Artificial Intelligence and Statistics},
+          pages={567--574},
+          year={2009}
+        }
+
+
         X is a data matrix, size N x D
         Y is a data matrix, size N x multivariate_norma is an appropriate GPflow object
 
@@ -42,13 +54,13 @@ class SGPR(GPModel):
         beta = 1./self.likelihood.variance
 
         # Compute A
-        tmp = tf.user_ops.triangular_solve(L, tf.transpose(Knm), 'lower')*tf.sqrt(beta)
+        tmp = tf.matrix_triangular_solve(L, tf.transpose(Knm), lower=True)*tf.sqrt(1./self.likelihood.variance)
         A_ = tf.matmul(tmp, tf.transpose(tmp))
         A = A_ + eye(num_inducing)
         LA = tf.cholesky(A)
 
-        tmp = tf.user_ops.triangular_solve(L, tf.matmul(tf.transpose(Knm), err), 'lower')
-        b = tf.user_ops.triangular_solve(LA, tmp, 'lower') * beta
+        tmp = tf.matrix_triangular_solve(L, tf.matmul(tf.transpose(Knm), err), lower=True)
+        b = tf.matrix_triangular_solve(LA, tmp, lower=True) * beta
 
         #compute log marginal bound
         bound = -0.5*tf.cast(num_data*output_dim, tf.float64)*np.log(2*np.pi)
@@ -61,4 +73,23 @@ class SGPR(GPModel):
         return bound
 
     def build_predict(self, Xnew):
-        raise NotImplementedError
+        err =  self.Y - self.mean_function(self.X)
+        beta = 1./self.likelihood.variance
+        Knm = self.kern.K(self.X, self.Z)
+        num_inducing = tf.shape(self.Z)[0]
+        Kmm = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kus = self.kern.K(self.Z, Xnew)
+        Kss = self.kern.Kdiag(Xnew)
+        L = tf.cholesky(Kmm)
+        B = tf.matrix_triangular_solve(L, tf.transpose(Knm), lower=True)*tf.sqrt(beta)
+        A = tf.matmul(B, tf.transpose(B)) + eye(num_inducing)
+        LA = tf.cholesky(A)
+        tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
+        tmp2 = tf.matrix_triangular_solve(LA, tmp1, lower=True)
+        mean = tf.matmul(tf.transpose(tmp2), tf.matrix_triangular_solve(LA, tf.matmul(B, err*beta), lower=True))
+        var = Kss + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(tf.square(tmp1), 0)
+        return mean + self.mean_function(Xnew), tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
+
+
+        
+
