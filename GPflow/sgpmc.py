@@ -52,7 +52,7 @@ class SGPMC(GPModel):
         fmean += self.mean_function(self.X)
         return tf.reduce_sum( self.likelihood.variational_expectations(fmean, fvar, self.Y) )
 
-    def build_predict(self, Xnew):
+    def build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -63,6 +63,6 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z, 
 
         """
-        mean, var = gp_predict_whitened(Xnew, self.Z, self.kern, self.V)
+        mean, var = gp_predict_whitened(Xnew, self.Z, self.kern, self.V, full_cov)
         return mean + self.mean_function(Xnew), var
 

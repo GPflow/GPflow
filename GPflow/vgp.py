@@ -88,7 +88,7 @@ class VGP(GPModel):
         #compute kernelly things
         Kx = self.kern.K(Xnew, self.X)
         K = self.kern.K(self.X)
-        Kd = self.kern.Kdiag(Xnew)
+
 
         #predictive mean
         f_mean = tf.matmul(Kx, self.q_alpha) + self.mean_function(Xnew)
@@ -100,7 +100,10 @@ class VGP(GPModel):
             A = K + tf.diag(1./tf.square(b))
             L = tf.cholesky(A)
             LiKx = tf.matrix_triangular_solve(L, tf.transpose(Kx), lower=True)
-            f_var.append( Kd - tf.reduce_sum(tf.square(LiKx),0) )
+            if full_cov:
+                f_var.append( self.kern.K(Xnew)- tf.matmul(tf.transpose(LiKx),LiKx) )
+            else:
+                f_var.append( self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(LiKx),0) )
         f_var = tf.pack(f_var)
         return f_mean, tf.transpose(f_var)
 

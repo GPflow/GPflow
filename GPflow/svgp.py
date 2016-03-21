@@ -81,11 +81,11 @@ class SVGP(GPModel):
         minibatch_scale = len(self.X) / tf.cast(tf.shape(self._tfX)[0], tf.float64)
         return tf.reduce_sum(variational_expectations) * minibatch_scale - KL
 
-    def build_predict(self, Xnew):
+    def build_predict(self, Xnew, full_cov=False):
         if self.whiten:
-            mu, var =  conditionals.gaussian_gp_predict_whitened(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
+            mu, var =  conditionals.gaussian_gp_predict_whitened(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent, full_cov)
         else:
-            mu, var =  conditionals.gaussian_gp_predict(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
+            mu, var =  conditionals.gaussian_gp_predict(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent, full_cov)
         return mu + self.mean_function(Xnew), var
 
 

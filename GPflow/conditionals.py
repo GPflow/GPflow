@@ -5,10 +5,10 @@ import tensorflow as tf
 """
 This file contains functions which compute tensorflow expressions for GP prediction
 equations. This enables much code re-use, because these expressions appear
-frequently. 
+frequently.
 """
 
-def gp_predict(Xnew, X, kern, F):
+def gp_predict(Xnew, X, kern, F, full_cov=False):
     """
     Given F, representing the GP at the points X, produce the mean and variance
     of the GP at the points Xnew.
@@ -16,7 +16,7 @@ def gp_predict(Xnew, X, kern, F):
     We assume K independent GPs, represented by the columns of F. This function
     computes the Gaussian conditional
 
-        p(F* | F) 
+        p(F* | F)
 
     Xnew is a data matrix, size N x D
     X are inducing points, size M x D
@@ -27,10 +27,9 @@ def gp_predict(Xnew, X, kern, F):
         gaussian_gp_predict -- similar, but with uncertainty in F
 
     """
- 
+
     #compute kernel stuff
     num_data = tf.shape(X)[0]
-    Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + eye(num_data)*1e-6
     Lm = tf.cholesky(Kmm)
@@ -41,13 +40,16 @@ def gp_predict(Xnew, X, kern, F):
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), F)
-    fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
-    fvar = tf.expand_dims(fvar, 1)
+    if full_cov:
+        fval = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
+    else:
+        fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
+        fvar = tf.expand_dims(fvar, 1)
 
     return fmean, fvar
 
 
-def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
+def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_cov=False):
     """
     Given an (approximate) posterior (via q_mu, q_sqrt) to the GP at the points
     X, produce the mean and variance of the GP at the points Xnew.
@@ -57,7 +59,7 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         q(f[:,i]) = N (q_mu[:,i],  diag(q_sqrt[:,i]**2))
     or
         q(f[:,i]) = N (q_mu,  W W^T)
-    where W is the lower triangle of q_sqrt[:,:,i]. 
+    where W is the lower triangle of q_sqrt[:,:,i].
 
     This function computes the Gaussian integral
         q(f*) = \int p(f*|f)q(f) df.
@@ -81,7 +83,6 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
  
     #compute kernel stuff
     num_data = tf.shape(X)[0]
-    Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + eye(num_data)*1e-6
     Lm = tf.cholesky(Kmm)
@@ -92,26 +93,46 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
 
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), q_mu)
-    fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
-    fvar = tf.expand_dims(fvar, 1)
-    if q_sqrt.get_shape().ndims==2:
-        #we hae a diagonal form for q(f)
-        fvar = fvar + tf.reduce_sum(tf.square(tf.expand_dims(tf.transpose(B), 2) * tf.expand_dims(q_sqrt, 0)),1)
-    elif q_sqrt.get_shape().ndims==3:
-        # we have the cholesky form for q(v)
+    if full_cov:
+        fvar = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
+        fvar = tf.expand_dims(fvar, 2)
         projected_var = []
-        for d in range(num_columns):
-            L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
-            LTB = tf.matmul(tf.transpose(L), B)
-            projected_var.append(tf.reduce_sum(tf.square(LTB),0))
+        if q_sqrt.get_shape().ndims==2:
+            for d in range(num_columns):
+            #we hae a diagonal form for q(f)
+            projected_var.append( tf.matmul(tf.transpose(B*q_sqrt[:,d:d+1]), B*q_sqrt[:,d:d+1]) )
+        elif q_sqrt.get_shape().ndims==3:
+            # we have the cholesky form for q(v)
+            for d in range(num_columns):
+                L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
+                LTB = tf.matmul(tf.transpose(L), B)
+                projected_var.append(tf.matmul(tf.transpose(LTB),LTB))
         fvar = fvar + tf.transpose(tf.pack(projected_var))
+        else:
+            raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+
     else:
-        raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+        Kdiag = kern.Kdiag(Xnew)
+        fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
+        fvar = tf.expand_dims(fvar, 1)
+        if q_sqrt.get_shape().ndims==2:
+            #we hae a diagonal form for q(f)
+            fvar = fvar + tf.reduce_sum(tf.square(tf.expand_dims(tf.transpose(B), 2) * tf.expand_dims(q_sqrt, 0)),1)
+        elif q_sqrt.get_shape().ndims==3:
+            # we have the cholesky form for q(v)
+            projected_var = []
+            for d in range(num_columns):
+                L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
+                LTB = tf.matmul(tf.transpose(L), B)
+                projected_var.append(tf.reduce_sum(tf.square(LTB),0))
+            fvar = fvar + tf.transpose(tf.pack(projected_var))
+        else:
+            raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
 
     return fmean, fvar
 
 
-def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
+def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_cov=False):
     """
     Given an (approximate) posterior (via q_mu, q_sqrt) to the GP at the points
     X, produce the mean and variance of the GP at the points Xnew.
@@ -127,7 +148,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         q(f[:,i]) = N (L q_mu[:,i],  L diag(q_sqrt**2) L^T)
     or
         q(f[:,i]) = N (L q_mu,  L [W W^T] L^T)
-    where W is the lower triangle of q_sqrt[:,:,i]. 
+    where W is the lower triangle of q_sqrt[:,:,i].
 
     This function computes the Gaussian integral
         q(f*) = \int p(f*|(f=Lv))q(v) df.
@@ -140,7 +161,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
     Note (and TODO):
         At the moment, num_columns only gets used for the q_sqrt.ndim==3 case,
         and it tells use the value of q_sqrt.shape()[2]. We need to find a way
-        to get this from the tf graph. 
+        to get this from the tf graph.
 
 
     See also:
@@ -148,7 +169,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
         gaussian_gp_predict -- same without the whitening
 
     """
- 
+
     #compute kernel stuff
     num_data = tf.shape(X)[0]
     Kdiag = kern.Kdiag(Xnew)
@@ -161,27 +182,30 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
 
     #construct the mean and variance of q(f)
     fmean = tf.matmul(tf.transpose(A), q_mu)
-    if q_sqrt.get_shape().ndims==2:
-        #we hae a diagonal form for q(v)
-        q_var = np.square(q_sqrt)
-        #fvar = Kdiag[:,None] + tf.reduce_sum((tf.square(tf.transpose(A)))[:,:,None] * (q_var[None, :,:] - 1),1)
-        fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.expand_dims(tf.square(tf.transpose(A)), 2) * (tf.expand_dims(q_var, 0) - 1.0),1)
-        return fmean, fvar
-    elif q_sqrt.get_shape().ndims==3:
-        # we have the cholesky form for q(v)
-        fvar = Kdiag - tf.reduce_sum(np.square(A), 0)
-        projected_var = []
-        for d in range(num_columns):
-            L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
-            LTA = tf.matmul(tf.transpose(L), A)
-            projected_var.append(fvar + tf.reduce_sum(tf.square(LTA),0))
-        fvar = tf.transpose(tf.pack(projected_var))
-        return fmean, fvar
+    if full_cov:
+        raise NotImplementedError
     else:
-        raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+        if q_sqrt.get_shape().ndims==2:
+            #we hae a diagonal form for q(v)
+            q_var = np.square(q_sqrt)
+            #fvar = Kdiag[:,None] + tf.reduce_sum((tf.square(tf.transpose(A)))[:,:,None] * (q_var[None, :,:] - 1),1)
+            fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.expand_dims(tf.square(tf.transpose(A)), 2) * (tf.expand_dims(q_var, 0) - 1.0),1)
+            return fmean, fvar
+        elif q_sqrt.get_shape().ndims==3:
+            # we have the cholesky form for q(v)
+            fvar = Kdiag - tf.reduce_sum(np.square(A), 0)
+            projected_var = []
+            for d in range(num_columns):
+                L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
+                LTA = tf.matmul(tf.transpose(L), A)
+                projected_var.append(fvar + tf.reduce_sum(tf.square(LTA),0))
+            fvar = tf.transpose(tf.pack(projected_var))
+            return fmean, fvar
+        else:
+            raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
 
 
-def gp_predict_whitened(Xnew, X, kern, V):
+def gp_predict_whitened(Xnew, X, kern, V, full_cov=False):
     """
     Given a whitened representation of the GP at the points X (V), produce the
     mean and variance of the GP at the points Xnew (F*).
@@ -207,14 +231,18 @@ def gp_predict_whitened(Xnew, X, kern, V):
         gaussian_gp_predict_whitened -- where there is no uncertainty in V
         gp_predict -- same, without the whitening
     """
-    Kd = kern.Kdiag(Xnew)
     Kx = kern.K(X, Xnew)
     K = kern.K(X)
     L = tf.cholesky(K)
     A = tf.matrix_triangular_solve(L, Kx, lower=True)
     fmean = tf.matmul(tf.transpose(A), V)
-    fvar = Kd - tf.reduce_sum(tf.square(A), 0)
-    return fmean, tf.expand_dims(fvar, 1) * tf.ones_like(V[0,:])
+    if full_cov:
+        var = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
+        var = tf.tile(tf.expand_dims(var, 2), tf.pack([1, 1, tf.shape(V)[1]]))
+    else:
+        fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
+        var = tf.tile(tf.expand_dims(fvar, 1), tf.pack([1, tf.shape(V)[1]]))
+    return fmean, var
 
 
 
