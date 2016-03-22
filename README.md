@@ -3,6 +3,9 @@
 GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
 The full list of contributors (in alphabetical order) is James Hensman, Alexander G. de G. Matthews and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
+[![Build Status](https://travis-ci.org/GPflow/GPflow.svg?branch=master)](https://travis-ci.org/GPflow/GPflow)
+[![codecov.io](https://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](https://codecov.io/github/GPFlow/GPFlow?branch=master)
+
 # Install
 
 ## 1) Install Tensorflow fork
