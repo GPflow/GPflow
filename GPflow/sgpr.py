@@ -92,5 +92,5 @@ class SGPR(GPModel):
         else:
             var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(tf.square(tmp1), 0)
             var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
-        return mean + self.mean_function(Xnew), 
+        return mean + self.mean_function(Xnew), var
 
