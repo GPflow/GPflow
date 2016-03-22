@@ -72,14 +72,13 @@ class SGPR(GPModel):
 
         return bound
 
-    def build_predict(self, Xnew):
+    def build_predict(self, Xnew, full_cov=False):
         err =  self.Y - self.mean_function(self.X)
         beta = 1./self.likelihood.variance
         Knm = self.kern.K(self.X, self.Z)
         num_inducing = tf.shape(self.Z)[0]
         Kmm = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
         Kus = self.kern.K(self.Z, Xnew)
-        Kss = self.kern.Kdiag(Xnew)
         L = tf.cholesky(Kmm)
         B = tf.matrix_triangular_solve(L, tf.transpose(Knm), lower=True)*tf.sqrt(beta)
         A = tf.matmul(B, tf.transpose(B)) + eye(num_inducing)
@@ -87,8 +86,13 @@ class SGPR(GPModel):
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
         tmp2 = tf.matrix_triangular_solve(LA, tmp1, lower=True)
         mean = tf.matmul(tf.transpose(tmp2), tf.matrix_triangular_solve(LA, tf.matmul(B, err*tf.sqrt(beta)), lower=True))
-        var = Kss + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(tf.square(tmp1), 0)
-        return mean + self.mean_function(Xnew), tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
+        if full_cov:
+            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) - tf.matmul(tf.transpose(tmp1), tmp1)
+            var = tf.tile(tf.expand_dims(var, 2), tf.pack([1,1, tf.shape(self.Y)[1]]))
+        else:
+            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(tf.square(tmp1), 0)
+            var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
+        return mean + self.mean_function(Xnew), 
 
 
         
