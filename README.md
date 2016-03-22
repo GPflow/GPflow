@@ -40,7 +40,7 @@ The sequence of commands is:
 
 ```
 pip uninstall tensorflow
-git clone --recurse-submodules github.com/gpflow/tensorflow
+git clone --recurse-submodules https://github.com/gpflow/tensorflow
 cd tensorflow
 ./configure 
 bazel build -c opt //tensorflow/tools/pip_package:build_pip_package
