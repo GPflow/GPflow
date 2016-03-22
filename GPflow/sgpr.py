@@ -23,11 +23,11 @@ class SGPR(GPModel):
 
 
         X is a data matrix, size N x D
-        Y is a data matrix, size N x multivariate_norma is an appropriate GPflow object
-
-        Z is a matrix of inducing points, size M x D
-
+        Y is a data matrix, size N x R
+        Z is a matrix of pseudo inputs, size M x D
         kern, mean_function are appropriate GPflow objects
+
+        This method only works with a Gaussian likelihood.
 
         """
         likelihood = likelihoods.Gaussian()
@@ -93,7 +93,4 @@ class SGPR(GPModel):
             var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(tf.square(tmp1), 0)
             var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
         return mean + self.mean_function(Xnew), 
-
-
-        
 
