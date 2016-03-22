@@ -13,11 +13,12 @@ class VGP(GPModel):
         Y is a data matrix, size N x R
         kern, likelihood, mean_function are appropriate GPflow objects
 
-        This is the variational objective for the Variational Gaussian Process (VGP). The key reference is 
+        This is the variational objective for the Variational Gaussian Process
+        (VGP). The key reference is:
 
         @article{Opper:2009,
             title = {The Variational Gaussian Approximation Revisited},
-            author = {Opper, Manfred and Archambeau, C{\'e}dric},
+            author = {Opper, Manfred and Archambeau, Cedric},
             journal = {Neural Comput.},
             year = {2009},
             pages = {786--792},
@@ -44,11 +45,14 @@ class VGP(GPModel):
         """
         q_alpha, q_lambda are variational parameters, size N x R
 
-        This method computes the variational lower lound on the likelihood, which is 
+        This method computes the variational lower lound on the likelihood, which is:
 
             E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
+
         with
-            q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1)
+
+            q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1) .
+
         """
         K = self.kern.K(self.X)
         f_mean = tf.matmul(K, self.q_alpha) + self.mean_function(self.X)
@@ -72,14 +76,14 @@ class VGP(GPModel):
         KL = 0.5*(A_logdet + trAi - self.num_data*self.num_latent + tf.reduce_sum(f_mean*self.q_alpha))
 
         return tf.reduce_sum(self.likelihood.variational_expectations(f_mean, f_var, self.Y)) - KL
-    
-    def build_predict(self, Xnew):
+
+    def build_predict(self, Xnew, full_cov=False):
         """
-        The posterior varirance of F is given by
+        The posterior variance of F is given by
 
             q(f) = N(f | K alpha, [K^-1 + diag(lambda**2)]^-1)
 
-        Here we projec this to F*, the values of the GP at Xnew which is given by
+        Here we project this to F*, the values of the GP at Xnew which is given by
 
            q(F*) = N ( F* | K_{*F} alpha , K_{**} - K_{*f}[K_{ff} + diag(lambda**-2)]^-1 K_{f*} )
 

@@ -35,7 +35,7 @@ class GPR(GPModel):
 
         return multivariate_normal(self.Y, m, L)
 
-    def build_predict(self, Xnew, full_cov=false):
+    def build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 

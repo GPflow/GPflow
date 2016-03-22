@@ -99,17 +99,16 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_cov=False
         projected_var = []
         if q_sqrt.get_shape().ndims==2:
             for d in range(num_columns):
-            #we hae a diagonal form for q(f)
-            projected_var.append( tf.matmul(tf.transpose(B*q_sqrt[:,d:d+1]), B*q_sqrt[:,d:d+1]) )
+                projected_var.append( tf.matmul(tf.transpose(B*q_sqrt[:,d:d+1]), B*q_sqrt[:,d:d+1]) )
         elif q_sqrt.get_shape().ndims==3:
             # we have the cholesky form for q(v)
             for d in range(num_columns):
                 L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
                 LTB = tf.matmul(tf.transpose(L), B)
                 projected_var.append(tf.matmul(tf.transpose(LTB),LTB))
-        fvar = fvar + tf.transpose(tf.pack(projected_var))
         else:
             raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+        fvar = fvar + tf.transpose(tf.pack(projected_var))
 
     else:
         Kdiag = kern.Kdiag(Xnew)
