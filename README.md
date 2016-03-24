@@ -70,6 +70,8 @@ GPflow has a slew of kernels that can be combined in a similar way to GPy ([see 
 #### Regression
 For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum liklelihood or MCMC for the covariance function parameters ([notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/regression.ipynb)).
 
+It's also possible to do Sparse GP regression using the `GPflow.sgpr.SGPR` class. This is based on [4].
+
 #### MCMC
 For non-Gaussian likelohoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/Sparse%20mcmc%20demo.ipynb) introduces the interface.
 
