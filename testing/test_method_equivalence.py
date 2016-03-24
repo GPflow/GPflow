@@ -35,7 +35,7 @@ class TestEquivalence(unittest.TestCase):
         m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1)+GPflow.kernels.White(1), Z=X.copy())
         m5.Z.fixed = True
         self.models = [m1, m2, m3, m4, m5]
-        [m.optimize() for m in self.models]
+        [m.optimize(display=False) for m in self.models]
 
     def test_likelihoods(self):
         likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze() for m in self.models])

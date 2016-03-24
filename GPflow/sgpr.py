@@ -38,8 +38,9 @@ class SGPR(GPModel):
 
     def build_likelihood(self):
         """
-        Constuct a tensorflow function to compute the bound on the marginal likelihood
-
+        Constuct a tensorflow function to compute the bound on the marginal
+        likelihood. For a derivation of the terms in here, see the associated
+        SGPR notebook. 
         """
 
         num_inducing = tf.shape(self.Z)[0]
@@ -48,44 +49,46 @@ class SGPR(GPModel):
 
         err =  self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
-        Knm = self.kern.K(self.X, self.Z)
-        Kmm = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
-        L = tf.cholesky(Kmm)
-        beta = 1./self.likelihood.variance
+        Kuf = self.kern.K(self.Z, self.X)
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        L = tf.cholesky(Kuu)
 
-        # Compute A
-        tmp = tf.matrix_triangular_solve(L, tf.transpose(Knm), lower=True)*tf.sqrt(1./self.likelihood.variance)
-        A_ = tf.matmul(tmp, tf.transpose(tmp))
-        A = A_ + eye(num_inducing)
-        LA = tf.cholesky(A)
-
-        tmp = tf.matrix_triangular_solve(L, tf.matmul(tf.transpose(Knm), err), lower=True)
-        b = tf.matrix_triangular_solve(LA, tmp, lower=True) * beta
+        # Compute intermediate matrices
+        A = tf.matrix_triangular_solve(L, Kuf, lower=True)*tf.sqrt(1./self.likelihood.variance)
+        AAT = tf.matmul(A, tf.transpose(A))
+        B = AAT + eye(num_inducing)
+        LB = tf.cholesky(B)
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, err), lower=True) * tf.sqrt(1./self.likelihood.variance)
 
         #compute log marginal bound
         bound = -0.5*tf.cast(num_data*output_dim, tf.float64)*np.log(2*np.pi)
-        bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.user_ops.get_diag(LA)))
-        bound += 0.5*tf.cast(num_data*output_dim, tf.float64)*tf.log(beta)
-        bound += -0.5*beta*tf.reduce_sum(tf.square(err))
-        bound += 0.5*tf.reduce_sum(tf.square(b))
-        bound += -0.5*(tf.reduce_sum(Kdiag)*beta - tf.reduce_sum(tf.user_ops.get_diag(A_)))
+        bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.user_ops.get_diag(LB)))
+        bound += -0.5*tf.cast(num_data*output_dim, tf.float64)*tf.log(self.likelihood.variance)
+        bound += -0.5*tf.reduce_sum(tf.square(err))/self.likelihood.variance
+        bound += 0.5*tf.reduce_sum(tf.square(c))
+        bound += -0.5*(tf.reduce_sum(Kdiag)/self.likelihood.variance - tf.reduce_sum(tf.user_ops.get_diag(AAT)))
 
         return bound
 
     def build_predict(self, Xnew, full_cov=False):
-        err =  self.Y - self.mean_function(self.X)
-        beta = 1./self.likelihood.variance
-        Knm = self.kern.K(self.X, self.Z)
+        """
+        Compute the mean and variance of the latent function at some new points
+        Xnew. For a derivation of the terms in here, see the associated SGPR
+        notebook. 
+        """
         num_inducing = tf.shape(self.Z)[0]
-        Kmm = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        err =  self.Y - self.mean_function(self.X)
+        Kuf = self.kern.K(self.Z, self.X)
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
         Kus = self.kern.K(self.Z, Xnew)
-        L = tf.cholesky(Kmm)
-        B = tf.matrix_triangular_solve(L, tf.transpose(Knm), lower=True)*tf.sqrt(beta)
-        A = tf.matmul(B, tf.transpose(B)) + eye(num_inducing)
-        LA = tf.cholesky(A)
+        L = tf.cholesky(Kuu)
+        A = tf.matrix_triangular_solve(L, Kuf, lower=True)*tf.sqrt(1./self.likelihood.variance)
+        B = tf.matmul(A, tf.transpose(A)) + eye(num_inducing)
+        LB = tf.cholesky(B)
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, err), lower=True) * tf.sqrt(1./self.likelihood.variance)
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
-        tmp2 = tf.matrix_triangular_solve(LA, tmp1, lower=True)
-        mean = tf.matmul(tf.transpose(tmp2), tf.matrix_triangular_solve(LA, tf.matmul(B, err*tf.sqrt(beta)), lower=True))
+        tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
+        mean = tf.matmul(tf.transpose(tmp2), c)
         if full_cov:
             var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) - tf.matmul(tf.transpose(tmp1), tmp1)
             var = tf.tile(tf.expand_dims(var, 2), tf.pack([1,1, tf.shape(self.Y)[1]]))
