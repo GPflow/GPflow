@@ -86,11 +86,15 @@ Advances in Neural Information Processing Systems, 1639-1647
 M Opper, C Archambeau
 Neural computation 21 (3), 786-792
 
-[3] Scalable Variational Gaussian Process Classification
+[3] Variational Learning of Inducing Variables in Sparse Gaussian Processes. 
+M Titsias
+Proceedings of AISTATS 12, 2009
+
+[4] Scalable Variational Gaussian Process Classification
 J Hensman, A G de G Matthews, Z Ghahramani
 Proceedings of AISTATS 18, 2015
 
-[4] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
+[5] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
 A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
 Proceedings of AISTATS 19, 2016
 
