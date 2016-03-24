@@ -74,7 +74,7 @@ For GP regression with Gaussian noise, it's possible to marginalize the function
 For non-Gaussian likelohoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/Sparse%20mcmc%20demo.ipynb) introduces the interface.
 
 #### Variational inference
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. All of the sparse methods in GPflow are solidified in [4]. 
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [4] in `GPflow.svgp.SVGP`. All of the sparse methods in GPflow are solidified in [5]. 
 
 
 ### References
