@@ -44,9 +44,18 @@ class BayesianGPLVM(GPModel):
         L = tf.cholesky(Kuu)
 
         # Compute intermediate matrices
-        D = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True)*tf.sqrt(1./self.likelihood.variance)
+        A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / tf.sqrt(self.likelihood.variance)
+        AAT = tf.matrix_triangular_solve(L, tf.transpose(tf.matrix_triangular_solve(L, psi2, lower=True)), lower=True)/self.likelihood.variance
+        B = AAT + eye(num_inducing)
+        LB = tf.cholesky(B)
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / tf.sqrt(self.likelihood.variance)
 
-        #TODO 
+        #compute log marginal bound
+        bound = -0.5*tf.cast(num_data*output_dim, tf.float64)*np.log(2*np.pi*self.likelihood.variance)
+        bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.user_ops.get_diag(LB)))
+        bound += -0.5*tf.reduce_sum(tf.square(self.Y))/self.likelihood.variance
+        bound += 0.5*tf.reduce_sum(tf.square(c))
+        bound += -0.5*tf.cast(tf.float64, self.output_dim)*(psi0/self.likelihood.variance - tf.reduce_sum(tf.user_ops.get_diag(AAT)))
 
         return bound
 
