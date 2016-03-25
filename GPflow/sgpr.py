@@ -54,19 +54,18 @@ class SGPR(GPModel):
         L = tf.cholesky(Kuu)
 
         # Compute intermediate matrices
-        A = tf.matrix_triangular_solve(L, Kuf, lower=True)*tf.sqrt(1./self.likelihood.variance)
+        A = tf.matrix_triangular_solve(L, Kuf, lower=True)/tf.sqrt(self.likelihood.variance)
         AAT = tf.matmul(A, tf.transpose(A))
         B = AAT + eye(num_inducing)
         LB = tf.cholesky(B)
-        c = tf.matrix_triangular_solve(LB, tf.matmul(A, err), lower=True) * tf.sqrt(1./self.likelihood.variance)
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, err), lower=True) / tf.sqrt(self.likelihood.variance)
 
         #compute log marginal bound
-        bound = -0.5*tf.cast(num_data*output_dim, tf.float64)*np.log(2*np.pi)
+        bound = -0.5*tf.cast(num_data*output_dim, tf.float64)*np.log(2*np.pi*self.likelihood.variance)
         bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.user_ops.get_diag(LB)))
-        bound += -0.5*tf.cast(num_data*output_dim, tf.float64)*tf.log(self.likelihood.variance)
         bound += -0.5*tf.reduce_sum(tf.square(err))/self.likelihood.variance
         bound += 0.5*tf.reduce_sum(tf.square(c))
-        bound += -0.5*(tf.reduce_sum(Kdiag)/self.likelihood.variance - tf.reduce_sum(tf.user_ops.get_diag(AAT)))
+        bound += -0.5*tf.cast(output_dim, tf.float64) * (tf.reduce_sum(Kdiag)/self.likelihood.variance - tf.reduce_sum(tf.user_ops.get_diag(AAT)))
 
         return bound
 
