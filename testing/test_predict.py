@@ -71,14 +71,15 @@ class TestFullCov(unittest.TestCase):
                   GPflow.sgpmc.SGPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)]
 
         for m in self.models:
-            m.optimize(max_iters=5, display=0)
+            m.optimize(max_iters=3, display=0)
 
     def test_cov(self):
         for m in self.models:
             mu1, var = m.predict_f(self.Xtest)
             mu2, covar = m.predict_f_full_cov(self.Xtest)
             self.failUnless(np.all(mu1==mu2))
-            self.failUnless(covar.shape == (var.shape[0], var.shape[0], var.shape[1]))
+            self.failUnless(covar.shape == (self.Ntest, self.Ntest, self.output_dim))
+            self.failUnless(var.shape == (self.Ntest, self.output_dim))
             for i in range(self.output_dim):
                 self.failUnless(np.allclose(var[:,i] , np.diag(covar[:,:,i])))
     
@@ -86,25 +87,6 @@ class TestFullCov(unittest.TestCase):
         for m in self.models:
             samples = m.predict_f_samples(self.Xtest, 5)
             self.failUnless(samples.shape==(5, self.Xtest.shape[0], self.output_dim))
-
-
-
-
-                 
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":

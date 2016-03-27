@@ -28,7 +28,7 @@ def conditional(Xnew, X, kern, f, num_columns=None, full_cov=False, q_sqrt=None,
     X are data points, size M x D
     kern is a GPflow kernel
     f is a data matrix, M x K, represensting the function values at X.
-    (optional) num_columns is an interger number of columns in the f matrix (optional, used with q_sqrt)
+    num_columns is an interger number of columns in the f matrix (must match q_sqrt's last dimension)
     (optional) q_sqrt is a matrix of standard-deviations or Cholesky matrices, size M x K or M x M x K
     (optional) whiten is a boolean: whether to whiten the representation as described above. 
 
@@ -53,10 +53,10 @@ def conditional(Xnew, X, kern, f, num_columns=None, full_cov=False, q_sqrt=None,
     #compute the covariance due to the conditioning
     if full_cov:
         fvar = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
-        fvar = tf.expand_dims(fvar, 2)
+        fvar = tf.tile(tf.expand_dims(fvar, 2), [1, 1, num_columns])
     else:
         fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
-        fvar = tf.expand_dims(fvar, 1)
+        fvar = tf.tile(tf.expand_dims(fvar, 1), [1, num_columns])
 
     #another backsubstitution in the whitened case
     if not whiten:
