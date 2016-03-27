@@ -2,7 +2,7 @@ import numpy as np
 from tf_hacks import eye
 import tensorflow as tf
 
-def conditional(Xnew, X, kern, f, num_columns=None, full_cov=False, q_sqrt=None, whiten=False):
+def conditional(Xnew, X, kern, f, num_columns, full_cov=False, q_sqrt=None, whiten=False):
     """
     Given F, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -89,7 +89,7 @@ import warnings
 
 def gp_predict(Xnew, X, kern, F, full_cov=False):
     warnings.warn('gp_predict is deprecated: use conditonal(...) instead', DeprecationWarning)
-    return conditional(Xnew, X, kern, F, num_columns=None, full_cov=full_cov, q_sqrt=None, whiten=False)
+    return conditional(Xnew, X, kern, F, num_columns=1, full_cov=full_cov, q_sqrt=None, whiten=False)
 
 def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_cov=False):
     warnings.warn('gp_predict is deprecated: use conditonal(...) instead', DeprecationWarning)
@@ -101,7 +101,7 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_
 
 def gp_predict_whitened(Xnew, X, kern, V, full_cov=False):
     warnings.warn('gp_predict is deprecated: use conditonal(...) instead', DeprecationWarning)
-    return conditional(Xnew, X, kern, V, num_columns=None, full_cov=full_cov, q_sqrt=None, whiten=True)
+    return conditional(Xnew, X, kern, V, num_columns=1, full_cov=full_cov, q_sqrt=None, whiten=True)
 
 
 
