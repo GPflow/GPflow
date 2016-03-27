@@ -46,6 +46,48 @@ class TestGaussian(unittest.TestCase):
         density = self.m.predict_density(self.Xtest, self.Ytest)
 
 
+class TestFullCov(unittest.TestCase):
+    def setUp(self):
+        self.input_dim=3
+        self.output_dim=2
+        self.N=20
+        self.Ntest=30
+        self.M=5
+        rng = np.random.RandomState(0)
+        X, Y, Z, self.Xtest = rng.randn(self.N, self.input_dim),\
+                              rng.randn(self.N, self.output_dim),\
+                              rng.randn(self.M, self.input_dim),\
+                              rng.randn(self.Ntest, self.input_dim)
+        k = lambda : GPflow.kernels.Matern32(self.input_dim)
+        self.models = [GPflow.gpr.GPR(X, Y, kern=k()),
+                  GPflow.sgpr.SGPR(X, Y, Z=Z, kern=k()),
+                  GPflow.svgp.SVGP(X, Y, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
+                  GPflow.vgp.VGP(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
+                  GPflow.vgp.VGP(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
+                  GPflow.gpmc.GPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
+                  GPflow.sgpmc.SGPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)]
+
+        for m in self.models:
+            m.optimize(max_iters=5, display=0)
+
+    def test_cov(self):
+        for m in self.models:
+            mu1, var = m.predict_f(self.Xtest)
+            mu2, covar = m.predict_f_full_cov(self.Xtest)
+            self.failUnless(np.all(mu1==mu2))
+            self.failUnless(covar.shape == (var.shape[0], var.shape[0], var.shape[1]))
+            for i in range(self.output_dim):
+                self.failUnless(np.allclose(var[:,i] , np.diag(covar[:,:,i])))
+    
+    def test_samples(self):
+        for m in self.models:
+            samples = m.predict_f_samples(self.Xtest, 5)
+            self.failUnless(samples.shape==(5, self.Xtest.shape[0], self.output_dim))
+
+
+
+
+                 
 
         
 

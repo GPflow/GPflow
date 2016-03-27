@@ -54,7 +54,7 @@ class GPR(GPModel):
         fmean = tf.matmul(tf.transpose(A), V) + self.mean_function(Xnew)
         if full_cov:
             fvar = self.kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
-            fvar = tf.tile(tf.expand_dims(var, 2), tf.pack([1, 1, tf.shape(self.Y)[1]]))
+            fvar = tf.tile(tf.expand_dims(fvar, 2), tf.pack([1, 1, tf.shape(self.Y)[1]]))
         else:
             fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), reduction_indices=0)
             fvar = tf.tile(tf.reshape(fvar, (-1,1)), [1, self.Y.shape[1]])
