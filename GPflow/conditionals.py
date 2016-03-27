@@ -41,7 +41,8 @@ def gp_predict(Xnew, X, kern, F, full_cov=False):
     #construct the mean and variance of q(f*)
     fmean = tf.matmul(tf.transpose(B), F)
     if full_cov:
-        fval = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
+        fvar = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
+        fvar = tf.expand_dims(fvar, 2)
     else:
         fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
         fvar = tf.expand_dims(fvar, 1)
@@ -96,37 +97,23 @@ def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_cov=False
     if full_cov:
         fvar = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
         fvar = tf.expand_dims(fvar, 2)
-        projected_var = []
-        if q_sqrt.get_shape().ndims==2:
-            for d in range(num_columns):
-                projected_var.append( tf.matmul(tf.transpose(B*q_sqrt[:,d:d+1]), B*q_sqrt[:,d:d+1]) )
-        elif q_sqrt.get_shape().ndims==3:
-            # we have the cholesky form for q(v)
-            for d in range(num_columns):
-                L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
-                LTB = tf.matmul(tf.transpose(L), B)
-                projected_var.append(tf.matmul(tf.transpose(LTB),LTB))
-        else:
-            raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
-        fvar = fvar + tf.transpose(tf.pack(projected_var))
-
     else:
-        Kdiag = kern.Kdiag(Xnew)
-        fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
+        fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
         fvar = tf.expand_dims(fvar, 1)
+    projected_var = []
+    for d in range(num_columns):
         if q_sqrt.get_shape().ndims==2:
-            #we hae a diagonal form for q(f)
-            fvar = fvar + tf.reduce_sum(tf.square(tf.expand_dims(tf.transpose(B), 2) * tf.expand_dims(q_sqrt, 0)),1)
+            LTB = B*q_sqrt[:,d:d+1]
         elif q_sqrt.get_shape().ndims==3:
-            # we have the cholesky form for q(v)
-            projected_var = []
-            for d in range(num_columns):
-                L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
-                LTB = tf.matmul(tf.transpose(L), B)
-                projected_var.append(tf.reduce_sum(tf.square(LTB),0))
-            fvar = fvar + tf.transpose(tf.pack(projected_var))
+            L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
+            LTB = tf.matmul(tf.transpose(L), B)
         else:
             raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+        if full_cov:
+            projected_var.append(tf.matmul(tf.transpose(LTB),LTB))
+        else:
+            projected_var.append(tf.reduce_sum(tf.square(LTB),0))
+    fvar = fvar + tf.transpose(tf.pack(projected_var))
 
     return fmean, fvar
 
