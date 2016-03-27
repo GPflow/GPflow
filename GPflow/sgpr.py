@@ -61,7 +61,7 @@ class SGPR(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, err), lower=True) / tf.sqrt(self.likelihood.variance)
 
         #compute log marginal bound
-        bound = -0.5*tf.cast(num_data*output_dim, tf.float64)*np.log(2*np.pi*self.likelihood.variance)
+        bound = -0.5*tf.cast(num_data*output_dim, tf.float64)*tf.log(2*np.pi*self.likelihood.variance)
         bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.user_ops.get_diag(LB)))
         bound += -0.5*tf.reduce_sum(tf.square(err))/self.likelihood.variance
         bound += 0.5*tf.reduce_sum(tf.square(c))
