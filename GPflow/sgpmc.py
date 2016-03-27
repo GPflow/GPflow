@@ -48,7 +48,7 @@ class SGPMC(GPModel):
         This function computes the (log) optimal distribution for v, q*(v). 
         """
         #get the (marginals of) q(f): exactly predicting!
-        fmean, fvar = gp_predict_whitened(self.X, self.Z, self.kern, self.V)
+        fmean, fvar = conditional(self.X, self.Z, self.kern, self.V, num_columns=self.num_latent, full_cov=False, q_sqrt=None, whiten=True)
         fmean += self.mean_function(self.X)
         return tf.reduce_sum( self.likelihood.variational_expectations(fmean, fvar, self.Y) )
 
