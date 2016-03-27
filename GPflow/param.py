@@ -347,11 +347,11 @@ class Parameterized(Parentable):
         self._end_tf_mode()
 
     def _begin_tf_mode(self):
-        [child._begin_tf_mode() for key, child in self.__dict__.items() if isinstance(child, Parameterized) and key is not '_parent']
+        [child._begin_tf_mode() for child in self.sorted_params if isinstance(child, Parameterized)]
         self._tf_mode = True
 
     def _end_tf_mode(self):
-        [child._end_tf_mode() for key, child in self.__dict__.items() if isinstance(child, Parameterized) and key is not '_parent']
+        [child._end_tf_mode() for child in self.sorted_params if isinstance(child, Parameterized)]
         self._tf_mode = False
 
     def build_prior(self):

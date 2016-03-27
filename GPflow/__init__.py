@@ -1,3 +1,3 @@
-from . import likelihoods, kernels, param, model, gpmc, sgpmc, priors, gpr, svgp, vgp
+from . import likelihoods, kernels, param, model, gpmc, sgpmc, priors, gpr, svgp, vgp, sgpr
 from ._version import __version__
 

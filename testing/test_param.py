@@ -243,6 +243,12 @@ class TestParamList(unittest.TestCase):
         l[0].p = 5
         self.failUnless( l.get_free_state()==5 )
 
+        #test to make sure tf_mode get turned on and off
+        self.failIf(pzd._tf_mode)
+        with l.tf_mode():
+            self.failUnless(pzd._tf_mode)
+        self.failIf(pzd._tf_mode)
+
 
     def test_in_model(self):
 
@@ -256,7 +262,7 @@ class TestParamList(unittest.TestCase):
 
         m = Foo()
         self.failUnless(m.get_free_state().size ==2)
-        m.optimize()
+        m.optimize(display=False)
         self.failUnless(np.allclose(m.get_free_state(), 0.))
 
 
