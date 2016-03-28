@@ -185,6 +185,89 @@ class ParamTestswider(unittest.TestCase):
 
 
 
+class TestParamList(unittest.TestCase):
+    def test_construction(self):
+        pl1 = GPflow.param.ParamList([])
+        pl2 = GPflow.param.ParamList([GPflow.param.Param(1)])
+        with self.assertRaises(AssertionError):
+            pl2 = GPflow.param.ParamList([GPflow.param.Param(1), 'stringsnotallowed'])
+
+    def test_naming(self):
+        p1 = GPflow.param.Param(1.2)
+        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        l = GPflow.param.ParamList([p1, p2])
+        self.failUnless(p1.name == 'item0')
+        self.failUnless(p2.name == 'item1')
+
+    def test_connected(self):
+        p1 = GPflow.param.Param(1.2)
+        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        l = GPflow.param.ParamList([p1, p2])
+        x = l.get_free_state()
+        x.sort()
+        self.failUnless( np.all( x==np.array([1.2, 3.4, 5.6]) ) )
+
+
+    def test_setitem(self):
+        p1 = GPflow.param.Param(1.2)
+        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        l = GPflow.param.ParamList([p1, p2])
+
+        l[0] = 1.2
+        self.failUnless( p1._array == 1.2 )
+
+        l[1] = np.array([1.1, 2.2])
+        self.failUnless( np.all(p2._array == np.array([1.1, 2.2])) )
+
+        with self.assertRaises(TypeError):
+            l[0] = GPflow.param.Param(12)
+
+    def test_append(self):
+        p1 = GPflow.param.Param(1.2)
+        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        l = GPflow.param.ParamList([p1])
+        l.append(p2)
+        self.failUnless( p2 in l.sorted_params )
+
+
+        with self.assertRaises(AssertionError):
+            l.append('foo')
+
+    def test_with_parameterized(self):
+        pzd = GPflow.param.Parameterized()
+        p = GPflow.param.Param(1.2)
+        pzd.p = p
+        l = GPflow.param.ParamList([pzd])
+
+        #test assignment:
+        l[0].p = 5
+        self.failUnless( l.get_free_state()==5 )
+
+        #test to make sure tf_mode get turned on and off
+        self.failIf(pzd._tf_mode)
+        with l.tf_mode():
+            self.failUnless(pzd._tf_mode)
+        self.failIf(pzd._tf_mode)
+
+
+    def test_in_model(self):
+
+        class Foo(GPflow.model.Model):
+            def __init__(self):
+                GPflow.model.Model.__init__(self)
+                self.l = GPflow.param.ParamList([
+                    GPflow.param.Param(1), GPflow.param.Param(12)])
+            def build_likelihood(self):
+                return -reduce(tf.add, [tf.square(x) for x in self.l])
+
+        m = Foo()
+        self.failUnless(m.get_free_state().size ==2)
+        m.optimize(display=False)
+        self.failUnless(np.allclose(m.get_free_state(), 0.))
+
+
+
+
 
 
 

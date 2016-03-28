@@ -21,7 +21,7 @@ class TestMethods(unittest.TestCase):
         for M in (GPflow.sgpmc.SGPMC, GPflow.svgp.SVGP):
             self.ms.append( M(self.X, self.Y, self.kern, self.lik, self.Z) )
         self.ms.append(GPflow.gpr.GPR(self.X, self.Y, self.kern))
-
+        self.ms.append(GPflow.sgpr.SGPR(self.X, self.Y, self.kern, Z=self.Z))
 
     def test_sizes(self):
         for m in self.ms:

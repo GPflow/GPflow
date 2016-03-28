@@ -1,7 +1,10 @@
 # GPflow
 
-GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow). It was written by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
+GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
+The full list of contributors (in alphabetical order) is James Hensman, Alexander G. de G. Matthews and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
+[![Build Status](https://travis-ci.org/GPflow/GPflow.svg?branch=master)](https://travis-ci.org/GPflow/GPflow)
+[![codecov.io](https://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](https://codecov.io/github/GPFlow/GPFlow?branch=master)
 
 # Install
 
@@ -37,7 +40,7 @@ The sequence of commands is:
 
 ```
 pip uninstall tensorflow
-git clone --recurse-submodules github.com/gpflow/tensorflow
+git clone --recurse-submodules https://github.com/gpflow/tensorflow
 cd tensorflow
 ./configure 
 bazel build -c opt //tensorflow/tools/pip_package:build_pip_package
@@ -67,11 +70,13 @@ GPflow has a slew of kernels that can be combined in a similar way to GPy ([see 
 #### Regression
 For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum liklelihood or MCMC for the covariance function parameters ([notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/regression.ipynb)).
 
+It's also possible to do Sparse GP regression using the `GPflow.sgpr.SGPR` class. This is based on [4].
+
 #### MCMC
 For non-Gaussian likelohoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/Sparse%20mcmc%20demo.ipynb) introduces the interface.
 
 #### Variational inference
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. All of the sparse methods in GPflow are solidified in [4]. 
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in `GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5]. 
 
 
 ### References
@@ -87,7 +92,11 @@ Neural computation 21 (3), 786-792
 J Hensman, A G de G Matthews, Z Ghahramani
 Proceedings of AISTATS 18, 2015
 
-[4] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
+[4] Variational Learning of Inducing Variables in Sparse Gaussian Processes. 
+M Titsias
+Proceedings of AISTATS 12, 2009
+
+[5] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
 A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
 Proceedings of AISTATS 19, 2016
 
