@@ -64,6 +64,7 @@ class TestKernDiags(unittest.TestCase):
         self.X_data = rng.randn(30,inputdim)
         self.kernels = [k(inputdim) for k in GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Bias, GPflow.kernels.Linear]]
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
+        self.kernels.append(GPflow.kernels.RBF(inputdim) * GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim, ARD=True, variance=rng.rand(inputdim)))
 
         self.x_free = tf.placeholder('float64')
