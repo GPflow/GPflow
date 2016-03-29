@@ -291,7 +291,7 @@ class Model(Parameterized):
                         tol=None, # TODO: tol??
                         callback=callback,
                         options=options)
-        except (KeyboardInterrupt): # pragma: no cover
+        except (KeyboardInterrupt):
             print("Caught KeyboardInterrupt, setting model with most recent state.")
             self.set_state(obj._previous_x)
             return None 

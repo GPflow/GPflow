@@ -25,6 +25,42 @@ class TestOptimize(unittest.TestCase):
         self.m.optimize()
         self.failUnless(self.m.x._array.max() < 1e-6)
 
+class KeyboardRaiser:
+    """
+    This wraps a function and makes it raise a KeyboardInterrupt after some number of calls
+    """
+    def __init__(self, iters_to_raise, f):
+        self.iters_to_raise, self.f = iters_to_raise, f
+        self.count = 0
+    def __call__(self, *a, **kw):
+        self.count += 1
+        if self.count >= self.iters_to_raise:
+            raise KeyboardInterrupt
+        return self.f(*a, **kw)
+
+class TestKeyboardCatching(unittest.TestCase):
+    def setUp(self):
+        X = np.random.randn(1000, 3)
+        Y = np.random.randn(1000, 3)
+        Z = np.random.randn(100, 3)
+        self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
+
+    def test_optimize_np(self):
+        x0 = self.m.get_free_state()
+        self.m._compile()
+        self.m._objective = KeyboardRaiser(15, self.m._objective)
+        self.m.optimize(display=0, max_iters=10000, ftol=0, gtol=0)
+        x1 = self.m.get_free_state()
+        self.failIf(np.allclose(x0, x1))
+
+    def test_optimize_tf(self):
+        x0 = self.m.get_free_state()
+        callback = KeyboardRaiser(5, lambda x: None)
+        o = tf.train.AdamOptimizer()
+        self.m.optimize(o, max_iters=15, callback=callback)
+        x1 = self.m.get_free_state()
+        self.failIf(np.allclose(x0, x1))
+
 
 if __name__ == "__main__":
     unittest.main()

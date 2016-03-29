@@ -56,6 +56,30 @@ class TestKernSymmetry(unittest.TestCase):
                 self.failUnless(np.allclose(Errors, 0))
 
 
+class TestKernDiags(unittest.TestCase):
+    def setUp(self):
+        inputdim=3
+        rng = np.random.RandomState(1)
+        self.X = tf.placeholder(tf.float64, [30,inputdim])
+        self.X_data = rng.randn(30,inputdim)
+        self.kernels = [k(inputdim) for k in GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Bias, GPflow.kernels.Linear]]
+        self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
+        self.kernels.append(GPflow.kernels.RBF(inputdim) * GPflow.kernels.Linear(inputdim))
+        self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim, ARD=True, variance=rng.rand(inputdim)))
+
+        self.x_free = tf.placeholder('float64')
+        [k.make_tf_array(self.x_free) for k in self.kernels]
+
+    def test(self):
+        for k in self.kernels:
+            with k.tf_mode():
+                k1 = k.Kdiag(self.X)
+                k2 = tf.user_ops.get_diag(k.K(self.X))
+                k1, k2 = tf.Session().run([k1 , k2],
+                            feed_dict={self.x_free:k.get_free_state(), self.X:self.X_data})
+            self.failUnless(np.allclose(k1, k2))
+
+
 
 
 class TestAdd(unittest.TestCase):
@@ -97,6 +121,7 @@ class TestAdd(unittest.TestCase):
 
 
 
+
 class TestWhite(unittest.TestCase):
     """the white kernel should not give the same result when called with k(X) and k(X, X)"""
     def setUp(self):
@@ -124,12 +149,13 @@ class TestSlice(unittest.TestCase):
         self.k1 = GPflow.kernels.RBF(1, active_dims=[0])
         self.k2 = GPflow.kernels.RBF(1, active_dims=[1])
         self.k3 = GPflow.kernels.RBF(1)
-        self.X = tf.placeholder('float64')
+        self.X = tf.placeholder('float64', [None, None])
+        self.Z = tf.placeholder('float64', [None, None])
 
         #make kernel functions in python
         self.x_free = tf.placeholder('float64')
 
-    def test(self):
+    def test_symm(self):
         X = self.rng.randn(20,2)
 
         with self.k1.tf_mode():
@@ -142,6 +168,23 @@ class TestSlice(unittest.TestCase):
                     K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X:X, self.x_free:np.ones(2)})
                     K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,:1], self.x_free:np.ones(2)})
                     K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,1:], self.x_free:np.ones(2)})
+        self.failUnless(np.allclose(K1, K3))
+        self.failUnless(np.allclose(K2, K4))
+
+    def test_asymm(self):
+        X = self.rng.randn(20,2)
+        Z = self.rng.randn(30,2)
+
+        with self.k1.tf_mode():
+            with self.k2.tf_mode():
+                with self.k3.tf_mode():
+                    self.k1.make_tf_array(self.x_free)
+                    self.k2.make_tf_array(self.x_free)
+                    self.k3.make_tf_array(self.x_free)
+                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X:X, self.Z:Z, self.x_free:np.ones(2)})
+                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X:X, self.Z:Z, self.x_free:np.ones(2)})
+                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,:1], self.Z:Z[:,:1], self.x_free:np.ones(2)})
+                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,1:], self.Z:Z[:,1:], self.x_free:np.ones(2)})
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
 
