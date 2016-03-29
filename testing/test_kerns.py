@@ -149,12 +149,13 @@ class TestSlice(unittest.TestCase):
         self.k1 = GPflow.kernels.RBF(1, active_dims=[0])
         self.k2 = GPflow.kernels.RBF(1, active_dims=[1])
         self.k3 = GPflow.kernels.RBF(1)
-        self.X = tf.placeholder('float64')
+        self.X = tf.placeholder('float64', [None, None])
+        self.Z = tf.placeholder('float64', [None, None])
 
         #make kernel functions in python
         self.x_free = tf.placeholder('float64')
 
-    def test(self):
+    def test_symm(self):
         X = self.rng.randn(20,2)
 
         with self.k1.tf_mode():
@@ -167,6 +168,23 @@ class TestSlice(unittest.TestCase):
                     K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X:X, self.x_free:np.ones(2)})
                     K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,:1], self.x_free:np.ones(2)})
                     K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,1:], self.x_free:np.ones(2)})
+        self.failUnless(np.allclose(K1, K3))
+        self.failUnless(np.allclose(K2, K4))
+
+    def test_asymm(self):
+        X = self.rng.randn(20,2)
+        Z = self.rng.randn(30,2)
+
+        with self.k1.tf_mode():
+            with self.k2.tf_mode():
+                with self.k3.tf_mode():
+                    self.k1.make_tf_array(self.x_free)
+                    self.k2.make_tf_array(self.x_free)
+                    self.k3.make_tf_array(self.x_free)
+                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X:X, self.Z:Z, self.x_free:np.ones(2)})
+                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X:X, self.Z:Z, self.x_free:np.ones(2)})
+                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,:1], self.Z:Z[:,:1], self.x_free:np.ones(2)})
+                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,1:], self.Z:Z[:,1:], self.x_free:np.ones(2)})
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
 
