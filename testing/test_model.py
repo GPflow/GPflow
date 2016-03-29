@@ -45,11 +45,19 @@ class TestKeyboardCatching(unittest.TestCase):
         Z = np.random.randn(100, 3)
         self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
 
-    def test(self):
+    def test_optimize_np(self):
         x0 = self.m.get_free_state()
         self.m._compile()
         self.m._objective = KeyboardRaiser(15, self.m._objective)
         self.m.optimize(display=0, max_iters=10000, ftol=0, gtol=0)
+        x1 = self.m.get_free_state()
+        self.failIf(np.allclose(x0, x1))
+
+    def test_optimize_tf(self):
+        x0 = self.m.get_free_state()
+        callback = KeyboardRaiser(5, lambda x: None)
+        o = tf.train.AdamOptimizer()
+        self.m.optimize(o, max_iters=15, callback=callback)
         x1 = self.m.get_free_state()
         self.failIf(np.allclose(x0, x1))
 
