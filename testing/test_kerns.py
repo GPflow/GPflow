@@ -56,6 +56,29 @@ class TestKernSymmetry(unittest.TestCase):
                 self.failUnless(np.allclose(Errors, 0))
 
 
+class TestKernDiags(unittest.TestCase):
+    def setUp(self):
+        inputdim=3
+        rng = np.random.RandomState(1)
+        self.X = tf.placeholder(tf.float64, [30,inputdim])
+        self.X_data = rng.randn(30,inputdim)
+        self.kernels = [k(inputdim) for k in GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Bias, GPflow.kernels.Linear]]
+        self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
+        self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim, ARD=True, variance=rng.rand(inputdim)))
+
+        self.x_free = tf.placeholder('float64')
+        [k.make_tf_array(self.x_free) for k in self.kernels]
+
+    def test(self):
+        for k in self.kernels:
+            with k.tf_mode():
+                k1 = k.Kdiag(self.X)
+                k2 = tf.user_ops.get_diag(k.K(self.X))
+                k1, k2 = tf.Session().run([k1 , k2],
+                            feed_dict={self.x_free:k.get_free_state(), self.X:self.X_data})
+            self.failUnless(np.allclose(k1, k2))
+
+
 
 
 class TestAdd(unittest.TestCase):
@@ -92,6 +115,7 @@ class TestAdd(unittest.TestCase):
                 k._K = tf.Session().run(k.K(X), feed_dict={x_free:k.get_free_state(), X:X_data, Z:Z_data})
 
         self.failUnless(np.allclose(self.rbf._K + self.lin._K, self.k._K))
+
 
 
 
