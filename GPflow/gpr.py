@@ -10,12 +10,11 @@ class GPR(GPModel):
     def __init__(self, X, Y, kern, mean_function=Zero()):
         """
         X is a data matrix, size N x D
-        Y is a data matrix, size N x multivariate_norma is an appropriate GPflow object
-
+        Y is a data matrix, size N x R
         kern, mean_function are appropriate GPflow objects
 
-        This is a vanilla implementation of a GP regression with a Gaussian
-        likelihood.
+        This is a vanilla implementation of GP regression with a Gaussian
+        likelihood.  Multiple columns of Y are treated independently.
         """
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
