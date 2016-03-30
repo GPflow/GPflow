@@ -97,3 +97,46 @@ class SGPR(GPModel):
             var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
         return mean + self.mean_function(Xnew), var
 
+class GPRFITC(GPModel):
+
+    def __init__(self, X, Y, kern, Z, mean_function=Zero()):
+        """
+        This implements GP regression with the FITC approximation. The key reference is
+
+        @INPROCEEDINGS{Snelson06sparsegaussian,
+        author = {Edward Snelson and Zoubin Ghahramani},
+        title = {Sparse Gaussian Processes using Pseudo-inputs},
+        booktitle = {ADVANCES IN NEURAL INFORMATION PROCESSING SYSTEMS },
+        year = {2006},
+        pages = {1257--1264},
+        publisher = {MIT press}
+        }
+
+        X is a data matrix, size N x D
+        Y is a data matrix, size N x R
+        Z is a matrix of pseudo inputs, size M x D
+        kern, mean_function are appropriate GPflow objects
+
+        This method only works with a Gaussian likelihood.
+
+        """
+        likelihood = likelihoods.Gaussian()
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
+        self.Z = Param(Z)
+        self.num_data = X.shape[0]
+        self.num_latent = Y.shape[1]
+
+    def build_likelihood(self):
+        """
+        Constuct a tensorflow function to compute the bound on the marginal
+        likelihood.. 
+        """
+        pass
+        
+    def build_predict(self, Xnew, full_cov=False):
+        """
+        Compute the mean and variance of the latent function at some new points
+        Xnew.
+        """
+        pass
+
