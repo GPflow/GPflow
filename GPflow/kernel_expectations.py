@@ -55,6 +55,40 @@ def build_psi_stats_rbf(Z, kern, mu, S):
     psi2 = tf.square(kern.variance) * tf.reduce_sum(tf.exp(psi2_logdenom - psi2_exp1 - psi2_exp2), 0)
     return psi0, psi1, psi2
 
+def build_psi_stats_rbf_plus_linear(Z, kern, mu, S):
+    psi0_lin, psi1_lin, psi2_lin = build_psi_stats_linear(Z, kern.linear, mu, S)
+    psi0_rbf, psi1_rbf, psi2_rbf = build_psi_stats_rbf(Z, kern.rbf, mu, S)
+    
+    psi0, psi1, psi2 = psi0_lin + psi0_rbf, psi1_lin + psi1_rbf, psi2_lin + psi2_rbf
+
+    #extra terms for the 'interaction' of linear and rbf
+    l2 = tf.square(kern.rbf.lengthscales)
+    A = tf.expand_dims(1./S + 1./l2, 1) # N x 1 x Q
+    m = (tf.expand_dims(mu/S, 1) + tf.expand_dims(Z/l2,0)) / A #N x M x Q
+    mTAZ = tf.reduce_sum(tf.expand_dims(m * kern.linear.variance, 1) * tf.expand_dims(tf.expand_dims(Z,0), 0), 3) # N x M x M
+    Z2 = tf.reduce_sum(tf.square(Z) / l2, 1) # M,
+    mu2 = tf.reduce_sum(tf.square(mu) / S, 1) # N
+    mAm = tf.reduce_sum( tf.square(m) * A, 2) # N x M
+    exp_term = tf.exp( -(Z2.reshape(1, -1) + mu2.reshape(-1,1) -mAm  )  / 2.) # N x M
+    psi2_extra = tf.reduce_sum( kern.rbf.variance * \
+                                tf.expand_dims(exp_term, 2) * \
+                                tf.expand_dim(tf.expand_dims(tf.reduce_prod(S, 1), 1), 2) * \
+                                tf.expand_dims(tf.reduce_prod(A, 2), 1) * \
+                                mTAZ, 0)
+
+    psi2 = psi2 + psi2_extra + tf.transpose(psi2_extra)
+    return psi0, psi1, psi2
+     
+
+
+
+
+
+
+    psi2_extra = kern.linear.variance * 
+
+
+
 
 if __name__=='__main__':
     import GPy
@@ -87,7 +121,6 @@ if __name__=='__main__':
 
     p1_np = GPy.kern._src.psi_comp.rbf_psi_comp.__psi1computations(1, 1, Z_np, mu_np, S_np)
     p2_np = GPy.kern._src.psi_comp.rbf_psi_comp.__psi2computations(1, 1, Z_np, mu_np, S_np).sum(0)
-
 
 
 
