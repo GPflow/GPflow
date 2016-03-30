@@ -22,7 +22,7 @@ class TestOptimize(unittest.TestCase):
         self.failUnless(self.m.x._array.max() < 1e-3)
     
     def test_lbfgsb(self):
-        self.m.optimize()
+        self.m.optimize(display=False)
         self.failUnless(self.m.x._array.max() < 1e-6)
 
 class KeyboardRaiser:
