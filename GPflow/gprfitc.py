@@ -39,15 +39,13 @@ class GPRFITC(GPModel):
     def build_likelihood(self):
         """
         Constuct a tensorflow function to compute the bound on the marginal
-        likelihood. For a derivation of the terms in here, see the associated
-        SGPR notebook. 
+        likelihood.. 
         """
         pass
         
     def build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points
-        Xnew. For a derivation of the terms in here, see the associated SGPR
-        notebook. 
+        Xnew.
         """
         pass
