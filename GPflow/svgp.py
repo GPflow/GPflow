@@ -67,7 +67,7 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt, self.num_latent)
         else:
-            K = self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6
+            K = self.kern.Kzz(self.Z) + eye(self.num_inducing) * 1e-6
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K, self.num_latent)
             else:
