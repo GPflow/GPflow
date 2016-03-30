@@ -58,7 +58,7 @@ def conditional(Xnew, X, kern, f, num_columns, full_cov=False, q_sqrt=None, whit
         fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
         fvar = tf.tile(tf.expand_dims(fvar, 1), [1, num_columns])
 
-    #another backsubstitution in the whitened case
+    #another backsubstitution in the unwhitened case
     if not whiten:
         A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
 
