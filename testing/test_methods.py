@@ -147,20 +147,7 @@ class TestSparseMCMC(unittest.TestCase):
         _, g2 = self.m2._objective(self.m2.get_free_state())
         g1 = np.sort(g1)
         g2 = np.sort(g2)
-        self.failUnless(np.allclose(g1, g2))
-
-
-
-
-
-
-
-
-
-
-
-
-
+        self.failUnless(np.allclose(g1, g2, 1e-4))
 
 
 if __name__ == "__main__":

@@ -76,8 +76,14 @@ It's also possible to do Sparse GP regression using the `GPflow.sgpr.SGPR` class
 For non-Gaussian likelohoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/Sparse%20mcmc%20demo.ipynb) introduces the interface.
 
 #### Variational inference
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in `GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5]. 
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in `GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5].
 
+The following table summarizes the model options in GPflow. 
+
+| | Gaussian <br> likelihood | Non-Gaussian <br> (variational) | Non-Gaussian <br> (MCMC)|
+| --- | --- | --- | --- |
+| Full-covariance | `GPflow.gpr.GPR` | `GPflow.vgp.VGP` | `GPflow.gpmc.GPMC`|
+| Sparse approximation | `GPflow.sgpr.SGPR` | `GPflow.svgp.SVGP` | `GPflow.sgpmc.SGPMC` |
 
 ### References
 [1] MCMC for Variationally Sparse Gaussian Processes

@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from .model import GPModel
 from .param import Param
-from .conditionals import gp_predict_whitened
+from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
 
@@ -48,11 +48,11 @@ class SGPMC(GPModel):
         This function computes the (log) optimal distribution for v, q*(v). 
         """
         #get the (marginals of) q(f): exactly predicting!
-        fmean, fvar = gp_predict_whitened(self.X, self.Z, self.kern, self.V)
+        fmean, fvar = conditional(self.X, self.Z, self.kern, self.V, num_columns=self.num_latent, full_cov=False, q_sqrt=None, whiten=True)
         fmean += self.mean_function(self.X)
         return tf.reduce_sum( self.likelihood.variational_expectations(fmean, fvar, self.Y) )
 
-    def build_predict(self, Xnew):
+    def build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -63,6 +63,6 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z, 
 
         """
-        mean, var = gp_predict_whitened(Xnew, self.Z, self.kern, self.V)
-        return mean + self.mean_function(Xnew), var
+        mu, var = conditional(Xnew, self.Z, self.kern, self.V, num_columns=self.num_latent, full_cov=full_cov, q_sqrt=None, whiten=True)
+        return mu + self.mean_function(Xnew), var
 
