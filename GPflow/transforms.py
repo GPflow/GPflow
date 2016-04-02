@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+epsilon = 1e-9
+
 
 class Transform(object):
     def forward(self, x):
@@ -71,8 +73,10 @@ class Log1pe(Transform):
     def forward(self, x):
         return np.log( 1. + np.exp(x) )
     def tf_forward(self, x):
+        #clip x to prevent overflow
+        x = tf.clip_by_value(x, -np.inf, 300)
         one = 0. * x + 1. # ensures shape
-        return tf.log( one + tf.exp(x) )
+        return tf.log( one + tf.exp(x) ) + epsilon
     def tf_log_jacobian(self, x):
         return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
     def backward(self, y):

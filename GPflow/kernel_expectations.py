@@ -81,15 +81,6 @@ def build_psi_stats_rbf_plus_linear(Z, kern, mu, S):
      
 
 
-
-
-
-
-    psi2_extra = kern.linear.variance * 
-
-
-
-
 if __name__=='__main__':
     import GPy
 
