@@ -1,3 +1,4 @@
+from __future__ import print_function
 import GPflow
 import numpy as np
 import unittest
@@ -35,11 +36,12 @@ class TestEquivalence(unittest.TestCase):
         m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1)+GPflow.kernels.White(1), Z=X.copy())
         m5.Z.fixed = True
         self.models = [m1, m2, m3, m4, m5]
-        [m.optimize(display=False) for m in self.models]
+        for m in self.models:
+            m.optimize(display=False, max_iters=300)
+            print('.') # stop travis timing out
 
     def test_likelihoods(self):
         likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze() for m in self.models])
-        print likelihoods
         self.failUnless(np.allclose(likelihoods, likelihoods[0], 1e-2))
         
     def test_kernel_params(self):
