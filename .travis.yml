@@ -18,13 +18,15 @@ before_install:
     - conda install scipy # GPflow needs scipy: installing through conda is easier than relying on setup.py
     - pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.3/linux/tensorflow-0.7.1-py2-none-any.whl
     - pip install codecov
+    - pip install coverage
     - pip install nose-timer
 
 install:
     - python setup.py install
 
 script:
-    - nosetests testing --with-coverage --cover-package=GPflow --cover-erase
+    #- nosetests testing --with-coverage --cover-package=GPflow --cover-erase
+    - coverage run --source=GPflow setup.py test 
 
 after_success:       
     - codecov
