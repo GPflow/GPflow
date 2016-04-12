@@ -32,7 +32,6 @@ class TestMethods(unittest.TestCase):
         
     def test_prediction_f(self):
         for m in self.ms:
-            m._compile()
             mf, vf = m.predict_f(self.Xs)
             self.failUnless(mf.shape == vf.shape)
             self.failUnless(mf.shape == (10, 1))
@@ -40,7 +39,6 @@ class TestMethods(unittest.TestCase):
 
     def test_prediction_y(self):
         for m in self.ms:
-            m._compile()
             mf, vf = m.predict_y(self.Xs)
             self.failUnless(mf.shape == vf.shape)
             self.failUnless(mf.shape == (10, 1))
@@ -49,7 +47,6 @@ class TestMethods(unittest.TestCase):
     def test_prediction_density(self):
         self.Ys = self.rng.randn(10,1)
         for m in self.ms:
-            m._compile()
             d = m.predict_density(self.Xs, self.Ys)
             self.failUnless(d.shape == (10, 1))
 
