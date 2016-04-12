@@ -25,15 +25,16 @@ class TestEquivalence(unittest.TestCase):
 
         m1 = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
         m2 = GPflow.vgp.VGP(X, Y, GPflow.kernels.RBF(1), likelihood=GPflow.likelihoods.Gaussian())
-        m3 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1)+GPflow.kernels.White(1),
+        m3 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1),
                               likelihood=GPflow.likelihoods.Gaussian(),
                               Z=X.copy(), q_diag=False)
         m3.Z.fixed = True
-        m4 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1)+GPflow.kernels.White(1),
+        m4 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1),
                               likelihood=GPflow.likelihoods.Gaussian(),
                               Z=X.copy(), q_diag=False, whiten=True)
         m4.Z.fixed=True
-        m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1)+GPflow.kernels.White(1), Z=X.copy())
+        m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1),
+                              Z=X.copy())
         m5.Z.fixed = True
         self.models = [m1, m2, m3, m4, m5]
         for m in self.models:
