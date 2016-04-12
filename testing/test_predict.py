@@ -70,9 +70,6 @@ class TestFullCov(unittest.TestCase):
                   GPflow.gpmc.GPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
                   GPflow.sgpmc.SGPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)]
 
-        for m in self.models:
-            m.optimize(max_iters=3, display=0)
-
     def test_cov(self):
         for m in self.models:
             mu1, var = m.predict_f(self.Xtest)
