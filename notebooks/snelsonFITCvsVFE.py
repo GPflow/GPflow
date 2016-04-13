@@ -6,8 +6,6 @@ from matplotlib import pyplot as plt
 import cProfile
 import csv
 
-from IPython import embed
-
 def readCsvFile( fileName ):
     reader = csv.reader(open(fileName,'r') )
     dataList = []
@@ -78,6 +76,23 @@ def getInitialVariationalCovariance( sparse_model ):
     
     return q_mean, q_std
 
+def trainSparseModel(xtrain,ytrain,exact_model,isFITC):
+    sparse_model = getSparseModel(xtrain,ytrain,True)
+    sparse_model.likelihood.variance._array = exact_model.likelihood.variance._array
+    sparse_model.kern.lengthscales._array = exact_model.kern.lengthscales._array
+    sparse_model.kern.variance._array = exact_model.kern.variance._array
+
+    sparse_model.optimize(max_iters = 200000  )
+    return sparse_model    
+
+def plotComparisonFigure(xtrain, sparse_model,exact_model, figure_number, title ):
+    plt.figure(figure_number)
+    plotPredictions( exact_model, 'go' )
+    plotPredictions( sparse_model, 'bo' )
+    plt.plot( xtrain, np.ones( xtrain.shape ), 'ko' )
+    plt.plot( sparse_model.Z._array , -1.*np.ones( xtrain.shape ), 'ko' )
+    plt.title(title)
+
 def snelsonDemo():
     xtrain,ytrain,xtest,ytest = getTrainingTestData()
     
@@ -87,27 +102,18 @@ def snelsonDemo():
     exact_model.optimize(max_iters = 200000 )
    
     #run sparse model on training data intialized from exact optimal solution.
-    sparse_model = getSparseModel(xtrain,ytrain,True)
-    sparse_model.likelihood.variance._array = exact_model.likelihood.variance._array
-    sparse_model.kern.lengthscales._array = exact_model.kern.lengthscales._array
-    sparse_model.kern.variance._array = exact_model.kern.variance._array
+    VFEmodel = trainSparseModel(xtrain,ytrain,exact_model,False)
+    FITCmodel = trainSparseModel(xtrain,ytrain,exact_model,False)
 
-    sparse_model.optimize(max_iters = 200000  )
-    
     print "Exact model parameters \n"
     printModelParameters( exact_model )
-    print "Sparse model parameters after optimization \n"
-    printModelParameters( sparse_model )
+    print "Sparse model parameters for VFE optimization \n"
+    printModelParameters( VFEmodel )
+    print "Sparse model parameters for FITC optimization \n"
+    printModelParameters( FITCmodel )
     
-    plt.figure(2)
-    plt.plot( xtrain, sparse_model.Z._array, 'bo' )
-    plt.plot( xtrain, xtrain, 'go' )
-    
-    plt.figure(1)
-    plotPredictions( exact_model, 'go' )
-    plotPredictions( sparse_model, 'bo' )
-    plt.plot( xtrain, np.ones( xtrain.shape ), 'ko' )
-    plt.plot( sparse_model.Z._array , -1.*np.ones( xtrain.shape ), 'ko' )
+    plotComparisonFigure( xtrain, FITCmodel, exact_model, 1, "FITC comparison" )
+    plotComparisonFigure( xtrain, VFEmodel, exact_model, 2, "VFE comparison" )
     
     embed()
     
