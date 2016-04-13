@@ -48,7 +48,6 @@ class TestGPmodel(unittest.TestCase):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
         self.m = GPflow.svgp.SVGP(X, Y, kern=GPflow.kernels.Matern32(1), likelihood=GPflow.likelihoods.StudentT(), Z=X[::2].copy())
-        self.m._compile()
         self.Xtest = np.random.randn(100,1)
         self.Ytest = np.random.randn(100,1)
     def test_predict_f(self):
