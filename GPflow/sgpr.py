@@ -213,9 +213,8 @@ class GPRFITC(GPModel):
         if full_cov:
             raise NotImplementedError
         else:
-            intermediateA = tf.matrix_triangular_solve( L, w, lower=True )
-            intermediateB = tf.matrix_triangular_solve( tf.transpose(L), intermediateA, lower=False) 
-            var = self.kern.Kdiag(Xnew) - tf.reduce_sum( tf.square(w), reduction_indices = [0] ) + tf.reduce_sum( tf.mul( w,  intermediateB ), reduction_indices = [0] ) # size( Xnew, )
+            intermediateA = tf.matrix_triangular_solve(L, w, lower=True)
+            var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(w), 0) + tf.reduce_sum(tf.square(intermediateA), 0) # size( Xnew, )
             var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
         
         return mean, var
