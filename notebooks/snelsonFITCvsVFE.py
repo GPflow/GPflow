@@ -54,7 +54,6 @@ def getSparseModel(X,Y,isFITC=False):
     if not(isFITC):
         m = GPflow.sgpr.SGPR(X, Y, kern=getKernel(),  Z=X.copy() )
     else:
-        print "here "
         m = GPflow.sgpr.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy() )
     return m
 
@@ -70,14 +69,8 @@ def plotPredictions( model, color ):
     plt.plot( xtest, predMean + 2.*np.sqrt(predVar),color )
     plt.plot( xtest, predMean - 2.*np.sqrt(predVar), color )
 
-def getInitialVariationalCovariance( sparse_model ):
-    gramMatrix = sparse_model.K( sparse_model.X )
-    
-    
-    return q_mean, q_std
-
 def trainSparseModel(xtrain,ytrain,exact_model,isFITC):
-    sparse_model = getSparseModel(xtrain,ytrain,True)
+    sparse_model = getSparseModel(xtrain,ytrain,isFITC)
     sparse_model.likelihood.variance._array = exact_model.likelihood.variance._array
     sparse_model.kern.lengthscales._array = exact_model.kern.lengthscales._array
     sparse_model.kern.variance._array = exact_model.kern.variance._array
@@ -85,12 +78,17 @@ def trainSparseModel(xtrain,ytrain,exact_model,isFITC):
     sparse_model.optimize(max_iters = 200000  )
     return sparse_model    
 
-def plotComparisonFigure(xtrain, sparse_model,exact_model, figure_number, title ):
-    plt.figure(figure_number)
+def plotComparisonFigure(xtrain, sparse_model,exact_model, figure_number_predictions, figure_number_inducing_points, title ):
+    plt.figure(figure_number_predictions)
     plotPredictions( exact_model, 'go' )
     plotPredictions( sparse_model, 'bo' )
     plt.plot( xtrain, np.ones( xtrain.shape ), 'ko' )
     plt.plot( sparse_model.Z._array , -1.*np.ones( xtrain.shape ), 'ko' )
+    plt.title(title)
+    plt.figure(figure_number_inducing_points)
+    plt.plot( xtrain, sparse_model.Z._array, 'bo' )
+    plt.xlabel('Initial inducing point positions')
+    plt.ylabel('Final inducing point positions')
     plt.title(title)
 
 def snelsonDemo():
@@ -99,11 +97,11 @@ def snelsonDemo():
     #run exact inference on training data.
     exact_model = getRegressionModel(xtrain,ytrain)
         
-    exact_model.optimize(max_iters = 200000 )
+    exact_model.optimize(max_iters = 2000000 )
    
     #run sparse model on training data intialized from exact optimal solution.
     VFEmodel = trainSparseModel(xtrain,ytrain,exact_model,False)
-    FITCmodel = trainSparseModel(xtrain,ytrain,exact_model,False)
+    FITCmodel = trainSparseModel(xtrain,ytrain,exact_model,True)
 
     print "Exact model parameters \n"
     printModelParameters( exact_model )
@@ -112,10 +110,9 @@ def snelsonDemo():
     print "Sparse model parameters for FITC optimization \n"
     printModelParameters( FITCmodel )
     
-    plotComparisonFigure( xtrain, FITCmodel, exact_model, 1, "FITC comparison" )
-    plotComparisonFigure( xtrain, VFEmodel, exact_model, 2, "VFE comparison" )
-    
-    embed()
+    plotComparisonFigure( xtrain, FITCmodel, exact_model, 1, 2, "FITC" )
+    plotComparisonFigure( xtrain, VFEmodel, exact_model, 3, 4, "VFE" )
+    plt.show()
     
 if __name__ == '__main__':
     snelsonDemo()
