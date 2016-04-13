@@ -196,16 +196,18 @@ class Model(Parameterized):
             self._compile()
         return hmc.sample_HMC(self._objective, num_samples, Lmax, epsilon, x0=self.get_free_state(), verbose=verbose)
 
-    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, calc_feed_dict=None, **kw):
+    def optimize(self, method='L-BFGS-B', tol=None, callback=None, max_iters=1000, calc_feed_dict=None, **kw):
         """
         Optimize the model by maximizing the likelihood (possibly with the
         priors also) with respect to any free variables. 
 
         method can be one of:
-            a string, corresponding to a valid scipy.minimize optimizer
+            a string, corresponding to a valid scipy.optimize.minimize optimizer
             a tensorflow optimizer (e.g. tf.optimize.AdaGrad)
 
-        The callback function is execteud by assing the current vale of self.get_free_state()
+        tol is the tolerance passed to scipy.optimize.minimize (ignored for tensorflow optimizers)
+
+        The callback function is executed by passing the current value of self.get_free_state()
 
         max_iters defines the maximum number of iterations
 
@@ -260,13 +262,26 @@ class Model(Parameterized):
                            status="Finished iterations.")
         return r
 
-    def _optimize_np(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
+    def _optimize_np(self, method='L-BFGS-B', tol=None, callback=None, max_iters=1000, **kw):
         """
         Optimize the model to find the maximum likelihood  or MAP point. Here
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
         through as `options`. 
 
-        self.self.optimize()
+        method is a string (default 'L-BFGS-B') specifying the scipy optimization routine, one of
+            - 'Powell'
+            - 'CG'
+            - 'BFGS'
+            - 'Newton-CG'
+            - 'L-BFGS-B'
+            - 'TNC'
+            - 'COBYLA'
+            - 'SLSQP'
+            - 'dogleg'
+        tol is the tolerance to be pased to the optimization routine
+        callback is callback function to be passed to the optimization routine
+        max_iters is the maximum numebr of iterations (used in the options dict
+            for the optimization routine)
         """
         if self._needs_recompile:
             self._compile()
@@ -288,7 +303,7 @@ class Model(Parameterized):
                         x0=self.get_free_state(),
                         method=method,
                         jac=True, # self._objective returns the objective and the jacobian.
-                        tol=None, # TODO: tol??
+                        tol=tol,
                         callback=callback,
                         options=options)
         except (KeyboardInterrupt):
