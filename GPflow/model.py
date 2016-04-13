@@ -225,7 +225,7 @@ class Model(Parameterized):
         """
 
         if type(method) is str:
-            return self._optimize_np(method, callback, max_iters, **kw)
+            return self._optimize_np(method, tol, callback, max_iters, **kw)
         else:
             return self._optimize_tf(method, callback, max_iters, calc_feed_dict, **kw)
 
