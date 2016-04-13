@@ -36,7 +36,9 @@ class TestEquivalence(unittest.TestCase):
         m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1),
                               Z=X.copy())
         m5.Z.fixed = True
-        self.models = [m1, m2, m3, m4, m5]
+        m6 = GPflow.sgpr.GPRFITC(X, Y, GPflow.kernels.RBF(1), Z=X.copy())
+        m6.Z.fixed = True
+        self.models = [m1, m2, m3, m4, m5, m6]
         for m in self.models:
             m.optimize(display=False, max_iters=300)
             print('.') # stop travis timing out

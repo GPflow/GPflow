@@ -14,7 +14,6 @@ class TestGaussian(unittest.TestCase):
 
         #make a Gaussian model
         self.m = GPflow.gpr.GPR(self.X, self.Y, kern=self.kern)
-        self.m._compile()
 
 
     def test_mean_variance(self):
@@ -61,6 +60,7 @@ class TestFullCov(unittest.TestCase):
         k = lambda : GPflow.kernels.Matern32(self.input_dim)
         self.models = [GPflow.gpr.GPR(X, Y, kern=k()),
                   GPflow.sgpr.SGPR(X, Y, Z=Z, kern=k()),
+                  GPflow.sgpr.GPRFITC(X, Y, Z=Z, kern=k()),
                   GPflow.svgp.SVGP(X, Y, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), whiten=False, q_diag=True),
                   GPflow.svgp.SVGP(X, Y, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), whiten=True, q_diag=False),
                   GPflow.svgp.SVGP(X, Y, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), whiten=True, q_diag=True),
