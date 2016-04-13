@@ -151,7 +151,6 @@ class GPRFITC(GPModel):
         alpha = tf.matmul(V, beta) # (size N x R )
 
         gamma = tf.matrix_triangular_solve(L, alpha, lower=True) # (size N x R )
-        #gamma = tf.matrix_triangular_solve( tf.transpose(L) , LinvAlpha, lower=False ) # = Solve( I + V \diag( \nu^{-1} ) V^T, alpha )
                         
         return err, nu, Luu, L, alpha, beta, gamma 
 
@@ -203,13 +202,13 @@ class GPRFITC(GPModel):
         Compute the mean and variance of the latent function at some new points
         Xnew.
         """
-        #TODO: defn of gamma has changed
-        err, nu, Luu, L, alpha, beta, gamma  = self.build_common_terms()
+        _, _, Luu, L, _, _, gamma  = self.build_common_terms()
         Kus = self.kern.K(self.Z, Xnew) # size ( M x Xnew )
                 
-        w = tf.matrix_triangular_solve( Luu, Kus, lower=True )  # size ( M x Xnew )
+        w = tf.matrix_triangular_solve(Luu, Kus, lower=True)  # size ( M x Xnew )
         
-        mean = tf.matmul( tf.transpose(w), gamma ) + self.mean_function(Xnew)
+        tmp = tf.matrix_triangular_solve(tf.transpose(L), gamma, lower=False)
+        mean = tf.matmul( tf.transpose(w), tmp ) + self.mean_function(Xnew)
         
         if full_cov:
             raise NotImplementedError
