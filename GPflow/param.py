@@ -166,7 +166,7 @@ class Param(Parentable):
         Build a tensorflow representation of the prior density. The log jacobian is included. 
         """
         if self.prior is None:
-            return 0
+            return tf.constant(0.0, tf.float64)
         elif self._tf_array is None:
             raise ValueError, "tensorflow array has not been initialized"
         else:

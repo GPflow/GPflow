@@ -188,9 +188,17 @@ class Model(Parameterized):
             for key in filter(lambda x : x[0]=='_' and x[-6:]=='_graph', dir(self)):
                 delattr(self, key)
 
+    @AutoFlow()
+    def compute_log_prior(self):
+        return self.build_prior()
+
+    @AutoFlow()
+    def compute_log_likelihood(self):
+        return self.build_likelihood()
+
     def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False):
         """
-        use hybrid Monte Carlo to draw samples from the posterior of the model. 
+        Use Hamiltonian Monte Carlo to draw samples from the posterior of the model. 
         """
         if self._needs_recompile:
             self._compile()
