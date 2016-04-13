@@ -7,6 +7,7 @@ from .mean_functions import Zero
 from . import likelihoods
 from .tf_hacks import eye
 
+
 class SGPR(GPModel):
 
     def __init__(self, X, Y, kern, Z, mean_function=Zero()):
@@ -40,28 +41,30 @@ class SGPR(GPModel):
         """
         Constuct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
-        SGPR notebook. 
+        SGPR notebook.
         """
 
         num_inducing = tf.shape(self.Z)[0]
         num_data = tf.shape(self.Y)[0]
         output_dim = tf.shape(self.Y)[1]
 
-        err =  self.Y - self.mean_function(self.X)
+        err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
         L = tf.cholesky(Kuu)
 
         # Compute intermediate matrices
-        A = tf.matrix_triangular_solve(L, Kuf, lower=True)*tf.sqrt(1./self.likelihood.variance)
+        A = tf.matrix_triangular_solve(L, Kuf, lower=True) /\
+            tf.sqrt(self.likelihood.variance)
         AAT = tf.matmul(A, tf.transpose(A))
         B = AAT + eye(num_inducing)
         LB = tf.cholesky(B)
-        c = tf.matrix_triangular_solve(LB, tf.matmul(A, err), lower=True) * tf.sqrt(1./self.likelihood.variance)
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, err), lower=True) /\
+            tf.sqrt(self.likelihood.variance)
 
-        #compute log marginal bound
-        bound = -0.5*tf.cast(num_data*output_dim, tf.float64)*np.log(2*np.pi)
+        # compute log marginal bound
+        bound = -0.5 * tf.cast(num_data * output_dim, tf.float64)*np.log(2*np.pi)
         bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.user_ops.get_diag(LB)))
         bound += -0.5*tf.cast(num_data*output_dim, tf.float64)*tf.log(self.likelihood.variance)
         bound += -0.5*tf.reduce_sum(tf.square(err))/self.likelihood.variance
@@ -112,7 +115,8 @@ class GPRFITC(GPModel):
         publisher = {MIT press}
         }
 
-        Implementation loosely based on code from GPML matlab library although obviously gradients are automatic in GPflow.
+        Implementation loosely based on code from GPML matlab library although
+        obviously gradients are automatic in GPflow.
 
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -136,17 +140,18 @@ class GPRFITC(GPModel):
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
 
         Luu = tf.cholesky(Kuu) #=> Luu^T Luu = Kuu
-        V = tf.matrix_triangular_solve( Luu, Kuf ) #=> V^T V = Qff
+        V = tf.matrix_triangular_solve(Luu, Kuf) #=> V^T V = Qff
 
-        diagQff = tf.reduce_sum( tf.square( V ) , reduction_indices = [0] )
+        diagQff = tf.reduce_sum( tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance        
 
-        beta = tf.div(err , tf.expand_dims(nu,1) ) # (size N x R )
-        alpha = tf.matmul( V, beta ) # (size N x R )
+        B = eye(num_inducing) + tf.matmul(V / nu, tf.transpose(V))
+        L = tf.cholesky(B)
+        beta = err / tf.expand_dims(nu, 1) # (size N x R )
+        alpha = tf.matmul(V, beta) # (size N x R )
 
-        L = tf.cholesky( eye( num_inducing ) + tf.matmul( V, tf.matmul( tf.diag( tf.inv( nu ) ), tf.transpose( V ) ) ) )
-        LinvAlpha = tf.matrix_triangular_solve( L, alpha, lower=True ) # (size N x R )
-        gamma = tf.matrix_triangular_solve( tf.transpose(L) , LinvAlpha, lower=False ) # = Solve( I + V \diag( \nu^{-1} ) V^T, alpha )
+        gamma = tf.matrix_triangular_solve(L, alpha, lower=True) # (size N x R )
+        #gamma = tf.matrix_triangular_solve( tf.transpose(L) , LinvAlpha, lower=False ) # = Solve( I + V \diag( \nu^{-1} ) V^T, alpha )
                         
         return err, nu, Luu, L, alpha, beta, gamma 
 
@@ -176,7 +181,7 @@ class GPRFITC(GPModel):
         
         err, nu, Luu, L, alpha, beta, gamma  = self.build_common_terms()
         
-        mahalanobisTerm = -0.5* ( tf.reduce_sum( tf.mul( tf.transpose(beta), err ) ) - tf.reduce_sum( tf.mul( tf.transpose(alpha), gamma ) ) )
+        mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) + 0.5 * tf.reduce_sum(tf.square(gamma))
         
         #We need to compute the log normalizing term -N/2 \log 2 pi - 0.5 \log \det( K_fitc )
         
@@ -198,6 +203,7 @@ class GPRFITC(GPModel):
         Compute the mean and variance of the latent function at some new points
         Xnew.
         """
+        #TODO: defn of gamma has changed
         err, nu, Luu, L, alpha, beta, gamma  = self.build_common_terms()
         Kus = self.kern.K(self.Z, Xnew) # size ( M x Xnew )
                 
