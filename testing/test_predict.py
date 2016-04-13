@@ -14,7 +14,6 @@ class TestGaussian(unittest.TestCase):
 
         #make a Gaussian model
         self.m = GPflow.gpr.GPR(self.X, self.Y, kern=self.kern)
-        self.m._compile()
 
 
     def test_mean_variance(self):
