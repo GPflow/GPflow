@@ -61,6 +61,26 @@ class TestKeyboardCatching(unittest.TestCase):
         x1 = self.m.get_free_state()
         self.failIf(np.allclose(x0, x1))
 
+class TestLikelihoodAutoflow(unittest.TestCase):
+    def setUp(self):
+        X = np.random.randn(1000, 3)
+        Y = np.random.randn(1000, 3)
+        Z = np.random.randn(100, 3)
+        self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
+
+    def test_lik_and_prior(self):
+        l0 = self.m.compute_log_likelihood()
+        p0 = self.m.compute_log_prior()
+        self.m.kern.variance.prior = GPflow.priors.Gamma(1.4, 1.6)
+        l1 = self.m.compute_log_likelihood()
+        p1 = self.m.compute_log_prior()
+
+        self.failUnless(p0==0.0)
+        self.failIf(p0==p1)
+        self.failUnless(l0==l1)
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
