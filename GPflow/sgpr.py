@@ -209,11 +209,12 @@ class GPRFITC(GPModel):
         
         tmp = tf.matrix_triangular_solve(tf.transpose(L), gamma, lower=False)
         mean = tf.matmul( tf.transpose(w), tmp ) + self.mean_function(Xnew)
+        intermediateA = tf.matrix_triangular_solve(L, w, lower=True)
         
         if full_cov:
-            raise NotImplementedError
+            var = self.kern.K(Xnew) - tf.matmul(tf.transpose(w), w) + tf.matmul(tf.transpose(intermediateA),intermediateA)
+            var = tf.tile(tf.expand_dims(var, 2), tf.pack([1,1, tf.shape(self.Y)[1]]))
         else:
-            intermediateA = tf.matrix_triangular_solve(L, w, lower=True)
             var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(w), 0) + tf.reduce_sum(tf.square(intermediateA), 0) # size( Xnew, )
             var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
         
