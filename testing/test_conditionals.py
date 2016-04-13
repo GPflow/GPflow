@@ -1,3 +1,4 @@
+from __future__ import print_function
 import GPflow
 import tensorflow as tf
 from GPflow.tf_hacks import eye
@@ -101,18 +102,18 @@ class WhitenTest(unittest.TestCase):
         """
         
         with self.k.tf_mode():
-            K = self.k.K(self.X)
+            K = self.k.K(self.X) + eye(self.num_data) * 1e-6
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, self.F, lower=True)
             Fstar_mean, Fstar_var = GPflow.conditionals.gp_predict(self.Xs, self.X, self.k, self.F)
             Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gp_predict_whitened(self.Xs, self.X, self.k, V)
 
 
-        mean_difference = tf.Session().run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
-        var_difference = tf.Session().run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
+        mean1, var1 = tf.Session().run([Fstar_w_mean, Fstar_w_var], feed_dict=self.feed_dict)
+        mean2, var2 = tf.Session().run([Fstar_mean, Fstar_var], feed_dict=self.feed_dict)
 
-        self.failUnless(np.all(np.abs(mean_difference) < 1e-4))
-        self.failUnless(np.all(np.abs(var_difference) < 1e-4))
+        self.failUnless(np.allclose(mean1, mean2))
+        self.failUnless(np.allclose(var1, var2))
 
 
 class WhitenTestGaussian(WhitenTest):

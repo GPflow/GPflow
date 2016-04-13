@@ -128,30 +128,42 @@ class GPRFITC(GPModel):
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
+    def build_common_terms(self):
+        num_inducing = tf.shape(self.Z)[0]
+        err =  self.Y - self.mean_function(self.X) # (size N x R )
+        Kdiag = self.kern.Kdiag(self.X)
+        Kuf = self.kern.K(self.Z, self.X)
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+
+        Luu = tf.cholesky(Kuu) #=> Luu^T Luu = Kuu
+        V = tf.matrix_triangular_solve( Luu, Kuf ) #=> V^T V = Qff
+
+        diagQff = tf.reduce_sum( tf.square( V ) , reduction_indices = [0] )
+        nu = Kdiag - diagQff + self.likelihood.variance        
+
+        beta = tf.div(err , tf.expand_dims(nu,1) ) # (size N x R )
+        alpha = tf.matmul( V, beta ) # (size N x R )
+
+        L = tf.cholesky( eye( num_inducing ) + tf.matmul( V, tf.matmul( tf.diag( tf.inv( nu ) ), tf.transpose( V ) ) ) )
+        LinvAlpha = tf.matrix_triangular_solve( L, alpha, lower=True ) # (size N x R )
+        gamma = tf.matrix_triangular_solve( tf.transpose(L) , LinvAlpha, lower=False ) # = Solve( I + V \diag( \nu^{-1} ) V^T, alpha )
+                        
+        return err, nu, Luu, L, alpha, beta, gamma 
+
     def build_likelihood(self):
         """
         Constuct a tensorflow function to compute the bound on the marginal
         likelihood.. 
         """
-        num_inducing = tf.shape(self.Z)[0]
-        err =  self.Y - self.mean_function(self.X)
-        Kdiag = self.kern.Kdiag(self.X)
-        Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
-        
+                
         #FITC approximation to the log marginal likelihood is 
         #log ( normal( y | mean, K_fitc ) )
         #where K_fitc = Qff + diag( \nu )
         #where Qff = Kfu Kuu^{-1} Kuf
         #with \nu_i = Kff_{i,i} - Qff_{i,i} + \sigma^2
+
         
-        Luu = tf.cholesky(Kuu) #=> Luu^T Luu = Kuu
-        V = tf.matrix_triangular_solve( Luu, Kuf ) #=> V^T V = Qff
-        
-        diagQff = tf.reduce_sum( tf.square( V ) , reduction_indeces = [0] )
-        nu = Kdiag - diagGff + self.likelihood.variance
-        
-        #We need to compute the Mahalanobis term -0.5* err^T K_fitc^{-1} err 
+        #We need to compute the Mahalanobis term -0.5* err^T K_fitc^{-1} err summed over functions.
         
         #We need to deal with the matrix inverse term.
         #K_fitc^{-1} = ( Qff + \diag( \nu ) )^{-1}
@@ -162,14 +174,9 @@ class GPRFITC(GPModel):
         #and let \alpha = V \beta
         #then Mahalanobis term = -0.5* ( \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha ) )
         
-        beta = y / nu
-        alpha = tf.matmul( V, beta )
+        err, nu, Luu, L, alpha, beta, gamma  = self.build_common_terms()
         
-        L = tf.cholesky( eye( num_inducing ) + tf.matmul( V, tf.matmul( tf.diag( tf.inv( nu ) ), tf.transpose( V ) ) ) )
-        LinvAlpha = tf.matrix_triangular_solve( L, alpha, lower=True )
-        gamma = tf.matrix_triangular_solve( tf.transpose(L) , LinvAlpha, lower=False ) # = Solve( I + V \diag( \nu^{-1} ) V^T, alpha )
-        
-        mahalanobisTerm = -0.5* ( tf.dot( beta, err ) - tf.dot( alpha, gamma ) )
+        mahalanobisTerm = -0.5* ( tf.reduce_sum( tf.mul( tf.transpose(beta), err ) ) - tf.reduce_sum( tf.mul( tf.transpose(alpha), gamma ) ) )
         
         #We need to compute the log normalizing term -N/2 \log 2 pi - 0.5 \log \det( K_fitc )
         
@@ -180,8 +187,8 @@ class GPRFITC(GPModel):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ] 
         
-        constantTerm = -0.5* self.num_data * tf.log( 2. * np.pi )
-        logDeterminantTerm = -0.5 * tf.reduce_sum( tf.log( nu ) ) - tf.reduce_sum( tf.log( tf.get_diag( L ) ) )
+        constantTerm = -0.5* self.num_data * tf.log( tf.constant( 2. * np.pi, tf.float64 ) )
+        logDeterminantTerm = -0.5 * tf.reduce_sum( tf.log( nu ) ) - tf.reduce_sum( tf.log( tf.user_ops.get_diag( L ) ) )
         logNormalizingTerm = constantTerm + logDeterminantTerm 
         
         return mahalanobisTerm + logNormalizingTerm
@@ -191,5 +198,20 @@ class GPRFITC(GPModel):
         Compute the mean and variance of the latent function at some new points
         Xnew.
         """
-        pass
+        err, nu, Luu, L, alpha, beta, gamma  = self.build_common_terms()
+        Kus = self.kern.K(self.Z, Xnew) # size ( M x Xnew )
+                
+        w = tf.matrix_triangular_solve( Luu, Kus, lower=True )  # size ( M x Xnew )
+        
+        mean = tf.matmul( tf.transpose(w), gamma ) + self.mean_function(Xnew)
+        
+        if full_cov:
+            raise NotImplementedError
+        else:
+            intermediateA = tf.matrix_triangular_solve( L, w, lower=True )
+            intermediateB = tf.matrix_triangular_solve( tf.transpose(L), intermediateA, lower=False) 
+            var = self.kern.Kdiag(Xnew) - tf.reduce_sum( tf.square(w), reduction_indices = [0] ) + tf.reduce_sum( tf.mul( w,  intermediateB ), reduction_indices = [0] ) # size( Xnew, )
+            var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
+        
+        return mean, var
 

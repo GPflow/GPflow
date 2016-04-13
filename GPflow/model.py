@@ -294,7 +294,7 @@ class Model(Parameterized):
         except (KeyboardInterrupt):
             print("Caught KeyboardInterrupt, setting model with most recent state.")
             self.set_state(obj._previous_x)
-            return None 
+            return None
 
         print("optimization terminated, setting model state")
         self.set_state(result.x)
@@ -327,14 +327,35 @@ class GPModel(Model):
     def build_predict(self):
         raise NotImplementedError
 
-    @AutoFlow(tf.placeholder(tf.float64))
+    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points Xnew
         """
         return self.build_predict(Xnew)
 
-    @AutoFlow(tf.placeholder(tf.float64))
+    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
+    def predict_f_full_cov(self, Xnew):
+        """
+        Compute the mean and covariance matrix of the latent function(s) at the
+        points Xnew.
+        """
+        return self.build_predict(Xnew, full_cov=True)
+
+    @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.int32, []))
+    def predict_f_samples(self, Xnew, num_samples):
+        """
+        Produce samples from the posterior latent function(s) at the points
+        Xnew.
+        """
+        mu, var = self.build_predict(Xnew, full_cov=True)
+        samples = []
+        for i in range(self.num_latent):
+            L = tf.cholesky(var[:,:,i])
+            samples.append(mu[:,i:i+1] + tf.matmul(L, tf.random_normal(tf.pack([tf.shape(L)[0], num_samples]), dtype=tf.float64)))
+        return tf.transpose(tf.pack(samples))
+
+    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -343,7 +364,7 @@ class GPModel(Model):
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
 
-    @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.float64))
+    @AutoFlow(tf.placeholder(tf.float64, [None, None]), tf.placeholder(tf.float64, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew
