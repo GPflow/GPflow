@@ -49,6 +49,7 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
         self.models_with, self.models_without =\
                 [[GPflow.gpr.GPR(X, Y, mean_function=mf, kern=k()),
                   GPflow.sgpr.SGPR(X, Y, mean_function=mf, Z=Z, kern=k()),
+                  GPflow.sgpr.GPRFITC(X, Y, mean_function=mf, Z=Z, kern=k()),
                   GPflow.svgp.SVGP(X, Y, mean_function=mf, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
                   GPflow.vgp.VGP(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
                   GPflow.vgp.VGP(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
