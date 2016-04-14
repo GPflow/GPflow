@@ -174,7 +174,7 @@ class Model(Parameterized):
             opt_step = None
         else:
             if float32_hack:
-                minus_F_f32 = tf.cast(self._minusF, tf.float32),
+                minus_F_f32 = tf.cast(self._minusF, tf.float32)
                 opt_step = optimizer.minimize(minus_F_f32,
                                               var_list=[self._free_vars32])
             else:
