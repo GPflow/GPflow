@@ -48,7 +48,7 @@ def conditional(Xnew, X, kern, f, num_columns,
     # compute kernel stuff
     num_data = tf.shape(X)[0]
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data)
+    Kmm = kern.K(X) + eye(num_data) * 1e-6
     Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
