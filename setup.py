@@ -30,6 +30,7 @@ setup(name = 'GPflow',
       py_modules = ['GPflow.__init__'],
       test_suite = 'testing',
       install_requires=['numpy>=1.9', 'scipy>=0.16', 'tensorflow>=0.7.1'],
+      tests_require=['dill'];
       classifiers=['License :: OSI Approved :: BSD License',
                    'Natural Language :: English',
                    'Operating System :: MacOS :: MacOS X',
