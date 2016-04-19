@@ -323,6 +323,24 @@ class Model(Parameterized):
         self.set_state(result.x)
         return result
 
+    def __setstate__(self, d):
+        """
+        This method is for use with pickle. It re-enstates a model from a
+        dictionary, replacing things that may have been removed during
+        __getstate__.
+        """
+        d['_session'] = tf.Session()
+        return d
+
+    def __getstate__(self):
+        """
+        for use with pickle. Removes things from the dict that are not
+        pickleable (they are reenstated by __setstate__)
+        """
+        d = self.__dict__.copy()
+        del d['_session']
+        return d
+
 class GPModel(Model):
     """
     A base class for Gaussian process models, that is, those of the form
