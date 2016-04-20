@@ -16,7 +16,7 @@ class TestGaussian(unittest.TestCase):
         self.m = GPflow.gpr.GPR(self.X, self.Y, kern=self.kern)
 
 
-    def test_mean_variance(self):
+    def test_all(self):
         mu_f, var_f = self.m.predict_f(self.Xtest)
         mu_y, var_y = self.m.predict_y(self.Xtest)
 
@@ -70,7 +70,7 @@ class TestFullCov(unittest.TestCase):
                   GPflow.gpmc.GPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
                   GPflow.sgpmc.SGPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)]
 
-    def test_cov(self):
+    def test_cov_and_samples(self):
         for m in self.models:
             mu1, var = m.predict_f(self.Xtest)
             mu2, covar = m.predict_f_full_cov(self.Xtest)
@@ -80,7 +80,6 @@ class TestFullCov(unittest.TestCase):
             for i in range(self.output_dim):
                 self.failUnless(np.allclose(var[:,i] , np.diag(covar[:,:,i])))
     
-    def test_samples(self):
         for m in self.models:
             samples = m.predict_f_samples(self.Xtest, 5)
             self.failUnless(samples.shape==(5, self.Xtest.shape[0], self.output_dim))

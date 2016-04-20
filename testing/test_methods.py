@@ -24,28 +24,27 @@ class TestMethods(unittest.TestCase):
         self.ms.append(GPflow.sgpr.SGPR(self.X, self.Y, self.kern, Z=self.Z))
         self.ms.append(GPflow.sgpr.GPRFITC(self.X, self.Y, self.kern, Z=self.Z))
 
-    def test_sizes(self):
+    def test_all(self):
+        #test sizes.
         for m in self.ms:
             m._compile()
             f,g = m._objective(m.get_free_state())
             self.failUnless(f.size == 1)
             self.failUnless(g.size == m.get_free_state().size)
-        
-    def test_prediction_f(self):
+        #test predict f.        
         for m in self.ms:
             mf, vf = m.predict_f(self.Xs)
             self.failUnless(mf.shape == vf.shape)
             self.failUnless(mf.shape == (10, 1))
             self.failUnless(np.all(vf >= 0.0))
-
-    def test_prediction_y(self):
+        # test predict y.
         for m in self.ms:
             mf, vf = m.predict_y(self.Xs)
             self.failUnless(mf.shape == vf.shape)
             self.failUnless(mf.shape == (10, 1))
             self.failUnless(np.all(vf >= 0.0))
 
-    def test_prediction_density(self):
+        #test predict density.
         self.Ys = self.rng.randn(10,1)
         for m in self.ms:
             d = m.predict_density(self.Xs, self.Ys)
@@ -134,12 +133,10 @@ class TestSparseMCMC(unittest.TestCase):
         self.m1._compile()
         self.m2._compile()
 
-    def test_likelihoods(self):
+    def test_likelihoods_and_gradients(self):
         f1, _ = self.m1._objective(self.m1.get_free_state())
         f2, _ = self.m2._objective(self.m2.get_free_state())
         self.failUnless(np.allclose(f1, f2))
-
-    def test_gradients(self):
         #the parameters might not be in the same order, so sort the gradients before checking they're the same
         _, g1 = self.m1._objective(self.m1.get_free_state())
         _, g2 = self.m2._objective(self.m2.get_free_state())
