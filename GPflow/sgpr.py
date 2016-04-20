@@ -65,11 +65,11 @@ class SGPR(GPModel):
 
         # compute log marginal bound
         bound = -0.5 * tf.cast(num_data * output_dim, tf.float64)*np.log(2*np.pi)
-        bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.user_ops.get_diag(LB)))
+        bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.diag_part(LB)))
         bound += -0.5*tf.cast(num_data*output_dim, tf.float64)*tf.log(self.likelihood.variance)
         bound += -0.5*tf.reduce_sum(tf.square(err))/self.likelihood.variance
         bound += 0.5*tf.reduce_sum(tf.square(c))
-        bound += -0.5*(tf.reduce_sum(Kdiag)/self.likelihood.variance - tf.reduce_sum(tf.user_ops.get_diag(AAT)))
+        bound += -0.5*(tf.reduce_sum(Kdiag)/self.likelihood.variance - tf.reduce_sum(tf.diag_part(AAT)))
 
         return bound
 
@@ -192,7 +192,7 @@ class GPRFITC(GPModel):
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ] 
         
         constantTerm = -0.5* self.num_data * tf.log( tf.constant( 2. * np.pi, tf.float64 ) )
-        logDeterminantTerm = -0.5 * tf.reduce_sum( tf.log( nu ) ) - tf.reduce_sum( tf.log( tf.user_ops.get_diag( L ) ) )
+        logDeterminantTerm = -0.5 * tf.reduce_sum( tf.log( nu ) ) - tf.reduce_sum( tf.log( tf.diag_part( L ) ) )
         logNormalizingTerm = constantTerm + logDeterminantTerm 
         
         return mahalanobisTerm + logNormalizingTerm
