@@ -43,11 +43,9 @@ class TestEquivalence(unittest.TestCase):
             m.optimize(display=False, max_iters=300)
             print('.') # stop travis timing out
 
-    def test_likelihoods(self):
+    def test_all(self):
         likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze() for m in self.models])
         self.failUnless(np.allclose(likelihoods, likelihoods[0], 1e-2))
-        
-    def test_kernel_params(self):
         variances, lengthscales = [], []
         for m in self.models:
             if hasattr(m.kern, 'rbf'):
@@ -60,9 +58,6 @@ class TestEquivalence(unittest.TestCase):
 
         self.failUnless(np.allclose(variances, variances[0], 1e-3))
         self.failUnless(np.allclose(lengthscales, lengthscales[0], 1e-3))
-
-
-    def test_predictions(self):
         mu0, var0 = self.models[0].predict_y(self.Xtest)
         for m in self.models[1:]:
             mu, var = m.predict_y(self.Xtest)

@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from setuptools import setup, Extension
+from setuptools import setup
 import re
-import numpy as np
 
 
-#load version form _version.py
+# load version form _version.py
 VERSIONFILE = "GPflow/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
@@ -16,11 +15,11 @@ if mo:
 else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
-setup(name = 'GPflow',
-      version = verstr,
-      author = "James Hensman, Alex Matthews",
-      author_email = "james.hensman@gmail.com",
-      description = ("Gaussian process methods in tensorflow"),
+setup(name='GPflow',
+      version=verstr,
+      author="James Hensman, Alex Matthews",
+      author_email="james.hensman@gmail.com",
+      description=("Gaussian process methods in tensorflow"),
       license = "BSD 3-clause",
       keywords = "machine-learning gaussian-processes kernels tensorflow",
       url = "http://github.com/gpflow/gpflow",
