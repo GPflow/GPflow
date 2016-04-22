@@ -131,7 +131,7 @@ class Param(Parentable):
         #TODO what about constraints that change the size ??
 
         if self.fixed:
-            self._tf_array = self._array.copy()
+            self._tf_array = tf.constant(self._array.copy(), dtype=tf.float64)
             return 0
         x_free = free_array[:self.size]
         mapped_array = self.transform.tf_forward(x_free)

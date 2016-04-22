@@ -108,6 +108,20 @@ class TestSVGP(unittest.TestCase):
         m2.q_mu = qmean
         self.failUnless(np.allclose(m1._objective(m1.get_free_state())[0], m2._objective(m2.get_free_state())[0]))
 
+    def test_q_sqrt_fixing(self):
+        """
+        In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
+        """
+        m1 = GPflow.svgp.SVGP(self.X, self.Y,
+                              kern=GPflow.kernels.RBF(1) + GPflow.kernels.White(1),
+                              likelihood=GPflow.likelihoods.Exponential(),
+                              Z=self.Z)
+        m1.q_sqrt.fixed = True
+        m1._compile()
+
+
+
+
 class TestSparseMCMC(unittest.TestCase):
     """
     This test makes sure that when the inducing points are the same as the data
