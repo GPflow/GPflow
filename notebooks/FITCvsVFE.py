@@ -2,10 +2,9 @@ import GPflow
 import tensorflow as tf
 import os
 import numpy as np
-from matplotlib import pyplot as plt
 import cProfile
 import csv
-from IPython import embed
+
 
 tol=1e-11
 nRepeats = 50
@@ -24,8 +23,8 @@ def readCsvFile( fileName ):
     return np.array( dataList )
     
 def getTrainingTestData():
-    overallX = readCsvFile( 'train_inputs' )
-    overallY = readCsvFile( 'train_outputs' )
+    overallX = readCsvFile( 'data/snelson_train_inputs' )
+    overallY = readCsvFile( 'data/snelson_train_outputs' )
     
     trainIndeces = []
     testIndeces = []
@@ -81,7 +80,7 @@ def printModelParameters( model ):
     print "Kernel lengthscale ", model.kern.lengthscales, "\n"
 
 def plotPredictions( ax, model, color, label ):
-    xtest = np.sort( readCsvFile( 'test_inputs' ) )
+    xtest = np.sort( readCsvFile( 'data/snelson_test_inputs' ) )
     predMean, predVar = model.predict_y(xtest)
     ax.plot( xtest, predMean, color, label=label )
     ax.plot( xtest, predMean + 2.*np.sqrt(predVar),color )
@@ -144,6 +143,8 @@ def stretch( lenNIters, initialValues ):
     return stretched
         
 def snelsonDemo():
+    from matplotlib import pyplot as plt
+    from IPython import embed
     xtrain,ytrain,xtest,ytest = getTrainingTestData()
 
     #run exact inference on training data.
