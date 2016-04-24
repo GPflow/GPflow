@@ -75,7 +75,7 @@ class TestKernDiags(unittest.TestCase):
         for k in self.kernels:
             with k.tf_mode():
                 k1 = k.Kdiag(self.X)
-                k2 = tf.user_ops.get_diag(k.K(self.X))
+                k2 = tf.diag_part(k.K(self.X))
                 k1, k2 = tf.Session().run([k1 , k2],
                             feed_dict={self.x_free:k.get_free_state(), self.X:self.X_data})
             self.failUnless(np.allclose(k1, k2))
