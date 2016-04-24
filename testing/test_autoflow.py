@@ -82,5 +82,26 @@ class TestResetGraph(unittest.TestCase):
         mu1, var1 = self.m.predict_f(self.Xnew)
 
 
+class TestFixAndPredict(unittest.TestCase):
+    """
+    Bug #54 says that if a model parameter is fixed  between calls to predict
+    (an autoflow fn) then the second call fails. This test ensures replicates
+    that and ensures that the bugfix remains in furure.
+    """
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        X, Y = rng.randn(2, 10, 1)
+        self.m = GPflow.svgp.SVGP(X, Y, kern=GPflow.kernels.Matern32(1),
+                                  likelihood=GPflow.likelihoods.StudentT(),
+                                  Z=X[::2].copy())
+        self.Xtest = np.random.randn(100, 1)
+        self.Ytest = np.random.randn(100, 1)
+
+    def test(self):
+        self.m._compile()
+        self.m.kern.variance.fixed = True
+        _, _ = self.m.predict_f(self.m.X)
+
+
 if __name__ == "__main__":
     unittest.main()
