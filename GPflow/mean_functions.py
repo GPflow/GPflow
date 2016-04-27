@@ -61,7 +61,7 @@ class Additive(MeanFunction):
     def __call__(self, X):
         return tf.add(self.first_part(X), self.second_part(X))
                     
-class PolyProd(MeanFunction):
+class Product(MeanFunction):
     def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
         self.first_part = first_part
