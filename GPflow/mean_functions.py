@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from GPflow.param import Param, Parameterized, ParamList
+from GPflow.param import Param, Parameterized
 
 class MeanFunction(Parameterized):
     """
@@ -15,22 +15,15 @@ class MeanFunction(Parameterized):
         raise NotImplementedError, "Implement the __call__ method for this mean function"
     
     def __add__(self, other):
-        raise NotImplementedError, "Implement the __add__ method for this mean function"
-        
+        return Additive(self,other)   
 
     def __mul__(self, other):
-        raise NotImplementedError, "Implement the __mul__ method for this mean function"
+        return Product(self, other)
         
 
 class Zero(MeanFunction):
     def __call__(self, X):
         return tf.zeros(tf.pack([tf.shape(X)[0], 1]), dtype='float64')
-        
-    def __add__(self, other):
-        return other
-    def __mul__(self, other):
-        return self   
-
 
 class Linear(MeanFunction):
     """
@@ -47,30 +40,7 @@ class Linear(MeanFunction):
         self.b = Param(b)
     def __call__(self, X):
         return tf.matmul(X, self.A) + self.b
-        
-    def __add__(self, other):  
-        if isinstance(other, Zero):
-            return self
-        elif isinstance(other, Constant):
-            return Linear(other.A, other.b + self.c)
-        elif isinstance(other, Linear):
-            return Linear(self.A + other.A, self.b + other.b)
-        elif isinstance(other, PolyAdd):
-            return PolyAdd(self, other)
-        elif isinstance(other, PolyProd):
-            return PolyAdd(self, other)
-            
-    def __mul__(self, other):
-        if isinstance(other, Zero):
-            return other
-        elif isinstance(other, Constant):
-            return Linear(other.A, other.b * self.c)
-        elif isinstance(other, Linear):
-            return PolyProd(self, other)
-        elif isinstance(other, PolyAdd):
-            return PolyProd(self, other)
-        elif isinstance(other, PolyProd):
-            return PolyProd(self, other)
+
 
 class Constant(MeanFunction):
     """
@@ -81,61 +51,20 @@ class Constant(MeanFunction):
         self.c = Param(c)
     def __call__(self, X):
         return tf.tile(tf.reshape(self.c, (1,-1)), tf.pack([tf.shape(X)[0], 1])) 
-    def __add__(self, other):  
-        if isinstance(other, Zero):
-            return self
-        elif isinstance(other, Constant):
-            return Constant(self.c + other.c)
-        elif isinstance(other, Linear):
-            return Linear(other.A, other.b + self.c)
-        elif isinstance(other, PolyAdd):
-            return PolyAdd(self, other)
-        elif isinstance(other, PolyProd):
-            return PolyAdd(self, other)
-            
-    def __mul__(self, other):
-        if isinstance(other, Zero):
-            return other
-        elif isinstance(other, Constant):
-            return Constant(self.c * other.c)
-        elif isinstance(other, Linear):
-            return Linear(other.A, other.b * self.c)
-        elif isinstance(other, PolyAdd):
-            PolyProd(self, other)
-        elif isinstance(other, PolyProd):
-            PolyProd(self, other)
 
-class PolyAdd(MeanFunction):
-    def __init__(self, mfunA, mfunB):
+class Additive(MeanFunction):
+    def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
-        self.mfunA = mfunA
-        self.mfunB = mfunB
+        self.first_part = first_part
+        self.second_part = second_part
         
     def __call__(self, X):
-        return tf.add(self.funA(X), self.funB(X))
-        
-    def __add__(self, other):
-        if isinstance(other, Zero):
-            return self
-        else: return PolyAdd(self, other)
-        
-    def __mul__(self, other):
-        if isinstance(other, Zero):
-            return other
-        else: return PolyProd(self, other)
+        return tf.add(self.first_part(X), self.second_part(X))
                     
 class PolyProd(MeanFunction):
-    def __init__(self, mfunA, mfunB):
+    def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
-        self.mfunA = mfunA
-        self.mfunB = mfunB
+        self.first_part = first_part
+        self.second_part = second_part
     def __call__(self, X):
-        return tf.matmul(self.mfunA(X), self.mfunB(X))
-    def __add__(self, other):
-        if isinstance(other, Zero):
-            return self
-        else: return PolyAdd(self, other)        
-    def __mul__(self, other):
-        if isinstance(other, Zero):
-            return other
-        else: return PolyProd(self, other)
+        return tf.matmul(self.first_part(X), self.second_part(X))
