@@ -50,8 +50,7 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
     function than with a zero mean function.
     
     """
-    
-    #TODO: Add 0, multiply with one --> not higher prediction
+
     def setUp(self):
         self.input_dim=3
         self.output_dim=2
@@ -66,12 +65,17 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
         k = lambda : GPflow.kernels.Matern32(self.input_dim)
         zero = GPflow.mean_functions.Zero()
         const = GPflow.mean_functions.Constant(np.ones(self.output_dim) * 10)
+        one = GPflow.mean_functions.Constant(np.ones(self.output_dim))
         
         
         mult = GPflow.mean_functions.Product(const,const)
         add = GPflow.mean_functions.Additive(const,const)
+        
+        addzero = GPflow.mean_functions.Additive(const, zero)
+        multone = GPflow.mean_functions.Product(const, one)
 
-        self.models_with, self.models_without, self.models_mult, self.models_add =\
+        self.models_with, self.models_without, self.models_mult, self.models_add, \
+        self.models_addzero, self.models_multone =\
                 [[GPflow.gpr.GPR(X, Y, mean_function=mf, kern=k()),
                   GPflow.sgpr.SGPR(X, Y, mean_function=mf, Z=Z, kern=k()),
                   GPflow.sgpr.GPRFITC(X, Y, mean_function=mf, Z=Z, kern=k()),
@@ -79,7 +83,7 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
                   GPflow.vgp.VGP(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
                   GPflow.vgp.VGP(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
                   GPflow.gpmc.GPMC(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
-                  GPflow.sgpmc.SGPMC(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)] for mf in (const, zero, mult, add)]
+                  GPflow.sgpmc.SGPMC(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)] for mf in (const, zero, mult, add, addzero, multone)]
 
     def test_basic_mean_function(self):
         for m_with, m_without in zip(self.models_with, self.models_without):
@@ -101,6 +105,21 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
             mu2, v2 = m_const.predict_f(self.Xtest)
             self.failUnless(np.all(v1==v2))
             self.failIf(np.all(mu1 == mu2))
+    
+    def test_addZero_meanfuction(self):
+        #TODO: this does not work yet? fix precision?
+        for m_add, m_addZero in zip(self.models_add, self.models_addzero):
+            mu1, v1 = m_add.predict_f(self.Xtest)
+            mu2, v2 = m_addZero.predict_f(self.Xtest)
+            self.failUnless(np.all(np.isclose(mu1,mu2)))
+            self.failUnless(np.all(np.isclose(v1, v2)))
+    def test_multOne_meanfuction(self):
+        #TODO: this does not work yet?
+        for m_mult, m_multOne in zip(self.models_mult, self.models_multone):
+            mu1, v1 = m_mult.predict_f(self.Xtest)
+            mu2, v2 = m_multOne.predict_f(self.Xtest)
+            self.failUnless(np.all(np.isclose(mu1,mu2)))
+            self.failUnless(np.all(np.isclose(v1, v2)))
 
 
 class TestCombinationsOfMeanFunctions(unittest.TestCase):
