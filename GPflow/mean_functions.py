@@ -55,8 +55,8 @@ class Constant(MeanFunction):
 class Additive(MeanFunction):
     def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
-        self.first_part = first_part
-        self.second_part = second_part
+        self.augend = first_part
+        self.addend = second_part
         
     def __call__(self, X):
         return tf.add(self.first_part(X), self.second_part(X))
@@ -64,7 +64,8 @@ class Additive(MeanFunction):
 class Product(MeanFunction):
     def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
-        self.first_part = first_part
-        self.second_part = second_part
+        self.multiplicant = first_part
+        self.multiplier = second_part
+                 
     def __call__(self, X):
-        return tf.matmul(self.first_part(X), self.second_part(X))
+        return tf.mul(self.first_part(X), self.second_part(X))
