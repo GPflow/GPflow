@@ -5,7 +5,13 @@ import numpy as np
 import unittest
 
 class TestMeanFuncs(unittest.TestCase):
+    """
+    Test the output shape for basic and compositional mean functions, also
+    check that the combination of mean functions returns the correct class and
+    operator precedence is correct    
+    """
     def setUp(self):
+        
         self.input_dim=3
         self.output_dim=2
         self.N=20
@@ -15,11 +21,14 @@ class TestMeanFuncs(unittest.TestCase):
                     GPflow.mean_functions.Constant(rng.randn(self.output_dim))]
                     
         
-        self.composition_mfs = []
-        for mean_f1 in self.mfs:
-            self.composition_mfs.extend([mean_f1 + mean_f2 for mean_f2 in self.mfs])
-            self.composition_mfs.extend([mean_f1 * mean_f2 for mean_f2 in self.mfs])
+        self.composition_mfs_add = []
+        self.composition_mfs_mult = []
         
+        for mean_f1 in self.mfs:
+            self.composition_mfs_add.extend([mean_f1 + mean_f2 for mean_f2 in self.mfs])
+            self.composition_mfs_mult.extend([mean_f1 * mean_f2 for mean_f2 in self.mfs])
+        
+        self.composition_mfs = self.composition_mfs_add + self.composition_mfs_mult
         
         self.x = tf.placeholder('float64')
         for mf in self.mfs:
@@ -41,6 +50,18 @@ class TestMeanFuncs(unittest.TestCase):
                 
                 Y = tf.Session().run(comp_mf(self.X), feed_dict={self.x: comp_mf.get_free_state(), self.X:self.X_data})
             self.failUnless(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
+
+    def test_combination_types(self):
+        #TODO: add combination of complex mean functions? 
+        self.failUnless(all(isinstance(mfAdd, GPflow.mean_functions.Additive) for mfAdd in self.composition_mfs_add))
+        self.failUnless(all(isinstance(mfMult, GPflow.mean_functions.Product) for mfMult in self.composition_mfs_mult))
+        
+    def test_precedence(self):
+        #TODO: check a + b * c, a* b +c etc
+        pass
+    def test_zero_operations(self):
+        #TODO: check a - a && a * zero for all a & combinations
+        pass
             
 
 
@@ -121,30 +142,8 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
             self.failUnless(np.all(np.isclose(mu1,mu2)))
             self.failUnless(np.all(np.isclose(v1, v2)))
 
-
-class TestCombinationsOfMeanFunctions(unittest.TestCase):
-    """
-    Check that the combination of mean functions returns the correct class and
-    operator precedence is correct    
-    """
-    def setUp(self):
-        #TODO: setup a list of random additions and one of random multiplications
-        print("test")
-        pass
-    def test_combination_types(self):
-        #TODO: combine elements and test their type
-        self.assertEqual('foo'.upper(), 'FOO')
-        pass
-    def test_precedence(self):
-        #TODO: check a + b * c, a* b +c etc
-        pass
-    def test_zero_operations(self):
-        #TODO: check a - a && a * zero for all a & combinations
-        pass
-
-
 if __name__ == "__main__":
       
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestModelsWithMeanFuncs)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestMeanFuncs)
     unittest.TextTestRunner(verbosity=2).run(suite)
 
