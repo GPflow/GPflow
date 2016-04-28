@@ -70,6 +70,10 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
     Simply check that all models have a higher prediction with a constant mean
     function than with a zero mean function.
     
+    For compositions of mean functions check that multiplication/ addition of 
+    a constant results in a higher prediction, whereas addition of zero/
+    mutliplication with one does not.
+    
     """
 
     def setUp(self):
@@ -143,7 +147,7 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
             self.failUnless(np.all(np.isclose(v1, v2)))
 
 if __name__ == "__main__":
-      
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestMeanFuncs)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    #suite = unittest.TestLoader().loadTestsFromTestCase(TestMeanFuncs)
+    #unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()
 
