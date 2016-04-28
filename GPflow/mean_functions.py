@@ -59,7 +59,7 @@ class Additive(MeanFunction):
         self.addend = second_part
         
     def __call__(self, X):
-        return tf.add(self.first_part(X), self.second_part(X))
+        return tf.add(self.augend(X), self.addend(X))
                     
 class Product(MeanFunction):
     def __init__(self, first_part, second_part):
@@ -68,4 +68,5 @@ class Product(MeanFunction):
         self.multiplier = second_part
                  
     def __call__(self, X):
-        return tf.mul(self.first_part(X), self.second_part(X))
+        return tf.mul(self.multiplicant(X), self.multiplier(X))
+        
