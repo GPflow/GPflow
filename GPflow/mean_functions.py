@@ -69,4 +69,3 @@ class Product(MeanFunction):
                  
     def __call__(self, X):
         return tf.mul(self.multiplicant(X), self.multiplier(X))
-        
