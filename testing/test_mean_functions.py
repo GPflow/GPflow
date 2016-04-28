@@ -7,11 +7,9 @@ import unittest
 class TestMeanFuncs(unittest.TestCase):
     """
     Test the output shape for basic and compositional mean functions, also
-    check that the combination of mean functions returns the correct class and
-    operator precedence is correct    
+    check that the combination of mean functions returns the correct clas
     """
     def setUp(self):
-        
         self.input_dim=3
         self.output_dim=2
         self.N=20
@@ -29,12 +27,14 @@ class TestMeanFuncs(unittest.TestCase):
             self.composition_mfs_mult.extend([mean_f1 * mean_f2 for mean_f2 in self.mfs])
         
         self.composition_mfs = self.composition_mfs_add + self.composition_mfs_mult
-        
         self.x = tf.placeholder('float64')
+        
+        
+        #TODO:this should also happen for the compositions?
         for mf in self.mfs:
             mf.make_tf_array(self.x)
+            
         
-
         self.X = tf.placeholder(tf.float64, [self.N, self.input_dim])
         self.X_data = np.random.randn(self.N, self.input_dim)
 
@@ -56,11 +56,69 @@ class TestMeanFuncs(unittest.TestCase):
         self.failUnless(all(isinstance(mfAdd, GPflow.mean_functions.Additive) for mfAdd in self.composition_mfs_add))
         self.failUnless(all(isinstance(mfMult, GPflow.mean_functions.Product) for mfMult in self.composition_mfs_mult))
         
+        
+class TestModelCompositionOperations(unittest.TestCase):
+    """
+    Tests that operator precedence is correct and zero unary operations, i.e.
+    adding 0, multiplying by 1, adding x and then subtracting etc. do not change
+    the mean function
+    """
+    def setUp(self):
+        self.input_dim=3
+        self.output_dim=2
+        self.N=20
+        rng = np.random.RandomState(0)
+        
+        zero = GPflow.mean_functions.Zero()
+        one = GPflow.mean_functions.Constant(np.ones(self.output_dim))
+        
+        const1 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
+        const2 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
+        const3 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
+        
+        linear1 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
+        linear2 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
+        linear3 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
+
+
+        self.k = GPflow.kernels.Bias(self.input_dim)        
+        
+        #a * (b + c)
+        self.set1 = GPflow.mean_functions.Product(const1,
+                                                  GPflow.mean_functions.Additive(const2, const3))
+        #ab + ac
+        self.set2 = GPflow.mean_functions.Additive(GPflow.mean_functions.Product(const1, const2),
+                                                   GPflow.mean_functions.Product(const1, const3))
+        
+        self.x = tf.placeholder('float64')
+        
+        #self.set1.make_tf_array(self.x)
+        #self.set2.make_tf_array(self.x)
+            
+        X = rng.randn(self.N, self.input_dim)
+        Y = rng.randn(self.N, self.output_dim)
+        self.Xtest =  rng.randn(30, self.output_dim)
+        
+        self.m_set1 = GPflow.gpr.GPR(X, Y, mean_function=self.set1, kern=self.k)
+        self.m_set2 = GPflow.gpr.GPR(X, Y, mean_function=self.set2, kern=self.k)
+                
     def test_precedence(self):
-        #TODO: check a + b * c, a* b +c etc
-        pass
+        
+        mu1, v1 = self.m_set1.predict_f(self.Xtest)
+        mu2, v2 = self.m_set2.predict_f(self.Xtest)
+        self.failUnless(np.all(v1==v2))
+        self.failUnless(np.all(mu1==mu2))
+            
+            
+            
+                
+                
     def test_zero_operations(self):
         #TODO: check a - a && a * zero for all a & combinations
+        #a-a = 0, (a + b) -a = b = a + (b - a)
+        #a*1 = a, (a + b) * 1 = (a+ b), (a * b) * 1 = (a * b)
+        #a*0 = 0, (a + b) * 0 = 0, (a * b) * 0 = 0
+   
         pass
             
 
@@ -147,7 +205,7 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
             self.failUnless(np.all(np.isclose(v1, v2)))
 
 if __name__ == "__main__":
-    #suite = unittest.TestLoader().loadTestsFromTestCase(TestMeanFuncs)
-    #unittest.TextTestRunner(verbosity=2).run(suite)
-    unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestModelCompositionOperations)
+    unittest.TextTestRunner(verbosity=2).run(suite)
+    #unittest.main()
 
