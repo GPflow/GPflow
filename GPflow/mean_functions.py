@@ -64,6 +64,7 @@ class Additive(MeanFunction):
 class Product(MeanFunction):
     def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
+        
         self.multiplicant = first_part
         self.multiplier = second_part
                  
