@@ -41,13 +41,14 @@ class TestMeanFuncs(unittest.TestCase):
     def test_basic_output_shape(self):
         for mf in self.mfs:
             with mf.tf_mode():
+                #TODO: InvalidArgumentError: Expected begin[0] == 0 (got 0) and size[0] == 0 (got 2) when input.dim_size(0) == 0
                 Y = tf.Session().run(mf(self.X), feed_dict={self.x: mf.get_free_state(), self.X:self.X_data})
             self.failUnless(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
     
     def test_composition_output_shape(self):
         for comp_mf in self.composition_mfs:
             with comp_mf.tf_mode():
-                
+                #TODO: InvalidArgumentError: Expected size[0] in [0, 4], but got 6
                 Y = tf.Session().run(comp_mf(self.X), feed_dict={self.x: comp_mf.get_free_state(), self.X:self.X_data})
             self.failUnless(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
 
@@ -70,22 +71,21 @@ class TestModelCompositionOperations(unittest.TestCase):
         
         X = rng.randn(self.N, self.input_dim)
         Y = rng.randn(self.N, self.output_dim)
-        self.Xtest =  rng.randn(30, self.output_dim)
+        self.Xtest =  rng.randn(30, 3)
         
         zero = GPflow.mean_functions.Zero()
         one = GPflow.mean_functions.Constant(np.ones(self.output_dim))
         
-        linear1 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
-        linear2 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
-        linear3 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
+        linear1 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim))
+        linear2 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim))
+        linear3 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim))
         
         const1 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
         const2 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
         const3 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
-        
-        
-        const1inv = GPflow.mean_functions.Constant(-1 * const1.c)
-        linear1inv = GPflow.mean_functions.Linear(-1 * linear1.A, linear1.b * -1)
+
+        const1inv = GPflow.mean_functions.Constant(const1.c.get_free_state() *-1)
+        linear1inv = GPflow.mean_functions.Linear(A = linear1.A.get_free_state() * -1., b = linear1.b.get_free_state() * -1.)
         
         #a * (b + c)
         const_set1 = GPflow.mean_functions.Product(const1,
@@ -135,13 +135,14 @@ class TestModelCompositionOperations(unittest.TestCase):
         mu1_const, v1_const = self.m_const_set1.predict_f(self.Xtest)
         mu2_const, v2_const = self.m_const_set2.predict_f(self.Xtest)
         
-        self.failUnless(np.all(v1_lin==v1_lin))
-        self.failUnless(np.all(mu1_lin==mu2_lin))
+        self.failUnless(np.all(np.isclose(v1_lin, v1_lin)))
+        self.failUnless(np.all(np.isclose(mu1_lin, mu2_lin)))
         
-        self.failUnless(np.all(v1_const==v2_const))
-        self.failUnless(np.all(mu1_const==mu2_const))
+        self.failUnless(np.all(np.isclose(v1_const, v2_const)))
+        self.failUnless(np.all(np.isclose(mu1_const, mu2_const)))
             
     def test_inverse_operations(self):
+        #TODO: Dimensionality issues here ValueError: Dimensions 3 and 1 are not compatible
         mu1_lin_min_lin, v1_lin_min_lin = self.m_linear_min_linear.predict_f(self.Xtest)
         mu1_const_min_const, v1_const_min_const= self.m_const_min_const.predict_f(self.Xtest)        
         
@@ -157,7 +158,6 @@ class TestModelCompositionOperations(unittest.TestCase):
         self.failUnless(np.all(np.isclose(mu1_comp_min_constituent1, mu_constituent)))
         self.failUnless(np.all(np.isclose(mu1_comp_min_constituent2, mu_constituent)))
         self.failUnless(np.all(np.isclose(mu1_comp_min_constituent1, mu1_comp_min_constituent2)))           
-
 
 class TestModelsWithMeanFuncs(unittest.TestCase):
     """
@@ -226,15 +226,13 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
             self.failIf(np.all(mu1 == mu2))
     
     def test_addZero_meanfuction(self):
-        #TODO: this does not work yet? fix precision?
-        for m_add, m_addZero in zip(self.models_add, self.models_addzero):
+        for m_add, m_addZero in zip(self.models_with, self.models_addzero):
             mu1, v1 = m_add.predict_f(self.Xtest)
             mu2, v2 = m_addZero.predict_f(self.Xtest)
             self.failUnless(np.all(np.isclose(mu1,mu2)))
             self.failUnless(np.all(np.isclose(v1, v2)))
     def test_multOne_meanfuction(self):
-        #TODO: this does not work yet?
-        for m_mult, m_multOne in zip(self.models_mult, self.models_multone):
+        for m_mult, m_multOne in zip(self.models_with, self.models_multone):
             mu1, v1 = m_mult.predict_f(self.Xtest)
             mu2, v2 = m_multOne.predict_f(self.Xtest)
             self.failUnless(np.all(np.isclose(mu1,mu2)))
