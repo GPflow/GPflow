@@ -84,14 +84,14 @@ class Param(Parentable):
     There is a self._fixed flag, in which case the parameter does not get
     optimized. To enable this, during make_tf_array, the fixed values of
     the parameter are returned. Fixes and transforms can be used together, in
-    the sense that fixes tkae priority over transforms, so unfixing a parameter
+    the sense that fixes take priority over transforms, so unfixing a parameter
     is as simple as setting the flag. Example:
 
     >>> p = Param(1.0, transform=GPflow.transforms.positive)
     >>> m = GPflow.model.Model()
-    >>> m.p = p # the model has a sinlge parameter, constrained to be +ve
+    >>> m.p = p # the model has a single parameter, constrained to be +ve
     >>> m.p.fixed = True # the model now has no free parameters
-    >>> m.p.fixed = False # the model has a sinlge parameter, constrained to be +ve
+    >>> m.p.fixed = False # the model has a single parameter, constrained to be +ve
 
 
     Compiling into tensorflow
@@ -223,7 +223,7 @@ class Parameterized(Parentable):
     models on those parameters. During _tf_mode, the __getattribute__
     method is overwritten to return tf arrays in place of parameters.
 
-    Another recurseive function is build_prior wich sums the log-prior from all
+    Another recursive function is build_prior wich sums the log-prior from all
     of the tree's parameters (whilst in tf_mode!).
     """
     def __init__(self):
