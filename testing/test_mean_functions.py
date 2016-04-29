@@ -28,11 +28,11 @@ class TestMeanFuncs(unittest.TestCase):
         
         self.composition_mfs = self.composition_mfs_add + self.composition_mfs_mult
         self.x = tf.placeholder('float64')
-        
-        
-        #TODO:this should also happen for the compositions?
+
         for mf in self.mfs:
             mf.make_tf_array(self.x)
+        for compmf in self.composition_mfs:
+            compmf.make_tf_array(self.x)
             
         
         self.X = tf.placeholder(tf.float64, [self.N, self.input_dim])
@@ -52,7 +52,6 @@ class TestMeanFuncs(unittest.TestCase):
             self.failUnless(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
 
     def test_combination_types(self):
-        #TODO: add combination of complex mean functions? 
         self.failUnless(all(isinstance(mfAdd, GPflow.mean_functions.Additive) for mfAdd in self.composition_mfs_add))
         self.failUnless(all(isinstance(mfMult, GPflow.mean_functions.Product) for mfMult in self.composition_mfs_mult))
         
@@ -69,58 +68,95 @@ class TestModelCompositionOperations(unittest.TestCase):
         self.N=20
         rng = np.random.RandomState(0)
         
-        zero = GPflow.mean_functions.Zero()
-        one = GPflow.mean_functions.Constant(np.ones(self.output_dim))
-        
-        const1 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
-        const2 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
-        const3 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
-        
-        linear1 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
-        linear2 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
-        linear3 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
-
-
-        self.k = GPflow.kernels.Bias(self.input_dim)        
-        
-        #a * (b + c)
-        self.set1 = GPflow.mean_functions.Product(const1,
-                                                  GPflow.mean_functions.Additive(const2, const3))
-        #ab + ac
-        self.set2 = GPflow.mean_functions.Additive(GPflow.mean_functions.Product(const1, const2),
-                                                   GPflow.mean_functions.Product(const1, const3))
-        
-        self.x = tf.placeholder('float64')
-        
-        #self.set1.make_tf_array(self.x)
-        #self.set2.make_tf_array(self.x)
-            
         X = rng.randn(self.N, self.input_dim)
         Y = rng.randn(self.N, self.output_dim)
         self.Xtest =  rng.randn(30, self.output_dim)
         
-        self.m_set1 = GPflow.gpr.GPR(X, Y, mean_function=self.set1, kern=self.k)
-        self.m_set2 = GPflow.gpr.GPR(X, Y, mean_function=self.set2, kern=self.k)
-                
-    def test_precedence(self):
+        zero = GPflow.mean_functions.Zero()
+        one = GPflow.mean_functions.Constant(np.ones(self.output_dim))
         
-        mu1, v1 = self.m_set1.predict_f(self.Xtest)
-        mu2, v2 = self.m_set2.predict_f(self.Xtest)
-        self.failUnless(np.all(v1==v2))
-        self.failUnless(np.all(mu1==mu2))
-            
-            
-            
-                
-                
-    def test_zero_operations(self):
-        #TODO: check a - a && a * zero for all a & combinations
+        linear1 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
+        linear2 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
+        linear3 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
+        
+        const1 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
+        const2 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
+        const3 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
+        
+        
+        const1inv = GPflow.mean_functions.Constant(-1 * const1.c)
+        linear1inv = GPflow.mean_functions.Linear(-1 * linear1.A, linear1.b * -1)
+        
+        #a * (b + c)
+        const_set1 = GPflow.mean_functions.Product(const1,
+                                                  GPflow.mean_functions.Additive(const2, const3))
+        linear_set1 = GPflow.mean_functions.Product(linear1,
+                                                  GPflow.mean_functions.Additive(linear2, linear3))
+
+        #ab + ac
+        const_set2 = GPflow.mean_functions.Additive(GPflow.mean_functions.Product(const1, const2),
+                                                   GPflow.mean_functions.Product(const1, const3))
+
+        linear_set2 = GPflow.mean_functions.Additive(GPflow.mean_functions.Product(linear1, linear2),
+                                                     GPflow.mean_functions.Product(linear1, linear3))
         #a-a = 0, (a + b) -a = b = a + (b - a)
-        #a*1 = a, (a + b) * 1 = (a+ b), (a * b) * 1 = (a * b)
-        #a*0 = 0, (a + b) * 0 = 0, (a * b) * 0 = 0
-   
-        pass
+        
+        linear1_minus_linear1 =  GPflow.mean_functions.Additive(linear1, linear1inv)   
+        const1_minus_const1=  GPflow.mean_functions.Additive(const1, const1inv)
+
+        comp_minus_constituent1 = GPflow.mean_functions.Additive(GPflow.mean_functions.Additive(linear1, linear2),
+                                                                      linear1inv)
+        comp_minus_constituent2 = GPflow.mean_functions.Additive(linear1,
+                                                                      GPflow.mean_functions.Additive(linear2,
+                                                                                                     linear1inv))  
+                                                    
+        k = GPflow.kernels.Bias(self.input_dim)        
+        
+        self.m_linear_set1 = GPflow.gpr.GPR(X, Y, mean_function=linear_set1, kern=k)
+        self.m_linear_set2 = GPflow.gpr.GPR(X, Y, mean_function=linear_set2, kern=k)
+        
+        self.m_const_set1 = GPflow.gpr.GPR(X, Y, mean_function=const_set1, kern=k)
+        self.m_const_set2 = GPflow.gpr.GPR(X, Y, mean_function=const_set2, kern=k)
+        
+        self.m_linear_min_linear= GPflow.gpr.GPR(X, Y, mean_function=linear1_minus_linear1, kern=k)
+        self.m_const_min_const = GPflow.gpr.GPR(X, Y, mean_function=const1_minus_const1, kern=k)        
+        
+        self.m_constituent = GPflow.gpr.GPR(X, Y, mean_function=linear2, kern=k) 
+        self.m_zero = GPflow.gpr.GPR(X, Y, mean_function=zero, kern=k)        
+        
+        self.m_comp_minus_constituent1 = GPflow.gpr.GPR(X, Y, mean_function=comp_minus_constituent1, kern=k)
+        self.m_comp_minus_constituent2 = GPflow.gpr.GPR(X, Y, mean_function=comp_minus_constituent2, kern=k)
+
+             
+    def test_precedence(self):
+        mu1_lin, v1_lin = self.m_linear_set1.predict_f(self.Xtest)
+        mu2_lin, v2_lin = self.m_linear_set2.predict_f(self.Xtest)
+        
+        mu1_const, v1_const = self.m_const_set1.predict_f(self.Xtest)
+        mu2_const, v2_const = self.m_const_set2.predict_f(self.Xtest)
+        
+        self.failUnless(np.all(v1_lin==v1_lin))
+        self.failUnless(np.all(mu1_lin==mu2_lin))
+        
+        self.failUnless(np.all(v1_const==v2_const))
+        self.failUnless(np.all(mu1_const==mu2_const))
             
+    def test_inverse_operations(self):
+        mu1_lin_min_lin, v1_lin_min_lin = self.m_linear_min_linear.predict_f(self.Xtest)
+        mu1_const_min_const, v1_const_min_const= self.m_const_min_const.predict_f(self.Xtest)        
+        
+        mu1_comp_min_constituent1, v1_comp_min_constituent1 = self.m_comp_minus_constituent1.predict_f(self.Xtest)
+        mu1_comp_min_constituent2, v1_comp_min_constituent2 = self.m_comp_minus_constituent2.predict_f(self.Xtest)
+        
+        mu_constituent, v_constituent = self.m_constituent.predict_f(self.Xtest)
+        mu_zero, v_zero= self.m_zero.predict_f(self.Xtest)
+        
+        self.failUnless(np.all(mu1_lin_min_lin, mu_zero))
+        self.failUnless(np.all(mu1_const_min_const, mu_zero))
+        
+        self.failUnless(np.all(np.isclose(mu1_comp_min_constituent1, mu_constituent)))
+        self.failUnless(np.all(np.isclose(mu1_comp_min_constituent2, mu_constituent)))
+        self.failUnless(np.all(np.isclose(mu1_comp_min_constituent1, mu1_comp_min_constituent2)))           
 
 
 class TestModelsWithMeanFuncs(unittest.TestCase):
