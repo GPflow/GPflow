@@ -84,8 +84,10 @@ class TestModelCompositionOperations(unittest.TestCase):
         const2 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
         const3 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
 
-        const1inv = GPflow.mean_functions.Constant(const1.c.get_free_state() *-1)
-        linear1inv = GPflow.mean_functions.Linear(A = linear1.A.get_free_state() * -1., b = linear1.b.get_free_state() * -1.)
+        const1inv = GPflow.mean_functions.Constant(np.reshape(const1.c.get_free_state() *-1, [self.output_dim]))
+        linear1inv = GPflow.mean_functions.Linear(A = np.reshape(linear1.A.get_free_state() * -1., [self.input_dim, self.output_dim]),
+                                                                 b = np.reshape(linear1.b.get_free_state() * -1., [self.output_dim]))
+        
         
         #a * (b + c)
         const_set1 = GPflow.mean_functions.Product(const1,
@@ -142,7 +144,6 @@ class TestModelCompositionOperations(unittest.TestCase):
         self.failUnless(np.all(np.isclose(mu1_const, mu2_const)))
             
     def test_inverse_operations(self):
-        #TODO: Dimensionality issues here ValueError: Dimensions 3 and 1 are not compatible
         mu1_lin_min_lin, v1_lin_min_lin = self.m_linear_min_linear.predict_f(self.Xtest)
         mu1_const_min_const, v1_const_min_const= self.m_const_min_const.predict_f(self.Xtest)        
         
@@ -152,8 +153,8 @@ class TestModelCompositionOperations(unittest.TestCase):
         mu_constituent, v_constituent = self.m_constituent.predict_f(self.Xtest)
         mu_zero, v_zero= self.m_zero.predict_f(self.Xtest)
         
-        self.failUnless(np.all(mu1_lin_min_lin, mu_zero))
-        self.failUnless(np.all(mu1_const_min_const, mu_zero))
+        self.failUnless(np.all(np.isclose(mu1_lin_min_lin, mu_zero)))
+        self.failUnless(np.all(np.isclose(mu1_const_min_const, mu_zero)))
         
         self.failUnless(np.all(np.isclose(mu1_comp_min_constituent1, mu_constituent)))
         self.failUnless(np.all(np.isclose(mu1_comp_min_constituent2, mu_constituent)))
