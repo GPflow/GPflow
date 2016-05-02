@@ -31,10 +31,11 @@ class TestMeanFuncs(unittest.TestCase):
 
         for mf in self.mfs:
             mf.make_tf_array(self.x)
-        for compmf in self.composition_mfs:
-            compmf.make_tf_array(self.x)
-            
         
+        
+        #for compmf in self.composition_mfs:
+            #compmf.make_tf_array(self.x)
+            
         self.X = tf.placeholder(tf.float64, [self.N, self.input_dim])
         self.X_data = np.random.randn(self.N, self.input_dim)
 
@@ -240,7 +241,7 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
             self.failUnless(np.all(np.isclose(v1, v2)))
 
 if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestModelCompositionOperations)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-    #unittest.main()
+    #suite = unittest.TestLoader().loadTestsFromTestCase(TestMeanFuncs)
+    #unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()
 
