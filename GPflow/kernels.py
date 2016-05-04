@@ -38,6 +38,17 @@ class Kern(Parameterized):
     def __mul__(self, other):
         return Prod([self, other])
 
+    def evalK(self, *args):
+        tf_vars = [tf.placeholder('float64', name='evalK_%i' % i) for i, x in enumerate(args)]
+        feed_dict = dict(zip(tf_vars, args))
+        fs = tf.Variable(self.get_free_state(), name='evalK_free_state')
+        self.make_tf_array(fs)
+        with tf.Session() as sess:
+            sess.run(tf.initialize_all_variables())
+            with self.tf_mode():
+                K = self.K(*args).eval(feed_dict=feed_dict)
+        return K
+
 
 class Static(Kern):
     """
