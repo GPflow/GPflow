@@ -17,7 +17,12 @@ class ObjectiveWrapper(object):
     def __init__(self, objective):
         self._objective = objective
     def __call__(self, x):
-        f, g = self._objective(x)
+        try:
+            f, g = self._objective(x)
+        except(tf.errors.InvalidArgumentError):
+            print("Warning: InvalidArgumentError in objective function possibly due to singular matrix")
+            return np.inf, np.zeros_like(x)
+            
         g_is_fin = np.isfinite(g)
         if np.all(g_is_fin):
             self._previous_x = x # store the last known good value
