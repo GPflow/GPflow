@@ -25,6 +25,8 @@ class Parentable(object):
         """to get the name of this object, have a look at what our _parent has called us"""
         if self._parent is None:
             return 'unnamed'
+        if isinstance(self._parent, ParamList):
+            return 'item%i'%self._parent._list.index(self)
         matches = [key for key, value in self._parent.__dict__.items() if value is self]
         if len(matches) == 0:
             raise ValueError, "mis-specified parent. This param's _parent does not contain a reference to it."
@@ -82,14 +84,14 @@ class Param(Parentable):
     There is a self._fixed flag, in which case the parameter does not get
     optimized. To enable this, during make_tf_array, the fixed values of
     the parameter are returned. Fixes and transforms can be used together, in
-    the sense that fixes tkae priority over transforms, so unfixing a parameter
+    the sense that fixes take priority over transforms, so unfixing a parameter
     is as simple as setting the flag. Example:
 
     >>> p = Param(1.0, transform=GPflow.transforms.positive)
     >>> m = GPflow.model.Model()
-    >>> m.p = p # the model has a sinlge parameter, constrained to be +ve
+    >>> m.p = p # the model has a single parameter, constrained to be +ve
     >>> m.p.fixed = True # the model now has no free parameters
-    >>> m.p.fixed = False # the model has a sinlge parameter, constrained to be +ve
+    >>> m.p.fixed = False # the model has a single parameter, constrained to be +ve
 
 
     Compiling into tensorflow
@@ -108,6 +110,7 @@ class Param(Parentable):
 
     """
     def __init__(self, array, transform=transforms.Identity()):
+        Parentable.__init__(self)
         self._array = np.asarray(np.atleast_1d(array), dtype=np.float64)
         self.transform = transform
         self.prior = None
@@ -128,7 +131,7 @@ class Param(Parentable):
         #TODO what about constraints that change the size ??
 
         if self.fixed:
-            self._tf_array = self._array.copy()
+            self._tf_array = tf.constant(self._array.copy(), dtype=tf.float64)
             return 0
         x_free = free_array[:self.size]
         mapped_array = self.transform.tf_forward(x_free)
@@ -163,7 +166,7 @@ class Param(Parentable):
         Build a tensorflow representation of the prior density. The log jacobian is included. 
         """
         if self.prior is None:
-            return 0
+            return tf.constant(0.0, tf.float64)
         elif self._tf_array is None:
             raise ValueError, "tensorflow array has not been initialized"
         else:
@@ -220,10 +223,11 @@ class Parameterized(Parentable):
     models on those parameters. During _tf_mode, the __getattribute__
     method is overwritten to return tf arrays in place of parameters.
 
-    Another recurseive function is build_prior wich sums the log-prior from all
+    Another recursive function is build_prior wich sums the log-prior from all
     of the tree's parameters (whilst in tf_mode!).
     """
     def __init__(self):
+        Parentable.__init__(self)
         self._tf_mode = False
 
     def __getattribute__(self, key):
@@ -343,11 +347,11 @@ class Parameterized(Parentable):
         self._end_tf_mode()
 
     def _begin_tf_mode(self):
-        [child._begin_tf_mode() for key, child in self.__dict__.items() if isinstance(child, Parameterized) and key is not '_parent']
+        [child._begin_tf_mode() for child in self.sorted_params if isinstance(child, Parameterized)]
         self._tf_mode = True
 
     def _end_tf_mode(self):
-        [child._end_tf_mode() for key, child in self.__dict__.items() if isinstance(child, Parameterized) and key is not '_parent']
+        [child._end_tf_mode() for child in self.sorted_params if isinstance(child, Parameterized)]
         self._tf_mode = False
 
     def build_prior(self):
@@ -386,3 +390,75 @@ class Parameterized(Parentable):
 
         html.append("</table>")
         return ''.join(html) 
+
+
+class ParamList(Parameterized):
+    """
+    A list of parameters. This allows us to store parameters in a list whilst
+    making them 'visible' to the GPflow machinery. 
+
+    The correct usage is
+
+    >>> my_list = GPflow.param.ParamList([Param1, Param2])
+
+    You can then iterate through the list. For example, to compute the sum:
+    >>> my_sum = reduce(tf.add, my_list)
+
+    or the sum of the squares:
+    >>> rmse = tf.sqrt(reduce(tf.add, map(tf.square, my_list)))
+
+    You can append things:
+    >>> my_list.append(GPflow.kernels.RBF(1))
+
+    but only if the are Parameters (or Parameterized objects). You can set the
+    value of Parameters in the list:
+
+    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
+    >>> print my_list
+    unnamed.item0 transform:(none) prior:None
+    [ 2.]
+    >>> my_list[0] = 12
+    >>> print my_list
+    unnamed.item0 transform:(none) prior:None
+    [ 12.]
+
+    But you can't change elements of the list by assignment:
+    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
+    >>> new_param = GPflow.param.Param(4)
+    >>> my_list[0] = new_param # raises exception
+
+    """
+    def __init__(self, list_of_params=[]):
+        Parameterized.__init__(self)
+        for item in list_of_params:
+            assert isinstance(item, (Param, Parameterized))
+            item._parent = self
+        self._list = list_of_params
+
+    @property
+    def sorted_params(self):
+        return self._list
+
+    def __getitem__(self, key):
+        """
+        If tf mode is off, this simply returns the corresponding Param . 
+
+        If tf mode is on, all items will appear as their tf
+        representations.
+        """
+        o = self.sorted_params[key]
+        if isinstance(o, Param) and self._tf_mode:
+            return o._tf_array
+        return o
+
+    def append(self, item):
+        assert isinstance(item, (Param, Parameterized)), "this object is for containing parameters"
+        item._parent = self
+        self.sorted_params.append(item)
+
+    def __setitem__(self, key, value):
+        """
+        It's not possible to assign to things in the list, but it is possbile
+        to set their values by assignment.
+        """
+        self.sorted_params[key]._array[...] = value

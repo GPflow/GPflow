@@ -1,0 +1,31 @@
+sudo: required
+dist: trusty    
+language: python
+python:
+    - "2.7"
+
+before_install:
+     #Install a mini version of anaconda such that we can easily install our dependencies
+    - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - conda config --set always_yes yes --set changeps1 no
+    - conda update -q conda
+    - conda create --yes -n condaenv python=2.7
+    - conda install --yes -n condaenv pip
+    - source activate condaenv
+    - conda install scipy # GPflow needs scipy: installing through conda is easier than relying on setup.py
+    - pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.4/linux/tensorflow-0.8.0rc0-py2-none-any.whl
+    - pip install codecov
+    - pip install coverage
+
+install:
+    - python setup.py install
+
+script:
+    #- nosetests testing --with-coverage --cover-package=GPflow --cover-erase
+    - coverage run --source=GPflow setup.py test 
+
+after_success:       
+    - codecov
+

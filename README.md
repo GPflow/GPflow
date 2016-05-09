@@ -3,47 +3,36 @@
 GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
 The full list of contributors (in alphabetical order) is James Hensman, Alexander G. de G. Matthews and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
+[![Build status](https://codeship.com/projects/26b43920-e96e-0133-3481-02cde9680eda/status?branch=master)](https://codeship.com/projects/147609)
+[![Coverage Status](https://coveralls.io/repos/github/GPflow/GPflow/badge.svg?branch=HEAD)](https://coveralls.io/github/GPflow/GPflow?branch=HEAD)
+
 # Install
 
-## 1) Install Tensorflow fork
+## 1) Install Tensorflow
 
-To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. You'll need to install our [fork](https://github.com/GPflow/tensorflow). If you are already using tensorflow be aware that changing to our fork may change how it works for you.
+To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. Our code is now included in the main TensorFlow repository and we are waiting for it to be part of the next release. Until then we have compiled pip packages from the TensorFlow master branch for you to use. Be aware that changing your installation of TensorFlow may change how it works for you.
 
 EITHER:
 
-### 1a) Install Tensorflow fork using Pip. Best option for most users.
+### 1a) Install Tensorflow using Pip. Best option for most users.
 
 The sequence of commands for Linux is:
 
 ```
 pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.3/linux/tensorflow-0.7.1-py2-none-any.whl
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.4/linux/tensorflow-0.8.0rc0-py2-none-any.whl
 ```
 
 The sequence of commands for Mac OS is:
 
 ```
 pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.3/osx/tensorflow-0.7.1-py2-none-any.whl
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.4/osx/tensorflow-0.8.0rc0-py2-none-any.whl
 ```
 
 OR:
 
 ### 1b) Install Tensorflow fork from sources.
-
-You will need [Bazel](http://bazel.io/). You will also need to install [Boost](http://www.boost.org/). This can usually be done using the command "apt-get install libboost-all-dev" on Linux or "brew install boost" for Mac OS.
-
-The sequence of commands is:
-
-```
-pip uninstall tensorflow
-git clone --recurse-submodules github.com/gpflow/tensorflow
-cd tensorflow
-./configure 
-bazel build -c opt //tensorflow/tools/pip_package:build_pip_package
-bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
-pip install /tmp/tensorflow_pkg/<package name>
-```
 
 For more information see [this page](https://www.tensorflow.org/versions/master/get_started/os_setup.html#installing-from-sources).
 
@@ -67,12 +56,20 @@ GPflow has a slew of kernels that can be combined in a similar way to GPy ([see 
 #### Regression
 For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum liklelihood or MCMC for the covariance function parameters ([notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/regression.ipynb)).
 
+It's also possible to do Sparse GP regression using the `GPflow.sgpr.SGPR` class. This is based on [4].
+
 #### MCMC
 For non-Gaussian likelohoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/Sparse%20mcmc%20demo.ipynb) introduces the interface.
 
 #### Variational inference
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. All of the sparse methods in GPflow are solidified in [4]. 
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in `GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5].
 
+The following table summarizes the model options in GPflow. 
+
+| | Gaussian <br> likelihood | Non-Gaussian <br> (variational) | Non-Gaussian <br> (MCMC)|
+| --- | --- | --- | --- |
+| Full-covariance | `GPflow.gpr.GPR` | `GPflow.vgp.VGP` | `GPflow.gpmc.GPMC`|
+| Sparse approximation | `GPflow.sgpr.SGPR` | `GPflow.svgp.SVGP` | `GPflow.sgpmc.SGPMC` |
 
 ### References
 [1] MCMC for Variationally Sparse Gaussian Processes
@@ -87,7 +84,11 @@ Neural computation 21 (3), 786-792
 J Hensman, A G de G Matthews, Z Ghahramani
 Proceedings of AISTATS 18, 2015
 
-[4] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
+[4] Variational Learning of Inducing Variables in Sparse Gaussian Processes. 
+M Titsias
+Proceedings of AISTATS 12, 2009
+
+[5] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
 A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
 Proceedings of AISTATS 19, 2016
 
