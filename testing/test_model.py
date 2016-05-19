@@ -79,9 +79,26 @@ class TestLikelihoodAutoflow(unittest.TestCase):
         self.failIf(p0==p1)
         self.failUnless(l0==l1)
 
+class TestCovarianceSingularity(unittest.TestCase):
+    def setUp(self):
+        X, Y = np.random.randn(2, 100, 1)
+        self.Xtest = np.random.randn(1000, 1)
+        self.m1 = GPflow.gpr.GPR(X, Y, GPflow.kernels.Cosine(1))
+        self.m2 = GPflow.gpr.GPR(X, Y, GPflow.kernels.Linear(1))
+        self.m3 = GPflow.gpr.GPR(X, Y, GPflow.kernels.RBF(1))
+        
+    def test_predict_samples(self):
+        
+        try:
+            my_sample1 = self.m1.predict_f_samples(self.Xtest, 1)
+            my_sample2 = self.m2.predict_f_samples(self.Xtest, 1)
+            my_sample3 = self.m3.predict_f_samples(self.Xtest, 1)
+        
+        except:
+            self.fail("predict_f_samples throws error")
+        
 
 
 
 if __name__ == "__main__":
     unittest.main()
-
