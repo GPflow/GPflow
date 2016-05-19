@@ -1,12 +1,12 @@
 import tensorflow as tf
 import numpy as np
-from param import Param
+from .param import Param
 from .model import GPModel
-import transforms
-import conditionals
+from . import transforms
+from . import conditionals
 from .mean_functions import Zero
-from tf_hacks import eye
-import kullback_leiblers
+from .tf_hacks import eye
+from . import kullback_leiblers
 
 
 class SVGP(GPModel):
@@ -106,7 +106,7 @@ class SVGP(GPModel):
 
         #Get prior KL.
         KL  = self.build_prior_KL()
-    
+
         #Get conditionals
         if self.whiten:
             fmean, fvar = conditionals.gaussian_gp_predict_whitened(self._tfX, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
@@ -115,7 +115,7 @@ class SVGP(GPModel):
 
         #add in mean function to conditionals.
         fmean += self.mean_function(self._tfX)
-        
+
         #Get variational expectations.
         variational_expectations = self.likelihood.variational_expectations(fmean, fvar, self._tfY)
 
@@ -128,8 +128,3 @@ class SVGP(GPModel):
         else:
             mu, var =  conditionals.gaussian_gp_predict(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent, full_cov)
         return mu + self.mean_function(Xnew), var
-
-
-      
-
-

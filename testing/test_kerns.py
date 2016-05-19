@@ -12,13 +12,13 @@ class TestRbf(unittest.TestCase):
         kernel.lengthscales = lengthScale
         kernel.variance = variance
         rng = np.random.RandomState(1)
-        
+
         x_free = tf.placeholder('float64')
         kernel.make_tf_array(x_free)
         X = tf.placeholder('float64')
         X_data = rng.randn( 3, 1 )
         reference_gram_matrix =  referenceRbfKernel(X_data, lengthScale, variance)
-        
+
         with kernel.tf_mode():
             gram_matrix = tf.Session().run( kernel.K(X) , feed_dict={x_free:kernel.get_free_state(), X:X_data})
         self.failUnless(np.allclose(gram_matrix-reference_gram_matrix, 0))
@@ -96,7 +96,7 @@ class TestAdd(unittest.TestCase):
 
     def test_sym(self):
         x_free = tf.placeholder('float64')
-        [k.make_tf_array(x_free) for k in self.rbf, self.lin, self.k]
+        [k.make_tf_array(x_free) for k in (self.rbf, self.lin, self.k)]
         X = tf.placeholder('float64')
         X_data = self.rng.randn(10,1)
         for k in [self.rbf, self.lin, self.k]:
@@ -107,7 +107,7 @@ class TestAdd(unittest.TestCase):
 
     def test_asym(self):
         x_free = tf.placeholder('float64')
-        [k.make_tf_array(x_free) for k in self.rbf, self.lin, self.k]
+        [k.make_tf_array(x_free) for k in (self.rbf, self.lin, self.k)]
         X = tf.placeholder('float64')
         Z = tf.placeholder('float64')
         X_data = self.rng.randn(10,1)
@@ -364,4 +364,3 @@ class TestKernNamingProduct(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
