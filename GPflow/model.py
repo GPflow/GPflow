@@ -5,6 +5,8 @@ import numpy as np
 import tensorflow as tf
 import hmc
 import sys
+import jitter_cholesky
+
 
 class ObjectiveWrapper(object):
     """
@@ -374,7 +376,7 @@ class GPModel(Model):
         mu, var = self.build_predict(Xnew, full_cov=True)
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:,:,i])
+            L = jitter_cholesky.jitchol(var[:,:,i])
             samples.append(mu[:,i:i+1] + tf.matmul(L, tf.random_normal(tf.pack([tf.shape(L)[0], num_samples]), dtype=tf.float64)))
         return tf.transpose(tf.pack(samples))
 
