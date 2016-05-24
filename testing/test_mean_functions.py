@@ -173,75 +173,40 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
     """
 
     def setUp(self):
-        self.input_dim=3
-        self.output_dim=2
-        self.N=20
-        self.Ntest=30
-        self.M=5
+        self.input_dim = 3
+        self.output_dim = 2
+        self.N = 20
+        self.Ntest = 30
+        self.M = 5
         rng = np.random.RandomState(0)
         X, Y, Z, self.Xtest = rng.randn(self.N, self.input_dim),\
                               rng.randn(self.N, self.output_dim),\
                               rng.randn(self.M, self.input_dim),\
                               rng.randn(self.Ntest, self.input_dim)
-        k = lambda : GPflow.kernels.Matern32(self.input_dim)
-        zero = GPflow.mean_functions.Zero()
-        const = GPflow.mean_functions.Constant(np.ones(self.output_dim) * 10)
-        one = GPflow.mean_functions.Constant(np.ones(self.output_dim))
-        
-        
-        mult = GPflow.mean_functions.Product(const,const)
-        add = GPflow.mean_functions.Additive(const,const)
-        
-        addzero = GPflow.mean_functions.Additive(const, zero)
-        multone = GPflow.mean_functions.Product(const, one)
+        k = lambda: GPflow.kernels.Matern32(self.input_dim)
+        lik = lambda: GPflow.likelihoods.Gaussian()
 
-        self.models_with, self.models_without, self.models_mult, self.models_add, \
-        self.models_addzero, self.models_multone =\
+        # test all models with these mean functions
+        mf0 = GPflow.mean_functions.Zero()
+        mf1 = GPflow.mean_functions.Constant(np.ones(self.output_dim) * 10)
+
+        self.models_with, self.models_without = \
                 [[GPflow.gpr.GPR(X, Y, mean_function=mf, kern=k()),
                   GPflow.sgpr.SGPR(X, Y, mean_function=mf, Z=Z, kern=k()),
                   GPflow.sgpr.GPRFITC(X, Y, mean_function=mf, Z=Z, kern=k()),
-                  GPflow.svgp.SVGP(X, Y, mean_function=mf, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
-                  GPflow.vgp.VGP(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
-                  GPflow.vgp.VGP(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
-                  GPflow.gpmc.GPMC(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
-                  GPflow.sgpmc.SGPMC(X, Y, mean_function=mf, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)] for mf in (const, zero, mult, add, addzero, multone)]
+                  GPflow.svgp.SVGP(X, Y, mean_function=mf, Z=Z, kern=k(), likelihood=lik()),
+                  GPflow.vgp.VGP(X, Y, mean_function=mf, kern=k(), likelihood=lik()),
+                  GPflow.vgp.VGP(X, Y, mean_function=mf, kern=k(), likelihood=lik()),
+                  GPflow.gpmc.GPMC(X, Y, mean_function=mf, kern=k(), likelihood=lik()),
+                  GPflow.sgpmc.SGPMC(X, Y, mean_function=mf, kern=k(), likelihood=lik(), Z=Z)] for mf in (mf0, mf1)]
 
     def test_basic_mean_function(self):
         for m_with, m_without in zip(self.models_with, self.models_without):
             mu1, v1 = m_with.predict_f(self.Xtest)
             mu2, v2 = m_without.predict_f(self.Xtest)
-            self.failUnless(np.all(v1==v2))
+            self.failUnless(np.all(v1 == v2))
             self.failIf(np.all(mu1 == mu2))
-    
-    def test_add_mean_function(self):
-        for m_add, m_const in zip(self.models_add, self.models_with):
-            mu1, v1 = m_add.predict_f(self.Xtest)
-            mu2, v2 = m_const.predict_f(self.Xtest)
-            self.failUnless(np.all(v1==v2))
-            self.failIf(np.all(mu1 == mu2))
-    
-    def test_mult_mean_function(self):
-        for m_mult, m_const in zip(self.models_mult, self.models_with):
-            mu1, v1 = m_mult.predict_f(self.Xtest)
-            mu2, v2 = m_const.predict_f(self.Xtest)
-            self.failUnless(np.all(v1==v2))
-            self.failIf(np.all(mu1 == mu2))
-    
-    def test_addZero_meanfuction(self):
-        for m_add, m_addZero in zip(self.models_with, self.models_addzero):
-            mu1, v1 = m_add.predict_f(self.Xtest)
-            mu2, v2 = m_addZero.predict_f(self.Xtest)
-            self.failUnless(np.all(np.isclose(mu1,mu2)))
-            self.failUnless(np.all(np.isclose(v1, v2)))
-    def test_multOne_meanfuction(self):
-        for m_mult, m_multOne in zip(self.models_with, self.models_multone):
-            mu1, v1 = m_mult.predict_f(self.Xtest)
-            mu2, v2 = m_multOne.predict_f(self.Xtest)
-            self.failUnless(np.all(np.isclose(mu1,mu2)))
-            self.failUnless(np.all(np.isclose(v1, v2)))
 
 if __name__ == "__main__":
-    #suite = unittest.TestLoader().loadTestsFromTestCase(TestMeanFuncs)
-    #unittest.TextTestRunner(verbosity=2).run(suite)
     unittest.main()
 
