@@ -30,7 +30,7 @@ class Kern(Parameterized):
             X = tf.transpose(tf.pack([X[:,i] for i in self.active_dims]))
             if X2 is not None:
                 X2 = tf.transpose(tf.pack([X2[:,i] for i in self.active_dims]))
-            return X, X2    
+            return X, X2
 
     def __add__(self, other):
         return Add([self, other])
@@ -134,6 +134,22 @@ class RBF(Stationary):
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
         return self.variance * tf.exp(-self.square_dist(X, X2)/2)
+
+
+class Constant(Kern):
+    """
+    The constant kernel
+    """
+    def __init__(self, input_dim, active_dims=None):
+        Kern.__init__(self, input_dim, active_dims)
+        self.variance = Param(1, transforms.positive)
+        self.parameters = [self.variance]
+    
+    def K(self, X, X2=None):
+        return self.variance
+
+    def Kdiag(self, X):
+        return self.variance
 
 
 class Linear(Kern):
