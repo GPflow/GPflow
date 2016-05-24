@@ -2,7 +2,7 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from reference import *
+from .reference import *
 
 class TestRbf(unittest.TestCase):
     def test_1d(self):
