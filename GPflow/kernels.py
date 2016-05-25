@@ -1,8 +1,10 @@
+from functools import reduce
+
 import tensorflow as tf
-from tf_hacks import eye
+from .tf_hacks import eye
 import numpy as np
-from param import Param, Parameterized
-import transforms
+from .param import Param, Parameterized
+from . import transforms
 
 class Kern(Parameterized):
     """
@@ -25,12 +27,12 @@ class Kern(Parameterized):
             X = X[:,self.active_dims]
             if X2 is not None:
                 X2 = X2[:,self.active_dims]
-            return X, X2    
+            return X, X2
         else: # TODO: when tf can do fancy indexing, use that.
             X = tf.transpose(tf.pack([X[:,i] for i in self.active_dims]))
             if X2 is not None:
                 X2 = tf.transpose(tf.pack([X2[:,i] for i in self.active_dims]))
-            return X, X2    
+            return X, X2
 
     def __add__(self, other):
         return Add([self, other])
@@ -48,7 +50,7 @@ class Static(Kern):
         Kern.__init__(self, input_dim, active_dims)
         self.variance = Param(variance, transforms.positive)
     def Kdiag(self, X):
-        zeros = X[:,0]*0 
+        zeros = X[:,0]*0
         return zeros + self.variance
 
 
@@ -76,13 +78,13 @@ class Bias(Static):
 
 class Stationary(Kern):
     """
-    Base class for kernels that are statinoary, that is, they only depend on 
+    Base class for kernels that are statinoary, that is, they only depend on
 
         r = || x - x' ||
 
     This class handles 'ARD' behaviour, which stands for 'Automatic Relevance
     Determination'. This means that the kernel has one lengthscale per
-    dimension, otherwise the kernel is isotropic (has a single lengthscale). 
+    dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
     def __init__(self, input_dim, variance=1.0, lengthscales=None, active_dims=None, ARD=False):
         """
@@ -123,7 +125,7 @@ class Stationary(Kern):
         return tf.sqrt(r2 + 1e-12)
 
     def Kdiag(self, X):
-        zeros = X[:,0]*0 
+        zeros = X[:,0]*0
         return zeros + self.variance
 
 
@@ -153,7 +155,7 @@ class Linear(Kern):
             self.variance = Param(np.ones(self.input_dim)*variance, transforms.positive)
         else:
             self.variance = Param(variance, transforms.positive)
-        self.parameters = [self.variance]    
+        self.parameters = [self.variance]
 
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
@@ -221,7 +223,7 @@ def make_kernel_names(kern_list):
     Take a list of kernels and return a list of strings, giving each kernel a
     unique name.
 
-    Each name is made from the lower-case version of the kernel's class name. 
+    Each name is made from the lower-case version of the kernel's class name.
 
     Duplicate kernels are given training numbers.
     """
@@ -281,6 +283,3 @@ class Prod(Combination):
 
     def Kdiag(self, X):
         return reduce(tf.mul, [k.Kdiag(X) for k in self.kern_list])
-
-
-

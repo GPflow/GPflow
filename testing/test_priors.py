@@ -12,7 +12,7 @@ class PriorModeTests(unittest.TestCase):
             def build_likelihood(self):
                 return 0
         self.m = FlatModel()
-    
+
     def testGaussianMode(self):
         self.m.x = GPflow.param.Param(1.0)
         self.m.x.prior = GPflow.priors.Gaussian(3,1)
@@ -35,7 +35,7 @@ class PriorModeTests(unittest.TestCase):
         self.m.x.prior = GPflow.priors.Gamma(shape, scale)
         self.m.optimize(display=0)
 
-        print self.m.x._array, (shape - 1) * scale
+        print(self.m.x._array, (shape - 1) * scale)
         self.failUnless(np.allclose(self.m.x._array, (shape -1.) * scale, 1e-3))
 
 
@@ -46,4 +46,3 @@ class PriorModeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

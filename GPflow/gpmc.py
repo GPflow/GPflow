@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from .model import GPModel
 from .param import Param
-import densities
+from . import densities
 from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
@@ -59,4 +59,3 @@ class GPMC(GPModel):
         """
         mu, var = conditional(Xnew, self.X, self.kern, self.V, num_columns=self.num_latent, full_cov=full_cov, q_sqrt=None, whiten=True)
         return mu + self.mean_function(Xnew), var
-
