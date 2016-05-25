@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import transforms
+from . import transforms
 from contextlib import contextmanager
 
 recompile_keys = ['prior', 'transform', 'fixed'] # when one of these attributes is set, notify a recompilation
@@ -8,7 +8,7 @@ recompile_keys = ['prior', 'transform', 'fixed'] # when one of these attributes 
 class Parentable(object):
     """
     A very simple class for objects in a tree, where each node contains a
-    reference to '_parent'. 
+    reference to '_parent'.
 
     This class can figure out its own name (by seeing what it's called by the
     _parent's __dict__) and also recurse up to the highest_parent.
@@ -29,16 +29,16 @@ class Parentable(object):
             return 'item%i'%self._parent._list.index(self)
         matches = [key for key, value in self._parent.__dict__.items() if value is self]
         if len(matches) == 0:
-            raise ValueError, "mis-specified parent. This param's _parent does not contain a reference to it."
+            raise ValueError("mis-specified parent. This param's _parent does not contain a reference to it.")
         if len(matches) > 1:
-            raise ValueError, "This param appears to be doubly referenced by a parent"
+            raise ValueError("This param appears to be doubly referenced by a parent")
         return matches [0]
 
 
 
 class Param(Parentable):
     """
-    An object to represent parameters. 
+    An object to represent parameters.
 
 
     Getting and setting values
@@ -64,8 +64,8 @@ class Param(Parentable):
 
     >>> self.get_free_state
     >>> self.set_state
-    
-    transforms between self._array and the free state. 
+
+    transforms between self._array and the free state.
 
     To apply a transform to the Param, simply set the transform atribute with a GPflow.transforms object
     >>> m = GPflow.model.Model()
@@ -96,11 +96,11 @@ class Param(Parentable):
 
     Compiling into tensorflow
     --
-    The method 
-        
+    The method
+
     >>> self.make_tf_array
 
-    constructs a tensorflow representation of the parameter, from a tensorflow vector representing the free state. 
+    constructs a tensorflow representation of the parameter, from a tensorflow vector representing the free state.
 
     The `self.prior` object is used to place priors on prameters, and the
     `self.transform` object is used to enable unconstrained optimization and
@@ -151,7 +151,7 @@ class Param(Parentable):
     def set_state(self, x):
         """
         Given a vector x representing the 'free' state of this param, transform
-        it 'forwards' and store the result in self._array. 
+        it 'forwards' and store the result in self._array.
 
         This is a numpy method.
         """
@@ -163,12 +163,12 @@ class Param(Parentable):
 
     def build_prior(self):
         """
-        Build a tensorflow representation of the prior density. The log jacobian is included. 
+        Build a tensorflow representation of the prior density. The log jacobian is included.
         """
         if self.prior is None:
             return tf.constant(0.0, tf.float64)
         elif self._tf_array is None:
-            raise ValueError, "tensorflow array has not been initialized"
+            raise ValueError("tensorflow array has not been initialized")
         else:
             return self.prior.logp(self._tf_array) + self._log_jacobian
 
@@ -211,12 +211,12 @@ class Param(Parentable):
 
 class Parameterized(Parentable):
     """
-    An object to contain parameters. 
+    An object to contain parameters.
 
     This object is designed to be part of a tree, with Param objects at the
     leaves. We can then recurse down the tree to find all the parameters
     (leaves), or recurse up the tree (using highest_parent) from the leaves to
-    the root. 
+    the root.
 
     A useful application of such a recursion is 'tf_mode', where the
     parameters appear as their _tf_array variables. This allows us to build
@@ -232,7 +232,7 @@ class Parameterized(Parentable):
 
     def __getattribute__(self, key):
         """
-        Here, we overwrite the getattribute method. 
+        Here, we overwrite the getattribute method.
 
         If tf mode is off, this does nothing.
 
@@ -294,7 +294,7 @@ class Parameterized(Parentable):
     def sorted_params(self):
         """
         Return a list of all the child parameters, sorted by id. This makes
-        sure they're always in the same order. 
+        sure they're always in the same order.
         """
         params = [child for key, child in self.__dict__.items() if isinstance(child, (Param, Parameterized)) and key is not '_parent']
         return sorted(params, key=id)
@@ -304,7 +304,7 @@ class Parameterized(Parentable):
         recurse get_free_state on all child parameters, and hstack them.
         """
         return np.hstack([p.get_free_state() for p in self.sorted_params] + [np.empty(0)]) # additional empty array allows hstacking of empty list
-    
+
     def set_state(self, x):
         """
         Set the values of all the parameters by recursion
@@ -389,13 +389,13 @@ class Parameterized(Parentable):
         html.append(self._html_table_rows())
 
         html.append("</table>")
-        return ''.join(html) 
+        return ''.join(html)
 
 
 class ParamList(Parameterized):
     """
     A list of parameters. This allows us to store parameters in a list whilst
-    making them 'visible' to the GPflow machinery. 
+    making them 'visible' to the GPflow machinery.
 
     The correct usage is
 
@@ -441,7 +441,7 @@ class ParamList(Parameterized):
 
     def __getitem__(self, key):
         """
-        If tf mode is off, this simply returns the corresponding Param . 
+        If tf mode is off, this simply returns the corresponding Param .
 
         If tf mode is on, all items will appear as their tf
         representations.

@@ -1,10 +1,10 @@
 import tensorflow as tf
 import numpy as np
-from param import Param
-from model import GPModel
-import transforms
+from .param import Param
+from .model import GPModel
+from . import transforms
 from .mean_functions import Zero
-from tf_hacks import eye
+from .tf_hacks import eye
 
 class VGP(GPModel):
     def __init__(self, X, Y, kern, likelihood, mean_function=Zero(), num_latent=None):
@@ -110,4 +110,3 @@ class VGP(GPModel):
                 f_var.append( self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(LiKx),0) )
         f_var = tf.pack(f_var)
         return f_mean, tf.transpose(f_var)
-

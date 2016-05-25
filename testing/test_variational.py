@@ -3,7 +3,7 @@ import tensorflow as tf
 from GPflow.tf_hacks import eye
 import numpy as np
 import unittest
-from reference import *
+from .reference import *
 
 def referenceUnivariateLogMarginalLikelihood( y, K, noiseVariance ):
     return -0.5 * y * y / ( K + noiseVariance ) - 0.5 * np.log( K + noiseVariance ) - 0.5 * np.log( np.pi * 2. )
