@@ -1,8 +1,10 @@
+from functools import reduce
+
 import tensorflow as tf
-from tf_hacks import eye
+from .tf_hacks import eye
 import numpy as np
-from param import Param, Parameterized
-import transforms
+from .param import Param, Parameterized
+from . import transforms
 
 
 class Kern(Parameterized):
@@ -25,12 +27,12 @@ class Kern(Parameterized):
         if isinstance(self.active_dims, slice):
             X = X[:, self.active_dims]
             if X2 is not None:
-                X2 = X2[:, self.active_dims]
+                X2 = X2[:,self.active_dims]
             return X, X2
-        else:  # TODO: when tf can do fancy indexing, use that.
-            X = tf.transpose(tf.pack([X[:, i] for i in self.active_dims]))
+        else: # TODO: when tf can do fancy indexing, use that.
+            X = tf.transpose(tf.pack([X[:,i] for i in self.active_dims]))
             if X2 is not None:
-                X2 = tf.transpose(tf.pack([X2[:, i] for i in self.active_dims]))
+                X2 = tf.transpose(tf.pack([X2[:,i] for i in self.active_dims]))
             return X, X2
 
     def __add__(self, other):
@@ -50,7 +52,7 @@ class Static(Kern):
         self.variance = Param(variance, transforms.positive)
 
     def Kdiag(self, X):
-        zeros = X[:, 0]*0
+        zeros = X[:,0]*0
         return zeros + self.variance
 
 
@@ -132,7 +134,7 @@ class Stationary(Kern):
         return tf.sqrt(r2 + 1e-12)
 
     def Kdiag(self, X):
-        zeros = X[:, 0]*0
+        zeros = X[:,0]*0
         return zeros + self.variance
 
 

@@ -95,7 +95,7 @@ class TestAdd(unittest.TestCase):
 
     def test_sym(self):
         x_free = tf.placeholder('float64')
-        [k.make_tf_array(x_free) for k in self.rbf, self.lin, self.k]
+        [k.make_tf_array(x_free) for k in (self.rbf, self.lin, self.k)]
         X = tf.placeholder('float64')
         X_data = self.rng.randn(10, 1)
         for k in [self.rbf, self.lin, self.k]:
@@ -106,7 +106,7 @@ class TestAdd(unittest.TestCase):
 
     def test_asym(self):
         x_free = tf.placeholder('float64')
-        [k.make_tf_array(x_free) for k in self.rbf, self.lin, self.k]
+        [k.make_tf_array(x_free) for k in (self.rbf, self.lin, self.k)]
         X = tf.placeholder('float64')
         Z = tf.placeholder('float64')
         X_data = self.rng.randn(10, 1)

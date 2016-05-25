@@ -1,8 +1,8 @@
-import densities
+from . import densities
 import tensorflow as tf
 import numpy as np
-from param import Parameterized, Param
-import transforms
+from .param import Parameterized, Param
+from . import transforms
 
 class Likelihood(Parameterized):
     def __init__(self):
@@ -13,14 +13,14 @@ class Likelihood(Parameterized):
         """
         Return the log density of the data given the function values.
         """
-        raise NotImplementedError, "implement the logp function for this likelihood"
+        raise NotImplementedError("implement the logp function for this likelihood")
 
     def conditional_mean(self, F):
         """
         Given a value of the latent function, compute the mean of the data
 
         If this object represents
-            
+
             p(y|f)
 
         then this mehtod computes
@@ -34,24 +34,24 @@ class Likelihood(Parameterized):
         Given a value of the latent function, compute the variance of the data
 
         If this object represents
-            
+
             p(y|f)
 
         then this mehtod computes
 
             \int y^2 p(y|f) dy  - [\int y p(y|f) dy] ^ 2
-            
+
         """
         raise NotImplementedError
 
     def predict_mean_and_var(self, Fmu, Fvar):
         """
-        Given a Normal distribution for the latend function, return the mean of Y 
-        
-        if 
+        Given a Normal distribution for the latend function, return the mean of Y
+
+        if
             q(f) = N(Fmu, Fvar)
 
-        and this object represents    
+        and this object represents
 
             p(y|f)
 
@@ -62,7 +62,7 @@ class Likelihood(Parameterized):
         and the predictive variance
 
            \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
-           
+
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
         """
@@ -70,9 +70,9 @@ class Likelihood(Parameterized):
         gh_w /= np.sqrt(np.pi)
         gh_w = gh_w.reshape(-1,1)
         shape = tf.shape(Fmu)
-        Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in Fmu, Fvar]
+        Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar)]
         X = gh_x[None,:] * tf.sqrt(2.0 * Fvar) + Fmu
-        
+
         #here's the quadrature for the mean
         E_y =  tf.reshape(tf.matmul(self.conditional_mean(X), gh_w), shape)
 
@@ -85,11 +85,11 @@ class Likelihood(Parameterized):
         """
         Given a Normal distribution for the latent function, and a datum Y,
         compute the (log) predictive density of Y.
-        
-        i.e. if 
+
+        i.e. if
             q(f) = N(Fmu, Fvar)
 
-        and this object represents    
+        and this object represents
 
             p(y|f)
 
@@ -103,7 +103,7 @@ class Likelihood(Parameterized):
         gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
         gh_w = gh_w.reshape(-1,1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1,1)) for e in Fmu, Fvar, Y]
+        Fmu, Fvar, Y = [tf.reshape(e, (-1,1)) for e in (Fmu, Fvar, Y)]
         X = gh_x[None,:] * tf.sqrt(2.0 * Fvar) + Fmu
         Y = tf.tile(Y, [1, self.num_gauss_hermite_points]) # broadcast Y to match X
         logp = self.logp(X, Y)
@@ -114,17 +114,17 @@ class Likelihood(Parameterized):
         """
         Compute the expected log density of the data, given a Gaussian distribution for the function values.
 
-        if 
+        if
             q(f) = N(Fmu, Fvar)
 
-        and this object represents    
+        and this object represents
 
             p(y|f)
 
-        then this method computes 
+        then this method computes
 
            \int (\log p(y|f)) q(f) df.
- 
+
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
@@ -133,7 +133,7 @@ class Likelihood(Parameterized):
         gh_x = gh_x.reshape(1,-1)
         gh_w = gh_w.reshape(-1,1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1,1)) for e in Fmu, Fvar, Y]
+        Fmu, Fvar, Y = [tf.reshape(e, (-1,1)) for e in (Fmu, Fvar, Y)]
         X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
         Y = tf.tile(Y, [1, self.num_gauss_hermite_points]) # broadcast Y to match X
         logp = self.logp(X, Y)
@@ -155,7 +155,7 @@ class Gaussian(Likelihood):
 
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
-    
+
     def predict_density(self, Fmu, Fvar, Y):
         return densities.gaussian(Fmu, Y, Fvar + self.variance)
 
@@ -204,13 +204,13 @@ class Exponential(Likelihood):
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
-    
+
 class StudentT(Likelihood):
     def __init__(self, deg_free=3.0):
         Likelihood.__init__(self)
         self.deg_free = deg_free
         self.scale = Param(1.0, transforms.positive)
-    
+
     def logp(self, F, Y):
         return densities.student_t(Y, F, self.scale, self.deg_free)
 
@@ -285,12 +285,12 @@ class Beta(Likelihood):
     Beta distribution given by the transformed process:
 
         m = sigma(f)
-    
+
     and a scale parameter. The familiar alpha, beta parameters are given by
 
         m     = alpha / (alpha + beta)
         scale = alpha + beta
-    
+
     so:
         alpha = scale * m
         beta  = scale * (1-m)
@@ -299,7 +299,7 @@ class Beta(Likelihood):
         Likelihood.__init__(self)
         self.scale = Param(scale, transforms.positive)
         self.invlink = invlink
-    
+
     def logp(self, F, Y):
         mean = self.invlink(F)
         alpha = mean * self.scale
@@ -312,14 +312,3 @@ class Beta(Likelihood):
     def conditional_variance(self, F):
         mean = self.invlink(F)
         return (mean - tf.square(mean)) / (self.scale + 1.)
-
-
-
-
-
-
-
-
-
-
-

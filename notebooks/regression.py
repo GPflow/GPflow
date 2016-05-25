@@ -1,8 +1,8 @@
+from matplotlib import pyplot as plt
 import GPflow
 import tensorflow as tf
 import os
 import numpy as np
-from matplotlib import pyplot as plt
 import cProfile
 
 def outputGraph( model, dirName, fileName ):

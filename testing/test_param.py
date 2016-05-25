@@ -1,3 +1,4 @@
+from functools import reduce
 import unittest
 import GPflow
 import tensorflow as tf

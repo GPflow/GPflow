@@ -3,8 +3,8 @@ from .model import GPModel
 from .param import Param
 from .densities import multivariate_normal
 from .mean_functions import Zero
-import likelihoods
-from tf_hacks import eye
+from . import likelihoods
+from .tf_hacks import eye
 
 class GPR(GPModel):
     def __init__(self, X, Y, kern, mean_function=Zero()):
@@ -58,6 +58,3 @@ class GPR(GPModel):
             fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), reduction_indices=0)
             fvar = tf.tile(tf.reshape(fvar, (-1,1)), [1, self.Y.shape[1]])
         return fmean, fvar
-
- 
-
