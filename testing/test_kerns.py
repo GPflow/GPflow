@@ -99,6 +99,7 @@ class TestKernDiags(unittest.TestCase):
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) * GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim, ARD=True, variance=rng.rand(inputdim)))
+        self.kernels.append(GPflow.kernels.PeriodicKernel(inputdim))
 
         self.x_free = tf.placeholder('float64')
         [k.make_tf_array(self.x_free) for k in self.kernels]
