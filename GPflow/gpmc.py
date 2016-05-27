@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 from .model import GPModel
 from .param import Param
-import densities
-from .conditionals import gp_predict_whitened
+from . import densities
+from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
 
@@ -24,7 +24,7 @@ class GPMC(GPModel):
         with
 
             L L^T = K
-        
+
         """
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
@@ -46,7 +46,7 @@ class GPMC(GPModel):
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))
 
-    def build_predict(self, Xnew):
+    def build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -54,9 +54,8 @@ class GPMC(GPModel):
 
             p(F* | (F=LV) )
 
-        where F* are points on the GP at Xnew, F=LV are points on the GP at X, 
+        where F* are points on the GP at Xnew, F=LV are points on the GP at X.
 
         """
-        mu, var = gp_predict_whitened(Xnew, self.X, self.kern, self.V)
+        mu, var = conditional(Xnew, self.X, self.kern, self.V, num_columns=self.num_latent, full_cov=full_cov, q_sqrt=None, whiten=True)
         return mu + self.mean_function(Xnew), var
-

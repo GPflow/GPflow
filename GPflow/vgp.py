@@ -1,10 +1,10 @@
 import tensorflow as tf
 import numpy as np
-from param import Param
-from model import GPModel
-import transforms
+from .param import Param
+from .model import GPModel
+from . import transforms
 from .mean_functions import Zero
-from tf_hacks import eye
+from .tf_hacks import eye
 
 class VGP(GPModel):
     def __init__(self, X, Y, kern, likelihood, mean_function=Zero(), num_latent=None):
@@ -13,11 +13,12 @@ class VGP(GPModel):
         Y is a data matrix, size N x R
         kern, likelihood, mean_function are appropriate GPflow objects
 
-        This is the variational objective for the Variational Gaussian Process (VGP). The key reference is 
+        This is the variational objective for the Variational Gaussian Process
+        (VGP). The key reference is:
 
         @article{Opper:2009,
             title = {The Variational Gaussian Approximation Revisited},
-            author = {Opper, Manfred and Archambeau, C{\'e}dric},
+            author = {Opper, Manfred and Archambeau, Cedric},
             journal = {Neural Comput.},
             year = {2009},
             pages = {786--792},
@@ -44,11 +45,14 @@ class VGP(GPModel):
         """
         q_alpha, q_lambda are variational parameters, size N x R
 
-        This method computes the variational lower lound on the likelihood, which is 
+        This method computes the variational lower lound on the likelihood, which is:
 
             E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
+
         with
-            q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1)
+
+            q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1) .
+
         """
         K = self.kern.K(self.X)
         f_mean = tf.matmul(K, self.q_alpha) + self.mean_function(self.X)
@@ -64,7 +68,7 @@ class VGP(GPModel):
             LiBi = Li / b
             #full_sigma:return tf.diag(b**-2) - LiBi.T.dot(LiBi)
             f_var.append(1./tf.square(b) - tf.reduce_sum(tf.square(LiBi),0))
-            A_logdet += 2*tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
+            A_logdet += 2*tf.reduce_sum(tf.log(tf.diag_part(L)))
             trAi += tf.reduce_sum(tf.square(Li))
 
         f_var = tf.transpose(tf.pack(f_var))
@@ -72,14 +76,14 @@ class VGP(GPModel):
         KL = 0.5*(A_logdet + trAi - self.num_data*self.num_latent + tf.reduce_sum(f_mean*self.q_alpha))
 
         return tf.reduce_sum(self.likelihood.variational_expectations(f_mean, f_var, self.Y)) - KL
-    
-    def build_predict(self, Xnew):
+
+    def build_predict(self, Xnew, full_cov=False):
         """
-        The posterior varirance of F is given by
+        The posterior variance of F is given by
 
             q(f) = N(f | K alpha, [K^-1 + diag(lambda**2)]^-1)
 
-        Here we projec this to F*, the values of the GP at Xnew which is given by
+        Here we project this to F*, the values of the GP at Xnew which is given by
 
            q(F*) = N ( F* | K_{*F} alpha , K_{**} - K_{*f}[K_{ff} + diag(lambda**-2)]^-1 K_{f*} )
 
@@ -88,7 +92,7 @@ class VGP(GPModel):
         #compute kernelly things
         Kx = self.kern.K(Xnew, self.X)
         K = self.kern.K(self.X)
-        Kd = self.kern.Kdiag(Xnew)
+
 
         #predictive mean
         f_mean = tf.matmul(Kx, self.q_alpha) + self.mean_function(Xnew)
@@ -100,7 +104,9 @@ class VGP(GPModel):
             A = K + tf.diag(1./tf.square(b))
             L = tf.cholesky(A)
             LiKx = tf.matrix_triangular_solve(L, tf.transpose(Kx), lower=True)
-            f_var.append( Kd - tf.reduce_sum(tf.square(LiKx),0) )
+            if full_cov:
+                f_var.append( self.kern.K(Xnew)- tf.matmul(tf.transpose(LiKx),LiKx) )
+            else:
+                f_var.append( self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(LiKx),0) )
         f_var = tf.pack(f_var)
         return f_mean, tf.transpose(f_var)
-

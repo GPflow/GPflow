@@ -1,220 +1,104 @@
 import numpy as np
-from tf_hacks import eye
+from .tf_hacks import eye
 import tensorflow as tf
 
-"""
-This file contains functions which compute tensorflow expressions for GP prediction
-equations. This enables much code re-use, because these expressions appear
-frequently. 
-"""
-
-def gp_predict(Xnew, X, kern, F):
+def conditional(Xnew, X, kern, f, num_columns, full_cov=False, q_sqrt=None, whiten=False):
     """
-    Given F, representing the GP at the points X, produce the mean and variance
-    of the GP at the points Xnew.
+    Given F, representing the GP at the points X, produce the mean and
+    (co-)variance of the GP at the points Xnew.
 
-    We assume K independent GPs, represented by the columns of F. This function
-    computes the Gaussian conditional
+    Additionally, there my be Gaussian uncertainty about F as represented by
+    q_sqrt. In this case `f` representes the mean of the distribution and
+    q_sqrt the square-root of the covariance.
 
-        p(F* | F) 
-
-    Xnew is a data matrix, size N x D
-    X are inducing points, size M x D
-    F are function values , size M x K
-
-    See also:
-        gp_predict_whitened -- where F is rotated into V (F = LV)
-        gaussian_gp_predict -- similar, but with uncertainty in F
-
-    """
- 
-    #compute kernel stuff
-    num_data = tf.shape(X)[0]
-    Kdiag = kern.Kdiag(Xnew)
-    Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data)*1e-6
-    Lm = tf.cholesky(Kmm)
-
-    #this is O(N M^2)
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
-    B = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False) # B is Kmm^{-1} Kmn
-
-    #construct the mean and variance of q(f*)
-    fmean = tf.matmul(tf.transpose(B), F)
-    fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
-    fvar = tf.expand_dims(fvar, 1)
-
-    return fmean, fvar
-
-
-def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns):
-    """
-    Given an (approximate) posterior (via q_mu, q_sqrt) to the GP at the points
-    X, produce the mean and variance of the GP at the points Xnew.
-
-    We assume K independent GPs, represented by the columns of q_mu (and the
-    last ax of q_sqrt).  q_mu and q_sqrt are variational posteriors for f, So
-        q(f[:,i]) = N (q_mu[:,i],  diag(q_sqrt[:,i]**2))
-    or
-        q(f[:,i]) = N (q_mu,  W W^T)
-    where W is the lower triangle of q_sqrt[:,:,i]. 
-
-    This function computes the Gaussian integral
-        q(f*) = \int p(f*|f)q(f) df.
-
-    Xnew is a data matrix, size N x D
-    X are inducing points, size M x D
-    q_mu are variational means, size M x K
-    q_sqrt are variational standard-deviations or Cholesky matrices,, size M x K or M x M x K
-    num_columns is the number of columns in q_mu. 
-
-    Note (and TODO):
-        At the moment, num_columns only gets used for the q_sqrt.ndim==3 case,
-        and it tells use the value of q_sqrt.shape()[2]. We need to find a way
-        to get this from the tf graph. 
-
-    See also:
-        gp_predict -- where there is no uncertainty in F
-        gaussian_gp_predict_whitened -- the same, but with whitening (centering) the F variables
-
-    """
- 
-    #compute kernel stuff
-    num_data = tf.shape(X)[0]
-    Kdiag = kern.Kdiag(Xnew)
-    Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data)*1e-6
-    Lm = tf.cholesky(Kmm)
-
-    #this is O(N M^2)
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
-    B = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False) # B is Kmm^{-1} Kmn
-
-    #construct the mean and variance of q(f*)
-    fmean = tf.matmul(tf.transpose(B), q_mu)
-    fvar = Kdiag - tf.reduce_sum(tf.square(A), 0)
-    fvar = tf.expand_dims(fvar, 1)
-    if q_sqrt.get_shape().ndims==2:
-        #we hae a diagonal form for q(f)
-        fvar = fvar + tf.reduce_sum(tf.square(tf.expand_dims(tf.transpose(B), 2) * tf.expand_dims(q_sqrt, 0)),1)
-    elif q_sqrt.get_shape().ndims==3:
-        # we have the cholesky form for q(v)
-        projected_var = []
-        for d in range(num_columns):
-            L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
-            LTB = tf.matmul(tf.transpose(L), B)
-            projected_var.append(tf.reduce_sum(tf.square(LTB),0))
-        fvar = fvar + tf.transpose(tf.pack(projected_var))
-    else:
-        raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
-
-    return fmean, fvar
-
-
-def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns):
-    """
-    Given an (approximate) posterior (via q_mu, q_sqrt) to the GP at the points
-    X, produce the mean and variance of the GP at the points Xnew.
-    Additionally, the GP has been centered (whitened) so that 
+    Additionally, the GP may have been centered (whitened) so that
         p(v) = N( 0, I)
         f = L v
     thus
         p(f) = N(0, LL^T) = N(0, K).
+    in this case 'f' represents the values taken by v.
 
-    We assume K independent GPs, represented by the columns of q_mu (and the
-    last ax of q_sqrt).  q_mu and q_sqrt are variational posteriors for v, So
-        q(v[:,i]) = N( q_mu[:,i], diag(q_sqrt[:,i]**2)
-        q(f[:,i]) = N (L q_mu[:,i],  L diag(q_sqrt**2) L^T)
-    or
-        q(f[:,i]) = N (L q_mu,  L [W W^T] L^T)
-    where W is the lower triangle of q_sqrt[:,:,i]. 
+    The method can either return the diagonals of the covariance matrix for
+    each output of the full covariance matrix (full_cov).
 
-    This function computes the Gaussian integral
-        q(f*) = \int p(f*|(f=Lv))q(v) df.
+    We assume K independent GPs, represented by the columns of f (and the
+    last ax of q_sqrt).
 
     Xnew is a data matrix, size N x D
     X are data points, size M x D
-    q_mu are variational means, size M x K
-    q_sqrt are variational standard-deviations or Cholesky matrices,, size M x K or M x M x K
-
-    Note (and TODO):
-        At the moment, num_columns only gets used for the q_sqrt.ndim==3 case,
-        and it tells use the value of q_sqrt.shape()[2]. We need to find a way
-        to get this from the tf graph. 
+    kern is a GPflow kernel
+    f is a data matrix, M x K, represensting the function values at X.
+    num_columns is an interger number of columns in the f matrix (must match q_sqrt's last dimension)
+    (optional) q_sqrt is a matrix of standard-deviations or Cholesky matrices, size M x K or M x M x K
+    (optional) whiten is a boolean: whether to whiten the representation as described above.
 
 
-    See also:
-        gp_predict_whitened -- where there is no uncertainty in V
-        gaussian_gp_predict -- same without the whitening
+    These functions are now considered deprecated, subsumed into this one function:
+        gp_predict
+        gaussian_gp_predict
+        gp_predict_whitened
+        gaussian_gp_predict_whitened
 
     """
- 
+
     #compute kernel stuff
     num_data = tf.shape(X)[0]
-    Kdiag = kern.Kdiag(Xnew)
     Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + eye(num_data)*1e-6
     Lm = tf.cholesky(Kmm)
 
-    #this is O(N M^2)
+    #Compute the projection matrix A
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
 
-    #construct the mean and variance of q(f)
-    fmean = tf.matmul(tf.transpose(A), q_mu)
-    if q_sqrt.get_shape().ndims==2:
-        #we hae a diagonal form for q(v)
-        q_var = np.square(q_sqrt)
-        #fvar = Kdiag[:,None] + tf.reduce_sum((tf.square(tf.transpose(A)))[:,:,None] * (q_var[None, :,:] - 1),1)
-        fvar = tf.reshape(Kdiag, (-1,1)) + tf.reduce_sum(tf.expand_dims(tf.square(tf.transpose(A)), 2) * (tf.expand_dims(q_var, 0) - 1.0),1)
-        return fmean, fvar
-    elif q_sqrt.get_shape().ndims==3:
-        # we have the cholesky form for q(v)
-        fvar = Kdiag - tf.reduce_sum(np.square(A), 0)
+    #compute the covariance due to the conditioning
+    if full_cov:
+        fvar = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
+        fvar = tf.tile(tf.expand_dims(fvar, 2), [1, 1, num_columns])
+    else:
+        fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
+        fvar = tf.tile(tf.expand_dims(fvar, 1), [1, num_columns])
+
+    #another backsubstitution in the unwhitened case
+    if not whiten:
+        A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
+
+    #construct the conditional mean
+    fmean = tf.matmul(tf.transpose(A), f)
+
+    #add extra projected variance from q(f) if needed
+    if q_sqrt is not None:
         projected_var = []
         for d in range(num_columns):
-            L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
-            LTA = tf.matmul(tf.transpose(L), A)
-            projected_var.append(fvar + tf.reduce_sum(tf.square(LTA),0))
-        fvar = tf.transpose(tf.pack(projected_var))
-        return fmean, fvar
-    else:
-        raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+            if q_sqrt.get_shape().ndims==2:
+                LTA = A*q_sqrt[:,d:d+1]
+            elif q_sqrt.get_shape().ndims==3:
+                L = tf.batch_matrix_band_part(q_sqrt[:,:,d], -1, 0)
+                LTA = tf.matmul(tf.transpose(L), A)
+            else: # pragma no cover
+                raise ValueError("Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims))
+            if full_cov:
+                projected_var.append(tf.matmul(tf.transpose(LTA),LTA))
+            else:
+                projected_var.append(tf.reduce_sum(tf.square(LTA),0))
+        fvar = fvar + tf.transpose(tf.pack(projected_var))
+
+    return fmean, fvar
 
 
-def gp_predict_whitened(Xnew, X, kern, V):
-    """
-    Given a whitened representation of the GP at the points X (V), produce the
-    mean and variance of the GP at the points Xnew (F*).
+import warnings
 
-    The GP has been centered (whitened) so that 
+def gp_predict(Xnew, X, kern, F, full_cov=False):
+    warnings.warn('gp_predict is deprecated: use conditonal(...) instead', DeprecationWarning)
+    return conditional(Xnew, X, kern, F, num_columns=1, full_cov=full_cov, q_sqrt=None, whiten=False)
 
-        p(v) = N( 0, I)
-        f = L v ,
+def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_cov=False):
+    warnings.warn('gp_predict is deprecated: use conditonal(...) instead', DeprecationWarning)
+    return conditional(Xnew, X, kern, q_mu, num_columns=num_columns, full_cov=full_cov, q_sqrt=q_sqrt, whiten=False)
 
-    and so
+def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_cov=False):
+    warnings.warn('gp_predict is deprecated: use conditonal(...) instead', DeprecationWarning)
+    return conditional(Xnew, X, kern, q_mu, num_columns=num_columns, full_cov=full_cov, q_sqrt=q_sqrt, whiten=True)
 
-        p(f) = N(0, LL^T) = N(0, K).
-
-    We assume K independent GPs, represented by the columns of V. The GP conditional is:
-    
-        p(F*[:,i] | V[:,i]) = N (K_{*f} L^{-T} V[:,i],  K_{**} - K_{*f}L^{-1} L^{-T} K_{f*})
-
-    Xnew is a data matrix, size N* x D
-    X is a data matrix, size N x D
-    V is a matrix containing whitened GP values, size N x K
-
-    See also:
-        gaussian_gp_predict_whitened -- where there is no uncertainty in V
-        gp_predict -- same, without the whitening
-    """
-    Kd = kern.Kdiag(Xnew)
-    Kx = kern.K(X, Xnew)
-    K = kern.K(X)
-    L = tf.cholesky(K)
-    A = tf.matrix_triangular_solve(L, Kx, lower=True)
-    fmean = tf.matmul(tf.transpose(A), V)
-    fvar = Kd - tf.reduce_sum(tf.square(A), 0)
-    return fmean, tf.expand_dims(fvar, 1) * tf.ones_like(V[0,:])
-
-
-
+def gp_predict_whitened(Xnew, X, kern, V, full_cov=False):
+    warnings.warn('gp_predict is deprecated: use conditonal(...) instead', DeprecationWarning)
+    return conditional(Xnew, X, kern, V, num_columns=1, full_cov=full_cov, q_sqrt=None, whiten=True)

@@ -1,12 +1,12 @@
 import tensorflow as tf
 import numpy as np
-from param import Param
+from .param import Param
 from .model import GPModel
-import transforms
-import conditionals
+from . import transforms
+from . import conditionals
 from .mean_functions import Zero
-from tf_hacks import eye
-import kullback_leiblers
+from .tf_hacks import eye
+from . import kullback_leiblers
 
 
 class SVGP(GPModel):
@@ -92,12 +92,12 @@ class SVGP(GPModel):
         self._objective = obj
         return opt_step
 
-    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
+    def optimize(self, method='L-BFGS-B', tol=None, callback=None, max_iters=1000, **kw):
         def calc_feed_dict():
             ss = np.random.randint(len(self.dX), size=self.minibatch)
             return {self.X: self.dX[ss, :], self.Y: self.dY[ss, :]}
 
-        return GPModel.optimize(self, method, callback, max_iters, calc_feed_dict, **kw)
+        return GPModel.optimize(self, method, tol, callback, max_iters, calc_feed_dict, **kw)
 
     def build_likelihood(self):
         """
@@ -106,7 +106,7 @@ class SVGP(GPModel):
 
         #Get prior KL.
         KL  = self.build_prior_KL()
-    
+
         #Get conditionals
         if self.whiten:
             fmean, fvar = conditionals.gaussian_gp_predict_whitened(self._tfX, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
@@ -115,21 +115,16 @@ class SVGP(GPModel):
 
         #add in mean function to conditionals.
         fmean += self.mean_function(self._tfX)
-        
+
         #Get variational expectations.
         variational_expectations = self.likelihood.variational_expectations(fmean, fvar, self._tfY)
 
         minibatch_scale = len(self.X) / tf.cast(tf.shape(self._tfX)[0], tf.float64)
         return tf.reduce_sum(variational_expectations) * minibatch_scale - KL
 
-    def build_predict(self, Xnew):
+    def build_predict(self, Xnew, full_cov=False):
         if self.whiten:
-            mu, var =  conditionals.gaussian_gp_predict_whitened(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
+            mu, var =  conditionals.gaussian_gp_predict_whitened(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent, full_cov)
         else:
-            mu, var =  conditionals.gaussian_gp_predict(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent)
+            mu, var =  conditionals.gaussian_gp_predict(Xnew, self.Z, self.kern, self.q_mu, self.q_sqrt, self.num_latent, full_cov)
         return mu + self.mean_function(Xnew), var
-
-
-      
-
-
