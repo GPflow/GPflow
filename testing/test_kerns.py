@@ -27,6 +27,7 @@ class TestRbf(unittest.TestCase):
 
 class TestKernSymmetry(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.kernels = GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Constant, GPflow.kernels.Linear]
         self.rng = np.random.RandomState()
 
@@ -60,6 +61,7 @@ class TestKernSymmetry(unittest.TestCase):
 
 class TestKernDiags(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         inputdim = 3
         rng = np.random.RandomState(1)
         self.X = tf.placeholder(tf.float64, [30, inputdim])
@@ -88,6 +90,7 @@ class TestAdd(unittest.TestCase):
     the result of the kernels separaetely
     """
     def setUp(self):
+        tf.reset_default_graph()
         self.rbf = GPflow.kernels.RBF(1)
         self.lin = GPflow.kernels.Linear(1)
         self.k = GPflow.kernels.RBF(1) + GPflow.kernels.Linear(1)
@@ -124,6 +127,7 @@ class TestWhite(unittest.TestCase):
     k(X, X)
     """
     def setUp(self):
+        tf.reset_default_graph()
         self.k = GPflow.kernels.White(1)
         self.rng = np.random.RandomState(0)
 
@@ -145,6 +149,7 @@ class TestSlice(unittest.TestCase):
     with correctly sliced data...
     """
     def setUp(self):
+        tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
         self.k1 = GPflow.kernels.RBF(1, active_dims=[0])
         self.k2 = GPflow.kernels.RBF(1, active_dims=[1])
@@ -191,6 +196,7 @@ class TestSlice(unittest.TestCase):
 
 class TestProd(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.k1 = GPflow.kernels.Matern32(2)
         self.k2 = GPflow.kernels.Matern52(2, lengthscales=0.3)
         self.k3 = self.k1 * self.k2
@@ -219,6 +225,7 @@ class TestProd(unittest.TestCase):
 
 class TestARDActiveProd(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
 
         # k3 = k1 * k2
