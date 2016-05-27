@@ -77,11 +77,8 @@ class TestResetGraph(unittest.TestCase):
         self.m = GPflow.gpr.GPR(X, Y, kern=k)
 
     def test(self):
-        self.m._compile()
         mu, var = self.m.predict_f(self.Xnew)
-        self.m._needs_recompile = True
         tf.reset_default_graph()
-        self.m._compile()
         mu1, var1 = self.m.predict_f(self.Xnew)
 
 
