@@ -40,7 +40,7 @@ class AutoFlow:
 
     >>> class MyModel(Model):
     >>>
-    >>>   @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.float64))
+    >>>   @AutoFlow((tf.float64), (tf.float64))
     >>>   def my_method(self, x, y):
     >>>       #compute something, returning a tf graph.
     >>>       return tf.foo(self.baz, x, y)
@@ -65,23 +65,26 @@ class AutoFlow:
     result in the graph being constructed only once.
 
     """
-    def __init__(self, *tf_args):
-        self.tf_args = tf_args
+    def __init__(self, *tf_arg_tuples):
+        # NB. TF arg_tuples is a list of tuples, each of which can be used to
+        # construct a tf placeholder.
+        self.tf_arg_tuples = tf_arg_tuples
+
     def __call__(self, tf_method):
         @wraps(tf_method)
         def runnable(instance, *np_args):
             graph_name = '_' + tf_method.__name__ + '_graph'
             if not hasattr(instance, graph_name):
+                instance._compile()
+                self.tf_args = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                 with instance.tf_mode():
-                    instance.make_tf_array(instance._free_vars)
                     graph = tf_method(instance, *self.tf_args)
-                    setattr(instance, graph_name, graph)
+                setattr(instance, graph_name, graph)
             feed_dict = dict(zip(self.tf_args, np_args))
             feed_dict[instance._free_vars] = instance.get_free_state()
             graph = getattr(instance, graph_name)
             return instance._session.run(graph, feed_dict=feed_dict)
         return runnable
-
 
 
 class Model(Parameterized):
@@ -127,7 +130,6 @@ class Model(Parameterized):
         self._name = name
         self._needs_recompile = True
         self._free_vars = tf.placeholder('float64', name='free_vars')
-        self._session = tf.Session()
 
     @property
     def name(self):
@@ -137,6 +139,7 @@ class Model(Parameterized):
         """
         compile the tensorflow function "self._objective"
         """
+        self._session = tf.Session()
         # Make float32 hack
         float32_hack = False
         if optimizer is not None:
@@ -183,7 +186,7 @@ class Model(Parameterized):
 
     def __setattr__(self, key, value):
         Parameterized.__setattr__(self, key, value)
-        #delete any AutoFlow related graphs
+        # delete any AutoFlow related graphs
         if key=='_needs_recompile' and value:
             for key in filter(lambda x : x[0]=='_' and x[-6:]=='_graph', dir(self)):
                 delattr(self, key)
@@ -350,14 +353,14 @@ class GPModel(Model):
     def build_predict(self):
         raise NotImplementedError
 
-    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points Xnew
         """
         return self.build_predict(Xnew)
 
-    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]))
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -365,7 +368,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew, full_cov=True)
 
-    @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.int32, []))
+    @AutoFlow((tf.float64, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
@@ -378,7 +381,7 @@ class GPModel(Model):
             samples.append(mu[:,i:i+1] + tf.matmul(L, tf.random_normal(tf.pack([tf.shape(L)[0], num_samples]), dtype=tf.float64)))
         return tf.transpose(tf.pack(samples))
 
-    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -386,8 +389,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-
-    @AutoFlow(tf.placeholder(tf.float64, [None, None]), tf.placeholder(tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew
