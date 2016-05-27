@@ -14,10 +14,9 @@ class TestGaussian(unittest.TestCase):
 
         #make a Gaussian model
         self.m = GPflow.gpr.GPR(self.X, self.Y, kern=self.kern)
-        self.m._compile()
 
 
-    def test_mean_variance(self):
+    def test_all(self):
         mu_f, var_f = self.m.predict_f(self.Xtest)
         mu_y, var_y = self.m.predict_y(self.Xtest)
 
@@ -61,6 +60,7 @@ class TestFullCov(unittest.TestCase):
         k = lambda : GPflow.kernels.Matern32(self.input_dim)
         self.models = [GPflow.gpr.GPR(X, Y, kern=k()),
                   GPflow.sgpr.SGPR(X, Y, Z=Z, kern=k()),
+                  GPflow.sgpr.GPRFITC(X, Y, Z=Z, kern=k()),
                   GPflow.svgp.SVGP(X, Y, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), whiten=False, q_diag=True),
                   GPflow.svgp.SVGP(X, Y, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), whiten=True, q_diag=False),
                   GPflow.svgp.SVGP(X, Y, Z=Z, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), whiten=True, q_diag=True),
@@ -70,10 +70,7 @@ class TestFullCov(unittest.TestCase):
                   GPflow.gpmc.GPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian()),
                   GPflow.sgpmc.SGPMC(X, Y, kern=k(), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)]
 
-        for m in self.models:
-            m.optimize(max_iters=3, display=0)
-
-    def test_cov(self):
+    def test_cov_and_samples(self):
         for m in self.models:
             mu1, var = m.predict_f(self.Xtest)
             mu2, covar = m.predict_f_full_cov(self.Xtest)
@@ -83,7 +80,6 @@ class TestFullCov(unittest.TestCase):
             for i in range(self.output_dim):
                 self.failUnless(np.allclose(var[:,i] , np.diag(covar[:,:,i])))
     
-    def test_samples(self):
         for m in self.models:
             samples = m.predict_f_samples(self.Xtest, 5)
             self.failUnless(samples.shape==(5, self.Xtest.shape[0], self.output_dim))

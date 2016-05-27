@@ -3,12 +3,12 @@ from .param import Param, Parameterized
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-import hmc
+from . import hmc
 import sys
 
 class ObjectiveWrapper(object):
     """
-    A simple class to wrap the objective function in order to make it more robust. 
+    A simple class to wrap the objective function in order to make it more robust.
 
     The previosly seen state is cached so that we can easily acess it if the
     model crashes.
@@ -30,7 +30,7 @@ class ObjectiveWrapper(object):
 from functools import wraps
 class AutoFlow:
     """
-    This decorator-class is designed for use on methods of the Model class (below). 
+    This decorator-class is designed for use on methods of the Model class (below).
 
     The idea is that methods that compute relevant quantities of the model
     (such as predictions) can define a tf graph which we automatically run when
@@ -39,7 +39,7 @@ class AutoFlow:
     The syntax looks like:
 
     >>> class MyModel(Model):
-    >>>   
+    >>>
     >>>   @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.float64))
     >>>   def my_method(self, x, y):
     >>>       #compute something, returning a tf graph.
@@ -62,7 +62,7 @@ class AutoFlow:
     >>> result = m._session.run(graph, feed_dict={x_tf:x, y_tf:y, m._free_vars:m.get_free_state()})
 
     Not only is the syntax cleaner, but multiple calls to the method will
-    result in the graph being constructed only once. 
+    result in the graph being constructed only once.
 
     """
     def __init__(self, *tf_args):
@@ -81,18 +81,18 @@ class AutoFlow:
             graph = getattr(instance, graph_name)
             return instance._session.run(graph, feed_dict=feed_dict)
         return runnable
-    
+
 
 
 class Model(Parameterized):
     """
-    The Model base class. 
+    The Model base class.
 
     To use this class, inherriting classes must define the method
 
     >>>     build_likelihood(self)
 
-    which returns a tensorflow representation of the model likelihood. 
+    which returns a tensorflow representation of the model likelihood.
 
     Param and Parameterized objects that are children of the model can be used
     in the tensorflow expression. Children on the model are defined by simply
@@ -115,7 +115,7 @@ class Model(Parameterized):
     but only recompiling lazily.
 
     This object has a `_free_vars` tensorflow array. This array is ised to build
-    the tensorflow representations of the Param objects during `make_tf_array`. 
+    the tensorflow representations of the Param objects during `make_tf_array`.
 
     This object defines `optimize` and `sample` to allow for model fitting.
     """
@@ -188,24 +188,34 @@ class Model(Parameterized):
             for key in filter(lambda x : x[0]=='_' and x[-6:]=='_graph', dir(self)):
                 delattr(self, key)
 
+    @AutoFlow()
+    def compute_log_prior(self):
+        return self.build_prior()
+
+    @AutoFlow()
+    def compute_log_likelihood(self):
+        return self.build_likelihood()
+
     def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False):
         """
-        use hybrid Monte Carlo to draw samples from the posterior of the model. 
+        Use Hamiltonian Monte Carlo to draw samples from the posterior of the model.
         """
         if self._needs_recompile:
             self._compile()
         return hmc.sample_HMC(self._objective, num_samples, Lmax, epsilon, x0=self.get_free_state(), verbose=verbose)
 
-    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, calc_feed_dict=None, **kw):
+    def optimize(self, method='L-BFGS-B', tol=None, callback=None, max_iters=1000, calc_feed_dict=None, **kw):
         """
         Optimize the model by maximizing the likelihood (possibly with the
-        priors also) with respect to any free variables. 
+        priors also) with respect to any free variables.
 
         method can be one of:
-            a string, corresponding to a valid scipy.minimize optimizer
+            a string, corresponding to a valid scipy.optimize.minimize optimizer
             a tensorflow optimizer (e.g. tf.optimize.AdaGrad)
 
-        The callback function is execteud by assing the current vale of self.get_free_state()
+        tol is the tolerance passed to scipy.optimize.minimize (ignored for tensorflow optimizers)
+
+        The callback function is executed by passing the current value of self.get_free_state()
 
         max_iters defines the maximum number of iterations
 
@@ -213,17 +223,17 @@ class Model(Parameterized):
         (suitable for tf.Session.run's feed_dict argument)
 
         In the case of the scipy optimization routines, any additional keyword
-        arguments are passed through. 
+        arguments are passed through.
 
         KeyboardInterrupts are caught and the model is set to the most recent
-        value tried by the optimization routine. 
+        value tried by the optimization routine.
 
         This method returns the results of the call to optimize.minimize, or a
         similar object in the tensorflow case.
         """
 
         if type(method) is str:
-            return self._optimize_np(method, callback, max_iters, **kw)
+            return self._optimize_np(method, tol, callback, max_iters, **kw)
         else:
             return self._optimize_tf(method, callback, max_iters, calc_feed_dict, **kw)
 
@@ -260,13 +270,26 @@ class Model(Parameterized):
                            status="Finished iterations.")
         return r
 
-    def _optimize_np(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
+    def _optimize_np(self, method='L-BFGS-B', tol=None, callback=None, max_iters=1000, **kw):
         """
         Optimize the model to find the maximum likelihood  or MAP point. Here
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
-        through as `options`. 
+        through as `options`.
 
-        self.self.optimize()
+        method is a string (default 'L-BFGS-B') specifying the scipy optimization routine, one of
+            - 'Powell'
+            - 'CG'
+            - 'BFGS'
+            - 'Newton-CG'
+            - 'L-BFGS-B'
+            - 'TNC'
+            - 'COBYLA'
+            - 'SLSQP'
+            - 'dogleg'
+        tol is the tolerance to be pased to the optimization routine
+        callback is callback function to be passed to the optimization routine
+        max_iters is the maximum numebr of iterations (used in the options dict
+            for the optimization routine)
         """
         if self._needs_recompile:
             self._compile()
@@ -288,7 +311,7 @@ class Model(Parameterized):
                         x0=self.get_free_state(),
                         method=method,
                         jac=True, # self._objective returns the objective and the jacobian.
-                        tol=None, # TODO: tol??
+                        tol=tol,
                         callback=callback,
                         options=options)
         except (KeyboardInterrupt):
@@ -375,8 +398,3 @@ class GPModel(Model):
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
-
-
-
-            
-

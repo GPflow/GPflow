@@ -1,52 +1,38 @@
 # GPflow
 
-GPflow is a package for building Gaussian process models in python, using [TensorFlow](github.com/tensorflow). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
-The full list of contributors (in alphabetical order) is James Hensman, Alexander G. de G. Matthews and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
+GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
+The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is James Hensman, Pablo Leon, Alexander G. de G. Matthews, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
-[![Build Status](https://travis-ci.org/GPflow/GPflow.svg?branch=master)](https://travis-ci.org/GPflow/GPflow)
-[![codecov.io](https://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](https://codecov.io/github/GPFlow/GPFlow?branch=master)
+[![Build status](https://codeship.com/projects/26b43920-e96e-0133-3481-02cde9680eda/status?branch=master)](https://codeship.com/projects/147609)
+[![Coverage Status](https://coveralls.io/repos/github/GPflow/GPflow/badge.svg?branch=HEAD)](https://coveralls.io/github/GPflow/GPflow?branch=HEAD)
 
 # Install
 
-## 1) Install Tensorflow fork
+## 1) Install Tensorflow
 
-To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. You'll need to install our [fork](https://github.com/GPflow/tensorflow). If you are already using tensorflow be aware that changing to our fork may change how it works for you.
+To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. Our code is now included in the main TensorFlow repository and we are waiting for it to be part of the next release. Until then we have compiled pip packages from the TensorFlow master branch for you to use. Be aware that changing your installation of TensorFlow may change how it works for you.
 
 EITHER:
 
-### 1a) Install Tensorflow fork using Pip. Best option for most users.
+### 1a) Install Tensorflow using Pip. Best option for most users.
 
 The sequence of commands for Linux is:
 
 ```
 pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.3/linux/tensorflow-0.7.1-py2-none-any.whl
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.4/linux/tensorflow-0.8.0rc0-py2-none-any.whl
 ```
 
 The sequence of commands for Mac OS is:
 
 ```
 pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.3/osx/tensorflow-0.7.1-py2-none-any.whl
+pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.4/osx/tensorflow-0.8.0rc0-py2-none-any.whl
 ```
 
 OR:
 
 ### 1b) Install Tensorflow fork from sources.
-
-You will need [Bazel](http://bazel.io/). You will also need to install [Boost](http://www.boost.org/). This can usually be done using the command "apt-get install libboost-all-dev" on Linux or "brew install boost" for Mac OS.
-
-The sequence of commands is:
-
-```
-pip uninstall tensorflow
-git clone --recurse-submodules https://github.com/gpflow/tensorflow
-cd tensorflow
-./configure 
-bazel build -c opt //tensorflow/tools/pip_package:build_pip_package
-bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
-pip install /tmp/tensorflow_pkg/<package name>
-```
 
 For more information see [this page](https://www.tensorflow.org/versions/master/get_started/os_setup.html#installing-from-sources).
 

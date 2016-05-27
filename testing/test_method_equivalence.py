@@ -1,3 +1,4 @@
+from __future__ import print_function
 import GPflow
 import numpy as np
 import unittest
@@ -24,25 +25,27 @@ class TestEquivalence(unittest.TestCase):
 
         m1 = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
         m2 = GPflow.vgp.VGP(X, Y, GPflow.kernels.RBF(1), likelihood=GPflow.likelihoods.Gaussian())
-        m3 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1)+GPflow.kernels.White(1),
+        m3 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1),
                               likelihood=GPflow.likelihoods.Gaussian(),
                               Z=X.copy(), q_diag=False)
         m3.Z.fixed = True
-        m4 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1)+GPflow.kernels.White(1),
+        m4 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1),
                               likelihood=GPflow.likelihoods.Gaussian(),
                               Z=X.copy(), q_diag=False, whiten=True)
         m4.Z.fixed=True
-        m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1)+GPflow.kernels.White(1), Z=X.copy())
+        m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1),
+                              Z=X.copy())
         m5.Z.fixed = True
-        self.models = [m1, m2, m3, m4, m5]
-        [m.optimize(display=False) for m in self.models]
+        m6 = GPflow.sgpr.GPRFITC(X, Y, GPflow.kernels.RBF(1), Z=X.copy())
+        m6.Z.fixed = True
+        self.models = [m1, m2, m3, m4, m5, m6]
+        for m in self.models:
+            m.optimize(display=False, max_iters=300)
+            print('.') # stop travis timing out
 
-    def test_likelihoods(self):
+    def test_all(self):
         likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze() for m in self.models])
-        print likelihoods
         self.failUnless(np.allclose(likelihoods, likelihoods[0], 1e-2))
-        
-    def test_kernel_params(self):
         variances, lengthscales = [], []
         for m in self.models:
             if hasattr(m.kern, 'rbf'):
@@ -55,9 +58,6 @@ class TestEquivalence(unittest.TestCase):
 
         self.failUnless(np.allclose(variances, variances[0], 1e-3))
         self.failUnless(np.allclose(lengthscales, lengthscales[0], 1e-3))
-
-
-    def test_predictions(self):
         mu0, var0 = self.models[0].predict_y(self.Xtest)
         for m in self.models[1:]:
             mu, var = m.predict_y(self.Xtest)

@@ -1,5 +1,5 @@
 import numpy as np
-from tf_hacks import eye
+from .tf_hacks import eye
 import tensorflow as tf
 
 def conditional(Xnew, X, kern, f, num_columns, full_cov=False, q_sqrt=None, whiten=False):
@@ -11,18 +11,18 @@ def conditional(Xnew, X, kern, f, num_columns, full_cov=False, q_sqrt=None, whit
     q_sqrt. In this case `f` representes the mean of the distribution and
     q_sqrt the square-root of the covariance.
 
-    Additionally, the GP may have been centered (whitened) so that 
+    Additionally, the GP may have been centered (whitened) so that
         p(v) = N( 0, I)
         f = L v
     thus
         p(f) = N(0, LL^T) = N(0, K).
-    in this case 'f' represents the values taken by v. 
+    in this case 'f' represents the values taken by v.
 
     The method can either return the diagonals of the covariance matrix for
-    each output of the full covariance matrix (full_cov). 
+    each output of the full covariance matrix (full_cov).
 
     We assume K independent GPs, represented by the columns of f (and the
-    last ax of q_sqrt).  
+    last ax of q_sqrt).
 
     Xnew is a data matrix, size N x D
     X are data points, size M x D
@@ -30,7 +30,7 @@ def conditional(Xnew, X, kern, f, num_columns, full_cov=False, q_sqrt=None, whit
     f is a data matrix, M x K, represensting the function values at X.
     num_columns is an interger number of columns in the f matrix (must match q_sqrt's last dimension)
     (optional) q_sqrt is a matrix of standard-deviations or Cholesky matrices, size M x K or M x M x K
-    (optional) whiten is a boolean: whether to whiten the representation as described above. 
+    (optional) whiten is a boolean: whether to whiten the representation as described above.
 
 
     These functions are now considered deprecated, subsumed into this one function:
@@ -62,7 +62,7 @@ def conditional(Xnew, X, kern, f, num_columns, full_cov=False, q_sqrt=None, whit
     if not whiten:
         A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
 
-    #construct the conditional mean 
+    #construct the conditional mean
     fmean = tf.matmul(tf.transpose(A), f)
 
     #add extra projected variance from q(f) if needed
@@ -72,10 +72,10 @@ def conditional(Xnew, X, kern, f, num_columns, full_cov=False, q_sqrt=None, whit
             if q_sqrt.get_shape().ndims==2:
                 LTA = A*q_sqrt[:,d:d+1]
             elif q_sqrt.get_shape().ndims==3:
-                L = tf.user_ops.triangle(q_sqrt[:,:,d], 'lower')
+                L = tf.batch_matrix_band_part(q_sqrt[:,:,d], -1, 0)
                 LTA = tf.matmul(tf.transpose(L), A)
             else: # pragma no cover
-                raise ValueError, "Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims)
+                raise ValueError("Bad dimension for q_sqrt: %s"%str(q_sqrt.get_shape().ndims))
             if full_cov:
                 projected_var.append(tf.matmul(tf.transpose(LTA),LTA))
             else:
@@ -102,6 +102,3 @@ def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns, full_
 def gp_predict_whitened(Xnew, X, kern, V, full_cov=False):
     warnings.warn('gp_predict is deprecated: use conditonal(...) instead', DeprecationWarning)
     return conditional(Xnew, X, kern, V, num_columns=1, full_cov=full_cov, q_sqrt=None, whiten=True)
-
-
-
