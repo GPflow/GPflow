@@ -1,10 +1,12 @@
 import GPflow
 import numpy as np
 import unittest
+import tensorflow as tf
 
 
 class TestMethods(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
         self.X = self.rng.randn(100, 2)
         self.Y = self.rng.randn(100, 1)
@@ -31,20 +33,22 @@ class TestMethods(unittest.TestCase):
             f, g = m._objective(m.get_free_state())
             self.failUnless(f.size == 1)
             self.failUnless(g.size == m.get_free_state().size)
-        # test predict f.
+
+    def test_predict_f(self):    
         for m in self.ms:
             mf, vf = m.predict_f(self.Xs)
             self.failUnless(mf.shape == vf.shape)
             self.failUnless(mf.shape == (10, 1))
             self.failUnless(np.all(vf >= 0.0))
-        # test predict y.
+
+    def test_predict_y(self):    
         for m in self.ms:
             mf, vf = m.predict_y(self.Xs)
             self.failUnless(mf.shape == vf.shape)
             self.failUnless(mf.shape == (10, 1))
             self.failUnless(np.all(vf >= 0.0))
 
-        # test predict density.
+    def test_predict_density(self):
         self.Ys = self.rng.randn(10, 1)
         for m in self.ms:
             d = m.predict_density(self.Xs, self.Ys)
@@ -60,6 +64,7 @@ class TestSVGP(unittest.TestCase):
     both representations (as far as possible)
     """
     def setUp(self):
+        tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
         self.X = self.rng.randn(20, 1)
         self.Y = self.rng.randn(20, 2)
@@ -134,6 +139,7 @@ class TestSparseMCMC(unittest.TestCase):
     points, the sparse mcmc is the same as full mcmc
     """
     def setUp(self):
+        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)

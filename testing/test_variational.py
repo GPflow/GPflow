@@ -38,6 +38,7 @@ def kernel(kernelVariance=1,lengthScale=1.):
 
 class VariationalUnivariateTest(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         #def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(), num_latent=None, q_diag=False, whiten=True):
         self.y_real = 2.
         self.K = 1.
@@ -109,6 +110,7 @@ class VariationalUnivariateTest(unittest.TestCase):
 
 class VariationalMultivariateTest(unittest.TestCase):
     def setUp( self ):
+        tf.reset_default_graph()
         self.nDimensions = 3
         self.rng = np.random.RandomState(1)
         self.Y = self.rng.randn( self.nDimensions, 1 )

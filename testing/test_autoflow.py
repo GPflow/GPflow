@@ -22,6 +22,7 @@ class NoArgsModel(DumbModel):
 
 class TestNoArgs(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.m = NoArgsModel()
         self.m._compile()
 
@@ -37,6 +38,7 @@ class AddModel(DumbModel):
 
 class TestAdd(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.m = AddModel()
         self.m._compile()
         rng = np.random.RandomState(0)
@@ -49,6 +51,7 @@ class TestAdd(unittest.TestCase):
 
 class TestGPmodel(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
         self.m = GPflow.svgp.SVGP(X, Y, kern=GPflow.kernels.Matern32(1), likelihood=GPflow.likelihoods.StudentT(), Z=X[::2].copy())
@@ -67,6 +70,7 @@ class TestGPmodel(unittest.TestCase):
 
 class TestResetGraph(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         k = GPflow.kernels.Matern32(1)
         X, Y = np.random.randn(2, 10, 1)
         self.Xnew = np.random.randn(5, 1)

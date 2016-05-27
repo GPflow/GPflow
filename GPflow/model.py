@@ -39,7 +39,6 @@ class AutoFlow:
     The syntax looks like:
 
     >>> class MyModel(Model):
-    >>>
     >>>   @AutoFlow((tf.float64), (tf.float64))
     >>>   def my_method(self, x, y):
     >>>       #compute something, returning a tf graph.
@@ -130,6 +129,7 @@ class Model(Parameterized):
         self._name = name
         self._needs_recompile = True
         self._free_vars = tf.placeholder('float64', name='free_vars')
+        self._session = tf.Session()
 
     @property
     def name(self):
@@ -139,7 +139,6 @@ class Model(Parameterized):
         """
         compile the tensorflow function "self._objective"
         """
-        self._session = tf.Session()
         # Make float32 hack
         float32_hack = False
         if optimizer is not None:
