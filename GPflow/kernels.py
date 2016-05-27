@@ -52,7 +52,7 @@ class Static(Kern):
         self.variance = Param(variance, transforms.positive)
 
     def Kdiag(self, X):
-        zeros = X[:,0]*0
+        zeros = X[:, 0]*0
         return zeros + self.variance
 
 
@@ -134,7 +134,7 @@ class Stationary(Kern):
         return tf.sqrt(r2 + 1e-12)
 
     def Kdiag(self, X):
-        zeros = X[:,0]*0
+        zeros = X[:, 0]*0
         return zeros + self.variance
 
 
@@ -225,6 +225,42 @@ class Cosine(Stationary):
         X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
         return self.variance * tf.cos(r)
+
+
+class PeriodicKernel(Kern):
+    """
+    The periodic kernel. Defined in  Equation (47) of
+
+    D.J.C.MacKay. Introduction to Gaussian processes. In C.M.Bishop, editor,
+    Neural Networks and Machine Learning, pages 133--165. Springer, 1998.
+
+    Derived using the mapping u=(cos(x), sin(x)) on the inputs.
+    """
+    def __init__(self, input_dim, period=1.0, variance=1.0, lengthscales=1.0, active_dims=None):
+        # No ARD support for lenghtscale or period yet
+        Kern.__init__(self, input_dim, active_dims)
+        self.variance = Param(variance, transforms.positive)
+        self.lengthscales = Param(lengthscales, transforms.positive)
+        self.ARD = False
+        self.period = Param(period, transforms.positive)
+
+    def Kdiag(self, X):
+        zeros = X[:, 0] * 0
+        return zeros + self.variance
+
+    def K(self, X, X2=None):
+        X, X2 = self._slice(X, X2)
+        if X2 is None:
+            X2 = X
+
+        # Introduce dummy dimension so we can use broadcasting
+        f = tf.expand_dims(X, 1)  # now N x 1 x D
+        f2 = tf.expand_dims(X2, 0)  # now 1 x M x D
+
+        r = np.pi * (f-f2) / self.period
+        r = tf.reduce_sum(tf.square(tf.sin(r)/self.lengthscales), 2)
+
+        return self.variance * tf.exp(-0.5 * r)
 
 
 def make_kernel_names(kern_list):
