@@ -2,7 +2,8 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from .reference import *
+from reference import *
+
 
 class TestRbf(unittest.TestCase):
     def test_1d(self):
@@ -16,12 +17,13 @@ class TestRbf(unittest.TestCase):
         x_free = tf.placeholder('float64')
         kernel.make_tf_array(x_free)
         X = tf.placeholder('float64')
-        X_data = rng.randn( 3, 1 )
-        reference_gram_matrix =  referenceRbfKernel(X_data, lengthScale, variance)
+        X_data = rng.randn(3, 1)
+        reference_gram_matrix = referenceRbfKernel(X_data, lengthScale, variance)
 
         with kernel.tf_mode():
-            gram_matrix = tf.Session().run( kernel.K(X) , feed_dict={x_free:kernel.get_free_state(), X:X_data})
+            gram_matrix = tf.Session().run(kernel.K(X), feed_dict={x_free: kernel.get_free_state(), X: X_data})
         self.failUnless(np.allclose(gram_matrix-reference_gram_matrix, 0))
+
 
 class TestKernSymmetry(unittest.TestCase):
     def setUp(self):
@@ -34,7 +36,7 @@ class TestKernSymmetry(unittest.TestCase):
         x_free = tf.placeholder('float64')
         [k.make_tf_array(x_free) for k in kernels]
         X = tf.placeholder('float64')
-        X_data = self.rng.randn(10,1)
+        X_data = self.rng.randn(10, 1)
         for k in kernels:
             break # TODO: reinstate this test (seems to hang?)
             with k.tf_mode():
@@ -43,13 +45,12 @@ class TestKernSymmetry(unittest.TestCase):
                             feed_dict={x_free:k.get_free_state(), X:X_data})
                 self.failUnless(np.allclose(Errors, 0))
 
-
     def test_5d(self):
         kernels = [K(5) for K in self.kernels]
         x_free = tf.placeholder('float64')
         [k.make_tf_array(x_free) for k in kernels]
         X = tf.placeholder('float64')
-        X_data = self.rng.randn(10,5)
+        X_data = self.rng.randn(10, 5)
         for k in kernels:
             with k.tf_mode():
                 Errors = tf.Session().run(
@@ -63,9 +64,9 @@ class TestKernDiags(unittest.TestCase):
         tf.reset_default_graph()
         inputdim = 3
         rng = np.random.RandomState(1)
-        self.X = tf.placeholder(tf.float64, [30,inputdim])
+        self.X = tf.placeholder(tf.float64, [30, inputdim])
         self.X_data = rng.randn(30,inputdim)
-        self.kernels = [k(inputdim) for k in GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Bias, GPflow.kernels.Linear]]
+        self.kernels = [k(inputdim) for k in GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Constant, GPflow.kernels.Linear]]
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) * GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim, ARD=True, variance=rng.rand(inputdim)))
@@ -81,8 +82,6 @@ class TestKernDiags(unittest.TestCase):
                 k1, k2 = tf.Session().run([k1 , k2],
                             feed_dict={self.x_free:k.get_free_state(), self.X:self.X_data})
             self.failUnless(np.allclose(k1, k2))
-
-
 
 
 class TestAdd(unittest.TestCase):
@@ -101,10 +100,10 @@ class TestAdd(unittest.TestCase):
         x_free = tf.placeholder('float64')
         [k.make_tf_array(x_free) for k in (self.rbf, self.lin, self.k)]
         X = tf.placeholder('float64')
-        X_data = self.rng.randn(10,1)
+        X_data = self.rng.randn(10, 1)
         for k in [self.rbf, self.lin, self.k]:
             with k.tf_mode():
-                k._K = tf.Session().run(k.K(X), feed_dict={x_free:k.get_free_state(), X:X_data})
+                k._K = tf.Session().run(k.K(X), feed_dict={x_free: k.get_free_state(), X: X_data})
 
         self.failUnless(np.allclose(self.rbf._K + self.lin._K, self.k._K))
 
@@ -113,21 +112,20 @@ class TestAdd(unittest.TestCase):
         [k.make_tf_array(x_free) for k in (self.rbf, self.lin, self.k)]
         X = tf.placeholder('float64')
         Z = tf.placeholder('float64')
-        X_data = self.rng.randn(10,1)
-        Z_data = self.rng.randn(12,1)
+        X_data = self.rng.randn(10, 1)
+        Z_data = self.rng.randn(12, 1)
         for k in [self.rbf, self.lin, self.k]:
             with k.tf_mode():
-                k._K = tf.Session().run(k.K(X), feed_dict={x_free:k.get_free_state(), X:X_data, Z:Z_data})
+                k._K = tf.Session().run(k.K(X), feed_dict={x_free: k.get_free_state(), X: X_data, Z: Z_data})
 
         self.failUnless(np.allclose(self.rbf._K + self.lin._K, self.k._K))
 
 
-
-
-
-
 class TestWhite(unittest.TestCase):
-    """the white kernel should not give the same result when called with k(X) and k(X, X)"""
+    """
+    The white kernel should not give the same result when called with k(X) and
+    k(X, X)
+    """
     def setUp(self):
         tf.reset_default_graph()
         self.k = GPflow.kernels.White(1)
@@ -137,17 +135,18 @@ class TestWhite(unittest.TestCase):
         x_free = tf.placeholder('float64')
         self.k.make_tf_array(x_free)
         X = tf.placeholder('float64')
-        X_data = self.rng.randn(10,1)
+        X_data = self.rng.randn(10, 1)
         with self.k.tf_mode():
-            K_sym = tf.Session().run(self.k.K(X), feed_dict={x_free:self.k.get_free_state(), X:X_data})
-            K_asym = tf.Session().run(self.k.K(X, X), feed_dict={x_free:self.k.get_free_state(), X:X_data})
+            K_sym = tf.Session().run(self.k.K(X), feed_dict={x_free: self.k.get_free_state(), X: X_data})
+            K_asym = tf.Session().run(self.k.K(X, X), feed_dict={x_free: self.k.get_free_state(), X: X_data})
 
         self.failIf(np.allclose(K_sym, K_asym))
 
 
 class TestSlice(unittest.TestCase):
     """
-    make sure the results of a sliced kernel is the ame as an unsliced kernel with correctly sliced data...
+    Make sure the results of a sliced kernel is the ame as an unsliced kernel
+    with correctly sliced data...
     """
     def setUp(self):
         tf.reset_default_graph()
@@ -158,11 +157,11 @@ class TestSlice(unittest.TestCase):
         self.X = tf.placeholder('float64', [None, None])
         self.Z = tf.placeholder('float64', [None, None])
 
-        #make kernel functions in python
+        # make kernel functions in python
         self.x_free = tf.placeholder('float64')
 
     def test_symm(self):
-        X = self.rng.randn(20,2)
+        X = self.rng.randn(20, 2)
 
         with self.k1.tf_mode():
             with self.k2.tf_mode():
@@ -170,16 +169,16 @@ class TestSlice(unittest.TestCase):
                     self.k1.make_tf_array(self.x_free)
                     self.k2.make_tf_array(self.x_free)
                     self.k3.make_tf_array(self.x_free)
-                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X:X, self.x_free:np.ones(2)})
-                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X:X, self.x_free:np.ones(2)})
-                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,:1], self.x_free:np.ones(2)})
-                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,1:], self.x_free:np.ones(2)})
+                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X: X, self.x_free: np.ones(2)})
+                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X: X, self.x_free: np.ones(2)})
+                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X: X[:, :1], self.x_free: np.ones(2)})
+                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X: X[:, 1:], self.x_free: np.ones(2)})
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
 
     def test_asymm(self):
-        X = self.rng.randn(20,2)
-        Z = self.rng.randn(30,2)
+        X = self.rng.randn(20, 2)
+        Z = self.rng.randn(30, 2)
 
         with self.k1.tf_mode():
             with self.k2.tf_mode():
@@ -187,12 +186,13 @@ class TestSlice(unittest.TestCase):
                     self.k1.make_tf_array(self.x_free)
                     self.k2.make_tf_array(self.x_free)
                     self.k3.make_tf_array(self.x_free)
-                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X:X, self.Z:Z, self.x_free:np.ones(2)})
-                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X:X, self.Z:Z, self.x_free:np.ones(2)})
-                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,:1], self.Z:Z[:,:1], self.x_free:np.ones(2)})
-                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X:X[:,1:], self.Z:Z[:,1:], self.x_free:np.ones(2)})
+                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X: X, self.Z: Z, self.x_free: np.ones(2)})
+                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X: X, self.Z: Z, self.x_free: np.ones(2)})
+                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X: X[:, :1], self.Z: Z[:, :1], self.x_free: np.ones(2)})
+                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X: X[:, 1:], self.Z: Z[:, 1:], self.x_free: np.ones(2)})
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
+
 
 class TestProd(unittest.TestCase):
     def setUp(self):
@@ -201,9 +201,8 @@ class TestProd(unittest.TestCase):
         self.k2 = GPflow.kernels.Matern52(2, lengthscales=0.3)
         self.k3 = self.k1 * self.k2
         self.x_free = tf.placeholder(tf.float64)
-        self.X = tf.placeholder(tf.float64, [30,2])
-        self.X_data = np.random.randn(30,2)
-
+        self.X = tf.placeholder(tf.float64, [30, 2])
+        self.X_data = np.random.randn(30, 2)
 
     def test_prod(self):
         with self.k1.tf_mode():
@@ -224,13 +223,12 @@ class TestProd(unittest.TestCase):
         self.failUnless(np.allclose(K1 * K2, K3))
 
 
-
 class TestARDActiveProd(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
 
-        #k3 = k1 * k2
+        # k3 = k1 * k2
         self.k1 = GPflow.kernels.RBF(3, active_dims=[0, 1, 3], ARD=True)
         self.k2 = GPflow.kernels.RBF(1, active_dims=[2], ARD=True)
         self.k3 = GPflow.kernels.RBF(4, ARD=True)
@@ -239,7 +237,7 @@ class TestARDActiveProd(unittest.TestCase):
         self.k3.lengthscales = np.array([3.4, 4.5, 6.7,  5.6])
         self.k3a = self.k1 * self.k2
 
-        #make kernel functions in python
+        # make kernel functions in python
         self.x_free = tf.placeholder('float64')
         self.k3.make_tf_array(self.x_free)
         self.k3a.make_tf_array(self.x_free)
@@ -257,8 +255,6 @@ class TestARDActiveProd(unittest.TestCase):
         self.failUnless(np.allclose(K1 , K2))
 
 
-
-
 class TestKernNaming(unittest.TestCase):
     def test_no_nesting_1(self):
         k1 = GPflow.kernels.RBF(1)
@@ -269,7 +265,6 @@ class TestKernNaming(unittest.TestCase):
         self.failUnless(k5.rbf is k1)
         self.failUnless(k5.linear is k2)
         self.failUnless(k5.matern32 is k4)
-
 
     def test_no_nesting_2(self):
         k1 = GPflow.kernels.RBF(1) + \
@@ -283,14 +278,12 @@ class TestKernNaming(unittest.TestCase):
         self.failUnless(hasattr(k, 'matern32'))
         self.failUnless(hasattr(k, 'matern52'))
 
-
     def test_simple(self):
         k1 = GPflow.kernels.RBF(1)
         k2 = GPflow.kernels.Linear(2)
         k = k1 + k2
         self.failUnless(k.rbf is k1)
         self.failUnless(k.linear is k2)
-
 
     def test_duplicates_1(self):
         k1 = GPflow.kernels.Matern32(1)
@@ -309,8 +302,6 @@ class TestKernNaming(unittest.TestCase):
         self.failUnless(k.matern32_3 is k3)
 
 
-
-
 class TestKernNamingProduct(unittest.TestCase):
     def test_no_nesting_1(self):
         k1 = GPflow.kernels.RBF(1)
@@ -321,7 +312,6 @@ class TestKernNamingProduct(unittest.TestCase):
         self.failUnless(k5.rbf is k1)
         self.failUnless(k5.linear is k2)
         self.failUnless(k5.matern32 is k4)
-
 
     def test_no_nesting_2(self):
         k1 = GPflow.kernels.RBF(1) * \
@@ -335,14 +325,12 @@ class TestKernNamingProduct(unittest.TestCase):
         self.failUnless(hasattr(k, 'matern32'))
         self.failUnless(hasattr(k, 'matern52'))
 
-
     def test_simple(self):
         k1 = GPflow.kernels.RBF(1)
         k2 = GPflow.kernels.Linear(2)
         k = k1 * k2
         self.failUnless(k.rbf is k1)
         self.failUnless(k.linear is k2)
-
 
     def test_duplicates_1(self):
         k1 = GPflow.kernels.Matern32(1)
@@ -359,14 +347,6 @@ class TestKernNamingProduct(unittest.TestCase):
         self.failUnless(k.matern32_1 is k1)
         self.failUnless(k.matern32_2 is k2)
         self.failUnless(k.matern32_3 is k3)
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
