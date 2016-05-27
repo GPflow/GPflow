@@ -7,6 +7,7 @@ import unittest
 
 class TestOptimize(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         class Quadratic(GPflow.model.Model):
             def __init__(self):
@@ -40,6 +41,7 @@ class KeyboardRaiser:
 
 class TestKeyboardCatching(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         X = np.random.randn(1000, 3)
         Y = np.random.randn(1000, 3)
         Z = np.random.randn(100, 3)
@@ -63,6 +65,7 @@ class TestKeyboardCatching(unittest.TestCase):
 
 class TestLikelihoodAutoflow(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         X = np.random.randn(1000, 3)
         Y = np.random.randn(1000, 3)
         Z = np.random.randn(100, 3)

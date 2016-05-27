@@ -1,7 +1,7 @@
-import densities
+from . import densities
 import tensorflow as tf
 import numpy as np
-from param import Parameterized
+from .param import Parameterized
 
 class Prior(Parameterized):
     def logp(self, x):
@@ -35,8 +35,3 @@ class Gamma(Prior):
         return tf.reduce_sum(densities.gamma(self.shape, self.scale, x))
     def __str__(self):
         return "Ga("+str(self.shape) + "," + str(self.scale) + ")"
-
-
-
-
-
