@@ -19,9 +19,18 @@ class ObjectiveWrapper(object):
     def __call__(self, x):
         try:
             f, g = self._objective(x)
-        except(tf.errors.InvalidArgumentError):
-            print("Warning: InvalidArgumentError in objective function possibly due to singular matrix")
-            return np.inf, np.zeros_like(x)
+        except tf.errors.InvalidArgumentError as e:
+            if((e.op.type == 'Cholesky' or e.op.type == 'MatrixTriangularSolve') and e.error_code==3):
+                ''' 
+                Failure in Cholesky op
+                The integer error code  3 denotes an 'LLT decomposition was not 
+                successful. The input might not be valid.' error.
+                '''
+                print("Warning: Matrix decomposition failed due to to singular matrix, setting objective to inf.")
+                # return inf objective and zero gradient
+                return np.inf, np.zeros_like(x) 
+            else:
+                raise # re-raise the last exception.
             
         g_is_fin = np.isfinite(g)
         if np.all(g_is_fin):

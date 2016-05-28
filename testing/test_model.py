@@ -80,7 +80,19 @@ class TestLikelihoodAutoflow(unittest.TestCase):
         self.failUnless(l0==l1)
 
 
-
+class TestRobustObjectiveEvaluaion(unittest.TestCase):
+    def setUp(self):
+        N = 10
+        k = GPflow.kernels.Matern52(1)
+        X_data = np.random.uniform(0,1,size=(N,1))
+        Y_data = np.sin(12*X_data) + 0.66*np.cos(25*X_data) + np.random.randn(N,1)*0.1 + 3
+        k.variance = 1e20 # blow up the kernel
+        self.m = GPflow.gpr.GPR(X_data, Y_data, k)
+        self.m.likelihood.variance = 0.01
+    def test_robust(self):
+        o=self.m.optimize()
+        self.failUnless(o.success == True)
+        self.failUnless(np.isinf(o.fun) == True) # objective must be infinite, this indicates an exception was thrown but handled
 
 if __name__ == "__main__":
     unittest.main()
