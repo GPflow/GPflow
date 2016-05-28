@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import transforms
+from . import transforms
 from contextlib import contextmanager
 
 # when one of these attributes is set, notify a recompilation
@@ -35,11 +35,11 @@ class Parentable(object):
         matches = [key for key, value in self._parent.__dict__.items()
                    if value is self]
         if len(matches) == 0:
-            raise ValueError("mis-specified parent. This param's _parent does\
-                               not contain a reference to it.")
+            raise ValueError("mis-specified parent. This param's\
+                             _parent does not contain a reference to it.")
         if len(matches) > 1:
             raise ValueError("This param appears to be doubly\
-                              referenced by a parent")
+                             referenced by a parent")
         return matches[0]
 
 
@@ -91,12 +91,12 @@ class Param(Parentable):
     There is a self._fixed flag, in which case the parameter does not get
     optimized. To enable this, during make_tf_array, the fixed values of
     the parameter are returned. Fixes and transforms can be used together, in
-    the sense that fixes tkae priority over transforms, so unfixing a parameter
+    the sense that fixes take priority over transforms, so unfixing a parameter
     is as simple as setting the flag. Example:
 
     >>> p = Param(1.0, transform=GPflow.transforms.positive)
     >>> m = GPflow.model.Model()
-    >>> m.p = p # the model has a sinlge parameter, constrained to be +ve
+    >>> m.p = p # the model has a single parameter, constrained to be +ve
     >>> m.p.fixed = True # the model now has no free parameters
     >>> m.p.fixed = False # the model has a sinlge parameter, constrained +ve
 
@@ -136,7 +136,7 @@ class Param(Parentable):
         # TODO what about constraints that change the size ??
 
         if self.fixed:
-            self._tf_array = self._array.copy()
+            self._tf_array = tf.constant(self._array.copy(), dtype=tf.float64)
             return 0
         x_free = free_array[:self.size]
         mapped_array = self.transform.tf_forward(x_free)
@@ -172,10 +172,10 @@ class Param(Parentable):
     def build_prior(self):
         """
         Build a tensorflow representation of the prior density.
-        The log jacobian is included.
+        The log Jacobian is included.
         """
         if self.prior is None:
-            return 0
+            return tf.constant(0.0, tf.float64)
         elif self._tf_array is None:
             raise ValueError("tensorflow array has not been initialized")
         else:
@@ -234,7 +234,7 @@ class Parameterized(Parentable):
     models on those parameters. During _tf_mode, the __getattribute__
     method is overwritten to return tf arrays in place of parameters.
 
-    Another recurseive function is build_prior wich sums the log-prior from all
+    Another recursive function is build_prior wich sums the log-prior from all
     of the tree's parameters (whilst in tf_mode!).
     """
     def __init__(self):

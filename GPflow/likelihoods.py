@@ -1,8 +1,8 @@
-import densities
+from . import densities
 import tensorflow as tf
 import numpy as np
-from param import Parameterized, Param
-import transforms
+from .param import Parameterized, Param
+from . import transforms
 hermgauss = np.polynomial.hermite.hermgauss
 
 
@@ -74,7 +74,7 @@ class Likelihood(Parameterized):
         gh_w /= np.sqrt(np.pi)
         gh_w = gh_w.reshape(-1, 1)
         shape = tf.shape(Fmu)
-        Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in Fmu, Fvar]
+        Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar)]
         X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
 
         # here's the quadrature for the mean
@@ -109,7 +109,7 @@ class Likelihood(Parameterized):
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         gh_w = gh_w.reshape(-1, 1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in Fmu, Fvar, Y]
+        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
         X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
         Y = tf.tile(Y, [1, self.num_gauss_hermite_points])
         logp = self.logp(X, Y)
@@ -139,7 +139,7 @@ class Likelihood(Parameterized):
         gh_x = gh_x.reshape(1, -1)
         gh_w = gh_w.reshape(-1, 1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in Fmu, Fvar, Y]
+        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
         X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
         Y = tf.tile(Y, [1, self.num_gauss_hermite_points])
         logp = self.logp(X, Y)

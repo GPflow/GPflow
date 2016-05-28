@@ -55,7 +55,8 @@ def multivariate_normal(x, mu, L):
     alpha = tf.matrix_triangular_solve(L, d, lower=True)
     num_col = 1 if tf.rank(x) == 1 else tf.shape(x)[1]
     num_col = tf.cast(num_col, tf.float64)
-    ret = - 0.5 * tf.cast(tf.size(x), tf.float64) * np.log(2 * np.pi)
-    ret += - num_col * tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
+    num_dims = tf.cast(tf.shape(x)[0], tf.float64)
+    ret = - 0.5 * num_dims * num_col * np.log(2 * np.pi)
+    ret += - num_col * tf.reduce_sum(tf.log(tf.diag_part(L)))
     ret += - 0.5 * tf.reduce_sum(tf.square(alpha))
     return ret

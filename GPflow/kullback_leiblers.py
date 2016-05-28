@@ -24,9 +24,9 @@ def gauss_kl_white(q_mu, q_sqrt, num_latent):
     KL = 0.5 * tf.reduce_sum(tf.square(q_mu))  # Mahalanobis term
     KL += -0.5 * tf.cast(tf.shape(q_sqrt)[0] * num_latent, tf.float64)
     for d in range(num_latent):
-        Lq = tf.user_ops.triangle(q_sqrt[:, :, d], 'lower')
+        Lq = tf.batch_matrix_band_part(q_sqrt[:, :, d], -1, 0)
         # Log determinant of q covariance:
-        KL -= 0.5 * tf.reduce_sum(tf.log(tf.square(tf.user_ops.get_diag(Lq))))
+        KL -= 0.5 * tf.reduce_sum(tf.log(tf.square(tf.diag_part(Lq))))
         KL += 0.5 * tf.reduce_sum(tf.square(Lq))  # Trace term.
     return KL
 
@@ -83,12 +83,12 @@ def gauss_kl_diag(q_mu, q_sqrt, K,  num_latent):
     alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
     KL = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
     KL += num_latent * 0.5 * tf.reduce_sum(
-        tf.log(tf.square(tf.user_ops.get_diag(L))))  # Prior log-det term.
+        tf.log(tf.square(tf.diag_part(L))))  # Prior log-det term.
     KL += -0.5 * tf.cast(tf.shape(q_sqrt)[0] * num_latent, tf.float64)
     KL += -0.5 * tf.reduce_sum(tf.log(tf.square(q_sqrt)))  # Log-det of q-cov
     L_inv = tf.matrix_triangular_solve(L, eye(tf.shape(L)[0]), lower=True)
     K_inv = tf.matrix_triangular_solve(tf.transpose(L), L_inv, lower=False)
-    KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.user_ops.get_diag(K_inv), 1)
+    KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.diag_part(K_inv), 1)
                               * tf.square(q_sqrt))  # Trace term.
     return KL
 
@@ -118,11 +118,12 @@ def gauss_kl(q_mu, q_sqrt, K, num_latent):
     alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
     KL = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
     KL += num_latent * 0.5 * tf.reduce_sum(
-        tf.log(tf.square(tf.user_ops.get_diag(L))))  # Prior log-det term.
+        tf.log(tf.square(tf.diag_part(L))))  # Prior log-det term.
     KL += -0.5 * tf.cast(tf.shape(q_sqrt)[0] * num_latent, tf.float64)
     for d in range(num_latent):
-        Lq = tf.user_ops.triangle(q_sqrt[:, :, d], 'lower')
-        KL += -0.5 * tf.reduce_sum(tf.log(tf.square(tf.user_ops.get_diag(Lq))))
+        Lq = tf.batch_matrix_band_part(q_sqrt[:, :, d], -1, 0)
+        # Log determinant of q covariance: 
+        KL += -0.5*tf.reduce_sum(tf.log(tf.square(tf.diag_part(Lq))))
         LiLq = tf.matrix_triangular_solve(L, Lq, lower=True)
         KL += 0.5 * tf.reduce_sum(tf.square(LiLq))  # Trace term
     return KL

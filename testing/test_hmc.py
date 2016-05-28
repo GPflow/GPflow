@@ -5,6 +5,7 @@ import tensorflow as tf
 
 class SampleGaussianTest(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.f = lambda x : (0.5*np.sum(np.square(x)), x)
         self.x0 = np.zeros(3)
 
@@ -45,6 +46,7 @@ class SampleModelTest(unittest.TestCase):
     Create a very simple model and make sure samples form is make sense. 
     """
     def setUp(self):
+        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         class Quadratic(GPflow.model.Model):
             def __init__(self):

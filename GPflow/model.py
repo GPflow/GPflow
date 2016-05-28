@@ -3,7 +3,7 @@ from .param import Parameterized
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-import hmc
+from . import hmc
 import sys
 from functools import wraps
 
@@ -44,7 +44,7 @@ class AutoFlow:
 
     >>> class MyModel(Model):
     >>>
-    >>>   @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.float64))
+    >>>   @AutoFlow((tf.float64), (tf.float64))
     >>>   def my_method(self, x, y):
     >>>       #compute something, returning a tf graph.
     >>>       return tf.foo(self.baz, x, y)
@@ -73,18 +73,21 @@ class AutoFlow:
     result in the graph being constructed only once.
 
     """
-    def __init__(self, *tf_args):
-        self.tf_args = tf_args
+    def __init__(self, *tf_arg_tuples):
+        # NB. TF arg_tuples is a list of tuples, each of which can be used to
+        # construct a tf placeholder.
+        self.tf_arg_tuples = tf_arg_tuples
 
     def __call__(self, tf_method):
         @wraps(tf_method)
         def runnable(instance, *np_args):
             graph_name = '_' + tf_method.__name__ + '_graph'
             if not hasattr(instance, graph_name):
+                instance._compile()
+                self.tf_args = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                 with instance.tf_mode():
-                    instance.make_tf_array(instance._free_vars)
                     graph = tf_method(instance, *self.tf_args)
-                    setattr(instance, graph_name, graph)
+                setattr(instance, graph_name, graph)
             feed_dict = dict(zip(self.tf_args, np_args))
             feed_dict[instance._free_vars] = instance.get_free_state()
             graph = getattr(instance, graph_name)
@@ -205,9 +208,17 @@ class Model(Parameterized):
                 if key[0] == '_' and key[-6:] == '_graph':
                     delattr(self, key)
 
+    @AutoFlow()
+    def compute_log_prior(self):
+        return self.build_prior()
+
+    @AutoFlow()
+    def compute_log_likelihood(self):
+        return self.build_likelihood()
+
     def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False):
         """
-        use hybrid Monte Carlo to draw samples from the posterior of the model.
+        Use Hamiltonian Monte Carlo to draw samples from the model posterior.
         """
         if self._needs_recompile:
             self._compile()
@@ -215,18 +226,21 @@ class Model(Parameterized):
                               Lmax, epsilon,
                               x0=self.get_free_state(), verbose=verbose)
 
-    def optimize(self, method='L-BFGS-B', callback=None,
+    def optimize(self, method='L-BFGS-B', tol=None, callback=None,
                  max_iters=1000, calc_feed_dict=None, **kw):
         """
         Optimize the model by maximizing the likelihood (possibly with the
         priors also) with respect to any free variables.
 
         method can be one of:
-            a string, corresponding to a valid scipy.minimize optimizer
+            a string, corresponding to a valid scipy.optimize.minimize string
             a tensorflow optimizer (e.g. tf.optimize.AdaGrad)
 
         The callback function is execteud by assing the current value of
         self.get_free_state()
+
+        tol is the tolerance passed to scipy.optimize.minimize (ignored
+            for tensorflow optimizers)
 
         max_iters defines the maximum number of iterations
 
@@ -244,7 +258,7 @@ class Model(Parameterized):
         """
 
         if type(method) is str:
-            return self._optimize_np(method, callback, max_iters, **kw)
+            return self._optimize_np(method, tol, callback, max_iters, **kw)
         else:
             return self._optimize_tf(method, callback, max_iters,
                                      calc_feed_dict, **kw)
@@ -283,14 +297,28 @@ class Model(Parameterized):
                            status="Finished iterations.")
         return r
 
-    def _optimize_np(self, method='L-BFGS-B', callback=None,
+    def _optimize_np(self, method='L-BFGS-B', tol=None, callback=None,
                      max_iters=1000, **kw):
         """
         Optimize the model to find the maximum likelihood  or MAP point. Here
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
         through as `options`.
 
-        self.self.optimize()
+        method is a string (default 'L-BFGS-B') specifying the scipy
+        optimization routine, one of
+            - 'Powell'
+            - 'CG'
+            - 'BFGS'
+            - 'Newton-CG'
+            - 'L-BFGS-B'
+            - 'TNC'
+            - 'COBYLA'
+            - 'SLSQP'
+            - 'dogleg'
+        tol is the tolerance to be pased to the optimization routine
+        callback is callback function to be passed to the optimization routine
+        max_iters is the maximum numebr of iterations (used in the options dict
+            for the optimization routine)
         """
         if self._needs_recompile:
             self._compile()
@@ -312,7 +340,7 @@ class Model(Parameterized):
                               x0=self.get_free_state(),
                               method=method,
                               jac=True,
-                              tol=None,  # TODO: tol??
+                              tol=tol,
                               callback=callback,
                               options=options)
         except (KeyboardInterrupt):
@@ -354,7 +382,7 @@ class GPModel(Model):
     def build_predict(self):
         raise NotImplementedError
 
-    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points
@@ -362,7 +390,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew)
 
-    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]))
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -370,7 +398,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew, full_cov=True)
 
-    @AutoFlow(tf.placeholder(tf.float64), tf.placeholder(tf.int32, []))
+    @AutoFlow((tf.float64, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
@@ -385,7 +413,7 @@ class GPModel(Model):
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.pack(samples))
 
-    @AutoFlow(tf.placeholder(tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -393,8 +421,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-    @AutoFlow(tf.placeholder(tf.float64, [None, None]),
-              tf.placeholder(tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew

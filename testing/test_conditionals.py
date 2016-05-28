@@ -12,6 +12,7 @@ class DiagsTest(unittest.TestCase):
     Here we make sure the behaviours overlap.
     """
     def setUp(self):
+        tf.reset_default_graph()
         self.num_latent = 2
         self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
         self.k.white.variance = 0.01
@@ -70,6 +71,7 @@ class DiagsTest(unittest.TestCase):
 
 class WhitenTest(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
         self.k.white.variance = 0.01
         self.num_data = 10
@@ -118,6 +120,7 @@ class WhitenTest(unittest.TestCase):
 
 class WhitenTestGaussian(WhitenTest):
     def setUp(self):
+        tf.reset_default_graph()
         WhitenTest.setUp(self)
         self.F_sqrt = tf.placeholder('float64', [self.num_data, 1])
         self.F_sqrt_data = self.rng.rand(self.num_data,1)

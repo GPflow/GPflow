@@ -1,4 +1,4 @@
-from tf_hacks import eye
+from .tf_hacks import eye
 import tensorflow as tf
 
 
@@ -35,7 +35,6 @@ def conditional(Xnew, X, kern, f, num_columns,
        matrices, size M x K or M x M x K
      - whiten (optional) is a boolean: whether to whiten the representation
        as described above.
-
 
     These functions are now considered deprecated, subsumed into this one:
         gp_predict
@@ -76,7 +75,7 @@ def conditional(Xnew, X, kern, f, num_columns,
             if q_sqrt.get_shape().ndims == 2:
                 LTA = A * q_sqrt[:, d:d + 1]
             elif q_sqrt.get_shape().ndims == 3:
-                L = tf.user_ops.triangle(q_sqrt[:, :, d], 'lower')
+                L = tf.batch_matrix_band_part(q_sqrt[:, :, d], -1, 0)
                 LTA = tf.matmul(tf.transpose(L), A)
             else:  # pragma no cover
                 raise ValueError("Bad dimension for q_sqrt: %s" %

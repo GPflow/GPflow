@@ -2,6 +2,7 @@ from __future__ import print_function
 import GPflow
 import numpy as np
 import unittest
+import tensorflow as tf
 
 class TestEquivalence(unittest.TestCase):
     """
@@ -18,6 +19,7 @@ class TestEquivalence(unittest.TestCase):
     5) Sparse variational GP Regression (as above, but there the inducing variables are 'collapsed' out, as in Titsias 2009)
     """
     def setUp(self):
+        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         X = rng.rand(20,1)*10
         Y = np.sin(X) + 0.9 * np.cos(X*1.6) + rng.randn(*X.shape)* 0.8
@@ -36,16 +38,16 @@ class TestEquivalence(unittest.TestCase):
         m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1),
                               Z=X.copy())
         m5.Z.fixed = True
-        self.models = [m1, m2, m3, m4, m5]
+        m6 = GPflow.sgpr.GPRFITC(X, Y, GPflow.kernels.RBF(1), Z=X.copy())
+        m6.Z.fixed = True
+        self.models = [m1, m2, m3, m4, m5, m6]
         for m in self.models:
             m.optimize(display=False, max_iters=300)
             print('.') # stop travis timing out
 
-    def test_likelihoods(self):
+    def test_all(self):
         likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze() for m in self.models])
         self.failUnless(np.allclose(likelihoods, likelihoods[0], 1e-2))
-        
-    def test_kernel_params(self):
         variances, lengthscales = [], []
         for m in self.models:
             if hasattr(m.kern, 'rbf'):
@@ -58,9 +60,6 @@ class TestEquivalence(unittest.TestCase):
 
         self.failUnless(np.allclose(variances, variances[0], 1e-3))
         self.failUnless(np.allclose(lengthscales, lengthscales[0], 1e-3))
-
-
-    def test_predictions(self):
         mu0, var0 = self.models[0].predict_y(self.Xtest)
         for m in self.models[1:]:
             mu, var = m.predict_y(self.Xtest)

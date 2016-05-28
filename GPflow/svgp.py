@@ -1,12 +1,12 @@
 import tensorflow as tf
 import numpy as np
-from param import Param
+from .param import Param
 from .model import GPModel
-import transforms
-import conditionals
+from . import transforms
+from . import conditionals
 from .mean_functions import Zero
-from tf_hacks import eye
-import kullback_leiblers
+from .tf_hacks import eye
+from . import kullback_leiblers
 
 
 class SVGP(GPModel):
@@ -113,12 +113,13 @@ class SVGP(GPModel):
         self._objective = obj
         return opt_step
 
-    def optimize(self, method='L-BFGS-B', callback=None, max_iters=1000, **kw):
+    def optimize(self, method='L-BFGS-B', tol=None,
+                 callback=None, max_iters=1000, **kw):
         def calc_feed_dict():
             ss = np.random.randint(len(self.dX), size=self.minibatch)
             return {self.X: self.dX[ss, :], self.Y: self.dY[ss, :]}
 
-        return GPModel.optimize(self, method, callback,
+        return GPModel.optimize(self, method, tol, callback,
                                 max_iters, calc_feed_dict, **kw)
 
     def build_likelihood(self):

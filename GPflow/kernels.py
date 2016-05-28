@@ -1,8 +1,10 @@
+from functools import reduce
+
 import tensorflow as tf
-from tf_hacks import eye
+from .tf_hacks import eye
 import numpy as np
-from param import Param, Parameterized
-import transforms
+from .param import Param, Parameterized
+from . import transforms
 
 
 class Kern(Parameterized):
@@ -67,9 +69,9 @@ class White(Static):
             return tf.zeros(shape, tf.float64)
 
 
-class Bias(Static):
+class Constant(Static):
     """
-    The Bias (constant) kernel
+    The Constant (aka Bias) kernel
     """
     def K(self, X, X2=None):
         if X2 is None:
@@ -77,6 +79,13 @@ class Bias(Static):
         else:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
         return self.variance * tf.ones(shape, tf.float64)
+
+
+class Bias(Constant):
+    """
+    Another name for the Constant kernel, included for convenience.
+    """
+    pass
 
 
 class Stationary(Kern):
@@ -190,9 +199,9 @@ class Exponential(Stationary):
         return self.variance * tf.exp(-0.5 * r)
 
 
-class OU(Stationary):
+class Matern12(Stationary):
     """
-    The Ornstein Uhlenbeck kernel
+    The Matern 1/2 kernel
     """
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)

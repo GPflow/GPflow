@@ -1,10 +1,10 @@
 import tensorflow as tf
 import numpy as np
-from param import Param
-from model import GPModel
-import transforms
+from .param import Param
+from .model import GPModel
+from . import transforms
 from .mean_functions import Zero
-from tf_hacks import eye
+from .tf_hacks import eye
 
 
 class VGP(GPModel):
@@ -72,9 +72,10 @@ class VGP(GPModel):
             L = tf.cholesky(A)
             Li = tf.matrix_triangular_solve(L, eye(self.num_data), lower=True)
             LiBi = Li / b
+
             # full_sigma:return tf.diag(b**-2) - LiBi.T.dot(LiBi)
             f_var.append(1./tf.square(b) - tf.reduce_sum(tf.square(LiBi), 0))
-            A_logdet += 2*tf.reduce_sum(tf.log(tf.user_ops.get_diag(L)))
+            A_logdet += 2*tf.reduce_sum(tf.log(tf.diag_part(L)))
             trAi += tf.reduce_sum(tf.square(Li))
 
         f_var = tf.transpose(tf.pack(f_var))
