@@ -1,10 +1,10 @@
 import tensorflow as tf
 from .model import GPModel
-from .param import Param
 from .densities import multivariate_normal
 from .mean_functions import Zero
-import likelihoods
-from tf_hacks import eye
+from . import likelihoods
+from .tf_hacks import eye
+
 
 class GPR(GPModel):
     def __init__(self, X, Y, kern, mean_function=Zero()):
@@ -23,7 +23,7 @@ class GPR(GPModel):
 
     def build_likelihood(self):
         """
-        Constuct a tensorflow function to compute the likelihood of a general GP model.
+        Constuct a tensorflow function to compute the likelihood.
 
             \log p(Y, V | theta).
 
@@ -49,15 +49,13 @@ class GPR(GPModel):
         K = self.kern.K(self.X) + eye(self.num_data) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
-        V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X), lower=True)
+        V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))
         fmean = tf.matmul(tf.transpose(A), V) + self.mean_function(Xnew)
         if full_cov:
             fvar = self.kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
-            fvar = tf.tile(tf.expand_dims(fvar, 2), tf.pack([1, 1, tf.shape(self.Y)[1]]))
+            shape = tf.pack([1, 1, tf.shape(self.Y)[1]])
+            fvar = tf.tile(tf.expand_dims(fvar, 2), shape)
         else:
-            fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), reduction_indices=0)
-            fvar = tf.tile(tf.reshape(fvar, (-1,1)), [1, self.Y.shape[1]])
+            fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
+            fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, self.Y.shape[1]])
         return fmean, fvar
-
- 
-
