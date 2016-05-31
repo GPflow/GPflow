@@ -1,5 +1,4 @@
 from __future__ import print_function
-from .tf_hacks import eye
 from .param import Parameterized
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
@@ -406,12 +405,11 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        num_points = tf.shape(Xnew)[0]
-        sample_shape = tf.pack([num_points, num_samples])
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:, :, i] + eye(num_points)*1e-6)
-            V = tf.random_normal(sample_shape, dtype=tf.float64)
+            L = tf.cholesky(var[:, :, i])
+            shape = tf.pack([tf.shape(L)[0], num_samples])
+            V = tf.random_normal(shape, dtype=tf.float64)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.pack(samples))
 
