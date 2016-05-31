@@ -99,14 +99,16 @@ class Log1pe(Transform):
 
 
 class Logistic(Transform):
-    def __init__(self, a, b):
+    def __init__(self, a=0., b=1.):
         Transform.__init__(self)
         assert b > a
         self.a, self.b = a, b
+        self._a = tf.constant(a, tf.float64)
+        self._b = tf.constant(b, tf.float64)
 
     def tf_forward(self, x):
         ex = tf.exp(-x)
-        return self.a + (self.b-self.a) / (1. + ex)
+        return self._a + (self._b-self._a) / (1. + ex)
 
     def forward(self, x):
         ex = np.exp(-x)
@@ -116,7 +118,7 @@ class Logistic(Transform):
         return -np.log((self.b - self.a) / (y - self.a) - 1.)
 
     def tf_log_jacobian(self, x):
-        return x - 2. * tf.log(tf.exp(x) + 1.) + tf.log(self.b - self.a)
+        return tf.reduce_sum(x - 2. * tf.log(tf.exp(x) + 1.) + tf.log(self._b - self._a))
 
     def __str__(self):
         return '[' + str(self.a) + ', ' + str(self.b) + ']'
