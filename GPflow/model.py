@@ -97,7 +97,8 @@ class AutoFlow:
         def runnable(instance, *np_args):
             graph_name = '_' + tf_method.__name__ + '_graph'
             if not hasattr(instance, graph_name):
-                instance._compile()
+                if instance._needs_recompile:
+                    instance._compile()  # ensures free_vars is up-to-date.
                 self.tf_args = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                 with instance.tf_mode():
                     graph = tf_method(instance, *self.tf_args)
