@@ -5,7 +5,6 @@ import unittest
 
 class TransformTests(unittest.TestCase):
     def setUp(self):
-        tf.reset_default_graph()
         self.x = tf.placeholder(tf.float64)
         self.x_np = np.random.randn(10)
         self.session = tf.Session()

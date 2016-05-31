@@ -6,7 +6,6 @@ import numpy as np
 
 class ParamTestsScalar(unittest.TestCase):
     def setUp(self):
-        tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
         self.m.p = GPflow.param.Param(1.0)
     
@@ -61,7 +60,6 @@ class ParamTestsScalar(unittest.TestCase):
 
 class ParamTestsDeeper(unittest.TestCase):
     def setUp(self):
-        tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
         self.m.foo = GPflow.param.Parameterized()
         self.m.foo.bar = GPflow.param.Parameterized()
@@ -124,7 +122,6 @@ class ParamTestsDeeper(unittest.TestCase):
 
 class ParamTestswider(unittest.TestCase):
     def setUp(self):
-        tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
         self.m.foo = GPflow.param.Param(1.0)
         self.m.bar = GPflow.param.Param(np.arange(10))

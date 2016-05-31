@@ -3,7 +3,7 @@ import tensorflow as tf
 from GPflow.tf_hacks import eye
 import numpy as np
 import unittest
-from reference import *
+from .reference import *
 
 def referenceUnivariateLogMarginalLikelihood( y, K, noiseVariance ):
     return -0.5 * y * y / ( K + noiseVariance ) - 0.5 * np.log( K + noiseVariance ) - 0.5 * np.log( np.pi * 2. )
@@ -38,7 +38,6 @@ def kernel(kernelVariance=1,lengthScale=1.):
 
 class VariationalUnivariateTest(unittest.TestCase):
     def setUp(self):
-        tf.reset_default_graph()
         #def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(), num_latent=None, q_diag=False, whiten=True):
         self.y_real = 2.
         self.K = 1.
@@ -110,7 +109,6 @@ class VariationalUnivariateTest(unittest.TestCase):
 
 class VariationalMultivariateTest(unittest.TestCase):
     def setUp( self ):
-        tf.reset_default_graph()
         self.nDimensions = 3
         self.rng = np.random.RandomState(1)
         self.Y = self.rng.randn( self.nDimensions, 1 )
