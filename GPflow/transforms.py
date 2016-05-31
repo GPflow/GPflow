@@ -106,7 +106,6 @@ class Logistic(Transform):
     def __str__(self):
         return '[' + str(self.a) + ', ' + str(self.b) + ']'
 
-
 positive = Log1pe()
 
 
