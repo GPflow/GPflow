@@ -11,7 +11,6 @@ class TestPredictConditional(unittest.TestCase):
     has no uncertainty.
     """
     def setUp(self):
-        tf.reset_default_graph()
         self.liks = [L() for L in GPflow.likelihoods.Likelihood.__subclasses__()]
 
         #some likelihoods are additionally tested with non-standard links
@@ -64,7 +63,6 @@ class TestQuadrature(unittest.TestCase):
      does something close to the quadrature
     """
     def setUp(self):
-        tf.reset_default_graph()
 
         self.rng = np.random.RandomState()
         self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2)

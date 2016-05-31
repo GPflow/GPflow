@@ -2,7 +2,6 @@ from __future__ import print_function
 import GPflow
 import numpy as np
 import unittest
-import tensorflow as tf
 
 class TestEquivalence(unittest.TestCase):
     """
@@ -19,7 +18,6 @@ class TestEquivalence(unittest.TestCase):
     5) Sparse variational GP Regression (as above, but there the inducing variables are 'collapsed' out, as in Titsias 2009)
     """
     def setUp(self):
-        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         X = rng.rand(20,1)*10
         Y = np.sin(X) + 0.9 * np.cos(X*1.6) + rng.randn(*X.shape)* 0.8
