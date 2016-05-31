@@ -25,6 +25,41 @@ class TestRbf(unittest.TestCase):
         self.failUnless(np.allclose(gram_matrix-reference_gram_matrix, 0))
 
 
+class TestPeriodic(unittest.TestCase):
+    def evalKernelError(self, D, lengthscale, variance, period, X_data):
+        kernel = GPflow.kernels.PeriodicKernel(D, period=period, variance=variance, lengthscales=lengthscale)
+
+        x_free = tf.placeholder('float64')
+        kernel.make_tf_array(x_free)
+        X = tf.placeholder('float64')
+        reference_gram_matrix = referencePeriodicKernel(X_data, lengthscale, variance, period)
+
+        with kernel.tf_mode():
+            gram_matrix = tf.Session().run(kernel.K(X),
+                                           feed_dict={x_free: kernel.get_free_state(), X: X_data})
+        self.failUnless(np.allclose(gram_matrix-reference_gram_matrix, 0))
+
+    def test_1d(self):
+        D = 1
+        lengthScale = 2
+        variance = 2.3
+        period = 2
+        rng = np.random.RandomState(1)
+        X_data = rng.randn(3, 1)
+        self.evalKernelError(D, lengthScale, variance, period, X_data)
+
+    def test_2d(self):
+        D = 2
+        N = 5
+        lengthScale = 11.5
+        variance = 1.3
+        period = 20
+        rng = np.random.RandomState(1)
+        X_data = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
+
+        self.evalKernelError(D, lengthScale, variance, period, X_data)
+
+
 class TestKernSymmetry(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
@@ -70,6 +105,7 @@ class TestKernDiags(unittest.TestCase):
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) * GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim, ARD=True, variance=rng.rand(inputdim)))
+        self.kernels.append(GPflow.kernels.PeriodicKernel(inputdim))
 
         self.x_free = tf.placeholder('float64')
         [k.make_tf_array(self.x_free) for k in self.kernels]
