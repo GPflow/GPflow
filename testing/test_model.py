@@ -7,19 +7,20 @@ import unittest
 
 class TestOptimize(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         class Quadratic(GPflow.model.Model):
             def __init__(self):
                 GPflow.model.Model.__init__(self)
-                self.x = GPflow.param.Param(rng.randn(100))
+                self.x = GPflow.param.Param(rng.randn(10))
             def build_likelihood(self):
                 return -tf.reduce_sum(tf.square(self.x))
         self.m = Quadratic()
 
     def test_adam(self):
         o = tf.train.AdamOptimizer()
-        self.m.optimize(o, max_iters=10000)
-        self.failUnless(self.m.x._array.max() < 1e-3)
+        self.m.optimize(o, max_iters=5000)
+        self.failUnless(self.m.x._array.max() < 1e-2)
     
     def test_lbfgsb(self):
         self.m.optimize(display=False)
@@ -40,6 +41,7 @@ class KeyboardRaiser:
 
 class TestKeyboardCatching(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         X = np.random.randn(1000, 3)
         Y = np.random.randn(1000, 3)
         Z = np.random.randn(100, 3)
@@ -63,6 +65,7 @@ class TestKeyboardCatching(unittest.TestCase):
 
 class TestLikelihoodAutoflow(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         X = np.random.randn(1000, 3)
         Y = np.random.randn(1000, 3)
         Z = np.random.randn(100, 3)
