@@ -10,6 +10,7 @@ class TestMeanFuncs(unittest.TestCase):
     check that the combination of mean functions returns the correct clas
     """
     def setUp(self):
+        tf.reset_default_graph()
         self.input_dim = 3
         self.output_dim = 2
         self.N = 20
@@ -58,6 +59,7 @@ class TestModelCompositionOperations(unittest.TestCase):
     change the mean function
     """
     def setUp(self):
+        tf.reset_default_graph()
         self.input_dim = 3
         self.output_dim = 2
         self.N = 20
@@ -164,6 +166,7 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
     """
 
     def setUp(self):
+        tf.reset_default_graph()
         self.input_dim = 3
         self.output_dim = 2
         self.N = 20
