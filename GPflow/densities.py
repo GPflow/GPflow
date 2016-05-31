@@ -42,6 +42,9 @@ def beta(alpha, beta, y):
         - tf.lgamma(alpha)\
         - tf.lgamma(beta)
 
+def laplace(mu, sigma, y):
+    return - tf.abs(mu - y) / sigma - tf.log(2. * sigma)
+
 
 def multivariate_normal(x, mu, L):
     """
