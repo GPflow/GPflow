@@ -12,7 +12,7 @@ dim = np.shape(X)[1]
 print 'Downloaded X,y from gist.'
 
 def GoodNumber(a):
-    assert np.any(np.logical_or(np.isnan(a),np.isinf(a))) == False, 'Should not have any nans==> ' + str(a)
+    assert np.any(np.logical_or(np.isnan(a),np.isinf(a))) == False, 'Should not have any nans==> ' + str(a[:3])
 
 def GPyRegression():
     k1 = GPy.kern.RBF(input_dim=dim, ARD=False)
@@ -31,6 +31,7 @@ def GPyRegression():
 
 
 def GPflowRegression(o='L-BFGS-B',max_iters=30):
+    tf.reset_default_graph()
     k1 = GPflow.kernels.RBF(input_dim=dim, ARD=False)
     k2 = GPflow.kernels.Linear(input_dim=7, active_dims=[10, 11, 12, 13, 14, 15, 16])
     k3 = GPflow.kernels.Matern32(input_dim=3, active_dims=[0,7,8])
@@ -38,7 +39,7 @@ def GPflowRegression(o='L-BFGS-B',max_iters=30):
     k = (k1 + k4 + k2 * k3)
 
     m = GPflow.gpr.GPR(X, y, k)
-    m.optimize(o,max_iters=max_iters)
+    m.optimize(o,max_iters=max_iters,options={'disp':True})
     GoodNumber(m.get_free_state())
     print(m)
     mean, v = m.predict_y(X)
@@ -53,16 +54,37 @@ def plot(X,y, mean):
     plt.plot(range(len(X)), mean, color='blue', linewidth=2, linestyle='dashed')
     plt.show()
 
+#print '-----------------BFGS-------------------------' # this fails with prediction giving nans
+#t = time.time()
+#m1 = GPflowRegression('BFGS') 
+#print 'GPflow took %g secs.'%(time.time()-t)
+
+
+print '-----------------L-BFGS-B-------------------------'
 t = time.time()
-mgpflow = GPflowRegression() 
-print mgpflow
+m1 = GPflowRegression('L-BFGS-B') 
 print 'GPflow took %g secs.'%(time.time()-t)
 
+print '-----------------CG-------------------------'
+t = time.time()
+m2 = GPflowRegression('CG') 
+print 'GPflow took %g secs.'%(time.time()-t)
 
+print '-----------------TNC-------------------------' # this does not hit the exception
+t = time.time()
+m3 = GPflowRegression('TNC') 
+print 'GPflow took %g secs.'%(time.time()-t)
+
+#print '-----------------SLSQP-------------------------' # this gets stuck
+#t = time.time()
+#m4 = GPflowRegression('SLSQP') 
+#print 'GPflow took %g secs.'%(time.time()-t)
+
+
+print '-----------------tf AdamOptimizer-------------------------'
 t = time.time()
 o = tf.train.AdamOptimizer()
-mgpflowtf = GPflowRegression(o) 
-print mgpflowtf
+m5 = GPflowRegression(o) 
 print 'GPflow took %g secs.'%(time.time()-t)
 
 #t = time.time()
