@@ -13,7 +13,7 @@ class ObjectiveWrapper(object):
     A simple class to wrap the objective function in order to make it more
     robust.
 
-    The previosly seen state is cached so that we can easily acess it if the
+    The previously seen state is cached so that we can easily access it if the
     model crashes.
     """
     def __init__(self, objective):
@@ -32,7 +32,9 @@ class ObjectiveWrapper(object):
                 '''
                 print("Warning: Matrix decomposition failed due to to singular matrix, setting objective to inf.")
                 # return inf objective and zero gradient
-                return np.inf, np.zeros_like(x) 
+                badgrad = np. zeros_like(x) 
+                badgrad[:] = np.nan
+                return np.inf, badgrad
             else:
                 raise # re-raise the last exception.
             
