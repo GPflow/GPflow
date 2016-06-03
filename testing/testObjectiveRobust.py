@@ -39,7 +39,7 @@ def GPflowRegression(o='L-BFGS-B',max_iters=30):
     k = (k1 + k4 + k2 * k3)
 
     m = GPflow.gpr.GPR(X, y, k)
-    m.optimize(o,max_iters=max_iters,options={'disp':True})
+    m.optimize(o,max_iters=max_iters)
     GoodNumber(m.get_free_state())
     print(m)
     mean, v = m.predict_y(X)
