@@ -1,7 +1,6 @@
 from functools import reduce
 
 import tensorflow as tf
-from .tf_hacks import eye
 import numpy as np
 from .param import Param, Parameterized
 from . import transforms
@@ -53,8 +52,7 @@ class Static(Kern):
         self.variance = Param(variance, transforms.positive)
 
     def Kdiag(self, X):
-        zeros = X[:, 0] * 0.0
-        return zeros + self.variance
+        return tf.fill((tf.shape(X)[0],), self.variance)
 
 
 class White(Static):
@@ -63,7 +61,8 @@ class White(Static):
     """
     def K(self, X, X2=None):
         if X2 is None:
-            return self.variance * eye(tf.shape(X)[0])
+            d = tf.fill((tf.shape(X)[0],), self.variance)
+            return tf.diag(d)
         else:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
             return tf.zeros(shape, tf.float64)
@@ -78,7 +77,7 @@ class Constant(Static):
             shape = tf.pack([tf.shape(X)[0], tf.shape(X)[0]])
         else:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
-        return self.variance * tf.ones(shape, tf.float64)
+        return tf.fill(shape, self.variance)
 
 
 class Bias(Constant):
@@ -143,8 +142,7 @@ class Stationary(Kern):
         return tf.sqrt(r2 + 1e-12)
 
     def Kdiag(self, X):
-        zeros = X[:, 0] * 0
-        return zeros + self.variance
+        return tf.fill((tf.shape(X)[0],), self.variance)
 
 
 class RBF(Stationary):
@@ -260,8 +258,7 @@ class PeriodicKernel(Kern):
         self.period = Param(period, transforms.positive)
 
     def Kdiag(self, X):
-        zeros = X[:, 0] * 0
-        return zeros + self.variance
+        return tf.fill((tf.shape(X)[0],), self.variance)
 
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
