@@ -158,7 +158,7 @@ class Gaussian(Likelihood):
         return tf.identity(F)
 
     def conditional_variance(self, F):
-        return tf.fill(tf.shape(F, self.variance))
+        return tf.fill(tf.shape(F), self.variance)
 
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
