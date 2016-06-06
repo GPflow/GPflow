@@ -52,7 +52,7 @@ class Static(Kern):
         self.variance = Param(variance, transforms.positive)
 
     def Kdiag(self, X):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), self.variance[0])
+        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class White(Static):
@@ -61,7 +61,7 @@ class White(Static):
     """
     def K(self, X, X2=None):
         if X2 is None:
-            d = tf.fill(tf.pack([tf.shape(X)[0]]), self.variance[0])
+            d = tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
             return tf.diag(d)
         else:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
@@ -77,7 +77,7 @@ class Constant(Static):
             shape = tf.pack([tf.shape(X)[0], tf.shape(X)[0]])
         else:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
-        return tf.fill(shape, self.variance[0])
+        return tf.fill(shape, tf.squeeze(self.variance))
 
 
 class Bias(Constant):
@@ -142,7 +142,7 @@ class Stationary(Kern):
         return tf.sqrt(r2 + 1e-12)
 
     def Kdiag(self, X):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), self.variance[0])
+        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class RBF(Stationary):
@@ -258,7 +258,7 @@ class PeriodicKernel(Kern):
         self.period = Param(period, transforms.positive)
 
     def Kdiag(self, X):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), self.variance[0])
+        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
