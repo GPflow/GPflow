@@ -45,3 +45,18 @@ class Gamma(Prior):
 
     def __str__(self):
         return "Ga("+str(self.shape) + "," + str(self.scale) + ")"
+
+
+class Laplace(Prior):
+    def __init__(self, mu, sigma):
+        Prior.__init__(self)
+        self.mu = np.atleast_1d(np.array(mu, np.float64))
+        self.sigma = np.atleast_1d(np.array(sigma, np.float64))
+
+    def logp(self, x):
+        return tf.reduce_sum(densities.laplace(self.mu, self.sigma, x))
+
+    def __str__(self):
+        return "Lap.("+str(self.mu) + "," + str(self.sigma) + ")"
+
+
