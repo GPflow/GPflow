@@ -62,11 +62,11 @@ class BayesianGPLVM(GPModel):
         bound += -tf.cast(output_dim, tf.float64)*tf.reduce_sum(tf.log(tf.diag_part(LB)))
         bound += -0.5*tf.reduce_sum(tf.square(self.Y))/self.likelihood.variance
         bound += 0.5*tf.reduce_sum(tf.square(c))
-        bound += -0.5*tf.cast(tf.float64, self.output_dim) * (psi0 / self.likelihood.variance - tf.reduce_sum(tf.diag_part(AAT)))
+        bound += -0.5*tf.cast(self.output_dim,tf.float64) * (psi0 / self.likelihood.variance - tf.reduce_sum(tf.diag_part(AAT)))
 
         # Compute KL[q(X) || p(X)]
         KL = -0.5*tf.reduce_sum(tf.log(self.X_var)) - \
-            0.5*tf.cast(tf.float64, tf.size(self.X_mean)) + \
+            0.5*tf.cast(tf.size(self.X_mean),tf.float64) + \
             0.5*tf.reduce_sum(tf.square(self.X_mean) + self.X_var)
 
         return bound - KL
