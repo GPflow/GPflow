@@ -63,6 +63,10 @@ class Param(Parentable):
     model.p transform:(none) prior:None
     [ 3.2]
 
+    To retrieve the value of the parameter, we use the 'value' property:
+    >>> m.p.value
+    array([ 3.2])
+
     Unconstrained optimization
     --
     The parameter can be transformed to a 'free state' where it
@@ -71,9 +75,9 @@ class Param(Parentable):
     >>> self.get_free_state
     >>> self.set_state
 
-    transforms between self._array and the free state.
+    transform between self._array and the free state.
 
-    To apply a transform to the Param, simply set the transform atribute
+    To apply a transform to the Param, simply set the transform attribute
     with a GPflow.transforms object
     >>> m = GPflow.model.Model()
     >>> m.p = GPflow.param.Param(1.0)
@@ -110,7 +114,7 @@ class Param(Parentable):
     constructs a tensorflow representation of the parameter, from a tensorflow
     vector representing the free state.
 
-    The `self.prior` object is used to place priors on prameters, and the
+    The `self.prior` object is used to place priors on parameters, and the
     `self.transform` object is used to enable unconstrained optimization and
     mcmc.
     """
@@ -121,6 +125,10 @@ class Param(Parentable):
         self.prior = None
         self.fixed = False
 
+    @property
+    def value(self):
+        return self._array
+
     def make_tf_array(self, free_array):
         """
         free_array is a tensorflow vector which will be the optimisation
@@ -130,7 +138,7 @@ class Param(Parentable):
         used to represent this parameter
 
         Then we return the number of elements that we've used to construct the
-        array, so that it can be sliced fo rthe next Param.
+        array, so that it can be sliced for the next Param.
         """
 
         # TODO what about constraints that change the size ??
@@ -183,7 +191,7 @@ class Param(Parentable):
 
     def __setattr__(self, key, value):
         """
-        When some attirbutes are set, we need to recompile the tf model before
+        When some attributes are set, we need to recompile the tf model before
         evaluation.
         """
         object.__setattr__(self, key, value)
@@ -234,7 +242,7 @@ class Parameterized(Parentable):
     models on those parameters. During _tf_mode, the __getattribute__
     method is overwritten to return tf arrays in place of parameters.
 
-    Another recursive function is build_prior wich sums the log-prior from all
+    Another recursive function is build_prior which sums the log-prior from all
     of the tree's parameters (whilst in tf_mode!).
     """
     def __init__(self):
