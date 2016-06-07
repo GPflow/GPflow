@@ -16,6 +16,7 @@ class ObjectiveWrapper(object):
     The previosly seen state is cached so that we can easily acess it if the
     model crashes.
     """
+
     def __init__(self, objective):
         self._objective = objective
         self._previous_x = None
@@ -73,6 +74,7 @@ class AutoFlow:
     result in the graph being constructed only once.
 
     """
+
     def __init__(self, *tf_arg_tuples):
         # NB. TF arg_tuples is a list of tuples, each of which can be used to
         # construct a tf placeholder.
@@ -94,6 +96,7 @@ class AutoFlow:
             feed_dict[instance._free_vars] = instance.get_free_state()
             graph = getattr(instance, graph_name)
             return instance._session.run(graph, feed_dict=feed_dict)
+
         return runnable
 
 
@@ -133,6 +136,7 @@ class Model(Parameterized):
 
     This object defines `optimize` and `sample` to allow for model fitting.
     """
+
     def __init__(self, name='model'):
         """
         name is a string describing this model.
@@ -155,7 +159,7 @@ class Model(Parameterized):
         float32_hack = False
         if optimizer is not None:
             if tf.float64 not in optimizer._valid_dtypes() and \
-                    tf.float32 in optimizer._valid_dtypes():
+                            tf.float32 in optimizer._valid_dtypes():
                 print("Using float32 hack for Tensorflow optimizers...")
                 float32_hack = True
 
@@ -195,6 +199,7 @@ class Model(Parameterized):
         def obj(x):
             return self._session.run([self._minusF, self._minusG],
                                      feed_dict={self._free_vars: x})
+
         self._objective = obj
         print("done")
         sys.stdout.flush()
@@ -376,8 +381,9 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
     """
+
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
-        self.X, self.Y, self.kern, self.likelihood, self.mean_function =\
+        self.X, self.Y, self.kern, self.likelihood, self.mean_function = \
             X, Y, kern, likelihood, mean_function
         Model.__init__(self, name)
 

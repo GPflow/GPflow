@@ -14,7 +14,6 @@ class DumbModel(GPflow.model.Model):
 
 
 class NoArgsModel(DumbModel):
-
     @GPflow.model.AutoFlow()
     def function(self):
         return self.a
@@ -34,6 +33,23 @@ class AddModel(DumbModel):
     @GPflow.model.AutoFlow((tf.float64,), (tf.float64,))
     def add(self, x, y):
         return tf.add(x, y)
+
+
+class TestShareArgs(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m1 = AddModel()
+        self.m1._compile()
+        self.m2 = AddModel()
+        self.m2._compile()
+        rng = np.random.RandomState(0)
+        self.x = rng.randn(10, 20)
+        self.y = rng.randn(10, 20)
+
+    def test_share_args(self):
+        self.m1.add(self.x, self.y)
+        self.m2.add(self.x, self.y)
+        self.m1.add(self.x, self.y)
 
 
 class TestAdd(unittest.TestCase):
@@ -90,6 +106,7 @@ class TestFixAndPredict(unittest.TestCase):
     (an autoflow fn) then the second call fails. This test ensures replicates
     that and ensures that the bugfix remains in furure.
     """
+
     def setUp(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
