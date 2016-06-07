@@ -36,6 +36,11 @@ class AddModel(DumbModel):
 
 
 class TestShareArgs(unittest.TestCase):
+    """
+    This is designed to replicate bug #85, where having two models caused
+    autoflow functions to fail because the tf_args were shared over the
+    instances.
+    """
     def setUp(self):
         tf.reset_default_graph()
         self.m1 = AddModel()
