@@ -72,7 +72,7 @@ def build_psi_stats_rbf_plus_linear(Z, kern, mu, S):
     exp_term = tf.exp( -(Z2.reshape(1, -1) + mu2.reshape(-1,1) -mAm  )  / 2.) # N x M
     psi2_extra = tf.reduce_sum( kern.rbf.variance * \
                                 tf.expand_dims(exp_term, 2) * \
-                                tf.expand_dim(tf.expand_dims(tf.reduce_prod(S, 1), 1), 2) * \
+                                tf.expand_dims(tf.expand_dims(tf.reduce_prod(S, 1), 1), 2) * \
                                 tf.expand_dims(tf.reduce_prod(A, 2), 1) * \
                                 mTAZ, 0)
 
@@ -85,7 +85,7 @@ def build_psi_stats_rbf_plus_linear(Z, kern, mu, S):
 
 
 
-    psi2_extra = kern.linear.variance * 
+    #psi2_extra = kern.linear.variance * 
 
 
 
