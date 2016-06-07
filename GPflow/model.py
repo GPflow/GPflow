@@ -155,19 +155,7 @@ class Model(Parameterized):
         """
         compile the tensorflow function "self._objective"
         """
-        # Make float32 hack
-        float32_hack = False
-        if optimizer is not None:
-            if tf.float64 not in optimizer._valid_dtypes() and \
-                            tf.float32 in optimizer._valid_dtypes():
-                print("Using float32 hack for Tensorflow optimizers...")
-                float32_hack = True
-
         self._free_vars = tf.Variable(self.get_free_state())
-        if float32_hack:
-            x = self.get_free_state().astype(np.float32)
-            self._free_vars32 = tf.Variable(x)
-            self._free_vars = tf.cast(self._free_vars32, tf.float64)
 
         self.make_tf_array(self._free_vars)
         with self.tf_mode():
@@ -182,12 +170,7 @@ class Model(Parameterized):
         if optimizer is None:
             opt_step = None
         else:
-            if float32_hack:
-                minus_F_f32 = tf.cast(self._minusF, tf.float32)
-                opt_step = optimizer.minimize(minus_F_f32,
-                                              var_list=[self._free_vars32])
-            else:
-                opt_step = optimizer.minimize(self._minusF,
+            opt_step = optimizer.minimize(self._minusF,
                                               var_list=[self._free_vars])
         init = tf.initialize_all_variables()
         self._session.run(init)
