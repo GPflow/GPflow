@@ -75,7 +75,7 @@ class Param(Parentable):
     >>> self.get_free_state
     >>> self.set_state
 
-    transform between self._array and the free state.
+    transform between self.value and the free state.
 
     To apply a transform to the Param, simply set the transform attribute
     with a GPflow.transforms object
@@ -154,19 +154,20 @@ class Param(Parentable):
 
     def get_free_state(self):
         """
-        Take the current state of this variable, as stored in self._array, and
+        Take the current state of this variable, as stored in self.value, and
         transform it to the 'free' state.
 
         This is a numpy method.
         """
         if self.fixed:
             return np.empty((0,))
-        return self.transform.backward(self._array.flatten())
+        return self.transform.backward(self.value.flatten())
 
     def set_state(self, x):
         """
         Given a vector x representing the 'free' state of this param, transform
-        it 'forwards' and store the result in self._array.
+        it 'forwards' and store the result in self._array. The values in
+        self._array can be accessed using self.value
 
         This is a numpy method.
         """
@@ -204,7 +205,7 @@ class Param(Parentable):
             ' transform:' + str(self.transform) + \
             ' prior:' + str(self.prior) + \
             (' [FIXED]' if self.fixed else '') + \
-            '\n' + str(self._array)
+            '\n' + str(self.value)
 
     @property
     def size(self):

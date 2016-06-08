@@ -20,11 +20,11 @@ class TestOptimize(unittest.TestCase):
     def test_adam(self):
         o = tf.train.AdamOptimizer()
         self.m.optimize(o, max_iters=5000)
-        self.failUnless(self.m.x._array.max() < 1e-2)
-    
+        self.failUnless(self.m.x.value.max() < 1e-2)
+
     def test_lbfgsb(self):
         self.m.optimize(display=False)
-        self.failUnless(self.m.x._array.max() < 1e-6)
+        self.failUnless(self.m.x.value.max() < 1e-6)
 
 class KeyboardRaiser:
     """
