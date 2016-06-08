@@ -122,7 +122,7 @@ class ParamTestsDeeper(unittest.TestCase):
             self.failUnless(isinstance(self.m.foo.bar.baz, tf.python.framework.ops.Tensor))
 
 
-class ParamTestswider(unittest.TestCase):
+class ParamTestsWider(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
@@ -162,6 +162,13 @@ class ParamTestswider(unittest.TestCase):
         y = np.random.randn(20)
         self.m.set_state(y)
         self.failUnless(np.allclose(self.m.get_free_state(), y))
+
+    def testIndexParam(self):
+        fs = self.m.get_free_state()
+        for p in [self.m.foo, self.m.bar, self.m.baz]:
+            index, found = self.m.get_param_index(p)
+            self.failUnless(found)
+            self.failUnless(fs[index] == p.get_free_state()[0])
         
     def testFixed(self):
         self.m.foo.fixed = True

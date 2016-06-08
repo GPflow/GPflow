@@ -300,6 +300,23 @@ class Parameterized(Parentable):
             count += p.make_tf_array(X[count:])
         return count
 
+    def get_param_index(self, param_to_index):
+        found = False
+        count = 0
+        for p in self.sorted_params:
+            if isinstance(p, Param):
+                if p is param_to_index:
+                    found = True
+                    break
+                else:
+                    count += p.get_free_state().size
+            elif isinstance(p, Parameterized):
+                extra, found = p.get_param_index(param_to_index)
+                count += extra
+                if found:
+                    break
+        return count, found
+
     @property
     def sorted_params(self):
         """
