@@ -23,7 +23,7 @@ class GPR(GPModel):
 
     def build_likelihood(self):
         """
-        Constuct a tensorflow function to compute the likelihood.
+        Construct a tensorflow function to compute the likelihood.
 
             \log p(Y, V | theta).
 

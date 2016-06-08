@@ -28,7 +28,7 @@ def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
 
       burn + thin * num_samples
 
-    the return shape is always num_samples x D
+    the return shape is always num_samples x D.
     """
 
     # burn some samples if needed.

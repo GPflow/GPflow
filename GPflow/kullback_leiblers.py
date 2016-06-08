@@ -19,7 +19,7 @@ def gauss_kl_white(q_mu, q_sqrt, num_latent):
         matrix of the covariance.
 
     num_latent is an integer: the number of independent distributions (equal to
-        the columns of q_mu andthe last dim of q_sqrt).
+        the columns of q_mu and the last dim of q_sqrt).
     """
     KL = 0.5 * tf.reduce_sum(tf.square(q_mu))  # Mahalanobis term
     KL += -0.5 * tf.cast(tf.shape(q_sqrt)[0] * num_latent, tf.float64)
@@ -44,7 +44,7 @@ def gauss_kl_white_diag(q_mu, q_sqrt, num_latent):
 
     q_mu is a matrix, each column contains a mean
 
-    q_sqrt is a matrix, each columnt represents the diagonal of a square-root
+    q_sqrt is a matrix, each column represents the diagonal of a square-root
         matrix of the covariance.
 
     num_latent is an integer: the number of independent distributions (equal to
@@ -71,7 +71,7 @@ def gauss_kl_diag(q_mu, q_sqrt, K,  num_latent):
 
     q_mu is a matrix, each column contains a mean
 
-    q_sqrt is a matrix, each columnt represents the diagonal of a square-root
+    q_sqrt is a matrix, each column represents the diagonal of a square-root
         matrix of the covariance of q.
 
     K is a positive definite matrix: the covariance of p.
@@ -112,7 +112,7 @@ def gauss_kl(q_mu, q_sqrt, K, num_latent):
     K is a positive definite matrix: the covariance of p.
 
     num_latent is an integer: the number of independent distributions (equal to
-        the columns of q_mu andthe last dim of q_sqrt).
+        the columns of q_mu and the last dim of q_sqrt).
     """
     L = tf.cholesky(K)
     alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
@@ -122,7 +122,7 @@ def gauss_kl(q_mu, q_sqrt, K, num_latent):
     KL += -0.5 * tf.cast(tf.shape(q_sqrt)[0] * num_latent, tf.float64)
     for d in range(num_latent):
         Lq = tf.batch_matrix_band_part(q_sqrt[:, :, d], -1, 0)
-        # Log determinant of q covariance: 
+        # Log determinant of q covariance:
         KL += -0.5*tf.reduce_sum(tf.log(tf.square(tf.diag_part(Lq))))
         LiLq = tf.matrix_triangular_solve(L, Lq, lower=True)
         KL += 0.5 * tf.reduce_sum(tf.square(LiLq))  # Trace term
