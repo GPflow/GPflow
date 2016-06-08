@@ -33,28 +33,24 @@ class TestNeedsRecompile(unittest.TestCase):
         self.m.p = GPflow.param.Param(1.0)
 
     def test_fix(self):
-        self.m._compile()
-        self.failIf(self.m._needs_recompile)
+        self.m._needs_recompile = False
         self.m.p.fixed = True
         self.failUnless(self.m._needs_recompile)
 
     def test_replace_param(self):
-        self.m._compile()
-        self.failIf(self.m._needs_recompile)
+        self.m._needs_recompile = False
         new_p = GPflow.param.Param(3.0)
         self.m.p = new_p
         self.failUnless(self.m._needs_recompile)
 
     def test_set_prior(self):
-        self.m._compile()
-        self.failIf(self.m._needs_recompile)
+        self.m._needs_recompile = False
         self.m.p.prior = GPflow.priors.Gaussian(0, 1)
         self.failUnless(self.m._needs_recompile)
 
     def test_set_transform(self):
-        self.m._compile()
-        self.failIf(self.m._needs_recompile)
-        self.m.p.transform = GPflow.transform.Identity()
+        self.m._needs_recompile = False
+        self.m.p.transform = GPflow.transforms.Identity()
         self.failUnless(self.m._needs_recompile)
 
 
