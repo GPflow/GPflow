@@ -283,12 +283,23 @@ class Parameterized(Parentable):
         know that this node is the _parent
         """
 
-        # set the _array value of child nodes instead of standard assignment.
+        # If we already have an atribute with that key, decide what to do:
         if key in self.__dict__.keys():
             p = getattr(self, key)
-            if isinstance(p, Param):
+
+            # if the existing attribute is a parameter, and the value is an
+            # array (or float, int), then self the _array of that parameter
+            if isinstance(p, Param) and isinstance(value, (np.ndarray, float, int)):
                 p._array[...] = value
                 return  # don't call object.setattr or set the _parent value
+
+            # if the existing attribute is a Param (or Parameterized), and the
+            # new attribute is too, replace the attribute and set the model to
+            # recompile if necessary.
+            if isinstance(p, Param) and isinstance(value, (Param, Parameterized)):
+                p._parent = None  # unlink the old Parameter from this tree
+                if hasattr(self.highest_parent, '_needs_recompile'):
+                    self.highest_parent._needs_recompile = True
 
         # use the standard setattr
         object.__setattr__(self, key, value)

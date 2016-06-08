@@ -22,6 +22,14 @@ class ParamTestsScalar(unittest.TestCase):
         with self.assertRaises(AttributeError):
             self.m.p.value = 2.5
 
+    def testReplacement(self):
+        old_p = self.m.p
+        new_p = GPflow.param.Param(3.0)
+        self.m.p = new_p
+        # Parameterized instances should not have _needs_recompile
+        self.failIf(hasattr(self.m, '_needs_recompile'))
+        self.failIf(old_p.highest_parent is self.m)
+
     def testHighestParent(self):
         self.failUnless(self.m.p.highest_parent is self.m)
 
@@ -79,6 +87,14 @@ class ParamTestsDeeper(unittest.TestCase):
         self.failUnless(self.m.foo.highest_parent is self.m)
         self.failUnless(self.m.foo.bar.highest_parent is self.m)
         self.failUnless(self.m.foo.bar.baz.highest_parent is self.m)
+
+    def testReplacement(self):
+        old_p = self.m.foo.bar.baz
+        new_p = GPflow.param.Param(3.0)
+        self.m.foo.bar.baz = new_p
+        # Parameterized instances should not have _needs_recompile
+        self.failIf(hasattr(self.m, '_needs_recompile'))
+        self.failIf(old_p.highest_parent is self.m)
 
     def testName(self):
         self.failUnless(self.m.foo.name == 'foo')
