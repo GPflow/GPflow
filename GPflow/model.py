@@ -84,20 +84,22 @@ class AutoFlow:
         @wraps(tf_method)
         def runnable(instance, *np_args):
             storage_name = '_' + tf_method.__name__ + '_AF_storage'
-            if hasattr(instance, storage_name):  # the method has been compiled already, get things out of storage
+            if hasattr(instance, storage_name):
+                # the method has been compiled already, get things out of storage
                 storage = getattr(instance, storage_name)
             else:
-                # the moethod needs to be compiled.
+                # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
                 storage['free_vars'] = tf.placeholder(tf.float64, [None])
                 instance.make_tf_array(storage['free_vars'])
                 storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                 with instance.tf_mode():
-                    storage['graph'] = tf_method(instance, *storage['tf_args'])
+                    storage['tf_result'] = tf_method(instance, *storage['tf_args'])
+                storage['session'] = tf.Session()
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
-            return instance._session.run(storage['graph'], feed_dict=feed_dict)
+            return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
 
@@ -197,7 +199,7 @@ class Model(Parameterized):
         # delete any AutoFlow related graphs
         if key == '_needs_recompile' and value:
             for key in dir(self):
-                if key[0] == '_' and key[-6:] == '_graph':
+                if key[0] == '_' and key[-11:] == '_AF_storage':
                     delattr(self, key)
 
     @AutoFlow()
