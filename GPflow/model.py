@@ -83,19 +83,21 @@ class AutoFlow:
     def __call__(self, tf_method):
         @wraps(tf_method)
         def runnable(instance, *np_args):
-            graph_name = '_' + tf_method.__name__ + '_graph'
-            tf_args_name = '_%s_tf_args' % tf_method.__name__
-            if not hasattr(instance, graph_name):
-                if instance._needs_recompile:
-                    instance._compile()  # ensures free_vars is up-to-date.
-                setattr(instance, tf_args_name, [tf.placeholder(*a) for a in self.tf_arg_tuples])
+            storage_name = '_' + tf_method.__name__ + '_AF_storage'
+            if hasattr(instance, storage_name):  # the method has been compiled already, get things out of storage
+                storage = getattr(instance, storage_name)
+            else:
+                # the moethod needs to be compiled.
+                storage = {}  # an empty dict to keep things in
+                setattr(instance, storage_name, storage)
+                storage['free_vars'] = tf.placeholder(tf.float64, [None])
+                instance.make_tf_array(storage['free_vars'])
+                storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                 with instance.tf_mode():
-                    graph = tf_method(instance, *getattr(instance, tf_args_name))
-                setattr(instance, graph_name, graph)
-            feed_dict = dict(zip(getattr(instance, tf_args_name), np_args))
-            feed_dict[instance._free_vars] = instance.get_free_state()
-            graph = getattr(instance, graph_name)
-            return instance._session.run(graph, feed_dict=feed_dict)
+                    storage['graph'] = tf_method(instance, *storage['tf_args'])
+            feed_dict = dict(zip(storage['tf_args'], np_args))
+            feed_dict[storage['free_vars']] = instance.get_free_state()
+            return instance._session.run(storage['graph'], feed_dict=feed_dict)
 
         return runnable
 
