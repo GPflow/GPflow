@@ -30,7 +30,7 @@ class VGP(GPModel):
         approximated by a Gaussian, and the KL divergence is minimised between
         the approximation and the posterior. It turns out that the optimal
         posterior precision shares off-diagonal elements with the prior, so
-        only the diagonal elements of the prcision need be adjusted.
+        only the diagonal elements of the precision need be adjusted.
 
         The posterior approximation is
 
@@ -48,7 +48,7 @@ class VGP(GPModel):
         """
         q_alpha, q_lambda are variational parameters, size N x R
 
-        This method computes the variational lower lound on the likelihood,
+        This method computes the variational lower bound on the likelihood,
         which is:
 
             E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
@@ -100,7 +100,7 @@ class VGP(GPModel):
 
         """
 
-        # compute kernelly things
+        # compute kernel things
         Kx = self.kern.K(Xnew, self.X)
         K = self.kern.K(self.X)
 

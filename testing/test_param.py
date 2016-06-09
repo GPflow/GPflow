@@ -43,7 +43,7 @@ class ParamTestsScalar(unittest.TestCase):
     def testName(self):
         self.assertTrue(self.m.p.name == 'p')
 
-    def testMakeTheano(self):
+    def testMakeTF(self):
         x = tf.placeholder('float64')
 
         l = self.m.make_tf_array(x)
@@ -74,12 +74,13 @@ class ParamTestsScalar(unittest.TestCase):
         self.m.p.prior = GPflow.priors.Gaussian(0, 1)
         self.assertTrue(self.m._needs_recompile)
 
-    def testTheanoMode(self):
+    def testTFMode(self):
         x = tf.placeholder('float64')
         l = self.m.make_tf_array(x)
         self.assertTrue(isinstance(self.m.p, GPflow.param.Param))
         with self.m.tf_mode():
             self.assertTrue(isinstance(self.m.p, tf.python.framework.ops.Tensor))
+
 
 
 class ParamTestsDeeper(unittest.TestCase):
@@ -108,7 +109,7 @@ class ParamTestsDeeper(unittest.TestCase):
         self.assertTrue(self.m.foo.bar.name == 'bar')
         self.assertTrue(self.m.foo.bar.baz.name == 'baz')
 
-    def testMakeTheano(self):
+    def testMakeTF(self):
         x = tf.placeholder('float64')
 
         l = self.m.make_tf_array(x)
@@ -144,7 +145,7 @@ class ParamTestsDeeper(unittest.TestCase):
         self.m.foo.bar.baz.prior = GPflow.priors.Gaussian(0, 1)
         self.assertTrue(self.m._needs_recompile)
 
-    def testTheanoMode(self):
+    def testTFMode(self):
         x = tf.placeholder('float64')
 
         l = self.m.make_tf_array(x)
@@ -171,7 +172,7 @@ class ParamTestswider(unittest.TestCase):
         self.assertTrue(self.m.bar.name == 'bar')
         self.assertTrue(self.m.baz.name == 'baz')
 
-    def testMakeTheano(self):
+    def testMakeTF(self):
         x = tf.placeholder('float64')
 
         l = self.m.make_tf_array(x)
@@ -211,7 +212,7 @@ class ParamTestswider(unittest.TestCase):
         self.m.bar.prior = GPflow.priors.Gaussian(0, 1)
         self.assertTrue(self.m._needs_recompile)
 
-    def testTheanoMode(self):
+    def testTFMode(self):
         x = tf.placeholder('float64')
         l = self.m.make_tf_array(x)
         self.assertTrue(all([isinstance(p, GPflow.param.Param) for p in (self.m.foo, self.m.bar, self.m.baz)]))

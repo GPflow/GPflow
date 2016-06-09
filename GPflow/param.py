@@ -35,10 +35,10 @@ class Parentable(object):
         matches = [key for key, value in self._parent.__dict__.items()
                    if value is self]
         if len(matches) == 0:
-            raise ValueError("mis-specified parent. This param's\
+            raise ValueError("mis-specified parent. This Param's\
                              _parent does not contain a reference to it.")
         if len(matches) > 1:
-            raise ValueError("This param appears to be doubly\
+            raise ValueError("This Param appears to be doubly\
                              referenced by a parent")
         return matches[0]
 
@@ -102,7 +102,7 @@ class Param(Parentable):
     >>> m = GPflow.model.Model()
     >>> m.p = p # the model has a single parameter, constrained to be +ve
     >>> m.p.fixed = True # the model now has no free parameters
-    >>> m.p.fixed = False # the model has a sinlge parameter, constrained +ve
+    >>> m.p.fixed = False # the model has a single parameter, constrained +ve
 
 
     Compiling into tensorflow
@@ -116,7 +116,7 @@ class Param(Parentable):
 
     The `self.prior` object is used to place priors on parameters, and the
     `self.transform` object is used to enable unconstrained optimization and
-    mcmc.
+    MCMC.
     """
     def __init__(self, array, transform=transforms.Identity()):
         Parentable.__init__(self)
@@ -165,7 +165,7 @@ class Param(Parentable):
 
     def set_state(self, x):
         """
-        Given a vector x representing the 'free' state of this param, transform
+        Given a vector x representing the 'free' state of this Param, transform
         it 'forwards' and store the result in self._array. The values in
         self._array can be accessed using self.value
 
@@ -354,7 +354,7 @@ class Parameterized(Parentable):
         A context for building models. Correct usage is
 
         with m.tf_mode:
-            #do tf stuff, lik
+            # do tf stuff, like
             m.build_likelihood()
             m.build_prior()
 
@@ -372,7 +372,7 @@ class Parameterized(Parentable):
         >>>     print m.foo
         Reshape{1}.0
 
-        The idea is that in tf_mode, we can easily get refrences to the
+        The idea is that in tf_mode, we can easily get references to the
         tf representation of parameters in order to construct tf
         objective functions.
         """
@@ -412,14 +412,14 @@ class Parameterized(Parentable):
         """
         Build a small html table for display in the jupyter notebook.
         """
-        html = ["<table id='parms' width=100%>"]
+        html = ["<table id='params' width=100%>"]
 
         # build the header
         header = "<tr>"
         header += "<td>Name</td>"
         header += "<td>values</td>"
         header += "<td>prior</td>"
-        header += "<td>constriant</td>"
+        header += "<td>constraint</td>"
         header += "</tr>"
         html.append(header)
 
@@ -496,7 +496,7 @@ class ParamList(Parameterized):
 
     def __setitem__(self, key, value):
         """
-        It's not possible to assign to things in the list, but it is possbile
+        It's not possible to assign to things in the list, but it is possible
         to set their values by assignment.
         """
         self.sorted_params[key]._array[...] = value
