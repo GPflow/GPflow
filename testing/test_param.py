@@ -1,3 +1,4 @@
+from functools import reduce
 import unittest
 import GPflow
 import tensorflow as tf
@@ -5,6 +6,7 @@ import numpy as np
 
 class ParamTestsScalar(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
         self.m.p = GPflow.param.Param(1.0)
     
@@ -59,6 +61,7 @@ class ParamTestsScalar(unittest.TestCase):
 
 class ParamTestsDeeper(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
         self.m.foo = GPflow.param.Parameterized()
         self.m.foo.bar = GPflow.param.Parameterized()
@@ -121,6 +124,7 @@ class ParamTestsDeeper(unittest.TestCase):
 
 class ParamTestswider(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
         self.m.foo = GPflow.param.Param(1.0)
         self.m.bar = GPflow.param.Param(np.arange(10))
@@ -243,6 +247,12 @@ class TestParamList(unittest.TestCase):
         l[0].p = 5
         self.failUnless( l.get_free_state()==5 )
 
+        #test to make sure tf_mode get turned on and off
+        self.failIf(pzd._tf_mode)
+        with l.tf_mode():
+            self.failUnless(pzd._tf_mode)
+        self.failIf(pzd._tf_mode)
+
 
     def test_in_model(self):
 
@@ -256,7 +266,7 @@ class TestParamList(unittest.TestCase):
 
         m = Foo()
         self.failUnless(m.get_free_state().size ==2)
-        m.optimize()
+        m.optimize(display=False)
         self.failUnless(np.allclose(m.get_free_state(), 0.))
 
 

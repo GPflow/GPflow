@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 
+
 class TestPredictConditional(unittest.TestCase):
     """
     Here we make sure that the conditional_mean and contitional_var functions
@@ -10,13 +11,24 @@ class TestPredictConditional(unittest.TestCase):
     has no uncertainty.
     """
     def setUp(self):
+        tf.reset_default_graph()
         self.liks = [L() for L in GPflow.likelihoods.Likelihood.__subclasses__()]
+
+        #some likelihoods are additionally tested with non-standard links
+        self.liks.append(GPflow.likelihoods.Poisson(invlink=tf.square))
+        self.liks.append(GPflow.likelihoods.Exponential(invlink=tf.square))
+        self.liks.append(GPflow.likelihoods.Gamma(invlink=tf.square))
+        sigmoid = lambda x : 1./(1 + tf.exp(-x))
+        self.liks.append(GPflow.likelihoods.Bernoulli(invlink=sigmoid))
+
         self.x = tf.placeholder('float64')
         for l in self.liks:
             l.make_tf_array(self.x)
 
         self.F = tf.placeholder(tf.float64)
-        self.F_data = np.random.randn(10,1)
+        rng = np.random.RandomState(0)
+        self.F_data = rng.randn(10,2)
+        self.Y = rng.rand(10,2)
 
     def test_mean(self):
         for l in self.liks:
@@ -33,12 +45,26 @@ class TestPredictConditional(unittest.TestCase):
                 v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
             self.failUnless(np.allclose(v1, v2, 1e-6, 1e-6))
 
+    def test_var_exp(self):
+        """
+        Here we make sure that the variational_expectations gives the same result
+        as logp if the latent function has no uncertainty.
+        """
+        for l in self.liks:
+            with l.tf_mode():
+                r1 = tf.Session().run(l.logp(self.F, self.Y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
+                r2 = tf.Session().run(l.variational_expectations(self.F, self.F * 0, self.Y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
+            self.failUnless(np.allclose(r1, r2, 1e-6, 1e-6))
+
+
+
 class TestQuadrature(unittest.TestCase):
     """
     Where quadratre methods have been overwritten, make sure the new code
      does something close to the quadrature
     """
     def setUp(self):
+        tf.reset_default_graph()
 
         self.rng = np.random.RandomState()
         self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2)

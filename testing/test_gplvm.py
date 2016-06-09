@@ -16,8 +16,7 @@ class TestGPLVM(unittest.TestCase):
         Z = np.linspace(0,1,M)
         Z = np.expand_dims(Z, D)
         rng = np.random.RandomState(1)
-        
-        Y = np.random.randn(N,R)
+        Y = rng.randn(N,R)
         self.m = GPflow.gplvm.BayesianGPLVM(X_mean = np.zeros((N,D)), 
                     X_var=np.ones((N,D)), Y=Y, kern=k, Z=Z)
 
