@@ -41,7 +41,7 @@ class SGPR(GPModel):
 
     def build_likelihood(self):
         """
-        Constuct a tensorflow function to compute the bound on the marginal
+        Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
@@ -117,10 +117,10 @@ class GPRFITC(GPModel):
         This implements GP regression with the FITC approximation.
         The key reference is
 
-        @INPROCEEDINGS{Snelson06sparsegaussian,
+        @inproceedings{Snelson06sparsegaussian,
         author = {Edward Snelson and Zoubin Ghahramani},
         title = {Sparse Gaussian Processes using Pseudo-inputs},
-        booktitle = {ADVANCES IN NEURAL INFORMATION PROCESSING SYSTEMS },
+        booktitle = {Advances In Neural Information Processing Systems },
         year = {2006},
         pages = {1257--1264},
         publisher = {MIT press}
@@ -167,7 +167,7 @@ class GPRFITC(GPModel):
 
     def build_likelihood(self):
         """
-        Constuct a tensorflow function to compute the bound on the marginal
+        Construct a tensorflow function to compute the bound on the marginal
         likelihood.
         """
 

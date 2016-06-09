@@ -23,18 +23,18 @@ class Transform(object):
 
     def tf_log_jacobian(self, x):
         """
-        Return the log jacobian of the tf_forward mapping.
+        Return the log Jacobian of the tf_forward mapping.
 
-        Note that we *could* do this using a tf manipluation of
+        Note that we *could* do this using a tf manipulation of
         self.tf_forward, but tensorflow may have difficulty: it doesn't have a
-        jacaobian at time of writing.  We do this in the tests to make sure the
+        Jacaobian at time of writing.  We do this in the tests to make sure the
         implementation is correct.
         """
         raise NotImplementedError
 
     def __str__(self):
         """
-        A short string desscribing the nature of the constraint
+        A short string describing the nature of the constraint
         """
         raise NotImplementedError
 

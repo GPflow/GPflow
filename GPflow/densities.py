@@ -42,12 +42,15 @@ def beta(alpha, beta, y):
         - tf.lgamma(alpha)\
         - tf.lgamma(beta)
 
+def laplace(mu, sigma, y):
+    return - tf.abs(mu - y) / sigma - tf.log(2. * sigma)
+
 
 def multivariate_normal(x, mu, L):
     """
-    L is the Cholesky decomposition of the covaraince.
+    L is the Cholesky decomposition of the covariance.
 
-    x and mu are either vectors (ndim=1) or matrices. in the matrix case, we
+    x and mu are either vectors (ndim=1) or matrices. In the matrix case, we
     assume independence over the *columns*: the number of rows must match the
     size of L.
     """

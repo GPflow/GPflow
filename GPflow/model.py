@@ -13,9 +13,10 @@ class ObjectiveWrapper(object):
     A simple class to wrap the objective function in order to make it more
     robust.
 
-    The previosly seen state is cached so that we can easily acess it if the
+    The previously seen state is cached so that we can easily access it if the
     model crashes.
     """
+
     def __init__(self, objective):
         self._objective = objective
         self._previous_x = None
@@ -73,6 +74,7 @@ class AutoFlow:
     result in the graph being constructed only once.
 
     """
+
     def __init__(self, *tf_arg_tuples):
         # NB. TF arg_tuples is a list of tuples, each of which can be used to
         # construct a tf placeholder.
@@ -82,17 +84,19 @@ class AutoFlow:
         @wraps(tf_method)
         def runnable(instance, *np_args):
             graph_name = '_' + tf_method.__name__ + '_graph'
+            tf_args_name = '_%s_tf_args' % tf_method.__name__
             if not hasattr(instance, graph_name):
                 if instance._needs_recompile:
                     instance._compile()  # ensures free_vars is up-to-date.
-                self.tf_args = [tf.placeholder(*a) for a in self.tf_arg_tuples]
+                setattr(instance, tf_args_name, [tf.placeholder(*a) for a in self.tf_arg_tuples])
                 with instance.tf_mode():
-                    graph = tf_method(instance, *self.tf_args)
+                    graph = tf_method(instance, *getattr(instance, tf_args_name))
                 setattr(instance, graph_name, graph)
-            feed_dict = dict(zip(self.tf_args, np_args))
+            feed_dict = dict(zip(getattr(instance, tf_args_name), np_args))
             feed_dict[instance._free_vars] = instance.get_free_state()
             graph = getattr(instance, graph_name)
             return instance._session.run(graph, feed_dict=feed_dict)
+
         return runnable
 
 
@@ -100,7 +104,7 @@ class Model(Parameterized):
     """
     The Model base class.
 
-    To use this class, inherriting classes must define the method
+    To use this class, inheriting classes must define the method
 
     >>>     build_likelihood(self)
 
@@ -122,16 +126,17 @@ class Model(Parameterized):
     self._objective.
 
     This object has a `_needs_recompile` switch. When any of the child nodes
-    change, this object is notified and on optimization (or mcmc) the
+    change, this object is notified and on optimization (or MCMC) the
     likelihood is recompiled. This allows fixing and constraining parameters,
     but only recompiling lazily.
 
-    This object has a `_free_vars` tensorflow array. This array is ised to
+    This object has a `_free_vars` tensorflow array. This array is used to
     build the tensorflow representations of the Param objects during
     `make_tf_array`.
 
     This object defines `optimize` and `sample` to allow for model fitting.
     """
+
     def __init__(self, name='model'):
         """
         name is a string describing this model.
@@ -150,19 +155,7 @@ class Model(Parameterized):
         """
         compile the tensorflow function "self._objective"
         """
-        # Make float32 hack
-        float32_hack = False
-        if optimizer is not None:
-            if tf.float64 not in optimizer._valid_dtypes() and \
-                    tf.float32 in optimizer._valid_dtypes():
-                print("Using float32 hack for Tensorflow optimizers...")
-                float32_hack = True
-
         self._free_vars = tf.Variable(self.get_free_state())
-        if float32_hack:
-            x = self.get_free_state().astype(np.float32)
-            self._free_vars32 = tf.Variable(x)
-            self._free_vars = tf.cast(self._free_vars32, tf.float64)
 
         self.make_tf_array(self._free_vars)
         with self.tf_mode():
@@ -177,12 +170,7 @@ class Model(Parameterized):
         if optimizer is None:
             opt_step = None
         else:
-            if float32_hack:
-                minus_F_f32 = tf.cast(self._minusF, tf.float32)
-                opt_step = optimizer.minimize(minus_F_f32,
-                                              var_list=[self._free_vars32])
-            else:
-                opt_step = optimizer.minimize(self._minusF,
+            opt_step = optimizer.minimize(self._minusF,
                                               var_list=[self._free_vars])
         init = tf.initialize_all_variables()
         self._session.run(init)
@@ -194,6 +182,7 @@ class Model(Parameterized):
         def obj(x):
             return self._session.run([self._minusF, self._minusG],
                                      feed_dict={self._free_vars: x})
+
         self._objective = obj
         print("done")
         sys.stdout.flush()
@@ -237,7 +226,7 @@ class Model(Parameterized):
             a string, corresponding to a valid scipy.optimize.minimize string
             a tensorflow optimizer (e.g. tf.optimize.AdaGrad)
 
-        The callback function is execteud by assing the current value of
+        The callback function is executed by passing the current value of
         self.get_free_state()
 
         tol is the tolerance passed to scipy.optimize.minimize (ignored
@@ -266,7 +255,7 @@ class Model(Parameterized):
 
     def _optimize_tf(self, method, callback, max_iters, calc_feed_dict):
         """
-        Optimize the model using a tensorflow optimizer. see self.optimize()
+        Optimize the model using a tensorflow optimizer. See self.optimize()
         """
         opt_step = self._compile(optimizer=method)
 
@@ -316,9 +305,9 @@ class Model(Parameterized):
             - 'COBYLA'
             - 'SLSQP'
             - 'dogleg'
-        tol is the tolerance to be pased to the optimization routine
+        tol is the tolerance to be passed to the optimization routine
         callback is callback function to be passed to the optimization routine
-        max_iters is the maximum numebr of iterations (used in the options dict
+        max_iters is the maximum number of iterations (used in the options dict
             for the optimization routine)
         """
         if self._needs_recompile:
@@ -334,7 +323,7 @@ class Model(Parameterized):
             options['disp'] = options['display']
             del options['display']
 
-        # here's the actual cll to minimize. cathc keyboard errors as harmless.
+        # here's the actual call to minimize. Catch keyboard errors as harmless.
         obj = ObjectiveWrapper(self._objective)
         try:
             result = minimize(fun=obj,
@@ -365,7 +354,7 @@ class GPModel(Model):
        Y|F ~ p(Y|F)
 
     This class mostly adds functionality to compile predictions. To use it,
-    inherriting classes must define a build_predict function, which computes
+    inheriting classes must define a build_predict function, which computes
     the means and variances of the latent function. This gets compiled
     similarly to build_likelihood in the Model class.
 
@@ -375,8 +364,9 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
     """
+
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
-        self.X, self.Y, self.kern, self.likelihood, self.mean_function =\
+        self.X, self.Y, self.kern, self.likelihood, self.mean_function = \
             X, Y, kern, likelihood, mean_function
         Model.__init__(self, name)
 
@@ -427,7 +417,7 @@ class GPModel(Model):
         """
         Compute the (log) density of the data Ynew at the points Xnew
 
-        Note that this computes the log denisty of the data individually,
+        Note that this computes the log density of the data individually,
         ignoring correlations between them. The result is a matrix the same
         shape as Ynew containing the log densities.
         """

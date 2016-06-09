@@ -26,7 +26,7 @@ class Likelihood(Parameterized):
 
             p(y|f)
 
-        then this mehtod computes
+        then this method computes
 
             \int y p(y|f) dy
         """
@@ -40,7 +40,7 @@ class Likelihood(Parameterized):
 
             p(y|f)
 
-        then this mehtod computes
+        then this method computes
 
             \int y^2 p(y|f) dy  - [\int y p(y|f) dy] ^ 2
 
@@ -158,7 +158,7 @@ class Gaussian(Likelihood):
         return tf.identity(F)
 
     def conditional_variance(self, F):
-        return tf.ones_like(F) * self.variance
+        return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
@@ -290,7 +290,7 @@ class Gamma(Likelihood):
 
 class Beta(Likelihood):
     """
-    This uses a reparameterization of the Beta density. We have the mean of the
+    This uses a reparameterisation of the Beta density. We have the mean of the
     Beta distribution given by the transformed process:
 
         m = sigma(f)
