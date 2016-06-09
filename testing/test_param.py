@@ -17,10 +17,17 @@ class ParamTestsScalar(unittest.TestCase):
         self.failUnless(self.m.get_free_state() == 2.0)
 
     def testValue(self):
+        # make sure the correct value is returned
         self.m.p = 3.0
         self.failUnless(isinstance(self.m.p.value, np.ndarray))
+
+        # make sure assignment does not work
+
         with self.assertRaises(AttributeError):
-            self.m.p.value = 2.5
+            self.m.p.value = 2.53
+
+        # make sure we get a copy
+        self.FailIf(m.p.value is m.p._array)
 
     def testReplacement(self):
         old_p = self.m.p

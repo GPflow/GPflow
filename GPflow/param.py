@@ -127,7 +127,7 @@ class Param(Parentable):
 
     @property
     def value(self):
-        return self._array
+        return self._array.copy()
 
     def make_tf_array(self, free_array):
         """
