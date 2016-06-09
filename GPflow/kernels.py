@@ -10,11 +10,13 @@ class Kern(Parameterized):
     """
     The basic kernel class. Handles input_dim and active dims, and provides a
     generic '_slice' function to implement them.
-
-    input dim is an integer
-    active dims is a (slice | iterable of integers | None)
     """
+
     def __init__(self, input_dim, active_dims=None):
+        """
+        input dim is an integer
+        active dims is a (slice | iterable of integers | None)
+        """
         Parameterized.__init__(self)
         self.input_dim = input_dim
         if active_dims is None:
@@ -89,7 +91,7 @@ class Bias(Constant):
 
 class Stationary(Kern):
     """
-    Base class for kernels that are statinoary, that is, they only depend on
+    Base class for kernels that are stationary, that is, they only depend on
 
         r = || x - x' ||
 
@@ -250,7 +252,7 @@ class PeriodicKernel(Kern):
     """
     def __init__(self, input_dim, period=1.0, variance=1.0,
                  lengthscales=1.0, active_dims=None):
-        # No ARD support for lenghtscale or period yet
+        # No ARD support for lengthscale or period yet
         Kern.__init__(self, input_dim, active_dims)
         self.variance = Param(variance, transforms.positive)
         self.lengthscales = Param(lengthscales, transforms.positive)
@@ -304,7 +306,7 @@ def make_kernel_names(kern_list):
 
 class Combination(Kern):
     """
-    Combine  a list of kernels, e.g. by adding or multiplying (see inherriting
+    Combine  a list of kernels, e.g. by adding or multiplying (see inheriting
     classes).
 
     The names of the kernels to be combined are generated from their class
@@ -323,7 +325,7 @@ class Combination(Kern):
             else:
                 self.kern_list.append(k)
 
-        # generate a set of suitable names and add the kernels as atributes
+        # generate a set of suitable names and add the kernels as attributes
         names = make_kernel_names(self.kern_list)
         [setattr(self, name, k) for name, k in zip(names, self.kern_list)]
 

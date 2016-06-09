@@ -33,7 +33,7 @@ class SVGP(GPModel):
           Y.shape[1]
         - q_diag is a boolean. If True, the covariance is approximated by a
           diagonal matrix.
-        - whiten is a boolean. If True, we use the whitened represenation of
+        - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
         """
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
