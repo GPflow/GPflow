@@ -157,9 +157,9 @@ class Model(Parameterized):
         """
         d = Parameterized.__getstate__(self)
         d.pop('_session')
+        d.pop('_free_vars')
         try:
             d.pop('_objective')
-            d.pop('_free_vars')
             d.pop('_minusF')
             d.pop('_minusG')
         except:
@@ -167,7 +167,7 @@ class Model(Parameterized):
         return d
 
     def __setstate__(self, d):
-        self.__dict__ = d
+        Parameterized.__setstate__(self, d)
         self._needs_recompile = True
         self._session = tf.Session()
 
