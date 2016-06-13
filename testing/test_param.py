@@ -299,5 +299,54 @@ class TestParamList(unittest.TestCase):
         self.assertTrue(np.allclose(m.get_free_state(), 0.))
 
 
+class TestDictEmpty(unittest.TestCase):
+    def setUp(self):
+        self.m = GPflow.model.Model()
+
+    def test(self):
+        d = self.m.to_dict()
+        self.assertTrue(len(d.keys()) == 0)
+        self.m.from_dict(d)
+
+
+class TestDictSimple(unittest.TestCase):
+    def setUp(self):
+        self.m = GPflow.model.Model()
+        self.m.p1 = GPflow.param.Param(np.random.randn(3, 2))
+        self.m.p2 = GPflow.param.Param(np.random.randn(10))
+
+    def test(self):
+        d = self.m.to_dict()
+        self.assertTrue(len(d.keys()) == 2)
+        state1 = self.m.get_free_state().copy()
+        self.m.set_state(state1 * 0)
+        self.m.from_dict(d)
+        self.assertTrue(np.all(state1 == self.m.get_free_state()))
+
+
+class TestDictSVGP(unittest.TestCase):
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(10, 1)
+        Y = rng.randn(10, 1)
+        Z = rng.randn(5, 1)
+        self.m = GPflow.svgp.SVGP(X, Y, Z=Z, likelihood=GPflow.likelihoods.Gaussian(), kern=GPflow.kernels.RBF(1))
+
+    def test(self):
+        loglik1 = self.m.compute_log_likelihood()
+        d = self.m.to_dict()
+
+        # muck up the model
+        self.m.set_state(np.random.randn(self.m.get_free_state().size))
+        loglik2 = self.m.compute_log_likelihood()
+
+        # reset the model
+        self.m.from_dict(d)
+        loglik3 = self.m.compute_log_likelihood()
+
+        self.assertFalse(loglik1 == loglik2)
+        self.assertTrue(loglik1 == loglik3)
+
+
 if __name__ == "__main__":
     unittest.main()
