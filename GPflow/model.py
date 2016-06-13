@@ -145,6 +145,7 @@ class Model(Parameterized):
         self._name = name
         self._needs_recompile = True
         self._session = tf.Session()
+        self._free_vars = tf.placeholder(tf.float64)
 
     @property
     def name(self):
@@ -159,6 +160,8 @@ class Model(Parameterized):
         try:
             d.pop('_objective')
             d.pop('_free_vars')
+            d.pop('_minusF')
+            d.pop('_minusG')
         except:
             pass
         return d
@@ -179,15 +182,15 @@ class Model(Parameterized):
             f = self.build_likelihood() + self.build_prior()
             g, = tf.gradients(f, self._free_vars)
 
-        minusF = tf.neg(f, name='objective')
-        minusG = tf.neg(g, name='grad_objective')
+        self._minusF = tf.neg(f, name='objective')
+        self._minusG = tf.neg(g, name='grad_objective')
 
         # The optimiser needs to be part of the computational graph, and needs
         # to be initialised before tf.initialise_all_variables() is called.
         if optimizer is None:
             opt_step = None
         else:
-            opt_step = optimizer.minimize(minusF,
+            opt_step = optimizer.minimize(self._minusF,
                                           var_list=[self._free_vars])
         init = tf.initialize_all_variables()
         self._session.run(init)
@@ -197,7 +200,7 @@ class Model(Parameterized):
         sys.stdout.flush()
 
         def obj(x):
-            return self._session.run([minusF, minusG],
+            return self._session.run([self._minusF, self._minusG],
                                      feed_dict={self._free_vars: x})
 
         self._objective = obj
