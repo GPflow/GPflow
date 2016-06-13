@@ -144,12 +144,29 @@ class Model(Parameterized):
         Parameterized.__init__(self)
         self._name = name
         self._needs_recompile = True
-        self._free_vars = tf.placeholder('float64', name='free_vars')
         self._session = tf.Session()
 
     @property
     def name(self):
         return self._name
+
+    def __getstate__(self):
+        """
+        This mehtod is necessary for pickling objects
+        """
+        d = Parameterized.__getstate__(self)
+        d.pop('_session')
+        try:
+            d.pop('_objective')
+            d.pop('_free_vars')
+        except:
+            pass
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self._needs_recompile = True
+        self._session = tf.Session()
 
     def _compile(self, optimizer=None):
         """
@@ -162,16 +179,16 @@ class Model(Parameterized):
             f = self.build_likelihood() + self.build_prior()
             g, = tf.gradients(f, self._free_vars)
 
-        self._minusF = tf.neg(f, name='objective')
-        self._minusG = tf.neg(g, name='grad_objective')
+        minusF = tf.neg(f, name='objective')
+        minusG = tf.neg(g, name='grad_objective')
 
         # The optimiser needs to be part of the computational graph, and needs
         # to be initialised before tf.initialise_all_variables() is called.
         if optimizer is None:
             opt_step = None
         else:
-            opt_step = optimizer.minimize(self._minusF,
-                                              var_list=[self._free_vars])
+            opt_step = optimizer.minimize(minusF,
+                                          var_list=[self._free_vars])
         init = tf.initialize_all_variables()
         self._session.run(init)
 
@@ -180,7 +197,7 @@ class Model(Parameterized):
         sys.stdout.flush()
 
         def obj(x):
-            return self._session.run([self._minusF, self._minusG],
+            return self._session.run([minusF, minusG],
                                      feed_dict={self._free_vars: x})
 
         self._objective = obj

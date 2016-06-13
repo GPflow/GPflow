@@ -15,7 +15,8 @@ class Parentable(object):
     This class can figure out its own name (by seeing what it's called by the
     _parent's __dict__) and also recurse up to the highest_parent.
     """
-    _parent = None
+    def __init__(self):
+        self._parent = None
 
     @property
     def highest_parent(self):
@@ -128,6 +129,8 @@ class Param(Parentable):
         Parentable.__init__(self)
         self._array = np.asarray(np.atleast_1d(array), dtype=np.float64)
         self.transform = transform
+        self._tf_array = None
+        self._log_jacobian = None
         self.prior = None
         self.fixed = False
 
@@ -239,6 +242,20 @@ class Param(Parentable):
                                       else str(self.transform))
         html += "</tr>"
         return html
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_tf_array')
+        d.pop('_log_jacobian')
+        d.pop('_parent')
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self._tf_array = None
+        self._log_jacobian = None
+        # NB the parent property will be set byt the parent object
+        # the tf_array and _log jacobian will be replaced when the model is recompiled
 
 
 class Parameterized(Parentable):
@@ -450,6 +467,17 @@ class Parameterized(Parentable):
 
         html.append("</table>")
         return ''.join(html)
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_parent')
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        # reinstate _parent graph
+        for p in self.sorted_params:
+            p._parent = self
 
 
 class ParamList(Parameterized):
