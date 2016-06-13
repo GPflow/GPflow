@@ -42,6 +42,12 @@ class Parentable(object):
                              referenced by a parent")
         return matches[0]
 
+    @property
+    def long_name(self):
+        if self._parent is None:
+            return self.name
+        return self._parent.long_name + '.' + self.name
+
 
 class Param(Parentable):
     """
@@ -128,6 +134,12 @@ class Param(Parentable):
     @property
     def value(self):
         return self._array.copy()
+
+    def to_dict(self, d):
+        d[self.long_name] = self.value
+
+    def from_dict(self, d):
+        self._array[...] = d.pop(self.long_name)
 
     def make_tf_array(self, free_array):
         """
@@ -249,6 +261,17 @@ class Parameterized(Parentable):
     def __init__(self):
         Parentable.__init__(self)
         self._tf_mode = False
+
+    def to_dict(self, d=None):
+        if d is None:
+            d = {}
+        for p in self.sorted_params:
+            p.to_dict(d)
+        return d
+
+    def from_dict(self, d):
+        for p in self.sorted_params:
+            p.from_dict(d)
 
     def __getattribute__(self, key):
         """
