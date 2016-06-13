@@ -254,7 +254,9 @@ class Param(Parentable):
         self.__dict__ = d
         self._tf_array = None
         self._log_jacobian = None
-        # NB the parent property will be set byt the parent object
+        self._parent = None
+        # NB the parent property will be set by the parent object, aprt from
+        # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
 
 
@@ -475,6 +477,7 @@ class Parameterized(Parentable):
 
     def __setstate__(self, d):
         self.__dict__ = d
+        self._parent = None
         # reinstate _parent graph
         for p in self.sorted_params:
             p._parent = self

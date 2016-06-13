@@ -93,7 +93,7 @@ class TestPickleAndDict(unittest.TestCase):
 
         d1 = self.m.to_dict()
         d2 = m1.to_dict()
-        for key, val in d1:
+        for key, val in d1.iteritems():
             assert np.all(val==d2[key])
 
 
