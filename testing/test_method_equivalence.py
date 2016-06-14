@@ -51,11 +51,11 @@ class TestEquivalence(unittest.TestCase):
         variances, lengthscales = [], []
         for m in self.models:
             if hasattr(m.kern, 'rbf'):
-                variances.append(m.kern.rbf.variance._array)
-                lengthscales.append(m.kern.rbf.lengthscales._array)
+                variances.append(m.kern.rbf.variance.value)
+                lengthscales.append(m.kern.rbf.lengthscales.value)
             else:
-                variances.append(m.kern.variance._array)
-                lengthscales.append(m.kern.lengthscales._array)
+                variances.append(m.kern.variance.value)
+                lengthscales.append(m.kern.lengthscales.value)
         variances, lengthscales = np.array(variances), np.array(lengthscales)
 
         self.failUnless(np.allclose(variances, variances[0], 1e-3))

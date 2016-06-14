@@ -63,6 +63,10 @@ class Param(Parentable):
     model.p transform:(none) prior:None
     [ 3.2]
 
+    To retrieve the value of the parameter, we use the 'value' property:
+    >>> m.p.value
+    array([ 3.2])
+
     Unconstrained optimization
     --
     The parameter can be transformed to a 'free state' where it
@@ -71,7 +75,7 @@ class Param(Parentable):
     >>> self.get_free_state
     >>> self.set_state
 
-    transform between self._array and the free state.
+    transform between self.value and the free state.
 
     To apply a transform to the Param, simply set the transform attribute
     with a GPflow.transforms object
@@ -121,6 +125,10 @@ class Param(Parentable):
         self.prior = None
         self.fixed = False
 
+    @property
+    def value(self):
+        return self._array.copy()
+
     def make_tf_array(self, free_array):
         """
         free_array is a tensorflow vector which will be the optimisation
@@ -146,19 +154,20 @@ class Param(Parentable):
 
     def get_free_state(self):
         """
-        Take the current state of this variable, as stored in self._array, and
+        Take the current state of this variable, as stored in self.value, and
         transform it to the 'free' state.
 
         This is a numpy method.
         """
         if self.fixed:
             return np.empty((0,))
-        return self.transform.backward(self._array.flatten())
+        return self.transform.backward(self.value.flatten())
 
     def set_state(self, x):
         """
         Given a vector x representing the 'free' state of this Param, transform
-        it 'forwards' and store the result in self._array.
+        it 'forwards' and store the result in self._array. The values in
+        self._array can be accessed using self.value
 
         This is a numpy method.
         """
@@ -196,7 +205,7 @@ class Param(Parentable):
             ' transform:' + str(self.transform) + \
             ' prior:' + str(self.prior) + \
             (' [FIXED]' if self.fixed else '') + \
-            '\n' + str(self._array)
+            '\n' + str(self.value)
 
     @property
     def size(self):
@@ -275,12 +284,23 @@ class Parameterized(Parentable):
         know that this node is the _parent
         """
 
-        # set the _array value of child nodes instead of standard assignment.
+        # If we already have an atribute with that key, decide what to do:
         if key in self.__dict__.keys():
             p = getattr(self, key)
-            if isinstance(p, Param):
+
+            # if the existing attribute is a parameter, and the value is an
+            # array (or float, int), then self the _array of that parameter
+            if isinstance(p, Param) and isinstance(value, (np.ndarray, float, int)):
                 p._array[...] = value
                 return  # don't call object.setattr or set the _parent value
+
+            # if the existing attribute is a Param (or Parameterized), and the
+            # new attribute is too, replace the attribute and set the model to
+            # recompile if necessary.
+            if isinstance(p, Param) and isinstance(value, (Param, Parameterized)):
+                p._parent = None  # unlink the old Parameter from this tree
+                if hasattr(self.highest_parent, '_needs_recompile'):
+                    self.highest_parent._needs_recompile = True
 
         # use the standard setattr
         object.__setattr__(self, key, value)

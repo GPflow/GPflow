@@ -20,11 +20,39 @@ class TestOptimize(unittest.TestCase):
     def test_adam(self):
         o = tf.train.AdamOptimizer()
         self.m.optimize(o, max_iters=5000)
-        self.failUnless(self.m.x._array.max() < 1e-2)
-    
+        self.failUnless(self.m.x.value.max() < 1e-2)
+
     def test_lbfgsb(self):
         self.m.optimize(display=False)
-        self.failUnless(self.m.x._array.max() < 1e-6)
+        self.failUnless(self.m.x.value.max() < 1e-6)
+
+
+class TestNeedsRecompile(unittest.TestCase):
+    def setUp(self):
+        self.m = GPflow.model.Model()
+        self.m.p = GPflow.param.Param(1.0)
+
+    def test_fix(self):
+        self.m._needs_recompile = False
+        self.m.p.fixed = True
+        self.failUnless(self.m._needs_recompile)
+
+    def test_replace_param(self):
+        self.m._needs_recompile = False
+        new_p = GPflow.param.Param(3.0)
+        self.m.p = new_p
+        self.failUnless(self.m._needs_recompile)
+
+    def test_set_prior(self):
+        self.m._needs_recompile = False
+        self.m.p.prior = GPflow.priors.Gaussian(0, 1)
+        self.failUnless(self.m._needs_recompile)
+
+    def test_set_transform(self):
+        self.m._needs_recompile = False
+        self.m.p.transform = GPflow.transforms.Identity()
+        self.failUnless(self.m._needs_recompile)
+
 
 class KeyboardRaiser:
     """
