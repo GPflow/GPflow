@@ -456,6 +456,15 @@ class Parameterized(Parentable):
                   and key is not '_parent']
         return sorted(params, key=id)
 
+    @property
+    def fixed(self):
+        return all(p.fixed for p in self.sorted_params)
+
+    @fixed.setter
+    def fixed(self, val):
+        for p in self.sorted_params:
+            p.fixed = val
+
     def get_free_state(self):
         """
         recurse get_free_state on all child parameters, and hstack them.
