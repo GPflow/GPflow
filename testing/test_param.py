@@ -43,6 +43,13 @@ class ParamTestsScalar(unittest.TestCase):
     def testName(self):
         self.assertTrue(self.m.p.name == 'p')
 
+    def testFixing(self):
+        self.m.p.fixed = False
+        self.m.fixed = True
+        self.assertTrue(self.m.p.fixed)
+        self.m.p.fixed = False
+        self.assertFalse(self.m.fixed)
+
     def testMakeTF(self):
         x = tf.placeholder('float64')
 
@@ -76,11 +83,10 @@ class ParamTestsScalar(unittest.TestCase):
 
     def testTFMode(self):
         x = tf.placeholder('float64')
-        l = self.m.make_tf_array(x)
+        self.m.make_tf_array(x)
         self.assertTrue(isinstance(self.m.p, GPflow.param.Param))
         with self.m.tf_mode():
             self.assertTrue(isinstance(self.m.p, tf.python.framework.ops.Tensor))
-
 
 
 class ParamTestsDeeper(unittest.TestCase):
@@ -136,6 +142,19 @@ class ParamTestsDeeper(unittest.TestCase):
         self.m.foo.bar.baz.fixed = True
         self.assertTrue(len(self.m.get_free_state()) == 0)
 
+    def testFixing(self):
+        self.m.fixed = False
+        self.m.foo.bar.fixed = True
+        self.assertTrue(self.m.fixed)
+        self.assertTrue(self.m.foo.fixed)
+        self.assertTrue(self.m.foo.bar.fixed)
+        self.assertTrue(self.m.foo.bar.baz.fixed)
+        self.m.foo.bar.baz.fixed = False
+        self.assertFalse(self.m.fixed)
+        self.assertFalse(self.m.foo.fixed)
+        self.assertFalse(self.m.foo.bar.fixed)
+        self.assertFalse(self.m.foo.bar.baz.fixed)
+
     def testRecompile(self):
         self.m._needs_recompile = False
         self.m.foo.bar.baz.fixed = True
@@ -148,7 +167,7 @@ class ParamTestsDeeper(unittest.TestCase):
     def testTFMode(self):
         x = tf.placeholder('float64')
 
-        l = self.m.make_tf_array(x)
+        self.m.make_tf_array(x)
         self.assertTrue(isinstance(self.m.foo.bar.baz, GPflow.param.Param))
         with self.m.tf_mode():
             self.assertTrue(isinstance(self.m.foo.bar.baz, tf.python.framework.ops.Tensor))
@@ -203,6 +222,20 @@ class ParamTestswider(unittest.TestCase):
         self.m.bar.fixed = True
         self.assertTrue(len(self.m.get_free_state()) == 10)
 
+    def testFixing(self):
+        self.m.fixed = False
+        self.m.foo.fixed = True
+        self.assertFalse(self.m.fixed)
+        self.assertTrue(self.m.foo.fixed)
+        self.assertFalse(self.m.bar.fixed)
+        self.assertFalse(self.m.baz.fixed)
+        self.m.bar.fixed = True
+        self.m.baz.fixed = True
+        self.assertTrue(self.m.fixed)
+        self.assertTrue(self.m.foo.fixed)
+        self.assertTrue(self.m.bar.fixed)
+        self.assertTrue(self.m.baz.fixed)
+
     def testRecompile(self):
         self.m._needs_recompile = False
         self.m.foo.fixed = True
@@ -214,23 +247,24 @@ class ParamTestswider(unittest.TestCase):
 
     def testTFMode(self):
         x = tf.placeholder('float64')
-        l = self.m.make_tf_array(x)
+        self.m.make_tf_array(x)
         self.assertTrue(all([isinstance(p, GPflow.param.Param) for p in (self.m.foo, self.m.bar, self.m.baz)]))
         with self.m.tf_mode():
-            self.assertTrue(all([isinstance(p, tf.python.framework.ops.Tensor) for p in (self.m.foo, self.m.bar, self.m.baz)]))
+            self.assertTrue(all([isinstance(p, tf.python.framework.ops.Tensor)
+                                 for p in (self.m.foo, self.m.bar, self.m.baz)]))
 
 
 class TestParamList(unittest.TestCase):
     def test_construction(self):
-        pl1 = GPflow.param.ParamList([])
-        pl2 = GPflow.param.ParamList([GPflow.param.Param(1)])
+        GPflow.param.ParamList([])
+        GPflow.param.ParamList([GPflow.param.Param(1)])
         with self.assertRaises(AssertionError):
-            pl2 = GPflow.param.ParamList([GPflow.param.Param(1), 'stringsnotallowed'])
+            GPflow.param.ParamList([GPflow.param.Param(1), 'stringsnotallowed'])
 
     def test_naming(self):
         p1 = GPflow.param.Param(1.2)
         p2 = GPflow.param.Param(np.array([3.4, 5.6]))
-        l = GPflow.param.ParamList([p1, p2])
+        GPflow.param.ParamList([p1, p2])
         self.assertTrue(p1.name == 'item0')
         self.assertTrue(p2.name == 'item1')
 
