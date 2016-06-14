@@ -328,6 +328,7 @@ class AutoFlow:
                 with instance.tf_mode():
                     storage['tf_result'] = tf_method(instance, *storage['tf_args'])
                 storage['session'] = tf.Session()
+                storage['session'].run(tf.initialize_all_variables())
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
