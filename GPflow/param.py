@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from . import transforms
 from contextlib import contextmanager
+from functools import wraps
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
@@ -213,6 +214,8 @@ class Param(Parentable):
         object.__setattr__(self, key, value)
         if key in recompile_keys:
             self.highest_parent._needs_recompile = True
+            if hasattr(self.highest_parent, '_kill_autoflow'):
+                self.highest_parent._kill_autoflow()
 
     def __str__(self, prepend=''):
         return prepend + \
@@ -258,6 +261,78 @@ class Param(Parentable):
         # NB the parent property will be set by the parent object, aprt from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
+
+
+class AutoFlow:
+    """
+    This decorator-class is designed for use on methods of the Parameterized class
+    (below).
+
+    The idea is that methods that compute relevant quantities (such as
+    predictions) can define a tf graph which we automatically run when the
+    (decorated) function is called.
+
+    The syntax looks like:
+
+    >>> class MyClass(Parameterized):
+    >>>
+    >>>   @AutoFlow((tf.float64), (tf.float64))
+    >>>   def my_method(self, x, y):
+    >>>       #compute something, returning a tf graph.
+    >>>       return tf.foo(self.baz, x, y)
+
+    >>> m = MyClass()
+    >>> x = np.random.randn(3,1)
+    >>> y = np.random.randn(3,1)
+    >>> result = my_method(x, y)
+
+    Now the output of the method call is the _result_ of the computation,
+    equivalent to
+
+    >>> m = MyModel()
+    >>> x = np.random.randn(3,1)
+    >>> y = np.random.randn(3,1)
+    >>> x_tf = tf.placeholder(tf.float64)
+    >>> y_tf = tf.placeholder(tf.float64)
+    >>> with m.tf_mode():
+    >>>     graph = tf.foo(m.baz, x_tf, y_tf)
+    >>> result = m._session.run(graph,
+                                feed_dict={x_tf:x,
+                                           y_tf:y,
+                                           m._free_vars:m.get_free_state()})
+
+    Not only is the syntax cleaner, but multiple calls to the method will
+    result in the graph being constructed only once.
+
+    """
+
+    def __init__(self, *tf_arg_tuples):
+        # NB. TF arg_tuples is a list of tuples, each of which can be used to
+        # construct a tf placeholder.
+        self.tf_arg_tuples = tf_arg_tuples
+
+    def __call__(self, tf_method):
+        @wraps(tf_method)
+        def runnable(instance, *np_args):
+            storage_name = '_' + tf_method.__name__ + '_AF_storage'
+            if hasattr(instance, storage_name):
+                # the method has been compiled already, get things out of storage
+                storage = getattr(instance, storage_name)
+            else:
+                # the method needs to be compiled.
+                storage = {}  # an empty dict to keep things in
+                setattr(instance, storage_name, storage)
+                storage['free_vars'] = tf.placeholder(tf.float64, [None])
+                instance.make_tf_array(storage['free_vars'])
+                storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
+                with instance.tf_mode():
+                    storage['tf_result'] = tf_method(instance, *storage['tf_args'])
+                storage['session'] = tf.Session()
+            feed_dict = dict(zip(storage['tf_args'], np_args))
+            feed_dict[storage['free_vars']] = instance.get_free_state()
+            return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
+
+        return runnable
 
 
 class Parameterized(Parentable):
@@ -341,6 +416,7 @@ class Parameterized(Parentable):
             # recompile if necessary.
             if isinstance(p, Param) and isinstance(value, (Param, Parameterized)):
                 p._parent = None  # unlink the old Parameter from this tree
+                self.highest_parent._kill_autoflow()
                 if hasattr(self.highest_parent, '_needs_recompile'):
                     self.highest_parent._needs_recompile = True
 
@@ -350,6 +426,13 @@ class Parameterized(Parentable):
         # make sure a new child node knows this is the _parent:
         if isinstance(value, (Param, Parameterized)) and key is not '_parent':
             value._parent = self
+
+    def _kill_autoflow(self):
+        # remove all AutoFlow storage dicts recursively
+        for key in self.__dict__.keys():
+            if key[0] == '_' and key[-11:] == '_AF_storage':
+                delattr(self, key)
+        [p._kill_autoflow for p in self.sorted_params if isinstance(p, Parameterized)]
 
     def make_tf_array(self, X):
         """
