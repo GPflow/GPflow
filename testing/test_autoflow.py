@@ -88,7 +88,7 @@ class TestGPmodel(unittest.TestCase):
         mu, var = self.m.predict_y(self.Xtest)
 
     def test_predict_density(self):
-        d = self.m.predict_density(self.Xtest, self.Ytest)
+        self.m.predict_density(self.Xtest, self.Ytest)
 
 
 class TestResetGraph(unittest.TestCase):
@@ -125,6 +125,19 @@ class TestFixAndPredict(unittest.TestCase):
         self.m._compile()
         self.m.kern.variance.fixed = True
         _, _ = self.m.predict_f(self.m.X)
+
+
+class TestSVGP(unittest.TestCase):
+    """
+    This replicates Alex's code from bug #99
+    """
+    def test(self):
+        rng = np.random.RandomState(1)
+        X = rng.randn(10, 1)
+        Y = rng.randn(10, 1)
+        Z = rng.randn(3, 1)
+        model = GPflow.svgp.SVGP(X=X, Y=Y, kern=GPflow.kernels.RBF(1), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)
+        model.compute_log_likelihood()
 
 
 if __name__ == "__main__":
