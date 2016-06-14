@@ -2,7 +2,7 @@ from functools import reduce
 
 import tensorflow as tf
 import numpy as np
-from .param import Param, Parameterized
+from .param import Param, Parameterized, AutoFlow
 from . import transforms
 
 
@@ -42,6 +42,10 @@ class Kern(Parameterized):
 
     def __mul__(self, other):
         return Prod([self, other])
+
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
+    def compute_K(self, X, Z):
+        return self.K(X, Z)
 
 
 class Static(Kern):
