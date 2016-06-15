@@ -48,12 +48,21 @@ class TestPickleGPR(unittest.TestCase):
         l3 = m2.compute_log_likelihood()
         self.assertTrue(l1 == l2 == l3)
 
+        # make sure predictions still match (this tests AutoFlow)
+        pX = np.linspace(-3, 3, 10)[:, None]
+        p1, _ = self.m.predict_y(pX)
+        p2, _ = m1.predict_y(pX)
+        p3, _ = m2.predict_y(pX)
+        self.assertTrue(np.all(p1 == p2))
+        self.assertTrue(np.all(p1 == p3))
+
 
 class TestPickleSVGP(unittest.TestCase):
     """
     Like the TestPickleGPR test, but with svgp (since it has extra tf variables
     for minibatching)
     """
+
     def setUp(self):
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
@@ -78,23 +87,13 @@ class TestPickleSVGP(unittest.TestCase):
         l3 = m2.compute_log_likelihood()
         self.assertTrue(l1 == l2 == l3)
 
-
-class TestPickleAndDict(unittest.TestCase):
-    def setUp(self):
-        rng = np.random.RandomState(0)
-        X = rng.randn(10, 1)
-        Y = rng.randn(10, 1)
-        self.m = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
-
-    def test(self):
-        # pickle and reload the model
-        s1 = pickle.dumps(self.m)
-        m1 = pickle.loads(s1)
-
-        d1 = self.m.to_dict()
-        d2 = m1.to_dict()
-        for key, val in d1.iteritems():
-            assert np.all(val==d2[key])
+        # make sure predictions still match (this tests AutoFlow)
+        pX = np.linspace(-3, 3, 10)[:, None]
+        p1, _ = self.m.predict_y(pX)
+        p2, _ = m1.predict_y(pX)
+        p3, _ = m2.predict_y(pX)
+        self.assertTrue(np.all(p1 == p2))
+        self.assertTrue(np.all(p1 == p3))
 
 
 if __name__ == "__main__":
