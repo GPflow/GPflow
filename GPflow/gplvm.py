@@ -15,7 +15,7 @@ class GPLVM(GPR):
     '''
     Standard GPLVM where the likelihood can be optimised with respect to the  latent X.
     '''
-    def __init__(self, X_mean, Y, kern, mean_function=Zero()):
+    def __init__(self, Y, X_mean, kern, mean_function=Zero()):
         """
         Y is a data matrix, size N x R
         Z is a matrix of pseudo inputs, size M x D
@@ -34,7 +34,7 @@ class GPLVM(GPR):
 
 class BayesianGPLVM(GPModel):
 
-    def __init__(self, X_mean, X_var, Y, kern, Z, priorXmean=None, priorXvar=None):
+    def __init__(self, X_mean, X_var, Y, kern, Z, X_prior_mean=None, X_prior_var=None):
         """
         X_mean is a data matrix, size N x D
         X_var is a data matrix, size N x D (X_var > 0)
@@ -53,22 +53,24 @@ class BayesianGPLVM(GPModel):
         self.num_data = X_mean.shape[0]
         self.num_latent = Z.shape[1]
         self.output_dim = Y.shape[1]
-        
+
         assert np.all(X_mean.shape == X_var.shape)
         assert X_mean.shape[1] == self.num_latent
-        # should just default to 0,1 and then have common KL
-        self.priorXmean = None
-        if(priorXmean is not None):
-            assert priorXmean.shape[0] == self.num_data
-            assert priorXmean.shape[1] == self.num_latent
-            self.priorXmean = priorXmean
-        if(priorXvar is not None):
-            assert priorXvar.shape[0] == self.num_data
-            assert priorXvar.shape[1] == self.num_latent
-            self.priorXvar = priorXvar
-
         assert X_mean.shape[0] == Y.shape[0], 'X mean and Y must be same size.'
         assert X_var.shape[0] == Y.shape[0], 'X var and Y must be same size.'
+
+        # deal with parameters for the prior mean variance of X
+        if X_prior_mean is None:
+            X_prior_mean = np.zeros((self.num_data, self.num_latent))
+        self.X_prior_mean = X_prior_mean
+        if X_prior_var is None:
+            X_prior_var = np.ones((self.num_data, self.num_latent))
+        self.X_prior_var = X_prior_var
+
+        assert X_prior_mean.shape[0] == self.num_data
+        assert X_prior_mean.shape[1] == self.num_latent
+        assert X_prior_var.shape[0] == self.num_data
+        assert X_prior_var.shape[1] == self.num_latent
 
     def build_likelihood(self):
         """
@@ -95,13 +97,10 @@ class BayesianGPLVM(GPModel):
         # KL[q(x) || p(x)]
         NQ = tf.cast(tf.size(self.X_mean), tf.float64)
         D = tf.cast(tf.shape(self.Y)[1], tf.float64)
-        if(self.priorXmean is None):
-            KL = -0.5*tf.reduce_sum(tf.log(self.X_var)) - 0.5 * NQ +\
-                0.5 * tf.reduce_sum(tf.square(self.X_mean) + self.X_var)
-        else:
-            KL = 0.5*tf.reduce_sum(tf.log(self.priorXvar/self.X_var))
-            KL += - 0.5 * NQ
-            KL += 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.priorXmean) + self.X_var) / self.priorXvar)
+        KL = -0.5*tf.reduce_sum(tf.log(self.X_var)) \
+            + 0.5*tf.reduce_sum(tf.log(self.X_prior_var))\
+            - 0.5 * NQ\
+            + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + self.X_var) / self.X_prior_var)
 
         # compute log marginal bound
         ND = tf.cast(tf.size(self.Y), tf.float64)

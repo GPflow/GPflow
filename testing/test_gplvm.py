@@ -40,10 +40,10 @@ class TestBayesianGPLVM(unittest.TestCase):
         m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.ones((N, Q)), Y=Y, kern=k, Z=Z)
         print(m)
         m.X_var.fixed = True
-        
+
         ll = m.compute_log_likelihood()
         print(ll)
-        m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.ones((N, Q)), Y=Y, kern=k, Z=Z, priorXmean=np.zeros((N,Q)), priorXvar = np.ones((N,Q)))
+        m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.ones((N, Q)), Y=Y, kern=k, Z=Z, X_prior_mean=np.zeros((N,Q)), X_prior_var = np.ones((N,Q)))
         llprior = m.compute_log_likelihood()
         print(m) 
         print(llprior)
@@ -51,7 +51,7 @@ class TestBayesianGPLVM(unittest.TestCase):
  
         Z = np.linspace(0, 1, M*2)
         Z = np.expand_dims(Z, Q)
-        m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.ones((N, Q)), Y=Y, kern=k, Z=Z, priorXmean=np.zeros((N,Q)), priorXvar = np.ones((N,Q)))
+        m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.ones((N, Q)), Y=Y, kern=k, Z=Z, X_prior_mean=np.zeros((N,Q)), X_prior_var = np.ones((N,Q)))
         llmoreZ = m.compute_log_likelihood()
         print(llmoreZ)
         assert llmoreZ > ll
