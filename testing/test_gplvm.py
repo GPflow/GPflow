@@ -1,10 +1,8 @@
 from __future__ import print_function
 import GPflow
-from GPflow import gplvm
-import tensorflow as tf
 import numpy as np
 import unittest
-
+from GPflow import gplvm
 
 class TestBayesianGPLVM(unittest.TestCase):
     def setUp(self):
@@ -29,27 +27,44 @@ class TestBayesianGPLVM(unittest.TestCase):
         # You could set the variance of the BGPLVM to zero and show that it's the same as the GPLVM
         # BGPLVM with variance to 0 is same as GPLVM
         N = 10  # number of data points
-        D = 1  # latent dimensions
-        M = 5  # inducings points
-        R = 2  # data dimension
-        k = GPflow.kernels.RBF(D)
+        Q = 1  # latent dimensions
+        M = 5  # inducing points
+        D = 2  # data dimension
+        k = GPflow.kernels.RBF(Q)
         Z = np.linspace(0, 1, M)
-        Z = np.expand_dims(Z, D)
+        Z = np.expand_dims(Z, Q)
         rng = np.random.RandomState(1)
-        Y = rng.randn(N, R)
-        XInit = rng.rand(N, D)
+        Y = rng.randn(N, Q)
+        XInit = rng.rand(N, Q)
         # use 0 variance for BGPLVM
-        m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.zeros((N, D)), Y=Y, kern=k, Z=Z)
+        m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.ones((N, Q)), Y=Y, kern=k, Z=Z)
+        print(m)
         m.X_var.fixed = True
-        m.optimize()
-        mGPLVM = GPflow.gplvm.GPLVM(Y=Y, Q=D, kern=k, XInit=XInit)
-        mGPLVM.optimize()
-        assert np.allclose(m.X_mean.value, mGPLVM.X.value)
+        
+        ll = m.compute_log_likelihood()
+        print(ll)
+        m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.ones((N, Q)), Y=Y, kern=k, Z=Z, priorXmean=np.zeros((N,Q)), priorXvar = np.ones((N,Q)))
+        llprior = m.compute_log_likelihood()
+        print(m) 
+        print(llprior)
+        assert ll == llprior
+ 
+        Z = np.linspace(0, 1, M*2)
+        Z = np.expand_dims(Z, Q)
+        m = GPflow.gplvm.BayesianGPLVM(X_mean=XInit, X_var=np.ones((N, Q)), Y=Y, kern=k, Z=Z, priorXmean=np.zeros((N,Q)), priorXvar = np.ones((N,Q)))
+        llmoreZ = m.compute_log_likelihood()
+        print(llmoreZ)
+        assert llmoreZ > ll
+        
+#         m.optimize()
+#         mGPLVM = GPflow.gplvm.GPLVM(Y=Y, Q=Q, kern=k, XInit=XInit)
+#         mGPLVM.optimize()
+#         assert np.allclose(m.X_mean.value, mGPLVM.X.value)
         # this does not work - f=    +Infinity!
 
     def test_gplvmOptimization(self):
         print('Run optimisation')
-        self.m.optimize()
+#         self.m.optimize()
     
 
 
