@@ -1,12 +1,43 @@
 import tensorflow as tf
 import numpy as np
 from .model import GPModel
+from .gpr import GPR
 from .param import Param
 from .mean_functions import Zero
 from . import likelihoods
 from .tf_hacks import eye
 from . import kernel_expectations as ke
 from . import transforms
+from sklearn.decomposition import PCA
+
+
+class GPLVM(GPR):
+    '''
+    Standard GPLVM where the likelihood can be optimised with respect to the  latent X.
+    '''
+    def __init__(self, Y, Q, kern, XInit=None, mean_function=Zero()):
+        """
+        Y is a data matrix, size N x R
+        Z is a matrix of pseudo inputs, size M x D
+        XInit is a matrix, size N x Q, for the initialisation of the latent space.
+        kern, mean_function are appropriate GPflow objects
+
+        This method only works with a Gaussian likelihood.
+
+        """
+        assert Q > 0
+        self.num_latent = Q
+        if(XInit is None):
+            # Use PCA to initialise
+            pca = PCA(n_components=Q)
+            XInit = pca.fit_transform(Y)
+        else:
+            assert XInit.shape[1] == Q
+
+        GPR. __init__(self, XInit, Y, kern, mean_function=mean_function)
+#         GPModel.__init__(self, XInit, Y, kern, likelihood=likelihoods.Gaussian(), mean_function=Zero())
+        del self.X  # in GPLVM this is a Param
+        self.X = Param(XInit)
 
 
 class BayesianGPLVM(GPModel):
