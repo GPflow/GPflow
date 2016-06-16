@@ -39,10 +39,7 @@ class BayesianGPLVM(GPModel):
         Constuct a tensorflow function to compute the bound on the marginal
         likelihood.
         """
-
         num_inducing = tf.shape(self.Z)[0]
-        num_data = tf.shape(self.Y)[0]
-        output_dim = tf.shape(self.Y)[1]
 
         psi0, psi1, psi2 = ke.build_psi_stats(self.Z, self.kern, self.X_mean, self.X_var)
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
@@ -60,12 +57,13 @@ class BayesianGPLVM(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        ND = tf.cast(num_data*output_dim, tf.float64)
-        D = tf.cast(output_dim, tf.float64)
-        KL = -0.5*tf.reduce_sum(tf.log(self.X_var)) - 0.5 * ND +\
+        NQ = tf.cast(tf.size(self.X_mean), tf.float64)
+        D = tf.cast(tf.shape(self.Y)[1], tf.float64)
+        KL = -0.5*tf.reduce_sum(tf.log(self.X_var)) - 0.5 * NQ +\
             0.5 * tf.reduce_sum(tf.square(self.X_mean) + self.X_var)
 
         # compute log marginal bound
+        ND = tf.cast(tf.size(self.Y), tf.float64)
         bound = -0.5 * ND * tf.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
