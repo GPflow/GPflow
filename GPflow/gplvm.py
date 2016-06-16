@@ -42,7 +42,7 @@ class GPLVM(GPR):
 
 class BayesianGPLVM(GPModel):
 
-    def __init__(self, X_mean, X_var, Y, kern, Z):
+    def __init__(self, X_mean, X_var, Y, kern, Z, X_prior_mean=None, X_prior_var=None):
         """
         X_mean is a data matrix, size N x D
         X_var is a data matrix, size N x D (X_var > 0)
@@ -64,6 +64,14 @@ class BayesianGPLVM(GPModel):
 
         assert X_mean.shape[0] == Y.shape[0], 'X mean and Y must be same size.'
         assert X_var.shape[0] == Y.shape[0], 'X var and Y must be same size.'
+
+        # dea with parameters for the prior mean variance of X
+        if X_prior_mean is None:
+            X_prior_mean = np.zeros((self.num_data, self.num_latent))
+        self.X_prior_mean = X_prior_mean
+        if X_prior_var is None:
+            X_prior_var = np.ones((self.num_data, self.num_latent))
+        self.X_prior_var = X_prior_var
 
     def build_likelihood(self):
         """
@@ -90,8 +98,10 @@ class BayesianGPLVM(GPModel):
         # KL[q(x) || p(x)]
         NQ = tf.cast(tf.size(self.X_mean), tf.float64)
         D = tf.cast(tf.shape(self.Y)[1], tf.float64)
-        KL = -0.5*tf.reduce_sum(tf.log(self.X_var)) - 0.5 * NQ +\
-            0.5 * tf.reduce_sum(tf.square(self.X_mean) + self.X_var)
+        KL = -0.5*tf.reduce_sum(tf.log(self.X_var)) \
+            + 0.5*tf.reduce_sum(tf.log(self.X_prior_var))\
+            - 0.5 * NQ\
+            + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + self.X_var) / self.X_prior_var)
 
         # compute log marginal bound
         ND = tf.cast(tf.size(self.Y), tf.float64)
