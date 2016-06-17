@@ -338,9 +338,9 @@ class TestDictEmpty(unittest.TestCase):
         self.m = GPflow.model.Model()
 
     def test(self):
-        d = self.m.to_dict()
+        d = self.m.get_parameter_dict()
         self.assertTrue(len(d.keys()) == 0)
-        self.m.from_dict(d)
+        self.m.set_parameter_dict(d)
 
 
 class TestDictSimple(unittest.TestCase):
@@ -350,11 +350,11 @@ class TestDictSimple(unittest.TestCase):
         self.m.p2 = GPflow.param.Param(np.random.randn(10))
 
     def test(self):
-        d = self.m.to_dict()
+        d = self.m.get_parameter_dict()
         self.assertTrue(len(d.keys()) == 2)
         state1 = self.m.get_free_state().copy()
         self.m.set_state(state1 * 0)
-        self.m.from_dict(d)
+        self.m.set_parameter_dict(d)
         self.assertTrue(np.all(state1 == self.m.get_free_state()))
 
 
@@ -368,14 +368,14 @@ class TestDictSVGP(unittest.TestCase):
 
     def test(self):
         loglik1 = self.m.compute_log_likelihood()
-        d = self.m.to_dict()
+        d = self.m.get_parameter_dict()
 
         # muck up the model
         self.m.set_state(np.random.randn(self.m.get_free_state().size))
         loglik2 = self.m.compute_log_likelihood()
 
         # reset the model
-        self.m.from_dict(d)
+        self.m.set_parameter_dict(d)
         loglik3 = self.m.compute_log_likelihood()
 
         self.assertFalse(loglik1 == loglik2)

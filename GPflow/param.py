@@ -46,6 +46,10 @@ class Parentable(object):
 
     @property
     def long_name(self):
+        """
+        This is a unique identifier for a param object within a structure, made
+        by concatenating the names through the tree.
+        """
         if self._parent is None:
             return self.name
         return self._parent.long_name + '.' + self.name
@@ -139,10 +143,10 @@ class Param(Parentable):
     def value(self):
         return self._array.copy()
 
-    def to_dict(self, d):
+    def get_parameter_dict(self, d):
         d[self.long_name] = self.value
 
-    def from_dict(self, d):
+    def set_parameter_dict(self, d):
         self._array[...] = d.pop(self.long_name)
 
     def make_tf_array(self, free_array):
@@ -357,16 +361,16 @@ class Parameterized(Parentable):
         Parentable.__init__(self)
         self._tf_mode = False
 
-    def to_dict(self, d=None):
+    def get_parameter_dict(self, d=None):
         if d is None:
             d = {}
         for p in self.sorted_params:
-            p.to_dict(d)
+            p.get_parameter_dict(d)
         return d
 
-    def from_dict(self, d):
+    def set_parameter_dict(self, d):
         for p in self.sorted_params:
-            p.from_dict(d)
+            p.set_parameter_dict(d)
 
     def __getattribute__(self, key):
         """
@@ -407,7 +411,7 @@ class Parameterized(Parentable):
             p = getattr(self, key)
 
             # if the existing attribute is a parameter, and the value is an
-            # array (or float, int), then self the _array of that parameter
+            # array (or float, int), then set the _array of that parameter
             if isinstance(p, Param) and isinstance(value, (np.ndarray, float, int)):
                 p._array[...] = value
                 return  # don't call object.setattr or set the _parent value

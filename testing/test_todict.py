@@ -16,8 +16,8 @@ class TestPickleAndDict(unittest.TestCase):
         s1 = pickle.dumps(self.m)
         m1 = pickle.loads(s1)
 
-        d1 = self.m.to_dict()
-        d2 = m1.to_dict()
+        d1 = self.m.get_parameter_dict()
+        d2 = m1.get_parameter_dict()
         for key, val in d1.items():
             assert np.all(val == d2[key])
 
