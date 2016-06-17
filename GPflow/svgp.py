@@ -56,6 +56,17 @@ class SVGP(GPModel):
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Param(q_sqrt)
 
+    def __getstate__(self):
+        d = GPModel.__getstate__(self)
+        d.pop('_tfX')
+        d.pop('_tfY')
+        return d
+
+    def __setstate__(self, d):
+        GPModel.__setstate__(self, d)
+        self._tfX = tf.Variable(self.X, name="tfX")
+        self._tfY = tf.Variable(self.Y, name="tfY")
+
     @property
     def minibatch(self):
         if self._minibatch is None:

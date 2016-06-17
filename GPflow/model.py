@@ -75,12 +75,32 @@ class Model(Parameterized):
         Parameterized.__init__(self)
         self._name = name
         self._needs_recompile = True
-        self._free_vars = tf.placeholder('float64', name='free_vars')
         self._session = tf.Session()
+        self._free_vars = tf.placeholder(tf.float64)
 
     @property
     def name(self):
         return self._name
+
+    def __getstate__(self):
+        """
+        This mehtod is necessary for pickling objects
+        """
+        d = Parameterized.__getstate__(self)
+        d.pop('_session')
+        d.pop('_free_vars')
+        try:
+            d.pop('_objective')
+            d.pop('_minusF')
+            d.pop('_minusG')
+        except:
+            pass
+        return d
+
+    def __setstate__(self, d):
+        Parameterized.__setstate__(self, d)
+        self._needs_recompile = True
+        self._session = tf.Session()
 
     def _compile(self, optimizer=None):
         """

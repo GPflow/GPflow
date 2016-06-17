@@ -16,7 +16,9 @@ class Parentable(object):
     This class can figure out its own name (by seeing what it's called by the
     _parent's __dict__) and also recurse up to the highest_parent.
     """
-    _parent = None
+
+    def __init__(self):
+        self._parent = None
 
     @property
     def highest_parent(self):
@@ -119,10 +121,13 @@ class Param(Parentable):
     `self.transform` object is used to enable unconstrained optimization and
     MCMC.
     """
+
     def __init__(self, array, transform=transforms.Identity()):
         Parentable.__init__(self)
         self._array = np.asarray(np.atleast_1d(array), dtype=np.float64)
         self.transform = transform
+        self._tf_array = None
+        self._log_jacobian = None
         self.prior = None
         self.fixed = False
 
@@ -204,11 +209,11 @@ class Param(Parentable):
 
     def __str__(self, prepend=''):
         return prepend + \
-            '\033[1m' + self.name + '\033[0m' + \
-            ' transform:' + str(self.transform) + \
-            ' prior:' + str(self.prior) + \
-            (' [FIXED]' if self.fixed else '') + \
-            '\n' + str(self.value)
+               '\033[1m' + self.name + '\033[0m' + \
+               ' transform:' + str(self.transform) + \
+               ' prior:' + str(self.prior) + \
+               (' [FIXED]' if self.fixed else '') + \
+               '\n' + str(self.value)
 
     @property
     def size(self):
@@ -230,6 +235,22 @@ class Param(Parentable):
                                       else str(self.transform))
         html += "</tr>"
         return html
+
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_tf_array')
+        d.pop('_log_jacobian')
+        d.pop('_parent')
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self._tf_array = None
+        self._log_jacobian = None
+        self._parent = None
+        # NB the parent property will be set by the parent object, aprt from
+        # for the top level, where it muct be None
+        # the tf_array and _log jacobian will be replaced when the model is recompiled
 
 
 class AutoFlow:
@@ -322,6 +343,7 @@ class Parameterized(Parentable):
     Another recursive function is build_prior which sums the log-prior from all
     of the tree's parameters (whilst in tf_mode!).
     """
+
     def __init__(self):
         Parentable.__init__(self)
         self._tf_mode = False
@@ -521,6 +543,18 @@ class Parameterized(Parentable):
         html.append("</table>")
         return ''.join(html)
 
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_parent')
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+        self._parent = None
+        # reinstate _parent graph
+        for p in self.sorted_params:
+            p._parent = self
+
 
 class ParamList(Parameterized):
     """
@@ -558,6 +592,7 @@ class ParamList(Parameterized):
     >>> my_list[0] = new_param # raises exception
 
     """
+
     def __init__(self, list_of_params=[]):
         Parameterized.__init__(self)
         for item in list_of_params:
@@ -582,7 +617,7 @@ class ParamList(Parameterized):
         return o
 
     def append(self, item):
-        assert isinstance(item, (Param, Parameterized)),\
+        assert isinstance(item, (Param, Parameterized)), \
             "this object is for containing parameters"
         item._parent = self
         self.sorted_params.append(item)

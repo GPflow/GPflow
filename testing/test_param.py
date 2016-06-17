@@ -317,7 +317,6 @@ class TestParamList(unittest.TestCase):
         self.assertFalse(pzd._tf_mode)
 
     def test_in_model(self):
-
         class Foo(GPflow.model.Model):
             def __init__(self):
                 GPflow.model.Model.__init__(self)
