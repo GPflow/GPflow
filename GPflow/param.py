@@ -45,12 +45,6 @@ class Parentable(object):
                              referenced by a parent")
         return matches[0]
 
-    @property
-    def long_name(self):
-        if self._parent is None:
-            return self.name
-        return self._parent.long_name + '.' + self.name
-
 
 class Param(Parentable):
     """
