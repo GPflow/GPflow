@@ -21,7 +21,23 @@ class ObjectiveWrapper(object):
         self._previous_x = None
 
     def __call__(self, x):
-        f, g = self._objective(x)
+        try:
+            f, g = self._objective(x)
+        except tf.errors.InvalidArgumentError as e:
+            if((e.op.type == 'Cholesky' or e.op.type == 'MatrixTriangularSolve') and e.error_code==3):
+                ''' 
+                Failure in Cholesky op
+                The integer error code  3 denotes an 'LLT decomposition was not 
+                successful. The input might not be valid.' error.
+                '''
+                print("Warning: Matrix decomposition failed due to to singular matrix, setting objective to inf.")
+                # return inf objective and zero gradient
+                badgrad = np. zeros_like(x) 
+                badgrad[:] = np.nan
+                return np.inf, badgrad
+            else:
+                raise # re-raise the last exception.
+            
         g_is_fin = np.isfinite(g)
         if np.all(g_is_fin):
             self._previous_x = x  # store the last known good value
