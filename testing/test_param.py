@@ -5,6 +5,26 @@ import tensorflow as tf
 import numpy as np
 
 
+class NamingTests(unittest.TestCase):
+    def test_unnamed(self):
+        p = GPflow.param.Param(1)
+        self.assertTrue(p.name == 'unnamed')
+
+    def test_bad_parent(self):
+        p = GPflow.param.Param(1)
+        m = GPflow.model.Model()
+        p._parent = m  # do not do this.
+        with self.assertRaises(ValueError):
+            print p.name
+
+    def test_two_parents(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1)
+        m.p2 = m.p  # do not do this!
+        with self.assertRaises(ValueError):
+            print m.p.name
+
+
 class ParamTestsScalar(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
@@ -317,7 +337,6 @@ class TestParamList(unittest.TestCase):
         self.assertFalse(pzd._tf_mode)
 
     def test_in_model(self):
-
         class Foo(GPflow.model.Model):
             def __init__(self):
                 GPflow.model.Model.__init__(self)
@@ -331,6 +350,24 @@ class TestParamList(unittest.TestCase):
         self.assertTrue(m.get_free_state().size == 2)
         m.optimize(display=False)
         self.assertTrue(np.allclose(m.get_free_state(), 0.))
+
+
+class TestPickleAndDict(unittest.TestCase):
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(10, 1)
+        Y = rng.randn(10, 1)
+        self.m = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
+
+    def test(self):
+        # pickle and reload the model
+        s1 = pickle.dumps(self.m)
+        m1 = pickle.loads(s1)
+
+        d1 = self.m.get_parameter_dict()
+        d2 = m1.get_parameter_dict()
+        for key, val in d1.items():
+            assert np.all(val == d2[key])
 
 
 class TestDictEmpty(unittest.TestCase):

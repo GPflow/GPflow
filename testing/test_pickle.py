@@ -1,4 +1,5 @@
 import unittest
+import tensorflow as tf
 import GPflow
 import numpy as np
 import pickle
@@ -6,6 +7,7 @@ import pickle
 
 class TestPickleEmpty(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.m = GPflow.model.Model()
 
     def test(self):
@@ -15,6 +17,7 @@ class TestPickleEmpty(unittest.TestCase):
 
 class TestPickleSimple(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         self.m = GPflow.model.Model()
         self.m.p1 = GPflow.param.Param(np.random.randn(3, 2))
         self.m.p2 = GPflow.param.Param(np.random.randn(10))
@@ -28,6 +31,7 @@ class TestPickleSimple(unittest.TestCase):
 
 class TestPickleGPR(unittest.TestCase):
     def setUp(self):
+        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)
@@ -64,6 +68,7 @@ class TestPickleSVGP(unittest.TestCase):
     """
 
     def setUp(self):
+        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)
