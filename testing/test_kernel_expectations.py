@@ -29,8 +29,8 @@ class PsiComputer(GPflow.param.Parameterized):
 class TestPsi1_GH(unittest.TestCase):
     def setUp(self):
         rng = np.random.RandomState()
-        self.kerns = [GPflow.kernels.RBF(1), GPflow.kernels.Linear(1)]
-        #self.kerns = [GPflow.kernels.Linear(1)]#, GPflow.kernels.Linear(1)]
+        self.kerns = [GPflow.kernels.RBF(1), GPflow.kernels.Linear(1), GPflow.kernels.RBF(1)+GPflow.kernels.Linear(1)]
+        # self.kerns = [GPflow.kernels.Linear(1)]#, GPflow.kernels.Linear(1)]
         self.z = rng.randn(1, 1)
         self.mu = rng.randn()
         self.var = rng.rand()
