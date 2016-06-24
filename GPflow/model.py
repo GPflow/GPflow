@@ -77,7 +77,8 @@ class Model(Parameterized):
         self._needs_recompile = True
         self._session = tf.Session()
         self._free_vars = tf.placeholder(tf.float64)
-
+        self._data_dict = {}
+        
     @property
     def name(self):
         return self._name
@@ -102,6 +103,13 @@ class Model(Parameterized):
         self._needs_recompile = True
         self._session = tf.Session()
 
+    def get_data(self):
+        """
+        This method returns the data that should be fed into tensorflow
+        """
+        # TODO should be include the fixed parameters
+        return self._data_dict        
+        
     def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
@@ -131,11 +139,13 @@ class Model(Parameterized):
         sys.stdout.flush()
 
         def obj(x):
+            feed_dict = {self._free_vars: x}
+            feed_dict.update(self.get_data())
             return self._session.run([self._minusF, self._minusG],
-                                     feed_dict={self._free_vars: x})
+                                                     feed_dict=feed_dict)
 
         self._objective = obj
-        print("done")
+        print("done") 
         sys.stdout.flush()
         self._needs_recompile = False
 
@@ -309,9 +319,15 @@ class GPModel(Model):
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
-        self.X, self.Y, self.kern, self.likelihood, self.mean_function = \
-            X, Y, kern, likelihood, mean_function
+        self.kern, self.likelihood, self.mean_function = \
+            kern, likelihood, mean_function
         Model.__init__(self, name)
+
+        # set of data is stored in dict self._data_dict 
+        # self._data_dict will be feeded to tensorflow at the runtime.
+        self.X = tf.placeholder(tf.float64, shape=X.shape, name="X")
+        self.Y = tf.placeholder(tf.float64, shape=Y.shape, name="Y")
+        self._data_dict= {self.X: X, self.Y: Y}
 
     def build_predict(self):
         raise NotImplementedError

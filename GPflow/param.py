@@ -169,6 +169,18 @@ class Param(Parentable):
             return np.empty((0,))
         return self.transform.backward(self.value.flatten())
 
+        """
+    def get_fixed_state(self):
+        Take the current state of this variable, as stored in self.value, and
+        transform it to the 'fixed' state.
+
+        This is a numpy method.
+        if self.fixed:
+            return self.transform.backward(self.value.flatten())
+        else:
+            return np.empty((0,))
+        """
+
     def set_state(self, x):
         """
         Given a vector x representing the 'free' state of this Param, transform
@@ -321,6 +333,7 @@ class AutoFlow:
                 storage['session'].run(tf.initialize_all_variables())
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
+            feed_dict.update(instance.get_data())
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
