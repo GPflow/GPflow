@@ -151,9 +151,9 @@ class Param(Parentable):
 
         if self.fixed:
             # fixed parameters are treated by tf.placeholder
-            self._tf_array = tf.placeholder(dtype=tf.float64, 
-                            shape = self._array.shape, name=self.name)
-            #self._tf_array = tf.constant(self._array.copy(), dtype=tf.float64)
+            self._tf_array = tf.placeholder(dtype=tf.float64,
+                                            shape=self._array.shape,
+                                            name=self.name)
             return 0
         x_free = free_array[:self.size]
         mapped_array = self.transform.tf_forward(x_free)
@@ -171,16 +171,16 @@ class Param(Parentable):
         if self.fixed:
             return np.empty((0,))
         return self.transform.backward(self.value.flatten())
-        
+
     def get_feed_dict(self):
         """
         Return a dictionary matching up any fixed-placeholders to their values
         """
         d = {}
         if self.fixed:
-            return d[self._tf_array] = self.value
+            d[self._tf_array] = self.value
         return d
-            
+
     def set_state(self, x):
         """
         Given a vector x representing the 'free' state of this Param, transform
@@ -334,8 +334,7 @@ class AutoFlow:
                 storage['session'].run(tf.initialize_all_variables())
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
-            feed_dict.update(instance.get_data())
-            feed_dict.update(dict(zip(storage['fixed_vars'], instance.get_fixed_state())))
+            feed_dict.update(instance.get_feed_dict())
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
