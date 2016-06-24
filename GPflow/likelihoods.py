@@ -359,7 +359,7 @@ class RobustMax(object):
         var_selected = tf.reduce_sum(oh_on * var, 1)
 
         # generate Gauss Hermite grid
-        X = tf.reshape(mu_selected, (-1, 1)) + gh_x * tf.reshape(tf.sqrt(2 * var_selected), (-1, 1))
+        X = tf.reshape(mu_selected, (-1, 1)) + gh_x * tf.reshape(tf.sqrt(tf.clip_by_value(2. * var_selected, 1e-10, np.inf)), (-1, 1))
 
         # compute the CDF of the Gaussian between the latent functions and the grid (includeing the selected function)
         dist = (tf.expand_dims(X, 1) - tf.expand_dims(mu, 2)) / tf.expand_dims(tf.sqrt(var), 2)
@@ -406,7 +406,7 @@ class MultiClass(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
+            gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
             p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
             return p * np.log(1-self.invlink.epsilon) + (1.-p) * np.log(self.invlink._eps_K1)
         else:
@@ -414,23 +414,19 @@ class MultiClass(Likelihood):
 
     def predict_mean_and_var(self, Fmu, Fvar):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
-
-            ps = tf.pack([tf.reshape(
-                self.invlink.prob_is_largest(
-                    tf.fill(tf.pack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)),
-                    Fmu, Fvar, gh_x, gh_w),
-                (-1,)) for i in range(self.num_classes)])
-            ps = tf.transpose(ps)
+            # To compute this, we'll compute the density for each possible output
+            possible_outputs = [tf.fill(tf.pack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in range(self.num_classes)]
+            ps = [self.predict_density(Fmu, Fvar, po) for po in possible_outputs]
+            ps = tf.transpose(tf.pack([tf.reshape(p, (-1,)) for p in ps]))
             return ps, ps - tf.square(ps)
         else:
             raise NotImplementedError
 
     def predict_density(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
+            gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
             p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1.-self.invlink.epsilon) + (1. - p) * self.invlink._eps_K1
+            return p * (1. - self.invlink.epsilon) + (1. - p) * self.invlink._eps_K1
         else:
             raise NotImplementedError
 
