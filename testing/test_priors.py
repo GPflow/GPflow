@@ -39,9 +39,18 @@ class PriorModeTests(unittest.TestCase):
         self.m.x.prior = GPflow.priors.Gamma(shape, scale)
         self.m.optimize(display=0)
 
-        print(self.m.x._array, (shape - 1) * scale)
         true_mode = (shape - 1.) * scale
-        self.failUnless(np.allclose(self.m.x._array, true_mode, 1e-3))
+        self.failUnless(np.allclose(self.m.x.value, true_mode, 1e-3))
+
+    def testLaplaceMode(self):
+        self.m.x = GPflow.param.Param(1.0)
+        self.m.x.prior = GPflow.priors.Laplace(3, 10)
+        self.m.optimize(display=0)
+
+        xmax = self.m.get_free_state()
+        self.failUnless(np.allclose(xmax, 3))
+
+
 
 
 if __name__ == "__main__":

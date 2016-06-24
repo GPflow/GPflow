@@ -1,40 +1,15 @@
 # GPflow
 
 GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
-The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is James Hensman, Pablo Leon, Alexander G. de G. Matthews, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
+The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexis Boukouvalas, James Hensman, Pablo Leon, Alexander G. de G. Matthews, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
 [![Build status](https://codeship.com/projects/26b43920-e96e-0133-3481-02cde9680eda/status?branch=master)](https://codeship.com/projects/147609)
 [![Coverage Status](https://coveralls.io/repos/github/GPflow/GPflow/badge.svg?branch=HEAD)](https://coveralls.io/github/GPflow/GPflow?branch=HEAD)
 
 # Install
 
-## 1) Install Tensorflow
-
-To make Gaussian processes work, we've had to add some extra functionality to TensorFlow. Our code is now included in the main TensorFlow repository and we are waiting for it to be part of the next release. Until then we have compiled pip packages from the TensorFlow master branch for you to use. Be aware that changing your installation of TensorFlow may change how it works for you.
-
-EITHER:
-
-### 1a) Install Tensorflow using Pip. Best option for most users.
-
-The sequence of commands for Linux is:
-
-```
-pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.4/linux/tensorflow-0.8.0rc0-py2-none-any.whl
-```
-
-The sequence of commands for Mac OS is:
-
-```
-pip uninstall tensorflow
-pip install http://mlg.eng.cam.ac.uk/matthews/GPflow/python_packages/version_0.4/osx/tensorflow-0.8.0rc0-py2-none-any.whl
-```
-
-OR:
-
-### 1b) Install Tensorflow fork from sources.
-
-For more information see [this page](https://www.tensorflow.org/versions/master/get_started/os_setup.html#installing-from-sources).
+## 1) Install TensorFlow. 
+Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r0.9/get_started/os_setup.html#download-and-setup). You will need at least version 0.9 . We find that for many users pip installation is the fastest way to get going.
 
 ## 2) install package
 GPflow is a pure python library for now, so you could just add it to your path (we use `python setup.py develop`) or try an install `python setup.py install` (untested). You can run the tests with `python setup.py test`.

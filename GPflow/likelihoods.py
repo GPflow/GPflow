@@ -3,6 +3,8 @@ import tensorflow as tf
 import numpy as np
 from .param import Parameterized, Param
 from . import transforms
+hermgauss = np.polynomial.hermite.hermgauss
+
 
 
 class Likelihood(Parameterized):
@@ -14,7 +16,8 @@ class Likelihood(Parameterized):
         """
         Return the log density of the data given the function values.
         """
-        raise NotImplementedError("implement the logp function for this likelihood")
+        raise NotImplementedError("implement the logp function\
+                                  for this likelihood")
 
     def conditional_mean(self, F):
         """
@@ -24,7 +27,7 @@ class Likelihood(Parameterized):
 
             p(y|f)
 
-        then this mehtod computes
+        then this method computes
 
             \int y p(y|f) dy
         """
@@ -38,7 +41,7 @@ class Likelihood(Parameterized):
 
             p(y|f)
 
-        then this mehtod computes
+        then this method computes
 
             \int y^2 p(y|f) dy  - [\int y p(y|f) dy] ^ 2
 
@@ -47,7 +50,8 @@ class Likelihood(Parameterized):
 
     def predict_mean_and_var(self, Fmu, Fvar):
         """
-        Given a Normal distribution for the latend function, return the mean of Y
+        Given a Normal distribution for the latent function,
+        return the mean of Y
 
         if
             q(f) = N(Fmu, Fvar)
@@ -67,7 +71,7 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
         """
-        gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
+        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         gh_w /= np.sqrt(np.pi)
         gh_w = gh_w.reshape(-1, 1)
         shape = tf.shape(Fmu)
@@ -78,7 +82,9 @@ class Likelihood(Parameterized):
         E_y = tf.reshape(tf.matmul(self.conditional_mean(X), gh_w), shape)
 
         # here's the quadrature for the variance
-        V_y = tf.reshape(tf.matmul(self.conditional_variance(X) + tf.square(self.conditional_mean(X)), gh_w), shape) - tf.square(E_y)
+        integrand = self.conditional_variance(X)\
+            + tf.square(self.conditional_mean(X))
+        V_y = tf.reshape(tf.matmul(integrand, gh_w), shape) - tf.square(E_y)
 
         return E_y, V_y
 
@@ -101,12 +107,20 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
+<<<<<<< HEAD
         gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
+=======
+        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+>>>>>>> master
         gh_w = gh_w.reshape(-1, 1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
         Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
         X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
+<<<<<<< HEAD
         Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
+=======
+        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])
+>>>>>>> master
         logp = self.logp(X, Y)
         return tf.reshape(tf.log(tf.matmul(tf.exp(logp), gh_w)), shape)
 
@@ -130,13 +144,21 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
+<<<<<<< HEAD
         gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
+=======
+        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+>>>>>>> master
         gh_x = gh_x.reshape(1, -1)
         gh_w = gh_w.reshape(-1, 1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
         Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
         X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
+<<<<<<< HEAD
         Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
+=======
+        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])
+>>>>>>> master
         logp = self.logp(X, Y)
         return tf.reshape(tf.matmul(logp, gh_w), shape)
 
@@ -153,7 +175,7 @@ class Gaussian(Likelihood):
         return tf.identity(F)
 
     def conditional_variance(self, F):
-        return tf.ones_like(F) * self.variance
+        return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
@@ -162,7 +184,12 @@ class Gaussian(Likelihood):
         return densities.gaussian(Fmu, Y, Fvar + self.variance)
 
     def variational_expectations(self, Fmu, Fvar, Y):
+<<<<<<< HEAD
         return -0.5*np.log(2*np.pi) - 0.5*tf.log(self.variance) - 0.5*(tf.square(Y - Fmu) + Fvar)/self.variance
+=======
+        return -0.5*np.log(2*np.pi) - 0.5*tf.log(self.variance)\
+            - 0.5*(tf.square(Y - Fmu) + Fvar)/self.variance
+>>>>>>> master
 
 
 class Poisson(Likelihood):
@@ -284,7 +311,7 @@ class Gamma(Likelihood):
 
 class Beta(Likelihood):
     """
-    This uses a reparameterization of the Beta density. We have the mean of the
+    This uses a reparameterisation of the Beta density. We have the mean of the
     Beta distribution given by the transformed process:
 
         m = sigma(f)
