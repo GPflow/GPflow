@@ -1,5 +1,5 @@
 from __future__ import print_function
-from .param import Parameterized, AutoFlow
+from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
@@ -77,7 +77,6 @@ class Model(Parameterized):
         self._needs_recompile = True
         self._session = tf.Session()
         self._free_vars = tf.placeholder(tf.float64)
-        self._data_dict = {}
 
     @property
     def name(self):
@@ -102,15 +101,6 @@ class Model(Parameterized):
         Parameterized.__setstate__(self, d)
         self._needs_recompile = True
         self._session = tf.Session()
-
-    def get_feed_dict(self):
-        """
-        Return a dicitonary containing all the placeholder-value pairs that
-        should be fed to tensorflow in order to evaluate the model
-        """
-        d = Parameterized.get_feed_dict(self)
-        d.update(self._data_dict)
-        return d
 
     def _compile(self, optimizer=None):
         """
@@ -324,11 +314,8 @@ class GPModel(Model):
             kern, likelihood, mean_function
         Model.__init__(self, name)
 
-        # set of data is stored in dict self._data_dict
-        # self._data_dict will be feeded to tensorflow at the runtime.
-        self.X = tf.placeholder(tf.float64, shape=X.shape, name="X")
-        self.Y = tf.placeholder(tf.float64, shape=Y.shape, name="Y")
-        self._data_dict = {self.X: X, self.Y: Y}
+        self.X = DataHolder(X)
+        self.Y = DataHolder(Y)
 
     def build_predict(self):
         raise NotImplementedError

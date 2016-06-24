@@ -45,6 +45,50 @@ class Parentable(object):
                              referenced by a parent")
         return matches[0]
 
+    def __getstate__(self):
+        d = object.__getstate__(self)
+        d.pop('_parent')
+        return d
+
+    def __setstate__(self, d):
+        object.__setstate__(self, d)
+        self._parent = None
+
+
+class DataHolder(Parentable):
+    """
+    """
+    def __init__(self, array):
+        """
+        """
+        Parentable.__init__(self)
+        self._array = array
+
+    def make_tf_array(self, X):
+        self._tf_array = tf.placeholder(dtype=tf.float64,
+                                        shape=self._array.shape,
+                                        name=self.name)
+
+    @property
+    def value(self):
+        return self._array.copy()
+
+    def get_feed_dict(self):
+        return {self._tf_array: self._array}
+
+    def __getstate__(self):
+        d = Parentable.__getstate__(self)
+        d.pop('_tf_array')
+        return d
+
+    @property
+    def size(self):
+        return self._array.size
+
+    @property
+    def shape(self):
+        return self._array.shape
+
 
 class Param(Parentable):
     """
@@ -249,18 +293,16 @@ class Param(Parentable):
         return html
 
     def __getstate__(self):
-        d = self.__dict__.copy()
+        d = Parentable.__getstate__(self)
         d.pop('_tf_array')
         d.pop('_log_jacobian')
-        d.pop('_parent')
         return d
 
     def __setstate__(self, d):
-        self.__dict__ = d
+        Parentable.__setstate__(self, d)
         self._tf_array = None
         self._log_jacobian = None
-        self._parent = None
-        # NB the parent property will be set by the parent object, aprt from
+        # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
 
@@ -371,7 +413,7 @@ class Parameterized(Parentable):
         representations.
         """
         o = object.__getattribute__(self, key)
-        if isinstance(o, Param) and object.__getattribute__(self, '_tf_mode'):
+        if isinstance(o, (Param, DataHolder)) and object.__getattribute__(self, '_tf_mode'):
             return o._tf_array
         return o
 
@@ -437,6 +479,8 @@ class Parameterized(Parentable):
         count = 0
         for p in self.sorted_params:
             count += p.make_tf_array(X[count:])
+        for d in self.data_holders:
+            d.make_tf_array()
         return count
 
     @property
@@ -449,6 +493,14 @@ class Parameterized(Parentable):
                   if isinstance(child, (Param, Parameterized))
                   and key is not '_parent']
         return sorted(params, key=id)
+
+    @property
+    def data_holders(self):
+        """
+        Return a list of all the child DataHolders
+        """
+        return [child for key, child in self.__dict__.items()
+                if isinstance(child, DataHolder)]
 
     @property
     def fixed(self):
@@ -473,7 +525,7 @@ class Parameterized(Parentable):
         associated values
         """
         d = {}
-        for p in self.sorted_params:
+        for p in self.sorted_params + self.data_holders:
             d.update(p.get_feed_dict())
         return d
 
@@ -566,16 +618,10 @@ class Parameterized(Parentable):
         html.append("</table>")
         return ''.join(html)
 
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        d.pop('_parent')
-        return d
-
     def __setstate__(self, d):
-        self.__dict__ = d
-        self._parent = None
+        Parentable.__setstate__(self, d)
         # reinstate _parent graph
-        for p in self.sorted_params:
+        for p in self.sorted_params + self.data_holders:
             p._parent = self
 
 
