@@ -18,16 +18,14 @@ class GPR(GPModel):
         """
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
-        self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
-        
+
     def update_data(self, X, Y):
         """
         Update the data X and Y.
         If the shape changes, it will recompile but would work.
         """
         super(GPR, self).update_data(X, Y)
-        self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
     def build_likelihood(self):
@@ -37,7 +35,7 @@ class GPR(GPModel):
             \log p(Y, V | theta).
 
         """
-        K = self.kern.K(self.X) + eye(self.num_data) * self.likelihood.variance
+        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
 
@@ -55,7 +53,7 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + eye(self.num_data) * self.likelihood.variance
+        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
         V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))
