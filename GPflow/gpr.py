@@ -20,6 +20,15 @@ class GPR(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
+        
+    def update_data(self, X, Y):
+        """
+        Update the data X and Y.
+        If the shape changes, it will recompile but would work.
+        """
+        super(GPR, self).update_data(X, Y)
+        self.num_data = X.shape[0]
+        self.num_latent = Y.shape[1]
 
     def build_likelihood(self):
         """
@@ -57,5 +66,5 @@ class GPR(GPModel):
             fvar = tf.tile(tf.expand_dims(fvar, 2), shape)
         else:
             fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
-            fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, self.Y.shape[1]])
+            fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, tf.shape(self.Y)[1]])
         return fmean, fvar

@@ -77,7 +77,8 @@ class Model(Parameterized):
         self._needs_recompile = True
         self._session = tf.Session()
         self._free_vars = tf.placeholder(tf.float64)
-
+        self._data_dict = {}
+        
     @property
     def name(self):
         return self._name
@@ -102,6 +103,12 @@ class Model(Parameterized):
         self._needs_recompile = True
         self._session = tf.Session()
 
+    def get_data(self):
+        """
+        This method returns the data that should be fed into tensorflow
+        """
+        return self._data_dict        
+        
     def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
@@ -112,6 +119,7 @@ class Model(Parameterized):
         with self.tf_mode():
             f = self.build_likelihood() + self.build_prior()
             g, = tf.gradients(f, self._free_vars)
+            self._fixed_vars = self.get_placeholders()
 
         self._minusF = tf.neg(f, name='objective')
         self._minusG = tf.neg(g, name='grad_objective')
@@ -131,11 +139,15 @@ class Model(Parameterized):
         sys.stdout.flush()
 
         def obj(x):
+            feed_dict = {self._free_vars: x}
+            feed_dict.update(self.get_data())
+            feed_dict.update(
+                    dict(zip(self._fixed_vars, self.get_fixed_state())))
             return self._session.run([self._minusF, self._minusG],
-                                     feed_dict={self._free_vars: x})
+                                                     feed_dict=feed_dict)
 
         self._objective = obj
-        print("done")
+        print("done") 
         sys.stdout.flush()
         self._needs_recompile = False
 
@@ -206,9 +218,14 @@ class Model(Parameterized):
             iteration = 0
             while iteration < max_iters:
                 if calc_feed_dict is None:
-                    feed_dict = {}
+                    feed_dict = self.get_data()
+                    feed_dict.update(
+                        dict(zip(self._fixed_vars, self.get_fixed_state())))
                 else:
-                    feed_dict = calc_feed_dict()
+                    feed_dict = self.get_data()
+                    feed_dict.update(
+                        dict(zip(self._fixed_vars, self.get_fixed_state())))
+                    feed_dict.update(calc_feed_dict())
                 self._session.run(opt_step, feed_dict=feed_dict)
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
@@ -309,9 +326,15 @@ class GPModel(Model):
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
-        self.X, self.Y, self.kern, self.likelihood, self.mean_function = \
-            X, Y, kern, likelihood, mean_function
+        self.kern, self.likelihood, self.mean_function = \
+            kern, likelihood, mean_function
         Model.__init__(self, name)
+
+        # set of data is stored in dict self._data_dict 
+        # self._data_dict will be feeded to tensorflow at the runtime.
+        self.X = tf.placeholder(tf.float64, shape=X.shape, name="X")
+        self.Y = tf.placeholder(tf.float64, shape=Y.shape, name="Y")
+        self._data_dict= {self.X: X, self.Y: Y}
 
     def build_predict(self):
         raise NotImplementedError
@@ -366,3 +389,22 @@ class GPModel(Model):
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
+
+    def update_data(self, X, Y):
+        """
+        Update data.
+        If size of data was changed, then it will recompile.
+        """
+        if (X.shape != self._data_dict[self.X].shape) or \
+           (Y.shape != self._data_dict[self.Y].shape):
+            self.X = tf.placeholder(tf.float64, shape=X.shape, name="X")
+            self.Y = tf.placeholder(tf.float64, shape=Y.shape, name="Y")
+            # raise the recompilation flag
+            self._needs_recompile = True
+            # autoflow also should be killed.
+            self._kill_autoflow()
+        
+        self._data_dict= {self.X: X, self.Y: Y}
+        
+        
+        

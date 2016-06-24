@@ -150,7 +150,10 @@ class Param(Parentable):
         # TODO what about constraints that change the size ??
 
         if self.fixed:
-            self._tf_array = tf.constant(self._array.copy(), dtype=tf.float64)
+            # fixed parameters are treated by tf.placeholder
+            self._tf_array = tf.placeholder(dtype=tf.float64, 
+                            shape = self._array.shape, name=self.name)
+            #self._tf_array = tf.constant(self._array.copy(), dtype=tf.float64)
             return 0
         x_free = free_array[:self.size]
         mapped_array = self.transform.tf_forward(x_free)
@@ -168,6 +171,27 @@ class Param(Parentable):
         if self.fixed:
             return np.empty((0,))
         return self.transform.backward(self.value.flatten())
+        
+    def get_fixed_state(self):
+        """
+        Take the fixed state of this variable.
+        Return a list of np_arrays
+        """
+        if self.fixed:
+            return [self.value]
+        else:
+            return []
+            
+    def get_placeholders(self):
+        """
+        Take the fixed variable as represented by tf.placeholder
+        Return a list of placeholders
+        """
+        if self.fixed:
+            return [self._tf_array,]
+        else:
+            return []
+        
 
     def set_state(self, x):
         """
@@ -317,10 +341,13 @@ class AutoFlow:
                 storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                 with instance.tf_mode():
                     storage['tf_result'] = tf_method(instance, *storage['tf_args'])
+                    storage['fixed_vars'] = instance.get_placeholders()
                 storage['session'] = tf.Session()
                 storage['session'].run(tf.initialize_all_variables())
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
+            feed_dict.update(instance.get_data())
+            feed_dict.update(dict(zip(storage['fixed_vars'], instance.get_fixed_state())))
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
@@ -453,6 +480,25 @@ class Parameterized(Parentable):
         # Here, additional empty array allows hstacking of empty list
         return np.hstack([p.get_free_state() for p in self.sorted_params]
                          + [np.empty(0)])
+        
+    def get_fixed_state(self):
+        """
+        recursely get the np.array for the fixed parameters
+        """
+        fixed_state = []
+        for p in self.sorted_params:
+            fixed_state+=p.get_fixed_state()
+        return fixed_state
+        
+    def get_placeholders(self):
+        """
+        recursely get the tf.placeholders for the fixed parameters
+        """
+        placeholders = []
+        for p in self.sorted_params:
+            placeholders+=p.get_placeholders()
+        return placeholders
+        
 
     def set_state(self, x):
         """
