@@ -78,7 +78,7 @@ class Model(Parameterized):
         self._session = tf.Session()
         self._free_vars = tf.placeholder(tf.float64)
         self._data_dict = {}
-        
+
     @property
     def name(self):
         return self._name
@@ -103,12 +103,15 @@ class Model(Parameterized):
         self._needs_recompile = True
         self._session = tf.Session()
 
-    def get_data(self):
+    def get_feed_dict(self):
         """
-        This method returns the data that should be fed into tensorflow
+        Return a dicitonary containing all the placeholder-value pairs that
+        should be fed to tensorflow in order to evaluate the model
         """
-        return self._data_dict        
-        
+        d = Parameterized.get_feed_dict(self)
+        d.update(self._data_dict)
+        return d
+
     def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
@@ -119,7 +122,6 @@ class Model(Parameterized):
         with self.tf_mode():
             f = self.build_likelihood() + self.build_prior()
             g, = tf.gradients(f, self._free_vars)
-            self._fixed_vars = self.get_placeholders()
 
         self._minusF = tf.neg(f, name='objective')
         self._minusG = tf.neg(g, name='grad_objective')
@@ -140,14 +142,12 @@ class Model(Parameterized):
 
         def obj(x):
             feed_dict = {self._free_vars: x}
-            feed_dict.update(self.get_data())
-            feed_dict.update(
-                    dict(zip(self._fixed_vars, self.get_fixed_state())))
+            feed_dict.update(self.get_feed_dict())
             return self._session.run([self._minusF, self._minusG],
-                                                     feed_dict=feed_dict)
+                                     feed_dict=feed_dict)
 
         self._objective = obj
-        print("done") 
+        print("done")
         sys.stdout.flush()
         self._needs_recompile = False
 
@@ -217,14 +217,8 @@ class Model(Parameterized):
         try:
             iteration = 0
             while iteration < max_iters:
-                if calc_feed_dict is None:
-                    feed_dict = self.get_data()
-                    feed_dict.update(
-                        dict(zip(self._fixed_vars, self.get_fixed_state())))
-                else:
-                    feed_dict = self.get_data()
-                    feed_dict.update(
-                        dict(zip(self._fixed_vars, self.get_fixed_state())))
+                feed_dict = self.get_feed_dict()
+                if calc_feed_dict is not None:
                     feed_dict.update(calc_feed_dict())
                 self._session.run(opt_step, feed_dict=feed_dict)
                 if callback is not None:
@@ -330,11 +324,11 @@ class GPModel(Model):
             kern, likelihood, mean_function
         Model.__init__(self, name)
 
-        # set of data is stored in dict self._data_dict 
+        # set of data is stored in dict self._data_dict
         # self._data_dict will be feeded to tensorflow at the runtime.
         self.X = tf.placeholder(tf.float64, shape=X.shape, name="X")
         self.Y = tf.placeholder(tf.float64, shape=Y.shape, name="Y")
-        self._data_dict= {self.X: X, self.Y: Y}
+        self._data_dict = {self.X: X, self.Y: Y}
 
     def build_predict(self):
         raise NotImplementedError
@@ -403,8 +397,5 @@ class GPModel(Model):
             self._needs_recompile = True
             # autoflow also should be killed.
             self._kill_autoflow()
-        
-        self._data_dict= {self.X: X, self.Y: Y}
-        
-        
-        
+
+        self._data_dict = {self.X: X, self.Y: Y}

@@ -172,27 +172,15 @@ class Param(Parentable):
             return np.empty((0,))
         return self.transform.backward(self.value.flatten())
         
-    def get_fixed_state(self):
+    def get_feed_dict(self):
         """
-        Take the fixed state of this variable.
-        Return a list of np_arrays
+        Return a dictionary matching up any fixed-placeholders to their values
         """
+        d = {}
         if self.fixed:
-            return [self.value]
-        else:
-            return []
+            return d[self._tf_array] = self.value
+        return d
             
-    def get_placeholders(self):
-        """
-        Take the fixed variable as represented by tf.placeholder
-        Return a list of placeholders
-        """
-        if self.fixed:
-            return [self._tf_array,]
-        else:
-            return []
-        
-
     def set_state(self, x):
         """
         Given a vector x representing the 'free' state of this Param, transform
@@ -480,25 +468,16 @@ class Parameterized(Parentable):
         # Here, additional empty array allows hstacking of empty list
         return np.hstack([p.get_free_state() for p in self.sorted_params]
                          + [np.empty(0)])
-        
-    def get_fixed_state(self):
+
+    def get_feed_dict(self):
         """
-        recursely get the np.array for the fixed parameters
+        Recursively fetch a dictionary matching up fixed-placeholders to
+        associated values
         """
-        fixed_state = []
+        d = {}
         for p in self.sorted_params:
-            fixed_state+=p.get_fixed_state()
-        return fixed_state
-        
-    def get_placeholders(self):
-        """
-        recursely get the tf.placeholders for the fixed parameters
-        """
-        placeholders = []
-        for p in self.sorted_params:
-            placeholders+=p.get_placeholders()
-        return placeholders
-        
+            d.update(p.get_feed_dict())
+        return d
 
     def set_state(self, x):
         """
