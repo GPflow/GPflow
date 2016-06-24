@@ -107,7 +107,6 @@ class Model(Parameterized):
         """
         This method returns the data that should be fed into tensorflow
         """
-        # TODO should be include the fixed parameters
         return self._data_dict        
         
     def _compile(self, optimizer=None):
@@ -118,9 +117,9 @@ class Model(Parameterized):
 
         self.make_tf_array(self._free_vars)
         with self.tf_mode():
-            self._fixed_vars = self.get_placeholders()
             f = self.build_likelihood() + self.build_prior()
             g, = tf.gradients(f, self._free_vars)
+            self._fixed_vars = self.get_placeholders()
 
         self._minusF = tf.neg(f, name='objective')
         self._minusG = tf.neg(g, name='grad_objective')
@@ -398,9 +397,12 @@ class GPModel(Model):
         """
         if (X.shape != self._data_dict[self.X].shape) or \
            (Y.shape != self._data_dict[self.Y].shape):
-            self._needs_recompile = True
             self.X = tf.placeholder(tf.float64, shape=X.shape, name="X")
             self.Y = tf.placeholder(tf.float64, shape=Y.shape, name="Y")
+            # raise the recompilation flag
+            self._needs_recompile = True
+            # autoflow also should be killed.
+            self._kill_autoflow()
         
         self._data_dict= {self.X: X, self.Y: Y}
         
