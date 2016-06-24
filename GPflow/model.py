@@ -118,6 +118,7 @@ class Model(Parameterized):
 
         self.make_tf_array(self._free_vars)
         with self.tf_mode():
+            self._fixed_vars = self.get_placeholders()
             f = self.build_likelihood() + self.build_prior()
             g, = tf.gradients(f, self._free_vars)
 
@@ -141,6 +142,8 @@ class Model(Parameterized):
         def obj(x):
             feed_dict = {self._free_vars: x}
             feed_dict.update(self.get_data())
+            feed_dict.update(
+                    dict(zip(self._fixed_vars, self.get_fixed_state())))
             return self._session.run([self._minusF, self._minusG],
                                                      feed_dict=feed_dict)
 
@@ -216,9 +219,14 @@ class Model(Parameterized):
             iteration = 0
             while iteration < max_iters:
                 if calc_feed_dict is None:
-                    feed_dict = {}
+                    feed_dict = self.get_data()
+                    feed_dict.update(
+                        dict(zip(self._fixed_vars, self.get_fixed_state())))
                 else:
-                    feed_dict = calc_feed_dict()
+                    feed_dict = self.get_data()
+                    feed_dict.update(
+                        dict(zip(self._fixed_vars, self.get_fixed_state())))
+                    feed_dict.update(calc_feed_dict())
                 self._session.run(opt_step, feed_dict=feed_dict)
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
@@ -382,3 +390,19 @@ class GPModel(Model):
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
+
+    def update_data(self, X, Y):
+        """
+        Update data.
+        If size of data was changed, then it will recompile.
+        """
+        if (X.shape != self._data_dict[self.X].shape) or \
+           (Y.shape != self._data_dict[self.Y].shape):
+            self._needs_recompile = True
+            self.X = tf.placeholder(tf.float64, shape=X.shape, name="X")
+            self.Y = tf.placeholder(tf.float64, shape=Y.shape, name="Y")
+        
+        self._data_dict= {self.X: X, self.Y: Y}
+        
+        
+        

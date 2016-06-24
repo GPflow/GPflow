@@ -44,6 +44,21 @@ class VGP(GPModel):
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
+    def update_data(self, X, Y, num_latent=None):
+        """
+        Update the data X and Y.
+        If the shape changes, it will recompile but would work.
+        """
+        super(VGP, self).update_data(X, Y)
+        self.num_data = X.shape[0]
+        # if the number of parameters was changed, recompile is ncecessary.
+        if self.num_latent != num_latent:
+            self._needs_recompile = True
+        self.num_latent = num_latent or Y.shape[1]
+        self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
+        self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
+                              transforms.positive)
+        
     def build_likelihood(self):
         """
         q_alpha, q_lambda are variational parameters, size N x R

@@ -20,6 +20,15 @@ class GPR(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
+        
+    def update_data(self, X, Y):
+        """
+        Update the data X and Y.
+        If the shape changes, it will recompile but would work.
+        """
+        super(GPR, self).update_data(X, Y)
+        self.num_data = X.shape[0]
+        self.num_latent = Y.shape[1]
 
     def build_likelihood(self):
         """
