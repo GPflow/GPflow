@@ -377,47 +377,47 @@ class RobustMax(object):
 
 
 class MultiClass(Likelihood):
-    def __init__(self, num_classes, inv_link=None):
+    def __init__(self, num_classes, invlink=None):
         """
         A likelihood that can do multi-way classification. We use the softmax
         and RobustMax inverse-link functions, defaulting to RobustMax
 
-        Valid choices of inv_link are
+        Valid choices of invlink are
            - an instance of RobustMax
            - tf.nn.softmax
         """
         Likelihood.__init__(self)
         self.num_classes = num_classes
-        if inv_link is None:
-            inv_link = RobustMax(self.num_classes)
-            self.inv_link = inv_link
+        if invlink is None:
+            invlink = RobustMax(self.num_classes)
+            self.invlink = invlink
 
     def logp(self, F, Y):
-        if isinstance(self.inv_link, RobustMax):
+        if isinstance(self.invlink, RobustMax):
             hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
-            yes = tf.ones(tf.shape(Y), dtype=tf.float64) - self.inv_link.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=tf.float64) + self.inv_link._eps_K1
+            yes = tf.ones(tf.shape(Y), dtype=tf.float64) - self.invlink.epsilon
+            no = tf.zeros(tf.shape(Y), dtype=tf.float64) + self.invlink._eps_K1
             p = tf.select(hits, yes, no)
             return tf.log(p)
-        elif self.inv_link is tf.nn.softmax:
+        elif self.invlink is tf.nn.softmax:
             return -tf.nn.softmax_cross_entropy_with_logits(tf.cast(F, tf.float32), tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.))
         else:
             raise NotImplementedError
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        if isinstance(self.inv_link, RobustMax):
+        if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
-            p = self.inv_link.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * np.log(1-self.inv_link.epsilon) + (1.-p) * np.log(self.inv_link._eps_K1)
+            p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+            return p * np.log(1-self.invlink.epsilon) + (1.-p) * np.log(self.invlink._eps_K1)
         else:
             raise NotImplementedError
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        if isinstance(self.inv_link, RobustMax):
+        if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
 
             ps = tf.pack([tf.reshape(
-                self.inv_link.prob_is_largest(
+                self.invlink.prob_is_largest(
                     tf.fill(tf.pack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)),
                     Fmu, Fvar, gh_x, gh_w),
                 (-1,)) for i in range(self.num_classes)])
@@ -427,10 +427,10 @@ class MultiClass(Likelihood):
             raise NotImplementedError
 
     def predict_density(self, Fmu, Fvar, Y):
-        if isinstance(self.inv_link, RobustMax):
+        if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
-            p = self.inv_link.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1.-self.inv_link.epsilon) + (1. - p) * self.inv_link._eps_K1
+            p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+            return p * (1.-self.invlink.epsilon) + (1. - p) * self.invlink._eps_K1
         else:
             raise NotImplementedError
 
