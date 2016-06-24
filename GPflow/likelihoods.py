@@ -107,20 +107,15 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-<<<<<<< HEAD
-        gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
-=======
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
->>>>>>> master
+
         gh_w = gh_w.reshape(-1, 1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
         Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
         X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
-<<<<<<< HEAD
+
         Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-=======
-        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])
->>>>>>> master
+
         logp = self.logp(X, Y)
         return tf.reshape(tf.log(tf.matmul(tf.exp(logp), gh_w)), shape)
 
