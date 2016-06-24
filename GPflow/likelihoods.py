@@ -144,21 +144,15 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-<<<<<<< HEAD
-        gh_x, gh_w = np.polynomial.hermite.hermgauss(self.num_gauss_hermite_points)
-=======
+
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
->>>>>>> master
         gh_x = gh_x.reshape(1, -1)
         gh_w = gh_w.reshape(-1, 1)/np.sqrt(np.pi)
         shape = tf.shape(Fmu)
         Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
         X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
-<<<<<<< HEAD
         Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-=======
-        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])
->>>>>>> master
+
         logp = self.logp(X, Y)
         return tf.reshape(tf.matmul(logp, gh_w), shape)
 
@@ -184,12 +178,8 @@ class Gaussian(Likelihood):
         return densities.gaussian(Fmu, Y, Fvar + self.variance)
 
     def variational_expectations(self, Fmu, Fvar, Y):
-<<<<<<< HEAD
-        return -0.5*np.log(2*np.pi) - 0.5*tf.log(self.variance) - 0.5*(tf.square(Y - Fmu) + Fvar)/self.variance
-=======
         return -0.5*np.log(2*np.pi) - 0.5*tf.log(self.variance)\
             - 0.5*(tf.square(Y - Fmu) + Fvar)/self.variance
->>>>>>> master
 
 
 class Poisson(Likelihood):
