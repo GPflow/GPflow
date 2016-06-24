@@ -64,7 +64,7 @@ class DataHolder(Parentable):
         Parentable.__init__(self)
         self._array = array
 
-    def make_tf_array(self, X):
+    def make_tf_array(self):
         self._tf_array = tf.placeholder(dtype=tf.float64,
                                         shape=self._array.shape,
                                         name=self.name)
@@ -80,6 +80,14 @@ class DataHolder(Parentable):
         d = Parentable.__getstate__(self)
         d.pop('_tf_array')
         return d
+
+    def set_data(self, array):
+        old_shape = self._array.shape
+        self._array = array
+        if not self.shape == old_shape:
+            self.highest_parent._needs_recompile = True
+            if hasattr(self.highest_parent, '_kill_autoflow'):
+                self.highest_parent._kill_autoflow()
 
     @property
     def size(self):
@@ -456,11 +464,16 @@ class Parameterized(Parentable):
                 if hasattr(self.highest_parent, '_needs_recompile'):
                     self.highest_parent._needs_recompile = True
 
+            # if the existing atribute is a DataHolder, set the value of the data inside
+            if isinstance(p, DataHolder):
+                p.set_data(value)
+                return  # don't call object.setattr or set the _parent value
+
         # use the standard setattr
         object.__setattr__(self, key, value)
 
         # make sure a new child node knows this is the _parent:
-        if isinstance(value, (Param, Parameterized)) and key is not '_parent':
+        if isinstance(value, Parentable) and key is not '_parent':
             value._parent = self
 
     def _kill_autoflow(self):
