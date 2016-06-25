@@ -63,10 +63,8 @@ class DataHolder(Parentable):
         """
         Parentable.__init__(self)
         self._array = array
-
-    def make_tf_array(self):
         self._tf_array = tf.placeholder(dtype=tf.float64,
-                                        shape=self._array.shape,
+                                        shape=[None]*array.ndim,
                                         name=self.name)
 
     @property
@@ -203,9 +201,6 @@ class Param(Parentable):
 
         if self.fixed:
             # fixed parameters are treated by tf.placeholder
-            self._tf_array = tf.placeholder(dtype=tf.float64,
-                                            shape=self._array.shape,
-                                            name=self.name)
             return 0
         x_free = free_array[:self.size]
         mapped_array = self.transform.tf_forward(x_free)
@@ -270,6 +265,15 @@ class Param(Parentable):
             self.highest_parent._needs_recompile = True
             if hasattr(self.highest_parent, '_kill_autoflow'):
                 self.highest_parent._kill_autoflow()
+
+        # when setting the fixed attribute, make or remove a placeholder appropraitely
+        if key == 'fixed':
+            if value:
+                self._tf_array = tf.placeholder(dtype=tf.float64,
+                                                shape=self._array.shape,
+                                                name=self.name)
+            else:
+                self._tf_array = None
 
     def __str__(self, prepend=''):
         return prepend + \
@@ -492,8 +496,6 @@ class Parameterized(Parentable):
         count = 0
         for p in self.sorted_params:
             count += p.make_tf_array(X[count:])
-        for d in self.data_holders:
-            d.make_tf_array()
         return count
 
     @property
