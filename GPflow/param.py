@@ -46,12 +46,12 @@ class Parentable(object):
         return matches[0]
 
     def __getstate__(self):
-        d = object.__getstate__(self)
+        d = self.__dict__.copy()
         d.pop('_parent')
         return d
 
     def __setstate__(self, d):
-        object.__setstate__(self, d)
+        self.__dict__.update(d)
         self._parent = None
 
 
@@ -64,7 +64,7 @@ class DataHolder(Parentable):
         Parentable.__init__(self)
         self._array = array
         self._tf_array = tf.placeholder(dtype=tf.float64,
-                                        shape=[None]*array.ndim,
+                                        shape=[None]*self._array.ndim,
                                         name=self.name)
 
     @property
@@ -78,6 +78,12 @@ class DataHolder(Parentable):
         d = Parentable.__getstate__(self)
         d.pop('_tf_array')
         return d
+
+    def __setstate__(self, d):
+        Parentable.__setstate__(self, d)
+        self._tf_array = tf.placeholder(dtype=tf.float64,
+                                        shape=[None]*self._array.ndim,
+                                        name=self.name)
 
     def set_data(self, array):
         old_shape = self._array.shape
