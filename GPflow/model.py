@@ -314,8 +314,11 @@ class GPModel(Model):
             kern, likelihood, mean_function
         Model.__init__(self, name)
 
-        self.X = DataHolder(X)
-        self.Y = DataHolder(Y)
+        if isinstance(X, np.ndarray):
+            X = DataHolder(X)
+        if isinstance(Y, np.ndarray):
+            Y = DataHolder(Y)
+        self.X, self.Y = X, Y
 
     def build_predict(self):
         raise NotImplementedError
