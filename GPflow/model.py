@@ -373,19 +373,3 @@ class GPModel(Model):
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
-
-    def update_data(self, X, Y):
-        """
-        Update data.
-        If size of data was changed, then it will recompile.
-        """
-        if (X.shape != self._data_dict[self.X].shape) or \
-           (Y.shape != self._data_dict[self.Y].shape):
-            self.X = tf.placeholder(tf.float64, shape=X.shape, name="X")
-            self.Y = tf.placeholder(tf.float64, shape=Y.shape, name="Y")
-            # raise the recompilation flag
-            self._needs_recompile = True
-            # autoflow also should be killed.
-            self._kill_autoflow()
-
-        self._data_dict = {self.X: X, self.Y: Y}
