@@ -88,16 +88,13 @@ class VariationalUnivariateTest(unittest.TestCase):
         for is_diagonal in [True,False]:
             for is_whitened in [True,False]:
                 model = self.get_model( is_diagonal, is_whitened )
-                model._compile()
-                with model.tf_mode():
-                    model_likelihood_function = model.build_likelihood()
-                model_likelihood = model_likelihood_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 
+                model_likelihood = model.compute_log_likelihood()
                 self.failUnless( np.abs( model_likelihood - log_marginal_likelihood ) < 1e-4 )
 
     def testUnivariateConditionals(self):
         for is_diagonal in [True,False]:
             for is_whitened in [True,False]:
-                model = self.get_model( is_diagonal, is_whitened )
+                model = self.get_model(is_diagonal, is_whitened)
                 with model.tf_mode():
                     if is_whitened:
                         fmean_func, fvar_func = GPflow.conditionals.gaussian_gp_predict_whitened(self.X, self.Z, model.kern, model.q_mu, model.q_sqrt, self.oneLatentFunction )

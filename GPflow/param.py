@@ -45,6 +45,62 @@ class Parentable(object):
                              referenced by a parent")
         return matches[0]
 
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_parent')
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__.update(d)
+        self._parent = None
+
+
+class DataHolder(Parentable):
+    """
+    """
+    def __init__(self, array):
+        """
+        """
+        Parentable.__init__(self)
+        self._array = array
+        self._tf_array = tf.placeholder(dtype=tf.float64,
+                                        shape=[None]*self._array.ndim,
+                                        name=self.name)
+
+    @property
+    def value(self):
+        return self._array.copy()
+
+    def get_feed_dict(self):
+        return {self._tf_array: self._array}
+
+    def __getstate__(self):
+        d = Parentable.__getstate__(self)
+        d.pop('_tf_array')
+        return d
+
+    def __setstate__(self, d):
+        Parentable.__setstate__(self, d)
+        self._tf_array = tf.placeholder(dtype=tf.float64,
+                                        shape=[None]*self._array.ndim,
+                                        name=self.name)
+
+    def set_data(self, array):
+        old_shape = self._array.shape
+        self._array = array
+        if not self.shape == old_shape:
+            self.highest_parent._needs_recompile = True
+            if hasattr(self.highest_parent, '_kill_autoflow'):
+                self.highest_parent._kill_autoflow()
+
+    @property
+    def size(self):
+        return self._array.size
+
+    @property
+    def shape(self):
+        return self._array.shape
+
 
 class Param(Parentable):
     """
@@ -151,9 +207,6 @@ class Param(Parentable):
 
         if self.fixed:
             # fixed parameters are treated by tf.placeholder
-            self._tf_array = tf.placeholder(dtype=tf.float64,
-                                            shape=self._array.shape,
-                                            name=self.name)
             return 0
         x_free = free_array[:self.size]
         mapped_array = self.transform.tf_forward(x_free)
@@ -219,6 +272,15 @@ class Param(Parentable):
             if hasattr(self.highest_parent, '_kill_autoflow'):
                 self.highest_parent._kill_autoflow()
 
+        # when setting the fixed attribute, make or remove a placeholder appropraitely
+        if key == 'fixed':
+            if value:
+                self._tf_array = tf.placeholder(dtype=tf.float64,
+                                                shape=self._array.shape,
+                                                name=self.name)
+            else:
+                self._tf_array = None
+
     def __str__(self, prepend=''):
         return prepend + \
                '\033[1m' + self.name + '\033[0m' + \
@@ -249,18 +311,16 @@ class Param(Parentable):
         return html
 
     def __getstate__(self):
-        d = self.__dict__.copy()
+        d = Parentable.__getstate__(self)
         d.pop('_tf_array')
         d.pop('_log_jacobian')
-        d.pop('_parent')
         return d
 
     def __setstate__(self, d):
-        self.__dict__ = d
+        Parentable.__setstate__(self, d)
         self._tf_array = None
         self._log_jacobian = None
-        self._parent = None
-        # NB the parent property will be set by the parent object, aprt from
+        # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
 
@@ -371,7 +431,7 @@ class Parameterized(Parentable):
         representations.
         """
         o = object.__getattribute__(self, key)
-        if isinstance(o, Param) and object.__getattribute__(self, '_tf_mode'):
+        if isinstance(o, (Param, DataHolder)) and object.__getattribute__(self, '_tf_mode'):
             return o._tf_array
         return o
 
@@ -414,11 +474,16 @@ class Parameterized(Parentable):
                 if hasattr(self.highest_parent, '_needs_recompile'):
                     self.highest_parent._needs_recompile = True
 
+            # if the existing atribute is a DataHolder, set the value of the data inside
+            if isinstance(p, DataHolder):
+                p.set_data(value)
+                return  # don't call object.setattr or set the _parent value
+
         # use the standard setattr
         object.__setattr__(self, key, value)
 
         # make sure a new child node knows this is the _parent:
-        if isinstance(value, (Param, Parameterized)) and key is not '_parent':
+        if isinstance(value, Parentable) and key is not '_parent':
             value._parent = self
 
     def _kill_autoflow(self):
@@ -451,6 +516,14 @@ class Parameterized(Parentable):
         return sorted(params, key=id)
 
     @property
+    def data_holders(self):
+        """
+        Return a list of all the child DataHolders
+        """
+        return [child for key, child in self.__dict__.items()
+                if isinstance(child, DataHolder)]
+
+    @property
     def fixed(self):
         return all(p.fixed for p in self.sorted_params)
 
@@ -473,7 +546,7 @@ class Parameterized(Parentable):
         associated values
         """
         d = {}
-        for p in self.sorted_params:
+        for p in self.sorted_params + self.data_holders:
             d.update(p.get_feed_dict())
         return d
 
@@ -566,16 +639,10 @@ class Parameterized(Parentable):
         html.append("</table>")
         return ''.join(html)
 
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        d.pop('_parent')
-        return d
-
     def __setstate__(self, d):
-        self.__dict__ = d
-        self._parent = None
+        Parentable.__setstate__(self, d)
         # reinstate _parent graph
-        for p in self.sorted_params:
+        for p in self.sorted_params + self.data_holders:
             p._parent = self
 
 
