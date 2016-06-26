@@ -27,7 +27,7 @@ class MinibatchData(DataHolder):
             # it doesn't make much difference. This actually
             # becomes the limit when N is around 10**6, which isn't
             # uncommon when using SVI.
-            return self.rng.random.randint(self._array.shape[0], size=self.minibatch_size)
+            return self.rng.randint(self._array.shape[0], size=self.minibatch_size)
 
     def get_feed_dict(self):
         return {self._tf_array: self._array[self.generate_index()]}
