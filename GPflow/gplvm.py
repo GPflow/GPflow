@@ -8,13 +8,29 @@ from . import likelihoods
 from .tf_hacks import eye
 from . import kernel_expectations as ke
 from . import transforms
-from sklearn.decomposition import PCA
+
+
+def PCA_reduce(X, Q):
+    """
+    A helpful function for linearly reducing the dimensionality of the data X
+    to Q.
+
+    X is a N x D numpy array.
+    Q is an integer, Q < D
+
+    returns a numpy array, N x Q
+    """
+    evecs, evals = np.linalg.eigh(np.cov(X.T))
+    i = np.argsort(evecs)[::-1]
+    W = evals[:, i]
+    W = W[:, :Q]
+    return (X-X.mean(0)).dot(W)
 
 
 class GPLVM(GPR):
-    '''
+    """
     Standard GPLVM where the likelihood can be optimised with respect to the  latent X.
-    '''
+    """
     def __init__(self, Y, X_mean, kern, mean_function=Zero()):
         """
         Y is a data matrix, size N x R
