@@ -104,11 +104,13 @@ class Param(Parentable):
 
     Fixes
     --
-    There is a self._fixed flag, in which case the parameter does not get
-    optimized. To enable this, during make_tf_array, the fixed values of
-    the parameter are returned. Fixes and transforms can be used together, in
-    the sense that fixes take priority over transforms, so unfixing a parameter
-    is as simple as setting the flag. Example:
+    There is a self.fixed flag, in which case the parameter does not get
+    optimized. To enable this, during make_tf_array, a fixed parameter will be
+    ignored, and a placeholder returned via get_feed_dict instead. 
+
+    Fixes and transforms can be used together, in the sense that fixes take
+    priority over transforms, so unfixing a parameter is as simple as setting
+    the flag. Example:
 
     >>> p = Param(1.0, transform=GPflow.transforms.positive)
     >>> m = GPflow.model.Model()
@@ -116,9 +118,9 @@ class Param(Parentable):
     >>> m.p.fixed = True # the model now has no free parameters
     >>> m.p.fixed = False # the model has a single parameter, constrained +ve
 
-    Note that if self._fixed flag is assigned,  recompilation of the model is
+    Note that if self.fixed flag is assigned,  recompilation of the model is
     necessary.  Otherwise, the change in the fixed parameter values does not
-    require recompialation.
+    require recompilation.
 
 
     Compiling into tensorflow
@@ -128,8 +130,13 @@ class Param(Parentable):
     >>> self.make_tf_array
 
     constructs a tensorflow representation of the parameter, from a tensorflow
-    vector representing the free state.
+    vector representing the free state. In this case, the parameter is
+    represented as part of the 'free-state' vector associated with a model.
+    However, if the parameters is fixed, then a placeholder is returned during
+    a call to get_feed_dict, and the parameter is represented that way instead.
 
+    Priors and transforms
+    --
     The `self.prior` object is used to place priors on parameters, and the
     `self.transform` object is used to enable unconstrained optimization and
     MCMC.
