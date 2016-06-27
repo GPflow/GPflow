@@ -68,15 +68,21 @@ class TestDataObject(unittest.TestCase):
 
     def test_set_another_data(self):
         rng = np.random.RandomState(0)
-        X = rng.rand(20,1)*10
+        old_shape = self.models[0].X.shape
+        size = np.abs(int(np.random.randn(1)*1.)+10)+10
+        X = rng.rand(size,1)*10
         Y = np.sin(X) + 0.9 * np.cos(X*1.6) + rng.randn(*X.shape)* 0.8
-        self.Xtest = rng.rand(10,1)*10
+        self.Xtest = rng.rand(size,1)*10
         
         for m in self.models:
             m.X = X
             m.Y = Y
-            self.assertFalse(m._needs_recompile, \
-                msg="Recompilation should be avoided for the same shape data")
+            if old_shape == X.shape:
+                self.assertFalse(m._needs_recompile, \
+                    msg="Recompilation should be avoided for the same shape data")
+            else:
+                self.assertTrue(m._needs_recompile, \
+		            msg="Recompilation should be necessary for the same shape data")
             
     def test_predict(self):
         mu0, var0 = self.models[0].predict_y(self.Xtest)
@@ -105,22 +111,16 @@ class TestDataObject(unittest.TestCase):
                 
             else:
                 if isFix == m.kern.lengthscales.fixed:
-                    print(type(m))
-                    print(new_lengthscale)
                     m.kern.lengthscales.fixed = isFix
                     m.kern.lengthscales = new_lengthscale
                     self.assertFalse(m._needs_recompile, \
                         msg="Recompilation should be avoided for previously fixed property")
                 else:
-                    print(type(m))
-                    print(new_lengthscale)
                     m.kern.lengthscales.fixed = isFix
                     m.kern.lengthscales = new_lengthscale
                     self.assertTrue(m._needs_recompile, \
                         msg="Recompilation is necessary for the newly fixed param")
-        
-        
-        
+                
         
 if __name__=='__main__':
     unittest.main()
