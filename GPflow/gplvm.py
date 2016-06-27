@@ -132,5 +132,35 @@ class BayesianGPLVM(GPModel):
 
     def build_predict(self, Xnew, full_cov=False):
         """
+        Compute the mean and variance of the latent function at some new points
+        Xnew. Note that this is very similar to the SGPR prediction, for whcih
+        there are notes in the SGPR notebook.
         """
-        raise NotImplementedError
+        num_inducing = tf.shape(self.Z)[0]
+        psi0, psi1, psi2 = ke.build_psi_stats(self.Z, self.kern, self.X_mean, self.X_var)
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kus = self.kern.K(self.Z, Xnew)
+        sigma2 = self.likelihood.variance
+        sigma = tf.sqrt(sigma2)
+        L = tf.cholesky(Kuu)
+
+        A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
+        tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
+        AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
+        B = AAT + eye(num_inducing)
+        LB = tf.cholesky(B)
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
+        tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
+        tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
+        mean = tf.matmul(tf.transpose(tmp2), c)
+        if full_cov:
+            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2)\
+                - tf.matmul(tf.transpose(tmp1), tmp1)
+            shape = tf.pack([1, 1, tf.shape(self.Y)[1]])
+            var = tf.tile(tf.expand_dims(var, 2), shape)
+        else:
+            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0)\
+                - tf.reduce_sum(tf.square(tmp1), 0)
+            shape = tf.pack([1, tf.shape(self.Y)[1]])
+            var = tf.tile(tf.expand_dims(var, 1), shape)
+        return mean + self.mean_function(Xnew), var
