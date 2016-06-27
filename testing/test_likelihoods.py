@@ -144,17 +144,22 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         nClasses = 5
         nPoints = 10
         tolerance = 1e-4
+        epsilon = 1e-3
         F = tf.placeholder(tf.float64)
         x = tf.placeholder('float64')
         F_data = np.ones( (nPoints, nClasses) )
         l = GPflow.likelihoods.MultiClass(nClasses)
+        l.invlink.epsilon = epsilon
         rng = np.random.RandomState(1)
         Y = rng.randint( nClasses, size = (nPoints,1) )
         with l.tf_mode():
             mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})  
             pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})  
-            self.failUnless( np.allclose( mu , np.ones(mu.shape)/nClasses, tolerance, tolerance ) )
-            self.failUnless( np.allclose( pred , np.ones(pred.shape)/nClasses, tolerance, tolerance ) )
+            variational_expectations = tf.Session().run(l.variational_expectations(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data}) 
+        self.failUnless( np.allclose( mu , np.ones((nPoints,nClasses))/nClasses, tolerance, tolerance ) )
+        self.failUnless( np.allclose( pred , np.ones((nPoints,1))/nClasses, tolerance, tolerance ) )
+        validation_variational_expectation = 1./nClasses * np.log( 1.- epsilon ) + (1. - 1./nClasses ) * np.log( epsilon / (nClasses - 1) )
+        self.failUnless( np.allclose( variational_expectations , np.ones((nPoints,1))*validation_variational_expectation, tolerance, tolerance ) )
             
 if __name__ == "__main__":
     unittest.main()
