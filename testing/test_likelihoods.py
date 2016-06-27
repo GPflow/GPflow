@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 
-def getLikelihoodsAndYs():
+def getLikelihoodsAndYs(includeMultiClass=True):
     liks = []
     Ys = []
     rng = np.random.RandomState(1)
@@ -11,7 +11,7 @@ def getLikelihoodsAndYs():
         if likelihoodClass!=GPflow.likelihoods.MultiClass:
             liks.append(likelihoodClass())   
             Ys.append( rng.rand(10,2) )
-        else:
+        elif includeMultiClass:
             liks.append(likelihoodClass(2)) 
             sample = rng.randn(10,2)
             Ys.append( np.argmax(sample, 1).reshape(-1,1) )
@@ -101,7 +101,7 @@ class TestQuadrature(unittest.TestCase):
 
     def test_pred_density(self):
         #get all the likelihoods where predict_density  has been overwritten
-        unfiltered_liks, unfiltered_ys = getLikelihoodsAndYs()
+        unfiltered_liks, unfiltered_ys = getLikelihoodsAndYs(False)
         liksAndYs = [(l,y) for l,y in zip(unfiltered_liks,unfiltered_ys)
                 if l.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__]
                 
