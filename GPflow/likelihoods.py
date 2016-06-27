@@ -365,9 +365,6 @@ class RobustMax(object):
         dist = (tf.expand_dims(X, 1) - tf.expand_dims(mu, 2)) / tf.expand_dims(tf.sqrt(var), 2)
         cdfs = 0.5 * (1.0 + tf.erf(dist/np.sqrt(2.0)))
 
-        # clip the cdfs to try to prevent over/under flow
-        cdfs = cdfs * (1-2e-4) + 1e-4
-
         # blank out all the distances on the selected latent function
         oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), tf.float64)
         cdfs = cdfs * tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
