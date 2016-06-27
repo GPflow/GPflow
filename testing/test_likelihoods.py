@@ -9,7 +9,7 @@ def getLikelihoodsAndYs(includeMultiClass=True):
     rng = np.random.RandomState(1)
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
         if likelihoodClass!=GPflow.likelihoods.MultiClass:
-            liks.append(likelihoodClass())   
+            liks.append(likelihoodClass())
             Ys.append( rng.rand(10,2) )
         elif includeMultiClass:
             liks.append(likelihoodClass(2)) 
@@ -49,7 +49,6 @@ class TestPredictConditional(unittest.TestCase):
                 mu2, _ = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
             self.failUnless(np.allclose(mu1, mu2, 1e-6, 1e-6))
 
-
     def test_variance(self):
         for l in self.liks:
             with l.tf_mode():
@@ -82,7 +81,7 @@ class TestQuadrature(unittest.TestCase):
 
     def test_var_exp(self):
         #get all the likelihoods where variational expectations has been overwritten
-        unfiltered_liks, unfiltered_ys = getLikelihoodsAndYs()
+        unfiltered_liks, unfiltered_ys = getLikelihoodsAndYs(False)
         liksAndYs = [(l,y) for l,y in zip(unfiltered_liks,unfiltered_ys)
                 if l.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__]
                 
