@@ -128,6 +128,32 @@ class TestQuadrature(unittest.TestCase):
             F1 = tf.Session().run(F1, feed_dict={x: x_data})
             F2 = tf.Session().run(F2, feed_dict={x: x_data})
             self.failUnless(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
+
+class TestRobustMaxMulticlass(unittest.TestCase):
+    """
+    Some specialized tests to the multiclass likelihood with RobustMax inverse link function.
+    """
+    def setUp(self):
+        tf.reset_default_graph()
+    
+    def testSymmetric(self):
+        """
+        This test is based on the observation that for 
+        symmetric inputs the class predictions must have equal probability.
+        """
+        nClasses = 5
+        nPoints = 10
+        tolerance = 1e-4
+        F = tf.placeholder(tf.float64)
+        x = tf.placeholder('float64')
+        F_data = np.ones( (nPoints, nClasses) )
+        l = GPflow.likelihoods.MultiClass(nClasses)
+        Y = np.zeros( (nPoints,1), dtype=np.int32 )
+        with l.tf_mode():
+            mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})  
+            pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})  
+            self.failUnless( np.allclose( mu , np.ones(mu.shape)/nClasses, tolerance, tolerance ) )
+            self.failUnless( np.allclose( pred , np.ones(pred.shape)/nClasses, tolerance, tolerance ) )
             
 if __name__ == "__main__":
     unittest.main()
