@@ -381,15 +381,16 @@ class MultiClass(Likelihood):
         A likelihood that can do multi-way classification. We use the softmax
         and RobustMax inverse-link functions, defaulting to RobustMax
 
-        Valid choices of invlink are
+        Currently the only valid choices of invlink is
            - an instance of RobustMax
-           - tf.nn.softmax
         """
         Likelihood.__init__(self)
         self.num_classes = num_classes
         if invlink is None:
             invlink = RobustMax(self.num_classes)
             self.invlink = invlink
+        elif not isinstance(invlink,RobustMax):
+            raise NotImplementedError        
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
@@ -398,8 +399,6 @@ class MultiClass(Likelihood):
             no = tf.zeros(tf.shape(Y), dtype=tf.float64) + self.invlink._eps_K1
             p = tf.select(hits, yes, no)
             return tf.log(p)
-        elif self.invlink is tf.nn.softmax:
-            return -tf.nn.softmax_cross_entropy_with_logits(tf.cast(F, tf.float32), tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.))
         else:
             raise NotImplementedError
 
