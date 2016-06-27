@@ -6,15 +6,12 @@ import unittest
 class TestSetup(object):
     def __init__( self, likelihood, Y, tolerance ):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
-
-def getTestSetups(includeMultiClass=True,includeOnlyAnalytics=False,addNonStandardLinks=False):
+        self.is_analytic = likelihood.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__
+        
+def getTestSetups(includeMultiClass=True,addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
-        isAnalytic = likelihoodClass.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__
-        shouldInclude = not(includeOnlyAnalytics) or isAnalytic
-        if not shouldInclude:
-            pass
         if likelihoodClass!=GPflow.likelihoods.MultiClass:
             test_setups.append( TestSetup( likelihoodClass() , rng.rand(10,2) , 1e-6 ) )
         elif includeMultiClass:
@@ -89,12 +86,14 @@ class TestQuadrature(unittest.TestCase):
         self.rng = np.random.RandomState()
         self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2)
         self.Fvar = 0.01 * self.Fvar **2
-        self.test_setups = getTestSetups(includeMultiClass=False,includeOnlyAnalytics=True)
+        self.test_setups = getTestSetups(includeMultiClass=False)
 
     def test_var_exp(self):
         #get all the likelihoods where variational expectations has been overwritten
                 
         for test_setup in self.test_setups:
+            if not test_setup.is_analytic:
+                continue
             l = test_setup.likelihood
             y = test_setup.Y
             x_data = l.get_free_state()
@@ -113,8 +112,9 @@ class TestQuadrature(unittest.TestCase):
         #get all the likelihoods where predict_density  has been overwritten.
         
         for test_setup in self.test_setups:
+            if not test_setup.is_analytic:
+                continue
             l = test_setup.likelihood
-            #print "likelihood ", l.__class__
             y = test_setup.Y
             x_data = l.get_free_state()
             #make parameters if needed
