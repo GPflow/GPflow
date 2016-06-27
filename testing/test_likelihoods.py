@@ -148,7 +148,8 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         x = tf.placeholder('float64')
         F_data = np.ones( (nPoints, nClasses) )
         l = GPflow.likelihoods.MultiClass(nClasses)
-        Y = np.zeros( (nPoints,1), dtype=np.int32 )
+        rng = np.random.RandomState(1)
+        Y = rng.randint( nClasses, size = (nPoints,1) )
         with l.tf_mode():
             mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})  
             pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})  
