@@ -57,6 +57,27 @@ class Parentable(object):
 
 class DataHolder(Parentable):
     """
+    An object to represent both data and the fixed parameters
+    (see Param class below).
+    These are treated as tf.placeholder so that once the model was compiled 
+    an inference for another data with the same shape can be carried out
+    without recompilation of the model.
+
+    Getting and setting values
+    --
+    The current value of the data is stored in self._array as a
+    numpy.ndarray.  Changing the value of the data is as simple as assignment
+    (once the data is part of a model). Example:
+
+    >>> m = GPflow.model.Model()
+    >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
+    >>> print(m.x.value)
+    [ [ 0.], [ 1.]]
+    >>> m.x = np.array([ 0., 2.])
+    >>> print(m.x.value)
+    [ [ 0.], [ 1.]]
+
+    See Parameterized class for the detail.
     """
     def __init__(self, array):
         """
@@ -86,6 +107,10 @@ class DataHolder(Parentable):
                                         name=self.name)
 
     def set_data(self, array):
+        """
+        Setting a data into self._array before any TensorFlow execution.
+        If the shape of the data changes, then raise the recompilation flag.
+        """
         old_shape = self._array.shape
         self._array = array
         if not self.shape == old_shape:
@@ -162,6 +187,10 @@ class Param(Parentable):
     >>> m.p = p # the model has a single parameter, constrained to be +ve
     >>> m.p.fixed = True # the model now has no free parameters
     >>> m.p.fixed = False # the model has a single parameter, constrained +ve
+
+    Note that if self._fixed flag is assigned,  recompilation of the model is
+    necessary.  Otherwise, the change in the fixed parameter values does not
+    require recompialation.
 
 
     Compiling into tensorflow
@@ -401,12 +430,12 @@ class AutoFlow:
 
 class Parameterized(Parentable):
     """
-    An object to contain parameters.
+    An object to contain parameters and data.
 
-    This object is designed to be part of a tree, with Param objects at the
-    leaves. We can then recurse down the tree to find all the parameters
-    (leaves), or recurse up the tree (using highest_parent) from the leaves to
-    the root.
+    This object is designed to be part of a tree, with Param and DataHolder 
+    objects at the leaves. We can then recurse down the tree to find all the 
+    parameters and data (leaves), or recurse up the tree (using highest_parent)
+    from the leaves to the root.
 
     A useful application of such a recursion is 'tf_mode', where the
     parameters appear as their _tf_array variables. This allows us to build

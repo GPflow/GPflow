@@ -307,6 +307,13 @@ class GPModel(Model):
 
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
+    
+    
+    For handling another data (X', Y'), set the new value to self.X and self.Y
+    >>> m.X = X'
+    >>> m.Y = Y'
+    If the shape of the data does not change, this model does not require 
+    another recompilation.
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
