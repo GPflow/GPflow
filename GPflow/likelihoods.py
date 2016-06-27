@@ -339,7 +339,7 @@ class RobustMax(object):
     with
 
     y_i = (1-eps)  i == argmax(f)
-          1/(k-1)  otherwise.
+          eps/(k-1)  otherwise.
 
 
     """
