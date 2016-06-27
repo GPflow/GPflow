@@ -55,78 +55,6 @@ class Parentable(object):
         self._parent = None
 
 
-class DataHolder(Parentable):
-    """
-    An object to represent both data and the fixed parameters
-    (see Param class below).
-    These are treated as tf.placeholder so that once the model was compiled 
-    an inference for another data with the same shape can be carried out
-    without recompilation of the model.
-
-    Getting and setting values
-    --
-    The current value of the data is stored in self._array as a
-    numpy.ndarray.  Changing the value of the data is as simple as assignment
-    (once the data is part of a model). Example:
-
-    >>> m = GPflow.model.Model()
-    >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
-    >>> print(m.x.value)
-    [ [ 0.], [ 1.]]
-    >>> m.x = np.array([ 0., 2.])
-    >>> print(m.x.value)
-    [ [ 0.], [ 1.]]
-
-    See Parameterized class for the detail.
-    """
-    def __init__(self, array):
-        """
-        """
-        Parentable.__init__(self)
-        self._array = array
-        self._tf_array = tf.placeholder(dtype=tf.float64,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
-
-    @property
-    def value(self):
-        return self._array.copy()
-
-    def get_feed_dict(self):
-        return {self._tf_array: self._array}
-
-    def __getstate__(self):
-        d = Parentable.__getstate__(self)
-        d.pop('_tf_array')
-        return d
-
-    def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
-        self._tf_array = tf.placeholder(dtype=tf.float64,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
-
-    def set_data(self, array):
-        """
-        Setting a data into self._array before any TensorFlow execution.
-        If the shape of the data changes, then raise the recompilation flag.
-        """
-        old_shape = self._array.shape
-        self._array = array
-        if not self.shape == old_shape:
-            self.highest_parent._needs_recompile = True
-            if hasattr(self.highest_parent, '_kill_autoflow'):
-                self.highest_parent._kill_autoflow()
-
-    @property
-    def size(self):
-        return self._array.size
-
-    @property
-    def shape(self):
-        return self._array.shape
-
-
 class Param(Parentable):
     """
     An object to represent parameters.
@@ -352,6 +280,76 @@ class Param(Parentable):
         # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
+
+
+class DataHolder(Parentable):
+    """
+    An object to represent data which needs to be passed to tensorflow for computation.
+
+    This behaves in much the same way as a Param (above), but is always
+    'fixed'. On a call to get_feed_dict, a placeholder-numpy pair is returned.
+
+    Getting and setting values
+    --
+    The current value of the data is stored in self._array as a
+    numpy.ndarray.  Changing the value of the data is as simple as assignment
+    (once the data is part of a model). Example:
+
+    >>> m = GPflow.model.Model()
+    >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
+    >>> print(m.x.value)
+    [[ 0.], [ 1.]]
+    >>> m.x = np.array([ 0., 2.])
+    >>> print(m.x.value)
+    [[ 0.], [ 1.]]
+
+    """
+    def __init__(self, array):
+        """
+        """
+        Parentable.__init__(self)
+        self._array = array
+        self._tf_array = tf.placeholder(dtype=tf.float64,
+                                        shape=[None]*self._array.ndim,
+                                        name=self.name)
+
+    @property
+    def value(self):
+        return self._array.copy()
+
+    def get_feed_dict(self):
+        return {self._tf_array: self._array}
+
+    def __getstate__(self):
+        d = Parentable.__getstate__(self)
+        d.pop('_tf_array')
+        return d
+
+    def __setstate__(self, d):
+        Parentable.__setstate__(self, d)
+        self._tf_array = tf.placeholder(dtype=tf.float64,
+                                        shape=[None]*self._array.ndim,
+                                        name=self.name)
+
+    def set_data(self, array):
+        """
+        Setting a data into self._array before any TensorFlow execution.
+        If the shape of the data changes, then raise the recompilation flag.
+        """
+        old_shape = self._array.shape
+        self._array = array
+        if not self.shape == old_shape:
+            self.highest_parent._needs_recompile = True
+            if hasattr(self.highest_parent, '_kill_autoflow'):
+                self.highest_parent._kill_autoflow()
+
+    @property
+    def size(self):
+        return self._array.size
+
+    @property
+    def shape(self):
+        return self._array.shape
 
 
 class AutoFlow:
