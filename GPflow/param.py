@@ -304,11 +304,11 @@ class DataHolder(Parentable):
 
     >>> m = GPflow.model.Model()
     >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
-    >>> print(m.x.value)
+    >>> print(m.x)
     [[ 0.], [ 1.]]
     >>> m.x = np.array([ 0., 2.])
-    >>> print(m.x.value)
-    [[ 0.], [ 1.]]
+    >>> print(m.x)
+    [[ 0.], [ 2.]]
 
     """
     def __init__(self, array):
@@ -467,6 +467,9 @@ class Parameterized(Parentable):
         o = object.__getattribute__(self, key)
         if isinstance(o, (Param, DataHolder)) and object.__getattribute__(self, '_tf_mode'):
             return o._tf_array
+        # For the back-compatibility so that m.X returns np.array
+        elif isinstance(o, DataHolder):
+            return o._array.copy()
         return o
 
     def __setattr__(self, key, value):
@@ -491,7 +494,12 @@ class Parameterized(Parentable):
 
         # If we already have an atribute with that key, decide what to do:
         if key in self.__dict__.keys():
-            p = getattr(self, key)
+            # get the instance of sekf.key.
+            # mostly equivalent to p = getattr(self, key) 
+            # but does not return p._array.copy() evern if p is DataHolder
+            p = object.__getattribute__(self, key)
+            if isinstance(p, (Param, DataHolder)) and object.__getattribute__(self, '_tf_mode'):
+                p = p._tf_array
 
             # if the existing attribute is a parameter, and the value is an
             # array (or float, int), then self the _array of that parameter
