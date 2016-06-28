@@ -190,42 +190,22 @@ class TestSlice(unittest.TestCase):
         self.k1 = GPflow.kernels.RBF(1, active_dims=[0])
         self.k2 = GPflow.kernels.RBF(1, active_dims=[1])
         self.k3 = GPflow.kernels.RBF(1)
-        self.X = tf.placeholder('float64', [None, None])
-        self.Z = tf.placeholder('float64', [None, None])
-
-        # make kernel functions in python
-        self.x_free = tf.placeholder('float64')
+        self.X = self.rng.randn(20, 2)
+        self.Z = self.rng.randn(10, 2)
 
     def test_symm(self):
-        X = self.rng.randn(20, 2)
-
-        with self.k1.tf_mode():
-            with self.k2.tf_mode():
-                with self.k3.tf_mode():
-                    self.k1.make_tf_array(self.x_free)
-                    self.k2.make_tf_array(self.x_free)
-                    self.k3.make_tf_array(self.x_free)
-                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X: X, self.x_free: np.ones(2)})
-                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X: X, self.x_free: np.ones(2)})
-                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X: X[:, :1], self.x_free: np.ones(2)})
-                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X: X[:, 1:], self.x_free: np.ones(2)})
+        K1 = self.k1.compute_K_symm(self.X)
+        K2 = self.k2.compute_K_symm(self.X)
+        K3 = self.k3.compute_K_symm(self.X[:, :1])
+        K4 = self.k3.compute_K_symm(self.X[:, 1:])
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
 
     def test_asymm(self):
-        X = self.rng.randn(20, 2)
-        Z = self.rng.randn(30, 2)
-
-        with self.k1.tf_mode():
-            with self.k2.tf_mode():
-                with self.k3.tf_mode():
-                    self.k1.make_tf_array(self.x_free)
-                    self.k2.make_tf_array(self.x_free)
-                    self.k3.make_tf_array(self.x_free)
-                    K1 = tf.Session().run(self.k1.K(self.X), feed_dict={self.X: X, self.Z: Z, self.x_free: np.ones(2)})
-                    K2 = tf.Session().run(self.k2.K(self.X), feed_dict={self.X: X, self.Z: Z, self.x_free: np.ones(2)})
-                    K3 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X: X[:, :1], self.Z: Z[:, :1], self.x_free: np.ones(2)})
-                    K4 = tf.Session().run(self.k3.K(self.X), feed_dict={self.X: X[:, 1:], self.Z: Z[:, 1:], self.x_free: np.ones(2)})
+        K1 = self.k1.compute_K(self.X, self.Z)
+        K2 = self.k2.compute_K(self.X, self.Z)
+        K3 = self.k3.compute_K(self.X[:, :1], self.Z[:, :1])
+        K4 = self.k3.compute_K(self.X[:, 1:], self.Z[:, 1:])
         self.failUnless(np.allclose(K1, K3))
         self.failUnless(np.allclose(K2, K4))
 
@@ -383,6 +363,17 @@ class TestKernNamingProduct(unittest.TestCase):
         self.failUnless(k.matern32_1 is k1)
         self.failUnless(k.matern32_2 is k2)
         self.failUnless(k.matern32_3 is k3)
+
+
+class TestARDInit(unittest.TestCase):
+    """
+    For ARD kernels, make sure that kernels can be instantiated with a single
+    lengthscale or a suitable array of lengthscales
+    """
+    def test_scalar(self):
+        k1 = GPflow.kernels.RBF(3, lengthscales=2.3)
+        k2 = GPflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3)
+        self.assertTrue(np.all(k1.lengthscales.value == k2.lengthscales.value))
 
 
 if __name__ == "__main__":
