@@ -361,7 +361,7 @@ class RobustMax(object):
         # generate Gauss Hermite grid
         X = tf.reshape(mu_selected, (-1, 1)) + gh_x * tf.reshape(tf.sqrt(tf.clip_by_value(2. * var_selected, 1e-10, np.inf)), (-1, 1))
 
-        # compute the CDF of the Gaussian between the latent functions and the grid (includeing the selected function)
+        # compute the CDF of the Gaussian between the latent functions and the grid (including the selected function)
         dist = (tf.expand_dims(X, 1) - tf.expand_dims(mu, 2)) / tf.expand_dims(tf.sqrt(tf.clip_by_value(var, 1e-10, np.inf)), 2)
         cdfs = 0.5 * (1.0 + tf.erf(dist/np.sqrt(2.0)))
 
@@ -371,7 +371,7 @@ class RobustMax(object):
         oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), tf.float64)
         cdfs = cdfs * tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
 
-        # take the product over the latnet functions, and the sum over the GH grid.
+        # take the product over the latent functions, and the sum over the GH grid.
         return tf.matmul(tf.reduce_prod(cdfs, 1), tf.reshape(gh_w/np.sqrt(np.pi), (-1, 1)))
 
 
