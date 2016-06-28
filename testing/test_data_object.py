@@ -99,7 +99,6 @@ class TestDataObject(unittest.TestCase):
         for m in self.models:
             if hasattr(m.kern, 'rbf'):
                 if isFix == m.kern.rbf.lengthscales.fixed:
-                    m.kern.rbf.lengthscales.fixed = isFix
                     m.kern.rbf.lengthscales = new_lengthscale
                     self.assertFalse(m._needs_recompile, \
                         msg="Recompilation should be avoided for previously fixed property")
@@ -111,7 +110,6 @@ class TestDataObject(unittest.TestCase):
                 
             else:
                 if isFix == m.kern.lengthscales.fixed:
-                    m.kern.lengthscales.fixed = isFix
                     m.kern.lengthscales = new_lengthscale
                     self.assertFalse(m._needs_recompile, \
                         msg="Recompilation should be avoided for previously fixed property")
