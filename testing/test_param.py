@@ -3,6 +3,10 @@ import unittest
 import GPflow
 import tensorflow as tf
 import numpy as np
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 
 class NamingTests(unittest.TestCase):
@@ -15,14 +19,14 @@ class NamingTests(unittest.TestCase):
         m = GPflow.model.Model()
         p._parent = m  # do not do this.
         with self.assertRaises(ValueError):
-            print p.name
+            print(p.name)
 
     def test_two_parents(self):
         m = GPflow.model.Model()
         m.p = GPflow.param.Param(1)
         m.p2 = m.p  # do not do this!
         with self.assertRaises(ValueError):
-            print m.p.name
+            print(m.p.name)
 
 
 class ParamTestsScalar(unittest.TestCase):
