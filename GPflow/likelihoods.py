@@ -378,11 +378,9 @@ class RobustMax(object):
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
         """
-        A likelihood that can do multi-way classification. We use the softmax
-        and RobustMax inverse-link functions, defaulting to RobustMax
-
-        Currently the only valid choices of invlink is
-           - an instance of RobustMax
+        A likelihood that can do multi-way classification. 
+        Currently the only valid choice
+        of inverse-link function (invlink) is an instance of RobustMax.
         """
         Likelihood.__init__(self)
         self.num_classes = num_classes
