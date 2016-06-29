@@ -203,7 +203,7 @@ class Model(Parameterized):
         try:
             iteration = 0
             while iteration < max_iters:
-                self._session.run(opt_step, feed_dict=self.get_feed_dict)
+                self._session.run(opt_step, feed_dict=self.get_feed_dict())
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
                 iteration += 1
