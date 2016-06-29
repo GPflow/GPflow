@@ -536,6 +536,7 @@ class Parameterized(Parentable):
 
             # if the existing atribute is a DataHolder, set the value of the data inside
             if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
+                print 'setting data'
                 p.set_data(value)
                 return  # don't call object.setattr or set the _parent value
 

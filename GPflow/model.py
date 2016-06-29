@@ -162,7 +162,7 @@ class Model(Parameterized):
                               x0=self.get_free_state(), verbose=verbose)
 
     def optimize(self, method='L-BFGS-B', tol=None, callback=None,
-                 max_iters=1000, calc_feed_dict=None, **kw):
+                 max_iters=1000, **kw):
         """
         Optimize the model by maximizing the likelihood (possibly with the
         priors also) with respect to any free variables.
@@ -179,9 +179,6 @@ class Model(Parameterized):
 
         max_iters defines the maximum number of iterations
 
-        calc_feed_dict is an optional function which returns a dictionary
-        (suitable for tf.Session.run's feed_dict argument)
-
         In the case of the scipy optimization routines, any additional keyword
         arguments are passed through.
 
@@ -195,10 +192,9 @@ class Model(Parameterized):
         if type(method) is str:
             return self._optimize_np(method, tol, callback, max_iters, **kw)
         else:
-            return self._optimize_tf(method, callback, max_iters,
-                                     calc_feed_dict, **kw)
+            return self._optimize_tf(method, callback, max_iters, **kw)
 
-    def _optimize_tf(self, method, callback, max_iters, calc_feed_dict):
+    def _optimize_tf(self, method, callback, max_iters):
         """
         Optimize the model using a tensorflow optimizer. See self.optimize()
         """
@@ -207,10 +203,7 @@ class Model(Parameterized):
         try:
             iteration = 0
             while iteration < max_iters:
-                feed_dict = self.get_feed_dict()
-                if calc_feed_dict is not None:
-                    feed_dict.update(calc_feed_dict())
-                self._session.run(opt_step, feed_dict=feed_dict)
+                self._session.run(opt_step, feed_dict=self.get_feed_dict)
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
                 iteration += 1
