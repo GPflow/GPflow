@@ -3,6 +3,10 @@ import unittest
 import GPflow
 import tensorflow as tf
 import numpy as np
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 
 class NamingTests(unittest.TestCase):
@@ -15,14 +19,14 @@ class NamingTests(unittest.TestCase):
         m = GPflow.model.Model()
         p._parent = m  # do not do this.
         with self.assertRaises(ValueError):
-            print p.name
+            print(p.name)
 
     def test_two_parents(self):
         m = GPflow.model.Model()
         m.p = GPflow.param.Param(1)
         m.p2 = m.p  # do not do this!
         with self.assertRaises(ValueError):
-            print m.p.name
+            print(m.p.name)
 
 
 class ParamTestsScalar(unittest.TestCase):
@@ -350,6 +354,73 @@ class TestParamList(unittest.TestCase):
         self.assertTrue(m.get_free_state().size == 2)
         m.optimize(display=False)
         self.assertTrue(np.allclose(m.get_free_state(), 0.))
+
+
+class TestPickleAndDict(unittest.TestCase):
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(10, 1)
+        Y = rng.randn(10, 1)
+        self.m = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
+
+    def test(self):
+        # pickle and reload the model
+        s1 = pickle.dumps(self.m)
+        m1 = pickle.loads(s1)
+
+        d1 = self.m.get_parameter_dict()
+        d2 = m1.get_parameter_dict()
+        for key, val in d1.items():
+            assert np.all(val == d2[key])
+
+
+class TestDictEmpty(unittest.TestCase):
+    def setUp(self):
+        self.m = GPflow.model.Model()
+
+    def test(self):
+        d = self.m.get_parameter_dict()
+        self.assertTrue(len(d.keys()) == 0)
+        self.m.set_parameter_dict(d)
+
+
+class TestDictSimple(unittest.TestCase):
+    def setUp(self):
+        self.m = GPflow.model.Model()
+        self.m.p1 = GPflow.param.Param(np.random.randn(3, 2))
+        self.m.p2 = GPflow.param.Param(np.random.randn(10))
+
+    def test(self):
+        d = self.m.get_parameter_dict()
+        self.assertTrue(len(d.keys()) == 2)
+        state1 = self.m.get_free_state().copy()
+        self.m.set_state(state1 * 0)
+        self.m.set_parameter_dict(d)
+        self.assertTrue(np.all(state1 == self.m.get_free_state()))
+
+
+class TestDictSVGP(unittest.TestCase):
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(10, 1)
+        Y = rng.randn(10, 1)
+        Z = rng.randn(5, 1)
+        self.m = GPflow.svgp.SVGP(X, Y, Z=Z, likelihood=GPflow.likelihoods.Gaussian(), kern=GPflow.kernels.RBF(1))
+
+    def test(self):
+        loglik1 = self.m.compute_log_likelihood()
+        d = self.m.get_parameter_dict()
+
+        # muck up the model
+        self.m.set_state(np.random.randn(self.m.get_free_state().size))
+        loglik2 = self.m.compute_log_likelihood()
+
+        # reset the model
+        self.m.set_parameter_dict(d)
+        loglik3 = self.m.compute_log_likelihood()
+
+        self.assertFalse(loglik1 == loglik2)
+        self.assertTrue(loglik1 == loglik3)
 
 
 if __name__ == "__main__":
