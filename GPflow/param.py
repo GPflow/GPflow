@@ -247,11 +247,11 @@ class Param(Parentable):
 
     def __str__(self, prepend=''):
         return prepend + \
-               '\033[1m' + self.name + '\033[0m' + \
-               ' transform:' + str(self.transform) + \
-               ' prior:' + str(self.prior) + \
-               (' [FIXED]' if self.fixed else '') + \
-               '\n' + str(self.value)
+            '\033[1m' + self.name + '\033[0m' + \
+            ' transform:' + str(self.transform) + \
+            ' prior:' + str(self.prior) + \
+            (' [FIXED]' if self.fixed else '') + \
+            '\n' + str(self.value)
 
     @property
     def size(self):
@@ -298,14 +298,16 @@ class DataHolder(Parentable):
 
     Getting and setting values
     --
-    The current value of the data is stored in self._array as a
-    numpy.ndarray.  Changing the value of the data is as simple as assignment
-    (once the data is part of a model). Example:
+    To get at the values of the data, use the value property:
 
     >>> m = GPflow.model.Model()
     >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
     >>> print(m.x.value)
     [[ 0.], [ 1.]]
+
+    Changing the value of the data is as simple as assignment
+    (once the data is part of a model):
+
     >>> m.x = np.array([ 0., 2.])
     >>> print(m.x.value)
     [[ 0.], [ 2.]]
@@ -315,7 +317,7 @@ class DataHolder(Parentable):
         """
         array is a numpy array of data.
         on_shape_change is one of ('raise', 'pass', 'recompile'), and
-        determines the behaviour when the data is set to a new value with tha
+        determines the behaviour when the data is set to a new value with a
         different shape
         """
         Parentable.__init__(self)
@@ -350,17 +352,18 @@ class DataHolder(Parentable):
         according to the option in self.on_shape_change.
         """
         if self.shape == array.shape:
-            self._array = array.copy()
+            self._array[...] = array  # just accept the new values
         else:
             if self.on_shape_change == 'raise':
                 raise ValueError("The shape of this data must not change. \
                                   (perhaps make the model again from scratch?)")
             elif self.on_shape_change == 'recompile':
+                self._array = array.copy()
                 self.highest_parent._needs_recompile = True
                 if hasattr(self.highest_parent, '_kill_autoflow'):
                     self.highest_parent._kill_autoflow()
             elif self.on_shape_change == 'pass':
-                pass
+                self._array = array.copy()
             else:
                 raise ValueError('invalid option')  # pragma no-cover
 
