@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from .param import Param
+from .param import Param, DataHolder
 from .model import GPModel
 from . import transforms
 from .mean_functions import Zero
@@ -37,6 +37,8 @@ class VGP(GPModel):
         q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1)
 
         """
+        X = DataHolder(X, on_shape_change='recompile')
+        Y = DataHolder(X, on_shape_change='recompile')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]

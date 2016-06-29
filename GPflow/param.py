@@ -106,7 +106,7 @@ class Param(Parentable):
     --
     There is a self.fixed flag, in which case the parameter does not get
     optimized. To enable this, during make_tf_array, a fixed parameter will be
-    ignored, and a placeholder returned via get_feed_dict instead. 
+    ignored, and a placeholder returned via get_feed_dict instead.
 
     Fixes and transforms can be used together, in the sense that fixes take
     priority over transforms, so unfixing a parameter is as simple as setting
@@ -308,21 +308,23 @@ class DataHolder(Parentable):
     [[ 0.], [ 1.]]
     >>> m.x = np.array([ 0., 2.])
     >>> print(m.x.value)
-    [[ 0.], [ 1.]]
+    [[ 0.], [ 2.]]
 
     """
-    def __init__(self, array):
+    def __init__(self, array, on_shape_change='raise'):
         """
+        array is a numpy array of data.
+        on_shape_change is one of ('raise', 'pass', 'recompile'), and
+        determines the behaviour when the data is set to a new value with tha
+        different shape
         """
         Parentable.__init__(self)
         self._array = array
-        self._tf_array = tf.placeholder(dtype=tf.float64,
+        self._tf_array = tf.placeholder(dtype=self._array.dtype,
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
-
-    @property
-    def value(self):
-        return self._array.copy()
+        assert on_shape_change in ['raise', 'pass', 'recompile']
+        self.on_shape_change = on_shape_change
 
     def get_feed_dict(self):
         return {self._tf_array: self._array}
@@ -334,21 +336,37 @@ class DataHolder(Parentable):
 
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
-        self._tf_array = tf.placeholder(dtype=tf.float64,
+        self._tf_array = tf.placeholder(dtype=self._array.dtype,
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
 
     def set_data(self, array):
         """
         Setting a data into self._array before any TensorFlow execution.
-        If the shape of the data changes, then raise the recompilation flag.
+        If the shape of the data changes, then either:
+         - raise an exception
+         - raise the recompilation flag.
+         - do nothing
+        according to the option in self.on_shape_change.
         """
-        old_shape = self._array.shape
-        self._array = array
-        if not self.shape == old_shape:
-            self.highest_parent._needs_recompile = True
-            if hasattr(self.highest_parent, '_kill_autoflow'):
-                self.highest_parent._kill_autoflow()
+        if self.shape == array.shape:
+            self._array = array.copy()
+        else:
+            if self.on_shape_change == 'raise':
+                raise ValueError("The shape of this data must not change. \
+                                  (perhaps make the model again from scratch?)")
+            elif self.on_shape_change == 'recompile':
+                self.highest_parent._needs_recompile = True
+                if hasattr(self.highest_parent, '_kill_autoflow'):
+                    self.highest_parent._kill_autoflow()
+            elif self.on_shape_change == 'pass':
+                pass
+            else:
+                raise ValueError('invalid option')  # pragma no-cover
+
+    @property
+    def value(self):
+        return self._array.copy()
 
     @property
     def size(self):
@@ -437,15 +455,15 @@ class Parameterized(Parentable):
     """
     An object to contain parameters and data.
 
-    This object is designed to be part of a tree, with Param and DataHolder 
-    objects at the leaves. We can then recurse down the tree to find all the 
+    This object is designed to be part of a tree, with Param and DataHolder
+    objects at the leaves. We can then recurse down the tree to find all the
     parameters and data (leaves), or recurse up the tree (using highest_parent)
     from the leaves to the root.
 
-    A useful application of such a recursion is 'tf_mode', where the
-    parameters appear as their _tf_array variables. This allows us to build
-    models on those parameters. During _tf_mode, the __getattribute__
-    method is overwritten to return tf arrays in place of parameters.
+    A useful application of such a recursion is 'tf_mode', where the parameters
+    appear as their _tf_array variables. This allows us to build models on
+    those parameters. During _tf_mode, the __getattribute__ method is
+    overwritten to return tf arrays in place of parameters (and data).
 
     Another recursive function is build_prior which sums the log-prior from all
     of the tree's parameters (whilst in tf_mode!).
@@ -509,7 +527,7 @@ class Parameterized(Parentable):
                     self.highest_parent._needs_recompile = True
 
             # if the existing atribute is a DataHolder, set the value of the data inside
-            if isinstance(p, DataHolder):
+            if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
                 p.set_data(value)
                 return  # don't call object.setattr or set the _parent value
 

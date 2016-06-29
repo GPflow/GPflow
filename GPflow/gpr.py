@@ -4,6 +4,7 @@ from .densities import multivariate_normal
 from .mean_functions import Zero
 from . import likelihoods
 from .tf_hacks import eye
+from .param import DataHolder
 
 
 class GPR(GPModel):
@@ -17,6 +18,8 @@ class GPR(GPModel):
         likelihood.  Multiple columns of Y are treated independently.
         """
         likelihood = likelihoods.Gaussian()
+        X = DataHolder(X, on_shape_change='pass')
+        Y = DataHolder(Y, on_shape_change='pass')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_latent = Y.shape[1]
 

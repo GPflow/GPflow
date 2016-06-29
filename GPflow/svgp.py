@@ -11,11 +11,16 @@ from . import kullback_leiblers
 
 class MinibatchData(DataHolder):
     """
+    A special DataHolder class which feeds a minibatch to tensorflow via
+    get_feed_dict().
     """
     def __init__(self, array, minibatch_size, rng=None):
         """
+        array is a numpy array of data.
+        minibatch_size (int) is the size of the minibatch
+        rng is an instance of np.random.RandomState(), defaults to seed 0.
         """
-        DataHolder.__init__(self, array)
+        DataHolder.__init__(self, array, on_shape_change='pass')
         self.minibatch_size = minibatch_size
         self.rng = rng or np.random.RandomState(0)
 
