@@ -22,7 +22,7 @@ class Kern(Parameterized):
         if active_dims is None:
             self.active_dims = slice(input_dim)
         else:
-            self.active_dims = active_dims
+            self.active_dims = tf.constant(np.array(active_dims, dtype=np.int32), tf.int32)
 
     def _slice(self, X, X2):
         if isinstance(self.active_dims, slice):
@@ -30,11 +30,10 @@ class Kern(Parameterized):
             if X2 is not None:
                 X2 = X2[:, self.active_dims]
             return X, X2
-        else:  # TODO: when tf can do fancy indexing, use that.
-            X = tf.transpose(tf.pack([X[:, i] for i in self.active_dims]))
+        else:
+            X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
             if X2 is not None:
-                X2 = tf.transpose(tf.pack([X2[:, i]
-                                           for i in self.active_dims]))
+                X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
             return X, X2
 
     def __add__(self, other):
@@ -46,6 +45,10 @@ class Kern(Parameterized):
     @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
+
+    @AutoFlow((tf.float64, [None, None]))
+    def compute_K_symm(self, X):
+        return self.K(X)
 
 
 class Static(Kern):
