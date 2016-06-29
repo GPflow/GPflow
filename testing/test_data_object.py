@@ -49,9 +49,9 @@ class TestDataHolderModels(unittest.TestCase):
     """
     def setUp(self):
         tf.reset_default_graph()
-        rng = np.random.RandomState(0)
-        self.X = rng.rand(20, 1)*10
-        self.Y = np.sin(self.X) + 0.9 * np.cos(self.X*1.6) + rng.randn(*self.X.shape) * 0.8
+        self.rng = np.random.RandomState(0)
+        self.X = self.rng.rand(20, 1)*10
+        self.Y = np.sin(self.X) + 0.9 * np.cos(self.X*1.6) + self.rng.randn(*self.X.shape) * 0.8
         self.kern = GPflow.kernels.Matern32(1)
 
     def test_gpr(self):
@@ -83,10 +83,13 @@ class TestDataHolderModels(unittest.TestCase):
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
 
-        m.X = np.random.randn(30, 1)
-
+        Xnew = np.random.randn(30, 1)
+        Ynew = np.sin(Xnew) + 0.9 * np.cos(Xnew*1.6) + self.rng.randn(*Xnew.shape) * 0.8
+        m.X = Xnew
+        m.Y = Ynew
         self.assertTrue(m._needs_recompile,
-                        msg="Recompilation should be necessary for the same shape data")
+                        msg="Recompilation should be necessary for different shape data")
+        m._compile()  # make sure compilation is okay for new shapes.
 
     def test_sgpmc(self):
         m = GPflow.sgpmc.SGPMC(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT(), Z=self.X[::2])
@@ -119,10 +122,13 @@ class TestDataHolderModels(unittest.TestCase):
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
 
-        m.X = np.random.randn(30, 1)
-
+        Xnew = np.random.randn(30, 1)
+        Ynew = np.sin(Xnew) + 0.9 * np.cos(Xnew*1.6) + self.rng.randn(*Xnew.shape) * 0.8
+        m.X = Xnew
+        m.Y = Ynew
         self.assertTrue(m._needs_recompile,
                         msg="Recompilation should be necessary for different shape data")
+        m._compile()  # make sure compilation is okay for new shapes.
 
 
 if __name__ == '__main__':
