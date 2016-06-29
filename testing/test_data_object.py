@@ -5,7 +5,44 @@ import unittest
 import tensorflow as tf
 
 
-class TestDataHolder(unittest.TestCase):
+class TestDataHolderSimple(unittest.TestCase):
+    def setUp(self):
+        self.m = GPflow.model.Model()
+        self.m.X = GPflow.param.DataHolder(np.random.randn(2, 2), on_shape_change='pass')
+        self.m.Y = GPflow.param.DataHolder(np.random.randn(2, 2), on_shape_change='raise')
+        self.m.Z = GPflow.param.DataHolder(np.random.randn(2, 2), on_shape_change='recompile')
+        self.m._needs_recompile = False
+
+    def test_same_shape(self):
+        new_X = np.random.randn(2, 2)
+        self.m.X = new_X
+        assert np.all(self.m.get_feed_dict()[self.m.X._tf_array] == new_X)
+        self.assertFalse(self.m._needs_recompile)
+
+        new_Y = np.random.randn(2, 2)
+        self.m.Y = new_Y
+        assert np.all(self.m.get_feed_dict()[self.m.Y._tf_array] == new_Y)
+        self.assertFalse(self.m._needs_recompile)
+
+        new_Z = np.random.randn(2, 2)
+        self.m.Z = new_Z
+        assert np.all(self.m.get_feed_dict()[self.m.Z._tf_array] == new_Z)
+        self.assertFalse(self.m._needs_recompile)
+
+    def test_pass(self):
+        self.m.X = np.random.randn(3, 3)
+        self.assertFalse(self.m._needs_recompile)
+
+    def test_raise(self):
+        with self.assertRaises(ValueError):
+            self.m.Y = np.random.randn(3, 3)
+
+    def test_recompile(self):
+        self.m.Z = np.random.randn(3, 3)
+        self.assertTrue(self.m._needs_recompile)
+
+
+class TestDataHolderModels(unittest.TestCase):
     """
     We make test for Dataholder that enables to reuse model for different data
     with the same shape to the original.  We tested this for the six models.
@@ -19,6 +56,7 @@ class TestDataHolder(unittest.TestCase):
 
     def test_gpr(self):
         m = GPflow.gpr.GPR(self.X, self.Y, self.kern)
+        m._compile()
         m.X = np.random.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -28,7 +66,8 @@ class TestDataHolder(unittest.TestCase):
                          msg="For GPR, recompilation should be avoided for the same shape data")
 
     def test_sgpr(self):
-        m = GPflow.sgpr.SGPR(self.X, self.Y, self.kern, X=self.X[::2])
+        m = GPflow.sgpr.SGPR(self.X, self.Y, self.kern, Z=self.X[::2])
+        m._compile()
         m.X = np.random.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -39,6 +78,7 @@ class TestDataHolder(unittest.TestCase):
 
     def test_gpmc(self):
         m = GPflow.gpmc.GPMC(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT())
+        m._compile()
         m.X = np.random.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -50,17 +90,19 @@ class TestDataHolder(unittest.TestCase):
 
     def test_sgpmc(self):
         m = GPflow.sgpmc.SGPMC(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT(), Z=self.X[::2])
+        m._compile()
         m.X = np.random.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
 
         m.X = np.random.randn(30, 1)
 
-        self.assertTrue(m._needs_recompile,
-                        msg="Recompilation should be necessary for different shape data")
+        self.assertFalse(m._needs_recompile,
+                         msg="Recompilation should not be necessary for different shape data")
 
     def test_svgp(self):
         m = GPflow.svgp.SVGP(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT(), Z=self.X[::2])
+        m._compile()
         m.X = np.random.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -68,10 +110,11 @@ class TestDataHolder(unittest.TestCase):
         m.X = np.random.randn(30, 1)
 
         self.assertFalse(m._needs_recompile,
-                         msg="For SVGP, recompilation should be avoided for the same shape data")
+                         msg="For SVGP, recompilation should be avoided for new shape data")
 
     def test_vgp(self):
         m = GPflow.vgp.VGP(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT())
+        m._compile()
         m.X = np.random.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
