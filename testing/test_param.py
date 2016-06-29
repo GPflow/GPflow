@@ -401,10 +401,10 @@ class TestDictSimple(unittest.TestCase):
 
 class TestDictSVGP(unittest.TestCase):
     def setUp(self):
-        rng = np.random.RandomState(0)
-        X = rng.randn(10, 1)
-        Y = rng.randn(10, 1)
-        Z = rng.randn(5, 1)
+        self.rng = np.random.RandomState(0)
+        X = self.rng.randn(10, 1)
+        Y = self.rng.randn(10, 1)
+        Z = self.rng.randn(5, 1)
         self.m = GPflow.svgp.SVGP(X, Y, Z=Z, likelihood=GPflow.likelihoods.Gaussian(), kern=GPflow.kernels.RBF(1))
 
     def test(self):
@@ -412,15 +412,15 @@ class TestDictSVGP(unittest.TestCase):
         d = self.m.get_parameter_dict()
 
         # muck up the model
-        self.m.set_state(np.random.randn(self.m.get_free_state().size))
+        self.m.set_state(self.rng.randn(self.m.get_free_state().size))
         loglik2 = self.m.compute_log_likelihood()
 
         # reset the model
         self.m.set_parameter_dict(d)
         loglik3 = self.m.compute_log_likelihood()
 
-        self.assertFalse(loglik1 == loglik2)
-        self.assertTrue(loglik1 == loglik3)
+        self.assertFalse(np.allclose(loglik1, loglik2))
+        self.assertTrue(np.allclose(loglik1, loglik3))
 
 
 if __name__ == "__main__":
