@@ -376,6 +376,11 @@ class DataHolder(Parentable):
     def shape(self):
         return self._array.shape
 
+    def __str__(self, prepend='Data:'):
+        return prepend + \
+            '\033[1m' + self.name + '\033[0m' + \
+            '\n' + str(self.value)
+
 
 class AutoFlow:
     """
