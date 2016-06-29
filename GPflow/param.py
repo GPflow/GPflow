@@ -220,7 +220,7 @@ class Param(Parentable):
         """
         if self.prior is None:
             return tf.constant(0.0, tf.float64)
-        elif self._tf_array is None:
+        elif self._tf_array is None:  # pragma: no-cover
             raise ValueError("tensorflow array has not been initialized")
         else:
             return self.prior.logp(self._tf_array) + self._log_jacobian
@@ -365,7 +365,7 @@ class DataHolder(Parentable):
             elif self.on_shape_change == 'pass':
                 self._array = array.copy()
             else:
-                raise ValueError('invalid option')  # pragma no-cover
+                raise ValueError('invalid option')  # pragma: no-cover
 
     @property
     def value(self):
