@@ -454,6 +454,12 @@ class Parameterized(Parentable):
         return count
 
     def get_param_index(self, param_to_index):
+        """
+        Given a parameter, compute the position of that parameter on the
+        free-state vector. This returns:
+          - count: an integer representing the position
+          - found: a bool representing whether the parameter was found.
+        """
         found = False
         count = 0
         for p in self.sorted_params:
