@@ -151,6 +151,21 @@ class Param(Parentable):
     def set_parameter_dict(self, d):
         self._array[...] = d.pop(self.long_name)
 
+    def get_samples_dict(self, samples):
+        """
+        Given a numpy array where each row is a valid free-state vector, return
+        a dictionary which contains the parameter name and associated samples
+        in the correct form (e.g. with positive constraints applied).
+        """
+        if self.fixed:
+            return {self.long_name: np.tile(self.value, [samples.shape[0], 1, 1])}
+        start, _ = self.highest_parent.get_param_index(self)
+        end = start + self.size
+        samples = samples[:, start:end]
+        samples = samples.reshape((samples.shape[0],) + self.shape)
+        samples = self.transform.forward(samples)
+        return {self.long_name: samples}
+
     def make_tf_array(self, free_array):
         """
         free_array is a tensorflow vector which will be the optimisation
@@ -374,6 +389,17 @@ class Parameterized(Parentable):
     def set_parameter_dict(self, d):
         for p in self.sorted_params:
             p.set_parameter_dict(d)
+
+    def get_samples_dict(self, samples):
+        """
+        Given a numpy array where each row is a valid free-state vector, return
+        a dictionary which contains the parameter name and associated samples
+        in the correct form (e.g. with positive constraints applied).
+        """
+        d = {}
+        for p in self.sorted_params:
+            d.update(p.get_samples_dict(samples))
+        return d
 
     def __getattribute__(self, key):
         """
