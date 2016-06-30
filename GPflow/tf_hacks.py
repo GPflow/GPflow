@@ -1,7 +1,7 @@
 """
 A collection of hacks for tensorflow.
 
-hopefully we can remove these as the library matures
+Hopefully we can remove these as the library matures
 """
 
 import tensorflow as tf

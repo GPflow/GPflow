@@ -88,9 +88,9 @@ def plotPredictions( ax, model, color, label ):
 
 def trainSparseModel(xtrain,ytrain,exact_model,isFITC, xtest, ytest):
     sparse_model = getSparseModel(xtrain,ytrain,isFITC)
-    sparse_model.likelihood.variance._array = exact_model.likelihood.variance._array.copy()
-    sparse_model.kern.lengthscales._array = exact_model.kern.lengthscales._array.copy()
-    sparse_model.kern.variance._array = exact_model.kern.variance._array.copy()
+    sparse_model.likelihood.variance = exact_model.likelihood.variance.value.copy()
+    sparse_model.kern.lengthscales = exact_model.kern.lengthscales.value.copy()
+    sparse_model.kern.variance = exact_model.kern.variance.value.copy()
     callback = cb( sparse_model, xtest, ytest )
     for repeatIndex in range(nRepeats):
         print("repeatIndex ",repeatIndex)
@@ -101,9 +101,9 @@ def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_in
     plotPredictions( ax_predictions, exact_model, 'g', label='Exact' )
     plotPredictions( ax_predictions, sparse_model, 'b', label='Approximate' )
     ax_predictions.legend(loc=9)
-    ax_predictions.plot( sparse_model.Z._array , -1.*np.ones( xtrain.shape ), 'ko' )
+    ax_predictions.plot( sparse_model.Z.value , -1.*np.ones( xtrain.shape ), 'ko' )
     ax_predictions.set_ylim( predict_limits )
-    ax_inducing_points.plot( xtrain, sparse_model.Z._array, 'bo' )
+    ax_inducing_points.plot( xtrain, sparse_model.Z.value, 'bo' )
     xs= np.linspace( ax_inducing_points.get_xlim()[0], ax_inducing_points.get_xlim()[1], 200 )
     ax_inducing_points.plot( xs, xs, 'g' )
     ax_inducing_points.set_xlabel('Optimal inducing point position')

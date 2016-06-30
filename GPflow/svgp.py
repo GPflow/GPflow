@@ -33,7 +33,7 @@ class SVGP(GPModel):
           Y.shape[1]
         - q_diag is a boolean. If True, the covariance is approximated by a
           diagonal matrix.
-        - whiten is a boolean. If True, we use the whitened represenation of
+        - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
         """
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
@@ -55,6 +55,17 @@ class SVGP(GPModel):
             q_sqrt = np.array([np.eye(self.num_inducing)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Param(q_sqrt)
+
+    def __getstate__(self):
+        d = GPModel.__getstate__(self)
+        d.pop('_tfX')
+        d.pop('_tfY')
+        return d
+
+    def __setstate__(self, d):
+        GPModel.__setstate__(self, d)
+        self._tfX = tf.Variable(self.X, name="tfX")
+        self._tfY = tf.Variable(self.Y, name="tfY")
 
     @property
     def minibatch(self):

@@ -2,7 +2,7 @@ from functools import reduce
 
 import tensorflow as tf
 import numpy as np
-from .param import Param, Parameterized
+from .param import Param, Parameterized, AutoFlow
 from . import transforms
 
 
@@ -10,17 +10,19 @@ class Kern(Parameterized):
     """
     The basic kernel class. Handles input_dim and active dims, and provides a
     generic '_slice' function to implement them.
-
-    input dim is an integer
-    active dims is a (slice | iterable of integers | None)
     """
+
     def __init__(self, input_dim, active_dims=None):
+        """
+        input dim is an integer
+        active dims is a (slice | iterable of integers | None)
+        """
         Parameterized.__init__(self)
         self.input_dim = input_dim
         if active_dims is None:
             self.active_dims = slice(input_dim)
         else:
-            self.active_dims = active_dims
+            self.active_dims = tf.constant(np.array(active_dims, dtype=np.int32), tf.int32)
 
     def _slice(self, X, X2):
         if isinstance(self.active_dims, slice):
@@ -28,11 +30,10 @@ class Kern(Parameterized):
             if X2 is not None:
                 X2 = X2[:, self.active_dims]
             return X, X2
-        else:  # TODO: when tf can do fancy indexing, use that.
-            X = tf.transpose(tf.pack([X[:, i] for i in self.active_dims]))
+        else:
+            X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
             if X2 is not None:
-                X2 = tf.transpose(tf.pack([X2[:, i]
-                                           for i in self.active_dims]))
+                X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
             return X, X2
 
     def __add__(self, other):
@@ -40,6 +41,14 @@ class Kern(Parameterized):
 
     def __mul__(self, other):
         return Prod([self, other])
+
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
+    def compute_K(self, X, Z):
+        return self.K(X, Z)
+
+    @AutoFlow((tf.float64, [None, None]))
+    def compute_K_symm(self, X):
+        return self.K(X)
 
 
 class Static(Kern):
@@ -89,7 +98,7 @@ class Bias(Constant):
 
 class Stationary(Kern):
     """
-    Base class for kernels that are statinoary, that is, they only depend on
+    Base class for kernels that are stationary, that is, they only depend on
 
         r = || x - x' ||
 
@@ -250,7 +259,7 @@ class PeriodicKernel(Kern):
     """
     def __init__(self, input_dim, period=1.0, variance=1.0,
                  lengthscales=1.0, active_dims=None):
-        # No ARD support for lenghtscale or period yet
+        # No ARD support for lengthscale or period yet
         Kern.__init__(self, input_dim, active_dims)
         self.variance = Param(variance, transforms.positive)
         self.lengthscales = Param(lengthscales, transforms.positive)
@@ -304,7 +313,7 @@ def make_kernel_names(kern_list):
 
 class Combination(Kern):
     """
-    Combine  a list of kernels, e.g. by adding or multiplying (see inherriting
+    Combine  a list of kernels, e.g. by adding or multiplying (see inheriting
     classes).
 
     The names of the kernels to be combined are generated from their class
@@ -323,7 +332,7 @@ class Combination(Kern):
             else:
                 self.kern_list.append(k)
 
-        # generate a set of suitable names and add the kernels as atributes
+        # generate a set of suitable names and add the kernels as attributes
         names = make_kernel_names(self.kern_list)
         [setattr(self, name, k) for name, k in zip(names, self.kern_list)]
 
