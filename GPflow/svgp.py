@@ -1,12 +1,41 @@
 import tensorflow as tf
 import numpy as np
-from .param import Param
+from .param import Param, DataHolder
 from .model import GPModel
 from . import transforms
 from . import conditionals
 from .mean_functions import Zero
 from .tf_hacks import eye
 from . import kullback_leiblers
+
+
+class MinibatchData(DataHolder):
+    """
+    A special DataHolder class which feeds a minibatch to tensorflow via
+    get_feed_dict().
+    """
+    def __init__(self, array, minibatch_size, rng=None):
+        """
+        array is a numpy array of data.
+        minibatch_size (int) is the size of the minibatch
+        rng is an instance of np.random.RandomState(), defaults to seed 0.
+        """
+        DataHolder.__init__(self, array, on_shape_change='pass')
+        self.minibatch_size = minibatch_size
+        self.rng = rng or np.random.RandomState(0)
+
+    def generate_index(self):
+        if float(self.minibatch_size) / float(self._array.shape[0]) > 0.5:
+            return self.rng.permutation(self._array.shape[0])[:self.minibatch_size]
+        else:
+            # This is much faster than above, and for N >> minibatch,
+            # it doesn't make much difference. This actually
+            # becomes the limit when N is around 10**6, which isn't
+            # uncommon when using SVI.
+            return self.rng.randint(self._array.shape[0], size=self.minibatch_size)
+
+    def get_feed_dict(self):
+        return {self._tf_array: self._array[self.generate_index()]}
 
 
 class SVGP(GPModel):
@@ -23,7 +52,7 @@ class SVGP(GPModel):
 
     """
     def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(),
-                 num_latent=None, q_diag=False, whiten=True, minibatch=None):
+                 num_latent=None, q_diag=False, whiten=True, minibatch_size=None):
         """
         - X is a data matrix, size N x D
         - Y is a data matrix, size N x R
@@ -36,17 +65,21 @@ class SVGP(GPModel):
         - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
         """
+        # sort out the X, Y into MiniBatch objects.
+        if minibatch_size is None:
+            minibatch_size = X.shape[0]
+        self.num_data = X.shape[0]
+        X = MinibatchData(X, minibatch_size, np.random.RandomState(0))
+        Y = MinibatchData(Y, minibatch_size, np.random.RandomState(0))
+
+        # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.q_diag, self.whiten = q_diag, whiten
         self.Z = Param(Z)
         self.num_latent = num_latent or Y.shape[1]
         self.num_inducing = Z.shape[0]
 
-        # these variables used for minibatching
-        self._tfX = tf.Variable(self.X, name="tfX")
-        self._tfY = tf.Variable(self.Y, name="tfY")
-        self.minibatch = minibatch
-
+        # init variational parameters
         self.q_mu = Param(np.zeros((self.num_inducing, self.num_latent)))
         if self.q_diag:
             self.q_sqrt = Param(np.ones((self.num_inducing, self.num_latent)),
@@ -55,28 +88,6 @@ class SVGP(GPModel):
             q_sqrt = np.array([np.eye(self.num_inducing)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Param(q_sqrt)
-
-    def __getstate__(self):
-        d = GPModel.__getstate__(self)
-        d.pop('_tfX')
-        d.pop('_tfY')
-        return d
-
-    def __setstate__(self, d):
-        GPModel.__setstate__(self, d)
-        self._tfX = tf.Variable(self.X, name="tfX")
-        self._tfY = tf.Variable(self.Y, name="tfY")
-
-    @property
-    def minibatch(self):
-        if self._minibatch is None:
-            return len(self.X)
-        else:
-            return self._minibatch
-
-    @minibatch.setter
-    def minibatch(self, val):
-        self._minibatch = val
 
     def build_prior_KL(self):
         if self.whiten:
@@ -102,37 +113,6 @@ class SVGP(GPModel):
                                                 self.num_latent)
         return KL
 
-    def _compile(self, optimizer=None):
-        """
-        compile the tensorflow function "self._objective"
-        """
-        opt_step = GPModel._compile(self, optimizer)
-
-        def obj(x):
-            if self.minibatch / float(len(self.X)) > 0.5:
-                ss = np.random.permutation(len(self.X))[:self.minibatch]
-            else:
-                # This is much faster than above, and for N >> minibatch,
-                # it doesn't make much difference. This actually
-                # becomes the limit when N is around 10**6, which isn't
-                # uncommon when using SVI.
-                ss = np.random.randint(len(self.X), size=self.minibatch)
-            return self._session.run([self._minusF, self._minusG],
-                                     feed_dict={self._free_vars: x,
-                                                self._tfX: self.X[ss, :],
-                                                self._tfY: self.Y[ss, :]})
-        self._objective = obj
-        return opt_step
-
-    def optimize(self, method='L-BFGS-B', tol=None,
-                 callback=None, max_iters=1000, **kw):
-        def calc_feed_dict():
-            ss = np.random.randint(len(self.dX), size=self.minibatch)
-            return {self.X: self.dX[ss, :], self.Y: self.dY[ss, :]}
-
-        return GPModel.optimize(self, method, tol, callback,
-                                max_iters, calc_feed_dict, **kw)
-
     def build_likelihood(self):
         """
         This gives a variational bound on the model likelihood.
@@ -146,20 +126,19 @@ class SVGP(GPModel):
             cond_fn = conditionals.gaussian_gp_predict_whitened
         else:
             cond_fn = conditionals.gaussian_gp_predict
-        fmean, fvar = cond_fn(self._tfX, self.Z, self.kern,
+        fmean, fvar = cond_fn(self.X, self.Z, self.kern,
                               self.q_mu, self.q_sqrt, self.num_latent)
 
         # add in mean function to conditionals.
-        fmean += self.mean_function(self._tfX)
+        fmean += self.mean_function(self.X)
 
         # Get variational expectations.
-        var_exp = self.likelihood.variational_expectations(fmean,
-                                                           fvar, self._tfY)
+        var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
-        Nbatch = tf.cast(tf.shape(self._tfX)[0], tf.float64)
-        minibatch_scale = len(self.X) / Nbatch
+        # re-scale for minibatch size
+        scale = tf.cast(self.num_data, tf.float64) / tf.cast(tf.shape(self.X)[0], tf.float64)
 
-        return tf.reduce_sum(var_exp) * minibatch_scale - KL
+        return tf.reduce_sum(var_exp) * scale - KL
 
     def build_predict(self, Xnew, full_cov=False):
         if self.whiten:

@@ -55,6 +55,15 @@ class Parentable(object):
             return self.name
         return self._parent.long_name + '.' + self.name
 
+    def __getstate__(self):
+        d = self.__dict__.copy()
+        d.pop('_parent')
+        return d
+
+    def __setstate__(self, d):
+        self.__dict__.update(d)
+        self._parent = None
+
 
 class Param(Parentable):
     """
@@ -105,17 +114,23 @@ class Param(Parentable):
 
     Fixes
     --
-    There is a self._fixed flag, in which case the parameter does not get
-    optimized. To enable this, during make_tf_array, the fixed values of
-    the parameter are returned. Fixes and transforms can be used together, in
-    the sense that fixes take priority over transforms, so unfixing a parameter
-    is as simple as setting the flag. Example:
+    There is a self.fixed flag, in which case the parameter does not get
+    optimized. To enable this, during make_tf_array, a fixed parameter will be
+    ignored, and a placeholder returned via get_feed_dict instead.
+
+    Fixes and transforms can be used together, in the sense that fixes take
+    priority over transforms, so unfixing a parameter is as simple as setting
+    the flag. Example:
 
     >>> p = Param(1.0, transform=GPflow.transforms.positive)
     >>> m = GPflow.model.Model()
     >>> m.p = p # the model has a single parameter, constrained to be +ve
     >>> m.p.fixed = True # the model now has no free parameters
     >>> m.p.fixed = False # the model has a single parameter, constrained +ve
+
+    Note that if self.fixed flag is assigned,  recompilation of the model is
+    necessary.  Otherwise, the change in the fixed parameter values does not
+    require recompilation.
 
 
     Compiling into tensorflow
@@ -125,8 +140,13 @@ class Param(Parentable):
     >>> self.make_tf_array
 
     constructs a tensorflow representation of the parameter, from a tensorflow
-    vector representing the free state.
+    vector representing the free state. In this case, the parameter is
+    represented as part of the 'free-state' vector associated with a model.
+    However, if the parameters is fixed, then a placeholder is returned during
+    a call to get_feed_dict, and the parameter is represented that way instead.
 
+    Priors and transforms
+    --
     The `self.prior` object is used to place priors on parameters, and the
     `self.transform` object is used to enable unconstrained optimization and
     MCMC.
@@ -166,7 +186,7 @@ class Param(Parentable):
         # TODO what about constraints that change the size ??
 
         if self.fixed:
-            self._tf_array = tf.constant(self._array.copy(), dtype=tf.float64)
+            # fixed parameters are treated by tf.placeholder
             return 0
         x_free = free_array[:self.size]
         mapped_array = self.transform.tf_forward(x_free)
@@ -184,6 +204,15 @@ class Param(Parentable):
         if self.fixed:
             return np.empty((0,))
         return self.transform.backward(self.value.flatten())
+
+    def get_feed_dict(self):
+        """
+        Return a dictionary matching up any fixed-placeholders to their values
+        """
+        d = {}
+        if self.fixed:
+            d[self._tf_array] = self.value
+        return d
 
     def set_state(self, x):
         """
@@ -207,7 +236,7 @@ class Param(Parentable):
         """
         if self.prior is None:
             return tf.constant(0.0, tf.float64)
-        elif self._tf_array is None:
+        elif self._tf_array is None:  # pragma: no-cover
             raise ValueError("tensorflow array has not been initialized")
         else:
             return self.prior.logp(self._tf_array) + self._log_jacobian
@@ -223,13 +252,22 @@ class Param(Parentable):
             if hasattr(self.highest_parent, '_kill_autoflow'):
                 self.highest_parent._kill_autoflow()
 
+        # when setting the fixed attribute, make or remove a placeholder appropraitely
+        if key == 'fixed':
+            if value:
+                self._tf_array = tf.placeholder(dtype=tf.float64,
+                                                shape=self._array.shape,
+                                                name=self.name)
+            else:
+                self._tf_array = None
+
     def __str__(self, prepend=''):
         return prepend + \
-               '\033[1m' + self.name + '\033[0m' + \
-               ' transform:' + str(self.transform) + \
-               ' prior:' + str(self.prior) + \
-               (' [FIXED]' if self.fixed else '') + \
-               '\n' + str(self.value)
+            '\033[1m' + self.name + '\033[0m' + \
+            ' transform:' + str(self.transform) + \
+            ' prior:' + str(self.prior) + \
+            (' [FIXED]' if self.fixed else '') + \
+            '\n' + str(self.value)
 
     @property
     def size(self):
@@ -253,20 +291,114 @@ class Param(Parentable):
         return html
 
     def __getstate__(self):
-        d = self.__dict__.copy()
+        d = Parentable.__getstate__(self)
         d.pop('_tf_array')
         d.pop('_log_jacobian')
-        d.pop('_parent')
         return d
 
     def __setstate__(self, d):
-        self.__dict__ = d
+        Parentable.__setstate__(self, d)
         self._tf_array = None
         self._log_jacobian = None
-        self._parent = None
-        # NB the parent property will be set by the parent object, aprt from
+        # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
+
+
+class DataHolder(Parentable):
+    """
+    An object to represent data which needs to be passed to tensorflow for computation.
+
+    This behaves in much the same way as a Param (above), but is always
+    'fixed'. On a call to get_feed_dict, a placeholder-numpy pair is returned.
+
+    Getting and setting values
+    --
+    To get at the values of the data, use the value property:
+
+    >>> m = GPflow.model.Model()
+    >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
+    >>> print(m.x.value)
+    [[ 0.], [ 1.]]
+
+    Changing the value of the data is as simple as assignment
+    (once the data is part of a model):
+
+    >>> m.x = np.array([ 0., 2.])
+    >>> print(m.x.value)
+    [[ 0.], [ 2.]]
+
+    """
+    def __init__(self, array, on_shape_change='raise'):
+        """
+        array is a numpy array of data.
+        on_shape_change is one of ('raise', 'pass', 'recompile'), and
+        determines the behaviour when the data is set to a new value with a
+        different shape
+        """
+        Parentable.__init__(self)
+        self._array = array
+        self._tf_array = tf.placeholder(dtype=self._array.dtype,
+                                        shape=[None]*self._array.ndim,
+                                        name=self.name)
+        assert on_shape_change in ['raise', 'pass', 'recompile']
+        self.on_shape_change = on_shape_change
+
+    def get_feed_dict(self):
+        return {self._tf_array: self._array}
+
+    def __getstate__(self):
+        d = Parentable.__getstate__(self)
+        d.pop('_tf_array')
+        return d
+
+    def __setstate__(self, d):
+        Parentable.__setstate__(self, d)
+        self._tf_array = tf.placeholder(dtype=self._array.dtype,
+                                        shape=[None]*self._array.ndim,
+                                        name=self.name)
+
+    def set_data(self, array):
+        """
+        Setting a data into self._array before any TensorFlow execution.
+        If the shape of the data changes, then either:
+         - raise an exception
+         - raise the recompilation flag.
+         - do nothing
+        according to the option in self.on_shape_change.
+        """
+        if self.shape == array.shape:
+            self._array[...] = array  # just accept the new values
+        else:
+            if self.on_shape_change == 'raise':
+                raise ValueError("The shape of this data must not change. \
+                                  (perhaps make the model again from scratch?)")
+            elif self.on_shape_change == 'recompile':
+                self._array = array.copy()
+                self.highest_parent._needs_recompile = True
+                if hasattr(self.highest_parent, '_kill_autoflow'):
+                    self.highest_parent._kill_autoflow()
+            elif self.on_shape_change == 'pass':
+                self._array = array.copy()
+            else:
+                raise ValueError('invalid option')  # pragma: no-cover
+
+    @property
+    def value(self):
+        return self._array.copy()
+
+    @property
+    def size(self):
+        return self._array.size
+
+    @property
+    def shape(self):
+        return self._array.shape
+
+    def __str__(self, prepend='Data:'):
+        return prepend + \
+            '\033[1m' + self.name + '\033[0m' + \
+            '\n' + str(self.value)
 
 
 class AutoFlow:
@@ -334,9 +466,10 @@ class AutoFlow:
                 with instance.tf_mode():
                     storage['tf_result'] = tf_method(instance, *storage['tf_args'])
                 storage['session'] = tf.Session()
-                storage['session'].run(tf.initialize_all_variables())
+                storage['session'].run(tf.initialize_all_variables(), feed_dict=instance.get_feed_dict())
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
+            feed_dict.update(instance.get_feed_dict())
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
@@ -344,17 +477,17 @@ class AutoFlow:
 
 class Parameterized(Parentable):
     """
-    An object to contain parameters.
+    An object to contain parameters and data.
 
-    This object is designed to be part of a tree, with Param objects at the
-    leaves. We can then recurse down the tree to find all the parameters
-    (leaves), or recurse up the tree (using highest_parent) from the leaves to
-    the root.
+    This object is designed to be part of a tree, with Param and DataHolder
+    objects at the leaves. We can then recurse down the tree to find all the
+    parameters and data (leaves), or recurse up the tree (using highest_parent)
+    from the leaves to the root.
 
-    A useful application of such a recursion is 'tf_mode', where the
-    parameters appear as their _tf_array variables. This allows us to build
-    models on those parameters. During _tf_mode, the __getattribute__
-    method is overwritten to return tf arrays in place of parameters.
+    A useful application of such a recursion is 'tf_mode', where the parameters
+    appear as their _tf_array variables. This allows us to build models on
+    those parameters. During _tf_mode, the __getattribute__ method is
+    overwritten to return tf arrays in place of parameters (and data).
 
     Another recursive function is build_prior which sums the log-prior from all
     of the tree's parameters (whilst in tf_mode!).
@@ -385,7 +518,7 @@ class Parameterized(Parentable):
         representations.
         """
         o = object.__getattribute__(self, key)
-        if isinstance(o, Param) and object.__getattribute__(self, '_tf_mode'):
+        if isinstance(o, (Param, DataHolder)) and object.__getattribute__(self, '_tf_mode'):
             return o._tf_array
         return o
 
@@ -428,11 +561,16 @@ class Parameterized(Parentable):
                 if hasattr(self.highest_parent, '_needs_recompile'):
                     self.highest_parent._needs_recompile = True
 
+            # if the existing atribute is a DataHolder, set the value of the data inside
+            if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
+                p.set_data(value)
+                return  # don't call object.setattr or set the _parent value
+
         # use the standard setattr
         object.__setattr__(self, key, value)
 
         # make sure a new child node knows this is the _parent:
-        if isinstance(value, (Param, Parameterized)) and key is not '_parent':
+        if isinstance(value, Parentable) and key is not '_parent':
             value._parent = self
 
     def _kill_autoflow(self):
@@ -465,6 +603,14 @@ class Parameterized(Parentable):
         return sorted(params, key=id)
 
     @property
+    def data_holders(self):
+        """
+        Return a list of all the child DataHolders
+        """
+        return [child for key, child in self.__dict__.items()
+                if isinstance(child, DataHolder)]
+
+    @property
     def fixed(self):
         return all(p.fixed for p in self.sorted_params)
 
@@ -480,6 +626,16 @@ class Parameterized(Parentable):
         # Here, additional empty array allows hstacking of empty list
         return np.hstack([p.get_free_state() for p in self.sorted_params]
                          + [np.empty(0)])
+
+    def get_feed_dict(self):
+        """
+        Recursively fetch a dictionary matching up fixed-placeholders to
+        associated values
+        """
+        d = {}
+        for p in self.sorted_params + self.data_holders:
+            d.update(p.get_feed_dict())
+        return d
 
     def set_state(self, x):
         """
@@ -570,16 +726,10 @@ class Parameterized(Parentable):
         html.append("</table>")
         return ''.join(html)
 
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        d.pop('_parent')
-        return d
-
     def __setstate__(self, d):
-        self.__dict__ = d
-        self._parent = None
+        Parentable.__setstate__(self, d)
         # reinstate _parent graph
-        for p in self.sorted_params:
+        for p in self.sorted_params + self.data_holders:
             p._parent = self
 
 
