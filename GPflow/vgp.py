@@ -46,7 +46,7 @@ class VGP(GPModel):
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
-    def _compile(self):
+    def _compile(self, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
