@@ -344,6 +344,19 @@ class DataHolder(Parentable):
         assert on_shape_change in ['raise', 'pass', 'recompile']
         self.on_shape_change = on_shape_change
 
+
+    def get_data_dict(self, d):
+        """
+        Add value in this dataholder into dict d
+        """
+        d[self.long_name] = self.value
+
+    def set_data_dict(self, d):
+        """
+        Restore value from dict d into self._array
+        """
+        self.set_data(d.pop(self.long_name))
+
     def get_feed_dict(self):
         return {self._tf_array: self._array}
 
@@ -507,6 +520,24 @@ class Parameterized(Parentable):
     def set_parameter_dict(self, d):
         for p in self.sorted_params:
             p.set_parameter_dict(d)
+
+    def get_data_dict(self, d=None):
+        """
+        Store data into dict d recursively.
+        """
+        if d is None:
+            d = {}
+        for p in self.data_holders:
+            p.get_data_dict(d)
+        return d
+
+    def set_data_dict(self, d):
+        """
+        Restore data from dict d into all the dataholders recursively.
+        """
+        for p in self.data_holders:
+            p.set_data_dict(d)
+
 
     def __getattribute__(self, key):
         """

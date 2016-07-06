@@ -131,5 +131,85 @@ class TestDataHolderModels(unittest.TestCase):
         m._compile()  # make sure compilation is okay for new shapes.
 
 
+class Test_Dict(unittest.TestCase):
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        self.X = rng.randn(10, 1)
+        self.Y = rng.randn(10, 1)
+        
+        self.m = GPflow.gpr.GPR(self.X, self.Y, kern=GPflow.kernels.RBF(1))
+        m2 = GPflow.gpr.GPR(rng.randn(11, 1), rng.randn(11, 1), kern=GPflow.kernels.RBF(1))
+        
+        self.data_dict = self.m.get_data_dict() # data.shape= (10,1)
+        self.data_dict2 = m2.get_data_dict()    # data.shape= (11,1)
+
+    def test_data_dict(self):
+        """
+        Check restoration (and aquisition) of data_dict
+        """
+        rng = np.random.RandomState(0)
+        # Prepare another instance
+        m2 = GPflow.gpr.GPR(rng.randn(10, 1), rng.randn(10, 1), kern=GPflow.kernels.RBF(1))
+        
+        # restore data from self.data_dict
+        m2.set_data_dict(self.data_dict.copy())
+        
+        # check self.X == self.m.X.value
+        assert np.allclose(self.X, m2.X.value)
+        assert np.allclose(self.Y, m2.Y.value)
+    
+    
+    def test_recompile(self):
+        """
+        Check if recompilation flag raises after the data size changed by
+        set_data_dict
+        """
+        rng = np.random.RandomState(0)
+        # test GPR
+        m2 = GPflow.gpr.GPR(rng.randn(10, 1), rng.randn(10, 1), kern=GPflow.kernels.RBF(1))
+        m2._compile()
+
+        # same shape data        
+        m2.set_data_dict(self.data_dict.copy())
+        self.assertFalse(m2._needs_recompile)
+        # different shape data
+        m2.set_data_dict(self.data_dict2.copy())
+        self.assertFalse(m2._needs_recompile)
+        
+        # test VGP, change of the 
+        m3 = GPflow.vgp.VGP(X=rng.randn(10, 1), Y=rng.randn(10, 1), \
+            kern=GPflow.kernels.RBF(1), likelihood=GPflow.likelihoods.Gaussian())
+        m3._compile()
+        
+        # same shape data        
+        m3.set_data_dict(self.data_dict.copy())
+        self.assertFalse(m3._needs_recompile)
+        # different shape data
+        m3.set_data_dict(self.data_dict2.copy())
+        self.assertTrue(m3._needs_recompile)
+        
+        
+    def test_setData_at_somewhere(self):        
+        """
+        Test the acquisition and restoration in other part of the model
+        """
+        rng = np.random.RandomState(0)
+        Z = rng.randn(13,1)
+        # test GPR
+        m2 = GPflow.gpr.GPR(rng.randn(10, 1), rng.randn(10, 1), kern=GPflow.kernels.RBF(1))
+        
+        # add data in kernel
+        m2.kern.Z = GPflow.param.DataHolder(Z, on_shape_change='pass')
+        
+        # generate dict
+        data_dict = m2.get_data_dict()
+        
+        # update Z
+        m2.kern.Z = GPflow.param.DataHolder(rng.randn(12,1), on_shape_change='pass')
+        # restore
+        m2.set_data_dict(data_dict.copy())
+
+        self.assertTrue(m2.kern.Z, Z)
+        
 if __name__ == '__main__':
     unittest.main()
