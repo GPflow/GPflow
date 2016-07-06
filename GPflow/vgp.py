@@ -59,7 +59,7 @@ class VGP(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        super(VGP, self)._compile()
+        super(VGP, self)._compile(optimizer=optimizer)
 
     def build_likelihood(self):
         """
