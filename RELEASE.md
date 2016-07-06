@@ -1,3 +1,20 @@
+# Release 0.2
+ - Significant improvements to the way that data and fixed parameters are handled. 
+
+Previously, data and fixed parameters were treated as tensorflow constants.
+Now, a new mechanism called `get_feed_dict()` can gather up data and and fixed
+parameters and pass them into the graph as placeholders.
+ 
+ - To enable the above, data are now stored in objects called `DataHolder`. To
+   access values of the data, use the same syntax as parameters:
+   `print(m.X.value)`
+ - Models do not need to be recompiled when the data changes. 
+ - Two models, VGP and GPMC, do need to be recompiled if the *shape* of the data changes
+
+ - A multi-class likelihood is implemented
+
+
+
 # Release 0.1.4
  - Updated to work with tensorflow 0.9
  - Added a Logistic transform to enable contraining a parameter between two bounds

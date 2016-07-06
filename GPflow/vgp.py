@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from .param import Param
+from .param import Param, DataHolder
 from .model import GPModel
 from . import transforms
 from .mean_functions import Zero
@@ -37,12 +37,29 @@ class VGP(GPModel):
         q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1)
 
         """
+        X = DataHolder(X, on_shape_change='recompile')
+        Y = DataHolder(Y, on_shape_change='recompile')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
         self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
+
+    def _compile(self):
+        """
+        Before calling the standard compile function, check to see if the size
+        of the data has changed and add variational parameters appropriately.
+
+        This is necessary because the hape of the parameters depends on the
+        shape of the data.
+        """
+        if not self.num_data == self.X.shape[0]:
+            self.num_data = self.X.shape[0]
+            self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
+            self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
+                                  transforms.positive)
+        super(VGP, self)._compile()
 
     def build_likelihood(self):
         """

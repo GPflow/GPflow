@@ -124,7 +124,7 @@ class TestFixAndPredict(unittest.TestCase):
     def test(self):
         self.m._compile()
         self.m.kern.variance.fixed = True
-        _, _ = self.m.predict_f(self.m.X)
+        _, _ = self.m.predict_f(self.m.X.value)
 
 
 class TestSVGP(unittest.TestCase):
