@@ -35,7 +35,7 @@ class GPMC(GPModel):
         self.V = Param(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    def _compile(self):
+    def _compile(self, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add parameters appropriately.
@@ -47,7 +47,7 @@ class GPMC(GPModel):
             self.num_data = self.X.shape[0]
             self.V = Param(np.zeros((self.num_data, self.num_latent)))
             self.V.prior = Gaussian(0., 1.)
-        super(GPMC, self)._compile()
+        super(GPMC, self)._compile(optimizer)
 
     def build_likelihood(self):
         """
