@@ -79,8 +79,9 @@ class SamplesDictTest(unittest.TestCase):
         samples = self.m.sample(num_samples=20, Lmax=10, epsilon=0.05)
         sample_dict = self.m.get_samples_dict(samples)
         for name, trace in sample_dict.iteritems():
-            assert trace.shape[0] == 20
-            assert trace.shape[1:] == self.m.get_parameter_dict()[name].shape
+            self.assertTrue(trace.shape[0] == 20)
+            self.assertTrue(trace.iloc[0].shape == self.m.get_parameter_dict()[name].shape)
+            self.assertTrue(trace.iloc[10].shape == self.m.get_parameter_dict()[name].shape)
 
     def test_with_fixed(self):
         self.m.kern.lengthscales.fixed = True
@@ -88,7 +89,7 @@ class SamplesDictTest(unittest.TestCase):
         sample_dict = self.m.get_samples_dict(samples)
 
         ls_trace = sample_dict['model.kern.lengthscales']
-        assert np.all(ls_trace[0] == ls_trace)
+        assert np.all([np.all(v == ls_trace[0]) for v in ls_trace])
 
 
 if __name__ == "__main__":

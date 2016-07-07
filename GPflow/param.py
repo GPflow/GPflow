@@ -179,7 +179,7 @@ class Param(Parentable):
         in the correct form (e.g. with positive constraints applied).
         """
         if self.fixed:
-            return pd.Series(np.tile(self.value, [samples.shape[0], 1, 1]), name=self.long_name)
+            return pd.Series([self.value for _ in range(samples.shape[0])], name=self.long_name)
         start, _ = self.highest_parent.get_param_index(self)
         end = start + self.size
         samples = samples[:, start:end]
