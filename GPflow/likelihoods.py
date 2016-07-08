@@ -432,3 +432,42 @@ class MultiClass(Likelihood):
     def conditional_variance(self, F):
         p = self.conditional_mean(F)
         return p - tf.square(p)
+
+
+class Ordinal(Likelihood):
+    """
+    A likelihood for doing ordinal regression. 
+    """
+    def __init__(self, bin_edges):
+        """
+        TODO
+        """
+        Likelihood.__init__(self)
+        self.bin_edges = bin_edges
+        self.num_bins = bin_edges.size + 1
+        self.sigma = Param(1.0, transforms.positive)
+
+        self._bins_left = tf.concat(0, [self.bin_edges, np.array([np.inf])])
+        self._bins_right = tf.concat(0, [np.array([-np.inf]), self.bin_edges])
+
+    def logp(self, F, Y):
+        selected_bins_left = tf.gather(self._bins_left, Y)
+        selected_bins_right = tf.gather(self._bins_right, Y)
+
+        return tf.log(probit((selected_bins_left - F) / self.sigma) - probit((selected_bins_right - F) / self.sigma))
+
+    def _make_phi(self, F):
+        return probit((self._bins_left - tf.reshape(F, (-1, 1))) / self.sigma)\
+            - probit((self._bins_right - tf.reshape(F, (-1, 1))) / self.sigma)
+
+    def conditional_mean(self, F):
+        phi = self._make_phi(F)
+        Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))
+        return tf.reshape(tf.matmul(phi, Ys), tf.shape(F))
+
+    def conditional_variance(self, F):
+        phi = self._make_phi(F)
+        Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))
+        E_y = tf.matmul(phi, Ys)
+        E_y2 = tf.matmul(phi, tf.square(Ys))
+        return tf.reshape(E_y2 - tf.square(E_y), tf.shape(F))
