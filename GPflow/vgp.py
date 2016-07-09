@@ -72,7 +72,7 @@ class VGP(GPModel):
 
         with
 
-            q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1) .
+            q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
 
         """
         K = self.kern.K(self.X)
@@ -108,12 +108,12 @@ class VGP(GPModel):
         """
         The posterior variance of F is given by
 
-            q(f) = N(f | K alpha, [K^-1 + diag(lambda**2)]^-1)
+            q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
 
         Here we project this to F*, the values of the GP at Xnew which is given
         by
 
-           q(F*) = N ( F* | K_{*F} alpha , K_{**} - K_{*f}[K_{ff} +
+           q(F*) = N ( F* | K_{*F} alpha + mean, K_{**} - K_{*f}[K_{ff} +
                                            diag(lambda**-2)]^-1 K_{f*} )
 
         """
