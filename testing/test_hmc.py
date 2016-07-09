@@ -75,10 +75,10 @@ class SamplesDictTest(unittest.TestCase):
         X, Y = np.random.randn(2, 10, 1)
         self.m = GPflow.gpmc.GPMC(X, Y, kern=GPflow.kernels.Matern32(1), likelihood=GPflow.likelihoods.StudentT())
 
-    def test_samples_dict(self):
+    def test_samples_df(self):
         samples = self.m.sample(num_samples=20, Lmax=10, epsilon=0.05)
-        sample_dict = self.m.get_samples_dict(samples)
-        for name, trace in sample_dict.iteritems():
+        sample_df = self.m.get_samples_df(samples)
+        for name, trace in sample_df.iteritems():
             self.assertTrue(trace.shape[0] == 20)
             self.assertTrue(trace.iloc[0].shape == self.m.get_parameter_dict()[name].shape)
             self.assertTrue(trace.iloc[10].shape == self.m.get_parameter_dict()[name].shape)
@@ -86,7 +86,7 @@ class SamplesDictTest(unittest.TestCase):
     def test_with_fixed(self):
         self.m.kern.lengthscales.fixed = True
         samples = self.m.sample(num_samples=20, Lmax=10, epsilon=0.05)
-        sample_dict = self.m.get_samples_dict(samples)
+        sample_dict = self.m.get_samples_df(samples)
 
         ls_trace = sample_dict['model.kern.lengthscales']
         assert np.all([np.all(v == ls_trace[0]) for v in ls_trace])

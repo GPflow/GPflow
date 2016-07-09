@@ -185,7 +185,7 @@ class Param(Parentable):
         samples = samples[:, start:end]
         samples = samples.reshape((samples.shape[0],) + self.shape)
         samples = self.transform.forward(samples)
-        return pd.Series([v.squeeze() for v in samples], name=self.long_name)
+        return pd.Series([v for v in samples], name=self.long_name)
 
     def make_tf_array(self, free_array):
         """
