@@ -7,6 +7,11 @@ def gaussian(x, mu, var):
         - 0.5 * tf.square(mu-x)/var
 
 
+def lognormal(x, mu, var):
+    lnx = tf.log(x)
+    return gaussian(lnx, mu, var) - lnx
+
+
 def bernoulli(p, y):
     return tf.log(tf.select(tf.equal(y, 1), p, 1-p))
 
@@ -41,6 +46,7 @@ def beta(alpha, beta, y):
         + tf.lgamma(alpha + beta)\
         - tf.lgamma(alpha)\
         - tf.lgamma(beta)
+
 
 def laplace(mu, sigma, y):
     return - tf.abs(mu - y) / sigma - tf.log(2. * sigma)
