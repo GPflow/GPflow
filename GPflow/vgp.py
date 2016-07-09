@@ -46,7 +46,7 @@ class VGP(GPModel):
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
-    def _compile(self):
+    def _compile(self, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -59,7 +59,7 @@ class VGP(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        super(VGP, self)._compile()
+        super(VGP, self)._compile(optimizer=optimizer)
 
     def build_likelihood(self):
         """
@@ -76,7 +76,8 @@ class VGP(GPModel):
 
         """
         K = self.kern.K(self.X)
-        f_mean = tf.matmul(K, self.q_alpha) + self.mean_function(self.X)
+        K_alpha = tf.matmul(K, self.q_alpha)
+        f_mean = K_alpha + self.mean_function(self.X)
         # for each of the data-dimensions (columns of Y), find the diagonal
         # of the variance, and also relevant parts of the KL.
         f_var = []
@@ -98,7 +99,7 @@ class VGP(GPModel):
         f_var = tf.transpose(tf.pack(f_var))
 
         KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent
-                    + tf.reduce_sum(f_mean*self.q_alpha))
+                    + tf.reduce_sum(K_alpha*self.q_alpha))
 
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         return tf.reduce_sum(v_exp) - KL
