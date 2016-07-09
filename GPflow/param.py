@@ -170,12 +170,12 @@ class Param(Parentable):
         d[self.long_name] = self.value
 
     def set_parameter_dict(self, d):
-        self._array[...] = d.pop(self.long_name)
+        self._array[...] = d[self.long_name]
 
-    def get_samples_dict(self, samples):
+    def get_samples_df(self, samples):
         """
         Given a numpy array where each row is a valid free-state vector, return
-        a dictionary which contains the parameter name and associated samples
+        a pandas.DataFrame which contains the parameter name and associated samples
         in the correct form (e.g. with positive constraints applied).
         """
         if self.fixed:
@@ -185,7 +185,7 @@ class Param(Parentable):
         samples = samples[:, start:end]
         samples = samples.reshape((samples.shape[0],) + self.shape)
         samples = self.transform.forward(samples)
-        return pd.Series([v for v in samples], name=self.long_name)
+        return pd.Series([v.squeeze() for v in samples], name=self.long_name)
 
     def make_tf_array(self, free_array):
         """
@@ -524,15 +524,15 @@ class Parameterized(Parentable):
         for p in self.sorted_params:
             p.set_parameter_dict(d)
 
-    def get_samples_dict(self, samples):
+    def get_samples_df(self, samples):
         """
         Given a numpy array where each row is a valid free-state vector, return
-        a dictionary which contains the parameter name and associated samples
+        a pandas.DataFrame which contains the parameter name and associated samples
         in the correct form (e.g. with positive constraints applied).
         """
         d = pd.DataFrame()
         for p in self.sorted_params:
-            d = pd.concat([d, p.get_samples_dict(samples)], axis=1)
+            d = pd.concat([d, p.get_samples_df(samples)], axis=1)
         return d
 
     def __getattribute__(self, key):
