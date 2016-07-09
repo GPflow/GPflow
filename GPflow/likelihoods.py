@@ -447,18 +447,20 @@ class Ordinal(Likelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Param(1.0, transforms.positive)
 
-        self._bins_left = tf.concat(0, [self.bin_edges, np.array([np.inf])])
-        self._bins_right = tf.concat(0, [np.array([-np.inf]), self.bin_edges])
-
     def logp(self, F, Y):
-        selected_bins_left = tf.gather(self._bins_left, Y)
-        selected_bins_right = tf.gather(self._bins_right, Y)
+        scaled_bins_left = tf.concat(0, [self.bin_edges/self.sigma, np.array([np.inf])])
+        scaled_bins_right = tf.concat(0, [np.array([-np.inf]), self.bin_edges/self.sigma])
+        selected_bins_left = tf.gather(scaled_bins_left, Y)
+        selected_bins_right = tf.gather(scaled_bins_right, Y)
 
-        return tf.log(probit((selected_bins_left - F) / self.sigma) - probit((selected_bins_right - F) / self.sigma))
+        return tf.log(probit(selected_bins_left - F / self.sigma) -
+                      probit(selected_bins_right - F / self.sigma))
 
     def _make_phi(self, F):
-        return probit((self._bins_left - tf.reshape(F, (-1, 1))) / self.sigma)\
-            - probit((self._bins_right - tf.reshape(F, (-1, 1))) / self.sigma)
+        scaled_bins_left = tf.concat(0, [self.bin_edges/self.sigma, np.array([np.inf])])
+        scaled_bins_right = tf.concat(0, [np.array([-np.inf]), self.bin_edges/self.sigma])
+        return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
+            - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
     def conditional_mean(self, F):
         phi = self._make_phi(F)
