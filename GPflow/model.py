@@ -5,6 +5,7 @@ import numpy as np
 import tensorflow as tf
 from . import hmc
 import sys
+from . import tf_hacks
 
 
 class ObjectiveWrapper(object):
@@ -300,12 +301,12 @@ class GPModel(Model):
 
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
-    
-    
+
+
     For handling another data (X', Y'), set the new value to self.X and self.Y
     >>> m.X = X'
     >>> m.Y = Y'
-    If the shape of the data does not change, this model does not require 
+    If the shape of the data does not change, this model does not require
     another recompilation.
     """
 
@@ -346,9 +347,10 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
+        jitter = tf_hacks.eye(tf.shape(mu)[0]) * 1e-6
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:, :, i])
+            L = tf.cholesky(var[:, :, i] + jitter)
             shape = tf.pack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=tf.float64)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
