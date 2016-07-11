@@ -1,5 +1,6 @@
 from __future__ import print_function
-from .param import Parameterized, AutoFlow, DataHolder
+from .param import Parameterized, AutoFlow
+from .data_holders import DictData
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
@@ -316,9 +317,9 @@ class GPModel(Model):
         Model.__init__(self, name)
 
         if isinstance(X, np.ndarray):
-            X = DataHolder(X)
+            X = DictData(X)
         if isinstance(Y, np.ndarray):
-            Y = DataHolder(Y)
+            Y = DictData(Y)
         self.X, self.Y = X, Y
 
     def build_predict(self):

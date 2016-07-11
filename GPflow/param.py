@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import abc
 import tensorflow as tf
 from . import transforms
 from contextlib import contextmanager
@@ -321,30 +322,13 @@ class Param(Parentable):
         # the tf_array and _log jacobian will be replaced when the model is recompiled
 
 
+
 class DataHolder(Parentable):
-    """
-    An object to represent data which needs to be passed to tensorflow for computation.
-
-    This behaves in much the same way as a Param (above), but is always
-    'fixed'. On a call to get_feed_dict, a placeholder-numpy pair is returned.
-
-    Getting and setting values
-    --
-    To get at the values of the data, use the value property:
-
-    >>> m = GPflow.model.Model()
-    >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
-    >>> print(m.x.value)
-    [[ 0.], [ 1.]]
-
-    Changing the value of the data is as simple as assignment
-    (once the data is part of a model):
-
-    >>> m.x = np.array([ 0., 2.])
-    >>> print(m.x.value)
-    [[ 0.], [ 2.]]
-
-    """
+    #Abstract base class for data holders.
+    #Cannot be instantiated directly
+    #Instead inherit from this class and implement virtual functions.
+    __metaclass__ = abc.ABCMeta
+    
     def __init__(self, array, on_shape_change='raise'):
         """
         array is a numpy array of data.
@@ -360,9 +344,13 @@ class DataHolder(Parentable):
         assert on_shape_change in ['raise', 'pass', 'recompile']
         self.on_shape_change = on_shape_change
 
+    @abc.abstractmethod
     def get_feed_dict(self):
-        return {self._tf_array: self._array}
-
+        """
+        Return a dictionary matching up any fixed-placeholders to their values
+        """
+        raise NotImplementedError
+        
     def __getstate__(self):
         d = Parentable.__getstate__(self)
         d.pop('_tf_array')
@@ -415,7 +403,6 @@ class DataHolder(Parentable):
         return prepend + \
             '\033[1m' + self.name + '\033[0m' + \
             '\n' + str(self.value)
-
 
 class AutoFlow:
     """
