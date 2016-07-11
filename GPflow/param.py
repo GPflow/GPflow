@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from . import transforms
 from contextlib import contextmanager
@@ -169,7 +170,22 @@ class Param(Parentable):
         d[self.long_name] = self.value
 
     def set_parameter_dict(self, d):
-        self._array[...] = d.pop(self.long_name)
+        self._array[...] = d[self.long_name]
+
+    def get_samples_df(self, samples):
+        """
+        Given a numpy array where each row is a valid free-state vector, return
+        a pandas.DataFrame which contains the parameter name and associated samples
+        in the correct form (e.g. with positive constraints applied).
+        """
+        if self.fixed:
+            return pd.Series([self.value for _ in range(samples.shape[0])], name=self.long_name)
+        start, _ = self.highest_parent.get_param_index(self)
+        end = start + self.size
+        samples = samples[:, start:end]
+        samples = samples.reshape((samples.shape[0],) + self.shape)
+        samples = self.transform.forward(samples)
+        return pd.Series([v for v in samples], name=self.long_name)
 
     def make_tf_array(self, free_array):
         """
@@ -508,6 +524,17 @@ class Parameterized(Parentable):
         for p in self.sorted_params:
             p.set_parameter_dict(d)
 
+    def get_samples_df(self, samples):
+        """
+        Given a numpy array where each row is a valid free-state vector, return
+        a pandas.DataFrame which contains the parameter name and associated samples
+        in the correct form (e.g. with positive constraints applied).
+        """
+        d = pd.DataFrame()
+        for p in self.sorted_params:
+            d = pd.concat([d, p.get_samples_df(samples)], axis=1)
+        return d
+
     def __getattribute__(self, key):
         """
         Here, we overwrite the getattribute method.
@@ -590,6 +617,29 @@ class Parameterized(Parentable):
         for p in self.sorted_params:
             count += p.make_tf_array(X[count:])
         return count
+
+    def get_param_index(self, param_to_index):
+        """
+        Given a parameter, compute the position of that parameter on the
+        free-state vector. This returns:
+          - count: an integer representing the position
+          - found: a bool representing whether the parameter was found.
+        """
+        found = False
+        count = 0
+        for p in self.sorted_params:
+            if isinstance(p, Param):
+                if p is param_to_index:
+                    found = True
+                    break
+                else:
+                    count += p.get_free_state().size
+            elif isinstance(p, Parameterized):
+                extra, found = p.get_param_index(param_to_index)
+                count += extra
+                if found:
+                    break
+        return count, found
 
     @property
     def sorted_params(self):
