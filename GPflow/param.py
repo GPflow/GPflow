@@ -321,28 +321,14 @@ class Param(Parentable):
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
 
-
-
 class DataHolder(Parentable):
     #Abstract base class for data holders.
     #Cannot be instantiated directly
     #Instead inherit from this class and implement virtual functions.
     __metaclass__ = abc.ABCMeta
     
-    def __init__(self, array, on_shape_change='raise'):
-        """
-        array is a numpy array of data.
-        on_shape_change is one of ('raise', 'pass', 'recompile'), and
-        determines the behaviour when the data is set to a new value with a
-        different shape
-        """
+    def __init__(self):
         Parentable.__init__(self)
-        self._array = array
-        self._tf_array = tf.placeholder(dtype=self._array.dtype,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
-        assert on_shape_change in ['raise', 'pass', 'recompile']
-        self.on_shape_change = on_shape_change
 
     @abc.abstractmethod
     def get_feed_dict(self):
@@ -358,46 +344,6 @@ class DataHolder(Parentable):
 
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
-        self._tf_array = tf.placeholder(dtype=self._array.dtype,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
-
-    def set_data(self, array):
-        """
-        Setting a data into self._array before any TensorFlow execution.
-        If the shape of the data changes, then either:
-         - raise an exception
-         - raise the recompilation flag.
-         - do nothing
-        according to the option in self.on_shape_change.
-        """
-        if self.shape == array.shape:
-            self._array[...] = array  # just accept the new values
-        else:
-            if self.on_shape_change == 'raise':
-                raise ValueError("The shape of this data must not change. \
-                                  (perhaps make the model again from scratch?)")
-            elif self.on_shape_change == 'recompile':
-                self._array = array.copy()
-                self.highest_parent._needs_recompile = True
-                if hasattr(self.highest_parent, '_kill_autoflow'):
-                    self.highest_parent._kill_autoflow()
-            elif self.on_shape_change == 'pass':
-                self._array = array.copy()
-            else:
-                raise ValueError('invalid option')  # pragma: no-cover
-
-    @property
-    def value(self):
-        return self._array.copy()
-
-    @property
-    def size(self):
-        return self._array.size
-
-    @property
-    def shape(self):
-        return self._array.shape
 
     def __str__(self, prepend='Data:'):
         return prepend + \
