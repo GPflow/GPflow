@@ -448,13 +448,14 @@ class Ordinal(Likelihood):
         self.sigma = Param(1.0, transforms.positive)
 
     def logp(self, F, Y):
+        Y = tf.cast(Y, tf.int32)
         scaled_bins_left = tf.concat(0, [self.bin_edges/self.sigma, np.array([np.inf])])
         scaled_bins_right = tf.concat(0, [np.array([-np.inf]), self.bin_edges/self.sigma])
         selected_bins_left = tf.gather(scaled_bins_left, Y)
         selected_bins_right = tf.gather(scaled_bins_right, Y)
 
         return tf.log(probit(selected_bins_left - F / self.sigma) -
-                      probit(selected_bins_right - F / self.sigma))
+                      probit(selected_bins_right - F / self.sigma) + 1e-6)
 
     def _make_phi(self, F):
         scaled_bins_left = tf.concat(0, [self.bin_edges/self.sigma, np.array([np.inf])])
