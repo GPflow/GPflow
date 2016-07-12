@@ -7,20 +7,23 @@ class TestSetup(object):
     def __init__( self, likelihood, Y, tolerance ):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
         self.is_analytic = likelihood.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__
-        
+
 def getTestSetups(includeMultiClass=True,addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
         if likelihoodClass!=GPflow.likelihoods.MultiClass:
-            test_setups.append( TestSetup( likelihoodClass() , rng.rand(10,2) , 1e-6 ) )
+            if likelihoodClass == GPflow.likelihoods.Ordinal:
+                test_setups.append( TestSetup( likelihoodClass(np.array([-1, 1])) , rng.randint(0, 3, (10,2)) , 1e-6 ) )
+            else:
+                test_setups.append( TestSetup( likelihoodClass() , rng.rand(10,2) , 1e-6 ) )
         elif includeMultiClass:
             sample = rng.randn(10,2)
             #Multiclass needs a less tight tolerance due to presence of clipping.
             tolerance = 1e-3
             test_setups.append( TestSetup( likelihoodClass(2) ,  np.argmax(sample, 1).reshape(-1,1) , tolerance )  )
-    
-    if addNonStandardLinks:        
+
+    if addNonStandardLinks:
         test_setups.append( TestSetup( GPflow.likelihoods.Poisson(invlink=tf.square) , rng.rand(10,2) , 1e-6 ) )
         test_setups.append( TestSetup( GPflow.likelihoods.Exponential(invlink=tf.square) , rng.rand(10,2) , 1e-6 ) )
         test_setups.append( TestSetup( GPflow.likelihoods.Gamma(invlink=tf.square) , rng.rand(10,2) , 1e-6 ) )
@@ -37,7 +40,7 @@ class TestPredictConditional(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.test_setups = getTestSetups(addNonStandardLinks=True)
-        
+
         self.x = tf.placeholder('float64')
         for test_setup in self.test_setups:
             test_setup.likelihood.make_tf_array(self.x)
@@ -59,7 +62,7 @@ class TestPredictConditional(unittest.TestCase):
             l = test_setup.likelihood
             with l.tf_mode():
                 v1 = tf.Session().run(l.conditional_variance(self.F), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
-                v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state(), self.F:self.F_data})   
+                v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
             self.failUnless(np.allclose(v1, v2, test_setup.tolerance, test_setup.tolerance))
 
     def test_var_exp(self):
@@ -72,7 +75,7 @@ class TestPredictConditional(unittest.TestCase):
             y = test_setup.Y
             with l.tf_mode():
                 r1 = tf.Session().run(l.logp(self.F, y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
-                r2 = tf.Session().run(l.variational_expectations(self.F, self.F * 0,test_setup.Y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})   
+                r2 = tf.Session().run(l.variational_expectations(self.F, self.F * 0,test_setup.Y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
             self.failUnless(np.allclose(r1, r2, test_setup.tolerance, test_setup.tolerance))
 
 class TestQuadrature(unittest.TestCase):
@@ -90,7 +93,7 @@ class TestQuadrature(unittest.TestCase):
 
     def test_var_exp(self):
         #get all the likelihoods where variational expectations has been overwritten
-                
+
         for test_setup in self.test_setups:
             if not test_setup.is_analytic:
                 continue
@@ -110,7 +113,7 @@ class TestQuadrature(unittest.TestCase):
 
     def test_pred_density(self):
         #get all the likelihoods where predict_density  has been overwritten.
-        
+
         for test_setup in self.test_setups:
             if not test_setup.is_analytic:
                 continue
@@ -135,10 +138,10 @@ class TestRobustMaxMulticlass(unittest.TestCase):
     """
     def setUp(self):
         tf.reset_default_graph()
-    
+
     def testSymmetric(self):
         """
-        This test is based on the observation that for 
+        This test is based on the observation that for
         symmetric inputs the class predictions must have equal probability.
         """
         nClasses = 5
@@ -153,14 +156,14 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         rng = np.random.RandomState(1)
         Y = rng.randint( nClasses, size = (nPoints,1) )
         with l.tf_mode():
-            mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})  
-            pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})  
-            variational_expectations = tf.Session().run(l.variational_expectations(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data}) 
+            mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})
+            pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})
+            variational_expectations = tf.Session().run(l.variational_expectations(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})
         self.failUnless( np.allclose( mu , np.ones((nPoints,nClasses))/nClasses, tolerance, tolerance ) )
         self.failUnless( np.allclose( pred , np.ones((nPoints,1))/nClasses, tolerance, tolerance ) )
         validation_variational_expectation = 1./nClasses * np.log( 1.- epsilon ) + (1. - 1./nClasses ) * np.log( epsilon / (nClasses - 1) )
         self.failUnless( np.allclose( variational_expectations , np.ones((nPoints,1))*validation_variational_expectation, tolerance, tolerance ) )
-            
+
 if __name__ == "__main__":
     unittest.main()
 
