@@ -1,6 +1,8 @@
 import tensorflow as tf
 import numpy as np
 
+#The base class is actually held in .param 
+#because of its complex dependencies.
 from .param import DataHolder
 
 class TensorData(DataHolder):
