@@ -378,7 +378,7 @@ class RobustMax(object):
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
         """
-        A likelihood that can do multi-way classification. 
+        A likelihood that can do multi-way classification.
         Currently the only valid choice
         of inverse-link function (invlink) is an instance of RobustMax.
         """
@@ -388,7 +388,7 @@ class MultiClass(Likelihood):
             invlink = RobustMax(self.num_classes)
             self.invlink = invlink
         elif not isinstance(invlink,RobustMax):
-            raise NotImplementedError        
+            raise NotImplementedError
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
@@ -436,11 +436,36 @@ class MultiClass(Likelihood):
 
 class Ordinal(Likelihood):
     """
-    A likelihood for doing ordinal regression. 
+    A likelihood for doing ordinal regression.
+
+    The data are integer values from 0 to K, and the user must specify (K-1)
+    'bin edges' which define the points at which the labels switch. Let the bin
+    edges be [a_0, a_1, ... a_{K-1}], then the likelihood is
+
+    p(Y=0|F) = phi((a_0 - F) / sigma)
+    p(Y=1|F) = phi((a_1 - F) / sigma) - phi((a_0 - F) / sigma)
+    p(Y=2|F) = phi((a_2 - F) / sigma) - phi((a_1 - F) / sigma)
+    ...
+    p(Y=K|F) = 1 - phi((a_{K-1} - F) / sigma)
+
+    where phi is the cumulative density function of a Gaussian (the probit
+    function) and sigma is a parameter to be learned. A reference is:
+
+    @article{chu2005gaussian,
+      title={Gaussian processes for ordinal regression},
+      author={Chu, Wei and Ghahramani, Zoubin},
+      journal={Journal of Machine Learning Research},
+      volume={6},
+      number={Jul},
+      pages={1019--1041},
+      year={2005}
+    }
     """
     def __init__(self, bin_edges):
         """
-        TODO
+        bin_edges is a numpy array specifying at which function value the
+        output label should switch. In the possible Y values are 0...K, then
+        the size of bin_edges should be (K-1).
         """
         Likelihood.__init__(self)
         self.bin_edges = bin_edges
@@ -458,6 +483,13 @@ class Ordinal(Likelihood):
                       probit(selected_bins_right - F / self.sigma) + 1e-6)
 
     def _make_phi(self, F):
+        """
+        A helper function for making predictions. Constructs a probability
+        matrix where each row output the probability of the corresponding
+        label, and the rows match the entries of F.
+
+        Note that a matrix of F values is flattened.
+        """
         scaled_bins_left = tf.concat(0, [self.bin_edges/self.sigma, np.array([np.inf])])
         scaled_bins_right = tf.concat(0, [np.array([-np.inf]), self.bin_edges/self.sigma])
         return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
