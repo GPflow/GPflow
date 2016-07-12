@@ -83,6 +83,8 @@ class Log1pe(Transform):
        y = \log ( 1 + \exp(x))
 
     x is a free variable, y is always positive.
+
+    This function is known as 'softplus' in tensorflow.
     """
 
     def __init__(self, lower=1e-6):
@@ -98,8 +100,7 @@ class Log1pe(Transform):
         return np.log(1. + np.exp(x)) + self._lower
 
     def tf_forward(self, x):
-        one = tf.ones(tf.shape(x), tf.float64)
-        return tf.log(one + tf.exp(x)) + self._lower
+        return tf.nn.softplus(x) + self._lower
 
     def tf_log_jacobian(self, x):
         return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))

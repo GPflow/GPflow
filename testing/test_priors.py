@@ -50,6 +50,15 @@ class PriorModeTests(unittest.TestCase):
         xmax = self.m.get_free_state()
         self.failUnless(np.allclose(xmax, 3))
 
+    def testLogNormalMode(self):
+        self.m.x = GPflow.param.Param(1.0)
+        self.m.x.prior = GPflow.priors.LogNormal(3, 10)
+        self.m.x.transform = GPflow.transforms.Exp()
+        self.m.optimize(display=0)
+
+        xmax = self.m.get_free_state()
+        self.failUnless(np.allclose(xmax, 3))
+
 
 
 

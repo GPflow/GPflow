@@ -34,6 +34,19 @@ class Gaussian(Prior):
         return "N("+str(self.mu) + "," + str(self.var) + ")"
 
 
+class LogNormal(Prior):
+    def __init__(self, mu, var):
+        Prior.__init__(self)
+        self.mu = np.atleast_1d(np.array(mu, np.float64))
+        self.var = np.atleast_1d(np.array(var, np.float64))
+
+    def logp(self, x):
+        return tf.reduce_sum(densities.lognormal(x, self.mu, self.var))
+
+    def __str__(self):
+        return "logN("+str(self.mu) + "," + str(self.var) + ")"
+
+
 class Gamma(Prior):
     def __init__(self, shape, scale):
         Prior.__init__(self)
