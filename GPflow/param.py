@@ -265,8 +265,6 @@ class Param(Parentable):
         object.__setattr__(self, key, value)
         if key in recompile_keys:
             self.highest_parent._needs_recompile = True
-            if hasattr(self.highest_parent, '_kill_autoflow'):
-                self.highest_parent._kill_autoflow()
 
         # when setting the fixed attribute, make or remove a placeholder appropraitely
         if key == 'fixed':
@@ -392,8 +390,6 @@ class DataHolder(Parentable):
             elif self.on_shape_change == 'recompile':
                 self._array = array.copy()
                 self.highest_parent._needs_recompile = True
-                if hasattr(self.highest_parent, '_kill_autoflow'):
-                    self.highest_parent._kill_autoflow()
             elif self.on_shape_change == 'pass':
                 self._array = array.copy()
             else:
@@ -584,7 +580,6 @@ class Parameterized(Parentable):
             # recompile if necessary.
             if isinstance(p, Param) and isinstance(value, (Param, Parameterized)):
                 p._parent = None  # unlink the old Parameter from this tree
-                self.highest_parent._kill_autoflow()
                 if hasattr(self.highest_parent, '_needs_recompile'):
                     self.highest_parent._needs_recompile = True
 
@@ -600,12 +595,20 @@ class Parameterized(Parentable):
         if isinstance(value, Parentable) and key is not '_parent':
             value._parent = self
 
+        if key == '_needs_recompile':
+            self._kill_autoflow()
+
     def _kill_autoflow(self):
-        # remove all AutoFlow storage dicts recursively
+        """Remove all AutoFlow storage dicts recursively.
+
+        If AutoFlow functions become invalid, because recompilation is
+        required, this function recurses the structure removing all AutoFlow
+        dicts. Subsequent calls to to those functions will casue AutoFlow to regenerate.
+        """
         for key in self.__dict__.keys():
             if key[0] == '_' and key[-11:] == '_AF_storage':
                 delattr(self, key)
-        [p._kill_autoflow for p in self.sorted_params if isinstance(p, Parameterized)]
+        [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
 
     def make_tf_array(self, X):
         """
