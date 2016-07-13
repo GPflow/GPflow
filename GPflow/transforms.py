@@ -57,14 +57,17 @@ class Identity(Transform):
 
 
 class Exp(Transform):
+    def __init__(self, lower=1e-6):
+        self._lower = lower
+
     def tf_forward(self, x):
-        return tf.exp(x)
+        return tf.exp(x) + self._lower
 
     def forward(self, x):
-        return np.exp(x)
+        return np.exp(x) + self._lower
 
     def backward(self, y):
-        return np.log(y)
+        return np.log(y - self._lower)
 
     def tf_log_jacobian(self, x):
         return tf.reduce_sum(x)
@@ -80,22 +83,34 @@ class Log1pe(Transform):
        y = \log ( 1 + \exp(x))
 
     x is a free variable, y is always positive.
+
+    This function is known as 'softplus' in tensorflow.
     """
+
+    def __init__(self, lower=1e-6):
+        """
+        lower is a float that defines the minimum value that this transform can
+        take, default 1e-6. This helps stability during optimization, because
+        aggressive optimizers can take overly-long steps which lead to zero in
+        the transformed variable, causing an error.
+        """
+        self._lower = lower
+
     def forward(self, x):
-        return np.log(1. + np.exp(x))
+        return np.log(1. + np.exp(x)) + self._lower
 
     def tf_forward(self, x):
-        one = 0. * x + 1.  # ensures shape
-        return tf.log(one + tf.exp(x))
+        return tf.nn.softplus(x) + self._lower
 
     def tf_log_jacobian(self, x):
         return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
 
     def backward(self, y):
-        return np.log(np.exp(y) - np.ones(1))
+        return np.log(np.exp(y - self._lower) - np.ones(1))
 
     def __str__(self):
         return '+ve'
+
 
 class Logistic(Transform):
     def __init__(self, a=0., b=1.):

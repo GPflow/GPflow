@@ -3,6 +3,9 @@ import numpy as np
 import GPflow
 
 
+def on_separate_dimensions(kernlist):
+    dimlist = [k.active_dims
+
 def build_psi_stats(Z, kern, mu, S):
     if isinstance(kern, GPflow.kernels.RBF):
         return build_psi_stats_rbf(Z, kern, mu, S)
@@ -10,8 +13,10 @@ def build_psi_stats(Z, kern, mu, S):
         return build_psi_stats_linear(Z, kern, mu, S)
     elif isinstance(kern, GPflow.kernels.Add) and len(kern.kern_list) == 2:
         lkern = np.sort(kern.kern_list)  # so one order
-        if isinstance(lkern[0], GPflow.kernels.Linear) and isinstance(lkern[1], GPflow.kernels.RBF):
+        if len(lkern) == 2 and isinstance(lkern[0], GPflow.kernels.Linear) and isinstance(lkern[1], GPflow.kernels.RBF):
             return build_psi_stats_rbf_plus_linear(Z, kern, mu, S)
+        elif on_separate_dimension(lkern)
+            return ??
         else:
             raise NotImplementedError
     else:

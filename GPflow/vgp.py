@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from .param import Param
+from .param import Param, DataHolder
 from .model import GPModel
 from . import transforms
 from .mean_functions import Zero
@@ -37,12 +37,29 @@ class VGP(GPModel):
         q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1)
 
         """
+        X = DataHolder(X, on_shape_change='recompile')
+        Y = DataHolder(Y, on_shape_change='recompile')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
         self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
+
+    def _compile(self, optimizer=None):
+        """
+        Before calling the standard compile function, check to see if the size
+        of the data has changed and add variational parameters appropriately.
+
+        This is necessary because the hape of the parameters depends on the
+        shape of the data.
+        """
+        if not self.num_data == self.X.shape[0]:
+            self.num_data = self.X.shape[0]
+            self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
+            self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
+                                  transforms.positive)
+        super(VGP, self)._compile(optimizer=optimizer)
 
     def build_likelihood(self):
         """
@@ -55,11 +72,12 @@ class VGP(GPModel):
 
         with
 
-            q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1) .
+            q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
 
         """
         K = self.kern.K(self.X)
-        f_mean = tf.matmul(K, self.q_alpha) + self.mean_function(self.X)
+        K_alpha = tf.matmul(K, self.q_alpha)
+        f_mean = K_alpha + self.mean_function(self.X)
         # for each of the data-dimensions (columns of Y), find the diagonal
         # of the variance, and also relevant parts of the KL.
         f_var = []
@@ -81,7 +99,7 @@ class VGP(GPModel):
         f_var = tf.transpose(tf.pack(f_var))
 
         KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent
-                    + tf.reduce_sum(f_mean*self.q_alpha))
+                    + tf.reduce_sum(K_alpha*self.q_alpha))
 
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         return tf.reduce_sum(v_exp) - KL
@@ -90,12 +108,12 @@ class VGP(GPModel):
         """
         The posterior variance of F is given by
 
-            q(f) = N(f | K alpha, [K^-1 + diag(lambda**2)]^-1)
+            q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
 
         Here we project this to F*, the values of the GP at Xnew which is given
         by
 
-           q(F*) = N ( F* | K_{*F} alpha , K_{**} - K_{*f}[K_{ff} +
+           q(F*) = N ( F* | K_{*F} alpha + mean, K_{**} - K_{*f}[K_{ff} +
                                            diag(lambda**-2)]^-1 K_{f*} )
 
         """

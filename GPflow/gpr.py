@@ -4,6 +4,7 @@ from .densities import multivariate_normal
 from .mean_functions import Zero
 from . import likelihoods
 from .tf_hacks import eye
+from .param import DataHolder
 
 
 class GPR(GPModel):
@@ -17,8 +18,9 @@ class GPR(GPModel):
         likelihood.  Multiple columns of Y are treated independently.
         """
         likelihood = likelihoods.Gaussian()
+        X = DataHolder(X, on_shape_change='pass')
+        Y = DataHolder(Y, on_shape_change='pass')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
-        self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
     def build_likelihood(self):
@@ -28,7 +30,7 @@ class GPR(GPModel):
             \log p(Y, V | theta).
 
         """
-        K = self.kern.K(self.X) + eye(self.num_data) * self.likelihood.variance
+        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
 
@@ -46,7 +48,7 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + eye(self.num_data) * self.likelihood.variance
+        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
         V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))
@@ -57,5 +59,5 @@ class GPR(GPModel):
             fvar = tf.tile(tf.expand_dims(fvar, 2), shape)
         else:
             fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
-            fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, self.Y.shape[1]])
+            fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, tf.shape(self.Y)[1]])
         return fmean, fvar
