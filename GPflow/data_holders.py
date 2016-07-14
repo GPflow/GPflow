@@ -9,6 +9,10 @@ class TensorData(DataHolder):
     def __init__(self, dataTensor):
         DataHolder.__init__(self)
         self._tf_array = dataTensor
+    
+    def __setstate__(self, d):
+        DataHolder.__setstate__(self, d)
+        raise NotImplementedError
         
     def get_feed_dict(self): 
         #All done using a TensorFlow tensor so 
