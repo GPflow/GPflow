@@ -1,3 +1,10 @@
+# Release 0.2.1
+ - DataTensor class added to alllow incorporation with user defined models.
+ - added `get_samples_df` function to convert samples into a convenient pandas dataframe
+ - Bugfix in VGP when using a mean function
+ - Stability improvements for postive-constrained parameters
+ - Improvements to code structure (added tree_stucture.py, data_holders.py)
+
 # Release 0.2
  - Significant improvements to the way that data and fixed parameters are handled. 
 
