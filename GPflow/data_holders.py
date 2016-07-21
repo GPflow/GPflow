@@ -1,23 +1,55 @@
 import tensorflow as tf
 import numpy as np
+import abc
+from .tree_structure import Parentable
 
-#The base class is actually held in .param 
-#because of its complex dependencies.
-from .param import DataHolder
+
+class DataHolder(Parentable):
+    """
+    Abstract base class for data holders.
+    Cannot be instantiated directly
+    Instead inherit from this class and implement virtual functions.
+    """
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self):
+        Parentable.__init__(self)
+
+    @abc.abstractmethod
+    def get_feed_dict(self):
+        """
+        Return a dictionary matching up any fixed-placeholders to their values
+        """
+        raise NotImplementedError
+
+    def __getstate__(self):
+        d = Parentable.__getstate__(self)
+        d.pop('_tf_array')
+        return d
+
+    def __setstate__(self, d):
+        Parentable.__setstate__(self, d)
+
+    def __str__(self, prepend='Data:'):
+        return prepend + \
+            '\033[1m' + self.name + '\033[0m' + \
+            '\n' + str(self.value)
+
 
 class TensorData(DataHolder):
     def __init__(self, dataTensor):
         DataHolder.__init__(self)
         self._tf_array = dataTensor
-    
+
     def __setstate__(self, d):
         DataHolder.__setstate__(self, d)
         raise NotImplementedError
-        
-    def get_feed_dict(self): 
-        #All done using a TensorFlow tensor so 
-        #there is no feed_dict associated with TensorData
+
+    def get_feed_dict(self):
+        # All done using a TensorFlow tensor so
+        # there is no feed_dict associated with TensorData
         return {}
+
 
 class DictData(DataHolder):
     def __init__(self, array, on_shape_change='raise'):
@@ -72,15 +104,16 @@ class DictData(DataHolder):
     def shape(self):
         return self._array.shape
 
-    def __setstate__(self, d):    
-        DataHolder.__setstate__(self,d)
+    def __setstate__(self, d):
+        DataHolder.__setstate__(self, d)
         tf_array = tf.placeholder(dtype=self._array.dtype,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
+                                  shape=[None]*self._array.ndim,
+                                  name=self.name)
         self._tf_array = tf_array
-        
+
     def get_feed_dict(self):
         return {self._tf_array: self._array}
+
 
 class MinibatchData(DictData):
     """

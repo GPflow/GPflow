@@ -1,70 +1,14 @@
 import numpy as np
 import pandas as pd
-import abc
 import tensorflow as tf
-from . import transforms
 from contextlib import contextmanager
 from functools import wraps
+from . import transforms
+from .tree_structure import Parentable
+from .data_holders import DataHolder
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
-
-
-class Parentable(object):
-    """
-    A very simple class for objects in a tree, where each node contains a
-    reference to '_parent'.
-
-    This class can figure out its own name (by seeing what it's called by the
-    _parent's __dict__) and also recurse up to the highest_parent.
-    """
-
-    def __init__(self):
-        self._parent = None
-
-    @property
-    def highest_parent(self):
-        if self._parent is None:
-            return self
-        else:
-            return self._parent.highest_parent
-
-    @property
-    def name(self):
-        """to get the name of this object, have a look at
-        what our _parent has called us"""
-        if self._parent is None:
-            return 'unnamed'
-        if isinstance(self._parent, ParamList):
-            return 'item%i' % self._parent._list.index(self)
-        matches = [key for key, value in self._parent.__dict__.items()
-                   if value is self]
-        if len(matches) == 0:
-            raise ValueError("mis-specified parent. This Param's\
-                             _parent does not contain a reference to it.")
-        if len(matches) > 1:
-            raise ValueError("This Param appears to be doubly\
-                             referenced by a parent")
-        return matches[0]
-
-    @property
-    def long_name(self):
-        """
-        This is a unique identifier for a param object within a structure, made
-        by concatenating the names through the tree.
-        """
-        if self._parent is None:
-            return self.name
-        return self._parent.long_name + '.' + self.name
-
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        d.pop('_parent')
-        return d
-
-    def __setstate__(self, d):
-        self.__dict__.update(d)
-        self._parent = None
 
 
 class Param(Parentable):
@@ -319,34 +263,6 @@ class Param(Parentable):
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
 
-class DataHolder(Parentable):
-    #Abstract base class for data holders.
-    #Cannot be instantiated directly
-    #Instead inherit from this class and implement virtual functions.
-    __metaclass__ = abc.ABCMeta
-    
-    def __init__(self):
-        Parentable.__init__(self)
-
-    @abc.abstractmethod
-    def get_feed_dict(self):
-        """
-        Return a dictionary matching up any fixed-placeholders to their values
-        """
-        raise NotImplementedError
-        
-    def __getstate__(self):
-        d = Parentable.__getstate__(self)
-        d.pop('_tf_array')
-        return d
-
-    def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
-
-    def __str__(self, prepend='Data:'):
-        return prepend + \
-            '\033[1m' + self.name + '\033[0m' + \
-            '\n' + str(self.value)
 
 class AutoFlow:
     """
@@ -765,6 +681,9 @@ class ParamList(Parameterized):
             item._parent = self
         self._list = list_of_params
 
+        # store all items as attributes also, for lookup-purposes
+        [setattr(self, 'item%i' % i, item) for i, item in enumerate(self._list)]
+
     @property
     def sorted_params(self):
         return self._list
@@ -786,6 +705,7 @@ class ParamList(Parameterized):
             "this object is for containing parameters"
         item._parent = self
         self.sorted_params.append(item)
+        setattr(self, 'item%i' % (len(self._list)-1), item)
 
     def __setitem__(self, key, value):
         """
