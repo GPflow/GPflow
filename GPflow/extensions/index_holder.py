@@ -2,8 +2,10 @@
 
 import numpy as np
 import tensorflow as tf
-from .param import DataHolder, Param, Parameterized
-from . import transforms
+from ..param import DataHolder, Param, Parameterized
+from .. import transforms
+
+# TODO inherite DataHolder class
 
 class IndexHolder(Parameterized):
     """
@@ -12,11 +14,19 @@ class IndexHolder(Parameterized):
     The backward index (see restore method below) is also stored, 
     self._permutation, as a list of DataHolders.
     
+    e.g. 
+    In case index = [1, 0, 2, 1, 0, 0]
+    then self._permutation and self._inv_perm becomes
+        self._permutation = [[1, 4, 5], [0, 3], [2]]
+        self._inv_perm = [3, 0, 5, 4, 1, 2]
+    
     This object supports the following functionalties.
         
     + split(X)
         gives a list of tensor that is the split result of X according to 
         self.index
+        
+            
         
     + restore(list_of_X)
         gives a tensor X from a list_of_X in the original order.
@@ -38,7 +48,10 @@ class IndexHolder(Parameterized):
                     
         """
         Parameterized.__init__(self)
-        self.index = DataHolder(index.as_type(np.int32), on_shape_change=on_shape_change)
+        self.index = DataHolder(np.array(index).astype(np.int32), on_shape_change=on_shape_change)
+        
+        if num_index is None:
+            num_index = np.max(index)+1
         self.num_index=num_index
         
         # define self._permutation
@@ -67,12 +80,14 @@ class IndexHolder(Parameterized):
                 self.highest_parent._needs_recompile = True
             self.num_index = num_index
             # define self._backward_index
-            self._backward_index = []
-            for i in range(num_index):
-                self._backward_index.append(DataHolder(np.ones((1), dtype=np.int32)))
-            
+            self._permutation = []
+            for i in range(self.num_index):
+                self._permutation.append(\
+                    DataHolder(np.ones((1), dtype=np.int32), on_shape_change='pass'))
+        
+        self.index.set_data(np.array(index).astype(np.int32))
         # construct self._permutation
-        for i in range(num_index):
+        for i in range(self.num_index):
             perm = [j for j in range(len(self.index.value)) if self.index.value[j] == i]
             self._permutation[i].set_data(np.array(perm, dtype=np.int32))
         
@@ -91,11 +106,14 @@ class IndexHolder(Parameterized):
         rslt = []
         if not self._tf_mode:
             # split X.value
-            for i in range(self.num_index):
-                rslt.append(X.value[self._permutation[i], :])
+            for perm in self._permutation:
+                rslt.append(X.value[perm.value, :])
         else:
-            for i in range(self.num_index):
-                rslt.append(tf.gather(X, self._permutation[i]))
+            for perm in self._permutation:
+                # access to _tf_array directly because 
+                # Parameterized.__getattribute does not work for list of 
+                # dataholders
+                rslt.append(tf.gather(X, perm._tf_array))     
         return rslt
     
     def restore(self, list_of_X):
@@ -103,18 +121,37 @@ class IndexHolder(Parameterized):
         restore a tensor X from a list_of_X in the original order.
         """
         if not self._tf_mode:
-            pass
+            if isinstance(list_of_X[0], np.ndarray):
+                 return np.concatenate(list_of_X)[self._inv_perm.value]
+            else:
+                return np.concatenate([x.value for x in list_of_X])[self._inv_perm]
         else:
             return tf.gather(tf.concat(0,list_of_X), self._inv_perm)
         
     @property
     def data_holders(self):
         """
-        Overwrite data_holders method to enable compilation of [DataHolder]
-        The dataholders in this object are self._backward_index and self.index.
+        Overwrite Parameterized method to enable compilation of list of DataHolders.
         """
-        return self._permutation + [self._inv_perm] + [self.index]
+        return super(IndexHolder, self).data_holders + self._permutation
 
+
+'''
+    def _begin_tf_mode(self):
+        """
+        Overwrite to enable tf_mode also for self._permutation
+        """
+        Parameterized._begin_tf_mode(self)
+        for perm in self._permutation:
+            perm._begin_tf_mode()
+
+    def _end_tf_mode(self):
+        Parameterized._end_tf_mode(self)
+        for perm in self._permutation:
+            perm._end_tf_mode()
+'''            
+        
+        
 '''        
  class Data_list(Parameterized):
     """
