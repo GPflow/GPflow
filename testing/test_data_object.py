@@ -3,14 +3,14 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
-
+from GPflow.data_holders import DictData
 
 class TestDataHolderSimple(unittest.TestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
-        self.m.X = GPflow.param.DataHolder(np.random.randn(2, 2), on_shape_change='pass')
-        self.m.Y = GPflow.param.DataHolder(np.random.randn(2, 2), on_shape_change='raise')
-        self.m.Z = GPflow.param.DataHolder(np.random.randn(2, 2), on_shape_change='recompile')
+        self.m.X = DictData(np.random.randn(2, 2), on_shape_change='pass')
+        self.m.Y = DictData(np.random.randn(2, 2), on_shape_change='raise')
+        self.m.Z = DictData(np.random.randn(2, 2), on_shape_change='recompile')
         self.m._needs_recompile = False
 
     def test_same_shape(self):

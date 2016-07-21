@@ -1,69 +1,14 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from . import transforms
 from contextlib import contextmanager
 from functools import wraps
+from . import transforms
+from .tree_structure import Parentable
+from .data_holders import DataHolder
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
-
-
-class Parentable(object):
-    """
-    A very simple class for objects in a tree, where each node contains a
-    reference to '_parent'.
-
-    This class can figure out its own name (by seeing what it's called by the
-    _parent's __dict__) and also recurse up to the highest_parent.
-    """
-
-    def __init__(self):
-        self._parent = None
-
-    @property
-    def highest_parent(self):
-        if self._parent is None:
-            return self
-        else:
-            return self._parent.highest_parent
-
-    @property
-    def name(self):
-        """to get the name of this object, have a look at
-        what our _parent has called us"""
-        if self._parent is None:
-            return 'unnamed'
-        if isinstance(self._parent, ParamList):
-            return 'item%i' % self._parent._list.index(self)
-        matches = [key for key, value in self._parent.__dict__.items()
-                   if value is self]
-        if len(matches) == 0:
-            raise ValueError("mis-specified parent. This Param's\
-                             _parent does not contain a reference to it.")
-        if len(matches) > 1:
-            raise ValueError("This Param appears to be doubly\
-                             referenced by a parent")
-        return matches[0]
-
-    @property
-    def long_name(self):
-        """
-        This is a unique identifier for a param object within a structure, made
-        by concatenating the names through the tree.
-        """
-        if self._parent is None:
-            return self.name
-        return self._parent.long_name + '.' + self.name
-
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        d.pop('_parent')
-        return d
-
-    def __setstate__(self, d):
-        self.__dict__.update(d)
-        self._parent = None
 
 
 class Param(Parentable):
@@ -317,100 +262,6 @@ class Param(Parentable):
         # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
-
-
-class DataHolder(Parentable):
-    """
-    An object to represent data which needs to be passed to tensorflow for computation.
-
-    This behaves in much the same way as a Param (above), but is always
-    'fixed'. On a call to get_feed_dict, a placeholder-numpy pair is returned.
-
-    Getting and setting values
-    --
-    To get at the values of the data, use the value property:
-
-    >>> m = GPflow.model.Model()
-    >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
-    >>> print(m.x.value)
-    [[ 0.], [ 1.]]
-
-    Changing the value of the data is as simple as assignment
-    (once the data is part of a model):
-
-    >>> m.x = np.array([ 0., 2.])
-    >>> print(m.x.value)
-    [[ 0.], [ 2.]]
-
-    """
-    def __init__(self, array, on_shape_change='raise'):
-        """
-        array is a numpy array of data.
-        on_shape_change is one of ('raise', 'pass', 'recompile'), and
-        determines the behaviour when the data is set to a new value with a
-        different shape
-        """
-        Parentable.__init__(self)
-        self._array = array
-        self._tf_array = tf.placeholder(dtype=self._array.dtype,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
-        assert on_shape_change in ['raise', 'pass', 'recompile']
-        self.on_shape_change = on_shape_change
-
-    def get_feed_dict(self):
-        return {self._tf_array: self._array}
-
-    def __getstate__(self):
-        d = Parentable.__getstate__(self)
-        d.pop('_tf_array')
-        return d
-
-    def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
-        self._tf_array = tf.placeholder(dtype=self._array.dtype,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
-
-    def set_data(self, array):
-        """
-        Setting a data into self._array before any TensorFlow execution.
-        If the shape of the data changes, then either:
-         - raise an exception
-         - raise the recompilation flag.
-         - do nothing
-        according to the option in self.on_shape_change.
-        """
-        if self.shape == array.shape:
-            self._array[...] = array  # just accept the new values
-        else:
-            if self.on_shape_change == 'raise':
-                raise ValueError("The shape of this data must not change. \
-                                  (perhaps make the model again from scratch?)")
-            elif self.on_shape_change == 'recompile':
-                self._array = array.copy()
-                self.highest_parent._needs_recompile = True
-            elif self.on_shape_change == 'pass':
-                self._array = array.copy()
-            else:
-                raise ValueError('invalid option')  # pragma: no-cover
-
-    @property
-    def value(self):
-        return self._array.copy()
-
-    @property
-    def size(self):
-        return self._array.size
-
-    @property
-    def shape(self):
-        return self._array.shape
-
-    def __str__(self, prepend='Data:'):
-        return prepend + \
-            '\033[1m' + self.name + '\033[0m' + \
-            '\n' + str(self.value)
 
 
 class AutoFlow:
@@ -830,6 +681,9 @@ class ParamList(Parameterized):
             item._parent = self
         self._list = list_of_params
 
+        # store all items as attributes also, for lookup-purposes
+        [setattr(self, 'item%i' % i, item) for i, item in enumerate(self._list)]
+
     @property
     def sorted_params(self):
         return self._list
@@ -851,6 +705,7 @@ class ParamList(Parameterized):
             "this object is for containing parameters"
         item._parent = self
         self.sorted_params.append(item)
+        setattr(self, 'item%i' % (len(self._list)-1), item)
 
     def __setitem__(self, key, value):
         """

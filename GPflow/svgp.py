@@ -1,42 +1,13 @@
 import tensorflow as tf
 import numpy as np
-from .param import Param, DataHolder
+from .param import Param
+from .data_holders import MinibatchData
 from .model import GPModel
 from . import transforms
 from . import conditionals
 from .mean_functions import Zero
 from .tf_hacks import eye
 from . import kullback_leiblers
-
-
-class MinibatchData(DataHolder):
-    """
-    A special DataHolder class which feeds a minibatch to tensorflow via
-    get_feed_dict().
-    """
-    def __init__(self, array, minibatch_size, rng=None):
-        """
-        array is a numpy array of data.
-        minibatch_size (int) is the size of the minibatch
-        rng is an instance of np.random.RandomState(), defaults to seed 0.
-        """
-        DataHolder.__init__(self, array, on_shape_change='pass')
-        self.minibatch_size = minibatch_size
-        self.rng = rng or np.random.RandomState(0)
-
-    def generate_index(self):
-        if float(self.minibatch_size) / float(self._array.shape[0]) > 0.5:
-            return self.rng.permutation(self._array.shape[0])[:self.minibatch_size]
-        else:
-            # This is much faster than above, and for N >> minibatch,
-            # it doesn't make much difference. This actually
-            # becomes the limit when N is around 10**6, which isn't
-            # uncommon when using SVI.
-            return self.rng.randint(self._array.shape[0], size=self.minibatch_size)
-
-    def get_feed_dict(self):
-        return {self._tf_array: self._array[self.generate_index()]}
-
 
 class SVGP(GPModel):
     """

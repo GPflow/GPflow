@@ -1,5 +1,6 @@
 from __future__ import print_function
-from .param import Parameterized, AutoFlow, DataHolder
+from .param import Parameterized, AutoFlow
+from .data_holders import DictData
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
@@ -302,10 +303,11 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
 
+    For handling another data (Xnew, Ynew), set the new value to self.X and self.Y
 
-    For handling another data (X', Y'), set the new value to self.X and self.Y
-    >>> m.X = X'
-    >>> m.Y = Y'
+    >>> m.X = Xnew
+    >>> m.Y = Ynew
+
     If the shape of the data does not change, this model does not require
     another recompilation.
     """
@@ -316,9 +318,9 @@ class GPModel(Model):
         Model.__init__(self, name)
 
         if isinstance(X, np.ndarray):
-            X = DataHolder(X)
+            X = DictData(X)
         if isinstance(Y, np.ndarray):
-            Y = DataHolder(Y)
+            Y = DictData(Y)
         self.X, self.Y = X, Y
 
     def build_predict(self):
