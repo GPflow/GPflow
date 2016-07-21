@@ -37,11 +37,23 @@ class DataHolder(Parentable):
 
 
 class TensorData(DataHolder):
+    """
+    A class to allow users to incorporate their own tensors into GPflow objects.
+    """
     def __init__(self, dataTensor):
+        """
+        This object is instantiated by passing in a tensorflow array. GPflow
+        will then incorporate this array into the model at compile time (e.g.
+        during a call to build_likelihood)
+        """
         DataHolder.__init__(self)
         self._tf_array = dataTensor
 
     def __setstate__(self, d):
+        """
+        It's not clear how to unpickle a model with user-controlled arrays, so
+        raise an exception here.
+        """
         DataHolder.__setstate__(self, d)
         raise NotImplementedError
 
@@ -49,6 +61,11 @@ class TensorData(DataHolder):
         # All done using a TensorFlow tensor so
         # there is no feed_dict associated with TensorData
         return {}
+
+    def __str__(self, prepend='Data:'):
+        return prepend + \
+            '\033[1m' + self.name + '\033[0m' + \
+            '\n' + '(user defined tensor)'
 
 
 class DictData(DataHolder):
