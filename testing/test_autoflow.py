@@ -28,6 +28,21 @@ class TestNoArgs(unittest.TestCase):
     def test_return(self):
         self.failUnless(np.allclose(self.m.function(), 3.))
 
+    def test_kill(self):
+        # make sure autoflow dicts are removed when _needs_recompile is set.
+        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+        self.assertTrue(len(keys) == 0, msg="no AF storage should be present to start.")
+
+        self.m.function()
+
+        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+        self.assertTrue(len(keys) == 1, msg="AF storage should be present after function call.")
+
+        self.m._needs_recompile = True
+
+        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+        self.assertTrue(len(keys) == 0, msg="no AF storage should be present after recompile switch set.")
+
 
 class AddModel(DumbModel):
     @GPflow.model.AutoFlow((tf.float64,), (tf.float64,))
