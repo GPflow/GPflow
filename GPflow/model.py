@@ -303,10 +303,11 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
 
+    For handling another data (Xnew, Ynew), set the new value to self.X and self.Y
 
-    For handling another data (X', Y'), set the new value to self.X and self.Y
-    >>> m.X = X'
-    >>> m.Y = Y'
+    >>> m.X = Xnew
+    >>> m.Y = Ynew
+
     If the shape of the data does not change, this model does not require
     another recompilation.
     """
