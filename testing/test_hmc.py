@@ -45,6 +45,16 @@ class SampleGaussianTest(unittest.TestCase):
         self.failUnless(samples.shape == (100, 3))
         self.failIf(np.all(samples[0] == self.x0))
 
+    def test_return_logprobs(self):
+        _ = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
+                                  x0=self.x0, verbose=False, thin=1, burn=10,
+                                  RNG=np.random.RandomState(11))
+        _, logps = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
+                                         x0=self.x0, verbose=False, thin=1, burn=10,
+                                         RNG=np.random.RandomState(11), return_logprobs=True)
+
+
+
 
 class SampleModelTest(unittest.TestCase):
     """
