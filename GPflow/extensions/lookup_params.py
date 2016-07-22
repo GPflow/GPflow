@@ -76,7 +76,7 @@ class LookupParam(Parameterized):
         The diag_generator is prepared for the use in diag() method.
         (This part should be improved.)
         """
-        self.shape = self.table.shape
+        self.shape = self.table.value.shape
         super(LookupParam, self)._begin_tf_mode()
         
         # generating _diag_generator, that has the following elements
