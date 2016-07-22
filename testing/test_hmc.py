@@ -46,10 +46,7 @@ class SampleGaussianTest(unittest.TestCase):
         self.failIf(np.all(samples[0] == self.x0))
 
     def test_return_logprobs(self):
-        _ = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
-                                  x0=self.x0, verbose=False, thin=1, burn=10,
-                                  RNG=np.random.RandomState(11))
-        _, logps = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
+        s, logps = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=1, burn=10,
                                          RNG=np.random.RandomState(11), return_logprobs=True)
 
@@ -74,10 +71,13 @@ class SampleModelTest(unittest.TestCase):
         self.m = Quadratic()
 
     def test_mean(self):
-        samples = self.m.sample(num_samples=200, Lmax=20, epsilon=0.05)
+        samples = self.m.sample(num_samples=400, Lmax=20, epsilon=0.05)
 
-        self.failUnless(samples.shape == (200, 2))
+        self.failUnless(samples.shape == (400, 2))
         self.failUnless(np.allclose(samples.mean(0), np.zeros(2), 1e-1, 1e-1))
+
+    def test_return_logprobs(self):
+        s, logps = self.m.sample(num_samples=200, Lmax=20, epsilon=0.05, return_logprobs=True)
 
 
 class SamplesDictTest(unittest.TestCase):
