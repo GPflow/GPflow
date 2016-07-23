@@ -1,6 +1,6 @@
 from __future__ import print_function
 from .param import Parameterized, AutoFlow
-from .data_holders import DictData
+from .data_holders import DictData, ScalarData
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
@@ -326,7 +326,7 @@ class GPModel(Model):
     def build_predict(self):
         raise NotImplementedError
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow(DictData)
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points
@@ -334,7 +334,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew)
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow(DictData)
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -342,7 +342,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew, full_cov=True)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.int32, []))
+    @AutoFlow(DictData, ScalarData)
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
@@ -358,7 +358,7 @@ class GPModel(Model):
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.pack(samples))
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow(DictData)
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -366,7 +366,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var, Xnew)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
+    @AutoFlow(DictData, DictData)
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew
