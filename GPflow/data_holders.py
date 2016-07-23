@@ -161,6 +161,41 @@ class MinibatchData(DictData):
         return {self._tf_array: self._array[self.generate_index()]}
 
 
+class ScalarData(DataHolder):
+    """
+    Data Holder that handle a single scalar.
+    """
+    def __init__(self, scalar):
+        DataHolder.__init__(self)
+        self.value = scalar
+        
+        # manual guess for dtype. It may not a very good solution
+        if isinstance(scalar, int):
+            dtype=tf.int32
+        elif isinstance(scalar, long):
+            dtype=tf.int64
+        elif isinstance(scalar, float):
+            dtype=tf.float64
+        else:
+            raise TypeError('ScalarData currently supports only int, long and float')
+        
+        self._tf_array = tf.placeholder(dtype=dtype, name=self.name)
+        
+    def set_data(self, scalar):
+        """
+        Setting a data into self._scalar before any TensorFlow execution.
+        """
+        self._scalar = scalar # just accept the new values
+
+    def __setstate__(self, d):
+        DataHolder.__setstate__(self, d)
+        tf_array = tf.placeholder(self.value, name=self.name)
+        self._tf_array = tf_array
+
+    def get_feed_dict(self):
+        return {self._tf_array: self.value}
+
+
 class DataHolderList(DataHolder):
     """
     Object for handling multiple DataHolders as list (shapes and types can be different).
