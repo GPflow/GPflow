@@ -102,9 +102,10 @@ class Linear(Kern):
         
         if kappa is not None:
             assert(kappa.shape[0] == number_of_tasks)
-            self.kappa = LookupParam(kappa, transform=transforms.positive)
+            # make sure kappa is a 1d vector
+            self.kappa = LookupParam(np.squeeze(kappa), transform=transforms.positive)
         else:
-            self.kappa = LookupParam(np.ones(number_of_tasks))
+            self.kappa = LookupParam(np.ones(number_of_tasks), transform=transforms.positive)
         
         Kern.__init__(self, base_kern)
         

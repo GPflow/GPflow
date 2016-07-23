@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
+from ..model import GPModel
 from .. import gpr
 from .coregionalized_model import Coregionalized_GPModel
 from ..mean_functions import Zero
@@ -32,11 +33,12 @@ class GPR(Coregionalized_GPModel, gpr.GPR):
         
         # Gaussian likelihoods for every labels
         likelihood = coregionalized_likelihoods.Likelihood(\
-                            [Gaussian() for i in range(len(X.num_labels))])
+                            [Gaussian() for i in range(X.num_labels)])
         
-        Coregionalized_GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_latent = Y.data.shape[1]
         
+        # initialize GPModel rather than gpr
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
 
     def get_variance(self):
         """
@@ -45,6 +47,6 @@ class GPR(Coregionalized_GPModel, gpr.GPR):
         """
         var = []
         for y, lik in zip(self.Y.split(self.Y.data), self.likelihood):
-            var.append(tf.ones(tf.shape(y))*lik.variation)
+            var.append(tf.ones(tf.shape(y), dtype=tf.float64)*lik.variance)
         return tf.diag(self.Y.restore(var))
         

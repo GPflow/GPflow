@@ -750,3 +750,6 @@ class ParamList(Parameterized):
         to set their values by assignment.
         """
         self.sorted_params[key]._array[...] = value
+
+    def __iter__(self):
+        return iter(self._list)

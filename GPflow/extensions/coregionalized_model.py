@@ -2,7 +2,7 @@
 import tensorflow as tf
 from .coregionalized_param import LabeledAutoFlow
 from .labeled_data import LabeledData
-from .data_holders import ScalarData
+from ..data_holders import ScalarData
 from .. import tf_hacks
 
 class Coregionalized_GPModel(object):

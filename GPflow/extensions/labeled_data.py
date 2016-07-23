@@ -90,6 +90,9 @@ class LabelHolder(Parameterized):
         inv_perm = np.argsort(perm_concat)
         self._inv_perm.set_data(np.array(inv_perm, dtype=np.int32))
 
+    @property
+    def num_labels(self):
+        return len(self._permutation)
                     
     def split(self, X):
         """
@@ -123,6 +126,10 @@ class LabelHolder(Parameterized):
         else:
             return tf.gather(tf.concat(0,list_of_X), self._inv_perm)
 
+    def setup_diag(self, list_of_X):
+        """
+        
+        """
 
 class LabeledData(LabelHolder):
     """

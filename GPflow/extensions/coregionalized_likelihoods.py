@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .. import likelihoods
+from ..param import ParamList
 
 class Likelihood(likelihoods.Likelihood):
     def __init__(self, list_likelihoods):
@@ -11,8 +12,9 @@ class Likelihood(likelihoods.Likelihood):
         """
         
         # TODO what about if number of labels changed?
-        self.list_of_likelihoods = list_likelihoods
+        self.list_of_likelihoods = ParamList(list_likelihoods)
         
+    
     def logp(self, F, Y):
         """
         F : tf.variable
@@ -52,4 +54,25 @@ class Likelihood(likelihoods.Likelihood):
                                 Y.split(Y.data), self.list_of_likelihoods):
             val.append(lik.variational_expectations(fmu, fvar, y))
         return Y.restore(val)
+
+    def __iter__(self):
+        return iter(self.list_of_likelihoods)
+
+'''    #----- overriding methods -----        
+    def _begin_tf_mode(self):
+        """
+        Override so that self.list_of_likelihoods also begin tf_mode.
+        """
+        likelihoods.Likelihood._begin_tf_mode(self)
+        for lik in self.list_of_likelihoods:
+            lik._begin_tf_mode()
         
+    def _end_tf_mode(self):
+        """
+        Override so that self.list_of_likelihoods also end tf_mode.
+        """
+        likelihoods.Likelihood._end_tf_mode(self)
+        for lik in self.list_of_likelihoods:
+            lik._end_tf_mode()
+'''     
+  
