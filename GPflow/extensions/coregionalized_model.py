@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
-from ..param import AutoFlow
+from .coregionalized_param import LabeledAutoFlow
+from .labeled_data import LabeledData
+from .data_holders import ScalarData
+from .. import tf_hacks
 
 class Coregionalized_GPModel(object):
     """
@@ -14,46 +17,35 @@ class Coregionalized_GPModel(object):
     >>> class coregionalized_gpr.GPR(Coregionalized_GPModel, GPModel):
     >>>     ...
     
+    
+    AutoFlow methods are overloaded to handled the labeled data.
+
+    The argument of these method is a tuple of data and index, but this tuple 
+    is converted to LabeledData by LabeledAutoFlow wrapping.
+
     """
 
     def __init__(self):
         """
-        This class should not have any instances.
+        This object has no instances (except for those added by AutoFlow).
         """
         pass
     
-    @LabeledAutoFlow({'data':(tf.float64, [None, None])}, {'label':(tf.int32, [None])})
-    def predict_f(self, Xnew, label_new):
-        # TODO 
-        """
-        Compute the mean and variance of the latent function(s) at the points
-        Xnew labeled with label_new.
-        
-        By CoregionalizedAutoFlow wrapping, Xnew becomes LabeledData under 
-        tf_mode.
-        """
-        return self.build_predict(Xnew)
+    @property
+    def num_labels(self):
+        return self.X.num_labels
+    
+    @LabeledAutoFlow(LabeledData)
+    def predict_f(self, Xnew_index_tuple):
+        return self.build_predict(Xnew_index_tuple)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.int32, [None, None]))
-    def predict_f_full_cov(self, Xnew):
-        """
-        Compute the mean and covariance matrix of the latent function(s) at the
-        points Xnew.
-        """
-        # TODO Imprement
-        raise NotImplementedError
-        return self.build_predict(Xnew, full_cov=True)
+    @LabeledAutoFlow(LabeledData)
+    def predict_f_full_cov(self, Xnew_index_tuple):
+        return self.build_predict(Xnew_index_tuple, full_cov=True)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.int32, []))
-    def predict_f_samples(self, Xnew, num_samples):
-        """
-        Produce samples from the posterior latent function(s) at the points
-        Xnew.
-        """
-        # TODO Imprement
-        raise NotImplementedError
-
-        mu, var = self.build_predict(Xnew, full_cov=True)
+    @LabeledAutoFlow(LabeledData, ScalarData)
+    def predict_f_samples(self, Xnew_index_tuple, num_samples):
+        mu, var = self.build_predict(Xnew_index_tuple, full_cov=True)
         jitter = tf_hacks.eye(tf.shape(mu)[0]) * 1e-6
         samples = []
         for i in range(self.num_latent):
@@ -63,28 +55,14 @@ class Coregionalized_GPModel(object):
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.pack(samples))
 
-    @AutoFlow((tf.float64, [None, None]))
-    def predict_y(self, Xnew):
-        """
-        Compute the mean and variance of held-out data at the points Xnew
-        """
-        # TODO Imprement
-        raise NotImplementedError
+    @LabeledAutoFlow(LabeledData)
+    def predict_y(self, Xnew_index_tuple):
+        pred_f_mean, pred_f_var = self.build_predict(Xnew_index_tuple)
+        # Labeled data is also passed to predict_mean_and_var to distinguish
+        # which likelihood to be used for each data.
+        return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var, Xnew_index_tuple)
 
-        pred_f_mean, pred_f_var = self.build_predict(Xnew)
-        return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
-
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
-    def predict_density(self, Xnew, Ynew):
-        """
-        Compute the (log) density of the data Ynew at the points Xnew
-
-        Note that this computes the log density of the data individually,
-        ignoring correlations between them. The result is a matrix the same
-        shape as Ynew containing the log densities.
-        """
-        # TODO Imprement
-        raise NotImplementedError
-
-        pred_f_mean, pred_f_var = self.build_predict(Xnew)
-        return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
+    @LabeledAutoFlow(LabeledData, LabeledData)
+    def predict_density(self, Xnew_index_tuple, Ynew_index_tuple):
+        pred_f_mean, pred_f_var = self.build_predict(Xnew_index_tuple)
+        return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew_index_tuple)

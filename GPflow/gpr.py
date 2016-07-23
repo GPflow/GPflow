@@ -30,7 +30,7 @@ class GPR(GPModel):
             \log p(Y, V | theta).
 
         """
-        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
+        K = self.kern.K(self.X) + self.get_variation()
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
 
@@ -48,7 +48,7 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
+        K = self.kern.K(self.X) + self.get_variation()
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
         V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))
@@ -61,3 +61,10 @@ class GPR(GPModel):
             fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
             fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, tf.shape(self.Y)[1]])
         return fmean, fvar
+
+
+    def get_variation(self):
+        """
+        Method to make a diagonal part of the kernel.
+        """
+        return eye(tf.shape(self.X)[0]) * self.likelihood.variance

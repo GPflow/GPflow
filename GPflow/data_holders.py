@@ -172,8 +172,6 @@ class ScalarData(DataHolder):
         # manual guess for dtype. It may not a very good solution
         if isinstance(scalar, int):
             dtype=tf.int32
-        elif isinstance(scalar, long):
-            dtype=tf.int64
         elif isinstance(scalar, float):
             dtype=tf.float64
         else:
