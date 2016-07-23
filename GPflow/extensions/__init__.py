@@ -1,3 +1,3 @@
 # -*- coding: utf-8 -*-
 
-from . import index_holder, lookup_params, lookup_kernels
+from . import labeled_data, lookup_params, lookup_kernels, coregionalized_kernels

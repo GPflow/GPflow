@@ -364,7 +364,7 @@ class GPModel(Model):
         Compute the mean and variance of held-out data at the points Xnew
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
-        return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
+        return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var, Xnew)
 
     @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
     def predict_density(self, Xnew, Ynew):
