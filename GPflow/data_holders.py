@@ -159,3 +159,80 @@ class MinibatchData(DictData):
 
     def get_feed_dict(self):
         return {self._tf_array: self._array[self.generate_index()]}
+
+
+class DataHolderList(DataHolder):
+    """
+    Object for handling multiple DataHolders as list (shapes and types can be different).
+    
+    [Typical usage]
+    
+    >>> data_list = DataHolderList()
+    
+    >>> for ary in some_arrays:
+    
+    >>> data_list.append(DictData(ary, on_shape_change='pass'))
+
+    _tf_array property is prepared so that this class behave like DataHolder,
+    
+    >>> data_list._tf_array -> returns list of tf.placeholders
+    
+        
+    """
+    def __init__(self):
+        DataHolder.__init__(self)
+        self._data_holders = []
+
+    def append(self, data_holder):
+        """
+        method to append a data holder
+        """
+        self._data_holders.append(data_holder)
+
+
+    def set_data(self, arrays):
+        """
+        Set the data into data_holders.
+        """
+        assert(len(self._data_holders) == len(arrays))
+        for (data_holder, array) in zip(self._data_holders, arrays):
+            data_holder.set_data(array)
+
+
+    def get_feed_dict(self):
+        feed_dict = {}        
+        for d in self._data_holders:
+            feed_dict.update(d.get_feed_dict())
+        return feed_dict
+        
+    @property
+    def _tf_array(self):
+        """
+        This property is prepared for Parameterized.__getattribute__ method.
+        It will return a list of _tf_arrays.
+        """
+        return [d._tf_array for d in self._data_holders]
+    
+    # support indexing
+    def __getitem__(self,index):
+        return self._data_holders[index]
+        
+    def __len__(self):
+        return len(self._data_holders)
+
+    def __getstate__(self):
+        return [d.__getstate__ for d in self._data_holders]
+
+    def __setstate__(self, d):
+        for d in self._data_holders:
+            d.__setstate__(self, d)
+
+    def __str__(self, prepend='Data:'):
+        # TODO add appropriate str method
+        return prepend + \
+            '\033[1m' + self.name + '\033[0m' + \
+            '\n' + str(self.value)
+
+    def __iter__(self):
+        # Overload __iter__ method
+        return iter(self._data_holders)

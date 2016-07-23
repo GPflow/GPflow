@@ -3,7 +3,7 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
-from GPflow.data_holders import DictData
+from GPflow.data_holders import DictData, DataHolderList
 
 class TestDataHolderSimple(unittest.TestCase):
     def setUp(self):
@@ -42,6 +42,26 @@ class TestDataHolderSimple(unittest.TestCase):
         self.assertTrue(self.m._needs_recompile)
 
 
+class TestDataHolderList(unittest.TestCase):
+    def setUp(self):
+        self.model = GPflow.param.Parameterized()
+        self.model.data_list = DataHolderList()
+        for i in range(4):
+            self.model.data_list.append(DictData(np.random.randn(4,3), on_shape_change='pass'))
+        
+    def test_tf_mode(self):
+        with self.model.tf_mode():
+            tf_array_list = self.model.data_list
+        for tf_array in tf_array_list:
+            self.assertTrue(isinstance(tf_array, tf.python.framework.ops.Tensor))
+
+    def test_iter(self):
+        for data in self.model.data_list:
+            self.assertTrue(isinstance(data, DictData))
+        for i in range(len(self.model.data_list)):
+            self.assertTrue(isinstance(self.model.data_list[i], DictData))
+            
+                        
 class TestDataHolderModels(unittest.TestCase):
     """
     We make test for Dataholder that enables to reuse model for different data

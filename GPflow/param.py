@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from functools import wraps
 from . import transforms
 from .tree_structure import Parentable
-from .data_holders import DataHolder
+from .data_holders import DataHolder, DataHolderList
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
