@@ -605,7 +605,7 @@ class Parameterized(Parentable):
         required, this function recurses the structure removing all AutoFlow
         dicts. Subsequent calls to to those functions will casue AutoFlow to regenerate.
         """
-        for key in self.__dict__.keys():
+        for key in list(self.__dict__.keys()):
             if key[0] == '_' and key[-11:] == '_AF_storage':
                 delattr(self, key)
         [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
