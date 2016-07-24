@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Sun Jul 23 2016
+
+@author: keisukefujii
+"""
+
 import tensorflow as tf
 import numpy as np
 from ..param import AutoFlow
@@ -34,15 +40,11 @@ class Kern(LookupKern):
     >>> Y = np.concatenate([y1, y2])
 
     4. Prepare task label as 1-d np.array with length len(x1)+len(x2), 
-    zero base and continuous incrementation.
+    zero base and continuous incrementation. Then prepare Labeled data for X
     
-    >>> I = np.concate([np.zeros(len(x1)), np.ones(len(x2))])
-    
-    5. Prepare Labeled data for X
-    
-    >>> Xl = LabeledData(X, I, on_shape_change)
+    >>> Xl = LabeledData((X, I), on_shape_change)
 
-    6. Get the kernel values!
+    5. Get the kernel values!
     
     >>> K.K(Xl)
             
@@ -66,7 +68,7 @@ class Kern(LookupKern):
             return self._K_pred(X.label, X2.label) * self.base_kern.K(X.data, X2.data)
         
     def Kdiag(self, X):
-        return self._K_diag(X.label) * self.base_kern.K(X.data)
+        return self._K_diag(X.label) * self.base_kern.Kdiag(X.data)
         
 
     # TODO for addition and multiplication  

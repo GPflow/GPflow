@@ -364,7 +364,7 @@ class AutoFlow:
         elif data_class == ScalarData:
             return ScalarData(np_arg)
         else:
-            raise Exception('%s Data_Holder class is not implemented.', data_class)
+            raise Exception(str(data_class)+' is not implemented in AutoFlow.')
                 
     
     def set_to_data_holder(self, data_holder, np_arg):
@@ -472,7 +472,7 @@ class Parameterized(Parentable):
                     self.highest_parent._needs_recompile = True
 
             # if the existing atribute is a DataHolder, set the value of the data inside
-            if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
+            if isinstance(p, DataHolder) and isinstance(value, (np.ndarray, list, tuple)):
                 p.set_data(value)
                 return  # don't call object.setattr or set the _parent value
 
@@ -750,6 +750,3 @@ class ParamList(Parameterized):
         to set their values by assignment.
         """
         self.sorted_params[key]._array[...] = value
-
-    def __iter__(self):
-        return iter(self._list)

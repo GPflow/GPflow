@@ -2,8 +2,8 @@
 
 import numpy as np
 import GPflow
-from GPflow.extensions.lookup_params import LookupParam, LookupDictData
-from GPflow.extensions.labeled_data import LabelHolder
+from GPflow.coregionalized.lookup_params import LookupParam, LookupDictData
+from GPflow.coregionalized.labeled_data import LabelHolder
 import tensorflow as tf
 import unittest
         

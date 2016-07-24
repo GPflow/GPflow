@@ -82,7 +82,7 @@ class TestAdd(unittest.TestCase):
         self.y = rng.randn(10, 20)
 
     def test_add(self):
-        self.failUnless(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
+        self.assertTrue(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
 
 
 class MulModel(DumbModel):
@@ -100,7 +100,7 @@ class TestScalar(unittest.TestCase):
         self.y = 10.0
 
     def test_scalar(self):
-        self.failUnless(np.allclose(self.x * self.y, self.m.mul(self.x, self.y)))
+        self.assertTrue(np.allclose(self.x * self.y, self.m.mul(self.x, self.y)))
         
 
 class TestGPmodel(unittest.TestCase):

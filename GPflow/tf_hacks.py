@@ -11,7 +11,7 @@ def eye(N):
     return tf.diag(tf.ones(tf.pack([N, ]), dtype='float64'))
 
 
-def diag_1dim(X):
+def diag_1stdim(X):
     """
     X is tensor.
     

@@ -6,13 +6,13 @@ import GPflow
 import unittest
 
 
-class test_diag_1dim(unittest.TestCase):
+class test_diag_1stdim(unittest.TestCase):
     
     def test(self):
         src = np.random.randn(3,4,5)
         src_tf = tf.constant(src)
         
-        dest= tf.Session().run(GPflow.tf_hacks.diag_1dim(src_tf))
+        dest= tf.Session().run(GPflow.tf_hacks.diag_1stdim(src_tf))
         ref = np.zeros((3,3,4,5))
         
         for i in range(src.shape[0]):

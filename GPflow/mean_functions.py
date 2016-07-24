@@ -59,8 +59,8 @@ class Constant(MeanFunction):
         self.c = Param(c)
 
     def __call__(self, X):
-        shape = tf.pack([tf.shape(X)[0], 1])
-        return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+        shape = tf.pack([tf.shape(X)[0], tf.shape(self.c)[0]])
+        return tf.ones(shape, dtype=tf.float64) * self.c
 
 
 class Additive(MeanFunction):

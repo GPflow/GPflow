@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Sun Jul 23 2016
 
+@author: keisukefujii
+"""
 from ..kernels import Kern
 
 

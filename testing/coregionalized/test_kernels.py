@@ -2,8 +2,8 @@
 
 import numpy as np
 import GPflow
-from GPflow.extensions.coregionalized_kernels import Linear
-from GPflow.extensions.labeled_data import LabeledData
+from GPflow.coregionalized.kernels import Linear
+from GPflow.coregionalized.labeled_data import LabeledData
 import tensorflow as tf
 import unittest
         
@@ -36,8 +36,8 @@ class test_LinearKernel(unittest.TestCase):
         
         X1 = np.random.randn(10,3)        
         X2 = np.random.randn(11,3)        
-        model.XL1 = LabeledData(X1, index1)
-        model.XL2 = LabeledData(X2, index2)
+        model.XL1 = LabeledData((X1, index1), on_shape_change='raise')
+        model.XL2 = LabeledData((X2, index2), on_shape_change='raise')
 
         sess = tf.Session()
         free_array = model.get_free_state()

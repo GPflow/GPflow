@@ -7,7 +7,7 @@ class TestSetup(object):
     def __init__( self, likelihood, Y, tolerance ):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
         # deprecated in python3
-        # self.is_analytic = likelihood.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__
+        #self.is_analytic = likelihood.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__
         self.is_analytic = likelihood.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density
         
         
@@ -15,9 +15,11 @@ def getTestSetups(includeMultiClass=True,addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
-        if likelihoodClass!=GPflow.likelihoods.MultiClass:
+        if likelihoodClass!=GPflow.likelihoods.MultiClass and \
+                likelihoodClass!=GPflow.coregionalized.likelihoods.Likelihood:
             test_setups.append( TestSetup( likelihoodClass() , rng.rand(10,2) , 1e-6 ) )
-        elif includeMultiClass:
+        elif includeMultiClass and\
+                likelihoodClass!=GPflow.coregionalized.likelihoods.Likelihood:
             sample = rng.randn(10,2)
             #Multiclass needs a less tight tolerance due to presence of clipping.
             tolerance = 1e-3

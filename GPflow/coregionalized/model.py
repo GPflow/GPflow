@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Sun Jul 23 2016
+
+@author: keisukefujii
+"""
 import tensorflow as tf
-from .coregionalized_param import LabeledAutoFlow
+from .param import LabeledAutoFlow
 from .labeled_data import LabeledData
 from ..data_holders import ScalarData
 from .. import tf_hacks
@@ -56,13 +61,13 @@ class Coregionalized_GPModel(object):
         return tf.transpose(tf.pack(samples))
 
     @LabeledAutoFlow(LabeledData)
-    def predict_y(self, Xnew_index_tuple):
-        pred_f_mean, pred_f_var = self.build_predict(Xnew_index_tuple)
+    def predict_y(self, Xnew_label_tuple):
+        pred_f_mean, pred_f_var = self.build_predict(Xnew_label_tuple)
         # Labeled data is also passed to predict_mean_and_var to distinguish
-        # which likelihood to be used for each data.
-        return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var, Xnew_index_tuple)
+        # likelihood used for each data.
+        return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var, Xnew_label_tuple)
 
     @LabeledAutoFlow(LabeledData, LabeledData)
-    def predict_density(self, Xnew_index_tuple, Ynew_index_tuple):
-        pred_f_mean, pred_f_var = self.build_predict(Xnew_index_tuple)
-        return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew_index_tuple)
+    def predict_density(self, Xnew_label_tuple, Ynew_label_tuple):
+        pred_f_mean, pred_f_var = self.build_predict(Xnew_label_tuple)
+        return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew_label_tuple)

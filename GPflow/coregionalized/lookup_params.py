@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Sun Jul 23 2016
 
+@author: keisukefujii
+"""
 import tensorflow as tf
 from ..param import Param, Parameterized
 from ..data_holders import DictData
-from GPflow import transforms
+from .. import transforms, tf_hacks
             
 
 class LookupParam(Parameterized):
@@ -97,18 +101,11 @@ class LookupParam(Parameterized):
 
     def diag(self, i, j):
         if self._tf_mode:
-            if len(self.shape) != 1:
-                raise NotImplementedError(
-                'LookupParam.diag is currently available\
-                                                    only for 1-d parameter')
+            
             return tf.transpose(tf.gather(\
-                   tf.transpose(tf.gather(tf.diag(self.table) , i))\
-                                                              , j))
+                   tf.transpose(tf.gather(tf_hacks.diag_1stdim(self.table) , i))\
+                                                                           , j))
         else:
-            if len(self.table.value.shape) != 1:
-                raise NotImplementedError(
-                'LookupParam.diag is currently available\
-                                                    only for 1-d parameter')
             if i==j:
                 return self.__call__(i)
             else:

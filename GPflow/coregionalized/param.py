@@ -9,14 +9,15 @@ class LabeledAutoFlow(AutoFlow):
     """
     def get_a_data_holder(self, data_class, np_arg, instance=None):
         """
-        For data_class == LabeledData,
-        np_array should be tuple (data, index)
+        For the case where data_class == LabeledData,
+        np_array should be a tuple (data, index) with appropirate shapes.
         
         """
         if data_class == LabeledData:
-            return LabeledData(np_arg, instance.num_label)
+            return LabeledData(np_arg, on_shape_change='pass', \
+                                            num_labels=instance.num_labels)
         
-        return AutoFlow.get_a_data_holder(self, data_class, np_arg)
+        return AutoFlow.get_a_data_holder(self, data_class, np_arg, instance)
                 
     
     def set_to_data_holder(self, data_holder, np_arg):
