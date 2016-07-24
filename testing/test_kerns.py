@@ -60,6 +60,38 @@ class TestPeriodic(unittest.TestCase):
         self.evalKernelError(D, lengthScale, variance, period, X_data)
 
 
+class TestCoregion(unittest.TestCase):
+    def setUp(self):
+        self.rng = np.random.RandomState(0)
+        self.k = GPflow.kernels.Coregion(1, output_dim=3, rank=2)
+        self.k.W = self.rng.randn(3, 2)
+        self.k.kappa = self.rng.rand(3) + 1.
+        self.X = np.random.randint(0, 3, (10, 1))
+        self.X2 = np.random.randint(0, 3, (12, 1))
+
+    def test_shape(self):
+        K = self.k.compute_K(self.X, self.X2)
+        self.assertTrue(K.shape == (10, 12))
+
+        K = self.k.compute_K_symm(self.X)
+        self.assertTrue(K.shape == (10, 10))
+
+    def test_diag(self):
+        K = self.k.compute_K_symm(self.X)
+        Kdiag = self.k.compute_Kdiag(self.X)
+        self.assertTrue(np.all(np.diag(K) == Kdiag))
+
+    def test_slice(self):
+        # compute another kernel with additinoal inputs, make sure out kernel is still okay.
+        X = np.hstack((self.X, self.rng.randn(10, 1)))
+        k1 = GPflow.kernels.Coregion(1, 3, 2, active_dims=[0])
+        k2 = GPflow.kernels.RBF(1, active_dims=[1])
+        k = k1 * k2
+        K1 = k.compute_K_symm(X)
+        K2 = k1.compute_K_symm(X) * k2.compute_K_symm(X)  # slicing happens inside kernel
+        self.assertTrue(np.allclose(K1, K2))
+
+
 class TestKernSymmetry(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()

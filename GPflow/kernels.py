@@ -50,6 +50,10 @@ class Kern(Parameterized):
     def compute_K_symm(self, X):
         return self.K(X)
 
+    @AutoFlow((tf.float64, [None, None]))
+    def compute_Kdiag(self, X):
+        return self.Kdiag(X)
+
 
 class Static(Kern):
     """
@@ -284,7 +288,7 @@ class PeriodicKernel(Kern):
         return self.variance * tf.exp(-0.5 * r)
 
 
-def Coregion(Kern):
+class Coregion(Kern):
     def __init__(self, input_dim, output_dim, rank, active_dims=None):
         """
         A Coregionalization kernel. The inputs to this kernel are _integers_
@@ -307,7 +311,7 @@ def Coregion(Kern):
         self.output_dim = output_dim
         self.rank = rank
         self.W = Param(np.zeros((self.output_dim, self.rank)))
-        self.kapa = Param(np.ones(self.output_dim), transforms.positive)
+        self.kappa = Param(np.ones(self.output_dim), transforms.positive)
 
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
