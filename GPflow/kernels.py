@@ -284,6 +284,48 @@ class PeriodicKernel(Kern):
         return self.variance * tf.exp(-0.5 * r)
 
 
+def Coregion(Kern):
+    def __init__(self, input_dim, output_dim, rank, active_dims=None):
+        """
+        A Coregionalization kernel. The inputs to this kernel are _integers_
+        (we cast them from floats as needed) which usually specify the
+        *outputs* or a Coregionalization model
+
+        The parameters of this kernel, W, kappa, specify a positive-definite
+        matrix B. The kernel function is then an indexing of this matrix, so
+
+          K[x, y] = B[x, y]
+
+        We refer to the size of B as "num_outputs x num_outputs", since this is
+        the number of outputs in a coreginoalization model. We refer to the
+        number of columns on W as 'rank': it is the number of degrees of
+        correlatino between the outputs.
+        """
+        assert input_dim == 1, "Coregion kernel in 1D only"
+        Kern.__init__(self, input_dim, active_dims)
+
+        self.output_dim = output_dim
+        self.rank = rank
+        self.W = Param(np.zeros((self.output_dim, self.rank)))
+        self.kapa = Param(np.ones(self.output_dim), transforms.positive)
+
+    def K(self, X, X2=None):
+        X, X2 = self._slice(X, X2)
+        X = tf.cast(X[:, 0], tf.int32)
+        if X2 is None:
+            X2 = X
+        else:
+            X2 = tf.cast(X2[:, 0], tf.int32)
+        B = tf.matmul(self.W, tf.transpose(self.W)) + tf.diag(self.kappa)
+        return tf.gather(tf.transpose(tf.gather(B, X2)), X)
+
+    def Kdiag(self, X):
+        X, _ = self._slice(X, None)
+        X = tf.cast(X[:, 0], tf.int32)
+        Bdiag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
+        return tf.gather(Bdiag, X)
+
+
 def make_kernel_names(kern_list):
     """
     Take a list of kernels and return a list of strings, giving each kernel a
