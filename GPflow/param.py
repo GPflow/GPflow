@@ -70,8 +70,8 @@ class Param(Parentable):
     """
     An object to represent parameters.
 
-    Getting and setting values
-    --
+    **Getting and setting values**
+
     The current value of the parameter is stored in self._array as a
     numpy.ndarray.  Changing the value of the Param is as simple as assignment
     (once the Param is part of a model). Example:
@@ -90,8 +90,8 @@ class Param(Parentable):
     >>> m.p.value
     array([ 3.2])
 
-    Unconstrained optimization
-    --
+    **Unconstrained optimization**
+
     The parameter can be transformed to a 'free state' where it
     can be optimized. The methods
 
@@ -102,6 +102,7 @@ class Param(Parentable):
 
     To apply a transform to the Param, simply set the transform attribute
     with a GPflow.transforms object
+
     >>> m = GPflow.model.Model()
     >>> m.p = GPflow.param.Param(1.0)
     >>> print(m)
@@ -113,8 +114,9 @@ class Param(Parentable):
     [ 1.]
 
 
-    Fixes
-    --
+    **Fixes**
+
+
     There is a self.fixed flag, in which case the parameter does not get
     optimized. To enable this, during make_tf_array, a fixed parameter will be
     ignored, and a placeholder returned via get_feed_dict instead.
@@ -134,8 +136,8 @@ class Param(Parentable):
     require recompilation.
 
 
-    Compiling into tensorflow
-    --
+    **Compiling into tensorflow**
+
     The method
 
     >>> self.make_tf_array
@@ -146,8 +148,8 @@ class Param(Parentable):
     However, if the parameters is fixed, then a placeholder is returned during
     a call to get_feed_dict, and the parameter is represented that way instead.
 
-    Priors and transforms
-    --
+    **Priors and transforms**
+
     The `self.prior` object is used to place priors on parameters, and the
     `self.transform` object is used to enable unconstrained optimization and
     MCMC.
