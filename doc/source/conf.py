@@ -34,7 +34,6 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages',
     'numpydoc',
     'nbsphinx',
     'IPython.sphinxext.ipython_console_highlighting' 
