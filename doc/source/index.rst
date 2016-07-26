@@ -14,11 +14,13 @@ Contents:
    intro
    notebooks/models
    notebooks/regression
+   notebooks/classification
    notebooks/kernels
    notebooks/mcmc
    notebooks/Sanity_check
-   notebooks/SGPR_notes
    notebooks/multiclass
+   notebooks/svi_test
    model_options
    guts
+   notebooks/SGPR_notes
     
