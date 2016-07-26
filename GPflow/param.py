@@ -312,8 +312,8 @@ class Param(Parentable):
 
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
-        self._tf_array = None
         self._log_jacobian = None
+        self.fixed = self.fixed  # make self._tf_array if the parameter is fixed
         # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled

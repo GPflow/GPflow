@@ -61,6 +61,17 @@ class TestPickleGPR(unittest.TestCase):
         self.assertTrue(np.all(p1 == p3))
 
 
+class TestPickleFix(unittest.TestCase):
+    """
+    Make sure a kernel with a fixed parameter can be computed after pickling
+    """
+    def test(self):
+        k = GPflow.kernels.PeriodicKernel(1)
+        k.period.fixed = True
+        k = pickle.loads(pickle.dumps(k))
+        x = np.linspace(0,1,100).reshape([-1,1])
+        k.compute_K(x, x)
+
 class TestPickleSVGP(unittest.TestCase):
     """
     Like the TestPickleGPR test, but with svgp (since it has extra tf variables
