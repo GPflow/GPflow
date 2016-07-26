@@ -14,6 +14,7 @@ Contents:
    intro
    notebooks/models
    notebooks/regression
+   notebooks/kernels
    notebooks/mcmc
    notebooks/Sanity_check
    notebooks/SGPR_notes
