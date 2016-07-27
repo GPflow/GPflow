@@ -3,6 +3,7 @@ from functools import reduce
 import tensorflow as tf
 import numpy as np
 from .param import Param, Parameterized, AutoFlow
+from .data_holders import DictData
 from . import transforms
 
 
@@ -42,11 +43,11 @@ class Kern(Parameterized):
     def __mul__(self, other):
         return Prod([self, other])
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
+    @AutoFlow(DictData, DictData)
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow(DictData)
     def compute_K_symm(self, X):
         return self.K(X)
 
