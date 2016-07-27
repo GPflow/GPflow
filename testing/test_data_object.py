@@ -3,7 +3,8 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
-from GPflow.data_holders import DictData
+from GPflow.data_holders import DictData, ScalarData, DataHolderList
+import pickle
 
 class TestDataHolderSimple(unittest.TestCase):
     def setUp(self):
@@ -41,6 +42,68 @@ class TestDataHolderSimple(unittest.TestCase):
         self.m.Z = np.random.randn(3, 3)
         self.assertTrue(self.m._needs_recompile)
 
+
+class TestScalarData(unittest.TestCase):
+    def setUp(self):
+        self.model = GPflow.param.Parameterized()
+        self.model.X = ScalarData(10.0)
+        self.model.Y = ScalarData(12.0)
+
+    def test_tf_array(self):
+        self.assertTrue(isinstance(self.model.X._tf_array, \
+                                        tf.python.framework.ops.Tensor))
+
+        with self.model.tf_mode():
+            self.assertTrue(isinstance(self.model.X, tf.python.framework.ops.Tensor))
+
+    def test_eval(self):
+        feed_dict = self.model.get_feed_dict()
+        with self.model.tf_mode():
+            value = tf.Session().run(self.model.X*self.model.Y, feed_dict=feed_dict)
+        self.assertTrue(np.allclose(self.model.X.value*self.model.Y.value, value))
+
+class TestDataHolderList(unittest.TestCase):
+    def setUp(self):
+        self.model = GPflow.param.Parameterized()
+        self.model.data_list = DataHolderList()
+        for i in range(4):
+            self.model.data_list.append(DictData(np.random.randn(4,3), on_shape_change='pass'))
+        # add a different type tensor
+        self.model.data_list.append(DictData(np.random.randint(0,5, (3,3)), on_shape_change='pass'))
+
+    def test_tf_array(self):
+        for d in self.model.data_list:
+            self.assertTrue(isinstance(d._tf_array, tf.python.framework.ops.Tensor))
+            #self.assertTrue(isinstance(d, tf.)
+        with self.model.tf_mode():
+            data_list_tf = self.model.data_list
+            for d in data_list_tf:
+                self.assertTrue(isinstance(d, tf.python.framework.ops.Tensor))
+            #self.assertTrue(isinstance(d, tf.)
+
+
+    def test_tf_mode(self):
+        with self.model.tf_mode():
+            tf_array_list = self.model.data_list
+        for tf_array in tf_array_list:
+            self.assertTrue(isinstance(tf_array, tf.python.framework.ops.Tensor))
+
+    def test_iter(self):
+        for data in self.model.data_list:
+            self.assertTrue(isinstance(data, DictData))
+        for i in range(len(self.model.data_list)):
+            self.assertTrue(isinstance(self.model.data_list[i], DictData))
+
+    """
+    def test_str(self):
+        # TODO Should be improved if
+        string = self.model.data_list
+        string = self.model
+    """
+
+    def test_pickle(self):
+        s = pickle.dumps(self.model.data_list)
+        pickle.loads(s)
 
 class TestDataHolderModels(unittest.TestCase):
     """
