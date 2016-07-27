@@ -364,7 +364,7 @@ class AutoFlow:
         elif data_class == ScalarData:
             return ScalarData(np_arg)
         else:
-            raise Exception(str(data_class)+' is not implemented in AutoFlow.')
+            raise TypeError(str(data_class)+' is not accepted by AutoFlow.')
 
 
     def set_to_data_holder(self, data_holder, np_arg):
