@@ -1,10 +1,9 @@
 from . import densities
 import tensorflow as tf
 import numpy as np
-from .param import Parameterized, Param
+from .param import Parameterized, Param, ParamList
 from . import transforms
 hermgauss = np.polynomial.hermite.hermgauss
-
 
 
 class Likelihood(Parameterized):
@@ -378,7 +377,7 @@ class RobustMax(object):
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
         """
-        A likelihood that can do multi-way classification. 
+        A likelihood that can do multi-way classification.
         Currently the only valid choice
         of inverse-link function (invlink) is an instance of RobustMax.
         """
@@ -432,3 +431,79 @@ class MultiClass(Likelihood):
     def conditional_variance(self, F):
         p = self.conditional_mean(F)
         return p - tf.square(p)
+
+
+class SwitchedLikelihood(Likelihood):
+    def __init__(self, likelihood_list):
+        """
+        In this likelihood, we assume at extra column of Y, which contains
+        integers that specify a likelihood from the list of likelihoods.
+        """
+        for l in likelihood_list:
+            assert isinstance(l, Likelihood)
+        self.likelihood_list = ParamList(likelihood_list)
+        self.num_likelihoods = len(self.likelihood_list)
+
+    def logp(self, F, Y):
+        ind = tf.gather(tf.transpose(Y), tf.shape(Y)[1]-1)
+        ind = tf.cast(ind, tf.int32)
+        Y = tf.transpose(tf.gather(tf.transpose(Y), tf.range(0, tf.shape(Y)[1]-1)))
+        # Y, ind = Y[:, :tf.shape(Y)[1]-1], Y[:, tf.shape(Y)[1]-1]
+
+        # split F and Y into the partitions defined by ind.
+        Fs = tf.dynamic_partition(F, ind, self.num_likelihoods)
+        Ys = tf.dynamic_partition(Y, ind, self.num_likelihoods)
+
+        # apply the likelihood to each section of the data
+        logps = [lik.logp(Fi, Yi) for lik, Fi, Yi in zip(self.likelihood_list, Fs, Ys)]
+
+        # stitch the results back together
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_likelihoods)
+        logp = tf.dynamic_stitch(partitions, logps)
+
+        return logp
+
+    def predict_mean_and_var(self, Fmu, Fvar):
+        return [lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list]
+
+    def predict_density(self, Fmu, Fvar, Y):
+        ind = tf.gather(tf.transpose(Y), tf.shape(Y)[1]-1)
+        ind = tf.cast(ind, tf.int32)
+        Y = tf.transpose(tf.gather(tf.transpose(Y), tf.range(0, tf.shape(Y)[1]-1)))
+        # Y, ind = Y[:, :tf.shape(Y)[1]-1], Y[:, tf.shape(Y)[1]-1]
+
+        # split F and Y into the partitions defined by ind.
+        Fmus = tf.dynamic_partition(Fmu, ind, self.num_likelihoods)
+        Fvars = tf.dynamic_partition(Fvar, ind, self.num_likelihoods)
+        Ys = tf.dynamic_partition(Y, ind, self.num_likelihoods)
+
+        # apply the likelihood to each section of the data
+        var_exps = [lik.predict_density(mui, vari, Yi) for
+                    lik, mui, vari, Yi in zip(self.likelihood_list, Fmus, Fvars, Ys)]
+
+        # stitch the results back together
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_likelihoods)
+        var_exp = tf.dynamic_stitch(partitions, var_exps)
+
+        return var_exp
+
+    def variational_expectations(self, Fmu, Fvar, Y):
+        ind = tf.gather(tf.transpose(Y), tf.shape(Y)[1]-1)
+        ind = tf.cast(ind, tf.int32)
+        Y = tf.transpose(tf.gather(tf.transpose(Y), tf.range(0, tf.shape(Y)[1]-1)))
+        # Y, ind = Y[:, :tf.shape(Y)[1]-1], Y[:, tf.shape(Y)[1]-1]
+
+        # split F and Y into the partitions defined by ind.
+        Fmus = tf.dynamic_partition(Fmu, ind, self.num_likelihoods)
+        Fvars = tf.dynamic_partition(Fvar, ind, self.num_likelihoods)
+        Ys = tf.dynamic_partition(Y, ind, self.num_likelihoods)
+
+        # apply the likelihood to each section of the data
+        var_exps = [lik.variational_expectations(mui, vari, Yi) for
+                    lik, mui, vari, Yi in zip(self.likelihood_list, Fmus, Fvars, Ys)]
+
+        # stitch the results back together
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_likelihoods)
+        var_exp = tf.dynamic_stitch(partitions, var_exps)
+
+        return var_exp

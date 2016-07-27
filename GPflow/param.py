@@ -858,3 +858,6 @@ class ParamList(Parameterized):
         to set their values by assignment.
         """
         self.sorted_params[key]._array[...] = value
+
+    def __len__(self):
+        return len(self.sorted_params)
