@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
 from .model import GPModel
-from .param import Param, DataHolder
+from .param import Param
+from .data_holders import DictData
 from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
@@ -27,8 +28,8 @@ class GPMC(GPModel):
             L L^T = K
 
         """
-        X = DataHolder(X, on_shape_change='recompile')
-        Y = DataHolder(Y, on_shape_change='recompile')
+        X = DictData(X, on_shape_change='recompile')
+        Y = DictData(Y, on_shape_change='recompile')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
