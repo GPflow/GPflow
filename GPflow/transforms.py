@@ -38,6 +38,12 @@ class Transform(object):
         """
         raise NotImplementedError
 
+    def __getstate__(self):
+        return self.__dict__.copy()
+
+    def __setstate__(self, d):
+        self.__dict__ = d
+
 
 class Identity(Transform):
     def tf_forward(self, x):
@@ -136,5 +142,17 @@ class Logistic(Transform):
 
     def __str__(self):
         return '[' + str(self.a) + ', ' + str(self.b) + ']'
+
+    def __getstate__(self):
+        d = Transform.__getstate__(self)
+        d.pop('_a')
+        d.pop('_b')
+        return d
+
+    def __setstate__(self, d):
+        Transform.__setstate__(self, d)
+        self._a = tf.constant(self.a, tf.float64)
+        self._b = tf.constant(self.b, tf.float64)
+
 
 positive = Log1pe()
