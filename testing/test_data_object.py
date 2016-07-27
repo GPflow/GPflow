@@ -69,6 +69,8 @@ class TestScalarData(unittest.TestCase):
         Y = ScalarData(1.0)
         feed_dict = X.get_feed_dict()
         self.assertTrue(X._tf_array.dtype, tf.float64)
+        with self.assertRaises(TypeError):
+            Y = ScalarData('1.0')
 
     def test_pickle(self):
         s = pickle.dumps(self.model)
@@ -98,6 +100,23 @@ class TestDataHolderList(unittest.TestCase):
                 self.assertTrue(isinstance(d, tf.python.framework.ops.Tensor))
             #self.assertTrue(isinstance(d, tf.)
 
+    def test_set_data(self):
+        array_list = []
+        for i in range(4):
+            array_list.append(np.random.randn(4,3))
+        # add a different type tensor
+        array_list.append(np.random.randint(0,5, (3,3)))
+        self.model.data_list.set_data(array_list)
+
+        # add another array
+        array_list.append(np.random.randint(0,5, (3,2)))
+        with self.assertRaises(IndexError):
+            self.model.data_list.set_data(array_list)
+
+    def test_get_feed_dict(self):
+        feed_dict = self.model.get_feed_dict()
+        for d in self.model.data_list:
+            self.assertTrue(feed_dict[d._tf_array] is d._array)
 
     def test_tf_mode(self):
         with self.model.tf_mode():
@@ -120,7 +139,8 @@ class TestDataHolderList(unittest.TestCase):
 
     def test_pickle(self):
         s = pickle.dumps(self.model.data_list)
-        pickle.loads(s)
+        d = pickle.loads(s)
+        self.assertTrue(np.allclose(d[0]._array, self.model.data_list[0]._array))
 
 class TestDataHolderModels(unittest.TestCase):
     """

@@ -223,16 +223,22 @@ class DataHolderList(DataHolder):
     def append(self, data_holder):
         """
         method to append a data holder
+        :param DatHolder data_holder: a data_holder to be stored.
         """
         self._data_holders.append(data_holder)
 
 
-    def set_data(self, arrays):
+    def set_data(self, array_list):
         """
-        Set the data into data_holders.
+        Set the a array_list into each data_holder.
+        :param list array_list: list of np.array. The length of the list
+            must match to self._data_holders
         """
-        assert(len(self._data_holders) == len(arrays))
-        for (data_holder, array) in zip(self._data_holders, arrays):
+        # TODO If length changes, better to raise recompile flag?
+        if len(self._data_holders) != len(array_list):
+            raise IndexError("length of array_list must match")
+
+        for (data_holder, array) in zip(self._data_holders, array_list):
             data_holder.set_data(array)
 
 
@@ -261,11 +267,7 @@ class DataHolderList(DataHolder):
         """
         Don't overload __getstate___ from DictData
         """
-        d = Parentable.__getstate__(self)
-
-    def __setstate__(self, d):
-        for d in self._data_holders:
-            d.__setstate__(self, d)
+        return Parentable.__getstate__(self)
 
     def __str__(self, prepend='Data:'):
         # TODO what should be demanded for __str__ for DataHolderList?
