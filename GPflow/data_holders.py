@@ -167,7 +167,7 @@ class ScalarData(DataHolder):
     """
     def __init__(self, scalar):
         DataHolder.__init__(self)
-        self.value = scalar
+        self._scalar = scalar
 
         # manual guess for dtype. It may not a very good solution
         if isinstance(scalar, int):
@@ -187,11 +187,15 @@ class ScalarData(DataHolder):
 
     def __setstate__(self, d):
         DataHolder.__setstate__(self, d)
-        tf_array = tf.placeholder(self.value, name=self.name)
+        tf_array = tf.placeholder(self._scalar, name=self.name)
         self._tf_array = tf_array
 
     def get_feed_dict(self):
         return {self._tf_array: self.value}
+
+    @property
+    def value(self):
+        return self._scalar
 
 
 class DataHolderList(DataHolder):

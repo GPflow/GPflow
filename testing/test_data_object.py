@@ -62,6 +62,23 @@ class TestScalarData(unittest.TestCase):
             value = tf.Session().run(self.model.X*self.model.Y, feed_dict=feed_dict)
         self.assertTrue(np.allclose(self.model.X.value*self.model.Y.value, value))
 
+    def test_type(self):
+        X = ScalarData(1)
+        feed_dict = X.get_feed_dict()
+        self.assertTrue(X._tf_array.dtype, tf.int32)
+        Y = ScalarData(1.0)
+        feed_dict = X.get_feed_dict()
+        self.assertTrue(X._tf_array.dtype, tf.float64)
+
+    def test_pickle(self):
+        s = pickle.dumps(self.model)
+        pickle.loads(s)
+
+    def test_set_data(self):
+        self.model.X.set_data(1.0)
+        self.assertTrue(self.model.X.value == 1.0)
+
+
 class TestDataHolderList(unittest.TestCase):
     def setUp(self):
         self.model = GPflow.param.Parameterized()
