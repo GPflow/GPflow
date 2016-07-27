@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from functools import wraps
 from . import transforms
 from .tree_structure import Parentable
-from .data_holders import DataHolder
+from .data_holders import DataHolder, DictData, ScalarData, DataHolderList
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
@@ -277,7 +277,7 @@ class AutoFlow:
 
     >>> class MyClass(Parameterized):
     >>>
-    >>>   @AutoFlow((tf.float64), (tf.float64))
+    >>>   @AutoFlow(DictData, DictData)
     >>>   def my_method(self, x, y):
     >>>       #compute something, returning a tf graph.
     >>>       return tf.foo(self.baz, x, y)
@@ -306,11 +306,10 @@ class AutoFlow:
     result in the graph being constructed only once.
 
     """
-
-    def __init__(self, *tf_arg_tuples):
+    def __init__(self, *data_classes):
         # NB. TF arg_tuples is a list of tuples, each of which can be used to
         # construct a tf placeholder.
-        self.tf_arg_tuples = tf_arg_tuples
+        self.data_classes= data_classes
 
     def __call__(self, tf_method):
         @wraps(tf_method)
@@ -323,19 +322,57 @@ class AutoFlow:
                 # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
+                # storage dict_data for the arguments
+                storage['data_holder_list'] = DataHolderList()
+                for data_class, np_arg in zip(self.data_classes, np_args):
+                    storage['data_holder_list'].append(\
+                        self.get_a_data_holder(data_class, np_arg, instance))
+
                 storage['free_vars'] = tf.placeholder(tf.float64, [None])
                 instance.make_tf_array(storage['free_vars'])
-                storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
+
+                # tf_array is passed to the tf_method
                 with instance.tf_mode():
-                    storage['tf_result'] = tf_method(instance, *storage['tf_args'])
+                    storage['tf_result'] = tf_method(instance, *storage['data_holder_list']._tf_array)
+
                 storage['session'] = tf.Session()
                 storage['session'].run(tf.initialize_all_variables(), feed_dict=instance.get_feed_dict())
-            feed_dict = dict(zip(storage['tf_args'], np_args))
+
+            # set array into dict_data
+            for d, np_arg in zip(storage['data_holder_list'], np_args):
+                self.set_to_data_holder(d, np_arg)
+
+            feed_dict = instance.get_feed_dict()
             feed_dict[storage['free_vars']] = instance.get_free_state()
-            feed_dict.update(instance.get_feed_dict())
+            feed_dict.update(storage['data_holder_list'].get_feed_dict())
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
+
+
+    def get_a_data_holder(self, data_class, np_arg, instance=None):
+        """
+        A method to create a DataHolder from data_class and np_arg.
+        data_class : an object that inherites from DataHolder.
+        np_array : an np.array (or a tuple of arguments) that will be passed
+                                                        to the DataHolder
+
+        instance : passed for the future extensions.
+        """
+        if data_class == DictData:
+            return DictData(np_arg, on_shape_change ='pass')
+        elif data_class == ScalarData:
+            return ScalarData(np_arg)
+        else:
+            raise TypeError(str(data_class)+' is not accepted by AutoFlow.')
+
+
+    def set_to_data_holder(self, data_holder, np_arg):
+        """
+        A method to set array into data holder.
+        """
+        if isinstance(data_holder, (DictData, ScalarData)):
+            data_holder.set_data(np_arg)
 
 
 class Parameterized(Parentable):
@@ -435,7 +472,7 @@ class Parameterized(Parentable):
                     self.highest_parent._needs_recompile = True
 
             # if the existing atribute is a DataHolder, set the value of the data inside
-            if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
+            if isinstance(p, DataHolder) and isinstance(value, (np.ndarray, list, tuple)):
                 p.set_data(value)
                 return  # don't call object.setattr or set the _parent value
 
@@ -456,7 +493,7 @@ class Parameterized(Parentable):
         required, this function recurses the structure removing all AutoFlow
         dicts. Subsequent calls to to those functions will casue AutoFlow to regenerate.
         """
-        for key in self.__dict__.keys():
+        for key in list(self.__dict__):
             if key[0] == '_' and key[-11:] == '_AF_storage':
                 delattr(self, key)
         [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]

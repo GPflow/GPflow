@@ -45,7 +45,7 @@ class TestNoArgs(unittest.TestCase):
 
 
 class AddModel(DumbModel):
-    @GPflow.model.AutoFlow((tf.float64,), (tf.float64,))
+    @GPflow.model.AutoFlow(GPflow.data_holders.DictData, GPflow.data_holders.DictData)
     def add(self, x, y):
         return tf.add(x, y)
 
@@ -82,7 +82,44 @@ class TestAdd(unittest.TestCase):
         self.y = rng.randn(10, 20)
 
     def test_add(self):
-        self.failUnless(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
+        self.assertTrue(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
+
+
+class MulModel(DumbModel):
+    @GPflow.model.AutoFlow(GPflow.data_holders.DictData, GPflow.data_holders.ScalarData)
+    def mul(self, x, y):
+        return tf.mul(x, y)
+
+class TestScalar(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m = MulModel()
+        self.m._compile()
+        rng = np.random.RandomState(0)
+        self.x = rng.randn(10, 20)
+        self.y = 10.0
+
+    def test_scalar(self):
+        self.assertTrue(np.allclose(self.x * self.y, self.m.mul(self.x, self.y)))
+
+class RaiseModel(DumbModel):
+    # This raises error because it is not a default data class, DictData or ScalarData
+    @GPflow.model.AutoFlow(GPflow.data_holders.DictData, GPflow.data_holders.DataHolder)
+    def mul(self, x, y):
+        return tf.mul(x, y)
+
+class TestRaise(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m = RaiseModel()
+        self.m._compile()
+        rng = np.random.RandomState(0)
+        self.x = rng.randn(10, 20)
+        self.y = 10.0
+
+    def test_scalar(self):
+        with self.assertRaises(TypeError):
+            self.m.mul(self.x, self.y)
 
 
 class TestGPmodel(unittest.TestCase):
