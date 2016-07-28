@@ -15,7 +15,7 @@ class TestEquivalence(unittest.TestCase):
         X = [rng.rand(10,2)*10, rng.rand(20,2)*10]
         Y = [np.sin(x) + 0.9 * np.cos(x*1.6) + rng.randn(*x.shape)* 0.8 for x in X]
         label = [np.zeros((10,1)), np.ones((20,1))]
-        perm = range(30)
+        perm = list(range(30))
         rng.shuffle(perm)
         self.Xtest = rng.rand(10,2)*10
 
@@ -76,20 +76,23 @@ class TestEquivalence(unittest.TestCase):
         # check predict_f
         pred_f0  = self.vgp0.predict_f(self.Xtest)
         pred_fc0 = self.cvgp.predict_f(X_augumented0)
-        self.assertTrue(pred_f0, pred_fc0)
+        self.assertTrue(np.allclose(pred_f0, pred_fc0, atol=1.0e-3))
         pred_f1  = self.vgp1.predict_f(self.Xtest)
         pred_fc1 = self.cvgp.predict_f(X_augumented1)
-        self.assertTrue(pred_f1, pred_fc1)
-        '''
+        self.assertTrue(np.allclose(pred_f1, pred_fc1, atol=1.0e-3))
+
         # check predict y
-        # currently does not work
         pred_y0  = self.vgp0.predict_y(self.Xtest)
         pred_yc0 = self.cvgp.predict_y(np.hstack([self.Xtest, np.zeros((self.Xtest.shape[0],1))]))
-        self.assertTrue(pred_y0, pred_yc0)
+        # predict_y returns results for all the likelihodds in multi_likelihood
+        self.assertTrue(np.allclose(pred_y0[0], pred_yc0[0][:, :np.array(Ytest).shape[1]], atol=1.0e-3))
+        self.assertTrue(np.allclose(pred_y0[1], pred_yc0[1][:, :np.array(Ytest).shape[1]], atol=1.0e-3))
         pred_y1  = self.vgp1.predict_y(self.Xtest)
         pred_yc1 = self.cvgp.predict_y(np.hstack([self.Xtest, np.ones((self.Xtest.shape[0],1))]))
-        self.assertTrue(pred_y1, pred_yc1)
-        '''
+        # predict_y returns results for all the likelihodds in multi_likelihood
+        self.assertTrue(np.allclose(pred_y1[0], pred_yc1[0][:, np.array(Ytest).shape[1]:], atol=1.0e-3))
+        self.assertTrue(np.allclose(pred_y1[1], pred_yc1[1][:, np.array(Ytest).shape[1]:], atol=1.0e-3))
+
         # check predict_density
         pred_ydensity0 = self.vgp0.predict_density(self.Xtest, Ytest)
         pred_ydensity_c0 = self.cvgp.predict_density(X_augumented0, Y_augumented0)
