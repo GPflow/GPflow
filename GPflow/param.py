@@ -257,8 +257,8 @@ class Param(Parentable):
 
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
-        self._tf_array = None
         self._log_jacobian = None
+        self.fixed = self.fixed  # make self._tf_array if the parameter is fixed
         # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
@@ -456,7 +456,7 @@ class Parameterized(Parentable):
         required, this function recurses the structure removing all AutoFlow
         dicts. Subsequent calls to to those functions will casue AutoFlow to regenerate.
         """
-        for key in self.__dict__.keys():
+        for key in list(self.__dict__.keys()):
             if key[0] == '_' and key[-11:] == '_AF_storage':
                 delattr(self, key)
         [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
