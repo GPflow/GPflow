@@ -7,20 +7,22 @@ class TestSetup(object):
     def __init__( self, likelihood, Y, tolerance ):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
         self.is_analytic = likelihood.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__
-        
+
 def getTestSetups(includeMultiClass=True,addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
-        if likelihoodClass!=GPflow.likelihoods.MultiClass:
-            test_setups.append( TestSetup( likelihoodClass() , rng.rand(10,2) , 1e-6 ) )
-        elif includeMultiClass:
-            sample = rng.randn(10,2)
-            #Multiclass needs a less tight tolerance due to presence of clipping.
-            tolerance = 1e-3
-            test_setups.append( TestSetup( likelihoodClass(2) ,  np.argmax(sample, 1).reshape(-1,1) , tolerance )  )
-    
-    if addNonStandardLinks:        
+        # SwitchedLikelihood is tested separately.
+        if likelihoodClass!=GPflow.likelihoods.SwitchedLikelihood:
+            if likelihoodClass!=GPflow.likelihoods.MultiClass:
+                test_setups.append( TestSetup( likelihoodClass() , rng.rand(10,2) , 1e-6 ) )
+            elif includeMultiClass:
+                sample = rng.randn(10,2)
+                #Multiclass needs a less tight tolerance due to presence of clipping.
+                tolerance = 1e-3
+                test_setups.append( TestSetup( likelihoodClass(2) ,  np.argmax(sample, 1).reshape(-1,1) , tolerance )  )
+
+    if addNonStandardLinks:
         test_setups.append( TestSetup( GPflow.likelihoods.Poisson(invlink=tf.square) , rng.rand(10,2) , 1e-6 ) )
         test_setups.append( TestSetup( GPflow.likelihoods.Exponential(invlink=tf.square) , rng.rand(10,2) , 1e-6 ) )
         test_setups.append( TestSetup( GPflow.likelihoods.Gamma(invlink=tf.square) , rng.rand(10,2) , 1e-6 ) )
@@ -37,7 +39,7 @@ class TestPredictConditional(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.test_setups = getTestSetups(addNonStandardLinks=True)
-        
+
         self.x = tf.placeholder('float64')
         for test_setup in self.test_setups:
             test_setup.likelihood.make_tf_array(self.x)
@@ -59,7 +61,7 @@ class TestPredictConditional(unittest.TestCase):
             l = test_setup.likelihood
             with l.tf_mode():
                 v1 = tf.Session().run(l.conditional_variance(self.F), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
-                v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state(), self.F:self.F_data})   
+                v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
             self.failUnless(np.allclose(v1, v2, test_setup.tolerance, test_setup.tolerance))
 
     def test_var_exp(self):
@@ -72,7 +74,7 @@ class TestPredictConditional(unittest.TestCase):
             y = test_setup.Y
             with l.tf_mode():
                 r1 = tf.Session().run(l.logp(self.F, y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
-                r2 = tf.Session().run(l.variational_expectations(self.F, self.F * 0,test_setup.Y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})   
+                r2 = tf.Session().run(l.variational_expectations(self.F, self.F * 0,test_setup.Y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
             self.failUnless(np.allclose(r1, r2, test_setup.tolerance, test_setup.tolerance))
 
 class TestQuadrature(unittest.TestCase):
@@ -90,7 +92,7 @@ class TestQuadrature(unittest.TestCase):
 
     def test_var_exp(self):
         #get all the likelihoods where variational expectations has been overwritten
-                
+
         for test_setup in self.test_setups:
             if not test_setup.is_analytic:
                 continue
@@ -110,7 +112,7 @@ class TestQuadrature(unittest.TestCase):
 
     def test_pred_density(self):
         #get all the likelihoods where predict_density  has been overwritten.
-        
+
         for test_setup in self.test_setups:
             if not test_setup.is_analytic:
                 continue
@@ -135,10 +137,10 @@ class TestRobustMaxMulticlass(unittest.TestCase):
     """
     def setUp(self):
         tf.reset_default_graph()
-    
+
     def testSymmetric(self):
         """
-        This test is based on the observation that for 
+        This test is based on the observation that for
         symmetric inputs the class predictions must have equal probability.
         """
         nClasses = 5
@@ -153,14 +155,89 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         rng = np.random.RandomState(1)
         Y = rng.randint( nClasses, size = (nPoints,1) )
         with l.tf_mode():
-            mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})  
-            pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})  
-            variational_expectations = tf.Session().run(l.variational_expectations(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data}) 
+            mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})
+            pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})
+            variational_expectations = tf.Session().run(l.variational_expectations(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})
         self.failUnless( np.allclose( mu , np.ones((nPoints,nClasses))/nClasses, tolerance, tolerance ) )
         self.failUnless( np.allclose( pred , np.ones((nPoints,1))/nClasses, tolerance, tolerance ) )
         validation_variational_expectation = 1./nClasses * np.log( 1.- epsilon ) + (1. - 1./nClasses ) * np.log( epsilon / (nClasses - 1) )
         self.failUnless( np.allclose( variational_expectations , np.ones((nPoints,1))*validation_variational_expectation, tolerance, tolerance ) )
-            
+
+
+class TestSwitchedLikelihood(unittest.TestCase):
+    """
+    SwitchedLikelihood is saparately tested here.
+    Here, we make sure the partition-stictch works fine.
+    """
+    def setUp(self):
+        rng = np.random.RandomState(1)
+        self.Y_list = [rng.randn(3,2),  rng.randn(4, 2),  rng.randn(5,2)]
+        self.F_list = [rng.randn(3,2),  rng.randn(4, 2),  rng.randn(5,2)]
+        self.Fvar_list = [np.exp(rng.randn(3,2)),  np.exp(rng.randn(4, 2)),  np.exp(rng.randn(5,2))]
+        self.Y_label= [np.ones((3,1))*0, np.ones((4,1))*1, np.ones((5,1))*2]
+        self.Y_perm = range(3+4+5)
+        rng.shuffle(self.Y_perm)
+
+        # shuffle the original data
+        self.Y_sw = np.hstack([np.concatenate(self.Y_list), np.concatenate(self.Y_label)])[self.Y_perm, :]
+        self.F_sw = np.concatenate(self.F_list)[self.Y_perm, :]
+        self.Fvar_sw = np.concatenate(self.Fvar_list)[self.Y_perm, :]
+        # likelihoods
+        self.likelihoods = [GPflow.likelihoods.Gaussian(),
+                            GPflow.likelihoods.Gaussian(),
+                            GPflow.likelihoods.Gaussian()]
+        for lik in self.likelihoods:
+            lik.variance = np.exp(rng.randn(1))
+        self.switched_likelihood = GPflow.likelihoods.SwitchedLikelihood(self.likelihoods)
+
+        # initialize switched likelihood
+        self.sess = tf.Session()
+        free_array = self.switched_likelihood.get_free_state()
+        self.switched_likelihood.make_tf_array(free_array)
+        self.sess.run(tf.initialize_all_variables())
+
+    def test_logp(self):
+        # switchedlikelihood
+        with self.switched_likelihood.tf_mode():
+            switched_rslt = self.sess.run(self.switched_likelihood.logp(self.F_sw, self.Y_sw))
+        # likelihood
+        rslts = []
+        for lik, y, f in zip(self.likelihoods, self.Y_list, self.F_list):
+            with lik.tf_mode():
+                rslts.append(self.sess.run(lik.logp(f, y)))
+
+        self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm,:]))
+        self.sess.close()
+
+    def test_predict_density(self):
+        # switchedlikelihood
+        with self.switched_likelihood.tf_mode():
+            switched_rslt = self.sess.run(\
+                self.switched_likelihood.predict_density(self.F_sw, self.Fvar_sw, self.Y_sw))
+        # likelihood
+        rslts = []
+        for lik, y, f, fvar in zip(self.likelihoods, self.Y_list, self.F_list, self.Fvar_list):
+            self.sess.run(tf.initialize_all_variables())
+            with lik.tf_mode():
+                rslts.append(self.sess.run(lik.predict_density(f, fvar, y)))
+
+        self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm,:]))
+        self.sess.close()
+
+    def test_variational_expectations(self):
+        # switchedlikelihood
+        with self.switched_likelihood.tf_mode():
+            switched_rslt = self.sess.run(\
+                self.switched_likelihood.variational_expectations(self.F_sw, self.Fvar_sw, self.Y_sw))
+        # likelihood
+        rslts = []
+        for lik, y, f, fvar in zip(self.likelihoods, self.Y_list, self.F_list, self.Fvar_list):
+            self.sess.run(tf.initialize_all_variables())
+            with lik.tf_mode():
+                rslts.append(self.sess.run(lik.variational_expectations(f, fvar, y)))
+
+        self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm,:]))
+        self.sess.close()
+
 if __name__ == "__main__":
     unittest.main()
-

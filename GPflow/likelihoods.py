@@ -387,7 +387,7 @@ class MultiClass(Likelihood):
             invlink = RobustMax(self.num_classes)
             self.invlink = invlink
         elif not isinstance(invlink,RobustMax):
-            raise NotImplementedError        
+            raise NotImplementedError
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
@@ -439,6 +439,7 @@ class SwitchedLikelihood(Likelihood):
         In this likelihood, we assume at extra column of Y, which contains
         integers that specify a likelihood from the list of likelihoods.
         """
+        Likelihood.__init__(self)
         for l in likelihood_list:
             assert isinstance(l, Likelihood)
         self.likelihood_list = ParamList(likelihood_list)
