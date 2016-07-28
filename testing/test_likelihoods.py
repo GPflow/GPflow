@@ -2,12 +2,16 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
+import six
+
 
 class TestSetup(object):
-    def __init__( self, likelihood, Y, tolerance ):
+    def __init__(self, likelihood, Y, tolerance):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
-        self.is_analytic = likelihood.predict_density.__func__ is not GPflow.likelihoods.Likelihood.predict_density.__func__
-        
+        self.is_analytic = six.get_unbound_function(likelihood.predict_density) is not\
+            six.get_unbound_function(GPflow.likelihoods.Likelihood.predict_density)
+
+
 def getTestSetups(includeMultiClass=True,addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
