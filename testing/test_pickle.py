@@ -112,5 +112,20 @@ class TestPickleSVGP(unittest.TestCase):
         self.assertTrue(np.all(p1 == p3))
 
 
+class TestTransforms(unittest.TestCase):
+    def setUp(self):
+        self.transforms = GPflow.transforms.Transform.__subclasses__()
+        self.models = []
+        for T in self.transforms:
+            m = GPflow.model.Model()
+            m.x = GPflow.param.Param(1.0)
+            m.x.transform = T()
+            self.models.append(m)
+
+    def test_pickle(self):
+        strings = [pickle.dumps(m) for m in self.models]
+        [pickle.loads(s) for s in strings]
+
+
 if __name__ == "__main__":
     unittest.main()
