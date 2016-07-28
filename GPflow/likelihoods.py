@@ -386,7 +386,7 @@ class MultiClass(Likelihood):
         if invlink is None:
             invlink = RobustMax(self.num_classes)
             self.invlink = invlink
-        elif not isinstance(invlink,RobustMax):
+        elif not isinstance(invlink, RobustMax):
             raise NotImplementedError
 
     def logp(self, F, Y):
@@ -445,21 +445,21 @@ class SwitchedLikelihood(Likelihood):
         self.likelihood_list = ParamList(likelihood_list)
         self.num_likelihoods = len(self.likelihood_list)
 
-    def _partition_and_stitch(self, args, Y_index, func_name):
+    def _partition_and_stitch(self, args, func_name):
         """
         args is a list of tensors, to be passed to self.likelihoods.<func_name>
 
-        args[Y_index] is the 'Y' argument, which contains the indexes to self.likelihoods.
+        args[-1] is the 'Y' argument, which contains the indexes to self.likelihoods.
 
         This function splits up the args using dynamic_partition, calls the
         relevant function on the likelihoods, and re-combines the result.
         """
         # get the index from Y
-        Y = args[Y_index]
+        Y = args[-1]
         ind = tf.gather(tf.transpose(Y), tf.shape(Y)[1]-1)  # ind = Y[:,-1]
         ind = tf.cast(ind, tf.int32)
         Y = tf.transpose(tf.gather(tf.transpose(Y), tf.range(0, tf.shape(Y)[1]-1)))  # Y = Y[:,:-1]
-        args[Y_index] = Y
+        args[-1] = Y
 
         # split up the arguments into chunks corresponding to the relevant likelihoods
         args = zip(*[tf.dynamic_partition(X, ind, self.num_likelihoods) for X in args])
@@ -475,13 +475,16 @@ class SwitchedLikelihood(Likelihood):
         return results
 
     def logp(self, F, Y):
-        return self._partition_and_stitch([F, Y], 1, 'logp')
-
-    def predict_mean_and_var(self, Fmu, Fvar):
-        return [lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list]
+        return self._partition_and_stitch([F, Y], 'logp')
 
     def predict_density(self, Fmu, Fvar, Y):
-        return self._partition_and_stitch([Fmu, Fvar, Y], 2, 'predict_density')
+        return self._partition_and_stitch([Fmu, Fvar, Y], 'predict_density')
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        return self._partition_and_stitch([Fmu, Fvar, Y], 2, 'variational_expectations')
+        return self._partition_and_stitch([Fmu, Fvar, Y], 'variational_expectations')
+
+    def predict_mean_and_var(self, Fmu, Fvar):
+        mu_list, var_list = zip(*[lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list])
+        mu = tf.concat(1, mu_list)
+        var = tf.concat(1, var_list)
+        return mu, var
