@@ -63,6 +63,35 @@ class Constant(MeanFunction):
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
 
 
+class SwitchedMeanFunction(MeanFunction):
+    def init__(self, meanfunction_list, input_dim, active_dim):
+    """
+    In this mean function, we assume at active_dim column of X, wchih contains
+    integers that specify a mean_function from the list of mean_functions.
+    """
+        MeanFunction.__init__(self)
+        for m in meanfunction_list:
+            assert isinstance(m, meanfunction_list)
+        self.meanfunction_list = ParamList(meanfunction_list)
+        self.num_meanfunctions = len(self.meanfunction_list)
+        # dimension that contains integers
+        self.active_dim = active_dim
+        # the rest of dimension as list, for deriving the true expressive variables
+        self.other_dims = list(range(input_dim))
+        pop(self.other_dims[self.active_dim])
+
+    def __call__(self, X):
+        ind = tf.gather(tf.transpose(X), self.active_dim)  # ind = Y[:,-1]
+        ind = tf.cast(ind, tf.int32)
+        X = tf.transpose(tf.gather(tf.transpose(X), self.other_dims))
+        # apply the likelihood-function to each section of the data
+        results = [m(X) for m in self.meanfunction_list]
+
+        # stitch the results back together
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
+        return tf.dynamic_stitch(partitions, results)
+
+
 class Additive(MeanFunction):
     def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
