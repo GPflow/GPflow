@@ -152,7 +152,7 @@ class Model(Parameterized):
     def compute_log_likelihood(self):
         return self.build_likelihood()
 
-    def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False):
+    def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False, return_logprobs=False, RNG=np.random.RandomState(0)):
         """
         Use Hamiltonian Monte Carlo to draw samples from the model posterior.
         """
@@ -160,7 +160,8 @@ class Model(Parameterized):
             self._compile()
         return hmc.sample_HMC(self._objective, num_samples,
                               Lmax, epsilon,
-                              x0=self.get_free_state(), verbose=verbose)
+                              x0=self.get_free_state(), verbose=verbose,
+                              return_logprobs=return_logprobs, RNG=RNG)
 
     def optimize(self, method='L-BFGS-B', tol=None, callback=None,
                  max_iters=1000, **kw):
