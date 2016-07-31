@@ -21,6 +21,7 @@ Contents:
    notebooks/multiclass
    notebooks/svi_test
    model_options
+   notebooks/structure
    guts
    notebooks/SGPR_notes
     
