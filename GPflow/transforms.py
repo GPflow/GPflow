@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import GPflow.tf_hacks as tfh
 
 
 class Transform(object):
@@ -128,11 +129,11 @@ class Logistic(Transform):
 
     def tf_forward(self, x):
         ex = tf.exp(-x)
-        return self._a + (self._b-self._a) / (1. + ex)
+        return self._a + (self._b - self._a) / (1. + ex)
 
     def forward(self, x):
         ex = np.exp(-x)
-        return self.a + (self.b-self.a) / (1. + ex)
+        return self.a + (self.b - self.a) / (1. + ex)
 
     def backward(self, y):
         return -np.log((self.b - self.a) / (y - self.a) - 1.)
@@ -153,6 +154,29 @@ class Logistic(Transform):
         Transform.__setstate__(self, d)
         self._a = tf.constant(self.a, tf.float64)
         self._b = tf.constant(self.b, tf.float64)
+
+
+class LowerTriangular(Transform):
+    def forward(self, x):
+        if np.floor(((len(x) * 8) + 1) ** 0.5) ** 2.0 != (len(x) * 8 + 1):
+            raise ValueError("The free state must be a triangle number.")
+
+        matsize = int((len(x) * 8 + 1) ** 0.5 * 0.5 - 0.5)
+        var = np.zeros((matsize, matsize))
+        var[np.tril_indices(matsize, 0)] = x
+        return x
+
+    def backward(self, y):
+        return y[np.tril_indices(len(y), 0)]
+
+    def tf_forward(self, x):
+        return tfh.vec_to_tri(x)
+
+    def tf_log_jacobian(self, x):
+        return tf.zeros((1,), tf.float64) - np.inf
+
+    def __str__(self):
+        return "LoTri->vec"
 
 
 positive = Log1pe()
