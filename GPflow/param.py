@@ -603,7 +603,7 @@ class Parameterized(Parentable):
 
         If AutoFlow functions become invalid, because recompilation is
         required, this function recurses the structure removing all AutoFlow
-        dicts. Subsequent calls to to those functions will casue AutoFlow to regenerate.
+        dicts. Subsequent calls to to those functions will casue AutoFlowg to regenerate.
         """
         for key in list(self.__dict__.keys()):
             if key[0] == '_' and key[-11:] == '_AF_storage':

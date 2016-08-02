@@ -10,7 +10,8 @@ class TransformTests(unittest.TestCase):
         self.x = tf.placeholder(tf.float64)
         self.x_np = np.random.randn(10)
         self.session = tf.Session()
-        self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
+        self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__() if
+                           C is not GPflow.transforms.LowerTriangular]
         self.transforms.append(GPflow.transforms.Logistic(7.3, 19.4))
 
     def test_tf_np_forward(self):
@@ -34,15 +35,36 @@ class TransformTests(unittest.TestCase):
         We have hand-crafted the log-jacobians for speed. Check they're correct
         wrt a tensorflow derived version
         """
+
         # there is no jacobian: loop manually
         def jacobian(f):
             return tf.pack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
+
         tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms]
         hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms]
 
         for j1, j2 in zip(tf_jacs, hand_jacs):
             self.assertTrue(np.allclose(self.session.run(j1, feed_dict={self.x: self.x_np}),
                                         self.session.run(j2, feed_dict={self.x: self.x_np})))
+
+
+class TestLowerTriTransform(TransformTests):
+    def setUp(self):
+        TransformTests.setUp(self)
+        self.x_np = np.random.randn(1, 10)
+        self.transforms = [GPflow.transforms.LowerTriangular()]
+
+    def test_logjac(self):
+        """
+        We have hand-crafted the log-jacobians for speed. Check they're correct
+        wrt a tensorflow derived version
+        """
+        # # there is no jacobian: loop manually
+        # def jacobian(f):
+        #     return tf.pack([[tf.gradients(f(self.x)[0, j, i], self.x)[0] for i in range(4)] for j in range(4)])
+        # There is no well-defined det of the jacobian, since it's not square.
+        pass
+
 
 
 if __name__ == "__main__":

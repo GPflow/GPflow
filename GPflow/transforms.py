@@ -158,16 +158,17 @@ class Logistic(Transform):
 
 class LowerTriangular(Transform):
     def forward(self, x):
-        if np.floor(((len(x) * 8) + 1) ** 0.5) ** 2.0 != (len(x) * 8 + 1):
+        L = x.shape[1]
+        if int(((L * 8) + 1) ** 0.5) ** 2.0 != (L * 8 + 1):
             raise ValueError("The free state must be a triangle number.")
 
-        matsize = int((len(x) * 8 + 1) ** 0.5 * 0.5 - 0.5)
+        matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
         var = np.zeros((matsize, matsize))
         var[np.tril_indices(matsize, 0)] = x
-        return x
+        return var
 
     def backward(self, y):
-        return y[np.tril_indices(len(y), 0)]
+        return y[np.tril_indices(len(y), 0)][None, :]
 
     def tf_forward(self, x):
         return tfh.vec_to_tri(x)
