@@ -31,28 +31,28 @@ class TestMethods(unittest.TestCase):
         for m in self.ms:
             m._compile()
             f, g = m._objective(m.get_free_state())
-            self.failUnless(f.size == 1)
-            self.failUnless(g.size == m.get_free_state().size)
+            self.assertTrue(f.size == 1)
+            self.assertTrue(g.size == m.get_free_state().size)
 
     def test_predict_f(self):    
         for m in self.ms:
             mf, vf = m.predict_f(self.Xs)
-            self.failUnless(mf.shape == vf.shape)
-            self.failUnless(mf.shape == (10, 1))
-            self.failUnless(np.all(vf >= 0.0))
+            self.assertTrue(mf.shape == vf.shape)
+            self.assertTrue(mf.shape == (10, 1))
+            self.assertTrue(np.all(vf >= 0.0))
 
     def test_predict_y(self):    
         for m in self.ms:
             mf, vf = m.predict_y(self.Xs)
-            self.failUnless(mf.shape == vf.shape)
-            self.failUnless(mf.shape == (10, 1))
-            self.failUnless(np.all(vf >= 0.0))
+            self.assertTrue(mf.shape == vf.shape)
+            self.assertTrue(mf.shape == (10, 1))
+            self.assertTrue(np.all(vf >= 0.0))
 
     def test_predict_density(self):
         self.Ys = self.rng.randn(10, 1)
         for m in self.ms:
             d = m.predict_density(self.Xs, self.Ys)
-            self.failUnless(d.shape == (10, 1))
+            self.assertTrue(d.shape == (10, 1))
 
 
 class TestSVGP(unittest.TestCase):
@@ -89,7 +89,7 @@ class TestSVGP(unittest.TestCase):
         m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]),
                               np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
         m2.q_mu = qmean
-        self.failUnless(np.allclose(m1._objective(m1.get_free_state())[0],
+        self.assertTrue(np.allclose(m1._objective(m1.get_free_state())[0],
                                     m2._objective(m2.get_free_state())[0]))
 
     def test_notwhite(self):
@@ -118,7 +118,7 @@ class TestSVGP(unittest.TestCase):
         m1.q_mu = qmean
         m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
         m2.q_mu = qmean
-        self.failUnless(np.allclose(m1._objective(m1.get_free_state())[0],
+        self.assertTrue(np.allclose(m1._objective(m1.get_free_state())[0],
                                     m2._objective(m2.get_free_state())[0]))
 
     def test_q_sqrt_fixing(self):
@@ -162,14 +162,14 @@ class TestSparseMCMC(unittest.TestCase):
     def test_likelihoods_and_gradients(self):
         f1, _ = self.m1._objective(self.m1.get_free_state())
         f2, _ = self.m2._objective(self.m2.get_free_state())
-        self.failUnless(np.allclose(f1, f2))
+        self.assertTrue(np.allclose(f1, f2))
         # the parameters might not be in the same order, so
         # sort the gradients before checking they're the same
         _, g1 = self.m1._objective(self.m1.get_free_state())
         _, g2 = self.m2._objective(self.m2.get_free_state())
         g1 = np.sort(g1)
         g2 = np.sort(g2)
-        self.failUnless(np.allclose(g1, g2, 1e-4))
+        self.assertTrue(np.allclose(g1, g2, 1e-4))
 
 
 if __name__ == "__main__":

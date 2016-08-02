@@ -610,6 +610,14 @@ class Parameterized(Parentable):
                 delattr(self, key)
         [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
 
+    def __getstate__(self):
+        d = Parentable.__getstate__(self)
+        # do not pickle autoflow
+        for key in list(d.keys()):
+            if key[0] == '_' and key[-11:] == '_AF_storage':
+                d.pop(key)
+        return d
+
     def make_tf_array(self, X):
         """
         X is a tf. placeholder. It gets passed to all the children of
