@@ -42,8 +42,8 @@ class TestVecToTri(unittest.TestCase):
         initval = np.arange(1, 0.5 * N * (N + 1) + 1)
         v = tf.Variable(initval[None, :])
         with tf.Session(''):
-            f = (vec_to_tri(v) * np.random.randn(N, N))**2.0  # Some function involving vec_to_tri
-            self.assertLess(gc.compute_gradient_error(v, [1, len(initval)], f, [1, N, N]), 10**-10)
+            f = (vec_to_tri(v) * np.random.randn(N, N)) ** 2.0  # Some function involving vec_to_tri
+            self.assertLess(gc.compute_gradient_error(v, [1, len(initval)], f, [1, N, N]), 10 ** -10)
 
 
 class TestTriToVec(unittest.TestCase):
