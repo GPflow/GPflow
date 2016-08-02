@@ -23,7 +23,7 @@ class PriorModeTests(unittest.TestCase):
         self.m.optimize(display=0)
 
         xmax = self.m.get_free_state()
-        self.failUnless(np.allclose(xmax, 3))
+        self.assertTrue(np.allclose(xmax, 3))
 
     def testGaussianModeMatrix(self):
         self.m.x = GPflow.param.Param(np.random.randn(4, 4))
@@ -31,7 +31,7 @@ class PriorModeTests(unittest.TestCase):
         self.m.optimize(display=0)
 
         xmax = self.m.get_free_state()
-        self.failUnless(np.allclose(xmax, -1))
+        self.assertTrue(np.allclose(xmax, -1))
 
     def testGammaMode(self):
         self.m.x = GPflow.param.Param(1.0)
@@ -40,7 +40,7 @@ class PriorModeTests(unittest.TestCase):
         self.m.optimize(display=0)
 
         true_mode = (shape - 1.) * scale
-        self.failUnless(np.allclose(self.m.x.value, true_mode, 1e-3))
+        self.assertTrue(np.allclose(self.m.x.value, true_mode, 1e-3))
 
     def testLaplaceMode(self):
         self.m.x = GPflow.param.Param(1.0)
@@ -48,7 +48,7 @@ class PriorModeTests(unittest.TestCase):
         self.m.optimize(display=0)
 
         xmax = self.m.get_free_state()
-        self.failUnless(np.allclose(xmax, 3))
+        self.assertTrue(np.allclose(xmax, 3))
 
     def testLogNormalMode(self):
         self.m.x = GPflow.param.Param(1.0)
@@ -57,7 +57,7 @@ class PriorModeTests(unittest.TestCase):
         self.m.optimize(display=0)
 
         xmax = self.m.get_free_state()
-        self.failUnless(np.allclose(xmax, 3))
+        self.assertTrue(np.allclose(xmax, 3))
 
 
 
