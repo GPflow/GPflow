@@ -7,6 +7,7 @@ from . import hmc
 import sys
 from . import tf_hacks
 
+_verbosity = 0
 
 class ObjectiveWrapper(object):
     """
@@ -128,7 +129,8 @@ class Model(Parameterized):
         self._session.run(init)
 
         # build tensorflow functions for computing the likelihood
-        print("compiling tensorflow function...")
+        if _verbosity >= 2:
+            print("compiling tensorflow function...")
         sys.stdout.flush()
 
         def obj(x):
@@ -138,7 +140,8 @@ class Model(Parameterized):
                                      feed_dict=feed_dict)
 
         self._objective = obj
-        print("done")
+        if _verbosity >= 2:
+            print("done")
         sys.stdout.flush()
         self._needs_recompile = False
 
