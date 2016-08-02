@@ -29,6 +29,16 @@ class TestPickleSimple(unittest.TestCase):
         self.assertTrue(m2.p2._parent is m2)
 
 
+class TestActiveDims(unittest.TestCase):
+    def test(self):
+        k = GPflow.kernels.RBF(2, active_dims=[0, 1])
+        X = np.random.randn(10, 2)
+        K = k.compute_K_symm(X)
+        k = pickle.loads(pickle.dumps(k))
+        K2 = k.compute_K_symm(X)
+        self.assertTrue(np.allclose(K, K2))
+
+
 class TestPickleGPR(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()

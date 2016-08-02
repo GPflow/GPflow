@@ -54,7 +54,7 @@ class TestEquivalence(unittest.TestCase):
 
     def test_all(self):
         likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze() for m in self.models])
-        self.failUnless(np.allclose(likelihoods, likelihoods[0], 1e-2))
+        self.assertTrue(np.allclose(likelihoods, likelihoods[0], 1e-2))
         variances, lengthscales = [], []
         for m in self.models:
             if hasattr(m.kern, 'rbf'):
@@ -65,13 +65,13 @@ class TestEquivalence(unittest.TestCase):
                 lengthscales.append(m.kern.lengthscales.value)
         variances, lengthscales = np.array(variances), np.array(lengthscales)
         
-        self.failUnless(np.allclose(variances, variances[0], 1e-3))            
-        self.failUnless(np.allclose(lengthscales, lengthscales[0], 1e-3))
+        self.assertTrue(np.allclose(variances, variances[0], 1e-3))
+        self.assertTrue(np.allclose(lengthscales, lengthscales[0], 1e-3))
         mu0, var0 = self.models[0].predict_y(self.Xtest)
         for m in self.models[1:]:
             mu, var = m.predict_y(self.Xtest)
-            self.failUnless(np.allclose(mu, mu0, 1e-2))
-            self.failUnless(np.allclose(var, var0, 1e-2))
+            self.assertTrue(np.allclose(mu, mu0, 1e-2))
+            self.assertTrue(np.allclose(var, var0, 1e-2))
 
 
 

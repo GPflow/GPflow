@@ -21,15 +21,15 @@ class TestGaussian(unittest.TestCase):
         mu_f, var_f = self.m.predict_f(self.Xtest)
         mu_y, var_y = self.m.predict_y(self.Xtest)
 
-        self.failUnless(np.allclose(mu_f, mu_y))
-        self.failUnless(np.allclose(var_f, var_y - 1.))
+        self.assertTrue(np.allclose(mu_f, mu_y))
+        self.assertTrue(np.allclose(var_f, var_y - 1.))
 
     def test_density(self):
         mu_y, var_y = self.m.predict_y(self.Xtest)
         density = self.m.predict_density(self.Xtest, self.Ytest)
 
         density_hand = -0.5*np.log(2*np.pi) - 0.5*np.log(var_y) - 0.5*np.square(mu_y - self.Ytest)/var_y
-        self.failUnless(np.allclose(density_hand, density))
+        self.assertTrue(np.allclose(density_hand, density))
 
     def test_recompile(self):
         mu_f, var_f = self.m.predict_f(self.Xtest)
@@ -75,15 +75,15 @@ class TestFullCov(unittest.TestCase):
     def test_cov(self):
         mu1, var = self.model.predict_f(self.Xtest)
         mu2, covar = self.model.predict_f_full_cov(self.Xtest)
-        self.failUnless(np.all(mu1 == mu2))
-        self.failUnless(covar.shape == self.covar_shape)
-        self.failUnless(var.shape == (self.Ntest, self.output_dim))
+        self.assertTrue(np.all(mu1 == mu2))
+        self.assertTrue(covar.shape == self.covar_shape)
+        self.assertTrue(var.shape == (self.Ntest, self.output_dim))
         for i in range(self.output_dim):
-            self.failUnless(np.allclose(var[:, i], np.diag(covar[:, :, i])))
+            self.assertTrue(np.allclose(var[:, i], np.diag(covar[:, :, i])))
 
     def test_samples(self):
         samples = self.model.predict_f_samples(self.Xtest, self.num_samples)
-        self.failUnless(samples.shape == self.samples_shape)
+        self.assertTrue(samples.shape == self.samples_shape)
 
 
 class TestFullCovSGPR(TestFullCov):
