@@ -50,10 +50,10 @@ class TestTriToVec(unittest.TestCase):
     def testTriToVec(self):
         mats = [
             np.arange(1, 4)[None, :],
-            # np.vstack((np.arange(1, 4), np.arange(3, 0, -1))), # Currently, only do matrices
+            np.vstack((np.arange(1, 4), np.arange(3, 0, -1))),  # Currently, only do matrices
             np.arange(1, 16)[None, :]
         ]
         with tf.Session(''):
             for m in mats:
                 # The ops are each others' inverse.
-                self.assertTrue(np.all(tri_to_vec(vec_to_tri(m)[0, :, :]).eval() == m))
+                self.assertTrue(np.all(tri_to_vec(vec_to_tri(m)).eval() == m))

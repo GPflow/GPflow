@@ -24,30 +24,33 @@ public:
     const int rank = input_shape.dims();
 
     // For now, keep it as just a matrix
-    OP_REQUIRES(context, TensorShapeUtils::IsMatrix(input_shape),
-		errors::InvalidArgument("TriToVec expects at least a 2-dim matrix, received shape: ",
+    OP_REQUIRES(context, rank == 3,
+		errors::InvalidArgument("TriToVec expects a rank-3 tensor, received shape: ",
 		input_shape.DebugString()));
 
-    const int k = input_shape.dim_size(rank - 1);
+    const int k = input_shape.dim_size(rank - 1);  // Matrix size
     OP_REQUIRES(context, k == input_shape.dim_size(rank - 2),
         errors::InvalidArgument("input's last two dimensions must be equal, received shape: ",
         input_shape.DebugString()));
 
-    auto f = input_tensor.flat_inner_dims<T, 2>();
+    auto f = input_tensor.flat_inner_dims<T, 3>();
 
     // Create an output tensor
-    TensorShape out_shape({k * (k+1) / 2});
+    TensorShape out_shape({input_shape.dim_size(rank - 3), k * (k+1) / 2});
     Tensor* output_tensor = NULL;
     OP_REQUIRES_OK(context, context->allocate_output(0, out_shape,
 	                                                 &output_tensor));
 
+
     auto output = output_tensor->template flat<T>();
     int i = 0;
-    for (int y = 0; y != f.dimension(1); y++) {
-      for (int x = 0; x != f.dimension(0); x++) {
-        if (y >= x) {
-          output(i) = f(y, x);
-          i++;
+    for (int z = 0; z != f.dimension(0); z++) {
+      for (int y = 0; y != f.dimension(1); y++) {
+        for (int x = 0; x != f.dimension(2); x++) {
+          if (y >= x) {
+            output(i) = f(z, y, x);
+            i++;
+          }
         }
       }
     }

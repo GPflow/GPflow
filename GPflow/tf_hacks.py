@@ -19,8 +19,7 @@ tri_to_vec = _custom_op_module.tri_to_vec
 
 @tf.python.framework.ops.RegisterGradient("VecToTri")
 def _vec_to_tri_grad(op, grad):
-    i = tri_to_vec(grad[0, :, :])
-    return [tf.reshape(i, [1, tf.shape(i)[0]])]
+    return [tri_to_vec(grad)]
 
 
 # TODO: Finish registering the shape. Was unsure how to handle incomplete shape information in the input.
