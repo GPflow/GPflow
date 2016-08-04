@@ -360,7 +360,7 @@ class TestParamList(unittest.TestCase):
 
         m = Foo()
         self.assertTrue(m.get_free_state().size == 2)
-        m.optimize(display=False)
+        m.optimize(disp=False)
         self.assertTrue(np.allclose(m.get_free_state(), 0.))
 
 
