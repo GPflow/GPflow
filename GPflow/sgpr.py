@@ -1,7 +1,8 @@
 import tensorflow as tf
 import numpy as np
 from .model import GPModel
-from .param import Param, DataHolder
+from .param import Param
+from .data_holders import DictData
 from .mean_functions import Zero
 from . import likelihoods
 from .tf_hacks import eye
@@ -31,8 +32,8 @@ class SGPR(GPModel):
         This method only works with a Gaussian likelihood.
 
         """
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
+        X = DictData(X, on_shape_change='pass')
+        Y = DictData(Y, on_shape_change='pass')
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.Z = Param(Z)
@@ -137,8 +138,8 @@ class GPRFITC(GPModel):
         This method only works with a Gaussian likelihood.
 
         """
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
+        X = DictData(X, on_shape_change='pass')
+        Y = DictData(Y, on_shape_change='pass')
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.Z = Param(Z)
