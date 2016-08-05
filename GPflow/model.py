@@ -253,15 +253,15 @@ class Model(Parameterized):
             self._compile()
 
         options = dict(disp=True, maxiter=maxiter)
-        if 'max_iters' in kw:  # pragma nocover
-            options['maxiter'] = kw.pop('max_iters')
-            import warnings
-            warnings.warn("Use `maxiter` instead of deprecated `max_iters`.", np.VisibleDeprecationWarning)
+        if 'max_iters' in kw:
+            options['maxiter'] = kw.pop('max_iters')  # pragma: no cover
+            import warnings  # pragma: no cover
+            warnings.warn("Use `maxiter` instead of deprecated `max_iters`.", np.VisibleDeprecationWarning)  # pragma: no cover
 
-        if 'display' in kw:  # pragma nocover
-            options['disp'] = kw.pop('display')
-            import warnings
-            warnings.warn("Use `disp` instead of deprecated `display`.", np.VisibleDeprecationWarning)
+        if 'display' in kw:
+            options['disp'] = kw.pop('display')  # pragma: no cover
+            import warnings  # pragma: no cover
+            warnings.warn("Use `disp` instead of deprecated `display`.", np.VisibleDeprecationWarning)  # pragma: no cover
         options.update(kw)
 
         # here's the actual call to minimize. Catch keyboard errors as harmless.
