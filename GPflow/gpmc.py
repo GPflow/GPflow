@@ -5,6 +5,7 @@ from .param import Param, DataHolder
 from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
+from .tf_hacks import eye
 
 
 class GPMC(GPModel):
@@ -58,7 +59,7 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = tf.cholesky(K)
+        L = tf.cholesky(K) + eye(tf.shape(self.X)[0])*1e-6
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))
