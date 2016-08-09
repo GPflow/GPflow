@@ -49,7 +49,7 @@ class TestEquivalence(unittest.TestCase):
         m6.Z.fixed = True
         self.models = [m1, m2, m3, m4, m5, m6]
         for m in self.models:
-            m.optimize(display=False, max_iters=300)
+            m.optimize(disp=False, maxiter=300)
             print('.') # stop travis timing out
 
     def test_all(self):
