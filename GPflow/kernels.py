@@ -1,3 +1,4 @@
+from __future__ import print_function
 from functools import reduce
 
 import tensorflow as tf
@@ -22,7 +23,8 @@ class Kern(Parameterized):
         if active_dims is None:
             self.active_dims = slice(input_dim)
         else:
-            self.active_dims = tf.constant(np.array(active_dims, dtype=np.int32), tf.int32)
+            self._active_dims_array = np.array(active_dims, dtype=np.int32)
+            self.active_dims = tf.constant(self._active_dims_array, tf.int32)
 
     def _slice(self, X, X2):
         if isinstance(self.active_dims, slice):
@@ -53,6 +55,17 @@ class Kern(Parameterized):
     @AutoFlow((tf.float64, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
+
+    def __getstate__(self):
+        d = Parameterized.__getstate__(self)
+        if hasattr(self, '_active_dims_array'):
+            d.pop('active_dims')
+        return d
+
+    def __setstate__(self, d):
+        Parameterized.__setstate__(self, d)
+        if hasattr(self, '_active_dims_array'):
+            self.active_dims = tf.constant(self._active_dims_array, tf.int32)
 
 
 class Static(Kern):

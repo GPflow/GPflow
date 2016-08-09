@@ -39,17 +39,17 @@ class TestMeanFuncs(unittest.TestCase):
         for mf in self.mfs:
             with mf.tf_mode():
                 Y = tf.Session().run(mf(self.X), feed_dict={self.x: mf.get_free_state(), self.X: self.X_data})
-            self.failUnless(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
+            self.assertTrue(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
 
     def test_composition_output_shape(self):
         for comp_mf in self.composition_mfs:
             with comp_mf.tf_mode():
                 Y = tf.Session().run(comp_mf(self.X), feed_dict={self.x: comp_mf.get_free_state(), self.X: self.X_data})
-            self.failUnless(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
+            self.assertTrue(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
 
     def test_combination_types(self):
-        self.failUnless(all(isinstance(mfAdd, GPflow.mean_functions.Additive) for mfAdd in self.composition_mfs_add))
-        self.failUnless(all(isinstance(mfMult, GPflow.mean_functions.Product) for mfMult in self.composition_mfs_mult))
+        self.assertTrue(all(isinstance(mfAdd, GPflow.mean_functions.Additive) for mfAdd in self.composition_mfs_add))
+        self.assertTrue(all(isinstance(mfMult, GPflow.mean_functions.Product) for mfMult in self.composition_mfs_mult))
 
 
 class TestModelCompositionOperations(unittest.TestCase):
@@ -130,11 +130,11 @@ class TestModelCompositionOperations(unittest.TestCase):
         mu1_const, v1_const = self.m_const_set1.predict_f(self.Xtest)
         mu2_const, v2_const = self.m_const_set2.predict_f(self.Xtest)
 
-        self.failUnless(np.all(np.isclose(v1_lin, v1_lin)))
-        self.failUnless(np.all(np.isclose(mu1_lin, mu2_lin)))
+        self.assertTrue(np.all(np.isclose(v1_lin, v1_lin)))
+        self.assertTrue(np.all(np.isclose(mu1_lin, mu2_lin)))
 
-        self.failUnless(np.all(np.isclose(v1_const, v2_const)))
-        self.failUnless(np.all(np.isclose(mu1_const, mu2_const)))
+        self.assertTrue(np.all(np.isclose(v1_const, v2_const)))
+        self.assertTrue(np.all(np.isclose(mu1_const, mu2_const)))
 
     def test_inverse_operations(self):
         mu1_lin_min_lin, v1_lin_min_lin = self.m_linear_min_linear.predict_f(self.Xtest)
@@ -146,12 +146,12 @@ class TestModelCompositionOperations(unittest.TestCase):
         mu_const, _ = self.m_constituent.predict_f(self.Xtest)
         mu_zero, v_zero = self.m_zero.predict_f(self.Xtest)
 
-        self.failUnless(np.all(np.isclose(mu1_lin_min_lin, mu_zero)))
-        self.failUnless(np.all(np.isclose(mu1_const_min_const, mu_zero)))
+        self.assertTrue(np.all(np.isclose(mu1_lin_min_lin, mu_zero)))
+        self.assertTrue(np.all(np.isclose(mu1_const_min_const, mu_zero)))
 
-        self.failUnless(np.all(np.isclose(mu1_comp_min_constituent1, mu_const)))
-        self.failUnless(np.all(np.isclose(mu1_comp_min_constituent2, mu_const)))
-        self.failUnless(np.all(np.isclose(mu1_comp_min_constituent1, mu1_comp_min_constituent2)))
+        self.assertTrue(np.all(np.isclose(mu1_comp_min_constituent1, mu_const)))
+        self.assertTrue(np.all(np.isclose(mu1_comp_min_constituent2, mu_const)))
+        self.assertTrue(np.all(np.isclose(mu1_comp_min_constituent1, mu1_comp_min_constituent2)))
 
 
 class TestModelsWithMeanFuncs(unittest.TestCase):
@@ -198,8 +198,8 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
         for m_with, m_without in zip(self.models_with, self.models_without):
             mu1, v1 = m_with.predict_f(self.Xtest)
             mu2, v2 = m_without.predict_f(self.Xtest)
-            self.failUnless(np.all(v1 == v2))
-            self.failIf(np.all(mu1 == mu2))
+            self.assertTrue(np.all(v1 == v2))
+            self.assertFalse(np.all(mu1 == mu2))
 
 if __name__ == "__main__":
     unittest.main()
