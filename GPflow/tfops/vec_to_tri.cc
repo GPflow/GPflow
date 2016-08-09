@@ -7,7 +7,17 @@
 REGISTER_OP("VecToTri")
 .Attr("T: realnumbertype")
 .Input("vec: T")
-.Output("matrix: T");
+.Output("matrix: T")
+.Doc(R"doc(
+Converts a matrix into a series of triangular matrices.
+
+If the input is D x M, then the output is D x N x N, where the lower
+triangle of each N x N matrix is constructed by unpacking each M-vector.
+
+See also: TriToVec.
+)doc");
+
+
 
 using namespace tensorflow;
 
