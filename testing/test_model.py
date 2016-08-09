@@ -21,11 +21,11 @@ class TestOptimize(unittest.TestCase):
 
     def test_adam(self):
         o = tf.train.AdamOptimizer()
-        self.m.optimize(o, max_iters=5000)
+        self.m.optimize(o, maxiter=5000)
         self.assertTrue(self.m.x.value.max() < 1e-2)
 
     def test_lbfgsb(self):
-        self.m.optimize(display=False)
+        self.m.optimize(disp=False)
         self.assertTrue(self.m.x.value.max() < 1e-6)
 
 
@@ -83,7 +83,7 @@ class TestKeyboardCatching(unittest.TestCase):
         x0 = self.m.get_free_state()
         self.m._compile()
         self.m._objective = KeyboardRaiser(15, self.m._objective)
-        self.m.optimize(display=0, max_iters=10000, ftol=0, gtol=0)
+        self.m.optimize(disp=0, maxiter=10000, ftol=0, gtol=0)
         x1 = self.m.get_free_state()
         self.assertFalse(np.allclose(x0, x1))
 
@@ -91,7 +91,7 @@ class TestKeyboardCatching(unittest.TestCase):
         x0 = self.m.get_free_state()
         callback = KeyboardRaiser(5, lambda x: None)
         o = tf.train.AdamOptimizer()
-        self.m.optimize(o, max_iters=15, callback=callback)
+        self.m.optimize(o, maxiter=15, callback=callback)
         x1 = self.m.get_free_state()
         self.assertFalse(np.allclose(x0, x1))
 

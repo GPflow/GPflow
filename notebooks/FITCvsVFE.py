@@ -94,7 +94,7 @@ def trainSparseModel(xtrain,ytrain,exact_model,isFITC, xtest, ytest):
     callback = cb( sparse_model, xtest, ytest )
     for repeatIndex in range(nRepeats):
         print("repeatIndex ",repeatIndex)
-        sparse_model.optimize( display=False, max_iters = 2000 , tol=tol, callback=callback)
+        sparse_model.optimize(disp=False, maxiter= 2000, tol=tol, callback=callback)
     return sparse_model, callback    
 
 def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_inducing_points, ax_optimization, iterations, log_likelihoods,hold_out_likelihood, title):
@@ -149,7 +149,7 @@ def snelsonDemo():
 
     #run exact inference on training data.
     exact_model = getRegressionModel(xtrain,ytrain)
-    exact_model.optimize(max_iters = 2000000, tol=tol )
+    exact_model.optimize(maxiter= 2000000, tol=tol)
 
     figA, axes = plt.subplots(1,1)
     inds = np.argsort( xtrain.flatten() )
