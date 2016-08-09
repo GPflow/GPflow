@@ -57,9 +57,16 @@ class TestLowerTriTransform(unittest.TestCase):
         self.t = GPflow.transforms.LowerTriangular(3)
 
     def testErrors(self):
-        self.assertRaises(ValueError, self.t.free_state_size, (2, 6, 6))
-        self.assertRaises(ValueError, self.t.free_state_size, (3, 6, 7))
-        self.assertRaises(ValueError, self.t.forward, np.random.randn(3, 7))
+
+        self.t.free_state_size((6, 6, 3))
+        with self.assertRaises(ValueError):
+            self.t.free_state_size((6, 6, 2))
+        with self.assertRaises(ValueError):
+            self.t.free_state_size((7, 6, 4))
+
+        self.t.forward(np.ones(3 * 6))
+        with self.assertRaises(ValueError):
+            self.t.forward(np.ones(3 * 7))
 
 
 if __name__ == "__main__":
