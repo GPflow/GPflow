@@ -37,10 +37,9 @@ def _vec_to_tri_grad(op, grad):
     return [tri_to_vec(grad)]
 
 
-# TODO: Finish registering the shape. Was unsure how to handle incomplete shape information in the input.
-# @tf.RegisterShape("VecToTri")
-# def _vec_to_tri_shape(op):
-#     in_shape = op.inputs[0].get_shape()
-#     k = int((in_shape[1] * 8 + 1) ** 0.5 / 2.0 - 0.5);
-#     shape = tf.TensorShape({in_shape[0], k, k})
-#     return [shape]
+@tf.RegisterShape("VecToTri")
+def _vec_to_tri_shape(op):
+    in_shape = op.inputs[0].get_shape().with_rank(2)
+    k = int((in_shape[1].value * 8 + 1) ** 0.5 / 2.0 - 0.5)
+    shape = tf.TensorShape([in_shape[0], k, k])
+    return [shape]
