@@ -34,15 +34,32 @@ class TransformTests(unittest.TestCase):
         We have hand-crafted the log-jacobians for speed. Check they're correct
         wrt a tensorflow derived version
         """
+
         # there is no jacobian: loop manually
         def jacobian(f):
             return tf.pack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
-        tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms]
-        hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms]
+
+        tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms if
+                   type(t) is not GPflow.transforms.LowerTriangular]
+        hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms if
+                     type(t) is not GPflow.transforms.LowerTriangular]
 
         for j1, j2 in zip(tf_jacs, hand_jacs):
             self.assertTrue(np.allclose(self.session.run(j1, feed_dict={self.x: self.x_np}),
                                         self.session.run(j2, feed_dict={self.x: self.x_np})))
+
+
+class TestLowerTriTransform(unittest.TestCase):
+    """
+    Some extra tests for the LowerTriangle transformation.
+    """
+    def setUp(self):
+        self.t = GPflow.transforms.LowerTriangular(3)
+
+    def testErrors(self):
+        self.assertRaises(ValueError, self.t.free_state_size, (2, 6, 6))
+        self.assertRaises(ValueError, self.t.free_state_size, (3, 6, 7))
+        self.assertRaises(ValueError, self.t.forward, np.random.randn(3, 7))
 
 
 if __name__ == "__main__":
