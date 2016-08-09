@@ -267,7 +267,7 @@ class Param(Parentable):
         """
         if self.prior is None:
             return tf.constant(0.0, tf.float64)
-        elif self._tf_array is None:  # pragma: no-cover
+        elif self._tf_array is None:  # pragma: no cover
             raise ValueError("tensorflow array has not been initialized")
         else:
             return self.prior.logp(self._tf_array) + self._log_jacobian
@@ -408,7 +408,7 @@ class DataHolder(Parentable):
             elif self.on_shape_change == 'pass':
                 self._array = array.copy()
             else:
-                raise ValueError('invalid option')  # pragma: no-cover
+                raise ValueError('invalid option')  # pragma: no cover
 
     @property
     def value(self):
@@ -774,7 +774,7 @@ class Parameterized(Parentable):
         prepend += self.name + '.'
         return '\n'.join([p.__str__(prepend) for p in self.sorted_params])
 
-    def _html_table_rows(self, name_prefix=''):  # pragma: no cover
+    def _html_table_rows(self, name_prefix=''):
         """
         Get the rows of the html table for this object
         """

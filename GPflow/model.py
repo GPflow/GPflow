@@ -179,7 +179,7 @@ class Model(Parameterized):
                               return_logprobs=return_logprobs, RNG=RNG)
 
     def optimize(self, method='L-BFGS-B', tol=None, callback=None,
-                 max_iters=1000, **kw):
+                 maxiter=1000, **kw):
         """
         Optimize the model by maximizing the likelihood (possibly with the
         priors also) with respect to any free variables.
@@ -207,11 +207,11 @@ class Model(Parameterized):
         """
 
         if type(method) is str:
-            return self._optimize_np(method, tol, callback, max_iters, **kw)
+            return self._optimize_np(method, tol, callback, maxiter, **kw)
         else:
-            return self._optimize_tf(method, callback, max_iters, **kw)
+            return self._optimize_tf(method, callback, maxiter, **kw)
 
-    def _optimize_tf(self, method, callback, max_iters):
+    def _optimize_tf(self, method, callback, maxiter):
         """
         Optimize the model using a tensorflow optimizer. See self.optimize()
         """
@@ -219,7 +219,7 @@ class Model(Parameterized):
 
         try:
             iteration = 0
-            while iteration < max_iters:
+            while iteration < maxiter:
                 self._session.run(opt_step, feed_dict=self.get_feed_dict())
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
@@ -242,7 +242,7 @@ class Model(Parameterized):
         return r
 
     def _optimize_np(self, method='L-BFGS-B', tol=None, callback=None,
-                     max_iters=1000, **kw):
+                     maxiter=1000, **kw):
         """
         Optimize the model to find the maximum likelihood  or MAP point. Here
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
@@ -267,15 +267,18 @@ class Model(Parameterized):
         if self._needs_recompile:
             self._compile()
 
-        options = dict(display=True, max_iters=max_iters)
-        options.update(kw)
+        options = dict(disp=True, maxiter=maxiter)
+        if 'max_iters' in kw:  # pragma: no cover
+            options['maxiter'] = kw.pop('max_iters')
+            import warnings
+            warnings.warn("Use `maxiter` instead of deprecated `max_iters`.", np.VisibleDeprecationWarning)
 
-        # LBFGS-B hacks. the options are different, annoyingly.
-        if method == 'L-BFGS-B':
-            options['maxiter'] = max_iters
-            del options['max_iters']
-            options['disp'] = options['display']
-            del options['display']
+        if 'display' in kw:  # pragma: no cover
+            options['disp'] = kw.pop('display')
+            import warnings
+            warnings.warn("Use `disp` instead of deprecated `display`.", np.VisibleDeprecationWarning)
+
+        options.update(kw)
 
         # here's the actual call to minimize. Catch keyboard errors as harmless.
         obj = ObjectiveWrapper(self._objective)
