@@ -47,6 +47,9 @@ class TestVecToTri(unittest.TestCase):
 
 
 class TestTriToVec(unittest.TestCase):
+    def setUp(self):
+        self.sess = tf.InteractiveSession()
+
     def testTriToVec(self):
         mats = [
             np.arange(1, 4)[None, :],
@@ -57,3 +60,16 @@ class TestTriToVec(unittest.TestCase):
             for m in mats:
                 # The ops are each others' inverse.
                 self.assertTrue(np.all(tri_to_vec(vec_to_tri(m)).eval() == m))
+
+    def test_wrong_shape(self):
+        mats = [
+            np.ones((2, 3, 4)),
+            np.ones((3, 3))
+        ]
+        with self.assertRaises(tf.errors.InvalidArgumentError):
+            for m in mats:
+                self.sess.run(tri_to_vec(m))
+
+
+if __name__ == "__main__":
+    unittest.main()
