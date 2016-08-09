@@ -321,17 +321,25 @@ class Coregion(Kern):
         """
         A Coregionalization kernel. The inputs to this kernel are _integers_
         (we cast them from floats as needed) which usually specify the
-        *outputs* or a Coregionalization model
+        *outputs* of a Coregionalization model.
 
         The parameters of this kernel, W, kappa, specify a positive-definite
-        matrix B. The kernel function is then an indexing of this matrix, so
+        matrix B.
 
-          K[x, y] = B[x, y]
+          B = W W^T + diag(kappa) .
+
+        The kernel function is then an indexing of this matrix, so
+
+          K(x, y) = B[x, y] .
 
         We refer to the size of B as "num_outputs x num_outputs", since this is
         the number of outputs in a coreginoalization model. We refer to the
         number of columns on W as 'rank': it is the number of degrees of
-        correlatino between the outputs.
+        correlation between the outputs.
+
+        NB. There is a symmetry between the elements of W, which creates a
+        local minimum at W=0. To avoid this, it's recommended to initialize the
+        optimization (or MCMC chain) using a random W.
         """
         assert input_dim == 1, "Coregion kernel in 1D only"
         Kern.__init__(self, input_dim, active_dims)
