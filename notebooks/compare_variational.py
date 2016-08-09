@@ -27,9 +27,9 @@ for m in model_list:
     m.kern.variance.fixed = True
     m.likelihood.variance.fixed = True
 
-m2.optimize(max_iters=100000)
-m3.optimize(max_iters=100000)
-m4.optimize(max_iters=100000)
+m2.optimize(maxiter=100000)
+m3.optimize(maxiter=100000)
+m4.optimize(maxiter=100000)
 
 xx = np.linspace(-1, 11, 100)[:,None]
 

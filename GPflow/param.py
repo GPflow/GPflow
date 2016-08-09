@@ -1,3 +1,18 @@
+# Copyright 2016 James Hensman, Mark van der Wilk, Valentine Svensson, alexggmatthews, PabloLeon, fujiisoup
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -252,7 +267,7 @@ class Param(Parentable):
         """
         if self.prior is None:
             return tf.constant(0.0, tf.float64)
-        elif self._tf_array is None:  # pragma: no-cover
+        elif self._tf_array is None:  # pragma: no cover
             raise ValueError("tensorflow array has not been initialized")
         else:
             return self.prior.logp(self._tf_array) + self._log_jacobian
@@ -393,7 +408,7 @@ class DataHolder(Parentable):
             elif self.on_shape_change == 'pass':
                 self._array = array.copy()
             else:
-                raise ValueError('invalid option')  # pragma: no-cover
+                raise ValueError('invalid option')  # pragma: no cover
 
     @property
     def value(self):
@@ -610,6 +625,14 @@ class Parameterized(Parentable):
                 delattr(self, key)
         [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
 
+    def __getstate__(self):
+        d = Parentable.__getstate__(self)
+        # do not pickle autoflow
+        for key in list(d.keys()):
+            if key[0] == '_' and key[-11:] == '_AF_storage':
+                d.pop(key)
+        return d
+
     def make_tf_array(self, X):
         """
         X is a tf. placeholder. It gets passed to all the children of
@@ -751,7 +774,7 @@ class Parameterized(Parentable):
         prepend += self.name + '.'
         return '\n'.join([p.__str__(prepend) for p in self.sorted_params])
 
-    def _html_table_rows(self, name_prefix=''):  # pragma: no cover
+    def _html_table_rows(self, name_prefix=''):
         """
         Get the rows of the html table for this object
         """
