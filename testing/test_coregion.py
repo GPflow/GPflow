@@ -25,14 +25,15 @@ class TestEquivalence(unittest.TestCase):
         # two independent vgps for two sets of data
         k0 = GPflow.kernels.RBF(2)
         k0.lengthscales.fixed=True
-        self.vgp0 = GPflow.vgp.VGP(X[0], Y[0], kern=k0, \
-                                likelihood = GPflow.likelihoods.Gaussian())#,\
-#                                mean_function=GPflow.mean_functions.Constant())
+        self.vgp0 = GPflow.vgp.VGP(X[0], Y[0], kern=k0,
+                                mean_function=GPflow.mean_functions.Constant(),
+                                likelihood = GPflow.likelihoods.Gaussian())
+
         k1 = GPflow.kernels.RBF(2)
         k1.lengthscales.fixed=True
-        self.vgp1 = GPflow.vgp.VGP(X[1], Y[1], kern=k1,\
-                                likelihood = GPflow.likelihoods.Gaussian())#,\
-#                                mean_function=GPflow.mean_functions.Constant())
+        self.vgp1 = GPflow.vgp.VGP(X[1], Y[1], kern=k1,
+                                mean_function=GPflow.mean_functions.Constant(),
+                                likelihood = GPflow.likelihoods.Gaussian())
         # coregionalized gpr
         lik = GPflow.likelihoods.SwitchedLikelihood(\
                 [GPflow.likelihoods.Gaussian(), GPflow.likelihoods.Gaussian()])
@@ -42,8 +43,11 @@ class TestEquivalence(unittest.TestCase):
         coreg = GPflow.kernels.Coregion(1, output_dim=2, rank=1, active_dims=[2])
         coreg.W.fixed=True
 
-        self.cvgp = GPflow.vgp.VGP(X_augumented, Y_augumented, \
-                                kern=kc*coreg,\
+        mean_c = GPflow.mean_functions.SwitchedMeanFunction(
+            [GPflow.mean_functions.Constant(),GPflow.mean_functions.Constant()])
+        self.cvgp = GPflow.vgp.VGP(X_augumented, Y_augumented,
+                                kern=kc*coreg,
+                                mean_function=mean_c,
                                 likelihood = lik, num_latent=2)
 
         self.vgp0.optimize(display=False, max_iters=300)
@@ -67,6 +71,14 @@ class TestEquivalence(unittest.TestCase):
                                     self.cvgp.kern.coregion.kappa.value[1], \
                                     atol = 1.0e-2))
 
+        # check mean values
+        self.assertTrue(np.allclose(self.vgp0.mean_function.c.value, \
+                                    self.cvgp.mean_function.meanfunction_list[0].c.value, \
+                                    atol = 1.0e-2))
+        self.assertTrue(np.allclose(self.vgp1.mean_function.c.value, \
+                                    self.cvgp.mean_function.meanfunction_list[1].c.value, \
+                                    atol = 1.0e-2))
+
         X_augumented0 = np.hstack([self.Xtest, np.zeros((self.Xtest.shape[0],1))])
         X_augumented1 = np.hstack([self.Xtest, np.ones((self.Xtest.shape[0],1))])
         Ytest = [np.sin(x) + 0.9 * np.cos(x*1.6) for x in self.Xtest]
@@ -76,22 +88,22 @@ class TestEquivalence(unittest.TestCase):
         # check predict_f
         pred_f0  = self.vgp0.predict_f(self.Xtest)
         pred_fc0 = self.cvgp.predict_f(X_augumented0)
-        self.assertTrue(np.allclose(pred_f0, pred_fc0, atol=1.0e-3))
+        self.assertTrue(np.allclose(pred_f0, pred_fc0, atol=1.0e-2))
         pred_f1  = self.vgp1.predict_f(self.Xtest)
         pred_fc1 = self.cvgp.predict_f(X_augumented1)
-        self.assertTrue(np.allclose(pred_f1, pred_fc1, atol=1.0e-3))
+        self.assertTrue(np.allclose(pred_f1, pred_fc1, atol=1.0e-2))
 
         # check predict y
         pred_y0  = self.vgp0.predict_y(self.Xtest)
         pred_yc0 = self.cvgp.predict_y(np.hstack([self.Xtest, np.zeros((self.Xtest.shape[0],1))]))
         # predict_y returns results for all the likelihodds in multi_likelihood
-        self.assertTrue(np.allclose(pred_y0[0], pred_yc0[0][:, :np.array(Ytest).shape[1]], atol=1.0e-3))
-        self.assertTrue(np.allclose(pred_y0[1], pred_yc0[1][:, :np.array(Ytest).shape[1]], atol=1.0e-3))
+        self.assertTrue(np.allclose(pred_y0[0], pred_yc0[0][:, :np.array(Ytest).shape[1]], atol=1.0e-2))
+        self.assertTrue(np.allclose(pred_y0[1], pred_yc0[1][:, :np.array(Ytest).shape[1]], atol=1.0e-2))
         pred_y1  = self.vgp1.predict_y(self.Xtest)
         pred_yc1 = self.cvgp.predict_y(np.hstack([self.Xtest, np.ones((self.Xtest.shape[0],1))]))
         # predict_y returns results for all the likelihodds in multi_likelihood
-        self.assertTrue(np.allclose(pred_y1[0], pred_yc1[0][:, np.array(Ytest).shape[1]:], atol=1.0e-3))
-        self.assertTrue(np.allclose(pred_y1[1], pred_yc1[1][:, np.array(Ytest).shape[1]:], atol=1.0e-3))
+        self.assertTrue(np.allclose(pred_y1[0], pred_yc1[0][:, np.array(Ytest).shape[1]:], atol=1.0e-2))
+        self.assertTrue(np.allclose(pred_y1[1], pred_yc1[1][:, np.array(Ytest).shape[1]:], atol=1.0e-2))
 
         # check predict_density
         pred_ydensity0 = self.vgp0.predict_density(self.Xtest, Ytest)

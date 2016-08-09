@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from .param import Param, Parameterized
+from .param import Param, ParamList, Parameterized
 
 
 class MeanFunction(Parameterized):
@@ -64,29 +64,27 @@ class Constant(MeanFunction):
 
 
 class SwitchedMeanFunction(MeanFunction):
-    def init__(self, meanfunction_list, input_dim, active_dim):
     """
-    In this mean function, we assume at active_dim column of X, wchih contains
-    integers that specify a mean_function from the list of mean_functions.
+    This class enables to use different (independent) mean_functions respective
+    to the data 'label'.
+    We assume the 'label' is stored in the extra column of X.
     """
+    def __init__(self, meanfunction_list):
         MeanFunction.__init__(self)
         for m in meanfunction_list:
-            assert isinstance(m, meanfunction_list)
+            assert isinstance(m, MeanFunction)
         self.meanfunction_list = ParamList(meanfunction_list)
         self.num_meanfunctions = len(self.meanfunction_list)
-        # dimension that contains integers
-        self.active_dim = active_dim
-        # the rest of dimension as list, for deriving the true expressive variables
-        self.other_dims = list(range(input_dim))
-        pop(self.other_dims[self.active_dim])
 
     def __call__(self, X):
-        ind = tf.gather(tf.transpose(X), self.active_dim)  # ind = Y[:,-1]
+        ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
-        X = tf.transpose(tf.gather(tf.transpose(X), self.other_dims))
-        # apply the likelihood-function to each section of the data
-        results = [m(X) for m in self.meanfunction_list]
+        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, tf.shape(X)[1]-1)))  # X = X[:,:-1]
 
+        # split up X into chunks corresponding to the relevant likelihoods
+        x_list = tf.dynamic_partition(X, ind, self.num_meanfunctions)
+        # apply the likelihood-function to each section of the data
+        results = [m(x) for (x,m) in zip(x_list, self.meanfunction_list)]
         # stitch the results back together
         partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
         return tf.dynamic_stitch(partitions, results)
