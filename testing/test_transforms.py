@@ -62,7 +62,7 @@ class TestLowerTriTransform(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.t.free_state_size((6, 6, 2))
         with self.assertRaises(ValueError):
-            self.t.free_state_size((7, 6, 4))
+            self.t.free_state_size((7, 6, 3))
 
         self.t.forward(np.ones(3 * 6))
         with self.assertRaises(ValueError):
