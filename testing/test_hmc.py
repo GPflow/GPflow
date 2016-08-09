@@ -15,8 +15,8 @@ class SampleGaussianTest(unittest.TestCase):
                                         x0=self.x0, verbose=False, thin=10, burn=0)
         mean = samples.mean(0)
         cov = np.cov(samples.T)
-        self.failUnless(np.allclose(mean, np.zeros(3), 1e-1, 1e-1))
-        self.failUnless(np.allclose(cov, np.eye(3), 1e-1, 1e-1))
+        self.assertTrue(np.allclose(mean, np.zeros(3), 1e-1, 1e-1))
+        self.assertTrue(np.allclose(cov, np.eye(3), 1e-1, 1e-1))
 
     def test_rng(self):
         """
@@ -34,16 +34,23 @@ class SampleGaussianTest(unittest.TestCase):
                                          x0=self.x0, verbose=False, thin=10, burn=0,
                                          RNG=np.random.RandomState(11))
 
-        self.failUnless(np.all(samples1 == samples2))
-        self.failIf(np.all(samples1 == samples3))
+        self.assertTrue(np.all(samples1 == samples2))
+        self.assertFalse(np.all(samples1 == samples3))
 
     def test_burn(self):
         samples = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
                                         x0=self.x0, verbose=False, thin=1, burn=10,
                                         RNG=np.random.RandomState(11))
 
-        self.failUnless(samples.shape == (100, 3))
-        self.failIf(np.all(samples[0] == self.x0))
+        self.assertTrue(samples.shape == (100, 3))
+        self.assertFalse(np.all(samples[0] == self.x0))
+
+    def test_return_logprobs(self):
+        s, logps = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
+                                         x0=self.x0, verbose=False, thin=1, burn=10,
+                                         RNG=np.random.RandomState(11), return_logprobs=True)
+
+
 
 
 class SampleModelTest(unittest.TestCase):
@@ -64,10 +71,13 @@ class SampleModelTest(unittest.TestCase):
         self.m = Quadratic()
 
     def test_mean(self):
-        samples = self.m.sample(num_samples=200, Lmax=20, epsilon=0.05)
+        samples = self.m.sample(num_samples=400, Lmax=20, epsilon=0.05)
 
-        self.failUnless(samples.shape == (200, 2))
-        self.failUnless(np.allclose(samples.mean(0), np.zeros(2), 1e-1, 1e-1))
+        self.assertTrue(samples.shape == (400, 2))
+        self.assertTrue(np.allclose(samples.mean(0), np.zeros(2), 1e-1, 1e-1))
+
+    def test_return_logprobs(self):
+        s, logps = self.m.sample(num_samples=200, Lmax=20, epsilon=0.05, return_logprobs=True)
 
 
 class SamplesDictTest(unittest.TestCase):

@@ -21,13 +21,13 @@ class TransformTests(unittest.TestCase):
         ys_tf = [self.session.run(y, feed_dict={self.x: self.x_np}) for y in ys]
         ys_np = [t.forward(self.x_np) for t in self.transforms]
         for y1, y2 in zip(ys_tf, ys_np):
-            self.failUnless(np.allclose(y1, y2))
+            self.assertTrue(np.allclose(y1, y2))
 
     def test_forward_backward(self):
         ys_np = [t.forward(self.x_np) for t in self.transforms]
         xs_np = [t.backward(y) for t, y in zip(self.transforms, ys_np)]
         for x in xs_np:
-            self.failUnless(np.allclose(x, self.x_np))
+            self.assertTrue(np.allclose(x, self.x_np))
 
     def test_logjac(self):
         """
@@ -41,7 +41,7 @@ class TransformTests(unittest.TestCase):
         hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms]
 
         for j1, j2 in zip(tf_jacs, hand_jacs):
-            self.failUnless(np.allclose(self.session.run(j1, feed_dict={self.x: self.x_np}),
+            self.assertTrue(np.allclose(self.session.run(j1, feed_dict={self.x: self.x_np}),
                                         self.session.run(j2, feed_dict={self.x: self.x_np})))
 
 

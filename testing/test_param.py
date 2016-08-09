@@ -243,8 +243,8 @@ class ParamTestsWider(unittest.TestCase):
         fs = self.m.get_free_state()
         for p in [self.m.foo, self.m.bar, self.m.baz]:
             index, found = self.m.get_param_index(p)
-            self.failUnless(found)
-            self.failUnless(fs[index] == p.get_free_state()[0])
+            self.assertTrue(found)
+            self.assertTrue(fs[index] == p.get_free_state()[0])
         
     def testFixed(self):
         self.m.foo.fixed = True
@@ -360,7 +360,7 @@ class TestParamList(unittest.TestCase):
 
         m = Foo()
         self.assertTrue(m.get_free_state().size == 2)
-        m.optimize(display=False)
+        m.optimize(disp=False)
         self.assertTrue(np.allclose(m.get_free_state(), 0.))
 
 

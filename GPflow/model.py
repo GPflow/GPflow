@@ -1,3 +1,18 @@
+# Copyright 2016 James Hensman, Mark van der Wilk, Valentine Svensson, alexggmatthews, fujiisoup
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 from __future__ import print_function
 from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
@@ -152,7 +167,7 @@ class Model(Parameterized):
     def compute_log_likelihood(self):
         return self.build_likelihood()
 
-    def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False):
+    def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False, return_logprobs=False, RNG=np.random.RandomState(0)):
         """
         Use Hamiltonian Monte Carlo to draw samples from the model posterior.
         """
@@ -160,10 +175,11 @@ class Model(Parameterized):
             self._compile()
         return hmc.sample_HMC(self._objective, num_samples,
                               Lmax, epsilon,
-                              x0=self.get_free_state(), verbose=verbose)
+                              x0=self.get_free_state(), verbose=verbose,
+                              return_logprobs=return_logprobs, RNG=RNG)
 
     def optimize(self, method='L-BFGS-B', tol=None, callback=None,
-                 max_iters=1000, **kw):
+                 maxiter=1000, **kw):
         """
         Optimize the model by maximizing the likelihood (possibly with the
         priors also) with respect to any free variables.
@@ -191,11 +207,11 @@ class Model(Parameterized):
         """
 
         if type(method) is str:
-            return self._optimize_np(method, tol, callback, max_iters, **kw)
+            return self._optimize_np(method, tol, callback, maxiter, **kw)
         else:
-            return self._optimize_tf(method, callback, max_iters, **kw)
+            return self._optimize_tf(method, callback, maxiter, **kw)
 
-    def _optimize_tf(self, method, callback, max_iters):
+    def _optimize_tf(self, method, callback, maxiter):
         """
         Optimize the model using a tensorflow optimizer. See self.optimize()
         """
@@ -203,7 +219,7 @@ class Model(Parameterized):
 
         try:
             iteration = 0
-            while iteration < max_iters:
+            while iteration < maxiter:
                 self._session.run(opt_step, feed_dict=self.get_feed_dict())
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
@@ -226,7 +242,7 @@ class Model(Parameterized):
         return r
 
     def _optimize_np(self, method='L-BFGS-B', tol=None, callback=None,
-                     max_iters=1000, **kw):
+                     maxiter=1000, **kw):
         """
         Optimize the model to find the maximum likelihood  or MAP point. Here
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
@@ -251,15 +267,18 @@ class Model(Parameterized):
         if self._needs_recompile:
             self._compile()
 
-        options = dict(display=True, max_iters=max_iters)
-        options.update(kw)
+        options = dict(disp=True, maxiter=maxiter)
+        if 'max_iters' in kw:  # pragma: no cover
+            options['maxiter'] = kw.pop('max_iters')
+            import warnings
+            warnings.warn("Use `maxiter` instead of deprecated `max_iters`.", np.VisibleDeprecationWarning)
 
-        # LBFGS-B hacks. the options are different, annoyingly.
-        if method == 'L-BFGS-B':
-            options['maxiter'] = max_iters
-            del options['max_iters']
-            options['disp'] = options['display']
-            del options['display']
+        if 'display' in kw:  # pragma: no cover
+            options['disp'] = kw.pop('display')
+            import warnings
+            warnings.warn("Use `disp` instead of deprecated `display`.", np.VisibleDeprecationWarning)
+
+        options.update(kw)
 
         # here's the actual call to minimize. Catch keyboard errors as harmless.
         obj = ObjectiveWrapper(self._objective)

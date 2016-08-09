@@ -1,9 +1,25 @@
+# Copyright 2016 James Hensman, alexggmatthews
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 from __future__ import division, print_function
 import numpy as np
 
 
 def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
-               thin=1, burn=0, RNG=np.random.RandomState(0)):
+               thin=1, burn=0, RNG=np.random.RandomState(0),
+               return_logprobs=False):
     """
     A straight-forward HMC implementation. The mass matrix is assumed to be the
     identity.
@@ -23,6 +39,7 @@ def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
     - thin is an integer which specifies the thinning interval
     - burn is an integer which specifies how many initial samples to discard.
     - RNG is a random number generator
+    - return_logprobs is a boolean indicating whether to return the log densities alongside the samples.
 
     The total number of iterations is given by
 
@@ -30,6 +47,9 @@ def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
 
     the return shape is always num_samples x D.
     """
+
+    # an array to store the logprobs in (even if the user doesn't want them)
+    logprob_track = np.empty(num_samples)
 
     # burn some samples if needed.
     if burn > 0:
@@ -84,20 +104,26 @@ def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
                   Rejecting this proposal prematurely")
             x, logprob, grad = x_old, logprob_old, grad_old
             if t % thin == 0:
-                samples[t / thin] = x_old
+                samples[t // thin] = x_old
+                logprob_track[t // thin] = logprob_old
             continue
 
-        # work out whether to accpet the proposal
+        # work out whether to accept the proposal
         log_accept_ratio = logprob - 0.5 * p.dot(p) -\
             logprob_old + 0.5 * p_old.dot(p_old)
         logu = np.log(RNG.rand())
 
         if logu < log_accept_ratio:  # accept
             if t % thin == 0:
-                samples[t/thin] = x
+                samples[t // thin] = x
+                logprob_track[t // thin] = logprob
             accept_count_batch += 1
         else:  # reject
             if t % thin == 0:
-                samples[t/thin] = x_old
+                samples[t // thin] = x_old
+                logprob_track[t // thin] = logprob_old
             x, logprob, grad = x_old, logprob_old, grad_old
-    return samples
+    if return_logprobs:
+        return samples, logprob_track
+    else:
+        return samples
