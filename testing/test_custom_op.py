@@ -21,6 +21,9 @@ def compare_op(v):
 
 
 class TestVecToTri(unittest.TestCase):
+    def setUp(self):
+        self.sess = tf.InteractiveSession()
+
     def testVecToTri(self):
         mats = [
             np.arange(1, 4)[None, :],
@@ -31,11 +34,8 @@ class TestVecToTri(unittest.TestCase):
             self.assertTrue(np.all(compare_op(m)))
 
     def testErrorOnIncorrectSize(self):
-        def func():
-            with tf.Session(''):
-                vec_to_tri(np.arange(1, 5)[None, :]).eval()
-
-        self.assertRaises(tf.errors.InvalidArgumentError, func)
+        with self.assertRaises(tf.errors.InvalidArgumentError):
+            self.sess.run(vec_to_tri(np.arange(1, 5)[None, :]))
 
     def testGradient(self):
         N = 30
