@@ -71,10 +71,10 @@ def conditional(Xnew, X, kern, f, num_columns,
     # compute the covariance due to the conditioning
     if full_cov:
         fvar = kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
-        fvar = tf.tile(tf.expand_dims(fvar, 2), [1, 1, num_columns])
+        fvar = tf.tile(tf.expand_dims(fvar, 0), [num_columns, 1, 1])  # D x N x N
     else:
         fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
-        fvar = tf.tile(tf.expand_dims(fvar, 1), [1, num_columns])
+        fvar = tf.tile(tf.expand_dims(fvar, 0), [num_columns, 1])  # D x N
 
     # another backsubstitution in the unwhitened case
     if not whiten:
@@ -83,23 +83,21 @@ def conditional(Xnew, X, kern, f, num_columns,
     # construct the conditional mean
     fmean = tf.matmul(tf.transpose(A), f)
 
-    # add extra projected variance from q(f) if needed
     if q_sqrt is not None:
-        projected_var = []
-        for d in range(num_columns):
-            if q_sqrt.get_shape().ndims == 2:
-                LTA = A * q_sqrt[:, d:d + 1]
-            elif q_sqrt.get_shape().ndims == 3:
-                L = tf.batch_matrix_band_part(q_sqrt[:, :, d], -1, 0)
-                LTA = tf.matmul(tf.transpose(L), A)
-            else:  # pragma no cover
-                raise ValueError("Bad dimension for q_sqrt: %s" %
-                                 str(q_sqrt.get_shape().ndims))
-            if full_cov:
-                projected_var.append(tf.matmul(tf.transpose(LTA), LTA))
-            else:
-                projected_var.append(tf.reduce_sum(tf.square(LTA), 0))
-        fvar = fvar + tf.transpose(tf.pack(projected_var))
+        if q_sqrt.get_shape().ndims == 2:
+            LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # D x M x N
+        elif q_sqrt.get_shape().ndims == 3:
+            L = tf.batch_matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
+            A_tiled = tf.tile(tf.expand_dims(A, 0), [num_columns, 1, 1])
+            LTA = tf.batch_matmul(L, A_tiled, adj_x=True)  # D x M x N
+        else:  # pragma: no cover
+            raise ValueError("Bad dimension for q_sqrt: %s" %
+                             str(q_sqrt.get_shape().ndims))
+        if full_cov:
+            fvar = fvar + tf.matmul(LTA, LTA, adj_x=True)  # D x N x N
+        else:
+            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # D x N
+    fvar = tf.transpose(fvar)  # N x D or N x N x D
 
     return fmean, fvar
 
