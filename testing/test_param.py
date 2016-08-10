@@ -74,6 +74,13 @@ class ParamTestsScalar(unittest.TestCase):
         self.m.p.fixed = False
         self.assertFalse(self.m.fixed)
 
+    def testFixedFreeState(self):
+        self.assertTrue(len(self.m.get_free_state()) == 1)
+        self.m.set_state(np.ones(1))
+        self.m.fixed = True
+        self.assertTrue(len(self.m.get_free_state()) == 0)
+        self.m.set_state(np.ones(0))
+
     def testMakeTF(self):
         x = tf.placeholder('float64')
 
@@ -245,7 +252,7 @@ class ParamTestsWider(unittest.TestCase):
             index, found = self.m.get_param_index(p)
             self.assertTrue(found)
             self.assertTrue(fs[index] == p.get_free_state()[0])
-        
+
     def testFixed(self):
         self.m.foo.fixed = True
         self.assertTrue(len(self.m.get_free_state()) == 19)
