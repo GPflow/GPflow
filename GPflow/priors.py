@@ -88,3 +88,13 @@ class Laplace(Prior):
         return "Lap.("+str(self.mu) + "," + str(self.sigma) + ")"
 
 
+class Uniform(Prior):
+    def __init__(self, lower=0, upper=1):
+        self.log_height = - np.log(upper - lower)
+        self.lower, self.upper = lower, upper
+
+    def logp(self, x):
+        return self.log_height * tf.cast(tf.size(x), tf.float64)
+
+    def __str__(self):
+        return "U("+str(self.lower) + "," + str(self.upper) + ")"
