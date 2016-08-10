@@ -15,6 +15,7 @@
 
 import numpy as np
 import tensorflow as tf
+import GPflow.tf_hacks as tfh
 
 
 class Transform(object):
@@ -46,6 +47,9 @@ class Transform(object):
         implementation is correct.
         """
         raise NotImplementedError
+
+    def free_state_size(self, variable_shape):
+        return np.prod(variable_shape)
 
     def __str__(self):
         """
@@ -143,11 +147,11 @@ class Logistic(Transform):
 
     def tf_forward(self, x):
         ex = tf.exp(-x)
-        return self._a + (self._b-self._a) / (1. + ex)
+        return self._a + (self._b - self._a) / (1. + ex)
 
     def forward(self, x):
         ex = np.exp(-x)
-        return self.a + (self.b-self.a) / (1. + ex)
+        return self.a + (self.b - self.a) / (1. + ex)
 
     def backward(self, y):
         return -np.log((self.b - self.a) / (y - self.a) - 1.)
@@ -168,6 +172,84 @@ class Logistic(Transform):
         Transform.__setstate__(self, d)
         self._a = tf.constant(self.a, tf.float64)
         self._b = tf.constant(self.b, tf.float64)
+
+
+class LowerTriangular(Transform):
+    """
+    A transform of the form
+
+       tri_mat = vec_to_tri(x)
+
+    x is a free variable, y is always a list of lower triangular matrices sized
+    (N x N x D).
+    """
+
+    def __init__(self, num_matrices=1):
+        self.num_matrices = num_matrices  # We need to store this for reconstruction.
+
+    def _validate_vector_length(self, length):
+        """
+        Check whether the vector length is consistent with being a triangular
+         matrix and with `self.num_matrices`.
+        Args:
+            length: Length of the free state vector.
+
+        Returns: Length of the vector with the lower triangular elements.
+
+        """
+        L = length / self.num_matrices
+        if int(((L * 8) + 1) ** 0.5) ** 2.0 != (L * 8 + 1):
+            raise ValueError("The free state must be a triangle number.")
+        return L
+
+    def forward(self, x):
+        """
+        Transforms from the free state to the variable.
+        Args:
+            x: Free state vector. Must have length of `self.num_matrices` *
+                triangular_number.
+
+        Returns:
+            Reconstructed variable.
+        """
+        L = self._validate_vector_length(len(x))
+        matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
+        xr = np.reshape(x, (self.num_matrices, -1))
+        var = np.zeros((matsize, matsize, self.num_matrices))
+        for i in range(self.num_matrices):
+            indices = np.tril_indices(matsize, 0)
+            var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
+        return var
+
+    def backward(self, y):
+        """
+        Transforms from the variable to the free state.
+        Args:
+            y: Variable representation.
+
+        Returns:
+            Free state.
+        """
+        N = int((y.size / self.num_matrices)**0.5)
+        y = np.reshape(y, (N, N, self.num_matrices))
+        return y[np.tril_indices(len(y), 0)].T.flatten()
+
+    def tf_forward(self, x):
+        return tf.transpose(tfh.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+
+    def tf_log_jacobian(self, x):
+        return tf.zeros((1,), tf.float64) - np.inf
+
+    def free_state_size(self, variable_shape):
+        if variable_shape[2] != self.num_matrices:
+            raise ValueError("Number of matrices must be consistent with what was passed to the constructor.")
+        if variable_shape[0] != variable_shape[1]:
+            raise ValueError("Matrices passed must be square.")
+        N = variable_shape[0]
+        return int(0.5 * N * (N + 1)) * variable_shape[2]
+
+    def __str__(self):
+        return "LoTri->vec"
 
 
 positive = Log1pe()
