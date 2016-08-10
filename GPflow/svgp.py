@@ -107,25 +107,15 @@ class SVGP(GPModel):
     def build_prior_KL(self):
         if self.whiten:
             if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu,
-                                                           self.q_sqrt,
-                                                           self.num_latent)
+                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu, self.q_sqrt)
             else:
-                KL = kullback_leiblers.gauss_kl_white(self.q_mu,
-                                                      self.q_sqrt,
-                                                      self.num_latent)
+                KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
             K = self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6
             if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_diag(self.q_mu,
-                                                     self.q_sqrt,
-                                                     K,
-                                                     self.num_latent)
+                KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
-                KL = kullback_leiblers.gauss_kl(self.q_mu,
-                                                self.q_sqrt,
-                                                K,
-                                                self.num_latent)
+                KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
         return KL
 
     def build_likelihood(self):
