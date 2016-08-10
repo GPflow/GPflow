@@ -94,7 +94,7 @@ class VGP(GPModel):
         K_alpha = tf.matmul(K, self.q_alpha)
         f_mean = K_alpha + self.mean_function(self.X)
 
-        ###
+        # compute the variance for each of the outputs
         I = tf.tile(tf.expand_dims(eye(self.num_data), 0), [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
@@ -102,28 +102,10 @@ class VGP(GPModel):
         Li = tf.batch_matrix_triangular_solve(L, I)
         tmp = Li / tf.transpose(self.q_lambda)
         f_var = 1./tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
+
+        # some statistics about A are used in the KL
         A_logdet = 2.0 * tf.reduce_sum(tf.log(tf.batch_matrix_diag_part(L)))
         trAi = tf.reduce_sum(tf.square(Li))
-
-        # for each of the data-dimensions (columns of Y), find the diagonal
-        # of the variance, and also relevant parts of the KL.
-        # f_var = []
-        # A_logdet = tf.zeros((1,), tf.float64)
-        # trAi = tf.zeros((1,), tf.float64)
-        # for d in range(self.num_latent):
-            # b = self.q_lambda[:, d]
-            # B = tf.expand_dims(b, 1)
-            # A = eye(self.num_data) + K*B*tf.transpose(B)
-            # L = tf.cholesky(A)
-            # Li = tf.matrix_triangular_solve(L, eye(self.num_data), lower=True)
-            # LiBi = Li / b
-
-            # # full_sigma:return tf.diag(b**-2) - LiBi.T.dot(LiBi)
-            # f_var.append(1./tf.square(b) - tf.reduce_sum(tf.square(LiBi), 0))
-            # A_logdet += 2*tf.reduce_sum(tf.log(tf.diag_part(L)))
-            # trAi += tf.reduce_sum(tf.square(Li))
-
-        # f_var = tf.transpose(tf.pack(f_var))
 
         KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent
                     + tf.reduce_sum(K_alpha*self.q_alpha))
