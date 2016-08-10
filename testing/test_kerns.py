@@ -2,7 +2,7 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from reference import referenceRbfKernel, referencePeriodicKernel
+from .reference import referenceRbfKernel, referencePeriodicKernel
 
 
 class TestRbf(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestRbf(unittest.TestCase):
 
         with kernel.tf_mode():
             gram_matrix = tf.Session().run(kernel.K(X), feed_dict={x_free: kernel.get_free_state(), X: X_data})
-        self.failUnless(np.allclose(gram_matrix-reference_gram_matrix, 0))
+        self.assertTrue(np.allclose(gram_matrix-reference_gram_matrix, 0))
 
 
 class TestPeriodic(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestPeriodic(unittest.TestCase):
         with kernel.tf_mode():
             gram_matrix = tf.Session().run(kernel.K(X),
                                            feed_dict={x_free: kernel.get_free_state(), X: X_data})
-        self.failUnless(np.allclose(gram_matrix-reference_gram_matrix, 0))
+        self.assertTrue(np.allclose(gram_matrix-reference_gram_matrix, 0))
 
     def test_1d(self):
         D = 1
@@ -76,7 +76,7 @@ class TestKernSymmetry(unittest.TestCase):
             with k.tf_mode():
                 Errors = tf.Session().run(k.K(X) - k.K(X, X),
                                           feed_dict={x_free: k.get_free_state(), X: X_data})
-                self.failUnless(np.allclose(Errors, 0))
+                self.assertTrue(np.allclose(Errors, 0))
 
     def test_5d(self):
         kernels = [K(5) for K in self.kernels]
@@ -88,7 +88,7 @@ class TestKernSymmetry(unittest.TestCase):
             with k.tf_mode():
                 Errors = tf.Session().run(k.K(X) - k.K(X, X),
                                           feed_dict={x_free: k.get_free_state(), X: X_data})
-                self.failUnless(np.allclose(Errors, 0))
+                self.assertTrue(np.allclose(Errors, 0))
 
 
 class TestKernDiags(unittest.TestCase):
@@ -116,7 +116,7 @@ class TestKernDiags(unittest.TestCase):
                 k2 = tf.diag_part(k.K(self.X))
                 k1, k2 = tf.Session().run([k1, k2],
                                           feed_dict={self.x_free: k.get_free_state(), self.X: self.X_data})
-            self.failUnless(np.allclose(k1, k2))
+            self.assertTrue(np.allclose(k1, k2))
 
 
 class TestAdd(unittest.TestCase):
@@ -140,7 +140,7 @@ class TestAdd(unittest.TestCase):
             with k.tf_mode():
                 k._K = tf.Session().run(k.K(X), feed_dict={x_free: k.get_free_state(), X: X_data})
 
-        self.failUnless(np.allclose(self.rbf._K + self.lin._K, self.k._K))
+        self.assertTrue(np.allclose(self.rbf._K + self.lin._K, self.k._K))
 
     def test_asym(self):
         x_free = tf.placeholder('float64')
@@ -153,7 +153,7 @@ class TestAdd(unittest.TestCase):
             with k.tf_mode():
                 k._K = tf.Session().run(k.K(X), feed_dict={x_free: k.get_free_state(), X: X_data, Z: Z_data})
 
-        self.failUnless(np.allclose(self.rbf._K + self.lin._K, self.k._K))
+        self.assertTrue(np.allclose(self.rbf._K + self.lin._K, self.k._K))
 
 
 class TestWhite(unittest.TestCase):
@@ -175,7 +175,7 @@ class TestWhite(unittest.TestCase):
             K_sym = tf.Session().run(self.k.K(X), feed_dict={x_free: self.k.get_free_state(), X: X_data})
             K_asym = tf.Session().run(self.k.K(X, X), feed_dict={x_free: self.k.get_free_state(), X: X_data})
 
-        self.failIf(np.allclose(K_sym, K_asym))
+        self.assertFalse(np.allclose(K_sym, K_asym))
 
 
 class TestSlice(unittest.TestCase):
@@ -197,16 +197,16 @@ class TestSlice(unittest.TestCase):
         K2 = self.k2.compute_K_symm(self.X)
         K3 = self.k3.compute_K_symm(self.X[:, :1])
         K4 = self.k3.compute_K_symm(self.X[:, 1:])
-        self.failUnless(np.allclose(K1, K3))
-        self.failUnless(np.allclose(K2, K4))
+        self.assertTrue(np.allclose(K1, K3))
+        self.assertTrue(np.allclose(K2, K4))
 
     def test_asymm(self):
         K1 = self.k1.compute_K(self.X, self.Z)
         K2 = self.k2.compute_K(self.X, self.Z)
         K3 = self.k3.compute_K(self.X[:, :1], self.Z[:, :1])
         K4 = self.k3.compute_K(self.X[:, 1:], self.Z[:, 1:])
-        self.failUnless(np.allclose(K1, K3))
-        self.failUnless(np.allclose(K2, K4))
+        self.assertTrue(np.allclose(K1, K3))
+        self.assertTrue(np.allclose(K2, K4))
 
 
 class TestProd(unittest.TestCase):
@@ -235,7 +235,7 @@ class TestProd(unittest.TestCase):
                     self.k3.make_tf_array(self.x_free)
                     K3 = self.k3.K(self.X)
                     K3 = tf.Session().run(K3, feed_dict={self.X: self.X_data, self.x_free: self.k3.get_free_state()})
-        self.failUnless(np.allclose(K1 * K2, K3))
+        self.assertTrue(np.allclose(K1 * K2, K3))
 
 
 class TestARDActiveProd(unittest.TestCase):
@@ -267,7 +267,7 @@ class TestARDActiveProd(unittest.TestCase):
                 K1 = tf.Session().run(K1, feed_dict={self.X: self.X_data, self.x_free: self.k3.get_free_state()})
                 K2 = tf.Session().run(K2, feed_dict={self.X: self.X_data, self.x_free: self.k3a.get_free_state()})
 
-        self.failUnless(np.allclose(K1, K2))
+        self.assertTrue(np.allclose(K1, K2))
 
 
 class TestKernNaming(unittest.TestCase):
@@ -277,9 +277,9 @@ class TestKernNaming(unittest.TestCase):
         k3 = k1 + k2
         k4 = GPflow.kernels.Matern32(1)
         k5 = k3 + k4
-        self.failUnless(k5.rbf is k1)
-        self.failUnless(k5.linear is k2)
-        self.failUnless(k5.matern32 is k4)
+        self.assertTrue(k5.rbf is k1)
+        self.assertTrue(k5.linear is k2)
+        self.assertTrue(k5.matern32 is k4)
 
     def test_no_nesting_2(self):
         k1 = GPflow.kernels.RBF(1) + GPflow.kernels.Linear(2)
@@ -287,33 +287,33 @@ class TestKernNaming(unittest.TestCase):
         k2 = GPflow.kernels.Matern32(1) + GPflow.kernels.Matern52(2)
 
         k = k1 + k2
-        self.failUnless(hasattr(k, 'rbf'))
-        self.failUnless(hasattr(k, 'linear'))
-        self.failUnless(hasattr(k, 'matern32'))
-        self.failUnless(hasattr(k, 'matern52'))
+        self.assertTrue(hasattr(k, 'rbf'))
+        self.assertTrue(hasattr(k, 'linear'))
+        self.assertTrue(hasattr(k, 'matern32'))
+        self.assertTrue(hasattr(k, 'matern52'))
 
     def test_simple(self):
         k1 = GPflow.kernels.RBF(1)
         k2 = GPflow.kernels.Linear(2)
         k = k1 + k2
-        self.failUnless(k.rbf is k1)
-        self.failUnless(k.linear is k2)
+        self.assertTrue(k.rbf is k1)
+        self.assertTrue(k.linear is k2)
 
     def test_duplicates_1(self):
         k1 = GPflow.kernels.Matern32(1)
         k2 = GPflow.kernels.Matern32(43)
         k = k1 + k2
-        self.failUnless(k.matern32_1 is k1)
-        self.failUnless(k.matern32_2 is k2)
+        self.assertTrue(k.matern32_1 is k1)
+        self.assertTrue(k.matern32_2 is k2)
 
     def test_duplicates_2(self):
         k1 = GPflow.kernels.Matern32(1)
         k2 = GPflow.kernels.Matern32(2)
         k3 = GPflow.kernels.Matern32(3)
         k = k1 + k2 + k3
-        self.failUnless(k.matern32_1 is k1)
-        self.failUnless(k.matern32_2 is k2)
-        self.failUnless(k.matern32_3 is k3)
+        self.assertTrue(k.matern32_1 is k1)
+        self.assertTrue(k.matern32_2 is k2)
+        self.assertTrue(k.matern32_3 is k3)
 
 
 class TestKernNamingProduct(unittest.TestCase):
@@ -323,9 +323,9 @@ class TestKernNamingProduct(unittest.TestCase):
         k3 = k1 * k2
         k4 = GPflow.kernels.Matern32(1)
         k5 = k3 * k4
-        self.failUnless(k5.rbf is k1)
-        self.failUnless(k5.linear is k2)
-        self.failUnless(k5.matern32 is k4)
+        self.assertTrue(k5.rbf is k1)
+        self.assertTrue(k5.linear is k2)
+        self.assertTrue(k5.matern32 is k4)
 
     def test_no_nesting_2(self):
         k1 = GPflow.kernels.RBF(1) * GPflow.kernels.Linear(2)
@@ -333,33 +333,33 @@ class TestKernNamingProduct(unittest.TestCase):
         k2 = GPflow.kernels.Matern32(1) * GPflow.kernels.Matern52(2)
 
         k = k1 * k2
-        self.failUnless(hasattr(k, 'rbf'))
-        self.failUnless(hasattr(k, 'linear'))
-        self.failUnless(hasattr(k, 'matern32'))
-        self.failUnless(hasattr(k, 'matern52'))
+        self.assertTrue(hasattr(k, 'rbf'))
+        self.assertTrue(hasattr(k, 'linear'))
+        self.assertTrue(hasattr(k, 'matern32'))
+        self.assertTrue(hasattr(k, 'matern52'))
 
     def test_simple(self):
         k1 = GPflow.kernels.RBF(1)
         k2 = GPflow.kernels.Linear(2)
         k = k1 * k2
-        self.failUnless(k.rbf is k1)
-        self.failUnless(k.linear is k2)
+        self.assertTrue(k.rbf is k1)
+        self.assertTrue(k.linear is k2)
 
     def test_duplicates_1(self):
         k1 = GPflow.kernels.Matern32(1)
         k2 = GPflow.kernels.Matern32(43)
         k = k1 * k2
-        self.failUnless(k.matern32_1 is k1)
-        self.failUnless(k.matern32_2 is k2)
+        self.assertTrue(k.matern32_1 is k1)
+        self.assertTrue(k.matern32_2 is k2)
 
     def test_duplicates_2(self):
         k1 = GPflow.kernels.Matern32(1)
         k2 = GPflow.kernels.Matern32(2)
         k3 = GPflow.kernels.Matern32(3)
         k = k1 * k2 * k3
-        self.failUnless(k.matern32_1 is k1)
-        self.failUnless(k.matern32_2 is k2)
-        self.failUnless(k.matern32_3 is k3)
+        self.assertTrue(k.matern32_1 is k1)
+        self.assertTrue(k.matern32_2 is k2)
+        self.assertTrue(k.matern32_3 is k3)
 
 
 class TestARDInit(unittest.TestCase):

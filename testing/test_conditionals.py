@@ -53,8 +53,8 @@ class DiagsTest(unittest.TestCase):
         mean_diff = tf.Session().run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
         var_diff = tf.Session().run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
 
-        self.failUnless(np.allclose(mean_diff, 0))
-        self.failUnless(np.allclose(var_diff, 0))
+        self.assertTrue(np.allclose(mean_diff, 0))
+        self.assertTrue(np.allclose(var_diff, 0))
 
 
     def test_nonwhiten(self):
@@ -65,8 +65,8 @@ class DiagsTest(unittest.TestCase):
         mean_diff = tf.Session().run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
         var_diff = tf.Session().run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
 
-        self.failUnless(np.allclose(mean_diff, 0))
-        self.failUnless(np.allclose(var_diff, 0))
+        self.assertTrue(np.allclose(mean_diff, 0))
+        self.assertTrue(np.allclose(var_diff, 0))
 
 
 class WhitenTest(unittest.TestCase):
@@ -114,8 +114,8 @@ class WhitenTest(unittest.TestCase):
         mean1, var1 = tf.Session().run([Fstar_w_mean, Fstar_w_var], feed_dict=self.feed_dict)
         mean2, var2 = tf.Session().run([Fstar_mean, Fstar_var], feed_dict=self.feed_dict)
 
-        self.failUnless(np.allclose(mean1, mean2))
-        self.failUnless(np.allclose(var1, var2))
+        self.assertTrue(np.allclose(mean1, mean2))
+        self.assertTrue(np.allclose(var1, var2))
 
 
 class WhitenTestGaussian(WhitenTest):
@@ -145,8 +145,8 @@ class WhitenTestGaussian(WhitenTest):
         mean_difference = tf.Session().run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
         var_difference = tf.Session().run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
 
-        self.failUnless(np.all(np.abs(mean_difference) < 1e-4))
-        self.failUnless(np.all(np.abs(var_difference) < 1e-4))
+        self.assertTrue(np.all(np.abs(mean_difference) < 1e-4))
+        self.assertTrue(np.all(np.abs(var_difference) < 1e-4))
 
        
 
