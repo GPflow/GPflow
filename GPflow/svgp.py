@@ -13,15 +13,14 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 from .param import Param, DataHolder
 from .model import GPModel
-from . import transforms
-from . import conditionals
+from . import transforms, conditionals, kullback_leiblers
 from .mean_functions import Zero
 from .tf_hacks import eye
-from . import kullback_leiblers
 
 
 class MinibatchData(DataHolder):

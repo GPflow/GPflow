@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 from .model import GPModel

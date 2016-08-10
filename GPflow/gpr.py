@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import tensorflow as tf
 from .model import GPModel
 from .densities import multivariate_normal
