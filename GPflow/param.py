@@ -213,17 +213,15 @@ class Param(Parentable):
         Then we return the number of elements that we've used to construct the
         array, so that it can be sliced for the next Param.
         """
-
-        # TODO what about constraints that change the size ??
-
         if self.fixed:
             # fixed parameters are treated by tf.placeholder
             return 0
-        x_free = free_array[:self.size]
+        free_size = self.transform.free_state_size(self.shape)
+        x_free = free_array[:free_size]
         mapped_array = self.transform.tf_forward(x_free)
         self._tf_array = tf.reshape(mapped_array, self.shape)
         self._log_jacobian = self.transform.tf_log_jacobian(x_free)
-        return self.size
+        return free_size
 
     def get_free_state(self):
         """
@@ -255,10 +253,11 @@ class Param(Parentable):
         """
         if self.fixed:
             return 0
-        new_array = self.transform.forward(x[:self.size]).reshape(self.shape)
+        free_size = self.transform.free_state_size(self.shape)
+        new_array = self.transform.forward(x[:free_size]).reshape(self.shape)
         assert new_array.shape == self.shape
         self._array[...] = new_array
-        return self.size
+        return free_size
 
     def build_prior(self):
         """
