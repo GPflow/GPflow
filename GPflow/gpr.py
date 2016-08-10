@@ -24,14 +24,17 @@ from .param import DataHolder
 
 
 class GPR(GPModel):
+    """
+    Gaussian Process Regression.
+
+    This is a vanilla implementation of GP regression with a Gaussian
+    likelihood.  Multiple columns of Y are treated independently.
+    """
     def __init__(self, X, Y, kern, mean_function=Zero()):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         kern, mean_function are appropriate GPflow objects
-
-        This is a vanilla implementation of GP regression with a Gaussian
-        likelihood.  Multiple columns of Y are treated independently.
         """
         likelihood = likelihoods.Gaussian()
         X = DataHolder(X, on_shape_change='pass')
@@ -43,7 +46,7 @@ class GPR(GPModel):
         """
         Construct a tensorflow function to compute the likelihood.
 
-            \log p(Y, V | theta).
+            \log p(Y | theta).
 
         """
         K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance

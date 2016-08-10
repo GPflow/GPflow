@@ -304,10 +304,15 @@ class GPModel(Model):
     """
     A base class for Gaussian process models, that is, those of the form
 
-       theta ~ p(theta)
-       f ~ GP(m(x), k(x, x'; theta))
-       F = f(X)
-       Y|F ~ p(Y|F)
+    .. math::
+       :nowrap:
+
+       \\begin{align}
+       \\theta & \sim p(\\theta) \\\\
+       f       & \sim \\mathcal{GP}(m(x), k(x, x'; \\theta)) \\\\
+       f_i       & = f(x_i) \\\\
+       y_i\,|\,f_i     & \sim p(y_i|f_i)
+       \\end{align}
 
     This class mostly adds functionality to compile predictions. To use it,
     inheriting classes must define a build_predict function, which computes
@@ -320,12 +325,10 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
 
+    For handling another data (Xnew, Ynew), set the new value to self.X and self.Y
 
-    For handling another data (X', Y'), set the new value to self.X and self.Y
-    >>> m.X = X'
-    >>> m.Y = Y'
-    If the shape of the data does not change, this model does not require
-    another recompilation.
+    >>> m.X = Xnew
+    >>> m.Y = Ynew
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
@@ -334,8 +337,10 @@ class GPModel(Model):
         Model.__init__(self, name)
 
         if isinstance(X, np.ndarray):
+            #: X is a data matrix; each row represents one instance
             X = DataHolder(X)
         if isinstance(Y, np.ndarray):
+            #: Y is a data matrix, rows correspond to the rows in X, columns are treated independently
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 
