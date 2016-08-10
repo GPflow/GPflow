@@ -3,7 +3,7 @@ import tensorflow as tf
 from GPflow.tf_hacks import eye
 import numpy as np
 import unittest
-from reference import *
+from .reference import *
 
 def referenceUnivariateLogMarginalLikelihood( y, K, noiseVariance ):
     return -0.5 * y * y / ( K + noiseVariance ) - 0.5 * np.log( K + noiseVariance ) - 0.5 * np.log( np.pi * 2. )
@@ -79,7 +79,7 @@ class VariationalUnivariateTest(unittest.TestCase):
                 with model.tf_mode():
                     prior_KL_function = model.build_prior_KL()
                 test_prior_KL = prior_KL_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 
-                self.failUnless( np.abs( referenceKL - test_prior_KL ) < 1e-4 )
+                self.assertTrue( np.abs( referenceKL - test_prior_KL ) < 1e-4 )
         
     def test_build_likelihood(self):
         #reference marginal likelihood
@@ -89,7 +89,7 @@ class VariationalUnivariateTest(unittest.TestCase):
             for is_whitened in [True,False]:
                 model = self.get_model( is_diagonal, is_whitened )
                 model_likelihood = model.compute_log_likelihood()
-                self.failUnless( np.abs( model_likelihood - log_marginal_likelihood ) < 1e-4 )
+                self.assertTrue( np.abs( model_likelihood - log_marginal_likelihood ) < 1e-4 )
 
     def testUnivariateConditionals(self):
         for is_diagonal in [True,False]:
@@ -102,8 +102,8 @@ class VariationalUnivariateTest(unittest.TestCase):
                         fmean_func, fvar_func = GPflow.conditionals.gaussian_gp_predict(self.X, self.Z, model.kern, model.q_mu, model.q_sqrt, self.oneLatentFunction)  
                 mean_value = fmean_func.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } )[0,0] 
                 var_value = fvar_func.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } )[0,0] 
-                self.failUnless( np.abs( mean_value - self.posteriorMean ) < 1e-4 )
-                self.failUnless( np.abs( var_value - self.posteriorVariance ) < 1e-4 )
+                self.assertTrue( np.abs( mean_value - self.posteriorMean ) < 1e-4 )
+                self.assertTrue( np.abs( var_value - self.posteriorVariance ) < 1e-4 )
 
 class VariationalMultivariateTest(unittest.TestCase):
     def setUp( self ):
@@ -142,7 +142,7 @@ class VariationalMultivariateTest(unittest.TestCase):
         pCov = rng.rand()
         univariate_KL = referenceUnivariatePriorKL( qMean, pMean, qCov, pCov )
         multivariate_KL = referenceMultivariatePriorKL( np.array( [[qMean]] ), np.array( [[qCov]]), np.array( [[pMean]] ), np.array( [[pCov]] ) )  
-        self.failUnless( np.abs( univariate_KL - multivariate_KL ) < 1e-4 )  
+        self.assertTrue( np.abs( univariate_KL - multivariate_KL ) < 1e-4 )
         
     def test_prior_KL_fullQ( self ):
         covQ = np.dot( self.q_sqrt_full, self.q_sqrt_full.T )
@@ -162,7 +162,7 @@ class VariationalMultivariateTest(unittest.TestCase):
             with model.tf_mode():
                 prior_KL_function = model.build_prior_KL()
             test_prior_KL = prior_KL_function.eval( session = model._session, feed_dict = {model._free_vars: model.get_free_state() } ) 
-            self.failUnless( np.abs( referenceKL - test_prior_KL ) < 1e-4 )        
+            self.assertTrue( np.abs( referenceKL - test_prior_KL ) < 1e-4 )
         
 if __name__ == "__main__":
     unittest.main()

@@ -21,28 +21,52 @@ class TransformTests(unittest.TestCase):
         ys_tf = [self.session.run(y, feed_dict={self.x: self.x_np}) for y in ys]
         ys_np = [t.forward(self.x_np) for t in self.transforms]
         for y1, y2 in zip(ys_tf, ys_np):
-            self.failUnless(np.allclose(y1, y2))
+            self.assertTrue(np.allclose(y1, y2))
 
     def test_forward_backward(self):
         ys_np = [t.forward(self.x_np) for t in self.transforms]
         xs_np = [t.backward(y) for t, y in zip(self.transforms, ys_np)]
         for x in xs_np:
-            self.failUnless(np.allclose(x, self.x_np))
+            self.assertTrue(np.allclose(x, self.x_np))
 
     def test_logjac(self):
         """
         We have hand-crafted the log-jacobians for speed. Check they're correct
         wrt a tensorflow derived version
         """
+
         # there is no jacobian: loop manually
         def jacobian(f):
             return tf.pack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
-        tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms]
-        hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms]
+
+        tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms if
+                   type(t) is not GPflow.transforms.LowerTriangular]
+        hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms if
+                     type(t) is not GPflow.transforms.LowerTriangular]
 
         for j1, j2 in zip(tf_jacs, hand_jacs):
-            self.failUnless(np.allclose(self.session.run(j1, feed_dict={self.x: self.x_np}),
+            self.assertTrue(np.allclose(self.session.run(j1, feed_dict={self.x: self.x_np}),
                                         self.session.run(j2, feed_dict={self.x: self.x_np})))
+
+
+class TestLowerTriTransform(unittest.TestCase):
+    """
+    Some extra tests for the LowerTriangle transformation.
+    """
+    def setUp(self):
+        self.t = GPflow.transforms.LowerTriangular(3)
+
+    def testErrors(self):
+
+        self.t.free_state_size((6, 6, 3))
+        with self.assertRaises(ValueError):
+            self.t.free_state_size((6, 6, 2))
+        with self.assertRaises(ValueError):
+            self.t.free_state_size((7, 6, 3))
+
+        self.t.forward(np.ones(3 * 6))
+        with self.assertRaises(ValueError):
+            self.t.forward(np.ones(3 * 7))
 
 
 if __name__ == "__main__":

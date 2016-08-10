@@ -56,7 +56,7 @@ class TestPredictConditional(unittest.TestCase):
             with l.tf_mode():
                 mu1 = tf.Session().run(l.conditional_mean(self.F), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
                 mu2, _ = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
-            self.failUnless(np.allclose(mu1, mu2, test_setup.tolerance, test_setup.tolerance))
+            self.assertTrue(np.allclose(mu1, mu2, test_setup.tolerance, test_setup.tolerance))
 
     def test_variance(self):
         for test_setup in self.test_setups:
@@ -64,7 +64,7 @@ class TestPredictConditional(unittest.TestCase):
             with l.tf_mode():
                 v1 = tf.Session().run(l.conditional_variance(self.F), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
                 v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1], feed_dict={self.x: l.get_free_state(), self.F:self.F_data})   
-            self.failUnless(np.allclose(v1, v2, test_setup.tolerance, test_setup.tolerance))
+            self.assertTrue(np.allclose(v1, v2, test_setup.tolerance, test_setup.tolerance))
 
     def test_var_exp(self):
         """
@@ -77,7 +77,7 @@ class TestPredictConditional(unittest.TestCase):
             with l.tf_mode():
                 r1 = tf.Session().run(l.logp(self.F, y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
                 r2 = tf.Session().run(l.variational_expectations(self.F, self.F * 0,test_setup.Y), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})   
-            self.failUnless(np.allclose(r1, r2, test_setup.tolerance, test_setup.tolerance))
+            self.assertTrue(np.allclose(r1, r2, test_setup.tolerance, test_setup.tolerance))
 
 class TestQuadrature(unittest.TestCase):
     """
@@ -110,7 +110,7 @@ class TestQuadrature(unittest.TestCase):
             #compile and run the functions:
             F1 = tf.Session().run(F1, feed_dict={x: x_data})
             F2 = tf.Session().run(F2, feed_dict={x: x_data})
-            self.failUnless(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
+            self.assertTrue(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
 
     def test_pred_density(self):
         #get all the likelihoods where predict_density  has been overwritten.
@@ -131,7 +131,7 @@ class TestQuadrature(unittest.TestCase):
             #compile and run the functions:
             F1 = tf.Session().run(F1, feed_dict={x: x_data})
             F2 = tf.Session().run(F2, feed_dict={x: x_data})
-            self.failUnless(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
+            self.assertTrue(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
 
 class TestRobustMaxMulticlass(unittest.TestCase):
     """
@@ -160,10 +160,10 @@ class TestRobustMaxMulticlass(unittest.TestCase):
             mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})  
             pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})  
             variational_expectations = tf.Session().run(l.variational_expectations(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data}) 
-        self.failUnless( np.allclose( mu , np.ones((nPoints,nClasses))/nClasses, tolerance, tolerance ) )
-        self.failUnless( np.allclose( pred , np.ones((nPoints,1))/nClasses, tolerance, tolerance ) )
+        self.assertTrue( np.allclose( mu , np.ones((nPoints,nClasses))/nClasses, tolerance, tolerance ) )
+        self.assertTrue( np.allclose( pred , np.ones((nPoints,1))/nClasses, tolerance, tolerance ) )
         validation_variational_expectation = 1./nClasses * np.log( 1.- epsilon ) + (1. - 1./nClasses ) * np.log( epsilon / (nClasses - 1) )
-        self.failUnless( np.allclose( variational_expectations , np.ones((nPoints,1))*validation_variational_expectation, tolerance, tolerance ) )
+        self.assertTrue( np.allclose( variational_expectations , np.ones((nPoints,1))*validation_variational_expectation, tolerance, tolerance ) )
             
 if __name__ == "__main__":
     unittest.main()

@@ -26,7 +26,7 @@ class TestNoArgs(unittest.TestCase):
         self.m._compile()
 
     def test_return(self):
-        self.failUnless(np.allclose(self.m.function(), 3.))
+        self.assertTrue(np.allclose(self.m.function(), 3.))
 
     def test_kill(self):
         # make sure autoflow dicts are removed when _needs_recompile is set.
@@ -82,7 +82,7 @@ class TestAdd(unittest.TestCase):
         self.y = rng.randn(10, 20)
 
     def test_add(self):
-        self.failUnless(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
+        self.assertTrue(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
 
 
 class TestGPmodel(unittest.TestCase):

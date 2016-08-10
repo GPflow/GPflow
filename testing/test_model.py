@@ -21,12 +21,12 @@ class TestOptimize(unittest.TestCase):
 
     def test_adam(self):
         o = tf.train.AdamOptimizer()
-        self.m.optimize(o, max_iters=5000)
-        self.failUnless(self.m.x.value.max() < 1e-2)
+        self.m.optimize(o, maxiter=5000)
+        self.assertTrue(self.m.x.value.max() < 1e-2)
 
     def test_lbfgsb(self):
-        self.m.optimize(display=False)
-        self.failUnless(self.m.x.value.max() < 1e-6)
+        self.m.optimize(disp=False)
+        self.assertTrue(self.m.x.value.max() < 1e-6)
 
 
 class TestNeedsRecompile(unittest.TestCase):
@@ -37,23 +37,23 @@ class TestNeedsRecompile(unittest.TestCase):
     def test_fix(self):
         self.m._needs_recompile = False
         self.m.p.fixed = True
-        self.failUnless(self.m._needs_recompile)
+        self.assertTrue(self.m._needs_recompile)
 
     def test_replace_param(self):
         self.m._needs_recompile = False
         new_p = GPflow.param.Param(3.0)
         self.m.p = new_p
-        self.failUnless(self.m._needs_recompile)
+        self.assertTrue(self.m._needs_recompile)
 
     def test_set_prior(self):
         self.m._needs_recompile = False
         self.m.p.prior = GPflow.priors.Gaussian(0, 1)
-        self.failUnless(self.m._needs_recompile)
+        self.assertTrue(self.m._needs_recompile)
 
     def test_set_transform(self):
         self.m._needs_recompile = False
         self.m.p.transform = GPflow.transforms.Identity()
-        self.failUnless(self.m._needs_recompile)
+        self.assertTrue(self.m._needs_recompile)
 
 
 class KeyboardRaiser:
@@ -83,17 +83,17 @@ class TestKeyboardCatching(unittest.TestCase):
         x0 = self.m.get_free_state()
         self.m._compile()
         self.m._objective = KeyboardRaiser(15, self.m._objective)
-        self.m.optimize(display=0, max_iters=10000, ftol=0, gtol=0)
+        self.m.optimize(disp=0, maxiter=10000, ftol=0, gtol=0)
         x1 = self.m.get_free_state()
-        self.failIf(np.allclose(x0, x1))
+        self.assertFalse(np.allclose(x0, x1))
 
     def test_optimize_tf(self):
         x0 = self.m.get_free_state()
         callback = KeyboardRaiser(5, lambda x: None)
         o = tf.train.AdamOptimizer()
-        self.m.optimize(o, max_iters=15, callback=callback)
+        self.m.optimize(o, maxiter=15, callback=callback)
         x1 = self.m.get_free_state()
-        self.failIf(np.allclose(x0, x1))
+        self.assertFalse(np.allclose(x0, x1))
 
 
 class TestLikelihoodAutoflow(unittest.TestCase):
@@ -111,9 +111,9 @@ class TestLikelihoodAutoflow(unittest.TestCase):
         l1 = self.m.compute_log_likelihood()
         p1 = self.m.compute_log_prior()
 
-        self.failUnless(p0 == 0.0)
-        self.failIf(p0 == p1)
-        self.failUnless(l0 == l1)
+        self.assertTrue(p0 == 0.0)
+        self.assertFalse(p0 == p1)
+        self.assertTrue(l0 == l1)
 
 
 class TestName(unittest.TestCase):
