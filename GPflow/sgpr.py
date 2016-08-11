@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, alexggmatthews
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,28 +24,32 @@ from .tf_hacks import eye
 
 
 class SGPR(GPModel):
+    """
+    Sparse Variational GP regression. The key reference is
+
+    ::
+
+      @inproceedings{titsias2009variational,
+        title={Variational learning of inducing variables in
+               sparse Gaussian processes},
+        author={Titsias, Michalis K},
+        booktitle={International Conference on
+                   Artificial Intelligence and Statistics},
+        pages={567--574},
+        year={2009}
+      }
+
+
+
+    """
     def __init__(self, X, Y, kern, Z, mean_function=Zero()):
         """
-        This Sparse Variational GP regression. The key reference is
-
-        @inproceedings{titsias2009variational,
-          title={Variational learning of inducing variables in
-                 sparse Gaussian processes},
-          author={Titsias, Michalis K},
-          booktitle={International Conference on
-                     Artificial Intelligence and Statistics},
-          pages={567--574},
-          year={2009}
-        }
-
-
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         Z is a matrix of pseudo inputs, size M x D
         kern, mean_function are appropriate GPflow objects
 
         This method only works with a Gaussian likelihood.
-
         """
         X = DataHolder(X, on_shape_change='pass')
         Y = DataHolder(Y, on_shape_change='pass')
