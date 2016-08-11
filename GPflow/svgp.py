@@ -25,8 +25,7 @@ from .tf_hacks import eye
 
 class MinibatchData(DataHolder):
     """
-    A special DataHolder class which feeds a minibatch to tensorflow via
-    get_feed_dict().
+    A special DataHolder class which feeds a minibatch to tensorflow via get_feed_dict().
     """
     def __init__(self, array, minibatch_size, rng=None):
         """
@@ -56,13 +55,15 @@ class SVGP(GPModel):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 
-    @inproceedings{hensman2014scalable,
-      title={Scalable Variational Gaussian Process Classification},
-      author={Hensman, James and Matthews,
-              Alexander G. de G. and Ghahramani, Zoubin},
-      booktitle={Proceedings of AISTATS},
-      year={2015}
-    }
+    ::
+
+      @inproceedings{hensman2014scalable,
+        title={Scalable Variational Gaussian Process Classification},
+        author={Hensman, James and Matthews,
+                Alexander G. de G. and Ghahramani, Zoubin},
+        booktitle={Proceedings of AISTATS},
+        year={2015}
+      }
 
     """
     def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(),

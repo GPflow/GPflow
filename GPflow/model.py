@@ -160,10 +160,12 @@ class Model(Parameterized):
 
     @AutoFlow()
     def compute_log_prior(self):
+        """ Compute the log prior of the model (uses AutoFlow)"""
         return self.build_prior()
 
     @AutoFlow()
     def compute_log_likelihood(self):
+        """ Compute the log likelihood of the model (uses AutoFlow on ``self.build_likelihood()``)"""
         return self.build_likelihood()
 
     def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False, return_logprobs=False, RNG=np.random.RandomState(0)):
