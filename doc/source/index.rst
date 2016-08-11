@@ -21,5 +21,6 @@ GPflow Documentation
    model_options
    notebooks/structure
    guts
+   options
    notebooks/SGPR_notes
     
