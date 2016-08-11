@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, alexggmatthews
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -65,16 +65,11 @@ class SGPMC(GPModel):
 
     def build_likelihood(self):
         """
-        This function computes the (log) optimal distribution for v, q*(v).`
+        This function computes the optimal density for v, q*(v), up to a constant
         """
         # get the (marginals of) q(f): exactly predicting!
-        fmean, fvar = conditional(self.X, self.Z, self.kern, self.V,
-                                  num_columns=self.num_latent, full_cov=False,
-                                  q_sqrt=None, whiten=True)
-        fmean += self.mean_function(self.X)
-        return tf.reduce_sum(self.likelihood.variational_expectations(fmean,
-                                                                      fvar,
-                                                                      self.Y))
+        fmean, fvar = self.build_predict(self.X, full_cov=False)
+        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y))
 
     def build_predict(self, Xnew, full_cov=False):
         """
@@ -88,6 +83,5 @@ class SGPMC(GPModel):
 
         """
         mu, var = conditional(Xnew, self.Z, self.kern, self.V,
-                              num_columns=self.num_latent,
                               full_cov=full_cov, q_sqrt=None, whiten=True)
         return mu + self.mean_function(Xnew), var

@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, Valentine Svensson, alexggmatthews
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -66,6 +66,10 @@ class Kern(Parameterized):
     @AutoFlow((tf.float64, [None, None]))
     def compute_K_symm(self, X):
         return self.K(X)
+
+    @AutoFlow((tf.float64, [None, None]))
+    def compute_Kdiag(self, X):
+        return self.Kdiag(X)
 
     def __getstate__(self):
         d = Parameterized.__getstate__(self)
@@ -310,6 +314,56 @@ class PeriodicKernel(Kern):
         r = tf.reduce_sum(tf.square(tf.sin(r)/self.lengthscales), 2)
 
         return self.variance * tf.exp(-0.5 * r)
+
+
+class Coregion(Kern):
+    def __init__(self, input_dim, output_dim, rank, active_dims=None):
+        """
+        A Coregionalization kernel. The inputs to this kernel are _integers_
+        (we cast them from floats as needed) which usually specify the
+        *outputs* of a Coregionalization model.
+
+        The parameters of this kernel, W, kappa, specify a positive-definite
+        matrix B.
+
+          B = W W^T + diag(kappa) .
+
+        The kernel function is then an indexing of this matrix, so
+
+          K(x, y) = B[x, y] .
+
+        We refer to the size of B as "num_outputs x num_outputs", since this is
+        the number of outputs in a coreginoalization model. We refer to the
+        number of columns on W as 'rank': it is the number of degrees of
+        correlation between the outputs.
+
+        NB. There is a symmetry between the elements of W, which creates a
+        local minimum at W=0. To avoid this, it's recommended to initialize the
+        optimization (or MCMC chain) using a random W.
+        """
+        assert input_dim == 1, "Coregion kernel in 1D only"
+        Kern.__init__(self, input_dim, active_dims)
+
+        self.output_dim = output_dim
+        self.rank = rank
+        self.W = Param(np.zeros((self.output_dim, self.rank)))
+        self.kappa = Param(np.ones(self.output_dim), transforms.positive)
+
+    def K(self, X, X2=None):
+        X, X2 = self._slice(X, X2)
+        X = tf.cast(X[:, 0], tf.int32)
+        if X2 is None:
+            X2 = X
+        else:
+            X2 = tf.cast(X2[:, 0], tf.int32)
+        B = tf.matmul(self.W, tf.transpose(self.W)) + tf.diag(self.kappa)
+        return tf.gather(tf.transpose(tf.gather(B, X2)), X)
+
+    def Kdiag(self, X):
+        X, _ = self._slice(X, None)
+        X = tf.cast(X[:, 0], tf.int32)
+        Bdiag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
+        return tf.gather(Bdiag, X)
 
 
 def make_kernel_names(kern_list):
