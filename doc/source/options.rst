@@ -14,7 +14,7 @@ Kernels
 .. autoclass:: GPflow.kernels.Matern52
 
 Likelihoods
------
+-----------
 
 .. automodule:: GPflow.likelihoods
 
@@ -28,7 +28,7 @@ Likelihoods
 .. autoclass:: GPflow.likelihoods.MultiClass
 
 Priors
--------------
+------
 
 .. automodule:: GPflow.priors
 
@@ -39,7 +39,7 @@ Priors
 .. autoclass:: GPflow.priors.Uniform
 
 Mean Functions
---------
+--------------
 
 .. automodule:: GPflow.mean_functions
 .. autoclass:: GPflow.mean_functions.Zero

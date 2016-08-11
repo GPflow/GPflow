@@ -23,5 +23,5 @@ GPflow Documentation
    guts
    options
    notebooks/SGPR_notes
-   notebooks/VGP_notes
+   notebooks/vgp_notes
     
