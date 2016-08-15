@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
-import GPflow.tf_hacks as tfh
+from . import tf_hacks as tfh
 
 
 class Transform(object):

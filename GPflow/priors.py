@@ -13,10 +13,11 @@
 # limitations under the License.
 
 
-from . import densities
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 from .param import Parameterized
+from . import densities
 
 
 class Prior(Parameterized):
