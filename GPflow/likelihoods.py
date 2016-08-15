@@ -386,7 +386,7 @@ class RobustMax(object):
         cdfs = cdfs * tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
 
         # take the product over the latent functions, and the sum over the GH grid.
-        return tf.matmul(tf.reduce_prod(cdfs, 1), tf.reshape(gh_w/np.sqrt(np.pi), (-1, 1)))
+        return tf.matmul(tf.reduce_prod(cdfs, reduction_indices=[1]), tf.reshape(gh_w/np.sqrt(np.pi), (-1, 1)))
 
 
 class MultiClass(Likelihood):
