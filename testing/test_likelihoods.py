@@ -164,6 +164,21 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         self.assertTrue( np.allclose( pred , np.ones((nPoints,1))/nClasses, tolerance, tolerance ) )
         validation_variational_expectation = 1./nClasses * np.log( 1.- epsilon ) + (1. - 1./nClasses ) * np.log( epsilon / (nClasses - 1) )
         self.assertTrue( np.allclose( variational_expectations , np.ones((nPoints,1))*validation_variational_expectation, tolerance, tolerance ) )
+
+class TestMulticlassIndexFix(unittest.TestCase):
+    """
+    A regression test for a bug in multiclass likelihood.
+    """
+    def setUp(self):
+        tf.reset_default_graph()	
+        
+    def testA(self):
+		mu, var = tf.placeholder(tf.float64), tf.placeholder(tf.float64)
+		Y = tf.placeholder(tf.int32)
+		lik = GPflow.likelihoods.MultiClass(3)
+		ve = lik.variational_expectations(mu, var, Y)
+		tf.gradients(tf.reduce_sum(ve), mu)
+		print "here !"
             
 if __name__ == "__main__":
     unittest.main()
