@@ -24,7 +24,7 @@ compile_commands = ["g++ -std=c++11 -shared ./GPflow/tfops/vec_to_tri.cc  \
                     GPflow/tfops/remove_row_elems_grad.cc -o GPflow/tfops/rowdeleteops.so \
                     -fPIC -I $(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')"]
 
-for compile_command in compile_commands[1:]:
+for compile_command in compile_commands:
     if sys.platform == "darwin":
         compile_command += " -undefined dynamic_lookup"
     os.system(compile_command)
