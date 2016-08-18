@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, Valentine Svensson, alexggmatthews, Mark van der Wilk
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -107,25 +107,15 @@ class SVGP(GPModel):
     def build_prior_KL(self):
         if self.whiten:
             if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu,
-                                                           self.q_sqrt,
-                                                           self.num_latent)
+                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu, self.q_sqrt)
             else:
-                KL = kullback_leiblers.gauss_kl_white(self.q_mu,
-                                                      self.q_sqrt,
-                                                      self.num_latent)
+                KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
             K = self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6
             if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_diag(self.q_mu,
-                                                     self.q_sqrt,
-                                                     K,
-                                                     self.num_latent)
+                KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
-                KL = kullback_leiblers.gauss_kl(self.q_mu,
-                                                self.q_sqrt,
-                                                K,
-                                                self.num_latent)
+                KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
         return KL
 
     def build_likelihood(self):
@@ -137,15 +127,7 @@ class SVGP(GPModel):
         KL = self.build_prior_KL()
 
         # Get conditionals
-        if self.whiten:
-            cond_fn = conditionals.gaussian_gp_predict_whitened
-        else:
-            cond_fn = conditionals.gaussian_gp_predict
-        fmean, fvar = cond_fn(self.X, self.Z, self.kern,
-                              self.q_mu, self.q_sqrt, self.num_latent)
-
-        # add in mean function to conditionals.
-        fmean += self.mean_function(self.X)
+        fmean, fvar = self.build_predict(self.X, full_cov=False)
 
         # Get variational expectations.
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
@@ -156,10 +138,6 @@ class SVGP(GPModel):
         return tf.reduce_sum(var_exp) * scale - KL
 
     def build_predict(self, Xnew, full_cov=False):
-        if self.whiten:
-            cond_fn = conditionals.gaussian_gp_predict_whitened
-        else:
-            cond_fn = conditionals.gaussian_gp_predict
-        mu, var = cond_fn(Xnew, self.Z, self.kern,
-                          self.q_mu, self.q_sqrt, self.num_latent, full_cov)
+        mu, var = conditionals.conditional(Xnew, self.Z, self.kern, self.q_mu,
+                                           q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var

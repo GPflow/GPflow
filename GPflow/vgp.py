@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, Valentine Svensson, alexggmatthews, fujiisoup
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -93,25 +93,19 @@ class VGP(GPModel):
         K = self.kern.K(self.X)
         K_alpha = tf.matmul(K, self.q_alpha)
         f_mean = K_alpha + self.mean_function(self.X)
-        # for each of the data-dimensions (columns of Y), find the diagonal
-        # of the variance, and also relevant parts of the KL.
-        f_var = []
-        A_logdet = tf.zeros((1,), tf.float64)
-        trAi = tf.zeros((1,), tf.float64)
-        for d in range(self.num_latent):
-            b = self.q_lambda[:, d]
-            B = tf.expand_dims(b, 1)
-            A = eye(self.num_data) + K*B*tf.transpose(B)
-            L = tf.cholesky(A)
-            Li = tf.matrix_triangular_solve(L, eye(self.num_data), lower=True)
-            LiBi = Li / b
 
-            # full_sigma:return tf.diag(b**-2) - LiBi.T.dot(LiBi)
-            f_var.append(1./tf.square(b) - tf.reduce_sum(tf.square(LiBi), 0))
-            A_logdet += 2*tf.reduce_sum(tf.log(tf.diag_part(L)))
-            trAi += tf.reduce_sum(tf.square(Li))
+        # compute the variance for each of the outputs
+        I = tf.tile(tf.expand_dims(eye(self.num_data), 0), [self.num_latent, 1, 1])
+        A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
+            tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
+        L = tf.batch_cholesky(A)
+        Li = tf.batch_matrix_triangular_solve(L, I)
+        tmp = Li / tf.transpose(self.q_lambda)
+        f_var = 1./tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
 
-        f_var = tf.transpose(tf.pack(f_var))
+        # some statistics about A are used in the KL
+        A_logdet = 2.0 * tf.reduce_sum(tf.log(tf.batch_matrix_diag_part(L)))
+        trAi = tf.reduce_sum(tf.square(Li))
 
         KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent
                     + tf.reduce_sum(K_alpha*self.q_alpha))
@@ -134,24 +128,19 @@ class VGP(GPModel):
         """
 
         # compute kernel things
-        Kx = self.kern.K(Xnew, self.X)
+        Kx = self.kern.K(self.X, Xnew)
         K = self.kern.K(self.X)
 
         # predictive mean
-        f_mean = tf.matmul(Kx, self.q_alpha) + self.mean_function(Xnew)
+        f_mean = tf.matmul(tf.transpose(Kx), self.q_alpha) + self.mean_function(Xnew)
 
         # predictive var
-        f_var = []
-        for d in range(self.num_latent):
-            b = self.q_lambda[:, d]
-            A = K + tf.diag(1./tf.square(b))
-            L = tf.cholesky(A)
-            LiKx = tf.matrix_triangular_solve(L, tf.transpose(Kx), lower=True)
-            if full_cov:
-                f_var.append(self.kern.K(Xnew) -
-                             tf.matmul(tf.transpose(LiKx), LiKx))
-            else:
-                f_var.append(self.kern.Kdiag(Xnew) -
-                             tf.reduce_sum(tf.square(LiKx), 0))
-        f_var = tf.pack(f_var)
+        A = K + tf.batch_matrix_diag(tf.transpose(1./tf.square(self.q_lambda)))
+        L = tf.batch_cholesky(A)
+        Kx_tiled = tf.tile(tf.expand_dims(Kx, 0), [self.num_latent, 1, 1])
+        LiKx = tf.batch_matrix_triangular_solve(L, Kx_tiled)
+        if full_cov:
+            f_var = self.kern.K(Xnew) - tf.batch_matmul(LiKx, LiKx, adj_x=True)
+        else:
+            f_var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)

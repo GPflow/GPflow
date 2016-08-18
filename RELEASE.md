@@ -1,3 +1,8 @@
+# Release 0.3
+ - Improvements to the way that parameters for triangular matrices are stored and optimised.
+ - Automatically generated Apache license headers.
+ - Ability to track log probabilities. 
+
 # Release 0.2
  - Significant improvements to the way that data and fixed parameters are handled. 
 
