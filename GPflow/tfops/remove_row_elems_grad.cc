@@ -21,6 +21,7 @@
 REGISTER_OP("RemoveRowElementsGrad")
 .Attr("T: realnumbertype")
 .Input("grad_mat: T")
+.Input("grad_vec: T")
 .Input("index: int32")
 .Output("output_mat: T")
 .Doc(R"doc(
@@ -36,20 +37,23 @@ public:
 
   void Compute(OpKernelContext* context) override {
     // Grab the input tensors
-    const Tensor& grad_tensor = context->input(0);
-    const Tensor& index_tensor = context->input(1);
+    const Tensor& gradmat_tensor = context->input(0);
+    const Tensor& gradvec_tensor = context->input(1);
+    const Tensor& index_tensor = context->input(2);
 
-    const TensorShape& grad_shape = grad_tensor.shape();
+    const TensorShape& gradmat_shape = gradmat_tensor.shape();
+    const TensorShape& gradvec_shape = gradmat_tensor.shape();
     const TensorShape& index_shape = index_tensor.shape();
-    const int grad_rank = grad_shape.dims();
+    const int gradmat_rank = gradmat_shape.dims();
+    const int gradvec_rank = gradmat_shape.dims();
     const int index_rank = index_shape.dims();
-    const int num_rows = grad_shape.dim_size(0);
+    const int num_rows = gradmat_shape.dim_size(0);
     const int num_index = index_shape.dim_size(0);
 
-    // make sure ograd matrix is 2D
-    OP_REQUIRES(context, grad_rank == 2,
+    // make sure ogradmat matrix is 2D
+    OP_REQUIRES(context, gradmat_rank == 2,
 		errors::InvalidArgument("RemoveRowElementsGrad expects a rank-2 tensor, received shape: ",
-		grad_shape.DebugString()));
+		gradmat_shape.DebugString()));
     // make sure index is 1D
     OP_REQUIRES(context, index_rank == 1,
 		errors::InvalidArgument("RemoveRowElementsGrad expects a rank-1 index-tensor, received shape: ",
@@ -57,32 +61,33 @@ public:
     // make sure size of index and matrix match (TODO: better error string)
     OP_REQUIRES(context, num_index == num_rows,
 		errors::InvalidArgument("RemoveRowElementsGrad requires the index to match the size of the matrix, received shapes: ",
-		grad_shape.DebugString()));
+		gradmat_shape.DebugString()));
     // make sure 
 
 
     // Create an output tensor
-    TensorShape out_shape({grad_shape.dim_size(0), grad_shape.dim_size(1) + 1});
+    TensorShape out_shape({gradmat_shape.dim_size(0), gradmat_shape.dim_size(1) + 1});
     Tensor* output_tensor = NULL;
     OP_REQUIRES_OK(context, context->allocate_output(0, out_shape,
 	                                                 &output_tensor));
 
     // get eigen objects for nice indexing
-    auto grad = grad_tensor.shaped<T,2>({grad_shape.dim_size(0), grad_shape.dim_size(1)});
+    auto gradmat = gradmat_tensor.shaped<T,2>({gradmat_shape.dim_size(0), gradmat_shape.dim_size(1)});
+    auto gradvec = gradvec_tensor.flat<T>();
     auto index = index_tensor.flat<int32>();
-    auto output = output_tensor->template shaped<T,2>({grad_shape.dim_size(0), grad_shape.dim_size(1) + 1});
+    auto output = output_tensor->template shaped<T,2>({gradmat_shape.dim_size(0), gradmat_shape.dim_size(1) + 1});
 
     // loop through rows, injecting zeros for indexed elements
     int j;
-    for (int i=0; i<grad_shape.dim_size(0); i++) {
+    for (int i=0; i<gradmat_shape.dim_size(0); i++) {
       j=0;
       for (; j<index(i); j++) {
-        output(i, j) = grad(i, j);
+        output(i, j) = gradmat(i, j);
       }
-      // output(i, j) = 0.0;
+      output(i, j) = gradvec(i);
       j++;
-      for (; j<grad_shape.dim_size(1)+1; j++) {
-        output(i, j) = grad(i, j-1);
+      for (; j<gradmat_shape.dim_size(1)+1; j++) {
+        output(i, j) = gradmat(i, j-1);
       }
     }
   }

@@ -23,8 +23,11 @@ REGISTER_OP("RemoveRowElements")
 .Input("input_mat: T")
 .Input("index: int32")
 .Output("output_mat: T")
+.Output("removed_elems: T")
 .Doc(R"doc(
-For each row in input_mat, removes one element as specified in index
+For each row in input_mat, removes one element as specified in index. 
+
+Returns the matrix with elements removed and the removed elements in a separate vector.
 )doc");
 
 using namespace tensorflow;
@@ -61,16 +64,22 @@ public:
     // make sure 
 
 
-    // Create an output tensor
+    // Create output tensors
     TensorShape out_shape({input_shape.dim_size(0), input_shape.dim_size(1) - 1});
     Tensor* output_tensor = NULL;
     OP_REQUIRES_OK(context, context->allocate_output(0, out_shape,
 	                                                 &output_tensor));
 
+    TensorShape outvec_shape({input_shape.dim_size(0)});
+    Tensor* outvec_tensor = NULL;
+    OP_REQUIRES_OK(context, context->allocate_output(1, outvec_shape,
+	                                                 &outvec_tensor));
+
     // get eigen objects for nice indexing
     auto input = input_tensor.shaped<T,2>({input_shape.dim_size(0), input_shape.dim_size(1)});
     auto index = index_tensor.flat<int32>();
     auto output = output_tensor->template shaped<T,2>({input_shape.dim_size(0), input_shape.dim_size(1) - 1});
+    auto outvec = outvec_tensor->template flat<T>();
 
     // loop through rows, dropping indexed elements
     int j;
@@ -79,6 +88,7 @@ public:
       for (; j<index(i); j++) {
         output(i, j) = input(i, j);
       }
+      outvec(i) = input(i,j);
       j++;
       for (; j<input_shape.dim_size(1); j++) {
         output(i, j-1) = input(i, j);
