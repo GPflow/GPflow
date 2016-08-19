@@ -11,7 +11,7 @@ class SampleGaussianTest(unittest.TestCase):
         self.x0 = np.zeros(3)
 
     def test_mean_cov(self):
-        samples = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmax=20, epsilon=0.05,
+        samples = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
                                         x0=self.x0, verbose=False, thin=10, burn=0)
         mean = samples.mean(0)
         cov = np.cov(samples.T)
@@ -22,15 +22,15 @@ class SampleGaussianTest(unittest.TestCase):
         """
         Make sure all randomness can be atributed to the rng
         """
-        samples1 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmax=20, epsilon=0.05,
+        samples1 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=10, burn=0,
                                          RNG=np.random.RandomState(10))
 
-        samples2 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmax=20, epsilon=0.05,
+        samples2 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=10, burn=0,
                                          RNG=np.random.RandomState(10))
 
-        samples3 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmax=20, epsilon=0.05,
+        samples3 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=10, burn=0,
                                          RNG=np.random.RandomState(11))
 
@@ -38,7 +38,7 @@ class SampleGaussianTest(unittest.TestCase):
         self.assertFalse(np.all(samples1 == samples3))
 
     def test_burn(self):
-        samples = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
+        samples = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmin=10, Lmax=20, epsilon=0.05,
                                         x0=self.x0, verbose=False, thin=1, burn=10,
                                         RNG=np.random.RandomState(11))
 
@@ -46,7 +46,7 @@ class SampleGaussianTest(unittest.TestCase):
         self.assertFalse(np.all(samples[0] == self.x0))
 
     def test_return_logprobs(self):
-        s, logps = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmax=20, epsilon=0.05,
+        s, logps = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmin=10, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=1, burn=10,
                                          RNG=np.random.RandomState(11), return_logprobs=True)
 
@@ -71,7 +71,7 @@ class SampleModelTest(unittest.TestCase):
         self.m = Quadratic()
 
     def test_mean(self):
-        samples = self.m.sample(num_samples=400, Lmax=20, epsilon=0.05)
+        samples = self.m.sample(num_samples=400, Lmin=10, Lmax=20, epsilon=0.05)
 
         self.assertTrue(samples.shape == (400, 2))
         self.assertTrue(np.allclose(samples.mean(0), np.zeros(2), 1e-1, 1e-1))
