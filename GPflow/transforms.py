@@ -185,6 +185,12 @@ class LowerTriangular(Transform):
     """
 
     def __init__(self, num_matrices=1, squeeze=False):
+        """
+        Create an instance of LowerTriangular transform.
+        Args:
+            num_matrices: Number of matrices to be stored.
+            squeeze: If num_matrices == 1, drop the redundant axis.
+        """
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
         self.squeeze = squeeze
 
