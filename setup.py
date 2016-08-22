@@ -26,7 +26,13 @@ compile_commands = ["g++ -std=c++11 -shared ./GPflow/tfops/vec_to_tri.cc  \
 
 for compile_command in compile_commands:
     if sys.platform == "darwin":
+        # Additional command for Macs, as instructed by the TensorFlow docs
         compile_command += " -undefined dynamic_lookup"
+    elif sys.platform.startswith("linux"):
+        # Additional command for gcc5
+        gcc_version = int(re.search('\d+.', os.popen("gcc --version").read()).group()[0])
+        if gcc_version == 5:
+            compile_command += " -D_GLIBCXX_USE_CXX11_ABI=0"
     os.system(compile_command)
 
 setup(name='GPflow',
