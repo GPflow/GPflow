@@ -18,10 +18,10 @@ from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
+import session
 from . import hmc
 import sys
 from . import tf_hacks
-
 
 class ObjectiveWrapper(object):
     """
@@ -91,7 +91,7 @@ class Model(Parameterized):
         Parameterized.__init__(self)
         self._name = name
         self._needs_recompile = True
-        self._session = tf.Session()
+        self._session = session.getSession()()
         self._free_vars = tf.placeholder(tf.float64)
 
     @property
@@ -116,7 +116,7 @@ class Model(Parameterized):
     def __setstate__(self, d):
         Parameterized.__setstate__(self, d)
         self._needs_recompile = True
-        self._session = tf.Session()
+        self._session = session.getSession()()
 
     def _compile(self, optimizer=None):
         """
