@@ -19,7 +19,7 @@ class TracerSessionAbstract(tf.Session):
 			if os.path.isfile(self.outputDirectory):
 				raise IOError("In tracer: given directory name is a file.")
 			if not(os.path.isdir(self.outputDirectory)):
-				os.path.mkdir(self.outputDirectory)
+				os.mkdir(self.outputDirectory)
 	
 	# getOutputParams needs to return 
 	# outputFileName, outputDirectory, eachTime
@@ -33,7 +33,7 @@ class TracerSessionAbstract(tf.Session):
 		else:
 			dirStub = ''
 		if self.eachTime:
-			return os.path.join(dirStub,self.outputFileName+'_'+str(counter)+'.json')
+			return os.path.join(dirStub,self.outputFileName+'_'+str(self.counter)+'.json')
 		else:
 			return os.path.join(dirStub,self.outputFileName+'.json')
         
@@ -48,7 +48,7 @@ class TracerSessionAbstract(tf.Session):
 		#There seem to be very few other relevant ones at the moment.
 		
 		self.local_run_metadata = tf.RunMetadata()
-		super(TracerSessionAbstract, self).run(fetches, feed_dict=feed_dict, options=options, run_metadata=self.local_run_metadata)
+		output = super(TracerSessionAbstract, self).run(fetches, feed_dict=feed_dict, options=self.profiler_options, run_metadata=self.local_run_metadata)
 		
 		#This means run metadata was requested externally
 		#so use set it from the one we passed through to tf.
@@ -62,6 +62,8 @@ class TracerSessionAbstract(tf.Session):
 		
 		if self.eachTime:
 			self.counter = self.counter + 1
+		
+		return output
 
 #This pattern is a bit like an explicitly defined decorator.
 #Allows TracerSession to have 
