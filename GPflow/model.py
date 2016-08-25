@@ -21,7 +21,7 @@ import tensorflow as tf
 from . import hmc
 import sys
 from . import tf_hacks
-
+from tensorflow.python.client import timeline
 
 class ObjectiveWrapper(object):
     """
@@ -149,8 +149,15 @@ class Model(Parameterized):
         def obj(x):
             feed_dict = {self._free_vars: x}
             feed_dict.update(self.get_feed_dict())
-            return self._session.run([self._minusF, self._minusG],
-                                     feed_dict=feed_dict)
+            run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            run_metadata = tf.RunMetadata()
+            res = self._session.run([self._minusF, self._minusG],
+                                     feed_dict=feed_dict, options=run_options, run_metadata=run_metadata)
+            tl = timeline.Timeline(run_metadata.step_stats)
+            ctf = tl.generate_chrome_trace_format()
+            with open('timeline.json', 'w') as f:
+				f.write(ctf)
+            return res
 
         self._objective = obj
         print("done")
@@ -221,10 +228,17 @@ class Model(Parameterized):
         try:
             iteration = 0
             while iteration < maxiter:
-                self._session.run(opt_step, feed_dict=self.get_feed_dict())
-                if callback is not None:
-                    callback(self._session.run(self._free_vars))
-                iteration += 1
+				run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+				run_metadata = tf.RunMetadata()
+				self._session.run(opt_step,
+                                     feed_dict=self.get_feed_dict(), options=run_options, run_metadata=run_metadata)
+				tl = timeline.Timeline(run_metadata.step_stats)
+				ctf = tl.generate_chrome_trace_format()
+				with open('timeline.json', 'w') as f:
+					f.write(ctf)
+				if callback is not None:
+					callback(self._session.run(self._free_vars))
+				iteration += 1
         except KeyboardInterrupt:
             print("Caught KeyboardInterrupt, setting model\
                   with most recent state.")
