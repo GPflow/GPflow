@@ -565,12 +565,24 @@ class Parameterized(Parentable):
         will have aname scope applied.
         """
         o = object.__getattribute__(self, key)
-        if not object.__getattribute__(self, '_tf_mode'):
+
+        # if _tf_mode is False, or there is no _tf_mode, just return the object as normal.
+        try:
+            if not object.__getattribute__(self, '_tf_mode'):
+                return o
+        except AttributeError:
             return o
+
+        # In tf_mode, if the object is a Param/Dataholder, ise the tf_array
         if isinstance(o, (Param, DataHolder)):
             return o._tf_array
-        elif key in self.scoped_keys:
+
+        # in tf_mode, wrap functions is a scope
+        elif key in object.__getattribute__(self, 'scoped_keys'):
             return NameScoped(key)(o)
+
+        # finally, just return the object
+        return o
 
     def __setattr__(self, key, value):
         """

@@ -39,3 +39,4 @@ class NameScoped(object):
         def runnable(*args, **kwargs):
             with tf.name_scope(self.name):
                 return f(*args, **kwargs)
+        return runnable
