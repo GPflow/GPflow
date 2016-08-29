@@ -15,8 +15,10 @@
 
 from .tf_hacks import eye
 import tensorflow as tf
+from .scoping import NameScoped
 
 
+@NameScoped("conditional")
 def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     """
     Given F, representing the GP at the points X, produce the mean and
