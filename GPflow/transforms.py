@@ -184,8 +184,15 @@ class LowerTriangular(Transform):
     (N x N x D).
     """
 
-    def __init__(self, num_matrices=1):
+    def __init__(self, num_matrices=1, squeeze=False):
+        """
+        Create an instance of LowerTriangular transform.
+        Args:
+            num_matrices: Number of matrices to be stored.
+            squeeze: If num_matrices == 1, drop the redundant axis.
+        """
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
+        self.squeeze = squeeze
 
     def _validate_vector_length(self, length):
         """
@@ -219,7 +226,7 @@ class LowerTriangular(Transform):
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
             var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
-        return var
+        return var.squeeze() if self.squeeze else var
 
     def backward(self, y):
         """
@@ -230,23 +237,26 @@ class LowerTriangular(Transform):
         Returns:
             Free state.
         """
-        N = int((y.size / self.num_matrices)**0.5)
+        N = int((y.size / self.num_matrices) ** 0.5)
         y = np.reshape(y, (N, N, self.num_matrices))
         return y[np.tril_indices(len(y), 0)].T.flatten()
 
     def tf_forward(self, x):
-        return tf.transpose(tfh.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+        fwd = tf.transpose(tfh.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+        return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
         return tf.zeros((1,), tf.float64) - np.inf
 
     def free_state_size(self, variable_shape):
-        if variable_shape[2] != self.num_matrices:
+        matrix_batch = len(variable_shape) > 2
+        if ((not matrix_batch and self.num_matrices != 1) or
+           (matrix_batch and variable_shape[2] != self.num_matrices)):
             raise ValueError("Number of matrices must be consistent with what was passed to the constructor.")
         if variable_shape[0] != variable_shape[1]:
             raise ValueError("Matrices passed must be square.")
         N = variable_shape[0]
-        return int(0.5 * N * (N + 1)) * variable_shape[2]
+        return int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1)
 
     def __str__(self):
         return "LoTri->vec"

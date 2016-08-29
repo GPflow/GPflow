@@ -4,7 +4,7 @@ GPflow is a package for building Gaussian process models in python, using [Tenso
 The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexis Boukouvalas, Keisuke Fujii, James Hensman, Pablo Leon, Alexander G. de G. Matthews, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
 [![Build status](https://codeship.com/projects/26b43920-e96e-0133-3481-02cde9680eda/status?branch=master)](https://codeship.com/projects/147609)
-[![Coverage Status](https://coveralls.io/repos/github/GPflow/GPflow/badge.svg?branch=HEAD)](https://coveralls.io/github/GPflow/GPflow?branch=HEAD)
+[![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
 
 # Install
 
