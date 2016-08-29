@@ -8,7 +8,7 @@ from . import likelihoods
 from .tf_hacks import eye
 from . import kernel_expectations as ke
 from . import transforms
-import GPflow
+from . import kernels
 
 
 def PCA_reduce(X, Q):
@@ -43,7 +43,7 @@ class GPLVM(GPR):
 
         """
         if kern is None:
-            kern = GPflow.kernels.RBF(latent_dim, ARD=True)
+            kern = kernels.RBF(latent_dim, ARD=True)
         if X_mean is None:
             X_mean = PCA_reduce(Y, latent_dim)
         assert X_mean.shape[1] == latent_dim, 'Passed in number of latent ' + str(latent_dim) + ' does not match initial X ' + str(X_mean.shape[1])
