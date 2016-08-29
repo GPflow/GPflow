@@ -89,6 +89,7 @@ class Model(Parameterized):
         name is a string describing this model.
         """
         Parameterized.__init__(self)
+        self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
         self._session = tf.Session()
