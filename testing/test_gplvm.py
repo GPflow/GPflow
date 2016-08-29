@@ -4,6 +4,32 @@ import numpy as np
 import unittest
 
 
+class TestGPLVM(unittest.TestCase):
+    def setUp(self):
+        # data
+        self.N = 20  # number of data points
+        D = 2  # data dimension
+        self.rng = np.random.RandomState(1)
+        self.Y = self.rng.randn(self.N, D)
+        # model
+        self.Q = 2  # latent dimensions
+        self.M = 10  # inducing points
+
+    def test_optimise(self):
+        m = GPflow.gplvm.GPLVM(self.Y, self.Q)
+        linit = m.compute_log_likelihood()
+        m.optimize(maxiter=10)
+        assert m.compute_log_likelihood() > linit
+
+    def test_quadrature(self):
+        k = GPflow.kernels.PeriodicKernel(self.Q)
+        XInit = self.rng.rand(self.N, self.Q)
+        m = GPflow.gplvm.GPLVM(self.Y, self.Q, XInit, k)
+        linit = m.compute_log_likelihood()
+        m.optimize(maxiter=10)
+        assert m.compute_log_likelihood() > linit
+
+
 class TestBayesianGPLVM(unittest.TestCase):
     def setUp(self):
         N = 10  # number of data points

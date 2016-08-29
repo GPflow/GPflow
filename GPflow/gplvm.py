@@ -8,6 +8,7 @@ from . import likelihoods
 from .tf_hacks import eye
 from . import kernel_expectations as ke
 from . import transforms
+import GPflow
 
 
 def PCA_reduce(X, Q):
@@ -31,7 +32,7 @@ class GPLVM(GPR):
     """
     Standard GPLVM where the likelihood can be optimised with respect to the  latent X.
     """
-    def __init__(self, Y, X_mean, kern, mean_function=Zero()):
+    def __init__(self, Y, latent_dim, X_mean=None, kern=None, mean_function=Zero()):
         """
         Y is a data matrix, size N x R
         Z is a matrix of pseudo inputs, size M x D
@@ -41,6 +42,11 @@ class GPLVM(GPR):
         This method only works with a Gaussian likelihood.
 
         """
+        if kern is None:
+            kern = GPflow.kernels.RBF(latent_dim, ARD=True)
+        if X_mean is None:
+            X_mean = PCA_reduce(Y, latent_dim)
+        assert X_mean.shape[1] == latent_dim, 'Passed in number of latent ' + str(latent_dim) + ' does not match initial X ' + str(X_mean.shape[1])
         self.num_latent = X_mean.shape[1]
         assert Y.shape[1] >= self.num_latent, 'More latent dimensions than observed.'
         GPR. __init__(self, X_mean, Y, kern, mean_function=mean_function)
