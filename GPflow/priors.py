@@ -17,6 +17,7 @@ from . import densities
 import tensorflow as tf
 import numpy as np
 from .param import Parameterized
+from .settings import float_type
 
 
 class Prior(Parameterized):
@@ -94,7 +95,7 @@ class Uniform(Prior):
         self.lower, self.upper = lower, upper
 
     def logp(self, x):
-        return self.log_height * tf.cast(tf.size(x), tf.float64)
+        return self.log_height * tf.cast(tf.size(x), float_type)
 
     def __str__(self):
         return "U("+str(self.lower) + "," + str(self.upper) + ")"

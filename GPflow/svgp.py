@@ -22,6 +22,7 @@ from . import conditionals
 from .mean_functions import Zero
 from .tf_hacks import eye
 from . import kullback_leiblers
+from .settings import float_type
 
 
 class MinibatchData(DataHolder):
@@ -133,7 +134,7 @@ class SVGP(GPModel):
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, tf.float64) / tf.cast(tf.shape(self.X)[0], tf.float64)
+        scale = tf.cast(self.num_data, float_type) / tf.cast(tf.shape(self.X)[0], float_type)
 
         return tf.reduce_sum(var_exp) * scale - KL
 

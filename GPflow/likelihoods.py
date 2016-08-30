@@ -18,6 +18,7 @@ import tensorflow as tf
 import numpy as np
 from .param import Parameterized, Param
 from . import transforms
+from .settings import float_type
 
 hermgauss = np.polynomial.hermite.hermgauss
 
@@ -373,7 +374,7 @@ class RobustMax(object):
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         # work out what the mean and variance is of the indicated latent function.
-        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), tf.float64)
+        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), float_type)
         mu_selected = tf.reduce_sum(oh_on * mu, 1)
         var_selected = tf.reduce_sum(oh_on * var, 1)
 
@@ -389,7 +390,7 @@ class RobustMax(object):
         cdfs = cdfs * (1 - 2e-4) + 1e-4
 
         # blank out all the distances on the selected latent function
-        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), tf.float64)
+        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), float_type)
         cdfs = cdfs * tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
 
         # take the product over the latent functions, and the sum over the GH grid.
@@ -414,8 +415,8 @@ class MultiClass(Likelihood):
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
             hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
-            yes = tf.ones(tf.shape(Y), dtype=tf.float64) - self.invlink.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=tf.float64) + self.invlink._eps_K1
+            yes = tf.ones(tf.shape(Y), dtype=float_type) - self.invlink.epsilon
+            no = tf.zeros(tf.shape(Y), dtype=float_type) + self.invlink._eps_K1
             p = tf.select(hits, yes, no)
             return tf.log(p)
         else:

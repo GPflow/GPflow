@@ -21,10 +21,11 @@ Hopefully we can remove these as the library matures
 
 import os
 import tensorflow as tf
+from .settings import float_type
 
 
 def eye(N):
-    return tf.diag(tf.ones(tf.pack([N, ]), dtype='float64'))
+    return tf.diag(tf.ones(tf.pack([N, ]), dtype=float_type))
 
 
 _custom_op_module = tf.load_op_library(os.path.join(os.path.dirname(__file__), 'tfops', 'matpackops.so'))

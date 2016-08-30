@@ -21,6 +21,7 @@ import tensorflow as tf
 from . import hmc
 import sys
 from . import tf_hacks
+from .settings import float_type
 
 
 class ObjectiveWrapper(object):
@@ -93,7 +94,7 @@ class Model(Parameterized):
         self._name = name
         self._needs_recompile = True
         self._session = tf.Session()
-        self._free_vars = tf.placeholder(tf.float64)
+        self._free_vars = tf.placeholder(float_type)
 
     @property
     def name(self):
@@ -345,7 +346,7 @@ class GPModel(Model):
     def build_predict(self):
         raise NotImplementedError
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points
@@ -353,7 +354,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew)
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]))
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -361,7 +362,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew, full_cov=True)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.int32, []))
+    @AutoFlow((float_type, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
@@ -373,11 +374,11 @@ class GPModel(Model):
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
             shape = tf.pack([tf.shape(L)[0], num_samples])
-            V = tf.random_normal(shape, dtype=tf.float64)
+            V = tf.random_normal(shape, dtype=float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.pack(samples))
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -385,7 +386,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew

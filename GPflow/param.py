@@ -20,6 +20,7 @@ from . import transforms
 from contextlib import contextmanager
 from functools import wraps
 from .scoping import NameScoped
+from .settings import float_type, np_float_type
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
@@ -171,7 +172,7 @@ class Param(Parentable):
 
     def __init__(self, array, transform=transforms.Identity()):
         Parentable.__init__(self)
-        self._array = np.asarray(np.atleast_1d(array), dtype=np.float64)
+        self._array = np.asarray(np.atleast_1d(array), dtype=np_float_type)
         self.transform = transform
         self._tf_array = None
         self._log_jacobian = None
@@ -232,7 +233,7 @@ class Param(Parentable):
         This is a numpy method.
         """
         if self.fixed:
-            return np.empty((0,))
+            return np.empty((0,), np_float_type)
         return self.transform.backward(self.value.flatten())
 
     def get_feed_dict(self):
@@ -266,7 +267,7 @@ class Param(Parentable):
         The log Jacobian is included.
         """
         if self.prior is None:
-            return tf.constant(0.0, tf.float64)
+            return tf.constant(0.0, float_type)
         elif self._tf_array is None:  # pragma: no cover
             raise ValueError("tensorflow array has not been initialized")
         else:
@@ -284,7 +285,7 @@ class Param(Parentable):
         # when setting the fixed attribute, make or remove a placeholder appropraitely
         if key == 'fixed':
             if value:
-                self._tf_array = tf.placeholder(dtype=tf.float64,
+                self._tf_array = tf.placeholder(dtype=float_type,
                                                 shape=self._array.shape,
                                                 name=self.name)
             else:
@@ -366,8 +367,8 @@ class DataHolder(Parentable):
         different shape
         """
         Parentable.__init__(self)
-        self._array = array
-        self._tf_array = tf.placeholder(dtype=self._array.dtype,
+        self._array = np.asarray(array, dtype=np_float_type)
+        self._tf_array = tf.placeholder(dtype=float_type,
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
         assert on_shape_change in ['raise', 'pass', 'recompile']
@@ -383,7 +384,7 @@ class DataHolder(Parentable):
 
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
-        self._tf_array = tf.placeholder(dtype=self._array.dtype,
+        self._tf_array = tf.placeholder(dtype=float_type,
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
 
@@ -487,7 +488,7 @@ class AutoFlow:
                 # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
-                storage['free_vars'] = tf.placeholder(tf.float64, [None])
+                storage['free_vars'] = tf.placeholder(float_type, [None])
                 instance.make_tf_array(storage['free_vars'])
                 storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                 with instance.tf_mode():
@@ -725,7 +726,7 @@ class Parameterized(Parentable):
         """
         # Here, additional empty array allows hstacking of empty list
         return np.hstack([p.get_free_state() for p in self.sorted_params]
-                         + [np.empty(0)])
+                         + [np.empty(0, np_float_type)])
 
     def get_feed_dict(self):
         """

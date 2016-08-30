@@ -20,6 +20,7 @@ from .param import Param, DataHolder
 from .mean_functions import Zero
 from . import likelihoods
 from .tf_hacks import eye
+from .settings import float_type
 
 
 class SGPR(GPModel):
@@ -62,8 +63,8 @@ class SGPR(GPModel):
         """
 
         num_inducing = tf.shape(self.Z)[0]
-        num_data = tf.cast(tf.shape(self.Y)[0], tf.float64)
-        output_dim = tf.cast(tf.shape(self.Y)[1], tf.float64)
+        num_data = tf.cast(tf.shape(self.Y)[0], float_type)
+        output_dim = tf.cast(tf.shape(self.Y)[1], float_type)
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
@@ -219,7 +220,7 @@ class GPRFITC(GPModel):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
-        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, tf.float64))
+        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, float_type))
         logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
