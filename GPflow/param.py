@@ -19,6 +19,7 @@ import tensorflow as tf
 from . import transforms
 from contextlib import contextmanager
 from functools import wraps
+from .scoping import NameScoped
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
@@ -517,10 +518,18 @@ class Parameterized(Parentable):
 
     Another recursive function is build_prior which sums the log-prior from all
     of the tree's parameters (whilst in tf_mode!).
+
+    *Scoping*
+    Parameterized classes can define functions that operate on tf variables. To
+    wrap those functions in tensorflow scopes, the names of the scoped
+    fucntions are stored in self.scoped_keys (a list of strings). Those
+    functions are then called inside a tensorflow scope.
+
     """
 
     def __init__(self):
         Parentable.__init__(self)
+        self.scoped_keys = []
         self._tf_mode = False
 
     def get_parameter_dict(self, d=None):
@@ -552,11 +561,27 @@ class Parameterized(Parentable):
         If tf mode is off, this does nothing.
 
         If tf mode is on, all child parameters will appear as their tf
-        representations.
+        representations, and all functions that are designated in 'scoped_keys'
+        will have aname scope applied.
         """
         o = object.__getattribute__(self, key)
-        if isinstance(o, (Param, DataHolder)) and object.__getattribute__(self, '_tf_mode'):
+
+        # if _tf_mode is False, or there is no _tf_mode, just return the object as normal.
+        try:
+            if not object.__getattribute__(self, '_tf_mode'):
+                return o
+        except AttributeError:
+            return o
+
+        # In tf_mode, if the object is a Param/Dataholder, ise the tf_array
+        if isinstance(o, (Param, DataHolder)):
             return o._tf_array
+
+        # in tf_mode, wrap functions is a scope
+        elif key in object.__getattribute__(self, 'scoped_keys'):
+            return NameScoped(self.long_name + '.' + key)(o)
+
+        # finally, just return the object
         return o
 
     def __setattr__(self, key, value):

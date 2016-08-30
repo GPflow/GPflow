@@ -25,6 +25,7 @@ hermgauss = np.polynomial.hermite.hermgauss
 class Likelihood(Parameterized):
     def __init__(self):
         Parameterized.__init__(self)
+        self.scoped_keys.extend(['logp', 'variational_expectations', 'predict_mean_and_var', 'predict_density'])
         self.num_gauss_hermite_points = 20
 
     def logp(self, F, Y):
