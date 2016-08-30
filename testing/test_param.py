@@ -438,5 +438,25 @@ class TestDictSVGP(unittest.TestCase):
         self.assertTrue(np.allclose(loglik1, loglik3))
 
 
+class TestScopes(unittest.TestCase):
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(10, 1)
+        k = GPflow.kernels.RBF(1)
+        Y = rng.randn(10, 1)
+        self.m = GPflow.gpr.GPR(X, Y, k)
+        self.m._compile()
+
+    def test_kern_name(self):
+        with self.m.tf_mode():
+            l = self.m.build_likelihood()
+        self.assertTrue('model.build_likelihood' in l.name)
+
+    def test_likelihood_name(self):
+        with self.m.tf_mode():
+            K = self.m.kern.K(self.m.X)
+        self.assertTrue('kern.K' in K.name)
+
+
 if __name__ == "__main__":
     unittest.main()
