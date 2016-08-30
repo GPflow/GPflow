@@ -18,10 +18,12 @@ import tensorflow as tf
 import numpy as np
 from .param import Parameterized, Param
 from . import transforms
-from .settings import float_type
+from .settings import float_type, np_float_type
 
-hermgauss = np.polynomial.hermite.hermgauss
-
+def hermgauss(n):
+    x, w = np.polynomial.hermite.hermgauss(n)
+    x, w = x.astype(np_float_type), w.astype(np_float_type)
+    return x, w
 
 class Likelihood(Parameterized):
     def __init__(self):
