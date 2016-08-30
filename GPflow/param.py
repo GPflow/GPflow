@@ -579,7 +579,7 @@ class Parameterized(Parentable):
 
         # in tf_mode, wrap functions is a scope
         elif key in object.__getattribute__(self, 'scoped_keys'):
-            return NameScoped(key)(o)
+            return NameScoped(self.long_name + key)(o)
 
         # finally, just return the object
         return o
