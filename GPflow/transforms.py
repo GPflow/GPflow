@@ -15,7 +15,7 @@
 
 import numpy as np
 import tensorflow as tf
-import GPflow.tf_hacks as tfh
+from . import tf_hacks as tfh
 
 
 class Transform(object):
