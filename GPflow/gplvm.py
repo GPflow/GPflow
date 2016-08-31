@@ -56,11 +56,12 @@ class GPLVM(GPR):
 
 class BayesianGPLVM(GPModel):
 
-    def __init__(self, X_mean, X_var, Y, kern, Z, X_prior_mean=None, X_prior_var=None):
+    def __init__(self, X_mean, X_var, Y, kern, M, Z=None, X_prior_mean=None, X_prior_var=None):
         """
         X_mean is a data matrix, size N x D
         X_var is a data matrix, size N x D (X_var > 0)
         Y is a data matrix, size N x R
+        M is the number of inducing points
         Z is a matrix of pseudo inputs, size M x D
         kern, mean_function are appropriate GPflow objects
 
@@ -71,15 +72,22 @@ class BayesianGPLVM(GPModel):
         del self.X
         self.X_mean = Param(X_mean)
         self.X_var = Param(X_var, transforms.positive)
-        self.Z = Param(Z)
         self.num_data = X_mean.shape[0]
-        self.num_latent = Z.shape[1]
         self.output_dim = Y.shape[1]
 
         assert np.all(X_mean.shape == X_var.shape)
-        assert X_mean.shape[1] == self.num_latent
         assert X_mean.shape[0] == Y.shape[0], 'X mean and Y must be same size.'
         assert X_var.shape[0] == Y.shape[0], 'X var and Y must be same size.'
+
+        # inducing points
+        if Z is None:
+            # By default we initialize by subset of initial latent points
+            Z = np.random.permutation(X_mean.copy())[:M]
+        else:
+            assert Z.shape[0] == M
+        self.Z = Param(Z)
+        self.num_latent = Z.shape[1]
+        assert X_mean.shape[1] == self.num_latent
 
         # deal with parameters for the prior mean variance of X
         if X_prior_mean is None:
