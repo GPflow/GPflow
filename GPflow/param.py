@@ -367,12 +367,24 @@ class DataHolder(Parentable):
         different shape
         """
         Parentable.__init__(self)
-        self._array = np.asarray(array, dtype=np_float_type)
-        self._tf_array = tf.placeholder(dtype=float_type,
+        dt = self._get_type(array)
+        self._array = np.asarray(array, dtype=dt)
+        self._tf_array = tf.placeholder(dtype=dt,
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
         assert on_shape_change in ['raise', 'pass', 'recompile']
         self.on_shape_change = on_shape_change
+
+    def _get_type(self, array):
+	"""
+        Work out what a sensible type for the array is. if the default type
+        is float32, downcast 64bit float to float32. For ints, assume int32"""
+        if array.dtype is np.dtype(np.float64) and np_float_type is np.float32:
+            return np.float32
+        elif array.dtype in map(np.dtype, [np.int16, np.int32, np.int64]):
+            return np.int32 
+        else:
+            raise NotImplementedError("unknown dtype")
 
     def get_feed_dict(self):
         return {self._tf_array: self._array}
@@ -384,7 +396,7 @@ class DataHolder(Parentable):
 
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
-        self._tf_array = tf.placeholder(dtype=float_type,
+        self._tf_array = tf.placeholder(dtype=self._get_type(self._array),
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
 
