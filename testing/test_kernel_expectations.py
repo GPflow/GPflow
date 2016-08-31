@@ -29,8 +29,10 @@ class PsiComputer(GPflow.param.Parameterized):
 class TestPsi1_GH(unittest.TestCase):
     def setUp(self):
         rng = np.random.RandomState()
-        self.kerns = [GPflow.kernels.RBF(1), GPflow.kernels.Linear(1), GPflow.kernels.RBF(1)+GPflow.kernels.Linear(1)]
-        # self.kerns = [GPflow.kernels.Linear(1)]#, GPflow.kernels.Linear(1)]
+        self.kerns = [GPflow.kernels.RBF(1), GPflow.kernels.Linear(1), 
+                      GPflow.kernels.RBF(1)+GPflow.kernels.Linear(1), 
+                      GPflow.kernels.Linear(1)+GPflow.kernels.RBF(1)]
+# TODO need to extend to 2D GPflow.kernels.PeriodicKernel(1, active_dims=[0])+GPflow.kernels.RBF(1, active_dims=[1])]
         self.z = rng.randn(1, 1)
         self.mu = rng.randn()
         self.var = rng.rand()
@@ -40,8 +42,8 @@ class TestPsi1_GH(unittest.TestCase):
             f = lambda x: k.compute_K(self.z, np.atleast_2d(x)).squeeze()
             result_numeric = do_GH_quadratre(f, self.mu, self.var)
             result_tf = PsiComputer(k).psi1(np.atleast_2d(self.mu), np.atleast_2d(self.var), self.z)
-            print k.__class__
-            print result_tf, result_numeric
+            print(k.__class__)
+            print(result_tf, result_numeric)
 
             self.assertTrue(np.allclose(result_numeric, result_tf))
 

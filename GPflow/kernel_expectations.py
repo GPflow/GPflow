@@ -9,17 +9,18 @@ def build_psi_stats(Z, kern, mu, S):
     elif isinstance(kern, kernels.Linear):
         return build_psi_stats_linear(Z, kern, mu, S)
     elif isinstance(kern, kernels.Add):
-        lkern = np.sort(kern.kern_list)  # so one order
-        if len(lkern) == 2 and isinstance(lkern[0], kernels.Linear) and isinstance(lkern[1], kernels.RBF):
+        klist = [ki.name for ki in kern.kern_list]
+        klist.sort() # in place sorting to have single order
+        if (len(kern.kern_list) == 2 and klist[0] == 'linear' and klist[1] == 'rbf'):
             # for RBF + Linear, we have an analytic solution:
             return build_psi_stats_rbf_plus_linear(Z, kern, mu, S)
 
-        elif on_separate_dimensions(lkern):
+        elif on_separate_dimensions(kern.kern_list):
             # for kernels additive over separate dimensions, the result is just the sum over each kernel.
             NxM = tf.pack([tf.shape(mu)[0], tf.shape(Z)[0]])
             MxM = tf.pack([tf.shape(Z)[0], tf.shape(Z)[0]])
             psi0, psi1, psi2 = tf.zeros((1,), tf.float64), tf.zeros(NxM, tf.float64), tf.zeros(MxM, tf.float64)
-            for k in lkern:
+            for k in kern.kern_list:
                 psi0_i, psi1_i, psi2_i = build_psi_stats(Z, k, mu, S)
                 psi0 += psi0_i
                 psi1 += psi1_i
@@ -28,12 +29,12 @@ def build_psi_stats(Z, kern, mu, S):
         else:
             raise NotImplementedError("Psi-statistics: cannot add arbitrary kernels on overlapping dimensions")
     elif isinstance(kern, kernels.Prod):
-        if on_separate_dimensions(lkern):
+        if on_separate_dimensions(kern.kern_list):
             # for kernels additive over separate dimensions, the result is just the product over each kernel.
             NxM = tf.pack([tf.shape(mu)[0], tf.shape(Z)[0]])
             MxM = tf.pack([tf.shape(Z)[0], tf.shape(Z)[0]])
             psi0, psi1, psi2 = tf.zeros((1,), tf.float64), tf.zeros(NxM, tf.float64), tf.zeros(MxM, tf.float64)
-            for k in lkern:
+            for k in kern.kern_list:
                 psi0_i, psi1_i, psi2_i = build_psi_stats(Z, k, mu, S)
                 psi0 *= psi0_i
                 psi1 *= psi1_i
@@ -88,14 +89,14 @@ def one_dimensional_psi_stats(Z, kern, mu, S, numpoints=5):
     gh_w /= np.sqrt(np.pi)
     X = gh_x * tf.sqrt(2.0 * S) + mu
 
-    psi0 = reduce(tf.add, [tf.reduce_sum(kern.Kdiag(pad_inputs(kern, X[:, i:i+1])))*wi for i, wi in enumerate(gh_w)])
+    psi0 = tf.reduce_sum(tf.add, [tf.reduce_sum(kern.Kdiag(pad_inputs(kern, X[:, i:i+1])))*wi for i, wi in enumerate(gh_w)])
 
     # psi1
     KXZ = [kern.K(pad_inputs(kern, X[:, i:i+1]), Z) for i in range(numpoints)]
-    psi1 = reduce(tf.add, [KXZ_i*wi for KXZ_i, wi in zip(KXZ, gh_w)])
+    psi1 = tf.reduce_sum(tf.add, [KXZ_i*wi for KXZ_i, wi in zip(KXZ, gh_w)])
 
     # psi2
-    psi2 = reduce(tf.add, [tf.matmul(tf.transpose(KXZ_i), KXZ_i)*wi for KXZ_i, wi in zip(KXZ, gh_w)])
+    psi2 = tf.reduce_sum(tf.add, [tf.matmul(tf.transpose(KXZ_i), KXZ_i)*wi for KXZ_i, wi in zip(KXZ, gh_w)])
 
     return psi0, psi1, psi2
 
