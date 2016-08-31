@@ -151,8 +151,9 @@ class Model(Parameterized):
         def obj(x):
             feed_dict = {self._free_vars: x}
             feed_dict.update(self.get_feed_dict())
-            return self._session.run([self._minusF, self._minusG],
+            f, g = self._session.run([self._minusF, self._minusG],
                                      feed_dict=feed_dict)
+            return f.astype(np.float64), g.astype(np.float64)
 
         self._objective = obj
         print("done")
