@@ -369,7 +369,8 @@ class TestParamList(unittest.TestCase):
         m = Foo()
         self.assertTrue(m.get_free_state().size == 2)
         m.optimize(disp=False)
-        self.assertTrue(np.allclose(m.get_free_state(), 0.))
+        atol=1e-6 if np_float_type is np.float32 else 1e-8
+        self.assertTrue(np.allclose(m.get_free_state(), 0., atol=atol))
 
 
 class TestPickleAndDict(unittest.TestCase):

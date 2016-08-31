@@ -70,7 +70,7 @@ class TestPredictConditional(unittest.TestCase):
                                       feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
                 v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1],
                                       feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
-            self.assertTrue(np.allclose(v1, v2, test_setup.tolerance, test_setup.tolerance))
+            self.assertTrue(np.allclose(v1, v2, atol=test_setup.tolerance))
 
     def test_var_exp(self):
         """
