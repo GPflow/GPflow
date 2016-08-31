@@ -34,6 +34,7 @@ class Kern(Parameterized):
         active dims is a (slice | iterable of integers | None)
         """
         Parameterized.__init__(self)
+        self.scoped_keys.extend(['K', 'Kdiag'])
         self.input_dim = input_dim
         if active_dims is None:
             self.active_dims = slice(input_dim)
@@ -151,6 +152,7 @@ class Stationary(Kern):
           (ARD=True) or a single lengthscale (ARD=False).
         """
         Kern.__init__(self, input_dim, active_dims)
+        self.scoped_keys.extend(['square_dist', 'euclid_dist'])
         self.variance = Param(variance, transforms.positive)
         if ARD:
             if lengthscales is None:
