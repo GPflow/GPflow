@@ -376,13 +376,14 @@ class DataHolder(Parentable):
         self.on_shape_change = on_shape_change
 
     def _get_type(self, array):
-	"""
+        """
         Work out what a sensible type for the array is. if the default type
-        is float32, downcast 64bit float to float32. For ints, assume int32"""
+        is float32, downcast 64bit float to float32. For ints, assume int32
+        """
         if array.dtype is np.dtype(np.float64) and np_float_type is np.float32:
             return np.float32
         elif array.dtype in map(np.dtype, [np.int16, np.int32, np.int64]):
-            return np.int32 
+            return np.int32
         else:
             raise NotImplementedError("unknown dtype")
 
