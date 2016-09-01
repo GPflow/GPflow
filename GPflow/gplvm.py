@@ -108,7 +108,6 @@ class BayesianGPLVM(GPModel):
         likelihood.
         """
         num_inducing = tf.shape(self.Z)[0]
-
         psi0, psi1, psi2 = ke.build_psi_stats(self.Z, self.kern, self.X_mean, self.X_var)
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
         L = tf.cholesky(Kuu)

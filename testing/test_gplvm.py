@@ -18,7 +18,7 @@ class TestGPLVM(unittest.TestCase):
         print('TestGPLVM.optimise')
         m = GPflow.gplvm.GPLVM(self.Y, self.Q)
         linit = m.compute_log_likelihood()
-        m.optimize(maxiter=10)
+        m.optimize(maxiter=2)
         self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_otherkernel(self):
@@ -27,7 +27,7 @@ class TestGPLVM(unittest.TestCase):
         XInit = self.rng.rand(self.N, self.Q)
         m = GPflow.gplvm.GPLVM(self.Y, self.Q, XInit, k)
         linit = m.compute_log_likelihood()
-        m.optimize(maxiter=10)
+        m.optimize(maxiter=2)
         self.assertTrue(m.compute_log_likelihood() > linit)
 
 
@@ -49,7 +49,7 @@ class TestBayesianGPLVM(unittest.TestCase):
         m = GPflow.gplvm.BayesianGPLVM(X_mean=np.zeros((self.N, Q)),
                                        X_var=np.ones((self.N, Q)), Y=self.Y, kern=k, M=self.M, Z=Z)
         linit = m.compute_log_likelihood()
-        m.optimize(maxiter=10)
+        m.optimize(maxiter=2)
         self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_2d(self):
@@ -60,7 +60,7 @@ class TestBayesianGPLVM(unittest.TestCase):
         m = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean,
                                        X_var=np.ones((self.N, Q)), Y=self.Y, kern=k, M=self.M)
         linit = m.compute_log_likelihood()
-        m.optimize(maxiter=10)
+        m.optimize(maxiter=2)
         self.assertTrue(m.compute_log_likelihood() > linit)
 
         # test prediction
@@ -150,14 +150,15 @@ class TestBayesianGPLVMQuadrature(unittest.TestCase):
 
     def testWithPeriodicK(self):
         # test kernel whose Psi statistics not computed
-        Q = 2  # latent dimensions
+        Q = 1  # latent dimensions
         X_mean = GPflow.gplvm.PCA_reduce(self.Y, Q)
         k = GPflow.kernels.PeriodicKernel(Q)
         m = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean,
                                        X_var=np.ones((self.N, Q)), Y=self.Y, kern=k, M=self.M)
         linit = m.compute_log_likelihood()
-        m.optimize(maxiter=10)
+        m.optimize(maxiter=2)
         assert(m.compute_log_likelihood() > linit)
+
 
 if __name__ == "__main__":
     unittest.main()
