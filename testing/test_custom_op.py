@@ -22,7 +22,7 @@ def compare_op(v):
 
 class TestVecToTri(unittest.TestCase):
     def setUp(self):
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.Session()
 
     def testVecToTri(self):
         mats = [
@@ -48,7 +48,7 @@ class TestVecToTri(unittest.TestCase):
 
 class TestTriToVec(unittest.TestCase):
     def setUp(self):
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.Session()
 
     def testTriToVec(self):
         mats = [
