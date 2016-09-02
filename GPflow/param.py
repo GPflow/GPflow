@@ -380,9 +380,11 @@ class DataHolder(Parentable):
         Work out what a sensible type for the array is. if the default type
         is float32, downcast 64bit float to float32. For ints, assume int32
         """
-        if array.dtype is np.dtype(np.float64) and np_float_type is np.float32:
+        if array.dtype == np.dtype(np_float_type):
+            return np_float_type
+        elif array.dtype == np.dtype(np.float64) and np_float_type is np.float32:
             return np.float32
-        elif array.dtype in [np.dtype(i) for i in [np.int16, np.int32, np.int64]]:
+        elif any([array.dtype == np.dtype(t) for t in [np.int16, np.int32, np.int64]]):
             return np.int32
         else:
             raise NotImplementedError("unknown dtype")
