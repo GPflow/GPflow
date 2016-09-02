@@ -382,7 +382,7 @@ class DataHolder(Parentable):
         """
         if array.dtype is np.dtype(np.float64) and np_float_type is np.float32:
             return np.float32
-        elif array.dtype in map(np.dtype, [np.int16, np.int32, np.int64]):
+        elif array.dtype in [np.dtype(i) for i in [np.int16, np.int32, np.int64]]:
             return np.int32
         else:
             raise NotImplementedError("unknown dtype")
