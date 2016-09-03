@@ -8,3 +8,5 @@ if float_type is tf.float64:
     np_float_type = np.float64
 elif float_type is tf.float32:
     np_float_type = np.float32
+
+jitter = 1e-4

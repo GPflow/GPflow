@@ -21,7 +21,7 @@ import tensorflow as tf
 from . import hmc
 import sys
 from . import tf_hacks
-from .settings import float_type
+from .settings import float_type, jitter
 
 
 class ObjectiveWrapper(object):
@@ -370,10 +370,10 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf_hacks.eye(tf.shape(mu)[0]) * 1e-6
+        jit = tf_hacks.eye(tf.shape(mu)[0]) * jitter
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:, :, i] + jitter)
+            L = tf.cholesky(var[:, :, i] + jit)
             shape = tf.pack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))

@@ -22,7 +22,7 @@ from . import conditionals
 from .mean_functions import Zero
 from .tf_hacks import eye
 from . import kullback_leiblers
-from .settings import float_type
+from .settings import float_type, jitter
 
 
 class MinibatchData(DataHolder):
@@ -112,7 +112,7 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6
+            K = self.kern.K(self.Z) + eye(self.num_inducing) * jitter
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:

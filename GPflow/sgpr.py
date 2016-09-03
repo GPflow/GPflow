@@ -20,7 +20,7 @@ from .param import Param, DataHolder
 from .mean_functions import Zero
 from . import likelihoods
 from .tf_hacks import eye
-from .settings import float_type
+from .settings import float_type, jitter
 
 
 class SGPR(GPModel):
@@ -69,7 +69,7 @@ class SGPR(GPModel):
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * jitter
         L = tf.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -101,7 +101,7 @@ class SGPR(GPModel):
         num_inducing = tf.shape(self.Z)[0]
         err = self.Y - self.mean_function(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * jitter
         Kus = self.kern.K(self.Z, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
@@ -166,7 +166,7 @@ class GPRFITC(GPModel):
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * jitter
 
         Luu = tf.cholesky(Kuu)  # => Luu^T Luu = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff

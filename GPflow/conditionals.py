@@ -16,6 +16,7 @@
 from .tf_hacks import eye
 import tensorflow as tf
 from .scoping import NameScoped
+from .settings import jitter
 
 
 @NameScoped("conditional")
@@ -61,7 +62,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     # compute kernel stuff
     num_data = tf.shape(X)[0]
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data) * 1e-6
+    Kmm = kern.K(X) + eye(num_data) * jitter
     Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
