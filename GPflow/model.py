@@ -3,9 +3,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,14 +13,13 @@
 # limitations under the License.
 
 
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc
+from . import hmc, tf_hacks
 import sys
-from . import tf_hacks
 
 
 class ObjectiveWrapper(object):
@@ -162,10 +161,12 @@ class Model(Parameterized):
 
     @AutoFlow()
     def compute_log_prior(self):
+        """ Compute the log prior of the model (uses AutoFlow)"""
         return self.build_prior()
 
     @AutoFlow()
     def compute_log_likelihood(self):
+        """ Compute the log likelihood of the model (uses AutoFlow on ``self.build_likelihood()``)"""
         return self.build_likelihood()
 
     def sample(self, num_samples, Lmin=5, Lmax=20, epsilon=0.01, thin=1, burn=0,
@@ -307,10 +308,15 @@ class GPModel(Model):
     """
     A base class for Gaussian process models, that is, those of the form
 
-       theta ~ p(theta)
-       f ~ GP(m(x), k(x, x'; theta))
-       F = f(X)
-       Y|F ~ p(Y|F)
+    .. math::
+       :nowrap:
+
+       \\begin{align}
+       \\theta & \sim p(\\theta) \\\\
+       f       & \sim \\mathcal{GP}(m(x), k(x, x'; \\theta)) \\\\
+       f_i       & = f(x_i) \\\\
+       y_i\,|\,f_i     & \sim p(y_i|f_i)
+       \\end{align}
 
     This class mostly adds functionality to compile predictions. To use it,
     inheriting classes must define a build_predict function, which computes
@@ -323,12 +329,10 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
 
+    For handling another data (Xnew, Ynew), set the new value to self.X and self.Y
 
-    For handling another data (X', Y'), set the new value to self.X and self.Y
-    >>> m.X = X'
-    >>> m.Y = Y'
-    If the shape of the data does not change, this model does not require
-    another recompilation.
+    >>> m.X = Xnew
+    >>> m.Y = Ynew
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
@@ -337,8 +341,10 @@ class GPModel(Model):
         Model.__init__(self, name)
 
         if isinstance(X, np.ndarray):
+            #: X is a data matrix; each row represents one instance
             X = DataHolder(X)
         if isinstance(Y, np.ndarray):
+            #: Y is a data matrix, rows correspond to the rows in X, columns are treated independently
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import tensorflow as tf
 from .model import GPModel
 from .densities import multivariate_normal
@@ -23,14 +24,23 @@ from .param import DataHolder
 
 
 class GPR(GPModel):
+    """
+    Gaussian Process Regression.
+
+    This is a vanilla implementation of GP regression with a Gaussian
+    likelihood.  Multiple columns of Y are treated independently.
+
+    The log likelihood i this models is sometimes referred to as the 'marginal log likelihood', and is given by
+
+    .. math::
+
+       \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
+    """
     def __init__(self, X, Y, kern, mean_function=Zero()):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         kern, mean_function are appropriate GPflow objects
-
-        This is a vanilla implementation of GP regression with a Gaussian
-        likelihood.  Multiple columns of Y are treated independently.
         """
         likelihood = likelihoods.Gaussian()
         X = DataHolder(X, on_shape_change='pass')
@@ -42,7 +52,7 @@ class GPR(GPModel):
         """
         Construct a tensorflow function to compute the likelihood.
 
-            \log p(Y, V | theta).
+            \log p(Y | theta).
 
         """
         K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
