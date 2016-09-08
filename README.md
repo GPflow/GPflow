@@ -5,11 +5,12 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 
 [![Build status](https://codeship.com/projects/26b43920-e96e-0133-3481-02cde9680eda/status?branch=master)](https://codeship.com/projects/147609)
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
+[![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=latest)](http://gpflow.readthedocs.io/en/latest/?badge=latest)
 
 # Install
 
 ## 1) Install TensorFlow. 
-Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r0.9/get_started/os_setup.html#download-and-setup). You will need at least version 0.9 . We find that for many users pip installation is the fastest way to get going.
+Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html#download-and-setup). You will need at least version 0.10 . We find that for many users pip installation is the fastest way to get going.
 
 ## 2) install package
 GPflow is a pure python library for now, so you could just add it to your path (we use `python setup.py develop`) or try an install `python setup.py install` (untested). You can run the tests with `python setup.py test`.
