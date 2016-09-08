@@ -88,6 +88,7 @@ class Model(Parameterized):
         name is a string describing this model.
         """
         Parameterized.__init__(self)
+        self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
         self._session = tf.Session()
@@ -168,14 +169,15 @@ class Model(Parameterized):
         """ Compute the log likelihood of the model (uses AutoFlow on ``self.build_likelihood()``)"""
         return self.build_likelihood()
 
-    def sample(self, num_samples, Lmax=20, epsilon=0.01, verbose=False, return_logprobs=False, RNG=np.random.RandomState(0)):
+    def sample(self, num_samples, Lmin=5, Lmax=20, epsilon=0.01, thin=1, burn=0,
+               verbose=False, return_logprobs=False, RNG=np.random.RandomState(0)):
         """
         Use Hamiltonian Monte Carlo to draw samples from the model posterior.
         """
         if self._needs_recompile:
             self._compile()
         return hmc.sample_HMC(self._objective, num_samples,
-                              Lmax, epsilon,
+                              Lmin=Lmin, Lmax=Lmax, epsilon=epsilon, thin=thin, burn=burn,
                               x0=self.get_free_state(), verbose=verbose,
                               return_logprobs=return_logprobs, RNG=RNG)
 
