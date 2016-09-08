@@ -3,18 +3,6 @@ import os
 import collections
 import tensorflow as tf
 
-c = configparser.ConfigParser()
-
-# first look in the current directory, then in the user's home directory, then in the same directory as this file.
-locations = map(os.path.abspath, [os.curdir, os.path.expanduser('~'), os.path.dirname(os.path.realpath(__file__))])
-
-for loc in locations:
-    # try both with and without preceeding 'dot' for hidden files (prefer non-hidden)
-    if c.read(os.path.join(loc, 'gpflowrc')):
-        break
-    if c.read(os.path.join(loc, '.gpflowrc')):
-        break
-
 
 # a very simple parser
 def parse(string):
@@ -46,4 +34,27 @@ def namedtuplify(mapping):  # thank you https://gist.github.com/hangtwenty/59604
         return collections.namedtuple('settings', dict(**mapping))(**mapping)
     return parse(mapping)
 
+
+def read_config_file(path=None):
+
+    c = configparser.ConfigParser()
+
+    if path is None:  # pragma: no cover
+        # first look in the current directory,
+        # then in the user's home directory,
+        # then in the same directory as this file.
+        locations = map(os.path.abspath, [os.curdir,
+                                          os.path.expanduser('~'),
+                                          os.path.dirname(os.path.realpath(__file__))])
+        for loc in locations:
+            # try both with and without preceeding 'dot' for hidden files (prefer non-hidden)
+            if c.read(os.path.join(loc, 'gpflowrc')):
+                break
+            if c.read(os.path.join(loc, '.gpflowrc')):
+                break
+    else:
+        c.read(path)
+    return c
+
+c = read_config_file()
 settings = namedtuplify(c._sections)
