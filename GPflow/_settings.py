@@ -53,7 +53,7 @@ def read_config_file(path=None):
             if c.read(os.path.join(loc, '.gpflowrc')):
                 break
     else:
-        c.read(path)
+        assert(c.read(path))
     return c
 
 c = read_config_file()
