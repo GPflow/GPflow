@@ -18,7 +18,7 @@ from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc, tf_hacks
+from . import hmc, tf_wraps
 import sys
 
 
@@ -374,7 +374,7 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf_hacks.eye(tf.shape(mu)[0]) * 1e-6
+        jitter = tf_wraps.eye(tf.shape(mu)[0]) * 1e-6
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)

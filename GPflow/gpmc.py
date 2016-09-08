@@ -20,7 +20,7 @@ from .param import Param, DataHolder
 from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
-from .tf_hacks import eye
+from .tf_wraps import eye
 
 
 class GPMC(GPModel):
