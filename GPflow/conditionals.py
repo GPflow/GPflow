@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from .tf_hacks import eye
+from .tf_wraps import eye
 import tensorflow as tf
 from .scoping import NameScoped
 from ._settings import settings
