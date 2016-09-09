@@ -17,5 +17,4 @@
 from __future__ import absolute_import
 from . import likelihoods, kernels, param, model, gpmc, sgpmc, priors, gpr, svgp, vgp, sgpr
 from ._version import __version__
-
-
+from ._settings import settings
