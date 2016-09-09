@@ -14,9 +14,7 @@
 
 
 """
-A collection of hacks for tensorflow.
-
-Hopefully we can remove these as the library matures
+A collection of wrappers and extensions for tensorflow.
 """
 
 import os
@@ -24,6 +22,9 @@ import tensorflow as tf
 
 
 def eye(N):
+    """
+    An identitiy matrix
+    """
     return tf.diag(tf.ones(tf.pack([N, ]), dtype='float64'))
 
 
