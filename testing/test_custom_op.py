@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import tensorflow as tf
-from GPflow.tf_hacks import vec_to_tri, tri_to_vec
+from GPflow.tf_wraps import vec_to_tri, tri_to_vec
 from tensorflow.python.ops.gradient_checker import compute_gradient_error
 
 

@@ -19,7 +19,7 @@ from .param import Param, DataHolder
 from .model import GPModel
 from . import transforms
 from .mean_functions import Zero
-from .tf_hacks import eye
+from .tf_wraps import eye
 
 
 class VGP(GPModel):
