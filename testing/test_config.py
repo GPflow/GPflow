@@ -39,6 +39,9 @@ class TestConfigParsing(unittest.TestCase):
         self.assertTrue(GPflow._settings.parse('32') is 32)
         self.assertTrue(GPflow._settings.parse('32.') == 32.)
         self.assertTrue(GPflow._settings.parse('int') == 'int')
+        self.assertTrue(GPflow._settings.parse('hello') == 'hello')
+        self.assertTrue(GPflow._settings.parse('1E2') == 1e2)
+        self.assertTrue(GPflow._settings.parse('1e-9') == 1e-9)
 
 
 if __name__ == "__main__":

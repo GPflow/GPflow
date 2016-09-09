@@ -14,9 +14,14 @@ def parse(string):
         return False
     elif string in ['float64', 'float32', 'float16', 'int64', 'int32', 'int16']:
         return getattr(tf, string)
-    else:
+    elif any([string.count(s) for s in '.eE']):
         try:
             return float(string)
+        except:
+            return string
+    else:
+        try:
+            return int(string)
         except:
             return string
 
