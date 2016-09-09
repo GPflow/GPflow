@@ -41,7 +41,6 @@ def namedtuplify(mapping):  # thank you https://gist.github.com/hangtwenty/59604
 
 
 def read_config_file(path=None):
-
     c = configparser.ConfigParser()
 
     if path is None:  # pragma: no cover
@@ -58,8 +57,9 @@ def read_config_file(path=None):
             if c.read(os.path.join(loc, '.gpflowrc')):
                 break
     else:
-        assert(c.read(path))
+        assert (c.read(path))
     return c
+
 
 c = read_config_file()
 settings = namedtuplify(c._sections)
