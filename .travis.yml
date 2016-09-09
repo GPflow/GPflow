@@ -1,0 +1,25 @@
+"sudo": "required",
+"dist": "trusty",
+"language": "python",
+"python": "3.5",
+"before_install": [
+"wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;",
+"bash miniconda.sh -b -p $HOME/miniconda",
+"export PATH=\"$HOME/miniconda/bin:$PATH\"",
+"conda config --set always_yes yes --set changeps1 no",
+"conda update -q conda",
+"conda create --yes -n condaenv python=3.5",
+"conda install --yes -n condaenv pip",
+"source activate condaenv",
+"conda install scipy",
+"pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.10.0-cp35-cp35m-linux_x86_64.whl"
+"pip insall nose"
+],
+"install": [
+"python setup.py install"
+],
+"script": [
+"nosetests --nologcapture testing"
+],
+"group": "stable",
+"os": "linux"
