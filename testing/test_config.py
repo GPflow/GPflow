@@ -21,6 +21,25 @@ class TestConfigParsing(unittest.TestCase):
             self.settings.second_section.another_bool is True,
             self.settings.second_section.yet_another_bool is False]))
 
+    def test_parser(self):
+        with self.assertRaises(ValueError):
+            GPflow._settings.parse(None)
+
+        with self.assertRaises(ValueError):
+            GPflow._settings.parse(12)
+
+        with self.assertRaises(ValueError):
+            GPflow._settings.parse([])
+
+        self.assertTrue(GPflow._settings.parse('false') is False)
+        self.assertTrue(GPflow._settings.parse('False') is False)
+        self.assertTrue(GPflow._settings.parse('true') is True)
+        self.assertTrue(GPflow._settings.parse('True') is True)
+        self.assertTrue(GPflow._settings.parse('int32') is tf.int32)
+        self.assertTrue(GPflow._settings.parse('32') is 32)
+        self.assertTrue(GPflow._settings.parse('32.') == 32.)
+        self.assertTrue(GPflow._settings.parse('int') == 'int')
+
 
 if __name__ == "__main__":
     unittest.main()
