@@ -24,6 +24,9 @@ class TestVecToTri(unittest.TestCase):
     def setUp(self):
         self.sess = tf.InteractiveSession()
 
+    def tearDown(self):
+        self.sess.close()
+
     def testVecToTri(self):
         mats = [
             np.arange(1, 4)[None, :],
@@ -49,6 +52,9 @@ class TestVecToTri(unittest.TestCase):
 class TestTriToVec(unittest.TestCase):
     def setUp(self):
         self.sess = tf.InteractiveSession()
+
+    def tearDown(self):
+        self.sess.close()
 
     def testTriToVec(self):
         mats = [
