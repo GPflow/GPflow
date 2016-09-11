@@ -13,13 +13,15 @@ class RBF(GPflow.kernels.RBF):
         """
         return self.Kdiag(X)
 
-    def eKxz(self, X, Z):
+    def eKxz(self, Z, Xmu, Xcov):
         """
         Also known as phi_1.
-        :param X:
-        :param Z:
+        :param Z: MxD inducing inputs
+        :param Xmu: X mean (N+1xD)
+        :param Xcov: DxD  # TODO code needs to be extended to return 2x(N+1)xDxD
         :return: NxM
         """
+        # TODO needs to be implemented
         raise NotImplementedError
 
     def exKxz(self, Z, Xmu, Xcov):
@@ -84,14 +86,3 @@ class RBF(GPflow.kernels.RBF):
 
         return self.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None]))
-    def compute_eKzxKxz(self, Z, Xmu, Xcov):
-        return self.eKzxKxz(Z, Xmu, Xcov)
-
-    @AutoFlow((tf.float64, [None, None]))
-    def compute_eKdiag(self, X, Xcov=None):
-        return self.eKdiag(X)
-
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None, None]))
-    def compute_exKxz(self, Z, Xmu, Xcov):
-        return self.exKxz(Z, Xmu, Xcov)

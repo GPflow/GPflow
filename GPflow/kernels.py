@@ -35,11 +35,16 @@ class Kern(Parameterized):
         """
         Parameterized.__init__(self)
         self.input_dim = input_dim
+          # TEMP HACK Code was using slice which cannot be handled in kernel_expectations
+          #         if active_dims is None:
+          #             self.active_dims = slice(input_dim)
+          #         else:
+          #             self._active_dims_array = np.array(active_dims, dtype=np.int32)
+          #             self.active_dims = tf.constant(self._active_dims_array, tf.int32)
         if active_dims is None:
-            self.active_dims = slice(input_dim)
-        else:
-            self._active_dims_array = np.array(active_dims, dtype=np.int32)
-            self.active_dims = tf.constant(self._active_dims_array, tf.int32)
+            active_dims = range(input_dim)
+        self._active_dims_array = np.array(active_dims, dtype=np.int32)
+        self.active_dims = tf.constant(self._active_dims_array, tf.int32)
 
     def _slice(self, X, X2):
         if isinstance(self.active_dims, slice):
@@ -81,6 +86,35 @@ class Kern(Parameterized):
         Parameterized.__setstate__(self, d)
         if hasattr(self, '_active_dims_array'):
             self.active_dims = tf.constant(self._active_dims_array, tf.int32)
+
+    # Latent variable model methods
+    @AutoFlow((tf.float64, [None, None]))
+    def compute_eKdiag(self, X, Xcov=None):
+        return self.eKdiag(X)
+
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None, None]))
+    def compute_eKxz(self, Z, Xmu, Xcov):
+        return self.eKxz(Z, Xmu, Xcov)
+
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None, None]))
+    def compute_exKxz(self, Z, Xmu, Xcov):
+        return self.exKxz(Z, Xmu, Xcov)
+
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None]))
+    def compute_eKzxKxz(self, Z, Xmu, Xcov):
+        return self.eKzxKxz(Z, Xmu, Xcov)
+
+    def eKdiag(self, X, Xcov=None):
+        raise NotImplementedError
+
+    def eKxz(self, Z, Xmu, Xcov):
+        raise NotImplementedError
+
+    def exKxz(self, Z, Xmu, Xcov):
+        raise NotImplementedError
+
+    def eKzxKxz(self, Z, Xmu, Xcov):
+        raise NotImplementedError
 
 
 class Static(Kern):
