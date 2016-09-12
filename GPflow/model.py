@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, Mark van der Wilk, Valentine Svensson, alexggmatthews, fujiisoup
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,15 +13,15 @@
 # limitations under the License.
 
 
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc
+from . import hmc, tf_wraps
+from ._settings import settings
 import sys
-from . import tf_hacks
-from .settings import float_type, jitter
+float_type = settings.dtypes.float_type
 
 
 class ObjectiveWrapper(object):
@@ -94,7 +94,7 @@ class Model(Parameterized):
         self._name = name
         self._needs_recompile = True
         self._session = tf.Session()
-        self._free_vars = tf.placeholder(float_type)
+        self._free_vars = tf.placeholder(settings.dtypes.float_type)
 
     @property
     def name(self):
@@ -102,7 +102,7 @@ class Model(Parameterized):
 
     def __getstate__(self):
         """
-        This mehtod is necessary for pickling objects
+        This method is necessary for pickling objects
         """
         d = Parameterized.__getstate__(self)
         d.pop('_session')
@@ -145,7 +145,8 @@ class Model(Parameterized):
         self._session.run(init)
 
         # build tensorflow functions for computing the likelihood
-        print("compiling tensorflow function...")
+        if settings.verbosity.tf_compile_verb:
+            print("compiling tensorflow function...")
         sys.stdout.flush()
 
         def obj(x):
@@ -156,7 +157,8 @@ class Model(Parameterized):
             return f.astype(np.float64), g.astype(np.float64)
 
         self._objective = obj
-        print("done")
+        if settings.verbosity.tf_compile_verb:
+            print("done")
         sys.stdout.flush()
         self._needs_recompile = False
 
@@ -164,10 +166,12 @@ class Model(Parameterized):
 
     @AutoFlow()
     def compute_log_prior(self):
+        """ Compute the log prior of the model (uses AutoFlow)"""
         return self.build_prior()
 
     @AutoFlow()
     def compute_log_likelihood(self):
+        """ Compute the log likelihood of the model (uses AutoFlow on ``self.build_likelihood()``)"""
         return self.build_likelihood()
 
     def sample(self, num_samples, Lmin=5, Lmax=20, epsilon=0.01, thin=1, burn=0,
@@ -271,7 +275,7 @@ class Model(Parameterized):
         if self._needs_recompile:
             self._compile()
 
-        options = dict(disp=True, maxiter=maxiter)
+        options = dict(disp=settings.verbosity.optimisation_verb, maxiter=maxiter)
         if 'max_iters' in kw:  # pragma: no cover
             options['maxiter'] = kw.pop('max_iters')
             import warnings
@@ -294,13 +298,14 @@ class Model(Parameterized):
                               tol=tol,
                               callback=callback,
                               options=options)
-        except (KeyboardInterrupt):
+        except KeyboardInterrupt:
             print("Caught KeyboardInterrupt, setting \
                   model with most recent state.")
             self.set_state(obj._previous_x)
             return None
 
-        print("optimization terminated, setting model state")
+        if settings.verbosity.optimisation_verb:
+            print("optimization terminated, setting model state")
         self.set_state(result.x)
         return result
 
@@ -309,10 +314,15 @@ class GPModel(Model):
     """
     A base class for Gaussian process models, that is, those of the form
 
-       theta ~ p(theta)
-       f ~ GP(m(x), k(x, x'; theta))
-       F = f(X)
-       Y|F ~ p(Y|F)
+    .. math::
+       :nowrap:
+
+       \\begin{align}
+       \\theta & \sim p(\\theta) \\\\
+       f       & \sim \\mathcal{GP}(m(x), k(x, x'; \\theta)) \\\\
+       f_i       & = f(x_i) \\\\
+       y_i\,|\,f_i     & \sim p(y_i|f_i)
+       \\end{align}
 
     This class mostly adds functionality to compile predictions. To use it,
     inheriting classes must define a build_predict function, which computes
@@ -325,12 +335,10 @@ class GPModel(Model):
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_density.
 
+    For handling another data (Xnew, Ynew), set the new value to self.X and self.Y
 
-    For handling another data (X', Y'), set the new value to self.X and self.Y
-    >>> m.X = X'
-    >>> m.Y = Y'
-    If the shape of the data does not change, this model does not require
-    another recompilation.
+    >>> m.X = Xnew
+    >>> m.Y = Ynew
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
@@ -339,8 +347,10 @@ class GPModel(Model):
         Model.__init__(self, name)
 
         if isinstance(X, np.ndarray):
+            #: X is a data matrix; each row represents one instance
             X = DataHolder(X)
         if isinstance(Y, np.ndarray):
+            #: Y is a data matrix, rows correspond to the rows in X, columns are treated independently
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 
@@ -370,12 +380,12 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jit = tf_hacks.eye(tf.shape(mu)[0]) * jitter
+        jitter = tf_wraps.eye(tf.shape(mu)[0]) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:, :, i] + jit)
+            L = tf.cholesky(var[:, :, i] + jitter)
             shape = tf.pack([tf.shape(L)[0], num_samples])
-            V = tf.random_normal(shape, dtype=float_type)
+            V = tf.random_normal(shape, dtype=settings.dtypes.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.pack(samples))
 

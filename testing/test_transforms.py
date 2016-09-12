@@ -54,11 +54,11 @@ class TestLowerTriTransform(unittest.TestCase):
     """
     Some extra tests for the LowerTriangle transformation.
     """
+
     def setUp(self):
         self.t = GPflow.transforms.LowerTriangular(3)
 
     def testErrors(self):
-
         self.t.free_state_size((6, 6, 3))
         with self.assertRaises(ValueError):
             self.t.free_state_size((6, 6, 2))
