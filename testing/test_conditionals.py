@@ -1,12 +1,10 @@
 from __future__ import print_function
 import GPflow
 import tensorflow as tf
-<<<<<<< HEAD
-from GPflow.tf_hacks import eye
-from GPflow.settings import float_type, np_float_type
-=======
 from GPflow.tf_wraps import eye
->>>>>>> master
+from GPflow import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 import numpy as np
 import unittest
 
