@@ -4,7 +4,6 @@ import tensorflow as tf
 from GPflow.tf_wraps import eye
 from GPflow import settings
 float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
 import numpy as np
 import unittest
 
