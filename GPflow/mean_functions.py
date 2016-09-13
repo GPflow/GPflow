@@ -16,6 +16,7 @@
 import tensorflow as tf
 import numpy as np
 from .param import Param, Parameterized
+from .settings import float_type
 
 
 class MeanFunction(Parameterized):
@@ -42,7 +43,7 @@ class MeanFunction(Parameterized):
 
 class Zero(MeanFunction):
     def __call__(self, X):
-        return tf.zeros(tf.pack([tf.shape(X)[0], 1]), dtype='float64')
+        return tf.zeros(tf.pack([tf.shape(X)[0], 1]), dtype=float_type)
 
 
 class Linear(MeanFunction):
