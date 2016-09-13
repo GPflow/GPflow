@@ -15,7 +15,7 @@
 from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
-from . import tf_hacks as tfh
+from . import tf_wraps as tfw
 
 
 class Transform(object):
@@ -242,7 +242,7 @@ class LowerTriangular(Transform):
         return y[np.tril_indices(len(y), 0)].T.flatten()
 
     def tf_forward(self, x):
-        fwd = tf.transpose(tfh.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):

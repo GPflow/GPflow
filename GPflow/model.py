@@ -1,5 +1,5 @@
 # Copyright 2016 James Hensman, Mark van der Wilk, Valentine Svensson, alexggmatthews, fujiisoup
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,7 +18,8 @@ from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc, tf_hacks
+from . import hmc, tf_wraps
+from ._settings import settings
 import sys
 
 
@@ -143,7 +144,8 @@ class Model(Parameterized):
         self._session.run(init)
 
         # build tensorflow functions for computing the likelihood
-        print("compiling tensorflow function...")
+        if settings.verbosity.tf_compile_verb:
+            print("compiling tensorflow function...")
         sys.stdout.flush()
 
         def obj(x):
@@ -153,7 +155,8 @@ class Model(Parameterized):
                                      feed_dict=feed_dict)
 
         self._objective = obj
-        print("done")
+        if settings.verbosity.tf_compile_verb:
+            print("done")
         sys.stdout.flush()
         self._needs_recompile = False
 
@@ -270,7 +273,7 @@ class Model(Parameterized):
         if self._needs_recompile:
             self._compile()
 
-        options = dict(disp=True, maxiter=maxiter)
+        options = dict(disp=settings.verbosity.optimisation_verb, maxiter=maxiter)
         if 'max_iters' in kw:  # pragma: no cover
             options['maxiter'] = kw.pop('max_iters')
             import warnings
@@ -293,13 +296,14 @@ class Model(Parameterized):
                               tol=tol,
                               callback=callback,
                               options=options)
-        except (KeyboardInterrupt):
+        except KeyboardInterrupt:
             print("Caught KeyboardInterrupt, setting \
                   model with most recent state.")
             self.set_state(obj._previous_x)
             return None
 
-        print("optimization terminated, setting model state")
+        if settings.verbosity.optimisation_verb:
+            print("optimization terminated, setting model state")
         self.set_state(result.x)
         return result
 
@@ -374,7 +378,7 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf_hacks.eye(tf.shape(mu)[0]) * 1e-6
+        jitter = tf_wraps.eye(tf.shape(mu)[0]) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)

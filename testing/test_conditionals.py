@@ -1,7 +1,7 @@
 from __future__ import print_function
 import GPflow
 import tensorflow as tf
-from GPflow.tf_hacks import eye
+from GPflow.tf_wraps import eye
 import numpy as np
 import unittest
 
