@@ -1,8 +1,9 @@
+import tensorflow as tf
+import numpy as np
 import GPflow
 from GPflow import settings
 float_type = settings.dtypes.float_type
-import tensorflow as tf
-import numpy as np
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 import unittest
 import six
 
@@ -19,7 +20,7 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
     rng = np.random.RandomState(1)
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
         if likelihoodClass != GPflow.likelihoods.MultiClass:
-            test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2), 1e-6))
+            test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2).astype(np_float_type), 1e-6))
         elif includeMultiClass:
             sample = rng.randn(10, 2)
             # Multiclass needs a less tight tolerance due to presence of clipping.
@@ -27,11 +28,15 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
             test_setups.append(TestSetup(likelihoodClass(2),  np.argmax(sample, 1).reshape(-1, 1), tolerance))
 
     if addNonStandardLinks:
-        test_setups.append(TestSetup(GPflow.likelihoods.Poisson(invlink=tf.square), rng.rand(10, 2), 1e-6))
-        test_setups.append(TestSetup(GPflow.likelihoods.Exponential(invlink=tf.square), rng.rand(10, 2), 1e-6))
-        test_setups.append(TestSetup(GPflow.likelihoods.Gamma(invlink=tf.square), rng.rand(10, 2), 1e-6))
+        test_setups.append(TestSetup(GPflow.likelihoods.Poisson(invlink=tf.square),
+                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
+        test_setups.append(TestSetup(GPflow.likelihoods.Exponential(invlink=tf.square),
+                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
+        test_setups.append(TestSetup(GPflow.likelihoods.Gamma(invlink=tf.square),
+                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
         sigmoid = lambda x: 1./(1 + tf.exp(-x))
-        test_setups.append(TestSetup(GPflow.likelihoods.Bernoulli(invlink=sigmoid), rng.rand(10, 2), 1e-6))
+        test_setups.append(TestSetup(GPflow.likelihoods.Bernoulli(invlink=sigmoid),
+                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
     return test_setups
 
 
@@ -51,7 +56,7 @@ class TestPredictConditional(unittest.TestCase):
 
         self.F = tf.placeholder(float_type)
         rng = np.random.RandomState(0)
-        self.F_data = rng.randn(10, 2)
+        self.F_data = rng.randn(10, 2).astype(np_float_type)
 
     def test_mean(self):
         for test_setup in self.test_setups:
@@ -97,7 +102,7 @@ class TestQuadrature(unittest.TestCase):
         tf.reset_default_graph()
 
         self.rng = np.random.RandomState()
-        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2)
+        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(np_float_type)
         self.Fvar = 0.01 * self.Fvar ** 2
         self.test_setups = getTestSetups(includeMultiClass=False)
 
