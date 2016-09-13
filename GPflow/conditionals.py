@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-from .tf_wraps import eye
+from .tf_hacks import eye
 import tensorflow as tf
 from .scoping import NameScoped
-from ._settings import settings
+from .settings import jitter
 
 
 @NameScoped("conditional")
@@ -62,7 +62,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     # compute kernel stuff
     num_data = tf.shape(X)[0]
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data) * settings.numerics.jitter_level
+    Kmm = kern.K(X) + eye(num_data) * jitter
     Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A

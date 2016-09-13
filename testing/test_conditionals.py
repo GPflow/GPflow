@@ -1,12 +1,8 @@
 from __future__ import print_function
 import GPflow
 import tensorflow as tf
-<<<<<<< HEAD
 from GPflow.tf_hacks import eye
 from GPflow.settings import float_type, np_float_type
-=======
-from GPflow.tf_wraps import eye
->>>>>>> master
 import numpy as np
 import unittest
 

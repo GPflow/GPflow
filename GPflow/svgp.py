@@ -13,20 +13,22 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 from .param import Param, DataHolder
 from .model import GPModel
-from . import transforms, conditionals, kullback_leiblers
+from . import transforms
+from . import conditionals
 from .mean_functions import Zero
-from .tf_wraps import eye
-from ._settings import settings
+from .tf_hacks import eye
+from . import kullback_leiblers
+from .settings import float_type, jitter
 
 
 class MinibatchData(DataHolder):
     """
-    A special DataHolder class which feeds a minibatch to tensorflow via get_feed_dict().
+    A special DataHolder class which feeds a minibatch to tensorflow via
+    get_feed_dict().
     """
     def __init__(self, array, minibatch_size, rng=None):
         """
@@ -56,15 +58,13 @@ class SVGP(GPModel):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 
-    ::
-
-      @inproceedings{hensman2014scalable,
-        title={Scalable Variational Gaussian Process Classification},
-        author={Hensman, James and Matthews,
-                Alexander G. de G. and Ghahramani, Zoubin},
-        booktitle={Proceedings of AISTATS},
-        year={2015}
-      }
+    @inproceedings{hensman2014scalable,
+      title={Scalable Variational Gaussian Process Classification},
+      author={Hensman, James and Matthews,
+              Alexander G. de G. and Ghahramani, Zoubin},
+      booktitle={Proceedings of AISTATS},
+      year={2015}
+    }
 
     """
     def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(),
@@ -112,7 +112,7 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + eye(self.num_inducing) * settings.numerics.jitter_level
+            K = self.kern.K(self.Z) + eye(self.num_inducing) * jitter
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
@@ -134,8 +134,7 @@ class SVGP(GPModel):
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, settings.dtypes.float_type) /\
-            tf.cast(tf.shape(self.X)[0], settings.dtypes.float_type)
+        scale = tf.cast(self.num_data, float_type) / tf.cast(tf.shape(self.X)[0], float_type)
 
         return tf.reduce_sum(var_exp) * scale - KL
 

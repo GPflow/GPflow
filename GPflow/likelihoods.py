@@ -1,11 +1,11 @@
 # Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews, Alexis Boukouvalas
-#
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 # http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,21 +13,17 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-from . import densities, transforms
-from .param import Parameterized, Param
+from . import densities
 import tensorflow as tf
 import numpy as np
-from ._settings import settings
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
-
+from .param import Parameterized, Param
+from . import transforms
+from .settings import float_type, np_float_type
 
 def hermgauss(n):
     x, w = np.polynomial.hermite.hermgauss(n)
     x, w = x.astype(np_float_type), w.astype(np_float_type)
     return x, w
-
 
 class Likelihood(Parameterized):
     def __init__(self):
@@ -106,7 +102,7 @@ class Likelihood(Parameterized):
 
         # here's the quadrature for the variance
         integrand = self.conditional_variance(X) \
-            + tf.square(self.conditional_mean(X))
+                    + tf.square(self.conditional_mean(X))
         V_y = tf.reshape(tf.matmul(integrand, gh_w), shape) - tf.square(E_y)
 
         return E_y, V_y
@@ -313,7 +309,7 @@ class Gamma(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return -self.shape * Fmu - tf.lgamma(self.shape) \
-                + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
+                   + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
@@ -406,7 +402,7 @@ class RobustMax(object):
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
         """
-        A likelihood that can do multi-way classification.
+        A likelihood that can do multi-way classification. 
         Currently the only valid choice
         of inverse-link function (invlink) is an instance of RobustMax.
         """

@@ -14,7 +14,7 @@
 
 
 import tensorflow as tf
-from .tf_wraps import eye
+from .tf_hacks import eye
 from .scoping import NameScoped
 from .settings import float_type
 

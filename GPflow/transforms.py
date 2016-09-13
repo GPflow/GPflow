@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
+
 import numpy as np
 import tensorflow as tf
-from . import tf_wraps as tfw
+from . import tf_hacks as tfh
 from .settings import float_type, np_float_type
 
 
@@ -243,7 +243,7 @@ class LowerTriangular(Transform):
         return y[np.tril_indices(len(y), 0)].T.flatten()
 
     def tf_forward(self, x):
-        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+        fwd = tf.transpose(tfh.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
