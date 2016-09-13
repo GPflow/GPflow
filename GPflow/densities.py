@@ -15,7 +15,8 @@
 
 import tensorflow as tf
 import numpy as np
-from .settings import float_type
+from ._settings import settings
+float_type = settings.dtypes.float_type
 
 
 def gaussian(x, mu, var):

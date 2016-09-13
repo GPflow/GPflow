@@ -68,8 +68,8 @@ class SGPR(GPModel):
         """
 
         num_inducing = tf.shape(self.Z)[0]
-        num_data = tf.cast(tf.shape(self.Y)[0], settings.dtypes.settings.dtypes.float_type)
-        output_dim = tf.cast(tf.shape(self.Y)[1], settings.dtypes.settings.dtypes.float_type)
+        num_data = tf.cast(tf.shape(self.Y)[0], settings.dtypes.float_type)
+        output_dim = tf.cast(tf.shape(self.Y)[1], settings.dtypes.float_type)
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)

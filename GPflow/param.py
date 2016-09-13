@@ -21,7 +21,9 @@ from . import transforms
 from contextlib import contextmanager
 from functools import wraps
 from .scoping import NameScoped
-from .settings import float_type, np_float_type
+from ._settings import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
@@ -385,10 +387,8 @@ class DataHolder(Parentable):
         Work out what a sensible type for the array is. if the default type
         is float32, downcast 64bit float to float32. For ints, assume int32
         """
-        if array.dtype == np.dtype(np_float_type):
+        if any([array.dtype == np.dtype(t) for t in [np.float32, np.float64]]):
             return np_float_type
-        elif array.dtype == np.dtype(np.float64) and np_float_type is np.float32:
-            return np.float32
         elif any([array.dtype == np.dtype(t) for t in [np.int16, np.int32, np.int64]]):
             return np.int32
         else:
@@ -863,9 +863,10 @@ class Parameterized(Parentable):
 
 class ParamList(Parameterized):
     """
-    A list of parameters. This allows us to store parameters in a list whilst making them 'visible' to the GPflow machinery.
+    A list of parameters.
 
-    The correct usage is
+    This allows us to store parameters in a list whilst making them 'visible'
+    to the GPflow machinery. The correct usage is
 
     >>> my_list = GPflow.param.ParamList([Param1, Param2])
 

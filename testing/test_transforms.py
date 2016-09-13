@@ -2,7 +2,9 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from GPflow.settings import float_type, np_float_type
+from GPflow import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class TransformTests(unittest.TestCase):

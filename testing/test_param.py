@@ -1,9 +1,11 @@
 from functools import reduce
 import unittest
 import GPflow
-from GPflow.settings import np_float_type, float_type
 import tensorflow as tf
 import numpy as np
+from GPflow import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 try:
     import cPickle as pickle
 except ImportError:
@@ -369,7 +371,7 @@ class TestParamList(unittest.TestCase):
         m = Foo()
         self.assertTrue(m.get_free_state().size == 2)
         m.optimize(disp=False)
-        atol=1e-6 if np_float_type is np.float32 else 1e-8
+        atol = 1e-6 if np_float_type is np.float32 else 1e-8
         self.assertTrue(np.allclose(m.get_free_state(), 0., atol=atol))
 
 

@@ -16,7 +16,9 @@
 import tensorflow as tf
 from .tf_wraps import eye
 from .scoping import NameScoped
-from .settings import float_type
+from ._settings import settings
+float_type = settings.dtypes.float_type
+
 
 @NameScoped("KL")
 def gauss_kl_white(q_mu, q_sqrt):
