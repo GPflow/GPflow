@@ -84,7 +84,7 @@ class Model(Parameterized):
     This object defines `optimize` and `sample` to allow for model fitting.
     """
 
-    def __init__(self, name='model'):
+    def __init__(self, name='model', session_config=None):
         """
         name is a string describing this model.
         """
@@ -92,7 +92,7 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
-        self._session = tf.Session()
+        self._session = tf.Session(config=session_config)
         self._free_vars = tf.placeholder(tf.float64)
 
     @property
