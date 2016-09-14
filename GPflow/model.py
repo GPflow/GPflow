@@ -339,10 +339,10 @@ class GPModel(Model):
     >>> m.Y = Ynew
     """
 
-    def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
+    def __init__(self, X, Y, kern, likelihood, mean_function, name='model', session_config=None):
         self.kern, self.likelihood, self.mean_function = \
             kern, likelihood, mean_function
-        Model.__init__(self, name)
+        Model.__init__(self, name, session_config=session_config)
 
         if isinstance(X, np.ndarray):
             #: X is a data matrix; each row represents one instance
