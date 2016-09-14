@@ -27,7 +27,7 @@ class SettingsManager(object):
         try:
             return self._cur_settings[name]
         except KeyError:
-            raise AttributeError
+            raise AttributeError("Unknown setting.")
 
     def push(self, settings):
         self._settings_stack.append(self._cur_settings)
@@ -43,7 +43,6 @@ class SettingsManager(object):
 
     def get_settings(self):
         c = copy.deepcopy(self._cur_settings)
-        c._mutable = True
         return c
 
 
@@ -54,7 +53,6 @@ class MutableNamedTuple(OrderedDict):
 
     def __init__(self, *args, **kwargs):
         super(MutableNamedTuple, self).__init__(*args, **kwargs)
-        self._mutable = True
         self._settings_stack = []
         self._initialised = True
 
@@ -67,10 +65,8 @@ class MutableNamedTuple(OrderedDict):
     def __setattr__(self, name, value):
         if not hasattr(self, "_initialised"):
             super(MutableNamedTuple, self).__setattr__(name, value)
-        elif self._mutable is True:
-            super(MutableNamedTuple, self).__setitem__(name, value)
         else:
-            raise AttributeError("Instance not mutable.")
+            super(MutableNamedTuple, self).__setitem__(name, value)
 
 
 # a very simple parser

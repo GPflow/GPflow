@@ -44,7 +44,10 @@ class TestConfigParsing(unittest.TestCase):
         self.assertTrue(GPflow._settings.parse('1e-9') == 1e-9)
 
 
-class TestConfigContexts(unittest.TestCase):
+class TestSettingsManager(unittest.TestCase):
+    def testRaises(self):
+        self.assertRaises(GPflow.settings.undefined_setting_to_raise_error, AttributeError)
+
     def testMutability(self):
         orig = GPflow.settings.verbosity.hmc_verb
         GPflow.settings.verbosity.hmc_verb = False
