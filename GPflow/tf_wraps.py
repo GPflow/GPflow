@@ -26,25 +26,3 @@ def eye(N):
     An identitiy matrix
     """
     return tf.diag(tf.ones(tf.pack([N, ]), dtype='float64'))
-
-
-_custom_op_module = tf.load_op_library(os.path.join(os.path.dirname(__file__), 'tfops', 'matpackops.so'))
-vec_to_tri = _custom_op_module.vec_to_tri
-tri_to_vec = _custom_op_module.tri_to_vec
-
-
-@tf.python.framework.ops.RegisterGradient("VecToTri")
-def _vec_to_tri_grad(op, grad):
-    return [tri_to_vec(grad)]
-
-
-@tf.RegisterShape("VecToTri")
-def _vec_to_tri_shape(op):
-    in_shape = op.inputs[0].get_shape().with_rank(2)
-    M = in_shape[1].value
-    if M is None:
-        k = None
-    else:
-        k = int((M * 8 + 1) ** 0.5 / 2.0 - 0.5)
-    shape = tf.TensorShape([in_shape[0], k, k])
-    return [shape]
