@@ -1,5 +1,5 @@
 # Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews, Alexis Boukouvalas
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,8 +18,16 @@ from . import densities, transforms
 from .param import Parameterized, Param
 import tensorflow as tf
 import numpy as np
+from ._settings import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
-hermgauss = np.polynomial.hermite.hermgauss
+
+def hermgauss(n):
+    x, w = np.polynomial.hermite.hermgauss(n)
+    x, w = x.astype(np_float_type), w.astype(np_float_type)
+    return x, w
+
 
 class Likelihood(Parameterized):
     def __init__(self):
@@ -98,7 +106,7 @@ class Likelihood(Parameterized):
 
         # here's the quadrature for the variance
         integrand = self.conditional_variance(X) \
-                    + tf.square(self.conditional_mean(X))
+            + tf.square(self.conditional_mean(X))
         V_y = tf.reshape(tf.matmul(integrand, gh_w), shape) - tf.square(E_y)
 
         return E_y, V_y
@@ -305,7 +313,7 @@ class Gamma(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return -self.shape * Fmu - tf.lgamma(self.shape) \
-                   + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
+                + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
@@ -372,7 +380,7 @@ class RobustMax(object):
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         # work out what the mean and variance is of the indicated latent function.
-        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), tf.float64)
+        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), float_type)
         mu_selected = tf.reduce_sum(oh_on * mu, 1)
         var_selected = tf.reduce_sum(oh_on * var, 1)
 
@@ -388,7 +396,7 @@ class RobustMax(object):
         cdfs = cdfs * (1 - 2e-4) + 1e-4
 
         # blank out all the distances on the selected latent function
-        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), tf.float64)
+        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), float_type)
         cdfs = cdfs * tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
 
         # take the product over the latent functions, and the sum over the GH grid.
@@ -398,7 +406,7 @@ class RobustMax(object):
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
         """
-        A likelihood that can do multi-way classification. 
+        A likelihood that can do multi-way classification.
         Currently the only valid choice
         of inverse-link function (invlink) is an instance of RobustMax.
         """
@@ -413,8 +421,8 @@ class MultiClass(Likelihood):
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
             hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
-            yes = tf.ones(tf.shape(Y), dtype=tf.float64) - self.invlink.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=tf.float64) + self.invlink._eps_K1
+            yes = tf.ones(tf.shape(Y), dtype=float_type) - self.invlink.epsilon
+            no = tf.zeros(tf.shape(Y), dtype=float_type) + self.invlink._eps_K1
             p = tf.select(hits, yes, no)
             return tf.log(p)
         else:

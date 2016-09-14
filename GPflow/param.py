@@ -21,6 +21,9 @@ from . import transforms
 from contextlib import contextmanager
 from functools import wraps
 from .scoping import NameScoped
+from ._settings import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 # when one of these attributes is set, notify a recompilation
 recompile_keys = ['prior', 'transform', 'fixed']
@@ -174,7 +177,7 @@ class Param(Parentable):
 
     def __init__(self, array, transform=transforms.Identity()):
         Parentable.__init__(self)
-        self._array = np.asarray(np.atleast_1d(array), dtype=np.float64)
+        self._array = np.asarray(np.atleast_1d(array), dtype=np_float_type)
         self.transform = transform
         self._tf_array = None
         self._log_jacobian = None
@@ -235,7 +238,7 @@ class Param(Parentable):
         This is a numpy method.
         """
         if self.fixed:
-            return np.empty((0,))
+            return np.empty((0,), np_float_type)
         return self.transform.backward(self.value.flatten())
 
     def get_feed_dict(self):
@@ -269,7 +272,7 @@ class Param(Parentable):
         The log Jacobian is included.
         """
         if self.prior is None:
-            return tf.constant(0.0, tf.float64)
+            return tf.constant(0.0, float_type)
         elif self._tf_array is None:  # pragma: no cover
             raise ValueError("tensorflow array has not been initialized")
         else:
@@ -287,7 +290,7 @@ class Param(Parentable):
         # when setting the fixed attribute, make or remove a placeholder appropraitely
         if key == 'fixed':
             if value:
-                self._tf_array = tf.placeholder(dtype=tf.float64,
+                self._tf_array = tf.placeholder(dtype=float_type,
                                                 shape=self._array.shape,
                                                 name=self.name)
             else:
@@ -371,12 +374,25 @@ class DataHolder(Parentable):
         different shape
         """
         Parentable.__init__(self)
-        self._array = array
-        self._tf_array = tf.placeholder(dtype=self._array.dtype,
+        dt = self._get_type(array)
+        self._array = np.asarray(array, dtype=dt)
+        self._tf_array = tf.placeholder(dtype=dt,
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
         assert on_shape_change in ['raise', 'pass', 'recompile']
         self.on_shape_change = on_shape_change
+
+    def _get_type(self, array):
+        """
+        Work out what a sensible type for the array is. if the default type
+        is float32, downcast 64bit float to float32. For ints, assume int32
+        """
+        if any([array.dtype == np.dtype(t) for t in [np.float32, np.float64]]):
+            return np_float_type
+        elif any([array.dtype == np.dtype(t) for t in [np.int16, np.int32, np.int64]]):
+            return np.int32
+        else:
+            raise NotImplementedError("unknown dtype")
 
     def get_feed_dict(self):
         return {self._tf_array: self._array}
@@ -388,7 +404,7 @@ class DataHolder(Parentable):
 
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
-        self._tf_array = tf.placeholder(dtype=self._array.dtype,
+        self._tf_array = tf.placeholder(dtype=self._get_type(self._array),
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
 
@@ -492,7 +508,7 @@ class AutoFlow:
                 # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
-                storage['free_vars'] = tf.placeholder(tf.float64, [None])
+                storage['free_vars'] = tf.placeholder(float_type, [None])
                 instance.make_tf_array(storage['free_vars'])
                 storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                 with instance.tf_mode():
@@ -736,7 +752,7 @@ class Parameterized(Parentable):
         """
         # Here, additional empty array allows hstacking of empty list
         return np.hstack([p.get_free_state() for p in self.sorted_params]
-                         + [np.empty(0)])
+                         + [np.empty(0, np_float_type)])
 
     def get_feed_dict(self):
         """
@@ -847,9 +863,10 @@ class Parameterized(Parentable):
 
 class ParamList(Parameterized):
     """
-    A list of parameters. This allows us to store parameters in a list whilst making them 'visible' to the GPflow machinery.
+    A list of parameters.
 
-    The correct usage is
+    This allows us to store parameters in a list whilst making them 'visible'
+    to the GPflow machinery. The correct usage is
 
     >>> my_list = GPflow.param.ParamList([Param1, Param2])
 
