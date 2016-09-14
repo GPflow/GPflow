@@ -66,7 +66,7 @@ class MutableNamedTuple(OrderedDict):
     def __setattr__(self, name, value):
         if name in ["_settings_stack", "_mutable"]:
             super(MutableNamedTuple, self).__setattr__(name, value)
-        elif self._mutable is True:
+        elif not hasattr(self, "_mutable") or self._mutable is False:
             super(MutableNamedTuple, self).__setitem__(name, value)
         else:
             raise AttributeError("Instance not mutable.")
