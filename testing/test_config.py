@@ -46,7 +46,8 @@ class TestConfigParsing(unittest.TestCase):
 
 class TestSettingsManager(unittest.TestCase):
     def testRaises(self):
-        self.assertRaises(GPflow.settings.undefined_setting_to_raise_error, AttributeError)
+        with self.assertRaises(AttributeError):
+            GPflow.settings.undefined_setting_to_raise_error
 
     def testMutability(self):
         orig = GPflow.settings.verbosity.hmc_verb
