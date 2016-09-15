@@ -17,6 +17,7 @@ GPflow Documentation
    notebooks/mcmc
    notebooks/Sanity_check
    notebooks/multiclass
+   notebooks/settings
    notebooks/svi_test
    model_options
    notebooks/structure
