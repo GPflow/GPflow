@@ -3,6 +3,9 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+from GPflow import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class TestDataHolderSimple(unittest.TestCase):
@@ -13,6 +16,11 @@ class TestDataHolderSimple(unittest.TestCase):
         self.m.Y = GPflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='raise')
         self.m.Z = GPflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='recompile')
         self.m._needs_recompile = False
+
+    def test_types(self):
+        assert self.m.X.value.dtype == np_float_type
+        assert self.m.Y.value.dtype == np_float_type
+        assert self.m.Z.value.dtype == np_float_type
 
     def test_same_shape(self):
         new_X = self.rng.randn(2, 2)
@@ -41,6 +49,23 @@ class TestDataHolderSimple(unittest.TestCase):
     def test_recompile(self):
         self.m.Z = self.rng.randn(3, 3)
         self.assertTrue(self.m._needs_recompile)
+
+
+class TestDataHolderIntegers(unittest.TestCase):
+    def setUp(self):
+        self.m = GPflow.model.Model()
+        self.rng = np.random.RandomState()
+        self.m.X = GPflow.param.DataHolder(self.rng.randint(0, 10, (2, 2)), on_shape_change='pass')
+        self.m._needs_recompile = False
+
+    def test_types(self):
+        assert self.m.X.value.dtype == np.int32
+
+    def test_same_shape(self):
+        new_X = self.rng.randint(0, 10, (2, 2))
+        self.m.X = new_X
+        assert np.all(self.m.get_feed_dict()[self.m.X._tf_array] == new_X)
+        self.assertFalse(self.m._needs_recompile)
 
 
 class TestDataHolderModels(unittest.TestCase):
