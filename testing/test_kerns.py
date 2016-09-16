@@ -1,3 +1,4 @@
+from __future__ import absolute_import, print_function
 import GPflow
 import tensorflow as tf
 import numpy as np
@@ -22,7 +23,7 @@ class TestRbf(unittest.TestCase):
 
         with kernel.tf_mode():
             gram_matrix = tf.Session().run(kernel.K(X), feed_dict={x_free: kernel.get_free_state(), X: X_data})
-        self.assertTrue(np.allclose(gram_matrix-reference_gram_matrix, 0))
+        self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
 
 
 class TestPeriodic(unittest.TestCase):
@@ -37,7 +38,7 @@ class TestPeriodic(unittest.TestCase):
         with kernel.tf_mode():
             gram_matrix = tf.Session().run(kernel.K(X),
                                            feed_dict={x_free: kernel.get_free_state(), X: X_data})
-        self.assertTrue(np.allclose(gram_matrix-reference_gram_matrix, 0))
+        self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
 
     def test_1d(self):
         D = 1

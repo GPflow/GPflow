@@ -2,13 +2,16 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
+from GPflow import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class TransformTests(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.x = tf.placeholder(tf.float64)
-        self.x_np = np.random.randn(10)
+        self.x = tf.placeholder(float_type)
+        self.x_np = np.random.randn(10).astype(np_float_type)
         self.session = tf.Session()
         self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
         self.transforms.append(GPflow.transforms.Logistic(7.3, 19.4))
