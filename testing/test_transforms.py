@@ -13,7 +13,7 @@ class TransformTests(unittest.TestCase):
         self.x = tf.placeholder(float_type)
         self.x_np = np.random.randn(10).astype(np_float_type)
         self.session = tf.Session()
-        self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
+        self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__() if C is not GPflow.etransforms.TriDiagonalBlockRep]
         self.transforms.append(GPflow.transforms.Logistic(7.3, 19.4))
 
     def test_tf_np_forward(self):

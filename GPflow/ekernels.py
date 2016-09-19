@@ -1,7 +1,6 @@
 import tensorflow as tf
 import GPflow.kernels
-from GPflow.tf_hacks import eye
-from GPflow.param import AutoFlow
+from GPflow.tf_wraps import eye
 
 
 class RBF(GPflow.kernels.RBF):
@@ -15,14 +14,22 @@ class RBF(GPflow.kernels.RBF):
 
     def eKxz(self, Z, Xmu, Xcov):
         """
-        Also known as phi_1.
+        Also known as phi_1: <K_{x, Z}>_{q(x)}.
         :param Z: MxD inducing inputs
-        :param Xmu: X mean (N+1xD)
-        :param Xcov: DxD  # TODO code needs to be extended to return 2x(N+1)xDxD
+        :param Xmu: X mean (NxD)
+        :param Xcov: NxDxD  # TODO code needs to be extended to return 2x(N+1)xDxD
         :return: NxM
         """
-        # TODO needs to be implemented
-        raise NotImplementedError
+        M = tf.shape(Z)[0]
+        vec = tf.expand_dims(Xmu, 1) - tf.expand_dims(Z, 0)  # NxMxD
+        scalemat = tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0) + Xcov  # NxDxD
+        rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
+        smIvec = tf.batch_matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxD
+        q = tf.reduce_sum(smIvec * vec, [2])  # NxM
+        det = tf.batch_matrix_determinant(
+            tf.expand_dims(eye(self.input_dim), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xcov
+        )  # N
+        return self.variance * tf.expand_dims(det ** -0.5, 1) * tf.exp(-0.5 * q)
 
     def exKxz(self, Z, Xmu, Xcov):
         """
@@ -49,7 +56,7 @@ class RBF(GPflow.kernels.RBF):
 
         vec = tf.expand_dims(Z, 0) - tf.expand_dims(Xmum, 1)  # NxMxD
 
-        rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))
+        rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
         smIvec = tf.batch_matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxDx1
         q = tf.reduce_sum(smIvec * vec, [2])  # NxM
 
@@ -86,3 +93,26 @@ class RBF(GPflow.kernels.RBF):
 
         return self.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
 
+
+class Linear(GPflow.kernels.Linear):
+    def eKdiag(self, X, Xcov):
+        return self.variance * tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.batch_matrix_diag_part(Xcov), 1)
+
+    def eKxz(self, Z, Xmu, Xcov):
+        return self.variance * tf.matmul(Xmu, tf.transpose(Z))
+
+    def exKxz(self, Z, Xmu, Xcov):
+        raise NotImplementedError
+
+    def eKzxKxz(self, Z, Xmu, Xcov):
+        """
+        exKxz
+        :param Z: MxD
+        :param Xmu: NxD
+        :param Xcov: NxDxD
+        :return:
+        """
+        N = tf.shape(Xmu)[0]
+        mom2 = tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2) + Xcov  # NxDxD
+        eZ = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
+        return self.variance ** 2.0 * tf.batch_matmul(tf.batch_matmul(eZ, mom2), eZ, adj_y=True)

@@ -92,11 +92,11 @@ class Kern(Parameterized):
             self.active_dims = tf.constant(self._active_dims_array, tf.int32)
 
     # Latent variable model methods
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None, None]))
     def compute_eKdiag(self, X, Xcov=None):
-        return self.eKdiag(X)
+        return self.eKdiag(X, Xcov)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None, None]))
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None]))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 

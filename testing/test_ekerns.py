@@ -68,7 +68,8 @@ class TestKernExpMC(unittest.TestCase):
 
 class TestKernExpDelta(unittest.TestCase):
     """
-    Check whether the normal kernel matrix is recovered if a delta distribution is used.
+    Check whether the normal kernel matrix is recovered if a delta distribution is used. First initial test which should
+    indicate whether things work or not.
     """
 
     def setUp(self):
@@ -77,29 +78,40 @@ class TestKernExpDelta(unittest.TestCase):
         self.Z = rnd.rand(4, self.D)
         self.Xcov = np.zeros((self.Xmu.shape[0], self.D, self.D))
         self.Xcovc = np.zeros((self.Xmu.shape[0], self.D, self.D))
-        self.k = kernels.RBF(self.D, ARD=True)
-        self.k.lengthscales = rnd.rand(2) + [0.5, 1.5]
-        self.k.variance = 0.3 + rnd.rand()
+        k1 = kernels.RBF(self.D, ARD=True)
+        k1.lengthscales = rnd.rand(2) + [0.5, 1.5]
+        k1.variance = 0.3 + rnd.rand()
+        klin = kernels.Linear(self.D, variance=0.3 + rnd.rand())
+        self.kernels = [k1, klin]
 
     def test_eKzxKxz(self):
-        # Calculation
-        psi2 = self.k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
-        kernmat = self.k.compute_K(self.Z, self.Xmu)  # MxN
-        kernouter = np.einsum('in,jn->nij', kernmat, kernmat)
-        self.assertTrue(np.allclose(kernouter, psi2))
+        for k in self.kernels:
+            psi2 = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
+            kernmat = k.compute_K(self.Z, self.Xmu)  # MxN
+            kernouter = np.einsum('in,jn->nij', kernmat, kernmat)
+            self.assertTrue(np.allclose(kernouter, psi2))
 
     def test_eKdiag(self):
-        kdiag = self.k.compute_eKdiag(self.Xmu, self.Xcov)
-        orig = self.k.compute_Kdiag(self.Xmu)
-        self.assertTrue(np.allclose(orig, kdiag))
+        for k in self.kernels:
+            kdiag = k.compute_eKdiag(self.Xmu, self.Xcov)
+            orig = k.compute_Kdiag(self.Xmu)
+            self.assertTrue(np.allclose(orig, kdiag))
 
     def test_exKxz(self):
         covall = np.array([self.Xcov, self.Xcovc])
-        exKxz = self.k.compute_exKxz(self.Z, self.Xmu, covall)
-        Kxz = self.k.compute_K(self.Xmu[:-1, :], self.Z)  # NxM
-        xKxz = np.einsum('nm,nd->nmd', Kxz, self.Xmu[1:, :])
+        for k in self.kernels:
+            if type(k) is kernels.Linear:
+                continue
+            exKxz = k.compute_exKxz(self.Z, self.Xmu, covall)
+            Kxz = k.compute_K(self.Xmu[:-1, :], self.Z)  # NxM
+            xKxz = np.einsum('nm,nd->nmd', Kxz, self.Xmu[1:, :])
+            self.assertTrue(np.allclose(xKxz, exKxz))
 
-        self.assertTrue(np.allclose(xKxz, exKxz))
+    def test_Kxz(self):
+        for k in self.kernels:
+            psi1 = k.compute_eKxz(self.Z, self.Xmu, self.Xcov)
+            kernmat = k.compute_K(self.Z, self.Xmu)  # MxN
+            self.assertTrue(np.allclose(kernmat, psi1.T))
 
 
 if __name__ == '__main__':
