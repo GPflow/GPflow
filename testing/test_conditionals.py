@@ -1,7 +1,9 @@
 from __future__ import print_function
 import GPflow
 import tensorflow as tf
-from GPflow.tf_hacks import eye
+from GPflow.tf_wraps import eye
+from GPflow import settings
+float_type = settings.dtypes.float_type
 import numpy as np
 import unittest
 
@@ -14,23 +16,24 @@ class DiagsTest(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.num_latent = 2
+        self.num_data = 3
         self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
         self.k.white.variance = 0.01
-        self.X = tf.placeholder('float64')
-        self.mu = tf.placeholder('float64')
-        self.Xs = tf.placeholder('float64')
-        self.sqrt = tf.placeholder('float64', shape=[3, self.num_latent])
+        self.X = tf.placeholder(float_type)
+        self.mu = tf.placeholder(float_type)
+        self.Xs = tf.placeholder(float_type)
+        self.sqrt = tf.placeholder(float_type, [self.num_data, self.num_latent])
 
         #make tf array shenanigans
-        self.free_x = tf.placeholder('float64')
+        self.free_x = tf.placeholder(float_type)
         self.k.make_tf_array(self.free_x)
 
         self.free_x_data = self.k.get_free_state()
         # NB. with too many random data, numerics suffer
         self.rng = np.random.RandomState(0)
-        self.X_data = self.rng.randn(3,1)
-        self.mu_data = self.rng.randn(3,self.num_latent)
-        self.sqrt_data = self.rng.randn(3,self.num_latent)
+        self.X_data = self.rng.randn(self.num_data,1)
+        self.mu_data = self.rng.randn(self.num_data,self.num_latent)
+        self.sqrt_data = self.rng.randn(self.num_data,self.num_latent)
         self.Xs_data = self.rng.randn(50,1)
 
         self.feed_dict = {
@@ -76,12 +79,12 @@ class WhitenTest(unittest.TestCase):
         self.k.white.variance = 0.01
         self.num_data = 10
         self.num_test_data = 100
-        self.X = tf.placeholder('float64', [self.num_data, 1])
-        self.F = tf.placeholder('float64', [self.num_data, 1])
-        self.Xs = tf.placeholder('float64', [self.num_test_data, 1])
+        self.X = tf.placeholder(float_type, [self.num_data, 1])
+        self.F = tf.placeholder(float_type, [self.num_data, 1])
+        self.Xs = tf.placeholder(float_type, [self.num_test_data, 1])
 
         #make tf array shenanigans
-        self.free_x = tf.placeholder('float64')
+        self.free_x = tf.placeholder(float_type)
         self.k.make_tf_array(self.free_x)
 
         self.free_x_data = self.k.get_free_state()
@@ -114,15 +117,15 @@ class WhitenTest(unittest.TestCase):
         mean1, var1 = tf.Session().run([Fstar_w_mean, Fstar_w_var], feed_dict=self.feed_dict)
         mean2, var2 = tf.Session().run([Fstar_mean, Fstar_var], feed_dict=self.feed_dict)
 
-        self.assertTrue(np.allclose(mean1, mean2))
-        self.assertTrue(np.allclose(var1, var2))
+        self.assertTrue(np.allclose(mean1, mean2, 1e-6, 1e-6)) # TODO: should tolerance be type dependent?
+        self.assertTrue(np.allclose(var1, var2, 1e-6, 1e-6))
 
 
 class WhitenTestGaussian(WhitenTest):
     def setUp(self):
         tf.reset_default_graph()
         WhitenTest.setUp(self)
-        self.F_sqrt = tf.placeholder('float64', [self.num_data, 1])
+        self.F_sqrt = tf.placeholder(float_type, [self.num_data, 1])
         self.F_sqrt_data = self.rng.rand(self.num_data,1)
         self.feed_dict[self.F_sqrt] = self.F_sqrt_data
 

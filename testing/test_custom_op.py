@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import tensorflow as tf
-from GPflow.tf_hacks import vec_to_tri, tri_to_vec
+from GPflow.tf_wraps import vec_to_tri, tri_to_vec
 from tensorflow.python.ops.gradient_checker import compute_gradient_error
 
 
@@ -22,7 +22,10 @@ def compare_op(v):
 
 class TestVecToTri(unittest.TestCase):
     def setUp(self):
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.Session()
+
+    def tearDown(self):
+        self.sess.close()
 
     def testVecToTri(self):
         mats = [
@@ -48,7 +51,10 @@ class TestVecToTri(unittest.TestCase):
 
 class TestTriToVec(unittest.TestCase):
     def setUp(self):
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.Session()
+
+    def tearDown(self):
+        self.sess.close()
 
     def testTriToVec(self):
         mats = [
