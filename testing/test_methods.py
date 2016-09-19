@@ -145,9 +145,9 @@ class TestSparseMCMC(unittest.TestCase):
         Y = rng.randn(10, 1)
         v_vals = rng.randn(10, 1)
 
-        l = GPflow.likelihoods.StudentT()
-        self.m1 = GPflow.gpmc.GPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=l)
-        self.m2 = GPflow.sgpmc.SGPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=l, Z=X.copy())
+        lik = GPflow.likelihoods.StudentT
+        self.m1 = GPflow.gpmc.GPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=lik())
+        self.m2 = GPflow.sgpmc.SGPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=lik(), Z=X.copy())
 
         self.m1.V = v_vals
         self.m2.V = v_vals.copy()

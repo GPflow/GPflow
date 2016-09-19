@@ -14,5 +14,7 @@
 
 
 # flake8: noqa
-from . import likelihoods, kernels, param, model, gpmc, sgpmc, priors, gpr, svgp, vgp, sgpr, kernel_expectations, gplvm
+from __future__ import absolute_import
+from . import likelihoods, kernels, param, model, gpmc, sgpmc, priors, gpr, svgp, vgp, sgpr, kernel_expectations, gplvm, tf_wraps, tf_hacks
 from ._version import __version__
+from ._settings import settings

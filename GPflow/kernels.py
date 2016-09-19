@@ -13,13 +13,16 @@
 # limitations under the License.
 
 
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 from functools import reduce
 
 import tensorflow as tf
 import numpy as np
 from .param import Param, Parameterized, AutoFlow
 from . import transforms
+from ._settings import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class Kern(Parameterized):
@@ -65,15 +68,15 @@ class Kern(Parameterized):
     def __mul__(self, other):
         return Prod([self, other])
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]))
     def compute_K_symm(self, X):
         return self.K(X)
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
@@ -141,7 +144,7 @@ class White(Static):
             return tf.diag(d)
         else:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
-            return tf.zeros(shape, tf.float64)
+            return tf.zeros(shape, float_type)
 
 
 class Constant(Static):
@@ -190,10 +193,10 @@ class Stationary(Kern):
         self.variance = Param(variance, transforms.positive)
         if ARD:
             if lengthscales is None:
-                lengthscales = np.ones(input_dim)
+                lengthscales = np.ones(input_dim, np_float_type)
             else:
                 # accepts float or array:
-                lengthscales = lengthscales * np.ones(input_dim)
+                lengthscales = lengthscales * np.ones(input_dim, np_float_type)
             self.lengthscales = Param(lengthscales, transforms.positive)
             self.ARD = True
         else:
