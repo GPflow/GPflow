@@ -96,13 +96,17 @@ class RBF(GPflow.kernels.RBF):
 
 class Linear(GPflow.kernels.Linear):
     def eKdiag(self, X, Xcov):
-        return self.variance * tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.batch_matrix_diag_part(Xcov), 1)
+        return self.variance * (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.batch_matrix_diag_part(Xcov), 1))
 
     def eKxz(self, Z, Xmu, Xcov):
         return self.variance * tf.matmul(Xmu, tf.transpose(Z))
 
     def exKxz(self, Z, Xmu, Xcov):
-        raise NotImplementedError
+        N = tf.shape(Xmu)[0] - 1
+        Xmum = Xmu[:-1, :]
+        Xmup = Xmu[1:, :]
+        op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
+        return self.variance*tf.batch_matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
