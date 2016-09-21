@@ -238,7 +238,7 @@ class Polynomial(Linear):
     The Polynomial kernel. Samples are polynomials of degree `d`.
     """
 
-    def __init__(self, input_dim, degree, variance=1.0, offset=1.0, active_dims=None, ARD=False):
+    def __init__(self, input_dim, degree=3.0, variance=1.0, offset=1.0, active_dims=None, ARD=False):
         """
         :param input_dim: the dimension of the input to the kernel
         :param variance: the (initial) value for the variance parameter(s)
@@ -254,6 +254,9 @@ class Polynomial(Linear):
 
     def K(self, X, X2=None):
         return (Linear.K(self, X, X2) + self.offset) ** self.degree
+
+    def Kdiag(self, X):
+        return (Linear.Kdiag(self, X) + self.offset) ** self.degree
 
 
 class Exponential(Stationary):
