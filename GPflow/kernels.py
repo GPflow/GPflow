@@ -138,17 +138,22 @@ class Kern(Parameterized):
     def eKdiag(self, Xmu, Xcov):
         """
         Computes <K_xx>_q(x).
-        NB: This may not play ball with active_dims yet.
         :param Xmu: Mean (NxD)
         :param Xcov: Covariance (NxDxD)
         :return:
         """
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+
         X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
         Kdiag = tf.reshape(self.Kdiag(X), (self.num_gauss_hermite_points ** self.input_dim, tf.shape(Xmu)[0]))
         eKdiag = tf.reduce_sum(Kdiag * wn[:, None], 0)
         return eKdiag
 
     def eKxz(self, Z, Xmu, Xcov):
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
         N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
         HpowD = self.num_gauss_hermite_points ** self.input_dim
@@ -164,6 +169,9 @@ class Kern(Parameterized):
         :param Xcov: 2xNxDxD
         :return:
         """
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
         N = tf.shape(Xmu)[0] - 1
         M = tf.shape(Z)[0]
         D = tf.shape(Xmu)[1]
@@ -181,6 +189,9 @@ class Kern(Parameterized):
         return exKxz
 
     def eKzxKxz(self, Z, Xmu, Xcov):
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
         N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
         HpowD = self.num_gauss_hermite_points ** self.input_dim

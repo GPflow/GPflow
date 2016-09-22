@@ -77,42 +77,49 @@ class TestRBFKernelExpectations(unittest.TestCase):
     """
 
     def setUp(self):
-        D = 1  # number of latent dimensions
+        D = 2  # number of latent dimensions
         M = 5  # number of latent points
         N = 12  # number of data points
         self.Xmu = rnd.rand(N, D)
         self.Z = rnd.rand(M, D)
         self.Xcov = np.zeros((self.Xmu.shape[0], D, D))
-        self.k = kernels.RBF(D, ARD=True)
-        self.k.lengthscales = rnd.rand(D) + 1.5
-        self.k.variance = 0.3 + rnd.rand()
+        self.D = D
 
-    def test_Quad(self):
+    def test_kern(self):
+        k = kernels.RBF(self.D, ARD=True)
+        k.lengthscales = rnd.rand(self.D) + 1.5
+        k.variance = 0.3 + rnd.rand()
+        #self.quad(k)
+        self.psi0(k)
+        self.psi1(k)
+        self.psi2(k)
+
+    def quad(self, k):
         # Check via quadrature
-        p0, p1, p2 = PsiComputer(self.k).psiQuad(np.atleast_2d(self.Xmu), self.Xcov[:, :, 0], self.Z)
+        p0, p1, p2 = PsiComputer(k).psiQuad(np.atleast_2d(self.Xmu), self.Xcov[:, :, 0], self.Z)
         # ekernels code
-        kdiag = self.k.compute_eKdiag(self.Xmu, self.Xcov)
-        # psi2 = self.k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov) TO DO
+        kdiag = k.compute_eKdiag(self.Xmu, self.Xcov)
+        # psi2 = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov) TO DO
 
         self.assertTrue(np.allclose(kdiag, p0))
         # self.assertTrue(np.allclose(kdiag, p1))  # TODO check psi1 stats
         # self.assertTrue(np.allclose(psi2, p2))
 
-    def test_psi0(self):
+    def psi0(self, k):
         # Check via analytic psi code
-        psi0_ke = PsiComputer(self.k).psi0(np.atleast_2d(self.Xmu), np.atleast_2d(self.Xcov[:, 0, 0]), self.Z)
-        kdiag = self.k.compute_eKdiag(self.Xmu, self.Xcov)
+        psi0_ke = PsiComputer(k).psi0(np.atleast_2d(self.Xmu), np.atleast_2d(self.Xcov[:, 0, 0]), self.Z)
+        kdiag = k.compute_eKdiag(self.Xmu, self.Xcov)
         self.assertTrue(np.allclose(kdiag.sum(), psi0_ke))
 
-    def test_psi1(self):
-        psi1_ke = PsiComputer(self.k).psi1(np.atleast_2d(self.Xmu), self.Xcov[:, :, 0], self.Z)
-        # TODO compare vs self.k.compute_eKxz
+    def psi1(self, k):
+        psi1_ke = PsiComputer(k).psi1(np.atleast_2d(self.Xmu), self.Xcov[:, :, 0], self.Z)
+        psi1 = k.compute_eKxz(self.Z, self.Xmu, self.Xcov)
+        self.assertTrue(np.allclose(psi1_ke, psi1))
 
-    def test_psi2(self):
-        psi2_ke = PsiComputer(self.k).psi2(np.atleast_2d(self.Xmu), np.atleast_2d(self.Xcov[:, 0, 0]), self.Z)
-        psi2 = self.k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
+    def psi2(self, k):
+        psi2_ke = PsiComputer(k).psi2(np.atleast_2d(self.Xmu), np.atleast_2d(self.Xcov[:, 0, 0]), self.Z)
+        psi2 = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
         self.assertTrue(np.allclose(psi2_ke, psi2.sum(0)))
-        print('tested')
 
 if __name__ == '__main__':
     unittest.main()

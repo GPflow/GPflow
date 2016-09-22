@@ -20,6 +20,9 @@ class RBF(GPflow.kernels.RBF):
         :param Xcov: NxDxD  # TODO code needs to be extended to return 2x(N+1)xDxD
         :return: NxM
         """
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
         M = tf.shape(Z)[0]
         vec = tf.expand_dims(Xmu, 1) - tf.expand_dims(Z, 0)  # NxMxD
         scalemat = tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0) + Xcov  # NxDxD
@@ -40,6 +43,9 @@ class RBF(GPflow.kernels.RBF):
         :return: NxMxD
         """
         tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
 
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0] - 1
@@ -76,6 +82,9 @@ class RBF(GPflow.kernels.RBF):
         :param Xcov: X covariance matrices (NxDxD)
         :return: NxMxM
         """
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
         D = self.input_dim
@@ -96,12 +105,20 @@ class RBF(GPflow.kernels.RBF):
 
 class Linear(GPflow.kernels.Linear):
     def eKdiag(self, X, Xcov):
+        # use only active dimensions
+        X, Xcov = self._slice(X, Xcov)
         return self.variance * (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.batch_matrix_diag_part(Xcov), 1))
 
     def eKxz(self, Z, Xmu, Xcov):
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
         return self.variance * tf.matmul(Xmu, tf.transpose(Z))
 
     def exKxz(self, Z, Xmu, Xcov):
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
         N = tf.shape(Xmu)[0] - 1
         Xmum = Xmu[:-1, :]
         Xmup = Xmu[1:, :]
@@ -116,6 +133,9 @@ class Linear(GPflow.kernels.Linear):
         :param Xcov: NxDxD
         :return:
         """
+        # use only active dimensions
+        Xmu, Xcov = self._slice(Xmu, Xcov)
+        Z, _ = self._slice(Z, None)
         N = tf.shape(Xmu)[0]
         mom2 = tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2) + Xcov  # NxDxD
         eZ = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
