@@ -96,7 +96,8 @@ class TestCoregion(unittest.TestCase):
 class TestKernSymmetry(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.kernels = GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Constant, GPflow.kernels.Linear]
+        self.kernels = GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Constant, GPflow.kernels.Linear,
+                                                                     GPflow.kernels.Polynomial]
         self.rng = np.random.RandomState()
 
     def test_1d(self):
@@ -132,7 +133,7 @@ class TestKernDiags(unittest.TestCase):
         self.X = tf.placeholder(tf.float64, [30, inputdim])
         self.X_data = rng.randn(30, inputdim)
         self.kernels = [k(inputdim) for k in GPflow.kernels.Stationary.__subclasses__() +
-                        [GPflow.kernels.Constant, GPflow.kernels.Linear]]
+                        [GPflow.kernels.Constant, GPflow.kernels.Linear, GPflow.kernels.Polynomial]]
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) * GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) +
@@ -157,6 +158,7 @@ class TestAdd(unittest.TestCase):
     add a rbf and linear kernel, make sure the result is the same as adding
     the result of the kernels separaetely
     """
+
     def setUp(self):
         tf.reset_default_graph()
         self.rbf = GPflow.kernels.RBF(1)
@@ -194,6 +196,7 @@ class TestWhite(unittest.TestCase):
     The white kernel should not give the same result when called with k(X) and
     k(X, X)
     """
+
     def setUp(self):
         tf.reset_default_graph()
         self.k = GPflow.kernels.White(1)
@@ -216,6 +219,7 @@ class TestSlice(unittest.TestCase):
     Make sure the results of a sliced kernel is the ame as an unsliced kernel
     with correctly sliced data...
     """
+
     def setUp(self):
         tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
@@ -256,7 +260,6 @@ class TestProd(unittest.TestCase):
         with self.k1.tf_mode():
             with self.k2.tf_mode():
                 with self.k3.tf_mode():
-
                     self.k1.make_tf_array(self.x_free)
                     K1 = self.k1.K(self.X)
                     K1 = tf.Session().run(K1, feed_dict={self.X: self.X_data, self.x_free: self.k1.get_free_state()})
@@ -282,7 +285,7 @@ class TestARDActiveProd(unittest.TestCase):
         self.k3 = GPflow.kernels.RBF(4, ARD=True)
         self.k1.lengthscales = np.array([3.4, 4.5, 5.6])
         self.k2.lengthscales = 6.7
-        self.k3.lengthscales = np.array([3.4, 4.5, 6.7,  5.6])
+        self.k3.lengthscales = np.array([3.4, 4.5, 6.7, 5.6])
         self.k3a = self.k1 * self.k2
 
         # make kernel functions in python
@@ -400,6 +403,7 @@ class TestARDInit(unittest.TestCase):
     For ARD kernels, make sure that kernels can be instantiated with a single
     lengthscale or a suitable array of lengthscales
     """
+
     def test_scalar(self):
         k1 = GPflow.kernels.RBF(3, lengthscales=2.3)
         k2 = GPflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3)

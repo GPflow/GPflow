@@ -354,6 +354,32 @@ class Linear(Kern):
         return tf.reduce_sum(tf.square(X) * self.variance, 1)
 
 
+class Polynomial(Linear):
+    """
+    The Polynomial kernel. Samples are polynomials of degree `d`.
+    """
+
+    def __init__(self, input_dim, degree=3.0, variance=1.0, offset=1.0, active_dims=None, ARD=False):
+        """
+        :param input_dim: the dimension of the input to the kernel
+        :param variance: the (initial) value for the variance parameter(s)
+                         if ARD=True, there is one variance per input
+        :param degree: the degree of the polynomial
+        :param active_dims: a list of length input_dim which controls
+          which columns of X are used.
+        :param ARD: use variance as described
+        """
+        Linear.__init__(self, input_dim, variance, active_dims, ARD)
+        self.degree = degree
+        self.offset = Param(offset, transform=transforms.positive)
+
+    def K(self, X, X2=None):
+        return (Linear.K(self, X, X2) + self.offset) ** self.degree
+
+    def Kdiag(self, X):
+        return (Linear.Kdiag(self, X) + self.offset) ** self.degree
+
+
 class Exponential(Stationary):
     """
     The Exponential kernel
