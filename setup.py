@@ -23,6 +23,10 @@ compile_command = "g++ -std=c++11 -shared ./GPflow/tfops/vec_to_tri.cc " \
 if sys.platform == "darwin":
     # Additional command for Macs, as instructed by the TensorFlow docs
     compile_command += " -undefined dynamic_lookup"
+elif sys.platform.startswith("linux"):
+    gcc_version = int(re.search('\d+.', os.popen("gcc --version").read()).group()[0])
+    if gcc_version == 5:
+        compile_command += " -D_GLIBCXX_USE_CXX11_ABI=0"
 os.system(compile_command)
 
 setup(name='GPflow',
@@ -33,12 +37,14 @@ setup(name='GPflow',
       license="BSD 3-clause",
       keywords="machine-learning gaussian-processes kernels tensorflow",
       url="http://github.com/gpflow/gpflow",
+      package_data={'GPflow': ['GPflow/tfops/*.so', 'GPflow/gpflowrc']},
+      include_package_data=True,
       ext_modules=[],
       packages=["GPflow"],
       package_dir={'GPflow': 'GPflow'},
       py_modules=['GPflow.__init__'],
       test_suite='testing',
-      install_requires=['numpy>=1.9', 'scipy>=0.16', 'tensorflow>=0.7.1'],
+      install_requires=['numpy>=1.9', 'scipy>=0.16', 'tensorflow>=0.10'],
       classifiers=['License :: OSI Approved :: BSD License',
                    'Natural Language :: English',
                    'Operating System :: MacOS :: MacOS X',

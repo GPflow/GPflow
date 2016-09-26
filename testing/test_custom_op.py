@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 import tensorflow as tf
-from GPflow.tf_hacks import vec_to_tri, tri_to_vec
-import tensorflow.python.kernel_tests.gradient_checker as gc
+from GPflow.tf_wraps import vec_to_tri, tri_to_vec
+from tensorflow.python.ops.gradient_checker import compute_gradient_error
 
 
 def np_vec_to_tri(vec):
@@ -22,7 +22,10 @@ def compare_op(v):
 
 class TestVecToTri(unittest.TestCase):
     def setUp(self):
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.Session()
+
+    def tearDown(self):
+        self.sess.close()
 
     def testVecToTri(self):
         mats = [
@@ -43,12 +46,15 @@ class TestVecToTri(unittest.TestCase):
         v = tf.Variable(initval[None, :])
         with tf.Session(''):
             f = (vec_to_tri(v) * np.random.randn(N, N)) ** 2.0  # Some function involving vec_to_tri
-            self.assertLess(gc.compute_gradient_error(v, [1, len(initval)], f, [1, N, N]), 10 ** -10)
+            self.assertLess(compute_gradient_error(v, [1, len(initval)], f, [1, N, N]), 10 ** -10)
 
 
 class TestTriToVec(unittest.TestCase):
     def setUp(self):
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.Session()
+
+    def tearDown(self):
+        self.sess.close()
 
     def testTriToVec(self):
         mats = [

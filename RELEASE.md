@@ -1,3 +1,14 @@
+# Release 0.3.1
+ - Added configuration file, which controls verbosity and level of numerical jitter
+ - tf_hacks is deprecated, became tf_wraps (tf_hacks will raise visible deprecation warnings)
+ - Documentation now at gpflow.readthedocs.io
+ - Many functions are now contained in tensorflow scopes for easier tensorboad visualisation and profiling
+
+# Release 0.3
+ - Improvements to the way that parameters for triangular matrices are stored and optimised.
+ - Automatically generated Apache license headers.
+ - Ability to track log probabilities. 
+
 # Release 0.2
  - Significant improvements to the way that data and fixed parameters are handled. 
 

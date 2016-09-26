@@ -12,17 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 from .param import Param, DataHolder
 from .model import GPModel
 from . import transforms
 from .mean_functions import Zero
-from .tf_hacks import eye
+from .tf_wraps import eye
 
 
 class VGP(GPModel):
+    """
+    This method approximates the Gaussian process posterior using a multivariate Gaussian.
+    The key reference is:
+
+    ::
+
+      @article{Opper:2009,
+          title = {The Variational Gaussian Approximation Revisited},
+          author = {Opper, Manfred and Archambeau, Cedric},
+          journal = {Neural Comput.},
+          year = {2009},
+          pages = {786--792},
+      }
+
+    The idea is that the posterior over the function-value vector F is
+    approximated by a Gaussian, and the KL divergence is minimised between
+    the approximation and the posterior. It turns out that the optimal
+    posterior precision shares off-diagonal elements with the prior, so
+    only the diagonal elements of the precision need be adjusted.
+
+    The posterior approximation is
+
+    .. math::
+
+       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\mathbf K \\boldsymbol \\alpha, [\\mathbf K^{-1} + \\textrm{diag}(\\boldsymbol \\lambda))^2]^{-1})
+    """
     def __init__(self, X, Y, kern, likelihood,
                  mean_function=Zero(), num_latent=None):
         """
@@ -30,28 +56,7 @@ class VGP(GPModel):
         Y is a data matrix, size N x R
         kern, likelihood, mean_function are appropriate GPflow objects
 
-        This is the variational objective for the Variational Gaussian Process
-        (VGP). The key reference is:
-
-        @article{Opper:2009,
-            title = {The Variational Gaussian Approximation Revisited},
-            author = {Opper, Manfred and Archambeau, Cedric},
-            journal = {Neural Comput.},
-            year = {2009},
-            pages = {786--792},
-        }
-
-        The idea is that the posterior over the function-value vector F is
-        approximated by a Gaussian, and the KL divergence is minimised between
-        the approximation and the posterior. It turns out that the optimal
-        posterior precision shares off-diagonal elements with the prior, so
-        only the diagonal elements of the precision need be adjusted.
-
-        The posterior approximation is
-
-        q(f) = N(f | K alpha, [K^-1 + diag(square(lambda))]^-1)
-
-        """
+                """
         X = DataHolder(X, on_shape_change='recompile')
         Y = DataHolder(Y, on_shape_change='recompile')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)

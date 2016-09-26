@@ -17,7 +17,7 @@ from __future__ import division, print_function
 import numpy as np
 
 
-def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
+def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
                thin=1, burn=0, RNG=np.random.RandomState(0),
                return_logprobs=False):
     """
@@ -33,7 +33,7 @@ def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
       pi(x) = exp(-E(x))/Z
 
     - num_samples is the number of samples to generate.
-    - Lmax, epsilon are parameters of the hmc procedure to be tuned.
+    - Lmin, Lmax, epsilon are parameters of the HMC procedure to be tuned.
     - x0 is the starting position for the procedure.
     - verbose is a flag which turns on the display of the running accept ratio.
     - thin is an integer which specifies the thinning interval
@@ -45,7 +45,10 @@ def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
 
       burn + thin * num_samples
 
-    the return shape is always num_samples x D.
+    The return shape is always num_samples x D.
+
+    The leafrog (Verlet) integrator works by picking a random number of steps
+    uniformly between Lmin and Lmax, and taking steps of length epsilon.
     """
 
     # an array to store the logprobs in (even if the user doesn't want them)
@@ -55,7 +58,7 @@ def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
     if burn > 0:
         if verbose:
             print("burn-in sampling started")
-        samples = sample_HMC(f, num_samples=burn, Lmax=Lmax,
+        samples = sample_HMC(f, num_samples=burn, Lmin=Lmin, Lmax=Lmax,
                              epsilon=epsilon, x0=x0,
                              verbose=verbose, thin=1, burn=0)
         if verbose:
@@ -87,7 +90,7 @@ def sample_HMC(f, num_samples, Lmax, epsilon, x0, verbose=False,
         # Standard HMC - begin leapfrogging
         premature_reject = False
         p = p_old + 0.5 * epsilon * grad
-        for l in range(RNG.randint(1, Lmax + 1)):
+        for l in range(RNG.randint(Lmin, Lmax)):
             x += epsilon * p
             logprob, grad = f(x)
             logprob, grad = -logprob, -grad

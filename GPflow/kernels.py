@@ -13,13 +13,16 @@
 # limitations under the License.
 
 
-from __future__ import print_function
+from __future__ import print_function, absolute_import
 from functools import reduce
 
 import tensorflow as tf
 import numpy as np
 from .param import Param, Parameterized, AutoFlow
 from . import transforms
+from ._settings import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class Kern(Parameterized):
@@ -34,6 +37,7 @@ class Kern(Parameterized):
         active dims is a (slice | iterable of integers | None)
         """
         Parameterized.__init__(self)
+        self.scoped_keys.extend(['K', 'Kdiag'])
         self.input_dim = input_dim
         if active_dims is None:
             self.active_dims = slice(input_dim)
@@ -59,15 +63,15 @@ class Kern(Parameterized):
     def __mul__(self, other):
         return Prod([self, other])
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]))
     def compute_K_symm(self, X):
         return self.K(X)
 
-    @AutoFlow((tf.float64, [None, None]))
+    @AutoFlow((float_type, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
@@ -106,7 +110,7 @@ class White(Static):
             return tf.diag(d)
         else:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
-            return tf.zeros(shape, tf.float64)
+            return tf.zeros(shape, float_type)
 
 
 class Constant(Static):
@@ -151,13 +155,14 @@ class Stationary(Kern):
           (ARD=True) or a single lengthscale (ARD=False).
         """
         Kern.__init__(self, input_dim, active_dims)
+        self.scoped_keys.extend(['square_dist', 'euclid_dist'])
         self.variance = Param(variance, transforms.positive)
         if ARD:
             if lengthscales is None:
-                lengthscales = np.ones(input_dim)
+                lengthscales = np.ones(input_dim, np_float_type)
             else:
                 # accepts float or array:
-                lengthscales = lengthscales * np.ones(input_dim)
+                lengthscales = lengthscales * np.ones(input_dim, np_float_type)
             self.lengthscales = Param(lengthscales, transforms.positive)
             self.ARD = True
         else:
@@ -226,6 +231,32 @@ class Linear(Kern):
 
     def Kdiag(self, X):
         return tf.reduce_sum(tf.square(X) * self.variance, 1)
+
+
+class Polynomial(Linear):
+    """
+    The Polynomial kernel. Samples are polynomials of degree `d`.
+    """
+
+    def __init__(self, input_dim, degree=3.0, variance=1.0, offset=1.0, active_dims=None, ARD=False):
+        """
+        :param input_dim: the dimension of the input to the kernel
+        :param variance: the (initial) value for the variance parameter(s)
+                         if ARD=True, there is one variance per input
+        :param degree: the degree of the polynomial
+        :param active_dims: a list of length input_dim which controls
+          which columns of X are used.
+        :param ARD: use variance as described
+        """
+        Linear.__init__(self, input_dim, variance, active_dims, ARD)
+        self.degree = degree
+        self.offset = Param(offset, transform=transforms.positive)
+
+    def K(self, X, X2=None):
+        return (Linear.K(self, X, X2) + self.offset) ** self.degree
+
+    def Kdiag(self, X):
+        return (Linear.Kdiag(self, X) + self.offset) ** self.degree
 
 
 class Exponential(Stationary):
