@@ -31,12 +31,12 @@ GPflow has origins in [GPy](http://github.com/sheffieldml/gpy) by the [GPy contr
 GPflow has a slew of kernels that can be combined in a similar way to GPy ([see this tutorial](https://github.com/SheffieldML/notebook/blob/master/GPy/basic_kernels.ipynb)). As for inference, the options are currently:
 
 #### Regression
-For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters ([notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/regression.ipynb)).
+For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters ([notebook](https://github.com/GPflow/GPflow/blob/master/doc/source/notebooks/regression.ipynb)).
 
 It's also possible to do Sparse GP regression using the `GPflow.sgpr.SGPR` class. This is based on [4].
 
 #### MCMC
-For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/notebooks/Sparse%20mcmc%20demo.ipynb) introduces the interface.
+For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: `GPflow.gpmc.GPMC`. There's also a sparse equivalent in `GPflow.sgpmc.SGPMC`, based on a recent paper [1]. This [notebook](https://github.com/GPflow/GPflow/blob/master/doc/source/notebooks/Sparse%20mcmc%20demo.ipynb) introduces the interface.
 
 #### Variational inference
 It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in `GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in `GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in `GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5].
