@@ -88,7 +88,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
         if q_sqrt.get_shape().ndims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # D x M x N
         elif q_sqrt.get_shape().ndims == 3:
-            L = tf.batch_matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
+            L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
             A_tiled = tf.tile(tf.expand_dims(A, 0), tf.pack([tf.shape(f)[1], 1, 1]))
             LTA = tf.batch_matmul(L, A_tiled, adj_x=True)  # D x M x N
         else:  # pragma: no cover
