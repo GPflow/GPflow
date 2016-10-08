@@ -24,6 +24,15 @@ class TestOptimize(unittest.TestCase):
         self.m.optimize(o, maxiter=5000)
         self.assertTrue(self.m.x.value.max() < 1e-2)
 
+    def test_adam_option(self):
+        global_step = tf.Variable(0, trainable=False)
+        starter_learning_rate = 0.01
+        learning_rate = tf.train.exponential_decay(
+            starter_learning_rate, global_step, 100, 0.9)
+        o = tf.train.AdamOptimizer(learning_rate)
+        self.m.optimize(o, maxiter=5000, global_step=global_step)
+        self.assertTrue(self.m.x.value.max() < 1e-2)
+
     def test_lbfgsb(self):
         self.m.optimize(disp=False)
         self.assertTrue(self.m.x.value.max() < 1e-6)

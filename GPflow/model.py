@@ -120,7 +120,7 @@ class Model(Parameterized):
         self._needs_recompile = True
         self._session = tf.Session()
 
-    def _compile(self, optimizer=None):
+    def _compile(self, optimizer=None, **kw):
         """
         compile the tensorflow function "self._objective"
         """
@@ -140,7 +140,8 @@ class Model(Parameterized):
             opt_step = None
         else:
             opt_step = optimizer.minimize(self._minusF,
-                                          var_list=[self._free_vars])
+                                          var_list=[self._free_vars],
+                                          **kw)
         init = tf.initialize_all_variables()
         self._session.run(init)
 
@@ -219,11 +220,11 @@ class Model(Parameterized):
         else:
             return self._optimize_tf(method, callback, maxiter, **kw)
 
-    def _optimize_tf(self, method, callback, maxiter):
+    def _optimize_tf(self, method, callback, maxiter, **kw):
         """
         Optimize the model using a tensorflow optimizer. See self.optimize()
         """
-        opt_step = self._compile(optimizer=method)
+        opt_step = self._compile(optimizer=method, **kw)
 
         try:
             iteration = 0
