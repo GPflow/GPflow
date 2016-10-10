@@ -228,6 +228,9 @@ class Param(Parentable):
         mapped_array = self.transform.tf_forward(x_free)
         self._tf_array = tf.reshape(mapped_array, self.shape)
         self._log_jacobian = self.transform.tf_log_jacobian(x_free)
+        
+        # tensorboard tracks free parameters during the optimization
+        tf.scalar_summary(self.long_name, tf.squeeze(x_free))
         return free_size
 
     def get_free_state(self):
