@@ -310,7 +310,7 @@ class BoundedAbove(Transform):
         return self.alpha - tf.nn.softplus(x)
 
     def tf_log_jacobian(self, x):
-        return tf.reduce_sum(tf.nn.softplus(-x))
+        return -tf.reduce_sum(tf.nn.softplus(-x))
 
     def backward(self, y):
         return np.log(np.exp(self.alpha - y) - np.ones(1, np_float_type))
