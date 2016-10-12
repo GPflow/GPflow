@@ -131,7 +131,7 @@ class Log1pe(Transform):
         return tf.nn.softplus(x) + self._lower
 
     def tf_log_jacobian(self, x):
-        return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
+        return -tf.reduce_sum(tf.nn.softplus(-x))
 
     def backward(self, y):
         return np.log(np.exp(y - self._lower) - np.ones(1, np_float_type))
@@ -263,6 +263,60 @@ class LowerTriangular(Transform):
 
     def __str__(self):
         return "LoTri->vec"
+
+
+class BoundedBelow(Log1pe):
+    """
+    A transform of the form
+
+       y = \log ( 1 + \exp(x)) + alpha
+
+    x is a free variable, y > alpha
+    """
+
+    def __init__(self, alpha=1.0):
+        """
+        alpha is a float that defines the minimum value that this transform can
+        take, default 1. note that alpha might also be a np.array that matches
+        the shape of the parameter.
+        """
+        Log1pe.__init__(self, alpha)
+
+    def __str__(self):
+        return '>{}'.format(self._lower)
+
+
+class BoundedAbove(Transform):
+    """
+    A transform of the form
+
+       y = \\alpha - \\log ( 1 + \\exp(x))
+
+    x is a free variable, y < alpha
+    """
+
+    def __init__(self, alpha=1.0):
+        """
+        alpha is a float that defines the minimum value that this transform can
+        take, default 1. note that alpha might also be a np.array that matches
+        the shape of the parameter.
+        """
+        self.alpha = alpha
+
+    def forward(self, x):
+        return self.alpha - np.log(1. + np.exp(x))
+
+    def tf_forward(self, x):
+        return self.alpha - tf.nn.softplus(x)
+
+    def tf_log_jacobian(self, x):
+        return tf.reduce_sum(tf.nn.softplus(-x))
+
+    def backward(self, y):
+        return np.log(np.exp(self.alpha - y) - np.ones(1, np_float_type))
+
+    def __str__(self):
+        return '<{}'.format(self._lower)
 
 
 positive = Log1pe()
