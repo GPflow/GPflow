@@ -15,6 +15,7 @@ class TransformTests(unittest.TestCase):
         self.session = tf.Session()
         self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
         self.transforms.append(GPflow.transforms.Logistic(7.3, 19.4))
+        self.transforms.append(GPflow.transforms.BoundedBelow(7.8))
 
     def test_tf_np_forward(self):
         """
