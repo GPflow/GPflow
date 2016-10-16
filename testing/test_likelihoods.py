@@ -21,11 +21,12 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
         if likelihoodClass == GPflow.likelihoods.Ordinal:
             test_setups.append(TestSetup(likelihoodClass(np.array([-1, 1])), rng.randint(0, 3, (10, 2)), 1e-6))
-        elif (likelihoodClass == GPflow.likelihoods.MultiClass) and includeMultiClass:
-            sample = rng.randn(10, 2)
-            # Multiclass needs a less tight tolerance due to presence of clipping.
-            tolerance = 1e-3
-            test_setups.append(TestSetup(likelihoodClass(2),  np.argmax(sample, 1).reshape(-1, 1), tolerance))
+        elif (likelihoodClass == GPflow.likelihoods.MultiClass):
+            if includeMultiClass:
+                sample = rng.randn(10, 2)
+                # Multiclass needs a less tight tolerance due to presence of clipping.
+                tolerance = 1e-3
+                test_setups.append(TestSetup(likelihoodClass(2),  np.argmax(sample, 1).reshape(-1, 1), tolerance))
         else:
             # most likelihoods follow this standard:
             test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2).astype(np_float_type), 1e-6))
