@@ -39,11 +39,16 @@ class Kern(Parameterized):
         Parameterized.__init__(self)
         self.scoped_keys.extend(['K', 'Kdiag'])
         self.input_dim = input_dim
+        # TEMP HACK Code was using slice which cannot be handled in kernel_expectations
+        #         if active_dims is None:
+        #             self.active_dims = slice(input_dim)
+        #         else:
+        #             self._active_dims_array = np.array(active_dims, dtype=np.int32)
+        #             self.active_dims = tf.constant(self._active_dims_array, tf.int32)
         if active_dims is None:
-            self.active_dims = slice(input_dim)
-        else:
-            self._active_dims_array = np.array(active_dims, dtype=np.int32)
-            self.active_dims = tf.constant(self._active_dims_array, tf.int32)
+            active_dims = range(input_dim)
+        self._active_dims_array = np.array(active_dims, dtype=np.int32)
+        self.active_dims = tf.constant(self._active_dims_array, tf.int32)
 
     def _slice(self, X, X2):
         if isinstance(self.active_dims, slice):
