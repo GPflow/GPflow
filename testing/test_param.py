@@ -3,6 +3,9 @@ import unittest
 import GPflow
 import tensorflow as tf
 import numpy as np
+from GPflow import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 try:
     import cPickle as pickle
 except ImportError:
@@ -94,14 +97,14 @@ class ParamTestsScalar(unittest.TestCase):
         xx = self.m.get_free_state()
         self.assertTrue(np.allclose(xx, np.ones(1)))
 
-        y = np.array([34.0])
+        y = np.array([34.0], np_float_type)
         self.m.set_state(y)
         self.assertTrue(np.allclose(self.m.get_free_state(), y))
 
     def testFixed(self):
         self.m.p.fixed = True
         self.assertTrue(len(self.m.get_free_state()) == 0)
-        self.assertTrue(self.m.make_tf_array(tf.placeholder('float64')) == 0)
+        self.assertTrue(self.m.make_tf_array(tf.placeholder(float_type)) == 0)
 
     def testRecompile(self):
         self.m._needs_recompile = False
@@ -165,7 +168,7 @@ class ParamTestsDeeper(unittest.TestCase):
         xx = self.m.get_free_state()
         self.assertTrue(np.allclose(xx, np.ones(1)))
 
-        y = np.array([34.0])
+        y = np.array([34.0], np_float_type)
         self.m.set_state(y)
         self.assertTrue(np.allclose(self.m.get_free_state(), y))
 
@@ -302,36 +305,36 @@ class TestParamList(unittest.TestCase):
 
     def test_naming(self):
         p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
         GPflow.param.ParamList([p1, p2])
         self.assertTrue(p1.name == 'item0')
         self.assertTrue(p2.name == 'item1')
 
     def test_connected(self):
         p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
         l = GPflow.param.ParamList([p1, p2])
         x = l.get_free_state()
         x.sort()
-        self.assertTrue(np.all(x == np.array([1.2, 3.4, 5.6])))
+        self.assertTrue(np.all(x == np.array([1.2, 3.4, 5.6], np_float_type)))
 
     def test_setitem(self):
         p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
         l = GPflow.param.ParamList([p1, p2])
 
         l[0] = 1.2
         self.assertTrue(p1._array == 1.2)
 
-        l[1] = np.array([1.1, 2.2])
-        self.assertTrue(np.all(p2._array == np.array([1.1, 2.2])))
+        l[1] = np.array([1.1, 2.2], np_float_type)
+        self.assertTrue(np.all(p2._array == np.array([1.1, 2.2], np_float_type)))
 
         with self.assertRaises(TypeError):
             l[0] = GPflow.param.Param(12)
 
     def test_append(self):
         p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
         l = GPflow.param.ParamList([p1])
         l.append(p2)
         self.assertTrue(p2 in l.sorted_params)
@@ -368,7 +371,8 @@ class TestParamList(unittest.TestCase):
         m = Foo()
         self.assertTrue(m.get_free_state().size == 2)
         m.optimize(disp=False)
-        self.assertTrue(np.allclose(m.get_free_state(), 0.))
+        atol = 1e-6 if np_float_type is np.float32 else 1e-8
+        self.assertTrue(np.allclose(m.get_free_state(), 0., atol=atol))
 
 
 class TestPickleAndDict(unittest.TestCase):
