@@ -1,11 +1,11 @@
 # Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews, Alexis Boukouvalas
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,19 +13,26 @@
 # limitations under the License.
 
 
-from . import densities
+from __future__ import absolute_import
+from . import densities, transforms, tf_wraps
+from .param import Parameterized, Param
 import tensorflow as tf
 import numpy as np
-from .param import Parameterized, Param
-from . import transforms
-from . import tf_hacks
-hermgauss = np.polynomial.hermite.hermgauss
+from ._settings import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
+
+def hermgauss(n):
+    x, w = np.polynomial.hermite.hermgauss(n)
+    x, w = x.astype(np_float_type), w.astype(np_float_type)
+    return x, w
 
 
 class Likelihood(Parameterized):
     def __init__(self):
         Parameterized.__init__(self)
+        self.scoped_keys.extend(['logp', 'variational_expectations', 'predict_mean_and_var', 'predict_density'])
         self.num_gauss_hermite_points = 20
 
     def logp(self, F, Y):
@@ -98,7 +105,7 @@ class Likelihood(Parameterized):
         E_y = tf.reshape(tf.matmul(self.conditional_mean(X), gh_w), shape)
 
         # here's the quadrature for the variance
-        integrand = self.conditional_variance(X)\
+        integrand = self.conditional_variance(X) \
             + tf.square(self.conditional_mean(X))
         V_y = tf.reshape(tf.matmul(integrand, gh_w), shape) - tf.square(E_y)
 
@@ -125,7 +132,7 @@ class Likelihood(Parameterized):
         """
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
 
-        gh_w = gh_w.reshape(-1, 1)/np.sqrt(np.pi)
+        gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
         shape = tf.shape(Fmu)
         Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
         X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
@@ -158,7 +165,7 @@ class Likelihood(Parameterized):
 
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         gh_x = gh_x.reshape(1, -1)
-        gh_w = gh_w.reshape(-1, 1)/np.sqrt(np.pi)
+        gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
         shape = tf.shape(Fmu)
         Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
         X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
@@ -189,8 +196,8 @@ class Gaussian(Likelihood):
         return densities.gaussian(Fmu, Y, Fvar + self.variance)
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        return -0.5*np.log(2*np.pi) - 0.5*tf.log(self.variance)\
-            - 0.5*(tf.square(Y - Fmu) + Fvar)/self.variance
+        return -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(self.variance) \
+               - 0.5 * (tf.square(Y - Fmu) + Fvar) / self.variance
 
 
 class Poisson(Likelihood):
@@ -209,7 +216,7 @@ class Poisson(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return Y*Fmu - tf.exp(Fmu + Fvar/2) - tf.lgamma(Y+1)
+            return Y * Fmu - tf.exp(Fmu + Fvar / 2) - tf.lgamma(Y + 1)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
@@ -230,7 +237,7 @@ class Exponential(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return -tf.exp(-Fmu + Fvar/2) * Y - Fmu
+            return -tf.exp(-Fmu + Fvar / 2) * Y - Fmu
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
@@ -248,11 +255,11 @@ class StudentT(Likelihood):
         return tf.identity(F)
 
     def conditional_variance(self, F):
-        return F*0.0 + (self.deg_free / (self.deg_free - 2.0))
+        return F * 0.0 + (self.deg_free / (self.deg_free - 2.0))
 
 
 def probit(x):
-    return 0.5*(1.0+tf.erf(x/np.sqrt(2.0))) * (1-2e-3) + 1e-3
+    return 0.5 * (1.0 + tf.erf(x / np.sqrt(2.0))) * (1 - 2e-3) + 1e-3
 
 
 class Bernoulli(Likelihood):
@@ -266,7 +273,7 @@ class Bernoulli(Likelihood):
     def predict_mean_and_var(self, Fmu, Fvar):
         if self.invlink is probit:
             p = probit(Fmu / tf.sqrt(1 + Fvar))
-            return p,  p - tf.square(p)
+            return p, p - tf.square(p)
         else:
             # for other invlink, use quadrature
             return Likelihood.predict_mean_and_var(self, Fmu, Fvar)
@@ -287,6 +294,7 @@ class Gamma(Likelihood):
     """
     Use the transformed GP to give the *scale* (inverse rate) of the Gamma
     """
+
     def __init__(self, invlink=tf.exp):
         Likelihood.__init__(self)
         self.invlink = invlink
@@ -304,8 +312,8 @@ class Gamma(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return -self.shape * Fmu - tf.lgamma(self.shape)\
-                + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar/2.)
+            return -self.shape * Fmu - tf.lgamma(self.shape) \
+                + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
@@ -326,6 +334,7 @@ class Beta(Likelihood):
         alpha = scale * m
         beta  = scale * (1-m)
     """
+
     def __init__(self, invlink=probit, scale=1.0):
         Likelihood.__init__(self)
         self.scale = Param(scale, transforms.positive)
@@ -359,14 +368,15 @@ class RobustMax(object):
 
 
     """
+
     def __init__(self, num_classes, epsilon=1e-3):
         self.epsilon = epsilon
         self.num_classes = num_classes
-        self._eps_K1 = self.epsilon/(self.num_classes-1)
+        self._eps_K1 = self.epsilon / (self.num_classes - 1)
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
-        return tf.one_hot(i, self.num_classes, 1.-self.epsilon, self._eps_K1)
+        return tf.one_hot(i, self.num_classes, 1. - self.epsilon, self._eps_K1)
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         # clip the variance for stability.
@@ -374,26 +384,26 @@ class RobustMax(object):
 
         # work out what the mean and variance is of the indicated latent function.
         Y_flat = tf.cast(tf.reshape(Y, (-1,)), tf.int32)
-        mu_not, mu_selected = tf_hacks.remove_row_elements(mu, Y_flat)
-        var_not, var_selected = tf_hacks.remove_row_elements(var, Y_flat)
+        mu_not, mu_selected = tf_wraps.remove_row_elements(mu, Y_flat)
+        var_not, var_selected = tf_wraps.remove_row_elements(var, Y_flat)
 
         # generate Gauss Hermite grid
         X = tf.reshape(mu_selected, (-1, 1)) + gh_x * tf.reshape(tf.sqrt(2. * var_selected), (-1, 1))
 
         # compute the CDF of the Gaussian between the latent functions and the grid (including the selected function)
         dist = (tf.expand_dims(X, 1) - tf.expand_dims(mu_not, 2)) / tf.expand_dims(tf.sqrt(var_not), 2)
-        cdfs = 0.5 * (1.0 + tf.erf(dist/np.sqrt(2.0)))
+        cdfs = 0.5 * (1.0 + tf.erf(dist / np.sqrt(2.0)))
 
-        cdfs = cdfs * (1-2e-4) + 1e-4
+        cdfs = cdfs * (1 - 2e-4) + 1e-4
 
         # take the product over the latent functions, and the sum over the GH grid.
-        return tf.matmul(tf.reduce_prod(cdfs, reduction_indices=[1]), tf.reshape(gh_w/np.sqrt(np.pi), (-1, 1)))
+        return tf.matmul(tf.reduce_prod(cdfs, reduction_indices=[1]), tf.reshape(gh_w / np.sqrt(np.pi), (-1, 1)))
 
 
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
         """
-        A likelihood that can do multi-way classification. 
+        A likelihood that can do multi-way classification.
         Currently the only valid choice
         of inverse-link function (invlink) is an instance of RobustMax.
         """
@@ -402,14 +412,14 @@ class MultiClass(Likelihood):
         if invlink is None:
             invlink = RobustMax(self.num_classes)
             self.invlink = invlink
-        elif not isinstance(invlink,RobustMax):
-            raise NotImplementedError        
+        elif not isinstance(invlink, RobustMax):
+            raise NotImplementedError
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
             hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
-            yes = tf.ones(tf.shape(Y), dtype=tf.float64) - self.invlink.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=tf.float64) + self.invlink._eps_K1
+            yes = tf.ones(tf.shape(Y), dtype=float_type) - self.invlink.epsilon
+            no = tf.zeros(tf.shape(Y), dtype=float_type) + self.invlink._eps_K1
             p = tf.select(hits, yes, no)
             return tf.log(p)
         else:
@@ -419,14 +429,15 @@ class MultiClass(Likelihood):
         if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
             p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * np.log(1-self.invlink.epsilon) + (1.-p) * np.log(self.invlink._eps_K1)
+            return p * np.log(1 - self.invlink.epsilon) + (1. - p) * np.log(self.invlink._eps_K1)
         else:
             raise NotImplementedError
 
     def predict_mean_and_var(self, Fmu, Fvar):
         if isinstance(self.invlink, RobustMax):
             # To compute this, we'll compute the density for each possible output
-            possible_outputs = [tf.fill(tf.pack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in range(self.num_classes)]
+            possible_outputs = [tf.fill(tf.pack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
+                                range(self.num_classes)]
             ps = [self.predict_density(Fmu, Fvar, po) for po in possible_outputs]
             ps = tf.transpose(tf.pack([tf.reshape(p, (-1,)) for p in ps]))
             return ps, ps - tf.square(ps)

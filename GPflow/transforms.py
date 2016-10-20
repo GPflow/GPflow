@@ -1,21 +1,24 @@
 # Copyright 2016 James Hensman, alexggmatthews
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
-import GPflow.tf_hacks as tfh
+from . import tf_wraps as tfw
+from ._settings import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class Transform(object):
@@ -75,7 +78,7 @@ class Identity(Transform):
         return y
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), tf.float64)
+        return tf.zeros((1,), float_type)
 
     def __str__(self):
         return '(none)'
@@ -131,7 +134,7 @@ class Log1pe(Transform):
         return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
 
     def backward(self, y):
-        return np.log(np.exp(y - self._lower) - np.ones(1))
+        return np.log(np.exp(y - self._lower) - np.ones(1, np_float_type))
 
     def __str__(self):
         return '+ve'
@@ -142,8 +145,8 @@ class Logistic(Transform):
         Transform.__init__(self)
         assert b > a
         self.a, self.b = a, b
-        self._a = tf.constant(a, tf.float64)
-        self._b = tf.constant(b, tf.float64)
+        self._a = tf.constant(a, float_type)
+        self._b = tf.constant(b, float_type)
 
     def tf_forward(self, x):
         ex = tf.exp(-x)
@@ -170,8 +173,8 @@ class Logistic(Transform):
 
     def __setstate__(self, d):
         Transform.__setstate__(self, d)
-        self._a = tf.constant(self.a, tf.float64)
-        self._b = tf.constant(self.b, tf.float64)
+        self._a = tf.constant(self.a, float_type)
+        self._b = tf.constant(self.b, float_type)
 
 
 class LowerTriangular(Transform):
@@ -184,8 +187,15 @@ class LowerTriangular(Transform):
     (N x N x D).
     """
 
-    def __init__(self, num_matrices=1):
+    def __init__(self, num_matrices=1, squeeze=False):
+        """
+        Create an instance of LowerTriangular transform.
+        Args:
+            num_matrices: Number of matrices to be stored.
+            squeeze: If num_matrices == 1, drop the redundant axis.
+        """
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
+        self.squeeze = squeeze
 
     def _validate_vector_length(self, length):
         """
@@ -215,11 +225,11 @@ class LowerTriangular(Transform):
         L = self._validate_vector_length(len(x))
         matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
         xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((matsize, matsize, self.num_matrices))
+        var = np.zeros((matsize, matsize, self.num_matrices), np_float_type)
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
             var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
-        return var
+        return var.squeeze() if self.squeeze else var
 
     def backward(self, y):
         """
@@ -230,23 +240,26 @@ class LowerTriangular(Transform):
         Returns:
             Free state.
         """
-        N = int((y.size / self.num_matrices)**0.5)
+        N = int((y.size / self.num_matrices) ** 0.5)
         y = np.reshape(y, (N, N, self.num_matrices))
         return y[np.tril_indices(len(y), 0)].T.flatten()
 
     def tf_forward(self, x):
-        return tf.transpose(tfh.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+        return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), tf.float64) - np.inf
+        return tf.zeros((1,), float_type) - np.inf
 
     def free_state_size(self, variable_shape):
-        if variable_shape[2] != self.num_matrices:
+        matrix_batch = len(variable_shape) > 2
+        if ((not matrix_batch and self.num_matrices != 1) or
+           (matrix_batch and variable_shape[2] != self.num_matrices)):
             raise ValueError("Number of matrices must be consistent with what was passed to the constructor.")
         if variable_shape[0] != variable_shape[1]:
             raise ValueError("Matrices passed must be square.")
         N = variable_shape[0]
-        return int(0.5 * N * (N + 1)) * variable_shape[2]
+        return int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1)
 
     def __str__(self):
         return "LoTri->vec"
