@@ -49,3 +49,21 @@ def _vec_to_tri_shape(op):
         k = int((M * 8 + 1) ** 0.5 / 2.0 - 0.5)
     shape = tf.TensorShape([in_shape[0], k, k])
     return [shape]
+
+_custom_op_module = tf.load_op_library(os.path.join(os.path.dirname(__file__), 'tfops', 'rowdeleteops.so'))
+remove_row_elements = _custom_op_module.remove_row_elements
+remove_row_elements_grad = _custom_op_module.remove_row_elements_grad
+
+
+@tf.python.framework.ops.RegisterGradient("RemoveRowElements")
+def _remove_row_elements_grad(op, gradmat, gradvec):
+    index = op.inputs[1]
+    return [remove_row_elements_grad(gradmat, gradvec, index), tf.zeros_like(index)]
+
+
+@tf.RegisterShape("RemoveRowElements")
+def _remove_row_elements_shape(op):
+    in_shape = op.inputs[0].get_shape().with_rank(2)
+    shape1 = tf.TensorShape([in_shape[0], in_shape[1] - 1])
+    shape2 = tf.TensorShape([in_shape[0]])
+    return [shape1, shape2]

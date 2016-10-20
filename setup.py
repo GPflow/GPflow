@@ -17,17 +17,23 @@ else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 # Compile the bespoke TensorFlow ops in-place. Not sure how this would work if this script wasn't executed as `develop`.
-compile_command = "g++ -std=c++11 -shared ./GPflow/tfops/vec_to_tri.cc " \
-                  "GPflow/tfops/tri_to_vec.cc -o GPflow/tfops/matpackops.so " \
-                  "-fPIC -I $(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')"
-if sys.platform == "darwin":
-    # Additional command for Macs, as instructed by the TensorFlow docs
-    compile_command += " -undefined dynamic_lookup"
-elif sys.platform.startswith("linux"):
-    gcc_version = int(re.search('\d+.', os.popen("gcc --version").read()).group()[0])
-    if gcc_version == 5:
-        compile_command += " -D_GLIBCXX_USE_CXX11_ABI=0"
-os.system(compile_command)
+compile_commands = ["g++ -std=c++11 -shared ./GPflow/tfops/vec_to_tri.cc  \
+                    GPflow/tfops/tri_to_vec.cc -o GPflow/tfops/matpackops.so \
+                    -fPIC -I $(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')",
+                    "g++ -std=c++11 -shared ./GPflow/tfops/remove_row_elems.cc  \
+                    GPflow/tfops/remove_row_elems_grad.cc -o GPflow/tfops/rowdeleteops.so \
+                    -fPIC -I $(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')"]
+
+for compile_command in compile_commands:
+    if sys.platform == "darwin":
+        # Additional command for Macs, as instructed by the TensorFlow docs
+        compile_command += " -undefined dynamic_lookup"
+    elif sys.platform.startswith("linux"):
+        # Additional command for gcc5
+        gcc_version = int(re.search('\d+.', os.popen("gcc --version").read()).group()[0])
+        if gcc_version == 5:
+            compile_command += " -D_GLIBCXX_USE_CXX11_ABI=0"
+    os.system(compile_command)
 
 setup(name='GPflow',
       version=verstr,
