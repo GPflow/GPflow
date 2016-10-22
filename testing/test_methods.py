@@ -34,14 +34,22 @@ class TestMethods(unittest.TestCase):
             self.assertTrue(f.size == 1)
             self.assertTrue(g.size == m.get_free_state().size)
 
-    def test_predict_f(self):    
+    def test_tf_optimize(self):
+        for m in self.ms:
+            trainer = tf.train.AdamOptimizer(learning_rate=0.001)
+            if isinstance(m, (GPflow.gpr.GPR,GPflow.vgp.VGP,GPflow.svgp.SVGP)):
+                optimizeOp = m._compile(trainer)
+                self.assertTrue(optimizeOp is not None)
+
+
+    def test_predict_f(self):
         for m in self.ms:
             mf, vf = m.predict_f(self.Xs)
             self.assertTrue(mf.shape == vf.shape)
             self.assertTrue(mf.shape == (10, 1))
             self.assertTrue(np.all(vf >= 0.0))
 
-    def test_predict_y(self):    
+    def test_predict_y(self):
         for m in self.ms:
             mf, vf = m.predict_y(self.Xs)
             self.assertTrue(mf.shape == vf.shape)
