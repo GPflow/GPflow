@@ -1,3 +1,7 @@
+# Release 0.3.2
+ - updated to work with tensorflow 0.11 (release candidate 1 available at time of writing)
+ - bugfixes in vgp._compile
+
 # Release 0.3.1
  - Added configuration file, which controls verbosity and level of numerical jitter
  - tf_hacks is deprecated, became tf_wraps (tf_hacks will raise visible deprecation warnings)
