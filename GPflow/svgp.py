@@ -134,7 +134,8 @@ class SVGP(GPModel):
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, tf.float64) / tf.cast(tf.shape(self.X)[0], tf.float64)
+        scale = tf.cast(self.num_data, settings.dtypes.float_type) /\
+            tf.cast(tf.shape(self.X)[0], settings.dtypes.float_type)
 
         return tf.reduce_sum(var_exp) * scale - KL
 

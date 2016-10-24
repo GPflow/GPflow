@@ -19,10 +19,11 @@ A collection of wrappers and extensions for tensorflow.
 
 import os
 import tensorflow as tf
+from ._settings import settings
 
 
 def eye(N):
     """
     An identitiy matrix
     """
-    return tf.diag(tf.ones(tf.pack([N, ]), dtype='float64'))
+    return tf.diag(tf.ones(tf.pack([N, ]), dtype=settings.dtypes.float_type))
