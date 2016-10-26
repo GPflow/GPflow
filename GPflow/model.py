@@ -93,8 +93,6 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
-        self._session = tf.Session()
-        self._free_vars = tf.placeholder(settings.dtypes.float_type)
 
     @property
     def name(self):
@@ -118,30 +116,32 @@ class Model(Parameterized):
     def __setstate__(self, d):
         Parameterized.__setstate__(self, d)
         self._needs_recompile = True
-        self._session = tf.Session()
 
     def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
         """
-        self._free_vars = tf.Variable(self.get_free_state())
+        self._graph = tf.Graph()
+        self._session = tf.Session(graph=self._graph)
+        with self._graph.as_default():
+            self._free_vars = tf.Variable(self.get_free_state())
 
-        self.make_tf_array(self._free_vars)
-        with self.tf_mode():
-            f = self.build_likelihood() + self.build_prior()
-            g, = tf.gradients(f, self._free_vars)
+            self.make_tf_array(self._free_vars)
+            with self.tf_mode():
+                f = self.build_likelihood() + self.build_prior()
+                g, = tf.gradients(f, self._free_vars)
 
-        self._minusF = tf.neg(f, name='objective')
-        self._minusG = tf.neg(g, name='grad_objective')
+            self._minusF = tf.neg(f, name='objective')
+            self._minusG = tf.neg(g, name='grad_objective')
 
-        # The optimiser needs to be part of the computational graph, and needs
-        # to be initialised before tf.initialise_all_variables() is called.
-        if optimizer is None:
-            opt_step = None
-        else:
-            opt_step = optimizer.minimize(self._minusF,
-                                          var_list=[self._free_vars])
-        init = tf.initialize_all_variables()
+            # The optimiser needs to be part of the computational graph, and needs
+            # to be initialised before tf.initialise_all_variables() is called.
+            if optimizer is None:
+                opt_step = None
+            else:
+                opt_step = optimizer.minimize(self._minusF,
+                                              var_list=[self._free_vars])
+            init = tf.initialize_all_variables()
         self._session.run(init)
 
         # build tensorflow functions for computing the likelihood
