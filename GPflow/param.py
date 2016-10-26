@@ -390,7 +390,10 @@ class DataHolder(Parentable):
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
-        d.pop('_tf_array')
+        try:
+            d.pop('_tf_array')
+        except KeyError:
+            pass
         return d
 
     def make_tf_array(self):
@@ -718,8 +721,8 @@ class Parameterized(Parentable):
         This makes sure they're always in the same order.
         """
         params = [child for key, child in self.__dict__.items()
-                  if isinstance(child, (Param, Parameterized))
-                  and key is not '_parent']
+                  if isinstance(child, (Param, Parameterized)) and
+                  key is not '_parent']
         return sorted(params, key=id)
 
     @property
@@ -745,8 +748,8 @@ class Parameterized(Parentable):
         Recurse get_free_state on all child parameters, and hstack them.
         """
         # Here, additional empty array allows hstacking of empty list
-        return np.hstack([p.get_free_state() for p in self.sorted_params]
-                         + [np.empty(0, np_float_type)])
+        return np.hstack([p.get_free_state() for p in self.sorted_params] +
+                         [np.empty(0, np_float_type)])
 
     def get_feed_dict(self):
         """
