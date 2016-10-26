@@ -376,9 +376,6 @@ class DataHolder(Parentable):
         Parentable.__init__(self)
         dt = self._get_type(array)
         self._array = np.asarray(array, dtype=dt)
-        self._tf_array = tf.placeholder(dtype=dt,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
         assert on_shape_change in ['raise', 'pass', 'recompile']
         self.on_shape_change = on_shape_change
 
@@ -402,8 +399,7 @@ class DataHolder(Parentable):
         d.pop('_tf_array')
         return d
 
-    def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
+    def make_tf_array(self):
         self._tf_array = tf.placeholder(dtype=self._get_type(self._array),
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
@@ -508,13 +504,15 @@ class AutoFlow:
                 # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
-                storage['free_vars'] = tf.placeholder(float_type, [None])
-                instance.make_tf_array(storage['free_vars'])
-                storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
-                with instance.tf_mode():
-                    storage['tf_result'] = tf_method(instance, *storage['tf_args'])
-                storage['session'] = tf.Session()
-                storage['session'].run(tf.initialize_all_variables(), feed_dict=instance.get_feed_dict())
+                storage['graph'] = tf.Graph()
+                storage['session'] = tf.Session(graph=storage['graph'])
+                with storage['graph'].as_default():
+                    storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
+                    storage['free_vars'] = tf.placeholder(float_type, [None])
+                    instance.make_tf_array(storage['free_vars'])
+                    with instance.tf_mode():
+                        storage['tf_result'] = tf_method(instance, *storage['tf_args'])
+                    storage['session'].run(tf.initialize_all_variables(), feed_dict=instance.get_feed_dict())
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
             feed_dict.update(instance.get_feed_dict())
@@ -688,6 +686,8 @@ class Parameterized(Parentable):
         construct their tf_array variables from consecutive sections.
         """
         count = 0
+        for dh in self.data_holders:
+            dh.make_tf_array()
         for p in self.sorted_params:
             count += p.make_tf_array(X[count:])
         return count
