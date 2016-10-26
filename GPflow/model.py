@@ -103,14 +103,11 @@ class Model(Parameterized):
         This method is necessary for pickling objects
         """
         d = Parameterized.__getstate__(self)
-        d.pop('_session')
-        d.pop('_free_vars')
-        try:
-            d.pop('_objective')
-            d.pop('_minusF')
-            d.pop('_minusG')
-        except:
-            pass
+        for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG']:
+            try:
+                d.pop(key)
+            except:
+                pass
         return d
 
     def __setstate__(self, d):
