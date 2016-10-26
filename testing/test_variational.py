@@ -68,7 +68,6 @@ class VariationalUnivariateTest(unittest.TestCase):
         else:
             m.q_sqrt = np.ones((self.univariate, self.univariate, self.oneLatentFunction)) * self.posteriorStd
         m.q_mu = np.ones((self.univariate, self.oneLatentFunction)) * self.posteriorMean
-        m.make_tf_array(m._free_vars)
         return m
 
     def test_prior_KL(self):
@@ -81,11 +80,9 @@ class VariationalUnivariateTest(unittest.TestCase):
 
         for is_diagonal in [True, False]:
             for is_whitened in [True, False]:
-                model = self.get_model(is_diagonal, is_whitened)
-                with model.tf_mode():
-                    prior_KL_function = model.build_prior_KL()
-                test_prior_KL = prior_KL_function.eval(session=model._session,
-                                                       feed_dict={model._free_vars: model.get_free_state()})
+                m = self.get_model(is_diagonal, is_whitened)
+
+                test_prior_KL = GPflow.param.AutoFlow()(m.build_prior_KL.__func__)(m)
                 self.assertTrue(np.abs(referenceKL - test_prior_KL) < 1e-4)
 
     def test_build_likelihood(self):
@@ -103,6 +100,9 @@ class VariationalUnivariateTest(unittest.TestCase):
         for is_diagonal in [True, False]:
             for is_whitened in [True, False]:
                 m = self.get_model(is_diagonal, is_whitened)
+                free_vars = tf.placeholder(tf.float64)
+                session = tf.Session()
+                m.make_tf_array(free_vars)
                 with m.tf_mode():
                     if is_whitened:
                         args = (self.X, self.Z, m.kern, m.q_mu, m.q_sqrt, self.oneLatentFunction)
@@ -110,8 +110,8 @@ class VariationalUnivariateTest(unittest.TestCase):
                     else:
                         args = (self.X, self.Z, m.kern, m.q_mu, m.q_sqrt, self.oneLatentFunction)
                         fmean_func, fvar_func = GPflow.conditionals.gaussian_gp_predict(*args)
-                mean_value = fmean_func.eval(session=m._session, feed_dict={m._free_vars: m.get_free_state()})[0, 0]
-                var_value = fvar_func.eval(session=m._session, feed_dict={m._free_vars: m.get_free_state()})[0, 0]
+                mean_value = fmean_func.eval(session=session, feed_dict={free_vars: m.get_free_state()})[0, 0]
+                var_value = fvar_func.eval(session=session, feed_dict={free_vars: m.get_free_state()})[0, 0]
                 self.assertTrue(np.abs(mean_value - self.posteriorMean) < 1e-4)
                 self.assertTrue(np.abs(var_value - self.posteriorVariance) < 1e-4)
 
