@@ -144,7 +144,6 @@ class VariationalMultivariateTest(unittest.TestCase):
         else:
             model.q_sqrt = self.q_sqrt_full[:, :, None]
         model.q_mu = self.q_mean
-        model.make_tf_array(model._free_vars)
         return model
 
     def test_refrence_implementation_consistency(self):
@@ -172,9 +171,7 @@ class VariationalMultivariateTest(unittest.TestCase):
 
             referenceKL = referenceMultivariatePriorKL(self.q_mean, covQ, mean_prior, cov_prior)
             # now get test KL.
-            with m.tf_mode():
-                prior_KL_function = m.build_prior_KL()
-            test_prior_KL = prior_KL_function.eval(session=m._session, feed_dict={m._free_vars: m.get_free_state()})
+            test_prior_KL = GPflow.param.AutoFlow()(m.build_prior_KL.__func__)(m)
             self.assertTrue(np.abs(referenceKL - test_prior_KL) < 1e-4)
 
 if __name__ == "__main__":
