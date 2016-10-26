@@ -222,6 +222,9 @@ class Param(Parentable):
         """
         if self.fixed:
             # fixed parameters are treated by tf.placeholder
+            self._tf_array = tf.placeholder(dtype=float_type,
+                                            shape=self._array.shape,
+                                            name=self.name)
             return 0
         free_size = self.transform.free_state_size(self.shape)
         x_free = free_array[:free_size]
@@ -286,15 +289,6 @@ class Param(Parentable):
         object.__setattr__(self, key, value)
         if key in recompile_keys:
             self.highest_parent._needs_recompile = True
-
-        # when setting the fixed attribute, make or remove a placeholder appropraitely
-        if key == 'fixed':
-            if value:
-                self._tf_array = tf.placeholder(dtype=float_type,
-                                                shape=self._array.shape,
-                                                name=self.name)
-            else:
-                self._tf_array = None
 
     def __str__(self, prepend=''):
         return prepend + \
