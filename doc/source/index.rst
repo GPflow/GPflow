@@ -19,6 +19,7 @@ GPflow Documentation
    notebooks/multiclass
    notebooks/settings
    notebooks/svi_test
+   notebooks/ordinal
    model_options
    notebooks/structure
    guts

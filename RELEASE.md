@@ -1,3 +1,6 @@
+# Release 0.3.3
+ - House keeping changes for paper submission.
+
 # Release 0.3.2
  - updated to work with tensorflow 0.11 (release candidate 1 available at time of writing)
  - bugfixes in vgp._compile
