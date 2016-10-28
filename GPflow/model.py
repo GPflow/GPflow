@@ -100,8 +100,6 @@ class Model(Parameterized):
         localtime = time.asctime( time.localtime(time.time()) )
         self._tf_name = 'tensorboard/' + name + '_' + localtime
         self._tf_metagraphInterval = tf_metagraphInterval
-        # TODO; very dirty. track iteration of numpy optimizers
-        self._tf_iteration_np = 0
         
     @property
     def name(self):
@@ -145,7 +143,6 @@ class Model(Parameterized):
         # to be initialised before tf.initialise_all_variables() is called.
         if optimizer is None:
             opt_step = None
-            self._tf_iteration_np = 0
         else:
             opt_step = optimizer.minimize(self._minusF,
                                           var_list=[self._free_vars])
@@ -169,9 +166,11 @@ class Model(Parameterized):
             summary, f, g = self._session.run([self._tf_merged, self._minusF, self._minusG],
                                      feed_dict=feed_dict)
                                      
-            self._tf_writer.add_summary(summary, self._tf_iteration_np)
-            self._tf_iteration_np += 1
+            self._tf_writer.add_summary(summary, obj._tf_iteration_np)
+            obj._tf_iteration_np += 1
             return f.astype(np.float64), g.astype(np.float64)
+
+        obj._tf_iteration_np = 0
 
         self._objective = obj
         if settings.verbosity.tf_compile_verb:
