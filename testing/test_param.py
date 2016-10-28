@@ -1,3 +1,17 @@
+# Copyright 2016 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
+
 from functools import reduce
 import unittest
 import GPflow
@@ -120,7 +134,7 @@ class ParamTestsScalar(unittest.TestCase):
         self.m.make_tf_array(x)
         self.assertTrue(isinstance(self.m.p, GPflow.param.Param))
         with self.m.tf_mode():
-            self.assertTrue(isinstance(self.m.p, tf.python.framework.ops.Tensor))
+            self.assertTrue(isinstance(self.m.p, tf.Tensor))
 
 
 class ParamTestsDeeper(unittest.TestCase):
@@ -204,7 +218,7 @@ class ParamTestsDeeper(unittest.TestCase):
         self.m.make_tf_array(x)
         self.assertTrue(isinstance(self.m.foo.bar.baz, GPflow.param.Param))
         with self.m.tf_mode():
-            self.assertTrue(isinstance(self.m.foo.bar.baz, tf.python.framework.ops.Tensor))
+            self.assertTrue(isinstance(self.m.foo.bar.baz, tf.Tensor))
 
 
 class ParamTestsWider(unittest.TestCase):
@@ -292,7 +306,7 @@ class ParamTestsWider(unittest.TestCase):
         self.m.make_tf_array(x)
         self.assertTrue(all([isinstance(p, GPflow.param.Param) for p in (self.m.foo, self.m.bar, self.m.baz)]))
         with self.m.tf_mode():
-            self.assertTrue(all([isinstance(p, tf.python.framework.ops.Tensor)
+            self.assertTrue(all([isinstance(p, tf.Tensor)
                                  for p in (self.m.foo, self.m.bar, self.m.baz)]))
 
 
