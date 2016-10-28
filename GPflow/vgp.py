@@ -66,7 +66,7 @@ class VGP(GPModel):
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
-    def _compile(self, optimizer=None):
+    def _compile(self, optimizer=None, **kw):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -79,7 +79,7 @@ class VGP(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        return super(VGP, self)._compile(optimizer=optimizer)
+        return super(VGP, self)._compile(optimizer=optimizer, **kw)
 
     def build_likelihood(self):
         """
