@@ -230,7 +230,7 @@ class Param(Parentable):
         self._log_jacobian = self.transform.tf_log_jacobian(x_free)
         
         # tensorboard tracks free parameters during the optimization
-        tf.scalar_summary(self.long_name, tf.squeeze(x_free))
+        tf.scalar_summary([self.long_name + str(i) for i in range(free_size)], x_free)
         return free_size
 
     def get_free_state(self):
