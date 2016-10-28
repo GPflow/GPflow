@@ -11,7 +11,7 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 # Install
 
 ## 1) Install TensorFlow. 
-Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html#download-and-setup). You will need version 0.10 (0.11 support coming soon). We find that for most users pip installation is the fastest way to get going.
+Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html#download-and-setup). You will need version 0.11. We find that for most users pip installation is the fastest way to get going.
 
 ## 2) install package
 GPflow includes some tensorflow extensions that are compiled when you run setup.py.  For those interested in modifying the source of GPflow, we recommend  
