@@ -400,7 +400,7 @@ class GPModel(Model):
     @AutoFlow((float_type, [None, None]))
     def predict_f_gradients(self, Xnew):
         """
-        Compute the mean and variance of the latent function(s) at the points
+        Compute the gradients of the mean and variance of the latent function(s) at the points
         Xnew.
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
@@ -409,7 +409,7 @@ class GPModel(Model):
     @AutoFlow((float_type, [None, None]))
     def predict_y_gradients(self, Xnew):
         """
-        Compute derivatives of the mean and variance of held-out data at the points Xnew
+        Compute the gradients of the mean and variance of held-out data at the points Xnew
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         pred_y_mean, pred_y_var = self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)

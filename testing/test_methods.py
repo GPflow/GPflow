@@ -76,6 +76,17 @@ class TestMethods(unittest.TestCase):
             d = m.predict_density(self.Xs, self.Ys)
             self.assertTrue(d.shape == (10, 1))
 
+    def test_predict_f_gradients(self):
+        for m in self.ms:
+            mf, vf = m.predict_f_gradients(self.Xs)
+            self.assertTrue(mf.shape == vf.shape)
+            self.assertTrue(mf.shape == (10, 2))
+
+    def test_predict_y_gradients(self):
+        for m in self.ms:
+            mf, vf = m.predict_y_gradients(self.Xs)
+            self.assertTrue(mf.shape == vf.shape)
+            self.assertTrue(mf.shape == (10, 2))
 
 class TestSVGP(unittest.TestCase):
     """
