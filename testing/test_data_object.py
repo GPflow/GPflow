@@ -15,6 +15,7 @@ class TestDataHolderSimple(unittest.TestCase):
         self.m.X = GPflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='pass')
         self.m.Y = GPflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='raise')
         self.m.Z = GPflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='recompile')
+        self.m.make_tf_array(np.empty(0))
         self.m._needs_recompile = False
 
     def test_types(self):
@@ -56,6 +57,7 @@ class TestDataHolderIntegers(unittest.TestCase):
         self.m = GPflow.model.Model()
         self.rng = np.random.RandomState()
         self.m.X = GPflow.param.DataHolder(self.rng.randint(0, 10, (2, 2)), on_shape_change='pass')
+        self.m.X.make_tf_array()
         self.m._needs_recompile = False
 
     def test_types(self):
