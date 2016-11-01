@@ -27,7 +27,7 @@ if sys.platform == "darwin":
     compile_command += " -undefined dynamic_lookup"
 elif sys.platform.startswith("linux"):
     gcc_version = int(re.search('\d+.', os.popen("gcc --version").read()).group()[0])
-    if gcc_version == 5:
+    if gcc_version > 4:
         compile_command += " -D_GLIBCXX_USE_CXX11_ABI=0"
 os.system(compile_command)
 
