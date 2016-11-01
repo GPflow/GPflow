@@ -19,31 +19,16 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
-<<<<<<< HEAD
-        # SwitchedLikelihood is tested separately.
-        if likelihoodClass != GPflow.likelihoods.SwitchedLikelihood:
-            if likelihoodClass != GPflow.likelihoods.MultiClass:
-                test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2), 1e-6))
-            elif includeMultiClass:
-=======
         if likelihoodClass == GPflow.likelihoods.Ordinal:
             test_setups.append(TestSetup(likelihoodClass(np.array([-1, 1])), rng.randint(0, 3, (10, 2)), 1e-6))
+        elif likelihoodClass == GPflow.likelihoods.SwitchedLikelihood:
+            continue  # switched likelihood tested separately
         elif (likelihoodClass == GPflow.likelihoods.MultiClass):
             if includeMultiClass:
->>>>>>> master
                 sample = rng.randn(10, 2)
                 # Multiclass needs a less tight tolerance due to presence of clipping.
                 tolerance = 1e-3
                 test_setups.append(TestSetup(likelihoodClass(2),  np.argmax(sample, 1).reshape(-1, 1), tolerance))
-<<<<<<< HEAD
-
-    if addNonStandardLinks:
-        test_setups.append(TestSetup(GPflow.likelihoods.Poisson(invlink=tf.square), rng.rand(10, 2), 1e-6))
-        test_setups.append(TestSetup(GPflow.likelihoods.Exponential(invlink=tf.square), rng.rand(10, 2), 1e-6))
-        test_setups.append(TestSetup(GPflow.likelihoods.Gamma(invlink=tf.square), rng.rand(10, 2), 1e-6))
-        sigmoid = lambda x: 1./(1 + tf.exp(-x))
-        test_setups.append(TestSetup(GPflow.likelihoods.Bernoulli(invlink=sigmoid), rng.rand(10, 2), 1e-6))
-=======
         else:
             # most likelihoods follow this standard:
             test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2).astype(np_float_type), 1e-6))
@@ -60,7 +45,6 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
             return 1./(1 + tf.exp(-x))
         test_setups.append(TestSetup(GPflow.likelihoods.Bernoulli(invlink=sigmoid),
                                      rng.rand(10, 2).astype(np_float_type), 1e-6))
->>>>>>> master
     return test_setups
 
 
@@ -73,36 +57,22 @@ class TestPredictConditional(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.test_setups = getTestSetups(addNonStandardLinks=True)
-<<<<<<< HEAD
-
-        self.x = tf.placeholder('float64')
-=======
         self.x = tf.placeholder(float_type)
->>>>>>> master
         for test_setup in self.test_setups:
             test_setup.likelihood.make_tf_array(self.x)
 
         self.F = tf.placeholder(float_type)
         rng = np.random.RandomState(0)
-<<<<<<< HEAD
-        self.F_data = rng.randn(10, 2)
-=======
         self.F_data = rng.randn(10, 2).astype(np_float_type)
->>>>>>> master
 
     def test_mean(self):
         for test_setup in self.test_setups:
             l = test_setup.likelihood
             with l.tf_mode():
-<<<<<<< HEAD
-                mu1 = tf.Session().run(l.conditional_mean(self.F), feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
-                mu2, _ = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0), feed_dict={self.x: l.get_free_state(), self.F:self.F_data})
-=======
                 mu1 = tf.Session().run(l.conditional_mean(self.F),
                                        feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
                 mu2, _ = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0),
                                           feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
->>>>>>> master
             self.assertTrue(np.allclose(mu1, mu2, test_setup.tolerance, test_setup.tolerance))
 
     def test_variance(self):
@@ -139,20 +109,12 @@ class TestQuadrature(unittest.TestCase):
         tf.reset_default_graph()
 
         self.rng = np.random.RandomState()
-<<<<<<< HEAD
-        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2)
-=======
         self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(np_float_type)
->>>>>>> master
         self.Fvar = 0.01 * self.Fvar ** 2
         self.test_setups = getTestSetups(includeMultiClass=False)
 
     def test_var_exp(self):
         # get all the likelihoods where variational expectations has been overwritten
-<<<<<<< HEAD
-
-=======
->>>>>>> master
         for test_setup in self.test_setups:
             if not test_setup.is_analytic:
                 continue
@@ -172,10 +134,6 @@ class TestQuadrature(unittest.TestCase):
 
     def test_pred_density(self):
         # get all the likelihoods where predict_density  has been overwritten.
-<<<<<<< HEAD
-
-=======
->>>>>>> master
         for test_setup in self.test_setups:
             if not test_setup.is_analytic:
                 continue
@@ -183,11 +141,7 @@ class TestQuadrature(unittest.TestCase):
             y = test_setup.Y
             x_data = l.get_free_state()
             # make parameters if needed
-<<<<<<< HEAD
-            x = tf.placeholder('float64')
-=======
             x = tf.placeholder(float_type)
->>>>>>> master
             l.make_tf_array(x)
             # 'build' the functions
             with l.tf_mode():
@@ -215,28 +169,40 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         nPoints = 10
         tolerance = 1e-4
         epsilon = 1e-3
-<<<<<<< HEAD
-        F = tf.placeholder(tf.float64)
-        x = tf.placeholder('float64')
-=======
         F = tf.placeholder(float_type)
         x = tf.placeholder(float_type)
->>>>>>> master
         F_data = np.ones((nPoints, nClasses))
         l = GPflow.likelihoods.MultiClass(nClasses)
         l.invlink.epsilon = epsilon
         rng = np.random.RandomState(1)
         Y = rng.randint(nClasses, size=(nPoints, 1))
         with l.tf_mode():
-<<<<<<< HEAD
-            mu, _ = tf.Session().run(l.predict_mean_and_var(F,F), feed_dict={x: l.get_free_state(), F:F_data})  
-            pred = tf.Session().run(l.predict_density(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data})  
-            variational_expectations = tf.Session().run(l.variational_expectations(F,F,Y), feed_dict={x: l.get_free_state(), F:F_data}) 
-        self.assertTrue( np.allclose( mu , np.ones((nPoints,nClasses))/nClasses, tolerance, tolerance ) )
-        self.assertTrue( np.allclose( pred , np.ones((nPoints,1))/nClasses, tolerance, tolerance ) )
-        validation_variational_expectation = 1./nClasses * np.log( 1.- epsilon ) + (1. - 1./nClasses ) * np.log( epsilon / (nClasses - 1) )
-        self.assertTrue( np.allclose( variational_expectations , np.ones((nPoints,1))*validation_variational_expectation, tolerance, tolerance ) )
-     
+            mu, _ = tf.Session().run(l.predict_mean_and_var(F, F), feed_dict={x: l.get_free_state(), F: F_data})
+            pred = tf.Session().run(l.predict_density(F, F, Y), feed_dict={x: l.get_free_state(), F: F_data})
+            variational_expectations = tf.Session().run(l.variational_expectations(F, F, Y),
+                                                        feed_dict={x: l.get_free_state(), F: F_data})
+        self.assertTrue(np.allclose(mu, np.ones((nPoints, nClasses))/nClasses, tolerance, tolerance))
+        self.assertTrue(np.allclose(pred, np.ones((nPoints, 1))/nClasses, tolerance, tolerance))
+        validation_variational_expectation = 1./nClasses * np.log(1. - epsilon) + \
+            (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
+        self.assertTrue(np.allclose(variational_expectations,
+                                    np.ones((nPoints, 1)) * validation_variational_expectation,
+                                    tolerance, tolerance))
+
+
+class TestMulticlassIndexFix(unittest.TestCase):
+    """
+    A regression test for a bug in multiclass likelihood.
+    """
+    def setUp(self):
+        tf.reset_default_graph()
+
+    def testA(self):
+        mu, var = tf.placeholder(float_type), tf.placeholder(float_type)
+        Y = tf.placeholder(tf.int32)
+        lik = GPflow.likelihoods.MultiClass(3)
+        ve = lik.variational_expectations(mu, var, Y)
+        tf.gradients(tf.reduce_sum(ve), mu)
 
 
 class TestSwitchedLikelihood(unittest.TestCase):
@@ -250,7 +216,7 @@ class TestSwitchedLikelihood(unittest.TestCase):
         self.F_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
         self.Fvar_list = [np.exp(rng.randn(3, 2)),  np.exp(rng.randn(4, 2)),  np.exp(rng.randn(5, 2))]
         self.Y_label = [np.ones((3, 1))*0, np.ones((4, 1))*1, np.ones((5, 1))*2]
-        self.Y_perm = range(3+4+5)
+        self.Y_perm = list(range(3+4+5))
         rng.shuffle(self.Y_perm)
 
         # shuffle the original data
@@ -313,34 +279,6 @@ class TestSwitchedLikelihood(unittest.TestCase):
 
         self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
         self.sess.close()
-=======
-            mu, _ = tf.Session().run(l.predict_mean_and_var(F, F), feed_dict={x: l.get_free_state(), F: F_data})
-            pred = tf.Session().run(l.predict_density(F, F, Y), feed_dict={x: l.get_free_state(), F: F_data})
-            variational_expectations = tf.Session().run(l.variational_expectations(F, F, Y),
-                                                        feed_dict={x: l.get_free_state(), F: F_data})
-        self.assertTrue(np.allclose(mu, np.ones((nPoints, nClasses))/nClasses, tolerance, tolerance))
-        self.assertTrue(np.allclose(pred, np.ones((nPoints, 1))/nClasses, tolerance, tolerance))
-        validation_variational_expectation = 1./nClasses * np.log(1. - epsilon) + \
-            (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
-        self.assertTrue(np.allclose(variational_expectations,
-                                    np.ones((nPoints, 1)) * validation_variational_expectation,
-                                    tolerance, tolerance))
-
-
-class TestMulticlassIndexFix(unittest.TestCase):
-    """
-    A regression test for a bug in multiclass likelihood.
-    """
-    def setUp(self):
-        tf.reset_default_graph()
-
-    def testA(self):
-        mu, var = tf.placeholder(float_type), tf.placeholder(float_type)
-        Y = tf.placeholder(tf.int32)
-        lik = GPflow.likelihoods.MultiClass(3)
-        ve = lik.variational_expectations(mu, var, Y)
-        tf.gradients(tf.reduce_sum(ve), mu)
->>>>>>> master
 
 if __name__ == "__main__":
     unittest.main()
