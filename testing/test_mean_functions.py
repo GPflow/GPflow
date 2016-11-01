@@ -2,6 +2,9 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
+from GPflow import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class TestMeanFuncs(unittest.TestCase):
@@ -16,8 +19,8 @@ class TestMeanFuncs(unittest.TestCase):
         self.N = 20
         rng = np.random.RandomState(0)
         self.mfs = [GPflow.mean_functions.Zero(),
-                    GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim)),
-                    GPflow.mean_functions.Constant(rng.randn(self.output_dim))]
+                    GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type)),
+                    GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))]
 
         self.composition_mfs_add = []
         self.composition_mfs_mult = []
@@ -27,13 +30,13 @@ class TestMeanFuncs(unittest.TestCase):
             self.composition_mfs_mult.extend([mean_f1 * mean_f2 for mean_f2 in self.mfs])
 
         self.composition_mfs = self.composition_mfs_add + self.composition_mfs_mult
-        self.x = tf.placeholder('float64')
+        self.x = tf.placeholder(float_type)
 
         for mf in self.mfs:
             mf.make_tf_array(self.x)
 
-        self.X = tf.placeholder(tf.float64, [self.N, self.input_dim])
-        self.X_data = np.random.randn(self.N, self.input_dim)
+        self.X = tf.placeholder(float_type, [self.N, self.input_dim])
+        self.X_data = np.random.randn(self.N, self.input_dim).astype(np_float_type)
 
     def test_basic_output_shape(self):
         for mf in self.mfs:
@@ -65,19 +68,19 @@ class TestModelCompositionOperations(unittest.TestCase):
         self.N = 20
         rng = np.random.RandomState(0)
 
-        X = rng.randn(self.N, self.input_dim)
-        Y = rng.randn(self.N, self.output_dim)
-        self.Xtest = rng.randn(30, 3)
+        X = rng.randn(self.N, self.input_dim).astype(np_float_type)
+        Y = rng.randn(self.N, self.output_dim).astype(np_float_type)
+        self.Xtest = rng.randn(30, 3).astype(np_float_type)
 
         zero = GPflow.mean_functions.Zero()
 
-        linear1 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim))
-        linear2 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim))
-        linear3 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim), rng.randn(self.output_dim))
+        linear1 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type))
+        linear2 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type))
+        linear3 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type))
 
-        const1 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
-        const2 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
-        const3 = GPflow.mean_functions.Constant(rng.randn(self.output_dim))
+        const1 = GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))
+        const2 = GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))
+        const3 = GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))
 
         const1inv = GPflow.mean_functions.Constant(np.reshape(const1.c.get_free_state() * -1, [self.output_dim]))
         linear1inv = GPflow.mean_functions.Linear(A=np.reshape(linear1.A.get_free_state() * -1., [self.input_dim, self.output_dim]),
@@ -173,10 +176,10 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
         self.Ntest = 30
         self.M = 5
         rng = np.random.RandomState(0)
-        X, Y, Z, self.Xtest = rng.randn(self.N, self.input_dim),\
-                              rng.randn(self.N, self.output_dim),\
-                              rng.randn(self.M, self.input_dim),\
-                              rng.randn(self.Ntest, self.input_dim)
+        X, Y, Z, self.Xtest = rng.randn(self.N, self.input_dim).astype(np_float_type),\
+                              rng.randn(self.N, self.output_dim).astype(np_float_type),\
+                              rng.randn(self.M, self.input_dim).astype(np_float_type),\
+                              rng.randn(self.Ntest, self.input_dim).astype(np_float_type)
         k = lambda: GPflow.kernels.Matern32(self.input_dim)
         lik = lambda: GPflow.likelihoods.Gaussian()
 

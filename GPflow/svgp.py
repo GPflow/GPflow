@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, Valentine Svensson, alexggmatthews, Mark van der Wilk
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,21 +13,20 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 from .param import Param, DataHolder
 from .model import GPModel
-from . import transforms
-from . import conditionals
+from . import transforms, conditionals, kullback_leiblers
 from .mean_functions import Zero
-from .tf_hacks import eye
-from . import kullback_leiblers
+from .tf_wraps import eye
+from ._settings import settings
 
 
 class MinibatchData(DataHolder):
     """
-    A special DataHolder class which feeds a minibatch to tensorflow via
-    get_feed_dict().
+    A special DataHolder class which feeds a minibatch to tensorflow via get_feed_dict().
     """
     def __init__(self, array, minibatch_size, rng=None):
         """
@@ -57,13 +56,15 @@ class SVGP(GPModel):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 
-    @inproceedings{hensman2014scalable,
-      title={Scalable Variational Gaussian Process Classification},
-      author={Hensman, James and Matthews,
-              Alexander G. de G. and Ghahramani, Zoubin},
-      booktitle={Proceedings of AISTATS},
-      year={2015}
-    }
+    ::
+
+      @inproceedings{hensman2014scalable,
+        title={Scalable Variational Gaussian Process Classification},
+        author={Hensman, James and Matthews,
+                Alexander G. de G. and Ghahramani, Zoubin},
+        booktitle={Proceedings of AISTATS},
+        year={2015}
+      }
 
     """
     def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(),
@@ -102,30 +103,20 @@ class SVGP(GPModel):
         else:
             q_sqrt = np.array([np.eye(self.num_inducing)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-            self.q_sqrt = Param(q_sqrt)
+            self.q_sqrt = Param(q_sqrt)  # , transforms.LowerTriangular(q_sqrt.shape[2]))  # Temp remove transform
 
     def build_prior_KL(self):
         if self.whiten:
             if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu,
-                                                           self.q_sqrt,
-                                                           self.num_latent)
+                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu, self.q_sqrt)
             else:
-                KL = kullback_leiblers.gauss_kl_white(self.q_mu,
-                                                      self.q_sqrt,
-                                                      self.num_latent)
+                KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6
+            K = self.kern.K(self.Z) + eye(self.num_inducing) * settings.numerics.jitter_level
             if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_diag(self.q_mu,
-                                                     self.q_sqrt,
-                                                     K,
-                                                     self.num_latent)
+                KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
-                KL = kullback_leiblers.gauss_kl(self.q_mu,
-                                                self.q_sqrt,
-                                                K,
-                                                self.num_latent)
+                KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
         return KL
 
     def build_likelihood(self):
@@ -137,29 +128,18 @@ class SVGP(GPModel):
         KL = self.build_prior_KL()
 
         # Get conditionals
-        if self.whiten:
-            cond_fn = conditionals.gaussian_gp_predict_whitened
-        else:
-            cond_fn = conditionals.gaussian_gp_predict
-        fmean, fvar = cond_fn(self.X, self.Z, self.kern,
-                              self.q_mu, self.q_sqrt, self.num_latent)
-
-        # add in mean function to conditionals.
-        fmean += self.mean_function(self.X)
+        fmean, fvar = self.build_predict(self.X, full_cov=False)
 
         # Get variational expectations.
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, tf.float64) / tf.cast(tf.shape(self.X)[0], tf.float64)
+        scale = tf.cast(self.num_data, settings.dtypes.float_type) /\
+            tf.cast(tf.shape(self.X)[0], settings.dtypes.float_type)
 
         return tf.reduce_sum(var_exp) * scale - KL
 
     def build_predict(self, Xnew, full_cov=False):
-        if self.whiten:
-            cond_fn = conditionals.gaussian_gp_predict_whitened
-        else:
-            cond_fn = conditionals.gaussian_gp_predict
-        mu, var = cond_fn(Xnew, self.Z, self.kern,
-                          self.q_mu, self.q_sqrt, self.num_latent, full_cov)
+        mu, var = conditionals.conditional(Xnew, self.Z, self.kern, self.q_mu,
+                                           q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var
