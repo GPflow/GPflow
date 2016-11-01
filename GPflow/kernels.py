@@ -34,7 +34,16 @@ class Kern(Parameterized):
     def __init__(self, input_dim, active_dims=None):
         """
         input dim is an integer
-        active dims is a (slice | iterable of integers | None)
+        active dims is either an iterable of integers or None.
+
+        Input dim is the number of input dimensions to the kernel. If the
+        kernel is computed on a matrix X which has more columns than input_dim,
+        then by default, only the first input_dim columns are used. If
+        different columns are required, then they may be specified by
+        active_dims.
+
+        If active dims is None, it effectively defaults to range(input_dim),
+        but we store it as a slice for efficiency.
         """
         Parameterized.__init__(self)
         self.scoped_keys.extend(['K', 'Kdiag'])
@@ -42,8 +51,7 @@ class Kern(Parameterized):
         if active_dims is None:
             self.active_dims = slice(input_dim)
         else:
-            self._active_dims_array = np.array(active_dims, dtype=np.int32)
-            self.active_dims = tf.constant(self._active_dims_array, tf.int32)
+            self.active_dims = np.array(active_dims, dtype=np.int32)
 
     def _slice(self, X, X2):
         if isinstance(self.active_dims, slice):
@@ -74,17 +82,6 @@ class Kern(Parameterized):
     @AutoFlow((float_type, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
-
-    def __getstate__(self):
-        d = Parameterized.__getstate__(self)
-        if hasattr(self, '_active_dims_array'):
-            d.pop('active_dims')
-        return d
-
-    def __setstate__(self, d):
-        Parameterized.__setstate__(self, d)
-        if hasattr(self, '_active_dims_array'):
-            self.active_dims = tf.constant(self._active_dims_array, tf.int32)
 
 
 class Static(Kern):

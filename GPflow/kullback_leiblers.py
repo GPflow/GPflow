@@ -39,8 +39,8 @@ def gauss_kl_white(q_mu, q_sqrt):
     """
     KL = 0.5 * tf.reduce_sum(tf.square(q_mu))  # Mahalanobis term
     KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), float_type)  # constant term
-    L = tf.batch_matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
-    KL -= 0.5 * tf.reduce_sum(tf.log(tf.square(tf.batch_matrix_diag_part(L))))  # logdet
+    L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
+    KL -= 0.5 * tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(L))))  # logdet
     KL += 0.5 * tf.reduce_sum(tf.square(L))  # Trace term.
     return KL
 
@@ -129,9 +129,9 @@ def gauss_kl(q_mu, q_sqrt, K):
     num_latent = tf.cast(tf.shape(q_sqrt)[2], float_type)
     KL += num_latent * 0.5 * tf.reduce_sum(tf.log(tf.square(tf.diag_part(L))))  # Prior log-det term.
     KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), float_type)  # constant term
-    Lq = tf.batch_matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
-    KL += -0.5*tf.reduce_sum(tf.log(tf.square(tf.batch_matrix_diag_part(Lq))))  # logdet
+    Lq = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
+    KL += -0.5*tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(Lq))))  # logdet
     L_tiled = tf.tile(tf.expand_dims(L, 0), tf.pack([tf.shape(Lq)[0], 1, 1]))
-    LiLq = tf.batch_matrix_triangular_solve(L_tiled, Lq, lower=True)
+    LiLq = tf.matrix_triangular_solve(L_tiled, Lq, lower=True)
     KL += 0.5 * tf.reduce_sum(tf.square(LiLq))  # Trace term
     return KL
