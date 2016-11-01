@@ -34,7 +34,16 @@ class Kern(Parameterized):
     def __init__(self, input_dim, active_dims=None):
         """
         input dim is an integer
-        active dims is a (slice | iterable of integers | None)
+        active dims is either an iterable of integers or None.
+
+        Input dim is the number of input dimensions to the kernel. If the
+        kernel is computed on a matrix X which has more columns than input_dim,
+        then by default, only the first input_dim columns are used. If
+        different columns are required, then they may be specified by
+        active_dims.
+
+        If active dims is None, it effectively defaults to range(input_dim),
+        but we store it as a slice for efficiency.
         """
         Parameterized.__init__(self)
         self.scoped_keys.extend(['K', 'Kdiag'])

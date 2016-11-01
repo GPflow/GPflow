@@ -225,6 +225,8 @@ class Param(Parentable):
             self._tf_array = tf.placeholder(dtype=float_type,
                                             shape=self._array.shape,
                                             name=self.name)
+            # do not consider log jacobian for parameters that are fixed.
+            self._log_jacobian = 0.0
             return 0
         free_size = self.transform.free_state_size(self.shape)
         x_free = free_array[:free_size]
