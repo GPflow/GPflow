@@ -5,7 +5,7 @@ from .gpr import GPR
 from .param import Param
 from .mean_functions import Zero
 from . import likelihoods
-from .tf_hacks import eye
+from .tf_wraps import eye
 from . import kernel_expectations as ke
 from . import transforms
 from . import kernels

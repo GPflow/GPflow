@@ -21,15 +21,15 @@ class RBF(GPflow.kernels.RBF):
         :return: NxM
         """
         # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
+        Xcov = self._slice_cov(Xcov)
+        Z, Xmu = self._slice(Z, Xmu)
         M = tf.shape(Z)[0]
         vec = tf.expand_dims(Xmu, 1) - tf.expand_dims(Z, 0)  # NxMxD
         scalemat = tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0) + Xcov  # NxDxD
         rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
-        smIvec = tf.batch_matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxD
+        smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxD
         q = tf.reduce_sum(smIvec * vec, [2])  # NxM
-        det = tf.batch_matrix_determinant(
+        det = tf.matrix_determinant(
             tf.expand_dims(eye(self.input_dim), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xcov
         )  # N
         return self.variance * tf.expand_dims(det ** -0.5, 1) * tf.exp(-0.5 * q)
@@ -44,8 +44,8 @@ class RBF(GPflow.kernels.RBF):
         """
         tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
         # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
+        Xcov = self._slice_cov(Xcov)
+        Z, Xmu = self._slice(Z, Xmu)
 
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0] - 1
@@ -56,14 +56,14 @@ class RBF(GPflow.kernels.RBF):
         Xmup = Xmu[1:, :]
         scalemat = tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0) + Xsigm  # NxDxD
 
-        det = tf.batch_matrix_determinant(
+        det = tf.matrix_determinant(
             tf.expand_dims(eye(self.input_dim), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xsigm
         )  # N
 
         vec = tf.expand_dims(Z, 0) - tf.expand_dims(Xmum, 1)  # NxMxD
 
         rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
-        smIvec = tf.batch_matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxDx1
+        smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxDx1
         q = tf.reduce_sum(smIvec * vec, [2])  # NxM
 
         addvec = tf.batch_matmul(
@@ -83,21 +83,21 @@ class RBF(GPflow.kernels.RBF):
         :return: NxMxM
         """
         # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
+        Xcov = self._slice_cov(Xcov)
+        Z, Xmu = self._slice(Z, Xmu)
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
         D = self.input_dim
         Kmms = tf.sqrt(self.K(Z)) / self.variance ** 0.5
         scalemat = tf.expand_dims(eye(D), 0) + 2 * Xcov * tf.reshape(self.lengthscales ** -2.0, [1, 1, -1])  # NxDxD
-        det = tf.batch_matrix_determinant(scalemat)
+        det = tf.matrix_determinant(scalemat)
 
         mat = Xcov + 0.5 * tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0)  # NxDxD
-        cm = tf.batch_cholesky(mat)  # NxDxD
+        cm = tf.cholesky(mat)  # NxDxD
         vec = 0.5 * (tf.reshape(Z, [1, M, 1, D]) +
                      tf.reshape(Z, [1, 1, M, D])) - tf.reshape(Xmu, [N, 1, 1, D])  # NxMxMxD
         cmr = tf.tile(tf.reshape(cm, [N, 1, 1, D, D]), [1, M, M, 1, 1])  # NxMxMxDxD
-        smI_z = tf.batch_matrix_triangular_solve(cmr, tf.expand_dims(vec, 4))  # NxMxMxDx1
+        smI_z = tf.matrix_triangular_solve(cmr, tf.expand_dims(vec, 4))  # NxMxMxDx1
         fs = tf.reduce_sum(tf.square(smI_z), [3, 4])
 
         return self.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
@@ -106,19 +106,19 @@ class RBF(GPflow.kernels.RBF):
 class Linear(GPflow.kernels.Linear):
     def eKdiag(self, X, Xcov):
         # use only active dimensions
-        X, Xcov = self._slice(X, Xcov)
-        return self.variance * (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.batch_matrix_diag_part(Xcov), 1))
+        X, _ = self._slice(X, None)
+        Xcov = self._slice_cov(Xcov)
+        return self.variance * (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.matrix_diag_part(Xcov), 1))
 
     def eKxz(self, Z, Xmu, Xcov):
         # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
-        return self.variance * tf.matmul(Xmu, tf.transpose(Z))
+        Z, Xmu = self._slice(Z, Xmu)
+        return self.variance * tf.batch_matmul(Xmu, tf.transpose(Z))
 
     def exKxz(self, Z, Xmu, Xcov):
         # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
+        Xcov = self._slice_cov(Xcov)
+        Z, Xmu = self._slice(Z, Xmu)
         N = tf.shape(Xmu)[0] - 1
         Xmum = Xmu[:-1, :]
         Xmup = Xmu[1:, :]

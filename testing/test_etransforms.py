@@ -40,7 +40,7 @@ class TestBlockTriDiagonalTransform(unittest.TestCase):
         sr = s.reshape(ns, -1)
         fm = t.forward_fullmat(self.x_np)
         empcov1 = np.einsum('ni,nj->ij', sr, sr) / ns
-        self.assertTrue(np.allclose(empcov1, fm, 0.05, 1e-2))
+        self.assertTrue(np.allclose(empcov1, fm, 0.05, 2e-2))
 
 
 if __name__ == "__main__":

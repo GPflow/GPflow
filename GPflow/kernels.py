@@ -45,7 +45,7 @@ def mvhermgauss(means, covs, H, D):
     gh_x, gh_w = hermgauss(H)
     xn = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
     wn = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
-    cholXcov = tf.batch_cholesky(covs)  # NxDxD
+    cholXcov = tf.cholesky(covs)  # NxDxD
     X = 2.0 ** 0.5 * tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
                                      adj_y=True) + tf.expand_dims(means, 2)  # NxDxH**D
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, D))  # H**DxNxD
@@ -66,16 +66,12 @@ class Kern(Parameterized):
         Parameterized.__init__(self)
         self.scoped_keys.extend(['K', 'Kdiag'])
         self.input_dim = input_dim
-        # TEMP HACK Code was using slice which cannot be handled in kernel_expectations
-        #         if active_dims is None:
-        #             self.active_dims = slice(input_dim)
-        #         else:
-        #             self._active_dims_array = np.array(active_dims, dtype=np.int32)
-        #             self.active_dims = tf.constant(self._active_dims_array, tf.int32)
         if active_dims is None:
-            active_dims = range(input_dim)
-        self._active_dims_array = np.array(active_dims, dtype=np.int32)
-        self.active_dims = tf.constant(self._active_dims_array, tf.int32)
+            self.active_dims = slice(input_dim)
+        elif type(active_dims) is slice:
+            self.active_dims = active_dims
+        else:
+            self.active_dims = np.array(active_dims, dtype=np.int32)
         self.num_gauss_hermite_points = 20
 
     def _slice(self, X, X2):
@@ -89,6 +85,14 @@ class Kern(Parameterized):
             if X2 is not None:
                 X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
             return X, X2
+
+    def _slice_cov(self, cov):
+        if isinstance(self.active_dims, slice):
+            cov = cov[..., self.active_dims, self.active_dims]
+        else:
+            i = np.dstack(np.meshgrid(self.active_dims, self.active_dims))
+            cov = tf.transpose(tf.gather_nd(tf.transpose(cov), i))
+        return cov
 
     def __add__(self, other):
         return Add([self, other])
@@ -107,17 +111,6 @@ class Kern(Parameterized):
     @AutoFlow((float_type, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
-
-    def __getstate__(self):
-        d = Parameterized.__getstate__(self)
-        if hasattr(self, '_active_dims_array'):
-            d.pop('active_dims')
-        return d
-
-    def __setstate__(self, d):
-        Parameterized.__setstate__(self, d)
-        if hasattr(self, '_active_dims_array'):
-            self.active_dims = tf.constant(self._active_dims_array, tf.int32)
 
     @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None, None]))
     def compute_eKdiag(self, X, Xcov=None):
@@ -170,8 +163,8 @@ class Kern(Parameterized):
         :return:
         """
         # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
+        Xcov = self._slice_cov(Xcov)
+        Z, Xmu = self._slice(Z, Xmu)
         N = tf.shape(Xmu)[0] - 1
         M = tf.shape(Z)[0]
         D = tf.shape(Xmu)[1]

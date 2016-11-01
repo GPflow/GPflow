@@ -52,28 +52,39 @@ def on_separate_dimensions(kernlist):
     """
     Take a list of kernels and return true if they operate on non-overlapping dimensions.
     """
-    # TODO: what if active_dims is a slice? raise Exception
-    with tf.Session() as sess:
-        dimlist = [sess.run(k.active_dims) for k in kernlist]
-    overlapping = False
-    for i, dims_i in enumerate(dimlist):
-        for dims_j in dimlist[i+1:]:
-            if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
-                overlapping = True
-    return not overlapping
+    # Be conservative in the case of a slice object
+    if np.any([isinstance(k.active_dims, slice) for k in kernlist]):
+        return False
+    else:
+        dimlist = [k.active_dims for k in kernlist]
+        overlapping = False
+        for i, dims_i in enumerate(dimlist):
+            for dims_j in dimlist[i+1:]:
+                if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
+                    overlapping = True
+        return not overlapping
 
 
 def is_one_dimensional(kern):
-    with tf.Session() as sess:
-        dims = sess.run(kern.active_dims)
-    return len(dims) == 1
+    if kern.input_dim == 1:
+        return True
+    elif isinstance(kern.active_dims, slice):
+        if kern.active_dims.start is None or kern.active_dims.stop is None:
+            return False
+        return (kern.active_dims.stop - kern.active_dims.start) == 1
+    else:
+        len(kern.active_dims) == 1
 
 
 def pad_inputs(kern, X):
     """
     prepend extra columns to X that will be sliced away by the kernel
     """
-    return tf.concat(1, [tf.zeros(tf.pack([tf.shape(X)[0], kern.active_dims[0]]), tf.float64), X])
+    if isinstance(kern.active_dims, slice):
+        start_index = 0 if kern.active_dims.start is None else kern.active_dims.start
+    else:
+        start_index = kern.active_dims[0]
+    return tf.concat(1, [tf.zeros(tf.pack([tf.shape(X)[0], start_index]), tf.float64), X])
 
 
 def one_dimensional_psi_stats(Z, kern, mu, S, numpoints=20):
