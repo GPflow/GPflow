@@ -353,6 +353,7 @@ class Linear(Kern):
             return tf.matmul(X * self.variance, tf.transpose(X2))
 
     def Kdiag(self, X):
+        X, _ = self._slice(X, None)
         return tf.reduce_sum(tf.square(X) * self.variance, 1)
 
 

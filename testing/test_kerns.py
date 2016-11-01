@@ -3,7 +3,7 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from .reference import referenceRbfKernel, referencePeriodicKernel
+from testing.reference import referenceRbfKernel, referencePeriodicKernel
 
 
 class TestRbf(unittest.TestCase):
@@ -221,29 +221,38 @@ class TestSlice(unittest.TestCase):
     """
 
     def setUp(self):
-        tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
-        self.k1 = GPflow.kernels.RBF(1, active_dims=[0])
-        self.k2 = GPflow.kernels.RBF(1, active_dims=[1])
-        self.k3 = GPflow.kernels.RBF(1)
+        tf.reset_default_graph()
+
         self.X = self.rng.randn(20, 2)
         self.Z = self.rng.randn(10, 2)
 
+        kernels = GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Constant, GPflow.kernels.Linear,
+                                                                GPflow.kernels.Polynomial]
+        self.kernels = []
+        for kernclass in kernels:
+            k1 = kernclass(self.X.shape[1], active_dims=[0])
+            k2 = kernclass(self.X.shape[1], active_dims=[1])
+            k3 = kernclass(1)
+            self.kernels.append([k1, k2, k3])
+
     def test_symm(self):
-        K1 = self.k1.compute_K_symm(self.X)
-        K2 = self.k2.compute_K_symm(self.X)
-        K3 = self.k3.compute_K_symm(self.X[:, :1])
-        K4 = self.k3.compute_K_symm(self.X[:, 1:])
-        self.assertTrue(np.allclose(K1, K3))
-        self.assertTrue(np.allclose(K2, K4))
+        for k1, k2, k3 in self.kernels:
+            K1 = k1.compute_K_symm(self.X)
+            K2 = k2.compute_K_symm(self.X)
+            K3 = k3.compute_K_symm(self.X[:, :1])
+            K4 = k3.compute_K_symm(self.X[:, 1:])
+            self.assertTrue(np.allclose(K1, K3))
+            self.assertTrue(np.allclose(K2, K4))
 
     def test_asymm(self):
-        K1 = self.k1.compute_K(self.X, self.Z)
-        K2 = self.k2.compute_K(self.X, self.Z)
-        K3 = self.k3.compute_K(self.X[:, :1], self.Z[:, :1])
-        K4 = self.k3.compute_K(self.X[:, 1:], self.Z[:, 1:])
-        self.assertTrue(np.allclose(K1, K3))
-        self.assertTrue(np.allclose(K2, K4))
+        for k1, k2, k3 in self.kernels:
+            K1 = k1.compute_K(self.X, self.Z)
+            K2 = k2.compute_K(self.X, self.Z)
+            K3 = k3.compute_K(self.X[:, :1], self.Z[:, :1])
+            K4 = k3.compute_K(self.X[:, 1:], self.Z[:, 1:])
+            self.assertTrue(np.allclose(K1, K3))
+            self.assertTrue(np.allclose(K2, K4))
 
 
 class TestProd(unittest.TestCase):
