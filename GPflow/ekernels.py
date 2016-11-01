@@ -1,3 +1,5 @@
+from functools import reduce
+import numpy as np
 import tensorflow as tf
 import GPflow.kernels
 from GPflow.tf_wraps import eye
@@ -24,13 +26,15 @@ class RBF(GPflow.kernels.RBF):
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
         M = tf.shape(Z)[0]
+        D = tf.shape(Xmu)[1]
+
         vec = tf.expand_dims(Xmu, 1) - tf.expand_dims(Z, 0)  # NxMxD
         scalemat = tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0) + Xcov  # NxDxD
         rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
         smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxD
         q = tf.reduce_sum(smIvec * vec, [2])  # NxM
         det = tf.matrix_determinant(
-            tf.expand_dims(eye(self.input_dim), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xcov
+            tf.expand_dims(eye(D), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xcov
         )  # N
         return self.variance * tf.expand_dims(det ** -0.5, 1) * tf.exp(-0.5 * q)
 
@@ -87,7 +91,8 @@ class RBF(GPflow.kernels.RBF):
         Z, Xmu = self._slice(Z, Xmu)
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
-        D = self.input_dim
+        D = tf.shape(Xmu)[1]
+
         Kmms = tf.sqrt(self.K(Z)) / self.variance ** 0.5
         scalemat = tf.expand_dims(eye(D), 0) + 2 * Xcov * tf.reshape(self.lengthscales ** -2.0, [1, 1, -1])  # NxDxD
         det = tf.matrix_determinant(scalemat)
@@ -105,12 +110,18 @@ class RBF(GPflow.kernels.RBF):
 
 class Linear(GPflow.kernels.Linear):
     def eKdiag(self, X, Xcov):
+        if self.ARD:
+            # TODO: Implement ARD
+            raise NotImplementedError
         # use only active dimensions
         X, _ = self._slice(X, None)
         Xcov = self._slice_cov(Xcov)
         return self.variance * (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.matrix_diag_part(Xcov), 1))
 
     def eKxz(self, Z, Xmu, Xcov):
+        if self.ARD:
+            # TODO: Implement ARD
+            raise NotImplementedError
         # use only active dimensions
         Z, Xmu = self._slice(Z, Xmu)
         return self.variance * tf.batch_matmul(Xmu, tf.transpose(Z))
@@ -123,7 +134,7 @@ class Linear(GPflow.kernels.Linear):
         Xmum = Xmu[:-1, :]
         Xmup = Xmu[1:, :]
         op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
-        return self.variance*tf.batch_matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
+        return self.variance * tf.batch_matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
@@ -134,9 +145,49 @@ class Linear(GPflow.kernels.Linear):
         :return:
         """
         # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
+        Xcov = self._slice_cov(Xcov)
+        Z, Xmu = self._slice(Z, Xmu)
         N = tf.shape(Xmu)[0]
         mom2 = tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2) + Xcov  # NxDxD
         eZ = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
         return self.variance ** 2.0 * tf.batch_matmul(tf.batch_matmul(eZ, mom2), eZ, adj_y=True)
+
+
+class Add(GPflow.kernels.Add):
+    """
+    Add
+    This version of Add will call the corresponding kernel expectations for each of the summed kernels. This will be
+    much better for kernels with analytically calculated kernel expectations. If quadrature is to be used, it's probably
+    better to do quadrature on the summed kernel function using `GPflow.kernels.Add` instead.
+    """
+
+    def eKdiag(self, X, Xcov):
+        return reduce(tf.add, [k.eKdiag(X, Xcov) for k in self.kern_list])
+
+    def eKxz(self, Z, Xmu, Xcov):
+        return reduce(tf.add, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
+
+    def exKxz(self, Z, Xmu, Xcov):
+        return reduce(tf.add, [k.exKxz(Z, Xmu, Xcov) for k in self.kern_list])
+
+    def eKzxKxz(self, Z, Xmu, Xcov):
+        all_sum = reduce(tf.add, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
+        if self.on_separate_dimensions:
+            return all_sum
+        else:
+            # TODO: Implement quadrature
+            raise NotImplementedError
+
+    @property
+    def on_separate_dimensions(self):
+        if np.any([isinstance(k.active_dims, slice) for k in self.kern_list]):
+            # Be conservative in the case of a slice object
+            return False
+        else:
+            dimlist = [k.active_dims for k in self.kern_list]
+            overlapping = False
+            for i, dims_i in enumerate(dimlist):
+                for dims_j in dimlist[i + 1:]:
+                    if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
+                        overlapping = True
+            return not overlapping

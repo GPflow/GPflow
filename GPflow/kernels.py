@@ -33,12 +33,13 @@ def hermgauss(n):
     return x, w
 
 
-def mvhermgauss(means, covs, H, D):
+def mvhermgauss(means, covs, H, D, active_dims=None):
     """
     Return the evaluation locations, and weights for several multivariate Hermite-Gauss quadrature runs.
     :param means: NxD
     :param covs: NxDxD
     :param H: Number of Gauss-Hermite evaluation points.
+    :param D: Number of input dimensions. Needs to be known at call-time.
     :return: eval_locations (H**DxNxD), weights (H**D)
     """
     N = tf.shape(means)[0]
@@ -144,18 +145,14 @@ class Kern(Parameterized):
         :param Xcov: Covariance (NxDxD)
         :return:
         """
-        # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-
+        # TODO: Use only active dimensions, can do this by only generating GH points in the right dims
         X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
         Kdiag = tf.reshape(self.Kdiag(X), (self.num_gauss_hermite_points ** self.input_dim, tf.shape(Xmu)[0]))
         eKdiag = tf.reduce_sum(Kdiag * wn[:, None], 0)
         return eKdiag
 
     def eKxz(self, Z, Xmu, Xcov):
-        # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
+        # TODO: Use only active dimensions
         N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
         HpowD = self.num_gauss_hermite_points ** self.input_dim
@@ -171,7 +168,7 @@ class Kern(Parameterized):
         :param Xcov: 2xNxDxD
         :return:
         """
-        # use only active dimensions
+        # TODO: Use only active dimensions
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
         N = tf.shape(Xmu)[0] - 1
@@ -191,9 +188,7 @@ class Kern(Parameterized):
         return exKxz
 
     def eKzxKxz(self, Z, Xmu, Xcov):
-        # use only active dimensions
-        Xmu, Xcov = self._slice(Xmu, Xcov)
-        Z, _ = self._slice(Z, None)
+        # TODO: Use only active dimensions
         N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
         HpowD = self.num_gauss_hermite_points ** self.input_dim
