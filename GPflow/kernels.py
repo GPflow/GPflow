@@ -53,6 +53,7 @@ class Kern(Parameterized):
             self.active_dims = slice(input_dim)
         else:
             self.active_dims = np.array(active_dims, dtype=np.int32)
+            assert len(active_dims) == input_dim
 
     def _slice(self, X, X2):
         if isinstance(self.active_dims, slice):
