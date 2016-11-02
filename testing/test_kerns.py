@@ -3,7 +3,7 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from testing.reference import referenceRbfKernel, referencePeriodicKernel
+from .reference import referenceRbfKernel, referencePeriodicKernel
 
 
 class TestRbf(unittest.TestCase):
@@ -231,8 +231,8 @@ class TestSlice(unittest.TestCase):
                                                                 GPflow.kernels.Polynomial]
         self.kernels = []
         for kernclass in kernels:
-            k1 = kernclass(self.X.shape[1], active_dims=[0])
-            k2 = kernclass(self.X.shape[1], active_dims=[1])
+            k1 = kernclass(1, active_dims=[0])
+            k2 = kernclass(1, active_dims=[1])
             k3 = kernclass(1)
             self.kernels.append([k1, k2, k3])
 
