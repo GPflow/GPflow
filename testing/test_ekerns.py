@@ -195,7 +195,7 @@ class TestKernExpQuadrature(unittest.TestCase):
         rbfard = [self.rng.rand() + 0.5]
         linvariance = 0.3 + self.rng.rand()
         self.kernels.append(
-            kernels.Add(2, [
+            kernels.Add([
                 kernels.RBF(1, rbfvariance, rbfard, [0], False),
                 kernels.Linear(1, linvariance, [1])
             ])
@@ -206,7 +206,7 @@ class TestKernExpQuadrature(unittest.TestCase):
         # for k in self.kernels[-1].kern_list:
         #     k.num_gauss_hermite_points = 30
         self.ekernels.append(
-            ekernels.Add(2, [
+            ekernels.Add([
                 ekernels.RBF(1, rbfvariance, rbfard, [0], False),
                 ekernels.Linear(1, linvariance, [1])
             ])
