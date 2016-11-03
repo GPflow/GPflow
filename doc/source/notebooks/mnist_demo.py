@@ -5,32 +5,18 @@ import time
 import tensorflow as tf
 import urllib2
 import os.path
+from tensorflow.examples.tutorials.mnist import input_data
 
 data_directory = 'data/'
 mnist_file_name = 'mnist_pickle'
 
-def downloadMnistData():
-	url = "http://mlg.eng.cam.ac.uk/matthews/GPflow/datasets/mnist/"+mnist_file_name
-	u = urllib2.urlopen(url)
-	f = open(data_directory+mnist_file_name, 'wb')
-	meta = u.info()
-	file_size = int(meta.getheaders("Content-Length")[0])
-	print "Downloading: %s Bytes: %s" % (mnist_file_name, file_size)
-	
-	file_size_dl = 0
-	block_sz = 8192
-	while True:
-		buffer = u.read(block_sz)
-		if not buffer:
-			break
-		
-		file_size_dl += len(buffer)
-		f.write(buffer)
-		status = r"%10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
-		status = status + chr(8)*(len(status)+1)
-		print status,
-	
-	f.close()	
+def getMnistData():
+	mnist = input_data.read_data_sets("MNIST_data/", one_hot=False)
+	X_train = np.vstack( [mnist.train.images,mnist.validation.images] )
+	Y_train = np.atleast_2d(np.hstack( [mnist.train.labels,mnist.validation.labels] )).T
+	X_test = mnist.test.images
+	Y_test = mnist.test.labels
+	return X_train, Y_train, X_test, Y_test
 
 np.random.seed(0)
 ndata = None # none for all data
@@ -44,12 +30,7 @@ nClasses = 10
 vb_batchsize = 1000
 thin = 2
 
-if not(os.path.exists(mnist_file_name)):
-	downloadMnistData()
-data = pickle.load(open(data_directory+mnist_file_name,'r'))
-X_train, Y_train, X_test, Y_test = data['Xtrain'], data['Ytrain'], data['Xtest'], data['Ytest']
-X_train = X_train.reshape(X_train.shape[0], -1)
-X_test = X_test.reshape(X_test.shape[0], -1)
+X_train, Y_train, X_test, Y_test = getMnistData()
 
 #scale data
 X_train = X_train/255.0
