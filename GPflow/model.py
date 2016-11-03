@@ -120,7 +120,6 @@ class Model(Parameterized):
         """
         self._graph = tf.Graph()
         self._session = tf.Session(graph=self._graph)
-        self._feed_dict_keys = self.get_feed_dict_keys()
         with self._graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
 
@@ -147,6 +146,7 @@ class Model(Parameterized):
             print("compiling tensorflow function...")
         sys.stdout.flush()
 
+        self._feed_dict_keys = self.get_feed_dict_keys()
         def obj(x):
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
