@@ -6,7 +6,10 @@ import time
 import tensorflow as tf
 import urllib2
 import os.path
+from GPflow import settings
 from tensorflow.examples.tutorials.mnist import input_data
+
+settings.dtypes.float_type = tf.float32
 
 def getMnistData():
 	mnist = input_data.read_data_sets("MNIST_data/", one_hot=False)
