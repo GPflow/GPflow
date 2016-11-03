@@ -1,15 +1,11 @@
 from __future__ import print_function
 import numpy as np
 import GPflow
-import cPickle as pickle
 import time
 import tensorflow as tf
-import urllib2
 import os.path
 from GPflow import settings
 from tensorflow.examples.tutorials.mnist import input_data
-
-settings.dtypes.float_type = tf.float32
 
 def getMnistData():
 	mnist = input_data.read_data_sets("MNIST_data/", one_hot=False)
@@ -34,9 +30,7 @@ thin = 2
 X_train, Y_train, X_test, Y_test = getMnistData()
 
 #scale data
-X_train = X_train/255.0
 X_train = X_train*2. - 1.
-X_test = X_test/255.0
 X_test = X_test*2. - 1.
 
 #randomize order
