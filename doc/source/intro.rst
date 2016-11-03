@@ -19,12 +19,10 @@ What's the difference between GPy and GPflow?
 
 GPflow has origins in `GPy <http://github.com/sheffieldml/gpy>`_ by the `GPy contributors <https://github.com/SheffieldML/GPy/graphs/contributors>`_, and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
 
- -  GPflow attempts to leverage tensorflow for faster/bigger computation
+ -  GPflow leverages TensorFlow for faster/bigger computation
  -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
  -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
- -  GPflow does not do latent variable models (GPLVMs).
  -  GPflow does not have any plotting functionality.
- -  GPflow is not meant as a tool to teach about GPs. `GPy is much better at that <http://gpss.cc>`_. 
 
 What models are implemented?
 ----------------------------
