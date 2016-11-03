@@ -8,9 +8,6 @@ import urllib2
 import os.path
 from tensorflow.examples.tutorials.mnist import input_data
 
-data_directory = 'data/'
-mnist_file_name = 'mnist_pickle'
-
 def getMnistData():
 	mnist = input_data.read_data_sets("MNIST_data/", one_hot=False)
 	X_train = np.vstack( [mnist.train.images,mnist.validation.images] )
