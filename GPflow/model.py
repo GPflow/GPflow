@@ -103,7 +103,7 @@ class Model(Parameterized):
         This method is necessary for pickling objects
         """
         d = Parameterized.__getstate__(self)
-        for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG']:
+        for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG', '_feed_dict_keys']:
             try:
                 d.pop(key)
             except:
@@ -120,6 +120,7 @@ class Model(Parameterized):
         """
         self._graph = tf.Graph()
         self._session = tf.Session(graph=self._graph)
+        self._feed_dict_keys = self.get_feed_dict_keys()
         with self._graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
 
@@ -148,7 +149,7 @@ class Model(Parameterized):
 
         def obj(x):
             feed_dict = {self._free_vars: x}
-            feed_dict.update(self.get_feed_dict())
+            self.update_feed_dict(self._feed_dict_keys, feed_dict)
             f, g = self._session.run([self._minusF, self._minusG],
                                      feed_dict=feed_dict)
             return f.astype(np.float64), g.astype(np.float64)
@@ -221,11 +222,13 @@ class Model(Parameterized):
         Optimize the model using a tensorflow optimizer. See self.optimize()
         """
         opt_step = self._compile(optimizer=method)
+        feed_dict = {}
+        self.update_feed_dict(self._feed_dict_keys, feed_dict)
 
         try:
             iteration = 0
             while iteration < maxiter:
-                self._session.run(opt_step, feed_dict=self.get_feed_dict())
+                self._session.run(opt_step, feed_dict=feed_dict)
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
                 iteration += 1
