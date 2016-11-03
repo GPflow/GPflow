@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import GPflow
 import cPickle as pickle
@@ -60,14 +61,14 @@ m_vb.likelihood.fixed=True
 
 #Takes a long time to run.        
 for repeatIndex in range(len(vb_max_iters)):
-	print "repeatIndex ", repeatIndex
+	print("repeatIndex ", repeatIndex)
 	start_time = time.time()
 	m_vb.optimize( tf.train.AdadeltaOptimizer(learning_rate=step_rates[repeatIndex], rho=0.9, epsilon=1e-4, use_locking=True) , maxiter=vb_max_iters[repeatIndex] )
 	mu, _ = m_vb.predict_y(X_test)
 	percent = np.mean(np.argmax(mu,1)==Y_test.flatten())
 	new_time = time.time()
-	print "percent ", percent
-	print "cycle_diff ", new_time - start_time
+	print("percent ", percent)
+	print("cycle_diff ", new_time - start_time)
 	start_time = new_time
 
 #achieves 97.94% error.
