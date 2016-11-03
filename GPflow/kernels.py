@@ -448,7 +448,12 @@ class Combination(Kern):
     def __init__(self, kern_list):
         for k in kern_list:
             assert isinstance(k, Kern), "can only add Kern instances"
-        Kern.__init__(self, input_dim=np.max([k.input_dim for k in kern_list]))
+
+        if np.any([type(k.active_dims) is slice for k in kern_list]):
+            input_dim = np.max([k.input_dim for k in kern_list])
+        else:
+            input_dim = np.hstack([k.active_dims for k in kern_list])
+        Kern.__init__(self, input_dim=input_dim)
 
         # add kernels to a list, flattening out instances of this class therein
         self.kern_list = []
