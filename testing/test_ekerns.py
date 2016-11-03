@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 import numpy.random as rnd
+import tensorflow as tf
 from GPflow import kernels
 from GPflow import ekernels
 import GPflow.etransforms
@@ -70,16 +71,16 @@ class TestKernExpActiveDims(unittest.TestCase):
 
         variance = 0.3 + rnd.rand()
 
-        k1 = ekernels.RBF(self.D, variance, active_dims=[0])
-        klin = ekernels.Linear(self.D, variance, active_dims=[1])
+        k1 = ekernels.RBF(1, variance, active_dims=[0])
+        klin = ekernels.Linear(1, variance, active_dims=[1])
         self.ekernels = [k1, klin]
 
         k1 = ekernels.RBF(1, variance)
         klin = ekernels.Linear(1, variance)
         self.pekernels = [k1, klin]
 
-        k1 = kernels.RBF(self.D, variance, active_dims=[0])
-        klin = kernels.Linear(self.D, variance, active_dims=[1])
+        k1 = kernels.RBF(1, variance, active_dims=[0])
+        klin = kernels.Linear(1, variance, active_dims=[1])
         self.kernels = [k1, klin]
 
         k1 = kernels.RBF(1, variance)
@@ -109,6 +110,64 @@ class TestKernExpActiveDims(unittest.TestCase):
             self._assert_pdeq(a, b, k)
 
 
+class TestExpxKxzActiveDims(unittest.TestCase):
+    _threshold = 0.5
+
+    def setUp(self):
+        self.N = 4
+        self.D = 2
+        self.Xmu = rnd.rand(self.N, self.D)
+        self.Z = rnd.rand(3, self.D)
+        unconstrained = rnd.randn(self.N, 2 * self.D, self.D)
+        t = GPflow.etransforms.TriDiagonalBlockRep()
+        self.Xcov = t.forward(unconstrained)
+
+        variance = 0.3 + rnd.rand()
+
+        k1 = ekernels.RBF(1, variance, active_dims=[0])
+        klin = ekernels.Linear(1, variance, active_dims=[1])
+        self.ekernels = [k1, klin]
+
+        k1 = ekernels.RBF(2, variance)
+        klin = ekernels.Linear(2, variance)
+        self.pekernels = [k1, klin]
+
+        k1 = kernels.RBF(1, variance, active_dims=[0])
+        klin = kernels.Linear(1, variance, active_dims=[1])
+        self.kernels = [k1, klin]
+
+        k1 = kernels.RBF(2, variance)
+        klin = kernels.Linear(2, variance)
+        self.pkernels = [k1, klin]
+
+    def _assert_pdeq(self, a, b, k=None):
+        pdmax = np.max(np.abs((a / b - 1) * 100))
+        self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
+                                                     "On kernel: %s" % (pdmax, str(type(k))))
+
+    def test_quad_active_dims(self):
+        for k, pk in zip(self.kernels, self.pkernels):
+            # exKxz is interacts slightly oddly with `active_dims`. It can't be implemented by simply dropping the
+            # dependence on certain inputs. As we still need to output the outer product between x_{t-1} and K_{x_t, Z}.
+            # So we can't do a comparison to a kernel that just takes a smaller X as an input. It may be possible to do
+            # this though for a carefully crafted `Xcov`. However, I'll leave that as a todo for now.
+            k.input_size = self.Xmu.shape[1]
+            pk.input_size = self.Xmu.shape[1]
+            a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
+            b = pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
+            self.assertFalse(np.all(a == b))
+            exp_shape = np.array([self.N - 1, self.Z.shape[0], self.D])
+            self.assertTrue(np.all(a.shape == exp_shape),
+                            msg="Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape)))
+
+        for k, pk in zip(self.ekernels, self.pekernels):
+            try:
+                k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
+                pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
+            except Exception as e:
+                self.assertTrue(type(e) is tf.errors.InvalidArgumentError)
+
+
 class TestKernExpQuadrature(unittest.TestCase):
     _threshold = 0.5
 
@@ -131,26 +190,30 @@ class TestKernExpQuadrature(unittest.TestCase):
         self.ekernels = [c(*p) for c, p in zip(ekernel_classes, params)]
         self.kernels = [c(*p) for c, p in zip(kernel_classes, params)]
 
-        # # Test summed kernels
-        # rbfvariance = 0.3 + self.rng.rand()
-        # rbfard = [self.rng.rand() + 0.5]
-        # linvariance = 0.3 + self.rng.rand()
-        # self.kernels.append(
-        #     kernels.Add([
-        #         kernels.RBF(self.D, rbfvariance, rbfard, [0], False),
-        #         kernels.Linear(self.D, linvariance, [1])
-        #     ])
-        # )
-        # # for k in self.kernels[-1].kern_list:
-        # #     k.num_gauss_hermite_points = 30
-        # self.ekernels.append(
-        #     ekernels.Add([
-        #         ekernels.RBF(self.D, rbfvariance, rbfard, [0], False),
-        #         ekernels.Linear(self.D, linvariance, [1])
-        #     ])
-        # )
+        # Test summed kernels
+        rbfvariance = 0.3 + self.rng.rand()
+        rbfard = [self.rng.rand() + 0.5]
+        linvariance = 0.3 + self.rng.rand()
+        self.kernels.append(
+            kernels.Add(2, [
+                kernels.RBF(1, rbfvariance, rbfard, [0], False),
+                kernels.Linear(1, linvariance, [1])
+            ])
+        )
+        self.kernels[-1].input_size = self.kernels[-1].input_dim
+        for k in self.kernels[-1].kern_list:
+            k.input_size = self.kernels[-1].input_size
+        # for k in self.kernels[-1].kern_list:
+        #     k.num_gauss_hermite_points = 30
+        self.ekernels.append(
+            ekernels.Add(2, [
+                ekernels.RBF(1, rbfvariance, rbfard, [0], False),
+                ekernels.Linear(1, linvariance, [1])
+            ])
+        )
 
     def _assert_pdeq(self, a, b, k=None):
+        self.assertTrue(np.all(a.shape == b.shape))
         pdmax = np.max(np.abs(a / b - 1) * 100)
         self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
                                                      "On kernel: %s" % (pdmax, str(type(k))))
@@ -176,7 +239,8 @@ class TestKernExpQuadrature(unittest.TestCase):
             self._assert_pdeq(a, b, k)
 
     def test_exKxz(self):
-        for k, ek in zip(self.kernels, self.ekernels):
+        # TODO: Run test for sum kernel as well.
+        for k, ek in zip(self.kernels[:-1], self.ekernels[:-1]):
             k._kill_autoflow()
             k.num_gauss_hermite_points = 20
             a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)

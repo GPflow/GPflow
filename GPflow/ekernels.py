@@ -46,10 +46,11 @@ class RBF(GPflow.kernels.RBF):
         :param Xcov: 2x(N+1)xDxD
         :return: NxMxD
         """
-        tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
-        # use only active dimensions
-        Xcov = self._slice_cov(Xcov)
-        Z, Xmu = self._slice(Z, Xmu)
+        with tf.control_dependencies([
+            tf.assert_equal(tf.shape(Xmu)[1], self.input_dim, message="Currently cannot handle slicing in exKxz."),
+            tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
+        ]):
+            Xmu = tf.identity(Xmu)
 
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0] - 1
@@ -61,7 +62,7 @@ class RBF(GPflow.kernels.RBF):
         scalemat = tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0) + Xsigm  # NxDxD
 
         det = tf.matrix_determinant(
-            tf.expand_dims(eye(self.input_dim), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xsigm
+            tf.expand_dims(eye(tf.shape(Xmu)[1]), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xsigm
         )  # N
 
         vec = tf.expand_dims(Z, 0) - tf.expand_dims(Xmum, 1)  # NxMxD
@@ -127,9 +128,12 @@ class Linear(GPflow.kernels.Linear):
         return self.variance * tf.batch_matmul(Xmu, tf.transpose(Z))
 
     def exKxz(self, Z, Xmu, Xcov):
-        # use only active dimensions
-        Xcov = self._slice_cov(Xcov)
-        Z, Xmu = self._slice(Z, Xmu)
+        with tf.control_dependencies([
+            tf.assert_equal(tf.shape(Xmu)[1], self.input_dim, message="Currently cannot handle slicing in exKxz."),
+            tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
+        ]):
+            Xmu = tf.identity(Xmu)
+
         N = tf.shape(Xmu)[0] - 1
         Xmum = Xmu[:-1, :]
         Xmup = Xmu[1:, :]
@@ -173,7 +177,16 @@ class Add(GPflow.kernels.Add):
     def eKzxKxz(self, Z, Xmu, Xcov):
         all_sum = reduce(tf.add, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
         if self.on_separate_dimensions:
-            return all_sum
+            crossterms = []
+            for i, kerna in enumerate(self.kern_list):
+                Ka = kerna.eKxz(Z, Xmu, Xcov)
+                for kernb in self.kern_list[i + 1:]:
+                    Kb = kernb.eKxz(Z, Xmu, Xcov)
+                    op = tf.matmul(Ka, Kb, transpose_a=True)
+                    ct = tf.transpose(op) + op
+                    crossterms.append(ct)
+            crossterm = reduce(tf.add, crossterms)
+            return all_sum + crossterm
         else:
             # TODO: Implement quadrature
             raise NotImplementedError

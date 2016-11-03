@@ -33,7 +33,7 @@ def hermgauss(n):
     return x, w
 
 
-def mvhermgauss(means, covs, H, D, active_dims=None):
+def mvhermgauss(means, covs, H, D):
     """
     Return the evaluation locations, and weights for several multivariate Hermite-Gauss quadrature runs.
     :param means: NxD
@@ -93,12 +93,16 @@ class Kern(Parameterized):
             X = X[:, self.active_dims]
             if X2 is not None:
                 X2 = X2[:, self.active_dims]
-            return X, X2
         else:
             X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
             if X2 is not None:
                 X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
-            return X, X2
+        with tf.control_dependencies([
+            tf.assert_equal(tf.shape(X)[1], tf.constant(self.input_dim, dtype=settings.dtypes.int_type))
+        ]):
+            X = tf.identity(X)
+
+        return X, X2
 
     def _slice_cov(self, cov):
         if isinstance(self.active_dims, slice):
@@ -149,19 +153,22 @@ class Kern(Parameterized):
         :param Xcov: Covariance (NxDxD)
         :return:
         """
-        # TODO: Use only active dimensions, can do this by only generating GH points in the right dims
+        Xmu, _ = self._slice(Xmu, None)
+        Xcov = self._slice_cov(Xcov)
         X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
-        Kdiag = tf.reshape(self.Kdiag(X), (self.num_gauss_hermite_points ** self.input_dim, tf.shape(Xmu)[0]))
+        Kdiag = tf.reshape(self.Kdiag(X, presliced=True),
+                           (self.num_gauss_hermite_points ** self.input_dim, tf.shape(Xmu)[0]))
         eKdiag = tf.reduce_sum(Kdiag * wn[:, None], 0)
         return eKdiag
 
     def eKxz(self, Z, Xmu, Xcov):
-        # TODO: Use only active dimensions
+        Xmu, Z = self._slice(Xmu, Z)
+        Xcov = self._slice_cov(Xcov)
         N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
         HpowD = self.num_gauss_hermite_points ** self.input_dim
         X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
-        Kxz = tf.reshape(self.K(tf.reshape(X, (-1, self.input_dim)), Z), (HpowD, N, M))
+        Kxz = tf.reshape(self.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=True), (HpowD, N, M))
         eKxz = tf.reduce_sum(Kxz * wn[:, None, None], 0)
         return eKxz
 
@@ -170,21 +177,30 @@ class Kern(Parameterized):
         :param Z: MxD
         :param Xmu: NxD
         :param Xcov: 2xNxDxD
-        :return:
+        :return: NxMxD
         """
-        # TODO: Use only active dimensions
-        Xcov = self._slice_cov(Xcov)
-        Z, Xmu = self._slice(Z, Xmu)
+        # Slicing is NOT needed here. The desired behaviour is to *still* return an NxMxD matrix. As even when the
+        # kernel does not depend on certain inputs, the output matrix will still contain the outer product between the
+        # mean of x_{t-1} and K_{x_t Z}. The code here will do this correctly automatically, since the quadrature will
+        # still be done over the distribution x_{t-1, t}, only now the kernel will not depend on certain inputs.
+        # However, this does mean that at the time of running this function we need to know the input *size* of Xmu, not
+        # just `input_dim`.
         N = tf.shape(Xmu)[0] - 1
         M = tf.shape(Z)[0]
-        D = tf.shape(Xmu)[1]
-        Hpow2D = self.num_gauss_hermite_points ** (2 * self.input_dim)
+        D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
+        Hpow2D = self.num_gauss_hermite_points ** (2 * D)
+
+        with tf.control_dependencies([
+            tf.assert_equal(tf.shape(Xmu)[1], D, message="Numerical quadrature needs to know correct shape of Xmu."),
+        ]):
+            Xmu = tf.identity(Xmu)
+
         # First, transform the compact representation of Xmu and Xcov into a list of full distributions.
         fXmu = tf.concat(1, (Xmu[:-1, :], Xmu[1:, :]))  # Nx2D
         fXcovt = tf.concat(2, (Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]))  # NxDx2D
         fXcovb = tf.concat(2, (tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]))
         fXcov = tf.concat(1, (fXcovt, fXcovb))  # Confirmed correct
-        X, wn = mvhermgauss(fXmu, fXcov, self.num_gauss_hermite_points, self.input_dim * 2)  # (H**2DxNx2D, H**2D)
+        X, wn = mvhermgauss(fXmu, fXcov, self.num_gauss_hermite_points, D * 2)  # (H**2DxNx2D, H**2D)
         Kxz = tf.reshape(self.K(X[:, :D], Z), (Hpow2D, N, M))
         exKxz = tf.reduce_sum(
             tf.expand_dims(tf.reshape(X[:, D:], (Hpow2D, N, D)), 2) * tf.expand_dims(Kxz, 3) * wn[:, None, None, None],
@@ -192,12 +208,13 @@ class Kern(Parameterized):
         return exKxz
 
     def eKzxKxz(self, Z, Xmu, Xcov):
-        # TODO: Use only active dimensions
+        Xmu, Z = self._slice(Xmu, Z)
+        Xcov = self._slice_cov(Xcov)
         N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
         HpowD = self.num_gauss_hermite_points ** self.input_dim
         X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
-        Kxz = tf.reshape(self.K(tf.reshape(X, (-1, self.input_dim)), Z), (HpowD, N, M))
+        Kxz = tf.reshape(self.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=True), (HpowD, N, M))
         KzxKxz = tf.expand_dims(Kxz, 3) * tf.expand_dims(Kxz, 2)
         eKzxKxz = tf.reduce_sum(KzxKxz * wn[:, None, None, None], 0)
         return eKzxKxz
@@ -222,7 +239,7 @@ class White(Static):
     The White kernel
     """
 
-    def K(self, X, X2=None):
+    def K(self, X, X2=None, presliced=False):
         if X2 is None:
             d = tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
             return tf.diag(d)
@@ -236,7 +253,7 @@ class Constant(Static):
     The Constant (aka Bias) kernel
     """
 
-    def K(self, X, X2=None):
+    def K(self, X, X2=None, presliced=False):
         if X2 is None:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X)[0]])
         else:
@@ -307,7 +324,7 @@ class Stationary(Kern):
         r2 = self.square_dist(X, X2)
         return tf.sqrt(r2 + 1e-12)
 
-    def Kdiag(self, X):
+    def Kdiag(self, X, presliced=False):
         return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
@@ -316,8 +333,9 @@ class RBF(Stationary):
     The radial basis function (RBF) or squared exponential kernel
     """
 
-    def K(self, X, X2=None):
-        X, X2 = self._slice(X, X2)
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
         return self.variance * tf.exp(-self.square_dist(X, X2) / 2)
 
 
@@ -344,15 +362,17 @@ class Linear(Kern):
             self.variance = Param(variance, transforms.positive)
         self.parameters = [self.variance]
 
-    def K(self, X, X2=None):
-        X, X2 = self._slice(X, X2)
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
         if X2 is None:
             return tf.matmul(X * self.variance, tf.transpose(X))
         else:
             return tf.matmul(X * self.variance, tf.transpose(X2))
 
-    def Kdiag(self, X):
-        X, _ = self._slice(X, None)
+    def Kdiag(self, X, presliced=False):
+        if not presliced:
+            X, _ = self._slice(X, None)
         return tf.reduce_sum(tf.square(X) * self.variance, 1)
 
 
@@ -375,11 +395,11 @@ class Polynomial(Linear):
         self.degree = degree
         self.offset = Param(offset, transform=transforms.positive)
 
-    def K(self, X, X2=None):
-        return (Linear.K(self, X, X2) + self.offset) ** self.degree
+    def K(self, X, X2=None, presliced=False):
+        return (Linear.K(self, X, X2, presliced=presliced) + self.offset) ** self.degree
 
-    def Kdiag(self, X):
-        return (Linear.Kdiag(self, X) + self.offset) ** self.degree
+    def Kdiag(self, X, presliced=False):
+        return (Linear.Kdiag(self, X, presliced=presliced) + self.offset) ** self.degree
 
 
 class Exponential(Stationary):
@@ -387,8 +407,9 @@ class Exponential(Stationary):
     The Exponential kernel
     """
 
-    def K(self, X, X2=None):
-        X, X2 = self._slice(X, X2)
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
         return self.variance * tf.exp(-0.5 * r)
 
@@ -398,8 +419,9 @@ class Matern12(Stationary):
     The Matern 1/2 kernel
     """
 
-    def K(self, X, X2=None):
-        X, X2 = self._slice(X, X2)
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
         return self.variance * tf.exp(-r)
 
@@ -409,8 +431,9 @@ class Matern32(Stationary):
     The Matern 3/2 kernel
     """
 
-    def K(self, X, X2=None):
-        X, X2 = self._slice(X, X2)
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
         return self.variance * (1. + np.sqrt(3.) * r) * \
                tf.exp(-np.sqrt(3.) * r)
@@ -421,8 +444,9 @@ class Matern52(Stationary):
     The Matern 5/2 kernel
     """
 
-    def K(self, X, X2=None):
-        X, X2 = self._slice(X, X2)
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
         return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) \
                * tf.exp(-np.sqrt(5.) * r)
@@ -433,8 +457,9 @@ class Cosine(Stationary):
     The Cosine kernel
     """
 
-    def K(self, X, X2=None):
-        X, X2 = self._slice(X, X2)
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
         return self.variance * tf.cos(r)
 
@@ -458,11 +483,12 @@ class PeriodicKernel(Kern):
         self.ARD = False
         self.period = Param(period, transforms.positive)
 
-    def Kdiag(self, X):
+    def Kdiag(self, X, presliced=False):
         return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
-    def K(self, X, X2=None):
-        X, X2 = self._slice(X, X2)
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
         if X2 is None:
             X2 = X
 
@@ -562,10 +588,10 @@ class Combination(Kern):
     names.
     """
 
-    def __init__(self, kern_list):
+    def __init__(self, input_dim, kern_list):
         for k in kern_list:
             assert isinstance(k, Kern), "can only add Kern instances"
-        Kern.__init__(self, input_dim=np.max([k.input_dim for k in kern_list]))
+        Kern.__init__(self, input_dim=input_dim)
 
         # add kernels to a list, flattening out instances of this class therein
         self.kern_list = []
@@ -581,16 +607,16 @@ class Combination(Kern):
 
 
 class Add(Combination):
-    def K(self, X, X2=None):
+    def K(self, X, X2=None, presliced=False):
         return reduce(tf.add, [k.K(X, X2) for k in self.kern_list])
 
-    def Kdiag(self, X):
+    def Kdiag(self, X, presliced=False):
         return reduce(tf.add, [k.Kdiag(X) for k in self.kern_list])
 
 
 class Prod(Combination):
-    def K(self, X, X2=None):
+    def K(self, X, X2=None, presliced=False):
         return reduce(tf.mul, [k.K(X, X2) for k in self.kern_list])
 
-    def Kdiag(self, X):
+    def Kdiag(self, X, presliced=False):
         return reduce(tf.mul, [k.Kdiag(X) for k in self.kern_list])
