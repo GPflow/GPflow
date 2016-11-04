@@ -222,6 +222,11 @@ class Param(Parentable):
         """
         if self.fixed:
             # fixed parameters are treated by tf.placeholder
+            self._tf_array = tf.placeholder(dtype=float_type,
+                                            shape=self._array.shape,
+                                            name=self.name)
+            # do not consider log jacobian for parameters that are fixed.
+            self._log_jacobian = 0.0
             return 0
         free_size = self.transform.free_state_size(self.shape)
         x_free = free_array[:free_size]
@@ -286,15 +291,6 @@ class Param(Parentable):
         object.__setattr__(self, key, value)
         if key in recompile_keys:
             self.highest_parent._needs_recompile = True
-
-        # when setting the fixed attribute, make or remove a placeholder appropraitely
-        if key == 'fixed':
-            if value:
-                self._tf_array = tf.placeholder(dtype=float_type,
-                                                shape=self._array.shape,
-                                                name=self.name)
-            else:
-                self._tf_array = None
 
     def __str__(self, prepend=''):
         return prepend + \
@@ -376,9 +372,6 @@ class DataHolder(Parentable):
         Parentable.__init__(self)
         dt = self._get_type(array)
         self._array = np.asarray(array, dtype=dt)
-        self._tf_array = tf.placeholder(dtype=dt,
-                                        shape=[None]*self._array.ndim,
-                                        name=self.name)
         assert on_shape_change in ['raise', 'pass', 'recompile']
         self.on_shape_change = on_shape_change
 
@@ -399,11 +392,13 @@ class DataHolder(Parentable):
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
-        d.pop('_tf_array')
+        try:
+            d.pop('_tf_array')
+        except KeyError:
+            pass
         return d
 
-    def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
+    def make_tf_array(self):
         self._tf_array = tf.placeholder(dtype=self._get_type(self._array),
                                         shape=[None]*self._array.ndim,
                                         name=self.name)
@@ -508,13 +503,15 @@ class AutoFlow:
                 # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
-                storage['free_vars'] = tf.placeholder(float_type, [None])
-                instance.make_tf_array(storage['free_vars'])
-                storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
-                with instance.tf_mode():
-                    storage['tf_result'] = tf_method(instance, *storage['tf_args'])
-                storage['session'] = tf.Session()
-                storage['session'].run(tf.initialize_all_variables(), feed_dict=instance.get_feed_dict())
+                storage['graph'] = tf.Graph()
+                storage['session'] = tf.Session(graph=storage['graph'])
+                with storage['graph'].as_default():
+                    storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
+                    storage['free_vars'] = tf.placeholder(float_type, [None])
+                    instance.make_tf_array(storage['free_vars'])
+                    with instance.tf_mode():
+                        storage['tf_result'] = tf_method(instance, *storage['tf_args'])
+                    storage['session'].run(tf.initialize_all_variables(), feed_dict=instance.get_feed_dict())
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
             feed_dict.update(instance.get_feed_dict())
@@ -688,6 +685,8 @@ class Parameterized(Parentable):
         construct their tf_array variables from consecutive sections.
         """
         count = 0
+        for dh in self.data_holders:
+            dh.make_tf_array()
         for p in self.sorted_params:
             count += p.make_tf_array(X[count:])
         return count
@@ -724,8 +723,8 @@ class Parameterized(Parentable):
         This makes sure they're always in the same order.
         """
         params = [child for key, child in self.__dict__.items()
-                  if isinstance(child, (Param, Parameterized))
-                  and key is not '_parent']
+                  if isinstance(child, (Param, Parameterized)) and
+                  key is not '_parent']
         return sorted(params, key=id)
 
     @property
@@ -751,8 +750,8 @@ class Parameterized(Parentable):
         Recurse get_free_state on all child parameters, and hstack them.
         """
         # Here, additional empty array allows hstacking of empty list
-        return np.hstack([p.get_free_state() for p in self.sorted_params]
-                         + [np.empty(0, np_float_type)])
+        return np.hstack([p.get_free_state() for p in self.sorted_params] +
+                         [np.empty(0, np_float_type)])
 
     def get_feed_dict(self):
         """
