@@ -26,7 +26,7 @@ from ._settings import settings
 
 class MinibatchData(DataHolder):
     """
-    A special DataHolder class which feeds a minibatch to tensorflow via get_feed_dict().
+    A special DataHolder class which feeds a minibatch to tensorflow via update_feed_dict().
     """
     def __init__(self, array, minibatch_size, rng=None):
         """
@@ -48,8 +48,8 @@ class MinibatchData(DataHolder):
             # uncommon when using SVI.
             return self.rng.randint(self._array.shape[0], size=self.minibatch_size)
 
-    def get_feed_dict(self):
-        return {self._tf_array: self._array[self.generate_index()]}
+    def update_feed_dict(self, key_dict, feed_dict):
+        feed_dict[key_dict[self]] = self._array[self.generate_index()]
 
 
 class SVGP(GPModel):
