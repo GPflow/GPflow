@@ -92,10 +92,10 @@ class TestActiveDimensionChecks(unittest.TestCase):
         k = GPflow.kernels.RBF(2, active_dims=[0,2])
         self.assertFalse(GPflow.kernel_expectations.is_one_dimensional(k))
 
-        k = GPflow.kernels.RBF(4, active_dims=[0,2]) + GPflow.kernels.PeriodicKernel(4, active_dims=[0,2])
+        k = GPflow.kernels.RBF(2, active_dims=[0,2]) + GPflow.kernels.PeriodicKernel(2, active_dims=[0,2])
         self.assertFalse(GPflow.kernel_expectations.on_separate_dimensions(k.kern_list))
 
-        k = GPflow.kernels.RBF(4, active_dims=[2,3]) + GPflow.kernels.PeriodicKernel(4, active_dims=[0,1])
+        k = GPflow.kernels.RBF(2, active_dims=[2,3]) + GPflow.kernels.PeriodicKernel(2, active_dims=[0,1])
         self.assertTrue(GPflow.kernel_expectations.on_separate_dimensions(k.kern_list))
 
         k = GPflow.kernels.RBF(4) + GPflow.kernels.PeriodicKernel(4)
