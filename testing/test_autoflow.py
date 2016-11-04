@@ -85,6 +85,27 @@ class TestAdd(unittest.TestCase):
         self.assertTrue(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
 
 
+class IncrementModel(DumbModel):
+    def __init__(self):
+        DumbModel.__init__(self)
+        self.a = GPflow.param.DataHolder(np.array([3.]))
+
+    @GPflow.model.AutoFlow((tf.float64,))
+    def inc(self, x):
+        return x + self.a
+
+
+class TestDataHolder(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m = IncrementModel()
+        rng = np.random.RandomState(0)
+        self.x = rng.randn(10, 20)
+
+    def test_add(self):
+        self.assertTrue(np.allclose(self.x + 3, self.m.inc(self.x)))
+
+
 class TestGPmodel(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
@@ -104,6 +125,11 @@ class TestGPmodel(unittest.TestCase):
 
     def test_predict_density(self):
         self.m.predict_density(self.Xtest, self.Ytest)
+
+    def test_multiple_AFs(self):
+        self.m.compute_log_likelihood()
+        self.m.compute_log_prior()
+        self.m.compute_log_likelihood()
 
 
 class TestResetGraph(unittest.TestCase):

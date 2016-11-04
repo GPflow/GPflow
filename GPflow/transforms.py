@@ -144,13 +144,11 @@ class Logistic(Transform):
     def __init__(self, a=0., b=1.):
         Transform.__init__(self)
         assert b > a
-        self.a, self.b = a, b
-        self._a = tf.constant(a, float_type)
-        self._b = tf.constant(b, float_type)
+        self.a, self.b = float(a), float(b)
 
     def tf_forward(self, x):
         ex = tf.exp(-x)
-        return self._a + (self._b - self._a) / (1. + ex)
+        return self.a + (self.b - self.a) / (1. + ex)
 
     def forward(self, x):
         ex = np.exp(-x)
@@ -160,21 +158,10 @@ class Logistic(Transform):
         return -np.log((self.b - self.a) / (y - self.a) - 1.)
 
     def tf_log_jacobian(self, x):
-        return tf.reduce_sum(x - 2. * tf.log(tf.exp(x) + 1.) + tf.log(self._b - self._a))
+        return tf.reduce_sum(x - 2. * tf.log(tf.exp(x) + 1.) + np.log(self.b - self.a))
 
     def __str__(self):
         return '[' + str(self.a) + ', ' + str(self.b) + ']'
-
-    def __getstate__(self):
-        d = Transform.__getstate__(self)
-        d.pop('_a')
-        d.pop('_b')
-        return d
-
-    def __setstate__(self, d):
-        Transform.__setstate__(self, d)
-        self._a = tf.constant(self.a, float_type)
-        self._b = tf.constant(self.b, float_type)
 
 
 class LowerTriangular(Transform):
