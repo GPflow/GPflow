@@ -139,7 +139,7 @@ class Param(Parentable):
 
     There is a self.fixed flag, in which case the parameter does not get
     optimized. To enable this, during make_tf_array, a fixed parameter will be
-    ignored, and a placeholder returned via get_feed_dict instead.
+    ignored, and a placeholder added to the feed_dict instead.
 
     Fixes and transforms can be used together, in the sense that fixes take
     priority over transforms, so unfixing a parameter is as simple as setting
@@ -166,7 +166,7 @@ class Param(Parentable):
     vector representing the free state. In this case, the parameter is
     represented as part of the 'free-state' vector associated with a model.
     However, if the parameters is fixed, then a placeholder is returned during
-    a call to get_feed_dict, and the parameter is represented that way instead.
+    a call to update_feed_dict, and the parameter is represented that way instead.
 
     **Priors and transforms**
 
@@ -246,14 +246,26 @@ class Param(Parentable):
             return np.empty((0,), np_float_type)
         return self.transform.backward(self.value.flatten())
 
-    def get_feed_dict(self):
+    def get_feed_dict_keys(self):
         """
-        Return a dictionary matching up any fixed-placeholders to their values
+        If this parameter is fixed, Return a dictionary mapping from self to self.value.
+        Else return an empty dictionary.
         """
         d = {}
         if self.fixed:
-            d[self._tf_array] = self.value
+            d[self] = self._tf_array
         return d
+
+    def update_feed_dict(self, key_dict, feed_dict):
+        """
+        key_dict is a dictionary which maps from objects (including self) to tensorflow placeholders.
+        feed_dict is a dictionary which will be fed to tensorflow.
+
+        If this parameter is fixed, we add self.value to the feed dict, paired
+        with the appropriate placeholder from the key_dict.
+        """
+        if self.fixed:
+            feed_dict[key_dict[self]] = self.value
 
     def set_state(self, x):
         """
@@ -343,7 +355,7 @@ class DataHolder(Parentable):
     An object to represent data which needs to be passed to tensorflow for computation.
 
     This behaves in much the same way as a Param (above), but is always
-    'fixed'. On a call to get_feed_dict, a placeholder-numpy pair is returned.
+    'fixed'. On a call to update_feed_dict, a placeholder-numpy pair is added to the feed_dict.
 
     Getting and setting values
     --
@@ -387,8 +399,11 @@ class DataHolder(Parentable):
         else:
             raise NotImplementedError("unknown dtype")
 
-    def get_feed_dict(self):
-        return {self._tf_array: self._array}
+    def get_feed_dict_keys(self):
+        return {self: self._tf_array}
+
+    def update_feed_dict(self, key_dict, feed_dict):
+        feed_dict[key_dict[self]] = self._array
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
@@ -511,10 +526,13 @@ class AutoFlow:
                     instance.make_tf_array(storage['free_vars'])
                     with instance.tf_mode():
                         storage['tf_result'] = tf_method(instance, *storage['tf_args'])
-                    storage['session'].run(tf.initialize_all_variables(), feed_dict=instance.get_feed_dict())
+                    storage['feed_dict_keys'] = instance.get_feed_dict_keys()
+                    feed_dict = {}
+                    instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
+                    storage['session'].run(tf.initialize_all_variables(), feed_dict=feed_dict)
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
-            feed_dict.update(instance.get_feed_dict())
+            instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
@@ -753,14 +771,19 @@ class Parameterized(Parentable):
         return np.hstack([p.get_free_state() for p in self.sorted_params] +
                          [np.empty(0, np_float_type)])
 
-    def get_feed_dict(self):
+    def get_feed_dict_keys(self):
         """
-        Recursively fetch a dictionary matching up fixed-placeholders to associated values
+        Recursively generate a dictionary of {object: _tf_array} pairs that can be used in update_feed_dict
         """
         d = {}
         for p in self.sorted_params + self.data_holders:
-            d.update(p.get_feed_dict())
+            d.update(p.get_feed_dict_keys())
         return d
+
+    def update_feed_dict(self, key_dict, feed_dict):
+        for p in self.sorted_params + self.data_holders:
+            p.update_feed_dict(key_dict, feed_dict)
+        return feed_dict
 
     def set_state(self, x):
         """

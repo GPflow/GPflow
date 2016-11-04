@@ -26,17 +26,23 @@ class TestDataHolderSimple(unittest.TestCase):
     def test_same_shape(self):
         new_X = self.rng.randn(2, 2)
         self.m.X = new_X
-        assert np.all(self.m.get_feed_dict()[self.m.X._tf_array] == new_X)
+        fd = {}
+        self.m.update_feed_dict(self.m.get_feed_dict_keys(), fd)
+        assert np.all(fd[self.m.X._tf_array] == new_X)
         self.assertFalse(self.m._needs_recompile)
 
         new_Y = self.rng.randn(2, 2)
         self.m.Y = new_Y
-        assert np.all(self.m.get_feed_dict()[self.m.Y._tf_array] == new_Y)
+        fd = {}
+        self.m.update_feed_dict(self.m.get_feed_dict_keys(), fd)
+        assert np.all(fd[self.m.Y._tf_array] == new_Y)
         self.assertFalse(self.m._needs_recompile)
 
         new_Z = self.rng.randn(2, 2)
         self.m.Z = new_Z
-        assert np.all(self.m.get_feed_dict()[self.m.Z._tf_array] == new_Z)
+        fd = {}
+        self.m.update_feed_dict(self.m.get_feed_dict_keys(), fd)
+        assert np.all(fd[self.m.Z._tf_array] == new_Z)
         self.assertFalse(self.m._needs_recompile)
 
     def test_pass(self):
@@ -66,7 +72,9 @@ class TestDataHolderIntegers(unittest.TestCase):
     def test_same_shape(self):
         new_X = self.rng.randint(0, 10, (2, 2))
         self.m.X = new_X
-        assert np.all(self.m.get_feed_dict()[self.m.X._tf_array] == new_X)
+        fd = {}
+        self.m.update_feed_dict(self.m.get_feed_dict_keys(), fd)
+        assert np.all(fd[self.m.X._tf_array] == new_X)
         self.assertFalse(self.m._needs_recompile)
 
 
