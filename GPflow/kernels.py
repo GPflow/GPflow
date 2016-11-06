@@ -21,6 +21,7 @@ import numpy as np
 from .param import Param, Parameterized, AutoFlow
 from . import transforms
 from ._settings import settings
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
@@ -34,7 +35,16 @@ class Kern(Parameterized):
     def __init__(self, input_dim, active_dims=None):
         """
         input dim is an integer
-        active dims is a (slice | iterable of integers | None)
+        active dims is either an iterable of integers or None.
+
+        Input dim is the number of input dimensions to the kernel. If the
+        kernel is computed on a matrix X which has more columns than input_dim,
+        then by default, only the first input_dim columns are used. If
+        different columns are required, then they may be specified by
+        active_dims.
+
+        If active dims is None, it effectively defaults to range(input_dim),
+        but we store it as a slice for efficiency.
         """
         Parameterized.__init__(self)
         self.scoped_keys.extend(['K', 'Kdiag'])
@@ -43,6 +53,7 @@ class Kern(Parameterized):
             self.active_dims = slice(input_dim)
         else:
             self.active_dims = np.array(active_dims, dtype=np.int32)
+            assert len(active_dims) == input_dim
 
     def _slice(self, X, X2):
         if isinstance(self.active_dims, slice):
@@ -80,6 +91,7 @@ class Static(Kern):
     Kernels who don't depend on the value of the inputs are 'Static'.  The only
     parameter is a variance.
     """
+
     def __init__(self, input_dim, variance=1.0, active_dims=None):
         Kern.__init__(self, input_dim, active_dims)
         self.variance = Param(variance, transforms.positive)
@@ -92,6 +104,7 @@ class White(Static):
     """
     The White kernel
     """
+
     def K(self, X, X2=None):
         if X2 is None:
             d = tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
@@ -105,6 +118,7 @@ class Constant(Static):
     """
     The Constant (aka Bias) kernel
     """
+
     def K(self, X, X2=None):
         if X2 is None:
             shape = tf.pack([tf.shape(X)[0], tf.shape(X)[0]])
@@ -130,6 +144,7 @@ class Stationary(Kern):
     Determination'. This means that the kernel has one lengthscale per
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
+
     def __init__(self, input_dim, variance=1.0, lengthscales=None,
                  active_dims=None, ARD=False):
         """
@@ -160,16 +175,16 @@ class Stationary(Kern):
             self.ARD = False
 
     def square_dist(self, X, X2):
-        X = X/self.lengthscales
+        X = X / self.lengthscales
         Xs = tf.reduce_sum(tf.square(X), 1)
         if X2 is None:
-            return -2*tf.matmul(X, tf.transpose(X)) +\
-                tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
+            return -2 * tf.matmul(X, tf.transpose(X)) + \
+                   tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
         else:
             X2 = X2 / self.lengthscales
             X2s = tf.reduce_sum(tf.square(X2), 1)
-            return -2*tf.matmul(X, tf.transpose(X2)) +\
-                tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
+            return -2 * tf.matmul(X, tf.transpose(X2)) + \
+                   tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
 
     def euclid_dist(self, X, X2):
         r2 = self.square_dist(X, X2)
@@ -183,15 +198,17 @@ class RBF(Stationary):
     """
     The radial basis function (RBF) or squared exponential kernel
     """
+
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
-        return self.variance * tf.exp(-self.square_dist(X, X2)/2)
+        return self.variance * tf.exp(-self.square_dist(X, X2) / 2)
 
 
 class Linear(Kern):
     """
     The linear kernel
     """
+
     def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=False):
         """
         - input_dim is the dimension of the input to the kernel
@@ -204,7 +221,7 @@ class Linear(Kern):
         self.ARD = ARD
         if ARD:
             # accept float or array:
-            variance = np.ones(self.input_dim)*variance
+            variance = np.ones(self.input_dim) * variance
             self.variance = Param(variance, transforms.positive)
         else:
             self.variance = Param(variance, transforms.positive)
@@ -218,6 +235,7 @@ class Linear(Kern):
             return tf.matmul(X * self.variance, tf.transpose(X2))
 
     def Kdiag(self, X):
+        X, _ = self._slice(X, None)
         return tf.reduce_sum(tf.square(X) * self.variance, 1)
 
 
@@ -251,6 +269,7 @@ class Exponential(Stationary):
     """
     The Exponential kernel
     """
+
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
@@ -261,6 +280,7 @@ class Matern12(Stationary):
     """
     The Matern 1/2 kernel
     """
+
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
@@ -271,28 +291,31 @@ class Matern32(Stationary):
     """
     The Matern 3/2 kernel
     """
+
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
-        return self.variance * (1. + np.sqrt(3.) * r) *\
-            tf.exp(-np.sqrt(3.) * r)
+        return self.variance * (1. + np.sqrt(3.) * r) * \
+               tf.exp(-np.sqrt(3.) * r)
 
 
 class Matern52(Stationary):
     """
     The Matern 5/2 kernel
     """
+
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
-        return self.variance*(1.0 + np.sqrt(5.) * r + 5./3. * tf.square(r))\
-            * tf.exp(-np.sqrt(5.) * r)
+        return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) \
+               * tf.exp(-np.sqrt(5.) * r)
 
 
 class Cosine(Stationary):
     """
     The Cosine kernel
     """
+
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
@@ -308,6 +331,7 @@ class PeriodicKernel(Kern):
 
     Derived using the mapping u=(cos(x), sin(x)) on the inputs.
     """
+
     def __init__(self, input_dim, period=1.0, variance=1.0,
                  lengthscales=1.0, active_dims=None):
         # No ARD support for lengthscale or period yet
@@ -329,8 +353,8 @@ class PeriodicKernel(Kern):
         f = tf.expand_dims(X, 1)  # now N x 1 x D
         f2 = tf.expand_dims(X2, 0)  # now 1 x M x D
 
-        r = np.pi * (f-f2) / self.period
-        r = tf.reduce_sum(tf.square(tf.sin(r)/self.lengthscales), 2)
+        r = np.pi * (f - f2) / self.period
+        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), 2)
 
         return self.variance * tf.exp(-0.5 * r)
 
@@ -420,10 +444,13 @@ class Combination(Kern):
     The names of the kernels to be combined are generated from their class
     names.
     """
+
     def __init__(self, kern_list):
         for k in kern_list:
             assert isinstance(k, Kern), "can only add Kern instances"
-        Kern.__init__(self, input_dim=np.max([k.input_dim for k in kern_list]))
+
+        input_dim = np.max([k.input_dim if type(k.active_dims) is slice else np.max(k.active_dims) + 1 for k in kern_list])
+        Kern.__init__(self, input_dim=input_dim)
 
         # add kernels to a list, flattening out instances of this class therein
         self.kern_list = []

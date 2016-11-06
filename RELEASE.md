@@ -1,3 +1,10 @@
+# Release 0.3.4
+ - Changes to stop computations all being done on the default graph.
+ - Update list of GPflow contributors and other small changes to front page.
+ - Better deduction of `input_dim` for `kernels.Combination`
+ - Some kernels did not properly respect active dims, now fixed.
+ - Make sure log jacobian is computed even for fixed variables
+
 # Release 0.3.3
  - House keeping changes for paper submission.
 

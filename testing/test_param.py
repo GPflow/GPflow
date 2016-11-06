@@ -356,6 +356,13 @@ class TestParamList(unittest.TestCase):
         with self.assertRaises(AssertionError):
             l.append('foo')
 
+    def test_len(self):
+        p1 = GPflow.param.Param(1.2)
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
+        l = GPflow.param.ParamList([p1])
+        l.append(p2)
+        self.assertTrue(len(l) == 2)
+
     def test_with_parameterized(self):
         pzd = GPflow.param.Parameterized()
         p = GPflow.param.Param(1.2)
@@ -454,6 +461,22 @@ class TestDictSVGP(unittest.TestCase):
 
         self.assertFalse(np.allclose(loglik1, loglik2))
         self.assertTrue(np.allclose(loglik1, loglik3))
+
+
+class TestFixWithPrior(unittest.TestCase):
+    """
+    This tests that models with a fixed parameter which has a prior continue to work
+    """
+
+    def test(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0, GPflow.transforms.positive)
+        m.pp = GPflow.param.Param(1.0, GPflow.transforms.positive)
+        m.p.prior = GPflow.priors.Gamma(1, 1)
+        m.pp.prior = GPflow.priors.Gamma(1, 1)
+        m.p.fixed = True
+        m.build_likelihood = lambda: tf.zeros([1], tf.float64)
+        m.optimize(disp=1, maxiter=10)
 
 
 class TestScopes(unittest.TestCase):
