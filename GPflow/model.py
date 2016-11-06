@@ -93,8 +93,6 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
-        self._session = tf.Session()
-        self._free_vars = tf.placeholder(settings.dtypes.float_type)
 
         import time;        
         localtime = time.asctime( time.localtime(time.time()) )
@@ -110,44 +108,43 @@ class Model(Parameterized):
         This method is necessary for pickling objects
         """
         d = Parameterized.__getstate__(self)
-        d.pop('_session')
-        d.pop('_free_vars')
-        try:
-            d.pop('_objective')
-            d.pop('_minusF')
-            d.pop('_minusG')
-        except:
-            pass
+        for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG', '_feed_dict_keys']:
+            try:
+                d.pop(key)
+            except:
+                pass
         return d
 
     def __setstate__(self, d):
         Parameterized.__setstate__(self, d)
         self._needs_recompile = True
-        self._session = tf.Session()
 
     def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
         """
-        self._free_vars = tf.Variable(self.get_free_state())
+        self._graph = tf.Graph()
+        self._session = tf.Session(graph=self._graph)
+        with self._graph.as_default():
+            self._free_vars = tf.Variable(self.get_free_state())
 
-        self.make_tf_array(self._free_vars)
-        with self.tf_mode():
-            f = self.build_likelihood() + self.build_prior()
-            g, = tf.gradients(f, self._free_vars)
+            self.make_tf_array(self._free_vars)
+            with self.tf_mode():
+                f = self.build_likelihood() + self.build_prior()
+                g, = tf.gradients(f, self._free_vars)
 
-        self._minusF = tf.neg(f, name='objective')
-        self._minusG = tf.neg(g, name='grad_objective')
+            self._minusF = tf.neg(f, name='objective')
+            self._minusG = tf.neg(g, name='grad_objective')
 
-        # The optimiser needs to be part of the computational graph, and needs
-        # to be initialised before tf.initialise_all_variables() is called.
-        if optimizer is None:
-            opt_step = None
-        else:
-            opt_step = optimizer.minimize(self._minusF,
-                                          var_list=[self._free_vars])
+            # The optimiser needs to be part of the computational graph, and needs
+            # to be initialised before tf.initialise_all_variables() is called.
+            if optimizer is None:
+                opt_step = None
+            else:
+                opt_step = optimizer.minimize(self._minusF,
+                                              var_list=[self._free_vars])
 
-        init = tf.initialize_all_variables()
+            init = tf.initialize_all_variables()
         self._session.run(init)
 
         # get tensorboard ready
@@ -160,9 +157,10 @@ class Model(Parameterized):
             print("compiling tensorflow function...")
         sys.stdout.flush()
 
+        self._feed_dict_keys = self.get_feed_dict_keys()
         def obj(x):
             feed_dict = {self._free_vars: x}
-            feed_dict.update(self.get_feed_dict())
+            self.update_feed_dict(self._feed_dict_keys, feed_dict)
             summary, f, g = self._session.run([self._tf_merged, self._minusF, self._minusG],
                                      feed_dict=feed_dict)
                                      
@@ -243,6 +241,8 @@ class Model(Parameterized):
         Optimize the model using a tensorflow optimizer. See self.optimize()
         """
         opt_step = self._compile(optimizer=method)
+        feed_dict = {}
+        self.update_feed_dict(self._feed_dict_keys, feed_dict)
 
         try:
             iteration = 0
