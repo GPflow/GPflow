@@ -24,7 +24,7 @@ beta = 0.5
 step_rates = [ 1e-3 * (beta ** elem ) for elem in range(5) ]
 
 nClasses = 10
-vb_batchsize = 1000
+vb_batchsize = 500
 thin = 2
 
 X_train, Y_train, X_test, Y_test = getMnistData()
@@ -39,16 +39,16 @@ i = rng.permutation(X_train.shape[0])
 i = i[:ndata]
 X_train, Y_train = X_train[i,:], Y_train[i,:]
 
-from scipy.cluster.vq import kmeans
+from scipy.cluster.vq import kmeans2 as kmeans
 skip = 20
-initZ, _ = kmeans(X_train[::skip,:], num_inducing)
+initZ, _ = kmeans(X_train[::skip,:], num_inducing, minit='points')
 
 def getKernel():
     k = GPflow.kernels.RBF(X_train.shape[1], ARD=False) + GPflow.kernels.White(1, 1e-3)
     return k
     
 m_vb = GPflow.svgp.SVGP(X=X_train, Y=Y_train.astype(np.int32), kern=getKernel(), likelihood=GPflow.likelihoods.MultiClass(nClasses), num_latent=nClasses, Z=initZ.copy(), minibatch_size=vb_batchsize, whiten=False)
-m_vb.q_mu = m_vb.q_mu.value+np.random.randn(*m_vb.q_mu.value.shape)*0.5 #Add jitter to initial function values to move away from local extremum of objective.
+m_vb.q_mu = m_vb.q_mu.value+rng.randn(*m_vb.q_mu.value.shape)*0.5 #Add jitter to initial function values to move away from local extremum of objective.
 
 m_vb.likelihood.invlink.epsilon = 1e-3
 m_vb.likelihood.fixed=True
