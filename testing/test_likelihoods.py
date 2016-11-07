@@ -21,6 +21,8 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
     for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
         if likelihoodClass == GPflow.likelihoods.Ordinal:
             test_setups.append(TestSetup(likelihoodClass(np.array([-1, 1])), rng.randint(0, 3, (10, 2)), 1e-6))
+        elif likelihoodClass == GPflow.likelihoods.SwitchedLikelihood:
+            continue  # switched likelihood tested separately
         elif (likelihoodClass == GPflow.likelihoods.MultiClass):
             if includeMultiClass:
                 sample = rng.randn(10, 2)
@@ -201,6 +203,82 @@ class TestMulticlassIndexFix(unittest.TestCase):
         lik = GPflow.likelihoods.MultiClass(3)
         ve = lik.variational_expectations(mu, var, Y)
         tf.gradients(tf.reduce_sum(ve), mu)
+
+
+class TestSwitchedLikelihood(unittest.TestCase):
+    """
+    SwitchedLikelihood is saparately tested here.
+    Here, we make sure the partition-stictch works fine.
+    """
+    def setUp(self):
+        rng = np.random.RandomState(1)
+        self.Y_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
+        self.F_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
+        self.Fvar_list = [np.exp(rng.randn(3, 2)),  np.exp(rng.randn(4, 2)),  np.exp(rng.randn(5, 2))]
+        self.Y_label = [np.ones((3, 1))*0, np.ones((4, 1))*1, np.ones((5, 1))*2]
+        self.Y_perm = list(range(3+4+5))
+        rng.shuffle(self.Y_perm)
+
+        # shuffle the original data
+        self.Y_sw = np.hstack([np.concatenate(self.Y_list), np.concatenate(self.Y_label)])[self.Y_perm, :]
+        self.F_sw = np.concatenate(self.F_list)[self.Y_perm, :]
+        self.Fvar_sw = np.concatenate(self.Fvar_list)[self.Y_perm, :]
+        # likelihoods
+        self.likelihoods = [GPflow.likelihoods.Gaussian(),
+                            GPflow.likelihoods.Gaussian(),
+                            GPflow.likelihoods.Gaussian()]
+        for lik in self.likelihoods:
+            lik.variance = np.exp(rng.randn(1))
+        self.switched_likelihood = GPflow.likelihoods.SwitchedLikelihood(self.likelihoods)
+
+        # initialize switched likelihood
+        self.sess = tf.Session()
+        free_array = self.switched_likelihood.get_free_state()
+        self.switched_likelihood.make_tf_array(free_array)
+        self.sess.run(tf.initialize_all_variables())
+
+    def test_logp(self):
+        # switchedlikelihood
+        with self.switched_likelihood.tf_mode():
+            switched_rslt = self.sess.run(self.switched_likelihood.logp(self.F_sw, self.Y_sw))
+        # likelihood
+        rslts = []
+        for lik, y, f in zip(self.likelihoods, self.Y_list, self.F_list):
+            with lik.tf_mode():
+                rslts.append(self.sess.run(lik.logp(f, y)))
+
+        self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+        self.sess.close()
+
+    def test_predict_density(self):
+        # switchedlikelihood
+        with self.switched_likelihood.tf_mode():
+            switched_rslt = self.sess.run(
+                self.switched_likelihood.predict_density(self.F_sw, self.Fvar_sw, self.Y_sw))
+        # likelihood
+        rslts = []
+        for lik, y, f, fvar in zip(self.likelihoods, self.Y_list, self.F_list, self.Fvar_list):
+            self.sess.run(tf.initialize_all_variables())
+            with lik.tf_mode():
+                rslts.append(self.sess.run(lik.predict_density(f, fvar, y)))
+
+        self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+        self.sess.close()
+
+    def test_variational_expectations(self):
+        # switchedlikelihood
+        with self.switched_likelihood.tf_mode():
+            switched_rslt = self.sess.run(
+                self.switched_likelihood.variational_expectations(self.F_sw, self.Fvar_sw, self.Y_sw))
+        # likelihood
+        rslts = []
+        for lik, y, f, fvar in zip(self.likelihoods, self.Y_list, self.F_list, self.Fvar_list):
+            self.sess.run(tf.initialize_all_variables())
+            with lik.tf_mode():
+                rslts.append(self.sess.run(lik.variational_expectations(f, fvar, y)))
+
+        self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+        self.sess.close()
 
 if __name__ == "__main__":
     unittest.main()
