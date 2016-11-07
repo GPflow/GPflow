@@ -34,7 +34,7 @@ vec_to_tri = _custom_op_module.vec_to_tri
 tri_to_vec = _custom_op_module.tri_to_vec
 
 
-@tf.python.framework.ops.RegisterGradient("VecToTri")
+@tf.RegisterGradient("VecToTri")
 def _vec_to_tri_grad(op, grad):
     return [tri_to_vec(grad)]
 
