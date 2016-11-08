@@ -8,7 +8,9 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=latest)](http://gpflow.readthedocs.io/en/latest/?badge=latest)
 
-This GitHub front page is mirrored from the [online user manual](http://gpflow.readthedocs.io/en/latest/).
+# What does GPflow do?
+
+GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online user manual](http://gpflow.readthedocs.io/en/latest/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), for more discussion of the comparison see [this page](http://gpflow.readthedocs.io/en/latest/intro.html#what-s-the-difference-between-gpy-and-gpflow).
 
 # Install
 
@@ -26,9 +28,6 @@ python setup.py install
 ```
 You can run the tests with `python setup.py test`.
 
-# What does GPflow do?
-
-GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The documentation contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), for more discussion of the comparison see this page.
 
 # Citing GPflow
 
