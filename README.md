@@ -28,6 +28,7 @@ You can run the tests with `python setup.py test`.
 
 To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/1610.08733). Sample bibtex is given below:
 
+```
 @ARTICLE{Matthews2016,
    author = {{Matthews}, Alexander G. de G. and {van der Wilk}, Mark and {Nickson}, Tom and 
 	{Fujii}, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
@@ -37,7 +38,7 @@ To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/16
      year = 2016,
     month = oct
 }
-
+```
 
 # What's the difference between GPy and GPflow?
 
