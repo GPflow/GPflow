@@ -94,4 +94,4 @@ Proceedings of AISTATS 19, 2016
 Acknowledgements
 ----------------
 
-James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grant EP/I036575/1.
+James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grants EP/I036575/1 and EP/N014162/1.
