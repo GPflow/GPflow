@@ -56,11 +56,11 @@ GPflow has origins in [GPy](http://github.com/sheffieldml/gpy) by the [GPy contr
 
 # Citing GPflow
 
-To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/1610.08733). Sample bibtex is given below:
+To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/1610.08733). Sample Bibtex is given below:
 
 ```
 @ARTICLE{Matthews2016,
-   author = {{Matthews}, Alexander G. de G. and {van der Wilk}, Mark and {Nickson}, Tom and 
+   author = {{Matthews}, Alexander {G. de G.} and {van der Wilk}, Mark and {Nickson}, Tom and 
 	{Fujii}, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
 	{Ghahramani}, Zoubin and {Hensman}, James},
     title = "{GPflow: A Gaussian process library using TensorFlow}",
