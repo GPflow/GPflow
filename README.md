@@ -45,6 +45,14 @@ The following table summarizes the model options in GPflow.
 | Full-covariance | `GPflow.gpr.GPR` | `GPflow.vgp.VGP` | `GPflow.gpmc.GPMC`|
 | Sparse approximation | `GPflow.sgpr.SGPR` | `GPflow.svgp.SVGP` | `GPflow.sgpmc.SGPMC` |
 
+# What's the difference between GPy and GPflow?
+
+GPflow has origins in [GPy](http://github.com/sheffieldml/gpy) by the [GPy contributors](https://github.com/SheffieldML/GPy/graphs/contributors), and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
+
+ -  GPflow leverages TensorFlow for faster/bigger computation
+ -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
+ -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
+ -  GPflow does not have any plotting functionality.
 
 # Citing GPflow
 
@@ -62,14 +70,6 @@ To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/16
 }
 ```
 
-# What's the difference between GPy and GPflow?
-
-GPflow has origins in [GPy](http://github.com/sheffieldml/gpy) by the [GPy contributors](https://github.com/SheffieldML/GPy/graphs/contributors), and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
-
- -  GPflow leverages TensorFlow for faster/bigger computation
- -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
- -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
- -  GPflow does not have any plotting functionality.
 
 
 ### References
