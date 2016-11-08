@@ -15,7 +15,7 @@
 
 import tensorflow as tf
 import numpy as np
-from .param import Param, Parameterized
+from .param import Param, ParamList, Parameterized
 from ._settings import settings
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
@@ -79,6 +79,33 @@ class Constant(MeanFunction):
     def __call__(self, X):
         shape = tf.pack([tf.shape(X)[0], 1])
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+
+
+class SwitchedMeanFunction(MeanFunction):
+    """
+    This class enables to use different (independent) mean_functions respective
+    to the data 'label'.
+    We assume the 'label' is stored in the extra column of X.
+    """
+    def __init__(self, meanfunction_list):
+        MeanFunction.__init__(self)
+        for m in meanfunction_list:
+            assert isinstance(m, MeanFunction)
+        self.meanfunction_list = ParamList(meanfunction_list)
+        self.num_meanfunctions = len(self.meanfunction_list)
+
+    def __call__(self, X):
+        ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
+        ind = tf.cast(ind, tf.int32)
+        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, tf.shape(X)[1]-1)))  # X = X[:,:-1]
+
+        # split up X into chunks corresponding to the relevant likelihoods
+        x_list = tf.dynamic_partition(X, ind, self.num_meanfunctions)
+        # apply the likelihood-function to each section of the data
+        results = [m(x) for (x,m) in zip(x_list, self.meanfunction_list)]
+        # stitch the results back together
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
+        return tf.dynamic_stitch(partitions, results)
 
 
 class Additive(MeanFunction):
