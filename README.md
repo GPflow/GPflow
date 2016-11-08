@@ -24,6 +24,21 @@ python setup.py install
 ```
 You can run the tests with `python setup.py test`.
 
+# Citing GPflow
+
+To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/1610.08733). Sample bibtex is given below:
+
+@ARTICLE{Matthews2016,
+   author = {{Matthews}, Alexander G. de G. and {van der Wilk}, Mark and {Nickson}, Tom and 
+	{Fujii}, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
+	{Ghahramani}, Zoubin and {Hensman}, James},
+    title = "{GPflow: A Gaussian process library using TensorFlow}",
+  journal = {arXiv preprint 1610.08733},
+     year = 2016,
+    month = oct
+}
+
+
 # What's the difference between GPy and GPflow?
 
 GPflow has origins in [GPy](http://github.com/sheffieldml/gpy) by the [GPy contributors](https://github.com/SheffieldML/GPy/graphs/contributors), and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
