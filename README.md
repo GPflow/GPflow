@@ -29,7 +29,7 @@ You can run the tests with `python setup.py test`.
 GPflow has origins in [GPy](http://github.com/sheffieldml/gpy) by the [GPy contributors](https://github.com/SheffieldML/GPy/graphs/contributors), and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
 
  -  GPflow leverages TensorFlow for faster/bigger computation
- -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
+ -  GPflow has much less code than GPy, mostly because all gradient computation is handled by TensorFlow.
  -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
  -  GPflow does not have any plotting functionality.
 
