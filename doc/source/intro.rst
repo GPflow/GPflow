@@ -59,9 +59,9 @@ To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/16
 
 ```
 @ARTICLE{GPflow2016,
-   author = {{Matthews}, Alexander {G. de G.} and {van der Wilk}, Mark and {Nickson}, Tom and 
-	{Fujii}, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
-	{Ghahramani}, Zoubin and {Hensman}, James},
+   author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and 
+	Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
+	Ghahramani, Zoubin and Hensman, James},
     title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
   journal = {arXiv preprint 1610.08733},
      year = 2016,
