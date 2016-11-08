@@ -8,6 +8,8 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=latest)](http://gpflow.readthedocs.io/en/latest/?badge=latest)
 
+This GitHub front page is mirrored from the [online user manual](https://readthedocs.org/projects/gpflow/badge/?version=latest).
+
 # Install
 
 ## 1) Install TensorFlow. 
