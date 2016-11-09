@@ -20,7 +20,7 @@ What's the difference between GPy and GPflow?
 GPflow has origins in `GPy <http://github.com/sheffieldml/gpy>`_ by the `GPy contributors <https://github.com/SheffieldML/GPy/graphs/contributors>`_, and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
 
  -  GPflow leverages TensorFlow for faster/bigger computation
- -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
+ -  GPflow has much less code than GPy, mostly because all gradient computation is handled by TensorFlow.
  -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
  -  GPflow does not have any plotting functionality.
 
@@ -53,6 +53,22 @@ The following table summarizes the model options in GPflow.
 | Sparse approximation | :class:`GPflow.sgpr.SGPR`| :class:`GPflow.svgp.SVGP`  | :class:`GPflow.sgpmc.SGPMC` |
 +----------------------+--------------------------+----------------------------+-----------------------------+
 
+# Citing GPflow
+
+To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/1610.08733). Sample Bibtex is given below:
+
+```
+@ARTICLE{GPflow2016,
+   author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and 
+	Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
+	Ghahramani, Zoubin and Hensman, James},
+    title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
+  journal = {arXiv preprint 1610.08733},
+     year = 2016,
+    month = oct
+}
+```
+
 References
 ----------
 [1] MCMC for Variationally Sparse Gaussian Processes
@@ -78,4 +94,4 @@ Proceedings of AISTATS 19, 2016
 Acknowledgements
 ----------------
 
-James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grant EP/I036575/1.
+James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grants EP/I036575/1 and EP/N014162/1.
