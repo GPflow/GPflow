@@ -16,6 +16,7 @@
 from __future__ import print_function, absolute_import
 from functools import reduce
 import itertools
+import warnings
 
 import tensorflow as tf
 import numpy as np
@@ -153,6 +154,7 @@ class Kern(Parameterized):
         :param Xcov: Covariance (NxDxD)
         :return:
         """
+        warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
         Xmu, _ = self._slice(Xmu, None)
         Xcov = self._slice_cov(Xcov)
         X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
@@ -162,6 +164,7 @@ class Kern(Parameterized):
         return eKdiag
 
     def eKxz(self, Z, Xmu, Xcov):
+        warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N = tf.shape(Xmu)[0]
@@ -179,6 +182,7 @@ class Kern(Parameterized):
         :param Xcov: 2xNxDxD
         :return: NxMxD
         """
+        warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
         # Slicing is NOT needed here. The desired behaviour is to *still* return an NxMxD matrix. As even when the
         # kernel does not depend on certain inputs, the output matrix will still contain the outer product between the
         # mean of x_{t-1} and K_{x_t Z}. The code here will do this correctly automatically, since the quadrature will
@@ -208,6 +212,7 @@ class Kern(Parameterized):
         return exKxz
 
     def eKzxKxz(self, Z, Xmu, Xcov):
+        warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N = tf.shape(Xmu)[0]
