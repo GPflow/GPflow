@@ -94,7 +94,7 @@ class RBF(GPflow.kernels.RBF):
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
 
-        Kmms = tf.sqrt(self.K(Z)) / self.variance ** 0.5
+        Kmms = tf.sqrt(self.K(Z, presliced=True)) / self.variance ** 0.5
         scalemat = tf.expand_dims(eye(D), 0) + 2 * Xcov * tf.reshape(self.lengthscales ** -2.0, [1, 1, -1])  # NxDxD
         det = tf.matrix_determinant(scalemat)
 
@@ -176,20 +176,37 @@ class Add(GPflow.kernels.Add):
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         all_sum = reduce(tf.add, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
-        if self.on_separate_dimensions:
-            crossterms = []
-            for i, kerna in enumerate(self.kern_list):
-                Ka = kerna.eKxz(Z, Xmu, Xcov)
-                for kernb in self.kern_list[i + 1:]:
-                    Kb = kernb.eKxz(Z, Xmu, Xcov)
-                    op = tf.matmul(Ka, Kb, transpose_a=True)
-                    ct = tf.transpose(op) + op
-                    crossterms.append(ct)
-            crossterm = reduce(tf.add, crossterms)
-            return all_sum + crossterm
+        eKxzs = [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list]
+        crossmeans = []
+        for i, Ka in enumerate(eKxzs):
+            for Kb in eKxzs[i + 1:]:
+                op = Ka[:, None, :] * Kb[:, :, None]
+                ct = tf.transpose(op, [0, 2, 1]) + op
+                crossmeans.append(ct)
+        crossmean = reduce(tf.add, crossmeans)
+
+        if self.on_separate_dimensions and Xcov.get_shape().ndims == 2:
+            # If we're on separate dimensions and the covariances are diagonal, we don't need Cov[Kzx1Kxz2].
+            return all_sum + crossmean
         else:
-            # TODO: Implement quadrature
-            raise NotImplementedError
+            # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
+            Xmu, Z = self._slice(Xmu, Z)
+            Xcov = self._slice_cov(Xcov)
+            N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
+            X, wn = GPflow.kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
+                                               self.input_dim)  # (H**DxNxD, H**D)
+
+            cKxzs = [tf.reshape(
+                k.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=False),
+                (HpowD, N, M)
+            ) - eK[None, :, :] for k, eK in zip(self.kern_list, eKxzs)]  # Centred Kxz
+            crosscovs = []
+            for i, cKa in enumerate(cKxzs):
+                for cKb in cKxzs[i + 1:]:
+                    cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
+                    crosscovs.append(cc + tf.transpose(cc, [0, 2, 1]))
+            crosscov = reduce(tf.add, crosscovs)
+            return all_sum + crossmean + crosscov
 
     @property
     def on_separate_dimensions(self):

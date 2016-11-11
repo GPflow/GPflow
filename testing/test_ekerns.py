@@ -9,6 +9,14 @@ import GPflow.etransforms
 rnd.seed(0)
 
 
+def _assert_pdeq(self, a, b, k=None):
+    self.assertTrue(np.all(a.shape == b.shape))
+    pdmax = np.max(np.abs(a / b - 1) * 100)
+    # print("%s, %f" % (str(type(k)), pdmax))
+    self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
+                                                 "On kernel: %s" % (pdmax, str(type(k))))
+
+
 class TestKernExpDelta(unittest.TestCase):
     """
     Check whether the normal kernel matrix is recovered if a delta distribution is used. First initial test which should
@@ -72,12 +80,14 @@ class TestKernExpActiveDims(unittest.TestCase):
         variance = 0.3 + rnd.rand()
 
         k1 = ekernels.RBF(1, variance, active_dims=[0])
+        k2 = ekernels.RBF(1, variance, active_dims=[1])
         klin = ekernels.Linear(1, variance, active_dims=[1])
-        self.ekernels = [k1, klin]
+        self.ekernels = [k1, k2, klin]  # Kernels doing the expectation in closed form, doing the slicing
 
         k1 = ekernels.RBF(1, variance)
+        k2 = ekernels.RBF(1, variance)
         klin = ekernels.Linear(1, variance)
-        self.pekernels = [k1, klin]
+        self.pekernels = [k1, k2, klin]  # kernels doing the expectations in closed form, without slicing
 
         k1 = kernels.RBF(1, variance, active_dims=[0])
         klin = kernels.Linear(1, variance, active_dims=[1])
@@ -87,27 +97,22 @@ class TestKernExpActiveDims(unittest.TestCase):
         klin = kernels.Linear(1, variance)
         self.pkernels = [k1, klin]
 
-    def _assert_pdeq(self, a, b, k=None):
-        pdmax = np.max(np.abs((a / b - 1) * 100))
-        self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
-                                                     "On kernel: %s" % (pdmax, str(type(k))))
-
     def test_quad_active_dims(self):
         for k, pk in zip(self.kernels + self.ekernels, self.pkernels + self.pekernels):
             a = k.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
             sliced = np.take(np.take(self.Xcov, k.active_dims, axis=-1), k.active_dims, axis=-2)
             b = pk.compute_eKdiag(self.Xmu[:, k.active_dims], sliced[0, :, :, :])
-            self._assert_pdeq(a, b, k)
+            _assert_pdeq(self, a, b, k)
 
             a = k.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             sliced = np.take(np.take(self.Xcov, k.active_dims, axis=-1), k.active_dims, axis=-2)
             b = pk.compute_eKxz(self.Z[:, k.active_dims], self.Xmu[:, k.active_dims], sliced[0, :, :, :])
-            self._assert_pdeq(a, b, k)
+            _assert_pdeq(self, a, b, k)
 
             a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             sliced = np.take(np.take(self.Xcov, k.active_dims, axis=-1), k.active_dims, axis=-2)
             b = pk.compute_eKzxKxz(self.Z[:, k.active_dims], self.Xmu[:, k.active_dims], sliced[0, :, :, :])
-            self._assert_pdeq(a, b, k)
+            _assert_pdeq(self, a, b, k)
 
 
 class TestExpxKxzActiveDims(unittest.TestCase):
@@ -125,12 +130,14 @@ class TestExpxKxzActiveDims(unittest.TestCase):
         variance = 0.3 + rnd.rand()
 
         k1 = ekernels.RBF(1, variance, active_dims=[0])
+        k2 = ekernels.RBF(1, variance, active_dims=[1])
         klin = ekernels.Linear(1, variance, active_dims=[1])
-        self.ekernels = [k1, klin]
+        self.ekernels = [k1, k2, klin]
 
         k1 = ekernels.RBF(2, variance)
+        k2 = ekernels.RBF(2, variance)
         klin = ekernels.Linear(2, variance)
-        self.pekernels = [k1, klin]
+        self.pekernels = [k1, k2, klin]
 
         k1 = kernels.RBF(1, variance, active_dims=[0])
         klin = kernels.Linear(1, variance, active_dims=[1])
@@ -139,11 +146,6 @@ class TestExpxKxzActiveDims(unittest.TestCase):
         k1 = kernels.RBF(2, variance)
         klin = kernels.Linear(2, variance)
         self.pkernels = [k1, klin]
-
-    def _assert_pdeq(self, a, b, k=None):
-        pdmax = np.max(np.abs((a / b - 1) * 100))
-        self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
-                                                     "On kernel: %s" % (pdmax, str(type(k))))
 
     def test_quad_active_dims(self):
         for k, pk in zip(self.kernels, self.pkernels):
@@ -196,8 +198,8 @@ class TestKernExpQuadrature(unittest.TestCase):
         linvariance = 0.3 + self.rng.rand()
         self.kernels.append(
             kernels.Add([
-                kernels.RBF(1, rbfvariance, rbfard, [0], False),
-                kernels.Linear(1, linvariance, [1])
+                kernels.RBF(1, rbfvariance, rbfard, [1], False),
+                kernels.Linear(1, linvariance, [0])
             ])
         )
         self.kernels[-1].input_size = self.kernels[-1].input_dim
@@ -207,36 +209,30 @@ class TestKernExpQuadrature(unittest.TestCase):
         #     k.num_gauss_hermite_points = 30
         self.ekernels.append(
             ekernels.Add([
-                ekernels.RBF(1, rbfvariance, rbfard, [0], False),
-                ekernels.Linear(1, linvariance, [1])
+                ekernels.RBF(1, rbfvariance, rbfard, [1], False),
+                ekernels.Linear(1, linvariance, [0])
             ])
         )
-
-    def _assert_pdeq(self, a, b, k=None):
-        self.assertTrue(np.all(a.shape == b.shape))
-        pdmax = np.max(np.abs(a / b - 1) * 100)
-        self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
-                                                     "On kernel: %s" % (pdmax, str(type(k))))
 
     def test_eKdiag(self):
         for k, ek in zip(self.kernels, self.ekernels):
             a = k.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
             b = ek.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
-            self._assert_pdeq(a, b, k)
+            _assert_pdeq(self, a, b, k)
 
     def test_eKxz(self):
         for k, ek in zip(self.kernels, self.ekernels):
             a = k.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             b = ek.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
-            self._assert_pdeq(a, b, k)
+            _assert_pdeq(self, a, b, k)
 
     def test_eKzxKxz(self):
         for k, ek in zip(self.kernels, self.ekernels):
             k._kill_autoflow()
-            k.num_gauss_hermite_points = 100
+            k.num_gauss_hermite_points = 30
             a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             b = ek.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
-            self._assert_pdeq(a, b, k)
+            _assert_pdeq(self, a, b, k)
 
     def test_exKxz(self):
         # TODO: Run test for sum kernel as well.
@@ -245,7 +241,7 @@ class TestKernExpQuadrature(unittest.TestCase):
             k.num_gauss_hermite_points = 20
             a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
             b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov)
-            self._assert_pdeq(a, b, k)
+            _assert_pdeq(self, a, b, k)
 
 
 if __name__ == '__main__':
