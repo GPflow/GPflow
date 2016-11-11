@@ -2,9 +2,9 @@ import unittest
 import numpy as np
 import numpy.random as rnd
 import tensorflow as tf
+import GPflow
 from GPflow import kernels
 from GPflow import ekernels
-import GPflow.etransforms
 
 rnd.seed(0)
 
@@ -15,6 +15,43 @@ def _assert_pdeq(self, a, b, k=None):
     # print("%s, %f" % (str(type(k)), pdmax))
     self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
                                                  "On kernel: %s" % (pdmax, str(type(k))))
+
+
+def index_block(y, x, D):
+    return np.s_[y * D:(y + 1) * D, x * D:(x + 1) * D]
+
+
+class TriDiagonalBlockRep(GPflow.transforms.Transform):
+    """
+    Transforms an unconstrained representation of a PSD block tri diagonal matrix to its PSD block representation.
+    """
+
+    def __init__(self):
+        GPflow.transforms.Transform.__init__(self)
+
+    def forward(self, x):
+        """
+        Transforms from the free state to the matrix of blocks.
+        :param x: Unconstrained state (Nx2DxD), where D is the block size.
+        :return: Return PSD blocks (2xNxDxD)
+        """
+        N, D = x.shape[0], x.shape[2]
+        diagblocks = np.einsum('nij,nik->njk', x, x)
+        ob = np.einsum('nij,nik->njk', x[:-1, :, :], x[1:, :, :])
+        # ob = np.einsum('nij,njk->nik', x[:-1, :, :].transpose([0, 2, 1]), x[1:, :, :])
+        offblocks = np.vstack((ob, np.zeros((1, D, D))))
+        return np.array([diagblocks, offblocks])
+
+    def tf_forward(self, x):
+        N, D = tf.shape(x)[0], tf.shape(x)[2]
+        xm = tf.slice(x, [0, 0, 0], tf.pack([N - 1, -1, -1]))
+        xp = x[1:, :, :]
+        diagblocks = tf.batch_matmul(x, x, adj_x=True)
+        offblocks = tf.concat(0, [tf.batch_matmul(xm, xp, adj_x=True), tf.zeros((1, D, D), dtype=tf.float64)])
+        return tf.pack([diagblocks, offblocks])
+
+    def __str__(self):
+        return "BlockTriDiagonal"
 
 
 class TestKernExpDelta(unittest.TestCase):
@@ -74,7 +111,7 @@ class TestKernExpActiveDims(unittest.TestCase):
         self.Xmu = rnd.rand(self.N, self.D)
         self.Z = rnd.rand(3, self.D)
         unconstrained = rnd.randn(self.N, 2 * self.D, self.D)
-        t = GPflow.etransforms.TriDiagonalBlockRep()
+        t = TriDiagonalBlockRep()
         self.Xcov = t.forward(unconstrained)
 
         variance = 0.3 + rnd.rand()
@@ -124,7 +161,7 @@ class TestExpxKxzActiveDims(unittest.TestCase):
         self.Xmu = rnd.rand(self.N, self.D)
         self.Z = rnd.rand(3, self.D)
         unconstrained = rnd.randn(self.N, 2 * self.D, self.D)
-        t = GPflow.etransforms.TriDiagonalBlockRep()
+        t = TriDiagonalBlockRep()
         self.Xcov = t.forward(unconstrained)
 
         variance = 0.3 + rnd.rand()
@@ -181,7 +218,7 @@ class TestKernExpQuadrature(unittest.TestCase):
         self.Z = self.rng.rand(2, self.D)
 
         unconstrained = rnd.randn(self.N, 2 * self.D, self.D)
-        t = GPflow.etransforms.TriDiagonalBlockRep()
+        t = TriDiagonalBlockRep()
         self.Xcov = t.forward(unconstrained)
 
         # Set up "normal" kernels
