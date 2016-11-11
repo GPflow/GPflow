@@ -356,6 +356,13 @@ class TestParamList(unittest.TestCase):
         with self.assertRaises(AssertionError):
             l.append('foo')
 
+    def test_len(self):
+        p1 = GPflow.param.Param(1.2)
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
+        l = GPflow.param.ParamList([p1])
+        l.append(p2)
+        self.assertTrue(len(l) == 2)
+
     def test_with_parameterized(self):
         pzd = GPflow.param.Parameterized()
         p = GPflow.param.Param(1.2)
