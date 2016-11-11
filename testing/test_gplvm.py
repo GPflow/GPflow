@@ -15,14 +15,12 @@ class TestGPLVM(unittest.TestCase):
         self.Q = 2  # latent dimensions
 
     def test_optimise(self):
-        print('TestGPLVM.optimise')
         m = GPflow.gplvm.GPLVM(self.Y, self.Q)
         linit = m.compute_log_likelihood()
         m.optimize(maxiter=2)
         self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_otherkernel(self):
-        print('TestGPLVM.test_otherkernel')
         k = GPflow.kernels.PeriodicKernel(self.Q)
         XInit = self.rng.rand(self.N, self.Q)
         m = GPflow.gplvm.GPLVM(self.Y, self.Q, XInit, k)

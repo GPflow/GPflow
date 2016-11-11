@@ -21,7 +21,7 @@ def index_block(y, x, D):
     return np.s_[y * D:(y + 1) * D, x * D:(x + 1) * D]
 
 
-class TriDiagonalBlockRep(GPflow.transforms.Transform):
+class TriDiagonalBlockRep(object):
     """
     Transforms an unconstrained representation of a PSD block tri diagonal matrix to its PSD block representation.
     """
