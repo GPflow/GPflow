@@ -6,7 +6,6 @@ from .param import Param
 from .mean_functions import Zero
 from . import likelihoods
 from .tf_wraps import eye
-from . import kernel_expectations as ke
 from . import transforms
 from . import kernels
 
@@ -71,7 +70,8 @@ class BayesianGPLVM(GPModel):
         GPModel.__init__(self, X_mean, Y, kern, likelihood=likelihoods.Gaussian(), mean_function=Zero())
         del self.X
         self.X_mean = Param(X_mean)
-        self.X_var = Param(X_var, transforms.positive)
+        diag_transform = transforms.DiagMatrix(X_var.shape[1])
+        self.X_var = Param(diag_transform.forward(X_var) if X_var.ndim == 2 else X_var, diag_transform)
         self.num_data = X_mean.shape[0]
         self.output_dim = Y.shape[1]
 
@@ -108,7 +108,9 @@ class BayesianGPLVM(GPModel):
         likelihood.
         """
         num_inducing = tf.shape(self.Z)[0]
-        psi0, psi1, psi2 = ke.build_psi_stats(self.Z, self.kern, self.X_mean, self.X_var)
+        psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
+        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
+        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
@@ -124,12 +126,13 @@ class BayesianGPLVM(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
+        dX_var = tf.matrix_diag_part(self.X_var)  # TODO: Re-write this to accept full covariance matrices
         NQ = tf.cast(tf.size(self.X_mean), tf.float64)
         D = tf.cast(tf.shape(self.Y)[1], tf.float64)
-        KL = -0.5*tf.reduce_sum(tf.log(self.X_var)) \
+        KL = -0.5*tf.reduce_sum(tf.log(dX_var)) \
             + 0.5*tf.reduce_sum(tf.log(self.X_prior_var))\
             - 0.5 * NQ\
-            + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + self.X_var) / self.X_prior_var)
+            + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
 
         # compute log marginal bound
         ND = tf.cast(tf.size(self.Y), tf.float64)
@@ -150,7 +153,8 @@ class BayesianGPLVM(GPModel):
         there are notes in the SGPR notebook.
         """
         num_inducing = tf.shape(self.Z)[0]
-        psi0, psi1, psi2 = ke.build_psi_stats(self.Z, self.kern, self.X_mean, self.X_var)
+        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
+        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
         Kus = self.kern.K(self.Z, Xnew)
         sigma2 = self.likelihood.variance

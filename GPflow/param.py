@@ -244,7 +244,7 @@ class Param(Parentable):
         """
         if self.fixed:
             return np.empty((0,), np_float_type)
-        return self.transform.backward(self.value.flatten())
+        return self.transform.backward(self.value).flatten()
 
     def get_feed_dict_keys(self):
         """

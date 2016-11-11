@@ -17,6 +17,7 @@ import numpy as np
 import tensorflow as tf
 from . import tf_wraps as tfw
 from ._settings import settings
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
@@ -162,6 +163,42 @@ class Logistic(Transform):
 
     def __str__(self):
         return '[' + str(self.a) + ', ' + str(self.b) + ']'
+
+
+class DiagMatrix(Transform):
+    # Currently, this transform does constrains both to positive and makes a matrix of the right shape. It may be nice
+    # to be able to chain transforms.
+    def __init__(self, dim=1):
+        self.dim = dim
+        self._lower = 1e-6
+
+    def forward(self, x):
+        # Create diagonal matrix
+        x = Log1pe.forward(self, x).reshape((-1, self.dim))
+        m = np.zeros((x.shape[0], x.shape[1], x.shape[1]))
+        m[(np.s_[:],) + np.diag_indices(x.shape[1])] = x
+        return m
+
+    def backward(self, y):
+        # Return diagonal of matrices
+        if y.ndim == 2:
+            return Log1pe.backward(self, np.diag(y).flatten())
+        elif y.ndim == 3:
+            return Log1pe.backward(self, y.diagonal(0, 1, 2).flatten())
+        else:
+            raise ValueError("Invalid input dimension: %i" % y.ndim)
+
+    def tf_forward(self, x):
+        return tf.matrix_diag(tf.reshape(Log1pe.tf_forward(self, x), (-1, self.dim)))
+
+    def tf_log_jacobian(self, x):
+        return tf.zeros((1,), float_type) + Log1pe.tf_log_jacobian(self, x)
+
+    def __str__(self):
+        return 'DiagMatrix'
+
+    def free_state_size(self, variable_shape):
+        return variable_shape[0] * variable_shape[1]
 
 
 class LowerTriangular(Transform):
