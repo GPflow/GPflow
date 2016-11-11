@@ -181,12 +181,7 @@ class DiagMatrix(Transform):
 
     def backward(self, y):
         # Return diagonal of matrices
-        if y.ndim == 2:
-            return Log1pe.backward(self, np.diag(y).flatten())
-        elif y.ndim == 3:
-            return Log1pe.backward(self, y.diagonal(0, 1, 2).flatten())
-        else:
-            raise ValueError("Invalid input dimension: %i" % y.ndim)
+        return Log1pe.backward(self, y.reshape(-1, self.dim, self.dim).diagonal(0, 1, 2).flatten())
 
     def tf_forward(self, x):
         return tf.matrix_diag(tf.reshape(Log1pe.tf_forward(self, x), (-1, self.dim)))

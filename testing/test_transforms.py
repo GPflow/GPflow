@@ -105,9 +105,6 @@ class TestDiagMatrixTransform(unittest.TestCase):
         self.assertTrue(np.all(fwd2d.shape == np.array([size2d, self.t2.dim, self.t2.dim])))
         self.assertTrue(np.allclose(free_2d, self.t2.backward(fwd2d)))
 
-        with self.assertRaises(ValueError):
-            self.t1.backward(np.random.randn(3))
-
     def test_tf_np_forward(self):
         """
         Make sure the np forward transforms are the same as the tensorflow ones
