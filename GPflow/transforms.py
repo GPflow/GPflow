@@ -166,28 +166,37 @@ class Logistic(Transform):
 
 
 class DiagMatrix(Transform):
-    # Currently, this transform does constrains both to positive and makes a matrix of the right shape. It may be nice
-    # to be able to chain transforms.
-    def __init__(self, dim=1):
+    """
+    A transform to represent diagonal matrices.
+
+    The output of this transform is a N x dim x dim array of diagonal matrices.
+    The contructor argumnet dim specifies the size of the matrixes.
+
+    Additionally, to ensure that the matrices are positive definite, the
+    diagonal elements are pushed through a 'positive' transform, defaulting to
+    log1pe.
+    """
+    def __init__(self, dim=1, positive_transform=Log1pe()):
         self.dim = dim
         self._lower = 1e-6
+        self._positive_transform = positive_transform
 
     def forward(self, x):
         # Create diagonal matrix
-        x = Log1pe.forward(self, x).reshape((-1, self.dim))
+        x = self._positive_transform.forward(x).reshape((-1, self.dim))
         m = np.zeros((x.shape[0], x.shape[1], x.shape[1]))
         m[(np.s_[:],) + np.diag_indices(x.shape[1])] = x
         return m
 
     def backward(self, y):
-        # Return diagonal of matrices
-        return Log1pe.backward(self, y.reshape(-1, self.dim, self.dim).diagonal(0, 1, 2).flatten())
+        # Return diagonals of matrices
+        return self._positive_transform.backward(y.reshape(-1, self.dim, self.dim).diagonal(0, 1, 2).flatten())
 
     def tf_forward(self, x):
-        return tf.matrix_diag(tf.reshape(Log1pe.tf_forward(self, x), (-1, self.dim)))
+        return tf.matrix_diag(tf.reshape(self._positive_transform.tf_forward(x), (-1, self.dim)))
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type) + Log1pe.tf_log_jacobian(self, x)
+        return tf.zeros((1,), float_type) + self._positive_transform.tf_log_jacobian(x)
 
     def __str__(self):
         return 'DiagMatrix'
