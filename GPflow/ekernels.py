@@ -3,6 +3,9 @@ import numpy as np
 import tensorflow as tf
 import GPflow.kernels
 from GPflow.tf_wraps import eye
+from ._settings import settings
+
+float_type = settings.dtypes.float_type
 
 
 class RBF(GPflow.kernels.RBF):
@@ -27,14 +30,15 @@ class RBF(GPflow.kernels.RBF):
         Z, Xmu = self._slice(Z, Xmu)
         M = tf.shape(Z)[0]
         D = tf.shape(Xmu)[1]
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
 
         vec = tf.expand_dims(Xmu, 1) - tf.expand_dims(Z, 0)  # NxMxD
-        scalemat = tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0) + Xcov  # NxDxD
+        scalemat = tf.expand_dims(tf.diag(lengthscales ** 2.0), 0) + Xcov  # NxDxD
         rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
         smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxD
         q = tf.reduce_sum(smIvec * vec, [2])  # NxM
         det = tf.matrix_determinant(
-            tf.expand_dims(eye(D), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xcov
+            tf.expand_dims(eye(D), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xcov
         )  # N
         return self.variance * tf.expand_dims(det ** -0.5, 1) * tf.exp(-0.5 * q)
 
@@ -54,15 +58,17 @@ class RBF(GPflow.kernels.RBF):
 
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0] - 1
+        D = tf.shape(Xmu)[1]
         Xsigmb = tf.slice(Xcov, [0, 0, 0, 0], tf.pack([-1, N, -1, -1]))
         Xsigm = Xsigmb[0, :, :, :]  # NxDxD
         Xsigmc = Xsigmb[1, :, :, :]  # NxDxD
         Xmum = tf.slice(Xmu, [0, 0], tf.pack([N, -1]))
         Xmup = Xmu[1:, :]
-        scalemat = tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0) + Xsigm  # NxDxD
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
+        scalemat = tf.expand_dims(tf.diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
 
         det = tf.matrix_determinant(
-            tf.expand_dims(eye(tf.shape(Xmu)[1]), 0) + tf.reshape(self.lengthscales ** -2.0, (1, 1, -1)) * Xsigm
+            tf.expand_dims(eye(tf.shape(Xmu)[1]), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
         )  # N
 
         vec = tf.expand_dims(Z, 0) - tf.expand_dims(Xmum, 1)  # NxMxD
@@ -93,12 +99,13 @@ class RBF(GPflow.kernels.RBF):
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
 
         Kmms = tf.sqrt(self.K(Z, presliced=True)) / self.variance ** 0.5
-        scalemat = tf.expand_dims(eye(D), 0) + 2 * Xcov * tf.reshape(self.lengthscales ** -2.0, [1, 1, -1])  # NxDxD
+        scalemat = tf.expand_dims(eye(D), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
         det = tf.matrix_determinant(scalemat)
 
-        mat = Xcov + 0.5 * tf.expand_dims(tf.diag(self.lengthscales ** 2.0), 0)  # NxDxD
+        mat = Xcov + 0.5 * tf.expand_dims(tf.diag(lengthscales ** 2.0), 0)  # NxDxD
         cm = tf.cholesky(mat)  # NxDxD
         vec = 0.5 * (tf.reshape(Z, [1, M, 1, D]) +
                      tf.reshape(Z, [1, 1, M, D])) - tf.reshape(Xmu, [N, 1, 1, D])  # NxMxMxD

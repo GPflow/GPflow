@@ -69,8 +69,11 @@ class TestKernExpDelta(unittest.TestCase):
         k1 = ekernels.RBF(self.D, ARD=True)
         k1.lengthscales = rnd.rand(2) + [0.5, 1.5]
         k1.variance = 0.3 + rnd.rand()
+        k2 = ekernels.RBF(self.D)
+        k2.lengthscales = rnd.rand(1) + [0.5]
+        k2.variance = 0.3 + rnd.rand()
         klin = ekernels.Linear(self.D, variance=0.3 + rnd.rand())
-        self.kernels = [k1, klin]
+        self.kernels = [k1, klin, k2]
 
     def test_eKzxKxz(self):
         for k in self.kernels:

@@ -54,7 +54,7 @@ class TestBayesianGPLVM(unittest.TestCase):
         # test default Z on 2_D example
         Q = 2  # latent dimensions
         X_mean = GPflow.gplvm.PCA_reduce(self.Y, Q)
-        k = GPflow.ekernels.RBF(Q)
+        k = GPflow.ekernels.RBF(Q, ARD=True)
         m = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean,
                                        X_var=np.ones((self.N, Q)), Y=self.Y, kern=k, M=self.M)
         linit = m.compute_log_likelihood()
