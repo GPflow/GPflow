@@ -22,7 +22,7 @@ from .priors import Gaussian
 from .mean_functions import Zero
 from .tf_wraps import eye
 from ._settings import settings
-
+from .maths import jitteredCholesky
 
 class GPMC(GPModel):
     def __init__(self, X, Y, kern, likelihood,
@@ -75,7 +75,7 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = tf.cholesky(K + eye(tf.shape(self.X)[0])*settings.numerics.jitter_level)
+        L = jitteredCholesky(K)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))

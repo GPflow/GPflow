@@ -17,7 +17,7 @@ from .tf_wraps import eye
 import tensorflow as tf
 from .scoping import NameScoped
 from ._settings import settings
-
+from .maths import jitteredCholesky
 
 @NameScoped("conditional")
 def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
@@ -62,8 +62,8 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     # compute kernel stuff
     num_data = tf.shape(X)[0]
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data) * settings.numerics.jitter_level
-    Lm = tf.cholesky(Kmm)
+    Kmm = kern.K(X)
+    Lm = jitteredCholesky(Kmm)
 
     # Compute the projection matrix A
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)

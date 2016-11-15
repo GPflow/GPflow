@@ -20,6 +20,7 @@ import numpy as np
 import tensorflow as tf
 from . import hmc, tf_wraps
 from ._settings import settings
+from .maths import jitteredCholesky
 import sys
 float_type = settings.dtypes.float_type
 
@@ -380,10 +381,9 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf_wraps.eye(tf.shape(mu)[0]) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:, :, i] + jitter)
+            L = jitteredCholesky(var[:, :, i])
             shape = tf.pack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=settings.dtypes.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))

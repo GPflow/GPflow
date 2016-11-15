@@ -22,7 +22,7 @@ from .mean_functions import Zero
 from . import likelihoods
 from .tf_wraps import eye
 from ._settings import settings
-
+from .maths import jitteredCholesky
 
 class SGPR(GPModel):
     """
@@ -74,8 +74,8 @@ class SGPR(GPModel):
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * settings.numerics.jitter_level
-        L = tf.cholesky(Kuu)
+        Kuu = self.kern.K(self.Z) 
+        L = jitteredCholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
         # Compute intermediate matrices
@@ -106,10 +106,10 @@ class SGPR(GPModel):
         num_inducing = tf.shape(self.Z)[0]
         err = self.Y - self.mean_function(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z)
         Kus = self.kern.K(self.Z, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
-        L = tf.cholesky(Kuu)
+        L = jitteredCholesky(Kuu)
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
         B = tf.matmul(A, tf.transpose(A)) + eye(num_inducing)
         LB = tf.cholesky(B)
@@ -171,16 +171,16 @@ class GPRFITC(GPModel):
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z)
 
-        Luu = tf.cholesky(Kuu)  # => Luu^T Luu = Kuu
+        Luu = jitteredCholesky(Kuu)  # => Luu^T Luu = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff
 
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
 
         B = eye(num_inducing) + tf.matmul(V / nu, tf.transpose(V))
-        L = tf.cholesky(B)
+        L = jitteredCholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size N x R
         alpha = tf.matmul(V, beta)  # size N x R
 

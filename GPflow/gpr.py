@@ -21,7 +21,7 @@ from .mean_functions import Zero
 from . import likelihoods
 from .tf_wraps import eye
 from .param import DataHolder
-
+from .maths import jitteredCholesky
 
 class GPR(GPModel):
     """

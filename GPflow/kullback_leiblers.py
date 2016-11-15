@@ -17,6 +17,7 @@ import tensorflow as tf
 from .tf_wraps import eye
 from .scoping import NameScoped
 from ._settings import settings
+from .maths import jitteredCholesky
 float_type = settings.dtypes.float_type
 
 
@@ -89,7 +90,7 @@ def gauss_kl_diag(q_mu, q_sqrt, K):
 
     K is a positive definite matrix: the covariance of p.
     """
-    L = tf.cholesky(K)
+    L = jitteredCholesky(K)
     alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
     KL = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
     num_latent = tf.cast(tf.shape(q_sqrt)[1], float_type)
@@ -123,7 +124,7 @@ def gauss_kl(q_mu, q_sqrt, K):
 
     K is a positive definite matrix: the covariance of p.
     """
-    L = tf.cholesky(K)
+    L = jitteredCholesky(K)
     alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
     KL = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
     num_latent = tf.cast(tf.shape(q_sqrt)[2], float_type)
