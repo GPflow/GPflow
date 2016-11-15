@@ -9,12 +9,12 @@ from GPflow import ekernels
 rnd.seed(0)
 
 
-def _assert_pdeq(self, a, b, k=None):
+def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
     self.assertTrue(np.all(a.shape == b.shape))
     pdmax = np.max(np.abs(a / b - 1) * 100)
     # print("%s, %f" % (str(type(k)), pdmax))
     self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
-                                                 "On kernel: %s" % (pdmax, str(type(k))))
+                                                 "On kernel: %s (%i / %i)" % (pdmax, str(type(k)), i + 1, l))
 
 
 def index_block(y, x, D):
@@ -232,7 +232,7 @@ class TestKernExpQuadrature(unittest.TestCase):
         self.ekernels = [c(*p) for c, p in zip(ekernel_classes, params)]
         self.kernels = [c(*p) for c, p in zip(kernel_classes, params)]
 
-        # Test summed kernels
+        # Test summed kernels, non-overlapping
         rbfvariance = 0.3 + self.rng.rand()
         rbfard = [self.rng.rand() + 0.5]
         linvariance = 0.3 + self.rng.rand()
@@ -245,20 +245,41 @@ class TestKernExpQuadrature(unittest.TestCase):
         self.kernels[-1].input_size = self.kernels[-1].input_dim
         for k in self.kernels[-1].kern_list:
             k.input_size = self.kernels[-1].input_size
-        # for k in self.kernels[-1].kern_list:
-        #     k.num_gauss_hermite_points = 30
         self.ekernels.append(
             ekernels.Add([
                 ekernels.RBF(1, rbfvariance, rbfard, [1], False),
                 ekernels.Linear(1, linvariance, [0])
             ])
         )
+        self.ekernels[-1].input_size = self.ekernels[-1].input_dim
+        for k in self.ekernels[-1].kern_list:
+            k.input_size = self.ekernels[-1].input_size
+
+        # Test summed kernels, overlapping
+        rbfvariance = 0.3 + self.rng.rand()
+        rbfard = [self.rng.rand() + 0.5]
+        linvariance = 0.3 + self.rng.rand()
+        self.kernels.append(
+            kernels.Add([
+                kernels.RBF(self.D, rbfvariance, rbfard),
+                kernels.Linear(self.D, linvariance)
+            ])
+        )
+        self.ekernels.append(
+            ekernels.Add([
+                ekernels.RBF(self.D, rbfvariance, rbfard),
+                ekernels.Linear(self.D, linvariance)
+            ])
+        )
+
+        self.assertTrue(self.ekernels[-2].on_separate_dimensions)
+        self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
 
     def test_eKdiag(self):
-        for k, ek in zip(self.kernels, self.ekernels):
+        for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
             a = k.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
             b = ek.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
-            _assert_pdeq(self, a, b, k)
+            _assert_pdeq(self, a, b, k, i, len(self.kernels))
 
     def test_eKxz(self):
         for k, ek in zip(self.kernels, self.ekernels):
@@ -275,13 +296,16 @@ class TestKernExpQuadrature(unittest.TestCase):
             _assert_pdeq(self, a, b, k)
 
     def test_exKxz(self):
-        # TODO: Run test for sum kernel as well.
-        for k, ek in zip(self.kernels[:-1], self.ekernels[:-1]):
+        for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
+            if type(k) is kernels.Add and hasattr(k, 'input_size'):
+                # xKxz does not work with slicing yet
+                continue
+
             k._kill_autoflow()
-            k.num_gauss_hermite_points = 20
+            k.num_gauss_hermite_points = 30
             a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
             b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov)
-            _assert_pdeq(self, a, b, k)
+            _assert_pdeq(self, a, b, k, i, len(self.kernels))
 
 
 if __name__ == '__main__':

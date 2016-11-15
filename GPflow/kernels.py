@@ -25,6 +25,7 @@ from . import transforms
 from ._settings import settings
 
 float_type = settings.dtypes.float_type
+int_type = settings.dtypes.int_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
@@ -195,7 +196,8 @@ class Kern(Parameterized):
         Hpow2D = self.num_gauss_hermite_points ** (2 * D)
 
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], D, message="Numerical quadrature needs to know correct shape of Xmu."),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=int_type),
+                            message="Numerical quadrature needs to know correct shape of Xmu.")
         ]):
             Xmu = tf.identity(Xmu)
 

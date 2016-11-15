@@ -5,6 +5,7 @@ import GPflow.kernels
 from GPflow.tf_wraps import eye
 from ._settings import settings
 
+int_type = settings.dtypes.int_type
 float_type = settings.dtypes.float_type
 
 
@@ -50,8 +51,10 @@ class RBF(GPflow.kernels.RBF):
         :param Xcov: 2x(N+1)xDxD
         :return: NxMxD
         """
+        D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], self.input_dim, message="Currently cannot handle slicing in exKxz."),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, dtype=int_type),
+                            message="Currently cannot handle slicing in exKxz."),
             tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
         ]):
             Xmu = tf.identity(Xmu)
@@ -135,8 +138,10 @@ class Linear(GPflow.kernels.Linear):
         return self.variance * tf.batch_matmul(Xmu, tf.transpose(Z))
 
     def exKxz(self, Z, Xmu, Xcov):
+        D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], self.input_dim, message="Currently cannot handle slicing in exKxz."),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, int_type),
+                            message="Currently cannot handle slicing in exKxz."),
             tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
         ]):
             Xmu = tf.identity(Xmu)
