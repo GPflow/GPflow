@@ -261,14 +261,14 @@ class TestKernExpQuadrature(unittest.TestCase):
         linvariance = 0.3 + self.rng.rand()
         self.kernels.append(
             kernels.Add([
-                kernels.RBF(self.D, rbfvariance, rbfard),
-                kernels.Linear(self.D, linvariance)
+                kernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
+                kernels.Linear(self.D, linvariance, active_dims=[0, 1])
             ])
         )
         self.ekernels.append(
             ekernels.Add([
-                ekernels.RBF(self.D, rbfvariance, rbfard),
-                ekernels.Linear(self.D, linvariance)
+                ekernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
+                ekernels.Linear(self.D, linvariance, active_dims=[0, 1])
             ])
         )
 
