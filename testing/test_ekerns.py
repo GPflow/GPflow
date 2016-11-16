@@ -12,7 +12,7 @@ rnd.seed(0)
 def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
     self.assertTrue(np.all(a.shape == b.shape))
     pdmax = np.max(np.abs(a / b - 1) * 100)
-    print("%s, %f" % (str(type(k)), pdmax))
+    # print("%s, %f" % (str(type(k)), pdmax))
     self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
                                                  "On kernel: %s (%i / %i)" % (pdmax, str(type(k)), i + 1, l))
 

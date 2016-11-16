@@ -110,8 +110,12 @@ class Kern(Parameterized):
         if isinstance(self.active_dims, slice):
             cov = cov[..., self.active_dims, self.active_dims]
         else:
-            i = np.dstack(np.meshgrid(self.active_dims, self.active_dims))
-            cov = tf.transpose(tf.gather_nd(tf.transpose(cov), i))
+            cov_shape = tf.shape(cov)
+            covr = tf.reshape(cov, [-1, cov_shape[-1], cov_shape[-1]])
+            gather1 = tf.gather(tf.transpose(covr, [2, 1, 0]), self.active_dims)
+            gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), self.active_dims)
+            cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
+                             tf.concat(0, [cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]]))
         return cov
 
     def __add__(self, other):
