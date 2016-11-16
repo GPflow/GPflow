@@ -51,7 +51,6 @@ class RBF(GPflow.kernels.RBF):
         :param Xcov: 2x(N+1)xDxD
         :return: NxMxD
         """
-        D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
         with tf.control_dependencies([
             tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, dtype=int_type),
                             message="Currently cannot handle slicing in exKxz."),
@@ -138,7 +137,6 @@ class Linear(GPflow.kernels.Linear):
         return self.variance * tf.batch_matmul(Xmu, tf.transpose(Z))
 
     def exKxz(self, Z, Xmu, Xcov):
-        D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
         with tf.control_dependencies([
             tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, int_type),
                             message="Currently cannot handle slicing in exKxz."),
