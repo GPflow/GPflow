@@ -12,7 +12,7 @@ rnd.seed(0)
 def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
     self.assertTrue(np.all(a.shape == b.shape))
     pdmax = np.max(np.abs(a / b - 1) * 100)
-    # print("%s, %f" % (str(type(k)), pdmax))
+    print("%s, %f" % (str(type(k)), pdmax))
     self.assertTrue(pdmax < self._threshold, msg="Percentage difference above threshold: %f\n"
                                                  "On kernel: %s (%i / %i)" % (pdmax, str(type(k)), i + 1, l))
 
@@ -306,6 +306,53 @@ class TestKernExpQuadrature(unittest.TestCase):
             a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
             b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b, k, i, len(self.kernels))
+
+
+class TestKernProd(unittest.TestCase):
+    """
+    TestKernProd
+    Need a separate test for this as Prod currently only supports diagonal Xcov matrices with non-overlapping kernels.
+    """
+
+    def setUp(self):
+        self._threshold = 0.5
+        self.rng = np.random.RandomState(0)
+        self.N = 4
+        self.D = 2
+
+        # Test summed kernels, non-overlapping
+        rbfvariance = 0.3 + self.rng.rand()
+        rbfard = [self.rng.rand() + 0.5]
+        linvariance = 0.3 + self.rng.rand()
+
+        self.kernel = kernels.Prod([
+            kernels.RBF(1, rbfvariance, rbfard, [1], False),
+            kernels.Linear(1, linvariance, [0])
+        ])
+
+        self.ekernel = ekernels.Prod([
+            ekernels.RBF(1, rbfvariance, rbfard, [1], False),
+            ekernels.Linear(1, linvariance, [0])
+        ])
+
+        self.Xmu = self.rng.rand(self.N, self.D)
+        self.Xcov = [np.diag(a) for a in self.rng.rand(self.N, self.D)]
+        self.Z = self.rng.rand(2, self.D)
+
+    def test_eKdiag(self):
+        a = self.kernel.compute_eKdiag(self.Xmu, self.Xcov)
+        b = self.ekernel.compute_eKdiag(self.Xmu, self.Xcov)
+        _assert_pdeq(self, a, b)
+
+    def test_eKxz(self):
+        a = self.kernel.compute_eKxz(self.Z, self.Xmu, self.Xcov)
+        b = self.ekernel.compute_eKxz(self.Z, self.Xmu, self.Xcov)
+        _assert_pdeq(self, a, b)
+
+    def test_eKzxKxz(self):
+        a = self.kernel.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
+        b = self.ekernel.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
+        _assert_pdeq(self, a, b)
 
 
 if __name__ == '__main__':

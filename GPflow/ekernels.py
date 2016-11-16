@@ -221,16 +221,34 @@ class Add(GPflow.kernels.Add):
         crosscov = reduce(tf.add, crosscovs)
         return all_sum + crossmean + crosscov
 
-    @property
-    def on_separate_dimensions(self):
-        if np.any([isinstance(k.active_dims, slice) for k in self.kern_list]):
-            # Be conservative in the case of a slice object
-            return False
-        else:
-            dimlist = [k.active_dims for k in self.kern_list]
-            overlapping = False
-            for i, dims_i in enumerate(dimlist):
-                for dims_j in dimlist[i + 1:]:
-                    if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
-                        overlapping = True
-            return not overlapping
+
+class Prod(GPflow.kernels.Prod):
+    def eKdiag(self, Xmu, Xcov):
+        if not self.on_separate_dimensions:
+            raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+        with tf.control_dependencies([
+            tf.assert_equal(tf.matrix_band_part(Xcov, 0, 0), Xcov,
+                            message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+        ]):
+            Xcov = tf.matrix_band_part(Xcov, 0, 0)
+        return reduce(tf.mul, [k.eKdiag(Xmu, Xcov) for k in self.kern_list])
+
+    def eKxz(self, Z, Xmu, Xcov):
+        if not self.on_separate_dimensions:
+            raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+        with tf.control_dependencies([
+            tf.assert_equal(tf.matrix_band_part(Xcov, 0, 0), Xcov,
+                            message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+        ]):
+            Xcov = tf.matrix_band_part(Xcov, 0, 0)
+        return reduce(tf.mul, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
+
+    def eKzxKxz(self, Z, Xmu, Xcov):
+        if not self.on_separate_dimensions:
+            raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+        with tf.control_dependencies([
+            tf.assert_equal(tf.matrix_band_part(Xcov, 0, 0), Xcov,
+                            message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+        ]):
+            Xcov = tf.matrix_band_part(Xcov, 0, 0)
+        return reduce(tf.mul, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])

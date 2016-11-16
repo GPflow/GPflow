@@ -153,7 +153,7 @@ class Kern(Parameterized):
         Computes <K_xx>_q(x).
         :param Xmu: Mean (NxD)
         :param Xcov: Covariance (NxDxD)
-        :return:
+        :return: (N)
         """
         warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
         Xmu, _ = self._slice(Xmu, None)
@@ -162,7 +162,7 @@ class Kern(Parameterized):
         Kdiag = tf.reshape(self.Kdiag(X, presliced=True),
                            (self.num_gauss_hermite_points ** self.input_dim, tf.shape(Xmu)[0]))
         eKdiag = tf.reduce_sum(Kdiag * wn[:, None], 0)
-        return eKdiag
+        return eKdiag  # N
 
     def eKxz(self, Z, Xmu, Xcov):
         warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
@@ -616,6 +616,20 @@ class Combination(Kern):
         # generate a set of suitable names and add the kernels as attributes
         names = make_kernel_names(self.kern_list)
         [setattr(self, name, k) for name, k in zip(names, self.kern_list)]
+
+    @property
+    def on_separate_dimensions(self):
+        if np.any([isinstance(k.active_dims, slice) for k in self.kern_list]):
+            # Be conservative in the case of a slice object
+            return False
+        else:
+            dimlist = [k.active_dims for k in self.kern_list]
+            overlapping = False
+            for i, dims_i in enumerate(dimlist):
+                for dims_j in dimlist[i + 1:]:
+                    if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
+                        overlapping = True
+            return not overlapping
 
 
 class Add(Combination):
