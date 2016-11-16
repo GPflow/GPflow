@@ -105,15 +105,15 @@ class VGP(GPModel):
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
         L = tf.cholesky(A)
         Li = tf.matrix_triangular_solve(L, I)
-        tmp = Li / tf.transpose(self.q_lambda)
+        tmp = Li / tf.expand_dims(tf.transpose(self.q_lambda), 1)
         f_var = 1./tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
 
         # some statistics about A are used in the KL
         A_logdet = 2.0 * tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
         trAi = tf.reduce_sum(tf.square(Li))
 
-        KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent
-                    + tf.reduce_sum(K_alpha*self.q_alpha))
+        KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent +
+                    tf.reduce_sum(K_alpha*self.q_alpha))
 
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         return tf.reduce_sum(v_exp) - KL
