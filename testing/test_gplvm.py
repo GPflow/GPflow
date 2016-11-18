@@ -4,6 +4,7 @@ import numpy as np
 import unittest
 from GPflow import ekernels
 from GPflow import kernels
+np.random.seed(0)
 
 
 class TestGPLVM(unittest.TestCase):
@@ -77,9 +78,11 @@ class TestBayesianGPLVM(unittest.TestCase):
         Q = 2  # latent dimensions
         X_mean = GPflow.gplvm.PCA_reduce(self.Y, Q)
         kernsQuadratu = [kernels.RBF(1, active_dims=[0])+kernels.Linear(1, active_dims=[1]),
-                         kernels.RBF(1, active_dims=[0])+kernels.PeriodicKernel(1, active_dims=[1])]
+                         kernels.RBF(1, active_dims=[0])+kernels.PeriodicKernel(1, active_dims=[1]),
+                         kernels.RBF(1, active_dims=[0])*kernels.Linear(1, active_dims=[1])]
         kernsAnalytic = [ekernels.Add([ekernels.RBF(1, active_dims=[0]), ekernels.Linear(1, active_dims=[1])]),
-                         ekernels.Add([ekernels.RBF(1, active_dims=[0]), kernels.PeriodicKernel(1, active_dims=[1])])]
+                         ekernels.Add([ekernels.RBF(1, active_dims=[0]), kernels.PeriodicKernel(1, active_dims=[1])]),
+                         ekernels.Prod([ekernels.RBF(1, active_dims=[0]), ekernels.Linear(1, active_dims=[1])])]
         Z = np.random.permutation(X_mean.copy())[:self.M]
         # Also test default N(0,1) is used
         X_prior_mean = np.zeros((self.N, Q))
@@ -91,9 +94,11 @@ class TestBayesianGPLVM(unittest.TestCase):
                                             kern=kq, M=self.M, Z=Z, X_prior_mean=X_prior_mean, X_prior_var=X_prior_var)
             ma = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_var=np.ones((self.N, Q)), Y=self.Y,
                                             kern=ka, M=self.M, Z=Z)
+            mq._compile()
+            ma._compile()
             ql = mq.compute_log_likelihood()
             al = ma.compute_log_likelihood()
-            self.assertTrue(np.allclose(ql, al), 'Likelihood not equal %f<>%f' % (ql, al))
+            self.assertTrue(np.allclose(ql, al, atol=1e-2), 'Likelihood not equal %f<>%f' % (ql, al))
             mu_f_a, var_f_a = ma.predict_f(Xtest)
             mu_f_q, var_f_q = mq.predict_f(Xtest)
             self.assertTrue(np.allclose(mu_f_a, mu_f_q, atol=1e-4), ('Posterior means different', mu_f_a-mu_f_q))
