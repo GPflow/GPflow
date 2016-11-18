@@ -23,13 +23,14 @@ def PCA_reduce(X, Q):
     i = np.argsort(evecs)[::-1]
     W = evals[:, i]
     W = W[:, :Q]
-    return (X-X.mean(0)).dot(W)
+    return (X - X.mean(0)).dot(W)
 
 
 class GPLVM(GPR):
     """
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
+
     def __init__(self, Y, latent_dim, X_mean=None, kern=None, mean_function=Zero()):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
@@ -43,17 +44,16 @@ class GPLVM(GPR):
             kern = kernels.RBF(latent_dim, ARD=True)
         if X_mean is None:
             X_mean = PCA_reduce(Y, latent_dim)
-        assert X_mean.shape[1] == latent_dim,\
+        assert X_mean.shape[1] == latent_dim, \
             'Passed in number of latent ' + str(latent_dim) + ' does not match initial X ' + str(X_mean.shape[1])
         self.num_latent = X_mean.shape[1]
         assert Y.shape[1] >= self.num_latent, 'More latent dimensions than observed.'
-        GPR. __init__(self, X_mean, Y, kern, mean_function=mean_function)
+        GPR.__init__(self, X_mean, Y, kern, mean_function=mean_function)
         del self.X  # in GPLVM this is a Param
         self.X = Param(X_mean)
 
 
 class BayesianGPLVM(GPModel):
-
     def __init__(self, X_mean, X_var, Y, kern, M, Z=None, X_prior_mean=None, X_prior_var=None):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
@@ -71,7 +71,8 @@ class BayesianGPLVM(GPModel):
         del self.X  # in GPLVM this is a Param
         self.X_mean = Param(X_mean)
         diag_transform = transforms.DiagMatrix(X_var.shape[1])
-        self.X_var = Param(diag_transform.forward(X_var) if X_var.ndim == 2 else X_var, diag_transform)
+        self.X_var = Param(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
+                           diag_transform)
         self.num_data = X_mean.shape[0]
         self.output_dim = Y.shape[1]
 
@@ -129,10 +130,10 @@ class BayesianGPLVM(GPModel):
         dX_var = tf.matrix_diag_part(self.X_var)  # TODO: Re-write this to accept full covariance matrices
         NQ = tf.cast(tf.size(self.X_mean), tf.float64)
         D = tf.cast(tf.shape(self.Y)[1], tf.float64)
-        KL = -0.5*tf.reduce_sum(tf.log(dX_var)) \
-            + 0.5*tf.reduce_sum(tf.log(self.X_prior_var))\
-            - 0.5 * NQ\
-            + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
+        KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
+             + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
+             - 0.5 * NQ \
+             + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
 
         # compute log marginal bound
         ND = tf.cast(tf.size(self.Y), tf.float64)
@@ -171,13 +172,13 @@ class BayesianGPLVM(GPModel):
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
         mean = tf.matmul(tf.transpose(tmp2), c)
         if full_cov:
-            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2)\
-                - tf.matmul(tf.transpose(tmp1), tmp1)
+            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) \
+                  - tf.matmul(tf.transpose(tmp1), tmp1)
             shape = tf.pack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
-            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0)\
-                - tf.reduce_sum(tf.square(tmp1), 0)
+            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
+                  - tf.reduce_sum(tf.square(tmp1), 0)
             shape = tf.pack([1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
