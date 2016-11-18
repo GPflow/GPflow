@@ -80,7 +80,7 @@ class TestCoregion(unittest.TestCase):
     def test_diag(self):
         K = self.k.compute_K_symm(self.X)
         Kdiag = self.k.compute_Kdiag(self.X)
-        self.assertTrue(np.all(np.diag(K) == Kdiag))
+        self.assertTrue(np.allclose(np.diag(K), Kdiag))
 
     def test_slice(self):
         # compute another kernel with additinoal inputs, make sure out kernel is still okay.
