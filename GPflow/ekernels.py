@@ -175,6 +175,11 @@ class Add(GPflow.kernels.Add):
     better to do quadrature on the summed kernel function using `GPflow.kernels.Add` instead.
     """
 
+    def __init__(self, kern_list):
+        # self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
+        self.crossexp_funcs = {}
+        GPflow.kernels.Add.__init__(self, kern_list)
+
     def eKdiag(self, X, Xcov):
         return reduce(tf.add, [k.eKdiag(X, Xcov) for k in self.kern_list])
 
@@ -186,39 +191,48 @@ class Add(GPflow.kernels.Add):
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         all_sum = reduce(tf.add, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
-        eKxzs = [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list]
-        crossmeans = []
-        for i, Ka in enumerate(eKxzs):
-            for Kb in eKxzs[i + 1:]:
-                op = Ka[:, None, :] * Kb[:, :, None]
-                ct = tf.transpose(op, [0, 2, 1]) + op
-                crossmeans.append(ct)
-        crossmean = reduce(tf.add, crossmeans)
 
         if self.on_separate_dimensions and Xcov.get_shape().ndims == 2:
             # If we're on separate dimensions and the covariances are diagonal, we don't need Cov[Kzx1Kxz2].
+            crossmeans = []
+            eKxzs = [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list]
+            for i, Ka in enumerate(eKxzs):
+                for Kb in eKxzs[i + 1:]:
+                    op = Ka[:, None, :] * Kb[:, :, None]
+                    ct = tf.transpose(op, [0, 2, 1]) + op
+                    crossmeans.append(ct)
+            crossmean = reduce(tf.add, crossmeans)
             return all_sum + crossmean
         else:
-            # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
-            self._check_quadrature()
-            warnings.warn("GPflowe.kernels.Add: Using numerical quadrature for kernel expectation cross terms.")
-            Xmu, Z = self._slice(Xmu, Z)
-            Xcov = self._slice_cov(Xcov)
-            N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
-            X, wn = GPflow.kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
-                                               self.input_dim)  # (H**DxNxD, H**D)
+            crossexps = []
+            for i, ka in enumerate(self.kern_list):
+                for kb in self.kern_list[i + 1:]:
+                    crossexp_func = self.crossexp_funcs.get(frozenset([type(ka), type(kb)]), self.quad_eKzx1Kxz2)
+                    crossexps.append(crossexp_func(ka, kb, Z, Xmu, Xcov))
+            return all_sum + reduce(tf.add, crossexps)
 
-            cKxzs = [tf.reshape(
-                k.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=False),
-                (HpowD, N, M)
-            ) - eK[None, :, :] for k, eK in zip(self.kern_list, eKxzs)]  # Centred Kxz
-            crosscovs = []
-            for i, cKa in enumerate(cKxzs):
-                for cKb in cKxzs[i + 1:]:
-                    cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
-                    crosscovs.append(cc + tf.transpose(cc, [0, 2, 1]))
-            crosscov = reduce(tf.add, crosscovs)
-        return all_sum + crossmean + crosscov
+    def Linear_RBF_eKxzKzx(self, Ka, Kb, Z, Xmu, Xcov):
+        return 0.0
+
+    def quad_eKzx1Kxz2(self, Ka, Kb, Z, Xmu, Xcov):
+        # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
+        self._check_quadrature()
+        warnings.warn("GPflow.ekernels.Add: Using numerical quadrature for kernel expectation cross terms.")
+        Xmu, Z = self._slice(Xmu, Z)
+        Xcov = self._slice_cov(Xcov)
+        N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
+        X, wn = GPflow.kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
+                                           self.input_dim)  # (H**DxNxD, H**D)
+
+        cKa, cKb = [tf.reshape(
+            k.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=False),
+            (HpowD, N, M)
+        ) - k.eKxz(Z, Xmu, Xcov)[None, :, :] for k in (Ka, Kb)]  # Centred Kxz
+        eKa, eKb = Ka.eKxz(Z, Xmu, Xcov), Kb.eKxz(Z, Xmu, Xcov)
+
+        cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
+        cm = eKa[:, None, :] * eKb[:, :, None]
+        return cc + tf.transpose(cc, [0, 2, 1]) + cm + tf.transpose(cm, [0, 2, 1])
 
 
 class Prod(GPflow.kernels.Prod):
