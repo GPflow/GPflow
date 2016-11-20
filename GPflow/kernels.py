@@ -107,6 +107,8 @@ class Kern(Parameterized):
         return X, X2
 
     def _slice_cov(self, cov):
+        cov = tf.cond(tf.equal(tf.rank(cov), 2), lambda: tf.matrix_diag(cov), lambda: cov)
+
         if isinstance(self.active_dims, slice):
             cov = cov[..., self.active_dims, self.active_dims]
         else:
@@ -136,11 +138,11 @@ class Kern(Parameterized):
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None, None]))
+    @AutoFlow((tf.float64, [None, None]), (tf.float64,))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None]))
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64,))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
@@ -148,7 +150,7 @@ class Kern(Parameterized):
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None]))
+    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 

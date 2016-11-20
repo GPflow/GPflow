@@ -70,9 +70,11 @@ class BayesianGPLVM(GPModel):
         GPModel.__init__(self, X_mean, Y, kern, likelihood=likelihoods.Gaussian(), mean_function=Zero())
         del self.X  # in GPLVM this is a Param
         self.X_mean = Param(X_mean)
-        diag_transform = transforms.DiagMatrix(X_var.shape[1])
-        self.X_var = Param(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
-                           diag_transform)
+        # diag_transform = transforms.DiagMatrix(X_var.shape[1])
+        # self.X_var = Param(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
+        #                    diag_transform)
+        assert X_var.ndim == 2
+        self.X_var = Param(X_var, transforms.positive)
         self.num_data = X_mean.shape[0]
         self.output_dim = Y.shape[1]
 
@@ -127,7 +129,8 @@ class BayesianGPLVM(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        dX_var = tf.matrix_diag_part(self.X_var)  # TODO: Re-write this to accept full covariance matrices
+        # TODO: Re-write this to accept full covariance matrices
+        dX_var = self.X_var if len(self.X_var.get_shape()) == 2 else tf.matrix_diag_part(self.X_var)
         NQ = tf.cast(tf.size(self.X_mean), tf.float64)
         D = tf.cast(tf.shape(self.Y)[1], tf.float64)
         KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \

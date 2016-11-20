@@ -362,5 +362,89 @@ class TestKernProd(unittest.TestCase):
         _assert_pdeq(self, a, b)
 
 
+class TestKernExpDiagXcov(unittest.TestCase):
+    _threshold = 1e-6
+
+    def setUp(self):
+        self.rng = np.random.RandomState(0)
+        self.N = 4
+        self.D = 2
+        self.Xmu = self.rng.rand(self.N, self.D)
+        self.Z = self.rng.rand(2, self.D)
+
+        self.Xcov_diag = 0.05 + self.rng.rand(self.N, self.D)
+        self.Xcov = np.zeros((self.Xcov_diag.shape[0], self.Xcov_diag.shape[1], self.Xcov_diag.shape[1]))
+        self.Xcov[(np.s_[:],) + np.diag_indices(self.Xcov_diag.shape[1])] = self.Xcov_diag
+
+        # Set up "normal" kernels
+        ekernel_classes = [ekernels.RBF, ekernels.Linear]
+        kernel_classes = [kernels.RBF, kernels.Linear]
+        params = [(self.D, 0.3 + self.rng.rand(), self.rng.rand(2) + [0.5, 1.5], None, True),
+                  (self.D, 0.3 + self.rng.rand(), None)]
+        self.ekernels = [c(*p) for c, p in zip(ekernel_classes, params)]
+        self.kernels = [c(*p) for c, p in zip(kernel_classes, params)]
+
+        # Test summed kernels, non-overlapping
+        rbfvariance = 0.3 + self.rng.rand()
+        rbfard = [self.rng.rand() + 0.5]
+        linvariance = 0.3 + self.rng.rand()
+        self.kernels.append(
+            kernels.Add([
+                kernels.RBF(1, rbfvariance, rbfard, [1], False),
+                kernels.Linear(1, linvariance, [0])
+            ])
+        )
+        self.kernels[-1].input_size = self.kernels[-1].input_dim
+        for k in self.kernels[-1].kern_list:
+            k.input_size = self.kernels[-1].input_size
+        self.ekernels.append(
+            ekernels.Add([
+                ekernels.RBF(1, rbfvariance, rbfard, [1], False),
+                ekernels.Linear(1, linvariance, [0])
+            ])
+        )
+        self.ekernels[-1].input_size = self.ekernels[-1].input_dim
+        for k in self.ekernels[-1].kern_list:
+            k.input_size = self.ekernels[-1].input_size
+
+        # Test summed kernels, overlapping
+        rbfvariance = 0.3 + self.rng.rand()
+        rbfard = [self.rng.rand() + 0.5]
+        linvariance = 0.3 + self.rng.rand()
+        self.kernels.append(
+            kernels.Add([
+                kernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
+                kernels.Linear(self.D, linvariance, active_dims=[0, 1])
+            ])
+        )
+        self.ekernels.append(
+            ekernels.Add([
+                ekernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
+                ekernels.Linear(self.D, linvariance, active_dims=[0, 1])
+            ])
+        )
+
+        self.assertTrue(self.ekernels[-2].on_separate_dimensions)
+        self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
+
+    def test_eKdiag(self):
+        for i, k in enumerate(self.kernels + self.ekernels):
+            d = k.compute_eKdiag(self.Xmu, self.Xcov)
+            e = k.compute_eKdiag(self.Xmu, self.Xcov_diag)
+            _assert_pdeq(self, d, e, k, i, len(self.kernels))
+
+    def test_eKxz(self):
+        for i, k in enumerate(self.kernels + self.ekernels):
+            a = k.compute_eKxz(self.Z, self.Xmu, self.Xcov)
+            b = k.compute_eKxz(self.Z, self.Xmu, self.Xcov_diag)
+            _assert_pdeq(self, a, b, k)
+
+    def test_eKzxKxz(self):
+        for i, k in enumerate(self.kernels + self.ekernels):
+            a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
+            b = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov_diag)
+            _assert_pdeq(self, a, b, k)
+
+
 if __name__ == '__main__':
     unittest.main()

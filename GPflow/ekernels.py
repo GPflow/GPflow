@@ -195,13 +195,12 @@ class Add(GPflow.kernels.Add):
                 crossmeans.append(ct)
         crossmean = reduce(tf.add, crossmeans)
 
-        # TODO: Implement this for on_separate_dimensions
-        # if self.on_separate_dimensions and Xcov.get_shape().ndims == 2:
-        #     # If we're on separate dimensions and the covariances are diagonal, we don't need Cov[Kzx1Kxz2].
-        #     return all_sum + crossmean
-        # else:
-        # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
-        if self.num_gauss_hermite_points > 0:
+        if self.on_separate_dimensions and Xcov.get_shape().ndims == 2:
+            # If we're on separate dimensions and the covariances are diagonal, we don't need Cov[Kzx1Kxz2].
+            return all_sum + crossmean
+        else:
+            # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
+            self._check_quadrature()
             warnings.warn("GPflowe.kernels.Add: Using numerical quadrature for kernel expectation cross terms.")
             Xmu, Z = self._slice(Xmu, Z)
             Xcov = self._slice_cov(Xcov)
@@ -219,11 +218,6 @@ class Add(GPflow.kernels.Add):
                     cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
                     crosscovs.append(cc + tf.transpose(cc, [0, 2, 1]))
             crosscov = reduce(tf.add, crosscovs)
-        else:
-            # TODO: In the future self._check_quadrature() needs to be called.
-            # Currently, we want to be able to switch off quadrature by setting num_gauss_hermite_points to zero.
-            warnings.warn("GPflow.ekernels.Add: Not using numerical quadrature for kernel expectation cross terms.")
-            crosscov = 0.0
         return all_sum + crossmean + crosscov
 
 
@@ -232,28 +226,25 @@ class Prod(GPflow.kernels.Prod):
         if not self.on_separate_dimensions:
             raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
         with tf.control_dependencies([
-            tf.assert_equal(tf.matrix_band_part(Xcov, 0, 0), Xcov,
+            tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            Xcov = tf.matrix_band_part(Xcov, 0, 0)
-        return reduce(tf.mul, [k.eKdiag(Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.mul, [k.eKdiag(Xmu, Xcov) for k in self.kern_list])
 
     def eKxz(self, Z, Xmu, Xcov):
         if not self.on_separate_dimensions:
             raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
         with tf.control_dependencies([
-            tf.assert_equal(tf.matrix_band_part(Xcov, 0, 0), Xcov,
+            tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            Xcov = tf.matrix_band_part(Xcov, 0, 0)
-        return reduce(tf.mul, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.mul, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         if not self.on_separate_dimensions:
             raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
         with tf.control_dependencies([
-            tf.assert_equal(tf.matrix_band_part(Xcov, 0, 0), Xcov,
+            tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            Xcov = tf.matrix_band_part(Xcov, 0, 0)
-        return reduce(tf.mul, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.mul, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
