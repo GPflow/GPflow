@@ -69,6 +69,17 @@ class TestNeedsRecompile(unittest.TestCase):
         self.m.p.transform = GPflow.transforms.Identity()
         self.assertTrue(self.m._needs_recompile)
 
+    def test_replacement(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Parameterized()
+        m.p.p = GPflow.param.Param(1.0)
+        m._needs_recompile = False
+        # replace Parameterized
+        new_p = GPflow.param.Parameterized()
+        new_p.p = GPflow.param.Param(1.0)
+        m.p = new_p
+        self.assertTrue(m._needs_recompile is True)
+
 
 class KeyboardRaiser:
     """
