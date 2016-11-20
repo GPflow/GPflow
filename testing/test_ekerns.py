@@ -307,6 +307,13 @@ class TestKernExpQuadrature(unittest.TestCase):
             b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b, k, i, len(self.kernels))
 
+    def test_switch_quadrature(self):
+        k = self.kernels[0]
+        k._kill_autoflow()
+        k.num_gauss_hermite_points = 0
+        with self.assertRaises(RuntimeError):
+            k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
+
 
 class TestKernProd(unittest.TestCase):
     """

@@ -152,6 +152,12 @@ class Kern(Parameterized):
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 
+    def _check_quadrature(self):
+        if settings.numerics.quadrature == "warn":
+            warnings.warn("Using numerical quadrature for kernel expectation. Use GPflow.ekernels instead.")
+        if settings.numerics.quadrature == "error" or self.num_gauss_hermite_points == 0:
+            raise RuntimeError("Settings indicate that quadrature may not be used.")
+
     def eKdiag(self, Xmu, Xcov):
         """
         Computes <K_xx>_q(x).
@@ -159,7 +165,7 @@ class Kern(Parameterized):
         :param Xcov: Covariance (NxDxD)
         :return: (N)
         """
-        warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
+        self._check_quadrature()
         Xmu, _ = self._slice(Xmu, None)
         Xcov = self._slice_cov(Xcov)
         X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
@@ -169,7 +175,7 @@ class Kern(Parameterized):
         return eKdiag  # N
 
     def eKxz(self, Z, Xmu, Xcov):
-        warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
+        self._check_quadrature()
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N = tf.shape(Xmu)[0]
@@ -187,7 +193,7 @@ class Kern(Parameterized):
         :param Xcov: 2xNxDxD
         :return: NxMxD
         """
-        warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
+        self._check_quadrature()
         # Slicing is NOT needed here. The desired behaviour is to *still* return an NxMxD matrix. As even when the
         # kernel does not depend on certain inputs, the output matrix will still contain the outer product between the
         # mean of x_{t-1} and K_{x_t Z}. The code here will do this correctly automatically, since the quadrature will
@@ -218,7 +224,7 @@ class Kern(Parameterized):
         return exKxz
 
     def eKzxKxz(self, Z, Xmu, Xcov):
-        warnings.warn("Using numerical quadrature for kernel expectation. Use kernels from GPflow.ekernels instead.")
+        self._check_quadrature()
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N = tf.shape(Xmu)[0]

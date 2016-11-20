@@ -1,5 +1,5 @@
 from functools import reduce
-import numpy as np
+import warnings
 import tensorflow as tf
 import GPflow.kernels
 from GPflow.tf_wraps import eye
@@ -201,22 +201,29 @@ class Add(GPflow.kernels.Add):
         #     return all_sum + crossmean
         # else:
         # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
-        Xmu, Z = self._slice(Xmu, Z)
-        Xcov = self._slice_cov(Xcov)
-        N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
-        X, wn = GPflow.kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
-                                           self.input_dim)  # (H**DxNxD, H**D)
+        if self.num_gauss_hermite_points > 0:
+            warnings.warn("GPflowe.kernels.Add: Using numerical quadrature for kernel expectation cross terms.")
+            Xmu, Z = self._slice(Xmu, Z)
+            Xcov = self._slice_cov(Xcov)
+            N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
+            X, wn = GPflow.kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
+                                               self.input_dim)  # (H**DxNxD, H**D)
 
-        cKxzs = [tf.reshape(
-            k.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=False),
-            (HpowD, N, M)
-        ) - eK[None, :, :] for k, eK in zip(self.kern_list, eKxzs)]  # Centred Kxz
-        crosscovs = []
-        for i, cKa in enumerate(cKxzs):
-            for cKb in cKxzs[i + 1:]:
-                cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
-                crosscovs.append(cc + tf.transpose(cc, [0, 2, 1]))
-        crosscov = reduce(tf.add, crosscovs)
+            cKxzs = [tf.reshape(
+                k.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=False),
+                (HpowD, N, M)
+            ) - eK[None, :, :] for k, eK in zip(self.kern_list, eKxzs)]  # Centred Kxz
+            crosscovs = []
+            for i, cKa in enumerate(cKxzs):
+                for cKb in cKxzs[i + 1:]:
+                    cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
+                    crosscovs.append(cc + tf.transpose(cc, [0, 2, 1]))
+            crosscov = reduce(tf.add, crosscovs)
+        else:
+            # TODO: In the future self._check_quadrature() needs to be called.
+            # Currently, we want to be able to switch off quadrature by setting num_gauss_hermite_points to zero.
+            warnings.warn("GPflow.ekernels.Add: Not using numerical quadrature for kernel expectation cross terms.")
+            crosscov = 0.0
         return all_sum + crossmean + crosscov
 
 
