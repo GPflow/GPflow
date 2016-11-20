@@ -343,7 +343,7 @@ class TestKernProd(unittest.TestCase):
         ])
 
         self.Xmu = self.rng.rand(self.N, self.D)
-        self.Xcov = [np.diag(a) for a in self.rng.rand(self.N, self.D)]
+        self.Xcov = self.rng.rand(self.N, self.D)
         self.Z = self.rng.rand(2, self.D)
 
     def test_eKdiag(self):
