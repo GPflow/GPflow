@@ -653,7 +653,7 @@ class Parameterized(Parentable):
             # if the existing attribute is a Param (or Parameterized), and the
             # new attribute is too, replace the attribute and set the model to
             # recompile if necessary.
-            if isinstance(p, Param) and isinstance(value, (Param, Parameterized)):
+            if isinstance(p, (Param, Parameterized)) and isinstance(value, (Param, Parameterized)):
                 p._parent = None  # unlink the old Parameter from this tree
                 if hasattr(self.highest_parent, '_needs_recompile'):
                     self.highest_parent._needs_recompile = True
