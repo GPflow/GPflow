@@ -176,8 +176,8 @@ class Add(GPflow.kernels.Add):
     """
 
     def __init__(self, kern_list):
-        # self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
-        self.crossexp_funcs = {}
+        self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
+        # self.crossexp_funcs = {}
         GPflow.kernels.Add.__init__(self, kern_list)
 
     def eKdiag(self, X, Xcov):
@@ -207,14 +207,54 @@ class Add(GPflow.kernels.Add):
             crossexps = []
             for i, ka in enumerate(self.kern_list):
                 for kb in self.kern_list[i + 1:]:
-                    crossexp_func = self.crossexp_funcs.get(frozenset([type(ka), type(kb)]), self.quad_eKzx1Kxz2)
-                    crossexps.append(crossexp_func(ka, kb, Z, Xmu, Xcov))
+                    try:
+                        crossexp_func = self.crossexp_funcs[frozenset([type(ka), type(kb)])]
+                        crossexp = crossexp_func(ka, kb, Z, Xmu, Xcov)
+                    except (KeyError, NotImplementedError) as e:
+                        print(str(e))
+                        crossexp = self.quad_eKzx1Kxz2(ka, kb, Z, Xmu, Xcov)
+                    crossexps.append(crossexp)
             return all_sum + reduce(tf.add, crossexps)
 
     def Linear_RBF_eKxzKzx(self, Ka, Kb, Z, Xmu, Xcov):
-        return 0.0
+        # Ka, Kb = self.kern_list[0], self.kern_list[1]
+        Xcov = self._slice_cov(Xcov)
+        Z, Xmu = self._slice(Z, Xmu)
+        lin, rbf = (Ka, Kb) if type(Ka) is Linear else (Kb, Ka)
+        assert type(lin) is Linear
+        assert type(rbf) is RBF, "%s is not %s" % (str(type(rbf)), str(RBF))
+        if lin.ARD or type(lin.active_dims) is not slice or type(rbf.active_dims) is not slice:
+            raise NotImplementedError("Active dims and/or Linear ARD not implemented.")
+        D = tf.shape(Xmu)[1]
+        M = tf.shape(Z)[0]
+        N = tf.shape(Xmu)[0]
+        lengthscales = rbf.lengthscales if rbf.ARD else tf.zeros((D,), dtype=float_type) + rbf.lengthscales
+        lengthscales2 = lengthscales ** 2.0
+
+        const = rbf.variance * lin.variance * tf.reduce_prod(lengthscales)
+
+        gaussmat = Xcov + tf.diag(lengthscales2)[None, :, :]  # NxDxD
+
+        det = tf.matrix_determinant(gaussmat) ** -0.5  # N
+
+        cgm = tf.cholesky(gaussmat)  # NxDxD
+        tcgm = tf.tile(cgm[:, None, :, :], [1, M, 1, 1])
+        vecmin = Z[None, :, :] - Xmu[:, None, :]  # NxMxD
+        d = tf.matrix_triangular_solve(tcgm, vecmin[:, :, :, None])  # NxMxDx1
+        exp = tf.exp(-0.5 * tf.reduce_sum(d ** 2.0, [2, 3]))  # NxM
+        # exp = tf.Print(exp, [tf.shape(exp)])
+
+        vecplus = (Z[None, :, :, None] / lengthscales2[None, None, :, None] +
+                   tf.matrix_solve(Xcov, Xmu[:, :, None])[:, None, :, :])  # NxMxDx1
+        mean = tf.cholesky_solve(tcgm,
+                                 tf.batch_matmul(tf.tile(Xcov[:, None, :, :], [1, M, 1, 1]), vecplus)
+                                 )[:, :, :, 0] * lengthscales2[None, None, :]  # NxMxD
+        a = tf.batch_matmul(tf.tile(Z[None, :, :], [N, 1, 1]),
+                            mean * exp[:, :, None] * det[:, None, None] * const, adj_y=True)
+        return a + tf.transpose(a, [0, 2, 1])
 
     def quad_eKzx1Kxz2(self, Ka, Kb, Z, Xmu, Xcov):
+        # Ka, Kb = self.kern_list[0], self.kern_list[1]
         # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
         self._check_quadrature()
         warnings.warn("GPflow.ekernels.Add: Using numerical quadrature for kernel expectation cross terms.")
