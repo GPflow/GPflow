@@ -8,6 +8,11 @@ from ._settings import settings
 int_type = settings.dtypes.int_type
 float_type = settings.dtypes.float_type
 
+# TODO: Efficiency gain from using diagonal q(X).
+# TODO: Efficiency can probably be gained by replacing the `tf.tile` operations with reshapes.
+# TODO: Allow Linear kernel to have ARD on.
+# TODO: Get Linear_RBF_eKxzKzx to play ball with overlapping, but non-slice active_dims.
+
 
 class RBF(GPflow.kernels.RBF):
     def eKdiag(self, X, Xcov=None):
@@ -217,7 +222,6 @@ class Add(GPflow.kernels.Add):
             return all_sum + reduce(tf.add, crossexps)
 
     def Linear_RBF_eKxzKzx(self, Ka, Kb, Z, Xmu, Xcov):
-        # Ka, Kb = self.kern_list[0], self.kern_list[1]
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
         lin, rbf = (Ka, Kb) if type(Ka) is Linear else (Kb, Ka)
@@ -254,7 +258,6 @@ class Add(GPflow.kernels.Add):
         return a + tf.transpose(a, [0, 2, 1])
 
     def quad_eKzx1Kxz2(self, Ka, Kb, Z, Xmu, Xcov):
-        # Ka, Kb = self.kern_list[0], self.kern_list[1]
         # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
         self._check_quadrature()
         warnings.warn("GPflow.ekernels.Add: Using numerical quadrature for kernel expectation cross terms.")

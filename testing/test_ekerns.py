@@ -446,5 +446,57 @@ class TestKernExpDiagXcov(unittest.TestCase):
             _assert_pdeq(self, a, b, k)
 
 
+class TestAddCrossCalcs(unittest.TestCase):
+    _threshold = 0.5
+
+    def setUp(self):
+        self.rng = np.random.RandomState(0)
+        self.N = 4
+        self.D = 2
+
+        self.rbf = ekernels.RBF(self.D, ARD=True)
+        self.rbf.lengthscales = self.rng.rand(2) + [0.5, 1.5]
+        self.rbf.variance = 0.3 + self.rng.rand()
+        self.lin = ekernels.Linear(self.D)
+        self.lin.variance = 0.3 + self.rng.rand()
+        self.add = ekernels.Add([self.rbf, self.lin])
+
+        self.Xmu = self.rng.rand(self.N, self.D)
+        self.Z = self.rng.rand(2, self.D)
+        unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
+        t = TriDiagonalBlockRep()
+        self.Xcov = t.forward(unconstrained)[0, :, :, :]
+
+    def test_cross_quad(self):
+        """
+        >>> m = MyModel()
+        >>> x = np.random.randn(3,1)
+        >>> y = np.random.randn(3,1)
+        >>> x_tf = tf.placeholder(tf.float64)
+        >>> y_tf = tf.placeholder(tf.float64)
+        >>> with m.tf_mode():
+        >>>     graph = tf.foo(m.baz, x_tf, y_tf)
+        >>> result = m._session.run(graph,
+                                    feed_dict={x_tf:x,
+                                    y_tf:y,
+                                    m._free_vars:m.get_free_state()})
+        """
+        self.add.num_gauss_hermite_points = 50
+        tfZ, tfXmu, tfXcov = tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64)
+        with self.add.tf_mode():
+            tfa = self.add.Linear_RBF_eKxzKzx(self.add.kern_list[0], self.add.kern_list[1], tfZ, tfXmu, tfXcov)
+            tfb = self.add.quad_eKzx1Kxz2(self.add.kern_list[0], self.add.kern_list[1], tfZ, tfXmu, tfXcov)
+
+        sess = tf.Session()
+        feed_dict = {tfZ: self.Z, tfXmu: self.Xmu, tfXcov: self.Xcov, self.add._free_vars: self.add.get_free_state()}
+        feed_dict = self.add.update_feed_dict(self.add.get_feed_dict_keys(), feed_dict)
+        r = sess.run((tfa, tfb), feed_dict=feed_dict)
+        print(r)
+
+        # a = self.add.compute_Linear_RBF_eKzxKxz(self.Z, self.Xmu, self.Xcov)
+        # b = self.add.compute_quad_eKzxKxz(self.Z, self.Xmu, self.Xcov)
+        # _assert_pdeq(self, a, b)
+
+
 if __name__ == '__main__':
     unittest.main()
