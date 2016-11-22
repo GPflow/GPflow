@@ -107,7 +107,10 @@ class Kern(Parameterized):
         return X, X2
 
     def _slice_cov(self, cov):
-        cov = tf.cond(tf.equal(tf.rank(cov), 2), lambda: tf.matrix_diag(cov), lambda: cov)
+        if type(cov).__module__ == np.__name__ and cov.ndim == 2:
+            cov = np.concat([np.diag(covi)[None, :, :] for covi in cov], 0)
+        elif type(cov).__module__.split('.')[0]:
+            cov = tf.cond(tf.equal(tf.rank(cov), 2), lambda: tf.matrix_diag(cov), lambda: cov)
 
         if isinstance(self.active_dims, slice):
             cov = cov[..., self.active_dims, self.active_dims]
