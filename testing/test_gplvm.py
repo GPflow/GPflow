@@ -79,17 +79,23 @@ class TestBayesianGPLVM(unittest.TestCase):
         X_mean = GPflow.gplvm.PCA_reduce(self.Y, Q)
         kernsQuadratu = [kernels.RBF(1, active_dims=[0])+kernels.Linear(1, active_dims=[1]),
                          kernels.RBF(1, active_dims=[0])+kernels.PeriodicKernel(1, active_dims=[1]),
-                         kernels.RBF(1, active_dims=[0])*kernels.Linear(1, active_dims=[1])]
+                         kernels.RBF(1, active_dims=[0])*kernels.Linear(1, active_dims=[1]),
+                         kernels.RBF(Q)+kernels.Linear(Q)]  # non-overlapping
         kernsAnalytic = [ekernels.Add([ekernels.RBF(1, active_dims=[0]), ekernels.Linear(1, active_dims=[1])]),
                          ekernels.Add([ekernels.RBF(1, active_dims=[0]), kernels.PeriodicKernel(1, active_dims=[1])]),
-                         ekernels.Prod([ekernels.RBF(1, active_dims=[0]), ekernels.Linear(1, active_dims=[1])])]
+                         ekernels.Prod([ekernels.RBF(1, active_dims=[0]), ekernels.Linear(1, active_dims=[1])]),
+                         ekernels.Add([ekernels.RBF(Q), ekernels.Linear(Q)])]
+        fOnSeparateDims = [True, True, True, False]
         Z = np.random.permutation(X_mean.copy())[:self.M]
         # Also test default N(0,1) is used
         X_prior_mean = np.zeros((self.N, Q))
         X_prior_var = np.ones((self.N, Q))
         Xtest = self.rng.randn(10, Q)
-        for kq, ka in zip(kernsQuadratu, kernsAnalytic):
-            self.assertTrue(ka.on_separate_dimensions, 'analytic kernel must not use quadrature')
+        for kq, ka, sepDims in zip(kernsQuadratu, kernsAnalytic, fOnSeparateDims):
+            kq.num_gauss_hermite_points = 20  # speed up quadratic for tests
+            ka.kern_list[0].num_gauss_hermite_points = 0  # RBF should throw error if quadrature is used
+            if(sepDims):
+                self.assertTrue(ka.on_separate_dimensions, 'analytic kernel must not use quadrature')
             mq = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_var=np.ones((self.N, Q)), Y=self.Y,
                                             kern=kq, M=self.M, Z=Z, X_prior_mean=X_prior_mean, X_prior_var=X_prior_var)
             ma = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_var=np.ones((self.N, Q)), Y=self.Y,
