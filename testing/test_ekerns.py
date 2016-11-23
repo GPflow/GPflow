@@ -468,19 +468,6 @@ class TestAddCrossCalcs(unittest.TestCase):
         self.Xcov = t.forward(unconstrained)[0, :, :, :]
 
     def test_cross_quad(self):
-        """
-        >>> m = MyModel()
-        >>> x = np.random.randn(3,1)
-        >>> y = np.random.randn(3,1)
-        >>> x_tf = tf.placeholder(tf.float64)
-        >>> y_tf = tf.placeholder(tf.float64)
-        >>> with m.tf_mode():
-        >>>     graph = tf.foo(m.baz, x_tf, y_tf)
-        >>> result = m._session.run(graph,
-                                    feed_dict={x_tf:x,
-                                    y_tf:y,
-                                    m._free_vars:m.get_free_state()})
-        """
         self.add.num_gauss_hermite_points = 50
         free_vars, tfZ, tfXmu, tfXcov = tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64)
         self.add.make_tf_array(free_vars)
@@ -491,12 +478,8 @@ class TestAddCrossCalcs(unittest.TestCase):
         sess = tf.Session()
         feed_dict = {tfZ: self.Z, tfXmu: self.Xmu, tfXcov: self.Xcov, free_vars: self.add.get_free_state()}
         feed_dict = self.add.update_feed_dict(self.add.get_feed_dict_keys(), feed_dict)
-        r = sess.run((tfa, tfb), feed_dict=feed_dict)
-        print(r)
-
-        # a = self.add.compute_Linear_RBF_eKzxKxz(self.Z, self.Xmu, self.Xcov)
-        # b = self.add.compute_quad_eKzxKxz(self.Z, self.Xmu, self.Xcov)
-        # _assert_pdeq(self, a, b)
+        a, b = sess.run((tfa, tfb), feed_dict=feed_dict)
+        _assert_pdeq(self, a, b)
 
 
 if __name__ == '__main__':

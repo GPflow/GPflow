@@ -228,7 +228,7 @@ class Add(kernels.Add):
         assert type(lin) is Linear
         assert type(rbf) is RBF, "%s is not %s" % (str(type(rbf)), str(RBF))
         if lin.ARD or type(lin.active_dims) is not slice or type(rbf.active_dims) is not slice:
-            raise NotImplementedError("Active dims and/or Linear ARD not implemented.")
+            raise NotImplementedError("Active dims and/or Linear ARD not implemented. Switching to quadrature.")
         D = tf.shape(Xmu)[1]
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
