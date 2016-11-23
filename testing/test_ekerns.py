@@ -455,6 +455,7 @@ class TestAddCrossCalcs(unittest.TestCase):
         self.D = 2
 
         self.rbf = ekernels.RBF(self.D, ARD=True)
+        # self.rbf = GPflow.kernels.RBF(self.D, ARD=True)
         self.rbf.lengthscales = self.rng.rand(2) + [0.5, 1.5]
         self.rbf.variance = 0.3 + self.rng.rand()
         self.lin = ekernels.Linear(self.D)
@@ -482,13 +483,14 @@ class TestAddCrossCalcs(unittest.TestCase):
                                     m._free_vars:m.get_free_state()})
         """
         self.add.num_gauss_hermite_points = 50
-        tfZ, tfXmu, tfXcov = tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64)
+        free_vars, tfZ, tfXmu, tfXcov = tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64)
+        self.add.make_tf_array(free_vars)
         with self.add.tf_mode():
             tfa = self.add.Linear_RBF_eKxzKzx(self.add.kern_list[0], self.add.kern_list[1], tfZ, tfXmu, tfXcov)
             tfb = self.add.quad_eKzx1Kxz2(self.add.kern_list[0], self.add.kern_list[1], tfZ, tfXmu, tfXcov)
 
         sess = tf.Session()
-        feed_dict = {tfZ: self.Z, tfXmu: self.Xmu, tfXcov: self.Xcov, self.add._free_vars: self.add.get_free_state()}
+        feed_dict = {tfZ: self.Z, tfXmu: self.Xmu, tfXcov: self.Xcov, free_vars: self.add.get_free_state()}
         feed_dict = self.add.update_feed_dict(self.add.get_feed_dict_keys(), feed_dict)
         r = sess.run((tfa, tfb), feed_dict=feed_dict)
         print(r)
