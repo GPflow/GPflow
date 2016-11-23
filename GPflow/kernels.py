@@ -117,7 +117,7 @@ class Kern(Parameterized):
         """
         Slice the correct dimensions for use in the kernel, as indicated by
         `self.active_dims` for covariance matrices. This requires slicing the
-        rows *and* columns. Currently, this will also turn flattened diagonal
+        rows *and* columns. This will also turn flattened diagonal
         matrices into a tensor of full diagonal matrices.
         :param cov: Tensor of covariance matrices (NxDxD or NxD).
         :return: N x self.input_dim x self.input_dim.
@@ -571,7 +571,7 @@ class Coregion(Kern):
           K(x, y) = B[x, y] .
 
         We refer to the size of B as "num_outputs x num_outputs", since this is
-        the number of outputs in a coreginoalization model. We refer to the
+        the number of outputs in a coregionalization model. We refer to the
         number of columns on W as 'rank': it is the number of degrees of
         correlation between the outputs.
 
@@ -611,7 +611,7 @@ def make_kernel_names(kern_list):
 
     Each name is made from the lower-case version of the kernel's class name.
 
-    Duplicate kernels are given training numbers.
+    Duplicate kernels are given trailing numbers.
     """
     names = []
     counting_dict = {}

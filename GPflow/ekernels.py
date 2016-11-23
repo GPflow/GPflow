@@ -218,7 +218,7 @@ class Add(kernels.Add):
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
         lin, rbf = (Ka, Kb) if type(Ka) is Linear else (Kb, Ka)
-        assert type(lin) is Linear
+        assert type(lin) is Linear, "%s is not %s" % (str(type(lin)), str(Linear))
         assert type(rbf) is RBF, "%s is not %s" % (str(type(rbf)), str(RBF))
         if lin.ARD or type(lin.active_dims) is not slice or type(rbf.active_dims) is not slice:
             raise NotImplementedError("Active dims and/or Linear ARD not implemented. Switching to quadrature.")
