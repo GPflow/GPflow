@@ -455,7 +455,6 @@ class TestAddCrossCalcs(unittest.TestCase):
         self.D = 2
 
         self.rbf = ekernels.RBF(self.D, ARD=True)
-        # self.rbf = GPflow.kernels.RBF(self.D, ARD=True)
         self.rbf.lengthscales = self.rng.rand(2) + [0.5, 1.5]
         self.rbf.variance = 0.3 + self.rng.rand()
         self.lin = ekernels.Linear(self.D)
