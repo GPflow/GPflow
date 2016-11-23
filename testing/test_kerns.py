@@ -216,7 +216,7 @@ class TestWhite(unittest.TestCase):
 
 class TestSlice(unittest.TestCase):
     """
-    Make sure the results of a sliced kernel is the ame as an unsliced kernel
+    Make sure the results of a sliced kernel is the same as an unsliced kernel
     with correctly sliced data...
     """
 
@@ -233,7 +233,7 @@ class TestSlice(unittest.TestCase):
         for kernclass in kernels:
             k1 = kernclass(1, active_dims=[0])
             k2 = kernclass(1, active_dims=[1])
-            k3 = kernclass(1)
+            k3 = kernclass(1, active_dims=slice(0, 1))
             self.kernels.append([k1, k2, k3])
 
     def test_symm(self):
