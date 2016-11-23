@@ -1,8 +1,8 @@
 from functools import reduce
 import warnings
 import tensorflow as tf
-import GPflow.kernels
-from GPflow.tf_wraps import eye
+from . import kernels
+from .tf_wraps import eye
 from ._settings import settings
 
 int_type = settings.dtypes.int_type
@@ -14,7 +14,7 @@ float_type = settings.dtypes.float_type
 # TODO: Get Linear_RBF_eKxzKzx to play ball with overlapping, but non-slice active_dims.
 
 
-class RBF(GPflow.kernels.RBF):
+class RBF(kernels.RBF):
     def eKdiag(self, X, Xcov=None):
         """
         Also known as phi_0.
@@ -123,7 +123,7 @@ class RBF(GPflow.kernels.RBF):
         return self.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
 
 
-class Linear(GPflow.kernels.Linear):
+class Linear(kernels.Linear):
     def eKdiag(self, X, Xcov):
         if self.ARD:
             # TODO: Implement ARD
@@ -172,7 +172,7 @@ class Linear(GPflow.kernels.Linear):
         return self.variance ** 2.0 * tf.batch_matmul(tf.batch_matmul(eZ, mom2), eZ, adj_y=True)
 
 
-class Add(GPflow.kernels.Add):
+class Add(kernels.Add):
     """
     Add
     This version of Add will call the corresponding kernel expectations for each of the summed kernels. This will be
@@ -183,7 +183,7 @@ class Add(GPflow.kernels.Add):
     def __init__(self, kern_list):
         self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
         # self.crossexp_funcs = {}
-        GPflow.kernels.Add.__init__(self, kern_list)
+        kernels.Add.__init__(self, kern_list)
 
     def eKdiag(self, X, Xcov):
         return reduce(tf.add, [k.eKdiag(X, Xcov) for k in self.kern_list])
@@ -264,8 +264,8 @@ class Add(GPflow.kernels.Add):
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
-        X, wn = GPflow.kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
-                                           self.input_dim)  # (H**DxNxD, H**D)
+        X, wn = kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
+                                    self.input_dim)  # (H**DxNxD, H**D)
 
         cKa, cKb = [tf.reshape(
             k.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=False),
@@ -278,7 +278,7 @@ class Add(GPflow.kernels.Add):
         return cc + tf.transpose(cc, [0, 2, 1]) + cm + tf.transpose(cm, [0, 2, 1])
 
 
-class Prod(GPflow.kernels.Prod):
+class Prod(kernels.Prod):
     def eKdiag(self, Xmu, Xcov):
         if not self.on_separate_dimensions:
             raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
