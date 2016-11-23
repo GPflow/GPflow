@@ -8,6 +8,9 @@ from . import likelihoods
 from .tf_wraps import eye
 from . import transforms
 from . import kernels
+from ._settings import settings
+
+float_type = settings.dtypes.float_type
 
 
 def PCA_reduce(X, Q):
@@ -129,17 +132,16 @@ class BayesianGPLVM(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        # TODO: Re-write this to accept full covariance matrices
         dX_var = self.X_var if len(self.X_var.get_shape()) == 2 else tf.matrix_diag_part(self.X_var)
-        NQ = tf.cast(tf.size(self.X_mean), tf.float64)
-        D = tf.cast(tf.shape(self.Y)[1], tf.float64)
+        NQ = tf.cast(tf.size(self.X_mean), float_type)
+        D = tf.cast(tf.shape(self.Y)[1], float_type)
         KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
              + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
              - 0.5 * NQ \
              + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
 
         # compute log marginal bound
-        ND = tf.cast(tf.size(self.Y), tf.float64)
+        ND = tf.cast(tf.size(self.Y), float_type)
         bound = -0.5 * ND * tf.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2

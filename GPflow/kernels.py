@@ -42,7 +42,7 @@ def mvhermgauss(means, covs, H, D):
     :param covs: NxDxD
     :param H: Number of Gauss-Hermite evaluation points.
     :param D: Number of input dimensions. Needs to be known at call-time.
-    :return: eval_locations (H**DxNxD), weights (H**D)
+    :return: eval_locations (H**D*NxD), weights (H**D)
     """
     N = tf.shape(means)[0]
     gh_x, gh_w = hermgauss(H)
@@ -51,7 +51,7 @@ def mvhermgauss(means, covs, H, D):
     cholXcov = tf.cholesky(covs)  # NxDxD
     X = 2.0 ** 0.5 * tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
                                      adj_y=True) + tf.expand_dims(means, 2)  # NxDxH**D
-    Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, D))  # H**DxNxD
+    Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, D))  # (H**D*N)xD
     return Xr, wn * np.pi ** (-D * 0.5)
 
 
@@ -91,6 +91,13 @@ class Kern(Parameterized):
         self.num_gauss_hermite_points = 20
 
     def _slice(self, X, X2):
+        """
+        Slice the correct dimensions for use in the kernel, as indicated by
+        `self.active_dims`.
+        :param X: Input 1 (NxD).
+        :param X2: Input 2 (MxD), may be None.
+        :return: Sliced X, X2, (Nxself.input_dim).
+        """
         if isinstance(self.active_dims, slice):
             X = X[:, self.active_dims]
             if X2 is not None:
@@ -107,6 +114,14 @@ class Kern(Parameterized):
         return X, X2
 
     def _slice_cov(self, cov):
+        """
+        Slice the correct dimensions for use in the kernel, as indicated by
+        `self.active_dims` for covariance matrices. This requires slicing the
+        rows *and* columns. Currently, this will also turn flattened diagonal
+        matrices into a tensor of full diagonal matrices.
+        :param cov: Tensor of covariance matrices (NxDxD or NxD).
+        :return: N x self.input_dim x self.input_dim.
+        """
         cov = tf.cond(tf.equal(tf.rank(cov), 2), lambda: tf.matrix_diag(cov), lambda: cov)
 
         if isinstance(self.active_dims, slice):
@@ -138,34 +153,34 @@ class Kern(Parameterized):
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64,))
+    @AutoFlow((float_type, [None, None]), (float_type,))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64,))
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type,))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64, [None, None, None, None]))
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type, [None, None, None, None]))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((tf.float64, [None, None]), (tf.float64, [None, None]), (tf.float64,))
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 
     def _check_quadrature(self):
-        if settings.numerics.quadrature == "warn":
+        if settings.numerics.ekern_quadrature == "warn":
             warnings.warn("Using numerical quadrature for kernel expectation of %s. Use GPflow.ekernels instead." %
                           str(type(self)))
-        if settings.numerics.quadrature == "error" or self.num_gauss_hermite_points == 0:
+        if settings.numerics.ekern_quadrature == "error" or self.num_gauss_hermite_points == 0:
             raise RuntimeError("Settings indicate that quadrature may not be used.")
 
     def eKdiag(self, Xmu, Xcov):
         """
         Computes <K_xx>_q(x).
         :param Xmu: Mean (NxD)
-        :param Xcov: Covariance (NxDxD)
+        :param Xcov: Covariance (NxDxD or NxD)
         :return: (N)
         """
         self._check_quadrature()
@@ -178,6 +193,13 @@ class Kern(Parameterized):
         return eKdiag  # N
 
     def eKxz(self, Z, Xmu, Xcov):
+        """
+        Computes <K_xz>_q(x) using quadrature.
+        :param Z: Fixed inputs (MxD).
+        :param Xmu: X means (NxD).
+        :param Xcov: X covariances (NxDxD or NxD).
+        :return: (NxM)
+        """
         self._check_quadrature()
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
@@ -191,10 +213,13 @@ class Kern(Parameterized):
 
     def exKxz(self, Z, Xmu, Xcov):
         """
-        :param Z: MxD
-        :param Xmu: NxD
-        :param Xcov: 2xNxDxD
-        :return: NxMxD
+        Computes <x_{t-1} K_{x_t z}>_q(x) for each pair of consecutive X's in
+        Xmu & Xcov.
+        :param Z: Fixed inputs (MxD).
+        :param Xmu: X means (T+1xD).
+        :param Xcov: 2xT+1xDxD. [0, t, :, :] contains covariances for x_t. [1, t, :, :] contains the cross covariances
+        for t and t+1.
+        :return: (TxMxD).
         """
         self._check_quadrature()
         # Slicing is NOT needed here. The desired behaviour is to *still* return an NxMxD matrix. As even when the
@@ -227,6 +252,13 @@ class Kern(Parameterized):
         return exKxz
 
     def eKzxKxz(self, Z, Xmu, Xcov):
+        """
+        Computes <K_zx Kxz>_q(x).
+        :param Z: Fixed inputs.
+        :param Xmu: X means (NxD).
+        :param Xcov: X covariances (NxDxD or NxD).
+        :return: NxDxD
+        """
         self._check_quadrature()
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
@@ -632,6 +664,12 @@ class Combination(Kern):
 
     @property
     def on_separate_dimensions(self):
+        """
+        Checks whether the kernels in the combination act on disjoint subsets
+        of dimensions. Currently, it is hard to asses whether two slice objects
+        will overlap, so this will always return False.
+        :return: Boolean indicator.
+        """
         if np.any([isinstance(k.active_dims, slice) for k in self.kern_list]):
             # Be conservative in the case of a slice object
             return False

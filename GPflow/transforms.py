@@ -277,7 +277,7 @@ class LowerTriangular(Transform):
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), tf.float64)
+        return tf.zeros((1,), float_type)
 
     def free_state_size(self, variable_shape):
         matrix_batch = len(variable_shape) > 2

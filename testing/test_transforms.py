@@ -44,8 +44,9 @@ class TransformTests(unittest.TestCase):
     def test_forward_backward(self):
         ys_np = [t.forward(self.x_np) for t in self.transforms]
         xs_np = [t.backward(y) for t, y in zip(self.transforms, ys_np)]
-        for x in xs_np:
+        for t, x in zip(self.transforms, xs_np):
             self.assertTrue(np.allclose(x, self.x_np))
+            self.assertTrue(t.free_state_size() == len(x))
 
     def test_logjac(self):
         """

@@ -8,11 +8,6 @@ from ._settings import settings
 int_type = settings.dtypes.int_type
 float_type = settings.dtypes.float_type
 
-# TODO: Efficiency gain from using diagonal q(X).
-# TODO: Efficiency can probably be gained by replacing the `tf.tile` operations with reshapes.
-# TODO: Allow Linear kernel to have ARD on.
-# TODO: Get Linear_RBF_eKxzKzx to play ball with overlapping, but non-slice active_dims.
-
 
 class RBF(kernels.RBF):
     def eKdiag(self, X, Xcov=None):
@@ -28,7 +23,7 @@ class RBF(kernels.RBF):
         Also known as phi_1: <K_{x, Z}>_{q(x)}.
         :param Z: MxD inducing inputs
         :param Xmu: X mean (NxD)
-        :param Xcov: NxDxD  # TODO code needs to be extended to return 2x(N+1)xDxD
+        :param Xcov: NxDxD
         :return: NxM
         """
         # use only active dimensions
@@ -126,7 +121,6 @@ class RBF(kernels.RBF):
 class Linear(kernels.Linear):
     def eKdiag(self, X, Xcov):
         if self.ARD:
-            # TODO: Implement ARD
             raise NotImplementedError
         # use only active dimensions
         X, _ = self._slice(X, None)
@@ -135,7 +129,6 @@ class Linear(kernels.Linear):
 
     def eKxz(self, Z, Xmu, Xcov):
         if self.ARD:
-            # TODO: Implement ARD
             raise NotImplementedError
         # use only active dimensions
         Z, Xmu = self._slice(Z, Xmu)
