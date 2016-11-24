@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, alexggmatthews, PabloLeon, Valentine Svensson
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -52,7 +52,7 @@ class Linear(MeanFunction):
     """
     y_i = A x_i + b
     """
-    def __init__(self, A=np.ones((1, 1)), b=np.zeros(1)):
+    def __init__(self, A=None, b=None):
         """
         A is a matrix which maps each element of X to Y, b is an additive
         constant.
@@ -60,6 +60,8 @@ class Linear(MeanFunction):
         If X has N rows and D columns, and Y is intended to have Q columns,
         then A must be D x Q, b must be a vector of length Q.
         """
+        A = A or np.ones((1, 1))
+        b = b or np.zeros(1)
         MeanFunction.__init__(self)
         self.A = Param(np.atleast_2d(A))
         self.b = Param(b)
@@ -72,8 +74,9 @@ class Constant(MeanFunction):
     """
     y_i = c,,
     """
-    def __init__(self, c=np.zeros(1)):
+    def __init__(self, c=None):
         MeanFunction.__init__(self)
+        c = c or np.zeros(1)
         self.c = Param(c)
 
     def __call__(self, X):
@@ -102,7 +105,7 @@ class SwitchedMeanFunction(MeanFunction):
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, self.num_meanfunctions)
         # apply the likelihood-function to each section of the data
-        results = [m(x) for (x,m) in zip(x_list, self.meanfunction_list)]
+        results = [m(x) for (x, m) in zip(x_list, self.meanfunction_list)]
         # stitch the results back together
         partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
         return tf.dynamic_stitch(partitions, results)
