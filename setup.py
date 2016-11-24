@@ -5,6 +5,7 @@ from setuptools import setup
 import re
 import os
 import sys
+import tensorflow as tf
 
 # load version form _version.py
 VERSIONFILE = "GPflow/_version.py"
@@ -17,9 +18,10 @@ else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 # Compile the bespoke TensorFlow ops in-place. Not sure how this would work if this script wasn't executed as `develop`.
+tf_include = tf.sysconfig.get_include()
 compile_command = "g++ -std=c++11 -shared ./GPflow/tfops/vec_to_tri.cc " \
                   "GPflow/tfops/tri_to_vec.cc -o GPflow/tfops/matpackops.so " \
-                  "-fPIC -I $(python -c 'import tensorflow as tf; print(tf.sysconfig.get_include())')"
+                  "-fPIC -I {}".format(tf_include)
 if sys.platform == "darwin":
     # Additional command for Macs, as instructed by the TensorFlow docs
     compile_command += " -undefined dynamic_lookup"

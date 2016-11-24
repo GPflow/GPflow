@@ -15,9 +15,9 @@
 
 from __future__ import absolute_import
 from . import densities, transforms
-from .param import Parameterized, Param
 import tensorflow as tf
 import numpy as np
+from .param import Parameterized, Param, ParamList
 from ._settings import settings
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
@@ -461,6 +461,63 @@ class MultiClass(Likelihood):
     def conditional_variance(self, F):
         p = self.conditional_mean(F)
         return p - tf.square(p)
+
+
+class SwitchedLikelihood(Likelihood):
+    def __init__(self, likelihood_list):
+        """
+        In this likelihood, we assume at extra column of Y, which contains
+        integers that specify a likelihood from the list of likelihoods.
+        """
+        Likelihood.__init__(self)
+        for l in likelihood_list:
+            assert isinstance(l, Likelihood)
+        self.likelihood_list = ParamList(likelihood_list)
+        self.num_likelihoods = len(self.likelihood_list)
+
+    def _partition_and_stitch(self, args, func_name):
+        """
+        args is a list of tensors, to be passed to self.likelihoods.<func_name>
+
+        args[-1] is the 'Y' argument, which contains the indexes to self.likelihoods.
+
+        This function splits up the args using dynamic_partition, calls the
+        relevant function on the likelihoods, and re-combines the result.
+        """
+        # get the index from Y
+        Y = args[-1]
+        ind = tf.gather(tf.transpose(Y), tf.shape(Y)[1]-1)  # ind = Y[:,-1]
+        ind = tf.cast(ind, tf.int32)
+        Y = tf.transpose(tf.gather(tf.transpose(Y), tf.range(0, tf.shape(Y)[1]-1)))  # Y = Y[:,:-1]
+        args[-1] = Y
+
+        # split up the arguments into chunks corresponding to the relevant likelihoods
+        args = zip(*[tf.dynamic_partition(X, ind, self.num_likelihoods) for X in args])
+
+        # apply the likelihood-function to each section of the data
+        funcs = [getattr(lik, func_name) for lik in self.likelihood_list]
+        results = [f(*args_i) for f, args_i in zip(funcs, args)]
+
+        # stitch the results back together
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_likelihoods)
+        results = tf.dynamic_stitch(partitions, results)
+
+        return results
+
+    def logp(self, F, Y):
+        return self._partition_and_stitch([F, Y], 'logp')
+
+    def predict_density(self, Fmu, Fvar, Y):
+        return self._partition_and_stitch([Fmu, Fvar, Y], 'predict_density')
+
+    def variational_expectations(self, Fmu, Fvar, Y):
+        return self._partition_and_stitch([Fmu, Fvar, Y], 'variational_expectations')
+
+    def predict_mean_and_var(self, Fmu, Fvar):
+        mu_list, var_list = zip(*[lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list])
+        mu = tf.concat(1, mu_list)
+        var = tf.concat(1, var_list)
+        return mu, var
 
 
 class Ordinal(Likelihood):

@@ -80,7 +80,7 @@ class TestCoregion(unittest.TestCase):
     def test_diag(self):
         K = self.k.compute_K_symm(self.X)
         Kdiag = self.k.compute_Kdiag(self.X)
-        self.assertTrue(np.all(np.diag(K) == Kdiag))
+        self.assertTrue(np.allclose(np.diag(K), Kdiag))
 
     def test_slice(self):
         # compute another kernel with additinoal inputs, make sure out kernel is still okay.
@@ -216,34 +216,43 @@ class TestWhite(unittest.TestCase):
 
 class TestSlice(unittest.TestCase):
     """
-    Make sure the results of a sliced kernel is the ame as an unsliced kernel
+    Make sure the results of a sliced kernel is the same as an unsliced kernel
     with correctly sliced data...
     """
 
     def setUp(self):
-        tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
-        self.k1 = GPflow.kernels.RBF(1, active_dims=[0])
-        self.k2 = GPflow.kernels.RBF(1, active_dims=[1])
-        self.k3 = GPflow.kernels.RBF(1)
+        tf.reset_default_graph()
+
         self.X = self.rng.randn(20, 2)
         self.Z = self.rng.randn(10, 2)
 
+        kernels = GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Constant, GPflow.kernels.Linear,
+                                                                GPflow.kernels.Polynomial]
+        self.kernels = []
+        for kernclass in kernels:
+            k1 = kernclass(1, active_dims=[0])
+            k2 = kernclass(1, active_dims=[1])
+            k3 = kernclass(1, active_dims=slice(0, 1))
+            self.kernels.append([k1, k2, k3])
+
     def test_symm(self):
-        K1 = self.k1.compute_K_symm(self.X)
-        K2 = self.k2.compute_K_symm(self.X)
-        K3 = self.k3.compute_K_symm(self.X[:, :1])
-        K4 = self.k3.compute_K_symm(self.X[:, 1:])
-        self.assertTrue(np.allclose(K1, K3))
-        self.assertTrue(np.allclose(K2, K4))
+        for k1, k2, k3 in self.kernels:
+            K1 = k1.compute_K_symm(self.X)
+            K2 = k2.compute_K_symm(self.X)
+            K3 = k3.compute_K_symm(self.X[:, :1])
+            K4 = k3.compute_K_symm(self.X[:, 1:])
+            self.assertTrue(np.allclose(K1, K3))
+            self.assertTrue(np.allclose(K2, K4))
 
     def test_asymm(self):
-        K1 = self.k1.compute_K(self.X, self.Z)
-        K2 = self.k2.compute_K(self.X, self.Z)
-        K3 = self.k3.compute_K(self.X[:, :1], self.Z[:, :1])
-        K4 = self.k3.compute_K(self.X[:, 1:], self.Z[:, 1:])
-        self.assertTrue(np.allclose(K1, K3))
-        self.assertTrue(np.allclose(K2, K4))
+        for k1, k2, k3 in self.kernels:
+            K1 = k1.compute_K(self.X, self.Z)
+            K2 = k2.compute_K(self.X, self.Z)
+            K3 = k3.compute_K(self.X[:, :1], self.Z[:, :1])
+            K4 = k3.compute_K(self.X[:, 1:], self.Z[:, 1:])
+            self.assertTrue(np.allclose(K1, K3))
+            self.assertTrue(np.allclose(K2, K4))
 
 
 class TestProd(unittest.TestCase):
