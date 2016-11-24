@@ -60,8 +60,8 @@ class Linear(MeanFunction):
         If X has N rows and D columns, and Y is intended to have Q columns,
         then A must be D x Q, b must be a vector of length Q.
         """
-        A = A or np.ones((1, 1))
-        b = b or np.zeros(1)
+        A = np.ones((1, 1)) if A is None else A
+        b = np.zeros(1) if b is None else b
         MeanFunction.__init__(self)
         self.A = Param(np.atleast_2d(A))
         self.b = Param(b)
@@ -76,7 +76,7 @@ class Constant(MeanFunction):
     """
     def __init__(self, c=None):
         MeanFunction.__init__(self)
-        c = c or np.zeros(1)
+        c = np.zeros(1) if c is None else c
         self.c = Param(c)
 
     def __call__(self, X):
