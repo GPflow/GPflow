@@ -233,5 +233,19 @@ class TestSwitchedMeanFunction(unittest.TestCase):
         self.assertTrue(np.allclose(result, result_ref))
 
 
+class TestBug277Regression(unittest.TestCase):
+    """
+    See github issue #277. This is a regression test.
+    """
+    def setUp(self):
+        self.m1 = GPflow.mean_functions.Linear()
+        self.m2 = GPflow.mean_functions.Linear()
+
+    def test(self):
+        self.assertTrue(self.m1.b.value == self.m2.b.value)
+        self.m1.b = 1.
+        self.assertFalse(self.m1.b.value == self.m2.b.value)
+
+
 if __name__ == "__main__":
     unittest.main()
