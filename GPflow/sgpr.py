@@ -92,8 +92,8 @@ class SGPR(GPModel):
         bound -= 0.5 * num_data * output_dim * tf.log(self.likelihood.variance)
         bound += -0.5*tf.reduce_sum(tf.square(err))/self.likelihood.variance
         bound += 0.5*tf.reduce_sum(tf.square(c))
-        bound += -0.5 * tf.reduce_sum(Kdiag) / self.likelihood.variance
-        bound += 0.5 * tf.reduce_sum(tf.diag_part(AAT))
+        bound += -0.5 * output_dim * tf.reduce_sum(Kdiag) / self.likelihood.variance
+        bound += 0.5 * output_dim * tf.reduce_sum(tf.diag_part(AAT))
 
         return bound
 
@@ -228,9 +228,9 @@ class GPRFITC(GPModel):
 
         constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.dtypes.float_type))
         logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.diag_part(L)))
-        logNormalizingTerm = constantTerm + logDeterminantTerm
-
-        return mahalanobisTerm + logNormalizingTerm
+        logNormalizingTerm = constantTerm + logDeterminantTerm 
+        
+        return mahalanobisTerm + logNormalizingTerm * self.num_latent
 
     def build_predict(self, Xnew, full_cov=False):
         """
