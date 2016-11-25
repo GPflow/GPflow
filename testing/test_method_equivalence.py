@@ -41,6 +41,7 @@ class TestEquivalence(unittest.TestCase):
         rng = np.random.RandomState(0)
         X = rng.rand(20, 1)*10
         Y = np.sin(X) + 0.9 * np.cos(X*1.6) + rng.randn(*X.shape) * 0.8
+        Y = np.tile(Y, 2) # two identical columns
         self.Xtest = rng.rand(10, 1)*10
 
         m1 = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1),
