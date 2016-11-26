@@ -223,11 +223,11 @@ class Model(Parameterized):
         """
         opt_step = self._compile(optimizer=method)
         feed_dict = {}
-        self.update_feed_dict(self._feed_dict_keys, feed_dict)
 
         try:
             iteration = 0
             while iteration < maxiter:
+                self.update_feed_dict(self._feed_dict_keys, feed_dict)
                 self._session.run(opt_step, feed_dict=feed_dict)
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
