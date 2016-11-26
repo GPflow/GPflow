@@ -84,8 +84,8 @@ class Model(Parameterized):
 
     This object defines `optimize` and `sample` to allow for model fitting.
     """
-
-    def __init__(self, name='model'):
+    
+    def __init__(self, name='model', tf_metagraphInterval=100000):
         """
         name is a string describing this model.
         """
@@ -94,6 +94,11 @@ class Model(Parameterized):
         self._name = name
         self._needs_recompile = True
 
+        import time;        
+        localtime = time.asctime( time.localtime(time.time()) )
+        self._tf_name = 'tensorboard/' + name + '_' + localtime
+        self._tf_metagraphInterval = tf_metagraphInterval
+        
     @property
     def name(self):
         return self._name
@@ -138,9 +143,15 @@ class Model(Parameterized):
             else:
                 opt_step = optimizer.minimize(self._minusF,
                                               var_list=[self._free_vars])
+
             init = tf.initialize_all_variables()
         self._session.run(init)
 
+        # get tensorboard ready
+        tf.scalar_summary('marginalLikelihood', tf.squeeze(f))
+        self._tf_merged = tf.merge_all_summaries()
+        self._tf_writer = tf.train.SummaryWriter(self._tf_name , self._session.graph)        
+            
         # build tensorflow functions for computing the likelihood
         if settings.verbosity.tf_compile_verb:
             print("compiling tensorflow function...")
@@ -150,9 +161,14 @@ class Model(Parameterized):
         def obj(x):
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
-            f, g = self._session.run([self._minusF, self._minusG],
+            summary, f, g = self._session.run([self._tf_merged, self._minusF, self._minusG],
                                      feed_dict=feed_dict)
+                                     
+            self._tf_writer.add_summary(summary, obj._tf_iteration_np)
+            obj._tf_iteration_np += 1
             return f.astype(np.float64), g.astype(np.float64)
+
+        obj._tf_iteration_np = 0
 
         self._objective = obj
         if settings.verbosity.tf_compile_verb:
@@ -213,9 +229,12 @@ class Model(Parameterized):
         """
 
         if type(method) is str:
-            return self._optimize_np(method, tol, callback, maxiter, **kw)
+            r = self._optimize_np(method, tol, callback, maxiter, **kw)
         else:
-            return self._optimize_tf(method, callback, maxiter, **kw)
+            r = self._optimize_tf(method, callback, maxiter, **kw)
+
+        self._tf_writer.close()
+        return r
 
     def _optimize_tf(self, method, callback, maxiter):
         """
@@ -228,7 +247,16 @@ class Model(Parameterized):
         try:
             iteration = 0
             while iteration < maxiter:
-                self._session.run(opt_step, feed_dict=feed_dict)
+                if (iteration % self._tf_metagraphInterval) == 0:
+                    run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                    run_metadata = tf.RunMetadata()
+                    summary, _ = self._session.run([self._tf_merged, opt_step], feed_dict=self.get_feed_dict(), options=run_options, run_metadata=run_metadata)
+                    self._tf_writer.add_run_metadata(run_metadata, 'step%04d' % iteration)
+                else:
+                    summary, _ = self._session.run([self._tf_merged, opt_step], feed_dict=self.get_feed_dict())
+                    
+                self._tf_writer.add_summary(summary, iteration)
+                
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
                 iteration += 1
