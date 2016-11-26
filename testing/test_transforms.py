@@ -17,6 +17,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 from GPflow import settings
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
@@ -44,8 +45,9 @@ class TransformTests(unittest.TestCase):
     def test_forward_backward(self):
         ys_np = [t.forward(self.x_np) for t in self.transforms]
         xs_np = [t.backward(y) for t, y in zip(self.transforms, ys_np)]
-        for x in xs_np:
+        for t, x, y in zip(self.transforms, xs_np, ys_np):
             self.assertTrue(np.allclose(x, self.x_np))
+            self.assertTrue(t.free_state_size(y.shape) == len(x))
 
     def test_logjac(self):
         """
@@ -85,6 +87,39 @@ class TestLowerTriTransform(unittest.TestCase):
         self.t.forward(np.ones(3 * 6))
         with self.assertRaises(ValueError):
             self.t.forward(np.ones(3 * 7))
+
+
+class TestDiagMatrixTransform(unittest.TestCase):
+    def setUp(self):
+        self.session = tf.Session()
+        self.t1 = GPflow.transforms.DiagMatrix(dim=1)
+        self.t2 = GPflow.transforms.DiagMatrix(dim=3)
+
+    def test_forward_backward(self):
+        free_1d = np.random.randn(8)
+        fwd1d = self.t1.forward(free_1d)
+        self.assertTrue(np.all(fwd1d.shape == np.array([len(free_1d), self.t1.dim, self.t1.dim])))
+        self.assertTrue(np.allclose(free_1d, self.t1.backward(fwd1d)))
+
+        size2d = 1
+        free_2d = np.random.randn(size2d, self.t2.dim).flatten()
+        fwd2d = self.t2.forward(free_2d)
+        self.assertTrue(np.all(fwd2d.shape == np.array([size2d, self.t2.dim, self.t2.dim])))
+        self.assertTrue(np.allclose(free_2d, self.t2.backward(fwd2d)))
+
+    def test_tf_np_forward(self):
+        """
+        Make sure the np forward transforms are the same as the tensorflow ones
+        """
+        free = np.random.randn(8, self.t2.dim).flatten()
+        x = tf.placeholder(float_type)
+        ys = self.session.run(self.t2.tf_forward(x), feed_dict={x: free})
+        self.assertTrue(np.allclose(ys, self.t2.forward(free)))
+
+        free = np.random.randn(1, self.t1.dim).flatten()
+        x = tf.placeholder(float_type)
+        ys = self.session.run(self.t1.tf_forward(x), feed_dict={x: free})
+        self.assertTrue(np.allclose(ys, self.t1.forward(free)))
 
 
 if __name__ == "__main__":
