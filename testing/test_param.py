@@ -324,6 +324,12 @@ class TestParamList(unittest.TestCase):
         GPflow.param.ParamList([GPflow.param.Param(1)])
         with self.assertRaises(AssertionError):
             GPflow.param.ParamList([GPflow.param.Param(1), 'stringsnotallowed'])
+        with self.assertRaises(AssertionError):
+            # tuples not valid in constuctor:
+            GPflow.param.ParamList((GPflow.param.Param(1),))
+        with self.assertRaises(AssertionError):
+            # param objects not valid in constructor (must be in list)
+            GPflow.param.ParamList(GPflow.param.Param(1))
 
     def test_naming(self):
         p1 = GPflow.param.Param(1.2)

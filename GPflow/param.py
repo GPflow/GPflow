@@ -920,8 +920,9 @@ class ParamList(Parameterized):
 
     """
 
-    def __init__(self, list_of_params=[]):
+    def __init__(self, list_of_params):
         Parameterized.__init__(self)
+        assert isinstance(list_of_params, list)
         for item in list_of_params:
             assert isinstance(item, (Param, Parameterized))
             item._parent = self
@@ -958,6 +959,3 @@ class ParamList(Parameterized):
         to set their values by assignment.
         """
         self.sorted_params[key]._array[...] = value
-
-    def __len__(self):
-        return len(self.sorted_params)
