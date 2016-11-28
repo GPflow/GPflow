@@ -44,7 +44,7 @@ class ReplacementSampling(IndexManager):
 class NoReplacementSampling(IndexManager):
 	def nextIndeces(self):
 		permutation = self.rng.permutation(self.total_points)
-		return permuatation[:self.minibatch_size]
+		return permutation[:self.minibatch_size]
 
 class SequenceIndeces(IndexManager):
     """
