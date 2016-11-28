@@ -23,26 +23,47 @@ from .mean_functions import Zero
 from .tf_wraps import eye
 from ._settings import settings
 
-class SequenceIndexManager:
+class IndexManager(object):
+    """
+    Base clase for methods of batch indexing data.
+    rng is an instance of np.random.RandomState, defaults to seed 0.
+    """
+    def __init__(self, minibatch_size, total_points, rng = None):
+        self.minibatch_size = minibatch_size
+        self.total_points = total_points
+        self.rng = rng or np.random.RandomState(0)
+        
+    def nextIndeces(self):
+        raise NotImplementedError
+
+class ReplacementSampling(IndexManager):
+	def nextIndeces(self):
+		return self.rng.randint(self.total_points, 
+		                        size=self.minibatch_size)
+
+class NoReplacementSampling(IndexManager):
+	def nextIndeces(self):
+		permutation = self.rng.permutation(self.total_points)
+		return permuatation[:self.minibatch_size]
+
+class SequenceIndeces(IndexManager):
     """
     A class that maintains the state necessary to manage 
     sequential indexing of data holders.
     """
-
-    def __init__(self, minibatch_size):
-        self.minibatch_size = minibatch_size
+    def __init__(self, minibatch_size, total_points, rng = None):
         self.counter = 0
+        IndexManager.__init__(self, minibatch_size, total_points, rng)
 		
-    def nextIndeces(self, total_points):
+    def nextIndeces(self):
         """
 		Written so that if total_points
 		changes this will still work
         """
-        
         firstIndex = self.counter
         lastIndex = self.counter + self.minibatch_size
-        self.counter = lastIndex % total_points
-        return np.arange(firstIndex,lastIndex) % total_points
+        self.counter = lastIndex % self.total_points
+        return np.arange(firstIndex,lastIndex) % self.total_points
 
 class MinibatchData(DataHolder):
     """
@@ -56,60 +77,51 @@ class MinibatchData(DataHolder):
     def __init__(self, array, 
                        minibatch_size, 
                        rng=None, 
-                       generation_method=None):
+                       batch_manager=None):
         """
         array is a numpy array of data.
         minibatch_size (int) is the size of the minibatch
-        rng is an instance of np.random.RandomState, defaults to seed 0.
         
-        generation_method specifies sampling scheme and is one of
-        replace noreplace and sequential where:
-        
-        replace: sampling with replacement
-        noreplace: sampling without replacement
-        sequential: give batches in sequence given in array.
+        batch_manager specified data sampling scheme and is a subclass 
+        of IndexManager.
         
         Note: you may want to randomize the order of the data 
         if using sequential generation.
         """
         DataHolder.__init__(self, array, on_shape_change='pass')
-        self.minibatch_size = minibatch_size
-        self.rng = rng or np.random.RandomState(0)
-        self.parseGenerationMethod(generation_method)
+        total_points = self._array.shape[0]
+        self.parseGenerationMethod(batch_manager, 
+                                   minibatch_size, 
+                                   total_points,
+                                   rng)
         
-    def parseGenerationMethod(self, input_generation_method):
-        if input_generation_method==None: #Default behaviour.
-		    total_points = self._array.shape[0]
-		    if float(self.minibatch_size) / float(total_points) > 0.5:
-		        self.generation_method = 'replace'
+    def parseGenerationMethod(self, 
+                              input_batch_manager, 
+                              minibatch_size,
+                              total_points,
+                              rng):
+        #Logic for default behaviour.
+        #When minibatch_size is a small fraction of total_point
+        #ReplacementSampling should give similar results to 
+        #NoReplacementSampling and the former can be much faster.
+        if input_batch_manager==None: 
+		    fraction = float(minibatch_size) / float(total_points)
+		    if fraction > 0.5:
+		        self.index_manager = ReplacementSampling(minibatch_size,
+		                                                 total_points,
+		                                                 rng)
 		    else:
-		        self.generation_method = 'noreplace'
+		        self.index_manager = NoReplacementSampling(minibatch_size,
+                                                           total_points,
+                                                           rng)
         else: #Explicitly specified behaviour.
-		    if input_generation_method not in self._generation_methods:
+		    if input_batch_manager.__class__ not in IndexManager.__subclasses__():
 			    raise NotImplementedError
-		    self.generation_method = input_generation_method
-		    if self.generation_method == 'sequential':
-				#In this case we need to maintain some state.
-				self.sequence = SequenceIndexManager(self.minibatch_size)
+		    self.index_manager = input_batch_manager
 			
-
-    def generate_index(self):
-		total_points = self._array.shape[0]
-		if self.generation_method == 'replace':
-		    return self.rng.permutation(total_points)[:self.minibatch_size]
-		elif self.generation_method == 'noreplace':
-            # noreplace is faster that replace, and for N >> minibatch,
-            # it doesn't make much difference. This actually
-            # becomes the limit when N is around 10**6, which isn't
-            # uncommon when using SVI.
-		    return self.rng.randint(total_points, size=self.minibatch_size)
-		elif self.generation_method == 'sequential':
-			return self.sequence.nextIndeces(total_points)
-		else:
-			raise NotImplementedError
-
     def update_feed_dict(self, key_dict, feed_dict):
-        feed_dict[key_dict[self]] = self._array[self.generate_index()]
+        next_indeces = self.index_manager.nextIndeces()
+        feed_dict[key_dict[self]] = self._array[next_indeces]
 
 
 class SVGP(GPModel):
