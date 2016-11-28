@@ -23,30 +23,90 @@ from .mean_functions import Zero
 from .tf_wraps import eye
 from ._settings import settings
 
+class SequenceIndexManager:
+    """
+    A class that maintains the state necessary to manage 
+    sequential indexing of data holders.
+    """
+
+	def __init__(self, minibatch_size):
+		self.minibatch_size = minibatch_size
+		self.counter = 0
+		
+	def nextIndeces(self, total_points):
+		"""
+		Written so that if total_points
+		changes this will still work
+		"""
+		
+		firstIndex = self.counter % total_points
+		lastIndex = (self.counter + self.minibatch_size) % total_points
+		self.counter = lastIndex
+		return range(firstIndex,lastIndex)
 
 class MinibatchData(DataHolder):
     """
-    A special DataHolder class which feeds a minibatch to tensorflow via update_feed_dict().
+    A special DataHolder class which feeds a minibatch 
+    to tensorflow via update_feed_dict().
     """
-    def __init__(self, array, minibatch_size, rng=None):
+    
+    #List of valid specifiers for generation methods.
+    self._generation_methods = ['replace','noreplace','sequential']
+    
+    def __init__(self, array, 
+                       minibatch_size, 
+                       rng=None, 
+                       generation_method=None):
         """
         array is a numpy array of data.
         minibatch_size (int) is the size of the minibatch
-        rng is an instance of np.random.RandomState(), defaults to seed 0.
+        rng is an instance of np.random.RandomState, defaults to seed 0.
+        
+        generation_method specifies sampling scheme and is one of
+        replace noreplace and sequential where:
+        
+        replace: sampling with replacement
+        noreplace: sampling without replacement
+        sequential: give batches in sequence given in array.
+        
+        Note: you may want to randomize the order of the data 
+        if using sequential generation.
         """
         DataHolder.__init__(self, array, on_shape_change='pass')
         self.minibatch_size = minibatch_size
         self.rng = rng or np.random.RandomState(0)
+        parseGenerationMethod(generation_method)
+        
+    def parseGenerationMethod(self, input_generation_method)
+        if input_generation_method==None: #Default behaviour.
+		    total_points = self._array.shape[0]
+		if float(self.minibatch_size) / float(total_points) > 0.5:
+		    self.generation_method = 'replace'
+		else:
+		    self.generation_method = 'noreplace'
+		else: #Explicitly specified behaviour.
+		    if input_generation_method not in self._generation_methods
+			    raise NotImplementedError
+			self.generation_method = input_generation_method
+			if self.generation_method == 'sequential':
+				#In this case we need to maintain some state.
+				self.sequence = SequenceIndexManager(self.minibatch_size)
+			
 
     def generate_index(self):
-        if float(self.minibatch_size) / float(self._array.shape[0]) > 0.5:
-            return self.rng.permutation(self._array.shape[0])[:self.minibatch_size]
-        else:
-            # This is much faster than above, and for N >> minibatch,
+		total_points = self._array.shape[0]
+        if self.generation_method == 'replace':
+            return self.rng.permutation(total_points)[:self.minibatch_size]
+        elif self.generation_method == 'noreplace':
+            # noreplace is faster that replace, and for N >> minibatch,
             # it doesn't make much difference. This actually
             # becomes the limit when N is around 10**6, which isn't
             # uncommon when using SVI.
-            return self.rng.randint(self._array.shape[0], size=self.minibatch_size)
+            return self.rng.randint(total_points, size=self.minibatch_size)
+		elif self.generation_method == 'sequential':
+			return self.sequence.nextIndeces(total_points)
+		else:
+			raise NotImplementedError
 
     def update_feed_dict(self, key_dict, feed_dict):
         feed_dict[key_dict[self]] = self._array[self.generate_index()]
