@@ -76,7 +76,7 @@ class MinibatchData(DataHolder):
         DataHolder.__init__(self, array, on_shape_change='pass')
         self.minibatch_size = minibatch_size
         self.rng = rng or np.random.RandomState(0)
-        parseGenerationMethod(generation_method)
+        self.parseGenerationMethod(generation_method)
         
     def parseGenerationMethod(self, input_generation_method):
         if input_generation_method==None: #Default behaviour.
