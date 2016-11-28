@@ -29,20 +29,20 @@ class SequenceIndexManager:
     sequential indexing of data holders.
     """
 
-	def __init__(self, minibatch_size):
-		self.minibatch_size = minibatch_size
-		self.counter = 0
+    def __init__(self, minibatch_size):
+        self.minibatch_size = minibatch_size
+        self.counter = 0
 		
-	def nextIndeces(self, total_points):
-		"""
+    def nextIndeces(self, total_points):
+        """
 		Written so that if total_points
 		changes this will still work
-		"""
-		
-		firstIndex = self.counter % total_points
-		lastIndex = (self.counter + self.minibatch_size) % total_points
-		self.counter = lastIndex
-		return range(firstIndex,lastIndex)
+        """
+        
+        firstIndex = self.counter
+        lastIndex = self.counter + self.minibatch_size
+        self.counter = (lastIndex+1) % total_points
+        return np.arange(firstIndex,lastIndex) % total_points
 
 class MinibatchData(DataHolder):
     """
@@ -51,7 +51,7 @@ class MinibatchData(DataHolder):
     """
     
     #List of valid specifiers for generation methods.
-    self._generation_methods = ['replace','noreplace','sequential']
+    _generation_methods = ['replace','noreplace','sequential']
     
     def __init__(self, array, 
                        minibatch_size, 
@@ -77,32 +77,32 @@ class MinibatchData(DataHolder):
         self.rng = rng or np.random.RandomState(0)
         parseGenerationMethod(generation_method)
         
-    def parseGenerationMethod(self, input_generation_method)
+    def parseGenerationMethod(self, input_generation_method):
         if input_generation_method==None: #Default behaviour.
 		    total_points = self._array.shape[0]
-		if float(self.minibatch_size) / float(total_points) > 0.5:
-		    self.generation_method = 'replace'
-		else:
-		    self.generation_method = 'noreplace'
-		else: #Explicitly specified behaviour.
-		    if input_generation_method not in self._generation_methods
+		    if float(self.minibatch_size) / float(total_points) > 0.5:
+		        self.generation_method = 'replace'
+		    else:
+		        self.generation_method = 'noreplace'
+        else: #Explicitly specified behaviour.
+		    if input_generation_method not in self._generation_methods:
 			    raise NotImplementedError
-			self.generation_method = input_generation_method
-			if self.generation_method == 'sequential':
+		    self.generation_method = input_generation_method
+		    if self.generation_method == 'sequential':
 				#In this case we need to maintain some state.
 				self.sequence = SequenceIndexManager(self.minibatch_size)
 			
 
     def generate_index(self):
 		total_points = self._array.shape[0]
-        if self.generation_method == 'replace':
-            return self.rng.permutation(total_points)[:self.minibatch_size]
-        elif self.generation_method == 'noreplace':
+		if self.generation_method == 'replace':
+		    return self.rng.permutation(total_points)[:self.minibatch_size]
+		elif self.generation_method == 'noreplace':
             # noreplace is faster that replace, and for N >> minibatch,
             # it doesn't make much difference. This actually
             # becomes the limit when N is around 10**6, which isn't
             # uncommon when using SVI.
-            return self.rng.randint(total_points, size=self.minibatch_size)
+		    return self.rng.randint(total_points, size=self.minibatch_size)
 		elif self.generation_method == 'sequential':
 			return self.sequence.nextIndeces(total_points)
 		else:
