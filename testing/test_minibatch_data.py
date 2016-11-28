@@ -46,6 +46,22 @@ class TestSequentialManager(unittest.TestCase):
 		targetIndecesB = np.array([1,0,1,0,1])
 			
 		self.assertTrue((indecesB==targetIndecesB).all())
-	
+
+class TestMinibatchData(unittest.TestCase):
+	def setUp(self):
+		tf.reset_default_graph()
+		self.nDataPoints = 10
+		self.minibatch_size = 4
+		self.dummyArray = np.zeros((self.nDataPoints,1))
+		
+		
+	def testA(self):
+		fake = 'sdfnkj'
+		constructor = lambda : MinibatchData(self.dummyArray, 
+                                         self.minibatch_size, 
+                                         rng=None, 
+                                         generation_method=fake)
+		self.assertRaises(NotImplementedError,constructor)
+		
 if __name__ == "__main__":
     unittest.main()
