@@ -15,7 +15,7 @@
 import tensorflow as tf
 import numpy as np
 import unittest
-from GPflow.svgp import SequenceIndexManager, MinibatchData
+from GPflow.svgp import SequenceIndeces, MinibatchData
 
 class TestSequentialManager(unittest.TestCase):
     def setUp(self):
@@ -24,25 +24,25 @@ class TestSequentialManager(unittest.TestCase):
     def testA(self):
 		minibatch_size = 3
 		total_points = 5
-		sequenceManager = SequenceIndexManager(minibatch_size)
+		sequenceManager = SequenceIndeces(minibatch_size,total_points)
 		
-		indecesA = sequenceManager.nextIndeces(total_points)
+		indecesA = sequenceManager.nextIndeces()
 		self.assertTrue((indecesA==np.arange(0,minibatch_size)).all())
 
-		indecesB = sequenceManager.nextIndeces(total_points)
+		indecesB = sequenceManager.nextIndeces()
 		self.assertTrue((indecesB==np.array([3,4,0 ])).all())
 	
     def testB(self):
 		minibatch_size = 5
 		total_points = 2
-		sequenceManager = SequenceIndexManager(minibatch_size)
+		sequenceManager = SequenceIndeces(minibatch_size,total_points)
 		
-		indecesA = sequenceManager.nextIndeces(total_points)
+		indecesA = sequenceManager.nextIndeces()
 		targetIndecesA = np.array([0,1,0,1,0])
 			
 		self.assertTrue((indecesA==targetIndecesA).all())
 
-		indecesB = sequenceManager.nextIndeces(total_points)
+		indecesB = sequenceManager.nextIndeces()
 		targetIndecesB = np.array([1,0,1,0,1])
 			
 		self.assertTrue((indecesB==targetIndecesB).all())
@@ -52,16 +52,29 @@ class TestMinibatchData(unittest.TestCase):
 		tf.reset_default_graph()
 		self.nDataPoints = 10
 		self.minibatch_size = 4
-		self.dummyArray = np.zeros((self.nDataPoints,1))
-		
-		
+		self.dummyArray = np.atleast_2d(np.arange(self.nDataPoints)).T
+				
 	def testA(self):
-		fake = 'sdfnkj'
 		constructor = lambda : MinibatchData(self.dummyArray, 
                                          self.minibatch_size, 
                                          rng=None, 
-                                         generation_method=fake)
+                                         batch_manager=[])
 		self.assertRaises(NotImplementedError,constructor)
+
+	def testB(self):
+		sm = SequenceIndeces(self.minibatch_size, self.nDataPoints)
+		md = MinibatchData(self.dummyArray, 
+                           self.minibatch_size, 
+                           rng=None, 
+                           batch_manager=sm)
+		output_string = 'test_out'
+		key_dict = {md: output_string}
+		feed_dict = {} 
+		md.update_feed_dict( key_dict, feed_dict )
+		test_out_array = np.atleast_2d(np.arange(self.minibatch_size)).T
+		test_dict = {output_string : test_out_array }                     
+		self.assertEqual(feed_dict.keys(),test_dict.keys())
+		self.assertTrue((feed_dict[output_string]==test_out_array).all())
 		
 if __name__ == "__main__":
     unittest.main()
