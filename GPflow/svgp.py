@@ -42,6 +42,11 @@ class ReplacementSampling(IndexManager):
 		                        size=self.minibatch_size)
 
 class NoReplacementSampling(IndexManager):
+	def __init__(self, minibatch_size, total_points, rng = None):
+	    assert(minibatch_size<=total_points,
+	           "replacement sampled minibatch size must be less than data size") 
+	    IndexManager.__init__(self, minibatch_size, total_points, rng)
+	
 	def nextIndeces(self):
 		permutation = self.rng.permutation(self.total_points)
 		return permutation[:self.minibatch_size]
