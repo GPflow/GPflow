@@ -16,6 +16,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 from GPflow.svgp import SequenceIndeces, MinibatchData
+from GPflow.svgp import ReplacementSampling, NoReplacementSampling
 
 class TestSequentialManager(unittest.TestCase):
     def setUp(self):
@@ -47,6 +48,50 @@ class TestSequentialManager(unittest.TestCase):
 			
 		self.assertTrue((indecesB==targetIndecesB).all())
 
+class TestRandomIndexManagers(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+    
+    def checkUniformDist(self, indeces, nChoices):
+        fTotalPoints = float(len(indeces))
+        tolerance = 1e-2
+        for possibleIndex in range(nChoices):
+			empirical = indeces.count(possibleIndex) / fTotalPoints
+			error = np.abs(empirical - 1./nChoices)        
+			if error > tolerance:
+				return False
+        return True
+        
+    def testReplacement(self):
+		minibatch_size = 1000
+		data_size = 3
+		tolerance = 1e-2
+		rs = ReplacementSampling(minibatch_size,data_size)
+		indeces = rs.nextIndeces().tolist()
+		self.assertTrue(self.checkUniformDist(indeces,data_size))
+					
+    def testNoReplacement(self):
+		mini_size_err = 5
+		data_size_err = 3
+		constructor = lambda : NoReplacementSampling(mini_size_err,
+		                                             data_size_err)
+		self.assertRaises(constructor)
+		
+		mini_size = 3
+		data_size = 3
+		nrs = NoReplacementSampling(mini_size,data_size)
+		indeces = np.sort(nrs.nextIndeces()).tolist()
+		self.assertEqual(indeces,range(data_size))
+
+		one = 1		
+		nrsb = NoReplacementSampling(one,data_size)
+		
+		indecesOverall = []
+		for repeatIndex in range(3000):
+			indeces = nrsb.nextIndeces().tolist()
+			indecesOverall = indecesOverall + indeces
+		self.assertTrue(self.checkUniformDist(indecesOverall,data_size))
+			
 class TestMinibatchData(unittest.TestCase):
 	def setUp(self):
 		tf.reset_default_graph()
