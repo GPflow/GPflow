@@ -30,17 +30,22 @@ class TestSequentialManager(unittest.TestCase):
 		self.assertTrue((indecesA==np.arange(0,minibatch_size)).all())
 
 		indecesB = sequenceManager.nextIndeces(total_points)
-		self.assertTrue((indecesB==np.array([4,0,1 ])).all())
+		self.assertTrue((indecesB==np.array([3,4,0 ])).all())
 	
     def testB(self):
 		minibatch_size = 5
 		total_points = 2
 		sequenceManager = SequenceIndexManager(minibatch_size)
 		
-		indeces = sequenceManager.nextIndeces(total_points)
-		targetIndeces = np.array([0,1,0,1,0])
+		indecesA = sequenceManager.nextIndeces(total_points)
+		targetIndecesA = np.array([0,1,0,1,0])
 			
-		self.assertTrue((indeces==targetIndeces).all())
+		self.assertTrue((indecesA==targetIndecesA).all())
+
+		indecesB = sequenceManager.nextIndeces(total_points)
+		targetIndecesB = np.array([1,0,1,0,1])
+			
+		self.assertTrue((indecesB==targetIndecesB).all())
 	
 if __name__ == "__main__":
     unittest.main()
