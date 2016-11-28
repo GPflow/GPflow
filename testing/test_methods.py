@@ -155,6 +155,41 @@ class TestSVGP(unittest.TestCase):
         m1._compile()
 
 
+	def getModel(self,X,Y,Z,minibatch_size):
+		model = GPflow.svgp.SVGP(X,
+		                         Y,
+		                         kern = GPflow.kernels.RBF(1),
+								 likelihood = GPflow.likelihoods.Gaussian(),
+								 Z = Z)
+		
+		return model
+
+    def test_stochastic_gradients(self):
+        """
+        In response to bug #281, we need to make sure stochastic update
+        happens correctly in tf optimizer mode.
+        To do this compare stochastic updates with deterministic updates
+        that should be equivalent.
+        """		
+        X = np.atleast_2d(np.array([0.,1.])).T
+        Y = np.atleast_2d(np.array([-1.,3.])).T
+        sharedZ = np.atleast_2d(np.array([0.5]) )
+        nDataPoints = X.shape[0]
+        nOptimizerIterations = 1
+        
+        
+        Xs = []
+        Ys = []
+        models = []
+        
+        for index in range(nDataPoints):
+			Xs.append(np.vstack( [ X[index,:] for i in range(nDataPoints) ] ))
+			Ys.append(np.vstack( [ Y[index,:] for i in range(nDataPoints) ] ))
+		    
+		for repeatIndex in range(nDataPoints):
+		
+			
+        
 class TestSparseMCMC(unittest.TestCase):
     """
     This test makes sure that when the inducing points are the same as the data
