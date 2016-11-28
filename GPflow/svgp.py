@@ -22,6 +22,7 @@ from . import transforms, conditionals, kullback_leiblers
 from .mean_functions import Zero
 from .tf_wraps import eye
 from ._settings import settings
+from IPython import embed
 
 class SequenceIndexManager:
     """
@@ -41,7 +42,7 @@ class SequenceIndexManager:
         
         firstIndex = self.counter
         lastIndex = self.counter + self.minibatch_size
-        self.counter = (lastIndex+1) % total_points
+        self.counter = lastIndex % total_points
         return np.arange(firstIndex,lastIndex) % total_points
 
 class MinibatchData(DataHolder):
