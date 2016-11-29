@@ -100,21 +100,21 @@ class MinibatchData(DataHolder):
         #When minibatch_size is a small fraction of total_point
         #ReplacementSampling should give similar results to 
         #NoReplacementSampling and the former can be much faster.
-        if input_batch_manager==None: 
-		    fraction = float(minibatch_size) / float(total_points)
-		    if fraction < 0.5:
-		        self.index_manager = ReplacementSampling(minibatch_size,
-		                                                 total_points,
-		                                                 rng)
-		    else:
-		        self.index_manager = NoReplacementSampling(minibatch_size,
-                                                           total_points,
-                                                           rng)
-        else: #Explicitly specified behaviour.
-		    if input_batch_manager.__class__ not in IndexManager.__subclasses__():
-			    raise NotImplementedError
-		    self.index_manager = input_batch_manager
+		if input_batch_manager==None: 
+			fraction = float(minibatch_size) / float(total_points)
+			if fraction < 0.5:
+				self.index_manager = ReplacementSampling(minibatch_size,
+														 total_points,
+														 rng)
+			else:
+				self.index_manager = NoReplacementSampling(minibatch_size,
+														   total_points,
+	                                                       rng)
+		else: #Explicitly specified behaviour.
+			if input_batch_manager.__class__ not in IndexManager.__subclasses__():
+				raise NotImplementedError
+			self.index_manager = input_batch_manager
 			
-    def update_feed_dict(self, key_dict, feed_dict):
-        next_indeces = self.index_manager.nextIndeces()
-        feed_dict[key_dict[self]] = self._array[next_indeces]
+	def update_feed_dict(self, key_dict, feed_dict):
+		next_indeces = self.index_manager.nextIndeces()
+		feed_dict[key_dict[self]] = self._array[next_indeces]
