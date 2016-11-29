@@ -28,19 +28,19 @@ class IndexManager(object):
         raise NotImplementedError
 
 class ReplacementSampling(IndexManager):
-	def nextIndeces(self):
-		return self.rng.randint(self.total_points, 
-		                        size=self.minibatch_size)
+    def nextIndeces(self):
+        return self.rng.randint(self.total_points, 
+                                size=self.minibatch_size)
 
 class NoReplacementSampling(IndexManager):
-	def __init__(self, minibatch_size, total_points, rng = None):
-	    assert(minibatch_size<=total_points,
-	           "replacement sampled minibatch size must be less than data size") 
-	    IndexManager.__init__(self, minibatch_size, total_points, rng)
-	
-	def nextIndeces(self):
-		permutation = self.rng.permutation(self.total_points)
-		return permutation[:self.minibatch_size]
+    def __init__(self, minibatch_size, total_points, rng = None):
+        assert(minibatch_size<=total_points,
+               "replacement sampled minibatch size must be less than data size") 
+        IndexManager.__init__(self, minibatch_size, total_points, rng)
+    
+    def nextIndeces(self):
+        permutation = self.rng.permutation(self.total_points)
+        return permutation[:self.minibatch_size]
 
 class SequenceIndeces(IndexManager):
     """
@@ -50,11 +50,11 @@ class SequenceIndeces(IndexManager):
     def __init__(self, minibatch_size, total_points, rng = None):
         self.counter = 0
         IndexManager.__init__(self, minibatch_size, total_points, rng)
-		
+        
     def nextIndeces(self):
         """
-		Written so that if total_points
-		changes this will still work
+        Written so that if total_points
+        changes this will still work
         """
         firstIndex = self.counter
         lastIndex = self.counter + self.minibatch_size
@@ -90,7 +90,7 @@ class MinibatchData(DataHolder):
                                    minibatch_size, 
                                    total_points,
                                    rng)
-        
+                                       
     def parseGenerationMethod(self, 
                               input_batch_manager, 
                               minibatch_size,
@@ -100,21 +100,21 @@ class MinibatchData(DataHolder):
         #When minibatch_size is a small fraction of total_point
         #ReplacementSampling should give similar results to 
         #NoReplacementSampling and the former can be much faster.
-		if input_batch_manager==None: 
-			fraction = float(minibatch_size) / float(total_points)
-			if fraction < 0.5:
-				self.index_manager = ReplacementSampling(minibatch_size,
-														 total_points,
-														 rng)
-			else:
-				self.index_manager = NoReplacementSampling(minibatch_size,
-														   total_points,
-	                                                       rng)
-		else: #Explicitly specified behaviour.
-			if input_batch_manager.__class__ not in IndexManager.__subclasses__():
-				raise NotImplementedError
-			self.index_manager = input_batch_manager
-			
-	def update_feed_dict(self, key_dict, feed_dict):
-		next_indeces = self.index_manager.nextIndeces()
-		feed_dict[key_dict[self]] = self._array[next_indeces]
+        if input_batch_manager==None: 
+            fraction = float(minibatch_size) / float(total_points)
+            if fraction < 0.5:
+                self.index_manager = ReplacementSampling(minibatch_size,
+                                                         total_points,
+                                                         rng)
+            else:
+                self.index_manager = NoReplacementSampling(minibatch_size,
+                                                           total_points,
+                                                           rng)
+        else: #Explicitly specified behaviour.
+            if input_batch_manager.__class__ not in IndexManager.__subclasses__():
+                raise NotImplementedError
+            self.index_manager = input_batch_manager
+            
+    def update_feed_dict(self, key_dict, feed_dict):
+        next_indeces = self.index_manager.nextIndeces()
+        feed_dict[key_dict[self]] = self._array[next_indeces]
