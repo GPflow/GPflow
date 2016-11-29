@@ -158,6 +158,14 @@ class ParamTestsDeeper(unittest.TestCase):
         self.assertFalse(hasattr(self.m, '_needs_recompile'))
         self.assertFalse(old_p.highest_parent is self.m)
 
+    def testReplacement2(self):
+        old_p = self.m.foo.bar
+        new_p = GPflow.param.Parameterized()
+        new_p.baz = GPflow.param.Param(3.0)
+        self.m.foo.bar = new_p
+        self.assertTrue(new_p.baz.highest_parent is self.m)
+        self.assertFalse(old_p.highest_parent is self.m)
+
     def testName(self):
         self.assertTrue(self.m.foo.name == 'foo')
         self.assertTrue(self.m.foo.bar.name == 'bar')
@@ -316,6 +324,12 @@ class TestParamList(unittest.TestCase):
         GPflow.param.ParamList([GPflow.param.Param(1)])
         with self.assertRaises(AssertionError):
             GPflow.param.ParamList([GPflow.param.Param(1), 'stringsnotallowed'])
+        with self.assertRaises(AssertionError):
+            # tuples not valid in constuctor:
+            GPflow.param.ParamList((GPflow.param.Param(1),))
+        with self.assertRaises(AssertionError):
+            # param objects not valid in constructor (must be in list)
+            GPflow.param.ParamList(GPflow.param.Param(1))
 
     def test_naming(self):
         p1 = GPflow.param.Param(1.2)

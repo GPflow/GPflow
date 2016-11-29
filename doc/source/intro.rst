@@ -20,7 +20,7 @@ What's the difference between GPy and GPflow?
 GPflow has origins in `GPy <http://github.com/sheffieldml/gpy>`_ by the `GPy contributors <https://github.com/SheffieldML/GPy/graphs/contributors>`_, and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:
 
  -  GPflow leverages TensorFlow for faster/bigger computation
- -  GPflow has much less code than GPy, mostly because all gradient computation is handled by tensorflow.
+ -  GPflow has much less code than GPy, mostly because all gradient computation is handled by TensorFlow.
  -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
  -  GPflow does not have any plotting functionality.
 
@@ -53,29 +53,60 @@ The following table summarizes the model options in GPflow.
 | Sparse approximation | :class:`GPflow.sgpr.SGPR`| :class:`GPflow.svgp.SVGP`  | :class:`GPflow.sgpmc.SGPMC` |
 +----------------------+--------------------------+----------------------------+-----------------------------+
 
+GPLVM
+~~~~~~~~~~~~~~~~~~~~~
+For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
+in GPflow. (`notebook <https://github.com/GPflow/GPflow/blob/master/notebooks/GPLVM.ipynb>`_).
+
+Citing GPflow
+------------
+
+To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/1610.08733). Sample Bibtex is given below:
+
+```
+@ARTICLE{GPflow2016,
+   author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and 
+	Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
+	Ghahramani, Zoubin and Hensman, James},
+    title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
+  journal = {arXiv preprint 1610.08733},
+     year = 2016,
+    month = oct
+}
+```
+
 References
 ----------
 [1] MCMC for Variationally Sparse Gaussian Processes
 J Hensman, A G de G Matthews, M Filippone, Z Ghahramani
-Advances in Neural Information Processing Systems, 1639-1647
+Advances in Neural Information Processing Systems, 1639-1647, 2015.
 
 [2] The variational Gaussian approximation revisited
 M Opper, C Archambeau
-Neural computation 21 (3), 786-792
+Neural computation 21 (3), 786-792, 2009.
 
 [3] Scalable Variational Gaussian Process Classification
 J Hensman, A G de G Matthews, Z Ghahramani
-Proceedings of AISTATS 18, 2015
+Proceedings of AISTATS 18, 2015.
 
 [4] Variational Learning of Inducing Variables in Sparse Gaussian Processes. 
 M Titsias
-Proceedings of AISTATS 12, 2009
+Proceedings of AISTATS 12, 2009.
 
 [5] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
 A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
-Proceedings of AISTATS 19, 2016
+Proceedings of AISTATS 19, 2016.
+
+[6] Gaussian process latent variable models for visualisation of high dimensional data.
+Lawrence, Neil D. 
+Advances in Neural Information Processing Systems, 329-336, 2004.
+
+[7] Bayesian Gaussian Process Latent Variable Model.
+Titsias, Michalis K., and Neil D. Lawrence. "
+Proceedings of AISTATS, 2010.
+
 
 Acknowledgements
 ----------------
 
-James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grant EP/I036575/1.
+James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grants EP/I036575/1 and EP/N014162/1.
