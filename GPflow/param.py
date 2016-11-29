@@ -529,7 +529,6 @@ class AutoFlow:
                     storage['feed_dict_keys'] = instance.get_feed_dict_keys()
                     feed_dict = {}
                     instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
-                    #storage['session'].run(tf.initialize_all_variables(), feed_dict=feed_dict)
                     storage['session'].run(tf.global_variables_initializer(), feed_dict=feed_dict)
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
