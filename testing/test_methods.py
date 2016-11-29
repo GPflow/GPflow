@@ -13,7 +13,7 @@
 # limitations under the License.from __future__ import print_function
 
 import GPflow
-from GPflow.minibatch import SequenceIndeces
+from GPflow.minibatch import SequenceIndices
 import numpy as np
 import unittest
 import tensorflow as tf
@@ -188,8 +188,8 @@ class TestStochasticGradients(unittest.TestCase):
                                  Z = Z,
                                  minibatch_size=minibatch_size)
         #This step changes the batch indeces to cycle.
-        model.X.index_manager = SequenceIndeces(minibatch_size,X.shape[0])
-        model.Y.index_manager = SequenceIndeces(minibatch_size,X.shape[0])
+        model.X.index_manager = SequenceIndices(minibatch_size,X.shape[0])
+        model.Y.index_manager = SequenceIndices(minibatch_size,X.shape[0])
         return model        
                 
     def getTfOptimizer(self):

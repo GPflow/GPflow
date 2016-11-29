@@ -15,7 +15,7 @@
 import tensorflow as tf
 import numpy as np
 import unittest
-from GPflow.minibatch import SequenceIndeces, MinibatchData
+from GPflow.minibatch import SequenceIndices, MinibatchData
 from GPflow.minibatch import ReplacementSampling, NoReplacementSampling
 
 class TestSequentialManager(unittest.TestCase):
@@ -25,28 +25,28 @@ class TestSequentialManager(unittest.TestCase):
     def testA(self):
         minibatch_size = 3
         total_points = 5
-        sequenceManager = SequenceIndeces(minibatch_size,total_points)
+        sequenceManager = SequenceIndices(minibatch_size,total_points)
         
-        indecesA = sequenceManager.nextIndeces()
+        indecesA = sequenceManager.nextIndices()
         self.assertTrue((indecesA==np.arange(0,minibatch_size)).all())
 
-        indecesB = sequenceManager.nextIndeces()
+        indecesB = sequenceManager.nextIndices()
         self.assertTrue((indecesB==np.array([3,4,0 ])).all())
     
     def testB(self):
         minibatch_size = 5
         total_points = 2
-        sequenceManager = SequenceIndeces(minibatch_size,total_points)
+        sequenceManager = SequenceIndices(minibatch_size,total_points)
         
-        indecesA = sequenceManager.nextIndeces()
-        targetIndecesA = np.array([0,1,0,1,0])
+        indecesA = sequenceManager.nextIndices()
+        targetIndicesA = np.array([0,1,0,1,0])
             
-        self.assertTrue((indecesA==targetIndecesA).all())
+        self.assertTrue((indecesA==targetIndicesA).all())
 
-        indecesB = sequenceManager.nextIndeces()
-        targetIndecesB = np.array([1,0,1,0,1])
+        indecesB = sequenceManager.nextIndices()
+        targetIndicesB = np.array([1,0,1,0,1])
             
-        self.assertTrue((indecesB==targetIndecesB).all())
+        self.assertTrue((indecesB==targetIndicesB).all())
 
 class TestRandomIndexManagers(unittest.TestCase):
     def setUp(self):
@@ -67,7 +67,7 @@ class TestRandomIndexManagers(unittest.TestCase):
         data_size = 3
         tolerance = 1e-2
         rs = ReplacementSampling(minibatch_size,data_size)
-        indeces = rs.nextIndeces().tolist()
+        indeces = rs.nextIndices().tolist()
         self.assertTrue(self.checkUniformDist(indeces,data_size))
                     
     def testNoReplacement(self):
@@ -80,7 +80,7 @@ class TestRandomIndexManagers(unittest.TestCase):
         mini_size = 3
         data_size = 3
         nrs = NoReplacementSampling(mini_size,data_size)
-        indeces = np.sort(nrs.nextIndeces()).tolist()
+        indeces = np.sort(nrs.nextIndices()).tolist()
         self.assertEqual(indeces,[0,1,2])
 
         one = 1     
@@ -88,7 +88,7 @@ class TestRandomIndexManagers(unittest.TestCase):
         
         indecesOverall = []
         for repeatIndex in range(3000):
-            indeces = nrsb.nextIndeces().tolist()
+            indeces = nrsb.nextIndices().tolist()
             indecesOverall = indecesOverall + indeces
         self.assertTrue(self.checkUniformDist(indecesOverall,data_size))
             
@@ -107,7 +107,7 @@ class TestMinibatchData(unittest.TestCase):
         self.assertRaises(NotImplementedError,constructor)
 
     def testB(self):
-        sm = SequenceIndeces(self.minibatch_size, self.nDataPoints)
+        sm = SequenceIndices(self.minibatch_size, self.nDataPoints)
         md = MinibatchData(self.dummyArray, 
                            self.minibatch_size, 
                            rng=None, 
