@@ -16,118 +16,13 @@
 from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .param import Param, DataHolder
+from .param import Param
 from .model import GPModel
 from . import transforms, conditionals, kullback_leiblers
 from .mean_functions import Zero
 from .tf_wraps import eye
 from ._settings import settings
-
-class IndexManager(object):
-    """
-    Base clase for methods of batch indexing data.
-    rng is an instance of np.random.RandomState, defaults to seed 0.
-    """
-    def __init__(self, minibatch_size, total_points, rng = None):
-        self.minibatch_size = minibatch_size
-        self.total_points = total_points
-        self.rng = rng or np.random.RandomState(0)
-        
-    def nextIndeces(self):
-        raise NotImplementedError
-
-class ReplacementSampling(IndexManager):
-	def nextIndeces(self):
-		return self.rng.randint(self.total_points, 
-		                        size=self.minibatch_size)
-
-class NoReplacementSampling(IndexManager):
-	def __init__(self, minibatch_size, total_points, rng = None):
-	    assert(minibatch_size<=total_points,
-	           "replacement sampled minibatch size must be less than data size") 
-	    IndexManager.__init__(self, minibatch_size, total_points, rng)
-	
-	def nextIndeces(self):
-		permutation = self.rng.permutation(self.total_points)
-		return permutation[:self.minibatch_size]
-
-class SequenceIndeces(IndexManager):
-    """
-    A class that maintains the state necessary to manage 
-    sequential indexing of data holders.
-    """
-    def __init__(self, minibatch_size, total_points, rng = None):
-        self.counter = 0
-        IndexManager.__init__(self, minibatch_size, total_points, rng)
-		
-    def nextIndeces(self):
-        """
-		Written so that if total_points
-		changes this will still work
-        """
-        firstIndex = self.counter
-        lastIndex = self.counter + self.minibatch_size
-        self.counter = lastIndex % self.total_points
-        return np.arange(firstIndex,lastIndex) % self.total_points
-
-class MinibatchData(DataHolder):
-    """
-    A special DataHolder class which feeds a minibatch 
-    to tensorflow via update_feed_dict().
-    """
-    
-    #List of valid specifiers for generation methods.
-    _generation_methods = ['replace','noreplace','sequential']
-    
-    def __init__(self, array, 
-                       minibatch_size, 
-                       rng=None, 
-                       batch_manager=None):
-        """
-        array is a numpy array of data.
-        minibatch_size (int) is the size of the minibatch
-        
-        batch_manager specified data sampling scheme and is a subclass 
-        of IndexManager.
-        
-        Note: you may want to randomize the order of the data 
-        if using sequential generation.
-        """
-        DataHolder.__init__(self, array, on_shape_change='pass')
-        total_points = self._array.shape[0]
-        self.parseGenerationMethod(batch_manager, 
-                                   minibatch_size, 
-                                   total_points,
-                                   rng)
-        
-    def parseGenerationMethod(self, 
-                              input_batch_manager, 
-                              minibatch_size,
-                              total_points,
-                              rng):
-        #Logic for default behaviour.
-        #When minibatch_size is a small fraction of total_point
-        #ReplacementSampling should give similar results to 
-        #NoReplacementSampling and the former can be much faster.
-        if input_batch_manager==None: 
-		    fraction = float(minibatch_size) / float(total_points)
-		    if fraction < 0.5:
-		        self.index_manager = ReplacementSampling(minibatch_size,
-		                                                 total_points,
-		                                                 rng)
-		    else:
-		        self.index_manager = NoReplacementSampling(minibatch_size,
-                                                           total_points,
-                                                           rng)
-        else: #Explicitly specified behaviour.
-		    if input_batch_manager.__class__ not in IndexManager.__subclasses__():
-			    raise NotImplementedError
-		    self.index_manager = input_batch_manager
-			
-    def update_feed_dict(self, key_dict, feed_dict):
-        next_indeces = self.index_manager.nextIndeces()
-        feed_dict[key_dict[self]] = self._array[next_indeces]
-
+from .minibatch import MinibatchData
 
 class SVGP(GPModel):
     """

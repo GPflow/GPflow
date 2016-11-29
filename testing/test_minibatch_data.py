@@ -15,8 +15,8 @@
 import tensorflow as tf
 import numpy as np
 import unittest
-from GPflow.svgp import SequenceIndeces, MinibatchData
-from GPflow.svgp import ReplacementSampling, NoReplacementSampling
+from GPflow.minibatch import SequenceIndeces, MinibatchData
+from GPflow.minibatch import ReplacementSampling, NoReplacementSampling
 
 class TestSequentialManager(unittest.TestCase):
     def setUp(self):
