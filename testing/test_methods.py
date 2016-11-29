@@ -13,7 +13,7 @@
 # limitations under the License.from __future__ import print_function
 
 import GPflow
-from GPflow.svgp import SequenceIndeces
+from GPflow.minibatch import SequenceIndeces
 import numpy as np
 import unittest
 import tensorflow as tf
