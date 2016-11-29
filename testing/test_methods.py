@@ -168,7 +168,7 @@ class TestStochasticGradients(unittest.TestCase):
     In this test we substitute a deterministic analogue of the batchs
     sampler for which we can predict the effects of different updates.
     """
-    def setUp(self):		
+    def setUp(self):        
         self.XAB = np.atleast_2d(np.array([0.,1.])).T
         self.YAB = np.atleast_2d(np.array([-1.,3.])).T
         self.sharedZ = np.atleast_2d(np.array([0.5]) )
@@ -179,25 +179,25 @@ class TestStochasticGradients(unittest.TestCase):
         newX = baseX[indeces]
         newY = baseY[indeces]
         return newX, newY
-			
+            
     def getModel(self,X,Y,Z,minibatch_size):
         model = GPflow.svgp.SVGP(X,
-		                         Y,
-		                         kern = GPflow.kernels.RBF(1),
-								 likelihood = GPflow.likelihoods.Gaussian(),
-								 Z = Z,
+                                 Y,
+                                 kern = GPflow.kernels.RBF(1),
+                                 likelihood = GPflow.likelihoods.Gaussian(),
+                                 Z = Z,
                                  minibatch_size=minibatch_size)
         #This step changes the batch indeces to cycle.
         model.X.index_manager = SequenceIndeces(minibatch_size,X.shape[0])
         model.Y.index_manager = SequenceIndeces(minibatch_size,X.shape[0])
-        return model		
-        		
+        return model        
+                
     def getTfOptimizer(self):
         learning_rate = .1
         opt = tf.train.GradientDescentOptimizer(learning_rate, 
                                                 use_locking=True)
         return opt
-        		
+                
     def getIndexedModel(self,X,Y,Z,minibatch_size,indeces):
         Xindeces,Yindeces = self.getIndexedData(X,Y,indeces)
         indexedModel = self.getModel(Xindeces,Yindeces,Z,minibatch_size)
@@ -230,11 +230,11 @@ class TestStochasticGradients(unittest.TestCase):
         modelOne.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
         modelTwo.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
         if checkSame:
-			self.assertTrue(self.checkModelsClose(modelOne,modelTwo))        
+            self.assertTrue(self.checkModelsClose(modelOne,modelTwo))        
         else:
-			self.assertFalse(self.checkModelsClose(modelOne,modelTwo)) 			
+            self.assertFalse(self.checkModelsClose(modelOne,modelTwo))          
         
-    def testOne(self):	
+    def testOne(self):  
         self.compareTwoModels([self.indexA,self.indexB],
                               [self.indexB,self.indexA],
                               2,
@@ -247,14 +247,14 @@ class TestStochasticGradients(unittest.TestCase):
                               1,
                               2,
                               1)        
-			                              
+                                          
     def testThree(self):
         self.compareTwoModels([self.indexA,self.indexA],
                               [self.indexA,self.indexB],
                               1,
                               1,
                               2,
-                              False)		          
+                              False)                  
 
 class TestSparseMCMC(unittest.TestCase):
     """
