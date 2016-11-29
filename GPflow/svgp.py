@@ -111,7 +111,7 @@ class MinibatchData(DataHolder):
         #NoReplacementSampling and the former can be much faster.
         if input_batch_manager==None: 
 		    fraction = float(minibatch_size) / float(total_points)
-		    if fraction > 0.5:
+		    if fraction < 0.5:
 		        self.index_manager = ReplacementSampling(minibatch_size,
 		                                                 total_points,
 		                                                 rng)
@@ -160,7 +160,7 @@ class SVGP(GPModel):
         """
         # sort out the X, Y into MiniBatch objects.
         if minibatch_size is None:
-            minibatch_size = X.shape[0]
+            minibatch_size = X.shape[0]     
         self.num_data = X.shape[0]
         X = MinibatchData(X, minibatch_size, np.random.RandomState(0))
         Y = MinibatchData(Y, minibatch_size, np.random.RandomState(0))
