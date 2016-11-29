@@ -17,7 +17,6 @@ from GPflow.svgp import SequenceIndeces
 import numpy as np
 import unittest
 import tensorflow as tf
-from IPython import embed
 
 class TestMethods(unittest.TestCase):
     def setUp(self):
@@ -194,7 +193,7 @@ class TestStochasticGradients(unittest.TestCase):
         return model		
         		
     def getTfOptimizer(self):
-        learning_rate = 1.
+        learning_rate = .1
         opt = tf.train.GradientDescentOptimizer(learning_rate, 
                                                 use_locking=True)
         return opt
@@ -214,7 +213,10 @@ class TestStochasticGradients(unittest.TestCase):
                 return False
         return True
     
-    def compareTwoModels(self,indecesOne,indecesTwo,batchOne,batchTwo):
+    def compareTwoModels(self,indecesOne,indecesTwo,
+                              batchOne,batchTwo,
+                              maxiter,
+                              checkSame=True):
         modelOne = self.getIndexedModel(self.XAB,
                                         self.YAB,
                                         self.sharedZ,
@@ -225,27 +227,34 @@ class TestStochasticGradients(unittest.TestCase):
                                         self.sharedZ,
                                         batchTwo,
                                         indecesTwo)
-        modelOne.optimize(method=self.getTfOptimizer(),maxiter=1)
-        modelTwo.optimize(method=self.getTfOptimizer(),maxiter=1)
-        self.assertTrue(self.checkModelsClose(modelOne,modelTwo))        
+        modelOne.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
+        modelTwo.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
+        if checkSame:
+			self.assertTrue(self.checkModelsClose(modelOne,modelTwo))        
+        else:
+			self.assertFalse(self.checkModelsClose(modelOne,modelTwo)) 			
         
     def testOne(self):	
         self.compareTwoModels([self.indexA,self.indexB],
                               [self.indexB,self.indexA],
                               2,
-                              2)
+                              2,
+                              3)
                               
     def testTwo(self):
         self.compareTwoModels([self.indexA,self.indexB],
                               [self.indexA,self.indexA],
                               1,
-                              2)        
-			
-    def testThree(self):	
-        self.compareTwoModels([self.indexB,self.indexA],
-                              [self.indexB,self.indexB],
+                              2,
+                              1)        
+			                              
+    def testThree(self):
+        self.compareTwoModels([self.indexA,self.indexA],
+                              [self.indexA,self.indexB],
                               1,
-                              2)          
+                              1,
+                              2,
+                              False)		          
 
 class TestSparseMCMC(unittest.TestCase):
     """
