@@ -13,10 +13,11 @@
 # limitations under the License.from __future__ import print_function
 
 import GPflow
+from GPflow.svgp import SequenceIndeces
 import numpy as np
 import unittest
 import tensorflow as tf
-
+from IPython import embed
 
 class TestMethods(unittest.TestCase):
     def setUp(self):
@@ -154,42 +155,98 @@ class TestSVGP(unittest.TestCase):
         m1.q_sqrt.fixed = True
         m1._compile()
 
-
-	def getModel(self,X,Y,Z,minibatch_size):
-		model = GPflow.svgp.SVGP(X,
+class TestStochasticGradients(unittest.TestCase):
+    """
+    In response to bug #281, we need to make sure stochastic update
+    happens correctly in tf optimizer mode.
+    To do this compare stochastic updates with deterministic updates
+    that should be equivalent.
+    
+    Data term in svgp likelihood is 
+    \sum_{i=1^N}E_{q(i)}[\log p(y_i | f_i )
+    
+    This sum is then approximated with an unbiased minibatch estimate.
+    In this test we substitute a deterministic analogue of the batchs
+    sampler for which we can predict the effects of different updates.
+    """
+    def setUp(self):		
+        self.XAB = np.atleast_2d(np.array([0.,1.])).T
+        self.YAB = np.atleast_2d(np.array([-1.,3.])).T
+        self.sharedZ = np.atleast_2d(np.array([0.5]) )
+        self.indexA = 0
+        self.indexB = 1
+        
+    def getIndexedData(self,baseX,baseY,indeces):
+        newX = baseX[indeces]
+        newY = baseY[indeces]
+        return newX, newY
+			
+    def getModel(self,X,Y,Z,minibatch_size):
+        model = GPflow.svgp.SVGP(X,
 		                         Y,
 		                         kern = GPflow.kernels.RBF(1),
 								 likelihood = GPflow.likelihoods.Gaussian(),
-								 Z = Z)
-		
-		return model
-
-    def test_stochastic_gradients(self):
-        """
-        In response to bug #281, we need to make sure stochastic update
-        happens correctly in tf optimizer mode.
-        To do this compare stochastic updates with deterministic updates
-        that should be equivalent.
-        """		
-        X = np.atleast_2d(np.array([0.,1.])).T
-        Y = np.atleast_2d(np.array([-1.,3.])).T
-        sharedZ = np.atleast_2d(np.array([0.5]) )
-        nDataPoints = X.shape[0]
-        nOptimizerIterations = 1
+								 Z = Z,
+                                 minibatch_size=minibatch_size)
+        #This step changes the batch indeces to cycle.
+        model.X.index_manager = SequenceIndeces(minibatch_size,X.shape[0])
+        model.Y.index_manager = SequenceIndeces(minibatch_size,X.shape[0])
+        return model		
+        		
+    def getTfOptimizer(self):
+        learning_rate = 1.
+        opt = tf.train.GradientDescentOptimizer(learning_rate, 
+                                                use_locking=True)
+        return opt
+        		
+    def getIndexedModel(self,X,Y,Z,minibatch_size,indeces):
+        Xindeces,Yindeces = self.getIndexedData(X,Y,indeces)
+        indexedModel = self.getModel(Xindeces,Yindeces,Z,minibatch_size)
+        return indexedModel
         
+    def checkModelsClose(self,modelA,modelB,tolerance=1e-2):
+        modelA_dict = modelA.get_parameter_dict()
+        modelB_dict = modelB.get_parameter_dict()
+        if sorted(modelA_dict.keys())!=sorted(modelB_dict.keys()):
+            return False
+        for key in modelA_dict:
+            if ((modelA_dict[key] - modelB_dict[key])>tolerance).any():
+                return False
+        return True
+    
+    def compareTwoModels(self,indecesOne,indecesTwo,batchOne,batchTwo):
+        modelOne = self.getIndexedModel(self.XAB,
+                                        self.YAB,
+                                        self.sharedZ,
+                                        batchOne,
+                                        indecesOne)
+        modelTwo = self.getIndexedModel(self.XAB,
+                                        self.YAB,
+                                        self.sharedZ,
+                                        batchTwo,
+                                        indecesTwo)
+        modelOne.optimize(method=self.getTfOptimizer(),maxiter=1)
+        modelTwo.optimize(method=self.getTfOptimizer(),maxiter=1)
+        self.assertTrue(self.checkModelsClose(modelOne,modelTwo))        
         
-        Xs = []
-        Ys = []
-        models = []
-        
-        for index in range(nDataPoints):
-			Xs.append(np.vstack( [ X[index,:] for i in range(nDataPoints) ] ))
-			Ys.append(np.vstack( [ Y[index,:] for i in range(nDataPoints) ] ))
-		    
-		for repeatIndex in range(nDataPoints):
-		
+    def testOne(self):	
+        self.compareTwoModels([self.indexA,self.indexB],
+                              [self.indexB,self.indexA],
+                              2,
+                              2)
+                              
+    def testTwo(self):
+        self.compareTwoModels([self.indexA,self.indexB],
+                              [self.indexA,self.indexA],
+                              1,
+                              2)        
 			
-        
+    def testThree(self):	
+        self.compareTwoModels([self.indexB,self.indexA],
+                              [self.indexB,self.indexB],
+                              1,
+                              2)          
+
 class TestSparseMCMC(unittest.TestCase):
     """
     This test makes sure that when the inducing points are the same as the data
