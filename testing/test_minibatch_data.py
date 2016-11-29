@@ -120,6 +120,19 @@ class TestMinibatchData(unittest.TestCase):
         test_dict = {output_string : test_out_array }                     
         self.assertEqual(feed_dict.keys(),test_dict.keys())
         self.assertTrue((feed_dict[output_string]==test_out_array).all())
-        
+
+    def testC(self):
+        #Test the manager selection logic.
+        md = MinibatchData(self.dummyArray, 
+                           self.minibatch_size, 
+                           rng=None)        
+        self.assertEqual(md.index_manager.__class__, ReplacementSampling)                  
+
+
+        md = MinibatchData(self.dummyArray, 
+                           self.minibatch_size*2, 
+                           rng=None)        
+        self.assertEqual(md.index_manager.__class__, NoReplacementSampling)          
+ 
 if __name__ == "__main__":
     unittest.main()
