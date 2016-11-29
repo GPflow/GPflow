@@ -75,13 +75,13 @@ class TestRandomIndexManagers(unittest.TestCase):
         data_size_err = 3
         constructor = lambda : NoReplacementSampling(mini_size_err,
                                                      data_size_err)
-        self.assertRaises(constructor)
+        self.assertRaises(AssertionError,constructor)
         
         mini_size = 3
         data_size = 3
         nrs = NoReplacementSampling(mini_size,data_size)
         indeces = np.sort(nrs.nextIndeces()).tolist()
-        self.assertEqual(indeces,range(data_size))
+        self.assertEqual(indeces,[0,1,2])
 
         one = 1     
         nrsb = NoReplacementSampling(one,data_size)

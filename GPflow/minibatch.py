@@ -34,8 +34,9 @@ class ReplacementSampling(IndexManager):
 
 class NoReplacementSampling(IndexManager):
     def __init__(self, minibatch_size, total_points, rng = None):
-        assert(minibatch_size<=total_points,
-               "replacement sampled minibatch size must be less than data size") 
+        #Can't sample without replacement is minibatch_size is larger 
+        #than total_points
+        assert(minibatch_size<=total_points) 
         IndexManager.__init__(self, minibatch_size, total_points, rng)
     
     def nextIndeces(self):
