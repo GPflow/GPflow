@@ -1,34 +1,61 @@
+# Copyright 2016 James Hensman, Valentine Svensson, alexggmatthews, fujiisoup
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+from __future__ import absolute_import
 import tensorflow as tf
 from .model import GPModel
-from .param import Param
 from .densities import multivariate_normal
 from .mean_functions import Zero
 from . import likelihoods
-from .tf_hacks import eye
+from .tf_wraps import eye
+from .param import DataHolder
+
 
 class GPR(GPModel):
+    """
+    Gaussian Process Regression.
+
+    This is a vanilla implementation of GP regression with a Gaussian
+    likelihood.  Multiple columns of Y are treated independently.
+
+    The log likelihood i this models is sometimes referred to as the 'marginal log likelihood', and is given by
+
+    .. math::
+
+       \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
+    """
     def __init__(self, X, Y, kern, mean_function=Zero()):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         kern, mean_function are appropriate GPflow objects
-
-        This is a vanilla implementation of GP regression with a Gaussian
-        likelihood.  Multiple columns of Y are treated independently.
         """
         likelihood = likelihoods.Gaussian()
+        X = DataHolder(X, on_shape_change='pass')
+        Y = DataHolder(Y, on_shape_change='pass')
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
-        self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
     def build_likelihood(self):
         """
-        Constuct a tensorflow function to compute the likelihood of a general GP model.
+        Construct a tensorflow function to compute the likelihood.
 
-            \log p(Y, V | theta).
+            \log p(Y | theta).
 
         """
-        K = self.kern.K(self.X) + eye(self.num_data) * self.likelihood.variance
+        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
 
@@ -46,15 +73,16 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + eye(self.num_data) * self.likelihood.variance
+        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
-        V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X), lower=True)
+        V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))
         fmean = tf.matmul(tf.transpose(A), V) + self.mean_function(Xnew)
         if full_cov:
             fvar = self.kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
-            fvar = tf.tile(tf.expand_dims(fvar, 2), tf.pack([1, 1, tf.shape(self.Y)[1]]))
+            shape = tf.pack([1, 1, tf.shape(self.Y)[1]])
+            fvar = tf.tile(tf.expand_dims(fvar, 2), shape)
         else:
-            fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), reduction_indices=0)
-            fvar = tf.tile(tf.reshape(fvar, (-1,1)), [1, self.Y.shape[1]])
+            fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
+            fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, tf.shape(self.Y)[1]])
         return fmean, fvar

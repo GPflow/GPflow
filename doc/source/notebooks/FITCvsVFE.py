@@ -88,22 +88,22 @@ def plotPredictions( ax, model, color, label ):
 
 def trainSparseModel(xtrain,ytrain,exact_model,isFITC, xtest, ytest):
     sparse_model = getSparseModel(xtrain,ytrain,isFITC)
-    sparse_model.likelihood.variance._array = exact_model.likelihood.variance._array.copy()
-    sparse_model.kern.lengthscales._array = exact_model.kern.lengthscales._array.copy()
-    sparse_model.kern.variance._array = exact_model.kern.variance._array.copy()
+    sparse_model.likelihood.variance = exact_model.likelihood.variance.value.copy()
+    sparse_model.kern.lengthscales = exact_model.kern.lengthscales.value.copy()
+    sparse_model.kern.variance = exact_model.kern.variance.value.copy()
     callback = cb( sparse_model, xtest, ytest )
     for repeatIndex in range(nRepeats):
         print("repeatIndex ",repeatIndex)
-        sparse_model.optimize( display=False, max_iters = 2000 , tol=tol, callback=callback)
+        sparse_model.optimize(disp=False, maxiter= 2000, tol=tol, callback=callback)
     return sparse_model, callback    
 
 def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_inducing_points, ax_optimization, iterations, log_likelihoods,hold_out_likelihood, title):
     plotPredictions( ax_predictions, exact_model, 'g', label='Exact' )
     plotPredictions( ax_predictions, sparse_model, 'b', label='Approximate' )
     ax_predictions.legend(loc=9)
-    ax_predictions.plot( sparse_model.Z._array , -1.*np.ones( xtrain.shape ), 'ko' )
+    ax_predictions.plot( sparse_model.Z.value , -1.*np.ones( xtrain.shape ), 'ko' )
     ax_predictions.set_ylim( predict_limits )
-    ax_inducing_points.plot( xtrain, sparse_model.Z._array, 'bo' )
+    ax_inducing_points.plot( xtrain, sparse_model.Z.value, 'bo' )
     xs= np.linspace( ax_inducing_points.get_xlim()[0], ax_inducing_points.get_xlim()[1], 200 )
     ax_inducing_points.plot( xs, xs, 'g' )
     ax_inducing_points.set_xlabel('Optimal inducing point position')
@@ -149,7 +149,7 @@ def snelsonDemo():
 
     #run exact inference on training data.
     exact_model = getRegressionModel(xtrain,ytrain)
-    exact_model.optimize(max_iters = 2000000, tol=tol )
+    exact_model.optimize(maxiter= 2000000, tol=tol)
 
     figA, axes = plt.subplots(1,1)
     inds = np.argsort( xtrain.flatten() )
