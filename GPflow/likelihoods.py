@@ -414,9 +414,9 @@ class MultiClass(Likelihood):
         self.num_classes = num_classes
         if invlink is None:
             invlink = RobustMax(self.num_classes)
-            self.invlink = invlink
         elif not isinstance(invlink, RobustMax):
             raise NotImplementedError
+        self.invlink = invlink
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
