@@ -16,41 +16,13 @@
 from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .param import Param, DataHolder
+from .param import Param
 from .model import GPModel
 from . import transforms, conditionals, kullback_leiblers
 from .mean_functions import Zero
 from .tf_wraps import eye
 from ._settings import settings
-
-
-class MinibatchData(DataHolder):
-    """
-    A special DataHolder class which feeds a minibatch to tensorflow via update_feed_dict().
-    """
-    def __init__(self, array, minibatch_size, rng=None):
-        """
-        array is a numpy array of data.
-        minibatch_size (int) is the size of the minibatch
-        rng is an instance of np.random.RandomState(), defaults to seed 0.
-        """
-        DataHolder.__init__(self, array, on_shape_change='pass')
-        self.minibatch_size = minibatch_size
-        self.rng = rng or np.random.RandomState(0)
-
-    def generate_index(self):
-        if float(self.minibatch_size) / float(self._array.shape[0]) > 0.5:
-            return self.rng.permutation(self._array.shape[0])[:self.minibatch_size]
-        else:
-            # This is much faster than above, and for N >> minibatch,
-            # it doesn't make much difference. This actually
-            # becomes the limit when N is around 10**6, which isn't
-            # uncommon when using SVI.
-            return self.rng.randint(self._array.shape[0], size=self.minibatch_size)
-
-    def update_feed_dict(self, key_dict, feed_dict):
-        feed_dict[key_dict[self]] = self._array[self.generate_index()]
-
+from .minibatch import MinibatchData
 
 class SVGP(GPModel):
     """
@@ -83,7 +55,7 @@ class SVGP(GPModel):
         """
         # sort out the X, Y into MiniBatch objects.
         if minibatch_size is None:
-            minibatch_size = X.shape[0]
+            minibatch_size = X.shape[0]     
         self.num_data = X.shape[0]
         X = MinibatchData(X, minibatch_size, np.random.RandomState(0))
         Y = MinibatchData(Y, minibatch_size, np.random.RandomState(0))
