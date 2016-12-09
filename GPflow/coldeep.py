@@ -2,10 +2,7 @@ from functools import reduce
 import GPflow
 import numpy as np
 import tensorflow as tf
-from GPflow.tf_hacks import eye
-
-# TODO:
-# allow non-diagonal q(u)
+from GPflow.tf_wraps import eye
 
 
 def cho_solve(L, X):
@@ -52,11 +49,12 @@ class Layer(GPflow.param.Parameterized):
         if full_cov:
             samples = []
             for i in range(self.output_dim):
-                L = tf.cholesky(v[:, :, i])
-                samples.append(m[:, i] + tf.matmul(L, tf.random_normal(tf.shape(m)[:1], dtype=tf.float64)))
-            return tf.transpose(tf.pack(samples))
+                L = tf.cholesky(v[:, :, i] + eye(tf.shape(v)[1]) / self.beta)
+                W = tf.random_normal(tf.pack([tf.shape(m)[0], 1]), dtype=tf.float64)
+                samples.append(m[:, i:i+1] + tf.matmul(L, W))
+            return tf.concat(1, samples)
         else:
-            return m + tf.random_normal(tf.shape(m), dtype=tf.float64)*tf.sqrt(v)
+            return m + tf.random_normal(tf.shape(m), dtype=tf.float64)*tf.sqrt(v + 1./self.beta)
 
 
 class HiddenLayer(Layer):
@@ -93,10 +91,9 @@ class HiddenLayer(Layer):
         forward_var = tf.reduce_sum(tf.square(tmp), 2) + 1./self.beta
 
         # complete the square term
-        psi2_centered = psi2 - tf.matmul(tf.transpose(psi1), psi1)
-        KmmiuuT = cho_solve(Lmm, uuT)
-        KmmiuuTKmmi = cho_solve(Lmm, tf.transpose(KmmiuuT))
-        self._log_marginal_contribution += -0.5*self.beta * tf.reduce_sum(psi2_centered * KmmiuuTKmmi)
+        KmmiPsi2Kmmi = cho_solve(Lmm, tf.transpose(KmmiPsi2))
+        tmp = KmmiPsi2Kmmi - tf.matmul(tf.transpose(psi1Kmmi), psi1Kmmi)
+        self._log_marginal_contribution += -0.5 * self.beta * tf.reduce_sum(tmp * uuT)
 
         return forward_mean, forward_var
 
@@ -146,9 +143,9 @@ class ObservedLayer(Layer):
         trace = psi0 - tf.reduce_sum(tf.diag_part(KmmiPsi2))
         self._log_marginal_contribution = -0.5 * self.beta * self.output_dim * trace
 
-        # CTS term
+        # CTS term -- including Thang's correction
         KmmiuuT = cho_solve(Lmm, uuT)
-        self._log_marginal_contribution += -0.5 * self.beta * tf.reduce_sum(tf.diag_part(tf.matmul(KmmiPsi2, KmmiuuT)))
+        self._log_marginal_contribution += -0.5 * self.beta * tf.reduce_sum(KmmiPsi2 * tf.transpose(KmmiuuT))
 
         # KL term
         self._log_marginal_contribution -= self.build_kl(Kmm)
@@ -157,10 +154,25 @@ class ObservedLayer(Layer):
         A = tf.transpose(cho_solve(Lmm, tf.transpose(psi1)))
         proj_mean = tf.matmul(A, self.q_mu)
         N = tf.cast(tf.shape(X_in_mean)[0], tf.float64)
-
         self._log_marginal_contribution += -0.5 * N * self.output_dim * tf.log(2 * np.pi / self.beta)
         self._log_marginal_contribution += -0.5 * self.beta * (np.sum(np.square(self.Y)) -
                                                                2.*tf.reduce_sum(self.Y*proj_mean))
+
+    def build_posterior_samples(self, Xtest, full_cov=False):
+        """
+        in the special case of the last layer, don't add noise to the predicted
+        samples (we want to predict the underlying value instead...)
+        """
+        m, v = self.build_predict(Xtest, full_cov=full_cov)
+        if full_cov:
+            samples = []
+            for i in range(self.output_dim):
+                L = tf.cholesky(v[:, :, i] + eye(tf.shape(v)[1]) / 1e6)
+                W = tf.random_normal(tf.pack([tf.shape(m)[0], 1]), dtype=tf.float64)
+                samples.append(m[:, i:i+1] + tf.matmul(L, W))
+            return tf.concat(1, samples)
+        else:
+            return m + tf.random_normal(tf.shape(m), dtype=tf.float64)*tf.sqrt(v)
 
 
 class ColDeep(GPflow.model.Model):
@@ -223,21 +235,17 @@ class ColDeep(GPflow.model.Model):
             Xtest = l.build_posterior_samples(Xtest, full_cov=True)
         return Xtest
 
-if __name__ == "__main__":
-    from matplotlib import pyplot as plt
-    X = np.linspace(-3, 3, 100)[:, None]
-    Y = np.where(X < 0, -1, 1) + np.random.randn(100, 1) * 0.01
-    m = ColDeep(X, Y, (1,), (15, 15))
-    for l in m.layers:
-        l.Z.fixed = True
-        l.kern.fixed = True
-        l.kern.lengthscales = 2.5
-        l.beta.fixed = True
-    m.optimize(maxiter=5000, disp=1)
+def plot(m):
+    # plot model fit
     plt.figure()
-    for i in range(10):
-        s = m.predict_sampling(X)
-        plt.plot(X, s, 'bo', mew=0, alpha=0.5)
+    extra = (X.max() - X.min()) * 1.0
+    Xtest = np.linspace(X.min() - extra, X.max() + extra, 300)[:, None]
+    for i in range(20):
+        s = m.predict_sampling(Xtest)
+        plt.plot(Xtest, s, 'bo', mew=0, alpha=0.1)
+    for i in range(3):
+        s = m.predict_sampling_correlated(Xtest)
+        plt.plot(Xtest, s, 'r', lw=1.2)
     plt.plot(X, Y, 'kx', mew=1.5, ms=8)
 
     for l in m.layers:
@@ -250,4 +258,21 @@ if __name__ == "__main__":
         plt.plot(Xtest, mu - 2*np.sqrt(var), 'r--')
         plt.plot(Xtest, mu + 2*np.sqrt(var), 'r--')
         mu, var = l.predict_f(Z)
-        plt.errorbar(Z.flatten(), mu.flatten(), yerr=2*np.sqrt(var).flatten(), capsize=0, elinewidth=1.5, ecolor='r', linewidth=0)
+        plt.errorbar(Z.flatten(), mu.flatten(), yerr=2*np.sqrt(var).flatten(),
+                     capsize=0, elinewidth=1.5, ecolor='r', linewidth=0)
+
+if __name__ == "__main__":
+    from matplotlib import pyplot as plt
+    X = np.linspace(-3, 3, 100)[:, None]
+    Y = np.where(X < 0, -1, 1) + np.random.randn(100, 1) * 0.01
+    m = ColDeep(X, Y, (1, 1, 1), (15, 15, 15, 15))
+    for l in m.layers:
+        l.Z.fixed = True
+        l.kern.fixed = True
+        l.kern.lengthscales = 2.5
+        l.beta.fixed = True
+        l.q_mu = np.random.randn(*l.q_mu.shape)
+    m.layers[0].kern.lengthscales = 5.
+    m.optimize(maxiter=5000, disp=1)
+
+    plot(m)
