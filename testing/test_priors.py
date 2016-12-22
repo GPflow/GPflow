@@ -31,6 +31,14 @@ class PriorModeTests(unittest.TestCase):
                 return 0
         self.m = FlatModel()
 
+    def testExponentialMode(self):
+        self.m.x = GPflow.param.Param(1.0)
+        self.m.x.prior = GPflow.priors.Exponential(2)
+        self.m.optimize(disp=0)
+
+        xmax = self.m.get_free_state()
+        self.assertTrue(np.allclose(xmax, 0))
+
     def testGaussianMode(self):
         self.m.x = GPflow.param.Param(1.0)
         self.m.x.prior = GPflow.priors.Gaussian(3, 1)

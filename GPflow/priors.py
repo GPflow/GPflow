@@ -46,6 +46,31 @@ class Prior(Parameterized):
         raise NotImplementedError
 
 
+class Exponential(Prior):
+    """
+    Exponential distribution.
+
+    Support: [0, inf)
+
+    Parameter:
+    rate -- float
+        Rate parameter (inverse scale) (rate > 0)
+    """
+    def __init__(self, rate):
+        Prior.__init__(self)
+        self.rate = np.atleast_1d(np.array(rate, np_float_type))
+        if rate <= 0:
+            raise ValueError("The rate parameter has to be positive.")
+
+    def logp(self, x):
+        return tf.cond(tf.reduce_any(x < 0),
+                       lambda: tf.constant(-np.infty, float_type),
+                       lambda: tf.reduce_sum(tf.log(self.rate) - self.rate * x))
+
+    def __str__(self):
+        return "Exp({})".format(self.rate)
+
+
 class Gaussian(Prior):
     def __init__(self, mu, var):
         Prior.__init__(self)
@@ -125,3 +150,4 @@ class Uniform(Prior):
 
     def __str__(self):
         return "U("+str(self.lower) + "," + str(self.upper) + ")"
+
