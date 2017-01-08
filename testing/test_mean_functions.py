@@ -222,7 +222,7 @@ class TestSwitchedMeanFunction(unittest.TestCase):
         sess = tf.Session()
         tf_array = switched_mean.get_free_state()
         switched_mean.make_tf_array(tf_array)
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         fd = {}
         switched_mean.update_feed_dict(switched_mean.get_feed_dict_keys(), fd)
         with switched_mean.tf_mode():
