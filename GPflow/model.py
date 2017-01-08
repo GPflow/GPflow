@@ -138,7 +138,7 @@ class Model(Parameterized):
             else:
                 opt_step = optimizer.minimize(self._minusF,
                                               var_list=[self._free_vars])
-            init = tf.initialize_all_variables()
+            init = tf.global_variables_initializer()
         self._session.run(init)
 
         # build tensorflow functions for computing the likelihood
