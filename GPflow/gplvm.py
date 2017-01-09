@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from .model import GPModel
 from .gpr import GPR
+from . import kullback_leiblers
 from .param import Param
 from .mean_functions import Zero
 from . import likelihoods
@@ -38,7 +39,6 @@ class GPLVM(GPR):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
         :param Y: data matrix, size N (number of points) x D (dimensions)
-        :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions)
         :param X_mean: latent positions (N x Q), for the initialisation of the latent space.
         :param kern: kernel specification, by default RBF
         :param mean_function: mean function, by default None.
@@ -57,11 +57,11 @@ class GPLVM(GPR):
 
 
 class BayesianGPLVM(GPModel):
-    def __init__(self, X_mean, X_var, Y, kern, M, Z=None, X_prior_mean=None, X_prior_var=None):
+    def __init__(self, X_mean, X_std, Y, kern, M, Z=None, X_prior_mean=None, X_prior_var=None):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
         :param X_mean: initial latent positions, size N (number of points) x Q (latent dimensions).
-        :param X_var: variance of latent positions (N x Q), for the initialisation of the latent space.
+        :param X_std: Chol of latent variances (N x Q or N x Q x Q), for the initialisation of the latent space.
         :param Y: data matrix, size N (number of points) x D (dimensions)
         :param kern: kernel specification, by default RBF
         :param M: number of inducing points
@@ -76,14 +76,23 @@ class BayesianGPLVM(GPModel):
         # diag_transform = transforms.DiagMatrix(X_var.shape[1])
         # self.X_var = Param(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
         #                    diag_transform)
-        assert X_var.ndim == 2
-        self.X_var = Param(X_var, transforms.positive)
+
+        if X_std.ndim == 2:
+            self.X_std = Param(X_std, transforms.positive)
+        elif X_std.ndim == 3:
+            self.X_std = Param(X_std)
+        else:
+            raise AssertionError("Incorrect number of dimensions for X_std.")
+
         self.num_data = X_mean.shape[0]
         self.output_dim = Y.shape[1]
 
-        assert np.all(X_mean.shape == X_var.shape)
+        if X_std.ndim == 2:
+            assert np.all(X_mean.shape == X_std.shape)
+        elif X_std.ndim == 3:
+            assert X_mean.shape[1] == X_std.shape[1] == X_std.shape[2]
         assert X_mean.shape[0] == Y.shape[0], 'X mean and Y must be same size.'
-        assert X_var.shape[0] == Y.shape[0], 'X var and Y must be same size.'
+        assert X_std.shape[0] == Y.shape[0], 'X var and Y must be same size.'
 
         # inducing points
         if Z is None:
@@ -92,7 +101,7 @@ class BayesianGPLVM(GPModel):
         else:
             assert Z.shape[0] == M
         self.Z = Param(Z)
-        self.num_latent = Z.shape[1]
+        self.num_latent = Z.shape[1]  # TODO: Better name for num_latent.
         assert X_mean.shape[1] == self.num_latent
 
         # deal with parameters for the prior mean variance of X
@@ -100,13 +109,20 @@ class BayesianGPLVM(GPModel):
             X_prior_mean = np.zeros((self.num_data, self.num_latent))
         self.X_prior_mean = X_prior_mean
         if X_prior_var is None:
-            X_prior_var = np.ones((self.num_data, self.num_latent))
+            X_prior_var = np.eye(self.num_latent)  # For now I set the X prior variance to zero
         self.X_prior_var = X_prior_var
 
         assert X_prior_mean.shape[0] == self.num_data
         assert X_prior_mean.shape[1] == self.num_latent
-        assert X_prior_var.shape[0] == self.num_data
+        assert X_prior_var.shape[0] == self.num_latent
         assert X_prior_var.shape[1] == self.num_latent
+
+    @property
+    def _X_var(self):
+        if self.X_std.get_shape().ndims == 3:
+            return tf.matmul(self.X_std, self.X_std, transpose_b=True)
+        elif self.X_std.get_shape().ndims == 2:
+            return tf.square(self.X_std)
 
     def build_likelihood(self):
         """
@@ -114,10 +130,10 @@ class BayesianGPLVM(GPModel):
         likelihood.
         """
         num_inducing = tf.shape(self.Z)[0]
-        psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
-        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
-        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self._X_var), 0)
+        psi1 = self.kern.eKxz(self.Z, self.X_mean, self._X_var)
+        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self._X_var), 0)
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * settings.numerics.jitter_level
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -132,15 +148,15 @@ class BayesianGPLVM(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        dX_var = self.X_var if len(self.X_var.get_shape()) == 2 else tf.matrix_diag_part(self.X_var)
-        NQ = tf.cast(tf.size(self.X_mean), float_type)
-        D = tf.cast(tf.shape(self.Y)[1], float_type)
-        KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
-             + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
-             - 0.5 * NQ \
-             + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
+        if self.X_std.get_shape().ndims == 3:
+            KL = kullback_leiblers.gauss_kl(tf.transpose(self.X_prior_mean - self.X_mean),
+                                            tf.transpose(self.X_std, [1, 2, 0]), self.X_prior_var)
+        elif self.X_std.get_shape().ndims == 2:
+            KL = kullback_leiblers.gauss_kl_diag(tf.transpose(self.X_prior_mean - self.X_mean),
+                                                 tf.transpose(self.X_std), self.X_prior_var)
 
         # compute log marginal bound
+        D = tf.cast(tf.shape(self.Y)[1], float_type)
         ND = tf.cast(tf.size(self.Y), float_type)
         bound = -0.5 * ND * tf.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
@@ -159,8 +175,8 @@ class BayesianGPLVM(GPModel):
         :param Xnew: Point to predict at.
         """
         num_inducing = tf.shape(self.Z)[0]
-        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
-        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
+        psi1 = self.kern.eKxz(self.Z, self.X_mean, self._X_var)
+        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self._X_var), 0)
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
         Kus = self.kern.K(self.Z, Xnew)
         sigma2 = self.likelihood.variance

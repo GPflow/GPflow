@@ -48,7 +48,7 @@ class TestBayesianGPLVM(unittest.TestCase):
         Z = np.linspace(0, 1, self.M)
         Z = np.expand_dims(Z, Q)  # inducing points
         m = GPflow.gplvm.BayesianGPLVM(X_mean=np.zeros((self.N, Q)),
-                                       X_var=np.ones((self.N, Q)), Y=self.Y, kern=k, M=self.M, Z=Z)
+                                       X_std=np.ones((self.N, Q)), Y=self.Y, kern=k, M=self.M, Z=Z)
         linit = m.compute_log_likelihood()
         m.optimize(maxiter=2)
         self.assertTrue(m.compute_log_likelihood() > linit)
@@ -59,7 +59,7 @@ class TestBayesianGPLVM(unittest.TestCase):
         X_mean = GPflow.gplvm.PCA_reduce(self.Y, Q)
         k = ekernels.RBF(Q, ARD=False)
         m = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean,
-                                       X_var=np.ones((self.N, Q)), Y=self.Y, kern=k, M=self.M)
+                                       X_std=np.ones((self.N, Q)), Y=self.Y, kern=k, M=self.M)
         linit = m.compute_log_likelihood()
         m.optimize(maxiter=2)
         self.assertTrue(m.compute_log_likelihood() > linit)
@@ -96,9 +96,9 @@ class TestBayesianGPLVM(unittest.TestCase):
             ka.kern_list[0].num_gauss_hermite_points = 0  # RBF should throw error if quadrature is used
             if(sepDims):
                 self.assertTrue(ka.on_separate_dimensions, 'analytic kernel must not use quadrature')
-            mq = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_var=np.ones((self.N, Q)), Y=self.Y,
+            mq = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_std=np.ones((self.N, Q)), Y=self.Y,
                                             kern=kq, M=self.M, Z=Z, X_prior_mean=X_prior_mean, X_prior_var=X_prior_var)
-            ma = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_var=np.ones((self.N, Q)), Y=self.Y,
+            ma = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_std=np.ones((self.N, Q)), Y=self.Y,
                                             kern=ka, M=self.M, Z=Z)
             mq._compile()
             ma._compile()
