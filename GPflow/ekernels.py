@@ -5,6 +5,7 @@ from . import kernels
 from .tf_wraps import eye
 from ._settings import settings
 
+from .quadrature import mvnquad, quadcov
 
 # can be removed when ekernels is compatible with quadrature
 import numpy as np
@@ -281,7 +282,6 @@ class Add(kernels.Add):
         vecmin = Z[None, :, :] - Xmu[:, None, :]  # NxMxD
         d = tf.matrix_triangular_solve(tcgm, vecmin[:, :, :, None])  # NxMxDx1
         exp = tf.exp(-0.5 * tf.reduce_sum(d ** 2.0, [2, 3]))  # NxM
-        # exp = tf.Print(exp, [tf.shape(exp)])
 
         vecplus = (Z[None, :, :, None] / lengthscales2[None, None, :, None] +
                    tf.matrix_solve(Xcov, Xmu[:, :, None])[:, None, :, :])  # NxMxDx1
@@ -299,16 +299,14 @@ class Add(kernels.Add):
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
-        X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
-                                    self.input_dim)  # (H**DxNxD, H**D)
 
-        cKa, cKb = [tf.reshape(
-            k.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=False),
-            (HpowD, N, M)
-        ) - k.eKxz(Z, Xmu, Xcov)[None, :, :] for k in (Ka, Kb)]  # Centred Kxz
         eKa, eKb = Ka.eKxz(Z, Xmu, Xcov), Kb.eKxz(Z, Xmu, Xcov)
-
-        cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
+        cc = quadcov(lambda x: Ka.K(x, Z, presliced=False),
+                     lambda x: Kb.K(x, Z, presliced=False),
+                     lambda m, S: Ka.eKxz(Z, m, S),
+                     lambda m, S: Kb.eKxz(Z, m, S),
+                     Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim,
+                     Dout1=(M,), Dout2=(M,))
         cm = eKa[:, None, :] * eKb[:, :, None]
         return cc + tf.transpose(cc, [0, 2, 1]) + cm + tf.transpose(cm, [0, 2, 1])
 

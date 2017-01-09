@@ -62,3 +62,47 @@ def mvnquad(f, means, covs, H, Din, Dout=()):
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
                     (-1, *np.ones(1+len(Dout), dtype=int)))
     return tf.reduce_sum(fX * wr, 0)
+
+
+def quadcov(f1, f2, muf1, muf2, means, covs, H, Din, Dout1=(), Dout2=()):
+    """
+    Computes N Gaussian expectation integrals of the covariance between two
+    functions.
+    using Gauss-Hermite quadrature.
+    :param f1: First covariate. Takes one input of shape ?xD.
+    :param f2: Second covariate. Takes one input of shape ?xD.
+    :param muf1: Mean of f1. Function that maps muf1(m, S)->(*Dout1)
+    :param muf2: Mean of f2. Function that maps muf2(m, S)->(*Dout2)
+    :param means: NxD
+    :param covs: NxDxD
+    :param H: Number of Gauss-Hermite evaluation points.
+    :param Din: Number of input dimensions. Needs to be known at call-time.
+    :param Dout1: Number of output dimensions of f1. Defaults to ().
+    :param Dout2: Number of output dimensions of f2. Defaults to (),
+    Both Dout1 and Dout2 is assumed to leave out the item index,
+    i.e. f actually maps (?xD)->(?x*Dout).
+
+    :return: covariance quadratures (N,*Dout1,*Dout2)
+    """
+    xn, wn = mvhermgauss(H, Din)
+    N = tf.shape(means)[0]
+
+    # transform points based on Gaussian parameters
+    cholXcov = tf.cholesky(covs)  # NxDxD
+    Xt = tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
+                         adj_y=True)  # NxDxH**D
+    X = 2.0 ** 0.5 * Xt + tf.expand_dims(means, 2)  # NxDxH**D
+
+    Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
+
+    # perform quadrature
+    cf1 = tf.reshape(f1(Xr), (H ** Din, N, *Dout1)) -\
+        muf1(means, covs)[None, ...]
+    cf2 = tf.reshape(f2(Xr), (H ** Din, N, *Dout2)) -\
+        muf2(means, covs)[None, ...]
+
+    fX = tf.reshape(cf1[:, :, :, None]*cf2[:, :, None, :],
+                    (H ** Din, N, *Dout1, *Dout2))
+    wr = np.reshape(wn * np.pi ** (-Din * 0.5),
+                    (-1, *np.ones(1+len(Dout1)+len(Dout2), dtype=int)))
+    return tf.reduce_sum(fX * wr, 0)
