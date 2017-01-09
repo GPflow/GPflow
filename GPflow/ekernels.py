@@ -5,9 +5,51 @@ from . import kernels
 from .tf_wraps import eye
 from ._settings import settings
 
+
+# can be removed when ekernels is compatible with quadrature
+import numpy as np
+import itertools
+
 int_type = settings.dtypes.int_type
 float_type = settings.dtypes.float_type
 
+# can be removed when ekernels is compatible with quadrature
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
+
+
+# can be removed when ekernels is compatible with quadrature
+def hermgauss(n):
+    x, w = np.polynomial.hermite.hermgauss(n)
+    x, w = x.astype(np_float_type), w.astype(np_float_type)
+    return x, w
+
+
+# can be removed when ekernels is compatible with quadrature
+def mvhermgauss(mu, covs, H, D):
+    """
+    Return the evaluation locations 'xn', and weights 'wn' for a multivariate
+    Gauss-Hermite quadrature.
+
+    The outputs can be used to approximate the following type of integral:
+    int exp(-x)*f(x) dx ~ sum_i w[i,:]*f(x[i,:])
+
+    :param H: Number of Gauss-Hermite evaluation points.
+    :param D: Number of input dimensions. Needs to be known at call-time.
+    :return: eval_locations 'x' (H**DxD), weights 'w' (H**D)
+    """
+    gh_x, gh_w = hermgauss(H)
+    xn = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
+    wn = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
+    N = tf.shape(mu)[0]
+
+    # transform points based on Gaussian parameters
+    cholXcov = tf.cholesky(covs)  # NxDxD
+    Xt = tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
+                         adj_y=True)  # NxDxH**D
+    X = 2.0 ** 0.5 * Xt + tf.expand_dims(mu, 2)  # NxDxH**D
+    Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, D))  # (H**D*N)xD
+    wr = wn * np.pi ** (-D * 0.5)
+    return Xr, wr
 
 class RBF(kernels.RBF):
     def eKdiag(self, X, Xcov=None):
@@ -257,7 +299,7 @@ class Add(kernels.Add):
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
-        X, wn = kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
+        X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
                                     self.input_dim)  # (H**DxNxD, H**D)
 
         cKa, cKb = [tf.reshape(
