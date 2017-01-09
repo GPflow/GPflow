@@ -644,7 +644,7 @@ class Combination(Kern):
         for k in kern_list:
             assert isinstance(k, Kern), "can only add Kern instances"
 
-        input_dim = np.max([k.input_dim
+        input_dim = np.max([(k.input_dim if k.active_dims.stop is None else k.active_dims.stop)
                             if type(k.active_dims) is slice else
                             np.max(k.active_dims) + 1
                             for k in kern_list])
