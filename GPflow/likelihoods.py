@@ -19,14 +19,9 @@ import tensorflow as tf
 import numpy as np
 from .param import Parameterized, Param, ParamList
 from ._settings import settings
+from .quadrature import hermgauss
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
-
-
-def hermgauss(n):
-    x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(np_float_type), w.astype(np_float_type)
-    return x, w
 
 
 class Likelihood(Parameterized):
