@@ -5,52 +5,11 @@ from . import kernels
 from .tf_wraps import eye
 from ._settings import settings
 
-from .quadrature import mvnquad, quadcov
-
-# can be removed when ekernels is compatible with quadrature
-import numpy as np
-import itertools
+from .quadrature import mvhermgauss
 
 int_type = settings.dtypes.int_type
 float_type = settings.dtypes.float_type
 
-# can be removed when ekernels is compatible with quadrature
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
-
-
-# can be removed when ekernels is compatible with quadrature
-def hermgauss(n):
-    x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(np_float_type), w.astype(np_float_type)
-    return x, w
-
-
-# can be removed when ekernels is compatible with quadrature
-def mvhermgauss(mu, covs, H, D):
-    """
-    Return the evaluation locations 'xn', and weights 'wn' for a multivariate
-    Gauss-Hermite quadrature.
-
-    The outputs can be used to approximate the following type of integral:
-    int exp(-x)*f(x) dx ~ sum_i w[i,:]*f(x[i,:])
-
-    :param H: Number of Gauss-Hermite evaluation points.
-    :param D: Number of input dimensions. Needs to be known at call-time.
-    :return: eval_locations 'x' (H**DxD), weights 'w' (H**D)
-    """
-    gh_x, gh_w = hermgauss(H)
-    xn = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
-    wn = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
-    N = tf.shape(mu)[0]
-
-    # transform points based on Gaussian parameters
-    cholXcov = tf.cholesky(covs)  # NxDxD
-    Xt = tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
-                         adj_y=True)  # NxDxH**D
-    X = 2.0 ** 0.5 * Xt + tf.expand_dims(mu, 2)  # NxDxH**D
-    Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, D))  # (H**D*N)xD
-    wr = wn * np.pi ** (-D * 0.5)
-    return Xr, wr
 
 class RBF(kernels.RBF):
     def eKdiag(self, X, Xcov=None):
@@ -282,6 +241,7 @@ class Add(kernels.Add):
         vecmin = Z[None, :, :] - Xmu[:, None, :]  # NxMxD
         d = tf.matrix_triangular_solve(tcgm, vecmin[:, :, :, None])  # NxMxDx1
         exp = tf.exp(-0.5 * tf.reduce_sum(d ** 2.0, [2, 3]))  # NxM
+        # exp = tf.Print(exp, [tf.shape(exp)])
 
         vecplus = (Z[None, :, :, None] / lengthscales2[None, None, :, None] +
                    tf.matrix_solve(Xcov, Xmu[:, :, None])[:, None, :, :])  # NxMxDx1
@@ -299,14 +259,22 @@ class Add(kernels.Add):
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
+        xn, wn = mvhermgauss(self.num_gauss_hermite_points, self.input_dim)
 
+        # transform points based on Gaussian parameters
+        cholXcov = tf.cholesky(Xcov)  # NxDxD
+        Xt = tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
+                             adj_y=True)  # NxDxH**D
+        X = 2.0 ** 0.5 * Xt + tf.expand_dims(means, 2)  # NxDxH**D
+        Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
+
+        cKa, cKb = [tf.reshape(
+            k.K(tf.reshape(Xr, (-1, self.input_dim)), Z, presliced=False),
+            (HpowD, N, M)
+        ) - k.eKxz(Z, Xmu, Xcov)[None, :, :] for k in (Ka, Kb)]  # Centred Kxz
         eKa, eKb = Ka.eKxz(Z, Xmu, Xcov), Kb.eKxz(Z, Xmu, Xcov)
-        cc = quadcov(lambda x: Ka.K(x, Z, presliced=False),
-                     lambda x: Kb.K(x, Z, presliced=False),
-                     lambda m, S: Ka.eKxz(Z, m, S),
-                     lambda m, S: Kb.eKxz(Z, m, S),
-                     Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim,
-                     Dout1=(M,), Dout2=(M,))
+
+        cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
         cm = eKa[:, None, :] * eKb[:, :, None]
         return cc + tf.transpose(cc, [0, 2, 1]) + cm + tf.transpose(cm, [0, 2, 1])
 
