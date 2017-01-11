@@ -1,3 +1,6 @@
+# Release 0.3.5
+ - Update to work with TensorFlow 0.12.1.
+
 # Release 0.3.4
  - Changes to stop computations all being done on the default graph.
  - Update list of GPflow contributors and other small changes to front page.
