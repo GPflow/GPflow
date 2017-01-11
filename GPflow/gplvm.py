@@ -109,7 +109,7 @@ class BayesianGPLVM(GPModel):
             X_prior_mean = np.zeros((self.num_data, self.num_latent))
         self.X_prior_mean = X_prior_mean
         if X_prior_var is None:
-            X_prior_var = np.eye(self.num_latent)  # For now I set the X prior variance to zero
+            X_prior_var = np.eye(self.num_latent)  # For now I set the X prior variance to one
         self.X_prior_var = X_prior_var
 
         assert X_prior_mean.shape[0] == self.num_data
