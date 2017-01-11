@@ -58,7 +58,7 @@ def mvnquad(f, means, covs, H, Din, Dout=()):
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
 
     # perform quadrature
-    fX = tf.reshape(f(Xr), (H ** Din, N, *Dout))
+    fX = tf.reshape(f(Xr), (H ** Din, N,) + Dout)
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
-                    (-1, *np.ones(1+len(Dout), dtype=int)))
+                    (-1,) + (1,)*(1+len(Dout)))
     return tf.reduce_sum(fX * wr, 0)
