@@ -89,7 +89,7 @@ class TestBayesianGPLVM(unittest.TestCase):
         Z = np.random.permutation(X_mean.copy())[:self.M]
         # Also test default N(0,1) is used
         X_prior_mean = np.zeros((self.N, Q))
-        X_prior_var = np.ones((self.N, Q))
+        X_prior_var = np.eye((Q))  # we are now limited to same variance
         Xtest = self.rng.randn(10, Q)
         for kq, ka, sepDims in zip(kernsQuadratu, kernsAnalytic, fOnSeparateDims):
             kq.num_gauss_hermite_points = 20  # speed up quadratic for tests
