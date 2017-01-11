@@ -77,7 +77,7 @@ class Kern(Parameterized):
         """
         Parameterized.__init__(self)
         self.scoped_keys.extend(['K', 'Kdiag'])
-        self.input_dim = input_dim
+        self.input_dim = int(input_dim)
         if active_dims is None:
             self.active_dims = slice(input_dim)
         elif type(active_dims) is slice:

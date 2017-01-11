@@ -235,7 +235,7 @@ class TestSwitchedLikelihood(unittest.TestCase):
         self.sess = tf.Session()
         free_array = self.switched_likelihood.get_free_state()
         self.switched_likelihood.make_tf_array(free_array)
-        self.sess.run(tf.initialize_all_variables())
+        self.sess.run(tf.global_variables_initializer())
 
     def test_logp(self):
         # switchedlikelihood
@@ -258,7 +258,7 @@ class TestSwitchedLikelihood(unittest.TestCase):
         # likelihood
         rslts = []
         for lik, y, f, fvar in zip(self.likelihoods, self.Y_list, self.F_list, self.Fvar_list):
-            self.sess.run(tf.initialize_all_variables())
+            self.sess.run(tf.global_variables_initializer())
             with lik.tf_mode():
                 rslts.append(self.sess.run(lik.predict_density(f, fvar, y)))
 
@@ -273,7 +273,7 @@ class TestSwitchedLikelihood(unittest.TestCase):
         # likelihood
         rslts = []
         for lik, y, f, fvar in zip(self.likelihoods, self.Y_list, self.F_list, self.Fvar_list):
-            self.sess.run(tf.initialize_all_variables())
+            self.sess.run(tf.global_variables_initializer())
             with lik.tf_mode():
                 rslts.append(self.sess.run(lik.variational_expectations(f, fvar, y)))
 
