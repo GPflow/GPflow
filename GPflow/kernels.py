@@ -24,9 +24,11 @@ from .param import Param, Parameterized, AutoFlow
 from . import transforms
 from ._settings import settings
 from .quadrature import hermgauss, mvhermgauss, mvnquad
+
 float_type = settings.dtypes.float_type
 int_type = settings.dtypes.int_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
+
 
 class Kern(Parameterized):
     """
@@ -160,8 +162,8 @@ class Kern(Parameterized):
         Xmu, _ = self._slice(Xmu, None)
         Xcov = self._slice_cov(Xcov)
         return mvnquad(lambda x: self.Kdiag(x, presliced=True),
-                           Xmu, Xcov,
-                           self.num_gauss_hermite_points, self.input_dim)  # N
+                       Xmu, Xcov,
+                       self.num_gauss_hermite_points, self.input_dim)  # N
 
     def eKxz(self, Z, Xmu, Xcov):
         """
@@ -174,13 +176,9 @@ class Kern(Parameterized):
         self._check_quadrature()
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
-        N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
-        HpowD = self.num_gauss_hermite_points ** self.input_dim
-        Kxz = lambda x: self.K(x, Z, presliced=True)
-        return mvnquad(Kxz, Xmu, Xcov, self.num_gauss_hermite_points,
-                            self.input_dim, Dout=(M,))  # (H**DxNxD, H**D)
-
+        return mvnquad(lambda x: self.K(x, Z, presliced=True), Xmu, Xcov, self.num_gauss_hermite_points,
+                       self.input_dim, Dout=(M,))  # (H**DxNxD, H**D)
 
     def exKxz(self, Z, Xmu, Xcov):
         """
@@ -199,7 +197,6 @@ class Kern(Parameterized):
         # still be done over the distribution x_{t-1, t}, only now the kernel will not depend on certain inputs.
         # However, this does mean that at the time of running this function we need to know the input *size* of Xmu, not
         # just `input_dim`.
-        N = tf.shape(Xmu)[0] - 1
         M = tf.shape(Z)[0]
         D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
 
@@ -212,15 +209,13 @@ class Kern(Parameterized):
         # First, transform the compact representation of Xmu and Xcov into a
         # list of full distributions.
         fXmu = tf.concat(1, (Xmu[:-1, :], Xmu[1:, :]))  # Nx2D
-        fXcovt = tf.concat(2, (Xcov[0, :-1, :, :],
-                               Xcov[1, :-1, :, :]))  # NxDx2D
-        fXcovb = tf.concat(2, (tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)),
-                               Xcov[0, 1:, :, :]))
-        fXcov = tf.concat(1, (fXcovt, fXcovb))  # Confirmed correct
+        fXcovt = tf.concat(2, (Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]))  # NxDx2D
+        fXcovb = tf.concat(2, (tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]))
+        fXcov = tf.concat(1, (fXcovt, fXcovb))
         return mvnquad(lambda x: tf.expand_dims(self.K(x[:, :D], Z), 2) *
-                       tf.expand_dims(x[:, D:], 1),
+                                 tf.expand_dims(x[:, D:], 1),
                        fXmu, fXcov, self.num_gauss_hermite_points,
-                       2*D, Dout=(M, D))
+                       2 * D, Dout=(M, D))
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
@@ -233,7 +228,6 @@ class Kern(Parameterized):
         self._check_quadrature()
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
-        N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
 
         def KzxKxz(x):
@@ -243,6 +237,7 @@ class Kern(Parameterized):
         return mvnquad(KzxKxz,
                        Xmu, Xcov, self.num_gauss_hermite_points,
                        self.input_dim, Dout=(M, M))
+
 
 class Static(Kern):
     """
