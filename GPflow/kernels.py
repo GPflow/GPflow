@@ -358,39 +358,6 @@ class RBF(Stationary):
         return self.variance * tf.exp(-self.square_dist(X, X2) / 2)
 
 
-class RBFMultiscale(RBF):
-    def _sliceZ(self, Z):
-        if isinstance(self.active_dims, slice):
-            Z = Z[:, self.active_dims, :]
-            return Z
-        else:  # TODO: when tf can do fancy indexing, use that.
-            Z = tf.transpose(tf.stack([Z[:, i, :] for i in self.active_dims]))
-            return Z
-
-    def _cust_square_dist(self, A, B, sc):
-        return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
-
-    def Kzx(self, Z, X):
-        X, _ = self._slice(X, None)
-        Z = self._sliceZ(Z)
-        Zmu = Z[:, :, 0]
-        Zlen = tf.exp(Z[:, :, 1])
-        idlengthscales = self.lengthscales + Zlen
-        d = self._cust_square_dist(X, Zmu, idlengthscales)
-        return tf.transpose(
-            self.variance * tf.exp(-d / 2) * tf.reshape(tf.reduce_prod(self.lengthscales / idlengthscales, 1), (1, -1)))
-
-    def Kzz(self, Z):
-        Z = self._sliceZ(Z)
-        Zmu = Z[:, :, 0]
-        Zlen = tf.exp(Z[:, :, 1])
-        idlengthscales2 = tf.square(self.lengthscales + Zlen)
-        sc = tf.sqrt(
-            tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(self.lengthscales))
-        d = self._cust_square_dist(Zmu, Zmu, sc)
-        return self.variance * tf.exp(-d / 2) * tf.reduce_prod(self.lengthscales / sc, 2)
-
-
 class Linear(Kern):
     """
     The linear kernel
