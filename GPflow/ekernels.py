@@ -5,6 +5,9 @@ from . import kernels
 from .tf_wraps import eye
 from ._settings import settings
 
+from .quadrature import mvhermgauss
+from numpy import pi as nppi
+
 int_type = settings.dtypes.int_type
 float_type = settings.dtypes.float_type
 
@@ -257,16 +260,24 @@ class Add(kernels.Add):
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
-        X, wn = kernels.mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points,
-                                    self.input_dim)  # (H**DxNxD, H**D)
+        xn, wn = mvhermgauss(self.num_gauss_hermite_points, self.input_dim)
+
+        # transform points based on Gaussian parameters
+        cholXcov = tf.cholesky(Xcov)  # NxDxD
+        Xt = tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
+                             adj_y=True)  # NxDxH**D
+
+        X = 2.0 ** 0.5 * Xt + tf.expand_dims(Xmu, 2)  # NxDxH**D
+        Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, self.input_dim))  # (H**D*N)xD
 
         cKa, cKb = [tf.reshape(
-            k.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=False),
+            k.K(tf.reshape(Xr, (-1, self.input_dim)), Z, presliced=False),
             (HpowD, N, M)
         ) - k.eKxz(Z, Xmu, Xcov)[None, :, :] for k in (Ka, Kb)]  # Centred Kxz
         eKa, eKb = Ka.eKxz(Z, Xmu, Xcov), Kb.eKxz(Z, Xmu, Xcov)
 
-        cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wn[:, None, None, None], 0)
+        wr = wn * nppi ** (-self.input_dim * 0.5)
+        cc = tf.reduce_sum(cKa[:, :, None, :] * cKb[:, :, :, None] * wr[:, None, None, None], 0)
         cm = eKa[:, None, :] * eKb[:, :, None]
         return cc + tf.transpose(cc, [0, 2, 1]) + cm + tf.transpose(cm, [0, 2, 1])
 
