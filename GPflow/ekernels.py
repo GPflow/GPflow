@@ -264,8 +264,7 @@ class Add(kernels.Add):
 
         # transform points based on Gaussian parameters
         cholXcov = tf.cholesky(Xcov)  # NxDxD
-        Xt = tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
-                             adj_y=True)  # NxDxH**D
+        Xt = tf.matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)), transpose_b=True)  # NxDxH**D
 
         X = 2.0 ** 0.5 * Xt + tf.expand_dims(Xmu, 2)  # NxDxH**D
         Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, self.input_dim))  # (H**D*N)xD

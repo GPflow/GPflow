@@ -23,7 +23,7 @@ import numpy as np
 from .param import Param, Parameterized, AutoFlow
 from . import transforms
 from ._settings import settings
-from .quadrature import mvhermgauss, mvnquad
+from .quadrature import hermgauss, mvhermgauss, mvnquad
 
 float_type = settings.dtypes.float_type
 int_type = settings.dtypes.int_type
@@ -206,51 +206,37 @@ class Kern(Parameterized):
         ]):
             Xmu = tf.identity(Xmu)
 
-<< << << < HEAD  # First, transform the compact representation of Xmu and Xcov into a list of full distributions.
-fXmu = tf.concat_v2((Xmu[:-1, :], Xmu[1:, :]), 1)  # Nx2D
-fXcovt = tf.concat_v2((Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]), 2)  # NxDx2D
-fXcovb = tf.concat_v2((tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]), 2)
-fXcov = tf.concat_v2((fXcovt, fXcovb), 1)  # Confirmed correct
-X, wn = mvhermgauss(fXmu, fXcov, self.num_gauss_hermite_points, D * 2)  # (H**2DxNx2D, H**2D)
-Kxz = tf.reshape(self.K(X[:, :D], Z), (Hpow2D, N, M))
-exKxz = tf.reduce_sum(
-    tf.expand_dims(tf.reshape(X[:, D:], (Hpow2D, N, D)), 2) * tf.expand_dims(Kxz, 3) * wn[:, None, None, None],
-    0)
-return exKxz
-== == == =  # First, transform the compact representation of Xmu and Xcov into a
-# list of full distributions.
-fXmu = tf.concat(1, (Xmu[:-1, :], Xmu[1:, :]))  # Nx2D
-fXcovt = tf.concat(2, (Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]))  # NxDx2D
-fXcovb = tf.concat(2, (tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]))
-fXcov = tf.concat(1, (fXcovt, fXcovb))
-return mvnquad(lambda x: tf.expand_dims(self.K(x[:, :D], Z), 2) *
-                         tf.expand_dims(x[:, D:], 1),
-               fXmu, fXcov, self.num_gauss_hermite_points,
-               2 * D, Dout=(M, D))
->> >> >> > 252
-baea29d7d781dd3568653f51a8deca29d4523
+        # First, transform the compact representation of Xmu and Xcov into a
+        # list of full distributions.
+        fXmu = tf.concat_v2((Xmu[:-1, :], Xmu[1:, :]), 1)  # Nx2D
+        fXcovt = tf.concat_v2((Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]), 2)  # NxDx2D
+        fXcovb = tf.concat_v2((tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]), 2)
+        fXcov = tf.concat_v2((fXcovt, fXcovb), 1)
+        return mvnquad(lambda x: tf.expand_dims(self.K(x[:, :D], Z), 2) *
+                                 tf.expand_dims(x[:, D:], 1),
+                       fXmu, fXcov, self.num_gauss_hermite_points,
+                       2 * D, Dout=(M, D))
 
+    def eKzxKxz(self, Z, Xmu, Xcov):
+        """
+        Computes <K_zx Kxz>_q(x).
+        :param Z: Fixed inputs MxD.
+        :param Xmu: X means (NxD).
+        :param Xcov: X covariances (NxDxD or NxD).
+        :return: NxMxM
+        """
+        self._check_quadrature()
+        Xmu, Z = self._slice(Xmu, Z)
+        Xcov = self._slice_cov(Xcov)
+        M = tf.shape(Z)[0]
 
-def eKzxKxz(self, Z, Xmu, Xcov):
-    """
-    Computes <K_zx Kxz>_q(x).
-    :param Z: Fixed inputs MxD.
-    :param Xmu: X means (NxD).
-    :param Xcov: X covariances (NxDxD or NxD).
-    :return: NxMxM
-    """
-    self._check_quadrature()
-    Xmu, Z = self._slice(Xmu, Z)
-    Xcov = self._slice_cov(Xcov)
-    M = tf.shape(Z)[0]
+        def KzxKxz(x):
+            Kxz = self.K(x, Z, presliced=True)
+            return tf.expand_dims(Kxz, 2) * tf.expand_dims(Kxz, 1)
 
-    def KzxKxz(x):
-        Kxz = self.K(x, Z, presliced=True)
-        return tf.expand_dims(Kxz, 2) * tf.expand_dims(Kxz, 1)
-
-    return mvnquad(KzxKxz,
-                   Xmu, Xcov, self.num_gauss_hermite_points,
-                   self.input_dim, Dout=(M, M))
+        return mvnquad(KzxKxz,
+                       Xmu, Xcov, self.num_gauss_hermite_points,
+                       self.input_dim, Dout=(M, M))
 
 
 class Static(Kern):
