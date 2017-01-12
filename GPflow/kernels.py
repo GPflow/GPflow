@@ -49,8 +49,8 @@ def mvhermgauss(means, covs, H, D):
     xn = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
     wn = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
     cholXcov = tf.cholesky(covs)  # NxDxD
-    X = 2.0 ** 0.5 * tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
-                                     adj_y=True) + tf.expand_dims(means, 2)  # NxDxH**D
+    X = 2.0 ** 0.5 * tf.matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
+                               transpose_b=True) + tf.expand_dims(means, 2)  # NxDxH**D
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, D))  # (H**D*N)xD
     return Xr, wn * np.pi ** (-D * 0.5)
 
@@ -132,7 +132,7 @@ class Kern(Parameterized):
             gather1 = tf.gather(tf.transpose(covr, [2, 1, 0]), self.active_dims)
             gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), self.active_dims)
             cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat(0, [cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]]))
+                             tf.concat_v2([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
         return cov
 
     def __add__(self, other):
@@ -240,10 +240,10 @@ class Kern(Parameterized):
             Xmu = tf.identity(Xmu)
 
         # First, transform the compact representation of Xmu and Xcov into a list of full distributions.
-        fXmu = tf.concat(1, (Xmu[:-1, :], Xmu[1:, :]))  # Nx2D
-        fXcovt = tf.concat(2, (Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]))  # NxDx2D
-        fXcovb = tf.concat(2, (tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]))
-        fXcov = tf.concat(1, (fXcovt, fXcovb))  # Confirmed correct
+        fXmu = tf.concat_v2((Xmu[:-1, :], Xmu[1:, :]), 1)  # Nx2D
+        fXcovt = tf.concat_v2((Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]), 2)  # NxDx2D
+        fXcovb = tf.concat_v2((tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]), 2)
+        fXcov = tf.concat_v2((fXcovt, fXcovb), 1)  # Confirmed correct
         X, wn = mvhermgauss(fXmu, fXcov, self.num_gauss_hermite_points, D * 2)  # (H**2DxNx2D, H**2D)
         Kxz = tf.reshape(self.K(X[:, :D], Z), (Hpow2D, N, M))
         exKxz = tf.reduce_sum(
@@ -283,7 +283,7 @@ class Static(Kern):
         self.variance = Param(variance, transforms.positive)
 
     def Kdiag(self, X):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class White(Static):
@@ -293,10 +293,10 @@ class White(Static):
 
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            d = tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+            d = tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
             return tf.diag(d)
         else:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
             return tf.zeros(shape, float_type)
 
 
@@ -307,9 +307,9 @@ class Constant(Static):
 
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X)[0]])
         else:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
         return tf.fill(shape, tf.squeeze(self.variance))
 
 
@@ -377,7 +377,7 @@ class Stationary(Kern):
         return tf.sqrt(r2 + 1e-12)
 
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class RBF(Stationary):
@@ -389,6 +389,39 @@ class RBF(Stationary):
         if not presliced:
             X, X2 = self._slice(X, X2)
         return self.variance * tf.exp(-self.square_dist(X, X2) / 2)
+
+
+class RBFMultiscale(RBF):
+    def _sliceZ(self, Z):
+        if isinstance(self.active_dims, slice):
+            Z = Z[:, self.active_dims, :]
+            return Z
+        else:  # TODO: when tf can do fancy indexing, use that.
+            Z = tf.transpose(tf.stack([Z[:, i, :] for i in self.active_dims]))
+            return Z
+
+    def _cust_square_dist(self, A, B, sc):
+        return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
+
+    def Kzx(self, Z, X):
+        X, _ = self._slice(X, None)
+        Z = self._sliceZ(Z)
+        Zmu = Z[:, :, 0]
+        Zlen = tf.exp(Z[:, :, 1])
+        idlengthscales = self.lengthscales + Zlen
+        d = self._cust_square_dist(X, Zmu, idlengthscales)
+        return tf.transpose(
+            self.variance * tf.exp(-d / 2) * tf.reshape(tf.reduce_prod(self.lengthscales / idlengthscales, 1), (1, -1)))
+
+    def Kzz(self, Z):
+        Z = self._sliceZ(Z)
+        Zmu = Z[:, :, 0]
+        Zlen = tf.exp(Z[:, :, 1])
+        idlengthscales2 = tf.square(self.lengthscales + Zlen)
+        sc = tf.sqrt(
+            tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(self.lengthscales))
+        d = self._cust_square_dist(Zmu, Zmu, sc)
+        return self.variance * tf.exp(-d / 2) * tf.reduce_prod(self.lengthscales / sc, 2)
 
 
 class Linear(Kern):
@@ -536,7 +569,7 @@ class PeriodicKernel(Kern):
         self.period = Param(period, transforms.positive)
 
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
