@@ -68,6 +68,20 @@ class TransformTests(unittest.TestCase):
                                         self.session.run(j2, feed_dict={self.x: self.x_np})))
 
 
+class TestOverflow(unittest.TestCase):
+    """
+    Bug #302 identified an overflow in the standard positive transform. This is a regression test.
+    """
+
+    def setUp(self):
+        self.t = GPflow.transforms.Log1pe()
+
+    def testOverflow(self):
+        y = self.t.forward(np.array([-300, -10, 10, 300]))
+        self.assertFalse(np.any(np.isinf(y)))
+        self.assertFalse(np.any(np.isnan(y)))
+
+
 class TestLowerTriTransform(unittest.TestCase):
     """
     Some extra tests for the LowerTriangle transformation.
