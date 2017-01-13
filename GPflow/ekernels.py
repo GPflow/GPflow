@@ -64,10 +64,10 @@ class RBF(kernels.RBF):
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0] - 1
         D = tf.shape(Xmu)[1]
-        Xsigmb = tf.slice(Xcov, [0, 0, 0, 0], tf.pack([-1, N, -1, -1]))
+        Xsigmb = tf.slice(Xcov, [0, 0, 0, 0], tf.stack([-1, N, -1, -1]))
         Xsigm = Xsigmb[0, :, :, :]  # NxDxD
         Xsigmc = Xsigmb[1, :, :, :]  # NxDxD
-        Xmum = tf.slice(Xmu, [0, 0], tf.pack([N, -1]))
+        Xmum = tf.slice(Xmu, [0, 0], tf.stack([N, -1]))
         Xmup = Xmu[1:, :]
         lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
         scalemat = tf.expand_dims(tf.diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
@@ -82,10 +82,10 @@ class RBF(kernels.RBF):
         smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxDx1
         q = tf.reduce_sum(smIvec * vec, [2])  # NxM
 
-        addvec = tf.batch_matmul(
+        addvec = tf.matmul(
             tf.tile(tf.expand_dims(Xsigmc, 1), (1, M, 1, 1)),
             tf.expand_dims(smIvec, 3),
-            adj_x=True
+            transpose_a=True
         )[:, :, :, 0] + tf.expand_dims(Xmup, 1)  # NxMxD
 
         return self.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
@@ -135,7 +135,7 @@ class Linear(kernels.Linear):
             raise NotImplementedError
         # use only active dimensions
         Z, Xmu = self._slice(Z, Xmu)
-        return self.variance * tf.batch_matmul(Xmu, tf.transpose(Z))
+        return self.variance * tf.matmul(Xmu, tf.transpose(Z))
 
     def exKxz(self, Z, Xmu, Xcov):
         with tf.control_dependencies([
@@ -149,7 +149,7 @@ class Linear(kernels.Linear):
         Xmum = Xmu[:-1, :]
         Xmup = Xmu[1:, :]
         op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
-        return self.variance * tf.batch_matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
+        return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
@@ -165,7 +165,7 @@ class Linear(kernels.Linear):
         N = tf.shape(Xmu)[0]
         mom2 = tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2) + Xcov  # NxDxD
         eZ = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
-        return self.variance ** 2.0 * tf.batch_matmul(tf.batch_matmul(eZ, mom2), eZ, adj_y=True)
+        return self.variance ** 2.0 * tf.matmul(tf.matmul(eZ, mom2), eZ, transpose_b=True)
 
 
 class Add(kernels.Add):
@@ -247,10 +247,10 @@ class Add(kernels.Add):
         vecplus = (Z[None, :, :, None] / lengthscales2[None, None, :, None] +
                    tf.matrix_solve(Xcov, Xmu[:, :, None])[:, None, :, :])  # NxMxDx1
         mean = tf.cholesky_solve(tcgm,
-                                 tf.batch_matmul(tf.tile(Xcov[:, None, :, :], [1, M, 1, 1]), vecplus)
+                                 tf.matmul(tf.tile(Xcov[:, None, :, :], [1, M, 1, 1]), vecplus)
                                  )[:, :, :, 0] * lengthscales2[None, None, :]  # NxMxD
-        a = tf.batch_matmul(tf.tile(Z[None, :, :], [N, 1, 1]),
-                            mean * exp[:, :, None] * det[:, None, None] * const, adj_y=True)
+        a = tf.matmul(tf.tile(Z[None, :, :], [N, 1, 1]),
+                            mean * exp[:, :, None] * det[:, None, None] * const, transpose_b=True)
         return a + tf.transpose(a, [0, 2, 1])
 
     def quad_eKzx1Kxz2(self, Ka, Kb, Z, Xmu, Xcov):
@@ -264,8 +264,7 @@ class Add(kernels.Add):
 
         # transform points based on Gaussian parameters
         cholXcov = tf.cholesky(Xcov)  # NxDxD
-        Xt = tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
-                             adj_y=True)  # NxDxH**D
+        Xt = tf.matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)), transpose_b=True)  # NxDxH**D
 
         X = 2.0 ** 0.5 * Xt + tf.expand_dims(Xmu, 2)  # NxDxH**D
         Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, self.input_dim))  # (H**D*N)xD

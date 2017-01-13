@@ -128,8 +128,8 @@ class Model(Parameterized):
                 f = self.build_likelihood() + self.build_prior()
                 g, = tf.gradients(f, self._free_vars)
 
-            self._minusF = tf.neg(f, name='objective')
-            self._minusG = tf.neg(g, name='grad_objective')
+            self._minusF = tf.negative(f, name='objective')
+            self._minusG = tf.negative(g, name='grad_objective')
 
             # The optimiser needs to be part of the computational graph, and needs
             # to be initialised before tf.initialise_all_variables() is called.
@@ -384,10 +384,10 @@ class GPModel(Model):
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
-            shape = tf.pack([tf.shape(L)[0], num_samples])
+            shape = tf.stack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=settings.dtypes.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
-        return tf.transpose(tf.pack(samples))
+        return tf.transpose(tf.stack(samples))
 
     @AutoFlow((float_type, [None, None]))
     def predict_y(self, Xnew):

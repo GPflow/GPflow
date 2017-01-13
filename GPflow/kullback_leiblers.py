@@ -131,7 +131,7 @@ def gauss_kl(q_mu, q_sqrt, K):
     KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), float_type)  # constant term
     Lq = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
     KL += -0.5*tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(Lq))))  # logdet
-    L_tiled = tf.tile(tf.expand_dims(L, 0), tf.pack([tf.shape(Lq)[0], 1, 1]))
+    L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([tf.shape(Lq)[0], 1, 1]))
     LiLq = tf.matrix_triangular_solve(L_tiled, Lq, lower=True)
     KL += 0.5 * tf.reduce_sum(tf.square(LiLq))  # Trace term
     return KL

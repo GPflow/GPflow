@@ -71,10 +71,10 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     # compute the covariance due to the conditioning
     if full_cov:
         fvar = kern.K(Xnew) - tf.matmul(A, A, transpose_a=True)
-        shape = tf.pack([tf.shape(f)[1], 1, 1])
+        shape = tf.stack([tf.shape(f)[1], 1, 1])
     else:
         fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
-        shape = tf.pack([tf.shape(f)[1], 1])
+        shape = tf.stack([tf.shape(f)[1], 1])
     fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # D x N x N or D x N
 
     # another backsubstitution in the unwhitened case
@@ -89,13 +89,13 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # D x M x N
         elif q_sqrt.get_shape().ndims == 3:
             L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
-            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.pack([tf.shape(f)[1], 1, 1]))
-            LTA = tf.batch_matmul(L, A_tiled, adj_x=True)  # D x M x N
+            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([tf.shape(f)[1], 1, 1]))
+            LTA = tf.matmul(L, A_tiled, transpose_a=True)  # D x M x N
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
                              str(q_sqrt.get_shape().ndims))
         if full_cov:
-            fvar = fvar + tf.batch_matmul(LTA, LTA, adj_x=True)  # D x N x N
+            fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # D x N x N
         else:
             fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # D x N
     fvar = tf.transpose(fvar)  # N x D or N x N x D
