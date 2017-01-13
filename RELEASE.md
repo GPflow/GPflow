@@ -1,3 +1,26 @@
+# Release 0.3.5
+ - Update to work with TensorFlow 0.12.1.
+
+# Release 0.3.4
+ - Changes to stop computations all being done on the default graph.
+ - Update list of GPflow contributors and other small changes to front page.
+ - Better deduction of `input_dim` for `kernels.Combination`
+ - Some kernels did not properly respect active dims, now fixed.
+ - Make sure log jacobian is computed even for fixed variables
+
+# Release 0.3.3
+ - House keeping changes for paper submission.
+
+# Release 0.3.2
+ - updated to work with tensorflow 0.11 (release candidate 1 available at time of writing)
+ - bugfixes in vgp._compile
+
+# Release 0.3.1
+ - Added configuration file, which controls verbosity and level of numerical jitter
+ - tf_hacks is deprecated, became tf_wraps (tf_hacks will raise visible deprecation warnings)
+ - Documentation now at gpflow.readthedocs.io
+ - Many functions are now contained in tensorflow scopes for easier tensorboad visualisation and profiling
+
 # Release 0.3
  - Improvements to the way that parameters for triangular matrices are stored and optimised.
  - Automatically generated Apache license headers.

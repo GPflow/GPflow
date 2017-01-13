@@ -1,8 +1,25 @@
+# Copyright 2016 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
+
 from functools import reduce
 import unittest
 import GPflow
 import tensorflow as tf
 import numpy as np
+from GPflow import settings
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 try:
     import cPickle as pickle
 except ImportError:
@@ -94,14 +111,14 @@ class ParamTestsScalar(unittest.TestCase):
         xx = self.m.get_free_state()
         self.assertTrue(np.allclose(xx, np.ones(1)))
 
-        y = np.array([34.0])
+        y = np.array([34.0], np_float_type)
         self.m.set_state(y)
         self.assertTrue(np.allclose(self.m.get_free_state(), y))
 
     def testFixed(self):
         self.m.p.fixed = True
         self.assertTrue(len(self.m.get_free_state()) == 0)
-        self.assertTrue(self.m.make_tf_array(tf.placeholder('float64')) == 0)
+        self.assertTrue(self.m.make_tf_array(tf.placeholder(float_type)) == 0)
 
     def testRecompile(self):
         self.m._needs_recompile = False
@@ -117,7 +134,7 @@ class ParamTestsScalar(unittest.TestCase):
         self.m.make_tf_array(x)
         self.assertTrue(isinstance(self.m.p, GPflow.param.Param))
         with self.m.tf_mode():
-            self.assertTrue(isinstance(self.m.p, tf.python.framework.ops.Tensor))
+            self.assertTrue(isinstance(self.m.p, tf.Tensor))
 
 
 class ParamTestsDeeper(unittest.TestCase):
@@ -139,6 +156,14 @@ class ParamTestsDeeper(unittest.TestCase):
         self.m.foo.bar.baz = new_p
         # Parameterized instances should not have _needs_recompile
         self.assertFalse(hasattr(self.m, '_needs_recompile'))
+        self.assertFalse(old_p.highest_parent is self.m)
+
+    def testReplacement2(self):
+        old_p = self.m.foo.bar
+        new_p = GPflow.param.Parameterized()
+        new_p.baz = GPflow.param.Param(3.0)
+        self.m.foo.bar = new_p
+        self.assertTrue(new_p.baz.highest_parent is self.m)
         self.assertFalse(old_p.highest_parent is self.m)
 
     def testName(self):
@@ -165,7 +190,7 @@ class ParamTestsDeeper(unittest.TestCase):
         xx = self.m.get_free_state()
         self.assertTrue(np.allclose(xx, np.ones(1)))
 
-        y = np.array([34.0])
+        y = np.array([34.0], np_float_type)
         self.m.set_state(y)
         self.assertTrue(np.allclose(self.m.get_free_state(), y))
 
@@ -201,7 +226,7 @@ class ParamTestsDeeper(unittest.TestCase):
         self.m.make_tf_array(x)
         self.assertTrue(isinstance(self.m.foo.bar.baz, GPflow.param.Param))
         with self.m.tf_mode():
-            self.assertTrue(isinstance(self.m.foo.bar.baz, tf.python.framework.ops.Tensor))
+            self.assertTrue(isinstance(self.m.foo.bar.baz, tf.Tensor))
 
 
 class ParamTestsWider(unittest.TestCase):
@@ -289,7 +314,7 @@ class ParamTestsWider(unittest.TestCase):
         self.m.make_tf_array(x)
         self.assertTrue(all([isinstance(p, GPflow.param.Param) for p in (self.m.foo, self.m.bar, self.m.baz)]))
         with self.m.tf_mode():
-            self.assertTrue(all([isinstance(p, tf.python.framework.ops.Tensor)
+            self.assertTrue(all([isinstance(p, tf.Tensor)
                                  for p in (self.m.foo, self.m.bar, self.m.baz)]))
 
 
@@ -299,45 +324,58 @@ class TestParamList(unittest.TestCase):
         GPflow.param.ParamList([GPflow.param.Param(1)])
         with self.assertRaises(AssertionError):
             GPflow.param.ParamList([GPflow.param.Param(1), 'stringsnotallowed'])
+        with self.assertRaises(AssertionError):
+            # tuples not valid in constuctor:
+            GPflow.param.ParamList((GPflow.param.Param(1),))
+        with self.assertRaises(AssertionError):
+            # param objects not valid in constructor (must be in list)
+            GPflow.param.ParamList(GPflow.param.Param(1))
 
     def test_naming(self):
         p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
         GPflow.param.ParamList([p1, p2])
         self.assertTrue(p1.name == 'item0')
         self.assertTrue(p2.name == 'item1')
 
     def test_connected(self):
         p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
         l = GPflow.param.ParamList([p1, p2])
         x = l.get_free_state()
         x.sort()
-        self.assertTrue(np.all(x == np.array([1.2, 3.4, 5.6])))
+        self.assertTrue(np.all(x == np.array([1.2, 3.4, 5.6], np_float_type)))
 
     def test_setitem(self):
         p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
         l = GPflow.param.ParamList([p1, p2])
 
         l[0] = 1.2
         self.assertTrue(p1._array == 1.2)
 
-        l[1] = np.array([1.1, 2.2])
-        self.assertTrue(np.all(p2._array == np.array([1.1, 2.2])))
+        l[1] = np.array([1.1, 2.2], np_float_type)
+        self.assertTrue(np.all(p2._array == np.array([1.1, 2.2], np_float_type)))
 
         with self.assertRaises(TypeError):
             l[0] = GPflow.param.Param(12)
 
     def test_append(self):
         p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6]))
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
         l = GPflow.param.ParamList([p1])
         l.append(p2)
         self.assertTrue(p2 in l.sorted_params)
 
         with self.assertRaises(AssertionError):
             l.append('foo')
+
+    def test_len(self):
+        p1 = GPflow.param.Param(1.2)
+        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
+        l = GPflow.param.ParamList([p1])
+        l.append(p2)
+        self.assertTrue(len(l) == 2)
 
     def test_with_parameterized(self):
         pzd = GPflow.param.Parameterized()
@@ -368,7 +406,8 @@ class TestParamList(unittest.TestCase):
         m = Foo()
         self.assertTrue(m.get_free_state().size == 2)
         m.optimize(disp=False)
-        self.assertTrue(np.allclose(m.get_free_state(), 0.))
+        atol = 1e-6 if np_float_type is np.float32 else 1e-8
+        self.assertTrue(np.allclose(m.get_free_state(), 0., atol=atol))
 
 
 class TestPickleAndDict(unittest.TestCase):
@@ -436,6 +475,44 @@ class TestDictSVGP(unittest.TestCase):
 
         self.assertFalse(np.allclose(loglik1, loglik2))
         self.assertTrue(np.allclose(loglik1, loglik3))
+
+
+class TestFixWithPrior(unittest.TestCase):
+    """
+    This tests that models with a fixed parameter which has a prior continue to work
+    """
+
+    def test(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0, GPflow.transforms.positive)
+        m.pp = GPflow.param.Param(1.0, GPflow.transforms.positive)
+        m.p.prior = GPflow.priors.Gamma(1, 1)
+        m.pp.prior = GPflow.priors.Gamma(1, 1)
+        m.p.fixed = True
+        m.build_likelihood = lambda: tf.zeros([1], tf.float64)
+        m.optimize(disp=1, maxiter=10)
+
+
+class TestScopes(unittest.TestCase):
+    def setUp(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(10, 1)
+        k = GPflow.kernels.RBF(1)
+        Y = rng.randn(10, 1)
+        self.m = GPflow.gpr.GPR(X, Y, k)
+        self.m._compile()
+
+    def test_likelihood_name(self):
+        with self.m.tf_mode():
+            with self.m._graph.as_default():
+                l = self.m.build_likelihood()
+        self.assertTrue('model.build_likelihood' in l.name)
+
+    def test_kern_name(self):
+        with self.m.tf_mode():
+            with self.m._graph.as_default():
+                K = self.m.kern.K(self.m.X)
+        self.assertTrue('kern.K' in K.name)
 
 
 if __name__ == "__main__":

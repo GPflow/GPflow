@@ -1,5 +1,5 @@
 import tensorflow as tf
-import session
+from . import session
 
 def activateTracer(outputFileName,outputDirectory=None,eachTime=False):
 	session.setSession( session.TracerSessionFactory(outputFileName,outputDirectory,eachTime) )

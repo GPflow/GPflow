@@ -1,8 +1,22 @@
+# Copyright 2016 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
+
 import GPflow
+from GPflow.minibatch import SequenceIndices
 import numpy as np
 import unittest
 import tensorflow as tf
-
 
 class TestMethods(unittest.TestCase):
     def setUp(self):
@@ -34,14 +48,22 @@ class TestMethods(unittest.TestCase):
             self.assertTrue(f.size == 1)
             self.assertTrue(g.size == m.get_free_state().size)
 
-    def test_predict_f(self):    
+    def test_tf_optimize(self):
+        for m in self.ms:
+            trainer = tf.train.AdamOptimizer(learning_rate=0.001)
+            if isinstance(m, (GPflow.gpr.GPR,GPflow.vgp.VGP,GPflow.svgp.SVGP)):
+                optimizeOp = m._compile(trainer)
+                self.assertTrue(optimizeOp is not None)
+
+
+    def test_predict_f(self):
         for m in self.ms:
             mf, vf = m.predict_f(self.Xs)
             self.assertTrue(mf.shape == vf.shape)
             self.assertTrue(mf.shape == (10, 1))
             self.assertTrue(np.all(vf >= 0.0))
 
-    def test_predict_y(self):    
+    def test_predict_y(self):
         for m in self.ms:
             mf, vf = m.predict_y(self.Xs)
             self.assertTrue(mf.shape == vf.shape)
@@ -132,6 +154,107 @@ class TestSVGP(unittest.TestCase):
         m1.q_sqrt.fixed = True
         m1._compile()
 
+class TestStochasticGradients(unittest.TestCase):
+    """
+    In response to bug #281, we need to make sure stochastic update
+    happens correctly in tf optimizer mode.
+    To do this compare stochastic updates with deterministic updates
+    that should be equivalent.
+    
+    Data term in svgp likelihood is 
+    \sum_{i=1^N}E_{q(i)}[\log p(y_i | f_i )
+    
+    This sum is then approximated with an unbiased minibatch estimate.
+    In this test we substitute a deterministic analogue of the batchs
+    sampler for which we can predict the effects of different updates.
+    """
+    def setUp(self):        
+        self.XAB = np.atleast_2d(np.array([0.,1.])).T
+        self.YAB = np.atleast_2d(np.array([-1.,3.])).T
+        self.sharedZ = np.atleast_2d(np.array([0.5]) )
+        self.indexA = 0
+        self.indexB = 1
+        
+    def getIndexedData(self,baseX,baseY,indeces):
+        newX = baseX[indeces]
+        newY = baseY[indeces]
+        return newX, newY
+            
+    def getModel(self,X,Y,Z,minibatch_size):
+        model = GPflow.svgp.SVGP(X,
+                                 Y,
+                                 kern = GPflow.kernels.RBF(1),
+                                 likelihood = GPflow.likelihoods.Gaussian(),
+                                 Z = Z,
+                                 minibatch_size=minibatch_size)
+        #This step changes the batch indeces to cycle.
+        model.X.index_manager = SequenceIndices(minibatch_size,X.shape[0])
+        model.Y.index_manager = SequenceIndices(minibatch_size,X.shape[0])
+        return model        
+                
+    def getTfOptimizer(self):
+        learning_rate = .1
+        opt = tf.train.GradientDescentOptimizer(learning_rate, 
+                                                use_locking=True)
+        return opt
+                
+    def getIndexedModel(self,X,Y,Z,minibatch_size,indeces):
+        Xindeces,Yindeces = self.getIndexedData(X,Y,indeces)
+        indexedModel = self.getModel(Xindeces,Yindeces,Z,minibatch_size)
+        return indexedModel
+        
+    def checkModelsClose(self,modelA,modelB,tolerance=1e-2):
+        modelA_dict = modelA.get_parameter_dict()
+        modelB_dict = modelB.get_parameter_dict()
+        if sorted(modelA_dict.keys())!=sorted(modelB_dict.keys()):
+            return False
+        for key in modelA_dict:
+            if ((modelA_dict[key] - modelB_dict[key])>tolerance).any():
+                return False
+        return True
+    
+    def compareTwoModels(self,indecesOne,indecesTwo,
+                              batchOne,batchTwo,
+                              maxiter,
+                              checkSame=True):
+        modelOne = self.getIndexedModel(self.XAB,
+                                        self.YAB,
+                                        self.sharedZ,
+                                        batchOne,
+                                        indecesOne)
+        modelTwo = self.getIndexedModel(self.XAB,
+                                        self.YAB,
+                                        self.sharedZ,
+                                        batchTwo,
+                                        indecesTwo)
+        modelOne.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
+        modelTwo.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
+        if checkSame:
+            self.assertTrue(self.checkModelsClose(modelOne,modelTwo))        
+        else:
+            self.assertFalse(self.checkModelsClose(modelOne,modelTwo))          
+        
+    def testOne(self):  
+        self.compareTwoModels([self.indexA,self.indexB],
+                              [self.indexB,self.indexA],
+                              2,
+                              2,
+                              3)
+                              
+    def testTwo(self):
+        self.compareTwoModels([self.indexA,self.indexB],
+                              [self.indexA,self.indexA],
+                              1,
+                              2,
+                              1)        
+                                          
+    def testThree(self):
+        self.compareTwoModels([self.indexA,self.indexA],
+                              [self.indexA,self.indexB],
+                              1,
+                              1,
+                              2,
+                              False)                  
 
 class TestSparseMCMC(unittest.TestCase):
     """
@@ -145,9 +268,9 @@ class TestSparseMCMC(unittest.TestCase):
         Y = rng.randn(10, 1)
         v_vals = rng.randn(10, 1)
 
-        l = GPflow.likelihoods.StudentT()
-        self.m1 = GPflow.gpmc.GPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=l)
-        self.m2 = GPflow.sgpmc.SGPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=l, Z=X.copy())
+        lik = GPflow.likelihoods.StudentT
+        self.m1 = GPflow.gpmc.GPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=lik())
+        self.m2 = GPflow.sgpmc.SGPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=lik(), Z=X.copy())
 
         self.m1.V = v_vals
         self.m2.V = v_vals.copy()

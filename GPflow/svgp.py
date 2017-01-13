@@ -13,57 +13,30 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .param import Param, DataHolder
+from .param import Param
 from .model import GPModel
-from . import transforms
-from . import conditionals
+from . import transforms, conditionals, kullback_leiblers
 from .mean_functions import Zero
-from .tf_hacks import eye
-from . import kullback_leiblers
-
-
-class MinibatchData(DataHolder):
-    """
-    A special DataHolder class which feeds a minibatch to tensorflow via
-    get_feed_dict().
-    """
-    def __init__(self, array, minibatch_size, rng=None):
-        """
-        array is a numpy array of data.
-        minibatch_size (int) is the size of the minibatch
-        rng is an instance of np.random.RandomState(), defaults to seed 0.
-        """
-        DataHolder.__init__(self, array, on_shape_change='pass')
-        self.minibatch_size = minibatch_size
-        self.rng = rng or np.random.RandomState(0)
-
-    def generate_index(self):
-        if float(self.minibatch_size) / float(self._array.shape[0]) > 0.5:
-            return self.rng.permutation(self._array.shape[0])[:self.minibatch_size]
-        else:
-            # This is much faster than above, and for N >> minibatch,
-            # it doesn't make much difference. This actually
-            # becomes the limit when N is around 10**6, which isn't
-            # uncommon when using SVI.
-            return self.rng.randint(self._array.shape[0], size=self.minibatch_size)
-
-    def get_feed_dict(self):
-        return {self._tf_array: self._array[self.generate_index()]}
-
+from .tf_wraps import eye
+from ._settings import settings
+from .minibatch import MinibatchData
 
 class SVGP(GPModel):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 
-    @inproceedings{hensman2014scalable,
-      title={Scalable Variational Gaussian Process Classification},
-      author={Hensman, James and Matthews,
-              Alexander G. de G. and Ghahramani, Zoubin},
-      booktitle={Proceedings of AISTATS},
-      year={2015}
-    }
+    ::
+
+      @inproceedings{hensman2014scalable,
+        title={Scalable Variational Gaussian Process Classification},
+        author={Hensman, James and Matthews,
+                Alexander G. de G. and Ghahramani, Zoubin},
+        booktitle={Proceedings of AISTATS},
+        year={2015}
+      }
 
     """
     def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(),
@@ -82,7 +55,7 @@ class SVGP(GPModel):
         """
         # sort out the X, Y into MiniBatch objects.
         if minibatch_size is None:
-            minibatch_size = X.shape[0]
+            minibatch_size = X.shape[0]     
         self.num_data = X.shape[0]
         X = MinibatchData(X, minibatch_size, np.random.RandomState(0))
         Y = MinibatchData(Y, minibatch_size, np.random.RandomState(0))
@@ -111,7 +84,7 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + eye(self.num_inducing) * 1e-6
+            K = self.kern.K(self.Z) + eye(self.num_inducing) * settings.numerics.jitter_level
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
@@ -133,7 +106,8 @@ class SVGP(GPModel):
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, tf.float64) / tf.cast(tf.shape(self.X)[0], tf.float64)
+        scale = tf.cast(self.num_data, settings.dtypes.float_type) /\
+            tf.cast(tf.shape(self.X)[0], settings.dtypes.float_type)
 
         return tf.reduce_sum(var_exp) * scale - KL
 

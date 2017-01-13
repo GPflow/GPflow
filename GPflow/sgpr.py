@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, alexggmatthews
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,38 +13,45 @@
 # limitations under the License.
 
 
+from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 from .model import GPModel
 from .param import Param, DataHolder
 from .mean_functions import Zero
 from . import likelihoods
-from .tf_hacks import eye
+from .tf_wraps import eye
+from ._settings import settings
 
 
 class SGPR(GPModel):
+    """
+    Sparse Variational GP regression. The key reference is
+
+    ::
+
+      @inproceedings{titsias2009variational,
+        title={Variational learning of inducing variables in
+               sparse Gaussian processes},
+        author={Titsias, Michalis K},
+        booktitle={International Conference on
+                   Artificial Intelligence and Statistics},
+        pages={567--574},
+        year={2009}
+      }
+
+
+
+    """
+
     def __init__(self, X, Y, kern, Z, mean_function=Zero()):
         """
-        This Sparse Variational GP regression. The key reference is
-
-        @inproceedings{titsias2009variational,
-          title={Variational learning of inducing variables in
-                 sparse Gaussian processes},
-          author={Titsias, Michalis K},
-          booktitle={International Conference on
-                     Artificial Intelligence and Statistics},
-          pages={567--574},
-          year={2009}
-        }
-
-
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         Z is a matrix of pseudo inputs, size M x D
         kern, mean_function are appropriate GPflow objects
 
         This method only works with a Gaussian likelihood.
-
         """
         X = DataHolder(X, on_shape_change='pass')
         Y = DataHolder(Y, on_shape_change='pass')
@@ -62,13 +69,13 @@ class SGPR(GPModel):
         """
 
         num_inducing = tf.shape(self.Z)[0]
-        num_data = tf.cast(tf.shape(self.Y)[0], tf.float64)
-        output_dim = tf.cast(tf.shape(self.Y)[1], tf.float64)
+        num_data = tf.cast(tf.shape(self.Y)[0], settings.dtypes.float_type)
+        output_dim = tf.cast(tf.shape(self.Y)[1], settings.dtypes.float_type)
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * settings.numerics.jitter_level
         L = tf.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -84,10 +91,10 @@ class SGPR(GPModel):
         bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
         bound += - output_dim * tf.reduce_sum(tf.log(tf.diag_part(LB)))
         bound -= 0.5 * num_data * output_dim * tf.log(self.likelihood.variance)
-        bound += -0.5*tf.reduce_sum(tf.square(err))/self.likelihood.variance
-        bound += 0.5*tf.reduce_sum(tf.square(c))
-        bound += -0.5 * tf.reduce_sum(Kdiag) / self.likelihood.variance
-        bound += 0.5 * tf.reduce_sum(tf.diag_part(AAT))
+        bound += -0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
+        bound += 0.5 * tf.reduce_sum(tf.square(c))
+        bound += -0.5 * output_dim * tf.reduce_sum(Kdiag) / self.likelihood.variance
+        bound += 0.5 * output_dim * tf.reduce_sum(tf.diag_part(AAT))
 
         return bound
 
@@ -100,7 +107,7 @@ class SGPR(GPModel):
         num_inducing = tf.shape(self.Z)[0]
         err = self.Y - self.mean_function(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * settings.numerics.jitter_level
         Kus = self.kern.K(self.Z, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
@@ -113,20 +120,19 @@ class SGPR(GPModel):
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
         mean = tf.matmul(tf.transpose(tmp2), c)
         if full_cov:
-            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2)\
-                - tf.matmul(tf.transpose(tmp1), tmp1)
-            shape = tf.pack([1, 1, tf.shape(self.Y)[1]])
+            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) \
+                  - tf.matmul(tf.transpose(tmp1), tmp1)
+            shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
-            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0)\
-                - tf.reduce_sum(tf.square(tmp1), 0)
-            shape = tf.pack([1, tf.shape(self.Y)[1]])
+            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
+                  - tf.reduce_sum(tf.square(tmp1), 0)
+            shape = tf.stack([1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
 
 class GPRFITC(GPModel):
-
     def __init__(self, X, Y, kern, Z, mean_function=Zero()):
         """
         This implements GP regression with the FITC approximation.
@@ -165,7 +171,7 @@ class GPRFITC(GPModel):
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * settings.numerics.jitter_level
 
         Luu = tf.cholesky(Kuu)  # => Luu^T Luu = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff
@@ -201,14 +207,15 @@ class GPRFITC(GPModel):
         # K_fitc^{-1} = ( Qff + \diag( \nu ) )^{-1}
         #            = ( V^T V + \diag( \nu ) )^{-1}
         # Applying the Woodbury identity we obtain
-        #            = \diag( \nu^{-1} ) - \diag( \nu^{-1} ) V^T ( I + V \diag( \nu^{-1} ) V^T )^{-1) V \diag( \nu^{-1} )
+        #            = \diag( \nu^{-1} ) - \diag( \nu^{-1} ) V^T ( I + V \diag( \nu^{-1} ) V^T )^{-1) V \diag(\nu^{-1} )
         # Let \beta =  \diag( \nu^{-1} ) err
         # and let \alpha = V \beta
         # then Mahalanobis term = -0.5* ( \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha ) )
 
         err, nu, Luu, L, alpha, beta, gamma = self.build_common_terms()
 
-        mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) + 0.5 * tf.reduce_sum(tf.square(gamma))
+        mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) \
+                          + 0.5 * tf.reduce_sum(tf.square(gamma))
 
         # We need to compute the log normalizing term -N/2 \log 2 pi - 0.5 \log \det( K_fitc )
 
@@ -219,11 +226,11 @@ class GPRFITC(GPModel):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
-        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, tf.float64))
+        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.dtypes.float_type))
         logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
-        return mahalanobisTerm + logNormalizingTerm
+        return mahalanobisTerm + logNormalizingTerm * self.num_latent
 
     def build_predict(self, Xnew, full_cov=False):
         """
@@ -240,10 +247,12 @@ class GPRFITC(GPModel):
         intermediateA = tf.matrix_triangular_solve(L, w, lower=True)
 
         if full_cov:
-            var = self.kern.K(Xnew) - tf.matmul(tf.transpose(w), w) + tf.matmul(tf.transpose(intermediateA), intermediateA)
-            var = tf.tile(tf.expand_dims(var, 2), tf.pack([1, 1, tf.shape(self.Y)[1]]))
+            var = self.kern.K(Xnew) - tf.matmul(tf.transpose(w), w) \
+                  + tf.matmul(tf.transpose(intermediateA), intermediateA)
+            var = tf.tile(tf.expand_dims(var, 2), tf.stack([1, 1, tf.shape(self.Y)[1]]))
         else:
-            var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(w), 0) + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,
-            var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
+            var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(w), 0) \
+                  + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,
+            var = tf.tile(tf.expand_dims(var, 1), tf.stack([1, tf.shape(self.Y)[1]]))
 
         return mean, var

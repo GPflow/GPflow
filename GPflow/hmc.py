@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, alexggmatthews
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -60,7 +60,7 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
             print("burn-in sampling started")
         samples = sample_HMC(f, num_samples=burn, Lmin=Lmin, Lmax=Lmax,
                              epsilon=epsilon, x0=x0,
-                             verbose=verbose, thin=1, burn=0)
+                             verbose=verbose, thin=1, burn=0, RNG=RNG)
         if verbose:
             print("burn-in sampling ended")
         x0 = samples[-1]
@@ -71,6 +71,7 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
     x = x0.copy()
     logprob, grad = f(x0)
     logprob, grad = -logprob, -grad
+    logprob_track[0] = logprob
 
     accept_count_batch = 0
 

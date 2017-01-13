@@ -1,3 +1,17 @@
+# Copyright 2016 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
+
 from __future__ import print_function
 import GPflow
 import tensorflow as tf
@@ -54,6 +68,17 @@ class TestNeedsRecompile(unittest.TestCase):
         self.m._needs_recompile = False
         self.m.p.transform = GPflow.transforms.Identity()
         self.assertTrue(self.m._needs_recompile)
+
+    def test_replacement(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Parameterized()
+        m.p.p = GPflow.param.Param(1.0)
+        m._needs_recompile = False
+        # replace Parameterized
+        new_p = GPflow.param.Parameterized()
+        new_p.p = GPflow.param.Param(1.0)
+        m.p = new_p
+        self.assertTrue(m._needs_recompile is True)
 
 
 class KeyboardRaiser:

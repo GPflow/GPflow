@@ -16,34 +16,24 @@
 """
 A collection of hacks for tensorflow.
 
-Hopefully we can remove these as the library matures
+this has been renamed tf_wraps, and is deprecated
 """
 
-import os
-import tensorflow as tf
+from . import tf_wraps
+import numpy as np
+import warnings
 
 
-def eye(N):
-    return tf.diag(tf.ones(tf.pack([N, ]), dtype='float64'))
+def eye(N):  # pragma: no cover
+    warnings.warn('tf_hacks is deprecated: use tf_wraps instead', np.VisibleDeprecationWarning)
+    return tf_wraps.eye(N)
 
 
-_custom_op_module = tf.load_op_library(os.path.join(os.path.dirname(__file__), 'tfops', 'matpackops.so'))
-vec_to_tri = _custom_op_module.vec_to_tri
-tri_to_vec = _custom_op_module.tri_to_vec
+def vec_to_tri(N):  # pragma: no cover
+    warnings.warn('tf_hacks is deprecated: use tf_wraps instead', np.VisibleDeprecationWarning)
+    return tf_wraps.vec_to_tri(N)
 
 
-@tf.python.framework.ops.RegisterGradient("VecToTri")
-def _vec_to_tri_grad(op, grad):
-    return [tri_to_vec(grad)]
-
-
-@tf.RegisterShape("VecToTri")
-def _vec_to_tri_shape(op):
-    in_shape = op.inputs[0].get_shape().with_rank(2)
-    M = in_shape[1].value
-    if M is None:
-        k = None
-    else:
-        k = int((M * 8 + 1) ** 0.5 / 2.0 - 0.5)
-    shape = tf.TensorShape([in_shape[0], k, k])
-    return [shape]
+def tri_to_vec(N):  # pragma: no cover
+    warnings.warn('tf_hacks is deprecated: use tf_wraps instead', np.VisibleDeprecationWarning)
+    return tf_wraps.tri_to_vec(N)

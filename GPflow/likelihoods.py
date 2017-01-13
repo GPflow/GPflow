@@ -1,11 +1,11 @@
 # Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews, Alexis Boukouvalas
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,18 +13,21 @@
 # limitations under the License.
 
 
-from . import densities
+from __future__ import absolute_import
+from . import densities, transforms
 import tensorflow as tf
 import numpy as np
-from .param import Parameterized, Param
-from . import transforms
-
-hermgauss = np.polynomial.hermite.hermgauss
+from .param import Parameterized, Param, ParamList
+from ._settings import settings
+from .quadrature import hermgauss
+float_type = settings.dtypes.float_type
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class Likelihood(Parameterized):
     def __init__(self):
         Parameterized.__init__(self)
+        self.scoped_keys.extend(['logp', 'variational_expectations', 'predict_mean_and_var', 'predict_density'])
         self.num_gauss_hermite_points = 20
 
     def logp(self, F, Y):
@@ -98,7 +101,7 @@ class Likelihood(Parameterized):
 
         # here's the quadrature for the variance
         integrand = self.conditional_variance(X) \
-                    + tf.square(self.conditional_mean(X))
+            + tf.square(self.conditional_mean(X))
         V_y = tf.reshape(tf.matmul(integrand, gh_w), shape) - tf.square(E_y)
 
         return E_y, V_y
@@ -305,7 +308,7 @@ class Gamma(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return -self.shape * Fmu - tf.lgamma(self.shape) \
-                   + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
+                + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
@@ -372,7 +375,7 @@ class RobustMax(object):
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         # work out what the mean and variance is of the indicated latent function.
-        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), tf.float64)
+        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), float_type)
         mu_selected = tf.reduce_sum(oh_on * mu, 1)
         var_selected = tf.reduce_sum(oh_on * var, 1)
 
@@ -388,7 +391,7 @@ class RobustMax(object):
         cdfs = cdfs * (1 - 2e-4) + 1e-4
 
         # blank out all the distances on the selected latent function
-        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), tf.float64)
+        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), float_type)
         cdfs = cdfs * tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
 
         # take the product over the latent functions, and the sum over the GH grid.
@@ -398,7 +401,7 @@ class RobustMax(object):
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
         """
-        A likelihood that can do multi-way classification. 
+        A likelihood that can do multi-way classification.
         Currently the only valid choice
         of inverse-link function (invlink) is an instance of RobustMax.
         """
@@ -406,16 +409,16 @@ class MultiClass(Likelihood):
         self.num_classes = num_classes
         if invlink is None:
             invlink = RobustMax(self.num_classes)
-            self.invlink = invlink
         elif not isinstance(invlink, RobustMax):
             raise NotImplementedError
+        self.invlink = invlink
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
             hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
-            yes = tf.ones(tf.shape(Y), dtype=tf.float64) - self.invlink.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=tf.float64) + self.invlink._eps_K1
-            p = tf.select(hits, yes, no)
+            yes = tf.ones(tf.shape(Y), dtype=float_type) - self.invlink.epsilon
+            no = tf.zeros(tf.shape(Y), dtype=float_type) + self.invlink._eps_K1
+            p = tf.where(hits, yes, no)
             return tf.log(p)
         else:
             raise NotImplementedError
@@ -431,10 +434,10 @@ class MultiClass(Likelihood):
     def predict_mean_and_var(self, Fmu, Fvar):
         if isinstance(self.invlink, RobustMax):
             # To compute this, we'll compute the density for each possible output
-            possible_outputs = [tf.fill(tf.pack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
+            possible_outputs = [tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
                                 range(self.num_classes)]
             ps = [self.predict_density(Fmu, Fvar, po) for po in possible_outputs]
-            ps = tf.transpose(tf.pack([tf.reshape(p, (-1,)) for p in ps]))
+            ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
             return ps, ps - tf.square(ps)
         else:
             raise NotImplementedError
@@ -453,3 +456,134 @@ class MultiClass(Likelihood):
     def conditional_variance(self, F):
         p = self.conditional_mean(F)
         return p - tf.square(p)
+
+
+class SwitchedLikelihood(Likelihood):
+    def __init__(self, likelihood_list):
+        """
+        In this likelihood, we assume at extra column of Y, which contains
+        integers that specify a likelihood from the list of likelihoods.
+        """
+        Likelihood.__init__(self)
+        for l in likelihood_list:
+            assert isinstance(l, Likelihood)
+        self.likelihood_list = ParamList(likelihood_list)
+        self.num_likelihoods = len(self.likelihood_list)
+
+    def _partition_and_stitch(self, args, func_name):
+        """
+        args is a list of tensors, to be passed to self.likelihoods.<func_name>
+
+        args[-1] is the 'Y' argument, which contains the indexes to self.likelihoods.
+
+        This function splits up the args using dynamic_partition, calls the
+        relevant function on the likelihoods, and re-combines the result.
+        """
+        # get the index from Y
+        Y = args[-1]
+        ind = tf.gather(tf.transpose(Y), tf.shape(Y)[1]-1)  # ind = Y[:,-1]
+        ind = tf.cast(ind, tf.int32)
+        Y = tf.transpose(tf.gather(tf.transpose(Y), tf.range(0, tf.shape(Y)[1]-1)))  # Y = Y[:,:-1]
+        args[-1] = Y
+
+        # split up the arguments into chunks corresponding to the relevant likelihoods
+        args = zip(*[tf.dynamic_partition(X, ind, self.num_likelihoods) for X in args])
+
+        # apply the likelihood-function to each section of the data
+        funcs = [getattr(lik, func_name) for lik in self.likelihood_list]
+        results = [f(*args_i) for f, args_i in zip(funcs, args)]
+
+        # stitch the results back together
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_likelihoods)
+        results = tf.dynamic_stitch(partitions, results)
+
+        return results
+
+    def logp(self, F, Y):
+        return self._partition_and_stitch([F, Y], 'logp')
+
+    def predict_density(self, Fmu, Fvar, Y):
+        return self._partition_and_stitch([Fmu, Fvar, Y], 'predict_density')
+
+    def variational_expectations(self, Fmu, Fvar, Y):
+        return self._partition_and_stitch([Fmu, Fvar, Y], 'variational_expectations')
+
+    def predict_mean_and_var(self, Fmu, Fvar):
+        mu_list, var_list = zip(*[lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list])
+        mu = tf.concat_v2(mu_list, 1)
+        var = tf.concat_v2(var_list, 1)
+        return mu, var
+
+
+class Ordinal(Likelihood):
+    """
+    A likelihood for doing ordinal regression.
+
+    The data are integer values from 0 to K, and the user must specify (K-1)
+    'bin edges' which define the points at which the labels switch. Let the bin
+    edges be [a_0, a_1, ... a_{K-1}], then the likelihood is
+
+    p(Y=0|F) = phi((a_0 - F) / sigma)
+    p(Y=1|F) = phi((a_1 - F) / sigma) - phi((a_0 - F) / sigma)
+    p(Y=2|F) = phi((a_2 - F) / sigma) - phi((a_1 - F) / sigma)
+    ...
+    p(Y=K|F) = 1 - phi((a_{K-1} - F) / sigma)
+
+    where phi is the cumulative density function of a Gaussian (the probit
+    function) and sigma is a parameter to be learned. A reference is:
+
+    @article{chu2005gaussian,
+      title={Gaussian processes for ordinal regression},
+      author={Chu, Wei and Ghahramani, Zoubin},
+      journal={Journal of Machine Learning Research},
+      volume={6},
+      number={Jul},
+      pages={1019--1041},
+      year={2005}
+    }
+    """
+    def __init__(self, bin_edges):
+        """
+        bin_edges is a numpy array specifying at which function value the
+        output label should switch. In the possible Y values are 0...K, then
+        the size of bin_edges should be (K-1).
+        """
+        Likelihood.__init__(self)
+        self.bin_edges = bin_edges
+        self.num_bins = bin_edges.size + 1
+        self.sigma = Param(1.0, transforms.positive)
+
+    def logp(self, F, Y):
+        Y = tf.cast(Y, tf.int32)
+        scaled_bins_left = tf.concat_v2([self.bin_edges/self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat_v2([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
+        selected_bins_left = tf.gather(scaled_bins_left, Y)
+        selected_bins_right = tf.gather(scaled_bins_right, Y)
+
+        return tf.log(probit(selected_bins_left - F / self.sigma) -
+                      probit(selected_bins_right - F / self.sigma) + 1e-6)
+
+    def _make_phi(self, F):
+        """
+        A helper function for making predictions. Constructs a probability
+        matrix where each row output the probability of the corresponding
+        label, and the rows match the entries of F.
+
+        Note that a matrix of F values is flattened.
+        """
+        scaled_bins_left = tf.concat_v2([self.bin_edges/self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat_v2([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
+        return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
+            - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
+
+    def conditional_mean(self, F):
+        phi = self._make_phi(F)
+        Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))
+        return tf.reshape(tf.matmul(phi, Ys), tf.shape(F))
+
+    def conditional_variance(self, F):
+        phi = self._make_phi(F)
+        Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))
+        E_y = tf.matmul(phi, Ys)
+        E_y2 = tf.matmul(phi, tf.square(Ys))
+        return tf.reshape(E_y2 - tf.square(E_y), tf.shape(F))
