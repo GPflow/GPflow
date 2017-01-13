@@ -94,7 +94,6 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
-        self._session = session.getSession()()
         self._free_vars = tf.placeholder(tf.float64)
 
     @property
@@ -116,14 +115,16 @@ class Model(Parameterized):
     def __setstate__(self, d):
         Parameterized.__setstate__(self, d)
         self._needs_recompile = True
-        self._session = session.getSession()()
 
     def _compile(self, optimizer=None):
         """
         compile the tensorflow function "self._objective"
         """
         self._graph = tf.Graph()
-        self._session = tf.Session(graph=self._graph)
+        self._session = session.get_session(graph=self._graph,
+                                            output_file_name=settings.profiling.output_file_name + "_objective",
+                                            output_directory=settings.profiling.output_directory,
+                                            each_time=settings.profiling.each_time)
         with self._graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
 
