@@ -179,11 +179,11 @@ class BayesianGPLVM(GPModel):
         if full_cov:
             var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) \
                   - tf.matmul(tf.transpose(tmp1), tmp1)
-            shape = tf.pack([1, 1, tf.shape(self.Y)[1]])
+            shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
             var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
                   - tf.reduce_sum(tf.square(tmp1), 0)
-            shape = tf.pack([1, tf.shape(self.Y)[1]])
+            shape = tf.stack([1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var

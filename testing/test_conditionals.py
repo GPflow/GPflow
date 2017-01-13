@@ -45,7 +45,7 @@ class DiagsTest(unittest.TestCase):
 
 
         #the chols are diagonal matrices, with the same entries as the diag representation.
-        self.chol = tf.pack([tf.diag(self.sqrt[:,i]) for i in range(self.num_latent)])
+        self.chol = tf.stack([tf.diag(self.sqrt[:,i]) for i in range(self.num_latent)])
         self.chol = tf.transpose(self.chol, perm=[1,2,0])
 
     def test_whiten(self):
