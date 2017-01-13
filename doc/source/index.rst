@@ -26,4 +26,5 @@ GPflow Documentation
    options
    notebooks/SGPR_notes
    notebooks/vgp_notes
+   notebooks/GPLVM
     
