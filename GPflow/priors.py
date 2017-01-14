@@ -63,9 +63,8 @@ class Exponential(Prior):
             raise ValueError("The rate parameter has to be positive.")
 
     def logp(self, x):
-        return tf.cond(tf.reduce_any(x < 0),
-                       lambda: tf.constant(-np.infty, float_type),
-                       lambda: tf.reduce_sum(tf.log(self.rate) - self.rate * x))
+        scale = 1 / self.rate
+        return tf.reduce_sum(densities.exponential(scale, x))
 
     def __str__(self):
         return "Exp({})".format(self.rate)
