@@ -30,7 +30,7 @@ def lognormal(x, mu, var):
 
 
 def bernoulli(p, y):
-    return tf.log(tf.select(tf.equal(y, 1), p, 1-p))
+    return tf.log(tf.where(tf.equal(y, 1), p, 1-p))
 
 
 def poisson(lamb, y):

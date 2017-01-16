@@ -52,13 +52,12 @@ def mvnquad(f, means, covs, H, Din, Dout=()):
 
     # transform points based on Gaussian parameters
     cholXcov = tf.cholesky(covs)  # NxDxD
-    Xt = tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
-                         adj_y=True)  # NxDxH**D
+    Xt = tf.matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)), transpose_b=True)  # NxDxH**D
     X = 2.0 ** 0.5 * Xt + tf.expand_dims(means, 2)  # NxDxH**D
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
 
     # perform quadrature
     fX = tf.reshape(f(Xr), (H ** Din, N,) + Dout)
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
-                    (-1,) + (1,)*(1+len(Dout)))
+                    (-1,) + (1,) * (1 + len(Dout)))
     return tf.reduce_sum(fX * wr, 0)

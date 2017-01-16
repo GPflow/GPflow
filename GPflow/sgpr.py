@@ -43,6 +43,7 @@ class SGPR(GPModel):
 
 
     """
+
     def __init__(self, X, Y, kern, Z, mean_function=Zero()):
         """
         X is a data matrix, size N x D
@@ -90,8 +91,8 @@ class SGPR(GPModel):
         bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
         bound += - output_dim * tf.reduce_sum(tf.log(tf.diag_part(LB)))
         bound -= 0.5 * num_data * output_dim * tf.log(self.likelihood.variance)
-        bound += -0.5*tf.reduce_sum(tf.square(err))/self.likelihood.variance
-        bound += 0.5*tf.reduce_sum(tf.square(c))
+        bound += -0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
+        bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * output_dim * tf.reduce_sum(Kdiag) / self.likelihood.variance
         bound += 0.5 * output_dim * tf.reduce_sum(tf.diag_part(AAT))
 
@@ -119,20 +120,19 @@ class SGPR(GPModel):
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
         mean = tf.matmul(tf.transpose(tmp2), c)
         if full_cov:
-            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2)\
-                - tf.matmul(tf.transpose(tmp1), tmp1)
-            shape = tf.pack([1, 1, tf.shape(self.Y)[1]])
+            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) \
+                  - tf.matmul(tf.transpose(tmp1), tmp1)
+            shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
-            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0)\
-                - tf.reduce_sum(tf.square(tmp1), 0)
-            shape = tf.pack([1, tf.shape(self.Y)[1]])
+            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
+                  - tf.reduce_sum(tf.square(tmp1), 0)
+            shape = tf.stack([1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
 
 class GPRFITC(GPModel):
-
     def __init__(self, X, Y, kern, Z, mean_function=Zero()):
         """
         This implements GP regression with the FITC approximation.
@@ -214,8 +214,8 @@ class GPRFITC(GPModel):
 
         err, nu, Luu, L, alpha, beta, gamma = self.build_common_terms()
 
-        mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1))\
-            + 0.5 * tf.reduce_sum(tf.square(gamma))
+        mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) \
+                          + 0.5 * tf.reduce_sum(tf.square(gamma))
 
         # We need to compute the log normalizing term -N/2 \log 2 pi - 0.5 \log \det( K_fitc )
 
@@ -228,8 +228,8 @@ class GPRFITC(GPModel):
 
         constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.dtypes.float_type))
         logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.diag_part(L)))
-        logNormalizingTerm = constantTerm + logDeterminantTerm 
-        
+        logNormalizingTerm = constantTerm + logDeterminantTerm
+
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
 
     def build_predict(self, Xnew, full_cov=False):
@@ -247,12 +247,12 @@ class GPRFITC(GPModel):
         intermediateA = tf.matrix_triangular_solve(L, w, lower=True)
 
         if full_cov:
-            var = self.kern.K(Xnew) - tf.matmul(tf.transpose(w), w)\
-                + tf.matmul(tf.transpose(intermediateA), intermediateA)
-            var = tf.tile(tf.expand_dims(var, 2), tf.pack([1, 1, tf.shape(self.Y)[1]]))
+            var = self.kern.K(Xnew) - tf.matmul(tf.transpose(w), w) \
+                  + tf.matmul(tf.transpose(intermediateA), intermediateA)
+            var = tf.tile(tf.expand_dims(var, 2), tf.stack([1, 1, tf.shape(self.Y)[1]]))
         else:
-            var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(w), 0)\
-                + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,
-            var = tf.tile(tf.expand_dims(var, 1), tf.pack([1, tf.shape(self.Y)[1]]))
+            var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(w), 0) \
+                  + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,
+            var = tf.tile(tf.expand_dims(var, 1), tf.stack([1, tf.shape(self.Y)[1]]))
 
         return mean, var

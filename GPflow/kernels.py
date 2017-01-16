@@ -107,7 +107,7 @@ class Kern(Parameterized):
             gather1 = tf.gather(tf.transpose(covr, [2, 1, 0]), self.active_dims)
             gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), self.active_dims)
             cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat(0, [cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]]))
+                             tf.concat_v2([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
         return cov
 
     def __add__(self, other):
@@ -208,10 +208,10 @@ class Kern(Parameterized):
 
         # First, transform the compact representation of Xmu and Xcov into a
         # list of full distributions.
-        fXmu = tf.concat(1, (Xmu[:-1, :], Xmu[1:, :]))  # Nx2D
-        fXcovt = tf.concat(2, (Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]))  # NxDx2D
-        fXcovb = tf.concat(2, (tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]))
-        fXcov = tf.concat(1, (fXcovt, fXcovb))
+        fXmu = tf.concat_v2((Xmu[:-1, :], Xmu[1:, :]), 1)  # Nx2D
+        fXcovt = tf.concat_v2((Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]), 2)  # NxDx2D
+        fXcovb = tf.concat_v2((tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]), 2)
+        fXcov = tf.concat_v2((fXcovt, fXcovb), 1)
         return mvnquad(lambda x: tf.expand_dims(self.K(x[:, :D], Z), 2) *
                                  tf.expand_dims(x[:, D:], 1),
                        fXmu, fXcov, self.num_gauss_hermite_points,
@@ -250,7 +250,7 @@ class Static(Kern):
         self.variance = Param(variance, transforms.positive)
 
     def Kdiag(self, X):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class White(Static):
@@ -260,10 +260,10 @@ class White(Static):
 
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            d = tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+            d = tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
             return tf.diag(d)
         else:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
             return tf.zeros(shape, float_type)
 
 
@@ -274,9 +274,9 @@ class Constant(Static):
 
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X)[0]])
         else:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
         return tf.fill(shape, tf.squeeze(self.variance))
 
 
@@ -344,7 +344,7 @@ class Stationary(Kern):
         return tf.sqrt(r2 + 1e-12)
 
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class RBF(Stationary):
@@ -503,7 +503,7 @@ class PeriodicKernel(Kern):
         self.period = Param(period, transforms.positive)
 
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:

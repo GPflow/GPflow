@@ -51,9 +51,9 @@ class TestEquivalence(unittest.TestCase):
                                    likelihood=lik,
                                    num_latent=2)
 
-        self.vgp0.optimize(display=False, max_iters=300)
-        self.vgp1.optimize(display=False, max_iters=300)
-        self.cvgp.optimize(display=False, max_iters=300)
+        self.vgp0.optimize(disp=False, maxiter=300)
+        self.vgp1.optimize(disp=False, maxiter=300)
+        self.cvgp.optimize(disp=False, maxiter=300)
 
     def test_all(self):
         # check variance
