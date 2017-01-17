@@ -93,7 +93,7 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
-        self.fevals = 0  # Keeps track of how often _objective is called
+        self.num_fevals = 0  # Keeps track of how often _objective is called
 
     @property
     def name(self):
@@ -149,7 +149,7 @@ class Model(Parameterized):
 
         self._feed_dict_keys = self.get_feed_dict_keys()
         def obj(x):
-            self.fevals += 1
+            self.num_fevals += 1
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
             f, g = self._session.run([self._minusF, self._minusG],
@@ -231,7 +231,7 @@ class Model(Parameterized):
             while iteration < maxiter:
                 self.update_feed_dict(self._feed_dict_keys, feed_dict)
                 self._session.run(opt_step, feed_dict=feed_dict)
-                self.fevals += 1
+                self.num_fevals += 1
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
                 iteration += 1
