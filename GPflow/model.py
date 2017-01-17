@@ -231,6 +231,7 @@ class Model(Parameterized):
             while iteration < maxiter:
                 self.update_feed_dict(self._feed_dict_keys, feed_dict)
                 self._session.run(opt_step, feed_dict=feed_dict)
+                self.fevals += 1
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
                 iteration += 1
