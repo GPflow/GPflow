@@ -14,7 +14,7 @@ class TracerSession(tf.Session):
         if self.outputDirectory is None and self.each_time:
             raise ValueError("In profiler session. Must specify a directory to use each_time mode.")
         if self.eachTime:
-            warnings.warn("Use `disp` instead of deprecated `display`.", np.VisibleDeprecationWarning)
+            warnings.warn("Outputting a trace for each run. May result in large disk usage.")
 
         super(TracerSession, self).__init__(*args, **kwargs)
         self.counter = 0
