@@ -30,7 +30,7 @@ GPflow has a slew of kernels that can be combined in a straightforward way. See 
 
 Regression
 ~~~~~~~~~~
-For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters (`notebook <https://github.com/GPflow/GPflow/blob/master/notebooks/regression.ipynb>`_).
+For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `GPflow.gpr.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters  (`notebook <notebooks/regression.html>`_).
 
 It's also possible to do Sparse GP regression using the :class:`GPflow.sgpr.SGPR` class. This is based on work by `Michalis Titsias <http://www.jmlr.org/proceedings/papers/v5/titsias09a.html>`_ [4].
 
@@ -56,7 +56,7 @@ The following table summarizes the model options in GPflow.
 GPLVM
 ~~~~~~~~~~~~~~~~~~~~~
 For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
-in GPflow. (`notebook <https://github.com/GPflow/GPflow/blob/master/notebooks/GPLVM.ipynb>`_).
+in GPflow. (`notebook <notebooks/GPLVM.html>`_).
 
 Citing GPflow
 ------------
