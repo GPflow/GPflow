@@ -93,6 +93,7 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
+        self.fevals = 0  # Keeps track of how often _objective is called
 
     @property
     def name(self):
@@ -148,6 +149,7 @@ class Model(Parameterized):
 
         self._feed_dict_keys = self.get_feed_dict_keys()
         def obj(x):
+            self.fevals += 1
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
             f, g = self._session.run([self._minusF, self._minusG],
