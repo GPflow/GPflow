@@ -26,9 +26,10 @@ GPflow tries to keep up with api changes in tensorflow as far as is reasonable, 
  - update version used on codeship (requires codeship login)
  - update `README.md`
  - update version ussed by readthedocs.org via `docsrequire.txt`
+ - Increment the GPflow version (see below). 
 
 ## Version numbering
-The main purpose of versioning GPflow is user convenience. 
+The main purpose of versioning GPflow is user convenience: to keep the number of releases down, we try to combine seversal PRs into one increment. As we work towards something that we might call 1.0, minor version bumps (X.1.X) are reserved for changes that alter the underlying code or code structure significantly. Minor-minor version bumps (X.X.1) are used for changes that change the GPflow API, update to a follow a new TensorFlow API, or introduce incremental new features.
 When incrementing the version number, the following tasks are required:
  - Update the version in `GPflow/_version.py`
  - Udate the version in the `doc/source/conf.py`
