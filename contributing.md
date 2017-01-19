@@ -6,7 +6,7 @@ We do welcome contributions to GPflow. However, the project is deliberately of l
 
 ## Code Style
  - Python code should follow the pep8 style. To help with this, we suggest using a plugin for your editor. 
- - Practise good code as far as is reasonable. The Google [python syle guide](https://google.github.io/styleguide/pyguide.html) is a good place to look for more information, as is (we hope!) reading the existing GPflow code. 
+ - Practise good code as far as is reasonable. Simpler is usually better. Compicated language features (I'm looking at you, metaclasses) are out. Reading the existing GPflow code should give a good idea of the expected style.
 
 ## Pull requests and the master branch
 All code that is destined for the master branch of GPflow goes through a PR. Only a small number of people can merge PRs onto the master branch (currently James Hensman, Alex Matthews, Mark van der Wilk and Alexis Boukouvalas). 
