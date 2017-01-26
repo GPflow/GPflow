@@ -289,7 +289,7 @@ class Prod(kernels.Prod):
             tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            return reduce(tf.mul, [k.eKdiag(Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.multiply, [k.eKdiag(Xmu, Xcov) for k in self.kern_list])
 
     def eKxz(self, Z, Xmu, Xcov):
         if not self.on_separate_dimensions:
@@ -298,7 +298,7 @@ class Prod(kernels.Prod):
             tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            return reduce(tf.mul, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.multiply, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         if not self.on_separate_dimensions:
@@ -307,4 +307,4 @@ class Prod(kernels.Prod):
             tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            return reduce(tf.mul, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.multiply, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
