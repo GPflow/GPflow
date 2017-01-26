@@ -11,8 +11,6 @@ class TracerSession(tf.Session):
         self.output_directory = output_directory
         self.eachTime = each_time
         self.local_run_metadata = None
-        if self.output_directory is None and self.each_time:
-            raise ValueError("In profiler session. Must specify a directory to use each_time mode.")
         if self.eachTime:
             warnings.warn("Outputting a trace for each run. May result in large disk usage.")
 
@@ -25,9 +23,6 @@ class TracerSession(tf.Session):
             if not (os.path.isdir(self.output_directory)):
                 os.mkdir(self.output_directory)
 
-    def get_output_params(self):
-        return self.output_file_name, self.output_directory, self.eachTime
-
     def get_filename(self):
         if self.output_directory is not None:
             dir_stub = self.output_directory
@@ -38,23 +33,16 @@ class TracerSession(tf.Session):
         else:
             return os.path.join(dir_stub, self.output_file_name + '.json')
 
-    def run(self, fetches, feed_dict=None, options=None, run_metadata=None):
+    def run(self, fetches, feed_dict=None, options=None):
         # Make sure there is no disagreement doing this.
         if options is not None:
             if options.trace_level != self.profiler_options.trace_level:
                 raise ValueError('In profiler session. Inconsistent trace level from run call')
-
-                # TODO Process run options. Merge input run options with our ones.
-                # There seem to be very few other relevant ones at the moment.
+            self.profiler_options.update(options)
 
         self.local_run_metadata = tf.RunMetadata()
         output = super(TracerSession, self).run(fetches, feed_dict=feed_dict, options=self.profiler_options,
                                                 run_metadata=self.local_run_metadata)
-
-        # This means run metadata was requested externally
-        # so use set it from the one we passed through to tf.
-        if run_metadata is not None:
-            run_metadata = self.local_run_metadata
 
         tl = timeline.Timeline(self.local_run_metadata.step_stats)
         ctf = tl.generate_chrome_trace_format()
