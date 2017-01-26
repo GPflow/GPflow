@@ -6,37 +6,37 @@ from ._settings import settings
 
 
 class TracerSession(tf.Session):
-    def __init__(self, *args, **kwargs):
-        self.outputFileName = kwargs.pop("output_file_name")
-        self.outputDirectory = kwargs.pop("output_directory", None)
-        self.eachTime = kwargs.pop("each_time", False)
+    def __init__(self, output_file_name, output_directory, each_time, **kwargs):
+        self.output_file_name = output_file_name
+        self.output_directory = output_directory
+        self.eachTime = each_time
         self.local_run_metadata = None
-        if self.outputDirectory is None and self.each_time:
+        if self.output_directory is None and self.each_time:
             raise ValueError("In profiler session. Must specify a directory to use each_time mode.")
         if self.eachTime:
             warnings.warn("Outputting a trace for each run. May result in large disk usage.")
 
-        super(TracerSession, self).__init__(*args, **kwargs)
+        super(TracerSession, self).__init__(**kwargs)
         self.counter = 0
         self.profiler_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-        if self.outputDirectory is not None:
-            if os.path.isfile(self.outputDirectory):
+        if self.output_directory is not None:
+            if os.path.isfile(self.output_directory):
                 raise IOError("In tracer: given directory name is a file.")
-            if not (os.path.isdir(self.outputDirectory)):
-                os.mkdir(self.outputDirectory)
+            if not (os.path.isdir(self.output_directory)):
+                os.mkdir(self.output_directory)
 
     def get_output_params(self):
-        return self.outputFileName, self.outputDirectory, self.eachTime
+        return self.output_file_name, self.output_directory, self.eachTime
 
     def get_filename(self):
-        if self.outputDirectory is not None:
-            dir_stub = self.outputDirectory
+        if self.output_directory is not None:
+            dir_stub = self.output_directory
         else:
             dir_stub = ''
         if self.eachTime:
-            return os.path.join(dir_stub, self.outputFileName + '_' + str(self.counter) + '.json')
+            return os.path.join(dir_stub, self.output_file_name + '_' + str(self.counter) + '.json')
         else:
-            return os.path.join(dir_stub, self.outputFileName + '.json')
+            return os.path.join(dir_stub, self.output_file_name + '.json')
 
     def run(self, fetches, feed_dict=None, options=None, run_metadata=None):
         # Make sure there is no disagreement doing this.
