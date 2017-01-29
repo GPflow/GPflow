@@ -24,10 +24,7 @@ class TracerSession(tf.Session):
                 os.mkdir(self.output_directory)
 
     def get_filename(self):
-        if self.output_directory is not None:
-            dir_stub = self.output_directory
-        else:
-            dir_stub = ''
+        dir_stub = self.output_directory if self.output_directory is not None else ''
         if self.eachTime:
             return os.path.join(dir_stub, self.output_file_name + '_' + str(self.counter) + '.json')
         else:
