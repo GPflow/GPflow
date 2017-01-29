@@ -33,9 +33,9 @@ class TracerSession(tf.Session):
     def run(self, fetches, feed_dict=None, options=None):
         # Make sure there is no disagreement doing this.
         if options is not None:
-            if options.trace_level != self.profiler_options.trace_level:
-                raise ValueError('In profiler session. Inconsistent trace level from run call')
-            self.profiler_options.update(options)
+            if options.trace_level != self.profiler_options.trace_level:  # pragma: no cover
+                raise ValueError('In profiler session. Inconsistent trace level from run call')  # pragma: no cover
+            self.profiler_options.update(options)  # pragma: no cover
 
         self.local_run_metadata = tf.RunMetadata()
         output = super(TracerSession, self).run(fetches, feed_dict=feed_dict, options=self.profiler_options,
