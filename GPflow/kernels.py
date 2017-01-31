@@ -660,7 +660,7 @@ class Add(Combination):
 
 class Prod(Combination):
     def K(self, X, X2=None, presliced=False):
-        return reduce(tf.mul, [k.K(X, X2) for k in self.kern_list])
+        return reduce(tf.multiply, [k.K(X, X2) for k in self.kern_list])
 
     def Kdiag(self, X, presliced=False):
-        return reduce(tf.mul, [k.Kdiag(X) for k in self.kern_list])
+        return reduce(tf.multiply, [k.Kdiag(X) for k in self.kern_list])
