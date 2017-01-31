@@ -28,6 +28,12 @@ python setup.py install
 ```
 You can run the tests with `python setup.py test`.
 
+# Getting help
+Please use gihub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs. 
+
+# Contributing
+All constuctive input is gratefully received. For more, see the [notes for contributors](contributing.md).
+
 
 # Citing GPflow
 
