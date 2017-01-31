@@ -18,9 +18,10 @@ from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc, tf_wraps
+from . import hmc, tf_wraps, session
 from ._settings import settings
 import sys
+
 float_type = settings.dtypes.float_type
 
 
@@ -93,6 +94,7 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
+        self._free_vars = tf.placeholder(tf.float64)
 
     @property
     def name(self):
@@ -119,7 +121,10 @@ class Model(Parameterized):
         compile the tensorflow function "self._objective"
         """
         self._graph = tf.Graph()
-        self._session = tf.Session(graph=self._graph)
+        self._session = session.get_session(graph=self._graph,
+                                            output_file_name=settings.profiling.output_file_name + "_objective",
+                                            output_directory=settings.profiling.output_directory,
+                                            each_time=settings.profiling.each_time)
         with self._graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
 
@@ -147,6 +152,7 @@ class Model(Parameterized):
         sys.stdout.flush()
 
         self._feed_dict_keys = self.get_feed_dict_keys()
+
         def obj(x):
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
