@@ -38,12 +38,13 @@ def getSamples( m ):
     samples = m.sample(100, epsilon = 0.1)
     return samples
 
-def runExperiments(plotting=True,outputGraphs=False):
+def runExperiments(sampling=True,outputGraphs=False):
     X,Y = getData()
     m = getRegressionModel(X,Y)
     optimizeModel(m)
-    setModelPriors( m )
-    samples = getSamples( m )
+    if sampling:
+        setModelPriors( m )
+        samples = getSamples( m )
 
 if __name__ == '__main__':
     runExperiments()
