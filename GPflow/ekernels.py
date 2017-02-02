@@ -36,11 +36,11 @@ class RBF(kernels.RBF):
         D = tf.shape(Xmu)[1]
         lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
 
-        vec = tf.expand_dims(Xmu, 1) - tf.expand_dims(Z, 0)  # NxMxD
+        vec = tf.expand_dims(Xmu, 2) - tf.expand_dims(tf.transpose(Z), 0)  # NxDxM
         scalemat = tf.expand_dims(tf.diag(lengthscales ** 2.0), 0) + Xcov  # NxDxD
-        rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
-        smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxD
-        q = tf.reduce_sum(smIvec * vec, [2])  # NxM
+        smIvec = tf.matrix_solve(scalemat, vec) # NxDxM
+        q = tf.reduce_sum(smIvec * vec, [1]) # NxM
+
         det = tf.matrix_determinant(
             tf.expand_dims(eye(D), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xcov
         )  # N
@@ -76,17 +76,14 @@ class RBF(kernels.RBF):
             tf.expand_dims(eye(tf.shape(Xmu)[1]), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
         )  # N
 
-        vec = tf.expand_dims(Z, 0) - tf.expand_dims(Xmum, 1)  # NxMxD
+        vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmum, 2)  # NxDxM
+        smIvec = tf.matrix_solve(scalemat, vec) # NxDxM
+        q = tf.reduce_sum(smIvec * vec, [1]) # NxM
 
-        rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
-        smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxDx1
-        q = tf.reduce_sum(smIvec * vec, [2])  # NxM
-
-        addvec = tf.matmul(
-            tf.tile(tf.expand_dims(Xsigmc, 1), (1, M, 1, 1)),
-            tf.expand_dims(smIvec, 3),
-            transpose_a=True
-        )[:, :, :, 0] + tf.expand_dims(Xmup, 1)  # NxMxD
+        # Xsigmc: NxD*xD
+        # smIvec: NxD*xM
+        # addvec: NxMxD
+        addvec = tf.einsum('ned,nem->nmd', Xsigmc, smIvec) + tf.expand_dims(Xmup, 1)
 
         return self.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
@@ -112,11 +109,12 @@ class RBF(kernels.RBF):
 
         mat = Xcov + 0.5 * tf.expand_dims(tf.diag(lengthscales ** 2.0), 0)  # NxDxD
         cm = tf.cholesky(mat)  # NxDxD
-        vec = 0.5 * (tf.reshape(Z, [1, M, 1, D]) +
-                     tf.reshape(Z, [1, 1, M, D])) - tf.reshape(Xmu, [N, 1, 1, D])  # NxMxMxD
-        cmr = tf.tile(tf.reshape(cm, [N, 1, 1, D, D]), [1, M, M, 1, 1])  # NxMxMxDxD
-        smI_z = tf.matrix_triangular_solve(cmr, tf.expand_dims(vec, 4))  # NxMxMxDx1
-        fs = tf.reduce_sum(tf.square(smI_z), [3, 4])
+        vec = 0.5 * (tf.reshape(tf.transpose(Z), [1, D, 1, M]) +
+                     tf.reshape(tf.transpose(Z), [1, D, M, 1])) - tf.reshape(Xmu, [N, D, 1, 1])  # NxDxMxM
+        svec = tf.reshape(vec, (N, D, M * M))
+        ssmI_z = tf.matrix_triangular_solve(cm, svec)  # NxDx(M*M)
+        smI_z = tf.reshape(ssmI_z, (N, D, M, M)) # NxDxMxM
+        fs = tf.reduce_sum(tf.square(smI_z), [1]) # NxMxM
 
         return self.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
 
