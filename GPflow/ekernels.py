@@ -77,13 +77,10 @@ class RBF(kernels.RBF):
         )  # N
 
         vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmum, 2)  # NxDxM
-        smIvec = tf.matrix_solve(scalemat, vec) # NxDxM
-        q = tf.reduce_sum(smIvec * vec, [1]) # NxM
+        smIvec = tf.matrix_solve(scalemat, vec)  # NxDxM
+        q = tf.reduce_sum(smIvec * vec, [1])  # NxM
 
-        # Xsigmc: NxD*xD
-        # smIvec: NxD*xM
-        # addvec: NxMxD
-        addvec = tf.einsum('ned,nem->nmd', Xsigmc, smIvec) + tf.expand_dims(Xmup, 1)
+        addvec = tf.matmul(smIvec, Xsigmc, transpose_a=True) + tf.expand_dims(Xmup, 1)  # NxMxD
 
         return self.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
