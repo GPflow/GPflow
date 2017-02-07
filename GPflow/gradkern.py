@@ -14,8 +14,26 @@ from multikernel import BlockKernel
 from GPflow._settings import settings
 float_type = settings.dtypes.float_type
 
-
 def find_partitions(collection):
+    '''Take an iterable `collection` and return a generator which produces
+    all unique partitions as lists-of-lists with every object being a member of
+    one set per partition.
+    alexis @ http://stackoverflow.com/questions/19368375/set-partitions-in-python
+    '''
+    if len(collection) == 1:
+        yield ( tuple(collection), )
+        return
+
+    first = collection[0]
+    for smaller in find_partitions(collection[1:]):
+        # insert `first` in each of the subpartition's subsets
+        smaller = tuple(smaller)
+        for n, subset in enumerate(smaller):
+            yield smaller[:n] + (( first, ) + subset, )  + smaller[n+1:]
+        # put `first` in its own subset
+        yield ( ( first, ), ) + smaller
+
+def find_partitions_old(collection):
     '''Take an iterable `collection` and return a generator which produces
     all unique partitions as lists-of-lists with every object being a member of
     one set per partition.
@@ -52,10 +70,14 @@ class StationaryGradKernel(BlockKernel):
         self.derivative_base = [lambda tau: self.variance*tf.exp(-0.5*tau), lambda tau: -0.5*self.variance*tf.exp(-0.5*tau), lambda tau: 0.25*self.variance*tf.exp(-0.5*tau)]
         self.kerns = [[self._kernel_factory(i,j) for j in range(groups)] for i in range(groups)]
 
+        self.partitions = [find_partitions(list(range(n+1))) for n in range(2)]
+        self.partitions = [[partition for partition in all_partitions
+                            if np.all([len(subset)<3 for subset in partition])]
+                           for all_partitions in self.partitions]
+        print('initialized!')
+
     def subK(self, index, X, X2 = None):
         i, j = index
-        if X2 is None:
-            X2 = X
         return self.kerns[i][j](X, X2)
 
     def subKdiag(self, index, X):
@@ -75,7 +97,7 @@ class StationaryGradKernel(BlockKernel):
             return -2 * tf.matmul(X, tf.transpose(X2)) + \
                    tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
 
-    def square_dist_d(self, X, X2, diff_x=(), diff_y=()):
+    def square_dist_d(self, X, X2, diff_x=(), diff_y=(), precomputed_delta = None):
         '''Take derivative of square_dist(x,y) wrt dimensions `diff_x` of first
         argument and `diff_y` of second argument.
 
@@ -104,18 +126,21 @@ class StationaryGradKernel(BlockKernel):
             #if we don't take the derivative, return the function
             return self.square_dist(X, X2)
         elif diff_order == 1:
-
-            X = X / self.lengthscales ** 2
-            if X2 is None:
-                X2 = X
+            if precomputed_delta is None:
+                X = X / self.lengthscales ** 2
+                if X2 is None:
+                    X2 = X
+                else:
+                    X2 = X2 / self.lengthscales ** 2
+                delta = tf.expand_dims(X[:,dx[0]], 1) - tf.expand_dims(X2[:,dx[0]], 0)
             else:
-                X2 = X2 / self.lengthscales ** 2
-            delta = tf.expand_dims(X[:,dx[0]], 1) - tf.expand_dims(X2[:,dx[0]], 0)
+                delta = precomputed_delta[:,:,dx[0]]
             #sign-flip if y derivative
             if x_order > 0:
                 return 2.*delta
             elif y_order > 0:
                 return -2.*delta
+
 
         elif diff_order == 2:
             #only equal-index dimension pairs are non-zero
@@ -147,22 +172,40 @@ class StationaryGradKernel(BlockKernel):
         Return:
         - `result` -
         '''
-        dist_d = partial(self.square_dist_d, X=X, X2=X2)
-        dx = [(x,'x') for x in diff_x] + [(y,'y') for y in diff_y]
+
+        X = X / self.lengthscales ** 2
+        if X2 is None:
+            X2 = X
+        else:
+            X2 = X2 / self.lengthscales ** 2
+        delta = tf.expand_dims(X, 1) - tf.expand_dims(X2, 0)
+
+        dist_d = partial(self.square_dist_d, X=X, X2=X2, precomputed_delta=delta)
+        dx = diff_x + diff_y #[(x,'x') for x in diff_x] + [(y,'y') for y in diff_y]
         x_order = len(diff_x)
         y_order = len(diff_y)
+        diff_keys = ['x']*x_order + ['y']*y_order
         diff_order = len(dx)
         if diff_order == 0:
             return self.derivative_base[0](self.square_dist(X, X2))
-        dx_combinations = find_partitions(dx)
+
+        dx_combinations = self.partitions[diff_order-1]
+        unique_subsets = []
+        for partition in self.partitions[diff_order-1]:
+            for subset in partition:
+                if not subset in unique_subsets:
+                    unique_subsets.append(tuple(subset))
+        all_derivatives = dict([(elem, dist_d(
+                                diff_x=tuple(dx[i] for i in elem if diff_keys[i] is 'x'),
+                                diff_y=tuple(dx[i] for i in elem if diff_keys[i] is 'y')))
+                                for elem in unique_subsets])
+
         order_factor = [self.derivative_base[order](self.square_dist(X, X2))
                         for order in range(diff_order+1)]
         terms = []
         for partition in dx_combinations:
             order = len(partition)
-            derivatives = [dist_d(diff_x=tuple(i for i, key in elem if key is 'x'),
-                                  diff_y=tuple(j for j, key in elem if key is 'y'))
-                           for elem in partition]
+            derivatives = [all_derivatives[elem] for elem in partition]
             terms.append(order_factor[order]*tf.foldl(tf.multiply, derivatives))
         result = tf.foldl(tf.add, terms)
         return result
@@ -171,7 +214,7 @@ class StationaryGradKernel(BlockKernel):
         '''Return a function that calculates proper sub-kernel'''
         diff_x = self.ind2dx(i)
         diff_y = self.ind2dx(j)
-        def f(X, X2):
+        def f(X, X2, precomputed_delta = None):
             return self.kernel_derivative(X, X2, diff_x=diff_x, diff_y=diff_y)
         return f
 
@@ -189,7 +232,10 @@ class StationaryHessianKernel(StationaryGradKernel):
         #self.derivative_base = [lambda tau: self.variance*(-0.5)**n*tf.exp(-0.5*tau) for n in range(5)]
         self.kerns = [[self._kernel_factory(i,j) for j in range(groups)] for i in range(groups)]
 
-
+        self.partitions = [find_partitions(list(range(n+1))) for n in range(4)]
+        self.partitions = [[partition for partition in all_partitions
+                            if np.all([len(subset)<3 for subset in partition])]
+                           for all_partitions in self.partitions]
     def ind2dx(self, i):
         if i == 0:
             return ()
