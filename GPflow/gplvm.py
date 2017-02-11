@@ -211,21 +211,19 @@ class BayesianGPLVM(GPModel):
         :param Y_new: new observed points, size Nnew (number of new points) x D (dimensions).
         :param mu_new: candidate mean, np.ndarray of size Nnew (number of new points) x Q (latent dimensions)
         :param var_new: candidate variance, np.ndarray of size Nnew (number of new points) x Q (latent dimensions)
-        :return: returning an (objective,gradient) tuple
+        :return: returning an (objective,gradients) tuple. gradients is a list of 2 matrices for mu and var of size
+        Nnew x Q
         """
         X_mean = tf.concat(0, [self.X_mean, mu_new])
         X_var = tf.concat(0, [self.X_var, var_new])
         Y = tf.concat(0, [self.Y, Y_new])
         objective = self._build_likelihood_graph(X_mean, X_var, Y)
 
-        # Collect and flatten gradients
-        flattened_gradients = map(lambda gradients: tf.reshape(gradients, [tf.size(mu_new),1]),
-                                  tf.gradients(objective, [mu_new, var_new]))
-        gradients = tf.squeeze(tf.concat(0, flattened_gradients))
+        # Collect gradients
+        gradients = tf.gradients(objective, [mu_new, var_new])
 
         f = tf.negative(objective, name='objective')
         g = tf.negative(gradients, name='grad_objective')
-
         return f, g
 
     def _held_out_data_wrapper_creator(self, Y_new):
@@ -239,9 +237,13 @@ class BayesianGPLVM(GPModel):
         num_param = infer_number * self.num_latent * 2
 
         def fun(x_flat):
+            # Unpack q(X*) candidate
             mu_new = x_flat[:num_param/2].reshape((infer_number, self.num_latent))
             var_new = x_flat[num_param/2:].reshape((infer_number, self.num_latent))
-            return self.held_out_data_objective(Y_new, mu_new, var_new)
+
+            # Compute likelihood & flatten gradients
+            f,g = self.held_out_data_objective(Y_new, mu_new, var_new)
+            return f, np.hstack(map(lambda gradient: gradient.flatten(), g))
 
         return fun
 
