@@ -7,20 +7,20 @@ import numpy as np
 import tensorflow as tf
 np.random.seed(0)
 
-Q = 1 # latent dimension
+Q = 2 # latent dimension
 D = 2 # output dimension
 N = 100
-lengthscale = 3.5
+lengthscale = [3.5, 3.5]
 variance = 1.
 noise_var = 0.001
 
 rng = np.random.RandomState(5) # 5 happens to be a pretty draw.
 X = rng.randn(N, Q)
-k = GPflow.kernels.PeriodicKernel(Q, variance=variance, lengthscales=lengthscale, period=3, active_dims=[0])
+k = GPflow.ekernels.RBF(Q, variance=variance, lengthscales=lengthscale, active_dims=[0,1])
 K = k.compute_K(X, X)
 Y = rng.multivariate_normal(np.zeros(N), K + np.eye(N) * noise_var, D).T
 
-XPCA = GPflow.gplvm.PCA_reduce(Y, 1)
+XPCA = GPflow.gplvm.PCA_reduce(Y, 2)
 m = GPflow.gplvm.BayesianGPLVM(Y=Y, kern=k, X_mean=XPCA, X_var=np.ones((N, Q)) * 0.01, Z=np.random.randn(10, Q), M=10)
 m.likelihood.variance = noise_var
 
@@ -53,7 +53,8 @@ def plot():
     axes[2].set_ylabel('Y_1 (data)')
 
 m.optimize()
-Xmu, Xvar = m.infer_latent_inputs(np.atleast_2d(Y[0,:]), disp=True)
-print(m)
-print(Xmu)
-print(Xvar)
+Xmu, Xvar,prob = m.infer_latent_inputs(np.atleast_2d(Y), return_logprobs=True)
+print(m.X_mean.value - Xmu)
+print(m.X_var.value - Xvar)
+print(m.compute_log_likelihood())
+print(prob)

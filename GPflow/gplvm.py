@@ -206,55 +206,88 @@ class BayesianGPLVM(GPModel):
 
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type, [None, None]))
     def held_out_data_objective(self, Y_new, mu_new, var_new):
+        """
+        TF computation of likelihood objective + gradients, given new observed points and a candidate q(X*)
+        :param Y_new: new observed points, size Nnew (number of new points) x D (dimensions).
+        :param mu_new: candidate mean, np.ndarray of size Nnew (number of new points) x Q (latent dimensions)
+        :param var_new: candidate variance, np.ndarray of size Nnew (number of new points) x Q (latent dimensions)
+        :return: returning an (objective,gradient) tuple
+        """
         X_mean = tf.concat(0, [self.X_mean, mu_new])
         X_var = tf.concat(0, [self.X_var, var_new])
         Y = tf.concat(0, [self.Y, Y_new])
         objective = self._build_likelihood_graph(X_mean, X_var, Y)
-        gradients = tf.squeeze(tf.concat(0, tf.gradients(objective, [mu_new, var_new])))
+
+        # Collect and flatten gradients
+        flattened_gradients = map(lambda gradients: tf.reshape(gradients, [tf.size(mu_new),1]),
+                                  tf.gradients(objective, [mu_new, var_new]))
+        gradients = tf.squeeze(tf.concat(0, flattened_gradients))
+
         f = tf.negative(objective, name='objective')
         g = tf.negative(gradients, name='grad_objective')
 
         return f, g
 
-    def _held_out_data_wrapper_creator(self, Ynew):
-        infer_number = Ynew.shape[0]
+    def _held_out_data_wrapper_creator(self, Y_new):
+        """
+        Private wrapper function for returning an objective function accepted by scipy.optimize.minimize
+        :param Y_new: new observed points, size Nnew (number of new points) x D (dimensions).
+        :return: function accepting a flat numpy array of size 2 x Nnew (number of new points) x Q (latent dimensions)
+        and returning an (objective,gradient) tuple
+        """
+        infer_number = Y_new.shape[0]
+        num_param = infer_number * self.num_latent * 2
 
         def fun(x_flat):
-            print(x_flat)
-            mu_new = x_flat[:infer_number * self.num_latent].reshape((infer_number, self.num_latent))
-            var_new = x_flat[infer_number * self.num_latent:].reshape((infer_number, self.num_latent))
-            print(self.held_out_data_objective(Ynew, mu_new, var_new))
-            return self.held_out_data_objective(Ynew, mu_new, var_new)
+            mu_new = x_flat[:num_param/2].reshape((infer_number, self.num_latent))
+            var_new = x_flat[num_param/2:].reshape((infer_number, self.num_latent))
+            return self.held_out_data_objective(Y_new, mu_new, var_new)
 
         return fun
 
-    def infer_latent_inputs(self, Ynew, method='L-BFGS-B', tol=None, observed=None, return_logprobs=False, **kwargs):
-        infer_number = Ynew.shape[0]
-        assert (Ynew.shape[1] == self.output_dim)
+    def infer_latent_inputs(self, Y_new, method='L-BFGS-B', tol=None, return_logprobs=False, **kwargs):
+        """
+        Computes the latent representation of new observed points by maximizing
+        .. math::
+
+            p(Y*|Y)
+
+        :param Y_new: new observed points, size Nnew (number of new points) x D (dimensions).
+        :param method: method is a string (default 'L-BFGS-B') specifying the scipy optimization routine
+        :param tol: tol is the tolerance to be passed to the optimization routine
+        :param kern: kernel specification, by default RBF
+        :param return_logprobs: returns the likelihood probability after optimization
+        :param kwargs: passed on to the options field of the scipy minimizer
+
+        :returns (mean, var) or (mean, var, prob) in case return_logprobs is true.
+        :rtype mean, var: np.ndarray, size Nnew (number of new points ) x Q (latent dim)
+        """
+
+        infer_number = Y_new.shape[0]
+        assert (Y_new.shape[1] == self.output_dim)
 
         # Objective
-        f = self._held_out_data_wrapper_creator(Ynew)
+        f = self._held_out_data_wrapper_creator(Y_new)
 
-        # Initialization - with tf?
-        nearest_idx = np.argmin(cdist(self.Y.value, Ynew), axis=0)
-        #x_init = np.hstack((self.X_mean.value[nearest_idx, :].flatten(),
-        #                    self.X_var.value[nearest_idx, :].flatten())) \
-        #         + np.random.randn(2* infer_number * self.num_latent) * 0.001
-        x_init = np.hstack((self.X_mean.value[nearest_idx, :].flatten(), np.ones(infer_number * self.num_latent)))
+        # Initialization: could do this with tf?
+        nearest_idx = np.argmin(cdist(self.Y.value, Y_new), axis=0)
+        x_init = np.hstack((self.X_mean.value[nearest_idx, :].flatten(),
+                            self.X_var.value[nearest_idx, :].flatten()))
 
-        # Optimize
+        # Optimize - restrict var to be positive
         result = minimize(fun=f,
                           x0=x_init,
                           jac=True,
                           method=method,
                           tol=tol,
+                          bounds = [(None, None)]*(x_init.size/2) + [(0, None)]*(x_init.size/2),
                           options=kwargs)
         x_hat = result.x
         mu = x_hat[:infer_number * self.num_latent].reshape((infer_number, self.num_latent))
         var = x_hat[infer_number * self.num_latent:].reshape((infer_number, self.num_latent))
 
         if return_logprobs:
-            return mu, var, result.fun
+            return mu, var, -result.fun
         else:
             return mu, var
 

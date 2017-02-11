@@ -73,6 +73,16 @@ class TestBayesianGPLVM(unittest.TestCase):
         for i in range(self.D):
             self.assertTrue(np.allclose(var_f[:, i], np.diag(var_fFull[:, :, i])))
 
+        # inverse prediction
+        m.optimize()
+        mu_inferred, var_inferred = m.infer_latent_inputs(self.Y)
+        self.assertTupleEqual(mu_inferred.shape, (self.N,Q))
+        self.assertTupleEqual(var_inferred.shape, (self.N,Q))
+        self.assertTrue(np.allclose(m.X_mean.value, mu_inferred, atol=1e-3))
+        self.assertTrue(np.allclose(m.X_var.value, var_inferred, atol=1e-3))
+        mu_inferred, var_inferred, prob = m.infer_latent_inputs(np.atleast_2d(self.Y[0,:]), return_logprobs=True)
+        self.assertLess(abs(prob - m.compute_log_likelihood()), 15)
+
     def test_kernelsActiveDims(self):
         ''' Test sum and product compositional kernels '''
         Q = 2  # latent dimensions
