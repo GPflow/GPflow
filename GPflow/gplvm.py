@@ -2,13 +2,15 @@ import tensorflow as tf
 import numpy as np
 from .model import GPModel
 from .gpr import GPR
-from .param import Param
+from .param import Param, AutoFlow, DataHolder
 from .mean_functions import Zero
 from . import likelihoods
 from .tf_wraps import eye
 from . import transforms
 from . import kernels
 from ._settings import settings
+from scipy.optimize import minimize
+from scipy.spatial.distance import cdist
 
 float_type = settings.dtypes.float_type
 
@@ -111,12 +113,26 @@ class BayesianGPLVM(GPModel):
     def build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
-        likelihood.
+        likelihood for the training data.
         """
+        return self._build_likelihood_graph(self.X_mean, self.X_var, self.Y, self.X_prior_mean, self.X_prior_var)
+
+    def _build_likelihood_graph(self, X_mean, X_var, Y, X_prior_mean=None, X_prior_var=None):
+        """
+        Construct a tensorflow function to compute the bound on the marginal
+        likelihood given a Gaussian multivariate distribution representing
+        X (and its priors) and observed Y
+        """
+
+        if X_prior_mean is None:
+            X_prior_mean = tf.zeros((tf.shape(Y)[0], self.num_latent), float_type)
+        if X_prior_var is None:
+            X_prior_var = tf.ones((tf.shape(Y)[0], self.num_latent), float_type)
+
         num_inducing = tf.shape(self.Z)[0]
-        psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
-        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
-        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
+        psi0 = tf.reduce_sum(self.kern.eKdiag(X_mean, X_var), 0)
+        psi1 = self.kern.eKxz(self.Z, X_mean, X_var)
+        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, X_mean, X_var), 0)
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
@@ -129,22 +145,22 @@ class BayesianGPLVM(GPModel):
         B = AAT + eye(num_inducing)
         LB = tf.cholesky(B)
         log_det_B = 2. * tf.reduce_sum(tf.log(tf.diag_part(LB)))
-        c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        dX_var = self.X_var if len(self.X_var.get_shape()) == 2 else tf.matrix_diag_part(self.X_var)
-        NQ = tf.cast(tf.size(self.X_mean), float_type)
-        D = tf.cast(tf.shape(self.Y)[1], float_type)
+        dX_var = X_var if len(X_var.get_shape()) == 2 else tf.matrix_diag_part(X_var)
+        NQ = tf.cast(tf.size(X_mean), float_type)
+        D = tf.cast(tf.shape(Y)[1], float_type)
         KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
-             + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
+             + 0.5 * tf.reduce_sum(tf.log(X_prior_var)) \
              - 0.5 * NQ \
-             + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
+             + 0.5 * tf.reduce_sum((tf.square(X_mean - X_prior_mean) + dX_var) / X_prior_var)
 
         # compute log marginal bound
-        ND = tf.cast(tf.size(self.Y), float_type)
+        ND = tf.cast(tf.size(Y), float_type)
         bound = -0.5 * ND * tf.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
-        bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
+        bound += -0.5 * tf.reduce_sum(tf.square(Y)) / sigma2
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 -
                              tf.reduce_sum(tf.diag_part(AAT)))
@@ -187,3 +203,77 @@ class BayesianGPLVM(GPModel):
             shape = tf.stack([1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
+
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type, [None, None]))
+    def held_out_data_objective(self, Y_new, mu_new, var_new):
+        X_mean = tf.concat(0, [self.X_mean, mu_new])
+        X_var = tf.concat(0, [self.X_var, var_new])
+        Y = tf.concat(0, [self.Y, Y_new])
+        objective = self._build_likelihood_graph(X_mean, X_var, Y)
+        gradients = tf.squeeze(tf.concat(0, tf.gradients(objective, [mu_new, var_new])))
+        f = tf.negative(objective, name='objective')
+        g = tf.negative(gradients, name='grad_objective')
+
+        return f, g
+
+    def _held_out_data_wrapper_creator(self, Ynew):
+        infer_number = Ynew.shape[0]
+
+        def fun(x_flat):
+            print(x_flat)
+            mu_new = x_flat[:infer_number * self.num_latent].reshape((infer_number, self.num_latent))
+            var_new = x_flat[infer_number * self.num_latent:].reshape((infer_number, self.num_latent))
+            print(self.held_out_data_objective(Ynew, mu_new, var_new))
+            return self.held_out_data_objective(Ynew, mu_new, var_new)
+
+        return fun
+
+    def infer_latent_inputs(self, Ynew, method='L-BFGS-B', tol=None, observed=None, return_logprobs=False, **kwargs):
+        infer_number = Ynew.shape[0]
+        assert (Ynew.shape[1] == self.output_dim)
+
+        # Objective
+        f = self._held_out_data_wrapper_creator(Ynew)
+
+        # Initialization - with tf?
+        nearest_idx = np.argmin(cdist(self.Y.value, Ynew), axis=0)
+        #x_init = np.hstack((self.X_mean.value[nearest_idx, :].flatten(),
+        #                    self.X_var.value[nearest_idx, :].flatten())) \
+        #         + np.random.randn(2* infer_number * self.num_latent) * 0.001
+        x_init = np.hstack((self.X_mean.value[nearest_idx, :].flatten(), np.ones(infer_number * self.num_latent)))
+
+        # Optimize
+        result = minimize(fun=f,
+                          x0=x_init,
+                          jac=True,
+                          method=method,
+                          tol=tol,
+                          options=kwargs)
+        x_hat = result.x
+        mu = x_hat[:infer_number * self.num_latent].reshape((infer_number, self.num_latent))
+        var = x_hat[infer_number * self.num_latent:].reshape((infer_number, self.num_latent))
+
+        if return_logprobs:
+            return mu, var, result.fun
+        else:
+            return mu, var
+
+    def predict_unobserved_f(self, Ynew_observed, observed):
+        observed = np.atleast_1d(observed)
+        assert(Ynew_observed.shape[1] == observed.size)
+        #unobserved = np.setdiff1d(np.arange(self.Y.shape[1]), observed)
+
+        # Retain observed variables of training data, obtain q(X*)
+        Y_full = self.Y
+        self.Y = DataHolder(Y_full.value[:, observed])
+        mu, var = self.infer_latent_inputs(Ynew_observed)
+
+        # Restore full training data
+        self.Y = Y_full
+
+        # Perform predict_f w.r.t uncertainty q(X*)
+        return
+
+    def predict_unobserved_y(self, Ynew_observed, observed):
+        pass
+
