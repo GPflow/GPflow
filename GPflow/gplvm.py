@@ -293,22 +293,68 @@ class BayesianGPLVM(GPModel):
         else:
             return mu, var
 
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
+    def uncertain_predict(self, Xstarmu, Xstarvar):
+        num_inducing = tf.shape(self.Z)[0]
+        num_predict = tf.shape(Xstarmu)[0]
+        num_out = tf.shape(self.Y)[1]
+
+        # Kernel expectations, w.r.t q(X) and q(X*)
+        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var) # num_train x num_inducing
+        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0) # num_inducing x num_inducing
+        psi0star = self.kern.eKdiag(Xstarmu, Xstarvar) # num_predict
+        psi1star = self.kern.eKxz(self.Z, Xstarmu, Xstarvar) # num_predict x num_inducing
+        psi2star = tf.reduce_sum(self.kern.eKzxKxz(self.Z, Xstarmu, Xstarvar), 0) # num_inducing x num_inducing
+
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6 # num_inducing x num_inducing
+        sigma2 = self.likelihood.variance
+        sigma = tf.sqrt(sigma2)
+        L = tf.cholesky(Kuu) # num_inducing x num_inducing
+
+        A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma # num_inducing x num_train
+        tmp = tf.matrix_triangular_solve(L, psi2, lower=True) # num_inducing x num_inducing
+        AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
+        B = AAT + eye(num_inducing)
+        LB = tf.cholesky(B) # num_inducing x num_inducing
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma # num_inducing x num_out
+        tmp1 = tf.matrix_triangular_solve(L, tf.transpose(psi1star), lower=True)
+        tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
+        mean = tf.matmul(tf.transpose(tmp2), c)
+
+        L3 = tf.tile(tf.expand_dims(L, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_inducing
+        LB3 = tf.tile(tf.expand_dims(LB, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_inducing
+        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.einsum('ij,ik->ijk', psi1star, psi1star))) # num_predict x num_inducing x num_inducing
+        tmp4 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.transpose(tmp3, perm=[0, 2, 1]))) # num_predict x num_inducing x num_inducing
+        tmp5 = tf.matrix_triangular_solve(L, tf.transpose(tf.matrix_triangular_solve(L, psi2star))) # num_inducing x num_inducing
+        c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_out
+
+        # some segments - must be joined into sigma
+        TT = tf.trace(tmp5 - tf.matrix_triangular_solve(LB, tf.transpose(tf.matrix_triangular_solve(LB, psi2star)))) # num_predict
+        var1 = tf.matmul(tf.transpose(c3, perm=[0,2,1]), tf.matmul(tmp4,c3)) # num_predict x num_out x num_out
+        var2 = tf.einsum('i,jk->ijk', psi0star - TT, tf.eye(num_out)) # num_predict x num_out x num_out
+        var = var1 + var2
+        return mean, var
+
+
     def predict_unobserved_f(self, Ynew_observed, observed):
         observed = np.atleast_1d(observed)
         assert(Ynew_observed.shape[1] == observed.size)
-        #unobserved = np.setdiff1d(np.arange(self.Y.shape[1]), observed)
 
         # Retain observed variables of training data, obtain q(X*)
         Y_full = self.Y
         self.Y = DataHolder(Y_full.value[:, observed])
-        mu, var = self.infer_latent_inputs(Ynew_observed)
+        self.output_dim = observed.size
+        Xstarmu, Xstarvar = self.infer_latent_inputs(Ynew_observed)
 
-        # Restore full training data
-        self.Y = Y_full
+        # Perform prediction w.r.t q(X*)
 
-        # Perform predict_f w.r.t uncertainty q(X*)
-        return
 
-    def predict_unobserved_y(self, Ynew_observed, observed):
-        pass
+        # Create full predictive distribution for Ynew
+        #unobserved = np.setdiff1d(np.arange(self.Y.shape[1]), observed)
+        #mu = np.zeros((Ynew_observed.shape[0], self.output_dim))
+        #mu[:, observed] = Ynew_observed
+        #mu[:, unobserved] = unobserved_mu
+        #var = np.zeros((Ynew_observed.shape[0], self.output_dim))
+        #return mu, var
+
 
