@@ -13,6 +13,8 @@ from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
 
 float_type = settings.dtypes.float_type
+int_type = settings.dtypes.int_type
+
 
 
 def PCA_reduce(X, Q):
@@ -204,19 +206,23 @@ class BayesianGPLVM(GPModel):
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
-    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type, [None, None]))
-    def held_out_data_objective(self, Y_new, mu_new, var_new):
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]),
+              (float_type, [None, None]), (int_type, [None]))
+    def held_out_data_objective(self, Y_new, mu_new, var_new, observed):
         """
         TF computation of likelihood objective + gradients, given new observed points and a candidate q(X*)
-        :param Y_new: new observed points, size Nnew (number of new points) x D (dimensions).
+        :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions), with k <= D.
         :param mu_new: candidate mean, np.ndarray of size Nnew (number of new points) x Q (latent dimensions)
         :param var_new: candidate variance, np.ndarray of size Nnew (number of new points) x Q (latent dimensions)
+        :param observed: 1D array of dimension indices to consider during inference. if specified, k = len(observed)
         :return: returning an (objective,gradients) tuple. gradients is a list of 2 matrices for mu and var of size
         Nnew x Q
         """
+        idx = tf.expand_dims(observed, -1)
+        Y_obs = tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
         X_mean = tf.concat(0, [self.X_mean, mu_new])
         X_var = tf.concat(0, [self.X_var, var_new])
-        Y = tf.concat(0, [self.Y, Y_new])
+        Y = tf.concat(0, [Y_obs, Y_new])
         objective = self._build_likelihood_graph(X_mean, X_var, Y)
 
         # Collect gradients
@@ -226,10 +232,11 @@ class BayesianGPLVM(GPModel):
         g = tf.negative(gradients, name='grad_objective')
         return f, g
 
-    def _held_out_data_wrapper_creator(self, Y_new):
+    def _held_out_data_wrapper_creator(self, Y_new, observed):
         """
         Private wrapper function for returning an objective function accepted by scipy.optimize.minimize
-        :param Y_new: new observed points, size Nnew (number of new points) x D (dimensions).
+        :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions), with k <= D.
+        :param observed: 1D array of dimension indices to consider during inference. if specified, k = len(observed)
         :return: function accepting a flat numpy array of size 2 x Nnew (number of new points) x Q (latent dimensions)
         and returning an (objective,gradient) tuple
         """
@@ -242,37 +249,44 @@ class BayesianGPLVM(GPModel):
             var_new = x_flat[num_param/2:].reshape((infer_number, self.num_latent))
 
             # Compute likelihood & flatten gradients
-            f,g = self.held_out_data_objective(Y_new, mu_new, var_new)
+            f,g = self.held_out_data_objective(Y_new, mu_new, var_new, observed)
             return f, np.hstack(map(lambda gradient: gradient.flatten(), g))
 
         return fun
 
-    def infer_latent_inputs(self, Y_new, method='L-BFGS-B', tol=None, return_logprobs=False, **kwargs):
+    def infer_latent_inputs(self, Y_new, method='L-BFGS-B', tol=None, return_logprobs=False, observed=None, **kwargs):
         """
         Computes the latent representation of new observed points by maximizing
         .. math::
 
             p(Y*|Y)
 
-        :param Y_new: new observed points, size Nnew (number of new points) x D (dimensions).
+        :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions). with k <= D.
         :param method: method is a string (default 'L-BFGS-B') specifying the scipy optimization routine
         :param tol: tol is the tolerance to be passed to the optimization routine
         :param kern: kernel specification, by default RBF
         :param return_logprobs: returns the likelihood probability after optimization
+        :param observed: 1D array of dimension indices to consider during inference. if specified, k = len(observed)
         :param kwargs: passed on to the options field of the scipy minimizer
 
         :returns (mean, var) or (mean, var, prob) in case return_logprobs is true.
         :rtype mean, var: np.ndarray, size Nnew (number of new points ) x Q (latent dim)
         """
 
+        if observed is None:
+            assert (Y_new.shape[1] == self.output_dim)
+            observed = np.arange(self.output_dim)
+        else:
+            observed = np.atleast_1d(observed)
+
+        assert (Y_new.shape[1] == observed.size)
         infer_number = Y_new.shape[0]
-        assert (Y_new.shape[1] == self.output_dim)
 
         # Objective
-        f = self._held_out_data_wrapper_creator(Y_new)
+        f = self._held_out_data_wrapper_creator(Y_new, observed)
 
         # Initialization: could do this with tf?
-        nearest_idx = np.argmin(cdist(self.Y.value, Y_new), axis=0)
+        nearest_idx = np.argmin(cdist(self.Y.value[:,observed], Y_new), axis=0)
         x_init = np.hstack((self.X_mean.value[nearest_idx, :].flatten(),
                             self.X_var.value[nearest_idx, :].flatten()))
 
@@ -293,11 +307,13 @@ class BayesianGPLVM(GPModel):
         else:
             return mu, var
 
-    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
-    def uncertain_predict(self, Xstarmu, Xstarvar):
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (int_type, [None]))
+    def uncertain_predict(self, Xstarmu, Xstarvar, unobserved):
+        idx = tf.expand_dims(unobserved, -1)
+        Y_unobs = tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
         num_inducing = tf.shape(self.Z)[0]
         num_predict = tf.shape(Xstarmu)[0]
-        num_out = tf.shape(self.Y)[1]
+        num_out = tf.shape(Y_unobs)[1]
 
         # Kernel expectations, w.r.t q(X) and q(X*)
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var) # num_train x num_inducing
@@ -316,45 +332,47 @@ class BayesianGPLVM(GPModel):
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + eye(num_inducing)
         LB = tf.cholesky(B) # num_inducing x num_inducing
-        c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma # num_inducing x num_out
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, Y_unobs), lower=True) / sigma # num_inducing x num_out
         tmp1 = tf.matrix_triangular_solve(L, tf.transpose(psi1star), lower=True)
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
         mean = tf.matmul(tf.transpose(tmp2), c)
 
         L3 = tf.tile(tf.expand_dims(L, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_inducing
         LB3 = tf.tile(tf.expand_dims(LB, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_inducing
-        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.einsum('ij,ik->ijk', psi1star, psi1star))) # num_predict x num_inducing x num_inducing
+        psi1star3 = tf.matmul(tf.expand_dims(psi1star, -1), tf.transpose(tf.expand_dims(psi1star, -1), perm=[0, 2, 1])) # num_predict x num_inducing x num_inducing
+        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, psi1star3)) # num_predict x num_inducing x num_inducing
         tmp4 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.transpose(tmp3, perm=[0, 2, 1]))) # num_predict x num_inducing x num_inducing
         tmp5 = tf.matrix_triangular_solve(L, tf.transpose(tf.matrix_triangular_solve(L, psi2star))) # num_inducing x num_inducing
         c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_out
 
-        # some segments - must be joined into sigma
-        TT = tf.trace(tmp5 - tf.matrix_triangular_solve(LB, tf.transpose(tf.matrix_triangular_solve(LB, psi2star)))) # num_predict
+        TT = tf.trace(tmp5 - tf.matrix_triangular_solve(LB, tf.transpose(tf.matrix_triangular_solve(LB, tmp5)))) # num_predict
+        diagonals = tf.tile(tf.expand_dims(eye(num_out), -1), [1, 1, num_predict]) * (psi0star - TT) # num_out x num_out x num_predict
         var1 = tf.matmul(tf.transpose(c3, perm=[0,2,1]), tf.matmul(tmp4,c3)) # num_predict x num_out x num_out
-        var2 = tf.einsum('i,jk->ijk', psi0star - TT, tf.eye(num_out)) # num_predict x num_out x num_out
+        var2 = tf.transpose(diagonals, perm=[2,0,1])
         var = var1 + var2
         return mean, var
 
 
     def predict_unobserved_f(self, Ynew_observed, observed):
         observed = np.atleast_1d(observed)
+        unobserved = np.setdiff1d(np.arange(self.Y.shape[1]), observed)
+        print(Ynew_observed.shape)
         assert(Ynew_observed.shape[1] == observed.size)
 
-        # Retain observed variables of training data, obtain q(X*)
-        Y_full = self.Y
-        self.Y = DataHolder(Y_full.value[:, observed])
-        self.output_dim = observed.size
-        Xstarmu, Xstarvar = self.infer_latent_inputs(Ynew_observed)
+        # obtain q(X*), only consider observed dimensions
+        Xstarmu, Xstarvar = self.infer_latent_inputs(Ynew_observed, observed=observed)
 
         # Perform prediction w.r.t q(X*)
+        unobserved_mu, unobserved_var = self.uncertain_predict(Xstarmu, Xstarvar, unobserved)
 
-
-        # Create full predictive distribution for Ynew
-        #unobserved = np.setdiff1d(np.arange(self.Y.shape[1]), observed)
-        #mu = np.zeros((Ynew_observed.shape[0], self.output_dim))
-        #mu[:, observed] = Ynew_observed
-        #mu[:, unobserved] = unobserved_mu
-        #var = np.zeros((Ynew_observed.shape[0], self.output_dim))
-        #return mu, var
+        # Fix full predictive distribution for Ynew
+        mu = np.zeros((Ynew_observed.shape[0], self.output_dim))
+        var = np.zeros((Ynew_observed.shape[0], self.output_dim, self.output_dim))
+        mu[:, observed] = Ynew_observed
+        mu[:, unobserved] = unobserved_mu
+        slice_x = var[:, unobserved, :]
+        slice_x[:,:,unobserved] = unobserved_var
+        var[:, unobserved, :] = slice_x
+        return mu, var
 
 
