@@ -28,7 +28,7 @@ python setup.py install
 ```
 You can run the tests with `python setup.py test`.
 
-#Docker image
+## Docker image
 
 We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which can be run using
 
