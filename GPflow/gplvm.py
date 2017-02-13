@@ -320,7 +320,7 @@ class BayesianGPLVM(GPModel):
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0) # num_inducing x num_inducing
         psi0star = self.kern.eKdiag(Xstarmu, Xstarvar) # num_predict
         psi1star = self.kern.eKxz(self.Z, Xstarmu, Xstarvar) # num_predict x num_inducing
-        psi2star = tf.reduce_sum(self.kern.eKzxKxz(self.Z, Xstarmu, Xstarvar), 0) # num_inducing x num_inducing
+        psi2star = self.kern.eKzxKxz(self.Z, Xstarmu, Xstarvar) # num_predict x num_inducing x num_inducing
 
         Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6 # num_inducing x num_inducing
         sigma2 = self.likelihood.variance
@@ -340,12 +340,12 @@ class BayesianGPLVM(GPModel):
         L3 = tf.tile(tf.expand_dims(L, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_inducing
         LB3 = tf.tile(tf.expand_dims(LB, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_inducing
         psi1star3 = tf.matmul(tf.expand_dims(psi1star, -1), tf.transpose(tf.expand_dims(psi1star, -1), perm=[0, 2, 1])) # num_predict x num_inducing x num_inducing
-        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, psi1star3)) # num_predict x num_inducing x num_inducing
+        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, psi2star-psi1star3)) # num_predict x num_inducing x num_inducing
         tmp4 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.transpose(tmp3, perm=[0, 2, 1]))) # num_predict x num_inducing x num_inducing
-        tmp5 = tf.matrix_triangular_solve(L, tf.transpose(tf.matrix_triangular_solve(L, psi2star))) # num_inducing x num_inducing
+        tmp5 = tf.matrix_triangular_solve(L3, tf.transpose(tf.matrix_triangular_solve(L3, psi2star), perm=[0, 2, 1])) # num_predict x num_inducing x num_inducing
         c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_out
 
-        TT = tf.trace(tmp5 - tf.matrix_triangular_solve(LB, tf.transpose(tf.matrix_triangular_solve(LB, tmp5)))) # num_predict
+        TT = tf.trace(tmp5 - tf.matrix_triangular_solve(LB3, tf.transpose(tf.matrix_triangular_solve(LB3, tmp5), perm=[0, 2, 1]))) # num_predict
         diagonals = tf.tile(tf.expand_dims(eye(num_out), -1), [1, 1, num_predict]) * (psi0star - TT) # num_out x num_out x num_predict
         var1 = tf.matmul(tf.transpose(c3, perm=[0,2,1]), tf.matmul(tmp4,c3)) # num_predict x num_out x num_out
         var2 = tf.transpose(diagonals, perm=[2,0,1])
