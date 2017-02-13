@@ -28,6 +28,16 @@ python setup.py install
 ```
 You can run the tests with `python setup.py test`.
 
+#Docker image
+
+We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which can be run using
+
+```
+docker run -it -p 8888:8888 gpflow/gpflow
+```
+
+Code to generate the image can be found [here](Dockerfile)
+
 # Getting help
 Please use gihub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs. 
 
