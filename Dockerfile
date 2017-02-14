@@ -18,18 +18,14 @@
 
 #To replicate build use:
 #docker build -t gpflow/gpflow .
+#Assumes you are running from within cloned repo.
 
 #Uses official Tensorflow docker for cpu only.
-FROM tensorflow/tensorflow
-RUN apt-get -y update
-RUN apt-get -y install git
-RUN git clone https://github.com/GPflow/GPflow /usr/local/GPflow
+FROM tensorflow/tensorflow:0.12.1
+COPY ./ /usr/local/GPflow/
 RUN cd /usr/local/GPflow && \
-    python setup.py develop
-#Clear TensorFlow demos and replace them with GPflow examples.
-RUN rm /notebooks/*.*
-RUN rm /notebooks/*
-COPY doc/source/notebooks/*.* /notebooks/
-COPY doc/source/notebooks/data/* /notebooks/data/
-COPY LICENSE /notebooks
-COPY README.md /notebooks
+    python setup.py develop && \
+    rm /notebooks/*  && \ 
+    apt-get clean  && \
+    rm -rf /var/lib/apt/lists/*  
+COPY doc/source/notebooks/ LICENSE README.md /notebooks/ 
