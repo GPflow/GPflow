@@ -285,12 +285,12 @@ class BayesianGPLVM(GPModel):
         and returning a tuple (objective,gradient)
         """
         infer_number = Ynew.shape[0]
-        num_param = infer_number * self.num_latent * 2
+        half_num_param = infer_number * self.num_latent
 
         def fun(x_flat):
             # Unpack q(X*) candidate
-            mu_new = x_flat[:num_param/2].reshape((infer_number, self.num_latent))
-            var_new = x_flat[num_param/2:].reshape((infer_number, self.num_latent))
+            mu_new = x_flat[:half_num_param].reshape((infer_number, self.num_latent))
+            var_new = x_flat[half_num_param:].reshape((infer_number, self.num_latent))
 
             # Compute likelihood & flatten gradients
             f,g = self.held_out_data_objective(Ynew, mu_new, var_new, observed)
@@ -337,7 +337,7 @@ class BayesianGPLVM(GPModel):
                           jac=True,
                           method=method,
                           tol=tol,
-                          bounds = [(None, None)]*(x_init.size/2) + [(0, None)]*(x_init.size/2),
+                          bounds = [(None, None)]*int(x_init.size/2) + [(0, None)]*int(x_init.size/2),
                           options=kwargs)
         x_hat = result.x
         mu = x_hat[:infer_number * self.num_latent].reshape((infer_number, self.num_latent))
