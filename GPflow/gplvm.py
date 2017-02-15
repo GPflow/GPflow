@@ -113,12 +113,10 @@ class BayesianGPLVM(GPModel):
         assert X_prior_var.shape[0] == self.num_data
         assert X_prior_var.shape[1] == self.num_latent
 
-        self.obs = DataHolder(np.empty(0))
-
     def build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
-        likelihood for the training data.
+        likelihood for the training data (all dimensions).
         """
         return self._build_likelihood_graph(self.X_mean, self.X_var, self.Y, self.X_prior_mean, self.X_prior_var)
 
@@ -209,21 +207,10 @@ class BayesianGPLVM(GPModel):
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
-    def _get_Y_observed(self):
-        idx = tf.expand_dims(self.obs, -1)
-        return tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
-
-    def _get_Y_unobserved(self):
-        unobserved = tf.setdiff1d(tf.range(tf.shape(self.Y)[1]), self.obs)[0]
-        idx = tf.expand_dims(unobserved, -1)
-        return tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
-
-
     def build_predict_distribution(self, Xstarmu, Xstarvar):
-        Y = self._get_Y_unobserved()
         num_inducing = tf.shape(self.Z)[0] # M
         num_predict = tf.shape(Xstarmu)[0] # N*
-        num_out = tf.shape(Y)[1]     # p
+        num_out = self.output_dim     # p
 
         # Kernel expectations, w.r.t q(X) and q(X*)
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var) # N x M
@@ -242,7 +229,7 @@ class BayesianGPLVM(GPModel):
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + eye(num_inducing)
         LB = tf.cholesky(B) # M x M
-        c = tf.matrix_triangular_solve(LB, tf.matmul(A, Y), lower=True) / sigma # M x p
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma # M x p
         tmp1 = tf.matrix_triangular_solve(L, tf.transpose(psi1star), lower=True)
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
         mean = tf.matmul(tf.transpose(tmp2), c)
@@ -265,18 +252,19 @@ class BayesianGPLVM(GPModel):
         return mean, covar
 
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]),
-              (float_type, [None, None]))
-    def held_out_data_objective(self, Y_new, mu_new, var_new):
+              (float_type, [None, None]), (int_type, [None]))
+    def held_out_data_objective(self, Y_new, mu_new, var_new, observed):
         """
         TF computation of likelihood objective + gradients, given new observed points and a candidate q(X*)
         :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions), with k <= D.
         :param mu_new: candidate mean, np.ndarray of size Nnew (number of new points) x Q (latent dimensions)
         :param var_new: candidate variance, np.ndarray of size Nnew (number of new points) x Q (latent dimensions)
-        :param observed: 1D array of dimension indices to consider during inference. if specified, k = len(observed)
-        :return: returning an (objective,gradients) tuple. gradients is a list of 2 matrices for mu and var of size
+        :param observed: indices for the observed dimensions np.ndarray of size k
+        :return: returning a tuple (objective,gradients). gradients is a list of 2 matrices for mu and var of size
         Nnew x Q
         """
-        Y_obs = self._get_Y_observed()
+        idx = tf.expand_dims(observed, -1)
+        Y_obs = tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
         X_mean = tf.concat(0, [self.X_mean, mu_new])
         X_var = tf.concat(0, [self.X_var, var_new])
         Y = tf.concat(0, [Y_obs, Y_new])
@@ -289,13 +277,12 @@ class BayesianGPLVM(GPModel):
         g = tf.negative(gradients, name='grad_objective')
         return f, g
 
-    def _held_out_data_wrapper_creator(self, Y_new):
+    def _held_out_data_wrapper_creator(self, Y_new, observed):
         """
         Private wrapper function for returning an objective function accepted by scipy.optimize.minimize
-        :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions), with k <= D.
-        :param observed: 1D array of dimension indices to consider during inference. if specified, k = len(observed)
-        :return: function accepting a flat numpy array of size 2 x Nnew (number of new points) x Q (latent dimensions)
-        and returning an (objective,gradient) tuple
+        :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions)
+        :return: function accepting a flat numpy array of size 2 * Nnew (number of new points) * Q (latent dimensions)
+        and returning a tuple (objective,gradient)
         """
         infer_number = Y_new.shape[0]
         num_param = infer_number * self.num_latent * 2
@@ -306,40 +293,43 @@ class BayesianGPLVM(GPModel):
             var_new = x_flat[num_param/2:].reshape((infer_number, self.num_latent))
 
             # Compute likelihood & flatten gradients
-            f,g = self.held_out_data_objective(Y_new, mu_new, var_new)
+            f,g = self.held_out_data_objective(Y_new, mu_new, var_new, observed)
             return f, np.hstack(map(lambda gradient: gradient.flatten(), g))
 
         return fun
 
-    def infer_latent_inputs(self, Y_new, method='L-BFGS-B', tol=None, return_logprobs=False, **kwargs):
+    def infer_latent_inputs(self, Y_new, method='L-BFGS-B', tol=None, return_logprobs=False, observed=None, **kwargs):
         """
         Computes the latent representation of new observed points by maximizing
         .. math::
 
             p(Y*|Y)
 
+        It is automatically assumed all dimensions D were observed unless the observed parameter is specified.
+
         :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions). with k <= D.
         :param method: method is a string (default 'L-BFGS-B') specifying the scipy optimization routine
         :param tol: tol is the tolerance to be passed to the optimization routine
         :param kern: kernel specification, by default RBF
-        :param return_logprobs: returns the likelihood probability after optimization
-        :param observed: 1D array of dimension indices to consider during inference. if specified, k = len(observed)
+        :param return_logprobs: return the likelihood probability after optimization (default: False)
+        :param observed: list of dimensions specified with length k. None (the default) indicates all D were observed
         :param kwargs: passed on to the options field of the scipy minimizer
 
         :returns (mean, var) or (mean, var, prob) in case return_logprobs is true.
         :rtype mean, var: np.ndarray, size Nnew (number of new points ) x Q (latent dim)
         """
 
-        assert (Y_new.shape[1] == self.obs.size)
+        observed = np.arange(self.Y.shape[1], dtype=np.int32) if observed is None else np.atleast_1d(observed)
+        assert (Y_new.shape[1] == observed.size)
         infer_number = Y_new.shape[0]
 
-        # Objective
-        f = self._held_out_data_wrapper_creator(Y_new)
-
         # Initialization: could do this with tf?
-        nearest_idx = np.argmin(cdist(self.Y.value[:,self.obs.value], Y_new), axis=0)
+        nearest_idx = np.argmin(cdist(self.Y.value[:, observed], Y_new), axis=0)
         x_init = np.hstack((self.X_mean.value[nearest_idx, :].flatten(),
                             self.X_var.value[nearest_idx, :].flatten()))
+
+        # Objective
+        f = self._held_out_data_wrapper_creator(Y_new, observed)
 
         # Optimize - restrict var to be positive
         result = minimize(fun=f,
@@ -359,11 +349,25 @@ class BayesianGPLVM(GPModel):
             return mu, var
 
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
-    def predict_f_latent_distribution(self, Xstarmu, Xstarvar):
+    def predict_f_uncertain(self, Xstarmu, Xstarvar):
+        """
+        Predicts the first and second moment of the (non-Gaussian) distribution of the latent function by propagating a
+        Gaussian distribution.
+
+        :param Xstarmu: mean of the points in latent space size: Nnew (number of new points ) x Q (latent dim)
+        :param Xstarvar: variance of the points in latent space size: Nnew (number of new points ) x Q (latent dim)
+        :returns (mean, covar)
+        :rtype mean: np.ndarray, size Nnew (number of new points ) x D
+        covar: np.ndarray, size Nnew (number of new points ) x D x D
+        """
         return self.build_predict_distribution(Xstarmu, Xstarvar)
 
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
-    def predict_y_latent_distribution(self, Xstarmu, Xstarvar):
+    def predict_y_uncertain(self, Xstarmu, Xstarvar):
+        """
+        Predicts the first and second moment of the (non-Gaussian) distribution by propagating a
+        Gaussian distribution.
+        """
         mean, covar = self.build_predict_distribution(Xstarmu, Xstarvar)
         num_predict = tf.shape(mean)[0]
         num_out = tf.shape(mean)[1]
@@ -371,20 +375,59 @@ class BayesianGPLVM(GPModel):
         return mean, covar+noise
 
     def predict_f_unobserved(self, Ynew_observed, observed):
+        """
+        Given a partial observation, predict the first and second moments of the non-Gaussian distriubtion over the
+        unobserved part of the latent functions:
+        .. math::
+
+            p(F^U_* | Y^O_*, X, X_*)
+
+        :param Ynew_observed: new observed points, size Nnew (number of new points) x k (observed dimensions),
+        with k <= D.
+        :param observed: 1D list or array of indices of observed dimensions, size D-k
+        :returns (mean, covar) of non-Gaussian predictive distribution over the unobserved dimensions
+        :rtype mean: np.ndarray, size Nnew (number of new points ) x D-k
+        covar: np.ndarray, size Nnew (number of new points ) x D-k x D-k
+        """
         observed = np.atleast_1d(observed)
+        unobserved = np.setdiff1d(np.arange(self.output_dim), observed)
         assert(Ynew_observed.shape[1] == observed.size)
 
-        with self.observed(observed):
-            # obtain q(X*), only consider observed dimensions
-            Xstarmu, Xstarvar = self.infer_latent_inputs(Ynew_observed)
-            # Perform prediction w.r.t q(X*)
-            unobserved_mu, unobserved_covar = self.predict_f_latent_distribution(Xstarmu, Xstarvar)
+        # obtain q(X*), only consider observed dimensions
+        Xstarmu, Xstarvar = self.infer_latent_inputs(Ynew_observed, observed=observed)
 
-        return unobserved_mu, unobserved_covar
+        # Perform (full) prediction w.r.t q(X*)
+        unobserved_mu, unobserved_covar = self.predict_f_uncertain(Xstarmu, Xstarvar)
 
-    @contextmanager
-    def observed(self, observed=[]):
-        observed_prev = self.obs
-        self.obs = DataHolder(np.atleast_1d(observed).astype(np.int32))
-        yield
-        self.obs = observed_prev
+        # Return only predictions for unobserved dimensions
+        return unobserved_mu[:, unobserved], \
+               unobserved_covar[:, unobserved, :][:, :, unobserved]
+
+    def predict_y_unobserved(self, Ynew_observed, observed):
+        """
+        Given a partial observation, predict the first and second moments of the non-Gaussian distriubtion over the
+        unobserved part:
+        .. math::
+
+            p(Y^U_* | Y^O_*, X, X_*)
+
+        :param Ynew_observed: new observed points, size Nnew (number of new points) x k (observed dimensions),
+        with k <= D.
+        :param observed: 1D list or array of indices of observed dimensions, size D-k
+        :returns (mean, covar) of non-Gaussian predictive distribution over the unobserved dimensions
+        :rtype mean: np.ndarray, size Nnew (number of new points ) x D-k
+        covar: np.ndarray, size Nnew (number of new points ) x D-k x D-k
+        """
+        observed = np.atleast_1d(observed)
+        unobserved = np.setdiff1d(np.arange(self.output_dim), observed)
+        assert(Ynew_observed.shape[1] == observed.size)
+
+        # obtain q(X*), only consider observed dimensions
+        Xstarmu, Xstarvar = self.infer_latent_inputs(Ynew_observed, observed=observed)
+
+        # Perform (full) prediction w.r.t q(X*)
+        unobserved_mu, unobserved_covar = self.predict_y_uncertain(Xstarmu, Xstarvar)
+
+        # Return only predictions for unobserved dimensions
+        return unobserved_mu[:, unobserved], \
+               unobserved_covar[:, unobserved, :][:, :, unobserved]
