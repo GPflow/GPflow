@@ -11,6 +11,7 @@ from . import kernels
 from ._settings import settings
 from scipy.optimize import minimize
 from scipy.spatial.distance import cdist
+from contextlib import contextmanager
 
 float_type = settings.dtypes.float_type
 int_type = settings.dtypes.int_type
@@ -112,6 +113,8 @@ class BayesianGPLVM(GPModel):
         assert X_prior_var.shape[0] == self.num_data
         assert X_prior_var.shape[1] == self.num_latent
 
+        self.obs = DataHolder(np.empty(0))
+
     def build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
@@ -206,9 +209,64 @@ class BayesianGPLVM(GPModel):
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
+    def _get_Y_observed(self):
+        idx = tf.expand_dims(self.obs, -1)
+        return tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
+
+    def _get_Y_unobserved(self):
+        unobserved = tf.setdiff1d(tf.range(tf.shape(self.Y)[1]), self.obs)[0]
+        idx = tf.expand_dims(unobserved, -1)
+        return tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
+
+
+    def build_predict_distribution(self, Xstarmu, Xstarvar):
+        Y = self._get_Y_unobserved()
+        num_inducing = tf.shape(self.Z)[0] # M
+        num_predict = tf.shape(Xstarmu)[0] # N*
+        num_out = tf.shape(Y)[1]     # p
+
+        # Kernel expectations, w.r.t q(X) and q(X*)
+        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var) # N x M
+        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0) # M x M
+        psi0star = self.kern.eKdiag(Xstarmu, Xstarvar) # N*
+        psi1star = self.kern.eKxz(self.Z, Xstarmu, Xstarvar) # N* x M
+        psi2star = self.kern.eKzxKxz(self.Z, Xstarmu, Xstarvar) # N* x M x M
+
+        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6 # M x M
+        sigma2 = self.likelihood.variance
+        sigma = tf.sqrt(sigma2)
+        L = tf.cholesky(Kuu) # M x M
+
+        A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma # M x N
+        tmp = tf.matrix_triangular_solve(L, psi2, lower=True) # M x M
+        AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
+        B = AAT + eye(num_inducing)
+        LB = tf.cholesky(B) # M x M
+        c = tf.matrix_triangular_solve(LB, tf.matmul(A, Y), lower=True) / sigma # M x p
+        tmp1 = tf.matrix_triangular_solve(L, tf.transpose(psi1star), lower=True)
+        tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
+        mean = tf.matmul(tf.transpose(tmp2), c)
+
+        # All of these: N* x M x M
+        L3 = tf.tile(tf.expand_dims(L, 0), [num_predict, 1, 1])
+        LB3 = tf.tile(tf.expand_dims(LB, 0), [num_predict, 1, 1])
+        psi1star3 = tf.matmul(tf.expand_dims(psi1star, -1), tf.transpose(tf.expand_dims(psi1star, -1), perm=[0, 2, 1]))
+        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, psi2star-psi1star3))
+        tmp4 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.transpose(tmp3, perm=[0, 2, 1])))
+        tmp5 = tf.matrix_triangular_solve(L3, tf.transpose(tf.matrix_triangular_solve(L3, psi2star), perm=[0, 2, 1]))
+        tmp6 = tf.matrix_triangular_solve(LB3, tf.transpose(tf.matrix_triangular_solve(LB3, tmp5), perm=[0, 2, 1]))
+
+        c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1]) # N* x M x p
+        TT = tf.trace(tmp5 - tmp6) # N*
+        diagonals = tf.tile(tf.expand_dims(eye(num_out), -1), [1, 1, num_predict]) * (psi0star - TT) # p x p x N*
+        covar1 = tf.matmul(tf.transpose(c3, perm=[0,2,1]), tf.matmul(tmp4,c3)) # N* x p x p
+        covar2 = tf.transpose(diagonals, perm=[2,0,1]) # N* x p x p
+        covar = covar1 + covar2
+        return mean, covar
+
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]),
-              (float_type, [None, None]), (int_type, [None]))
-    def held_out_data_objective(self, Y_new, mu_new, var_new, observed):
+              (float_type, [None, None]))
+    def held_out_data_objective(self, Y_new, mu_new, var_new):
         """
         TF computation of likelihood objective + gradients, given new observed points and a candidate q(X*)
         :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions), with k <= D.
@@ -218,8 +276,7 @@ class BayesianGPLVM(GPModel):
         :return: returning an (objective,gradients) tuple. gradients is a list of 2 matrices for mu and var of size
         Nnew x Q
         """
-        idx = tf.expand_dims(observed, -1)
-        Y_obs = tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
+        Y_obs = self._get_Y_observed()
         X_mean = tf.concat(0, [self.X_mean, mu_new])
         X_var = tf.concat(0, [self.X_var, var_new])
         Y = tf.concat(0, [Y_obs, Y_new])
@@ -232,7 +289,7 @@ class BayesianGPLVM(GPModel):
         g = tf.negative(gradients, name='grad_objective')
         return f, g
 
-    def _held_out_data_wrapper_creator(self, Y_new, observed):
+    def _held_out_data_wrapper_creator(self, Y_new):
         """
         Private wrapper function for returning an objective function accepted by scipy.optimize.minimize
         :param Y_new: new observed points, size Nnew (number of new points) x k (observed dimensions), with k <= D.
@@ -249,12 +306,12 @@ class BayesianGPLVM(GPModel):
             var_new = x_flat[num_param/2:].reshape((infer_number, self.num_latent))
 
             # Compute likelihood & flatten gradients
-            f,g = self.held_out_data_objective(Y_new, mu_new, var_new, observed)
+            f,g = self.held_out_data_objective(Y_new, mu_new, var_new)
             return f, np.hstack(map(lambda gradient: gradient.flatten(), g))
 
         return fun
 
-    def infer_latent_inputs(self, Y_new, method='L-BFGS-B', tol=None, return_logprobs=False, observed=None, **kwargs):
+    def infer_latent_inputs(self, Y_new, method='L-BFGS-B', tol=None, return_logprobs=False, **kwargs):
         """
         Computes the latent representation of new observed points by maximizing
         .. math::
@@ -273,20 +330,14 @@ class BayesianGPLVM(GPModel):
         :rtype mean, var: np.ndarray, size Nnew (number of new points ) x Q (latent dim)
         """
 
-        if observed is None:
-            assert (Y_new.shape[1] == self.output_dim)
-            observed = np.arange(self.output_dim)
-        else:
-            observed = np.atleast_1d(observed)
-
-        assert (Y_new.shape[1] == observed.size)
+        assert (Y_new.shape[1] == self.obs.size)
         infer_number = Y_new.shape[0]
 
         # Objective
-        f = self._held_out_data_wrapper_creator(Y_new, observed)
+        f = self._held_out_data_wrapper_creator(Y_new)
 
         # Initialization: could do this with tf?
-        nearest_idx = np.argmin(cdist(self.Y.value[:,observed], Y_new), axis=0)
+        nearest_idx = np.argmin(cdist(self.Y.value[:,self.obs.value], Y_new), axis=0)
         x_init = np.hstack((self.X_mean.value[nearest_idx, :].flatten(),
                             self.X_var.value[nearest_idx, :].flatten()))
 
@@ -307,72 +358,33 @@ class BayesianGPLVM(GPModel):
         else:
             return mu, var
 
-    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (int_type, [None]))
-    def uncertain_predict(self, Xstarmu, Xstarvar, unobserved):
-        idx = tf.expand_dims(unobserved, -1)
-        Y_unobs = tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
-        num_inducing = tf.shape(self.Z)[0]
-        num_predict = tf.shape(Xstarmu)[0]
-        num_out = tf.shape(Y_unobs)[1]
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
+    def predict_f_latent_distribution(self, Xstarmu, Xstarvar):
+        return self.build_predict_distribution(Xstarmu, Xstarvar)
 
-        # Kernel expectations, w.r.t q(X) and q(X*)
-        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var) # num_train x num_inducing
-        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0) # num_inducing x num_inducing
-        psi0star = self.kern.eKdiag(Xstarmu, Xstarvar) # num_predict
-        psi1star = self.kern.eKxz(self.Z, Xstarmu, Xstarvar) # num_predict x num_inducing
-        psi2star = self.kern.eKzxKxz(self.Z, Xstarmu, Xstarvar) # num_predict x num_inducing x num_inducing
+    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
+    def predict_y_latent_distribution(self, Xstarmu, Xstarvar):
+        mean, covar = self.build_predict_distribution(Xstarmu, Xstarvar)
+        num_predict = tf.shape(mean)[0]
+        num_out = tf.shape(mean)[1]
+        noise = tf.tile(tf.expand_dims(self.likelihood.variance * eye(num_out), 0), [num_predict, 1, 1])
+        return mean, covar+noise
 
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6 # num_inducing x num_inducing
-        sigma2 = self.likelihood.variance
-        sigma = tf.sqrt(sigma2)
-        L = tf.cholesky(Kuu) # num_inducing x num_inducing
-
-        A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma # num_inducing x num_train
-        tmp = tf.matrix_triangular_solve(L, psi2, lower=True) # num_inducing x num_inducing
-        AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + eye(num_inducing)
-        LB = tf.cholesky(B) # num_inducing x num_inducing
-        c = tf.matrix_triangular_solve(LB, tf.matmul(A, Y_unobs), lower=True) / sigma # num_inducing x num_out
-        tmp1 = tf.matrix_triangular_solve(L, tf.transpose(psi1star), lower=True)
-        tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
-        mean = tf.matmul(tf.transpose(tmp2), c)
-
-        L3 = tf.tile(tf.expand_dims(L, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_inducing
-        LB3 = tf.tile(tf.expand_dims(LB, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_inducing
-        psi1star3 = tf.matmul(tf.expand_dims(psi1star, -1), tf.transpose(tf.expand_dims(psi1star, -1), perm=[0, 2, 1])) # num_predict x num_inducing x num_inducing
-        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, psi2star-psi1star3)) # num_predict x num_inducing x num_inducing
-        tmp4 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.transpose(tmp3, perm=[0, 2, 1]))) # num_predict x num_inducing x num_inducing
-        tmp5 = tf.matrix_triangular_solve(L3, tf.transpose(tf.matrix_triangular_solve(L3, psi2star), perm=[0, 2, 1])) # num_predict x num_inducing x num_inducing
-        c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1]) # num_predict x num_inducing x num_out
-
-        TT = tf.trace(tmp5 - tf.matrix_triangular_solve(LB3, tf.transpose(tf.matrix_triangular_solve(LB3, tmp5), perm=[0, 2, 1]))) # num_predict
-        diagonals = tf.tile(tf.expand_dims(eye(num_out), -1), [1, 1, num_predict]) * (psi0star - TT) # num_out x num_out x num_predict
-        var1 = tf.matmul(tf.transpose(c3, perm=[0,2,1]), tf.matmul(tmp4,c3)) # num_predict x num_out x num_out
-        var2 = tf.transpose(diagonals, perm=[2,0,1])
-        var = var1 + var2
-        return mean, var
-
-
-    def predict_unobserved_f(self, Ynew_observed, observed):
+    def predict_f_unobserved(self, Ynew_observed, observed):
         observed = np.atleast_1d(observed)
-        unobserved = np.setdiff1d(np.arange(self.Y.shape[1]), observed)
-        print(Ynew_observed.shape)
         assert(Ynew_observed.shape[1] == observed.size)
 
-        # obtain q(X*), only consider observed dimensions
-        Xstarmu, Xstarvar = self.infer_latent_inputs(Ynew_observed, observed=observed)
+        with self.observed(observed):
+            # obtain q(X*), only consider observed dimensions
+            Xstarmu, Xstarvar = self.infer_latent_inputs(Ynew_observed)
+            # Perform prediction w.r.t q(X*)
+            unobserved_mu, unobserved_covar = self.predict_f_latent_distribution(Xstarmu, Xstarvar)
 
-        # Perform prediction w.r.t q(X*)
-        unobserved_mu, unobserved_var = self.uncertain_predict(Xstarmu, Xstarvar, unobserved)
+        return unobserved_mu, unobserved_covar
 
-        # Fix full predictive distribution for Ynew
-        mu = np.zeros((Ynew_observed.shape[0], self.output_dim))
-        var = np.zeros((Ynew_observed.shape[0], self.output_dim, self.output_dim))
-        mu[:, observed] = Ynew_observed
-        mu[:, unobserved] = unobserved_mu
-        slice_x = var[:, unobserved, :]
-        slice_x[:,:,unobserved] = unobserved_var
-        var[:, unobserved, :] = slice_x
-        return mu, var
-
-
+    @contextmanager
+    def observed(self, observed=[]):
+        observed_prev = self.obs
+        self.obs = DataHolder(np.atleast_1d(observed).astype(np.int32))
+        yield
+        self.obs = observed_prev
