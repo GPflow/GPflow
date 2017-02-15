@@ -14,6 +14,12 @@ Please see instructions on the main TensorFlow `webpage <https://www.tensorflow.
 2. install package
 GPflow is a pure python library for now, so you could just add it to your path (we use ``python setup.py develop``) or try an install ``python setup.py install`` (untested). You can run the tests with ``python setup.py test``.
 
+We also provide a `Docker image <https://hub.docker.com/r/gpflow/gpflow/>`_ which can be run using
+
+``docker run -it -p 8888:8888 gpflow/gpflow``
+
+Code to generate the image can be found `here <https://github.com/GPflow/GPflow/blob/master/Dockerfile>`_.
+
 What's the difference between GPy and GPflow?
 ---------------------------------------------
 
@@ -63,17 +69,17 @@ Citing GPflow
 
 To cite GPflow, please reference the [Technical report](https://arxiv.org/abs/1610.08733). Sample Bibtex is given below:
 
-```
 @ARTICLE{GPflow2016,
-   author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and 
-	Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
-	Ghahramani, Zoubin and Hensman, James},
-    title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
-  journal = {arXiv preprint 1610.08733},
-     year = 2016,
-    month = oct
+author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and Ghahramani, Zoubin and Hensman, James},
+
+title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
+
+journal = {arXiv preprint 1610.08733},
+
+year = 2016,
+
+month = oct
 }
-```
 
 References
 ----------
