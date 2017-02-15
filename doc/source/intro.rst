@@ -3,16 +3,18 @@ Introduction
 ------------
 
 GPflow is a package for building Gaussian process models in python, using `TensorFlow <http://www.tensorflow.org>`_. It was originally created and is now managed by `James Hensman <http://www.lancaster.ac.uk/staff/hensmanj/>`_ and `Alexander G. de G. Matthews <http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews>`_. 
-The full list of `contributors <http://github.com/GPflow/GPflow/graphs/contributors>`_ (in alphabetical order) is Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
+The full list of `contributors <http://github.com/GPflow/GPflow/graphs/contributors>`_ (in alphabetical order) is Rasmus Bonnevie, Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
 Install
 -------
 
 1. Install TensorFlow. 
-Please see instructions on the main TensorFlow `webpage <https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html#download-and-setup>`_. You will need at least version 0.10 . We find that for many users pip installation is the fastest way to get going.
+Please see instructions on the main TensorFlow `webpage <https://www.tensorflow.org/versions/r0.12/get_started/os_setup.html#download-and-setup>`_. You will need version 0.12. . We find that for many users pip installation is the fastest way to get going.
 
 2. install package
 GPflow is a pure python library for now, so you could just add it to your path (we use ``python setup.py develop``) or try an install ``python setup.py install`` (untested). You can run the tests with ``python setup.py test``.
+
+Version history is documented `here <https://github.com/GPflow/GPflow/blob/master/RELEASE.md>`_.
 
 We also provide a `Docker image <https://hub.docker.com/r/gpflow/gpflow/>`_ which can be run using
 
@@ -63,6 +65,10 @@ GPLVM
 ~~~~~~~~~~~~~~~~~~~~~
 For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
 in GPflow. (`notebook <notebooks/GPLVM.html>`_).
+
+Contributing
+------------
+All constuctive input is gratefully received. For more information, see the `notes for contributors <https://github.com/GPflow/GPflow/blob/master/contributing.md>`_.
 
 Citing GPflow
 ------------
