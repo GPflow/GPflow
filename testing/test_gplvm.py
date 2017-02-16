@@ -83,6 +83,17 @@ class TestBayesianGPLVM(unittest.TestCase):
         mu_inferred, var_inferred, prob = m.infer_latent_inputs(np.atleast_2d(self.Y[0,:]), return_logprobs=True)
         self.assertLess(abs(prob - m.compute_log_likelihood()), 15)
 
+        # predict with input densities: no variance -> mean equals predict_f
+        uncertain_mu, uncertain_covar = m.predict_f_uncertain(m.X_mean.value, np.zeros((self.N, Q)))
+        certain_mu, certain_covar = m.predict_f(m.X_mean.value)
+        self.assertTrue(np.allclose(uncertain_mu, certain_mu))
+        self.assertTrue(np.allclose(uncertain_covar[:,np.arange(self.D),np.arange(self.D)], certain_covar))
+
+        uncertain_mu, uncertain_covar = m.predict_y_uncertain(m.X_mean.value, np.zeros((self.N, Q)))
+        certain_mu, certain_covar = m.predict_y(m.X_mean.value)
+        self.assertTrue(np.allclose(uncertain_mu, certain_mu))
+        self.assertTrue(np.allclose(uncertain_covar[:,np.arange(self.D),np.arange(self.D)], certain_covar))
+
         # Partial prediction
         observed = [0, 2, 4]
         mu_predict_f, var_predict_f = m.predict_f_unobserved(self.Y[:, observed], observed=observed)

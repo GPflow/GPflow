@@ -118,6 +118,8 @@ class BayesianGPLVM(GPModel):
         Construct a tensorflow function to compute the bound on the marginal
         likelihood for the training data (all dimensions).
         """
+
+        # Default: construct likelihood graph using the training data Y and initialized q(X)
         return self._build_likelihood_graph(self.X_mean, self.X_var, self.Y, self.X_prior_mean, self.X_prior_var)
 
     def _build_likelihood_graph(self, X_mean, X_var, Y, X_prior_mean=None, X_prior_var=None):
@@ -125,6 +127,9 @@ class BayesianGPLVM(GPModel):
         Construct a tensorflow function to compute the bound on the marginal
         likelihood given a Gaussian multivariate distribution representing
         X (and its priors) and observed Y
+
+        Split from the general build_likelihood method, as the graph is reused by the held_out_data_objective
+        method for inference of latent points for new data points
         """
 
         if X_prior_mean is None:
@@ -208,6 +213,15 @@ class BayesianGPLVM(GPModel):
         return mean + self.mean_function(Xnew), var
 
     def build_predict_distribution(self, Xstarmu, Xstarvar):
+        """
+        Build the graph to map a latent point to its corresponding output. Unlike build_predict, here a
+        Gaussian density is mapped rather than only its mean as in build_predict. Details of the calculation
+        are in the gplvm predict x notebook.
+
+        :param Xstarmu: mean of the points in latent space size: Nnew (number of new points ) x Q (latent dim)
+        :param Xstarvar: variance of the points in latent space size: Nnew (number of new points ) x Q (latent dim)
+        :return: tensor for computation of the moments of the output distribution.
+        """
         num_inducing = tf.shape(self.Z)[0] # M
         num_predict = tf.shape(Xstarmu)[0] # N*
         num_out = self.output_dim     # p
@@ -237,17 +251,16 @@ class BayesianGPLVM(GPModel):
         # All of these: N* x M x M
         L3 = tf.tile(tf.expand_dims(L, 0), [num_predict, 1, 1])
         LB3 = tf.tile(tf.expand_dims(LB, 0), [num_predict, 1, 1])
-        psi1star3 = tf.matmul(tf.expand_dims(psi1star, -1), tf.transpose(tf.expand_dims(psi1star, -1), perm=[0, 2, 1]))
-        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, psi2star-psi1star3))
-        tmp4 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.transpose(tmp3, perm=[0, 2, 1])))
+        tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.expand_dims(psi1star, -1)))
+        tmp4 = tf.matmul(tmp3, tf.transpose(tmp3, perm=[0, 2, 1]))
         tmp5 = tf.matrix_triangular_solve(L3, tf.transpose(tf.matrix_triangular_solve(L3, psi2star), perm=[0, 2, 1]))
         tmp6 = tf.matrix_triangular_solve(LB3, tf.transpose(tf.matrix_triangular_solve(LB3, tmp5), perm=[0, 2, 1]))
 
-        c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1]) # N* x M x p
-        TT = tf.trace(tmp5 - tmp6) # N*
-        diagonals = tf.tile(tf.expand_dims(eye(num_out), -1), [1, 1, num_predict]) * (psi0star - TT) # p x p x N*
-        covar1 = tf.matmul(tf.transpose(c3, perm=[0,2,1]), tf.matmul(tmp4,c3)) # N* x p x p
-        covar2 = tf.transpose(diagonals, perm=[2,0,1]) # N* x p x p
+        c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1])  # N* x M x p
+        TT = tf.trace(tmp5 - tmp6)  # N*
+        diagonals = tf.tile(tf.expand_dims(eye(num_out), -1), [1, 1, num_predict]) * (psi0star - TT)  # p x p x N*
+        covar1 = tf.matmul(tf.transpose(c3, perm=[0, 2, 1]), tf.matmul(tmp6 - tmp4, c3))  # N* x p x p
+        covar2 = tf.transpose(diagonals, perm=[2, 0, 1])  # N* x p x p
         covar = covar1 + covar2
         return mean, covar
 
@@ -268,6 +281,8 @@ class BayesianGPLVM(GPModel):
         X_mean = tf.concat(0, [self.X_mean, mu])
         X_var = tf.concat(0, [self.X_var, var])
         Y = tf.concat(0, [Y_obs, Ynew])
+
+        # Build the likelihood graph for the suggested q(X,X*) and the observed dimensions of Y and Y*
         objective = self._build_likelihood_graph(X_mean, X_var, Y)
 
         # Collect gradients
@@ -384,12 +399,14 @@ class BayesianGPLVM(GPModel):
 
         :param Ynew: new observed points, size Nnew (number of new points) x k (observed dimensions),
         with k <= D.
-        :param observed: 1D list or array of indices of observed dimensions, size D-k
+        :param observed: 1D list or array of indices of observed dimensions, size D-k. Should at least contain one
+        observed dimension, and at most all dimensions.
         :returns (mean, covar) of non-Gaussian predictive distribution over the unobserved dimensions
         :rtype mean: np.ndarray, size Nnew (number of new points ) x D-k
         covar: np.ndarray, size Nnew (number of new points ) x D-k x D-k
         """
-        observed = np.atleast_1d(observed)
+        observed = np.unique(np.atleast_1d(observed))
+        assert(0 < observed.size <= self.output_dim)
         unobserved = np.setdiff1d(np.arange(self.output_dim), observed)
         assert(Ynew.shape[1] == observed.size)
 
@@ -413,12 +430,14 @@ class BayesianGPLVM(GPModel):
 
         :param Ynew: new observed points, size Nnew (number of new points) x k (observed dimensions),
         with k <= D.
-        :param observed: 1D list or array of indices of observed dimensions, size D-k
+        :param observed: 1D list or array of indices of observed dimensions, size D-k. Should at least contain one
+        observed dimension, and at most all dimensions.
         :returns (mean, covar) of non-Gaussian predictive distribution over the unobserved dimensions
         :rtype mean: np.ndarray, size Nnew (number of new points ) x D-k
         covar: np.ndarray, size Nnew (number of new points ) x D-k x D-k
         """
-        observed = np.atleast_1d(observed)
+        observed = np.unique(np.atleast_1d(observed))
+        assert(0 < observed.size <= self.output_dim)
         unobserved = np.setdiff1d(np.arange(self.output_dim), observed)
         assert(Ynew.shape[1] == observed.size)
 
