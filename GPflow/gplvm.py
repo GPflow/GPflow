@@ -3,7 +3,7 @@ import numpy as np
 from .model import GPModel
 from .gpr import GPR
 from .param import Param, AutoFlow, DataHolder
-from .mean_functions import Zero
+from .mean_functions import Constant, Zero
 from . import likelihoods
 from .tf_wraps import eye
 from . import transforms
@@ -262,7 +262,7 @@ class BayesianGPLVM(GPModel):
         covar1 = tf.matmul(tf.transpose(c3, perm=[0, 2, 1]), tf.matmul(tmp6 - tmp4, c3))  # N* x p x p
         covar2 = tf.transpose(diagonals, perm=[2, 0, 1])  # N* x p x p
         covar = covar1 + covar2
-        return mean, covar
+        return mean + self.mean_function(Xstarmu), covar
 
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]),
               (float_type, [None, None]), (int_type, [None]))
@@ -369,12 +369,15 @@ class BayesianGPLVM(GPModel):
         Predicts the first and second moment of the (non-Gaussian) distribution of the latent function by propagating a
         Gaussian distribution.
 
+        Note: this method is only available in combination with Constant or Zero mean functions.
+
         :param Xstarmu: mean of the points in latent space size: Nnew (number of new points ) x Q (latent dim)
         :param Xstarvar: variance of the points in latent space size: Nnew (number of new points ) x Q (latent dim)
         :returns (mean, covar)
         :rtype mean: np.ndarray, size Nnew (number of new points ) x D
         covar: np.ndarray, size Nnew (number of new points ) x D x D
         """
+        assert(isinstance(self.mean_function, (Zero, Constant)))
         return self.build_predict_distribution(Xstarmu, Xstarvar)
 
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
@@ -382,7 +385,10 @@ class BayesianGPLVM(GPModel):
         """
         Predicts the first and second moment of the (non-Gaussian) distribution by propagating a
         Gaussian distribution.
+
+        Note: this method is only available in combination with Constant or Zero mean functions.
         """
+        assert(isinstance(self.mean_function, (Zero, Constant)))
         mean, covar = self.build_predict_distribution(Xstarmu, Xstarvar)
         num_predict = tf.shape(mean)[0]
         num_out = tf.shape(mean)[1]
