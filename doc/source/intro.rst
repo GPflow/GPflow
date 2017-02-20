@@ -48,7 +48,7 @@ For non-Gaussian likelihoods, GPflow has a model that can jointly sample over th
 
 Variational inference
 ~~~~~~~~~~~~~~~~~~~~~
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in :class:`GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5]. A unified view of many of the relevant references along with some extensions and an early discussion of GPflow itself is given in [8].
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in :class:`GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5]. 
 
 The following table summarizes the model options in GPflow. 
 
@@ -60,6 +60,8 @@ The following table summarizes the model options in GPflow.
 +----------------------+--------------------------+----------------------------+-----------------------------+
 | Sparse approximation | :class:`GPflow.sgpr.SGPR`| :class:`GPflow.svgp.SVGP`  | :class:`GPflow.sgpmc.SGPMC` |
 +----------------------+--------------------------+----------------------------+-----------------------------+
+
+A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of `Matthews <http://mlg.eng.cam.ac.uk/matthews/thesis.pdf>`_ [8].
 
 GPLVM
 ~~~~~~~~~~~~~~~~~~~~~
