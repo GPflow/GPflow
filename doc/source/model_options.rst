@@ -25,7 +25,7 @@ GP Regression
 Sparse GP Regression
 --------------------
 
-See also the documentation of the 'derivation  <notebooks/SGPR_notes.html>'_.
+See also the documentation of the `derivation  <notebooks/SGPR_notes.html>`_.
 
 .. automodule:: GPflow.sgpr
 .. autoclass:: GPflow.sgpr.SGPR
@@ -33,7 +33,7 @@ See also the documentation of the 'derivation  <notebooks/SGPR_notes.html>'_.
 Variational Gaussian Approximation
 ----------------------------------
 
-See also the documentation of the 'derivation  <notebooks/VGP_notes.html>'_.
+See also the documentation of the `derivation  <notebooks/VGP_notes.html>`_.
 
 .. automodule:: GPflow.vgp
 .. autoclass:: GPflow.vgp.VGP
