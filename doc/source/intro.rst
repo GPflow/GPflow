@@ -48,7 +48,7 @@ For non-Gaussian likelihoods, GPflow has a model that can jointly sample over th
 
 Variational inference
 ~~~~~~~~~~~~~~~~~~~~~
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in :class:`GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5].
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in :class:`GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5]. A unified view of many of the relevant references along with some extensions and an early discussion of GPflow itself is given in [8].
 
 The following table summarizes the model options in GPflow. 
 
@@ -111,8 +111,12 @@ Lawrence, Neil D.
 Advances in Neural Information Processing Systems, 329-336, 2004.
 
 [7] Bayesian Gaussian Process Latent Variable Model.
-Titsias, Michalis K., and Neil D. Lawrence. "
+Titsias, Michalis K., and Neil D. Lawrence.
 Proceedings of AISTATS, 2010.
+
+[8] Scalable Gaussian process inference using variational methods.
+Alexander G. de G. Matthews.
+PhD Thesis. University of Cambridge, 2016.
 
 
 Acknowledgements
