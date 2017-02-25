@@ -483,6 +483,58 @@ class Cosine(Stationary):
         return self.variance * tf.cos(r)
 
 
+class MLP(Kern):
+    """
+    The multi layer perceptron (MLP) kernel
+    """
+    def __init__(self, input_dim, variance=1.0,
+                 weight_variances=1., bias_variance=1.,
+                 active_dims=None, ARD=False):
+        Kern.__init__(self, input_dim, active_dims)
+        self.variance = Param(variance, transforms.positive)
+        self.bias_variance = Param(bias_variance, transforms.positive)
+        if ARD:
+            if weight_variances is None:
+                weight_variances = np.ones(input_dim, np_float_type)
+            else:
+                # accepts float or array:
+                weight_variances = weight_variances * np.ones(input_dim, np_float_type)
+            self.weight_variances = Param(weight_variances, transforms.positive)
+            self.ARD = True
+        else:
+            if weight_variances is None:
+                weight_variances = 1.0
+            self.weight_variances = Param(weight_variances, transforms.positive)
+            self.ARD = False
+
+    def _weighted_product(self, X, X2=None):
+        if X2 is None:
+            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+        else:
+            return tf.matmul((self.weight_variances * X), tf.transpose(X2)) + self.bias_variance
+
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+
+        X_denominator = tf.sqrt(self._weighted_product(X) + 1.)
+        if X2 is None:
+            X2 = X
+            X2_denominator = X_denominator
+        else:
+            X2_denominator = tf.sqrt(self._weighted_product(X2) + 1.)
+
+        enumerator = self._weighted_product(X, X2)
+        return self.variance * (2. / np.pi) * tf.asin(enumerator / X_denominator[:, None] / X2_denominator[None, :])
+
+    def Kdiag(self, X, presliced=False):
+        if not presliced:
+            X, _ = self._slice(X, None)
+
+        X_product = self._weighted_product(X)
+        return self.variance * (2. / np.pi) * tf.asin(X_product / (X_product + 1.))
+
+
 class PeriodicKernel(Kern):
     """
     The periodic kernel. Defined in  Equation (47) of

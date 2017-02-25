@@ -3,7 +3,7 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from .reference import referenceRbfKernel, referencePeriodicKernel
+from .reference import referenceRbfKernel, referenceMLPKernel, referencePeriodicKernel
 
 
 class TestRbf(unittest.TestCase):
@@ -24,6 +24,49 @@ class TestRbf(unittest.TestCase):
         with kernel.tf_mode():
             gram_matrix = tf.Session().run(kernel.K(X), feed_dict={x_free: kernel.get_free_state(), X: X_data})
         self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
+
+
+class TestMLP(unittest.TestCase):
+    def evalKernelError(self, D, variance, weight_variances, bias_variance, ARD, X_data):
+        kernel = GPflow.kernels.MLP(D, variance=variance,
+                                    weight_variances=weight_variances,
+                                    bias_variance=bias_variance,
+                                    ARD=ARD)
+        rng = np.random.RandomState(1)
+
+        x_free = tf.placeholder('float64')
+        kernel.make_tf_array(x_free)
+        X = tf.placeholder('float64')
+        reference_gram_matrix = referenceMLPKernel(X_data, weight_variances, bias_variance, variance)
+
+        with kernel.tf_mode():
+            gram_matrix = tf.Session().run(kernel.K(X), feed_dict={x_free: kernel.get_free_state(), X: X_data})
+
+        self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
+
+    def test_1d(self):
+        D = 1
+        N = 3
+        weight_variances = 1.7
+        bias_variance = 0.6
+        variance = 2.3
+        ARD = False
+
+        rng = np.random.RandomState(1)
+        X_data = rng.randn(N, D)
+        self.evalKernelError(D, variance, weight_variances, bias_variance, ARD, X_data)
+
+    def test_2d(self):
+        D = 2
+        N = 5
+        weight_variances = np.array([0.4, 4.2])
+        bias_variance = 1.9
+        variance = 1e-2
+        ARD = True
+
+        rng = np.random.RandomState(1)
+        X_data = rng.randn(N, D)
+        self.evalKernelError(D, variance, weight_variances, bias_variance, ARD, X_data)
 
 
 class TestPeriodic(unittest.TestCase):
@@ -133,7 +176,7 @@ class TestKernDiags(unittest.TestCase):
         self.X = tf.placeholder(tf.float64, [30, inputdim])
         self.X_data = rng.randn(30, inputdim)
         self.kernels = [k(inputdim) for k in GPflow.kernels.Stationary.__subclasses__() +
-                        [GPflow.kernels.Constant, GPflow.kernels.Linear, GPflow.kernels.Polynomial]]
+                        [GPflow.kernels.Constant, GPflow.kernels.Linear, GPflow.kernels.Polynomial, GPflow.kernels.MLP]]
         self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) * GPflow.kernels.Linear(inputdim))
         self.kernels.append(GPflow.kernels.RBF(inputdim) +
