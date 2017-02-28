@@ -181,10 +181,10 @@ class TestRobustMaxMulticlass(unittest.TestCase):
             pred = tf.Session().run(l.predict_density(F, F, Y), feed_dict={x: l.get_free_state(), F: F_data})
             variational_expectations = tf.Session().run(l.variational_expectations(F, F, Y),
                                                         feed_dict={x: l.get_free_state(), F: F_data})
-        expected_mu = np.exp(1./nClasses * np.log(1. - epsilon) + (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1)))
+        expected_mu = (1./nClasses * (1. - epsilon) + (1. - 1./nClasses) * epsilon / (nClasses - 1)) * np.ones((nPoints, 1))
         self.assertTrue(np.allclose(mu, expected_mu, tolerance, tolerance))
-        expected_log_denisty = 1./nClasses * np.log(1. - epsilon) + (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
-        self.assertTrue(np.allclose(pred, np.ones((nPoints, 1)) * expected_log_denisty, tolerance, tolerance))
+        expected_log_denisty = np.log(expected_mu)
+        self.assertTrue(np.allclose(pred, expected_log_denisty, 1e-3, 1e-3))
         validation_variational_expectation = 1./nClasses * np.log(1. - epsilon) + \
             (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
         self.assertTrue(np.allclose(variational_expectations,
@@ -192,6 +192,7 @@ class TestRobustMaxMulticlass(unittest.TestCase):
                                     tolerance, tolerance))
 
     def testPredictDensity(self):
+        tol = 1e-4
         num_points = 100
         mock_prob = 0.73
 
@@ -212,9 +213,10 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         with l.tf_mode():
             pred = tf.Session().run(l.predict_density(F, F, y), feed_dict={F: F_data, y: Y_data})
 
-        expected_prediction = -0.9616855669  # from calculator
+        expected_prediction = -0.5499780059
+        #^ evaluated on calculator: log( (1-\epsilon) * 0.73 + (1-0.73) * \epsilon/(num_classes -1))
 
-        self.assertTrue(np.alltrue(pred == expected_prediction))
+        self.assertTrue(np.allclose(pred, expected_prediction, tol, tol))
 
 
 
