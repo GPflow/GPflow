@@ -181,13 +181,44 @@ class TestRobustMaxMulticlass(unittest.TestCase):
             pred = tf.Session().run(l.predict_density(F, F, Y), feed_dict={x: l.get_free_state(), F: F_data})
             variational_expectations = tf.Session().run(l.variational_expectations(F, F, Y),
                                                         feed_dict={x: l.get_free_state(), F: F_data})
-        self.assertTrue(np.allclose(mu, np.ones((nPoints, nClasses))/nClasses, tolerance, tolerance))
-        self.assertTrue(np.allclose(pred, np.ones((nPoints, 1))/nClasses, tolerance, tolerance))
+        expected_mu = np.exp(1./nClasses * np.log(1. - epsilon) + (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1)))
+        self.assertTrue(np.allclose(mu, expected_mu, tolerance, tolerance))
+        expected_log_denisty = 1./nClasses * np.log(1. - epsilon) + (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
+        self.assertTrue(np.allclose(pred, np.ones((nPoints, 1)) * expected_log_denisty, tolerance, tolerance))
         validation_variational_expectation = 1./nClasses * np.log(1. - epsilon) + \
             (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
         self.assertTrue(np.allclose(variational_expectations,
                                     np.ones((nPoints, 1)) * validation_variational_expectation,
                                     tolerance, tolerance))
+
+    def testPredictDensity(self):
+        num_points = 100
+        mock_prob = 0.73
+
+        class MockRobustMax(GPflow.likelihoods.RobustMax):
+            def prob_is_largest(self, Y, Fmu, Fvar, gh_x, gh_w):
+                return tf.ones((num_points, 1)) * mock_prob
+
+        epsilon = 0.231
+        num_classes = 5
+        l = GPflow.likelihoods.MultiClass(num_classes, invlink=MockRobustMax(num_classes, epsilon))
+
+        F = tf.placeholder(float_type)
+        y = tf.placeholder(float_type)
+        F_data = np.ones((num_points, num_classes))
+        rng = np.random.RandomState(1)
+        Y_data = rng.randint(num_classes, size=(num_points, 1))
+
+        with l.tf_mode():
+            pred = tf.Session().run(l.predict_density(F, F, y), feed_dict={F: F_data, y: Y_data})
+
+        expected_prediction = -0.9616855669  # from calculator
+
+        self.assertTrue(np.alltrue(pred == expected_prediction))
+
+
+
+
 
 
 class TestMulticlassIndexFix(unittest.TestCase):
