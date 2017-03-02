@@ -126,7 +126,9 @@ class Log1pe(Transform):
         self._lower = lower
 
     def forward(self, x):
-        return np.log(1. + np.exp(x)) + self._lower
+        result = np.log(1. + np.exp(x)) + self._lower
+        # do not transform large numbers, they overflow and the mapping is exactly identity.
+        return np.where(x > 35, x + self._lower, result)
 
     def tf_forward(self, x):
         return tf.nn.softplus(x) + self._lower
@@ -135,7 +137,8 @@ class Log1pe(Transform):
         return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
 
     def backward(self, y):
-        return np.log(np.exp(y - self._lower) - np.ones(1, np_float_type))
+        result = np.log(np.exp(y - self._lower) - np.ones(1, np_float_type))
+        return np.where(y > 35, y-self._lower, result)
 
     def __str__(self):
         return '+ve'

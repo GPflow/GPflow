@@ -17,11 +17,12 @@ from __future__ import absolute_import
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from . import transforms
+from . import transforms, session
 from contextlib import contextmanager
 from functools import wraps
 from .scoping import NameScoped
 from ._settings import settings
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
@@ -206,7 +207,7 @@ class Param(Parentable):
         end = start + self.size
         samples = samples[:, start:end]
         samples = samples.reshape((samples.shape[0],) + self.shape)
-        samples = self.transform.forward(samples)
+        samples = np.atleast_1d(self.transform.forward(samples))
         return pd.Series([v for v in samples], name=self.long_name)
 
     def make_tf_array(self, free_array):
@@ -306,11 +307,11 @@ class Param(Parentable):
 
     def __str__(self, prepend=''):
         return prepend + \
-            '\033[1m' + self.name + '\033[0m' + \
-            ' transform:' + str(self.transform) + \
-            ' prior:' + str(self.prior) + \
-            (' [FIXED]' if self.fixed else '') + \
-            '\n' + str(self.value)
+               '\033[1m' + self.name + '\033[0m' + \
+               ' transform:' + str(self.transform) + \
+               ' prior:' + str(self.prior) + \
+               (' [FIXED]' if self.fixed else '') + \
+               '\n' + str(self.value)
 
     @property
     def size(self):
@@ -374,6 +375,7 @@ class DataHolder(Parentable):
     [[ 0.], [ 2.]]
 
     """
+
     def __init__(self, array, on_shape_change='raise'):
         """
         array is a numpy array of data.
@@ -415,7 +417,7 @@ class DataHolder(Parentable):
 
     def make_tf_array(self):
         self._tf_array = tf.placeholder(dtype=self._get_type(self._array),
-                                        shape=[None]*self._array.ndim,
+                                        shape=[None] * self._array.ndim,
                                         name=self.name)
 
     def set_data(self, array):
@@ -455,8 +457,8 @@ class DataHolder(Parentable):
 
     def __str__(self, prepend='Data:'):
         return prepend + \
-            '\033[1m' + self.name + '\033[0m' + \
-            '\n' + str(self.value)
+               '\033[1m' + self.name + '\033[0m' + \
+               '\n' + str(self.value)
 
 
 class AutoFlow:
@@ -519,7 +521,13 @@ class AutoFlow:
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
                 storage['graph'] = tf.Graph()
-                storage['session'] = tf.Session(graph=storage['graph'])
+                # storage['session'] = tf.Session(graph=storage['graph'])
+                storage['session'] = session.get_session(
+                    graph=storage['graph'],
+                    output_file_name=settings.profiling.output_file_name + "_" + tf_method.__name__,
+                    output_directory=settings.profiling.output_directory,
+                    each_time=settings.profiling.each_time
+                )
                 with storage['graph'].as_default():
                     storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                     storage['free_vars'] = tf.placeholder(float_type, [None])
@@ -529,7 +537,7 @@ class AutoFlow:
                     storage['feed_dict_keys'] = instance.get_feed_dict_keys()
                     feed_dict = {}
                     instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
-                    storage['session'].run(tf.initialize_all_variables(), feed_dict=feed_dict)
+                    storage['session'].run(tf.global_variables_initializer(), feed_dict=feed_dict)
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
             instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
