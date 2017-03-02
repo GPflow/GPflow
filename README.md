@@ -15,7 +15,7 @@ GPflow implements modern Gaussian process inference for composable kernels and l
 # Install
 
 ## 1) Install TensorFlow. 
-Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r0.12/get_started/os_setup.html#download-and-setup). You will need version 0.12. We find that for most users pip installation is the fastest way to get going.
+Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r1.0/get_started/get_started). You will need version 1.0. We find that for most users pip installation is the fastest way to get going.
 
 ## 2) install package
 GPflow includes some tensorflow extensions that are compiled when you run setup.py.  For those interested in modifying the source of GPflow, we recommend  
@@ -28,11 +28,23 @@ python setup.py install
 ```
 You can run the tests with `python setup.py test`.
 
+Version history is documented [here.](https://github.com/GPflow/GPflow/blob/master/RELEASE.md)
+
+## Docker image
+
+We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which can be run using
+
+```
+docker run -it -p 8888:8888 gpflow/gpflow
+```
+
+Code to generate the image can be found [here](Dockerfile)
+
 # Getting help
 Please use gihub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs. 
 
 # Contributing
-All constuctive input is gratefully received. For more, see the [notes for contributors](contributing.md).
+All constuctive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
 
 
 # Citing GPflow
