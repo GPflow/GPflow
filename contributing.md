@@ -2,7 +2,7 @@
 This file contains notes for potential contribtors to GPflow, as well as some notes that may be helpful for maintainance.
 
 ## Project scope
-We do welcome contributions to GPflow. However, the project is deliberately of limited scope, to try to ensure a high quality codebase: if you'd like to contribute a feature, please raise discussion via a github issue. 
+We do welcome contributions to GPflow. However, the project is deliberately of limited scope, to try to ensure a high quality codebase: if you'd like to contribute a feature, please raise discussion via a github issue. Large features also make it onto the [roadmap](roadmap.md).
 
 ## Code Style
  - Python code should follow the pep8 style. To help with this, we suggest using a plugin for your editor. 
