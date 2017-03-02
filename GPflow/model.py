@@ -18,9 +18,10 @@ from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc, tf_wraps
+from . import hmc, tf_wraps, session
 from ._settings import settings
 import sys
+
 float_type = settings.dtypes.float_type
 
 
@@ -93,6 +94,7 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
+        self._free_vars = tf.placeholder(tf.float64)
 
     @property
     def name(self):
@@ -119,7 +121,10 @@ class Model(Parameterized):
         compile the tensorflow function "self._objective"
         """
         self._graph = tf.Graph()
-        self._session = tf.Session(graph=self._graph)
+        self._session = session.get_session(graph=self._graph,
+                                            output_file_name=settings.profiling.output_file_name + "_objective",
+                                            output_directory=settings.profiling.output_directory,
+                                            each_time=settings.profiling.each_time)
         with self._graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
 
@@ -128,8 +133,8 @@ class Model(Parameterized):
                 f = self.build_likelihood() + self.build_prior()
                 g, = tf.gradients(f, self._free_vars)
 
-            self._minusF = tf.neg(f, name='objective')
-            self._minusG = tf.neg(g, name='grad_objective')
+            self._minusF = tf.negative(f, name='objective')
+            self._minusG = tf.negative(g, name='grad_objective')
 
             # The optimiser needs to be part of the computational graph, and needs
             # to be initialised before tf.initialise_all_variables() is called.
@@ -147,6 +152,7 @@ class Model(Parameterized):
         sys.stdout.flush()
 
         self._feed_dict_keys = self.get_feed_dict_keys()
+
         def obj(x):
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
@@ -384,10 +390,10 @@ class GPModel(Model):
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
-            shape = tf.pack([tf.shape(L)[0], num_samples])
+            shape = tf.stack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=settings.dtypes.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
-        return tf.transpose(tf.pack(samples))
+        return tf.transpose(tf.stack(samples))
 
     @AutoFlow((float_type, [None, None]))
     def predict_y(self, Xnew):

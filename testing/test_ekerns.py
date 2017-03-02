@@ -44,11 +44,11 @@ class TriDiagonalBlockRep(object):
 
     def tf_forward(self, x):
         N, D = tf.shape(x)[0], tf.shape(x)[2]
-        xm = tf.slice(x, [0, 0, 0], tf.pack([N - 1, -1, -1]))
+        xm = tf.slice(x, [0, 0, 0], tf.stack([N - 1, -1, -1]))
         xp = x[1:, :, :]
-        diagblocks = tf.batch_matmul(x, x, adj_x=True)
-        offblocks = tf.concat(0, [tf.batch_matmul(xm, xp, adj_x=True), tf.zeros((1, D, D), dtype=tf.float64)])
-        return tf.pack([diagblocks, offblocks])
+        diagblocks = tf.matmul(x, x, transpose_a=True)
+        offblocks = tf.concat_v2([tf.matmul(xm, xp, transpose_a=True), tf.zeros((1, D, D), 0, dtype=tf.float64)])
+        return tf.stack([diagblocks, offblocks])
 
     def __str__(self):
         return "BlockTriDiagonal"
