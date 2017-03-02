@@ -107,7 +107,7 @@ class Kern(Parameterized):
             gather1 = tf.gather(tf.transpose(covr, [2, 1, 0]), self.active_dims)
             gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), self.active_dims)
             cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat_v2([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
+                             tf.concat([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
         return cov
 
     def __add__(self, other):
@@ -208,10 +208,10 @@ class Kern(Parameterized):
 
         # First, transform the compact representation of Xmu and Xcov into a
         # list of full distributions.
-        fXmu = tf.concat_v2((Xmu[:-1, :], Xmu[1:, :]), 1)  # Nx2D
-        fXcovt = tf.concat_v2((Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]), 2)  # NxDx2D
-        fXcovb = tf.concat_v2((tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]), 2)
-        fXcov = tf.concat_v2((fXcovt, fXcovb), 1)
+        fXmu = tf.concat((Xmu[:-1, :], Xmu[1:, :]), 1)  # Nx2D
+        fXcovt = tf.concat((Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]), 2)  # NxDx2D
+        fXcovb = tf.concat((tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]), 2)
+        fXcov = tf.concat((fXcovt, fXcovb), 1)
         return mvnquad(lambda x: tf.expand_dims(self.K(x[:, :D], Z), 2) *
                                  tf.expand_dims(x[:, D:], 1),
                        fXmu, fXcov, self.num_gauss_hermite_points,
