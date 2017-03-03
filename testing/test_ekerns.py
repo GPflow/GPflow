@@ -1,12 +1,9 @@
 import unittest
 import numpy as np
-import numpy.random as rnd
 import tensorflow as tf
 import GPflow
 from GPflow import kernels
 from GPflow import ekernels
-
-rnd.seed(0)
 
 
 def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
@@ -62,17 +59,18 @@ class TestKernExpDelta(unittest.TestCase):
 
     def setUp(self):
         self.D = 2
-        self.Xmu = rnd.rand(10, self.D)
-        self.Z = rnd.rand(4, self.D)
+        self.rng = np.random.RandomState(0)
+        self.Xmu = self.rng.rand(10, self.D)
+        self.Z = self.rng.rand(4, self.D)
         self.Xcov = np.zeros((self.Xmu.shape[0], self.D, self.D))
         self.Xcovc = np.zeros((self.Xmu.shape[0], self.D, self.D))
         k1 = ekernels.RBF(self.D, ARD=True)
-        k1.lengthscales = rnd.rand(2) + [0.5, 1.5]
-        k1.variance = 0.3 + rnd.rand()
+        k1.lengthscales = self.rng.rand(2) + [0.5, 1.5]
+        k1.variance = 0.3 + self.rng.rand()
         k2 = ekernels.RBF(self.D)
-        k2.lengthscales = rnd.rand(1) + [0.5]
-        k2.variance = 0.3 + rnd.rand()
-        klin = ekernels.Linear(self.D, variance=0.3 + rnd.rand())
+        k2.lengthscales = self.rng.rand(1) + [0.5]
+        k2.variance = 0.3 + self.rng.rand()
+        klin = ekernels.Linear(self.D, variance=0.3 + self.rng.rand())
         self.kernels = [k1, klin, k2]
 
     def test_eKzxKxz(self):
@@ -111,13 +109,13 @@ class TestKernExpActiveDims(unittest.TestCase):
     def setUp(self):
         self.N = 4
         self.D = 2
-        self.Xmu = rnd.rand(self.N, self.D)
-        self.Z = rnd.rand(3, self.D)
-        unconstrained = rnd.randn(self.N, 2 * self.D, self.D)
+        self.Xmu = self.rng.rand(self.N, self.D)
+        self.Z = self.rng.rand(3, self.D)
+        unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
         t = TriDiagonalBlockRep()
         self.Xcov = t.forward(unconstrained)
 
-        variance = 0.3 + rnd.rand()
+        variance = 0.3 + self.rng.rand()
 
         k1 = ekernels.RBF(1, variance, active_dims=[0])
         k2 = ekernels.RBF(1, variance, active_dims=[1])
@@ -159,15 +157,17 @@ class TestExpxKxzActiveDims(unittest.TestCase):
     _threshold = 0.5
 
     def setUp(self):
+        self.rng = np.random.RandomState(0)
+
         self.N = 4
         self.D = 2
-        self.Xmu = rnd.rand(self.N, self.D)
-        self.Z = rnd.rand(3, self.D)
-        unconstrained = rnd.randn(self.N, 2 * self.D, self.D)
+        self.Xmu = self.rng.rand(self.N, self.D)
+        self.Z = self.rng.rand(3, self.D)
+        unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
         t = TriDiagonalBlockRep()
         self.Xcov = t.forward(unconstrained)
 
-        variance = 0.3 + rnd.rand()
+        variance = 0.3 + self.rng.rand()
 
         k1 = ekernels.RBF(1, variance, active_dims=[0])
         k2 = ekernels.RBF(1, variance, active_dims=[1])
@@ -220,7 +220,7 @@ class TestKernExpQuadrature(unittest.TestCase):
         self.Xmu = self.rng.rand(self.N, self.D)
         self.Z = self.rng.rand(2, self.D)
 
-        unconstrained = rnd.randn(self.N, 2 * self.D, self.D)
+        unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
         t = TriDiagonalBlockRep()
         self.Xcov = t.forward(unconstrained)
 
