@@ -215,7 +215,7 @@ class TestKernExpQuadrature(unittest.TestCase):
     _threshold = 0.5
 
     def setUp(self):
-        self.rng = np.random.RandomState(0)
+        self.rng = np.random.RandomState(1)
         self.N = 4
         self.D = 2
         self.Xmu = self.rng.rand(self.N, self.D)
@@ -291,7 +291,7 @@ class TestKernExpQuadrature(unittest.TestCase):
     def test_eKzxKxz(self):
         for k, ek in zip(self.kernels, self.ekernels):
             k._kill_autoflow()
-            k.num_gauss_hermite_points = 30
+            k.num_gauss_hermite_points = 50
             a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             b = ek.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             _assert_pdeq(self, a, b, k)
