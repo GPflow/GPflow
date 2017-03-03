@@ -109,6 +109,7 @@ class TestKernExpActiveDims(unittest.TestCase):
     def setUp(self):
         self.N = 4
         self.D = 2
+        self.rng = np.random.RandomState(0)
         self.Xmu = self.rng.rand(self.N, self.D)
         self.Z = self.rng.rand(3, self.D)
         unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
