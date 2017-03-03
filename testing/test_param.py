@@ -369,7 +369,7 @@ class SingleParamterizedInvariantTest(unittest.TestCase):
         m1.foo = GPflow.param.Parameterized()
 
         m2 = GPflow.param.Parameterized()
-        m2.foo = GPflow.param.Parameterized()
+        m2.foo = m1.foo
 
 
 class SingleParamInvariantTest(unittest.TestCase):
@@ -422,7 +422,7 @@ class SingleParamInvariantTest(unittest.TestCase):
         m1.foo = GPflow.param.Param(1)
 
         m2 = GPflow.param.Parameterized()
-        m2.foo = GPflow.param.Param(1)
+        m2.foo = m1.foo
 
 
 class TestParamList(unittest.TestCase):
