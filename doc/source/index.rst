@@ -7,23 +7,11 @@ GPflow Documentation
 ==================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    intro
-   notebooks/models
-   notebooks/regression
-   notebooks/classification
-   notebooks/kernels
-   notebooks/mcmc
-   notebooks/Sanity_check
-   notebooks/multiclass
-   notebooks/settings
-   notebooks/svi_test
-   notebooks/ordinal
-   model_options
-   notebooks/structure
-   guts
-   options
-   notebooks/SGPR_notes
-   notebooks/vgp_notes
+   tutorialsAndExamples
+   apiAndArchitecture
+   derivations
+
     

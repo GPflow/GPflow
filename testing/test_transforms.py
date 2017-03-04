@@ -56,7 +56,7 @@ class TransformTests(unittest.TestCase):
 
         # there is no jacobian: loop manually
         def jacobian(f):
-            return tf.pack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
+            return tf.stack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
 
         tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms if
                    type(t) is not GPflow.transforms.LowerTriangular]

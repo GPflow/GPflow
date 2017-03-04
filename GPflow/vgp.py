@@ -145,7 +145,7 @@ class VGP(GPModel):
         Kx_tiled = tf.tile(tf.expand_dims(Kx, 0), [self.num_latent, 1, 1])
         LiKx = tf.matrix_triangular_solve(L, Kx_tiled)
         if full_cov:
-            f_var = self.kern.K(Xnew) - tf.batch_matmul(LiKx, LiKx, adj_x=True)
+            f_var = self.kern.K(Xnew) - tf.matmul(LiKx, LiKx, transpose_a=True)
         else:
             f_var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)
