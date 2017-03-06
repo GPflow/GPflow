@@ -213,9 +213,10 @@ class TestExpxKxzActiveDims(unittest.TestCase):
 
 class TestKernExpQuadrature(unittest.TestCase):
     _threshold = 0.5
+    num_gauss_hermite_points = 100
 
     def setUp(self):
-        self.rng = np.random.RandomState(1)
+        self.rng = np.random.RandomState(0)
         self.N = 4
         self.D = 2
         self.Xmu = self.rng.rand(self.N, self.D)
@@ -283,15 +284,18 @@ class TestKernExpQuadrature(unittest.TestCase):
             _assert_pdeq(self, a, b, k, i, len(self.kernels))
 
     def test_eKxz(self):
+        aa, bb = [], []
         for k, ek in zip(self.kernels, self.ekernels):
+            k.num_gauss_hermite_points = self.num_gauss_hermite_points
             a = k.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             b = ek.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
-            _assert_pdeq(self, a, b, k)
+            aa.append(a); bb.append(b)
+        [_assert_pdeq(self, a, b, k) for a, b, k in zip(aa, bb, self.kernels)]
 
     def test_eKzxKxz(self):
         for k, ek in zip(self.kernels, self.ekernels):
             k._kill_autoflow()
-            k.num_gauss_hermite_points = 50
+            k.num_gauss_hermite_points = self.num_gauss_hermite_points
             a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             b = ek.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             _assert_pdeq(self, a, b, k)
@@ -303,7 +307,7 @@ class TestKernExpQuadrature(unittest.TestCase):
                 continue
 
             k._kill_autoflow()
-            k.num_gauss_hermite_points = 30
+            k.num_gauss_hermite_points = self.num_gauss_hermite_points
             a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
             b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b, k, i, len(self.kernels))
