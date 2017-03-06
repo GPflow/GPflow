@@ -199,7 +199,7 @@ class BinnedPoisson(Likelihood):
     def __init__(self, binsize=1., invlink=tf.exp):
         Likelihood.__init__(self)
         self.invlink = invlink
-        self.binsize = binsize
+        self.binsize = np.double(binsize)
 
     def logp(self, F, Y):
         return densities.poisson(self.invlink(F)*self.binsize, Y)

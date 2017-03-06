@@ -34,6 +34,8 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
             test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2).astype(np_float_type), 1e-6))
 
     if addNonStandardLinks:
+        test_setups.append(TestSetup(GPflow.likelihoods.BinnedPoisson(invlink=tf.square),
+                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
         test_setups.append(TestSetup(GPflow.likelihoods.Poisson(invlink=tf.square),
                                      rng.rand(10, 2).astype(np_float_type), 1e-6))
         test_setups.append(TestSetup(GPflow.likelihoods.Exponential(invlink=tf.square),
