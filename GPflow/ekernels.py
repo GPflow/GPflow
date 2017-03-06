@@ -4,6 +4,7 @@ import tensorflow as tf
 from . import kernels
 from .tf_wraps import eye
 from ._settings import settings
+from .param import AutoFlow
 
 from .quadrature import mvhermgauss
 from numpy import pi as nppi
@@ -32,19 +33,18 @@ class RBF(kernels.RBF):
         # use only active dimensions
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
-        M = tf.shape(Z)[0]
         D = tf.shape(Xmu)[1]
         lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
 
-        vec = tf.expand_dims(Xmu, 1) - tf.expand_dims(Z, 0)  # NxMxD
-        scalemat = tf.expand_dims(tf.diag(lengthscales ** 2.0), 0) + Xcov  # NxDxD
-        rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
-        smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxD
-        q = tf.reduce_sum(smIvec * vec, [2])  # NxM
-        det = tf.matrix_determinant(
-            tf.expand_dims(eye(D), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xcov
-        )  # N
-        return self.variance * tf.expand_dims(det ** -0.5, 1) * tf.exp(-0.5 * q)
+        vec = tf.expand_dims(Xmu, 2) - tf.expand_dims(tf.transpose(Z), 0)  # NxDxM
+        chols = tf.cholesky(tf.expand_dims(tf.diag(lengthscales ** 2), 0) + Xcov)
+        Lvec = tf.matrix_triangular_solve(chols, vec)
+        q = tf.reduce_sum(Lvec ** 2, [1])
+
+        chol_diags = tf.matrix_diag_part(chols)  # N x D
+        half_log_dets = tf.reduce_sum(tf.log(chol_diags), 1) - tf.reduce_sum(tf.log(lengthscales))  # N,
+
+        return self.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
 
     def exKxz(self, Z, Xmu, Xcov):
         """
@@ -76,17 +76,11 @@ class RBF(kernels.RBF):
             tf.expand_dims(eye(tf.shape(Xmu)[1]), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
         )  # N
 
-        vec = tf.expand_dims(Z, 0) - tf.expand_dims(Xmum, 1)  # NxMxD
+        vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmum, 2)  # NxDxM
+        smIvec = tf.matrix_solve(scalemat, vec)  # NxDxM
+        q = tf.reduce_sum(smIvec * vec, [1])  # NxM
 
-        rsm = tf.tile(tf.expand_dims(scalemat, 1), (1, M, 1, 1))  # Reshaped scalemat
-        smIvec = tf.matrix_solve(rsm, tf.expand_dims(vec, 3))[:, :, :, 0]  # NxMxDx1
-        q = tf.reduce_sum(smIvec * vec, [2])  # NxM
-
-        addvec = tf.matmul(
-            tf.tile(tf.expand_dims(Xsigmc, 1), (1, M, 1, 1)),
-            tf.expand_dims(smIvec, 3),
-            transpose_a=True
-        )[:, :, :, 0] + tf.expand_dims(Xmup, 1)  # NxMxD
+        addvec = tf.matmul(smIvec, Xsigmc, transpose_a=True) + tf.expand_dims(Xmup, 1)  # NxMxD
 
         return self.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
@@ -112,11 +106,12 @@ class RBF(kernels.RBF):
 
         mat = Xcov + 0.5 * tf.expand_dims(tf.diag(lengthscales ** 2.0), 0)  # NxDxD
         cm = tf.cholesky(mat)  # NxDxD
-        vec = 0.5 * (tf.reshape(Z, [1, M, 1, D]) +
-                     tf.reshape(Z, [1, 1, M, D])) - tf.reshape(Xmu, [N, 1, 1, D])  # NxMxMxD
-        cmr = tf.tile(tf.reshape(cm, [N, 1, 1, D, D]), [1, M, M, 1, 1])  # NxMxMxDxD
-        smI_z = tf.matrix_triangular_solve(cmr, tf.expand_dims(vec, 4))  # NxMxMxDx1
-        fs = tf.reduce_sum(tf.square(smI_z), [3, 4])
+        vec = 0.5 * (tf.reshape(tf.transpose(Z), [1, D, 1, M]) +
+                     tf.reshape(tf.transpose(Z), [1, D, M, 1])) - tf.reshape(Xmu, [N, D, 1, 1])  # NxDxMxM
+        svec = tf.reshape(vec, (N, D, M * M))
+        ssmI_z = tf.matrix_triangular_solve(cm, svec)  # NxDx(M*M)
+        smI_z = tf.reshape(ssmI_z, (N, D, M, M)) # NxDxMxM
+        fs = tf.reduce_sum(tf.square(smI_z), [1]) # NxMxM
 
         return self.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
 
@@ -289,7 +284,7 @@ class Prod(kernels.Prod):
             tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            return reduce(tf.mul, [k.eKdiag(Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.multiply, [k.eKdiag(Xmu, Xcov) for k in self.kern_list])
 
     def eKxz(self, Z, Xmu, Xcov):
         if not self.on_separate_dimensions:
@@ -298,7 +293,7 @@ class Prod(kernels.Prod):
             tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            return reduce(tf.mul, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.multiply, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         if not self.on_separate_dimensions:
@@ -307,4 +302,4 @@ class Prod(kernels.Prod):
             tf.assert_equal(tf.rank(Xcov), 2,
                             message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
-            return reduce(tf.mul, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
+            return reduce(tf.multiply, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])

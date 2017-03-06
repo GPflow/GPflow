@@ -129,4 +129,4 @@ class Product(MeanFunction):
         self.prod_2 = second_part
 
     def __call__(self, X):
-        return tf.mul(self.prod_1(X), self.prod_2(X))
+        return tf.multiply(self.prod_1(X), self.prod_2(X))
