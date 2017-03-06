@@ -4,6 +4,7 @@ import tensorflow as tf
 from . import kernels
 from .tf_wraps import eye
 from ._settings import settings
+from .param import AutoFlow
 
 from .quadrature import mvhermgauss
 from numpy import pi as nppi
@@ -32,19 +33,18 @@ class RBF(kernels.RBF):
         # use only active dimensions
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
-        M = tf.shape(Z)[0]
         D = tf.shape(Xmu)[1]
         lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
 
         vec = tf.expand_dims(Xmu, 2) - tf.expand_dims(tf.transpose(Z), 0)  # NxDxM
-        scalemat = tf.expand_dims(tf.diag(lengthscales ** 2.0), 0) + Xcov  # NxDxD
-        smIvec = tf.matrix_solve(scalemat, vec) # NxDxM
-        q = tf.reduce_sum(smIvec * vec, [1]) # NxM
+        chols = tf.cholesky(tf.expand_dims(tf.diag(lengthscales ** 2), 0) + Xcov)
+        Lvec = tf.matrix_triangular_solve(chols, vec)
+        q = tf.reduce_sum(Lvec ** 2, [1])
 
-        det = tf.matrix_determinant(
-            tf.expand_dims(eye(D), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xcov
-        )  # N
-        return self.variance * tf.expand_dims(det ** -0.5, 1) * tf.exp(-0.5 * q)
+        chol_diags = tf.matrix_diag_part(chols)  # N x D
+        half_log_dets = tf.reduce_sum(tf.log(chol_diags), 1) - tf.reduce_sum(tf.log(lengthscales))  # N,
+
+        return self.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
 
     def exKxz(self, Z, Xmu, Xcov):
         """
