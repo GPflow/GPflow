@@ -53,6 +53,8 @@ class TracerSession(tf.Session):
 
 
 def get_session(*args, **kwargs):
+    # Pass session configuration options
+    kwargs['config'] = tf.ConfigProto(**settings.session)
     if settings.profiling.dump_timeline:
         return TracerSession(*args, **kwargs)
     else:
