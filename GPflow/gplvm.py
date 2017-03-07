@@ -258,7 +258,7 @@ class BayesianGPLVM(GPModel):
 
         c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1])  # N* x M x p
         TT = tf.trace(tmp5 - tmp6)  # N*
-        diagonals = tf.tile(tf.expand_dims(eye(num_out), -1), [1, 1, num_predict]) * (psi0star - TT)  # p x p x N*
+        diagonals = tf.einsum("ij,k->ijk", eye(num_out), psi0star - TT) # p x p x N*
         covar1 = tf.matmul(tf.transpose(c3, perm=[0, 2, 1]), tf.matmul(tmp6 - tmp4, c3))  # N* x p x p
         covar2 = tf.transpose(diagonals, perm=[2, 0, 1])  # N* x p x p
         covar = covar1 + covar2
@@ -278,9 +278,9 @@ class BayesianGPLVM(GPModel):
         """
         idx = tf.expand_dims(observed, -1)
         Y_obs = tf.transpose(tf.gather_nd(tf.transpose(self.Y), idx))
-        X_mean = tf.concat(0, [self.X_mean, mu])
-        X_var = tf.concat(0, [self.X_var, var])
-        Y = tf.concat(0, [Y_obs, Ynew])
+        X_mean = tf.concat([self.X_mean, mu], 0)
+        X_var = tf.concat([self.X_var, var], 0)
+        Y = tf.concat([Y_obs, Ynew], 0)
 
         # Build the likelihood graph for the suggested q(X,X*) and the observed dimensions of Y and Y*
         objective = self._build_likelihood_graph(X_mean, X_var, Y)
