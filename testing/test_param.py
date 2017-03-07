@@ -38,13 +38,6 @@ class NamingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             print(p.name)
 
-    def test_two_parents(self):
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Param(1)
-        m.p2 = m.p  # do not do this!
-        with self.assertRaises(ValueError):
-            print(m.p.name)
-
 
 class ParamTestsScalar(unittest.TestCase):
     def setUp(self):
@@ -316,6 +309,120 @@ class ParamTestsWider(unittest.TestCase):
         with self.m.tf_mode():
             self.assertTrue(all([isinstance(p, tf.Tensor)
                                  for p in (self.m.foo, self.m.bar, self.m.baz)]))
+
+
+class SingleParamterizedInvariantTest(unittest.TestCase):
+    """
+    Tests that invariants of only allowing a single reference to a given Parameterized in a tree
+    """
+    def setUp(self):
+        tf.reset_default_graph()
+
+    def testSelfReference(self):
+        """
+        Test we raise when a Parameterized object references itself
+        """
+        m = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.foo = m
+
+    def testReferenceBelow(self):
+        """
+        Test we raise when we reference the same Parameterized object in a descendent node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.foo.bar = m
+
+    def testReferenceAbove(self):
+        """
+        Test we raise when we reference the same Parameterized object in an ancestor node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+        m.foo.bar = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.baz = m.foo.bar
+
+    def testReferenceAccross(self):
+        """
+        Test we raise when we reference the same Parameterized object in a sibling node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+        m.foo.bar = GPflow.param.Parameterized()
+
+        m.boo = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.boo.far = m.foo.bar
+
+    def testAddingToAnother(self):
+        """
+        Adding the same Paramterized object to another tree is fine.
+        """
+        m1 = GPflow.param.Parameterized()
+        m1.foo = GPflow.param.Parameterized()
+
+        m2 = GPflow.param.Parameterized()
+        m2.foo = m1.foo
+
+
+class SingleParamInvariantTest(unittest.TestCase):
+    """
+    Tests that invariants of only allowing a single reference to a given Param in a tree
+    """
+    def setUp(self):
+        tf.reset_default_graph()
+
+    def testReferenceBelow(self):
+        """
+        Test we raise when the same Param object is added further down the tree
+        """
+        m = GPflow.param.Parameterized()
+        m.p = GPflow.param.Param(1)
+        m.foo = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.foo.p = m.p
+
+    def testReferenceAbove(self):
+        """
+        Test we raise when we reference the same Param object in a an ancestor node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+        m.foo.p = GPflow.param.Param(1)
+
+        with self.assertRaises(ValueError):
+            m.p = m.foo.p
+
+    def testReferenceAccross(self):
+        """
+        Test we raise when we reference the same Param object in a sibling node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+        m.foo.p = GPflow.param.Param(1)
+
+        m.bar = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.bar.p = m.foo.p
+
+    def testAddingToAnother(self):
+        """
+        Adding the same Param object to another tree is fine.
+        """
+        m1 = GPflow.param.Parameterized()
+        m1.foo = GPflow.param.Param(1)
+
+        m2 = GPflow.param.Parameterized()
+        m2.foo = m1.foo
 
 
 class TestParamList(unittest.TestCase):
