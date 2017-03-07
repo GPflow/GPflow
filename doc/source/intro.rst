@@ -9,7 +9,7 @@ Install
 -------
 
 1. Install TensorFlow. 
-Please see instructions on the main TensorFlow `webpage <https://www.tensorflow.org/versions/r0.12/get_started/os_setup.html#download-and-setup>`_. You will need version 0.12. . We find that for many users pip installation is the fastest way to get going.
+Please see instructions on the main TensorFlow `webpage <https://www.tensorflow.org/versions/r1.0/get_started/get_started>`_. You will need version 1.0. . We find that for many users pip installation is the fastest way to get going.
 
 2. install package
 GPflow is a pure python library for now, so you could just add it to your path (we use ``python setup.py develop``) or try an install ``python setup.py install`` (untested). You can run the tests with ``python setup.py test``.
@@ -48,7 +48,7 @@ For non-Gaussian likelihoods, GPflow has a model that can jointly sample over th
 
 Variational inference
 ~~~~~~~~~~~~~~~~~~~~~
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in :class:`GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5].
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`GPflow.vgp.VGP`. In addition, there is a sparse version based on [3] in :class:`GPflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`GPflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5]. 
 
 The following table summarizes the model options in GPflow. 
 
@@ -60,6 +60,8 @@ The following table summarizes the model options in GPflow.
 +----------------------+--------------------------+----------------------------+-----------------------------+
 | Sparse approximation | :class:`GPflow.sgpr.SGPR`| :class:`GPflow.svgp.SVGP`  | :class:`GPflow.sgpmc.SGPMC` |
 +----------------------+--------------------------+----------------------------+-----------------------------+
+
+A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of `Matthews <http://mlg.eng.cam.ac.uk/matthews/thesis.pdf>`_ [8].
 
 GPLVM
 ~~~~~~~~~~~~~~~~~~~~~
@@ -111,8 +113,12 @@ Lawrence, Neil D.
 Advances in Neural Information Processing Systems, 329-336, 2004.
 
 [7] Bayesian Gaussian Process Latent Variable Model.
-Titsias, Michalis K., and Neil D. Lawrence. "
+Titsias, Michalis K., and Neil D. Lawrence.
 Proceedings of AISTATS, 2010.
+
+[8] Scalable Gaussian process inference using variational methods.
+Alexander G. de G. Matthews.
+PhD Thesis. University of Cambridge, 2016.
 
 
 Acknowledgements

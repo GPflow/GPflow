@@ -367,7 +367,7 @@ class RobustMax(object):
     def __init__(self, num_classes, epsilon=1e-3):
         self.epsilon = epsilon
         self.num_classes = num_classes
-        self._eps_K1 = self.epsilon / (self.num_classes - 1)
+        self._eps_K1 = self.epsilon / (self.num_classes - 1.)
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
@@ -436,19 +436,23 @@ class MultiClass(Likelihood):
             # To compute this, we'll compute the density for each possible output
             possible_outputs = [tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
                                 range(self.num_classes)]
-            ps = [self.predict_density(Fmu, Fvar, po) for po in possible_outputs]
+            ps = [self._predict_non_logged_density(Fmu, Fvar, po) for po in possible_outputs]
             ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
             return ps, ps - tf.square(ps)
         else:
             raise NotImplementedError
 
     def predict_density(self, Fmu, Fvar, Y):
+        return tf.log(self._predict_non_logged_density(Fmu, Fvar, Y))
+
+    def _predict_non_logged_density(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
             p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1. - self.invlink.epsilon) + (1. - p) * self.invlink._eps_K1
+            return p * (1 - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
         else:
             raise NotImplementedError
+
 
     def conditional_mean(self, F):
         return self.invlink(F)
@@ -510,8 +514,8 @@ class SwitchedLikelihood(Likelihood):
 
     def predict_mean_and_var(self, Fmu, Fvar):
         mu_list, var_list = zip(*[lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list])
-        mu = tf.concat_v2(mu_list, 1)
-        var = tf.concat_v2(var_list, 1)
+        mu = tf.concat(mu_list, 1)
+        var = tf.concat(var_list, 1)
         return mu, var
 
 
@@ -555,8 +559,8 @@ class Ordinal(Likelihood):
 
     def logp(self, F, Y):
         Y = tf.cast(Y, tf.int32)
-        scaled_bins_left = tf.concat_v2([self.bin_edges/self.sigma, np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat_v2([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
+        scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
         selected_bins_left = tf.gather(scaled_bins_left, Y)
         selected_bins_right = tf.gather(scaled_bins_right, Y)
 
@@ -571,8 +575,8 @@ class Ordinal(Likelihood):
 
         Note that a matrix of F values is flattened.
         """
-        scaled_bins_left = tf.concat_v2([self.bin_edges/self.sigma, np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat_v2([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
+        scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
         return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
             - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 

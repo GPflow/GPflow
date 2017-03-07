@@ -348,9 +348,9 @@ class GPModel(Model):
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
+        Model.__init__(self, name)
         self.kern, self.likelihood, self.mean_function = \
             kern, likelihood, mean_function
-        Model.__init__(self, name)
 
         if isinstance(X, np.ndarray):
             #: X is a data matrix; each row represents one instance
