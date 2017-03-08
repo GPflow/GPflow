@@ -630,7 +630,9 @@ class TestRandomizePrior(unittest.TestCase):
     """
 
     def test(self):
-        from inspect import signature, _empty
+        from inspect import getfullargspec
+
+
         m = GPflow.model.Model()
         m.p = GPflow.param.Param(1.0)
 
@@ -640,9 +642,15 @@ class TestRandomizePrior(unittest.TestCase):
                   obj is not GPflow.priors.Prior]
 
         for prior in priors:
-            d = dict(signature(prior).parameters)
-            params = dict((key, 1. if param.default is _empty
-                           else param.default) for key, param in d.items())
+            signature = getfullargspec(prior)
+            params = {}
+            if not signature.defaults is None:
+                params = dict(zip(reversed(signature.args),
+                                  reversed(signature.defaults)))
+            for param in signature.args:
+                if not param in params.keys() and not param is 'self':
+                    params[param] = 1.
+
             m.p = 1.0
             m.p.prior = prior(**params)
             m.p.randomize()
