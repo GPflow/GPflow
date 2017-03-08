@@ -679,6 +679,24 @@ class Parameterized(Parentable):
                 p.set_data(value)
                 return  # don't call object.setattr or set the _parent value
 
+        if key is not '_parent' and isinstance(value, (Param, Parameterized)):
+            # assigning a param that isn't the parent, check that it is not already in the tree
+
+            def _raise_for_existing_param(node):
+                """
+                Find a certain param from the root of the tree we're in by depth first search. Raise if found.
+                """
+                if node is value:
+                    raise ValueError('The Param(eterized) object {0} is already present in the tree'.format(value))
+
+                # search all children if we aren't at a leaf node
+                if isinstance(node, Parameterized):
+                    for child in node.sorted_params:
+                        _raise_for_existing_param(child)
+
+            root = self.highest_parent
+            _raise_for_existing_param(root)
+
         # use the standard setattr
         object.__setattr__(self, key, value)
 
@@ -756,7 +774,7 @@ class Parameterized(Parentable):
 
         This makes sure they're always in the same order.
         """
-        params = [child for key, child in self.__dict__.items()
+        params=  [child for key, child in self.__dict__.items()
                   if isinstance(child, (Param, Parameterized)) and
                   key is not '_parent']
         return sorted(params, key=id)
