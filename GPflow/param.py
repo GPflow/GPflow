@@ -284,6 +284,14 @@ class Param(Parentable):
         self._array[...] = new_array
         return free_size
 
+    def randomize(self, skipfixed = True):
+        if not (skipfixed and self.fixed):
+            try:
+                self._array = self.prior.sample()
+            except AttributeError:
+                randn = np.array(np.random.randn())
+                self._array = self.transform.forward(randn)
+
     def build_prior(self):
         """
         Build a tensorflow representation of the prior density.
@@ -845,6 +853,10 @@ class Parameterized(Parentable):
         [child._end_tf_mode() for child in self.sorted_params
          if isinstance(child, Parameterized)]
         self._tf_mode = False
+
+    def randomize(self):
+        for param in self.sorted_params:
+            param.randomize()
 
     def build_prior(self):
         """

@@ -492,6 +492,76 @@ class TestFixWithPrior(unittest.TestCase):
         m.build_likelihood = lambda: tf.zeros([1], tf.float64)
         m.optimize(disp=1, maxiter=10)
 
+class TestRandomizeDefault(unittest.TestCase):
+    """
+    This tests that distributions can sample random values without priors
+    """
+
+    def test(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        m.pp = GPflow.param.Param(1.0, GPflow.transforms.Log1pe())
+        m.pf = GPflow.param.Param(1.0)
+        m.pf.fixed = True
+
+
+
+        #should work as (pseudo) random vals a.s. are not 1.0
+        np.random.seed(1)
+        m.p.randomize()
+        self.assertTrue(m.p.value != 1.0)
+        m.pp.randomize()
+        self.assertTrue(m.pp.value != 1.0 and m.pp.value >= 0.0)
+        m.pf.randomize()
+        self.assertTrue(m.pf.value == 1.0)
+        m.pf.randomize(skipfixed = False)
+        self.assertTrue(m.pf.value != 1.0)
+
+class TestRandomizePrior(unittest.TestCase):
+    """
+    This tests that distributions can sample random values from priors
+    """
+
+    def test(self):
+        from inspect import signature, _empty
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+
+        priors = [obj for obj in GPflow.priors.__dict__.values() if
+                  isinstance(obj, type) and
+                  issubclass(obj, GPflow.priors.Prior) and
+                  obj is not GPflow.priors.Prior]
+
+        for prior in priors:
+            d = dict(signature(prior).parameters)
+            params = dict((key, 1. if param.default is _empty
+                           else param.default) for key, param in d.items())
+            m.p = 1.0
+            m.p.prior = prior(**params)
+            m.p.randomize()
+            self.assertTrue(m.p.value != 1.0)
+
+class TestRandomizeHierarchical(unittest.TestCase):
+    """
+    This tests that models can randomize all contained parameters
+    """
+
+    def test(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        m.p2 = GPflow.param.Param(1.0)
+        m.m = GPflow.model.Model()
+        m.m.p = GPflow.param.Param(1.0)
+        m.m.p2 = GPflow.param.Param(1.0)
+
+        m.p2.prior = GPflow.priors.Gaussian(0,1)
+        m.m.p2.prior = GPflow.priors.Gaussian(0,1)
+        m.randomize()
+
+        self.assertTrue(m.p.value != 1.0)
+        self.assertTrue(m.p2.value != 1.0)
+        self.assertTrue(m.m.p.value != 1.0)
+        self.assertTrue(m.m.p2.value != 1.0)
 
 class TestScopes(unittest.TestCase):
     def setUp(self):
