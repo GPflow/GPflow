@@ -195,8 +195,8 @@ class Gaussian(Likelihood):
                - 0.5 * (tf.square(Y - Fmu) + Fvar) / self.variance
 
 
-class BinnedPoisson(Likelihood):
-    def __init__(self, binsize=1., invlink=tf.exp):
+class Poisson(Likelihood):
+    def __init__(self, invlink=tf.exp, binsize=1.):
         Likelihood.__init__(self)
         self.invlink = invlink
         self.binsize = np.double(binsize)
@@ -216,27 +216,6 @@ class BinnedPoisson(Likelihood):
                    - tf.lgamma(Y + 1) + Y * tf.log(self.binsize) 
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
-
-class Poisson(Likelihood):
-    def __init__(self, invlink=tf.exp):
-        Likelihood.__init__(self)
-        self.invlink = invlink
-
-    def logp(self, F, Y):
-        return densities.poisson(self.invlink(F), Y)
-
-    def conditional_variance(self, F):
-        return self.invlink(F)
-
-    def conditional_mean(self, F):
-        return self.invlink(F)
-
-    def variational_expectations(self, Fmu, Fvar, Y):
-        if self.invlink is tf.exp:
-            return Y * Fmu - tf.exp(Fmu + Fvar / 2) - tf.lgamma(Y + 1)
-        else:
-            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
-
 
 class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):
