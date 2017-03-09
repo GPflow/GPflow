@@ -1,3 +1,4 @@
+from __future__ import print_function
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
