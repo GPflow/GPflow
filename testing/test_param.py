@@ -641,6 +641,11 @@ class TestRandomizePrior(unittest.TestCase):
                   issubclass(obj, GPflow.priors.Prior) and
                   obj is not GPflow.priors.Prior]
 
+        with self.assertRaises(NotImplementedError):
+            m.p = 1.0
+            m.p.prior = GPflow.priors.Prior()
+            m.p.randomize()
+
         for prior in priors:
             signature = getargspec(prior.__init__)
             params = {}
@@ -656,6 +661,20 @@ class TestRandomizePrior(unittest.TestCase):
             m.p.prior = prior(**params)
             m.p.randomize()
             self.assertTrue(m.p.value != 1.0)
+
+class TestRandomizeFeedPriors(unittest.TestCase):
+    """
+    Test if standard randomize behavior can be overriden using
+    distributions keyword.
+    """
+
+    def test(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        with self.assertRaises(NotImplementedError):
+            m.p.randomize(distributions = {m.p: GPflow.priors.Prior()})
+        m.p.randomize(distributions = {m.p: GPflow.priors.Gaussian(0,1)})
+        self.assertTrue(m.p.value != 1.0)
 
 class TestRandomizeHierarchical(unittest.TestCase):
     """

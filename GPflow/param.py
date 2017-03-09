@@ -284,13 +284,29 @@ class Param(Parentable):
         self._array[...] = new_array
         return free_size
 
-    def randomize(self, skipfixed = True):
+    def randomize(self, distributions={}, skipfixed = True):
+        """
+        Randomly assign the parameter a new value by sampling either from a
+        provided distribution from GPflow.priors, the parameter's prior, or
+        by using a default scheme where a standard normal variable is
+        propagated through the parameters transform.
+        Will not change fixed parameters unless skipfixed flag is set to False.
+
+        Optional Input:
+            distributions (dictionary) - a list of priors indexed by parameters.
+                Defaults to an empty dictionary.
+            skipfixed (boolean) - if True, parameter cannot be randomized.
+                Defaults to True.
+        """
         if not (skipfixed and self.fixed):
-            try:
-                self._array = self.prior.sample()
-            except AttributeError:
-                randn = np.array(np.random.randn())
-                self._array = self.transform.forward(randn)
+            if self in distributions.keys():
+                self._array = distributions[self].sample()
+            else:
+                try:
+                    self._array = self.prior.sample()
+                except AttributeError:
+                    randn = np.array(np.random.randn())
+                    self._array = self.transform.forward(randn)
 
     def build_prior(self):
         """
@@ -872,9 +888,12 @@ class Parameterized(Parentable):
          if isinstance(child, Parameterized)]
         self._tf_mode = False
 
-    def randomize(self):
+    def randomize(self, distributions={}, skipfixed=True):
+        """
+        Calls randomize on all parameters in model hierarchy.
+        """
         for param in self.sorted_params:
-            param.randomize()
+            param.randomize(distributions, skipfixed)
 
     def build_prior(self):
         """
