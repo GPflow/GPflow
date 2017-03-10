@@ -610,8 +610,7 @@ class TestRandomizeDefault(unittest.TestCase):
         m.pp = GPflow.param.Param(1.0, GPflow.transforms.Log1pe())
         m.pf = GPflow.param.Param(1.0)
         m.pf.fixed = True
-
-
+        m.pmd = GPflow.param.Param(np.ones(5))
 
         #should work as (pseudo) random vals a.s. are not 1.0
         np.random.seed(1)
@@ -635,6 +634,7 @@ class TestRandomizePrior(unittest.TestCase):
 
         m = GPflow.model.Model()
         m.p = GPflow.param.Param(1.0)
+        m.pmd = GPflow.param.Param(np.ones(5))
 
         priors = [obj for obj in GPflow.priors.__dict__.values() if
                   isinstance(obj, type) and
@@ -659,8 +659,11 @@ class TestRandomizePrior(unittest.TestCase):
 
             m.p = 1.0
             m.p.prior = prior(**params)
+            m.pmd.prior = prior(**params)
             m.p.randomize()
+            m.pmd.randomize()
             self.assertTrue(m.p.value != 1.0)
+            self.assertFalse(np.any(m.pmd.value == np.ones(5)))
 
 class TestRandomizeFeedPriors(unittest.TestCase):
     """

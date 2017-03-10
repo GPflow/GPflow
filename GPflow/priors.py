@@ -33,7 +33,7 @@ class Prior(Parameterized):
         """
         raise NotImplementedError
 
-    def sample(self):
+    def sample(self, shape=()):
         """
         a sample utility function for the prior.
         """
@@ -55,8 +55,8 @@ class Gaussian(Prior):
     def logp(self, x):
         return tf.reduce_sum(densities.gaussian(x, self.mu, self.var))
 
-    def sample(self):
-        return np.array(self.mu + np.sqrt(self.var)*np.random.randn())
+    def sample(self, shape=()):
+        return np.array(self.mu + np.sqrt(self.var)*np.random.randn(*shape))
 
     def __str__(self):
         return "N("+str(self.mu) + "," + str(self.var) + ")"
@@ -71,8 +71,9 @@ class LogNormal(Prior):
     def logp(self, x):
         return tf.reduce_sum(densities.lognormal(x, self.mu, self.var))
 
-    def sample(self):
-        return np.array(np.exp(self.mu + np.sqrt(self.var)*np.random.randn()))
+    def sample(self, shape=()):
+        return np.array(np.exp(self.mu +
+                               np.sqrt(self.var)*np.random.randn(*shape)))
 
     def __str__(self):
         return "logN("+str(self.mu) + "," + str(self.var) + ")"
@@ -87,7 +88,7 @@ class Gamma(Prior):
     def logp(self, x):
         return tf.reduce_sum(densities.gamma(self.shape, self.scale, x))
 
-    def sample(self):
+    def sample(self, shape=()):
         return np.array(np.random.gamma(self.shape, self.scale))
 
     def __str__(self):
@@ -103,8 +104,9 @@ class Laplace(Prior):
     def logp(self, x):
         return tf.reduce_sum(densities.laplace(self.mu, self.sigma, x))
 
-    def sample(self):
-        return np.array(np.random.laplace(self.mu, self.sigma))
+    def sample(self, shape=()):
+        return np.array(np.random.laplace(self.mu, self.sigma,
+                                          size=shape if shape else None))
 
     def __str__(self):
         return "Lap.("+str(self.mu) + "," + str(self.sigma) + ")"
@@ -118,8 +120,9 @@ class Uniform(Prior):
     def logp(self, x):
         return self.log_height * tf.cast(tf.size(x), float_type)
 
-    def sample(self):
-        return np.array((self.upper - self.lower)*np.random.rand() + self.lower)
+    def sample(self, shape=()):
+        return np.array(self.lower +
+                        (self.upper - self.lower)*np.random.rand(*shape))
 
     def __str__(self):
         return "U("+str(self.lower) + "," + str(self.upper) + ")"

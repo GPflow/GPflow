@@ -284,7 +284,7 @@ class Param(Parentable):
         self._array[...] = new_array
         return free_size
 
-    def randomize(self, distributions={}, skipfixed = True):
+    def randomize(self, distributions={}, skipfixed=True):
         """
         Randomly assign the parameter a new value by sampling either from a
         provided distribution from GPflow.priors, the parameter's prior, or
@@ -300,12 +300,12 @@ class Param(Parentable):
         """
         if not (skipfixed and self.fixed):
             if self in distributions.keys():
-                self._array = distributions[self].sample()
+                self._array = distributions[self].sample(self.shape)
             else:
                 try:
-                    self._array = self.prior.sample()
+                    self._array = self.prior.sample(self.shape)
                 except AttributeError:
-                    randn = np.array(np.random.randn())
+                    randn = np.array(np.random.randn(*self.shape))
                     self._array = self.transform.forward(randn)
 
     def build_prior(self):
