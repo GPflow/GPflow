@@ -7,7 +7,7 @@ import traceback
 import unittest
 import sys
 import time
-
+import os
 
 class TestNotebooks(unittest.TestCase):
     def _execNotebook(self, ep, notebook_filename, nbpath):
@@ -19,7 +19,7 @@ class TestNotebooks(unittest.TestCase):
                 print('-' * 60)
                 traceback.print_exc(file=sys.stdout)
                 print('-' * 60)
-                self.assertFalse('Error executing the notebook %s. See above for error.' % notebook_filename)
+                self.assertTrue(False, 'Error executing the notebook %s. See above for error.' % notebook_filename)
 
     def test_all_notebooks(self):
         ''' Test all notebooks except blacklist. Blacklisted notebooks take too long.'''
@@ -30,9 +30,11 @@ class TestNotebooks(unittest.TestCase):
         ep = ExecutePreprocessor(timeout=120, kernel_name=pythonkernel, interrupt_on_timeout=True)
         lfiles = glob.glob(nbpath+"*.ipynb")
         for notebook_filename in lfiles:
-            if(notebook_filename not in blacklist):
+            if(os.path.basename(notebook_filename) not in blacklist):
                 t = time.time()
                 self._execNotebook(ep, notebook_filename, nbpath)
                 print(notebook_filename, 'took %g seconds.' % (time.time()-t))
+
+
 if __name__ == '__main__':
     unittest.main()
