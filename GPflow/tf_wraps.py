@@ -20,6 +20,7 @@ A collection of wrappers and extensions for tensorflow.
 import os
 import tensorflow as tf
 from tensorflow.python.framework import ops
+import warnings
 from ._settings import settings
 
 
@@ -27,6 +28,7 @@ def eye(N):
     """
     An identitiy matrix
     """
+    warnings.warn('tf_wraps.eye is deprecated: use tf.eye instead', np.VisibleDeprecationWarning)
     return tf.diag(tf.ones(tf.stack([N, ]), dtype=settings.dtypes.float_type))
 
 
