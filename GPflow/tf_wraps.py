@@ -22,6 +22,7 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 import warnings
 from ._settings import settings
+import numpy as np
 
 
 def eye(N):

@@ -20,6 +20,7 @@ from .densities import multivariate_normal
 from .mean_functions import Zero
 from . import likelihoods
 from .param import DataHolder
+from ._settings import settings
 float_type = settings.dtypes.float_type
 
 
@@ -73,7 +74,7 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=float_type) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
         V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))
