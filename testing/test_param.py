@@ -605,6 +605,7 @@ class TestRandomizeDefault(unittest.TestCase):
     """
 
     def test(self):
+        np.random.seed(1)
         m = GPflow.model.Model()
         m.p = GPflow.param.Param(1.0)
         m.pp = GPflow.param.Param(1.0, GPflow.transforms.Log1pe())
@@ -613,15 +614,20 @@ class TestRandomizeDefault(unittest.TestCase):
         m.pmd = GPflow.param.Param(np.ones(5))
 
         #should work as (pseudo) random vals a.s. are not 1.0
-        np.random.seed(1)
         m.p.randomize()
-        self.assertTrue(m.p.value != 1.0)
+        self.assertFalse(m.p.value == 1.0)
         m.pp.randomize()
-        self.assertTrue(m.pp.value != 1.0 and m.pp.value >= 0.0)
+        self.assertFalse(m.pp.value == 1.0 or m.pp.value <= 0.0)
+
+        #check if fixing works
         m.pf.randomize()
         self.assertTrue(m.pf.value == 1.0)
-        m.pf.randomize(skipfixed = False)
-        self.assertTrue(m.pf.value != 1.0)
+        m.pf.randomize(skipfixed=False)
+        self.assertFalse(m.pf.value == 1.0)
+
+        #check multidimensional
+        m.pmd.randomize()
+        self.assertFalse(np.any(m.pmd.value == 1.0))
 
 class TestRandomizePrior(unittest.TestCase):
     """
@@ -629,12 +635,12 @@ class TestRandomizePrior(unittest.TestCase):
     """
 
     def test(self):
+        np.random.seed(1)
         from inspect import getargspec
-
 
         m = GPflow.model.Model()
         m.p = GPflow.param.Param(1.0)
-        m.pmd = GPflow.param.Param(np.ones(5))
+        m.pmd = GPflow.param.Param(np.eye(5), transform=GPflow.transforms.DiagMatrix())
 
         priors = [obj for obj in GPflow.priors.__dict__.values() if
                   isinstance(obj, type) and
@@ -654,7 +660,7 @@ class TestRandomizePrior(unittest.TestCase):
             else:
                 param_names = signature.args
             for param in param_names:
-                if not param in params.keys() and not param is 'self':
+                if param not in params.keys() and param is not 'self':
                     params[param] = 1.
 
             m.p = 1.0
@@ -662,8 +668,10 @@ class TestRandomizePrior(unittest.TestCase):
             m.pmd.prior = prior(**params)
             m.p.randomize()
             m.pmd.randomize()
-            self.assertTrue(m.p.value != 1.0)
+            self.assertFalse(m.p.value == 1.0)
             self.assertFalse(np.any(m.pmd.value == np.ones(5)))
+            self.assertTrue(m.pmd.value.shape == (5,5))
+
 
 class TestRandomizeFeedPriors(unittest.TestCase):
     """
@@ -672,12 +680,14 @@ class TestRandomizeFeedPriors(unittest.TestCase):
     """
 
     def test(self):
+        np.random.seed(1)
         m = GPflow.model.Model()
         m.p = GPflow.param.Param(1.0)
         with self.assertRaises(NotImplementedError):
-            m.p.randomize(distributions = {m.p: GPflow.priors.Prior()})
-        m.p.randomize(distributions = {m.p: GPflow.priors.Gaussian(0,1)})
-        self.assertTrue(m.p.value != 1.0)
+            m.p.randomize(distributions={m.p: GPflow.priors.Prior()})
+        m.p.randomize(distributions={m.p: GPflow.priors.Gaussian(0, 1)})
+        self.assertFalse(m.p.value == 1.0)
+
 
 class TestRandomizeHierarchical(unittest.TestCase):
     """
@@ -685,6 +695,7 @@ class TestRandomizeHierarchical(unittest.TestCase):
     """
 
     def test(self):
+        np.random.seed(1)
         m = GPflow.model.Model()
         m.p = GPflow.param.Param(1.0)
         m.p2 = GPflow.param.Param(1.0)
@@ -692,14 +703,15 @@ class TestRandomizeHierarchical(unittest.TestCase):
         m.m.p = GPflow.param.Param(1.0)
         m.m.p2 = GPflow.param.Param(1.0)
 
-        m.p2.prior = GPflow.priors.Gaussian(0,1)
-        m.m.p2.prior = GPflow.priors.Gaussian(0,1)
+        m.p2.prior = GPflow.priors.Gaussian(0, 1)
+        m.m.p2.prior = GPflow.priors.Gaussian(0, 1)
         m.randomize()
 
-        self.assertTrue(m.p.value != 1.0)
-        self.assertTrue(m.p2.value != 1.0)
-        self.assertTrue(m.m.p.value != 1.0)
-        self.assertTrue(m.m.p2.value != 1.0)
+        self.assertFalse(m.p.value == 1.0)
+        self.assertFalse(m.p2.value == 1.0)
+        self.assertFalse(m.m.p.value == 1.0)
+        self.assertFalse(m.m.p2.value == 1.0)
+
 
 class TestScopes(unittest.TestCase):
     def setUp(self):
