@@ -34,3 +34,6 @@ When incrementing the version number, the following tasks are required:
  - Update the version in `GPflow/_version.py`
  - Udate the version in the `doc/source/conf.py`
  - Add a note to `RELEASE.md`
+ - Update PyPI package by doing `python setup.py register -r pypi` and `python setup.py sdist upload -r pypi`.
+
+
