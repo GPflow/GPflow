@@ -613,7 +613,8 @@ class TestScopes(unittest.TestCase):
         with self.m.tf_mode():
             with self.m._graph.as_default():
                 l = self.m.build_likelihood()
-        self.assertTrue('model.build_likelihood' in l.name)
+        expected_name = self.m.name + '.build_likelihood'
+        self.assertTrue(expected_name in l.name)
 
     def test_kern_name(self):
         with self.m.tf_mode():
