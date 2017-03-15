@@ -305,8 +305,8 @@ class Param(Parentable):
                 try:
                     self._array = self.prior.sample(self.shape)
                 except AttributeError:
-                    randn = np.array(np.random.randn(
-                        self.transform.free_state_size(self.shape)))
+                    randn = np.random.randn(
+                        self.transform.free_state_size(self.shape))
                     self._array = self.transform.forward(randn)
 
     def build_prior(self):
