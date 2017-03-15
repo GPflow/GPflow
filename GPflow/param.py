@@ -15,7 +15,6 @@
 
 from __future__ import absolute_import
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 from . import transforms, session
 from contextlib import contextmanager
@@ -201,6 +200,7 @@ class Param(Parentable):
         a pandas.DataFrame which contains the parameter name and associated samples
         in the correct form (e.g. with positive constraints applied).
         """
+        import pandas as pd
         if self.fixed:
             return pd.Series([self.value for _ in range(samples.shape[0])], name=self.long_name)
         start, _ = self.highest_parent.get_param_index(self)
@@ -593,6 +593,7 @@ class Parameterized(Parentable):
         a pandas.DataFrame which contains the parameter name and associated samples
         in the correct form (e.g. with positive constraints applied).
         """
+        import pandas as pd
         d = pd.DataFrame()
         for p in self.sorted_params:
             d = pd.concat([d, p.get_samples_df(samples)], axis=1)
