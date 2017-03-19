@@ -483,14 +483,22 @@ class Cosine(Stationary):
         return self.variance * tf.cos(r)
 
 
-class MLP(Kern):
+class ArcCosine(Kern):
     """
-    The multi layer perceptron (MLP) kernel
+    The arc cosine family of kernels
     """
+
+    implemented_orders = {0, 1, 2}
     def __init__(self, input_dim, variance=1.0,
                  weight_variances=1., bias_variance=1.,
+                 order=0,
                  active_dims=None, ARD=False):
         Kern.__init__(self, input_dim, active_dims)
+
+        if not order in self.implemented_orders:
+            raise ValueError('Requested kernel order is not implemented.')
+        self.order = order
+
         self.variance = Param(variance, transforms.positive)
         self.bias_variance = Param(bias_variance, transforms.positive)
         if ARD:
@@ -513,26 +521,43 @@ class MLP(Kern):
         else:
             return tf.matmul((self.weight_variances * X), tf.transpose(X2)) + self.bias_variance
 
+    def _J(self, theta):
+        if self.order == 0:
+            return np.pi - theta
+        elif self.order == 1:
+            return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)
+        elif self.order == 2:
+            return 3. * tf.sin(theta) * tf.cos(theta) + \
+                   (np.pi - theta) * (1. + 2. * tf.cos(theta) ** 2)
+
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
 
-        X_denominator = tf.sqrt(self._weighted_product(X) + 1.)
+        X_denominator = tf.sqrt(self._weighted_product(X))
         if X2 is None:
             X2 = X
             X2_denominator = X_denominator
         else:
-            X2_denominator = tf.sqrt(self._weighted_product(X2) + 1.)
+            X2_denominator = tf.sqrt(self._weighted_product(X2))
 
         enumerator = self._weighted_product(X, X2)
-        return self.variance * (2. / np.pi) * tf.asin(enumerator / X_denominator[:, None] / X2_denominator[None, :])
+        theta = tf.acos(tf.clip_by_value(enumerator / \
+                                         X_denominator[:, None] / \
+                                         X2_denominator[None, :],
+                                         -1., 1.))
+
+        return self.variance * (1. / np.pi) * self._J(theta) * \
+               X_denominator[:, None] ** self.order * \
+               X2_denominator[None, :] ** self.order
 
     def Kdiag(self, X, presliced=False):
         if not presliced:
             X, _ = self._slice(X, None)
 
         X_product = self._weighted_product(X)
-        return self.variance * (2. / np.pi) * tf.asin(X_product / (X_product + 1.))
+        theta = tf.zeros([tf.shape(X)[0]], float_type)
+        return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 
 class PeriodicKernel(Kern):

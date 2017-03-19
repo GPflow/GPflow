@@ -13,7 +13,7 @@ def referenceRbfKernel( X, lengthScale, signalVariance ):
     return kernel
 
 
-def referenceMLPKernel( X, weightVariances, biasVariance, signalVariance ):
+def referenceArcCosineKernel( X, order, weightVariances, biasVariance, signalVariance ):
     num_points = X.shape[0]
     kernel = np.empty((num_points, num_points))
     for row in range(num_points):
@@ -23,11 +23,21 @@ def referenceMLPKernel( X, weightVariances, biasVariance, signalVariance ):
 
             enumerator = (weightVariances * x).dot(y) + biasVariance
 
-            x_denominator = np.sqrt((weightVariances * x).dot(x) + biasVariance + 1.)
-            y_denominator = np.sqrt((weightVariances * y).dot(y) + biasVariance + 1.)
+            x_denominator = np.sqrt((weightVariances * x).dot(x) + biasVariance)
+            y_denominator = np.sqrt((weightVariances * y).dot(y) + biasVariance)
             denominator = x_denominator * y_denominator
 
-            kernel[row, col] = signalVariance * 2. / np.pi * np.arcsin(enumerator / denominator)
+            theta = np.arccos(np.clip(enumerator / denominator, -1., 1.))
+            if order == 0:
+                J = np.pi - theta
+            elif order == 1:
+                J = np.sin(theta) + (np.pi - theta) * np.cos(theta)
+            elif order == 2:
+                J = 3. * np.sin(theta) * np.cos(theta) + (np.pi - theta) * (1. + 2. * np.cos(theta) ** 2)
+
+            kernel[row, col] = signalVariance * (1. / np.pi) * J * \
+                               x_denominator ** order * \
+                               y_denominator ** order
     return kernel
 
 
