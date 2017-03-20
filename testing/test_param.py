@@ -371,6 +371,15 @@ class SingleParamterizedInvariantTest(unittest.TestCase):
         m2 = GPflow.param.Parameterized()
         m2.foo = m1.foo
 
+    def testReassign(self):
+        """
+        We should be able to reassign the same value to the same param
+        """
+        m1 = GPflow.param.Parameterized()
+        p = GPflow.param.Parameterized()
+        m1.foo = p  # assign
+        m1.foo = p  # reassign
+
 
 class SingleParamInvariantTest(unittest.TestCase):
     """
@@ -423,6 +432,15 @@ class SingleParamInvariantTest(unittest.TestCase):
 
         m2 = GPflow.param.Parameterized()
         m2.foo = m1.foo
+
+    def testReassign(self):
+        """
+        We should be able to reassign the same value to the same param
+        """
+        m1 = GPflow.param.Parameterized()
+        p = GPflow.param.Param(1)
+        m1.foo = p  # assign
+        m1.foo = p  # reassign
 
 
 class TestParamList(unittest.TestCase):
@@ -613,7 +631,8 @@ class TestScopes(unittest.TestCase):
         with self.m.tf_mode():
             with self.m._graph.as_default():
                 l = self.m.build_likelihood()
-        self.assertTrue('model.build_likelihood' in l.name)
+        expected_name = self.m.name + '.build_likelihood'
+        self.assertTrue(expected_name in l.name)
 
     def test_kern_name(self):
         with self.m.tf_mode():

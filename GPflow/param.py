@@ -673,21 +673,23 @@ class Parameterized(Parentable):
 
         if key is not '_parent' and isinstance(value, (Param, Parameterized)):
             # assigning a param that isn't the parent, check that it is not already in the tree
+            if not hasattr(self, key) or not self.__getattribute__(key) is value:
+                # we are not assigning the same value to the same member
 
-            def _raise_for_existing_param(node):
-                """
-                Find a certain param from the root of the tree we're in by depth first search. Raise if found.
-                """
-                if node is value:
-                    raise ValueError('The Param(eterized) object {0} is already present in the tree'.format(value))
+                def _raise_for_existing_param(node):
+                    """
+                    Find a certain param from the root of the tree we're in by depth first search. Raise if found.
+                    """
+                    if node is value:
+                        raise ValueError('The Param(eterized) object {0} is already present in the tree'.format(value))
 
-                # search all children if we aren't at a leaf node
-                if isinstance(node, Parameterized):
-                    for child in node.sorted_params:
-                        _raise_for_existing_param(child)
+                    # search all children if we aren't at a leaf node
+                    if isinstance(node, Parameterized):
+                        for child in node.sorted_params:
+                            _raise_for_existing_param(child)
 
-            root = self.highest_parent
-            _raise_for_existing_param(root)
+                root = self.highest_parent
+                _raise_for_existing_param(root)
 
         # use the standard setattr
         object.__setattr__(self, key, value)
