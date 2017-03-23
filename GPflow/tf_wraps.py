@@ -25,7 +25,7 @@ from ._settings import settings
 import numpy as np
 
 
-def eye(N):
+def eye(N):  # pragma: no cover
     """
     An identitiy matrix
     """
