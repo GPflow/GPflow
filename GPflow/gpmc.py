@@ -20,8 +20,8 @@ from .param import Param, DataHolder
 from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
-from .tf_wraps import eye
 from ._settings import settings
+float_type = settings.dtypes.float_type
 
 
 class GPMC(GPModel):
@@ -75,7 +75,7 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = tf.cholesky(K + eye(tf.shape(self.X)[0])*settings.numerics.jitter_level)
+        L = tf.cholesky(K + tf.eye(tf.shape(self.X)[0], dtype=float_type)*settings.numerics.jitter_level)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))
