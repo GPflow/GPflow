@@ -59,7 +59,6 @@ class RBF(kernels.RBF):
         ]):
             Xmu = tf.identity(Xmu)
 
-        # M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0] - 1
         D = tf.shape(Xmu)[1]
         Xsigmb = tf.slice(Xcov, [0, 0, 0, 0], tf.stack([-1, N, -1, -1]))
