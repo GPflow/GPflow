@@ -556,7 +556,7 @@ class ArcCosine(Kern):
             X, _ = self._slice(X, None)
 
         X_product = self._weighted_product(X)
-        theta = tf.zeros([tf.shape(X)[0]], float_type)
+        theta = tf.constant(0., float_type)
         return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 
