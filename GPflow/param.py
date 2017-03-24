@@ -284,6 +284,31 @@ class Param(Parentable):
         self._array[...] = new_array
         return free_size
 
+    def randomize(self, distributions={}, skipfixed=True):
+        """
+        Randomly assign the parameter a new value by sampling either from a
+        provided distribution from GPflow.priors, the parameter's prior, or
+        by using a default scheme where a standard normal variable is
+        propagated through the parameters transform.
+        Will not change fixed parameters unless skipfixed flag is set to False.
+
+        Optional Input:
+            distributions (dictionary) - a list of priors indexed by parameters.
+                Defaults to an empty dictionary.
+            skipfixed (boolean) - if True, parameter cannot be randomized.
+                Defaults to True.
+        """
+        if not (skipfixed and self.fixed):
+            if self in distributions.keys():
+                self._array = distributions[self].sample(self.shape)
+            else:
+                try:
+                    self._array = self.prior.sample(self.shape)
+                except AttributeError:
+                    randn = np.random.randn(
+                        self.transform.free_state_size(self.shape))
+                    self._array = self.transform.forward(randn)
+
     def build_prior(self):
         """
         Build a tensorflow representation of the prior density.
@@ -673,21 +698,23 @@ class Parameterized(Parentable):
 
         if key is not '_parent' and isinstance(value, (Param, Parameterized)):
             # assigning a param that isn't the parent, check that it is not already in the tree
+            if not hasattr(self, key) or not self.__getattribute__(key) is value:
+                # we are not assigning the same value to the same member
 
-            def _raise_for_existing_param(node):
-                """
-                Find a certain param from the root of the tree we're in by depth first search. Raise if found.
-                """
-                if node is value:
-                    raise ValueError('The Param(eterized) object {0} is already present in the tree'.format(value))
+                def _raise_for_existing_param(node):
+                    """
+                    Find a certain param from the root of the tree we're in by depth first search. Raise if found.
+                    """
+                    if node is value:
+                        raise ValueError('The Param(eterized) object {0} is already present in the tree'.format(value))
 
-                # search all children if we aren't at a leaf node
-                if isinstance(node, Parameterized):
-                    for child in node.sorted_params:
-                        _raise_for_existing_param(child)
+                    # search all children if we aren't at a leaf node
+                    if isinstance(node, Parameterized):
+                        for child in node.sorted_params:
+                            _raise_for_existing_param(child)
 
-            root = self.highest_parent
-            _raise_for_existing_param(root)
+                root = self.highest_parent
+                _raise_for_existing_param(root)
 
         # use the standard setattr
         object.__setattr__(self, key, value)
@@ -863,6 +890,13 @@ class Parameterized(Parentable):
         [child._end_tf_mode() for child in self.sorted_params
          if isinstance(child, Parameterized)]
         self._tf_mode = False
+
+    def randomize(self, distributions={}, skipfixed=True):
+        """
+        Calls randomize on all parameters in model hierarchy.
+        """
+        for param in self.sorted_params:
+            param.randomize(distributions, skipfixed)
 
     def build_prior(self):
         """

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import GPflow
 import tensorflow as tf
 import os
@@ -75,9 +76,9 @@ def getSparseModel(X,Y,isFITC=False):
     return m
 
 def printModelParameters( model ):
-    print "Likelihood variance ", model.likelihood.variance, "\n"
-    print "Kernel variance ", model.kern.variance, "\n"
-    print "Kernel lengthscale ", model.kern.lengthscales, "\n"
+    print("Likelihood variance ", model.likelihood.variance, "\n")
+    print("Kernel variance ", model.kern.variance, "\n")
+    print("Kernel lengthscale ", model.kern.lengthscales, "\n")
 
 def plotPredictions( ax, model, color, label ):
     xtest = np.sort( readCsvFile( 'data/snelson_test_inputs' ) )
@@ -162,11 +163,11 @@ def snelsonDemo():
     VFEmodel, VFEcb = trainSparseModel(xtrain,ytrain,exact_model,False,xtest,ytest)
     FITCmodel, FITCcb = trainSparseModel(xtrain,ytrain,exact_model,True,xtest,ytest)
 
-    print "Exact model parameters \n"
+    print("Exact model parameters \n")
     printModelParameters( exact_model )
-    print "Sparse model parameters for VFE optimization \n"
+    print("Sparse model parameters for VFE optimization \n")
     printModelParameters( VFEmodel )
-    print "Sparse model parameters for FITC optimization \n"
+    print("Sparse model parameters for FITC optimization \n")
     printModelParameters( FITCmodel )
     
     VFEiters = FITCcb.n_iters

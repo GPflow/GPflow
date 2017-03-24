@@ -18,7 +18,7 @@ from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc, tf_wraps, session
+from . import hmc, session
 from ._settings import settings
 import sys
 
@@ -390,7 +390,7 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf_wraps.eye(tf.shape(mu)[0]) * settings.numerics.jitter_level
+        jitter = tf.eye(tf.shape(mu)[0], dtype=float_type) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
