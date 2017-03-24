@@ -20,9 +20,10 @@ from .param import Param
 from .model import GPModel
 from . import transforms, conditionals, kullback_leiblers
 from .mean_functions import Zero
-from .tf_wraps import eye
 from ._settings import settings
 from .minibatch import MinibatchData
+float_type = settings.dtypes.float_type
+
 
 class SVGP(GPModel):
     """
@@ -55,7 +56,7 @@ class SVGP(GPModel):
         """
         # sort out the X, Y into MiniBatch objects.
         if minibatch_size is None:
-            minibatch_size = X.shape[0]     
+            minibatch_size = X.shape[0]
         self.num_data = X.shape[0]
         X = MinibatchData(X, minibatch_size, np.random.RandomState(0))
         Y = MinibatchData(Y, minibatch_size, np.random.RandomState(0))
@@ -84,7 +85,7 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + eye(self.num_inducing) * settings.numerics.jitter_level
+            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=float_type) * settings.numerics.jitter_level
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
