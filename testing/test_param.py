@@ -617,6 +617,119 @@ class TestFixWithPrior(unittest.TestCase):
         m.build_likelihood = lambda: tf.zeros([1], tf.float64)
         m.optimize(disp=1, maxiter=10)
 
+class TestRandomizeDefault(unittest.TestCase):
+    """
+    This tests that distributions can sample random values without priors
+    """
+
+    def test(self):
+        np.random.seed(1)
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        m.pp = GPflow.param.Param(1.0, GPflow.transforms.Log1pe())
+        m.pf = GPflow.param.Param(1.0)
+        m.pf.fixed = True
+        m.pmd = GPflow.param.Param(np.ones(5))
+
+        #should work as (pseudo) random vals a.s. are not 1.0
+        m.p.randomize()
+        self.assertFalse(m.p.value == 1.0)
+        m.pp.randomize()
+        self.assertFalse(m.pp.value == 1.0 or m.pp.value <= 0.0)
+
+        #check if fixing works
+        m.pf.randomize()
+        self.assertTrue(m.pf.value == 1.0)
+        m.pf.randomize(skipfixed=False)
+        self.assertFalse(m.pf.value == 1.0)
+
+        #check multidimensional
+        m.pmd.randomize()
+        self.assertFalse(np.any(m.pmd.value == 1.0))
+
+class TestRandomizePrior(unittest.TestCase):
+    """
+    This tests that distributions can sample random values from priors
+    """
+
+    def test(self):
+        np.random.seed(1)
+        from inspect import getargspec
+
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        m.pmd = GPflow.param.Param(np.eye(5), transform=GPflow.transforms.DiagMatrix())
+
+        priors = [obj for obj in GPflow.priors.__dict__.values() if
+                  isinstance(obj, type) and
+                  issubclass(obj, GPflow.priors.Prior) and
+                  obj is not GPflow.priors.Prior]
+
+        with self.assertRaises(NotImplementedError):
+            m.p = 1.0
+            m.p.prior = GPflow.priors.Prior()
+            m.p.randomize()
+
+        for prior in priors:
+            signature = getargspec(prior.__init__)
+            params = {}
+            if signature.defaults is not None:
+                param_names = signature.args[:-len(signature.defaults)]
+            else:
+                param_names = signature.args
+            for param in param_names:
+                if param not in params.keys() and param is not 'self':
+                    params[param] = 1.
+
+            m.p = 1.0
+            m.p.prior = prior(**params)
+            m.pmd.prior = prior(**params)
+            m.p.randomize()
+            m.pmd.randomize()
+            self.assertFalse(m.p.value == 1.0)
+            self.assertFalse(np.any(m.pmd.value == np.ones(5)))
+            self.assertTrue(m.pmd.value.shape == (5,5))
+
+
+class TestRandomizeFeedPriors(unittest.TestCase):
+    """
+    Test if standard randomize behavior can be overriden using
+    distributions keyword.
+    """
+
+    def test(self):
+        np.random.seed(1)
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        with self.assertRaises(NotImplementedError):
+            m.p.randomize(distributions={m.p: GPflow.priors.Prior()})
+        m.p.randomize(distributions={m.p: GPflow.priors.Gaussian(0, 1)})
+        self.assertFalse(m.p.value == 1.0)
+
+
+class TestRandomizeHierarchical(unittest.TestCase):
+    """
+    This tests that models can randomize all contained parameters
+    """
+
+    def test(self):
+        np.random.seed(1)
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        m.p2 = GPflow.param.Param(1.0)
+        m.m = GPflow.model.Model()
+        m.m.p = GPflow.param.Param(1.0)
+        m.m.p2 = GPflow.param.Param(1.0)
+
+        m.p2.prior = GPflow.priors.Gaussian(0, 1)
+        m.m.p2.prior = GPflow.priors.Gaussian(0, 1)
+        m.randomize()
+
+        self.assertFalse(m.p.value == 1.0)
+        self.assertFalse(m.p2.value == 1.0)
+        self.assertFalse(m.m.p.value == 1.0)
+        self.assertFalse(m.m.p2.value == 1.0)
+
 
 class TestScopes(unittest.TestCase):
     def setUp(self):
