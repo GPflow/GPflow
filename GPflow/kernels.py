@@ -495,7 +495,7 @@ class ArcCosine(Kern):
                  active_dims=None, ARD=False):
         Kern.__init__(self, input_dim, active_dims)
 
-        if not order in self.implemented_orders:
+        if order not in self.implemented_orders:
             raise ValueError('Requested kernel order is not implemented.')
         self.order = order
 
@@ -541,8 +541,8 @@ class ArcCosine(Kern):
         else:
             X2_denominator = tf.sqrt(self._weighted_product(X2))
 
-        enumerator = self._weighted_product(X, X2)
-        theta = tf.acos(tf.clip_by_value(enumerator / \
+        numerator = self._weighted_product(X, X2)
+        theta = tf.acos(tf.clip_by_value(numerator / \
                                          X_denominator[:, None] / \
                                          X2_denominator[None, :],
                                          -1., 1.))

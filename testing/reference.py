@@ -21,13 +21,13 @@ def referenceArcCosineKernel( X, order, weightVariances, biasVariance, signalVar
             x = X[row]
             y = X[col]
 
-            enumerator = (weightVariances * x).dot(y) + biasVariance
+            numerator = (weightVariances * x).dot(y) + biasVariance
 
             x_denominator = np.sqrt((weightVariances * x).dot(x) + biasVariance)
             y_denominator = np.sqrt((weightVariances * y).dot(y) + biasVariance)
             denominator = x_denominator * y_denominator
 
-            theta = np.arccos(np.clip(enumerator / denominator, -1., 1.))
+            theta = np.arccos(np.clip(numerator / denominator, -1., 1.))
             if order == 0:
                 J = np.pi - theta
             elif order == 1:
