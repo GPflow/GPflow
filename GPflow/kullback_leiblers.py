@@ -14,7 +14,6 @@
 
 
 import tensorflow as tf
-from .tf_wraps import eye
 from .scoping import NameScoped
 from ._settings import settings
 float_type = settings.dtypes.float_type
@@ -97,10 +96,10 @@ def gauss_kl_diag(q_mu, q_sqrt, K):
         tf.log(tf.square(tf.diag_part(L))))  # Prior log-det term.
     KL += -0.5 * tf.cast(tf.size(q_sqrt), float_type)  # constant term
     KL += -0.5 * tf.reduce_sum(tf.log(tf.square(q_sqrt)))  # Log-det of q-cov
-    L_inv = tf.matrix_triangular_solve(L, eye(tf.shape(L)[0]), lower=True)
+    L_inv = tf.matrix_triangular_solve(L, tf.eye(tf.shape(L)[0], dtype=float_type), lower=True)
     K_inv = tf.matrix_triangular_solve(tf.transpose(L), L_inv, lower=False)
-    KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.diag_part(K_inv), 1)
-                              * tf.square(q_sqrt))  # Trace term.
+    KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.diag_part(K_inv), 1) *
+                              tf.square(q_sqrt))  # Trace term.
     return KL
 
 
