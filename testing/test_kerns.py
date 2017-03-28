@@ -80,7 +80,7 @@ class TestCoregion(unittest.TestCase):
     def test_diag(self):
         K = self.k.compute_K_symm(self.X)
         Kdiag = self.k.compute_Kdiag(self.X)
-        self.assertTrue(np.all(np.diag(K) == Kdiag))
+        self.assertTrue(np.allclose(np.diag(K), Kdiag))
 
     def test_slice(self):
         # compute another kernel with additinoal inputs, make sure out kernel is still okay.
@@ -216,7 +216,7 @@ class TestWhite(unittest.TestCase):
 
 class TestSlice(unittest.TestCase):
     """
-    Make sure the results of a sliced kernel is the ame as an unsliced kernel
+    Make sure the results of a sliced kernel is the same as an unsliced kernel
     with correctly sliced data...
     """
 
@@ -233,7 +233,7 @@ class TestSlice(unittest.TestCase):
         for kernclass in kernels:
             k1 = kernclass(1, active_dims=[0])
             k2 = kernclass(1, active_dims=[1])
-            k3 = kernclass(1)
+            k3 = kernclass(1, active_dims=slice(0, 1))
             self.kernels.append([k1, k2, k3])
 
     def test_symm(self):

@@ -42,6 +42,13 @@ class TestOptimize(unittest.TestCase):
         self.m.optimize(disp=False)
         self.assertTrue(self.m.x.value.max() < 1e-6)
 
+    def test_feval_counter(self):
+        self.m._compile()
+        self.m.num_fevals = 0
+        for _ in range(10):
+            self.m._objective(self.m.get_free_state())
+        self.assertTrue(self.m.num_fevals == 10)
+
 
 class TestNeedsRecompile(unittest.TestCase):
     def setUp(self):
@@ -68,6 +75,17 @@ class TestNeedsRecompile(unittest.TestCase):
         self.m._needs_recompile = False
         self.m.p.transform = GPflow.transforms.Identity()
         self.assertTrue(self.m._needs_recompile)
+
+    def test_replacement(self):
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Parameterized()
+        m.p.p = GPflow.param.Param(1.0)
+        m._needs_recompile = False
+        # replace Parameterized
+        new_p = GPflow.param.Parameterized()
+        new_p.p = GPflow.param.Param(1.0)
+        m.p = new_p
+        self.assertTrue(m._needs_recompile is True)
 
 
 class KeyboardRaiser:

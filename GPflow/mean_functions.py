@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, alexggmatthews, PabloLeon, Valentine Svensson
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +15,7 @@
 
 import tensorflow as tf
 import numpy as np
-from .param import Param, Parameterized
+from .param import Param, ParamList, Parameterized
 from ._settings import settings
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
@@ -45,14 +45,14 @@ class MeanFunction(Parameterized):
 
 class Zero(MeanFunction):
     def __call__(self, X):
-        return tf.zeros(tf.pack([tf.shape(X)[0], 1]), dtype=float_type)
+        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=float_type)
 
 
 class Linear(MeanFunction):
     """
     y_i = A x_i + b
     """
-    def __init__(self, A=np.ones((1, 1)), b=np.zeros(1)):
+    def __init__(self, A=None, b=None):
         """
         A is a matrix which maps each element of X to Y, b is an additive
         constant.
@@ -60,6 +60,8 @@ class Linear(MeanFunction):
         If X has N rows and D columns, and Y is intended to have Q columns,
         then A must be D x Q, b must be a vector of length Q.
         """
+        A = np.ones((1, 1)) if A is None else A
+        b = np.zeros(1) if b is None else b
         MeanFunction.__init__(self)
         self.A = Param(np.atleast_2d(A))
         self.b = Param(b)
@@ -72,13 +74,41 @@ class Constant(MeanFunction):
     """
     y_i = c,,
     """
-    def __init__(self, c=np.zeros(1)):
+    def __init__(self, c=None):
         MeanFunction.__init__(self)
+        c = np.zeros(1) if c is None else c
         self.c = Param(c)
 
     def __call__(self, X):
-        shape = tf.pack([tf.shape(X)[0], 1])
+        shape = tf.stack([tf.shape(X)[0], 1])
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+
+
+class SwitchedMeanFunction(MeanFunction):
+    """
+    This class enables to use different (independent) mean_functions respective
+    to the data 'label'.
+    We assume the 'label' is stored in the extra column of X.
+    """
+    def __init__(self, meanfunction_list):
+        MeanFunction.__init__(self)
+        for m in meanfunction_list:
+            assert isinstance(m, MeanFunction)
+        self.meanfunction_list = ParamList(meanfunction_list)
+        self.num_meanfunctions = len(self.meanfunction_list)
+
+    def __call__(self, X):
+        ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
+        ind = tf.cast(ind, tf.int32)
+        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, tf.shape(X)[1]-1)))  # X = X[:,:-1]
+
+        # split up X into chunks corresponding to the relevant likelihoods
+        x_list = tf.dynamic_partition(X, ind, self.num_meanfunctions)
+        # apply the likelihood-function to each section of the data
+        results = [m(x) for (x, m) in zip(x_list, self.meanfunction_list)]
+        # stitch the results back together
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
+        return tf.dynamic_stitch(partitions, results)
 
 
 class Additive(MeanFunction):
@@ -99,4 +129,4 @@ class Product(MeanFunction):
         self.prod_2 = second_part
 
     def __call__(self, X):
-        return tf.mul(self.prod_1(X), self.prod_2(X))
+        return tf.multiply(self.prod_1(X), self.prod_2(X))

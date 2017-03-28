@@ -18,9 +18,10 @@ from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc, tf_wraps
+from . import hmc, session
 from ._settings import settings
 import sys
+
 float_type = settings.dtypes.float_type
 
 
@@ -94,6 +95,9 @@ class Model(Parameterized):
         self._name = name
         self._needs_recompile = True
 
+        self.num_fevals = 0  # Keeps track of how often _objective is called
+
+
     @property
     def name(self):
         return self._name
@@ -103,7 +107,7 @@ class Model(Parameterized):
         This method is necessary for pickling objects
         """
         d = Parameterized.__getstate__(self)
-        for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG']:
+        for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG', '_feed_dict_keys']:
             try:
                 d.pop(key)
             except:
@@ -119,7 +123,10 @@ class Model(Parameterized):
         compile the tensorflow function "self._objective"
         """
         self._graph = tf.Graph()
-        self._session = tf.Session(graph=self._graph)
+        self._session = session.get_session(graph=self._graph,
+                                            output_file_name=settings.profiling.output_file_name + "_objective",
+                                            output_directory=settings.profiling.output_directory,
+                                            each_time=settings.profiling.each_time)
         with self._graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
 
@@ -128,8 +135,8 @@ class Model(Parameterized):
                 f = self.build_likelihood() + self.build_prior()
                 g, = tf.gradients(f, self._free_vars)
 
-            self._minusF = tf.neg(f, name='objective')
-            self._minusG = tf.neg(g, name='grad_objective')
+            self._minusF = tf.negative(f, name='objective')
+            self._minusG = tf.negative(g, name='grad_objective')
 
             # The optimiser needs to be part of the computational graph, and needs
             # to be initialised before tf.initialise_all_variables() is called.
@@ -138,7 +145,7 @@ class Model(Parameterized):
             else:
                 opt_step = optimizer.minimize(self._minusF,
                                               var_list=[self._free_vars])
-            init = tf.initialize_all_variables()
+            init = tf.global_variables_initializer()
         self._session.run(init)
 
         # build tensorflow functions for computing the likelihood
@@ -146,9 +153,12 @@ class Model(Parameterized):
             print("compiling tensorflow function...")
         sys.stdout.flush()
 
+        self._feed_dict_keys = self.get_feed_dict_keys()
+
         def obj(x):
+            self.num_fevals += 1
             feed_dict = {self._free_vars: x}
-            feed_dict.update(self.get_feed_dict())
+            self.update_feed_dict(self._feed_dict_keys, feed_dict)
             f, g = self._session.run([self._minusF, self._minusG],
                                      feed_dict=feed_dict)
             return f.astype(np.float64), g.astype(np.float64)
@@ -221,11 +231,14 @@ class Model(Parameterized):
         Optimize the model using a tensorflow optimizer. See self.optimize()
         """
         opt_step = self._compile(optimizer=method)
+        feed_dict = {}
 
         try:
             iteration = 0
             while iteration < maxiter:
-                self._session.run(opt_step, feed_dict=self.get_feed_dict())
+                self.update_feed_dict(self._feed_dict_keys, feed_dict)
+                self._session.run(opt_step, feed_dict=feed_dict)
+                self.num_fevals += 1
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
                 iteration += 1
@@ -339,9 +352,9 @@ class GPModel(Model):
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
+        Model.__init__(self, name)
         self.kern, self.likelihood, self.mean_function = \
             kern, likelihood, mean_function
-        Model.__init__(self, name)
 
         if isinstance(X, np.ndarray):
             #: X is a data matrix; each row represents one instance
@@ -377,14 +390,14 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf_wraps.eye(tf.shape(mu)[0]) * settings.numerics.jitter_level
+        jitter = tf.eye(tf.shape(mu)[0], dtype=float_type) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
-            shape = tf.pack([tf.shape(L)[0], num_samples])
+            shape = tf.stack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=settings.dtypes.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
-        return tf.transpose(tf.pack(samples))
+        return tf.transpose(tf.stack(samples))
 
     @AutoFlow((float_type, [None, None]))
     def predict_y(self, Xnew):

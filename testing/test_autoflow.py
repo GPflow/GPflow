@@ -126,6 +126,11 @@ class TestGPmodel(unittest.TestCase):
     def test_predict_density(self):
         self.m.predict_density(self.Xtest, self.Ytest)
 
+    def test_multiple_AFs(self):
+        self.m.compute_log_likelihood()
+        self.m.compute_log_prior()
+        self.m.compute_log_likelihood()
+
 
 class TestResetGraph(unittest.TestCase):
     def setUp(self):
