@@ -19,14 +19,18 @@ A collection of wrappers and extensions for tensorflow.
 
 import os
 import tensorflow as tf
+from tensorflow.python.framework import ops
+import warnings
 from ._settings import settings
+import numpy as np
 
 
-def eye(N):
+def eye(N):  # pragma: no cover
     """
     An identitiy matrix
     """
-    return tf.diag(tf.ones(tf.pack([N, ]), dtype=settings.dtypes.float_type))
+    warnings.warn('tf_wraps.eye is deprecated: use tf.eye instead', np.VisibleDeprecationWarning)
+    return tf.diag(tf.ones(tf.stack([N, ]), dtype=settings.dtypes.float_type))
 
 
 _custom_op_module = tf.load_op_library(os.path.join(os.path.dirname(__file__), 'tfops', 'matpackops.so'))
@@ -34,12 +38,12 @@ vec_to_tri = _custom_op_module.vec_to_tri
 tri_to_vec = _custom_op_module.tri_to_vec
 
 
-@tf.RegisterGradient("VecToTri")
+@ops.RegisterGradient("VecToTri")
 def _vec_to_tri_grad(op, grad):
     return [tri_to_vec(grad)]
 
 
-@tf.RegisterShape("VecToTri")
+@ops.RegisterShape("VecToTri")
 def _vec_to_tri_shape(op):
     in_shape = op.inputs[0].get_shape().with_rank(2)
     M = in_shape[1].value

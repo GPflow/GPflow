@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-from .tf_wraps import eye
 import tensorflow as tf
 from .scoping import NameScoped
 from ._settings import settings
+float_type = settings.dtypes.float_type
 
 
 @NameScoped("conditional")
@@ -62,7 +62,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     # compute kernel stuff
     num_data = tf.shape(X)[0]
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data) * settings.numerics.jitter_level
+    Kmm = kern.K(X) + tf.eye(num_data, dtype=float_type) * settings.numerics.jitter_level
     Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
@@ -71,10 +71,10 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     # compute the covariance due to the conditioning
     if full_cov:
         fvar = kern.K(Xnew) - tf.matmul(A, A, transpose_a=True)
-        shape = tf.pack([tf.shape(f)[1], 1, 1])
+        shape = tf.stack([tf.shape(f)[1], 1, 1])
     else:
         fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
-        shape = tf.pack([tf.shape(f)[1], 1])
+        shape = tf.stack([tf.shape(f)[1], 1])
     fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # D x N x N or D x N
 
     # another backsubstitution in the unwhitened case
@@ -89,13 +89,13 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # D x M x N
         elif q_sqrt.get_shape().ndims == 3:
             L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
-            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.pack([tf.shape(f)[1], 1, 1]))
-            LTA = tf.batch_matmul(L, A_tiled, adj_x=True)  # D x M x N
+            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([tf.shape(f)[1], 1, 1]))
+            LTA = tf.matmul(L, A_tiled, transpose_a=True)  # D x M x N
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
                              str(q_sqrt.get_shape().ndims))
         if full_cov:
-            fvar = fvar + tf.batch_matmul(LTA, LTA, adj_x=True)  # D x N x N
+            fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # D x N x N
         else:
             fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # D x N
     fvar = tf.transpose(fvar)  # N x D or N x N x D

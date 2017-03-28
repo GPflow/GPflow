@@ -19,7 +19,8 @@ from .param import Param, DataHolder
 from .model import GPModel
 from . import transforms
 from .mean_functions import Zero
-from .tf_wraps import eye
+from ._settings import settings
+float_type = settings.dtypes.float_type
 
 
 class VGP(GPModel):
@@ -100,7 +101,7 @@ class VGP(GPModel):
         f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.expand_dims(eye(self.num_data), 0), [self.num_latent, 1, 1])
+        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=float_type), 0), [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
         L = tf.cholesky(A)
@@ -145,7 +146,7 @@ class VGP(GPModel):
         Kx_tiled = tf.tile(tf.expand_dims(Kx, 0), [self.num_latent, 1, 1])
         LiKx = tf.matrix_triangular_solve(L, Kx_tiled)
         if full_cov:
-            f_var = self.kern.K(Xnew) - tf.batch_matmul(LiKx, LiKx, adj_x=True)
+            f_var = self.kern.K(Xnew) - tf.matmul(LiKx, LiKx, transpose_a=True)
         else:
             f_var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)

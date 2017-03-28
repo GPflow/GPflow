@@ -56,7 +56,7 @@ class TransformTests(unittest.TestCase):
 
         # there is no jacobian: loop manually
         def jacobian(f):
-            return tf.pack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
+            return tf.stack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
 
         tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms if
                    type(t) is not GPflow.transforms.LowerTriangular]
@@ -66,6 +66,20 @@ class TransformTests(unittest.TestCase):
         for j1, j2 in zip(tf_jacs, hand_jacs):
             self.assertTrue(np.allclose(self.session.run(j1, feed_dict={self.x: self.x_np}),
                                         self.session.run(j2, feed_dict={self.x: self.x_np})))
+
+
+class TestOverflow(unittest.TestCase):
+    """
+    Bug #302 identified an overflow in the standard positive transform. This is a regression test.
+    """
+
+    def setUp(self):
+        self.t = GPflow.transforms.Log1pe()
+
+    def testOverflow(self):
+        y = self.t.forward(np.array([-300, -10, 10, 300]))
+        self.assertFalse(np.any(np.isinf(y)))
+        self.assertFalse(np.any(np.isnan(y)))
 
 
 class TestLowerTriTransform(unittest.TestCase):

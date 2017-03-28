@@ -19,14 +19,9 @@ import tensorflow as tf
 import numpy as np
 from .param import Parameterized, Param, ParamList
 from ._settings import settings
+from .quadrature import hermgauss
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
-
-
-def hermgauss(n):
-    x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(np_float_type), w.astype(np_float_type)
-    return x, w
 
 
 class Likelihood(Parameterized):
@@ -372,7 +367,7 @@ class RobustMax(object):
     def __init__(self, num_classes, epsilon=1e-3):
         self.epsilon = epsilon
         self.num_classes = num_classes
-        self._eps_K1 = self.epsilon / (self.num_classes - 1)
+        self._eps_K1 = self.epsilon / (self.num_classes - 1.)
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
@@ -414,16 +409,16 @@ class MultiClass(Likelihood):
         self.num_classes = num_classes
         if invlink is None:
             invlink = RobustMax(self.num_classes)
-            self.invlink = invlink
         elif not isinstance(invlink, RobustMax):
             raise NotImplementedError
+        self.invlink = invlink
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
             hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
             yes = tf.ones(tf.shape(Y), dtype=float_type) - self.invlink.epsilon
             no = tf.zeros(tf.shape(Y), dtype=float_type) + self.invlink._eps_K1
-            p = tf.select(hits, yes, no)
+            p = tf.where(hits, yes, no)
             return tf.log(p)
         else:
             raise NotImplementedError
@@ -439,21 +434,25 @@ class MultiClass(Likelihood):
     def predict_mean_and_var(self, Fmu, Fvar):
         if isinstance(self.invlink, RobustMax):
             # To compute this, we'll compute the density for each possible output
-            possible_outputs = [tf.fill(tf.pack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
+            possible_outputs = [tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
                                 range(self.num_classes)]
-            ps = [self.predict_density(Fmu, Fvar, po) for po in possible_outputs]
-            ps = tf.transpose(tf.pack([tf.reshape(p, (-1,)) for p in ps]))
+            ps = [self._predict_non_logged_density(Fmu, Fvar, po) for po in possible_outputs]
+            ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
             return ps, ps - tf.square(ps)
         else:
             raise NotImplementedError
 
     def predict_density(self, Fmu, Fvar, Y):
+        return tf.log(self._predict_non_logged_density(Fmu, Fvar, Y))
+
+    def _predict_non_logged_density(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
             p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1. - self.invlink.epsilon) + (1. - p) * self.invlink._eps_K1
+            return p * (1 - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
         else:
             raise NotImplementedError
+
 
     def conditional_mean(self, F):
         return self.invlink(F)
@@ -515,8 +514,8 @@ class SwitchedLikelihood(Likelihood):
 
     def predict_mean_and_var(self, Fmu, Fvar):
         mu_list, var_list = zip(*[lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list])
-        mu = tf.concat(1, mu_list)
-        var = tf.concat(1, var_list)
+        mu = tf.concat(mu_list, 1)
+        var = tf.concat(var_list, 1)
         return mu, var
 
 
@@ -560,8 +559,8 @@ class Ordinal(Likelihood):
 
     def logp(self, F, Y):
         Y = tf.cast(Y, tf.int32)
-        scaled_bins_left = tf.concat(0, [self.bin_edges/self.sigma, np.array([np.inf])])
-        scaled_bins_right = tf.concat(0, [np.array([-np.inf]), self.bin_edges/self.sigma])
+        scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
         selected_bins_left = tf.gather(scaled_bins_left, Y)
         selected_bins_right = tf.gather(scaled_bins_right, Y)
 
@@ -576,8 +575,8 @@ class Ordinal(Likelihood):
 
         Note that a matrix of F values is flattened.
         """
-        scaled_bins_left = tf.concat(0, [self.bin_edges/self.sigma, np.array([np.inf])])
-        scaled_bins_right = tf.concat(0, [np.array([-np.inf]), self.bin_edges/self.sigma])
+        scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
         return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
             - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 

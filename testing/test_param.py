@@ -38,13 +38,6 @@ class NamingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             print(p.name)
 
-    def test_two_parents(self):
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Param(1)
-        m.p2 = m.p  # do not do this!
-        with self.assertRaises(ValueError):
-            print(m.p.name)
-
 
 class ParamTestsScalar(unittest.TestCase):
     def setUp(self):
@@ -318,12 +311,150 @@ class ParamTestsWider(unittest.TestCase):
                                  for p in (self.m.foo, self.m.bar, self.m.baz)]))
 
 
+class SingleParamterizedInvariantTest(unittest.TestCase):
+    """
+    Tests that invariants of only allowing a single reference to a given Parameterized in a tree
+    """
+    def setUp(self):
+        tf.reset_default_graph()
+
+    def testSelfReference(self):
+        """
+        Test we raise when a Parameterized object references itself
+        """
+        m = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.foo = m
+
+    def testReferenceBelow(self):
+        """
+        Test we raise when we reference the same Parameterized object in a descendent node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.foo.bar = m
+
+    def testReferenceAbove(self):
+        """
+        Test we raise when we reference the same Parameterized object in an ancestor node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+        m.foo.bar = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.baz = m.foo.bar
+
+    def testReferenceAccross(self):
+        """
+        Test we raise when we reference the same Parameterized object in a sibling node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+        m.foo.bar = GPflow.param.Parameterized()
+
+        m.boo = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.boo.far = m.foo.bar
+
+    def testAddingToAnother(self):
+        """
+        Adding the same Paramterized object to another tree is fine.
+        """
+        m1 = GPflow.param.Parameterized()
+        m1.foo = GPflow.param.Parameterized()
+
+        m2 = GPflow.param.Parameterized()
+        m2.foo = m1.foo
+
+    def testReassign(self):
+        """
+        We should be able to reassign the same value to the same param
+        """
+        m1 = GPflow.param.Parameterized()
+        p = GPflow.param.Parameterized()
+        m1.foo = p  # assign
+        m1.foo = p  # reassign
+
+
+class SingleParamInvariantTest(unittest.TestCase):
+    """
+    Tests that invariants of only allowing a single reference to a given Param in a tree
+    """
+    def setUp(self):
+        tf.reset_default_graph()
+
+    def testReferenceBelow(self):
+        """
+        Test we raise when the same Param object is added further down the tree
+        """
+        m = GPflow.param.Parameterized()
+        m.p = GPflow.param.Param(1)
+        m.foo = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.foo.p = m.p
+
+    def testReferenceAbove(self):
+        """
+        Test we raise when we reference the same Param object in a an ancestor node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+        m.foo.p = GPflow.param.Param(1)
+
+        with self.assertRaises(ValueError):
+            m.p = m.foo.p
+
+    def testReferenceAccross(self):
+        """
+        Test we raise when we reference the same Param object in a sibling node
+        """
+        m = GPflow.param.Parameterized()
+        m.foo = GPflow.param.Parameterized()
+        m.foo.p = GPflow.param.Param(1)
+
+        m.bar = GPflow.param.Parameterized()
+
+        with self.assertRaises(ValueError):
+            m.bar.p = m.foo.p
+
+    def testAddingToAnother(self):
+        """
+        Adding the same Param object to another tree is fine.
+        """
+        m1 = GPflow.param.Parameterized()
+        m1.foo = GPflow.param.Param(1)
+
+        m2 = GPflow.param.Parameterized()
+        m2.foo = m1.foo
+
+    def testReassign(self):
+        """
+        We should be able to reassign the same value to the same param
+        """
+        m1 = GPflow.param.Parameterized()
+        p = GPflow.param.Param(1)
+        m1.foo = p  # assign
+        m1.foo = p  # reassign
+
+
 class TestParamList(unittest.TestCase):
     def test_construction(self):
         GPflow.param.ParamList([])
         GPflow.param.ParamList([GPflow.param.Param(1)])
         with self.assertRaises(AssertionError):
             GPflow.param.ParamList([GPflow.param.Param(1), 'stringsnotallowed'])
+        with self.assertRaises(AssertionError):
+            # tuples not valid in constuctor:
+            GPflow.param.ParamList((GPflow.param.Param(1),))
+        with self.assertRaises(AssertionError):
+            # param objects not valid in constructor (must be in list)
+            GPflow.param.ParamList(GPflow.param.Param(1))
 
     def test_naming(self):
         p1 = GPflow.param.Param(1.2)
@@ -486,6 +617,119 @@ class TestFixWithPrior(unittest.TestCase):
         m.build_likelihood = lambda: tf.zeros([1], tf.float64)
         m.optimize(disp=1, maxiter=10)
 
+class TestRandomizeDefault(unittest.TestCase):
+    """
+    This tests that distributions can sample random values without priors
+    """
+
+    def test(self):
+        np.random.seed(1)
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        m.pp = GPflow.param.Param(1.0, GPflow.transforms.Log1pe())
+        m.pf = GPflow.param.Param(1.0)
+        m.pf.fixed = True
+        m.pmd = GPflow.param.Param(np.ones(5))
+
+        #should work as (pseudo) random vals a.s. are not 1.0
+        m.p.randomize()
+        self.assertFalse(m.p.value == 1.0)
+        m.pp.randomize()
+        self.assertFalse(m.pp.value == 1.0 or m.pp.value <= 0.0)
+
+        #check if fixing works
+        m.pf.randomize()
+        self.assertTrue(m.pf.value == 1.0)
+        m.pf.randomize(skipfixed=False)
+        self.assertFalse(m.pf.value == 1.0)
+
+        #check multidimensional
+        m.pmd.randomize()
+        self.assertFalse(np.any(m.pmd.value == 1.0))
+
+class TestRandomizePrior(unittest.TestCase):
+    """
+    This tests that distributions can sample random values from priors
+    """
+
+    def test(self):
+        np.random.seed(1)
+        from inspect import getargspec
+
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        m.pmd = GPflow.param.Param(np.eye(5), transform=GPflow.transforms.DiagMatrix())
+
+        priors = [obj for obj in GPflow.priors.__dict__.values() if
+                  isinstance(obj, type) and
+                  issubclass(obj, GPflow.priors.Prior) and
+                  obj is not GPflow.priors.Prior]
+
+        with self.assertRaises(NotImplementedError):
+            m.p = 1.0
+            m.p.prior = GPflow.priors.Prior()
+            m.p.randomize()
+
+        for prior in priors:
+            signature = getargspec(prior.__init__)
+            params = {}
+            if signature.defaults is not None:
+                param_names = signature.args[:-len(signature.defaults)]
+            else:
+                param_names = signature.args
+            for param in param_names:
+                if param not in params.keys() and param is not 'self':
+                    params[param] = 1.
+
+            m.p = 1.0
+            m.p.prior = prior(**params)
+            m.pmd.prior = prior(**params)
+            m.p.randomize()
+            m.pmd.randomize()
+            self.assertFalse(m.p.value == 1.0)
+            self.assertFalse(np.any(m.pmd.value == np.ones(5)))
+            self.assertTrue(m.pmd.value.shape == (5,5))
+
+
+class TestRandomizeFeedPriors(unittest.TestCase):
+    """
+    Test if standard randomize behavior can be overriden using
+    distributions keyword.
+    """
+
+    def test(self):
+        np.random.seed(1)
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        with self.assertRaises(NotImplementedError):
+            m.p.randomize(distributions={m.p: GPflow.priors.Prior()})
+        m.p.randomize(distributions={m.p: GPflow.priors.Gaussian(0, 1)})
+        self.assertFalse(m.p.value == 1.0)
+
+
+class TestRandomizeHierarchical(unittest.TestCase):
+    """
+    This tests that models can randomize all contained parameters
+    """
+
+    def test(self):
+        np.random.seed(1)
+        m = GPflow.model.Model()
+        m.p = GPflow.param.Param(1.0)
+        m.p2 = GPflow.param.Param(1.0)
+        m.m = GPflow.model.Model()
+        m.m.p = GPflow.param.Param(1.0)
+        m.m.p2 = GPflow.param.Param(1.0)
+
+        m.p2.prior = GPflow.priors.Gaussian(0, 1)
+        m.m.p2.prior = GPflow.priors.Gaussian(0, 1)
+        m.randomize()
+
+        self.assertFalse(m.p.value == 1.0)
+        self.assertFalse(m.p2.value == 1.0)
+        self.assertFalse(m.m.p.value == 1.0)
+        self.assertFalse(m.m.p2.value == 1.0)
+
 
 class TestScopes(unittest.TestCase):
     def setUp(self):
@@ -500,7 +744,8 @@ class TestScopes(unittest.TestCase):
         with self.m.tf_mode():
             with self.m._graph.as_default():
                 l = self.m.build_likelihood()
-        self.assertTrue('model.build_likelihood' in l.name)
+        expected_name = self.m.name + '.build_likelihood'
+        self.assertTrue(expected_name in l.name)
 
     def test_kern_name(self):
         with self.m.tf_mode():

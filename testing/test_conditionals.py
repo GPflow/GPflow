@@ -1,7 +1,6 @@
 from __future__ import print_function
 import GPflow
 import tensorflow as tf
-from GPflow.tf_wraps import eye
 from GPflow import settings
 float_type = settings.dtypes.float_type
 import numpy as np
@@ -45,7 +44,7 @@ class DiagsTest(unittest.TestCase):
 
 
         #the chols are diagonal matrices, with the same entries as the diag representation.
-        self.chol = tf.pack([tf.diag(self.sqrt[:,i]) for i in range(self.num_latent)])
+        self.chol = tf.stack([tf.diag(self.sqrt[:,i]) for i in range(self.num_latent)])
         self.chol = tf.transpose(self.chol, perm=[1,2,0])
 
     def test_whiten(self):
@@ -107,7 +106,7 @@ class WhitenTest(unittest.TestCase):
         """
         
         with self.k.tf_mode():
-            K = self.k.K(self.X) + eye(self.num_data) * 1e-6
+            K = self.k.K(self.X) + tf.eye(self.num_data, dtype=float_type) * 1e-6
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, self.F, lower=True)
             Fstar_mean, Fstar_var = GPflow.conditionals.gp_predict(self.Xs, self.X, self.k, self.F)
