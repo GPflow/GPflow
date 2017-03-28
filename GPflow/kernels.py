@@ -491,14 +491,13 @@ class ArcCosine(Kern):
     implemented_orders = {0, 1, 2}
     def __init__(self, input_dim, variance=1.0,
                  weight_variances=1., bias_variance=1.,
-                 order=0, num_layers=1,
+                 order=0,
                  active_dims=None, ARD=False):
         Kern.__init__(self, input_dim, active_dims)
 
         if order not in self.implemented_orders:
             raise ValueError('Requested kernel order is not implemented.')
         self.order = order
-        self.num_layers = num_layers
 
         self.variance = Param(variance, transforms.positive)
         self.bias_variance = Param(bias_variance, transforms.positive)
@@ -535,55 +534,30 @@ class ArcCosine(Kern):
         if not presliced:
             X, X2 = self._slice(X, X2)
 
-        X_product = self._weighted_product(X)
+        X_denominator = tf.sqrt(self._weighted_product(X))
         if X2 is None:
             X2 = X
-            X2_product = X_product
+            X2_denominator = X_denominator
         else:
-            X2_product = self._weighted_product(X2)
+            X2_denominator = tf.sqrt(self._weighted_product(X2))
 
-        fraction = self._weighted_product(X, X2) / \
-                   tf.sqrt(X_product[:, None] * X2_product[None, :])
-        joint_theta = tf.acos(tf.clip_by_value(fraction, -1., 1.))
+        numerator = self._weighted_product(X, X2)
+        theta = tf.acos(tf.clip_by_value(numerator / \
+                                         X_denominator[:, None] / \
+                                         X2_denominator[None, :],
+                                         -1., 1.))
 
-        joint_kernel = (1. / np.pi) * self._J(joint_theta) * \
-                       tf.sqrt(X_product[:, None] * X2_product[None, :]) ** self.order
-
-        single_theta = tf.constant(0., float_type)
-        X_kernel = (1. / np.pi) * self._J(single_theta) * \
-                   X_product ** self.order
-        X2_kernel = (1. / np.pi) * self._J(single_theta) * \
-                    X2_product ** self.order
-
-        for _ in range(self.num_layers - 1):
-            fraction = joint_kernel / \
-                       tf.sqrt(X_kernel[:, None] * X2_kernel[None, :])
-            joint_theta = tf.acos(tf.clip_by_value(fraction, -1., 1.))
-
-            joint_kernel = (1. / np.pi) * self._J(joint_theta) * \
-                           tf.sqrt(X_kernel[:, None] * X2_kernel[None, :]) ** self.order
-
-            X_kernel = (1. / np.pi) * self._J(single_theta) * \
-                       X_kernel ** self.order
-            X2_kernel = (1. / np.pi) * self._J(single_theta) * \
-                        X2_kernel ** self.order
-
-        return self.variance * joint_kernel
+        return self.variance * (1. / np.pi) * self._J(theta) * \
+               X_denominator[:, None] ** self.order * \
+               X2_denominator[None, :] ** self.order
 
     def Kdiag(self, X, presliced=False):
         if not presliced:
             X, _ = self._slice(X, None)
 
         X_product = self._weighted_product(X)
-
-        joint_theta = tf.constant(0., float_type)
-        joint_kernel = (1. / np.pi) * self._J(joint_theta) * X_product ** self.order
-
-        for _ in range(self.num_layers):
-            joint_kernel = (1. / np.pi) * self._J(joint_theta) * \
-                           joint_kernel ** self.order
-
-        return self.variance * joint_kernel
+        theta = tf.constant(0., float_type)
+        return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 
 class PeriodicKernel(Kern):
