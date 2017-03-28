@@ -29,10 +29,11 @@ class TestRbf(unittest.TestCase):
 class TestArcCosine(unittest.TestCase):
     def evalKernelError(self, D, variance, weight_variances,
                         bias_variance, order, ARD, X_data):
-        kernel = GPflow.kernels.ArcCosine(D, variance=variance,
+        kernel = GPflow.kernels.ArcCosine(D,
+                                          order=order,
+                                          variance=variance,
                                           weight_variances=weight_variances,
                                           bias_variance=bias_variance,
-                                          order=order,
                                           ARD=ARD)
         rng = np.random.RandomState(1)
 
