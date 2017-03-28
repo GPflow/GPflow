@@ -18,7 +18,7 @@ from .param import Parameterized, AutoFlow, DataHolder
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc, tf_wraps, session
+from . import hmc, session
 from ._settings import settings
 import sys
 
@@ -94,7 +94,9 @@ class Model(Parameterized):
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
         self._name = name
         self._needs_recompile = True
-        self._free_vars = tf.placeholder(tf.float64)
+
+        self.num_fevals = 0  # Keeps track of how often _objective is called
+
 
     @property
     def name(self):
@@ -154,6 +156,7 @@ class Model(Parameterized):
         self._feed_dict_keys = self.get_feed_dict_keys()
 
         def obj(x):
+            self.num_fevals += 1
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
             f, g = self._session.run([self._minusF, self._minusG],
@@ -235,6 +238,7 @@ class Model(Parameterized):
             while iteration < maxiter:
                 self.update_feed_dict(self._feed_dict_keys, feed_dict)
                 self._session.run(opt_step, feed_dict=feed_dict)
+                self.num_fevals += 1
                 if callback is not None:
                     callback(self._session.run(self._free_vars))
                 iteration += 1
@@ -348,9 +352,9 @@ class GPModel(Model):
     """
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
+        Model.__init__(self, name)
         self.kern, self.likelihood, self.mean_function = \
             kern, likelihood, mean_function
-        Model.__init__(self, name)
 
         if isinstance(X, np.ndarray):
             #: X is a data matrix; each row represents one instance
@@ -386,7 +390,7 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf_wraps.eye(tf.shape(mu)[0]) * settings.numerics.jitter_level
+        jitter = tf.eye(tf.shape(mu)[0], dtype=float_type) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
