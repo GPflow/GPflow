@@ -197,11 +197,13 @@ class Gaussian(Likelihood):
 
 class Poisson(Likelihood):
     """
-    Poisson likelihood for use in a Log Gaussian Cox process (doubly stochastic model) where the 
-    rate function of an inhomogeneous Poisson process is given by a GP.  This likelihood 
-    approximates the (typically intractable) integral over the domain by overlaying a grid on 
-    the domain. The binsize parameter determines the size of the approximating grid. 
-    assumption that the GP is constant over the width of the grid, 
+    Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.
+    
+    Note:binsize
+    For use in a Log Gaussian Cox process (doubly stochastic model) where the 
+    rate function of an inhomogeneous Poisson process is given by a GP.  The intractable likelihood 
+    can be approximated by gridding the space (into bins of size 'binsize') and using this Poisson likelihood. 
+    The inherrent assumption is that the GP is constant over the width of the grid, 
     """
 
     def __init__(self, invlink=tf.exp, binsize=1.):
