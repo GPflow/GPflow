@@ -331,12 +331,12 @@ class Stationary(Kern):
         X = X / self.lengthscales
         Xs = tf.reduce_sum(tf.square(X), 1)
         if X2 is None:
-            return -2 * tf.matmul(X, tf.transpose(X)) + \
+            return -2 * tf.matmul(X, X, transpose_b=True) + \
                    tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
         else:
             X2 = X2 / self.lengthscales
             X2s = tf.reduce_sum(tf.square(X2), 1)
-            return -2 * tf.matmul(X, tf.transpose(X2)) + \
+            return -2 * tf.matmul(X, X2, transpose_b=True) + \
                    tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
 
     def euclid_dist(self, X, X2):
@@ -385,9 +385,9 @@ class Linear(Kern):
         if not presliced:
             X, X2 = self._slice(X, X2)
         if X2 is None:
-            return tf.matmul(X * self.variance, tf.transpose(X))
+            return tf.matmul(X * self.variance, X, transpose_b=True)
         else:
-            return tf.matmul(X * self.variance, tf.transpose(X2))
+            return tf.matmul(X * self.variance, X2, transpose_b=True)
 
     def Kdiag(self, X, presliced=False):
         if not presliced:
@@ -561,7 +561,7 @@ class Coregion(Kern):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.matmul(self.W, tf.transpose(self.W)) + tf.diag(self.kappa)
+        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def Kdiag(self, X):

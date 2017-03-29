@@ -127,7 +127,7 @@ class Linear(kernels.Linear):
             raise NotImplementedError
         # use only active dimensions
         Z, Xmu = self._slice(Z, Xmu)
-        return self.variance * tf.matmul(Xmu, tf.transpose(Z))
+        return self.variance * tf.matmul(Xmu, Z, transpose_b=True)
 
     def exKxz(self, Z, Xmu, Xcov):
         with tf.control_dependencies([
