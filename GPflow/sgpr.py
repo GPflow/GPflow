@@ -81,7 +81,7 @@ class SGPR(GPModel):
 
         # Compute intermediate matrices
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
-        AAT = tf.matmul(A, tf.transpose(A))
+        AAT = tf.matmul(A, A, transpose_b=True)
         B = AAT + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
@@ -112,16 +112,16 @@ class SGPR(GPModel):
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
-        B = tf.matmul(A, tf.transpose(A)) + tf.eye(num_inducing, dtype=float_type)
+        B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
-        mean = tf.matmul(tf.transpose(tmp2), c)
+        mean = tf.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) \
-                  - tf.matmul(tf.transpose(tmp1), tmp1)
+            var = self.kern.K(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
+                  - tf.matmul(tmp1, tmp1, transpose_a=True)
             shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
@@ -179,7 +179,7 @@ class GPRFITC(GPModel):
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
 
-        B = tf.eye(num_inducing, dtype=float_type) + tf.matmul(V / nu, tf.transpose(V))
+        B = tf.eye(num_inducing, dtype=float_type) + tf.matmul(V / nu, V, transpose_b=True)
         L = tf.cholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size N x R
         alpha = tf.matmul(V, beta)  # size N x R
@@ -243,12 +243,12 @@ class GPRFITC(GPModel):
         w = tf.matrix_triangular_solve(Luu, Kus, lower=True)  # size M x Xnew
 
         tmp = tf.matrix_triangular_solve(tf.transpose(L), gamma, lower=False)
-        mean = tf.matmul(tf.transpose(w), tmp) + self.mean_function(Xnew)
+        mean = tf.matmul(w, tmp, transpose_a=True) + self.mean_function(Xnew)
         intermediateA = tf.matrix_triangular_solve(L, w, lower=True)
 
         if full_cov:
-            var = self.kern.K(Xnew) - tf.matmul(tf.transpose(w), w) \
-                  + tf.matmul(tf.transpose(intermediateA), intermediateA)
+            var = self.kern.K(Xnew) - tf.matmul(w, w, transpose_a=True) \
+                  + tf.matmul(intermediateA, intermediateA, transpose_a=True)
             var = tf.tile(tf.expand_dims(var, 2), tf.stack([1, 1, tf.shape(self.Y)[1]]))
         else:
             var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(w), 0) \

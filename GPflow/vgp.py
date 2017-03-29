@@ -138,7 +138,7 @@ class VGP(GPModel):
         K = self.kern.K(self.X)
 
         # predictive mean
-        f_mean = tf.matmul(tf.transpose(Kx), self.q_alpha) + self.mean_function(Xnew)
+        f_mean = tf.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)
 
         # predictive var
         A = K + tf.matrix_diag(tf.transpose(1./tf.square(self.q_lambda)))
