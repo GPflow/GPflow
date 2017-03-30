@@ -546,7 +546,7 @@ class ArcCosine(Kern):
         if X2 is None:
             return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
         else:
-            return tf.matmul((self.weight_variances * X), tf.transpose(X2)) + self.bias_variance
+            return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
 
     def _J(self, theta):
         """
