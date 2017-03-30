@@ -476,9 +476,9 @@ class TestARDInit(unittest.TestCase):
         self.assertTrue(np.all(k1.lengthscales.value == k2.lengthscales.value))
 
     def test_MLP(self):
-        k1 = GPflow.kernels.ArcCosine(3, lengthscales=1.23, ARD=True)
-        k2 = GPflow.kernels.ArcCosine(3, lengthscales=np.ones(3) * 1.23, ARD=True)
-        self.assertTrue(np.all(k1.lengthscales.value == k2.lengthscales.value))
+        k1 = GPflow.kernels.ArcCosine(3, weight_variances=1.23, ARD=True)
+        k2 = GPflow.kernels.ArcCosine(3, weight_variances=np.ones(3) * 1.23, ARD=True)
+        self.assertTrue(np.all(k1.weight_variances.value == k2.weight_variances.value))
 
 if __name__ == "__main__":
     unittest.main()
