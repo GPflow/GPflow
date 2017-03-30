@@ -152,7 +152,7 @@ class TestKernSymmetry(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.kernels = GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Constant, GPflow.kernels.Linear,
-                                                                     GPflow.kernels.Polynomial]
+                                                                     GPflow.kernels.Polynomial, GPflow.kernels.ArcCosine]
         self.rng = np.random.RandomState()
 
     def test_1d(self):
