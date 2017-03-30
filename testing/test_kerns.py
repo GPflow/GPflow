@@ -3,7 +3,7 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from .reference import referenceRbfKernel, referencePeriodicKernel
+from .reference import referenceRbfKernel, referenceArcCosineKernel, referencePeriodicKernel
 
 
 class TestRbf(unittest.TestCase):
@@ -24,6 +24,61 @@ class TestRbf(unittest.TestCase):
         with kernel.tf_mode():
             gram_matrix = tf.Session().run(kernel.K(X), feed_dict={x_free: kernel.get_free_state(), X: X_data})
         self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
+
+
+class TestArcCosine(unittest.TestCase):
+    def evalKernelError(self, D, variance, weight_variances,
+                        bias_variance, order, ARD, X_data):
+        kernel = GPflow.kernels.ArcCosine(D,
+                                          order=order,
+                                          variance=variance,
+                                          weight_variances=weight_variances,
+                                          bias_variance=bias_variance,
+                                          ARD=ARD)
+        rng = np.random.RandomState(1)
+
+        x_free = tf.placeholder('float64')
+        kernel.make_tf_array(x_free)
+        X = tf.placeholder('float64')
+        reference_gram_matrix = referenceArcCosineKernel(X_data, order,
+                                                         weight_variances,
+                                                         bias_variance,
+                                                         variance)
+
+        with kernel.tf_mode():
+            gram_matrix = tf.Session().run(kernel.K(X), feed_dict={x_free: kernel.get_free_state(), X: X_data})
+
+        self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
+
+    def test_1d(self):
+        D = 1
+        N = 3
+        weight_variances = 1.7
+        bias_variance = 0.6
+        variance = 2.3
+        ARD = False
+        orders = GPflow.kernels.ArcCosine.implemented_orders
+
+        rng = np.random.RandomState(1)
+        X_data = rng.randn(N, D)
+        for order in orders:
+            self.evalKernelError(D, variance, weight_variances,
+                                 bias_variance, order, ARD, X_data)
+
+    def test_3d(self):
+        D = 3
+        N = 8
+        weight_variances = np.array([0.4, 4.2, 2.3])
+        bias_variance = 1.9
+        variance = 1e-2
+        ARD = True
+        orders = GPflow.kernels.ArcCosine.implemented_orders
+
+        rng = np.random.RandomState(1)
+        X_data = rng.randn(N, D)
+        for order in orders:
+            self.evalKernelError(D, variance, weight_variances,
+                                bias_variance, order, ARD, X_data)
 
 
 class TestPeriodic(unittest.TestCase):
@@ -139,6 +194,8 @@ class TestKernDiags(unittest.TestCase):
         self.kernels.append(GPflow.kernels.RBF(inputdim) +
                             GPflow.kernels.Linear(inputdim, ARD=True, variance=rng.rand(inputdim)))
         self.kernels.append(GPflow.kernels.PeriodicKernel(inputdim))
+        self.kernels.extend(GPflow.kernels.ArcCosine(inputdim, order=order)
+                            for order in GPflow.kernels.ArcCosine.implemented_orders)
 
         self.x_free = tf.placeholder('float64')
         [k.make_tf_array(self.x_free) for k in self.kernels]
