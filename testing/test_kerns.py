@@ -40,6 +40,9 @@ class TestArcCosine(unittest.TestCase):
         x_free = tf.placeholder('float64')
         kernel.make_tf_array(x_free)
         X = tf.placeholder('float64')
+
+        if weight_variances is None:
+            weight_variances = 1.
         reference_gram_matrix = referenceArcCosineKernel(X_data, order,
                                                          weight_variances,
                                                          bias_variance,
@@ -80,6 +83,24 @@ class TestArcCosine(unittest.TestCase):
             self.evalKernelError(D, variance, weight_variances,
                                 bias_variance, order, ARD, X_data)
 
+    def test_non_implemented_order(self):
+        with self.assertRaises(ValueError):
+            GPflow.kernels.ArcCosine(1, order=42)
+
+    def test_weight_initializations(self):
+        D = 1
+        N = 3
+        weight_variances = None
+        bias_variance = 1.
+        variance = 1.
+        ARDs = {False, True}
+        order = 0
+
+        rng = np.random.RandomState(1)
+        X_data = rng.randn(N, D)
+        for ARD in ARDs:
+            self.evalKernelError(D, variance, weight_variances,
+                                 bias_variance, order, ARD, X_data)
 
 class TestPeriodic(unittest.TestCase):
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
