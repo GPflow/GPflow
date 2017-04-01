@@ -234,7 +234,7 @@ class BayesianGPLVM(GPModel):
         psi1star = self.kern.eKxz(self.Z, Xstarmu, Xstarvar) # N* x M
         psi2star = self.kern.eKzxKxz(self.Z, Xstarmu, Xstarvar) # N* x M x M
 
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6 # M x M
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * 1e-6 # M x M
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
         L = tf.cholesky(Kuu) # M x M
@@ -242,25 +242,25 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma # M x N
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True) # M x M
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + eye(num_inducing)
+        B = AAT + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B) # M x M
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma # M x p
         tmp1 = tf.matrix_triangular_solve(L, tf.transpose(psi1star), lower=True)
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
-        mean = tf.matmul(tf.transpose(tmp2), c)
+        mean = tf.matmul(tmp2, c, transpose_a=True)
 
         # All of these: N* x M x M
         L3 = tf.tile(tf.expand_dims(L, 0), [num_predict, 1, 1])
         LB3 = tf.tile(tf.expand_dims(LB, 0), [num_predict, 1, 1])
         tmp3 = tf.matrix_triangular_solve(LB3, tf.matrix_triangular_solve(L3, tf.expand_dims(psi1star, -1)))
-        tmp4 = tf.matmul(tmp3, tf.transpose(tmp3, perm=[0, 2, 1]))
+        tmp4 = tf.matmul(tmp3, tmp3, transpose_b=True)
         tmp5 = tf.matrix_triangular_solve(L3, tf.transpose(tf.matrix_triangular_solve(L3, psi2star), perm=[0, 2, 1]))
         tmp6 = tf.matrix_triangular_solve(LB3, tf.transpose(tf.matrix_triangular_solve(LB3, tmp5), perm=[0, 2, 1]))
 
         c3 = tf.tile(tf.expand_dims(c, 0), [num_predict, 1, 1])  # N* x M x p
         TT = tf.trace(tmp5 - tmp6)  # N*
-        diagonals = tf.einsum("ij,k->ijk", eye(num_out), psi0star - TT) # p x p x N*
-        covar1 = tf.matmul(tf.transpose(c3, perm=[0, 2, 1]), tf.matmul(tmp6 - tmp4, c3))  # N* x p x p
+        diagonals = tf.einsum("ij,k->ijk", tf.eye(num_out, dtype=float_type), psi0star - TT) # p x p x N*
+        covar1 = tf.matmul(c3, tf.matmul(tmp6 - tmp4, c3), transpose_a=True)  # N* x p x p
         covar2 = tf.transpose(diagonals, perm=[2, 0, 1])  # N* x p x p
         covar = covar1 + covar2
         return mean + self.mean_function(Xstarmu), covar
@@ -393,12 +393,12 @@ class BayesianGPLVM(GPModel):
         mean, covar = self.build_predict_distribution(Xstarmu, Xstarvar)
         num_predict = tf.shape(mean)[0]
         num_out = tf.shape(mean)[1]
-        noise = tf.tile(tf.expand_dims(self.likelihood.variance * eye(num_out), 0), [num_predict, 1, 1])
+        noise = tf.tile(tf.expand_dims(self.likelihood.variance * tf.eye(num_out, dtype=float_type), 0), [num_predict, 1, 1])
         return mean, covar+noise
 
     def predict_f_unobserved(self, Ynew, observed):
         """
-        Given a partial observation, predict the first and second moments of the non-Gaussian distriubtion over the
+        Given a partial observation, predict the first and second moments of the non-Gaussian distribution over the
         unobserved part of the latent functions:
         .. math::
 
