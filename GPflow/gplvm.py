@@ -200,10 +200,10 @@ class BayesianGPLVM(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
-        mean = tf.matmul(tf.transpose(tmp2), c)
+        mean = tf.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) \
-                  - tf.matmul(tf.transpose(tmp1), tmp1)
+            var = self.kern.K(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
+                  - tf.matmul(tmp1, tmp1, transpose_a=True)
             shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
