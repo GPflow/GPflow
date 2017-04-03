@@ -307,7 +307,7 @@ class Param(Parentable):
                 except AttributeError:
                     randn = np.random.randn(
                         self.transform.free_state_size(self.shape))
-                    self._array = self.transform.forward(randn)
+                    self._array = self.transform.forward(randn).reshape(self.shape)
 
     def build_prior(self):
         """
