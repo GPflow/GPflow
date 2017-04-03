@@ -629,7 +629,8 @@ class TestRandomizeDefault(unittest.TestCase):
         m.pp = GPflow.param.Param(1.0, GPflow.transforms.Log1pe())
         m.pf = GPflow.param.Param(1.0)
         m.pf.fixed = True
-        m.pmd = GPflow.param.Param(np.ones(5))
+        pmd_shape = (5, 2)
+        m.pmd = GPflow.param.Param(np.ones(pmd_shape))
 
         #should work as (pseudo) random vals a.s. are not 1.0
         m.p.randomize()
@@ -646,6 +647,7 @@ class TestRandomizeDefault(unittest.TestCase):
         #check multidimensional
         m.pmd.randomize()
         self.assertFalse(np.any(m.pmd.value == 1.0))
+        self.assertEquals(m.pmd.shape, pmd_shape)
 
 class TestRandomizePrior(unittest.TestCase):
     """
