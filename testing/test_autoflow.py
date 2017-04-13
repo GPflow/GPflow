@@ -181,5 +181,35 @@ class TestSVGP(unittest.TestCase):
         model.compute_log_likelihood()
 
 
+class LongAddModel(DumbModel):
+    @GPflow.model.AutoFlow((tf.float64,), x=(tf.float64,))
+    def add(self, a, b, *cs, x=-1., only_a_and_b=False, **zs):
+        if only_a_and_b:
+            return a + b
+        else:
+            result = a + b + x
+            for c in cs:
+                result += c
+            for z in zs.values():
+                result += z
+            return result
+
+
+class TestMixedArgs(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m = LongAddModel()
+        self.m._compile()
+        rng = np.random.RandomState(0)
+        self.a = rng.randn(10, 20)
+        self.x = rng.randn(10, 20)
+
+    def test_add(self):
+        self.assertTrue(np.allclose(self.a + 1., self.m.add(self.a, 1., only_a_and_b=True)))
+        self.assertTrue(np.allclose(self.a + 1., self.m.add(a=self.a, b=1., only_a_and_b=True)))
+        self.assertTrue(np.allclose(self.a + 1. + 2. + 3. + self.x + 4.,
+                                    self.m.add(self.a, 1., 2., 3., x=self.x, y=4.)))
+
+
 if __name__ == "__main__":
     unittest.main()
