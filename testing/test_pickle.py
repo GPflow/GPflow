@@ -69,20 +69,24 @@ class TestPickleGPR(unittest.TestCase):
         # reload the model
         m1 = pickle.loads(s1)
         m2 = pickle.loads(s2)
+        m3 = pickle.loads(pickle.dumps(m1))
 
         # make sure the log likelihoods still match
         l1 = self.m.compute_log_likelihood()
         l2 = m1.compute_log_likelihood()
         l3 = m2.compute_log_likelihood()
-        self.assertTrue(l1 == l2 == l3)
+        l4 = m3.compute_log_likelihood()
+        self.assertTrue(l1 == l2 == l3 == l4)
 
         # make sure predictions still match (this tests AutoFlow)
         pX = np.linspace(-3, 3, 10)[:, None]
         p1, _ = self.m.predict_y(pX)
         p2, _ = m1.predict_y(pX)
         p3, _ = m2.predict_y(pX)
+        p4, _ = m3.predict_y(pX)
         self.assertTrue(np.all(p1 == p2))
         self.assertTrue(np.all(p1 == p3))
+        self.assertTrue(np.all(p1 == p4))
 
 
 class TestPickleFix(unittest.TestCase):
@@ -120,20 +124,24 @@ class TestPickleSVGP(unittest.TestCase):
         # reload the model
         m1 = pickle.loads(s1)
         m2 = pickle.loads(s2)
+        m3 = pickle.loads(pickle.dumps(m2))
 
         # make sure the log likelihoods still match
         l1 = self.m.compute_log_likelihood()
         l2 = m1.compute_log_likelihood()
         l3 = m2.compute_log_likelihood()
-        self.assertTrue(l1 == l2 == l3)
+        l4 = m3.compute_log_likelihood()
+        self.assertTrue(l1 == l2 == l3 == l4)
 
         # make sure predictions still match (this tests AutoFlow)
         pX = np.linspace(-3, 3, 10)[:, None]
         p1, _ = self.m.predict_y(pX)
         p2, _ = m1.predict_y(pX)
         p3, _ = m2.predict_y(pX)
+        p4, _ = m3.predict_y(pX)
         self.assertTrue(np.all(p1 == p2))
         self.assertTrue(np.all(p1 == p3))
+        self.assertTrue(np.all(p1 == p4))
 
 
 class TestTransforms(unittest.TestCase):
