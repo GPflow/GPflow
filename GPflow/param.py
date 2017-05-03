@@ -363,8 +363,11 @@ class Param(Parentable):
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
-        d.pop('_tf_array')
-        d.pop('_log_jacobian')
+        for key in ['_tf_array', '_log_jacobian']:
+            try:
+                d.pop(key)
+            except:
+                pass
         return d
 
     def __setstate__(self, d):
