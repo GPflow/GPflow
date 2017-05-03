@@ -364,10 +364,7 @@ class Param(Parentable):
     def __getstate__(self):
         d = Parentable.__getstate__(self)
         for key in ['_tf_array', '_log_jacobian']:
-            try:
-                d.pop(key)
-            except:
-                pass
+            d.pop(key, None)
         return d
 
     def __setstate__(self, d):
