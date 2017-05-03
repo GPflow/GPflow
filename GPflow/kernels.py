@@ -574,7 +574,7 @@ class ArcCosine(Kern):
 
         numerator = self._weighted_product(X, X2)
         cos_theta = numerator / X_denominator[:, None] / X2_denominator[None, :]
-        jitter = settings.numerics.jitter_level
+        jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
         return self.variance * (1. / np.pi) * self._J(theta) * \
