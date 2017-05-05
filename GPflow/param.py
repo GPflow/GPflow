@@ -14,11 +14,14 @@
 
 
 from __future__ import absolute_import
+import inspect
 import numpy as np
 import pandas as pd
+import sys
 import tensorflow as tf
 from . import transforms, session
 from contextlib import contextmanager
+from collections import OrderedDict
 from functools import wraps
 from .scoping import NameScoped
 from ._settings import settings
@@ -532,17 +535,84 @@ class AutoFlow:
         self.tf_arg_tuples = tf_arg_tuples
         self.tf_kwarg_tuples = tf_kwarg_tuples
 
+    if sys.version_info >= (3,):
+        signature = inspect.signature
+        Parameter = inspect.Parameter
+    else:
+        class BoundArguments(object):
+            def __init__(self, arguments):
+                self.arguments = arguments
+                self.args = ()
+                self.kwargs = arguments
+
+            def apply_defaults(self):
+                pass
+
+        class Parameter(object):
+            VAR_KEYWORD = True
+            def __init__(self, kind):
+                self.kind = kind
+
+        class Signature(object):
+            def __init__(self, func):
+                self.func = func
+                self.argspec = inspect.getargspec(func)
+                if self.argspec.varargs is not None:
+                    raise TypeError('Cannot handle varargs in AutoFlow in python 2')
+
+                self.parameters = OrderedDict([
+                    (arg, AutoFlow.Parameter(False))
+                    for arg in self.argspec.args
+                ])
+                if self.argspec.keywords is not None:
+                    self.parameters[self.argspec.keywords] = AutoFlow.Parameter(True)
+
+            def bind(self, *args, **kwargs):
+                callargs = inspect.getcallargs(self.func, *args, **kwargs)
+                if self.argspec.keywords is not None:
+                    kwvar = callargs[self.argspec.keywords]
+                    callargs.pop(self.argspec.keywords, None)
+                    callargs.update(kwvar)
+                return AutoFlow.BoundArguments(callargs)
+
+            def bind_partial(self, *args, **kwargs):
+                if len(args) > len(self.argspec.args):
+                    raise TypeError('Passed too many arguments')
+
+                args_dict = OrderedDict(zip(self.argspec.args, args))
+                if not set(args_dict.keys()).isdisjoint(set(kwargs.keys())):
+                    raise TypeError('Passed duplicate arguments')
+                args_dict.update(kwargs)
+
+                return AutoFlow.BoundArguments(args_dict)
+
+        signature = Signature
+
+    @classmethod
+    def flat_bound_arguments(cls, signature, bound):
+        varkw = None
+        for name, parameter in signature.parameters.items():
+            if parameter.kind is cls.Parameter.VAR_KEYWORD:
+                varkw = name
+
+        for name, argument in bound.arguments.items():
+            if name == varkw:
+                for kwarg in argument.items():
+                    yield kwarg
+            else:
+                yield (name, argument)
+
     def __call__(self, tf_method):
-        import inspect
-        signature = inspect.signature(tf_method)
+        signature = self.__class__.signature(tf_method)
 
         # NOTE: Bind to the 'self'-parameter via an explicit None which gets
         # ignored by popping it from the argument list.
-        tf_params = signature.bind_partial(None, *self.tf_arg_tuples, **self.tf_kwarg_tuples)
-        tf_params.arguments.popitem(last=False)
-
-
-        hash_params = signature.parameters.keys() - tf_params.arguments.keys()
+        tf_params = OrderedDict(self.flat_bound_arguments(
+            signature,
+            signature.bind_partial(None, *self.tf_arg_tuples, **self.tf_kwarg_tuples)
+        ))
+        self_parameter = next(iter(signature.parameters.keys()))
+        tf_params.pop(self_parameter)
 
         @wraps(tf_method)
         def runnable(instance, *args, **kwargs):
@@ -550,16 +620,15 @@ class AutoFlow:
             all_args.apply_defaults()
             np_args = {
                 arg: all_args.arguments[arg]
-                for arg in tf_params.arguments.keys()
+                for arg in tf_params
             }
 
             hash_args = tuple(
                 (name, argument)
-                if parameter.kind is not inspect.Parameter.VAR_KEYWORD
-                else (name, tuple(sorted(argument.items())))
-                for parameter, (name, argument)
-                in zip(signature.parameters.values(), all_args.arguments.items())
-                if name in hash_params
+                for name, argument
+                in self.flat_bound_arguments(signature, all_args)
+                if name not in tf_params
+                if name != self_parameter
             )
 
             storage_name = '_{}_{}_AF_storage'.format(tf_method.__name__, hash(hash_args))
@@ -583,7 +652,7 @@ class AutoFlow:
                 with storage['graph'].as_default():
                     storage['tf_args'] = {
                         arg: tf.placeholder(*arg_tuple)
-                        for arg, arg_tuple in tf_params.arguments.items()
+                        for arg, arg_tuple in tf_params.items()
                     }
 
                     storage['free_vars'] = tf.placeholder(float_type, [None])
@@ -600,7 +669,7 @@ class AutoFlow:
 
             feed_dict = {
                 storage['tf_args'][arg]: np_args[arg]
-                for arg in tf_params.arguments.keys()
+                for arg in tf_params
             }
             feed_dict[storage['free_vars']] = instance.get_free_state()
             instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
