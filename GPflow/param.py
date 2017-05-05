@@ -486,7 +486,7 @@ class DataHolder(Parentable):
                '\n' + str(self.value)
 
 
-def AutoFlow(*tf_arg_tuples, **tf_kwarg_tuples):
+class AutoFlow:
     """
     This decorator is designed for use on methods of the Parameterized class
     (below).
@@ -528,20 +528,25 @@ def AutoFlow(*tf_arg_tuples, **tf_kwarg_tuples):
     result in the graph being constructed only once.
 
     """
-    import inspect
+    def __init__(self, *tf_arg_tuples, **tf_kwarg_tuples):
+        self.tf_arg_tuples = tf_arg_tuples
+        self.tf_kwarg_tuples = tf_kwarg_tuples
 
-    def decorator(tf_method):
+    def __call__(self, tf_method):
+        import inspect
         signature = inspect.signature(tf_method)
 
-        # NOTE: Bind to the 'self'-parameter via an expolicit None which gets
+        # NOTE: Bind to the 'self'-parameter via an explicit None which gets
         # ignored by popping it from the argument list.
-        tf_params = signature.bind_partial(None, *tf_arg_tuples, **tf_kwarg_tuples)
-        hash_params = signature.parameters.keys() - tf_params.arguments.keys()
+        tf_params = signature.bind_partial(None, *self.tf_arg_tuples, **self.tf_kwarg_tuples)
         tf_params.arguments.popitem(last=False)
 
+
+        hash_params = signature.parameters.keys() - tf_params.arguments.keys()
+
         @wraps(tf_method)
-        def runnable(self, *args, **kwargs):
-            all_args = signature.bind(self, *args, **kwargs)
+        def runnable(instance, *args, **kwargs):
+            all_args = signature.bind(instance, *args, **kwargs)
             all_args.apply_defaults()
             np_args = {
                 arg: all_args.arguments[arg]
@@ -549,9 +554,9 @@ def AutoFlow(*tf_arg_tuples, **tf_kwarg_tuples):
             }
 
             hash_args = tuple(
-                (name, tuple(sorted(argument.items())))
-                if parameter.kind is inspect.Parameter.VAR_KEYWORD
-                else (name, argument)
+                (name, argument)
+                if parameter.kind is not inspect.Parameter.VAR_KEYWORD
+                else (name, tuple(sorted(argument.items())))
                 for parameter, (name, argument)
                 in zip(signature.parameters.values(), all_args.arguments.items())
                 if name in hash_params
@@ -559,13 +564,13 @@ def AutoFlow(*tf_arg_tuples, **tf_kwarg_tuples):
 
             storage_name = '_{}_{}_AF_storage'.format(tf_method.__name__, hash(hash_args))
 
-            if hasattr(self, storage_name):
+            if hasattr(instance, storage_name):
                 # The method has been compiled already, get things out of storage
-                storage = getattr(self, storage_name)
+                storage = getattr(instance, storage_name)
             else:
                 # The method needs to be compiled
                 storage = {}
-                setattr(self, storage_name, storage)
+                setattr(instance, storage_name, storage)
                 storage['graph'] = tf.Graph()
                 storage['session'] = session.get_session(
                     graph=storage['graph'],
@@ -582,27 +587,26 @@ def AutoFlow(*tf_arg_tuples, **tf_kwarg_tuples):
                     }
 
                     storage['free_vars'] = tf.placeholder(float_type, [None])
-                    self.make_tf_array(storage['free_vars'])
+                    instance.make_tf_array(storage['free_vars'])
 
-                    with self.tf_mode():
+                    with instance.tf_mode():
                         all_args.arguments.update(storage['tf_args'])
                         storage['tf_result'] = tf_method(*all_args.args, **all_args.kwargs)
 
-                    storage['feed_dict_keys'] = self.get_feed_dict_keys()
+                    storage['feed_dict_keys'] = instance.get_feed_dict_keys()
                     feed_dict = {}
-                    self.update_feed_dict(storage['feed_dict_keys'], feed_dict)
+                    instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
                     storage['session'].run(tf.global_variables_initializer(), feed_dict=feed_dict)
 
             feed_dict = {
                 storage['tf_args'][arg]: np_args[arg]
                 for arg in tf_params.arguments.keys()
             }
-            feed_dict[storage['free_vars']] = self.get_free_state()
-            self.update_feed_dict(storage['feed_dict_keys'], feed_dict)
+            feed_dict[storage['free_vars']] = instance.get_free_state()
+            instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
-    return decorator
 
 
 class Parameterized(Parentable):
