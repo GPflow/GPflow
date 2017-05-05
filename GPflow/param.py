@@ -569,9 +569,8 @@ def AutoFlow(*tf_arg_tuples, **tf_kwarg_tuples):
                 storage['graph'] = tf.Graph()
                 storage['session'] = session.get_session(
                     graph=storage['graph'],
-                    output_file_name='{}_{}_{}'.format(settings.profiling.output_file_name,
-                                                       tf_method.__name__,
-                                                       hash(hash_args)),
+                    output_file_name='{}_{}'.format(settings.profiling.output_file_name,
+                                                    tf_method.__name__),
                     output_directory=settings.profiling.output_directory,
                     each_time=settings.profiling.each_time
                 )
