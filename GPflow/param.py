@@ -589,11 +589,16 @@ class AutoFlow:
         signature = Signature
 
     @classmethod
-    def flat_bound_arguments(cls, signature, bound):
+    def find_varkw(cls, signature):
         varkw = None
         for name, parameter in signature.parameters.items():
             if parameter.kind is cls.Parameter.VAR_KEYWORD:
                 varkw = name
+        return varkw
+
+    @classmethod
+    def flat_bound_arguments(cls, signature, bound):
+        varkw = cls.find_varkw(signature)
 
         for name, argument in bound.arguments.items():
             if name == varkw:
@@ -604,6 +609,7 @@ class AutoFlow:
 
     def __call__(self, tf_method):
         signature = self.__class__.signature(tf_method)
+        varkw = self.find_varkw(signature)
 
         # NOTE: Bind to the 'self'-parameter via an explicit None which gets
         # ignored by popping it from the argument list.
@@ -618,17 +624,16 @@ class AutoFlow:
         def runnable(instance, *args, **kwargs):
             all_args = signature.bind(instance, *args, **kwargs)
             all_args.apply_defaults()
+
+            flat_all_args = OrderedDict(self.flat_bound_arguments(signature, all_args))
             np_args = {
-                arg: all_args.arguments[arg]
+                arg: flat_all_args[arg]
                 for arg in tf_params
             }
-
             hash_args = tuple(
                 (name, argument)
-                for name, argument
-                in self.flat_bound_arguments(signature, all_args)
-                if name not in tf_params
-                if name != self_parameter
+                for name, argument in flat_all_args.items()
+                if name not in tf_params and name != self_parameter
             )
 
             storage_name = '_{}_{}_AF_storage'.format(tf_method.__name__, hash(hash_args))
@@ -659,7 +664,12 @@ class AutoFlow:
                     instance.make_tf_array(storage['free_vars'])
 
                     with instance.tf_mode():
-                        all_args.arguments.update(storage['tf_args'])
+                        for name, argument in storage['tf_args'].items():
+                            if name in all_args.arguments:
+                                all_args.arguments[name] = argument
+                            else:
+                                if varkw is not None:
+                                    all_args.arguments[varkw][name] = argument
                         storage['tf_result'] = tf_method(*all_args.args, **all_args.kwargs)
 
                     storage['feed_dict_keys'] = instance.get_feed_dict_keys()
