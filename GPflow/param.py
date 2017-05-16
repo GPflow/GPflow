@@ -796,7 +796,7 @@ class Parameterized(Parentable):
         params=  [child for key, child in self.__dict__.items()
                   if isinstance(child, (Param, Parameterized)) and
                   key is not '_parent']
-        return sorted(params, key=lambda x: x.name)
+        return sorted(params, key=lambda x: x.long_name)
 
     @property
     def data_holders(self):
