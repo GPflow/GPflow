@@ -331,12 +331,12 @@ class Stationary(Kern):
         X = X / self.lengthscales
         Xs = tf.reduce_sum(tf.square(X), 1)
         if X2 is None:
-            return -2 * tf.matmul(X, tf.transpose(X)) + \
+            return -2 * tf.matmul(X, X, transpose_b=True) + \
                    tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
         else:
             X2 = X2 / self.lengthscales
             X2s = tf.reduce_sum(tf.square(X2), 1)
-            return -2 * tf.matmul(X, tf.transpose(X2)) + \
+            return -2 * tf.matmul(X, X2, transpose_b=True) + \
                    tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
 
     def euclid_dist(self, X, X2):
@@ -385,9 +385,9 @@ class Linear(Kern):
         if not presliced:
             X, X2 = self._slice(X, X2)
         if X2 is None:
-            return tf.matmul(X * self.variance, tf.transpose(X))
+            return tf.matmul(X * self.variance, X, transpose_b=True)
         else:
-            return tf.matmul(X * self.variance, tf.transpose(X2))
+            return tf.matmul(X * self.variance, X2, transpose_b=True)
 
     def Kdiag(self, X, presliced=False):
         if not presliced:
@@ -483,6 +483,113 @@ class Cosine(Stationary):
         return self.variance * tf.cos(r)
 
 
+class ArcCosine(Kern):
+    """
+    The Arc-cosine family of kernels which mimics the computation in neural
+    networks. The order parameter specifies the assumed activation function.
+    The Multi Layer Perceptron (MLP) kernel is closely related to the ArcCosine
+    kernel of order 0. The key reference is
+
+    ::
+
+        @incollection{NIPS2009_3628,
+            title = {Kernel Methods for Deep Learning},
+            author = {Youngmin Cho and Lawrence K. Saul},
+            booktitle = {Advances in Neural Information Processing Systems 22},
+            year = {2009},
+            url = {http://papers.nips.cc/paper/3628-kernel-methods-for-deep-learning.pdf}
+        }
+    """
+
+    implemented_orders = {0, 1, 2}
+    def __init__(self, input_dim,
+                 order=0,
+                 variance=1.0, weight_variances=1., bias_variance=1.,
+                 active_dims=None, ARD=False):
+        """
+        - input_dim is the dimension of the input to the kernel
+        - order specifies the activation function of the neural network
+          the function is a rectified monomial of the chosen order.
+        - variance is the initial value for the variance parameter
+        - weight_variances is the initial value for the weight_variances parameter
+          defaults to 1.0 (ARD=False) or np.ones(input_dim) (ARD=True).
+        - bias_variance is the initial value for the bias_variance parameter
+          defaults to 1.0.
+        - active_dims is a list of length input_dim which controls which
+          columns of X are used.
+        - ARD specifies whether the kernel has one weight_variance per dimension
+          (ARD=True) or a single weight_variance (ARD=False).
+        """
+        Kern.__init__(self, input_dim, active_dims)
+
+        if order not in self.implemented_orders:
+            raise ValueError('Requested kernel order is not implemented.')
+        self.order = order
+
+        self.variance = Param(variance, transforms.positive)
+        self.bias_variance = Param(bias_variance, transforms.positive)
+        if ARD:
+            if weight_variances is None:
+                weight_variances = np.ones(input_dim, np_float_type)
+            else:
+                # accepts float or array:
+                weight_variances = weight_variances * np.ones(input_dim, np_float_type)
+            self.weight_variances = Param(weight_variances, transforms.positive)
+            self.ARD = True
+        else:
+            if weight_variances is None:
+                weight_variances = 1.0
+            self.weight_variances = Param(weight_variances, transforms.positive)
+            self.ARD = False
+
+    def _weighted_product(self, X, X2=None):
+        if X2 is None:
+            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+        else:
+            return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
+
+    def _J(self, theta):
+        """
+        Implements the order dependent family of functions defined in equations
+        4 to 7 in the reference paper.
+        """
+        if self.order == 0:
+            return np.pi - theta
+        elif self.order == 1:
+            return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)
+        elif self.order == 2:
+            return 3. * tf.sin(theta) * tf.cos(theta) + \
+                   (np.pi - theta) * (1. + 2. * tf.cos(theta) ** 2)
+
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+
+        X_denominator = tf.sqrt(self._weighted_product(X))
+        if X2 is None:
+            X2 = X
+            X2_denominator = X_denominator
+        else:
+            X2_denominator = tf.sqrt(self._weighted_product(X2))
+
+        numerator = self._weighted_product(X, X2)
+        cos_theta = numerator / X_denominator[:, None] / X2_denominator[None, :]
+        jitter = 1e-15
+        theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
+
+        return self.variance * (1. / np.pi) * self._J(theta) * \
+               X_denominator[:, None] ** self.order * \
+               X2_denominator[None, :] ** self.order
+
+    def Kdiag(self, X, presliced=False):
+        if not presliced:
+            X, _ = self._slice(X, None)
+
+        X_product = self._weighted_product(X)
+        theta = tf.constant(0., float_type)
+        return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
+
+
 class PeriodicKernel(Kern):
     """
     The periodic kernel. Defined in  Equation (47) of
@@ -561,7 +668,7 @@ class Coregion(Kern):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.matmul(self.W, tf.transpose(self.W)) + tf.diag(self.kappa)
+        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def Kdiag(self, X):

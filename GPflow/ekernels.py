@@ -2,9 +2,7 @@ from functools import reduce
 import warnings
 import tensorflow as tf
 from . import kernels
-from .tf_wraps import eye
 from ._settings import settings
-from .param import AutoFlow
 
 from .quadrature import mvhermgauss
 from numpy import pi as nppi
@@ -61,7 +59,6 @@ class RBF(kernels.RBF):
         ]):
             Xmu = tf.identity(Xmu)
 
-        M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0] - 1
         D = tf.shape(Xmu)[1]
         Xsigmb = tf.slice(Xcov, [0, 0, 0, 0], tf.stack([-1, N, -1, -1]))
@@ -73,7 +70,7 @@ class RBF(kernels.RBF):
         scalemat = tf.expand_dims(tf.diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
 
         det = tf.matrix_determinant(
-            tf.expand_dims(eye(tf.shape(Xmu)[1]), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
+            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=float_type), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
         )  # N
 
         vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmum, 2)  # NxDxM
@@ -101,7 +98,7 @@ class RBF(kernels.RBF):
         lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
 
         Kmms = tf.sqrt(self.K(Z, presliced=True)) / self.variance ** 0.5
-        scalemat = tf.expand_dims(eye(D), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
+        scalemat = tf.expand_dims(tf.eye(D, dtype=float_type), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
         det = tf.matrix_determinant(scalemat)
 
         mat = Xcov + 0.5 * tf.expand_dims(tf.diag(lengthscales ** 2.0), 0)  # NxDxD
@@ -110,8 +107,8 @@ class RBF(kernels.RBF):
                      tf.reshape(tf.transpose(Z), [1, D, M, 1])) - tf.reshape(Xmu, [N, D, 1, 1])  # NxDxMxM
         svec = tf.reshape(vec, (N, D, M * M))
         ssmI_z = tf.matrix_triangular_solve(cm, svec)  # NxDx(M*M)
-        smI_z = tf.reshape(ssmI_z, (N, D, M, M)) # NxDxMxM
-        fs = tf.reduce_sum(tf.square(smI_z), [1]) # NxMxM
+        smI_z = tf.reshape(ssmI_z, (N, D, M, M))  # NxDxMxM
+        fs = tf.reduce_sum(tf.square(smI_z), [1])  # NxMxM
 
         return self.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
 
@@ -130,7 +127,7 @@ class Linear(kernels.Linear):
             raise NotImplementedError
         # use only active dimensions
         Z, Xmu = self._slice(Z, Xmu)
-        return self.variance * tf.matmul(Xmu, tf.transpose(Z))
+        return self.variance * tf.matmul(Xmu, Z, transpose_b=True)
 
     def exKxz(self, Z, Xmu, Xcov):
         with tf.control_dependencies([
