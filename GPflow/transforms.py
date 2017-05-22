@@ -13,8 +13,10 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+
 import numpy as np
 import tensorflow as tf
+
 from . import tf_wraps as tfw
 from ._settings import settings
 
@@ -138,7 +140,7 @@ class Log1pe(Transform):
 
     def backward(self, y):
         result = np.log(np.exp(y - self._lower) - np.ones(1, np_float_type))
-        return np.where(y > 35, y-self._lower, result)
+        return np.where(y > 35, y - self._lower, result)
 
     def __str__(self):
         return '+ve'
@@ -168,6 +170,28 @@ class Logistic(Transform):
         return '[' + str(self.a) + ', ' + str(self.b) + ']'
 
 
+class Rescale(Transform):
+    def __init__(self, factor=1.0, chain_transform=Identity()):
+        self.factor = factor
+        self.chain_transform = chain_transform
+
+    def tf_forward(self, x):
+        return self.chain_transform.tf_forward(x * self.factor)
+
+    def forward(self, x):
+        return self.chain_transform.forward(x * self.factor)
+
+    def backward(self, y):
+        return self.chain_transform.backward(y) / self.factor
+
+    def tf_log_jacobian(self, x):
+        return tf.cast(tf.reduce_prod(tf.shape(x)), float_type) * self.factor * self.chain_transform.tf_log_jacobian(
+            x * self.factor)
+
+    def __str__(self):
+        return "R" + self.chain_transform.__str__()
+
+
 class DiagMatrix(Transform):
     """
     A transform to represent diagonal matrices.
@@ -179,6 +203,7 @@ class DiagMatrix(Transform):
     diagonal elements are pushed through a 'positive' transform, defaulting to
     log1pe.
     """
+
     def __init__(self, dim=1, positive_transform=Log1pe()):
         self.dim = dim
         self._lower = 1e-6
