@@ -102,6 +102,24 @@ class TestArcCosine(unittest.TestCase):
             self.evalKernelError(D, variance, weight_variances,
                                  bias_variance, order, ARD, X_data)
 
+    def test_nan_in_gradient(self):
+        D = 1
+        N = 4
+
+        rng = np.random.RandomState(23)
+        X_data = rng.rand(N, D)
+        kernel = GPflow.kernels.ArcCosine(D)
+
+        x_free = tf.placeholder('float64')
+        kernel.make_tf_array(x_free)
+        X = tf.placeholder('float64')
+
+        with kernel.tf_mode():
+            gradients = tf.Session().run(tf.gradients(kernel.K(X), X), feed_dict={x_free: kernel.get_free_state(), X: X_data})
+
+        self.assertFalse(np.any(np.isnan(gradients)))
+
+
 class TestPeriodic(unittest.TestCase):
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
         kernel = GPflow.kernels.PeriodicKernel(D, period=period, variance=variance, lengthscales=lengthscale)
