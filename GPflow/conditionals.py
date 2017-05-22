@@ -82,7 +82,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
         A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
 
     # construct the conditional mean
-    fmean = tf.matmul(tf.transpose(A), f)
+    fmean = tf.matmul(A, f, transpose_a=True)
 
     if q_sqrt is not None:
         if q_sqrt.get_shape().ndims == 2:
