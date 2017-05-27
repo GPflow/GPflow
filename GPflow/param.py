@@ -503,14 +503,14 @@ class AutoFlow:
     >>> class MyClass(Parameterized):
     >>>
     >>>   @AutoFlow(x=(tf.float64), y=(tf.float64))
-    >>>   def my_method(self, x, y):
+    >>>   def my_method(self, x, y, some_flag=True):
     >>>       #compute something, returning a tf graph.
-    >>>       return tf.foo(self.baz, x, y)
+    >>>       return tf.foo(self.baz, x, y, some_flag=some_flag)
 
     >>> m = MyClass()
     >>> x = np.random.randn(3,1)
     >>> y = np.random.randn(3,1)
-    >>> result = my_method(x, y)
+    >>> result = my_method(x, y, some_flag=False)
 
     Now the output of the method call is the _result_ of the computation,
     equivalent to
@@ -521,15 +521,15 @@ class AutoFlow:
     >>> x_tf = tf.placeholder(tf.float64)
     >>> y_tf = tf.placeholder(tf.float64)
     >>> with m.tf_mode():
-    >>>     graph = tf.foo(m.baz, x_tf, y_tf)
+    >>>     graph = tf.foo(m.baz, x_tf, y_tf, some_flag=False)
     >>> result = m._session.run(graph,
                                 feed_dict={x_tf:x,
                                            y_tf:y,
                                            m._free_vars:m.get_free_state()})
 
     Not only is the syntax cleaner, but multiple calls to the method will
-    result in the graph being constructed only once.
-
+    result in the graph being constructed only once for every set of non tensorflow
+    parameters.
     """
     def __init__(self, *tf_arg_tuples, **tf_kwarg_tuples):
         self.tf_arg_tuples = tf_arg_tuples
