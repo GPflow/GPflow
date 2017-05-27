@@ -109,10 +109,7 @@ class Model(Parameterized):
         """
         d = Parameterized.__getstate__(self)
         for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG', '_feed_dict_keys']:
-            try:
-                d.pop(key)
-            except:
-                pass
+            d.pop(key, None)
         return d
 
     def __setstate__(self, d):

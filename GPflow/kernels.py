@@ -573,10 +573,9 @@ class ArcCosine(Kern):
             X2_denominator = tf.sqrt(self._weighted_product(X2))
 
         numerator = self._weighted_product(X, X2)
-        theta = tf.acos(tf.clip_by_value(numerator / \
-                                         X_denominator[:, None] / \
-                                         X2_denominator[None, :],
-                                         -1., 1.))
+        cos_theta = numerator / X_denominator[:, None] / X2_denominator[None, :]
+        jitter = 1e-15
+        theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
         return self.variance * (1. / np.pi) * self._J(theta) * \
                X_denominator[:, None] ** self.order * \
