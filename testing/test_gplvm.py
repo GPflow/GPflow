@@ -67,7 +67,7 @@ class TestBayesianGPLVM(unittest.TestCase):
         # test prediction
         Xtest = self.rng.randn(10, Q)
         mu_f, var_f = m.predict_f(Xtest)
-        mu_fFull, var_fFull = m.predict_f_full_cov(Xtest)
+        mu_fFull, var_fFull = m.predict_f(Xtest, full_cov=True)
         self.assertTrue(np.allclose(mu_fFull, mu_f))
         # check full covariance diagonal
         for i in range(self.D):
