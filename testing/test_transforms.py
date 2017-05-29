@@ -17,6 +17,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 from GPflow import settings
+import warnings
 
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
@@ -77,7 +78,20 @@ class TestOverflow(unittest.TestCase):
         self.t = GPflow.transforms.Log1pe()
 
     def testOverflow(self):
-        y = self.t.forward(np.array([-300, -10, 10, 300]))
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            y = self.t.forward(np.array([-1000, -300, -10, 10, 300, 1000]))
+            self.assertTrue(len(w) == 0)
+
+        self.assertFalse(np.any(np.isinf(y)))
+        self.assertFalse(np.any(np.isnan(y)))
+
+    def testDivByZero(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            y = self.t.backward(np.array([self.t._lower]))
+            self.assertTrue(len(w) == 0)
+
         self.assertFalse(np.any(np.isinf(y)))
         self.assertFalse(np.any(np.isnan(y)))
 
