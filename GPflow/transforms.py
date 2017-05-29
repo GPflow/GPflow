@@ -128,9 +128,11 @@ class Log1pe(Transform):
         self._lower = lower
 
     def forward(self, x):
-        result = np.log(1. + np.exp(x)) + self._lower
-        # do not transform large numbers, they overflow and the mapping is exactly identity.
-        return np.where(x > 35, x + self._lower, result)
+        """
+        Implementation of softplus. Overflow avoided by use of the logaddexp function.
+        self._lower is added before returning.
+        """
+        return np.logaddexp(0, x) + self._lower
 
     def tf_forward(self, x):
         return tf.nn.softplus(x) + self._lower
@@ -139,8 +141,33 @@ class Log1pe(Transform):
         return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
 
     def backward(self, y):
-        result = np.log(np.exp(y - self._lower) - np.ones(1, np_float_type))
-        return np.where(y > 35, y - self._lower, result)
+        """
+        Inverse of the softplus transform:
+        .. math::
+
+           x = \log( \exp(y) - 1)
+
+        The bound for the input y is [self._lower. inf[, self._lower is
+        subtracted prior to any calculations. The implementation avoids overflow
+        explicitly by applying the log sum exp trick:
+        .. math::
+
+           \log ( \exp(y) - \exp(0)) &= ys + \log( \exp(y-ys) - \exp(-ys)) \\
+                                     &= ys + \log( 1 - \exp(-ys)
+
+           ys = \max(0, y)
+
+        As y can not be negative, ys could be replaced with y itself.
+        However, in case :math:`y=0` this results in np.log(0). Hence the zero is 
+        replaced by a machine epsilon.
+        .. math::
+
+           ys = \max( \epsilon, y)
+
+
+        """
+        ys = np.maximum(y - self._lower, np.finfo(np_float_type).eps)
+        return ys + np.log(-np.expm1(-ys))
 
     def __str__(self):
         return '+ve'
