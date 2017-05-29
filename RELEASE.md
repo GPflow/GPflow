@@ -1,3 +1,6 @@
+# Release 0.3.6
+ - Pip package available.
+
 # Release 0.3.5
  - Update to work with TensorFlow 0.12.1.
 

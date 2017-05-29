@@ -7,6 +7,12 @@ import os
 import sys
 import tensorflow as tf
 
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except ImportError:
+    long_description = open('README.md').read()
+
 # load version form _version.py
 VERSIONFILE = "GPflow/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
@@ -36,6 +42,7 @@ setup(name='GPflow',
       author="James Hensman, Alex Matthews",
       author_email="james.hensman@gmail.com",
       description=("Gaussian process methods in tensorflow"),
+      long_description=long_description,
       license="BSD 3-clause",
       keywords="machine-learning gaussian-processes kernels tensorflow",
       url="http://github.com/gpflow/gpflow",
