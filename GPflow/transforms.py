@@ -71,6 +71,9 @@ class Transform(object):
 
 
 class Identity(Transform):
+    """
+    The identity transform: y = x
+    """
     def tf_forward(self, x):
         return tf.identity(x)
 
@@ -88,6 +91,14 @@ class Identity(Transform):
 
 
 class Exp(Transform):
+    """
+    The exponential transform:
+
+       y = \exp(x) + \epsilon
+
+    x is a free variable, y is always positive. The epsilon value (self.lower)
+    prevents the optimizer reaching numerical zero. 
+    """
     def __init__(self, lower=1e-6):
         self._lower = lower
 
@@ -110,6 +121,7 @@ class Exp(Transform):
 class Log1pe(Transform):
     """
     A transform of the form
+    .. math::
 
        y = \log ( 1 + \exp(x))
 
@@ -158,7 +170,7 @@ class Log1pe(Transform):
            ys = \max(0, y)
 
         As y can not be negative, ys could be replaced with y itself.
-        However, in case :math:`y=0` this results in np.log(0). Hence the zero is 
+        However, in case :math:`y=0` this results in np.log(0). Hence the zero is
         replaced by a machine epsilon.
         .. math::
 
@@ -174,6 +186,13 @@ class Log1pe(Transform):
 
 
 class Logistic(Transform):
+    """
+    The logictic transform, useful for keeping variables constrained between the limits a and b:
+    .. math::
+
+       y = a + (b-a) s(x)
+       s(x) = 1 / (1 + \exp(-x))
+   """
     def __init__(self, a=0., b=1.):
         Transform.__init__(self)
         assert b > a
@@ -198,6 +217,18 @@ class Logistic(Transform):
 
 
 class Rescale(Transform):
+    """
+    A transform that can linearly rescale parameters, in conjucntion with
+    another transform. By default, the identity transform is wrapped so
+    .. math::
+       y = factor * x
+
+    If another transform t() is passed to the constructor, then this transform becomes
+    .. math::
+       y = factor * t(x)
+
+    This is useful for avoiding optimization or MCMC over large or small scales.
+    """
     def __init__(self, factor=1.0, chain_transform=Identity()):
         self.factor = factor
         self.chain_transform = chain_transform
@@ -212,8 +243,8 @@ class Rescale(Transform):
         return self.chain_transform.backward(y) / self.factor
 
     def tf_log_jacobian(self, x):
-        return tf.cast(tf.reduce_prod(tf.shape(x)), float_type) * self.factor * self.chain_transform.tf_log_jacobian(
-            x * self.factor)
+        return tf.cast(tf.reduce_prod(tf.shape(x)), float_type) * \
+                self.factor * self.chain_transform.tf_log_jacobian(x * self.factor)
 
     def __str__(self):
         return "R" + self.chain_transform.__str__()
