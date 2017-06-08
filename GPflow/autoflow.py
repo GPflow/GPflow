@@ -63,6 +63,12 @@ class AutoFlow:
 
     Not only is the syntax cleaner, but multiple calls to the method will
     result in the graph being constructed only once.
+
+    AutoFlow takes as many arguments as the wrapped function, each being a
+    tuple with the same arguments as you would give to tf.placeholder. For
+    example, (tf.float64, [None,2,3]) indicates a float64 tensor of rank 3,
+    with an arbitrary number of elements along the first dimension, 2 elements
+    along the second dimension, and 3 elements along the third dimension.
     """
 
     def __init__(self, *tf_arg_tuples):
