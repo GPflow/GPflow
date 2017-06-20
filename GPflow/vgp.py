@@ -72,7 +72,7 @@ class VGP(GPModel):
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
 
-        This is necessary because the hape of the parameters depends on the
+        This is necessary because the shape of the parameters depends on the
         shape of the data.
         """
         if not self.num_data == self.X.shape[0]:
