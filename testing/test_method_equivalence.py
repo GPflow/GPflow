@@ -16,8 +16,10 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+from nose.plugins.attrib import attr
 
 
+@attr(speed='slow')
 class TestEquivalence(unittest.TestCase):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)

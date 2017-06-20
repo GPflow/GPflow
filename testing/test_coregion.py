@@ -3,8 +3,10 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+from nose.plugins.attrib import attr
 
 
+@attr(speed='slow')
 class TestEquivalence(unittest.TestCase):
     """
     Here we make sure the coregionalized model with diagonal coregion kernel and
