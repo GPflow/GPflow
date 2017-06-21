@@ -20,9 +20,10 @@ from .model import GPModel
 from .mean_functions import Zero
 from ._settings import settings
 from . import transforms
-float_type = settings.dtypes.float_type
 from .conditionals import conditional
 from .kullback_leiblers import  gauss_kl_white
+float_type = settings.dtypes.float_type
+
 
 class VGP(GPModel):
     """
@@ -31,7 +32,7 @@ class VGP(GPModel):
     The idea is that the posterior over the function-value vector F is
     approximated by a Gaussian, and the KL divergence is minimised between
     the approximation and the posterior.
-    
+
     This implementation is equivalent to svgp with X=Z, but is more efficient.
     The whitened representation is used to aid optimization.
 
@@ -39,8 +40,8 @@ class VGP(GPModel):
 
     .. math::
 
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
-       
+        q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+
     """
     def __init__(self, X, Y, kern, likelihood,
                  mean_function=Zero(), num_latent=None):
@@ -58,9 +59,9 @@ class VGP(GPModel):
         self.num_latent = num_latent or Y.shape[1]
 
         self.q_mu = Param(np.zeros((self.num_data, self.num_latent)))
-        self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] * 
+        self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] *
                             np.ones((1, 1, self.num_latent)))
-        
+
     def _compile(self, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
@@ -72,7 +73,7 @@ class VGP(GPModel):
         if not self.num_data == self.X.shape[0]:
             self.num_data = self.X.shape[0]
             self.q_mu = Param(np.zeros((self.num_data, self.num_latent)))
-            self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] * 
+            self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] *
                                 np.ones((1, 1, self.num_latent)))
 
         return super(VGP, self)._compile(optimizer=optimizer)
@@ -97,17 +98,17 @@ class VGP(GPModel):
         K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=float_type) * settings.numerics.jitter_level
         L = tf.cholesky(K)
 
-        fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X) # NN,ND->ND
-        
+        fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
+
         q_sqrt_dnn = tf.matrix_band_part(tf.transpose(self.q_sqrt, [2, 0, 1]), -1, 0)  # D x N x N
 
         L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent, 1, 1]))
-        
+
         LTA = tf.matmul(L_tiled, q_sqrt_dnn)  # D x N x N
         fvar = tf.reduce_sum(tf.square(LTA), 2)
 
         fvar = tf.transpose(fvar)
-        
+
         # Get variational expectations.
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
@@ -139,10 +140,10 @@ class VGP_opper_archambeau(GPModel):
     The posterior approximation is
     .. math::
        q(\\mathbf f) = N(\\mathbf f \\,|\\, \\mathbf K \\boldsymbol \\alpha, [\\mathbf K^{-1} + \\textrm{diag}(\\boldsymbol \\lambda))^2]^{-1})
-    
+
     This approach has only 2ND parameters, rather than the N + N^2 of vgp,
-    but the optimization is non-convex and in practice may cause difficulty. 
-    
+    but the optimization is non-convex and in practice may cause difficulty.
+
     """
     def __init__(self, X, Y, kern, likelihood,
                  mean_function=Zero(), num_latent=None):
@@ -164,7 +165,7 @@ class VGP_opper_archambeau(GPModel):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
-        This is necessary because the hape of the parameters depends on the
+        This is necessary because the shape of the parameters depends on the
         shape of the data.
         """
         if not self.num_data == self.X.shape[0]:
@@ -172,7 +173,7 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        return super(VGP, self)._compile(optimizer=optimizer)
+        return super(VGP_opper_archambeau, self)._compile(optimizer=optimizer)
 
     def build_likelihood(self):
         """
@@ -233,4 +234,3 @@ class VGP_opper_archambeau(GPModel):
         else:
             f_var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)
-
