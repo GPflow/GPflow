@@ -165,7 +165,7 @@ class VGP_opper_archambeau(GPModel):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
-        This is necessary because the hape of the parameters depends on the
+        This is necessary because the shape of the parameters depends on the
         shape of the data.
         """
         if not self.num_data == self.X.shape[0]:
@@ -173,7 +173,7 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        return super(VGP, self)._compile(optimizer=optimizer)
+        return super(VGP_opper_archambeau, self)._compile(optimizer=optimizer)
 
     def build_likelihood(self):
         """

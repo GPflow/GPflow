@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import GPflow
 import numpy as np
-import unittest
 import tensorflow as tf
+import unittest
+import GPflow
+
 
 class TestEquivalence(unittest.TestCase):
     """
@@ -71,7 +72,8 @@ class TestEquivalence(unittest.TestCase):
             print('.')  # stop travis timing out
 
     def test_all(self):
-        likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze() for m in self.models])
+        likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze()
+                                for m in self.models])
         self.assertTrue(np.allclose(likelihoods, likelihoods[0], 1e-6))
         variances, lengthscales = [], []
         for m in self.models:
@@ -91,16 +93,15 @@ class TestEquivalence(unittest.TestCase):
             self.assertTrue(np.allclose(var, var0, 1e-4))
 
 
-
 class VGPTest(unittest.TestCase):
     def test_vgp_vs_svgp(self):
         N, Ns, DX, DY = 100, 10, 2, 2
-        
+
         np.random.seed(1)
         X = np.random.randn(N, DX)
         Xs = np.random.randn(Ns, DX)
         Y = np.random.randn(N, DY)
-        
+
         kern = GPflow.kernels.Matern52(DX)
         likelihood = GPflow.likelihoods.StudentT()
 
@@ -185,6 +186,31 @@ class VGPTest(unittest.TestCase):
         assert np.allclose(pred_vgp[1], pred_vgp_oa[1], rtol=1e-4)  # jitter?
         assert np.allclose(pred_vgp[1], pred_svgp_unwhitened[1], rtol=1e-4)
 
+<<<<<<< HEAD
+=======
+    def test_recompile(self):
+        N, DX, DY = 100, 2, 2
+
+        np.random.seed(1)
+        X = np.random.randn(N, DX)
+        Y = np.random.randn(N, DY)
+
+        kern = GPflow.kernels.Matern52(DX)
+        likelihood = GPflow.likelihoods.StudentT()
+
+        m_vgp = GPflow.vgp.VGP(X, Y, kern, likelihood)
+        m_vgp_oa = GPflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
+
+        try:
+            for m in [m_vgp, m_vgp_oa]:
+                m.optimize(maxiter=1)
+                m.X = X[:-1, :]
+                m.Y = Y[:-1, :]
+                m.optimize(maxiter=1)
+        except:
+            assert False, 'array mismatch'
+
+>>>>>>> cdd982de27a17568cacc3202e5d18b976a508cbc
 
 if __name__ == '__main__':
     unittest.main()
