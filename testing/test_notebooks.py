@@ -9,23 +9,26 @@ import sys
 import time
 import os
 
+
 class TestNotebooks(unittest.TestCase):
     def _execNotebook(self, ep, notebook_filename, nbpath):
         with open(notebook_filename) as f:
             nb = nbformat.read(f, as_version=nbformat.current_nbformat)
             try:
-                out = ep.preprocess(nb, {'metadata': {'path': nbpath}})
+                ep.preprocess(nb, {'metadata': {'path': nbpath}})
             except CellExecutionError:
                 print('-' * 60)
                 traceback.print_exc(file=sys.stdout)
                 print('-' * 60)
-                self.assertTrue(False, 'Error executing the notebook %s. See above for error.' % notebook_filename)
+                self.assertTrue(False, 'Error executing the notebook %s.\
+                                        See above for error.' % notebook_filename)
 
     def test_all_notebooks(self):
         ''' Test all notebooks except blacklist. Blacklisted notebooks take too long.'''
-        blacklist = ['svi_test.ipynb']
+        blacklist = ['svi_test.ipynb', 'GPLVM.ipynb']
         pythonkernel = 'python'+str(sys.version_info[0])
-        nbpath = '../doc/source/notebooks/'
+        this_dir = os.path.dirname(__file__)
+        nbpath = os.path.join(this_dir, '../doc/source/notebooks/')
         # see http://nbconvert.readthedocs.io/en/stable/execute_api.html
         ep = ExecutePreprocessor(timeout=120, kernel_name=pythonkernel, interrupt_on_timeout=True)
         lfiles = glob.glob(nbpath+"*.ipynb")
