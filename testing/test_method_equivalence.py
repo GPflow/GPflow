@@ -186,8 +186,6 @@ class VGPTest(unittest.TestCase):
         assert np.allclose(pred_vgp[1], pred_vgp_oa[1], rtol=1e-4)  # jitter?
         assert np.allclose(pred_vgp[1], pred_svgp_unwhitened[1], rtol=1e-4)
 
-<<<<<<< HEAD
-=======
     def test_recompile(self):
         N, DX, DY = 100, 2, 2
 
@@ -210,7 +208,6 @@ class VGPTest(unittest.TestCase):
         except:
             assert False, 'array mismatch'
 
->>>>>>> cdd982de27a17568cacc3202e5d18b976a508cbc
 
 if __name__ == '__main__':
     unittest.main()
