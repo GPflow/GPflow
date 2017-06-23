@@ -165,6 +165,7 @@ class VGP_opper_archambeau(GPModel):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
+
         This is necessary because the shape of the parameters depends on the
         shape of the data.
         """
