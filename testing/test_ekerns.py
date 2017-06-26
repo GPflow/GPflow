@@ -5,6 +5,7 @@ import GPflow
 from GPflow import kernels
 from GPflow import ekernels
 from .parallel import ParallelTestCase
+from nose.plugins.attrib import attr
 
 
 def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
@@ -212,6 +213,7 @@ class TestExpxKxzActiveDims(ParallelTestCase):
                 self.assertTrue(type(e) is tf.errors.InvalidArgumentError)
 
 
+@attr(speed='slow')
 class TestKernExpQuadrature(ParallelTestCase):
     _threshold = 0.5
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.

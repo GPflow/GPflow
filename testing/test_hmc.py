@@ -3,8 +3,10 @@ import numpy as np
 import unittest
 import tensorflow as tf
 from .parallel import ParallelTestCase
+from nose.plugins.attrib import attr
 
 
+@attr(speed='slow')
 class SampleGaussianTest(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()

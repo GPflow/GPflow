@@ -4,8 +4,10 @@ import numpy as np
 import unittest
 import tensorflow as tf
 from .parallel import ParallelTestCase
+from nose.plugins.attrib import attr
 
 
+@attr(speed='slow')
 class TestEquivalence(ParallelTestCase):
     """
     Here we make sure the coregionalized model with diagonal coregion kernel and

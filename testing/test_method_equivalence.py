@@ -17,8 +17,10 @@ import numpy as np
 import unittest
 import tensorflow as tf
 from .parallel import ParallelTestCase
+from nose.plugins.attrib import attr
 
 
+@attr(speed='slow')
 class TestEquivalence(ParallelTestCase):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
