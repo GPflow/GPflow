@@ -17,9 +17,10 @@ import tensorflow as tf
 import GPflow
 import numpy as np
 import pickle
+from .parallel import ParallelTestCase
 
 
-class TestPickleEmpty(unittest.TestCase):
+class TestPickleEmpty(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = GPflow.model.Model()
@@ -29,7 +30,7 @@ class TestPickleEmpty(unittest.TestCase):
         pickle.loads(s)
 
 
-class TestPickleSimple(unittest.TestCase):
+class TestPickleSimple(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = GPflow.model.Model()
@@ -43,7 +44,7 @@ class TestPickleSimple(unittest.TestCase):
         self.assertTrue(m2.p2._parent is m2)
 
 
-class TestActiveDims(unittest.TestCase):
+class TestActiveDims(ParallelTestCase):
     def test(self):
         k = GPflow.kernels.RBF(2, active_dims=[0, 1])
         X = np.random.randn(10, 2)
@@ -53,7 +54,7 @@ class TestActiveDims(unittest.TestCase):
         self.assertTrue(np.allclose(K, K2))
 
 
-class TestPickleGPR(unittest.TestCase):
+class TestPickleGPR(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
@@ -89,7 +90,7 @@ class TestPickleGPR(unittest.TestCase):
         self.assertTrue(np.all(p1 == p4))
 
 
-class TestPickleFix(unittest.TestCase):
+class TestPickleFix(ParallelTestCase):
     """
     Make sure a kernel with a fixed parameter can be computed after pickling
     """
@@ -100,7 +101,7 @@ class TestPickleFix(unittest.TestCase):
         x = np.linspace(0,1,100).reshape([-1,1])
         k.compute_K(x, x)
 
-class TestPickleSVGP(unittest.TestCase):
+class TestPickleSVGP(ParallelTestCase):
     """
     Like the TestPickleGPR test, but with svgp (since it has extra tf variables
     for minibatching)
@@ -144,7 +145,7 @@ class TestPickleSVGP(unittest.TestCase):
         self.assertTrue(np.all(p1 == p4))
 
 
-class TestTransforms(unittest.TestCase):
+class TestTransforms(ParallelTestCase):
     def setUp(self):
         self.transforms = GPflow.transforms.Transform.__subclasses__()
         self.models = []

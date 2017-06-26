@@ -16,9 +16,10 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+from .parallel import ParallelTestCase
 
 
-class TestEquivalence(unittest.TestCase):
+class TestEquivalence(ParallelTestCase):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
     positioned at the data, many of the GPflow methods are equivalent (perhaps

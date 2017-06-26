@@ -18,6 +18,7 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 from GPflow import settings
+from .parallel import ParallelTestCase
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 try:
@@ -26,7 +27,7 @@ except ImportError:
     import pickle
 
 
-class NamingTests(unittest.TestCase):
+class NamingTests(ParallelTestCase):
     def test_unnamed(self):
         p = GPflow.param.Param(1)
         self.assertTrue(p.name == 'unnamed')
@@ -39,7 +40,7 @@ class NamingTests(unittest.TestCase):
             print(p.name)
 
 
-class ParamTestsScalar(unittest.TestCase):
+class ParamTestsScalar(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
@@ -130,7 +131,7 @@ class ParamTestsScalar(unittest.TestCase):
             self.assertTrue(isinstance(self.m.p, tf.Tensor))
 
 
-class ParamTestsDeeper(unittest.TestCase):
+class ParamTestsDeeper(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
@@ -222,7 +223,7 @@ class ParamTestsDeeper(unittest.TestCase):
             self.assertTrue(isinstance(self.m.foo.bar.baz, tf.Tensor))
 
 
-class ParamTestsWider(unittest.TestCase):
+class ParamTestsWider(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
@@ -311,7 +312,7 @@ class ParamTestsWider(unittest.TestCase):
                                  for p in (self.m.foo, self.m.bar, self.m.baz)]))
 
 
-class SingleParamterizedInvariantTest(unittest.TestCase):
+class SingleParamterizedInvariantTest(ParallelTestCase):
     """
     Tests that invariants of only allowing a single reference to a given Parameterized in a tree
     """
@@ -381,7 +382,7 @@ class SingleParamterizedInvariantTest(unittest.TestCase):
         m1.foo = p  # reassign
 
 
-class SingleParamInvariantTest(unittest.TestCase):
+class SingleParamInvariantTest(ParallelTestCase):
     """
     Tests that invariants of only allowing a single reference to a given Param in a tree
     """
@@ -443,7 +444,7 @@ class SingleParamInvariantTest(unittest.TestCase):
         m1.foo = p  # reassign
 
 
-class TestParamList(unittest.TestCase):
+class TestParamList(ParallelTestCase):
     def test_construction(self):
         GPflow.param.ParamList([])
         GPflow.param.ParamList([GPflow.param.Param(1)])
@@ -535,7 +536,7 @@ class TestParamList(unittest.TestCase):
         self.assertTrue(np.allclose(m.get_free_state(), 0., atol=atol))
 
 
-class TestPickleAndDict(unittest.TestCase):
+class TestPickleAndDict(ParallelTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
@@ -553,7 +554,7 @@ class TestPickleAndDict(unittest.TestCase):
             assert np.all(val == d2[key])
 
 
-class TestDictEmpty(unittest.TestCase):
+class TestDictEmpty(ParallelTestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
 
@@ -563,7 +564,7 @@ class TestDictEmpty(unittest.TestCase):
         self.m.set_parameter_dict(d)
 
 
-class TestDictSimple(unittest.TestCase):
+class TestDictSimple(ParallelTestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
         self.m.p1 = GPflow.param.Param(np.random.randn(3, 2))
@@ -578,7 +579,7 @@ class TestDictSimple(unittest.TestCase):
         self.assertTrue(np.all(state1 == self.m.get_free_state()))
 
 
-class TestDictSVGP(unittest.TestCase):
+class TestDictSVGP(ParallelTestCase):
     def setUp(self):
         self.rng = np.random.RandomState(0)
         X = self.rng.randn(10, 1)
@@ -602,7 +603,7 @@ class TestDictSVGP(unittest.TestCase):
         self.assertTrue(np.allclose(loglik1, loglik3))
 
 
-class TestFixWithPrior(unittest.TestCase):
+class TestFixWithPrior(ParallelTestCase):
     """
     This tests that models with a fixed parameter which has a prior continue to work
     """
@@ -617,7 +618,8 @@ class TestFixWithPrior(unittest.TestCase):
         m.build_likelihood = lambda: tf.zeros([1], tf.float64)
         m.optimize(disp=1, maxiter=10)
 
-class TestRandomizeDefault(unittest.TestCase):
+
+class TestRandomizeDefault(ParallelTestCase):
     """
     This tests that distributions can sample random values without priors
     """
@@ -658,7 +660,8 @@ class TestRandomizeDefault(unittest.TestCase):
         self.assertFalse(np.any(m.pmd2.value == 1.0))
         self.assertEquals(m.pmd2.shape, pmd2_shape)
 
-class TestRandomizePrior(unittest.TestCase):
+
+class TestRandomizePrior(ParallelTestCase):
     """
     This tests that distributions can sample random values from priors
     """
@@ -702,7 +705,7 @@ class TestRandomizePrior(unittest.TestCase):
             self.assertTrue(m.pmd.value.shape == (5,5))
 
 
-class TestRandomizeFeedPriors(unittest.TestCase):
+class TestRandomizeFeedPriors(ParallelTestCase):
     """
     Test if standard randomize behavior can be overriden using
     distributions keyword.
@@ -718,7 +721,7 @@ class TestRandomizeFeedPriors(unittest.TestCase):
         self.assertFalse(m.p.value == 1.0)
 
 
-class TestRandomizeHierarchical(unittest.TestCase):
+class TestRandomizeHierarchical(ParallelTestCase):
     """
     This tests that models can randomize all contained parameters
     """
@@ -742,7 +745,7 @@ class TestRandomizeHierarchical(unittest.TestCase):
         self.assertFalse(m.m.p2.value == 1.0)
 
 
-class TestScopes(unittest.TestCase):
+class TestScopes(ParallelTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)

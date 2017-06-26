@@ -16,9 +16,10 @@ import unittest
 import GPflow
 import numpy as np
 import tensorflow as tf
+from .parallel import ParallelTestCase
 
 
-class PriorModeTests(unittest.TestCase):
+class PriorModeTests(ParallelTestCase):
     """
     these tests optimize the prior to find the mode numerically. Make sure the
     mode is the same as the known mode.

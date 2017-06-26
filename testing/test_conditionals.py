@@ -5,8 +5,9 @@ from GPflow import settings
 float_type = settings.dtypes.float_type
 import numpy as np
 import unittest
+from .parallel import ParallelTestCase
 
-class DiagsTest(unittest.TestCase):
+class DiagsTest(ParallelTestCase):
     """
     The conditionals can take cholesky matrices or diagaonal matrices. 
 
@@ -71,7 +72,7 @@ class DiagsTest(unittest.TestCase):
         self.assertTrue(np.allclose(var_diff, 0))
 
 
-class WhitenTest(unittest.TestCase):
+class WhitenTest(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)

@@ -3,9 +3,10 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+from .parallel import ParallelTestCase
 
 
-class TestEquivalence(unittest.TestCase):
+class TestEquivalence(ParallelTestCase):
     """
     Here we make sure the coregionalized model with diagonal coregion kernel and
     with fixed lengthscale is equivalent with normal GP regression.

@@ -17,6 +17,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 from .reference import referenceRbfKernel
+from .parallel import ParallelTestCase
 
 
 def referenceUnivariateLogMarginalLikelihood(y, K, noiseVariance):
@@ -55,7 +56,7 @@ def kernel(kernelVariance=1, lengthScale=1.):
     return kern
 
 
-class VariationalUnivariateTest(unittest.TestCase):
+class VariationalUnivariateTest(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.y_real = 2.
@@ -130,7 +131,7 @@ class VariationalUnivariateTest(unittest.TestCase):
                 self.assertTrue(np.abs(var_value - self.posteriorVariance) < 1e-4)
 
 
-class VariationalMultivariateTest(unittest.TestCase):
+class VariationalMultivariateTest(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.nDimensions = 3

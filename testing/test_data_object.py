@@ -4,11 +4,12 @@ import numpy as np
 import unittest
 import tensorflow as tf
 from GPflow import settings
+from .parallel import ParallelTestCase
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
-class TestDataHolderSimple(unittest.TestCase):
+class TestDataHolderSimple(ParallelTestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
         self.rng = np.random.RandomState()
@@ -58,7 +59,7 @@ class TestDataHolderSimple(unittest.TestCase):
         self.assertTrue(self.m._needs_recompile)
 
 
-class TestDataHolderIntegers(unittest.TestCase):
+class TestDataHolderIntegers(ParallelTestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
         self.rng = np.random.RandomState()
@@ -78,7 +79,7 @@ class TestDataHolderIntegers(unittest.TestCase):
         self.assertFalse(self.m._needs_recompile)
 
 
-class TestDataHolderModels(unittest.TestCase):
+class TestDataHolderModels(ParallelTestCase):
     """
     We make test for Dataholder that enables to reuse model for different data
     with the same shape to the original.  We tested this for the six models.

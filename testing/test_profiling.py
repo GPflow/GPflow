@@ -3,11 +3,11 @@ import os
 import unittest
 
 import numpy as np
-
 import GPflow
+from .parallel import ParallelTestCase
 
 
-class TestProfiling(unittest.TestCase):
+class TestProfiling(ParallelTestCase):
     def setUp(self):
         X = np.random.rand(100, 1)
         Y = np.sin(X) + np.random.randn(*X.shape) * 0.01

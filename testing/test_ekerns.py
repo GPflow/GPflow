@@ -4,6 +4,7 @@ import tensorflow as tf
 import GPflow
 from GPflow import kernels
 from GPflow import ekernels
+from .parallel import ParallelTestCase
 
 
 def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
@@ -51,7 +52,7 @@ class TriDiagonalBlockRep(object):
         return "BlockTriDiagonal"
 
 
-class TestKernExpDelta(unittest.TestCase):
+class TestKernExpDelta(ParallelTestCase):
     """
     Check whether the normal kernel matrix is recovered if a delta distribution is used. First initial test which should
     indicate whether things work or not.
@@ -103,7 +104,7 @@ class TestKernExpDelta(unittest.TestCase):
             self.assertTrue(np.allclose(kernmat, psi1.T))
 
 
-class TestKernExpActiveDims(unittest.TestCase):
+class TestKernExpActiveDims(ParallelTestCase):
     _threshold = 0.5
 
     def setUp(self):
@@ -154,7 +155,7 @@ class TestKernExpActiveDims(unittest.TestCase):
             _assert_pdeq(self, a, b, k)
 
 
-class TestExpxKxzActiveDims(unittest.TestCase):
+class TestExpxKxzActiveDims(ParallelTestCase):
     _threshold = 0.5
 
     def setUp(self):
@@ -211,7 +212,7 @@ class TestExpxKxzActiveDims(unittest.TestCase):
                 self.assertTrue(type(e) is tf.errors.InvalidArgumentError)
 
 
-class TestKernExpQuadrature(unittest.TestCase):
+class TestKernExpQuadrature(ParallelTestCase):
     _threshold = 0.5
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.
 
@@ -320,7 +321,7 @@ class TestKernExpQuadrature(unittest.TestCase):
             k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
 
 
-class TestKernProd(unittest.TestCase):
+class TestKernProd(ParallelTestCase):
     """
     TestKernProd
     Need a separate test for this as Prod currently only supports diagonal Xcov matrices with non-overlapping kernels.
@@ -367,7 +368,7 @@ class TestKernProd(unittest.TestCase):
         _assert_pdeq(self, a, b)
 
 
-class TestKernExpDiagXcov(unittest.TestCase):
+class TestKernExpDiagXcov(ParallelTestCase):
     _threshold = 1e-6
 
     def setUp(self):
@@ -451,7 +452,7 @@ class TestKernExpDiagXcov(unittest.TestCase):
             _assert_pdeq(self, a, b, k)
 
 
-class TestAddCrossCalcs(unittest.TestCase):
+class TestAddCrossCalcs(ParallelTestCase):
     _threshold = 0.5
 
     def setUp(self):
