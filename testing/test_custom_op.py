@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 from GPflow.tf_wraps import vec_to_tri, tri_to_vec
 from tensorflow.python.ops.gradient_checker import compute_gradient_error
+from .parallel import ParallelTestCase
 
 
 def np_vec_to_tri(vec):
@@ -20,7 +21,7 @@ def compare_op(v):
         return np_vec_to_tri(v) == vec_to_tri(v).eval()
 
 
-class TestVecToTri(unittest.TestCase):
+class TestVecToTri(ParallelTestCase):
     def setUp(self):
         self.sess = tf.Session()
 
@@ -49,7 +50,7 @@ class TestVecToTri(unittest.TestCase):
             self.assertLess(compute_gradient_error(v, [1, len(initval)], f, [1, N, N]), 10 ** -10)
 
 
-class TestTriToVec(unittest.TestCase):
+class TestTriToVec(ParallelTestCase):
     def setUp(self):
         self.sess = tf.Session()
 

@@ -16,9 +16,10 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+from .parallel import ParallelTestCase
 
 
-class TestGaussian(unittest.TestCase):
+class TestGaussian(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
@@ -60,7 +61,7 @@ class TestGaussian(unittest.TestCase):
         density = self.m.predict_density(self.Xtest, self.Ytest)
 
 
-class TestFullCov(unittest.TestCase):
+class TestFullCov(ParallelTestCase):
     """ 
     this base class requires inherriting to specify the model.
 

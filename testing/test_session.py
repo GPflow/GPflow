@@ -4,8 +4,10 @@ import GPflow
 from GPflow import session
 from GPflow import settings
 import tensorflow as tf
+from .parallel import ParallelTestCase
 
-class TestSessionConfiguration(unittest.TestCase):
+
+class TestSessionConfiguration(ParallelTestCase):
     def setUp(self):
         self.m = GPflow.gpr.GPR(np.ones((1, 1)), np.ones((1, 1)), kern=GPflow.kernels.Matern52(1))
 

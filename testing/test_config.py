@@ -2,9 +2,10 @@ import unittest
 import GPflow
 import os
 import tensorflow as tf
+from .parallel import ParallelTestCase
 
 
-class TestConfigParsing(unittest.TestCase):
+class TestConfigParsing(ParallelTestCase):
     def setUp(self):
         directory = os.path.dirname(os.path.realpath(__file__))
         f = os.path.join(directory, 'gpflowrc_test.txt')
@@ -44,7 +45,7 @@ class TestConfigParsing(unittest.TestCase):
         self.assertTrue(GPflow._settings.parse('1e-9') == 1e-9)
 
 
-class TestSettingsManager(unittest.TestCase):
+class TestSettingsManager(ParallelTestCase):
     def testRaises(self):
         with self.assertRaises(AttributeError):
             GPflow.settings.undefined_setting_to_raise_error

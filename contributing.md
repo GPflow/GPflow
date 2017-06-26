@@ -14,6 +14,8 @@ All code that is destined for the master branch of GPflow goes through a PR. Onl
 ## Tests and continuous integration
 GPflow is 99% covered by the testing suite. We expect changes to code to pass these tests, and for new code to be covered by new tests. Currently, tests are run by travis (python 3) and by codeship (python 2.7), coverage is reported by codecov. 
 
+To save time during development, slow tests are marked with a 'speed' attribute. To run the tests without the slow ones, use `nosetests -A "speed!='slow'" testing`. By default, all tests are run, including on travis/codeship.
+
 ## Python 2 and 3
 GPflow aims to work in both python 2.7 and 3.5. Tests should pass in both. 
 

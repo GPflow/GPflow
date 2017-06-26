@@ -17,8 +17,10 @@ import numpy as np
 import unittest
 from GPflow.minibatch import SequenceIndices, MinibatchData
 from GPflow.minibatch import ReplacementSampling, NoReplacementSampling
+from .parallel import ParallelTestCase
 
-class TestSequentialManager(unittest.TestCase):
+
+class TestSequentialManager(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
      
@@ -48,7 +50,8 @@ class TestSequentialManager(unittest.TestCase):
             
         self.assertTrue((indecesB==targetIndicesB).all())
 
-class TestRandomIndexManagers(unittest.TestCase):
+
+class TestRandomIndexManagers(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
     
@@ -91,8 +94,9 @@ class TestRandomIndexManagers(unittest.TestCase):
             indeces = nrsb.nextIndices().tolist()
             indecesOverall = indecesOverall + indeces
         self.assertTrue(self.checkUniformDist(indecesOverall,data_size))
+
             
-class TestMinibatchData(unittest.TestCase):
+class TestMinibatchData(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.nDataPoints = 10

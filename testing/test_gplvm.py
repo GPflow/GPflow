@@ -4,10 +4,12 @@ import numpy as np
 import unittest
 from GPflow import ekernels
 from GPflow import kernels
+from .parallel import ParallelTestCase
+from nose.plugins.attrib import attr
 np.random.seed(0)
 
 
-class TestGPLVM(unittest.TestCase):
+class TestGPLVM(ParallelTestCase):
     def setUp(self):
         # data
         self.N = 20  # number of data points
@@ -32,7 +34,8 @@ class TestGPLVM(unittest.TestCase):
         self.assertTrue(m.compute_log_likelihood() > linit)
 
 
-class TestBayesianGPLVM(unittest.TestCase):
+@attr(speed='slow')
+class TestBayesianGPLVM(ParallelTestCase):
     def setUp(self):
         # data
         self.N = 20  # number of data points

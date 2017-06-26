@@ -2,6 +2,7 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
+from .parallel import ParallelTestCase
 
 
 class DumbModel(GPflow.model.Model):
@@ -19,7 +20,7 @@ class NoArgsModel(DumbModel):
         return self.a
 
 
-class TestNoArgs(unittest.TestCase):
+class TestNoArgs(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = NoArgsModel()
@@ -50,7 +51,7 @@ class AddModel(DumbModel):
         return tf.add(x, y)
 
 
-class TestShareArgs(unittest.TestCase):
+class TestShareArgs(ParallelTestCase):
     """
     This is designed to replicate bug #85, where having two models caused
     autoflow functions to fail because the tf_args were shared over the
@@ -72,7 +73,7 @@ class TestShareArgs(unittest.TestCase):
         self.m1.add(self.x, self.y)
 
 
-class TestAdd(unittest.TestCase):
+class TestAdd(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = AddModel()
@@ -95,7 +96,7 @@ class IncrementModel(DumbModel):
         return x + self.a
 
 
-class TestDataHolder(unittest.TestCase):
+class TestDataHolder(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = IncrementModel()
@@ -106,7 +107,7 @@ class TestDataHolder(unittest.TestCase):
         self.assertTrue(np.allclose(self.x + 3, self.m.inc(self.x)))
 
 
-class TestGPmodel(unittest.TestCase):
+class TestGPmodel(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
@@ -132,7 +133,7 @@ class TestGPmodel(unittest.TestCase):
         self.m.compute_log_likelihood()
 
 
-class TestResetGraph(unittest.TestCase):
+class TestResetGraph(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         k = GPflow.kernels.Matern32(1)
@@ -146,7 +147,7 @@ class TestResetGraph(unittest.TestCase):
         mu1, var1 = self.m.predict_f(self.Xnew)
 
 
-class TestFixAndPredict(unittest.TestCase):
+class TestFixAndPredict(ParallelTestCase):
     """
     Bug #54 says that if a model parameter is fixed  between calls to predict
     (an autoflow fn) then the second call fails. This test ensures replicates
@@ -168,7 +169,7 @@ class TestFixAndPredict(unittest.TestCase):
         _, _ = self.m.predict_f(self.m.X.value)
 
 
-class TestSVGP(unittest.TestCase):
+class TestSVGP(ParallelTestCase):
     """
     This replicates Alex's code from bug #99
     """

@@ -3,6 +3,7 @@ dist: trusty
 language: python
 python:
   - 3.5
+cache: pip
 install:
   - sudo apt-get update
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -15,9 +16,12 @@ install:
   - conda info -a
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=3.5 numpy scipy pandas nose nbformat nbconvert jupyter_client jupyter
+  - conda create -q -n test-environment python=3.5 numpy scipy pandas nose nbformat nbconvert jupyter_client jupyter matplotlib
   - source activate test-environment
   - pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.0-cp35-cp35m-linux_x86_64.whl
   - python setup.py install
+env:
+  - ATTRIBUTE="-a speed=slow"
+  - ATTRIBUTE="-A speed!='slow'"
 script:
-  - nosetests --nologcapture testing
+  - nosetests $ATTRIBUTE --nologcapture --processes=2 --process-timeout=600 testing

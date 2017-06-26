@@ -17,9 +17,10 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
+from .parallel import ParallelTestCase
 
 
-class TestOptimize(unittest.TestCase):
+class TestOptimize(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
@@ -50,7 +51,7 @@ class TestOptimize(unittest.TestCase):
         self.assertTrue(self.m.num_fevals == 10)
 
 
-class TestNeedsRecompile(unittest.TestCase):
+class TestNeedsRecompile(ParallelTestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
         self.m.p = GPflow.param.Param(1.0)
@@ -103,7 +104,7 @@ class KeyboardRaiser:
         return self.f(*a, **kw)
 
 
-class TestKeyboardCatching(unittest.TestCase):
+class TestKeyboardCatching(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         X = np.random.randn(1000, 3)
@@ -128,7 +129,7 @@ class TestKeyboardCatching(unittest.TestCase):
         self.assertFalse(np.allclose(x0, x1))
 
 
-class TestLikelihoodAutoflow(unittest.TestCase):
+class TestLikelihoodAutoflow(ParallelTestCase):
     def setUp(self):
         tf.reset_default_graph()
         X = np.random.randn(1000, 3)
@@ -148,7 +149,7 @@ class TestLikelihoodAutoflow(unittest.TestCase):
         self.assertTrue(l0 == l1)
 
 
-class TestName(unittest.TestCase):
+class TestName(ParallelTestCase):
     def test_name(self):
         m = GPflow.model.Model(name='foo')
         assert m.name == 'foo'
