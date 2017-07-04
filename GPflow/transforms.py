@@ -301,7 +301,7 @@ class LowerTriangular(Transform):
     (N x N x D).
     """
 
-    def __init__(self, num_matrices=1, squeeze=False):
+    def __init__(self, N, num_matrices=1, squeeze=False):
         """
         Create an instance of LowerTriangular transform.
         Args:
@@ -310,6 +310,7 @@ class LowerTriangular(Transform):
         """
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
         self.squeeze = squeeze
+        self.N = N
 
     def _validate_vector_length(self, length):
         """
@@ -359,7 +360,7 @@ class LowerTriangular(Transform):
         return y[np.tril_indices(len(y), 0)].T.flatten()
 
     def tf_forward(self, x):
-        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1)),self.N), [1, 2, 0])
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
