@@ -37,12 +37,17 @@ class Likelihood(Parameterized):
         raise NotImplementedError("implement the logp function\
                                   for this likelihood")
 
-    def _check_inputs(self, Y_np):
+    def _check_targets(self, Y_np):
         """
-        Check that the Y values are valid for the likelihood. Y_np is a numpy array
+        Check that the Y values are valid for the likelihood. Y_np is a numpy array.
+
+        The base class check is that the array has two dimensions and consists only of floats. The float requirement
+        is so that AutoFlow can work with Model.predict_density.
         """
-        assert len(Y_np.shape) == 2
-        assert np.array(list(Y_np)).dtype == np_float_type, 'use {}, even for discrete variables'.format(np_float_type)
+        if not len(Y_np.shape) == 2:
+            raise ValueError('targets must be shape N x D')
+        if np.array(list(Y_np)).dtype != np_float_type:
+            raise ValueError('use {}, even for discrete variables'.format(np_float_type))
 
     def conditional_mean(self, F):
         """
@@ -207,10 +212,12 @@ class Poisson(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
 
-    def _check_inputs(self, Y_np):
-        Likelihood._check_inputs(self)
-        assert np.all(Y_np >= 0), 'poisson variables must be positive'
-        assert np.all(np.equal(np.mod(Y_np, 1), 0)), 'poisson variables must be integer valued'
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if np.any(Y_np < 0):
+            raise ValueError('poisson variables must be positive')
+        if not np.all(np.equal(np.mod(Y_np, 1), 0)):
+            raise ValueError('poisson variables must be integer valued')
 
     def logp(self, F, Y):
         return densities.poisson(self.invlink(F), Y)
@@ -233,9 +240,10 @@ class Exponential(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
 
-    def _check_inputs(self, Y_np):
-        Likelihood._check_inputs(self)
-        assert np.all(Y_np >= 0), 'exponential variables must be positive'
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if np.any(Y_np < 0):
+            raise ValueError('exponential variables must be positive')
 
     def logp(self, F, Y):
         return densities.exponential(self.invlink(F), Y)
@@ -278,11 +286,11 @@ class Bernoulli(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
 
-    def _check_inputs(self, Y_np):
-        Likelihood._check_inputs(self)
-        Y_set = set(Y_np)
-        assert Y_set.issubset(set(1., -1.)) or Y_set.issubset(set(1., 0.)), \
-            'bernoulli variables must be in {1., -1.} or {1., 0.}'
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        Y_set = set(Y_np.flatten())
+        if not (Y_set.issubset(set((1., -1.))) or Y_set.issubset(set((1., 0.)))):
+            raise ValueError('bernoulli variables must be in {1., -1.} or {1., 0.}')
 
     def logp(self, F, Y):
         return densities.bernoulli(self.invlink(F), Y)
@@ -317,9 +325,10 @@ class Gamma(Likelihood):
         self.invlink = invlink
         self.shape = Param(1.0, transforms.positive)
 
-    def _check_inputs(self, Y_np):
-        Likelihood._check_inputs(self)
-        assert np.all(Y_np >= 0), 'gamma variables must be non-negative'
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if np.any(Y_np < 0):
+            raise ValueError('gamma variables must be non-negative')
 
     def logp(self, F, Y):
         return densities.gamma(self.shape, self.invlink(F), Y)
@@ -361,9 +370,10 @@ class Beta(Likelihood):
         self.scale = Param(scale, transforms.positive)
         self.invlink = invlink
 
-    def _check_inputs(self, Y_np):
-        Likelihood._check_inputs(self)
-        assert np.all(Y_np >= 0.) and np.all(Y_np <= 1.), 'beta variables must be in the range [0, 1]'
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if np.any(Y_np < 0.) or np.any(Y_np > 1.):
+            raise ValueError('beta variables must be in [0, 1]')
 
     def logp(self, F, Y):
         mean = self.invlink(F)
@@ -404,8 +414,9 @@ class RobustMax(object):
         return tf.one_hot(i, self.num_classes, 1. - self.epsilon, self._eps_K1)
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
+        Y = tf.cast(Y, tf.int64)
         # work out what the mean and variance is of the indicated latent function.
-        oh_on = tf.cast(tf.one_hot(tf.reshape(tf.cast(Y, tf.int64), (-1,)), self.num_classes, 1., 0.), float_type)
+        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), float_type)
         mu_selected = tf.reduce_sum(oh_on * mu, 1)
         var_selected = tf.reduce_sum(oh_on * var, 1)
 
@@ -455,10 +466,12 @@ class MultiClass(Likelihood):
             raise NotImplementedError
         self.invlink = invlink
 
-    def _check_inputs(self, Y_np):
-        Likelihood._check_inputs(self)
-        Y_elments = set(Y_np)
-        assert set(Y_np).issubset(set(np.arange(self.num_classes))), 'multiclass likelihood expects 0., 1., 2.,...,k-1'
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if not set(Y_np.flatten()).issubset(set(np.arange(self.num_classes))):
+            raise ValueError('multiclass likelihood expects inputs to be in {0., 1., 2.,...,k-1}')
+        if Y_np.shape[1] != 1:
+            raise ValueError('only one dimension currently supported for multiclass likelihood')
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
@@ -520,10 +533,10 @@ class SwitchedLikelihood(Likelihood):
         self.likelihood_list = ParamList(likelihood_list)
         self.num_likelihoods = len(self.likelihood_list)
 
-    def _check_inputs(self, Y_np):
-        Likelihood._check_inputs(self)
-        assert set(Y_np[:, -1]).issubset(set(np.arange(self.num_likelihoods))), \
-            'switched likelihood expects final column from {0,1,...,k-1}'
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if not set(Y_np[:, -1]).issubset(set(np.arange(self.num_likelihoods))):
+            raise ValueError('switched likelihood expects final column values in {0,1,...,k-1}')
 
     def _partition_and_stitch(self, args, func_name):
         """
@@ -608,12 +621,8 @@ class Ordinal(Likelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Param(1.0, transforms.positive)
 
-    def _check_inputs(self, Y_np):
-        Likelihood._check_inputs(self)
-        assert set(Y_np).issubset(set(np.arange(self.num_bins))), 'ordinal likelihood expects 0., 1., 2.,...,k-1'
-
     def logp(self, F, Y):
-        Y = tf.cast(Y, tf.int32)
+        Y = tf.cast(Y, tf.int64)
         scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
         selected_bins_left = tf.gather(scaled_bins_left, Y)
