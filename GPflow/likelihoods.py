@@ -37,6 +37,13 @@ class Likelihood(Parameterized):
         raise NotImplementedError("implement the logp function\
                                   for this likelihood")
 
+    def _check_inputs(self, Y_np):
+        """
+        Check that the Y values are valid for the likelihood. Y_np is a numpy array
+        """
+        assert len(Y_np.shape) == 2
+        assert np.array(list(Y_np)).dtype == np_float_type, 'use {}, even for discrete variables'.format(np_float_type)
+
     def conditional_mean(self, F):
         """
         Given a value of the latent function, compute the mean of the data
@@ -200,6 +207,11 @@ class Poisson(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
 
+    def _check_inputs(self, Y_np):
+        Likelihood._check_inputs(self)
+        assert np.all(Y_np >= 0), 'poisson variables must be positive'
+        assert np.all(np.equal(np.mod(Y_np, 1), 0)), 'poisson variables must be integer valued'
+
     def logp(self, F, Y):
         return densities.poisson(self.invlink(F), Y)
 
@@ -220,6 +232,10 @@ class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):
         Likelihood.__init__(self)
         self.invlink = invlink
+
+    def _check_inputs(self, Y_np):
+        Likelihood._check_inputs(self)
+        assert np.all(Y_np >= 0), 'exponential variables must be positive'
 
     def logp(self, F, Y):
         return densities.exponential(self.invlink(F), Y)
@@ -262,6 +278,12 @@ class Bernoulli(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
 
+    def _check_inputs(self, Y_np):
+        Likelihood._check_inputs(self)
+        Y_set = set(Y_np)
+        assert Y_set.issubset(set(1., -1.)) or Y_set.issubset(set(1., 0.)), \
+            'bernoulli variables must be in {1., -1.} or {1., 0.}'
+
     def logp(self, F, Y):
         return densities.bernoulli(self.invlink(F), Y)
 
@@ -294,6 +316,10 @@ class Gamma(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
         self.shape = Param(1.0, transforms.positive)
+
+    def _check_inputs(self, Y_np):
+        Likelihood._check_inputs(self)
+        assert np.all(Y_np >= 0), 'gamma variables must be non-negative'
 
     def logp(self, F, Y):
         return densities.gamma(self.shape, self.invlink(F), Y)
@@ -335,6 +361,10 @@ class Beta(Likelihood):
         self.scale = Param(scale, transforms.positive)
         self.invlink = invlink
 
+    def _check_inputs(self, Y_np):
+        Likelihood._check_inputs(self)
+        assert np.all(Y_np >= 0.) and np.all(Y_np <= 1.), 'beta variables must be in the range [0, 1]'
+
     def logp(self, F, Y):
         mean = self.invlink(F)
         alpha = mean * self.scale
@@ -375,7 +405,7 @@ class RobustMax(object):
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         # work out what the mean and variance is of the indicated latent function.
-        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), float_type)
+        oh_on = tf.cast(tf.one_hot(tf.reshape(tf.cast(Y, tf.int64), (-1,)), self.num_classes, 1., 0.), float_type)
         mu_selected = tf.reduce_sum(oh_on * mu, 1)
         var_selected = tf.reduce_sum(oh_on * var, 1)
 
@@ -397,6 +427,18 @@ class RobustMax(object):
         # take the product over the latent functions, and the sum over the GH grid.
         return tf.matmul(tf.reduce_prod(cdfs, reduction_indices=[1]), tf.reshape(gh_w / np.sqrt(np.pi), (-1, 1)))
 
+# def extend_over_columns(F_args, Y_args):
+#     def decorator(f):
+#         return f
+#     return decorator
+
+def extend_over_cols2(f):
+    def newf(self, F, Y):
+        D = self.num_latent
+        k = self.num_classes
+        return tf.stack([f(self, F[d*k:(d+1)*k], Y[:, d, None]) for d in range(D)], -1)
+    return newf
+
 
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
@@ -413,9 +455,14 @@ class MultiClass(Likelihood):
             raise NotImplementedError
         self.invlink = invlink
 
+    def _check_inputs(self, Y_np):
+        Likelihood._check_inputs(self)
+        Y_elments = set(Y_np)
+        assert set(Y_np).issubset(set(np.arange(self.num_classes))), 'multiclass likelihood expects 0., 1., 2.,...,k-1'
+
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
-            hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
+            hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
             yes = tf.ones(tf.shape(Y), dtype=float_type) - self.invlink.epsilon
             no = tf.zeros(tf.shape(Y), dtype=float_type) + self.invlink._eps_K1
             p = tf.where(hits, yes, no)
@@ -453,7 +500,6 @@ class MultiClass(Likelihood):
         else:
             raise NotImplementedError
 
-
     def conditional_mean(self, F):
         return self.invlink(F)
 
@@ -473,6 +519,11 @@ class SwitchedLikelihood(Likelihood):
             assert isinstance(l, Likelihood)
         self.likelihood_list = ParamList(likelihood_list)
         self.num_likelihoods = len(self.likelihood_list)
+
+    def _check_inputs(self, Y_np):
+        Likelihood._check_inputs(self)
+        assert set(Y_np[:, -1]).issubset(set(np.arange(self.num_likelihoods))), \
+            'switched likelihood expects final column from {0,1,...,k-1}'
 
     def _partition_and_stitch(self, args, func_name):
         """
@@ -556,6 +607,10 @@ class Ordinal(Likelihood):
         self.bin_edges = bin_edges
         self.num_bins = bin_edges.size + 1
         self.sigma = Param(1.0, transforms.positive)
+
+    def _check_inputs(self, Y_np):
+        Likelihood._check_inputs(self)
+        assert set(Y_np).issubset(set(np.arange(self.num_bins))), 'ordinal likelihood expects 0., 1., 2.,...,k-1'
 
     def logp(self, F, Y):
         Y = tf.cast(Y, tf.int32)
