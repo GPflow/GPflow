@@ -1,3 +1,6 @@
+# Release 0.3.7
+ - Improvements to VGP class allow more straightforward optimization
+
 # Release 0.3.6
  - Changed ordering of parameters to be alphabetical, to ensure consistency
 

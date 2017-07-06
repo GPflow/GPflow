@@ -173,8 +173,8 @@ class GPRFITC(GPModel):
         Kuf = self.kern.K(self.Z, self.X)
         Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
 
-        Luu = tf.cholesky(Kuu)  # => Luu^T Luu = Kuu
-        V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff
+        Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
+        V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
 
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
