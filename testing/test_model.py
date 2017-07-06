@@ -18,19 +18,21 @@ import tensorflow as tf
 import numpy as np
 import unittest
 
+rng = np.random.RandomState(0)
+
+
+class Quadratic(GPflow.model.Model):
+    def __init__(self):
+        GPflow.model.Model.__init__(self)
+        self.x = GPflow.param.Param(rng.randn(10))
+
+    def build_likelihood(self):
+        return -tf.reduce_sum(tf.square(self.x))
+
 
 class TestOptimize(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        rng = np.random.RandomState(0)
-
-        class Quadratic(GPflow.model.Model):
-            def __init__(self):
-                GPflow.model.Model.__init__(self)
-                self.x = GPflow.param.Param(rng.randn(10))
-
-            def build_likelihood(self):
-                return -tf.reduce_sum(tf.square(self.x))
         self.m = Quadratic()
 
     def test_adam(self):
@@ -86,6 +88,48 @@ class TestNeedsRecompile(unittest.TestCase):
         new_p.p = GPflow.param.Param(1.0)
         m.p = new_p
         self.assertTrue(m._needs_recompile is True)
+
+
+class TestRecompileNestedInHierarchy(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+        m1 = Quadratic()
+        m1.p = GPflow.param.Param(3.0)
+        m1._compile()
+        m2 = Quadratic()
+        m2._compile()
+        self.m = GPflow.param.ParamList([m1, m2])
+
+    def _validate_hierarchy_after_change(self):
+        self.assertFalse(hasattr(self.m, '_needs_recompile'))
+        self.assertTrue(self.m[0]._needs_recompile)
+        self.assertFalse(self.m[1]._needs_recompile)
+        self.m[0].optimize(maxiter=10)
+        self.m[1].optimize(maxiter=10)
+        self.assertFalse(hasattr(self.m, '_needs_recompile'))
+        self.assertFalse(self.m[0]._needs_recompile)
+        self.assertFalse(self.m[1]._needs_recompile)
+
+    def test_fix(self):
+        self.assertFalse(hasattr(self.m, '_needs_recompile'))
+        self.m[0].p.fixed = True
+        self._validate_hierarchy_after_change()
+
+    def test_replace_param(self):
+        self.assertFalse(hasattr(self.m, '_needs_recompile'))
+        new_p = GPflow.param.Param(3.0)
+        self.m[0].x = new_p
+        self._validate_hierarchy_after_change()
+
+    def test_set_prior(self):
+        self.assertFalse(hasattr(self.m, '_needs_recompile'))
+        self.m[0].x.prior = GPflow.priors.Gaussian(0, 1)
+        self._validate_hierarchy_after_change()
+
+    def test_set_transform(self):
+        self.assertFalse(hasattr(self.m, '_needs_recompile'))
+        self.m[0].x.transform = GPflow.transforms.Identity()
+        self._validate_hierarchy_after_change()
 
 
 class KeyboardRaiser:

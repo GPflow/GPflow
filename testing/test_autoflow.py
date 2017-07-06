@@ -43,6 +43,12 @@ class TestNoArgs(unittest.TestCase):
         keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
         self.assertTrue(len(keys) == 0, msg="no AF storage should be present after recompile switch set.")
 
+        self.m.function()
+        self.m._needs_recompile = False
+
+        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+        self.assertTrue(len(keys) == 1, msg="AF storage should be persistent when setting _needs_recompile to False.")
+
 
 class AddModel(DumbModel):
     @GPflow.model.AutoFlow((tf.float64,), (tf.float64,))
@@ -179,6 +185,65 @@ class TestSVGP(unittest.TestCase):
         Z = rng.randn(3, 1)
         model = GPflow.svgp.SVGP(X=X, Y=Y, kern=GPflow.kernels.RBF(1), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)
         model.compute_log_likelihood()
+
+
+class NestedModels(GPflow.param.Parameterized):
+
+    def __init__(self):
+        super(NestedModels, self).__init__()
+        self.m1 = NoArgsModel()
+        self.m2 = NoArgsModel()
+        self.m1._compile()
+        self.m2._compile()
+
+    @GPflow.model.AutoFlow()
+    def function(self):
+        return self.m1.a + self.m2.a
+
+
+class TestNestedModels(unittest.TestCase):
+
+    def setUp(self):
+        self.m = NestedModels()
+
+    def assertAutoFlowCaches(self, p, number, msg=""):
+        keys = [k for k in p.__dict__.keys() if k[-11:] == '_AF_storage']
+        self.assertTrue(len(keys) == number, msg=msg)
+
+    def test_kill(self):
+        self.assertAutoFlowCaches(self.m, 0, "no AF storage should be present to start.")
+        self.assertAutoFlowCaches(self.m.m1, 0, "no AF storage should be present to start.")
+        self.assertAutoFlowCaches(self.m.m2, 0, "no AF storage should be present to start.")
+
+        self.m.function()
+        self.assertAutoFlowCaches(self.m, 1, "AF storage should be present after function call.")
+        self.assertAutoFlowCaches(self.m.m1, 0)
+        self.assertAutoFlowCaches(self.m.m2, 0)
+
+        self.m.m1._needs_recompile = False
+        self.assertAutoFlowCaches(self.m, 1, "AF storage should be persistent after setting needs_recompile to False.")
+        self.m.m1._needs_recompile = True
+        self.assertAutoFlowCaches(self.m, 0, "Setting needs_recompile to True should erase parent AF storage.")
+
+    def test_kill_sibling_persistence(self):
+        self.m.m1.function()
+        self.m.m2.function()
+        self.m.function()
+        self.assertAutoFlowCaches(self.m, 1, "AF storage should be present after function call.")
+        self.assertAutoFlowCaches(self.m.m1, 1, "AF storage should be present after function call.")
+        self.assertAutoFlowCaches(self.m.m2, 1, "AF storage should be present after function call.")
+
+        self.m.m1._needs_recompile = True
+        self.assertAutoFlowCaches(self.m, 0, "Setting needs_recompile to True should erase parent AF storage.")
+        self.assertAutoFlowCaches(self.m.m1, 0, "Setting needs_recompile to True should erase AF storage.")
+        self.assertAutoFlowCaches(self.m.m2, 1, "AF storage should be persistent, as model is in different subtree")
+
+        self.m.m1._needs_recompile = False
+        self.m.m1.function()
+        self.assertAutoFlowCaches(self.m, 0, "no AF storage should be present without running function.")
+        self.m.m2._needs_recompile = True
+        self.assertAutoFlowCaches(self.m.m2, 0, "Setting needs_recompile to True should erase AF storage.")
+        self.assertAutoFlowCaches(self.m.m1, 1, "AF storage should be persistent, as model is in different subtree")
 
 
 if __name__ == "__main__":
