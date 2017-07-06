@@ -305,6 +305,7 @@ class LowerTriangular(Transform):
         """
         Create an instance of LowerTriangular transform.
         Args:
+            N the size of the final lower triangular matrices.
             num_matrices: Number of matrices to be stored.
             squeeze: If num_matrices == 1, drop the redundant axis.
         """
