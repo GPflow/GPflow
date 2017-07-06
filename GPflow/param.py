@@ -701,6 +701,10 @@ class Parameterized(Parentable):
                 recompileable_parent = self._highest_parent_with_condition(lambda x: hasattr(x, '_needs_recompile'))
                 if recompileable_parent is not None:
                     recompileable_parent._needs_recompile = True
+                else:
+                    # No compilable parent found: for this corner case, no _needs_recompile is set, so _kill_autoflow
+                    # needs to be called separately.
+                    self.highest_parent._kill_autoflow()
 
             # if the existing atribute is a DataHolder, set the value of the data inside
             if isinstance(p, DataHolder) and isinstance(value, np.ndarray):

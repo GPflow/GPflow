@@ -245,6 +245,12 @@ class TestNestedModels(unittest.TestCase):
         self.assertAutoFlowCaches(self.m.m2, 0, "Setting needs_recompile to True should erase AF storage.")
         self.assertAutoFlowCaches(self.m.m1, 1, "AF storage should be persistent, as model is in different subtree")
 
+    def test_kill_replacements(self):
+        self.m.function()
+        self.assertAutoFlowCaches(self.m, 1, "AF storage should be present after function call.")
+        self.m.m1 = NoArgsModel()
+        self.assertAutoFlowCaches(self.m, 0, "AF storage should be erased after replacing a Param.")
+
 
 if __name__ == "__main__":
     unittest.main()
