@@ -1,3 +1,9 @@
+# Release 0.3.8
+ - Change to LowerTriangular transform interface.
+ - LowerTriangular transform now used by default in VGP and SVGP
+ - LowerTriangular transform now used native TensorFlow 
+ - No longer use bespoke GPflow user ops.
+
 # Release 0.3.7
  - Improvements to VGP class allow more straightforward optimization
 
