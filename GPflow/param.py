@@ -701,10 +701,13 @@ class Parameterized(Parentable):
                 recompileable_parent = self._highest_parent_with_condition(lambda x: hasattr(x, '_needs_recompile'))
                 if recompileable_parent is not None:
                     recompileable_parent._needs_recompile = True
-                else:
-                    # No compilable parent found: for this corner case, no _needs_recompile is set, so _kill_autoflow
-                    # needs to be called separately.
+                elif key is not '_parent':
+                    # No parent with recompile flag: for this corner case, no _needs_recompile is set in the process
+                    # so _kill_autoflow needs to be called separately.
                     self.highest_parent._kill_autoflow()
+                elif key is '_parent':
+                    # In case the parent is altered, call _kill_autoflow on the new parent.
+                    value.highest_parent._kill_autoflow()
 
             # if the existing atribute is a DataHolder, set the value of the data inside
             if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
@@ -1001,10 +1004,10 @@ class ParamList(Parameterized):
     def __init__(self, list_of_params):
         Parameterized.__init__(self)
         assert isinstance(list_of_params, list)
-        for item in list_of_params:
-            assert isinstance(item, (Param, Parameterized))
-            item._parent = self
+        assert all(isinstance(item, (Param, Parameterized)) for item in list_of_params)
         self._list = list_of_params
+        for item in list_of_params:
+            item._parent = self
 
     @property
     def sorted_params(self):
