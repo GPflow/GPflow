@@ -410,20 +410,37 @@ class GPModel(Model):
     @AutoFlow((float_type, [None, None]))
     def predict_f_gradients(self, Xnew):
         """
-        Compute the gradients of the mean and variance of the latent function(s) at the points
-        Xnew.
+        Compute the gradients of the mean and variance of the latent
+        function(s) w.r.t. Xnew.
+
+        Note that this is different to the mean and variance of the derivative
+        posterior process.
+
+        Note on output shapes: if Xnew is N x D, and the model contains K
+        latent processes, then F is N x K, and both gradients are of shape
+        N x D x K
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
-        return tf.gradients(pred_f_mean, Xnew) + tf.gradients(pred_f_var, Xnew)
+        mean_grad = tf.map_fn(lambda mu : tf.gradients(mu, Xnew)[0], tf.transpose(pred_f_mean))
+        var_grad = tf.map_fn(lambda var : tf.gradients(var, Xnew)[0], tf.transpose(pred_f_var))
+        return tf.transpose(mean_grad, perm=[1, 2, 0]), tf.transpose(var_grad, perm=[1, 2, 0])
 
     @AutoFlow((float_type, [None, None]))
     def predict_y_gradients(self, Xnew):
         """
-        Compute the gradients of the mean and variance of held-out data at the points Xnew
+        Compute the gradients of the mean and variance of held-out data w.r.t.
+        Xnew
+
+        Note that this is different to the mean and variance of the derivative
+        posterior process.
+
+        See also predict_f_gradients.
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         pred_y_mean, pred_y_var = self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
-        return tf.gradients(pred_y_mean, Xnew) + tf.gradients(pred_y_var, Xnew)
+        mean_grad = tf.map_fn(lambda mu : tf.gradients(mu, Xnew)[0], tf.transpose(pred_y_mean))
+        var_grad = tf.map_fn(lambda var : tf.gradients(var, Xnew)[0], tf.transpose(pred_y_var))
+        return tf.transpose(mean_grad, perm=[1, 2, 0]), tf.transpose(var_grad, perm=[1, 2, 0])
 
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
     def predict_density(self, Xnew, Ynew):
