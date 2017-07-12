@@ -177,6 +177,47 @@ class TestRobustMaxMulticlass(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
 
+
+    def testEpsilonK1Changes(self):
+        """
+        checks that epsilon_K1 changes as you change epsilon. This saves the user from having to explicitly reset it.
+        """
+        nClasses = 10
+        epsilon = 1e-3
+        l = GPflow.likelihoods.MultiClass(nClasses)
+        l.invlink.epsilon = epsilon
+        l.invlink.epsilon.fixed = True
+
+        expectedEpsK1 = epsilon / float(nClasses -1.)
+
+        l.make_tf_array([None])
+        with l.tf_mode():
+            bfd_keys = l.get_feed_dict_keys()
+            fd = {}
+            l.update_feed_dict(bfd_keys, fd)
+
+
+            foundEpsK1 = tf.Session().run(l.invlink._eps_K1, feed_dict=fd)
+        np.testing.assert_almost_equal(expectedEpsK1, foundEpsK1)
+
+        newEpsilon = 0.456
+        newExpectedEpsK1 = newEpsilon / float(nClasses -1.)
+
+        l.invlink.epsilon = newEpsilon
+        with l.tf_mode():
+            bfd_keys = l.get_feed_dict_keys()
+            fd = {}
+            l.update_feed_dict(bfd_keys, fd)
+
+
+            newFoundEpsK1 = tf.Session().run(l.invlink._eps_K1, feed_dict=fd)
+            np.testing.assert_almost_equal(newExpectedEpsK1, newFoundEpsK1, err_msg="updating epsilon has not updated eps K1")
+
+
+
+
+
+
     def testSymmetric(self):
         """
         This test is based on the observation that for
@@ -237,7 +278,7 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         rng = np.random.RandomState(1)
         Y_data = rng.randint(num_classes, size=(num_points, 1))
 
-        l.make_tf_array([None,])  # can use None as
+        l.make_tf_array([None,])  # can use None as fixed epsilon so can mock this array
         with l.tf_mode():
             bfd_keys = l.get_feed_dict_keys()
             fd = {}
