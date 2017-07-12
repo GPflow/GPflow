@@ -20,6 +20,7 @@ import numpy as np
 import tensorflow as tf
 from . import hmc, session
 from ._settings import settings
+from .tf_wraps import columnwise_gradients
 import sys
 
 float_type = settings.dtypes.float_type
@@ -418,9 +419,7 @@ class GPModel(Model):
         N x D x K
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
-        mean_grad = tf.map_fn(lambda mu : tf.gradients(mu, Xnew)[0], tf.transpose(pred_f_mean))
-        var_grad = tf.map_fn(lambda var : tf.gradients(var, Xnew)[0], tf.transpose(pred_f_var))
-        return tf.transpose(mean_grad, perm=[1, 2, 0]), tf.transpose(var_grad, perm=[1, 2, 0])
+        return columnwise_gradients(pred_f_mean, Xnew), columnwise_gradients(pred_f_var, Xnew)
 
     @AutoFlow((float_type, [None, None]))
     def predict_y_gradients(self, Xnew):
@@ -435,9 +434,7 @@ class GPModel(Model):
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         pred_y_mean, pred_y_var = self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
-        mean_grad = tf.map_fn(lambda mu : tf.gradients(mu, Xnew)[0], tf.transpose(pred_y_mean))
-        var_grad = tf.map_fn(lambda var : tf.gradients(var, Xnew)[0], tf.transpose(pred_y_var))
-        return tf.transpose(mean_grad, perm=[1, 2, 0]), tf.transpose(var_grad, perm=[1, 2, 0])
+        return columnwise_gradients(pred_y_mean, Xnew), columnwise_gradients(pred_y_var, Xnew)
 
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
     def predict_density(self, Xnew, Ynew):
