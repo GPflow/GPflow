@@ -51,10 +51,10 @@ class TestMethods(unittest.TestCase):
     def test_tf_optimize(self):
         for m in self.ms:
             trainer = tf.train.AdamOptimizer(learning_rate=0.001)
-            if isinstance(m, (GPflow.gpr.GPR,GPflow.vgp.VGP,GPflow.svgp.SVGP)):
+            if isinstance(m, (GPflow.gpr.GPR, GPflow.vgp.VGP,
+                              GPflow.svgp.SVGP, GPflow.gpmc.GPMC)):
                 optimizeOp = m._compile(trainer)
                 self.assertTrue(optimizeOp is not None)
-
 
     def test_predict_f(self):
         for m in self.ms:
