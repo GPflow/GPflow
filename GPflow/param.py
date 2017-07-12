@@ -307,7 +307,7 @@ class Param(Parentable):
                 except AttributeError:
                     randn = np.random.randn(
                         self.transform.free_state_size(self.shape))
-                    self._array = self.transform.forward(randn)
+                    self._array = self.transform.forward(randn).reshape(self.shape)
 
     def build_prior(self):
         """
@@ -363,8 +363,8 @@ class Param(Parentable):
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
-        d.pop('_tf_array')
-        d.pop('_log_jacobian')
+        for key in ['_tf_array', '_log_jacobian']:
+            d.pop(key, None)
         return d
 
     def __setstate__(self, d):
@@ -796,7 +796,7 @@ class Parameterized(Parentable):
         params=  [child for key, child in self.__dict__.items()
                   if isinstance(child, (Param, Parameterized)) and
                   key is not '_parent']
-        return sorted(params, key=id)
+        return sorted(params, key=lambda x: x.long_name)
 
     @property
     def data_holders(self):

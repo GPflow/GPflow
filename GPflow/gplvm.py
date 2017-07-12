@@ -127,7 +127,7 @@ class BayesianGPLVM(GPModel):
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
-        log_det_B = 2. * tf.reduce_sum(tf.log(tf.diag_part(LB)))
+        log_det_B = 2. * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
@@ -146,7 +146,7 @@ class BayesianGPLVM(GPModel):
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 -
-                             tf.reduce_sum(tf.diag_part(AAT)))
+                             tf.reduce_sum(tf.matrix_diag_part(AAT)))
         bound -= KL
         return bound
 
@@ -174,10 +174,10 @@ class BayesianGPLVM(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
-        mean = tf.matmul(tf.transpose(tmp2), c)
+        mean = tf.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) \
-                  - tf.matmul(tf.transpose(tmp1), tmp1)
+            var = self.kern.K(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
+                  - tf.matmul(tmp1, tmp1, transpose_a=True)
             shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
