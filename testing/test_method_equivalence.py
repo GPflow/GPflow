@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import GPflow
 import numpy as np
-import unittest
 import tensorflow as tf
+import unittest
+import GPflow
 
 
 class TestEquivalence(unittest.TestCase):
@@ -72,8 +72,9 @@ class TestEquivalence(unittest.TestCase):
             print('.')  # stop travis timing out
 
     def test_all(self):
-        likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze() for m in self.models])
-        self.assertTrue(np.allclose(likelihoods, likelihoods[0], 1e-2))
+        likelihoods = np.array([-m._objective(m.get_free_state())[0].squeeze()
+                                for m in self.models])
+        self.assertTrue(np.allclose(likelihoods, likelihoods[0], 1e-6))
         variances, lengthscales = [], []
         for m in self.models:
             if hasattr(m.kern, 'rbf'):
@@ -83,14 +84,129 @@ class TestEquivalence(unittest.TestCase):
                 variances.append(m.kern.variance.value)
                 lengthscales.append(m.kern.lengthscales.value)
         variances, lengthscales = np.array(variances), np.array(lengthscales)
-
-        self.assertTrue(np.allclose(variances, variances[0], 1e-3))
-        self.assertTrue(np.allclose(lengthscales, lengthscales.mean(), 1e-2))
+        self.assertTrue(np.allclose(variances, variances[0], 1e-5))
+        self.assertTrue(np.allclose(lengthscales, lengthscales.mean(), 1e-4))
         mu0, var0 = self.models[0].predict_y(self.Xtest)
         for m in self.models[1:]:
             mu, var = m.predict_y(self.Xtest)
-            self.assertTrue(np.allclose(mu, mu0, 1e-2))
-            self.assertTrue(np.allclose(var, var0, 1e-2))
+            self.assertTrue(np.allclose(mu, mu0, 1e-3))
+            self.assertTrue(np.allclose(var, var0, 1e-4))
+
+
+class VGPTest(unittest.TestCase):
+    def test_vgp_vs_svgp(self):
+        N, Ns, DX, DY = 100, 10, 2, 2
+
+        np.random.seed(1)
+        X = np.random.randn(N, DX)
+        Xs = np.random.randn(Ns, DX)
+        Y = np.random.randn(N, DY)
+
+        kern = GPflow.kernels.Matern52(DX)
+        likelihood = GPflow.likelihoods.StudentT()
+
+        m_svgp = GPflow.svgp.SVGP(X, Y, kern, likelihood, X.copy(),
+                                  whiten=True, q_diag=False)
+        m_vgp = GPflow.vgp.VGP(X, Y, kern, likelihood)
+
+        q_mu = np.random.randn(N, DY)
+        q_sqrt = np.random.randn(N, N, DY)
+
+        m_svgp.q_mu = q_mu
+        m_svgp.q_sqrt = q_sqrt
+
+        m_vgp.q_mu = q_mu
+        m_vgp.q_sqrt = q_sqrt
+
+        L_svgp = m_svgp.compute_log_likelihood()
+        L_vgp = m_vgp.compute_log_likelihood()
+        assert np.allclose(L_svgp, L_vgp)
+
+        pred_svgp = m_svgp.predict_f(Xs)
+        pred_vgp = m_vgp.predict_f(Xs)
+        assert np.allclose(pred_svgp[0], pred_vgp[0])
+        assert np.allclose(pred_svgp[1], pred_vgp[1])
+
+    def test_vgp_vs_opper_archambeau(self):
+        N, Ns, DX, DY = 100, 10, 2, 2
+
+        np.random.seed(1)
+        X = np.random.randn(N, DX)
+        Xs = np.random.randn(Ns, DX)
+        Y = np.random.randn(N, DY)
+
+        kern = GPflow.kernels.Matern52(DX)
+        likelihood = GPflow.likelihoods.StudentT()
+
+        m_vgp = GPflow.vgp.VGP(X, Y, kern, likelihood)
+
+        m_vgp_oa = GPflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
+
+        q_alpha = np.random.randn(N, DX)
+        q_lambda = np.random.randn(N, DX)**2
+
+        m_vgp_oa.q_alpha = q_alpha
+        m_vgp_oa.q_lambda = q_lambda
+
+        K = kern.compute_K_symm(X) + np.eye(N) * GPflow._settings.settings.numerics.jitter_level
+        L = np.linalg.cholesky(K)
+        L_inv = np.linalg.inv(L)
+        K_inv = np.linalg.inv(K)
+
+        mean = K.dot(q_alpha)
+        prec_dnn = K_inv[None, :, :] + np.array([np.diag(l**2) for l in q_lambda.T])
+        var_dnn = np.linalg.inv(prec_dnn)
+
+        m_svgp_unwhitened = GPflow.svgp.SVGP(X, Y, kern, likelihood, X.copy(),
+                                             whiten=False, q_diag=False)
+
+        m_svgp_unwhitened.q_mu = mean
+        m_svgp_unwhitened.q_sqrt = np.transpose(np.linalg.cholesky(var_dnn), [1, 2, 0])
+
+        mean_white_nd = L_inv.dot(mean)
+        var_white_dnn = np.einsum('nN,dNM,mM->dnm', L_inv, var_dnn, L_inv)
+
+        q_sqrt_nnd = np.transpose(np.linalg.cholesky(var_white_dnn), [1, 2, 0])
+
+        m_vgp.q_mu = mean_white_nd
+        m_vgp.q_sqrt = q_sqrt_nnd
+
+        L_vgp = m_vgp.compute_log_likelihood()
+        L_svgp_unwhitened = m_svgp_unwhitened.compute_log_likelihood()
+        L_vgp_oa = m_vgp_oa.compute_log_likelihood()
+        assert np.allclose(L_vgp, L_vgp_oa)
+        assert np.allclose(L_vgp, L_svgp_unwhitened)
+
+        pred_vgp = m_vgp.predict_f(Xs)
+        pred_svgp_unwhitened = m_svgp_unwhitened.predict_f(Xs)
+        pred_vgp_oa = m_vgp_oa.predict_f(Xs)
+
+        assert np.allclose(pred_vgp[0], pred_vgp_oa[0])
+        assert np.allclose(pred_vgp[0], pred_svgp_unwhitened[0])
+        assert np.allclose(pred_vgp[1], pred_vgp_oa[1], rtol=1e-4)  # jitter?
+        assert np.allclose(pred_vgp[1], pred_svgp_unwhitened[1], rtol=1e-4)
+
+    def test_recompile(self):
+        N, DX, DY = 100, 2, 2
+
+        np.random.seed(1)
+        X = np.random.randn(N, DX)
+        Y = np.random.randn(N, DY)
+
+        kern = GPflow.kernels.Matern52(DX)
+        likelihood = GPflow.likelihoods.StudentT()
+
+        m_vgp = GPflow.vgp.VGP(X, Y, kern, likelihood)
+        m_vgp_oa = GPflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
+
+        try:
+            for m in [m_vgp, m_vgp_oa]:
+                m.optimize(maxiter=1)
+                m.X = X[:-1, :]
+                m.Y = Y[:-1, :]
+                m.optimize(maxiter=1)
+        except:
+            assert False, 'array mismatch'
 
 
 if __name__ == '__main__':
