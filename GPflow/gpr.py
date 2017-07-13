@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, Valentine Svensson, alexggmatthews, fujiisoup
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,8 +19,9 @@ from .model import GPModel
 from .densities import multivariate_normal
 from .mean_functions import Zero
 from . import likelihoods
-from .tf_wraps import eye
 from .param import DataHolder
+from ._settings import settings
+float_type = settings.dtypes.float_type
 
 
 class GPR(GPModel):
@@ -36,7 +37,7 @@ class GPR(GPModel):
 
        \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
-    def __init__(self, X, Y, kern, mean_function=Zero()):
+    def __init__(self, X, Y, kern, mean_function=Zero(), name='name'):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -45,7 +46,7 @@ class GPR(GPModel):
         likelihood = likelihoods.Gaussian()
         X = DataHolder(X, on_shape_change='pass')
         Y = DataHolder(Y, on_shape_change='pass')
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name)
         self.num_latent = Y.shape[1]
 
     def build_likelihood(self):
@@ -55,7 +56,7 @@ class GPR(GPModel):
             \log p(Y | theta).
 
         """
-        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=float_type) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
 
@@ -73,13 +74,13 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + eye(tf.shape(self.X)[0]) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=float_type) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
         V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))
-        fmean = tf.matmul(tf.transpose(A), V) + self.mean_function(Xnew)
+        fmean = tf.matmul(A, V, transpose_a=True) + self.mean_function(Xnew)
         if full_cov:
-            fvar = self.kern.K(Xnew) - tf.matmul(tf.transpose(A), A)
+            fvar = self.kern.K(Xnew) - tf.matmul(A, A, transpose_a=True)
             shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             fvar = tf.tile(tf.expand_dims(fvar, 2), shape)
         else:

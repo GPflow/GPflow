@@ -17,36 +17,28 @@
 A collection of wrappers and extensions for tensorflow.
 """
 
-import os
 import tensorflow as tf
-from tensorflow.python.framework import ops
-from ._settings import settings
+import numpy as np
 
 
-def eye(N):
-    """
-    An identitiy matrix
-    """
-    return tf.diag(tf.ones(tf.stack([N, ]), dtype=settings.dtypes.float_type))
+def vec_to_tri( vectors, N ):
+	#Takes a D x M tensor `vectors'
+	#and maps it to a D x matrix_size X matrix_sizetensor
+	#where the where the lower
+	#triangle of each matrix_size x matrix_size matrix 
+	#is constructed by unpacking each M-vector.
+	#Native TensorFlow version of Custom Op by Mark van der Wilk.
+	#def int_shape(x):
+	#	return list(map(int, x.get_shape()))
 
+	#D, M = int_shape(vectors)
+	#N = int( np.floor( 0.5 * np.sqrt( M * 8. + 1. ) - 0.5 ) )
+	#assert( (matri*(N+1)) == (2 * M ) ) #check M is a valid triangle number.	
+	indices = list(zip(*np.tril_indices(N)))
+	indices = tf.constant([ list(i) for i in indices], dtype=tf.int64)
 
-_custom_op_module = tf.load_op_library(os.path.join(os.path.dirname(__file__), 'tfops', 'matpackops.so'))
-vec_to_tri = _custom_op_module.vec_to_tri
-tri_to_vec = _custom_op_module.tri_to_vec
+	def vec_to_tri_vector(vector):
+		return tf.scatter_nd(indices=indices, shape=[N, N], updates=vector)
 
-
-@ops.RegisterGradient("VecToTri")
-def _vec_to_tri_grad(op, grad):
-    return [tri_to_vec(grad)]
-
-
-@ops.RegisterShape("VecToTri")
-def _vec_to_tri_shape(op):
-    in_shape = op.inputs[0].get_shape().with_rank(2)
-    M = in_shape[1].value
-    if M is None:
-        k = None
-    else:
-        k = int((M * 8 + 1) ** 0.5 / 2.0 - 0.5)
-    shape = tf.TensorShape([in_shape[0], k, k])
-    return [shape]
+	return tf.map_fn( vec_to_tri_vector, vectors )
+	

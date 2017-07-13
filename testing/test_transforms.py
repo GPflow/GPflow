@@ -17,6 +17,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 from GPflow import settings
+import warnings
 
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
@@ -25,10 +26,16 @@ np_float_type = np.float32 if float_type is tf.float32 else np.float64
 class TransformTests(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.x = tf.placeholder(float_type)
+        self.x = tf.placeholder(float_type,10)
         self.x_np = np.random.randn(10).astype(np_float_type)
         self.session = tf.Session()
-        self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
+        self.transforms = []
+        for transform in GPflow.transforms.Transform.__subclasses__():
+            if transform!=GPflow.transforms.LowerTriangular:
+                self.transforms.append(transform())
+            else:
+                self.transforms.append(transform(4))
+        #self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
         self.transforms.append(GPflow.transforms.Logistic(7.3, 19.4))
 
     def test_tf_np_forward(self):
@@ -77,7 +84,20 @@ class TestOverflow(unittest.TestCase):
         self.t = GPflow.transforms.Log1pe()
 
     def testOverflow(self):
-        y = self.t.forward(np.array([-300, -10, 10, 300]))
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            y = self.t.forward(np.array([-1000, -300, -10, 10, 300, 1000]))
+            self.assertTrue(len(w) == 0)
+
+        self.assertFalse(np.any(np.isinf(y)))
+        self.assertFalse(np.any(np.isnan(y)))
+
+    def testDivByZero(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            y = self.t.backward(np.array([self.t._lower]))
+            self.assertTrue(len(w) == 0)
+
         self.assertFalse(np.any(np.isinf(y)))
         self.assertFalse(np.any(np.isnan(y)))
 
@@ -88,7 +108,7 @@ class TestLowerTriTransform(unittest.TestCase):
     """
 
     def setUp(self):
-        self.t = GPflow.transforms.LowerTriangular(3)
+        self.t = GPflow.transforms.LowerTriangular(1,3)
 
     def testErrors(self):
         self.t.free_state_size((6, 6, 3))
