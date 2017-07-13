@@ -257,7 +257,7 @@ class Model(Parameterized):
         return r
 
     def _optimize_np(self, method='L-BFGS-B', tol=None, callback=None,
-                     maxiter=1000, **kw):
+                     maxiter=1000, bounds=None, **kw):
         """
         Optimize the model to find the maximum likelihood  or MAP point. Here
         we wrap `scipy.optimize.minimize`, any keyword arguments are passed
@@ -304,6 +304,7 @@ class Model(Parameterized):
                               jac=True,
                               tol=tol,
                               callback=callback,
+                              bounds=bounds,
                               options=options)
         except KeyboardInterrupt:
             print("Caught KeyboardInterrupt, setting \

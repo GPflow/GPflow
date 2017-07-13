@@ -677,6 +677,50 @@ class Coregion(Kern):
         Bdiag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
         return tf.gather(Bdiag, X)
 
+    
+class Gabor(Stationary):
+    '''
+    The SM (Spectral Mixture) kernel is a (parameterized) weighted sum of several Gabor kernels.
+    In other words, The Gabor kernel is the one-unit special case of the SM kernel.
+    It's used for time-dependent pattern discovery.
+    
+    The covariance function for the Gabor kernel is:
+    $$ k(x, x') = e^{-\frac{r^2}{2 l^2}} \cos^{\frac{2 \pi r}{p}} $$
+    where
+    - r is the Euclidean distance between x and x'.
+    - l is the characteristic lengthscale.
+    - p is the period.
+    
+    References:
+    - Gaussian Process Kernels for Pattern Discovery and Extrapolation,
+    ICML, 2013, by Andrew Gordon Wilson and Ryan Prescott Adams.
+    - GPatt: Fast Multidimensional Pattern Extrapolation with Gaussian
+    Processes, arXiv 1310.5288, 2013, by Andrew Gordon Wilson, Elad Gilboa,
+    Arye Nehorai and John P. Cunningham.
+    '''
+    
+    def __init__(self, *args, period=1.0, ARD=False, **kwargs):
+        # ARD is not supported.
+        # other parameters are passed as-is to Stationary.
+        super().__init__(*args, ARD=False, **kwargs)
+        
+        # period is an additional parameter of Gabor to Stationary.
+        self.period = Param(period, transforms.positive)
+        
+        # In the Gabor kernel (not SM), the variance is assumed to be 1.
+        # the SM kernel can change this.
+        self.variance.fixed = True
+    
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+        r = self.euclid_dist(X, X2)
+        
+        return self.variance \
+            * tf.exp(- 0.5 * (r ** 2) / (self.lengthscales ** 2)) \
+            * tf.cos(2 * np.pi * r / self.period)
+    
+    
 
 def make_kernel_names(kern_list):
     """
