@@ -17,19 +17,9 @@
 A collection of wrappers and extensions for tensorflow.
 """
 
-import os
 import tensorflow as tf
-from tensorflow.python.framework import ops
-import warnings
-from ._settings import settings
 import numpy as np
 
-def eye(N):  # pragma: no cover
-    """
-    An identitiy matrix
-    """
-    warnings.warn('tf_wraps.eye is deprecated: use tf.eye instead', np.VisibleDeprecationWarning)
-    return tf.diag(tf.ones(tf.stack([N, ]), dtype=settings.dtypes.float_type))
 
 def vec_to_tri( vectors, N ):
 	#Takes a D x M tensor `vectors'

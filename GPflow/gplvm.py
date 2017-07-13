@@ -127,7 +127,7 @@ class BayesianGPLVM(GPModel):
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
-        log_det_B = 2. * tf.reduce_sum(tf.log(tf.diag_part(LB)))
+        log_det_B = 2. * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
@@ -146,7 +146,7 @@ class BayesianGPLVM(GPModel):
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 -
-                             tf.reduce_sum(tf.diag_part(AAT)))
+                             tf.reduce_sum(tf.matrix_diag_part(AAT)))
         bound -= KL
         return bound
 
