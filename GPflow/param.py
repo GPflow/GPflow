@@ -42,19 +42,19 @@ class Parentable(object):
     def __init__(self):
         self._parent = None
 
-    def _highest_parent_with_condition(self, condition):
+    def find_parents_by_condition(self, condition):
         """
-        A reference to the highest parent satisfying a condition. If no parent satisfies the condition, None is returned
+        Returns a list of references to parents satisfying a given condition. If no parent satisfies the condition,
+        an empty list is returned. The order of list is given by the position in the tree: the first element of the list
+        corresponds to the highest parent satisfying the constraint.
         """
-        if self._parent is None:
-           return self if condition(self) else None
-        else:
-           return self._parent._highest_parent_with_condition(condition) or (self if condition(self) else None)
+        this_node = [self] if condition(self) else []
+        return this_node if self._parent is None else self._parent.find_parents_by_condition(condition) + this_node
 
     @property
     def highest_parent(self):
         """A reference to the top of the tree, usually a Model instance"""
-        return self._highest_parent_with_condition(lambda x: True)
+        return self.find_parents_by_condition(lambda x: True)[0]
 
     @property
     def name(self):
@@ -334,9 +334,9 @@ class Param(Parentable):
         """
         object.__setattr__(self, key, value)
         if key in recompile_keys:
-            recompileable_parent = self._highest_parent_with_condition(lambda x: hasattr(x, '_needs_recompile'))
-            if recompileable_parent is not None:
-                recompileable_parent._needs_recompile = True
+            recompileable_parents = self.find_parents_by_condition(lambda x: hasattr(x, '_needs_recompile'))
+            if recompileable_parents:
+                recompileable_parents[0]._needs_recompile = True
 
     def __str__(self, prepend=''):
         return prepend + \
@@ -470,9 +470,9 @@ class DataHolder(Parentable):
                                   (perhaps make the model again from scratch?)")
             elif self.on_shape_change == 'recompile':
                 self._array = array.copy()
-                recompileable_parent = self._highest_parent_with_condition(lambda x: hasattr(x, '_needs_recompile'))
-                if recompileable_parent is not None:
-                    recompileable_parent._needs_recompile = True
+                recompileable_parents = self.find_parents_by_condition(lambda x: hasattr(x, '_needs_recompile'))
+                if recompileable_parents:
+                    recompileable_parents[0]._needs_recompile = True
             elif self.on_shape_change == 'pass':
                 self._array = array.copy()
             else:
@@ -698,9 +698,9 @@ class Parameterized(Parentable):
             # recompile if necessary.
             if isinstance(p, (Param, Parameterized)) and isinstance(value, (Param, Parameterized)):
                 p._parent = None  # unlink the old Parameter from this tree
-                recompileable_parent = self._highest_parent_with_condition(lambda x: hasattr(x, '_needs_recompile'))
-                if recompileable_parent is not None:
-                    recompileable_parent._needs_recompile = True
+                recompileable_parents = self.find_parents_by_condition(lambda x: hasattr(x, '_needs_recompile'))
+                if recompileable_parents:
+                    recompileable_parents[0]._needs_recompile = True
                 elif key is not '_parent':
                     # No parent with recompile flag: for this corner case, no _needs_recompile is set in the process
                     # so _kill_autoflow needs to be called separately.
