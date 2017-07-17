@@ -14,10 +14,13 @@
 
 import numpy as np
 import tensorflow as tf
+from nose.plugins.attrib import attr
 import unittest
 import GPflow
 
 
+
+@attr(speed='slow')
 class TestEquivalence(unittest.TestCase):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
