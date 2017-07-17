@@ -80,13 +80,13 @@ class TestMethods(unittest.TestCase):
         for m in self.ms:
             mf, vf = m.predict_f_gradients(self.Xs)
             self.assertTrue(mf.shape == vf.shape)
-            self.assertTrue(mf.shape == (10, 2))
+            self.assertTrue(mf.shape == (10, 2, 1))
 
     def test_predict_y_gradients(self):
         for m in self.ms:
             mf, vf = m.predict_y_gradients(self.Xs)
             self.assertTrue(mf.shape == vf.shape)
-            self.assertTrue(mf.shape == (10, 2))
+            self.assertTrue(mf.shape == (10, 2, 1))
 
 class TestSVGP(unittest.TestCase):
     """
