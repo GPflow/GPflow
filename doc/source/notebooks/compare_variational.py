@@ -1,4 +1,4 @@
-import GPflow
+import gpflow
 import numpy as np
 from matplotlib import pyplot as plt
 from IPython import embed

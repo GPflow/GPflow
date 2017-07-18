@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-import GPflow
+import gpflow
 import tensorflow as tf
 import os
 import numpy as np

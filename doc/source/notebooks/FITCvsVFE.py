@@ -1,5 +1,5 @@
 from __future__ import print_function
-import GPflow
+import gpflow
 import tensorflow as tf
 import os
 import numpy as np
