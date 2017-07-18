@@ -1,4 +1,4 @@
-# Copyright 2016 the GPflow authors.
+# Copyright 2016 the gpflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
 
 from functools import reduce
 import unittest
-import GPflow
+import gpflow
 import tensorflow as tf
 import numpy as np
-from GPflow import settings
+from gpflow import settings
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 try:
@@ -28,12 +28,12 @@ except ImportError:
 
 class NamingTests(unittest.TestCase):
     def test_unnamed(self):
-        p = GPflow.param.Param(1)
+        p = gpflow.param.Param(1)
         self.assertTrue(p.name == 'unnamed')
 
     def test_bad_parent(self):
-        p = GPflow.param.Param(1)
-        m = GPflow.model.Model()
+        p = gpflow.param.Param(1)
+        m = gpflow.model.Model()
         p._parent = m  # do not do this.
         with self.assertRaises(ValueError):
             print(p.name)
@@ -42,12 +42,12 @@ class NamingTests(unittest.TestCase):
 class ParamTestsScalar(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.m = GPflow.param.Parameterized()
-        self.m.p = GPflow.param.Param(1.0)
+        self.m = gpflow.param.Parameterized()
+        self.m.p = gpflow.param.Param(1.0)
 
     def testAssign(self):
         self.m.p = 2.0
-        self.assertTrue(isinstance(self.m.p, GPflow.param.Param))
+        self.assertTrue(isinstance(self.m.p, gpflow.param.Param))
         self.assertTrue(self.m.get_free_state() == 2.0)
 
     def testValue(self):
@@ -65,7 +65,7 @@ class ParamTestsScalar(unittest.TestCase):
 
     def testReplacement(self):
         old_p = self.m.p
-        new_p = GPflow.param.Param(3.0)
+        new_p = gpflow.param.Param(3.0)
         self.m.p = new_p
         # Parameterized instances should not have _needs_recompile
         self.assertFalse(hasattr(self.m, '_needs_recompile'))
@@ -119,13 +119,13 @@ class ParamTestsScalar(unittest.TestCase):
         self.assertTrue(self.m._needs_recompile)
 
         self.m._needs_recompile = False
-        self.m.p.prior = GPflow.priors.Gaussian(0, 1)
+        self.m.p.prior = gpflow.priors.Gaussian(0, 1)
         self.assertTrue(self.m._needs_recompile)
 
     def testTFMode(self):
         x = tf.placeholder('float64')
         self.m.make_tf_array(x)
-        self.assertTrue(isinstance(self.m.p, GPflow.param.Param))
+        self.assertTrue(isinstance(self.m.p, gpflow.param.Param))
         with self.m.tf_mode():
             self.assertTrue(isinstance(self.m.p, tf.Tensor))
 
@@ -133,10 +133,10 @@ class ParamTestsScalar(unittest.TestCase):
 class ParamTestsDeeper(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.m = GPflow.param.Parameterized()
-        self.m.foo = GPflow.param.Parameterized()
-        self.m.foo.bar = GPflow.param.Parameterized()
-        self.m.foo.bar.baz = GPflow.param.Param(1.0)
+        self.m = gpflow.param.Parameterized()
+        self.m.foo = gpflow.param.Parameterized()
+        self.m.foo.bar = gpflow.param.Parameterized()
+        self.m.foo.bar.baz = gpflow.param.Param(1.0)
 
     def testHighestParent(self):
         self.assertTrue(self.m.foo.highest_parent is self.m)
@@ -145,7 +145,7 @@ class ParamTestsDeeper(unittest.TestCase):
 
     def testReplacement(self):
         old_p = self.m.foo.bar.baz
-        new_p = GPflow.param.Param(3.0)
+        new_p = gpflow.param.Param(3.0)
         self.m.foo.bar.baz = new_p
         # Parameterized instances should not have _needs_recompile
         self.assertFalse(hasattr(self.m, '_needs_recompile'))
@@ -153,8 +153,8 @@ class ParamTestsDeeper(unittest.TestCase):
 
     def testReplacement2(self):
         old_p = self.m.foo.bar
-        new_p = GPflow.param.Parameterized()
-        new_p.baz = GPflow.param.Param(3.0)
+        new_p = gpflow.param.Parameterized()
+        new_p.baz = gpflow.param.Param(3.0)
         self.m.foo.bar = new_p
         self.assertTrue(new_p.baz.highest_parent is self.m)
         self.assertFalse(old_p.highest_parent is self.m)
@@ -210,14 +210,14 @@ class ParamTestsDeeper(unittest.TestCase):
         self.assertTrue(self.m._needs_recompile)
 
         self.m._needs_recompile = False
-        self.m.foo.bar.baz.prior = GPflow.priors.Gaussian(0, 1)
+        self.m.foo.bar.baz.prior = gpflow.priors.Gaussian(0, 1)
         self.assertTrue(self.m._needs_recompile)
 
     def testTFMode(self):
         x = tf.placeholder('float64')
 
         self.m.make_tf_array(x)
-        self.assertTrue(isinstance(self.m.foo.bar.baz, GPflow.param.Param))
+        self.assertTrue(isinstance(self.m.foo.bar.baz, gpflow.param.Param))
         with self.m.tf_mode():
             self.assertTrue(isinstance(self.m.foo.bar.baz, tf.Tensor))
 
@@ -225,10 +225,10 @@ class ParamTestsDeeper(unittest.TestCase):
 class ParamTestsWider(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.m = GPflow.param.Parameterized()
-        self.m.foo = GPflow.param.Param(1.0)
-        self.m.bar = GPflow.param.Param(np.arange(10))
-        self.m.baz = GPflow.param.Param(np.random.randn(3, 3))
+        self.m = gpflow.param.Parameterized()
+        self.m.foo = gpflow.param.Param(1.0)
+        self.m.bar = gpflow.param.Param(np.arange(10))
+        self.m.baz = gpflow.param.Param(np.random.randn(3, 3))
 
     def testHighestParent(self):
         self.assertTrue(self.m.foo.highest_parent is self.m)
@@ -299,13 +299,13 @@ class ParamTestsWider(unittest.TestCase):
         self.assertTrue(self.m._needs_recompile)
 
         self.m._needs_recompile = False
-        self.m.bar.prior = GPflow.priors.Gaussian(0, 1)
+        self.m.bar.prior = gpflow.priors.Gaussian(0, 1)
         self.assertTrue(self.m._needs_recompile)
 
     def testTFMode(self):
         x = tf.placeholder('float64')
         self.m.make_tf_array(x)
-        self.assertTrue(all([isinstance(p, GPflow.param.Param) for p in (self.m.foo, self.m.bar, self.m.baz)]))
+        self.assertTrue(all([isinstance(p, gpflow.param.Param) for p in (self.m.foo, self.m.bar, self.m.baz)]))
         with self.m.tf_mode():
             self.assertTrue(all([isinstance(p, tf.Tensor)
                                  for p in (self.m.foo, self.m.bar, self.m.baz)]))
@@ -322,7 +322,7 @@ class SingleParamterizedInvariantTest(unittest.TestCase):
         """
         Test we raise when a Parameterized object references itself
         """
-        m = GPflow.param.Parameterized()
+        m = gpflow.param.Parameterized()
 
         with self.assertRaises(ValueError):
             m.foo = m
@@ -331,8 +331,8 @@ class SingleParamterizedInvariantTest(unittest.TestCase):
         """
         Test we raise when we reference the same Parameterized object in a descendent node
         """
-        m = GPflow.param.Parameterized()
-        m.foo = GPflow.param.Parameterized()
+        m = gpflow.param.Parameterized()
+        m.foo = gpflow.param.Parameterized()
 
         with self.assertRaises(ValueError):
             m.foo.bar = m
@@ -341,9 +341,9 @@ class SingleParamterizedInvariantTest(unittest.TestCase):
         """
         Test we raise when we reference the same Parameterized object in an ancestor node
         """
-        m = GPflow.param.Parameterized()
-        m.foo = GPflow.param.Parameterized()
-        m.foo.bar = GPflow.param.Parameterized()
+        m = gpflow.param.Parameterized()
+        m.foo = gpflow.param.Parameterized()
+        m.foo.bar = gpflow.param.Parameterized()
 
         with self.assertRaises(ValueError):
             m.baz = m.foo.bar
@@ -352,11 +352,11 @@ class SingleParamterizedInvariantTest(unittest.TestCase):
         """
         Test we raise when we reference the same Parameterized object in a sibling node
         """
-        m = GPflow.param.Parameterized()
-        m.foo = GPflow.param.Parameterized()
-        m.foo.bar = GPflow.param.Parameterized()
+        m = gpflow.param.Parameterized()
+        m.foo = gpflow.param.Parameterized()
+        m.foo.bar = gpflow.param.Parameterized()
 
-        m.boo = GPflow.param.Parameterized()
+        m.boo = gpflow.param.Parameterized()
 
         with self.assertRaises(ValueError):
             m.boo.far = m.foo.bar
@@ -365,18 +365,18 @@ class SingleParamterizedInvariantTest(unittest.TestCase):
         """
         Adding the same Paramterized object to another tree is fine.
         """
-        m1 = GPflow.param.Parameterized()
-        m1.foo = GPflow.param.Parameterized()
+        m1 = gpflow.param.Parameterized()
+        m1.foo = gpflow.param.Parameterized()
 
-        m2 = GPflow.param.Parameterized()
+        m2 = gpflow.param.Parameterized()
         m2.foo = m1.foo
 
     def testReassign(self):
         """
         We should be able to reassign the same value to the same param
         """
-        m1 = GPflow.param.Parameterized()
-        p = GPflow.param.Parameterized()
+        m1 = gpflow.param.Parameterized()
+        p = gpflow.param.Parameterized()
         m1.foo = p  # assign
         m1.foo = p  # reassign
 
@@ -392,9 +392,9 @@ class SingleParamInvariantTest(unittest.TestCase):
         """
         Test we raise when the same Param object is added further down the tree
         """
-        m = GPflow.param.Parameterized()
-        m.p = GPflow.param.Param(1)
-        m.foo = GPflow.param.Parameterized()
+        m = gpflow.param.Parameterized()
+        m.p = gpflow.param.Param(1)
+        m.foo = gpflow.param.Parameterized()
 
         with self.assertRaises(ValueError):
             m.foo.p = m.p
@@ -403,9 +403,9 @@ class SingleParamInvariantTest(unittest.TestCase):
         """
         Test we raise when we reference the same Param object in a an ancestor node
         """
-        m = GPflow.param.Parameterized()
-        m.foo = GPflow.param.Parameterized()
-        m.foo.p = GPflow.param.Param(1)
+        m = gpflow.param.Parameterized()
+        m.foo = gpflow.param.Parameterized()
+        m.foo.p = gpflow.param.Param(1)
 
         with self.assertRaises(ValueError):
             m.p = m.foo.p
@@ -414,11 +414,11 @@ class SingleParamInvariantTest(unittest.TestCase):
         """
         Test we raise when we reference the same Param object in a sibling node
         """
-        m = GPflow.param.Parameterized()
-        m.foo = GPflow.param.Parameterized()
-        m.foo.p = GPflow.param.Param(1)
+        m = gpflow.param.Parameterized()
+        m.foo = gpflow.param.Parameterized()
+        m.foo.p = gpflow.param.Param(1)
 
-        m.bar = GPflow.param.Parameterized()
+        m.bar = gpflow.param.Parameterized()
 
         with self.assertRaises(ValueError):
             m.bar.p = m.foo.p
@@ -427,54 +427,54 @@ class SingleParamInvariantTest(unittest.TestCase):
         """
         Adding the same Param object to another tree is fine.
         """
-        m1 = GPflow.param.Parameterized()
-        m1.foo = GPflow.param.Param(1)
+        m1 = gpflow.param.Parameterized()
+        m1.foo = gpflow.param.Param(1)
 
-        m2 = GPflow.param.Parameterized()
+        m2 = gpflow.param.Parameterized()
         m2.foo = m1.foo
 
     def testReassign(self):
         """
         We should be able to reassign the same value to the same param
         """
-        m1 = GPflow.param.Parameterized()
-        p = GPflow.param.Param(1)
+        m1 = gpflow.param.Parameterized()
+        p = gpflow.param.Param(1)
         m1.foo = p  # assign
         m1.foo = p  # reassign
 
 
 class TestParamList(unittest.TestCase):
     def test_construction(self):
-        GPflow.param.ParamList([])
-        GPflow.param.ParamList([GPflow.param.Param(1)])
+        gpflow.param.ParamList([])
+        gpflow.param.ParamList([gpflow.param.Param(1)])
         with self.assertRaises(AssertionError):
-            GPflow.param.ParamList([GPflow.param.Param(1), 'stringsnotallowed'])
+            gpflow.param.ParamList([gpflow.param.Param(1), 'stringsnotallowed'])
         with self.assertRaises(AssertionError):
             # tuples not valid in constuctor:
-            GPflow.param.ParamList((GPflow.param.Param(1),))
+            gpflow.param.ParamList((gpflow.param.Param(1),))
         with self.assertRaises(AssertionError):
             # param objects not valid in constructor (must be in list)
-            GPflow.param.ParamList(GPflow.param.Param(1))
+            gpflow.param.ParamList(gpflow.param.Param(1))
 
     def test_naming(self):
-        p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
-        GPflow.param.ParamList([p1, p2])
+        p1 = gpflow.param.Param(1.2)
+        p2 = gpflow.param.Param(np.array([3.4, 5.6], np_float_type))
+        gpflow.param.ParamList([p1, p2])
         self.assertTrue(p1.name == 'item0')
         self.assertTrue(p2.name == 'item1')
 
     def test_connected(self):
-        p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
-        l = GPflow.param.ParamList([p1, p2])
+        p1 = gpflow.param.Param(1.2)
+        p2 = gpflow.param.Param(np.array([3.4, 5.6], np_float_type))
+        l = gpflow.param.ParamList([p1, p2])
         x = l.get_free_state()
         x.sort()
         self.assertTrue(np.all(x == np.array([1.2, 3.4, 5.6], np_float_type)))
 
     def test_setitem(self):
-        p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
-        l = GPflow.param.ParamList([p1, p2])
+        p1 = gpflow.param.Param(1.2)
+        p2 = gpflow.param.Param(np.array([3.4, 5.6], np_float_type))
+        l = gpflow.param.ParamList([p1, p2])
 
         l[0] = 1.2
         self.assertTrue(p1._array == 1.2)
@@ -483,12 +483,12 @@ class TestParamList(unittest.TestCase):
         self.assertTrue(np.all(p2._array == np.array([1.1, 2.2], np_float_type)))
 
         with self.assertRaises(TypeError):
-            l[0] = GPflow.param.Param(12)
+            l[0] = gpflow.param.Param(12)
 
     def test_append(self):
-        p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
-        l = GPflow.param.ParamList([p1])
+        p1 = gpflow.param.Param(1.2)
+        p2 = gpflow.param.Param(np.array([3.4, 5.6], np_float_type))
+        l = gpflow.param.ParamList([p1])
         l.append(p2)
         self.assertTrue(p2 in l.sorted_params)
 
@@ -496,17 +496,17 @@ class TestParamList(unittest.TestCase):
             l.append('foo')
 
     def test_len(self):
-        p1 = GPflow.param.Param(1.2)
-        p2 = GPflow.param.Param(np.array([3.4, 5.6], np_float_type))
-        l = GPflow.param.ParamList([p1])
+        p1 = gpflow.param.Param(1.2)
+        p2 = gpflow.param.Param(np.array([3.4, 5.6], np_float_type))
+        l = gpflow.param.ParamList([p1])
         l.append(p2)
         self.assertTrue(len(l) == 2)
 
     def test_with_parameterized(self):
-        pzd = GPflow.param.Parameterized()
-        p = GPflow.param.Param(1.2)
+        pzd = gpflow.param.Parameterized()
+        p = gpflow.param.Param(1.2)
         pzd.p = p
-        l = GPflow.param.ParamList([pzd])
+        l = gpflow.param.ParamList([pzd])
 
         # test assignment:
         l[0].p = 5
@@ -519,11 +519,11 @@ class TestParamList(unittest.TestCase):
         self.assertFalse(pzd._tf_mode)
 
     def test_in_model(self):
-        class Foo(GPflow.model.Model):
+        class Foo(gpflow.model.Model):
             def __init__(self):
-                GPflow.model.Model.__init__(self)
-                self.l = GPflow.param.ParamList([
-                    GPflow.param.Param(1), GPflow.param.Param(12)])
+                gpflow.model.Model.__init__(self)
+                self.l = gpflow.param.ParamList([
+                    gpflow.param.Param(1), gpflow.param.Param(12)])
 
             def build_likelihood(self):
                 return -reduce(tf.add, [tf.square(x) for x in self.l])
@@ -540,7 +540,7 @@ class TestPickleAndDict(unittest.TestCase):
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)
-        self.m = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
+        self.m = gpflow.gpr.GPR(X, Y, kern=gpflow.kernels.RBF(1))
 
     def test(self):
         # pickle and reload the model
@@ -555,7 +555,7 @@ class TestPickleAndDict(unittest.TestCase):
 
 class TestDictEmpty(unittest.TestCase):
     def setUp(self):
-        self.m = GPflow.model.Model()
+        self.m = gpflow.model.Model()
 
     def test(self):
         d = self.m.get_parameter_dict()
@@ -565,9 +565,9 @@ class TestDictEmpty(unittest.TestCase):
 
 class TestDictSimple(unittest.TestCase):
     def setUp(self):
-        self.m = GPflow.model.Model()
-        self.m.p1 = GPflow.param.Param(np.random.randn(3, 2))
-        self.m.p2 = GPflow.param.Param(np.random.randn(10))
+        self.m = gpflow.model.Model()
+        self.m.p1 = gpflow.param.Param(np.random.randn(3, 2))
+        self.m.p2 = gpflow.param.Param(np.random.randn(10))
 
     def test(self):
         d = self.m.get_parameter_dict()
@@ -584,7 +584,7 @@ class TestDictSVGP(unittest.TestCase):
         X = self.rng.randn(10, 1)
         Y = self.rng.randn(10, 1)
         Z = self.rng.randn(5, 1)
-        self.m = GPflow.svgp.SVGP(X, Y, Z=Z, likelihood=GPflow.likelihoods.Gaussian(), kern=GPflow.kernels.RBF(1))
+        self.m = gpflow.svgp.SVGP(X, Y, Z=Z, likelihood=gpflow.likelihoods.Gaussian(), kern=gpflow.kernels.RBF(1))
 
     def test(self):
         loglik1 = self.m.compute_log_likelihood()
@@ -608,11 +608,11 @@ class TestFixWithPrior(unittest.TestCase):
     """
 
     def test(self):
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Param(1.0, GPflow.transforms.positive)
-        m.pp = GPflow.param.Param(1.0, GPflow.transforms.positive)
-        m.p.prior = GPflow.priors.Gamma(1, 1)
-        m.pp.prior = GPflow.priors.Gamma(1, 1)
+        m = gpflow.model.Model()
+        m.p = gpflow.param.Param(1.0, gpflow.transforms.positive)
+        m.pp = gpflow.param.Param(1.0, gpflow.transforms.positive)
+        m.p.prior = gpflow.priors.Gamma(1, 1)
+        m.pp.prior = gpflow.priors.Gamma(1, 1)
         m.p.fixed = True
         m.build_likelihood = lambda: tf.zeros([1], tf.float64)
         m.optimize(disp=1, maxiter=10)
@@ -624,15 +624,15 @@ class TestRandomizeDefault(unittest.TestCase):
 
     def test(self):
         np.random.seed(1)
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Param(1.0)
-        m.pp = GPflow.param.Param(1.0, GPflow.transforms.Log1pe())
-        m.pf = GPflow.param.Param(1.0)
+        m = gpflow.model.Model()
+        m.p = gpflow.param.Param(1.0)
+        m.pp = gpflow.param.Param(1.0, gpflow.transforms.Log1pe())
+        m.pf = gpflow.param.Param(1.0)
         m.pf.fixed = True
 
-        m.pmd = GPflow.param.Param(np.ones((5, 2)))
-        ltr = GPflow.transforms.LowerTriangular(1,2).forward(np.ones(2 * 10))
-        m.pmd2 = GPflow.param.Param(ltr, transform=GPflow.transforms.LowerTriangular(1,2))
+        m.pmd = gpflow.param.Param(np.ones((5, 2)))
+        ltr = gpflow.transforms.LowerTriangular(1,2).forward(np.ones(2 * 10))
+        m.pmd2 = gpflow.param.Param(ltr, transform=gpflow.transforms.LowerTriangular(1,2))
 
         #should work as (pseudo) random vals a.s. are not 1.0
         m.p.randomize()
@@ -667,18 +667,18 @@ class TestRandomizePrior(unittest.TestCase):
         np.random.seed(1)
         from inspect import getargspec
 
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Param(1.0)
-        m.pmd = GPflow.param.Param(np.eye(5), transform=GPflow.transforms.DiagMatrix())
+        m = gpflow.model.Model()
+        m.p = gpflow.param.Param(1.0)
+        m.pmd = gpflow.param.Param(np.eye(5), transform=gpflow.transforms.DiagMatrix())
 
-        priors = [obj for obj in GPflow.priors.__dict__.values() if
+        priors = [obj for obj in gpflow.priors.__dict__.values() if
                   isinstance(obj, type) and
-                  issubclass(obj, GPflow.priors.Prior) and
-                  obj is not GPflow.priors.Prior]
+                  issubclass(obj, gpflow.priors.Prior) and
+                  obj is not gpflow.priors.Prior]
 
         with self.assertRaises(NotImplementedError):
             m.p = 1.0
-            m.p.prior = GPflow.priors.Prior()
+            m.p.prior = gpflow.priors.Prior()
             m.p.randomize()
 
         for prior in priors:
@@ -710,11 +710,11 @@ class TestRandomizeFeedPriors(unittest.TestCase):
 
     def test(self):
         np.random.seed(1)
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Param(1.0)
+        m = gpflow.model.Model()
+        m.p = gpflow.param.Param(1.0)
         with self.assertRaises(NotImplementedError):
-            m.p.randomize(distributions={m.p: GPflow.priors.Prior()})
-        m.p.randomize(distributions={m.p: GPflow.priors.Gaussian(0, 1)})
+            m.p.randomize(distributions={m.p: gpflow.priors.Prior()})
+        m.p.randomize(distributions={m.p: gpflow.priors.Gaussian(0, 1)})
         self.assertFalse(m.p.value == 1.0)
 
 
@@ -725,15 +725,15 @@ class TestRandomizeHierarchical(unittest.TestCase):
 
     def test(self):
         np.random.seed(1)
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Param(1.0)
-        m.p2 = GPflow.param.Param(1.0)
-        m.m = GPflow.model.Model()
-        m.m.p = GPflow.param.Param(1.0)
-        m.m.p2 = GPflow.param.Param(1.0)
+        m = gpflow.model.Model()
+        m.p = gpflow.param.Param(1.0)
+        m.p2 = gpflow.param.Param(1.0)
+        m.m = gpflow.model.Model()
+        m.m.p = gpflow.param.Param(1.0)
+        m.m.p2 = gpflow.param.Param(1.0)
 
-        m.p2.prior = GPflow.priors.Gaussian(0, 1)
-        m.m.p2.prior = GPflow.priors.Gaussian(0, 1)
+        m.p2.prior = gpflow.priors.Gaussian(0, 1)
+        m.m.p2.prior = gpflow.priors.Gaussian(0, 1)
         m.randomize()
 
         self.assertFalse(m.p.value == 1.0)
@@ -746,9 +746,9 @@ class TestScopes(unittest.TestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
-        k = GPflow.kernels.RBF(1)
+        k = gpflow.kernels.RBF(1)
         Y = rng.randn(10, 1)
-        self.m = GPflow.gpr.GPR(X, Y, k)
+        self.m = gpflow.gpr.GPR(X, Y, k)
         self.m._compile()
 
     def test_likelihood_name(self):

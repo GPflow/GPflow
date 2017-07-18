@@ -146,7 +146,7 @@ class Kern(Parameterized):
 
     def _check_quadrature(self):
         if settings.numerics.ekern_quadrature == "warn":
-            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use GPflow.ekernels instead." %
+            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use gpflow.ekernels instead." %
                           str(type(self)))
         if settings.numerics.ekern_quadrature == "error" or self.num_gauss_hermite_points == 0:
             raise RuntimeError("Settings indicate that quadrature may not be used.")

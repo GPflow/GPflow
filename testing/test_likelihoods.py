@@ -2,8 +2,8 @@ import unittest
 import six
 import tensorflow as tf
 import numpy as np
-import GPflow
-from GPflow import settings
+import gpflow
+from gpflow import settings
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
@@ -12,18 +12,18 @@ class TestSetup(object):
     def __init__(self, likelihood, Y, tolerance):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
         self.is_analytic = six.get_unbound_function(likelihood.predict_density) is not\
-            six.get_unbound_function(GPflow.likelihoods.Likelihood.predict_density)
+            six.get_unbound_function(gpflow.likelihoods.Likelihood.predict_density)
 
 
 def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
-    for likelihoodClass in GPflow.likelihoods.Likelihood.__subclasses__():
-        if likelihoodClass == GPflow.likelihoods.Ordinal:
+    for likelihoodClass in gpflow.likelihoods.Likelihood.__subclasses__():
+        if likelihoodClass == gpflow.likelihoods.Ordinal:
             test_setups.append(TestSetup(likelihoodClass(np.array([-1, 1])), rng.randint(0, 3, (10, 2)), 1e-6))
-        elif likelihoodClass == GPflow.likelihoods.SwitchedLikelihood:
+        elif likelihoodClass == gpflow.likelihoods.SwitchedLikelihood:
             continue  # switched likelihood tested separately
-        elif (likelihoodClass == GPflow.likelihoods.MultiClass):
+        elif (likelihoodClass == gpflow.likelihoods.MultiClass):
             if includeMultiClass:
                 sample = rng.randn(10, 2)
                 # Multiclass needs a less tight tolerance due to presence of clipping.
@@ -34,16 +34,16 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
             test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2).astype(np_float_type), 1e-6))
 
     if addNonStandardLinks:
-        test_setups.append(TestSetup(GPflow.likelihoods.Poisson(invlink=tf.square),
+        test_setups.append(TestSetup(gpflow.likelihoods.Poisson(invlink=tf.square),
                                      rng.rand(10, 2).astype(np_float_type), 1e-6))
-        test_setups.append(TestSetup(GPflow.likelihoods.Exponential(invlink=tf.square),
+        test_setups.append(TestSetup(gpflow.likelihoods.Exponential(invlink=tf.square),
                                      rng.rand(10, 2).astype(np_float_type), 1e-6))
-        test_setups.append(TestSetup(GPflow.likelihoods.Gamma(invlink=tf.square),
+        test_setups.append(TestSetup(gpflow.likelihoods.Gamma(invlink=tf.square),
                                      rng.rand(10, 2).astype(np_float_type), 1e-6))
 
         def sigmoid(x):
             return 1./(1 + tf.exp(-x))
-        test_setups.append(TestSetup(GPflow.likelihoods.Bernoulli(invlink=sigmoid),
+        test_setups.append(TestSetup(gpflow.likelihoods.Bernoulli(invlink=sigmoid),
                                      rng.rand(10, 2).astype(np_float_type), 1e-6))
     return test_setups
 
@@ -126,7 +126,7 @@ class TestQuadrature(unittest.TestCase):
             # 'build' the functions
             with l.tf_mode():
                 F1 = l.variational_expectations(self.Fmu, self.Fvar, y)
-                F2 = GPflow.likelihoods.Likelihood.variational_expectations(l, self.Fmu, self.Fvar, y)
+                F2 = gpflow.likelihoods.Likelihood.variational_expectations(l, self.Fmu, self.Fvar, y)
             # compile and run the functions:
             F1 = tf.Session().run(F1, feed_dict={x: x_data})
             F2 = tf.Session().run(F2, feed_dict={x: x_data})
@@ -146,7 +146,7 @@ class TestQuadrature(unittest.TestCase):
             # 'build' the functions
             with l.tf_mode():
                 F1 = l.predict_density(self.Fmu, self.Fvar, y)
-                F2 = GPflow.likelihoods.Likelihood.predict_density(l, self.Fmu, self.Fvar, y)
+                F2 = gpflow.likelihoods.Likelihood.predict_density(l, self.Fmu, self.Fvar, y)
             # compile and run the functions:
             F1 = tf.Session().run(F1, feed_dict={x: x_data})
             F2 = tf.Session().run(F2, feed_dict={x: x_data})
@@ -172,7 +172,7 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         F = tf.placeholder(float_type)
         x = tf.placeholder(float_type)
         F_data = np.ones((nPoints, nClasses))
-        l = GPflow.likelihoods.MultiClass(nClasses)
+        l = gpflow.likelihoods.MultiClass(nClasses)
         l.invlink.epsilon = epsilon
         rng = np.random.RandomState(1)
         Y = rng.randint(nClasses, size=(nPoints, 1))
@@ -196,13 +196,13 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         num_points = 100
         mock_prob = 0.73
 
-        class MockRobustMax(GPflow.likelihoods.RobustMax):
+        class MockRobustMax(gpflow.likelihoods.RobustMax):
             def prob_is_largest(self, Y, Fmu, Fvar, gh_x, gh_w):
                 return tf.ones((num_points, 1)) * mock_prob
 
         epsilon = 0.231
         num_classes = 5
-        l = GPflow.likelihoods.MultiClass(num_classes, invlink=MockRobustMax(num_classes, epsilon))
+        l = gpflow.likelihoods.MultiClass(num_classes, invlink=MockRobustMax(num_classes, epsilon))
 
         F = tf.placeholder(float_type)
         y = tf.placeholder(float_type)
@@ -233,7 +233,7 @@ class TestMulticlassIndexFix(unittest.TestCase):
     def testA(self):
         mu, var = tf.placeholder(float_type), tf.placeholder(float_type)
         Y = tf.placeholder(tf.int32)
-        lik = GPflow.likelihoods.MultiClass(3)
+        lik = gpflow.likelihoods.MultiClass(3)
         ve = lik.variational_expectations(mu, var, Y)
         tf.gradients(tf.reduce_sum(ve), mu)
 
@@ -257,12 +257,12 @@ class TestSwitchedLikelihood(unittest.TestCase):
         self.F_sw = np.concatenate(self.F_list)[self.Y_perm, :]
         self.Fvar_sw = np.concatenate(self.Fvar_list)[self.Y_perm, :]
         # likelihoods
-        self.likelihoods = [GPflow.likelihoods.Gaussian(),
-                            GPflow.likelihoods.Gaussian(),
-                            GPflow.likelihoods.Gaussian()]
+        self.likelihoods = [gpflow.likelihoods.Gaussian(),
+                            gpflow.likelihoods.Gaussian(),
+                            gpflow.likelihoods.Gaussian()]
         for lik in self.likelihoods:
             lik.variance = np.exp(rng.randn(1))
-        self.switched_likelihood = GPflow.likelihoods.SwitchedLikelihood(self.likelihoods)
+        self.switched_likelihood = gpflow.likelihoods.SwitchedLikelihood(self.likelihoods)
 
         # initialize switched likelihood
         self.sess = tf.Session()

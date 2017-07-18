@@ -1,4 +1,4 @@
-# Copyright 2016 the GPflow authors.
+# Copyright 2016 the gpflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.from __future__ import print_function
 
 from __future__ import print_function
-import GPflow
+import gpflow
 import tensorflow as tf
 import numpy as np
 import unittest
@@ -24,10 +24,10 @@ class TestOptimize(unittest.TestCase):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
 
-        class Quadratic(GPflow.model.Model):
+        class Quadratic(gpflow.model.Model):
             def __init__(self):
-                GPflow.model.Model.__init__(self)
-                self.x = GPflow.param.Param(rng.randn(10))
+                gpflow.model.Model.__init__(self)
+                self.x = gpflow.param.Param(rng.randn(10))
 
             def build_likelihood(self):
                 return -tf.reduce_sum(tf.square(self.x))
@@ -53,8 +53,8 @@ class TestOptimize(unittest.TestCase):
 
 class TestNeedsRecompile(unittest.TestCase):
     def setUp(self):
-        self.m = GPflow.model.Model()
-        self.m.p = GPflow.param.Param(1.0)
+        self.m = gpflow.model.Model()
+        self.m.p = gpflow.param.Param(1.0)
 
     def test_fix(self):
         self.m._needs_recompile = False
@@ -63,28 +63,28 @@ class TestNeedsRecompile(unittest.TestCase):
 
     def test_replace_param(self):
         self.m._needs_recompile = False
-        new_p = GPflow.param.Param(3.0)
+        new_p = gpflow.param.Param(3.0)
         self.m.p = new_p
         self.assertTrue(self.m._needs_recompile)
 
     def test_set_prior(self):
         self.m._needs_recompile = False
-        self.m.p.prior = GPflow.priors.Gaussian(0, 1)
+        self.m.p.prior = gpflow.priors.Gaussian(0, 1)
         self.assertTrue(self.m._needs_recompile)
 
     def test_set_transform(self):
         self.m._needs_recompile = False
-        self.m.p.transform = GPflow.transforms.Identity()
+        self.m.p.transform = gpflow.transforms.Identity()
         self.assertTrue(self.m._needs_recompile)
 
     def test_replacement(self):
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Parameterized()
-        m.p.p = GPflow.param.Param(1.0)
+        m = gpflow.model.Model()
+        m.p = gpflow.param.Parameterized()
+        m.p.p = gpflow.param.Param(1.0)
         m._needs_recompile = False
         # replace Parameterized
-        new_p = GPflow.param.Parameterized()
-        new_p.p = GPflow.param.Param(1.0)
+        new_p = gpflow.param.Parameterized()
+        new_p.p = gpflow.param.Param(1.0)
         m.p = new_p
         self.assertTrue(m._needs_recompile is True)
 
@@ -111,7 +111,7 @@ class TestKeyboardCatching(unittest.TestCase):
         X = np.random.randn(1000, 3)
         Y = np.random.randn(1000, 3)
         Z = np.random.randn(100, 3)
-        self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
+        self.m = gpflow.sgpr.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
     def test_optimize_np(self):
         x0 = self.m.get_free_state()
@@ -136,12 +136,12 @@ class TestLikelihoodAutoflow(unittest.TestCase):
         X = np.random.randn(1000, 3)
         Y = np.random.randn(1000, 3)
         Z = np.random.randn(100, 3)
-        self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
+        self.m = gpflow.sgpr.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
     def test_lik_and_prior(self):
         l0 = self.m.compute_log_likelihood()
         p0 = self.m.compute_log_prior()
-        self.m.kern.variance.prior = GPflow.priors.Gamma(1.4, 1.6)
+        self.m.kern.variance.prior = gpflow.priors.Gamma(1.4, 1.6)
         l1 = self.m.compute_log_likelihood()
         p1 = self.m.compute_log_prior()
 
@@ -152,7 +152,7 @@ class TestLikelihoodAutoflow(unittest.TestCase):
 
 class TestName(unittest.TestCase):
     def test_name(self):
-        m = GPflow.model.Model(name='foo')
+        m = gpflow.model.Model(name='foo')
         assert m.name == 'foo'
 
 
