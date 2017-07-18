@@ -280,7 +280,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'GPflow.tex', u'GPflow Documentation',
+    (master_doc, 'gpflow.tex', u'GPflow Documentation',
      u'James Hensman and Alexander G. de G. Matthews', 'manual'),
 ]
 

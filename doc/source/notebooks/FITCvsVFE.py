@@ -59,10 +59,10 @@ def getLogPredictiveDensities( targetValues, means, variances ):
     return mahalanobisTerms + normalizationTerms
     
 def getKernel():
-    return GPflow.kernels.RBF(1)
+    return gpflow.kernels.RBF(1)
 
 def getRegressionModel(X,Y):
-    m = GPflow.gpr.GPR(X, Y, kern=getKernel() )
+    m = gpflow.gpr.GPR(X, Y, kern=getKernel() )
     m.likelihood.variance = 1.
     m.kern.lengthscales = 1.
     m.kern.variance = 1.
@@ -70,9 +70,9 @@ def getRegressionModel(X,Y):
     
 def getSparseModel(X,Y,isFITC=False):
     if not(isFITC):
-        m = GPflow.sgpr.SGPR(X, Y, kern=getKernel(),  Z=X.copy() )
+        m = gpflow.sgpr.SGPR(X, Y, kern=getKernel(),  Z=X.copy() )
     else:
-        m = GPflow.sgpr.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy() )
+        m = gpflow.sgpr.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy() )
     return m
 
 def printModelParameters( model ):
