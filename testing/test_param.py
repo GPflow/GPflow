@@ -638,8 +638,8 @@ class TestRandomizeDefault(unittest.TestCase):
         m.pf.fixed = True
 
         m.pmd = GPflow.param.Param(np.ones((5, 2)))
-        ltr = GPflow.transforms.LowerTriangular(2).forward(np.ones(2 * 10))
-        m.pmd2 = GPflow.param.Param(ltr, transform=GPflow.transforms.LowerTriangular(2))
+        ltr = GPflow.transforms.LowerTriangular(1,2).forward(np.ones(2 * 10))
+        m.pmd2 = GPflow.param.Param(ltr, transform=GPflow.transforms.LowerTriangular(1,2))
 
         #should work as (pseudo) random vals a.s. are not 1.0
         m.p.randomize()
