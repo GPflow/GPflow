@@ -42,19 +42,19 @@ class Parentable(object):
     def __init__(self):
         self._parent = None
 
-    def find_parents_by_condition(self, condition):
+    def find_parents(self, condition=lambda x: True):
         """
         Returns a list of references to parents satisfying a given condition. If no parent satisfies the condition,
         an empty list is returned. The order of list is given by the position in the tree: the first element of the list
         corresponds to the highest parent satisfying the constraint.
         """
         this_node = [self] if condition(self) else []
-        return this_node if self._parent is None else self._parent.find_parents_by_condition(condition) + this_node
+        return this_node if self._parent is None else self._parent.find_parents(condition) + this_node
 
     @property
     def highest_parent(self):
         """A reference to the top of the tree, usually a Model instance"""
-        return self.find_parents_by_condition(lambda x: True)[0]
+        return self.find_parents()[0]
 
     @property
     def name(self):
@@ -334,7 +334,7 @@ class Param(Parentable):
         """
         object.__setattr__(self, key, value)
         if key in recompile_keys:
-            recompileable_parents = self.find_parents_by_condition(lambda x: hasattr(x, '_needs_recompile'))
+            recompileable_parents = self.find_parents(lambda x: hasattr(x, '_needs_recompile'))
             if recompileable_parents:
                 recompileable_parents[0]._needs_recompile = True
 
@@ -470,7 +470,7 @@ class DataHolder(Parentable):
                                   (perhaps make the model again from scratch?)")
             elif self.on_shape_change == 'recompile':
                 self._array = array.copy()
-                recompileable_parents = self.find_parents_by_condition(lambda x: hasattr(x, '_needs_recompile'))
+                recompileable_parents = self.find_parents(lambda x: hasattr(x, '_needs_recompile'))
                 if recompileable_parents:
                     recompileable_parents[0]._needs_recompile = True
             elif self.on_shape_change == 'pass':
@@ -698,7 +698,7 @@ class Parameterized(Parentable):
             # recompile if necessary.
             if isinstance(p, (Param, Parameterized)) and isinstance(value, (Param, Parameterized)):
                 p._parent = None  # unlink the old Parameter from this tree
-                recompileable_parents = self.find_parents_by_condition(lambda x: hasattr(x, '_needs_recompile'))
+                recompileable_parents = self.find_parents(lambda x: hasattr(x, '_needs_recompile'))
                 if recompileable_parents:
                     recompileable_parents[0]._needs_recompile = True
                 elif key is not '_parent':
