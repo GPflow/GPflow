@@ -40,7 +40,7 @@ class SVGP(GPModel):
       }
 
     """
-    def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(),
+    def __init__(self, X, Y, kern, likelihood, Z, mean_function=None,
                  num_latent=None, q_diag=False, whiten=True, minibatch_size=None):
         """
         - X is a data matrix, size N x D
