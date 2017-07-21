@@ -164,7 +164,7 @@ class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
     def test_gpr(self):
         m1 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
         m1._compile()
-        m2 = GPflow.gpr.GPR(self.X.copy(), self.Y.copy(), GPflow.kernels.Matern32(2))
+        m2 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
         self.assertFalse(m1._needs_recompile)
 
     def test_sgpr(self):
