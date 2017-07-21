@@ -31,6 +31,7 @@ class TestOptimize(unittest.TestCase):
 
             def build_likelihood(self):
                 return -tf.reduce_sum(tf.square(self.x))
+
         self.m = Quadratic()
 
     def test_adam(self):
@@ -92,6 +93,7 @@ class KeyboardRaiser:
     """
     This wraps a function and makes it raise a KeyboardInterrupt after some number of calls
     """
+
     def __init__(self, iters_to_raise, f):
         self.iters_to_raise, self.f = iters_to_raise, f
         self.count = 0
@@ -200,6 +202,7 @@ class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
         m1._compile()
         m2 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
         self.assertFalse(m1._needs_recompile)
+
 
 if __name__ == "__main__":
     unittest.main()

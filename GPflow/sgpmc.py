@@ -65,7 +65,6 @@ class SGPMC(GPModel):
         """
         X = DataHolder(X, on_shape_change='pass')
         Y = DataHolder(Y, on_shape_change='pass')
-        mean_function = mean_function or Zero()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_inducing = Z.shape[0]

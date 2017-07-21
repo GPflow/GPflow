@@ -56,7 +56,6 @@ class SGPR(GPModel):
         X = DataHolder(X, on_shape_change='pass')
         Y = DataHolder(Y, on_shape_change='pass')
         likelihood = likelihoods.Gaussian()
-        mean_function = mean_function or Zero()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.Z = Param(Z)
         self.num_data = X.shape[0]
