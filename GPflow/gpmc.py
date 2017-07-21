@@ -26,7 +26,7 @@ float_type = settings.dtypes.float_type
 
 class GPMC(GPModel):
     def __init__(self, X, Y, kern, likelihood,
-                 mean_function=Zero(), num_latent=None):
+                 mean_function=None, num_latent=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -46,6 +46,7 @@ class GPMC(GPModel):
         """
         X = DataHolder(X, on_shape_change='recompile')
         Y = DataHolder(Y, on_shape_change='recompile')
+        mean_function = mean_function or Zero()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]

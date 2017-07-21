@@ -154,5 +154,52 @@ class TestName(unittest.TestCase):
         assert m.name == 'foo'
 
 
+class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
+    """ Regression tests for Bug #454 """
+
+    def setUp(self):
+        self.X = np.random.rand(10, 2)
+        self.Y = np.random.rand(10, 1)
+
+    def test_gpr(self):
+        m1 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
+        m1._compile()
+        m2 = GPflow.gpr.GPR(self.X.copy(), self.Y.copy(), GPflow.kernels.Matern32(2))
+        self.assertFalse(m1._needs_recompile)
+
+    def test_sgpr(self):
+        m1 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
+        m1._compile()
+        m2 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
+        self.assertFalse(m1._needs_recompile)
+
+    def test_gpmc(self):
+        m1 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        m1._compile()
+        m2 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        self.assertFalse(m1._needs_recompile)
+
+    def test_sgpmc(self):
+        m1 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+                                Z=self.X)
+        m1._compile()
+        m2 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+                                Z=self.X)
+        self.assertFalse(m1._needs_recompile)
+
+    def test_svgp(self):
+        m1 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+                              Z=self.X)
+        m1._compile()
+        m2 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+                              Z=self.X)
+        self.assertFalse(m1._needs_recompile)
+
+    def test_vgp(self):
+        m1 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        m1._compile()
+        m2 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        self.assertFalse(m1._needs_recompile)
+
 if __name__ == "__main__":
     unittest.main()

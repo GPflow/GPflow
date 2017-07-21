@@ -40,7 +40,7 @@ class SVGP(GPModel):
       }
 
     """
-    def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(),
+    def __init__(self, X, Y, kern, likelihood, Z, mean_function=None,
                  num_latent=None, q_diag=False, whiten=True, minibatch_size=None):
         """
         - X is a data matrix, size N x D
@@ -60,6 +60,7 @@ class SVGP(GPModel):
         self.num_data = X.shape[0]
         X = MinibatchData(X, minibatch_size, np.random.RandomState(0))
         Y = MinibatchData(Y, minibatch_size, np.random.RandomState(0))
+        mean_function = mean_function or Zero()
 
         # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
