@@ -127,8 +127,12 @@ class Model(Parameterized):
         Compile the tensorflow function "self._objective".
         The `session` and `graph` parameters are mutually exclusive.
         :param session: TensorFlow Session. This parameter prevails `graph`
-                        parameter. Custom session will be created if
-        :param graph: TensorFlow Graph.
+                        parameter. Custom created session will be used if
+                        this argument is left default, i.e. None.
+        :param graph: TensorFlow Graph. This argument ignored when `session`
+                      differs from default value, otherwise it is passed to
+                      new session constructor. Default TensorFlow graph value
+                      is used, when `graph` equals None.
         :param optimizer: TensorFlow Optimizer.
         """
         out_filename = settings.profiling.output_file_name + "_objective"
