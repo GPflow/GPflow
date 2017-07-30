@@ -91,7 +91,7 @@ class TestNeedsRecompile(unittest.TestCase):
 class TestSessionGraphArguments(unittest.TestCase):
     class Dummy(GPflow.model.Model):
         def __init__(self):
-            super(TestSessionGraphArguments.Dummy, self).__init__(self)
+            GPflow.model.Model.__init__(self)
             self.x = GPflow.param.Param(10)
 
         def build_likelihood(self):
@@ -101,7 +101,8 @@ class TestSessionGraphArguments(unittest.TestCase):
         tf.reset_default_graph()
 
     def test_session_graph_properties(self):
-        models = [TestSessionGraphArguments.Dummy() for _ in range(5)]
+        models = [TestSessionGraphArguments.Dummy()
+                  for i in range(5)]
         m1, m2, m3, m4, m5 = models
         session = tf.Session()
         graph = tf.Graph()
