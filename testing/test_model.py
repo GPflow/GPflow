@@ -89,6 +89,42 @@ class TestNeedsRecompile(unittest.TestCase):
         self.assertTrue(m._needs_recompile is True)
 
 
+class TestSessionGraphArguments(unittest.TestCase):
+    class Dummy(GPflow.model.Model):
+        def __init__(self):
+            super(Dummy, self).__init__(self)
+            self.x = GPflow.param.Param(10)
+
+        def build_likelihood(self):
+            return tf.negative(tf.reduce_sum(tf.square(self.x)))
+
+    def setUp(self):
+        tf.reset_default_graph()
+
+    def test_session_graph_properties(self):
+        models = [TestSessionGraphArguments.Dummy() for _ in range(5)]
+        m1, m2, m3, m4, m5 = models
+        session = tf.Session()
+        graph = tf.Graph()
+        m1.compile()
+        m2.compile(session=session)
+        m3.compile(graph=graph)
+        with graph.as_default():
+            m4.compile()
+        m5.compile(session=session, graph=graph)
+
+        sessions = [m.session for m in models]
+        sess1, sess2, sess3, sess4, sess5 = sessions
+        sessions_set = set(map(str, sessions))
+        self.assertEqual(len(sessions_set), 4)
+        self.assertEqual(sess2, sess5)
+        self.assertEqual(sess1.graph, sess2.graph)
+        self.assertEqual(sess3.graph, sess4.graph)
+        self.assertEqual(sess2.graph, tf.get_default_graph())
+        self.assertEqual(sess3.graph, graph)
+        self.assertNotEqual(sess1.graph, sess3.graph)
+
+
 class KeyboardRaiser:
     """
     This wraps a function and makes it raise a KeyboardInterrupt after some number of calls
@@ -153,7 +189,7 @@ class TestLikelihoodAutoflow(unittest.TestCase):
 class TestName(unittest.TestCase):
     def test_name(self):
         m = GPflow.model.Model(name='foo')
-        assert m.name == 'foo'
+        self.assertEqual(m.name, 'foo')
 
 
 class TestNoRecompileThroughNewModelInstance(unittest.TestCase):

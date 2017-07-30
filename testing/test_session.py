@@ -50,6 +50,10 @@ class TestSessionConfiguration(unittest.TestCase):
         self.assertTrue(tf_session._config.intra_op_parallelism_threads == dopOverride)
         self.assertTrue(tf_session._config.inter_op_parallelism_threads == dopOverride)
 
+    def test_session_default_graph(self):
+        tf_session = session.get_session()
+        self.assertEqual(tf_session.graph, tf.get_default_graph())
+
     def test_autoflow(self):
         dop = 4
         settings.session.intra_op_parallelism_threads = dop
