@@ -1,18 +1,20 @@
 import os
 import warnings
 import tensorflow as tf
+
 from tensorflow.python.client import timeline
 from ._settings import settings
 
-
 class TracerSession(tf.Session):
-    def __init__(self, output_file_name, output_directory, each_time, **kwargs):
+    def __init__(self, output_file_name=None, output_directory=None,
+                 each_time=None, **kwargs):
         self.output_file_name = output_file_name
         self.output_directory = output_directory
-        self.eachTime = each_time
+        self.each_time = each_time
         self.local_run_metadata = None
-        if self.eachTime:
-            warnings.warn("Outputting a trace for each run. May result in large disk usage.")
+        if self.each_time:
+            warnings.warn("Outputting a trace for each run. "
+                          "May result in large disk usage.")
 
         super(TracerSession, self).__init__(**kwargs)
         self.counter = 0
@@ -20,46 +22,64 @@ class TracerSession(tf.Session):
         if self.output_directory is not None:
             if os.path.isfile(self.output_directory):
                 raise IOError("In tracer: given directory name is a file.")
-            if not (os.path.isdir(self.output_directory)):
+            if not os.path.isdir(self.output_directory):
                 os.mkdir(self.output_directory)
 
     def get_filename(self):
-        dir_stub = self.output_directory if self.output_directory is not None else ''
-        if self.eachTime:
-            return os.path.join(dir_stub, self.output_file_name + '_' + str(self.counter) + '.json')
-        else:
-            return os.path.join(dir_stub, self.output_file_name + '.json')
+        """
+        """
+        dir_stub = self.output_directory if self.output_directory else ''
+        if self.each_time:
+            filename = '{0}_{1}.json'.format(self.output_file_name, self.counter)
+            return os.path.join(dir_stub, filename)
+        filename = '{0}'.format(self.output_file_name)
+        return os.path.join(dir_stub, filename)
 
-    def run(self, fetches, feed_dict=None, options=None):
+    def run(self, fetches, feed_dict=None, options=None, run_metadata=None):
         # Make sure there is no disagreement doing this.
         if options is not None:
             if options.trace_level != self.profiler_options.trace_level:  # pragma: no cover
-                raise ValueError('In profiler session. Inconsistent trace level from run call')  # pragma: no cover
+                raise ValueError(
+                    'In profiler session. Inconsistent trace '
+                    'level from run call')  # pragma: no cover
             self.profiler_options.update(options)  # pragma: no cover
 
         self.local_run_metadata = tf.RunMetadata()
-        output = super(TracerSession, self).run(fetches, feed_dict=feed_dict, options=self.profiler_options,
-                                                run_metadata=self.local_run_metadata)
+        output = super(TracerSession, self).run(
+            fetches, feed_dict=feed_dict,
+            options=self.profiler_options,
+            run_metadata=self.local_run_metadata)
 
-        tl = timeline.Timeline(self.local_run_metadata.step_stats)
-        ctf = tl.generate_chrome_trace_format()
-        with open(self.get_filename(), 'w') as f:
-            f.write(ctf)
+        time = timeline.Timeline(self.local_run_metadata.step_stats)
+        ctf = time.generate_chrome_trace_format()
+        with open(self.get_filename(), 'w') as file:
+            file.write(ctf)
 
-        if self.eachTime:
+        if self.each_time:
             self.counter += 1
 
         return output
 
 
 def get_session(*args, **kwargs):
-    # Pass session configuration options
-    if('config' not in kwargs):
+    """
+    Pass session configuration options
+    """
+    if 'config' not in kwargs:
         kwargs['config'] = tf.ConfigProto(**settings.session)
     if settings.profiling.dump_timeline:
+        def fill_kwargs(key, value):
+            """
+            Internal function for filling default None values with meaningful
+            values from GPflow settings.
+            """
+            if kwargs.get(key) is None:
+                kwargs[key] = value
+        fill_kwargs('output_file_name', settings.profiling.output_file_name)
+        fill_kwargs('output_directory', settings.profiling.output_directory)
+        fill_kwargs('each_time', settings.profiling.each_time)
         return TracerSession(*args, **kwargs)
-    else:
-        kwargs.pop("output_file_name", None)
-        kwargs.pop("output_directory", None)
-        kwargs.pop("each_time", None)
-        return tf.Session(*args, **kwargs)
+    kwargs.pop("output_file_name", None)
+    kwargs.pop("output_directory", None)
+    kwargs.pop("each_time", None)
+    return tf.Session(*args, **kwargs)

@@ -43,7 +43,7 @@ class TestOptimize(unittest.TestCase):
         self.assertTrue(self.m.x.value.max() < 1e-6)
 
     def test_feval_counter(self):
-        self.m._compile()
+        self.m.compile()
         self.m.num_fevals = 0
         for _ in range(10):
             self.m._objective(self.m.get_free_state())
@@ -113,7 +113,7 @@ class TestKeyboardCatching(unittest.TestCase):
 
     def test_optimize_np(self):
         x0 = self.m.get_free_state()
-        self.m._compile()
+        self.m.compile()
         self.m._objective = KeyboardRaiser(15, self.m._objective)
         self.m.optimize(disp=0, maxiter=10000, ftol=0, gtol=0)
         x1 = self.m.get_free_state()
