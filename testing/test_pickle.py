@@ -62,9 +62,9 @@ class TestPickleGPR(unittest.TestCase):
         self.m = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
 
     def test(self):
-        s1 = pickle.dumps(self.m)  # the model without running _compile
-        self.m._compile()
-        s2 = pickle.dumps(self.m)  # the model after _compile
+        s1 = pickle.dumps(self.m)  # the model without running compile
+        self.m.compile()
+        s2 = pickle.dumps(self.m)  # the model after compile
 
         # reload the model
         m1 = pickle.loads(s1)
@@ -117,9 +117,9 @@ class TestPickleSVGP(unittest.TestCase):
                                   kern=GPflow.kernels.RBF(1))
 
     def test(self):
-        s1 = pickle.dumps(self.m)  # the model without running _compile
-        self.m._compile()
-        s2 = pickle.dumps(self.m)  # the model after _compile
+        s1 = pickle.dumps(self.m)  # the model without running compile
+        self.m.compile()
+        s2 = pickle.dumps(self.m)  # the model after compile
 
         # reload the model
         m1 = pickle.loads(s1)
