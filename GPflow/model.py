@@ -375,12 +375,12 @@ class GPModel(Model):
         raise NotImplementedError
 
     @AutoFlow((float_type, [None, None]))
-    def predict_f(self, x):
+    def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s)
-        at the points `x`.
+        at the points `Xnew`.
         """
-        return self.build_predict(x)
+        return self.build_predict(Xnew)
 
     @AutoFlow((float_type, [None, None]))
     def predict_f_full_cov(self, Xnew):
