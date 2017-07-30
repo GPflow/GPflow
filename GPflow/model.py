@@ -103,6 +103,10 @@ class Model(Parameterized):
     def name(self):
         return self._name
 
+    @property
+    def session(self):
+        return self._session
+
     def __getstate__(self):
         """
         This method is necessary for pickling objects
@@ -165,7 +169,7 @@ class Model(Parameterized):
             self.num_fevals += 1
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
-            f, g = self._session.run([self._minusF, self._minusG],
+            f, g = self.session.run([self._minusF, self._minusG],
                                      feed_dict=feed_dict)
             return f.astype(np.float64), g.astype(np.float64)
 
@@ -243,18 +247,18 @@ class Model(Parameterized):
             iteration = 0
             while iteration < maxiter:
                 self.update_feed_dict(self._feed_dict_keys, feed_dict)
-                self._session.run(opt_step, feed_dict=feed_dict)
+                self.session.run(opt_step, feed_dict=feed_dict)
                 self.num_fevals += 1
                 if callback is not None:
-                    callback(self._session.run(self._free_vars))
+                    callback(self.session.run(self._free_vars))
                 iteration += 1
         except KeyboardInterrupt:
             print("Caught KeyboardInterrupt, setting model\
                   with most recent state.")
-            self.set_state(self._session.run(self._free_vars))
+            self.set_state(self.session.run(self._free_vars))
             return None
 
-        final_x = self._session.run(self._free_vars)
+        final_x = self.session.run(self._free_vars)
         self.set_state(final_x)
         fun, jac = self._objective(final_x)
         r = OptimizeResult(x=final_x,
