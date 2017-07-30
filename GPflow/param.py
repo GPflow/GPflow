@@ -563,10 +563,10 @@ class AutoFlow:
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
                 if session is None:
-                    filename = ''.join([settings.profiling.output_directory,
+                    filename = ''.join([settings.profiling.output_file_name,
                                         '_', tf_method.__name__])
                     session = session_mngr.get_session(
-                        graph, output_file_name=filename)
+                        graph=graph, output_file_name=filename)
                 graph = session.graph
                 storage['graph'] = graph
                 storage['session'] = session

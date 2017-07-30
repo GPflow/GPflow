@@ -60,4 +60,3 @@ class TestProfiling(unittest.TestCase):
 
         if os.path.exists(s.profiling.output_directory):
             os.rmdir(s.profiling.output_directory)
-

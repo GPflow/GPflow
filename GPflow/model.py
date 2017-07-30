@@ -130,7 +130,7 @@ class Model(Parameterized):
         out_filename = settings.profiling.output_file_name + "_objective"
         if session is None:
             session = session_mngr.get_session(
-                graph, output_file_name=out_filename)
+                graph=graph, output_file_name=out_filename)
         self._session = session
         with session.graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
