@@ -72,6 +72,53 @@ class TestShareArgs(unittest.TestCase):
         self.m1.add(self.x, self.y)
 
 
+class TestSessionGraphArguments(unittest.TestCase):
+    """
+    """
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m1 = AddModel()
+        self.m2 = AddModel()
+        self.m3 = AddModel()
+        self.m4 = AddModel()
+        self.session = tf.Session()
+        self.graph = tf.Graph()
+        self.x = np.array([1., 1., 1.])
+        self.y = np.array([1., 2., 3.])
+
+    def test_storage_properties(self):
+        storage_name = '_add_AF_storage'
+        self.m1.add(self.x, self.y)
+        self.m2.add(self.x, self.y, session=self.session)
+        tf.reset_default_graph()
+        self.m3.add(self.x, self.y, graph=self.graph)
+        tf.reset_default_graph()
+        with self.graph.as_default():
+            self.m4.add(self.x, self.y)
+        models = [self.m1, self.m2, self.m3, self.m4]
+        sessions = [getattr(m, storage_name)['session'] for m in models]
+        sess1, sess2, sess3, sess4 = sessions
+        sessions_set = set(map(str, sessions))
+        self.assertEqual(len(sessions_set), 4)
+        self.assertEqual(sess1.graph, sess2.graph)
+        self.assertEqual(sess3.graph, sess4.graph)
+
+    def test_autoflow_results(self):
+        expected = self.x + self.y
+
+        def assert_add(model, **kwargs):
+            res = model.add(self.x, self.y, **kwargs)
+            print(res, expected, kwargs)
+            self.assertTrue(np.all(res == expected))
+
+        assert_add(self.m1)
+        assert_add(self.m2, session=self.session)
+        tf.reset_default_graph()
+        assert_add(self.m3, graph=self.graph)
+        tf.reset_default_graph()
+        with self.graph.as_default():
+            assert_add(self.m4)
+
 class TestAdd(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
