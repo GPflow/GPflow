@@ -16,14 +16,17 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from GPflow import settings
 import warnings
+
+from testing.gpflow_testcase import GPflowTestCase
+from GPflow import settings
+
 
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
-class TransformTests(unittest.TestCase):
+class TransformTests(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.x = tf.placeholder(float_type,10)
@@ -75,7 +78,7 @@ class TransformTests(unittest.TestCase):
                                         self.session.run(j2, feed_dict={self.x: self.x_np})))
 
 
-class TestOverflow(unittest.TestCase):
+class TestOverflow(GPflowTestCase):
     """
     Bug #302 identified an overflow in the standard positive transform. This is a regression test.
     """
@@ -102,7 +105,7 @@ class TestOverflow(unittest.TestCase):
         self.assertFalse(np.any(np.isnan(y)))
 
 
-class TestLowerTriTransform(unittest.TestCase):
+class TestLowerTriTransform(GPflowTestCase):
     """
     Some extra tests for the LowerTriangle transformation.
     """
@@ -122,7 +125,7 @@ class TestLowerTriTransform(unittest.TestCase):
             self.t.forward(np.ones(3 * 7))
 
 
-class TestDiagMatrixTransform(unittest.TestCase):
+class TestDiagMatrixTransform(GPflowTestCase):
     def setUp(self):
         self.session = tf.Session()
         self.t1 = GPflow.transforms.DiagMatrix(dim=1)

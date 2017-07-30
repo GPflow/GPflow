@@ -55,8 +55,8 @@ class TracerSession(tf.Session):
             options=self.profiler_options,
             run_metadata=self.local_run_metadata)
 
-        time = timeline.Timeline(self.local_run_metadata.step_stats)
-        ctf = time.generate_chrome_trace_format()
+        trace_time = timeline.Timeline(self.local_run_metadata.step_stats)
+        ctf = trace_time.generate_chrome_trace_format()
         with open(self._trace_filename(), 'w') as trace_file:
             trace_file.write(ctf)
 

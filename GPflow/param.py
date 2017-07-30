@@ -494,7 +494,9 @@ class DataHolder(Parentable):
 class AutoFlow:
     """
     This decorator-class is designed for use on methods of the Parameterized class
-    (below).
+    (below). It extends wrapped method argument list with `session` and `graph`
+    parameters and allows you to integrate GPflow computation into your existing
+    graph.
 
     The idea is that methods that compute relevant quantities (such as
     predictions) can define a tf graph which we automatically run when the
@@ -544,6 +546,7 @@ class AutoFlow:
             """
             AutoFlow function wrapper.
             """
+
             if not set(kwargs.keys()).issubset(['session', 'graph']):
                 raise ValueError('Unknown arguments passed.')
 
@@ -555,6 +558,8 @@ class AutoFlow:
                 # the method has been compiled already,
                 # get things out of storage
                 storage = getattr(instance, storage_name)
+                graph = storage['graph']
+                session = storage['session']
             else:
                 # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
@@ -583,8 +588,7 @@ class AutoFlow:
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
             instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
-            return storage['session'].run(storage['tf_result'],
-                                          feed_dict=feed_dict)
+            return session.run(storage['tf_result'], feed_dict=feed_dict)
 
         return runnable
 
@@ -747,6 +751,8 @@ class Parameterized(Parentable):
     def _kill_autoflow(self):
         """
         Remove all compiled AutoFlow methods recursively.
+
+
 
         If AutoFlow functions become invalid, because recompilation is
         required, this function recurses the structure removing all AutoFlow

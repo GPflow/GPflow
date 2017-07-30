@@ -3,6 +3,8 @@ import tensorflow as tf
 import numpy as np
 import unittest
 
+from testing.gpflow_testcase import GPflowTestCase
+
 
 class DumbModel(GPflow.model.Model):
     def __init__(self):
@@ -19,7 +21,7 @@ class NoArgsModel(DumbModel):
         return self.a
 
 
-class TestNoArgs(unittest.TestCase):
+class TestNoArgs(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = NoArgsModel()
@@ -50,7 +52,7 @@ class AddModel(DumbModel):
         return tf.add(x, y)
 
 
-class TestShareArgs(unittest.TestCase):
+class TestShareArgs(GPflowTestCase):
     """
     This is designed to replicate bug #85, where having two models caused
     autoflow functions to fail because the tf_args were shared over the
@@ -72,9 +74,9 @@ class TestShareArgs(unittest.TestCase):
         self.m1.add(self.x, self.y)
 
 
-class TestSessionGraphArguments(unittest.TestCase):
-    """
-    """
+class TestAutoFlowSessionGraphArguments(GPflowTestCase):
+    """AutoFlow tests for external session and graph."""
+
     def setUp(self):
         tf.reset_default_graph()
         self.m1 = AddModel()
@@ -86,7 +88,15 @@ class TestSessionGraphArguments(unittest.TestCase):
         self.x = np.array([1., 1., 1.])
         self.y = np.array([1., 2., 3.])
 
+    def test_wrong_arguments(self):
+        """Wrong arguments for AutoFlow wrapped function."""
+        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
+                          unknown1='argument1')
+        self.assertRaises(ValueError, self.m2.add, [1.], [1.],
+                          session=self.session, unknown2='argument2')
+
     def test_storage_properties(self):
+        """External graph and session passed to AutoFlow."""
         storage_name = '_add_AF_storage'
         self.m1.add(self.x, self.y)
         self.m2.add(self.x, self.y, session=self.session)
@@ -104,12 +114,12 @@ class TestSessionGraphArguments(unittest.TestCase):
         self.assertEqual(sess3.graph, sess4.graph)
 
     def test_autoflow_results(self):
+        """AutoFlow computation results for external session and graph."""
         expected = self.x + self.y
 
         def assert_add(model, **kwargs):
-            res = model.add(self.x, self.y, **kwargs)
-            print(res, expected, kwargs)
-            self.assertTrue(np.all(res == expected))
+            result = model.add(self.x, self.y, **kwargs)
+            self.assertTrue(np.all(result == expected))
 
         assert_add(self.m1)
         assert_add(self.m2, session=self.session)
@@ -119,7 +129,7 @@ class TestSessionGraphArguments(unittest.TestCase):
         with self.graph.as_default():
             assert_add(self.m4)
 
-class TestAdd(unittest.TestCase):
+class TestAdd(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = AddModel()
@@ -142,7 +152,7 @@ class IncrementModel(DumbModel):
         return x + self.a
 
 
-class TestDataHolder(unittest.TestCase):
+class TestDataHolder(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = IncrementModel()
@@ -153,7 +163,7 @@ class TestDataHolder(unittest.TestCase):
         self.assertTrue(np.allclose(self.x + 3, self.m.inc(self.x)))
 
 
-class TestGPmodel(unittest.TestCase):
+class TestGPmodel(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
@@ -179,7 +189,7 @@ class TestGPmodel(unittest.TestCase):
         self.m.compute_log_likelihood()
 
 
-class TestResetGraph(unittest.TestCase):
+class TestResetGraph(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         k = GPflow.kernels.Matern32(1)
@@ -193,7 +203,7 @@ class TestResetGraph(unittest.TestCase):
         mu1, var1 = self.m.predict_f(self.Xnew)
 
 
-class TestFixAndPredict(unittest.TestCase):
+class TestFixAndPredict(GPflowTestCase):
     """
     Bug #54 says that if a model parameter is fixed  between calls to predict
     (an autoflow fn) then the second call fails. This test ensures replicates
@@ -215,7 +225,7 @@ class TestFixAndPredict(unittest.TestCase):
         _, _ = self.m.predict_f(self.m.X.value)
 
 
-class TestSVGP(unittest.TestCase):
+class TestSVGP(GPflowTestCase):
     """
     This replicates Alex's code from bug #99
     """

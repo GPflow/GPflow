@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import GPflow
-from GPflow.minibatch import SequenceIndices
 import numpy as np
 import unittest
 import tensorflow as tf
+import GPflow
 
-class TestMethods(unittest.TestCase):
+from testing.gpflow_testcase import GPflowTestCase
+from GPflow.minibatch import SequenceIndices
+
+class TestMethods(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
@@ -50,6 +52,7 @@ class TestMethods(unittest.TestCase):
 
     def test_tf_optimize(self):
         for m in self.ms:
+            tf.reset_default_graph()
             trainer = tf.train.AdamOptimizer(learning_rate=0.001)
             if isinstance(m, (GPflow.gpr.GPR, GPflow.vgp.VGP,
                               GPflow.svgp.SVGP, GPflow.gpmc.GPMC)):
@@ -77,7 +80,7 @@ class TestMethods(unittest.TestCase):
             self.assertTrue(d.shape == (10, 1))
 
 
-class TestSVGP(unittest.TestCase):
+class TestSVGP(GPflowTestCase):
     """
     The SVGP has four modes of operation. with and without whitening, with and
     without diagonals.
@@ -154,7 +157,7 @@ class TestSVGP(unittest.TestCase):
         m1.q_sqrt.fixed = True
         m1.compile()
 
-class TestStochasticGradients(unittest.TestCase):
+class TestStochasticGradients(GPflowTestCase):
     """
     In response to bug #281, we need to make sure stochastic update
     happens correctly in tf optimizer mode.
@@ -256,7 +259,7 @@ class TestStochasticGradients(unittest.TestCase):
                               2,
                               False)
 
-class TestSparseMCMC(unittest.TestCase):
+class TestSparseMCMC(GPflowTestCase):
     """
     This test makes sure that when the inducing points are the same as the data
     points, the sparse mcmc is the same as full mcmc

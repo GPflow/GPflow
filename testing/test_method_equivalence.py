@@ -18,10 +18,11 @@ from nose.plugins.attrib import attr
 import unittest
 import GPflow
 
+from testing.gpflow_testcase import GPflowTestCase
 
 
 @attr(speed='slow')
-class TestEquivalence(unittest.TestCase):
+class TestEquivalence(GPflowTestCase):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
     positioned at the data, many of the GPflow methods are equivalent (perhaps
@@ -96,7 +97,8 @@ class TestEquivalence(unittest.TestCase):
             self.assertTrue(np.allclose(var, var0, 1e-4))
 
 
-class VGPTest(unittest.TestCase):
+class VGPTest(GPflowTestCase):
+
     def test_vgp_vs_svgp(self):
         N, Ns, DX, DY = 100, 10, 2, 2
 

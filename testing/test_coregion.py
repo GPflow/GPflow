@@ -3,11 +3,13 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+
+from testing.gpflow_testcase import GPflowTestCase
 from nose.plugins.attrib import attr
 
 
 @attr(speed='slow')
-class TestEquivalence(unittest.TestCase):
+class TestEquivalence(GPflowTestCase):
     """
     Here we make sure the coregionalized model with diagonal coregion kernel and
     with fixed lengthscale is equivalent with normal GP regression.

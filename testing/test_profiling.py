@@ -2,12 +2,14 @@ import glob
 import os
 import unittest
 
+import tensorflow as tf
 import numpy as np
-
 import GPflow
 
+from testing.gpflow_testcase import GPflowTestCase
 
-class TestProfiling(unittest.TestCase):
+
+class TestProfiling(GPflowTestCase):
     def setUp(self):
         X = np.random.rand(100, 1)
         Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
@@ -40,6 +42,7 @@ class TestProfiling(unittest.TestCase):
             os.remove(expected_file)
 
         s.profiling.output_directory = './testing/__init__.py'
+        tf.reset_default_graph()
         self.m.kern._kill_autoflow()
         with self.assertRaises(IOError):
             with GPflow.settings.temp_settings(s):

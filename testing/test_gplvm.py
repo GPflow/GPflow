@@ -1,14 +1,17 @@
 from __future__ import print_function
 import GPflow
 import numpy as np
+import tensorflow as tf
 import unittest
+
+from testing.gpflow_testcase import GPflowTestCase
 from GPflow import ekernels
 from GPflow import kernels
 from nose.plugins.attrib import attr
+
 np.random.seed(0)
 
-
-class TestGPLVM(unittest.TestCase):
+class TestGPLVM(GPflowTestCase):
     def setUp(self):
         # data
         self.N = 20  # number of data points
@@ -34,7 +37,7 @@ class TestGPLVM(unittest.TestCase):
 
 
 @attr(speed='slow')
-class TestBayesianGPLVM(unittest.TestCase):
+class TestBayesianGPLVM(GPflowTestCase):
     def setUp(self):
         # data
         self.N = 20  # number of data points

@@ -18,8 +18,10 @@ import tensorflow as tf
 import numpy as np
 import unittest
 
+from testing.gpflow_testcase import GPflowTestCase
 
-class TestOptimize(unittest.TestCase):
+
+class TestOptimize(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
@@ -51,7 +53,7 @@ class TestOptimize(unittest.TestCase):
         self.assertTrue(self.m.num_fevals == 10)
 
 
-class TestNeedsRecompile(unittest.TestCase):
+class TestNeedsRecompile(GPflowTestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
         self.m.p = GPflow.param.Param(1.0)
@@ -89,10 +91,13 @@ class TestNeedsRecompile(unittest.TestCase):
         self.assertTrue(m._needs_recompile is True)
 
 
-class TestSessionGraphArguments(unittest.TestCase):
+class TestModelSessionGraphArguments(GPflowTestCase):
+    """Tests for external graph and session passed to model."""
+
     class Dummy(GPflow.model.Model):
+        """Dummy class with naive build_likelihood function"""
         def __init__(self):
-            super(TestSessionGraphArguments.Dummy, self).__init__(self)
+            GPflow.model.Model.__init__(self)
             self.x = GPflow.param.Param(10)
 
         def build_likelihood(self):
@@ -102,7 +107,10 @@ class TestSessionGraphArguments(unittest.TestCase):
         tf.reset_default_graph()
 
     def test_session_graph_properties(self):
-        models = [TestSessionGraphArguments.Dummy() for _ in range(5)]
+        """
+        """
+        models = [TestModelSessionGraphArguments.Dummy()
+                  for i in range(5)]
         m1, m2, m3, m4, m5 = models
         session = tf.Session()
         graph = tf.Graph()
@@ -141,32 +149,32 @@ class KeyboardRaiser:
         return self.f(*a, **kw)
 
 
-class TestKeyboardCatching(unittest.TestCase):
+class TestKeyboardCatching(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
-        X = np.random.randn(1000, 3)
-        Y = np.random.randn(1000, 3)
-        Z = np.random.randn(100, 3)
+        X = np.random.randn(100, 3)
+        Y = np.random.randn(100, 3)
+        Z = np.random.randn(10, 3)
         self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
 
     def test_optimize_np(self):
         x0 = self.m.get_free_state()
         self.m.compile()
         self.m._objective = KeyboardRaiser(15, self.m._objective)
-        self.m.optimize(disp=0, maxiter=10000, ftol=0, gtol=0)
+        self.m.optimize(disp=0, maxiter=100, ftol=0, gtol=0) ## TODO(awav): maxiter = 1000
         x1 = self.m.get_free_state()
         self.assertFalse(np.allclose(x0, x1))
 
     def test_optimize_tf(self):
         x0 = self.m.get_free_state()
-        callback = KeyboardRaiser(5, lambda x: None)
+        callback = KeyboardRaiser(2, lambda x: None)
         o = tf.train.AdamOptimizer()
-        self.m.optimize(o, maxiter=15, callback=callback)
+        self.m.optimize(o, maxiter=5, callback=callback)
         x1 = self.m.get_free_state()
         self.assertFalse(np.allclose(x0, x1))
 
 
-class TestLikelihoodAutoflow(unittest.TestCase):
+class TestLikelihoodAutoflow(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         X = np.random.randn(1000, 3)
@@ -186,13 +194,13 @@ class TestLikelihoodAutoflow(unittest.TestCase):
         self.assertTrue(l0 == l1)
 
 
-class TestName(unittest.TestCase):
+class TestName(GPflowTestCase):
     def test_name(self):
         m = GPflow.model.Model(name='foo')
         self.assertEqual(m.name, 'foo')
 
 
-class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
+class TestNoRecompileThroughNewModelInstance(GPflowTestCase):
     """ Regression tests for Bug #454 """
 
     def setUp(self):
@@ -201,26 +209,26 @@ class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
 
     def test_gpr(self):
         m1 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
-        m1._compile()
+        m1.compile()
         m2 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
         self.assertFalse(m1._needs_recompile)
 
     def test_sgpr(self):
         m1 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
-        m1._compile()
+        m1.compile()
         m2 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
         self.assertFalse(m1._needs_recompile)
 
     def test_gpmc(self):
         m1 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
-        m1._compile()
+        m1.compile()
         m2 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
         self.assertFalse(m1._needs_recompile)
 
     def test_sgpmc(self):
         m1 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
                                 Z=self.X)
-        m1._compile()
+        m1.compile()
         m2 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
                                 Z=self.X)
         self.assertFalse(m1._needs_recompile)
@@ -228,14 +236,14 @@ class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
     def test_svgp(self):
         m1 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
                               Z=self.X)
-        m1._compile()
+        m1.compile()
         m2 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
                               Z=self.X)
         self.assertFalse(m1._needs_recompile)
 
     def test_vgp(self):
         m1 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
-        m1._compile()
+        m1.compile()
         m2 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
         self.assertFalse(m1._needs_recompile)
 
