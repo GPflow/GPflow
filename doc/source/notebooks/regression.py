@@ -12,7 +12,7 @@ def outputGraph( model, dirName, fileName ):
     fullFileName = os.path.join( dirName, fileName )
     if os.path.isfile( fullFileName ):
         os.remove( fullFileName )
-    tf.train.write_graph(model._session.graph_def, dirName+'/', fileName, as_text=False)
+    tf.train.write_graph(model.session.graph_def, dirName+'/', fileName, as_text=False)
 
 # build a very simple data set:
 def getData():
@@ -51,7 +51,7 @@ def plotOptimizationResult(X,Y,m):
     plt.plot(xx, mean + 2*np.sqrt(var), 'b--', xx, mean - 2*np.sqrt(var), 'b--', lw=1.2)
 
 def setModelPriors( m ):
-    #we'll choose rather arbitrary priors. 
+    #we'll choose rather arbitrary priors.
     m.kern.lengthscales.prior = GPflow.priors.Gamma(1., 1.)
     m.kern.variance.prior = GPflow.priors.Gamma(1., 1.)
     m.likelihood.variance.prior = GPflow.priors.Gamma(1., 1.)
@@ -67,7 +67,7 @@ def plotSamples( X, Y, m, samples ):
     xx = np.linspace(-0.1, 1.1, 100)[:,None]
     plt.figure()
     plt.plot(samples)
-    
+
     f, axs = plt.subplots(1,3, figsize=(12,4), tight_layout=True)
     axs[0].plot(samples[:,0], samples[:,1], 'k.', alpha = 0.15)
     axs[0].set_xlabel('noise_variance')
@@ -80,8 +80,8 @@ def plotSamples( X, Y, m, samples ):
     axs[2].set_ylabel('signal_variance')
 
     #an attempt to plot the function posterior
-    #Note that we should really sample the function values here, instead of just using the mean. 
-    #We are under-representing the uncertainty here. 
+    #Note that we should really sample the function values here, instead of just using the mean.
+    #We are under-representing the uncertainty here.
     # TODO: get full_covariance of the predictions (predict_f only?)
 
     plt.figure()
@@ -90,7 +90,7 @@ def plotSamples( X, Y, m, samples ):
         m.set_state(s)
         mean, _ = m.predict_y(xx)
         plt.plot(xx, mean, 'b', lw=2, alpha = 0.05)
-    
+
     plt.plot(X, Y, 'kx', mew=2)
 
 def showAllPlots():

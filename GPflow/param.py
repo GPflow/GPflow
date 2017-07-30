@@ -525,11 +525,8 @@ class AutoFlow:
     >>> y_tf = tf.placeholder(tf.float64)
     >>> with m.tf_mode():
     >>>     graph = tf.foo(m.baz, x_tf, y_tf)
-    >>> result = m._session.run(graph,
-                                feed_dict={x_tf:x,
-                                           y_tf:y,
-                                           m._free_vars:m.get_free_state()})
-
+    >>> result = m.session.run(graph, feed_dict={
+                     x_tf:x, y_tf:y, m._free_vars:m.get_free_state()})
     Not only is the syntax cleaner, but multiple calls to the method will
     result in the graph being constructed only once.
 

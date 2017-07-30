@@ -18,11 +18,11 @@ class TestSessionConfiguration(unittest.TestCase):
         settings.session.inter_op_parallelism_threads = dop
         settings.session.allow_soft_placement = True
         self.m.compile()
-        self.assertTrue(self.m._session._config.intra_op_parallelism_threads == dop)
-        self.assertTrue(self.m._session._config.inter_op_parallelism_threads == dop)
-        self.assertTrue(isinstance(self.m._session._config.inter_op_parallelism_threads, int))
-        self.assertTrue(self.m._session._config.allow_soft_placement)
-        self.assertTrue(isinstance(self.m._session._config.allow_soft_placement, bool))
+        self.assertTrue(self.m.session._config.intra_op_parallelism_threads == dop)
+        self.assertTrue(self.m.session._config.inter_op_parallelism_threads == dop)
+        self.assertTrue(isinstance(self.m.session._config.inter_op_parallelism_threads, int))
+        self.assertTrue(self.m.session._config.allow_soft_placement)
+        self.assertTrue(isinstance(self.m.session._config.allow_soft_placement, bool))
         self.m.optimize(maxiter=1)
 
     def test_option_mutability(self):
