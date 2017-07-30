@@ -139,7 +139,7 @@ class Model(Parameterized):
             self.make_tf_array(self._free_vars)
             with self.tf_mode():
                 f = self.build_likelihood() + self.build_prior()
-                g = tf.gradients(f, self._free_vars)
+                g = tf.gradients(f, self._free_vars)[0]
 
             self._minusF = tf.negative(f, name='objective')
             self._minusG = tf.negative(g, name='grad_objective')
