@@ -17,8 +17,10 @@ import numpy as np
 import unittest
 import tensorflow as tf
 
+from testing.gpflow_testcase import GPflowTestCase
 
-class TestGaussian(unittest.TestCase):
+
+class TestGaussian(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
@@ -60,13 +62,13 @@ class TestGaussian(unittest.TestCase):
         density = self.m.predict_density(self.Xtest, self.Ytest)
 
 
-class TestFullCov(unittest.TestCase):
-    """ 
+class TestFullCov(GPflowTestCase):
+    """
     this base class requires inherriting to specify the model.
 
     This test structure is more complex that, say, looping over the models, but
     makses all the tests much smaller and so less prone to erroring out. Also,
-    if a test fails, it should be clearer where the error is. 
+    if a test fails, it should be clearer where the error is.
     """
     def setUp(self):
         tf.reset_default_graph()

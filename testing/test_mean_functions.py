@@ -3,12 +3,15 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
+
+from testing.gpflow_testcase import GPflowTestCase
 from GPflow import settings
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
-class TestMeanFuncs(unittest.TestCase):
+class TestMeanFuncs(GPflowTestCase):
     """
     Test the output shape for basic and compositional mean functions, also
     check that the combination of mean functions returns the correct clas
@@ -76,7 +79,7 @@ class TestMeanFuncs(unittest.TestCase):
         self.assertTrue(all(isinstance(mfMult, GPflow.mean_functions.Product) for mfMult in self.composition_mfs_mult))
 
 
-class TestModelCompositionOperations(unittest.TestCase):
+class TestModelCompositionOperations(GPflowTestCase):
     """
     Tests that operator precedence is correct and zero unary operations, i.e.
     adding 0, multiplying by 1, adding x and then subtracting etc. do not
@@ -186,7 +189,7 @@ class TestModelCompositionOperations(unittest.TestCase):
         self.assertTrue(np.all(np.isclose(mu1_comp_min_constituent1, mu1_comp_min_constituent2)))
 
 
-class TestModelsWithMeanFuncs(unittest.TestCase):
+class TestModelsWithMeanFuncs(GPflowTestCase):
     """
     Simply check that all models have a higher prediction with a constant mean
     function than with a zero mean function.
@@ -234,7 +237,7 @@ class TestModelsWithMeanFuncs(unittest.TestCase):
             self.assertFalse(np.all(mu1 == mu2))
 
 
-class TestSwitchedMeanFunction(unittest.TestCase):
+class TestSwitchedMeanFunction(GPflowTestCase):
     """
     Test for the SwitchedMeanFunction.
     """
@@ -262,7 +265,7 @@ class TestSwitchedMeanFunction(unittest.TestCase):
         self.assertTrue(np.allclose(result, result_ref))
 
 
-class TestBug277Regression(unittest.TestCase):
+class TestBug277Regression(GPflowTestCase):
     """
     See github issue #277. This is a regression test.
     """

@@ -2,6 +2,8 @@ import unittest
 import numpy as np
 import tensorflow as tf
 import GPflow
+
+from testing.gpflow_testcase import GPflowTestCase
 from GPflow import kernels
 from GPflow import ekernels
 from nose.plugins.attrib import attr
@@ -52,7 +54,7 @@ class TriDiagonalBlockRep(object):
         return "BlockTriDiagonal"
 
 
-class TestKernExpDelta(unittest.TestCase):
+class TestKernExpDelta(GPflowTestCase):
     """
     Check whether the normal kernel matrix is recovered if a delta distribution is used. First initial test which should
     indicate whether things work or not.
@@ -104,7 +106,7 @@ class TestKernExpDelta(unittest.TestCase):
             self.assertTrue(np.allclose(kernmat, psi1.T))
 
 
-class TestKernExpActiveDims(unittest.TestCase):
+class TestKernExpActiveDims(GPflowTestCase):
     _threshold = 0.5
 
     def setUp(self):
@@ -155,7 +157,7 @@ class TestKernExpActiveDims(unittest.TestCase):
             _assert_pdeq(self, a, b, k)
 
 
-class TestExpxKxzActiveDims(unittest.TestCase):
+class TestExpxKxzActiveDims(GPflowTestCase):
     _threshold = 0.5
 
     def setUp(self):
@@ -213,11 +215,12 @@ class TestExpxKxzActiveDims(unittest.TestCase):
 
 
 @attr(speed='slow')
-class TestKernExpQuadrature(unittest.TestCase):
+class TestKernExpQuadrature(GPflowTestCase):
     _threshold = 0.5
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.
 
     def setUp(self):
+        tf.reset_default_graph()
         self.rng = np.random.RandomState(1)  # this seed works with 60 GH points
         self.N = 4
         self.D = 2
@@ -291,11 +294,13 @@ class TestKernExpQuadrature(unittest.TestCase):
             k.num_gauss_hermite_points = self.num_gauss_hermite_points
             a = k.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
             b = ek.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
-            aa.append(a); bb.append(b)
+            aa.append(a)
+            bb.append(b)
         [_assert_pdeq(self, a, b, k) for a, b, k in zip(aa, bb, self.kernels)]
 
     def test_eKzxKxz(self):
         for k, ek in zip(self.kernels, self.ekernels):
+            #tf.reset_default_graph()
             k._kill_autoflow()
             k.num_gauss_hermite_points = self.num_gauss_hermite_points
             a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
@@ -304,11 +309,12 @@ class TestKernExpQuadrature(unittest.TestCase):
 
     def test_exKxz(self):
         for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
-            if type(k) is kernels.Add and hasattr(k, 'input_size'):
+            if isinstance(k, kernels.Add) and hasattr(k, 'input_size'):
                 # xKxz does not work with slicing yet
                 continue
 
             k._kill_autoflow()
+            tf.reset_default_graph()
             k.num_gauss_hermite_points = self.num_gauss_hermite_points
             a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
             b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov)
@@ -316,13 +322,14 @@ class TestKernExpQuadrature(unittest.TestCase):
 
     def test_switch_quadrature(self):
         k = self.kernels[0]
+        #tf.reset_default_graph()
         k._kill_autoflow()
         k.num_gauss_hermite_points = 0
         with self.assertRaises(RuntimeError):
             k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
 
 
-class TestKernProd(unittest.TestCase):
+class TestKernProd(GPflowTestCase):
     """
     TestKernProd
     Need a separate test for this as Prod currently only supports diagonal Xcov matrices with non-overlapping kernels.
@@ -369,7 +376,7 @@ class TestKernProd(unittest.TestCase):
         _assert_pdeq(self, a, b)
 
 
-class TestKernExpDiagXcov(unittest.TestCase):
+class TestKernExpDiagXcov(GPflowTestCase):
     _threshold = 1e-6
 
     def setUp(self):
@@ -453,7 +460,7 @@ class TestKernExpDiagXcov(unittest.TestCase):
             _assert_pdeq(self, a, b, k)
 
 
-class TestAddCrossCalcs(unittest.TestCase):
+class TestAddCrossCalcs(GPflowTestCase):
     _threshold = 0.5
 
     def setUp(self):

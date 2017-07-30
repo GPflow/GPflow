@@ -2,15 +2,18 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+
 try:
     import pandas
 except ImportError:
     pandas = None
 from nose.plugins.attrib import attr
 
+from testing.gpflow_testcase import GPflowTestCase
+from nose.plugins.attrib import attr
 
 @attr(speed='slow')
-class SampleGaussianTest(unittest.TestCase):
+class SampleGaussianTest(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.f = lambda x: (0.5*np.sum(np.square(x)), x)
@@ -59,7 +62,7 @@ class SampleGaussianTest(unittest.TestCase):
 
 
 
-class SampleModelTest(unittest.TestCase):
+class SampleModelTest(GPflowTestCase):
     """
     Create a very simple model and make sure samples form is make sense.
     """
@@ -86,7 +89,7 @@ class SampleModelTest(unittest.TestCase):
         s, logps = self.m.sample(num_samples=200, Lmax=20, epsilon=0.05, return_logprobs=True)
 
 
-class SamplesDictTest(unittest.TestCase):
+class SamplesDictTest(GPflowTestCase):
     def setUp(self):
         X, Y = np.random.randn(2, 10, 1)
         self.m = GPflow.gpmc.GPMC(X, Y, kern=GPflow.kernels.Matern32(1), likelihood=GPflow.likelihoods.StudentT())

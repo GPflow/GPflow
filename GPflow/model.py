@@ -136,11 +136,12 @@ class Model(Parameterized):
                       is used, when `graph` equals None.
         :param optimizer: TensorFlow Optimizer.
         """
+
         out_filename = settings.profiling.output_file_name + "_objective"
         if session is None:
             session = session_mngr.get_session(
                 graph=graph, output_file_name=out_filename)
-        self._session = session
+
         with session.graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
 
@@ -161,7 +162,9 @@ class Model(Parameterized):
                 opt_step = optimizer.minimize(
                     self._minusF, var_list=[self._free_vars])
             init = tf.global_variables_initializer()
+
         session.run(init)
+        self._session = session
 
         # build tensorflow functions for computing the likelihood
         if settings.verbosity.tf_compile_verb:
@@ -237,7 +240,7 @@ class Model(Parameterized):
         similar object in the tensorflow case.
         """
 
-        if isinstance(method, str):
+        if type(method) is str:
             return self._optimize_np(method, tol, callback, maxiter, **kw)
         return self._optimize_tf(method, callback, maxiter, **kw)
 
@@ -297,6 +300,7 @@ class Model(Parameterized):
         max_iters is the maximum number of iterations (used in the options dict
             for the optimization routine)
         """
+
         if self._needs_recompile:
             self.compile()
 

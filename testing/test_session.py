@@ -1,11 +1,14 @@
 import unittest
 import numpy as np
 import GPflow
-from GPflow import session
-from GPflow import settings
 import tensorflow as tf
 
-class TestSessionConfiguration(unittest.TestCase):
+from testing.gpflow_testcase import GPflowTestCase
+from GPflow import session
+from GPflow import settings
+
+
+class TestSessionConfiguration(GPflowTestCase):
     def setUp(self):
         self.m = GPflow.gpr.GPR(np.ones((1, 1)), np.ones((1, 1)), kern=GPflow.kernels.Matern52(1))
 

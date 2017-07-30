@@ -3,10 +3,11 @@ import GPflow
 import tensorflow as tf
 import numpy as np
 import unittest
+
+from testing.gpflow_testcase import GPflowTestCase
 from .reference import referenceRbfKernel, referenceArcCosineKernel, referencePeriodicKernel
 
-
-class TestRbf(unittest.TestCase):
+class TestRbf(GPflowTestCase):
     def test_1d(self):
         lengthScale = 1.4
         variance = 2.3
@@ -26,7 +27,7 @@ class TestRbf(unittest.TestCase):
         self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
 
 
-class TestArcCosine(unittest.TestCase):
+class TestArcCosine(GPflowTestCase):
     def evalKernelError(self, D, variance, weight_variances,
                         bias_variance, order, ARD, X_data):
         kernel = GPflow.kernels.ArcCosine(D,
@@ -120,7 +121,7 @@ class TestArcCosine(unittest.TestCase):
         self.assertFalse(np.any(np.isnan(gradients)))
 
 
-class TestPeriodic(unittest.TestCase):
+class TestPeriodic(GPflowTestCase):
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
         kernel = GPflow.kernels.PeriodicKernel(D, period=period, variance=variance, lengthscales=lengthscale)
 
@@ -155,7 +156,7 @@ class TestPeriodic(unittest.TestCase):
         self.evalKernelError(D, lengthScale, variance, period, X_data)
 
 
-class TestCoregion(unittest.TestCase):
+class TestCoregion(GPflowTestCase):
     def setUp(self):
         self.rng = np.random.RandomState(0)
         self.k = GPflow.kernels.Coregion(1, output_dim=3, rank=2)
@@ -187,7 +188,7 @@ class TestCoregion(unittest.TestCase):
         self.assertTrue(np.allclose(K1, K2))
 
 
-class TestKernSymmetry(unittest.TestCase):
+class TestKernSymmetry(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.kernels = GPflow.kernels.Stationary.__subclasses__() + [GPflow.kernels.Constant, GPflow.kernels.Linear,
@@ -219,7 +220,7 @@ class TestKernSymmetry(unittest.TestCase):
                 self.assertTrue(np.allclose(Errors, 0))
 
 
-class TestKernDiags(unittest.TestCase):
+class TestKernDiags(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         inputdim = 3
@@ -249,7 +250,7 @@ class TestKernDiags(unittest.TestCase):
             self.assertTrue(np.allclose(k1, k2))
 
 
-class TestAdd(unittest.TestCase):
+class TestAdd(GPflowTestCase):
     """
     add a rbf and linear kernel, make sure the result is the same as adding
     the result of the kernels separaetely
@@ -287,7 +288,7 @@ class TestAdd(unittest.TestCase):
         self.assertTrue(np.allclose(self.rbf._K + self.lin._K, self.k._K))
 
 
-class TestWhite(unittest.TestCase):
+class TestWhite(GPflowTestCase):
     """
     The white kernel should not give the same result when called with k(X) and
     k(X, X)
@@ -310,7 +311,7 @@ class TestWhite(unittest.TestCase):
         self.assertFalse(np.allclose(K_sym, K_asym))
 
 
-class TestSlice(unittest.TestCase):
+class TestSlice(GPflowTestCase):
     """
     Make sure the results of a sliced kernel is the same as an unsliced kernel
     with correctly sliced data...
@@ -351,7 +352,7 @@ class TestSlice(unittest.TestCase):
             self.assertTrue(np.allclose(K2, K4))
 
 
-class TestProd(unittest.TestCase):
+class TestProd(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.k1 = GPflow.kernels.Matern32(2)
@@ -379,7 +380,7 @@ class TestProd(unittest.TestCase):
         self.assertTrue(np.allclose(K1 * K2, K3))
 
 
-class TestARDActiveProd(unittest.TestCase):
+class TestARDActiveProd(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
@@ -411,7 +412,7 @@ class TestARDActiveProd(unittest.TestCase):
         self.assertTrue(np.allclose(K1, K2))
 
 
-class TestKernNaming(unittest.TestCase):
+class TestKernNaming(GPflowTestCase):
     def test_no_nesting_1(self):
         k1 = GPflow.kernels.RBF(1)
         k2 = GPflow.kernels.Linear(2)
@@ -457,7 +458,7 @@ class TestKernNaming(unittest.TestCase):
         self.assertTrue(k.matern32_3 is k3)
 
 
-class TestKernNamingProduct(unittest.TestCase):
+class TestKernNamingProduct(GPflowTestCase):
     def test_no_nesting_1(self):
         k1 = GPflow.kernels.RBF(1)
         k2 = GPflow.kernels.Linear(2)
@@ -503,7 +504,7 @@ class TestKernNamingProduct(unittest.TestCase):
         self.assertTrue(k.matern32_3 is k3)
 
 
-class TestARDInit(unittest.TestCase):
+class TestARDInit(GPflowTestCase):
     """
     For ARD kernels, make sure that kernels can be instantiated with a single
     lengthscale or a suitable array of lengthscales

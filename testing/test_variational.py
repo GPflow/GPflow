@@ -18,6 +18,8 @@ import numpy as np
 import unittest
 from .reference import referenceRbfKernel
 
+from testing.gpflow_testcase import GPflowTestCase
+
 
 def referenceUnivariateLogMarginalLikelihood(y, K, noiseVariance):
     return -0.5 * y * y / (K + noiseVariance) - 0.5 * np.log(K + noiseVariance) - 0.5 * np.log(np.pi * 2.)
@@ -55,7 +57,7 @@ def kernel(kernelVariance=1, lengthScale=1.):
     return kern
 
 
-class VariationalUnivariateTest(unittest.TestCase):
+class VariationalUnivariateTest(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.y_real = 2.
@@ -130,7 +132,7 @@ class VariationalUnivariateTest(unittest.TestCase):
                 self.assertTrue(np.abs(var_value - self.posteriorVariance) < 1e-4)
 
 
-class VariationalMultivariateTest(unittest.TestCase):
+class VariationalMultivariateTest(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.nDimensions = 3
