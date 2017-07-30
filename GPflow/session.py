@@ -29,11 +29,15 @@ class TracerSession(tf.Session):
         """
         Creates trace filename.
         """
-        dir_stub = self.output_directory if self.output_directory else ''
+        dir_stub = ''
+        if self.output_directory is not None:
+            dir_stub = self.output_directory
+        print(dir_stub, self.output_directory, self.output_file_name)
         if self.each_time:
-            filename = '{0}_{1}.json'.format(self.output_file_name, self.counter)
-            return os.path.join(dir_stub, filename)
-        filename = '{0}'.format(self.output_file_name)
+            filename = '{0}_{1}.json'.format(
+                self.output_file_name, self.counter)
+        else:
+            filename = '{0}.json'.format(self.output_file_name)
         return os.path.join(dir_stub, filename)
 
     def run(self, fetches, feed_dict=None, options=None, run_metadata=None):
@@ -53,8 +57,8 @@ class TracerSession(tf.Session):
 
         time = timeline.Timeline(self.local_run_metadata.step_stats)
         ctf = time.generate_chrome_trace_format()
-        with open(self._trace_filename(), 'w') as file:
-            file.write(ctf)
+        with open(self._trace_filename(), 'w') as trace_file:
+            trace_file.write(ctf)
 
         if self.each_time:
             self.counter += 1
