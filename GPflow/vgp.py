@@ -63,7 +63,7 @@ class VGP(GPModel):
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
         self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_data, self.num_latent))
 
-    def _compile(self, optimizer=None):
+    def compile(self, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -77,7 +77,7 @@ class VGP(GPModel):
             self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] *
                                 np.ones((1, 1, self.num_latent)))
 
-        return super(VGP, self)._compile(optimizer=optimizer)
+        return super(VGP, self).compile(optimizer=optimizer)
 
     def build_likelihood(self):
         """
@@ -162,7 +162,7 @@ class VGP_opper_archambeau(GPModel):
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
-    def _compile(self, optimizer=None):
+    def compile(self, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -175,7 +175,7 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        return super(VGP_opper_archambeau, self)._compile(optimizer=optimizer)
+        return super(VGP_opper_archambeau, self).compile(optimizer=optimizer)
 
     def build_likelihood(self):
         """

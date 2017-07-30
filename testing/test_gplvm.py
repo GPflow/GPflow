@@ -102,8 +102,8 @@ class TestBayesianGPLVM(unittest.TestCase):
                                             kern=kq, M=self.M, Z=Z, X_prior_mean=X_prior_mean, X_prior_var=X_prior_var)
             ma = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_var=np.ones((self.N, Q)), Y=self.Y,
                                             kern=ka, M=self.M, Z=Z)
-            mq._compile()
-            ma._compile()
+            mq.compile()
+            ma.compile()
             ql = mq.compute_log_likelihood()
             al = ma.compute_log_likelihood()
             self.assertTrue(np.allclose(ql, al, atol=1e-2), 'Likelihood not equal %f<>%f' % (ql, al))

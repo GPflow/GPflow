@@ -14,11 +14,13 @@
 
 
 from __future__ import absolute_import
+import functools
 import numpy as np
 import tensorflow as tf
-from . import transforms, session
+
+from . import transforms
+from . import session as session_mngr
 from contextlib import contextmanager
-from functools import wraps
 from .scoping import NameScoped
 from ._settings import settings
 
@@ -51,7 +53,10 @@ class Parentable(object):
 
     @property
     def name(self):
-        """An automatically generated name, given by the reference of the _parent to this instance"""
+        """
+        An automatically generated name, given by the reference of
+        the _parent to this instance.
+        """
         if self._parent is None:
             return 'unnamed'
         if isinstance(self._parent, ParamList):
@@ -531,43 +536,59 @@ class AutoFlow:
     """
 
     def __init__(self, *tf_arg_tuples):
-        # NB. TF arg_tuples is a list of tuples, each of which can be used to
-        # construct a tf placeholder.
+        """
+        :param tf_arg_tuples: list of tuples, each of which can be
+                              used to construct a tensorflow placeholder.
+        """
         self.tf_arg_tuples = tf_arg_tuples
 
     def __call__(self, tf_method):
-        @wraps(tf_method)
-        def runnable(instance, *np_args):
-            storage_name = '_' + tf_method.__name__ + '_AF_storage'
+        @functools.wraps(tf_method)
+        def runnable(instance, *np_args, **kwargs):
+            """
+            AutoFlow function wrapper.
+            """
+            if not set(kwargs.keys()).issubset(['session', 'graph']):
+                raise ValueError('Unknown arguments passed.')
+
+            session = kwargs.get('session')
+            graph = kwargs.get('graph')
+
+            storage_name = ''.join(['_', tf_method.__name__, '_AF_storage'])
             if hasattr(instance, storage_name):
-                # the method has been compiled already, get things out of storage
+                # the method has been compiled already,
+                # get things out of storage
                 storage = getattr(instance, storage_name)
             else:
                 # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
-                storage['graph'] = tf.Graph()
-                # storage['session'] = tf.Session(graph=storage['graph'])
-                storage['session'] = session.get_session(
-                    graph=storage['graph'],
-                    output_file_name=settings.profiling.output_file_name + "_" + tf_method.__name__,
-                    output_directory=settings.profiling.output_directory,
-                    each_time=settings.profiling.each_time
-                )
-                with storage['graph'].as_default():
-                    storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
+                if session is None:
+                    filename = ''.join([settings.profiling.output_directory,
+                                        '_', tf_method.__name__])
+                    session = session_mngr.get_session(
+                        graph, output_file_name=filename)
+                graph = session.graph
+                storage['graph'] = graph
+                storage['session'] = session
+                with graph.as_default():
+                    tf_args = [tf.placeholder(*a) for a in self.tf_arg_tuples]
+                    storage['tf_args'] = tf_args
                     storage['free_vars'] = tf.placeholder(float_type, [None])
                     instance.make_tf_array(storage['free_vars'])
                     with instance.tf_mode():
-                        storage['tf_result'] = tf_method(instance, *storage['tf_args'])
+                        storage['tf_result'] = tf_method(instance, *tf_args)
                     storage['feed_dict_keys'] = instance.get_feed_dict_keys()
                     feed_dict = {}
-                    instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
-                    storage['session'].run(tf.global_variables_initializer(), feed_dict=feed_dict)
+                    instance.update_feed_dict(
+                        storage['feed_dict_keys'], feed_dict)
+                    init = tf.global_variables_initializer()
+                    session.run(init, feed_dict=feed_dict)
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
             instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
-            return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
+            return storage['session'].run(storage['tf_result'],
+                                          feed_dict=feed_dict)
 
         return runnable
 

@@ -43,7 +43,7 @@ class TestMethods(unittest.TestCase):
     def test_all(self):
         # test sizes.
         for m in self.ms:
-            m._compile()
+            m.compile()
             f, g = m._objective(m.get_free_state())
             self.assertTrue(f.size == 1)
             self.assertTrue(g.size == m.get_free_state().size)
@@ -53,7 +53,7 @@ class TestMethods(unittest.TestCase):
             trainer = tf.train.AdamOptimizer(learning_rate=0.001)
             if isinstance(m, (GPflow.gpr.GPR, GPflow.vgp.VGP,
                               GPflow.svgp.SVGP, GPflow.gpmc.GPMC)):
-                optimizeOp = m._compile(trainer)
+                optimizeOp = m.compile(trainer)
                 self.assertTrue(optimizeOp is not None)
 
     def test_predict_f(self):
@@ -101,8 +101,8 @@ class TestSVGP(unittest.TestCase):
                               kern=GPflow.kernels.RBF(1),
                               likelihood=GPflow.likelihoods.Exponential(),
                               Z=self.Z, q_diag=False, whiten=True)
-        m1._compile()
-        m2._compile()
+        m1.compile()
+        m2.compile()
 
         qsqrt, qmean = self.rng.randn(2, 3, 2)
         qsqrt = (qsqrt**2)*0.01
@@ -131,8 +131,8 @@ class TestSVGP(unittest.TestCase):
                               Z=self.Z,
                               q_diag=False,
                               whiten=False)
-        m1._compile()
-        m2._compile()
+        m1.compile()
+        m2.compile()
 
         qsqrt, qmean = self.rng.randn(2, 3, 2)
         qsqrt = (qsqrt**2)*0.01
@@ -152,7 +152,7 @@ class TestSVGP(unittest.TestCase):
                               likelihood=GPflow.likelihoods.Exponential(),
                               Z=self.Z)
         m1.q_sqrt.fixed = True
-        m1._compile()
+        m1.compile()
 
 class TestStochasticGradients(unittest.TestCase):
     """
@@ -279,8 +279,8 @@ class TestSparseMCMC(unittest.TestCase):
         self.m1.kern.variance = 4.2
         self.m2.kern.variance = 4.2
 
-        self.m1._compile()
-        self.m2._compile()
+        self.m1.compile()
+        self.m2.compile()
 
     def test_likelihoods_and_gradients(self):
         f1, _ = self.m1._objective(self.m1.get_free_state())

@@ -17,7 +17,7 @@ class TestSessionConfiguration(unittest.TestCase):
         settings.session.intra_op_parallelism_threads = dop
         settings.session.inter_op_parallelism_threads = dop
         settings.session.allow_soft_placement = True
-        self.m._compile()
+        self.m.compile()
         self.assertTrue(self.m._session._config.intra_op_parallelism_threads == dop)
         self.assertTrue(self.m._session._config.inter_op_parallelism_threads == dop)
         self.assertTrue(isinstance(self.m._session._config.inter_op_parallelism_threads, int))
@@ -54,7 +54,7 @@ class TestSessionConfiguration(unittest.TestCase):
         dop = 4
         settings.session.intra_op_parallelism_threads = dop
         settings.session.inter_op_parallelism_threads = dop
-        self.m._compile()  # clear pick up new settings
+        self.m.compile()  # clear pick up new settings
         self.m.compute_log_likelihood()  # causes Autoflow to create log likelihood graph
         afsession = self.m.__dict__['_compute_log_likelihood_AF_storage']['session']
         self.assertTrue(afsession._config.intra_op_parallelism_threads == dop)

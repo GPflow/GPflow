@@ -23,7 +23,7 @@ class TestNoArgs(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = NoArgsModel()
-        self.m._compile()
+        self.m.compile()
 
     def test_return(self):
         self.assertTrue(np.allclose(self.m.function(), 3.))
@@ -59,9 +59,9 @@ class TestShareArgs(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m1 = AddModel()
-        self.m1._compile()
+        self.m1.compile()
         self.m2 = AddModel()
-        self.m2._compile()
+        self.m2.compile()
         rng = np.random.RandomState(0)
         self.x = rng.randn(10, 20)
         self.y = rng.randn(10, 20)
@@ -76,7 +76,7 @@ class TestAdd(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = AddModel()
-        self.m._compile()
+        self.m.compile()
         rng = np.random.RandomState(0)
         self.x = rng.randn(10, 20)
         self.y = rng.randn(10, 20)
@@ -163,7 +163,7 @@ class TestFixAndPredict(unittest.TestCase):
         self.Ytest = np.random.randn(100, 1)
 
     def test(self):
-        self.m._compile()
+        self.m.compile()
         self.m.kern.variance.fixed = True
         _, _ = self.m.predict_f(self.m.X.value)
 
