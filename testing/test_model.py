@@ -91,7 +91,7 @@ class TestNeedsRecompile(unittest.TestCase):
 class TestSessionGraphArguments(unittest.TestCase):
     class Dummy(GPflow.model.Model):
         def __init__(self):
-            super(Dummy, self).__init__(self)
+            super(TestSessionGraphArguments.Dummy, self).__init__(self)
             self.x = GPflow.param.Param(10)
 
         def build_likelihood(self):
