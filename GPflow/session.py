@@ -25,8 +25,9 @@ class TracerSession(tf.Session):
             if not os.path.isdir(self.output_directory):
                 os.mkdir(self.output_directory)
 
-    def get_filename(self):
+    def _trace_filename(self):
         """
+        Creates trace filename.
         """
         dir_stub = self.output_directory if self.output_directory else ''
         if self.each_time:
@@ -52,7 +53,7 @@ class TracerSession(tf.Session):
 
         time = timeline.Timeline(self.local_run_metadata.step_stats)
         ctf = time.generate_chrome_trace_format()
-        with open(self.get_filename(), 'w') as file:
+        with open(self._trace_filename(), 'w') as file:
             file.write(ctf)
 
         if self.each_time:
