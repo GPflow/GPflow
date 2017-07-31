@@ -494,7 +494,9 @@ class DataHolder(Parentable):
 class AutoFlow:
     """
     This decorator-class is designed for use on methods of the Parameterized class
-    (below).
+    (below). It extends wrapped method argument list with `session` and `graph`
+    parameters and allows you to integrate GPflow computation into your existing
+    graph.
 
     The idea is that methods that compute relevant quantities (such as
     predictions) can define a tf graph which we automatically run when the
