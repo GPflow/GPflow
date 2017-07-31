@@ -107,9 +107,8 @@ class TestSessionGraphArguments(unittest.TestCase):
         expected = self.x + self.y
 
         def assert_add(model, **kwargs):
-            res = model.add(self.x, self.y, **kwargs)
-            print(res, expected, kwargs)
-            self.assertTrue(np.all(res == expected))
+            result = model.add(self.x, self.y, **kwargs)
+            self.assertTrue(np.all(result == expected))
 
         assert_add(self.m1)
         assert_add(self.m2, session=self.session)
