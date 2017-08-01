@@ -43,7 +43,7 @@ class TestMethods(unittest.TestCase):
     def test_all(self):
         # test sizes.
         for m in self.ms:
-            m._compile()
+            m.compile()
             f, g = m._objective(m.get_free_state())
             self.assertTrue(f.size == 1)
             self.assertTrue(g.size == m.get_free_state().size)
@@ -53,7 +53,7 @@ class TestMethods(unittest.TestCase):
             trainer = tf.train.AdamOptimizer(learning_rate=0.001)
             if isinstance(m, (GPflow.gpr.GPR, GPflow.vgp.VGP,
                               GPflow.svgp.SVGP, GPflow.gpmc.GPMC)):
-                optimizeOp = m._compile(trainer)
+                optimizeOp = m.compile(optimizer=trainer)
                 self.assertTrue(optimizeOp is not None)
 
     def test_predict_f(self):
@@ -101,8 +101,8 @@ class TestSVGP(unittest.TestCase):
                               kern=GPflow.kernels.RBF(1),
                               likelihood=GPflow.likelihoods.Exponential(),
                               Z=self.Z, q_diag=False, whiten=True)
-        m1._compile()
-        m2._compile()
+        m1.compile()
+        m2.compile()
 
         qsqrt, qmean = self.rng.randn(2, 3, 2)
         qsqrt = (qsqrt**2)*0.01
@@ -131,8 +131,8 @@ class TestSVGP(unittest.TestCase):
                               Z=self.Z,
                               q_diag=False,
                               whiten=False)
-        m1._compile()
-        m2._compile()
+        m1.compile()
+        m2.compile()
 
         qsqrt, qmean = self.rng.randn(2, 3, 2)
         qsqrt = (qsqrt**2)*0.01
@@ -152,7 +152,7 @@ class TestSVGP(unittest.TestCase):
                               likelihood=GPflow.likelihoods.Exponential(),
                               Z=self.Z)
         m1.q_sqrt.fixed = True
-        m1._compile()
+        m1.compile()
 
 class TestStochasticGradients(unittest.TestCase):
     """
@@ -160,26 +160,26 @@ class TestStochasticGradients(unittest.TestCase):
     happens correctly in tf optimizer mode.
     To do this compare stochastic updates with deterministic updates
     that should be equivalent.
-    
-    Data term in svgp likelihood is 
+
+    Data term in svgp likelihood is
     \sum_{i=1^N}E_{q(i)}[\log p(y_i | f_i )
-    
+
     This sum is then approximated with an unbiased minibatch estimate.
     In this test we substitute a deterministic analogue of the batchs
     sampler for which we can predict the effects of different updates.
     """
-    def setUp(self):        
+    def setUp(self):
         self.XAB = np.atleast_2d(np.array([0.,1.])).T
         self.YAB = np.atleast_2d(np.array([-1.,3.])).T
         self.sharedZ = np.atleast_2d(np.array([0.5]) )
         self.indexA = 0
         self.indexB = 1
-        
+
     def getIndexedData(self,baseX,baseY,indeces):
         newX = baseX[indeces]
         newY = baseY[indeces]
         return newX, newY
-            
+
     def getModel(self,X,Y,Z,minibatch_size):
         model = GPflow.svgp.SVGP(X,
                                  Y,
@@ -190,19 +190,19 @@ class TestStochasticGradients(unittest.TestCase):
         #This step changes the batch indeces to cycle.
         model.X.index_manager = SequenceIndices(minibatch_size,X.shape[0])
         model.Y.index_manager = SequenceIndices(minibatch_size,X.shape[0])
-        return model        
-                
+        return model
+
     def getTfOptimizer(self):
         learning_rate = .1
-        opt = tf.train.GradientDescentOptimizer(learning_rate, 
+        opt = tf.train.GradientDescentOptimizer(learning_rate,
                                                 use_locking=True)
         return opt
-                
+
     def getIndexedModel(self,X,Y,Z,minibatch_size,indeces):
         Xindeces,Yindeces = self.getIndexedData(X,Y,indeces)
         indexedModel = self.getModel(Xindeces,Yindeces,Z,minibatch_size)
         return indexedModel
-        
+
     def checkModelsClose(self,modelA,modelB,tolerance=1e-2):
         modelA_dict = modelA.get_parameter_dict()
         modelB_dict = modelB.get_parameter_dict()
@@ -212,7 +212,7 @@ class TestStochasticGradients(unittest.TestCase):
             if ((modelA_dict[key] - modelB_dict[key])>tolerance).any():
                 return False
         return True
-    
+
     def compareTwoModels(self,indecesOne,indecesTwo,
                               batchOne,batchTwo,
                               maxiter,
@@ -230,31 +230,31 @@ class TestStochasticGradients(unittest.TestCase):
         modelOne.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
         modelTwo.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
         if checkSame:
-            self.assertTrue(self.checkModelsClose(modelOne,modelTwo))        
+            self.assertTrue(self.checkModelsClose(modelOne,modelTwo))
         else:
-            self.assertFalse(self.checkModelsClose(modelOne,modelTwo))          
-        
-    def testOne(self):  
+            self.assertFalse(self.checkModelsClose(modelOne,modelTwo))
+
+    def testOne(self):
         self.compareTwoModels([self.indexA,self.indexB],
                               [self.indexB,self.indexA],
                               2,
                               2,
                               3)
-                              
+
     def testTwo(self):
         self.compareTwoModels([self.indexA,self.indexB],
                               [self.indexA,self.indexA],
                               1,
                               2,
-                              1)        
-                                          
+                              1)
+
     def testThree(self):
         self.compareTwoModels([self.indexA,self.indexA],
                               [self.indexA,self.indexB],
                               1,
                               1,
                               2,
-                              False)                  
+                              False)
 
 class TestSparseMCMC(unittest.TestCase):
     """
@@ -279,8 +279,8 @@ class TestSparseMCMC(unittest.TestCase):
         self.m1.kern.variance = 4.2
         self.m2.kern.variance = 4.2
 
-        self.m1._compile()
-        self.m2._compile()
+        self.m1.compile()
+        self.m2.compile()
 
     def test_likelihoods_and_gradients(self):
         f1, _ = self.m1._objective(self.m1.get_free_state())

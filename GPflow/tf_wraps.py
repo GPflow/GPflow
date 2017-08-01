@@ -25,7 +25,7 @@ def vec_to_tri( vectors, N ):
 	#Takes a D x M tensor `vectors'
 	#and maps it to a D x matrix_size X matrix_sizetensor
 	#where the where the lower
-	#triangle of each matrix_size x matrix_size matrix 
+	#triangle of each matrix_size x matrix_size matrix
 	#is constructed by unpacking each M-vector.
 	#Native TensorFlow version of Custom Op by Mark van der Wilk.
 	#def int_shape(x):
@@ -33,7 +33,7 @@ def vec_to_tri( vectors, N ):
 
 	#D, M = int_shape(vectors)
 	#N = int( np.floor( 0.5 * np.sqrt( M * 8. + 1. ) - 0.5 ) )
-	#assert( (matri*(N+1)) == (2 * M ) ) #check M is a valid triangle number.	
+	#assert( (matri*(N+1)) == (2 * M ) ) #check M is a valid triangle number.
 	indices = list(zip(*np.tril_indices(N)))
 	indices = tf.constant([ list(i) for i in indices], dtype=tf.int64)
 
@@ -41,4 +41,3 @@ def vec_to_tri( vectors, N ):
 		return tf.scatter_nd(indices=indices, shape=[N, N], updates=vector)
 
 	return tf.map_fn( vec_to_tri_vector, vectors )
-	

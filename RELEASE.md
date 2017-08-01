@@ -25,7 +25,7 @@
 
 # Release 0.3.2
  - updated to work with tensorflow 0.11 (release candidate 1 available at time of writing)
- - bugfixes in vgp._compile
+ - bugfixes in vgp.compile
 
 # Release 0.3.1
  - Added configuration file, which controls verbosity and level of numerical jitter

@@ -19,7 +19,7 @@ class TestProfiling(unittest.TestCase):
         s.profiling.dump_timeline = True
         s.profiling.output_directory = './testing/'
         with GPflow.settings.temp_settings(s):
-            self.m._compile()
+            self.m.compile()
             self.m._objective(self.m.get_free_state())
 
         expected_file = s.profiling.output_directory + s.profiling.output_file_name + "_objective.json"
@@ -51,7 +51,7 @@ class TestProfiling(unittest.TestCase):
         s.profiling.each_time = True
         s.profiling.output_directory = './testing/each_time/'
         with GPflow.settings.temp_settings(s):
-            self.m._compile()
+            self.m.compile()
             self.m._objective(self.m.get_free_state())
             self.m._objective(self.m.get_free_state())
 
@@ -60,4 +60,3 @@ class TestProfiling(unittest.TestCase):
 
         if os.path.exists(s.profiling.output_directory):
             os.rmdir(s.profiling.output_directory)
-

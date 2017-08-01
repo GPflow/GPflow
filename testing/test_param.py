@@ -749,18 +749,18 @@ class TestScopes(unittest.TestCase):
         k = GPflow.kernels.RBF(1)
         Y = rng.randn(10, 1)
         self.m = GPflow.gpr.GPR(X, Y, k)
-        self.m._compile()
+        self.m.compile()
 
     def test_likelihood_name(self):
         with self.m.tf_mode():
-            with self.m._graph.as_default():
+            with self.m.session.graph.as_default():
                 l = self.m.build_likelihood()
         expected_name = self.m.name + '.build_likelihood'
         self.assertTrue(expected_name in l.name)
 
     def test_kern_name(self):
         with self.m.tf_mode():
-            with self.m._graph.as_default():
+            with self.m.session.graph.as_default():
                 K = self.m.kern.K(self.m.X)
         self.assertTrue('kern.K' in K.name)
 
