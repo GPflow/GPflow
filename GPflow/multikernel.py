@@ -83,7 +83,7 @@ class MultiKernel(GPflow.kernels.Kern):
 
     def reconstruct(self, K, splitnum, goback):
         '''uses quantities from splitback to invert a dynamic_partition'''
-        tmp = tf.split_v(K, splitnum, split_dim=0) #split
+        tmp = tf.split(K, splitnum, axis=0) #split
         return tf.dynamic_stitch(goback, tmp) #stitch
 
 class HeteroscedasticWhite(GPflow.kernels.Kern):
@@ -147,8 +147,8 @@ class RecursiveKernel(MultiKernel):
 
         for index, (data1, data2) in enumerate(XandX2):
             #add incoming data
-            D = tf.concat(0, [data1, D])
-            D2 = tf.concat(0, [data2, D2])
+            D = tf.concat([data1, D], 0)
+            D2 = tf.concat([data2, D2], 0)
 
             #look up shape of the new kernel
             nshape = XandX2shapes[index,:]
@@ -168,7 +168,7 @@ class RecursiveKernel(MultiKernel):
         Kd = tf.zeros((0), dtype=tf.float64)
         D = tf.zeros((0, self.input_dim-1), dtype=tf.float64)
         for index, data in enumerate(datarev):
-            D = tf.concat(0, [data, D])
+            D = tf.concat([data, D], 0)
             sizediff = Xshapes[index]-tf.shape(Kd)[0]
             Kd = tf.pad(Kd,[[sizediff,0]])  +  self.subKdiag(index, D)
         return Kd
@@ -192,8 +192,8 @@ class BlockKernel(MultiKernel):
             row_i = []
             for j in range(self.groups):
                 row_i.append(self.subK((i, j), Xparts[i], X2parts[j]))
-            rows.append(tf.concat(1, row_i))
-        return tf.concat(0, rows)
+            rows.append(tf.concat(row_i, 1))
+        return tf.concat(rows, 0)
 
     def multidiag(self, Xparts):
         Kd = tf.zeros((0), dtype=tf.float64)
@@ -201,7 +201,7 @@ class BlockKernel(MultiKernel):
         subdiags = []
         for index, data in enumerate(Xparts):
             subdiags.append(self.subKdiag(index, Xparts[index]))
-        return tf.concat(0, subdiags)
+        return tf.concat(subdiags, 0)
 
 
 class KernelList(GPflow.param.Parameterized):
