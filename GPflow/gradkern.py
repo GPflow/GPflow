@@ -199,21 +199,27 @@ class StationaryHessianKernel(StationaryGradKernel):
             return tuple(self.tril_indices[i-self.input_dim,:])
 
 
-d = 1
-groups = 3
-Ns = [10,5,0]
+d = 1 #dimension
+groups = 3 #observation types
+res = 100 #plot resolution
 
-ind = np.vstack([n*np.ones((Ns[n],1)) for n in range(3)])
+#number of function, derivative, and second derivative observations
+Ns = [10,5,0]
 N = np.sum(Ns)
-#np.random.shuffle(ind)
+
+
+#generate data and annotate with observation type
+ind = np.vstack([n*np.ones((Ns[n],1)) for n in range(3)])
 val = np.vstack([np.linspace(0,1,n).reshape((-1,1)) for n in Ns])
 X = np.concatenate([ind, val],1)
+
+#test function and derivatives
 f = lambda x: np.exp(-x)
 fp = lambda x: -np.exp(-x)
 fpp = lambda x: np.exp(-x)
 y = np.vstack([fun(val[ind == i]).reshape((-1,1)) for fun, i in zip([f,fp,fpp], range(groups))])
 
-
+#define kernels and GPs
 k = StationaryHessianKernel(d+1)
 kg = StationaryGradKernel(d+1)
 m = GPflow.gpr.GPR(X, y, k)
@@ -221,20 +227,25 @@ mg = GPflow.gpr.GPR(X, y, kg)
 m.likelihood.variance = 0.1
 mg.likelihood.variance = 0.1
 
+#compute kernel matrices
 K = k.compute_K(X, X)
 Kg = kg.compute_K(X, X)
-#m.optimize()
-#mg.optimize()
-res = 100
+
+
+#predict function, derivative, and second derivative
 x = np.column_stack([np.linspace(-1,1, res),np.zeros(res)])
 predlevel = lambda i: m.predict_f(np.column_stack([i*np.ones(res),x]))
 mu, var = predlevel(0)
 mug, varg = predlevel(1)
 mug2, varg = predlevel(2)
 
-plt.plot(x[:,0],mu,label='Function')
-plt.plot(x[:,0],mug,label='Derivative')
-plt.plot(x[:,0],mug2,label='Derivative2')
+#plot
+pf = plt.plot(x[:,0],mu,label='Function')
+#plt.scatter(X[X[:,0]==0,1],y[X[:,0]==0],color=pf[0].get_color())
+pfp = plt.plot(x[:,0],mug,label='Derivative')
+#plt.scatter(X[X[:,0]==1,1],y[X[:,0]==1],color=pfp[0].get_color())
+pfpp = plt.plot(x[:,0],mug2,label='Derivative2')
+#plt.scatter(*X[X[:,0]==2,1].T,color=pfpp[0].get_color())
 
 plt.hlines(0, -1, 1)
 plt.legend()
