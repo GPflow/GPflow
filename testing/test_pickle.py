@@ -151,7 +151,10 @@ class TestTransforms(unittest.TestCase):
         for T in self.transforms:
             m = GPflow.model.Model()
             m.x = GPflow.param.Param(1.0)
-            m.x.transform = T()
+            if T==GPflow.transforms.LowerTriangular:
+                m.x.transform = T(1)
+            else:
+                m.x.transform = T()
             self.models.append(m)
 
     def test_pickle(self):

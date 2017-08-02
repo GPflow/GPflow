@@ -40,7 +40,7 @@ class SVGP(GPModel):
       }
 
     """
-    def __init__(self, X, Y, kern, likelihood, Z, mean_function=Zero(),
+    def __init__(self, X, Y, kern, likelihood, Z, mean_function=None,
                  num_latent=None, q_diag=False, whiten=True, minibatch_size=None):
         """
         - X is a data matrix, size N x D
@@ -76,7 +76,7 @@ class SVGP(GPModel):
         else:
             q_sqrt = np.array([np.eye(self.num_inducing)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-            self.q_sqrt = Param(q_sqrt)  # , transforms.LowerTriangular(q_sqrt.shape[2]))  # Temp remove transform
+            self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_inducing, self.num_latent))
 
     def build_prior_KL(self):
         if self.whiten:
