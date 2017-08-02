@@ -66,6 +66,9 @@ class Exponential(Prior):
         scale = 1 / self.rate
         return tf.reduce_sum(densities.exponential(scale, x))
 
+    def sample(self, shape=(1,)):
+        return np.random.exponential(scale=1 / self.rate, size=shape)
+
     def __str__(self):
         return "Exp({})".format(self.rate)
 
