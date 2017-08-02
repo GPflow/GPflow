@@ -44,7 +44,7 @@ class SGPR(GPModel):
 
     """
 
-    def __init__(self, X, Y, kern, Z, mean_function=Zero()):
+    def __init__(self, X, Y, kern, Z, mean_function=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
