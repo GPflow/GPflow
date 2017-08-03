@@ -10,7 +10,7 @@ from . import kernels
 from ._settings import settings
 
 float_type = settings.dtypes.float_type
-
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 def PCA_reduce(X, Q):
     """
@@ -97,15 +97,16 @@ class BayesianGPLVM(GPModel):
         # deal with parameters for the prior mean variance of X
         if X_prior_mean is None:
             X_prior_mean = np.zeros((self.num_data, self.num_latent))
-        self.X_prior_mean = X_prior_mean
         if X_prior_var is None:
             X_prior_var = np.ones((self.num_data, self.num_latent))
-        self.X_prior_var = X_prior_var
 
-        assert X_prior_mean.shape[0] == self.num_data
-        assert X_prior_mean.shape[1] == self.num_latent
-        assert X_prior_var.shape[0] == self.num_data
-        assert X_prior_var.shape[1] == self.num_latent
+        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=np_float_type)
+        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=np_float_type)
+
+        assert self.X_prior_mean.shape[0] == self.num_data
+        assert self.X_prior_mean.shape[1] == self.num_latent
+        assert self.X_prior_var.shape[0] == self.num_data
+        assert self.X_prior_var.shape[1] == self.num_latent
 
     def build_likelihood(self):
         """
