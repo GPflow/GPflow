@@ -46,6 +46,17 @@ Please use gihub issues to start discussion on the use of GPflow. Tagging enquir
 # Contributing
 All constuctive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
 
+# Projects using GPflow
+
+A few projects building on GPflow and demonstrating its usage are listed below.
+
+| Project | Description | 
+| --- | --- | 
+| [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow. |
+| [VFF](https://github.com/jameshensman/VFF)       | Variational Fourier Features for Gaussian Processes. |
+| [Doubly-Stochastic-DGP](https://github.com/ICL-SML/Doubly-Stochastic-DGP)| Deep Gaussian Processes with Doubly Stochastic Variational Inference.|
+| [BranchedGP](https://github.com/ManchesterBioinference/BranchedGP) | Gaussian processes with branching kernels.
+Let us know if you would like your project listed here.
 
 # Citing GPflow
 
