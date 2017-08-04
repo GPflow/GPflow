@@ -117,7 +117,7 @@ class BayesianGPLVM(GPModel):
         psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * 1e-6
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -161,7 +161,7 @@ class BayesianGPLVM(GPModel):
         num_inducing = tf.shape(self.Z)[0]
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * 1e-6
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
         Kus = self.kern.K(self.Z, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
