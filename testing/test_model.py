@@ -13,10 +13,13 @@
 # limitations under the License.from __future__ import print_function
 
 from __future__ import print_function
-import GPflow
-import tensorflow as tf
-import numpy as np
+
 import unittest
+
+import numpy as np
+import tensorflow as tf
+
+import GPflow
 
 
 class TestOptimize(unittest.TestCase):
@@ -202,6 +205,42 @@ class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
         m1._compile()
         m2 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
         self.assertFalse(m1._needs_recompile)
+
+
+class TestUpperBound(unittest.TestCase):
+    """
+    Test for SGPU
+    """
+
+    def setUp(self):
+        self.X = np.random.rand(100, 1)
+        self.Y = np.sin(1.5 * 2 * np.pi * self.X) + np.random.randn(*self.X.shape) * 0.1
+
+    def test_few_inducing_points(self):
+        vfe = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.RBF(1), self.X[:10, :].copy())
+        vfe.optimize()
+
+        upper = GPflow.sgpr.SGPU(self.X, self.Y, GPflow.kernels.RBF(1), self.X[:10, :].copy())
+        upper.set_parameter_dict(vfe.get_parameter_dict())
+        upper.kern.fixed = True
+        upper.likelihood.fixed = True
+        upper.optimize()
+
+        full = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.RBF(1))
+        full.kern.lengthscales = vfe.kern.lengthscales.value
+        full.kern.variance = vfe.kern.variance.value
+        full.likelihood.variance = vfe.likelihood.variance.value
+        full._compile()
+
+        lml_upper = upper.compute_upper_bound()
+        lml_vfe = -vfe._objective(vfe.get_free_state())[0]
+        lml_full = -full._objective(full.get_free_state())[0]
+
+        # print(lml_upper)
+        # print(lml_full)
+        # print(lml_vfe)
+
+        self.assertTrue(lml_upper > lml_full > lml_vfe)
 
 
 if __name__ == "__main__":
