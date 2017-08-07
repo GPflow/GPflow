@@ -378,7 +378,8 @@ class LowerTriangular(Transform):
         if variable_shape[0] != variable_shape[1]:
             raise ValueError("Matrices passed must be square.")
         N = variable_shape[0]
-        return (int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1),)
+        free_state_size = int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1)
+        return (free_state_size,)
 
     def __str__(self):
         return "LoTri->vec"
