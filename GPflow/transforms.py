@@ -54,11 +54,8 @@ class Transform(object):
         """
         raise NotImplementedError
 
-    def free_state_shape(self, variable_shape):
-        return variable_shape
-
     def free_state_size(self, variable_shape):
-        return np.prod(self.free_state_shape(variable_shape))
+        return np.prod(variable_shape)
 
     def __str__(self):
         """
@@ -290,8 +287,8 @@ class DiagMatrix(Transform):
     def __str__(self):
         return 'DiagMatrix'
 
-    def free_state_shape(self, variable_shape):
-        return (variable_shape[0] * variable_shape[1],)
+    def free_state_size(self, variable_shape):
+        return variable_shape[0] * variable_shape[1]
 
 
 class LowerTriangular(Transform):
@@ -370,7 +367,7 @@ class LowerTriangular(Transform):
     def tf_log_jacobian(self, x):
         return tf.zeros((1,), float_type)
 
-    def free_state_shape(self, variable_shape):
+    def free_state_size(self, variable_shape):
         matrix_batch = len(variable_shape) > 2
         if ((not matrix_batch and self.num_matrices != 1) or
                 (matrix_batch and variable_shape[2] != self.num_matrices)):
@@ -378,8 +375,7 @@ class LowerTriangular(Transform):
         if variable_shape[0] != variable_shape[1]:
             raise ValueError("Matrices passed must be square.")
         N = variable_shape[0]
-        free_state_size = int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1)
-        return (free_state_size,)
+        return int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1)
 
     def __str__(self):
         return "LoTri->vec"
