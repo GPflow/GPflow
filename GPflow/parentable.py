@@ -65,4 +65,3 @@ class Parentable(object):
     def __setstate__(self, d):
         self.__dict__.update(d)
         self._parent = None
-
