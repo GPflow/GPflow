@@ -2,12 +2,14 @@ import glob
 import os
 import unittest
 
+import tensorflow as tf
 import numpy as np
-
 import GPflow
 
+from testing.gpflow_testcase import GPflowTestCase
 
-class TestProfiling(unittest.TestCase):
+
+class TestProfiling(GPflowTestCase):
     def setUp(self):
         X = np.random.rand(100, 1)
         Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
@@ -19,7 +21,7 @@ class TestProfiling(unittest.TestCase):
         s.profiling.dump_timeline = True
         s.profiling.output_directory = './testing/'
         with GPflow.settings.temp_settings(s):
-            self.m._compile()
+            self.m.compile()
             self.m._objective(self.m.get_free_state())
 
         expected_file = s.profiling.output_directory + s.profiling.output_file_name + "_objective.json"
@@ -40,6 +42,7 @@ class TestProfiling(unittest.TestCase):
             os.remove(expected_file)
 
         s.profiling.output_directory = './testing/__init__.py'
+        tf.reset_default_graph()
         self.m.kern._kill_autoflow()
         with self.assertRaises(IOError):
             with GPflow.settings.temp_settings(s):
@@ -51,7 +54,7 @@ class TestProfiling(unittest.TestCase):
         s.profiling.each_time = True
         s.profiling.output_directory = './testing/each_time/'
         with GPflow.settings.temp_settings(s):
-            self.m._compile()
+            self.m.compile()
             self.m._objective(self.m.get_free_state())
             self.m._objective(self.m.get_free_state())
 
@@ -60,4 +63,3 @@ class TestProfiling(unittest.TestCase):
 
         if os.path.exists(s.profiling.output_directory):
             os.rmdir(s.profiling.output_directory)
-

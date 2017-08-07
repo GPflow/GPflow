@@ -3,12 +3,15 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+
 from GPflow import settings
+from testing.gpflow_testcase import GPflowTestCase
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
-class TestDataHolderSimple(unittest.TestCase):
+class TestDataHolderSimple(GPflowTestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
         self.rng = np.random.RandomState()
@@ -58,7 +61,7 @@ class TestDataHolderSimple(unittest.TestCase):
         self.assertTrue(self.m._needs_recompile)
 
 
-class TestDataHolderIntegers(unittest.TestCase):
+class TestDataHolderIntegers(GPflowTestCase):
     def setUp(self):
         self.m = GPflow.model.Model()
         self.rng = np.random.RandomState()
@@ -78,7 +81,7 @@ class TestDataHolderIntegers(unittest.TestCase):
         self.assertFalse(self.m._needs_recompile)
 
 
-class TestDataHolderModels(unittest.TestCase):
+class TestDataHolderModels(GPflowTestCase):
     """
     We make test for Dataholder that enables to reuse model for different data
     with the same shape to the original.  We tested this for the six models.
@@ -92,7 +95,7 @@ class TestDataHolderModels(unittest.TestCase):
 
     def test_gpr(self):
         m = GPflow.gpr.GPR(self.X, self.Y, self.kern)
-        m._compile()
+        m.compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -103,7 +106,7 @@ class TestDataHolderModels(unittest.TestCase):
 
     def test_sgpr(self):
         m = GPflow.sgpr.SGPR(self.X, self.Y, self.kern, Z=self.X[::2])
-        m._compile()
+        m.compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -114,7 +117,7 @@ class TestDataHolderModels(unittest.TestCase):
 
     def test_gpmc(self):
         m = GPflow.gpmc.GPMC(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT())
-        m._compile()
+        m.compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -125,11 +128,11 @@ class TestDataHolderModels(unittest.TestCase):
         m.Y = Ynew
         self.assertTrue(m._needs_recompile,
                         msg="Recompilation should be necessary for different shape data")
-        m._compile()  # make sure compilation is okay for new shapes.
+        m.compile()  # make sure compilation is okay for new shapes.
 
     def test_sgpmc(self):
         m = GPflow.sgpmc.SGPMC(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT(), Z=self.X[::2])
-        m._compile()
+        m.compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -141,7 +144,7 @@ class TestDataHolderModels(unittest.TestCase):
 
     def test_svgp(self):
         m = GPflow.svgp.SVGP(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT(), Z=self.X[::2])
-        m._compile()
+        m.compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -153,7 +156,7 @@ class TestDataHolderModels(unittest.TestCase):
 
     def test_vgp(self):
         m = GPflow.vgp.VGP(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT())
-        m._compile()
+        m.compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
                          msg="Recompilation should be avoided for the same shape data")
@@ -164,7 +167,7 @@ class TestDataHolderModels(unittest.TestCase):
         m.Y = Ynew
         self.assertTrue(m._needs_recompile,
                         msg="Recompilation should be necessary for different shape data")
-        m._compile()  # make sure compilation is okay for new shapes.
+        m.compile()  # make sure compilation is okay for new shapes.
 
 
 if __name__ == '__main__':

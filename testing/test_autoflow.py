@@ -3,6 +3,8 @@ import tensorflow as tf
 import numpy as np
 import unittest
 
+from testing.gpflow_testcase import GPflowTestCase
+
 
 class DumbModel(GPflow.model.Model):
     def __init__(self):
@@ -19,11 +21,11 @@ class NoArgsModel(DumbModel):
         return self.a
 
 
-class TestNoArgs(unittest.TestCase):
+class TestNoArgs(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = NoArgsModel()
-        self.m._compile()
+        self.m.compile()
 
     def test_return(self):
         self.assertTrue(np.allclose(self.m.function(), 3.))
@@ -50,7 +52,7 @@ class AddModel(DumbModel):
         return tf.add(x, y)
 
 
-class TestShareArgs(unittest.TestCase):
+class TestShareArgs(GPflowTestCase):
     """
     This is designed to replicate bug #85, where having two models caused
     autoflow functions to fail because the tf_args were shared over the
@@ -59,9 +61,9 @@ class TestShareArgs(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m1 = AddModel()
-        self.m1._compile()
+        self.m1.compile()
         self.m2 = AddModel()
-        self.m2._compile()
+        self.m2.compile()
         rng = np.random.RandomState(0)
         self.x = rng.randn(10, 20)
         self.y = rng.randn(10, 20)
@@ -72,11 +74,66 @@ class TestShareArgs(unittest.TestCase):
         self.m1.add(self.x, self.y)
 
 
-class TestAdd(unittest.TestCase):
+class TestAutoFlowSessionGraphArguments(GPflowTestCase):
+    """AutoFlow tests for external session and graph."""
+
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m1 = AddModel()
+        self.m2 = AddModel()
+        self.m3 = AddModel()
+        self.m4 = AddModel()
+        self.session = tf.Session()
+        self.graph = tf.Graph()
+        self.x = np.array([1., 1., 1.])
+        self.y = np.array([1., 2., 3.])
+
+    def test_wrong_arguments(self):
+        """Wrong arguments for AutoFlow wrapped function."""
+        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
+                          unknown1='argument1')
+        self.assertRaises(ValueError, self.m2.add, [1.], [1.],
+                          session=self.session, unknown2='argument2')
+
+    def test_storage_properties(self):
+        """External graph and session passed to AutoFlow."""
+        storage_name = '_add_AF_storage'
+        self.m1.add(self.x, self.y)
+        self.m2.add(self.x, self.y, session=self.session)
+        tf.reset_default_graph()
+        self.m3.add(self.x, self.y, graph=self.graph)
+        tf.reset_default_graph()
+        with self.graph.as_default():
+            self.m4.add(self.x, self.y)
+        models = [self.m1, self.m2, self.m3, self.m4]
+        sessions = [getattr(m, storage_name)['session'] for m in models]
+        sess1, sess2, sess3, sess4 = sessions
+        sessions_set = set(map(str, sessions))
+        self.assertEqual(len(sessions_set), 4)
+        self.assertEqual(sess1.graph, sess2.graph)
+        self.assertEqual(sess3.graph, sess4.graph)
+
+    def test_autoflow_results(self):
+        """AutoFlow computation results for external session and graph."""
+        expected = self.x + self.y
+
+        def assert_add(model, **kwargs):
+            result = model.add(self.x, self.y, **kwargs)
+            self.assertTrue(np.all(result == expected))
+
+        assert_add(self.m1)
+        assert_add(self.m2, session=self.session)
+        tf.reset_default_graph()
+        assert_add(self.m3, graph=self.graph)
+        tf.reset_default_graph()
+        with self.graph.as_default():
+            assert_add(self.m4)
+
+class TestAdd(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = AddModel()
-        self.m._compile()
+        self.m.compile()
         rng = np.random.RandomState(0)
         self.x = rng.randn(10, 20)
         self.y = rng.randn(10, 20)
@@ -95,7 +152,7 @@ class IncrementModel(DumbModel):
         return x + self.a
 
 
-class TestDataHolder(unittest.TestCase):
+class TestDataHolder(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         self.m = IncrementModel()
@@ -106,7 +163,7 @@ class TestDataHolder(unittest.TestCase):
         self.assertTrue(np.allclose(self.x + 3, self.m.inc(self.x)))
 
 
-class TestGPmodel(unittest.TestCase):
+class TestGPmodel(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
@@ -132,7 +189,7 @@ class TestGPmodel(unittest.TestCase):
         self.m.compute_log_likelihood()
 
 
-class TestResetGraph(unittest.TestCase):
+class TestResetGraph(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
         k = GPflow.kernels.Matern32(1)
@@ -146,7 +203,7 @@ class TestResetGraph(unittest.TestCase):
         mu1, var1 = self.m.predict_f(self.Xnew)
 
 
-class TestFixAndPredict(unittest.TestCase):
+class TestFixAndPredict(GPflowTestCase):
     """
     Bug #54 says that if a model parameter is fixed  between calls to predict
     (an autoflow fn) then the second call fails. This test ensures replicates
@@ -163,12 +220,12 @@ class TestFixAndPredict(unittest.TestCase):
         self.Ytest = np.random.randn(100, 1)
 
     def test(self):
-        self.m._compile()
+        self.m.compile()
         self.m.kern.variance.fixed = True
         _, _ = self.m.predict_f(self.m.X.value)
 
 
-class TestSVGP(unittest.TestCase):
+class TestSVGP(GPflowTestCase):
     """
     This replicates Alex's code from bug #99
     """

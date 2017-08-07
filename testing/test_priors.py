@@ -17,8 +17,10 @@ import GPflow
 import numpy as np
 import tensorflow as tf
 
+from testing.gpflow_testcase import GPflowTestCase
 
-class PriorModeTests(unittest.TestCase):
+
+class PriorModeTests(GPflowTestCase):
     """
     these tests optimize the prior to find the mode numerically. Make sure the
     mode is the same as the known mode.

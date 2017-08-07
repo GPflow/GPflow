@@ -1,14 +1,17 @@
 from __future__ import print_function
 import GPflow
 import numpy as np
+import tensorflow as tf
 import unittest
+
+from testing.gpflow_testcase import GPflowTestCase
 from GPflow import ekernels
 from GPflow import kernels
 from nose.plugins.attrib import attr
+
 np.random.seed(0)
 
-
-class TestGPLVM(unittest.TestCase):
+class TestGPLVM(GPflowTestCase):
     def setUp(self):
         # data
         self.N = 20  # number of data points
@@ -34,7 +37,7 @@ class TestGPLVM(unittest.TestCase):
 
 
 @attr(speed='slow')
-class TestBayesianGPLVM(unittest.TestCase):
+class TestBayesianGPLVM(GPflowTestCase):
     def setUp(self):
         # data
         self.N = 20  # number of data points
@@ -102,8 +105,8 @@ class TestBayesianGPLVM(unittest.TestCase):
                                             kern=kq, M=self.M, Z=Z, X_prior_mean=X_prior_mean, X_prior_var=X_prior_var)
             ma = GPflow.gplvm.BayesianGPLVM(X_mean=X_mean, X_var=np.ones((self.N, Q)), Y=self.Y,
                                             kern=ka, M=self.M, Z=Z)
-            mq._compile()
-            ma._compile()
+            mq.compile()
+            ma.compile()
             ql = mq.compute_log_likelihood()
             al = ma.compute_log_likelihood()
             self.assertTrue(np.allclose(ql, al, atol=1e-2), 'Likelihood not equal %f<>%f' % (ql, al))

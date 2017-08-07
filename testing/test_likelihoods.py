@@ -3,10 +3,12 @@ import six
 import tensorflow as tf
 import numpy as np
 import GPflow
+
+from testing.gpflow_testcase import GPflowTestCase
 from GPflow import settings
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
-
 
 class TestSetup(object):
     def __init__(self, likelihood, Y, tolerance):
@@ -48,7 +50,7 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
     return test_setups
 
 
-class TestPredictConditional(unittest.TestCase):
+class TestPredictConditional(GPflowTestCase):
     """
     Here we make sure that the conditional_mean and contitional_var functions
     give the same result as the predict_mean_and_var function if the prediction
@@ -100,7 +102,7 @@ class TestPredictConditional(unittest.TestCase):
             self.assertTrue(np.allclose(r1, r2, test_setup.tolerance, test_setup.tolerance))
 
 
-class TestQuadrature(unittest.TestCase):
+class TestQuadrature(GPflowTestCase):
     """
     Where quadratre methods have been overwritten, make sure the new code
      does something close to the quadrature
@@ -153,7 +155,7 @@ class TestQuadrature(unittest.TestCase):
             self.assertTrue(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
 
 
-class TestRobustMaxMulticlass(unittest.TestCase):
+class TestRobustMaxMulticlass(GPflowTestCase):
     """
     Some specialized tests to the multiclass likelihood with RobustMax inverse link function.
     """
@@ -223,7 +225,7 @@ class TestRobustMaxMulticlass(unittest.TestCase):
 
 
 
-class TestMulticlassIndexFix(unittest.TestCase):
+class TestMulticlassIndexFix(GPflowTestCase):
     """
     A regression test for a bug in multiclass likelihood.
     """
@@ -238,7 +240,7 @@ class TestMulticlassIndexFix(unittest.TestCase):
         tf.gradients(tf.reduce_sum(ve), mu)
 
 
-class TestSwitchedLikelihood(unittest.TestCase):
+class TestSwitchedLikelihood(GPflowTestCase):
     """
     SwitchedLikelihood is saparately tested here.
     Here, we make sure the partition-stictch works fine.
