@@ -92,8 +92,12 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
         """Wrong arguments for AutoFlow wrapped function."""
         self.assertRaises(ValueError, self.m1.add, [1.], [1.],
                           unknown1='argument1')
-        self.assertRaises(ValueError, self.m2.add, [1.], [1.],
+        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
+                          graph=tf.Graph(), unknown1='argument1')
+        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
                           session=self.session, unknown2='argument2')
+        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
+                          graph=tf.Graph(), session=tf.Session())
 
     def test_storage_properties(self):
         """External graph and session passed to AutoFlow."""
@@ -105,6 +109,7 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
         tf.reset_default_graph()
         with self.graph.as_default():
             self.m4.add(self.x, self.y)
+
         models = [self.m1, self.m2, self.m3, self.m4]
         sessions = [getattr(m, storage_name)['session'] for m in models]
         sess1, sess2, sess3, sess4 = sessions
@@ -112,6 +117,17 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
         self.assertEqual(len(sessions_set), 4)
         self.assertEqual(sess1.graph, sess2.graph)
         self.assertEqual(sess3.graph, sess4.graph)
+
+        self.m2.add(self.x, self.y)
+        sess2_second_run = getattr(self.m2, storage_name)['session']
+        self.assertTrue(isinstance(sess2_second_run, tf.Session))
+        self.assertEqual(sess2, sess2_second_run)
+
+        self.m4.add(self.x, self.y, graph=tf.get_default_graph())
+        sess4_second_run = getattr(self.m4, storage_name)['session']
+        self.assertTrue(isinstance(sess4_second_run, tf.Session))
+        self.assertNotEqual(sess4, sess4_second_run)
+
 
     def test_autoflow_results(self):
         """AutoFlow computation results for external session and graph."""

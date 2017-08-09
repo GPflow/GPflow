@@ -545,7 +545,31 @@ class AutoFlow:
         @functools.wraps(tf_method)
         def runnable(instance, *np_args, **kwargs):
             """
-            AutoFlow function wrapper.
+            AutoFlow function wrapper adds extra parameters:
+            session and graph. It allows you specify which session and graph
+            will be used during compilation. Session always prevails graph
+            presence. It means that whenever session parameter is not None,
+            the session's graph will be used for compilation.
+            Let's say we have `method(x)` wrapped in AutoFlow:
+
+            > m.method(x)
+            > m.method(x, session=tf.Session())
+            > m.method(x, graph=tf.Graph())
+
+            In first case we call method without extra parameters -
+            the default graph is used and new session is created for compiling
+            model, both are stored in model cache.
+            Second example has only session parameter which is constructed
+            with default graph, thereafter model will not be re-built, but it
+            will be initialized again and new session will replace old one.
+            In third example we passed a new graph and the model will be
+            recompiled from scratch.
+            The graph and session being passed together make little sense as
+            tensorflow session can be tied to only graph.
+
+            :raises ValueError: when `**kwargs` contains unknown key-valued
+            parameters or user passed both session and graph parameters and
+            session references to different graph.
             """
 
             if not set(kwargs.keys()).issubset(['session', 'graph']):
@@ -554,25 +578,51 @@ class AutoFlow:
             session = kwargs.get('session')
             graph = kwargs.get('graph')
 
+            if session and graph and session.graph != graph:
+                raise ValueError(
+                    'Ambiguous session and graph parameters passed')
+
             storage_name = ''.join(['_', tf_method.__name__, '_AF_storage'])
+            storage, storage_session, storage_graph = None, None, None
             if hasattr(instance, storage_name):
+                storage = getattr(instance, storage_name)
+                storage_session = storage['session']
+                storage_graph = storage['graph']
+
+            def get_session():
+                if session is None:
+                    filename = ''.join([
+                        settings.profiling.output_file_name,
+                        '_', tf_method.__name__])
+                    return session_mngr.get_session(
+                        graph=graph, output_file_name=filename)
+                return session
+
+            def tf_init_feed_dict(instance_, storage_, session_):
+                feed_dict = {}
+                feed_dict_keys = storage_['feed_dict_keys']
+                instance_.update_feed_dict(feed_dict_keys, feed_dict)
+                init = tf.global_variables_initializer()
+                session_.run(init, feed_dict=feed_dict)
+
+            if storage is not None and (
+                    (session is None and graph is None) or
+                    (storage_session == session)):
                 # the method has been compiled already,
                 # get things out of storage
-                storage = getattr(instance, storage_name)
-                graph = storage['graph']
-                session = storage['session']
+                graph = storage_graph
+                session = storage_session
+            elif storage is not None and storage_graph == graph:
+                session = get_session()
+                with graph.as_default():
+                    tf_init_feed_dict(instance, storage, session)
             else:
                 # the method needs to be compiled.
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
-                if session is None:
-                    filename = ''.join([settings.profiling.output_file_name,
-                                        '_', tf_method.__name__])
-                    session = session_mngr.get_session(
-                        graph=graph, output_file_name=filename)
+                storage = getattr(instance, storage_name)
+                session = get_session()
                 graph = session.graph
-                storage['graph'] = graph
-                storage['session'] = session
                 with graph.as_default():
                     tf_args = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                     storage['tf_args'] = tf_args
@@ -581,11 +631,10 @@ class AutoFlow:
                     with instance.tf_mode():
                         storage['tf_result'] = tf_method(instance, *tf_args)
                     storage['feed_dict_keys'] = instance.get_feed_dict_keys()
-                    feed_dict = {}
-                    instance.update_feed_dict(
-                        storage['feed_dict_keys'], feed_dict)
-                    init = tf.global_variables_initializer()
-                    session.run(init, feed_dict=feed_dict)
+                    tf_init_feed_dict(instance, storage, session)
+
+            storage['graph'] = graph
+            storage['session'] = session
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
             instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
