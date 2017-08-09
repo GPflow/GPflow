@@ -5,7 +5,6 @@ from .gpr import GPR
 from .param import Param
 from .mean_functions import Zero
 from . import likelihoods
-from .tf_wraps import eye
 from . import transforms
 from . import kernels
 from ._settings import settings
@@ -117,7 +116,7 @@ class BayesianGPLVM(GPModel):
         psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * 1e-6
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -126,9 +125,9 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + eye(num_inducing)
+        B = AAT + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
-        log_det_B = 2. * tf.reduce_sum(tf.log(tf.diag_part(LB)))
+        log_det_B = 2. * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
@@ -147,7 +146,7 @@ class BayesianGPLVM(GPModel):
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 -
-                             tf.reduce_sum(tf.diag_part(AAT)))
+                             tf.reduce_sum(tf.matrix_diag_part(AAT)))
         bound -= KL
         return bound
 
@@ -161,7 +160,7 @@ class BayesianGPLVM(GPModel):
         num_inducing = tf.shape(self.Z)[0]
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + eye(num_inducing) * 1e-6
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * 1e-6
         Kus = self.kern.K(self.Z, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -170,15 +169,15 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + eye(num_inducing)
+        B = AAT + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
-        mean = tf.matmul(tf.transpose(tmp2), c)
+        mean = tf.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kern.K(Xnew) + tf.matmul(tf.transpose(tmp2), tmp2) \
-                  - tf.matmul(tf.transpose(tmp1), tmp1)
+            var = self.kern.K(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
+                  - tf.matmul(tmp1, tmp1, transpose_a=True)
             shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:

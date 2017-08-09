@@ -4,6 +4,7 @@ import numpy as np
 import unittest
 from GPflow import ekernels
 from GPflow import kernels
+from nose.plugins.attrib import attr
 np.random.seed(0)
 
 
@@ -32,6 +33,7 @@ class TestGPLVM(unittest.TestCase):
         self.assertTrue(m.compute_log_likelihood() > linit)
 
 
+@attr(speed='slow')
 class TestBayesianGPLVM(unittest.TestCase):
     def setUp(self):
         # data

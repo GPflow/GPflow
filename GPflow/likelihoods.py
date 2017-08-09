@@ -218,25 +218,40 @@ class BinnedPoisson(Likelihood):
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 
 class Poisson(Likelihood):
-    def __init__(self, invlink=tf.exp):
+    """
+    Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.
+
+    let g(.) be the inverse-link function, then this likelihood represents
+
+    p(y_i | f_i) = Poisson(y_i | g(f_i) * binsize)
+    
+    Note:binsize
+    For use in a Log Gaussian Cox process (doubly stochastic model) where the
+    rate function of an inhomogeneous Poisson process is given by a GP.  The
+    intractable likelihood can be approximated by gridding the space (into bins
+    of size 'binsize') and using this Poisson likelihood.
+    """
+
+    def __init__(self, invlink=tf.exp, binsize=1.):
         Likelihood.__init__(self)
         self.invlink = invlink
+        self.binsize = np.double(binsize)
 
     def logp(self, F, Y):
-        return densities.poisson(self.invlink(F), Y)
+        return densities.poisson(self.invlink(F) * self.binsize, Y)
 
     def conditional_variance(self, F):
-        return self.invlink(F)
+        return self.invlink(F) * self.binsize
 
     def conditional_mean(self, F):
-        return self.invlink(F)
+        return self.invlink(F) * self.binsize
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return Y * Fmu - tf.exp(Fmu + Fvar / 2) - tf.lgamma(Y + 1)
+            return Y * Fmu - tf.exp(Fmu + Fvar / 2) * self.binsize \
+                   - tf.lgamma(Y + 1) + Y * tf.log(self.binsize) 
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
-
 
 class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):
@@ -389,7 +404,7 @@ class RobustMax(object):
     def __init__(self, num_classes, epsilon=1e-3):
         self.epsilon = epsilon
         self.num_classes = num_classes
-        self._eps_K1 = self.epsilon / (self.num_classes - 1)
+        self._eps_K1 = self.epsilon / (self.num_classes - 1.)
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
@@ -458,19 +473,23 @@ class MultiClass(Likelihood):
             # To compute this, we'll compute the density for each possible output
             possible_outputs = [tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
                                 range(self.num_classes)]
-            ps = [self.predict_density(Fmu, Fvar, po) for po in possible_outputs]
+            ps = [self._predict_non_logged_density(Fmu, Fvar, po) for po in possible_outputs]
             ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
             return ps, ps - tf.square(ps)
         else:
             raise NotImplementedError
 
     def predict_density(self, Fmu, Fvar, Y):
+        return tf.log(self._predict_non_logged_density(Fmu, Fvar, Y))
+
+    def _predict_non_logged_density(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
             p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1. - self.invlink.epsilon) + (1. - p) * self.invlink._eps_K1
+            return p * (1 - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
         else:
             raise NotImplementedError
+
 
     def conditional_mean(self, F):
         return self.invlink(F)
