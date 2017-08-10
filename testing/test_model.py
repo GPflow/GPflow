@@ -164,43 +164,43 @@ class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
         self.Y = np.random.rand(10, 1)
 
     def test_gpr(self):
-        m1 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
+        m1 = gpflow.gpr.GPR(self.X, self.Y, gpflow.kernels.Matern32(2))
         m1._compile()
-        m2 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
+        m2 = gpflow.gpr.GPR(self.X, self.Y, gpflow.kernels.Matern32(2))
         self.assertFalse(m1._needs_recompile)
 
     def test_sgpr(self):
-        m1 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
+        m1 = gpflow.sgpr.SGPR(self.X, self.Y, gpflow.kernels.Matern32(2), Z=self.X)
         m1._compile()
-        m2 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
+        m2 = gpflow.sgpr.SGPR(self.X, self.Y, gpflow.kernels.Matern32(2), Z=self.X)
         self.assertFalse(m1._needs_recompile)
 
     def test_gpmc(self):
-        m1 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        m1 = gpflow.gpmc.GPMC(self.X, self.Y, gpflow.kernels.Matern32(2), likelihood=gpflow.likelihoods.StudentT())
         m1._compile()
-        m2 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        m2 = gpflow.gpmc.GPMC(self.X, self.Y, gpflow.kernels.Matern32(2), likelihood=gpflow.likelihoods.StudentT())
         self.assertFalse(m1._needs_recompile)
 
     def test_sgpmc(self):
-        m1 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+        m1 = gpflow.sgpmc.SGPMC(self.X, self.Y, gpflow.kernels.Matern32(2), likelihood=gpflow.likelihoods.StudentT(),
                                 Z=self.X)
         m1._compile()
-        m2 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+        m2 = gpflow.sgpmc.SGPMC(self.X, self.Y, gpflow.kernels.Matern32(2), likelihood=gpflow.likelihoods.StudentT(),
                                 Z=self.X)
         self.assertFalse(m1._needs_recompile)
 
     def test_svgp(self):
-        m1 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+        m1 = gpflow.svgp.SVGP(self.X, self.Y, gpflow.kernels.Matern32(2), likelihood=gpflow.likelihoods.StudentT(),
                               Z=self.X)
         m1._compile()
-        m2 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+        m2 = gpflow.svgp.SVGP(self.X, self.Y, gpflow.kernels.Matern32(2), likelihood=gpflow.likelihoods.StudentT(),
                               Z=self.X)
         self.assertFalse(m1._needs_recompile)
 
     def test_vgp(self):
-        m1 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        m1 = gpflow.vgp.VGP(self.X, self.Y, gpflow.kernels.Matern32(2), likelihood=gpflow.likelihoods.StudentT())
         m1._compile()
-        m2 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        m2 = gpflow.vgp.VGP(self.X, self.Y, gpflow.kernels.Matern32(2), likelihood=gpflow.likelihoods.StudentT())
         self.assertFalse(m1._needs_recompile)
 
 

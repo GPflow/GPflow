@@ -322,7 +322,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'gpflow', u'GPflow Documentation',
+    (master_doc, 'GPflow', u'GPflow Documentation',
      [author], 1)
 ]
 
