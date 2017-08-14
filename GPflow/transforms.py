@@ -13,8 +13,10 @@
 # limitations under the License.
 
 from __future__ import absolute_import
+
 import numpy as np
 import tensorflow as tf
+
 from . import tf_wraps as tfw
 from ._settings import settings
 
@@ -69,6 +71,9 @@ class Transform(object):
 
 
 class Identity(Transform):
+    """
+    The identity transform: y = x
+    """
     def tf_forward(self, x):
         return tf.identity(x)
 
@@ -86,6 +91,14 @@ class Identity(Transform):
 
 
 class Exp(Transform):
+    """
+    The exponential transform:
+
+       y = \exp(x) + \epsilon
+
+    x is a free variable, y is always positive. The epsilon value (self.lower)
+    prevents the optimizer reaching numerical zero. 
+    """
     def __init__(self, lower=1e-6):
         self._lower = lower
 
@@ -108,6 +121,7 @@ class Exp(Transform):
 class Log1pe(Transform):
     """
     A transform of the form
+    .. math::
 
        y = \log ( 1 + \exp(x))
 
@@ -156,7 +170,7 @@ class Log1pe(Transform):
            ys = \max(0, y)
 
         As y can not be negative, ys could be replaced with y itself.
-        However, in case :math:`y=0` this results in np.log(0). Hence the zero is 
+        However, in case :math:`y=0` this results in np.log(0). Hence the zero is
         replaced by a machine epsilon.
         .. math::
 
@@ -172,6 +186,13 @@ class Log1pe(Transform):
 
 
 class Logistic(Transform):
+    """
+    The logictic transform, useful for keeping variables constrained between the limits a and b:
+    .. math::
+
+       y = a + (b-a) s(x)
+       s(x) = 1 / (1 + \exp(-x))
+   """
     def __init__(self, a=0., b=1.):
         Transform.__init__(self)
         assert b > a
@@ -193,6 +214,40 @@ class Logistic(Transform):
 
     def __str__(self):
         return '[' + str(self.a) + ', ' + str(self.b) + ']'
+
+
+class Rescale(Transform):
+    """
+    A transform that can linearly rescale parameters, in conjucntion with
+    another transform. By default, the identity transform is wrapped so
+    .. math::
+       y = factor * x
+
+    If another transform t() is passed to the constructor, then this transform becomes
+    .. math::
+       y = factor * t(x)
+
+    This is useful for avoiding optimization or MCMC over large or small scales.
+    """
+    def __init__(self, factor=1.0, chain_transform=Identity()):
+        self.factor = factor
+        self.chain_transform = chain_transform
+
+    def tf_forward(self, x):
+        return self.chain_transform.tf_forward(x * self.factor)
+
+    def forward(self, x):
+        return self.chain_transform.forward(x * self.factor)
+
+    def backward(self, y):
+        return self.chain_transform.backward(y) / self.factor
+
+    def tf_log_jacobian(self, x):
+        return tf.cast(tf.reduce_prod(tf.shape(x)), float_type) * \
+                self.factor * self.chain_transform.tf_log_jacobian(x * self.factor)
+
+    def __str__(self):
+        return "R" + self.chain_transform.__str__()
 
 
 class DiagMatrix(Transform):
@@ -246,15 +301,17 @@ class LowerTriangular(Transform):
     (N x N x D).
     """
 
-    def __init__(self, num_matrices=1, squeeze=False):
+    def __init__(self, N, num_matrices=1, squeeze=False):
         """
         Create an instance of LowerTriangular transform.
         Args:
+            N the size of the final lower triangular matrices.
             num_matrices: Number of matrices to be stored.
             squeeze: If num_matrices == 1, drop the redundant axis.
         """
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
         self.squeeze = squeeze
+        self.N = N
 
     def _validate_vector_length(self, length):
         """
@@ -304,7 +361,7 @@ class LowerTriangular(Transform):
         return y[np.tril_indices(len(y), 0)].T.flatten()
 
     def tf_forward(self, x):
-        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1))), [1, 2, 0])
+        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1)),self.N), [1, 2, 0])
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
