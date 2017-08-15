@@ -82,6 +82,16 @@ class PriorModeTests(unittest.TestCase):
         xmax = self.m.get_free_state()
         self.assertTrue(np.allclose(xmax, 3))
 
+    def testBetaMode(self):
+        self.m.x = GPflow.param.Param(0.1)
+        self.m.x.prior = GPflow.priors.Beta(3., 3.)
+        self.m.x.transform = GPflow.transforms.Logistic()
+
+        self.m.optimize(disp=0, tol=1e-8)
+
+        xmax = self.m.get_free_state()
+        self.assertTrue(np.allclose(0.0, xmax))
+
     def testUniform(self):
         self.m.x = GPflow.param.Param(1.0)
         self.m.x.prior = GPflow.priors.Uniform(-2, 3)
