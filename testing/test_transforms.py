@@ -17,6 +17,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 from GPflow import settings
+import warnings
 
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
@@ -25,10 +26,16 @@ np_float_type = np.float32 if float_type is tf.float32 else np.float64
 class TransformTests(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.x = tf.placeholder(float_type)
+        self.x = tf.placeholder(float_type,10)
         self.x_np = np.random.randn(10).astype(np_float_type)
         self.session = tf.Session()
-        self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
+        self.transforms = []
+        for transform in GPflow.transforms.Transform.__subclasses__():
+            if transform!=GPflow.transforms.LowerTriangular:
+                self.transforms.append(transform())
+            else:
+                self.transforms.append(transform(4))
+        #self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
         self.transforms.append(GPflow.transforms.Logistic(7.3, 19.4))
         self.transforms.append(GPflow.transforms.BoundedBelow(7.8))
 
@@ -57,7 +64,7 @@ class TransformTests(unittest.TestCase):
 
         # there is no jacobian: loop manually
         def jacobian(f):
-            return tf.pack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
+            return tf.stack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
 
         tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms if
                    type(t) is not GPflow.transforms.LowerTriangular]
@@ -69,13 +76,40 @@ class TransformTests(unittest.TestCase):
                                         self.session.run(j2, feed_dict={self.x: self.x_np})))
 
 
+class TestOverflow(unittest.TestCase):
+    """
+    Bug #302 identified an overflow in the standard positive transform. This is a regression test.
+    """
+
+    def setUp(self):
+        self.t = GPflow.transforms.Log1pe()
+
+    def testOverflow(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            y = self.t.forward(np.array([-1000, -300, -10, 10, 300, 1000]))
+            self.assertTrue(len(w) == 0)
+
+        self.assertFalse(np.any(np.isinf(y)))
+        self.assertFalse(np.any(np.isnan(y)))
+
+    def testDivByZero(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            y = self.t.backward(np.array([self.t._lower]))
+            self.assertTrue(len(w) == 0)
+
+        self.assertFalse(np.any(np.isinf(y)))
+        self.assertFalse(np.any(np.isnan(y)))
+
+
 class TestLowerTriTransform(unittest.TestCase):
     """
     Some extra tests for the LowerTriangle transformation.
     """
 
     def setUp(self):
-        self.t = GPflow.transforms.LowerTriangular(3)
+        self.t = GPflow.transforms.LowerTriangular(1,3)
 
     def testErrors(self):
         self.t.free_state_size((6, 6, 3))

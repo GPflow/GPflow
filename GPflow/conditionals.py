@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-from .tf_wraps import eye
 import tensorflow as tf
 from .scoping import NameScoped
 from ._settings import settings
+float_type = settings.dtypes.float_type
 
 
 @NameScoped("conditional")
@@ -25,7 +25,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     Given F, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
 
-    Additionally, there my be Gaussian uncertainty about F as represented by
+    Additionally, there may be Gaussian uncertainty about F as represented by
     q_sqrt. In this case `f` represents the mean of the distribution and
     q_sqrt the square-root of the covariance.
 
@@ -60,9 +60,10 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     """
 
     # compute kernel stuff
-    num_data = tf.shape(X)[0]
+    num_data = tf.shape(X)[0]  # M
+    num_func = tf.shape(f)[1]  # K
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + eye(num_data) * settings.numerics.jitter_level
+    Kmm = kern.K(X) + tf.eye(num_data, dtype=float_type) * settings.numerics.jitter_level
     Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
@@ -71,34 +72,34 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     # compute the covariance due to the conditioning
     if full_cov:
         fvar = kern.K(Xnew) - tf.matmul(A, A, transpose_a=True)
-        shape = tf.pack([tf.shape(f)[1], 1, 1])
+        shape = tf.stack([num_func, 1, 1])
     else:
         fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
-        shape = tf.pack([tf.shape(f)[1], 1])
-    fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # D x N x N or D x N
+        shape = tf.stack([num_func, 1])
+    fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # K x N x N or K x N
 
     # another backsubstitution in the unwhitened case
     if not whiten:
         A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
 
     # construct the conditional mean
-    fmean = tf.matmul(tf.transpose(A), f)
+    fmean = tf.matmul(A, f, transpose_a=True)
 
     if q_sqrt is not None:
         if q_sqrt.get_shape().ndims == 2:
-            LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # D x M x N
+            LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # K x M x N
         elif q_sqrt.get_shape().ndims == 3:
-            L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
-            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.pack([tf.shape(f)[1], 1, 1]))
-            LTA = tf.batch_matmul(L, A_tiled, adj_x=True)  # D x M x N
+            L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # K x M x M
+            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
+            LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
                              str(q_sqrt.get_shape().ndims))
         if full_cov:
-            fvar = fvar + tf.batch_matmul(LTA, LTA, adj_x=True)  # D x N x N
+            fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
         else:
-            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # D x N
-    fvar = tf.transpose(fvar)  # N x D or N x N x D
+            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
+    fvar = tf.transpose(fvar)  # N x K or N x N x K
 
     return fmean, fvar
 

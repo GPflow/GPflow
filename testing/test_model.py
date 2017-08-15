@@ -31,6 +31,7 @@ class TestOptimize(unittest.TestCase):
 
             def build_likelihood(self):
                 return -tf.reduce_sum(tf.square(self.x))
+
         self.m = Quadratic()
 
     def test_adam(self):
@@ -41,6 +42,13 @@ class TestOptimize(unittest.TestCase):
     def test_lbfgsb(self):
         self.m.optimize(disp=False)
         self.assertTrue(self.m.x.value.max() < 1e-6)
+
+    def test_feval_counter(self):
+        self.m._compile()
+        self.m.num_fevals = 0
+        for _ in range(10):
+            self.m._objective(self.m.get_free_state())
+        self.assertTrue(self.m.num_fevals == 10)
 
 
 class TestNeedsRecompile(unittest.TestCase):
@@ -85,6 +93,7 @@ class KeyboardRaiser:
     """
     This wraps a function and makes it raise a KeyboardInterrupt after some number of calls
     """
+
     def __init__(self, iters_to_raise, f):
         self.iters_to_raise, self.f = iters_to_raise, f
         self.count = 0
@@ -145,6 +154,54 @@ class TestName(unittest.TestCase):
     def test_name(self):
         m = GPflow.model.Model(name='foo')
         assert m.name == 'foo'
+
+
+class TestNoRecompileThroughNewModelInstance(unittest.TestCase):
+    """ Regression tests for Bug #454 """
+
+    def setUp(self):
+        self.X = np.random.rand(10, 2)
+        self.Y = np.random.rand(10, 1)
+
+    def test_gpr(self):
+        m1 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
+        m1._compile()
+        m2 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
+        self.assertFalse(m1._needs_recompile)
+
+    def test_sgpr(self):
+        m1 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
+        m1._compile()
+        m2 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
+        self.assertFalse(m1._needs_recompile)
+
+    def test_gpmc(self):
+        m1 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        m1._compile()
+        m2 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        self.assertFalse(m1._needs_recompile)
+
+    def test_sgpmc(self):
+        m1 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+                                Z=self.X)
+        m1._compile()
+        m2 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+                                Z=self.X)
+        self.assertFalse(m1._needs_recompile)
+
+    def test_svgp(self):
+        m1 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+                              Z=self.X)
+        m1._compile()
+        m2 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
+                              Z=self.X)
+        self.assertFalse(m1._needs_recompile)
+
+    def test_vgp(self):
+        m1 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        m1._compile()
+        m2 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
+        self.assertFalse(m1._needs_recompile)
 
 
 if __name__ == "__main__":

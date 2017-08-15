@@ -23,36 +23,11 @@ import numpy as np
 from .param import Param, Parameterized, AutoFlow
 from . import transforms
 from ._settings import settings
+from .quadrature import hermgauss, mvhermgauss, mvnquad
 
 float_type = settings.dtypes.float_type
 int_type = settings.dtypes.int_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
-
-
-def hermgauss(n):
-    x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(np_float_type), w.astype(np_float_type)
-    return x, w
-
-
-def mvhermgauss(means, covs, H, D):
-    """
-    Return the evaluation locations, and weights for several multivariate Hermite-Gauss quadrature runs.
-    :param means: NxD
-    :param covs: NxDxD
-    :param H: Number of Gauss-Hermite evaluation points.
-    :param D: Number of input dimensions. Needs to be known at call-time.
-    :return: eval_locations (H**D*NxD), weights (H**D)
-    """
-    N = tf.shape(means)[0]
-    gh_x, gh_w = hermgauss(H)
-    xn = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
-    wn = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
-    cholXcov = tf.cholesky(covs)  # NxDxD
-    X = 2.0 ** 0.5 * tf.batch_matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)),
-                                     adj_y=True) + tf.expand_dims(means, 2)  # NxDxH**D
-    Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, D))  # (H**D*N)xD
-    return Xr, wn * np.pi ** (-D * 0.5)
 
 
 class Kern(Parameterized):
@@ -77,7 +52,7 @@ class Kern(Parameterized):
         """
         Parameterized.__init__(self)
         self.scoped_keys.extend(['K', 'Kdiag'])
-        self.input_dim = input_dim
+        self.input_dim = int(input_dim)
         if active_dims is None:
             self.active_dims = slice(input_dim)
         elif type(active_dims) is slice:
@@ -132,7 +107,7 @@ class Kern(Parameterized):
             gather1 = tf.gather(tf.transpose(covr, [2, 1, 0]), self.active_dims)
             gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), self.active_dims)
             cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat(0, [cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]]))
+                             tf.concat([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
         return cov
 
     def __add__(self, other):
@@ -186,11 +161,9 @@ class Kern(Parameterized):
         self._check_quadrature()
         Xmu, _ = self._slice(Xmu, None)
         Xcov = self._slice_cov(Xcov)
-        X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
-        Kdiag = tf.reshape(self.Kdiag(X, presliced=True),
-                           (self.num_gauss_hermite_points ** self.input_dim, tf.shape(Xmu)[0]))
-        eKdiag = tf.reduce_sum(Kdiag * wn[:, None], 0)
-        return eKdiag  # N
+        return mvnquad(lambda x: self.Kdiag(x, presliced=True),
+                       Xmu, Xcov,
+                       self.num_gauss_hermite_points, self.input_dim)  # N
 
     def eKxz(self, Z, Xmu, Xcov):
         """
@@ -203,13 +176,9 @@ class Kern(Parameterized):
         self._check_quadrature()
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
-        N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
-        HpowD = self.num_gauss_hermite_points ** self.input_dim
-        X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
-        Kxz = tf.reshape(self.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=True), (HpowD, N, M))
-        eKxz = tf.reduce_sum(Kxz * wn[:, None, None], 0)
-        return eKxz
+        return mvnquad(lambda x: self.K(x, Z, presliced=True), Xmu, Xcov, self.num_gauss_hermite_points,
+                       self.input_dim, Dout=(M,))  # (H**DxNxD, H**D)
 
     def exKxz(self, Z, Xmu, Xcov):
         """
@@ -228,10 +197,8 @@ class Kern(Parameterized):
         # still be done over the distribution x_{t-1, t}, only now the kernel will not depend on certain inputs.
         # However, this does mean that at the time of running this function we need to know the input *size* of Xmu, not
         # just `input_dim`.
-        N = tf.shape(Xmu)[0] - 1
         M = tf.shape(Z)[0]
         D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
-        Hpow2D = self.num_gauss_hermite_points ** (2 * D)
 
         with tf.control_dependencies([
             tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=int_type),
@@ -239,37 +206,37 @@ class Kern(Parameterized):
         ]):
             Xmu = tf.identity(Xmu)
 
-        # First, transform the compact representation of Xmu and Xcov into a list of full distributions.
-        fXmu = tf.concat(1, (Xmu[:-1, :], Xmu[1:, :]))  # Nx2D
-        fXcovt = tf.concat(2, (Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]))  # NxDx2D
-        fXcovb = tf.concat(2, (tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]))
-        fXcov = tf.concat(1, (fXcovt, fXcovb))  # Confirmed correct
-        X, wn = mvhermgauss(fXmu, fXcov, self.num_gauss_hermite_points, D * 2)  # (H**2DxNx2D, H**2D)
-        Kxz = tf.reshape(self.K(X[:, :D], Z), (Hpow2D, N, M))
-        exKxz = tf.reduce_sum(
-            tf.expand_dims(tf.reshape(X[:, D:], (Hpow2D, N, D)), 2) * tf.expand_dims(Kxz, 3) * wn[:, None, None, None],
-            0)
-        return exKxz
+        # First, transform the compact representation of Xmu and Xcov into a
+        # list of full distributions.
+        fXmu = tf.concat((Xmu[:-1, :], Xmu[1:, :]), 1)  # Nx2D
+        fXcovt = tf.concat((Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]), 2)  # NxDx2D
+        fXcovb = tf.concat((tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]), 2)
+        fXcov = tf.concat((fXcovt, fXcovb), 1)
+        return mvnquad(lambda x: tf.expand_dims(self.K(x[:, :D], Z), 2) *
+                                 tf.expand_dims(x[:, D:], 1),
+                       fXmu, fXcov, self.num_gauss_hermite_points,
+                       2 * D, Dout=(M, D))
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
         Computes <K_zx Kxz>_q(x).
-        :param Z: Fixed inputs.
+        :param Z: Fixed inputs MxD.
         :param Xmu: X means (NxD).
         :param Xcov: X covariances (NxDxD or NxD).
-        :return: NxDxD
+        :return: NxMxM
         """
         self._check_quadrature()
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
-        N = tf.shape(Xmu)[0]
         M = tf.shape(Z)[0]
-        HpowD = self.num_gauss_hermite_points ** self.input_dim
-        X, wn = mvhermgauss(Xmu, Xcov, self.num_gauss_hermite_points, self.input_dim)  # (H**DxNxD, H**D)
-        Kxz = tf.reshape(self.K(tf.reshape(X, (-1, self.input_dim)), Z, presliced=True), (HpowD, N, M))
-        KzxKxz = tf.expand_dims(Kxz, 3) * tf.expand_dims(Kxz, 2)
-        eKzxKxz = tf.reduce_sum(KzxKxz * wn[:, None, None, None], 0)
-        return eKzxKxz
+
+        def KzxKxz(x):
+            Kxz = self.K(x, Z, presliced=True)
+            return tf.expand_dims(Kxz, 2) * tf.expand_dims(Kxz, 1)
+
+        return mvnquad(KzxKxz,
+                       Xmu, Xcov, self.num_gauss_hermite_points,
+                       self.input_dim, Dout=(M, M))
 
 
 class Static(Kern):
@@ -283,7 +250,7 @@ class Static(Kern):
         self.variance = Param(variance, transforms.positive)
 
     def Kdiag(self, X):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class White(Static):
@@ -293,10 +260,10 @@ class White(Static):
 
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            d = tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
-            return tf.diag(d)
+            d = tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+            return tf.matrix_diag(d)
         else:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
             return tf.zeros(shape, float_type)
 
 
@@ -307,9 +274,9 @@ class Constant(Static):
 
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X)[0]])
         else:
-            shape = tf.pack([tf.shape(X)[0], tf.shape(X2)[0]])
+            shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
         return tf.fill(shape, tf.squeeze(self.variance))
 
 
@@ -364,12 +331,12 @@ class Stationary(Kern):
         X = X / self.lengthscales
         Xs = tf.reduce_sum(tf.square(X), 1)
         if X2 is None:
-            return -2 * tf.matmul(X, tf.transpose(X)) + \
+            return -2 * tf.matmul(X, X, transpose_b=True) + \
                    tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
         else:
             X2 = X2 / self.lengthscales
             X2s = tf.reduce_sum(tf.square(X2), 1)
-            return -2 * tf.matmul(X, tf.transpose(X2)) + \
+            return -2 * tf.matmul(X, X2, transpose_b=True) + \
                    tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
 
     def euclid_dist(self, X, X2):
@@ -377,7 +344,7 @@ class Stationary(Kern):
         return tf.sqrt(r2 + 1e-12)
 
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class RBF(Stationary):
@@ -418,9 +385,9 @@ class Linear(Kern):
         if not presliced:
             X, X2 = self._slice(X, X2)
         if X2 is None:
-            return tf.matmul(X * self.variance, tf.transpose(X))
+            return tf.matmul(X * self.variance, X, transpose_b=True)
         else:
-            return tf.matmul(X * self.variance, tf.transpose(X2))
+            return tf.matmul(X * self.variance, X2, transpose_b=True)
 
     def Kdiag(self, X, presliced=False):
         if not presliced:
@@ -516,6 +483,113 @@ class Cosine(Stationary):
         return self.variance * tf.cos(r)
 
 
+class ArcCosine(Kern):
+    """
+    The Arc-cosine family of kernels which mimics the computation in neural
+    networks. The order parameter specifies the assumed activation function.
+    The Multi Layer Perceptron (MLP) kernel is closely related to the ArcCosine
+    kernel of order 0. The key reference is
+
+    ::
+
+        @incollection{NIPS2009_3628,
+            title = {Kernel Methods for Deep Learning},
+            author = {Youngmin Cho and Lawrence K. Saul},
+            booktitle = {Advances in Neural Information Processing Systems 22},
+            year = {2009},
+            url = {http://papers.nips.cc/paper/3628-kernel-methods-for-deep-learning.pdf}
+        }
+    """
+
+    implemented_orders = {0, 1, 2}
+    def __init__(self, input_dim,
+                 order=0,
+                 variance=1.0, weight_variances=1., bias_variance=1.,
+                 active_dims=None, ARD=False):
+        """
+        - input_dim is the dimension of the input to the kernel
+        - order specifies the activation function of the neural network
+          the function is a rectified monomial of the chosen order.
+        - variance is the initial value for the variance parameter
+        - weight_variances is the initial value for the weight_variances parameter
+          defaults to 1.0 (ARD=False) or np.ones(input_dim) (ARD=True).
+        - bias_variance is the initial value for the bias_variance parameter
+          defaults to 1.0.
+        - active_dims is a list of length input_dim which controls which
+          columns of X are used.
+        - ARD specifies whether the kernel has one weight_variance per dimension
+          (ARD=True) or a single weight_variance (ARD=False).
+        """
+        Kern.__init__(self, input_dim, active_dims)
+
+        if order not in self.implemented_orders:
+            raise ValueError('Requested kernel order is not implemented.')
+        self.order = order
+
+        self.variance = Param(variance, transforms.positive)
+        self.bias_variance = Param(bias_variance, transforms.positive)
+        if ARD:
+            if weight_variances is None:
+                weight_variances = np.ones(input_dim, np_float_type)
+            else:
+                # accepts float or array:
+                weight_variances = weight_variances * np.ones(input_dim, np_float_type)
+            self.weight_variances = Param(weight_variances, transforms.positive)
+            self.ARD = True
+        else:
+            if weight_variances is None:
+                weight_variances = 1.0
+            self.weight_variances = Param(weight_variances, transforms.positive)
+            self.ARD = False
+
+    def _weighted_product(self, X, X2=None):
+        if X2 is None:
+            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+        else:
+            return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
+
+    def _J(self, theta):
+        """
+        Implements the order dependent family of functions defined in equations
+        4 to 7 in the reference paper.
+        """
+        if self.order == 0:
+            return np.pi - theta
+        elif self.order == 1:
+            return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)
+        elif self.order == 2:
+            return 3. * tf.sin(theta) * tf.cos(theta) + \
+                   (np.pi - theta) * (1. + 2. * tf.cos(theta) ** 2)
+
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+
+        X_denominator = tf.sqrt(self._weighted_product(X))
+        if X2 is None:
+            X2 = X
+            X2_denominator = X_denominator
+        else:
+            X2_denominator = tf.sqrt(self._weighted_product(X2))
+
+        numerator = self._weighted_product(X, X2)
+        cos_theta = numerator / X_denominator[:, None] / X2_denominator[None, :]
+        jitter = 1e-15
+        theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
+
+        return self.variance * (1. / np.pi) * self._J(theta) * \
+               X_denominator[:, None] ** self.order * \
+               X2_denominator[None, :] ** self.order
+
+    def Kdiag(self, X, presliced=False):
+        if not presliced:
+            X, _ = self._slice(X, None)
+
+        X_product = self._weighted_product(X)
+        theta = tf.constant(0., float_type)
+        return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
+
+
 class PeriodicKernel(Kern):
     """
     The periodic kernel. Defined in  Equation (47) of
@@ -536,7 +610,7 @@ class PeriodicKernel(Kern):
         self.period = Param(period, transforms.positive)
 
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.pack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -594,7 +668,7 @@ class Coregion(Kern):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.matmul(self.W, tf.transpose(self.W)) + tf.diag(self.kappa)
+        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.matrix_diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def Kdiag(self, X):
@@ -693,7 +767,7 @@ class Add(Combination):
 
 class Prod(Combination):
     def K(self, X, X2=None, presliced=False):
-        return reduce(tf.mul, [k.K(X, X2) for k in self.kern_list])
+        return reduce(tf.multiply, [k.K(X, X2) for k in self.kern_list])
 
     def Kdiag(self, X, presliced=False):
-        return reduce(tf.mul, [k.Kdiag(X) for k in self.kern_list])
+        return reduce(tf.multiply, [k.Kdiag(X) for k in self.kern_list])

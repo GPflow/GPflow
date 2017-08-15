@@ -1,3 +1,4 @@
+import itertools
 import GPflow
 import tensorflow as tf
 import numpy as np
@@ -18,37 +19,57 @@ class TestMeanFuncs(unittest.TestCase):
         self.output_dim = 2
         self.N = 20
         rng = np.random.RandomState(0)
-        self.mfs = [GPflow.mean_functions.Zero(),
-                    GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type)),
-                    GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))]
+        self.mfs1 = [GPflow.mean_functions.Zero(),
+                     GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type)),
+                     GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))]
+        rng = np.random.RandomState(0)
+        self.mfs2 = [GPflow.mean_functions.Zero(),
+                     GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type)),
+                     GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))]
+
 
         self.composition_mfs_add = []
         self.composition_mfs_mult = []
 
-        for mean_f1 in self.mfs:
-            self.composition_mfs_add.extend([mean_f1 + mean_f2 for mean_f2 in self.mfs])
-            self.composition_mfs_mult.extend([mean_f1 * mean_f2 for mean_f2 in self.mfs])
+        for (mean_f1, mean_f2) in itertools.product(self.mfs1, self.mfs2):
+            self.composition_mfs_add.extend([mean_f1 + mean_f2])
+            self.composition_mfs_mult.extend([mean_f1 * mean_f2])
 
         self.composition_mfs = self.composition_mfs_add + self.composition_mfs_mult
         self.x = tf.placeholder(float_type)
 
-        for mf in self.mfs:
+        for mf in self.mfs1:
+            mf.make_tf_array(self.x)
+        for mf in self.mfs2:
             mf.make_tf_array(self.x)
 
         self.X = tf.placeholder(float_type, [self.N, self.input_dim])
         self.X_data = np.random.randn(self.N, self.input_dim).astype(np_float_type)
 
     def test_basic_output_shape(self):
-        for mf in self.mfs:
+        for mf in self.mfs1:
             with mf.tf_mode():
                 Y = tf.Session().run(mf(self.X), feed_dict={self.x: mf.get_free_state(), self.X: self.X_data})
             self.assertTrue(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
 
-    def test_composition_output_shape(self):
-        for comp_mf in self.composition_mfs:
+    def test_add_output_shape(self):
+        for comp_mf in self.composition_mfs_add:
             with comp_mf.tf_mode():
                 Y = tf.Session().run(comp_mf(self.X), feed_dict={self.x: comp_mf.get_free_state(), self.X: self.X_data})
             self.assertTrue(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
+
+    def test_mult_output_shape(self):
+        for comp_mf in self.composition_mfs_mult:
+            with comp_mf.tf_mode():
+                Y = tf.Session().run(comp_mf(self.X), feed_dict={self.x: comp_mf.get_free_state(), self.X: self.X_data})
+            self.assertTrue(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
+
+    def test_composition_output_shape(self):
+        comp_mf = self.composition_mfs[1]
+        # for comp_mf in self.composition_mfs:
+        with comp_mf.tf_mode():
+            Y = tf.Session().run(comp_mf(self.X), feed_dict={self.x: comp_mf.get_free_state(), self.X: self.X_data})
+        self.assertTrue(Y.shape in [(self.N, self.output_dim), (self.N, 1)])
 
     def test_combination_types(self):
         self.assertTrue(all(isinstance(mfAdd, GPflow.mean_functions.Additive) for mfAdd in self.composition_mfs_add))
@@ -74,38 +95,46 @@ class TestModelCompositionOperations(unittest.TestCase):
 
         zero = GPflow.mean_functions.Zero()
 
-        linear1 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type))
+        # need two copies of the linear1_1 since we can't add the same parameter twice to a single tree
+        _rng = np.random.RandomState(0)
+        linear1_1 = GPflow.mean_functions.Linear(_rng.randn(self.input_dim, self.output_dim).astype(np_float_type),
+                                                 _rng.randn(self.output_dim).astype(np_float_type))
+        _rng = np.random.RandomState(0)
+        linear1_2 = GPflow.mean_functions.Linear(_rng.randn(self.input_dim, self.output_dim).astype(np_float_type),
+                                                 _rng.randn(self.output_dim).astype(np_float_type))
         linear2 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type))
         linear3 = GPflow.mean_functions.Linear(rng.randn(self.input_dim, self.output_dim).astype(np_float_type), rng.randn(self.output_dim).astype(np_float_type))
 
-        const1 = GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))
+        # need two copies of the const1 since we can't add the same parameter twice to a single tree
+        const1_1 = GPflow.mean_functions.Constant(np.random.RandomState(0).randn(self.output_dim).astype(np_float_type))
+        const1_2 = GPflow.mean_functions.Constant(np.random.RandomState(0).randn(self.output_dim).astype(np_float_type))
         const2 = GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))
         const3 = GPflow.mean_functions.Constant(rng.randn(self.output_dim).astype(np_float_type))
 
-        const1inv = GPflow.mean_functions.Constant(np.reshape(const1.c.get_free_state() * -1, [self.output_dim]))
-        linear1inv = GPflow.mean_functions.Linear(A=np.reshape(linear1.A.get_free_state() * -1., [self.input_dim, self.output_dim]),
-                                                  b=np.reshape(linear1.b.get_free_state() * -1., [self.output_dim]))
+        const1inv = GPflow.mean_functions.Constant(np.reshape(const1_1.c.get_free_state() * -1, [self.output_dim]))
+        linear1inv = GPflow.mean_functions.Linear(A=np.reshape(linear1_1.A.get_free_state() * -1., [self.input_dim, self.output_dim]),
+                                                  b=np.reshape(linear1_2.b.get_free_state() * -1., [self.output_dim]))
 
         # a * (b + c)
-        const_set1 = GPflow.mean_functions.Product(const1,
+        const_set1 = GPflow.mean_functions.Product(const1_1,
                                                    GPflow.mean_functions.Additive(const2, const3))
-        linear_set1 = GPflow.mean_functions.Product(linear1,
+        linear_set1 = GPflow.mean_functions.Product(linear1_1,
                                                     GPflow.mean_functions.Additive(linear2, linear3))
 
         # ab + ac
-        const_set2 = GPflow.mean_functions.Additive(GPflow.mean_functions.Product(const1, const2),
-                                                    GPflow.mean_functions.Product(const1, const3))
+        const_set2 = GPflow.mean_functions.Additive(GPflow.mean_functions.Product(const1_1, const2),
+                                                    GPflow.mean_functions.Product(const1_2, const3))
 
-        linear_set2 = GPflow.mean_functions.Additive(GPflow.mean_functions.Product(linear1, linear2),
-                                                     GPflow.mean_functions.Product(linear1, linear3))
+        linear_set2 = GPflow.mean_functions.Additive(GPflow.mean_functions.Product(linear1_1, linear2),
+                                                     GPflow.mean_functions.Product(linear1_2, linear3))
         # a-a = 0, (a + b) -a = b = a + (b - a)
 
-        linear1_minus_linear1 = GPflow.mean_functions.Additive(linear1, linear1inv)
-        const1_minus_const1 = GPflow.mean_functions.Additive(const1, const1inv)
+        linear1_minus_linear1 = GPflow.mean_functions.Additive(linear1_1, linear1inv)
+        const1_minus_const1 = GPflow.mean_functions.Additive(const1_1, const1inv)
 
-        comp_minus_constituent1 = GPflow.mean_functions.Additive(GPflow.mean_functions.Additive(linear1, linear2),
+        comp_minus_constituent1 = GPflow.mean_functions.Additive(GPflow.mean_functions.Additive(linear1_1, linear2),
                                                                       linear1inv)
-        comp_minus_constituent2 = GPflow.mean_functions.Additive(linear1,
+        comp_minus_constituent2 = GPflow.mean_functions.Additive(linear1_1,
                                                                       GPflow.mean_functions.Additive(linear2,
                                                                                                      linear1inv))
 
@@ -222,7 +251,7 @@ class TestSwitchedMeanFunction(unittest.TestCase):
         sess = tf.Session()
         tf_array = switched_mean.get_free_state()
         switched_mean.make_tf_array(tf_array)
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         fd = {}
         switched_mean.update_feed_dict(switched_mean.get_feed_dict_keys(), fd)
         with switched_mean.tf_mode():

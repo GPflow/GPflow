@@ -17,11 +17,12 @@ from __future__ import absolute_import
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from . import transforms
+from . import transforms, session
 from contextlib import contextmanager
 from functools import wraps
 from .scoping import NameScoped
 from ._settings import settings
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
@@ -206,7 +207,7 @@ class Param(Parentable):
         end = start + self.size
         samples = samples[:, start:end]
         samples = samples.reshape((samples.shape[0],) + self.shape)
-        samples = self.transform.forward(samples)
+        samples = np.atleast_1d(self.transform.forward(samples))
         return pd.Series([v for v in samples], name=self.long_name)
 
     def make_tf_array(self, free_array):
@@ -283,6 +284,31 @@ class Param(Parentable):
         self._array[...] = new_array
         return free_size
 
+    def randomize(self, distributions={}, skipfixed=True):
+        """
+        Randomly assign the parameter a new value by sampling either from a
+        provided distribution from GPflow.priors, the parameter's prior, or
+        by using a default scheme where a standard normal variable is
+        propagated through the parameters transform.
+        Will not change fixed parameters unless skipfixed flag is set to False.
+
+        Optional Input:
+            distributions (dictionary) - a list of priors indexed by parameters.
+                Defaults to an empty dictionary.
+            skipfixed (boolean) - if True, parameter cannot be randomized.
+                Defaults to True.
+        """
+        if not (skipfixed and self.fixed):
+            if self in distributions.keys():
+                self._array = distributions[self].sample(self.shape)
+            else:
+                try:
+                    self._array = self.prior.sample(self.shape)
+                except AttributeError:
+                    randn = np.random.randn(
+                        self.transform.free_state_size(self.shape))
+                    self._array = self.transform.forward(randn).reshape(self.shape)
+
     def build_prior(self):
         """
         Build a tensorflow representation of the prior density.
@@ -306,11 +332,11 @@ class Param(Parentable):
 
     def __str__(self, prepend=''):
         return prepend + \
-            '\033[1m' + self.name + '\033[0m' + \
-            ' transform:' + str(self.transform) + \
-            ' prior:' + str(self.prior) + \
-            (' [FIXED]' if self.fixed else '') + \
-            '\n' + str(self.value)
+               '\033[1m' + self.name + '\033[0m' + \
+               ' transform:' + str(self.transform) + \
+               ' prior:' + str(self.prior) + \
+               (' [FIXED]' if self.fixed else '') + \
+               '\n' + str(self.value)
 
     @property
     def size(self):
@@ -337,8 +363,8 @@ class Param(Parentable):
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
-        d.pop('_tf_array')
-        d.pop('_log_jacobian')
+        for key in ['_tf_array', '_log_jacobian']:
+            d.pop(key, None)
         return d
 
     def __setstate__(self, d):
@@ -374,6 +400,7 @@ class DataHolder(Parentable):
     [[ 0.], [ 2.]]
 
     """
+
     def __init__(self, array, on_shape_change='raise'):
         """
         array is a numpy array of data.
@@ -415,7 +442,7 @@ class DataHolder(Parentable):
 
     def make_tf_array(self):
         self._tf_array = tf.placeholder(dtype=self._get_type(self._array),
-                                        shape=[None]*self._array.ndim,
+                                        shape=[None] * self._array.ndim,
                                         name=self.name)
 
     def set_data(self, array):
@@ -455,8 +482,8 @@ class DataHolder(Parentable):
 
     def __str__(self, prepend='Data:'):
         return prepend + \
-            '\033[1m' + self.name + '\033[0m' + \
-            '\n' + str(self.value)
+               '\033[1m' + self.name + '\033[0m' + \
+               '\n' + str(self.value)
 
 
 class AutoFlow:
@@ -519,7 +546,13 @@ class AutoFlow:
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
                 storage['graph'] = tf.Graph()
-                storage['session'] = tf.Session(graph=storage['graph'])
+                # storage['session'] = tf.Session(graph=storage['graph'])
+                storage['session'] = session.get_session(
+                    graph=storage['graph'],
+                    output_file_name=settings.profiling.output_file_name + "_" + tf_method.__name__,
+                    output_directory=settings.profiling.output_directory,
+                    each_time=settings.profiling.each_time
+                )
                 with storage['graph'].as_default():
                     storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                     storage['free_vars'] = tf.placeholder(float_type, [None])
@@ -529,7 +562,7 @@ class AutoFlow:
                     storage['feed_dict_keys'] = instance.get_feed_dict_keys()
                     feed_dict = {}
                     instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
-                    storage['session'].run(tf.initialize_all_variables(), feed_dict=feed_dict)
+                    storage['session'].run(tf.global_variables_initializer(), feed_dict=feed_dict)
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
             instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
@@ -663,6 +696,26 @@ class Parameterized(Parentable):
                 p.set_data(value)
                 return  # don't call object.setattr or set the _parent value
 
+        if key is not '_parent' and isinstance(value, (Param, Parameterized)):
+            # assigning a param that isn't the parent, check that it is not already in the tree
+            if not hasattr(self, key) or not self.__getattribute__(key) is value:
+                # we are not assigning the same value to the same member
+
+                def _raise_for_existing_param(node):
+                    """
+                    Find a certain param from the root of the tree we're in by depth first search. Raise if found.
+                    """
+                    if node is value:
+                        raise ValueError('The Param(eterized) object {0} is already present in the tree'.format(value))
+
+                    # search all children if we aren't at a leaf node
+                    if isinstance(node, Parameterized):
+                        for child in node.sorted_params:
+                            _raise_for_existing_param(child)
+
+                root = self.highest_parent
+                _raise_for_existing_param(root)
+
         # use the standard setattr
         object.__setattr__(self, key, value)
 
@@ -740,10 +793,10 @@ class Parameterized(Parentable):
 
         This makes sure they're always in the same order.
         """
-        params = [child for key, child in self.__dict__.items()
+        params=  [child for key, child in self.__dict__.items()
                   if isinstance(child, (Param, Parameterized)) and
                   key is not '_parent']
-        return sorted(params, key=id)
+        return sorted(params, key=lambda x: x.long_name)
 
     @property
     def data_holders(self):
@@ -837,6 +890,13 @@ class Parameterized(Parentable):
         [child._end_tf_mode() for child in self.sorted_params
          if isinstance(child, Parameterized)]
         self._tf_mode = False
+
+    def randomize(self, distributions={}, skipfixed=True):
+        """
+        Calls randomize on all parameters in model hierarchy.
+        """
+        for param in self.sorted_params:
+            param.randomize(distributions, skipfixed)
 
     def build_prior(self):
         """

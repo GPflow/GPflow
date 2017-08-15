@@ -30,7 +30,7 @@ def lognormal(x, mu, var):
 
 
 def bernoulli(p, y):
-    return tf.log(tf.select(tf.equal(y, 1), p, 1-p))
+    return tf.log(tf.where(tf.equal(y, 1), p, 1-p))
 
 
 def poisson(lamb, y):
@@ -83,6 +83,6 @@ def multivariate_normal(x, mu, L):
     num_col = tf.cast(num_col, float_type)
     num_dims = tf.cast(tf.shape(x)[0], float_type)
     ret = - 0.5 * num_dims * num_col * np.log(2 * np.pi)
-    ret += - num_col * tf.reduce_sum(tf.log(tf.diag_part(L)))
+    ret += - num_col * tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
     ret += - 0.5 * tf.reduce_sum(tf.square(alpha))
     return ret

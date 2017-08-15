@@ -14,6 +14,7 @@
 
 
 import tensorflow as tf
+from functools import wraps
 
 
 class NameScoped(object):
@@ -36,6 +37,7 @@ class NameScoped(object):
         self.name = name
 
     def __call__(self, f):
+        @wraps(f)
         def runnable(*args, **kwargs):
             with tf.name_scope(self.name):
                 return f(*args, **kwargs)

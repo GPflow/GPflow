@@ -20,13 +20,13 @@ from .param import Param, DataHolder
 from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
-from .tf_wraps import eye
 from ._settings import settings
+float_type = settings.dtypes.float_type
 
 
 class GPMC(GPModel):
     def __init__(self, X, Y, kern, likelihood,
-                 mean_function=Zero(), num_latent=None):
+                 mean_function=None, num_latent=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -52,7 +52,7 @@ class GPMC(GPModel):
         self.V = Param(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    def _compile(self):
+    def _compile(self, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add parameters appropriately.
@@ -64,7 +64,8 @@ class GPMC(GPModel):
             self.num_data = self.X.shape[0]
             self.V = Param(np.zeros((self.num_data, self.num_latent)))
             self.V.prior = Gaussian(0., 1.)
-        super(GPMC, self)._compile()
+
+        return super(GPMC, self)._compile(optimizer=optimizer)
 
     def build_likelihood(self):
         """
@@ -75,7 +76,7 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = tf.cholesky(K + eye(tf.shape(self.X)[0])*settings.numerics.jitter_level)
+        L = tf.cholesky(K + tf.eye(tf.shape(self.X)[0], dtype=float_type)*settings.numerics.jitter_level)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))
