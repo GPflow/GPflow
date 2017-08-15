@@ -23,27 +23,29 @@ class NoArgsModel(DumbModel):
 
 class TestNoArgs(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
-        self.m = NoArgsModel()
-        self.m.compile()
+        with self.test_session():
+            self.m = NoArgsModel()
+            self.m.compile()
 
     def test_return(self):
-        self.assertTrue(np.allclose(self.m.function(), 3.))
+        with self.test_session():
+            self.assertTrue(np.allclose(self.m.function(), 3.))
 
     def test_kill(self):
         # make sure autoflow dicts are removed when _needs_recompile is set.
-        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
-        self.assertTrue(len(keys) == 0, msg="no AF storage should be present to start.")
+        with self.test_session():
+            keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+            self.assertTrue(len(keys) == 0, msg="no AF storage should be present to start.")
 
-        self.m.function()
+            self.m.function()
 
-        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
-        self.assertTrue(len(keys) == 1, msg="AF storage should be present after function call.")
+            keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+            self.assertTrue(len(keys) == 1, msg="AF storage should be present after function call.")
 
-        self.m._needs_recompile = True
+            self.m._needs_recompile = True
 
-        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
-        self.assertTrue(len(keys) == 0, msg="no AF storage should be present after recompile switch set.")
+            keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+            self.assertTrue(len(keys) == 0, msg="no AF storage should be present after recompile switch set.")
 
 
 class AddModel(DumbModel):
@@ -59,26 +61,26 @@ class TestShareArgs(GPflowTestCase):
     instances.
     """
     def setUp(self):
-        tf.reset_default_graph()
-        self.m1 = AddModel()
-        self.m1.compile()
-        self.m2 = AddModel()
-        self.m2.compile()
-        rng = np.random.RandomState(0)
-        self.x = rng.randn(10, 20)
-        self.y = rng.randn(10, 20)
+        with self.test_session():
+            self.m1 = AddModel()
+            self.m1.compile()
+            self.m2 = AddModel()
+            self.m2.compile()
+            rng = np.random.RandomState(0)
+            self.x = rng.randn(10, 20)
+            self.y = rng.randn(10, 20)
 
     def test_share_args(self):
-        self.m1.add(self.x, self.y)
-        self.m2.add(self.x, self.y)
-        self.m1.add(self.x, self.y)
+        with self.test_session():
+            self.m1.add(self.x, self.y)
+            self.m2.add(self.x, self.y)
+            self.m1.add(self.x, self.y)
 
 
 class TestAutoFlowSessionGraphArguments(GPflowTestCase):
     """AutoFlow tests for external session and graph."""
 
     def setUp(self):
-        tf.reset_default_graph()
         self.m1 = AddModel()
         self.m2 = AddModel()
         self.m3 = AddModel()
@@ -147,15 +149,16 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
 
 class TestAdd(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
-        self.m = AddModel()
-        self.m.compile()
-        rng = np.random.RandomState(0)
-        self.x = rng.randn(10, 20)
-        self.y = rng.randn(10, 20)
+        with self.test_session():
+            self.m = AddModel()
+            self.m.compile()
+            rng = np.random.RandomState(0)
+            self.x = rng.randn(10, 20)
+            self.y = rng.randn(10, 20)
 
     def test_add(self):
-        self.assertTrue(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
+        with self.test_session():
+            self.assertTrue(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
 
 
 class IncrementModel(DumbModel):
@@ -170,18 +173,18 @@ class IncrementModel(DumbModel):
 
 class TestDataHolder(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
-        self.m = IncrementModel()
-        rng = np.random.RandomState(0)
-        self.x = rng.randn(10, 20)
+        with self.test_session():
+            self.m = IncrementModel()
+            rng = np.random.RandomState(0)
+            self.x = rng.randn(10, 20)
 
     def test_add(self):
-        self.assertTrue(np.allclose(self.x + 3, self.m.inc(self.x)))
+        with self.test_session():
+            self.assertTrue(np.allclose(self.x + 3, self.m.inc(self.x)))
 
 
 class TestGPmodel(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
         self.m = GPflow.svgp.SVGP(X, Y, kern=GPflow.kernels.Matern32(1),
@@ -191,18 +194,22 @@ class TestGPmodel(GPflowTestCase):
         self.Ytest = np.random.randn(100, 1)
 
     def test_predict_f(self):
-        mu, var = self.m.predict_f(self.Xtest)
+        with self.test_session():
+            mu, var = self.m.predict_f(self.Xtest)
 
     def test_predict_y(self):
-        mu, var = self.m.predict_y(self.Xtest)
+        with self.test_session():
+            mu, var = self.m.predict_y(self.Xtest)
 
     def test_predict_density(self):
-        self.m.predict_density(self.Xtest, self.Ytest)
+        with self.test_session():
+            self.m.predict_density(self.Xtest, self.Ytest)
 
     def test_multiple_AFs(self):
-        self.m.compute_log_likelihood()
-        self.m.compute_log_prior()
-        self.m.compute_log_likelihood()
+        with self.test_session():
+            self.m.compute_log_likelihood()
+            self.m.compute_log_prior()
+            self.m.compute_log_likelihood()
 
 
 class TestResetGraph(GPflowTestCase):

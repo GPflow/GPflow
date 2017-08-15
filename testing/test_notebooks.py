@@ -10,36 +10,86 @@ import time
 import os
 from nose.plugins.attrib import attr
 
-
 @attr(speed='slow')
 class TestNotebooks(unittest.TestCase):
-    def _execNotebook(self, ep, notebook_filename, nbpath):
-        with open(notebook_filename) as f:
-            nb = nbformat.read(f, as_version=nbformat.current_nbformat)
+    """
+    Run notebook tests.
+
+    Blacklist:
+    - svi_test.ipynb
+    - GPLVM.ipynb
+    - regression.ipynb
+    """
+    nbpath = None
+    preproc = None
+
+    @classmethod
+    def setUpClass(cls):
+        pythonkernel = 'python'+str(sys.version_info[0])
+        this_dir = os.path.dirname(__file__)
+        cls.nbpath = os.path.join(this_dir, '../doc/source/notebooks/')
+        cls.preproc = ExecutePreprocessor(
+            timeout=120, kernel_name=pythonkernel, interrupt_on_timeout=True)
+
+    def _exec_notebook(self, notebook_filename):
+        full_notebook_filename = os.path.join(self.nbpath, notebook_filename)
+        with open(full_notebook_filename) as notebook_file:
+            nb = nbformat.read(notebook_file, as_version=nbformat.current_nbformat)
             try:
-                ep.preprocess(nb, {'metadata': {'path': nbpath}})
+                self.preproc.preprocess(nb, {'metadata': {'path': self.nbpath}})
             except CellExecutionError:
                 print('-' * 60)
                 traceback.print_exc(file=sys.stdout)
                 print('-' * 60)
-                self.assertTrue(False, 'Error executing the notebook %s.\
-                                        See above for error.' % notebook_filename)
+                msg = 'Error executing the notebook {0}. See above for error.'
+                self.fail(msg.format(notebook_filename))
 
-    def test_all_notebooks(self):
-        ''' Test all notebooks except blacklist. Blacklisted notebooks take too long.'''
-        blacklist = ['svi_test.ipynb', 'GPLVM.ipynb', 'regression.ipynb']
-        pythonkernel = 'python'+str(sys.version_info[0])
-        this_dir = os.path.dirname(__file__)
-        nbpath = os.path.join(this_dir, '../doc/source/notebooks/')
-        # see http://nbconvert.readthedocs.io/en/stable/execute_api.html
-        ep = ExecutePreprocessor(timeout=120, kernel_name=pythonkernel, interrupt_on_timeout=True)
-        lfiles = glob.glob(nbpath+"*.ipynb")
-        for notebook_filename in lfiles:
-            if(os.path.basename(notebook_filename) not in blacklist):
-                t = time.time()
-                self._execNotebook(ep, notebook_filename, nbpath)
-                print(notebook_filename, 'took %g seconds.' % (time.time()-t))
+    def _exec_notebook_ts(self, notebook_filename):
+        ts = time.time()
+        self._exec_notebook(notebook_filename)
+        print(notebook_filename, 'took {0} seconds.'.format(time.time() - ts))
 
+    def classification_test(self):
+        self._exec_notebook_ts("classification.ipynb")
+
+    def coreg_demo_test(self):
+        self._exec_notebook_ts("coreg_demo.ipynb")
+
+    def FITCvsVFE_test(self):
+        self._exec_notebook_ts("FITCvsVFE.ipynb")
+
+    def kernels_test(self):
+        self._exec_notebook_ts("kernels.ipynb")
+
+    def mcmc_test(self):
+        self._exec_notebook_ts("mcmc.ipynb")
+
+    def models_test(self):
+        self._exec_notebook_ts("models.ipynb")
+
+    def multiclass_test(self):
+        self._exec_notebook_ts("multiclass.ipynb")
+
+    def multiclass_test(self):
+        self._exec_notebook_ts("ordinal.ipynb")
+
+    def regression_with_updated_data_test(self):
+        self._exec_notebook_ts("regression_with_updated_data.ipynb")
+
+    def sanity_check_test(self):
+        self._exec_notebook_ts("Sanity_check.ipynb")
+
+    def settings_test(self):
+        self._exec_notebook_ts("settings.ipynb")
+
+    def SGPR_notes_test(self):
+        self._exec_notebook_ts("SGPR_notes.ipynb")
+
+    def structure_test(self):
+        self._exec_notebook_ts("structure.ipynb")
+
+    def vgp_notes_test(self):
+        self._exec_notebook_ts("vgp_notes.ipynb")
 
 if __name__ == '__main__':
     unittest.main()
