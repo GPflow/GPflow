@@ -309,14 +309,12 @@ class TestSwitchedLikelihood(unittest.TestCase):
         self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
         self.sess.close()
 
+
 class TestLikelihoodChecks(unittest.TestCase):
     def run_models(self, likelihood, Y):
         X = np.random.randn(Y.shape[0], 1)
         m1 = GPflow.vgp.VGP(X, Y, GPflow.kernels.RBF(1), likelihood)
         m2 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
-        # for m in [m1, m2]:  # quite slow, but not really needed just to test the likelihood checks
-        #     m.compute_log_likelihood()
-        #     m.predict_density(X, Y)
 
     def test_likelihood_checks(self):
         to_pass = [
@@ -348,6 +346,7 @@ class TestLikelihoodChecks(unittest.TestCase):
                     [GPflow.likelihoods.MultiClass(3), np.array((1., 3.)).reshape(2, 1)],
         ]
 
+        # special case of switched likelihood
         sl = GPflow.likelihoods.SwitchedLikelihood([GPflow.likelihoods.Gamma(),
                                                     GPflow.likelihoods.Gaussian()])
         A = np.array(((0, 1), (0, 1), (2, 0.))).reshape(3, 2)
@@ -359,12 +358,8 @@ class TestLikelihoodChecks(unittest.TestCase):
             self.run_models(l, v)
 
         for l, v, in to_fail:
-            try:
+            with self.assertRaises(ValueError):
                 self.run_models(l, v)
-            except ValueError:
-                pass
-            else:
-                assert False, 'error not caught'
 
 
 
