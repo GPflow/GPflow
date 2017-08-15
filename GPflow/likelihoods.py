@@ -208,9 +208,24 @@ class Gaussian(Likelihood):
 
 
 class Poisson(Likelihood):
-    def __init__(self, invlink=tf.exp):
+    """
+    Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.
+
+    let g(.) be the inverse-link function, then this likelihood represents
+
+    p(y_i | f_i) = Poisson(y_i | g(f_i) * binsize)
+    
+    Note:binsize
+    For use in a Log Gaussian Cox process (doubly stochastic model) where the
+    rate function of an inhomogeneous Poisson process is given by a GP.  The
+    intractable likelihood can be approximated by gridding the space (into bins
+    of size 'binsize') and using this Poisson likelihood.
+    """
+
+    def __init__(self, invlink=tf.exp, binsize=1.):
         Likelihood.__init__(self)
         self.invlink = invlink
+        self.binsize = np.double(binsize)
 
     def _check_targets(self, Y_np):
         Likelihood._check_targets(self, Y_np)
@@ -220,20 +235,20 @@ class Poisson(Likelihood):
             raise ValueError('poisson variables must be integer valued')
 
     def logp(self, F, Y):
-        return densities.poisson(self.invlink(F), Y)
+        return densities.poisson(self.invlink(F) * self.binsize, Y)
 
     def conditional_variance(self, F):
-        return self.invlink(F)
+        return self.invlink(F) * self.binsize
 
     def conditional_mean(self, F):
-        return self.invlink(F)
+        return self.invlink(F) * self.binsize
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return Y * Fmu - tf.exp(Fmu + Fvar / 2) - tf.lgamma(Y + 1)
+            return Y * Fmu - tf.exp(Fmu + Fvar / 2) * self.binsize \
+                   - tf.lgamma(Y + 1) + Y * tf.log(self.binsize) 
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
-
 
 class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):

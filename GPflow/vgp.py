@@ -44,7 +44,7 @@ class VGP(GPModel):
 
     """
     def __init__(self, X, Y, kern, likelihood,
-                 mean_function=Zero(), num_latent=None):
+                 mean_function=None, num_latent=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
