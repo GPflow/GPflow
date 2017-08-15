@@ -88,7 +88,7 @@ class TestFullCov(unittest.TestCase):
 
     def test_cov(self):
         mu1, var = self.model.predict_f(self.Xtest)
-        mu2, covar = self.model.predict_f_full_cov(self.Xtest)
+        mu2, covar = self.model.predict_f(self.Xtest, full_cov=True)
         self.assertTrue(np.all(mu1 == mu2))
         self.assertTrue(covar.shape == self.covar_shape)
         self.assertTrue(var.shape == (self.Ntest, self.output_dim))

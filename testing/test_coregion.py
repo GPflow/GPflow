@@ -121,11 +121,11 @@ class TestEquivalence(unittest.TestCase):
         self.cvgp.predict_f_samples(X_augumented0, 1)
         self.cvgp.predict_f_samples(X_augumented1, 1)
 
-        # check predict_f_full_cov
-        self.vgp0.predict_f_full_cov(self.Xtest)
-        self.cvgp.predict_f_full_cov(X_augumented0)
-        self.vgp1.predict_f_full_cov(self.Xtest)
-        self.cvgp.predict_f_full_cov(X_augumented1)
+        # check predict with full_cov=True
+        self.vgp0.predict_f(self.Xtest, full_cov=True)
+        self.cvgp.predict_f(X_augumented0, full_cov=True)
+        self.vgp1.predict_f(self.Xtest, full_cov=True)
+        self.cvgp.predict_f(X_augumented1, full_cov=True)
 
 
 if __name__ == '__main__':

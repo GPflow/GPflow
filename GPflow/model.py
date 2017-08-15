@@ -22,6 +22,7 @@ import tensorflow as tf
 from . import hmc, session
 from ._settings import settings
 import sys
+import warnings
 
 float_type = settings.dtypes.float_type
 
@@ -366,20 +367,17 @@ class GPModel(Model):
         raise NotImplementedError
 
     @AutoFlow((float_type, [None, None]))
-    def predict_f(self, Xnew):
+    def predict_f(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function(s) at the points
         Xnew.
         """
-        return self.build_predict(Xnew)
+        return self.build_predict(Xnew, full_cov=full_cov)
 
-    @AutoFlow((float_type, [None, None]))
     def predict_f_full_cov(self, Xnew):
-        """
-        Compute the mean and covariance matrix of the latent function(s) at the
-        points Xnew.
-        """
-        return self.build_predict(Xnew, full_cov=True)
+        warnings.warn('predict_f_full_cov is deprecated: use predict_f instead',
+                      DeprecationWarning)
+        return self.predict_f(Xnew, full_cov=True)
 
     @AutoFlow((float_type, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):

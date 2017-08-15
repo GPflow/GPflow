@@ -56,7 +56,10 @@ class TestSessionConfiguration(unittest.TestCase):
         settings.session.inter_op_parallelism_threads = dop
         self.m._compile()  # clear pick up new settings
         self.m.compute_log_likelihood()  # causes Autoflow to create log likelihood graph
-        afsession = self.m.__dict__['_compute_log_likelihood_AF_storage']['session']
+        afstorage_key = next(k for k in self.m.__dict__.keys()
+                             if k.startswith('_compute_log_likelihood_')
+                             and k.endswith('AF_storage'))
+        afsession = self.m.__dict__[afstorage_key]['session']
         self.assertTrue(afsession._config.intra_op_parallelism_threads == dop)
         self.assertTrue(afsession._config.inter_op_parallelism_threads == dop)
 

@@ -14,11 +14,14 @@
 
 
 from __future__ import absolute_import
+import inspect
 import numpy as np
 import pandas as pd
+import sys
 import tensorflow as tf
 from . import transforms, session
 from contextlib import contextmanager
+from collections import OrderedDict
 from functools import wraps
 from .scoping import NameScoped
 from ._settings import settings
@@ -489,7 +492,7 @@ class DataHolder(Parentable):
 
 class AutoFlow:
     """
-    This decorator-class is designed for use on methods of the Parameterized class
+    This decorator is designed for use on methods of the Parameterized class
     (below).
 
     The idea is that methods that compute relevant quantities (such as
@@ -500,15 +503,15 @@ class AutoFlow:
 
     >>> class MyClass(Parameterized):
     >>>
-    >>>   @AutoFlow((tf.float64), (tf.float64))
-    >>>   def my_method(self, x, y):
+    >>>   @AutoFlow(x=(tf.float64), y=(tf.float64))
+    >>>   def my_method(self, x, y, some_flag=True):
     >>>       #compute something, returning a tf graph.
-    >>>       return tf.foo(self.baz, x, y)
+    >>>       return tf.foo(self.baz, x, y, some_flag=some_flag)
 
     >>> m = MyClass()
     >>> x = np.random.randn(3,1)
     >>> y = np.random.randn(3,1)
-    >>> result = my_method(x, y)
+    >>> result = my_method(x, y, some_flag=False)
 
     Now the output of the method call is the _result_ of the computation,
     equivalent to
@@ -519,52 +522,166 @@ class AutoFlow:
     >>> x_tf = tf.placeholder(tf.float64)
     >>> y_tf = tf.placeholder(tf.float64)
     >>> with m.tf_mode():
-    >>>     graph = tf.foo(m.baz, x_tf, y_tf)
+    >>>     graph = tf.foo(m.baz, x_tf, y_tf, some_flag=False)
     >>> result = m._session.run(graph,
                                 feed_dict={x_tf:x,
                                            y_tf:y,
                                            m._free_vars:m.get_free_state()})
 
     Not only is the syntax cleaner, but multiple calls to the method will
-    result in the graph being constructed only once.
-
+    result in the graph being constructed only once for every set of non tensorflow
+    parameters.
     """
-
-    def __init__(self, *tf_arg_tuples):
-        # NB. TF arg_tuples is a list of tuples, each of which can be used to
-        # construct a tf placeholder.
+    def __init__(self, *tf_arg_tuples, **tf_kwarg_tuples):
         self.tf_arg_tuples = tf_arg_tuples
+        self.tf_kwarg_tuples = tf_kwarg_tuples
+
+    if sys.version_info >= (3,):
+        signature = inspect.signature
+        Parameter = inspect.Parameter
+    else:
+        class BoundArguments(object):
+            def __init__(self, arguments):
+                self.arguments = arguments
+                self.args = ()
+                self.kwargs = arguments
+
+            def apply_defaults(self):
+                pass
+
+        class Parameter(object):
+            VAR_KEYWORD = True
+            def __init__(self, kind):
+                self.kind = kind
+
+        class Signature(object):
+            def __init__(self, func):
+                self.func = func
+                self.argspec = inspect.getargspec(func)
+                if self.argspec.varargs is not None:
+                    raise TypeError('Cannot handle varargs in AutoFlow in python 2')
+
+                self.parameters = OrderedDict([
+                    (arg, AutoFlow.Parameter(False))
+                    for arg in self.argspec.args
+                ])
+                if self.argspec.keywords is not None:
+                    self.parameters[self.argspec.keywords] = AutoFlow.Parameter(True)
+
+            def bind(self, *args, **kwargs):
+                callargs = inspect.getcallargs(self.func, *args, **kwargs)
+                if self.argspec.keywords is not None:
+                    kwvar = callargs[self.argspec.keywords]
+                    callargs.pop(self.argspec.keywords, None)
+                    callargs.update(kwvar)
+                return AutoFlow.BoundArguments(callargs)
+
+            def bind_partial(self, *args, **kwargs):
+                if len(args) > len(self.argspec.args):
+                    raise TypeError('Passed too many arguments')
+
+                args_dict = OrderedDict(zip(self.argspec.args, args))
+                if not set(args_dict.keys()).isdisjoint(set(kwargs.keys())):
+                    raise TypeError('Passed duplicate arguments')
+                args_dict.update(kwargs)
+
+                return AutoFlow.BoundArguments(args_dict)
+
+        signature = Signature
+
+    @classmethod
+    def find_varkw(cls, signature):
+        varkw = None
+        for name, parameter in signature.parameters.items():
+            if parameter.kind is cls.Parameter.VAR_KEYWORD:
+                varkw = name
+        return varkw
+
+    @classmethod
+    def flat_bound_arguments(cls, signature, bound):
+        varkw = cls.find_varkw(signature)
+
+        for name, argument in bound.arguments.items():
+            if name == varkw:
+                for kwarg in argument.items():
+                    yield kwarg
+            else:
+                yield (name, argument)
 
     def __call__(self, tf_method):
+        signature = self.__class__.signature(tf_method)
+        varkw = self.find_varkw(signature)
+
+        # NOTE: Bind to the 'self'-parameter via an explicit None which gets
+        # ignored by popping it from the argument list.
+        tf_params = OrderedDict(self.flat_bound_arguments(
+            signature,
+            signature.bind_partial(None, *self.tf_arg_tuples, **self.tf_kwarg_tuples)
+        ))
+        self_parameter = next(iter(signature.parameters.keys()))
+        tf_params.pop(self_parameter)
+
         @wraps(tf_method)
-        def runnable(instance, *np_args):
-            storage_name = '_' + tf_method.__name__ + '_AF_storage'
+        def runnable(instance, *args, **kwargs):
+            all_args = signature.bind(instance, *args, **kwargs)
+            all_args.apply_defaults()
+
+            flat_all_args = OrderedDict(self.flat_bound_arguments(signature, all_args))
+            np_args = {
+                arg: flat_all_args[arg]
+                for arg in tf_params
+            }
+            hash_args = tuple(
+                (name, argument)
+                for name, argument in flat_all_args.items()
+                if name not in tf_params and name != self_parameter
+            )
+
+            storage_name = '_{}_{}_AF_storage'.format(tf_method.__name__, hash(hash_args))
+
             if hasattr(instance, storage_name):
-                # the method has been compiled already, get things out of storage
+                # The method has been compiled already, get things out of storage
                 storage = getattr(instance, storage_name)
             else:
-                # the method needs to be compiled.
-                storage = {}  # an empty dict to keep things in
+                # The method needs to be compiled
+                storage = {}
                 setattr(instance, storage_name, storage)
                 storage['graph'] = tf.Graph()
-                # storage['session'] = tf.Session(graph=storage['graph'])
                 storage['session'] = session.get_session(
                     graph=storage['graph'],
-                    output_file_name=settings.profiling.output_file_name + "_" + tf_method.__name__,
+                    output_file_name='{}_{}'.format(settings.profiling.output_file_name,
+                                                    tf_method.__name__),
                     output_directory=settings.profiling.output_directory,
                     each_time=settings.profiling.each_time
                 )
+
                 with storage['graph'].as_default():
-                    storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
+                    storage['tf_args'] = {
+                        arg: tf.placeholder(*arg_tuple)
+                        for arg, arg_tuple in tf_params.items()
+                    }
+
                     storage['free_vars'] = tf.placeholder(float_type, [None])
                     instance.make_tf_array(storage['free_vars'])
+
                     with instance.tf_mode():
-                        storage['tf_result'] = tf_method(instance, *storage['tf_args'])
+                        for name, argument in storage['tf_args'].items():
+                            if name in all_args.arguments:
+                                all_args.arguments[name] = argument
+                            else:
+                                if varkw is not None:
+                                    all_args.arguments[varkw][name] = argument
+                        storage['tf_result'] = tf_method(*all_args.args, **all_args.kwargs)
+
                     storage['feed_dict_keys'] = instance.get_feed_dict_keys()
                     feed_dict = {}
                     instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
                     storage['session'].run(tf.global_variables_initializer(), feed_dict=feed_dict)
-            feed_dict = dict(zip(storage['tf_args'], np_args))
+
+            feed_dict = {
+                storage['tf_args'][arg]: np_args[arg]
+                for arg in tf_params
+            }
             feed_dict[storage['free_vars']] = instance.get_free_state()
             instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
             return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)

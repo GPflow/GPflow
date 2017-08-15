@@ -1,6 +1,7 @@
 import GPflow
 import tensorflow as tf
 import numpy as np
+import sys
 import unittest
 
 
@@ -30,17 +31,17 @@ class TestNoArgs(unittest.TestCase):
 
     def test_kill(self):
         # make sure autoflow dicts are removed when _needs_recompile is set.
-        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+        keys = [k for k in self.m.__dict__.keys() if k.endswith('_AF_storage')]
         self.assertTrue(len(keys) == 0, msg="no AF storage should be present to start.")
 
         self.m.function()
 
-        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+        keys = [k for k in self.m.__dict__.keys() if k.endswith('_AF_storage')]
         self.assertTrue(len(keys) == 1, msg="AF storage should be present after function call.")
 
         self.m._needs_recompile = True
 
-        keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
+        keys = [k for k in self.m.__dict__.keys() if k.endswith('_AF_storage')]
         self.assertTrue(len(keys) == 0, msg="no AF storage should be present after recompile switch set.")
 
 
@@ -179,6 +180,120 @@ class TestSVGP(unittest.TestCase):
         Z = rng.randn(3, 1)
         model = GPflow.svgp.SVGP(X=X, Y=Y, kern=GPflow.kernels.RBF(1), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)
         model.compute_log_likelihood()
+
+
+class CombinedAutoflowModel(DumbModel):
+    @GPflow.model.AutoFlow(b=(tf.float64,))
+    def multiply(self, a, b):
+        return a * b
+
+    @GPflow.model.AutoFlow((tf.float64,), x=(tf.float64,))
+    def add(self, a, b, x=-1., only_a_and_b=False, **zs):
+        if only_a_and_b:
+            return a + b
+        else:
+            result = a + b + x
+            for z in zs.values():
+                result += z
+            return result
+
+    @GPflow.model.AutoFlow(x=(tf.float64,), b=(tf.float64,))
+    def subtract(self, x, **zs):
+        result = x
+        for z in zs.values():
+            result -= z
+        return result
+
+    if sys.version_info >= (3,):
+        @GPflow.model.AutoFlow(a=(tf.float64,))
+        def divide(self, a, *cs):
+            result = a
+            for c in cs:
+                result /= c
+            return result
+
+
+class TestMixedArgs(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m = CombinedAutoflowModel()
+        self.m._compile()
+        rng = np.random.RandomState(0)
+        self.a = rng.randn(10, 20)
+        self.b = rng.randn(10, 20)
+        self.x = rng.randn(10, 20)
+
+    def test_simple(self):
+        self.assertTrue(np.allclose(1. * self.b,
+                                    self.m.multiply(1., self.b)))
+        self.assertTrue(np.allclose(1 * self.b,
+                                    self.m.multiply(1, self.b)))
+        self.assertTrue(np.allclose(2. * self.b,
+                                    self.m.multiply(2., self.b)))
+        self.assertTrue(np.allclose(self.a[0] * self.b,
+                                    self.m.multiply(tuple(self.a[0]), self.b)))
+
+    def test_varkwargs(self):
+        self.assertTrue(np.allclose(3 - 1. - 2.,
+                                    self.m.subtract(x=3., a=1., b=2.)))
+        self.assertTrue(np.allclose(self.x - 17. - self.b,
+                                    self.m.subtract(a=17., b=self.b, x=self.x)))
+
+    def test_combined(self):
+        self.assertTrue(np.allclose(self.a + 1.,
+                                    self.m.add(self.a, 1., only_a_and_b=True)))
+        self.assertTrue(np.allclose(self.a + 1.,
+                                    self.m.add(a=self.a, b=1., only_a_and_b=True)))
+        self.assertTrue(np.allclose(self.a + 1. + self.x + 4.,
+                                    self.m.add(self.a, 1., x=self.x, y=4.)))
+
+    if sys.version_info >= (3,):
+        def test_varargs(self):
+            self.assertTrue(np.allclose(1. / 2. / 3. / -4.,
+                                        self.m.divide(1., 2., 3., -4.)))
+            self.assertTrue(np.allclose(self.a / 2. / 3. / -4.,
+                                        self.m.divide(self.a, 2., 3., -4.)))
+
+
+class CachedModel(DumbModel):
+    @GPflow.model.AutoFlow(a=(tf.float64,))
+    def add(self, a, b, double_result=False):
+        if double_result:
+            return 2 * (a + b)
+        else:
+            return a + b
+
+
+class TestGraphCaching(unittest.TestCase):
+    def setUp(self):
+        tf.reset_default_graph()
+        self.m = CachedModel()
+        self.m._compile()
+        rng = np.random.RandomState(0)
+        self.a = rng.randn(10, 20)
+        self.b = rng.randn(10, 20)
+
+    def test_caching(self):
+        def number_of_cached_graphs(model):
+            keys = [k for k in self.m.__dict__.keys() if k.endswith('_AF_storage')]
+            return len(keys)
+
+        self.assertTrue(number_of_cached_graphs(self.m) == 0)
+
+        self.m.add(self.a, 1.)
+        self.assertTrue(number_of_cached_graphs(self.m) == 1)
+
+        self.m.add(self.b, 1.)
+        self.assertTrue(number_of_cached_graphs(self.m) == 1)
+
+        self.m.add(self.a, 2.)
+        self.assertTrue(number_of_cached_graphs(self.m) == 2)
+
+        self.m.add(self.a, 2., double_result=True)
+        self.assertTrue(number_of_cached_graphs(self.m) == 3)
+
+        self.m.add(self.b, 2., double_result=True)
+        self.assertTrue(number_of_cached_graphs(self.m) == 3)
 
 
 if __name__ == "__main__":
