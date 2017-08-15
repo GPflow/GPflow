@@ -6,8 +6,10 @@ try:
     import pandas
 except ImportError:
     pandas = None
+from nose.plugins.attrib import attr
 
 
+@attr(speed='slow')
 class SampleGaussianTest(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()

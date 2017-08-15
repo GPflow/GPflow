@@ -37,7 +37,7 @@ class GPR(GPModel):
 
        \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
-    def __init__(self, X, Y, kern, mean_function=Zero(), name='name'):
+    def __init__(self, X, Y, kern, mean_function=None, name='name'):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R

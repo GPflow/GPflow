@@ -44,7 +44,7 @@ class SGPR(GPModel):
 
     """
 
-    def __init__(self, X, Y, kern, Z, mean_function=Zero()):
+    def __init__(self, X, Y, kern, Z, mean_function=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -89,12 +89,12 @@ class SGPR(GPModel):
 
         # compute log marginal bound
         bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
-        bound += - output_dim * tf.reduce_sum(tf.log(tf.diag_part(LB)))
+        bound += - output_dim * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         bound -= 0.5 * num_data * output_dim * tf.log(self.likelihood.variance)
         bound += -0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * output_dim * tf.reduce_sum(Kdiag) / self.likelihood.variance
-        bound += 0.5 * output_dim * tf.reduce_sum(tf.diag_part(AAT))
+        bound += 0.5 * output_dim * tf.reduce_sum(tf.matrix_diag_part(AAT))
 
         return bound
 
@@ -173,8 +173,8 @@ class GPRFITC(GPModel):
         Kuf = self.kern.K(self.Z, self.X)
         Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
 
-        Luu = tf.cholesky(Kuu)  # => Luu^T Luu = Kuu
-        V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff
+        Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
+        V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
 
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
@@ -227,7 +227,7 @@ class GPRFITC(GPModel):
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
         constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.dtypes.float_type))
-        logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.diag_part(L)))
+        logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent

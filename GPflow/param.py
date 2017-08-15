@@ -204,11 +204,12 @@ class Param(Parentable):
         if self.fixed:
             return pd.Series([self.value for _ in range(samples.shape[0])], name=self.long_name)
         start, _ = self.highest_parent.get_param_index(self)
-        end = start + self.size
+        free_state_size = self.transform.free_state_size(self.shape)
+        end = start + free_state_size
         samples = samples[:, start:end]
-        samples = samples.reshape((samples.shape[0],) + self.shape)
-        samples = np.atleast_1d(self.transform.forward(samples))
-        return pd.Series([v for v in samples], name=self.long_name)
+        samples = [np.atleast_1d(self.transform.forward(s).reshape(self.shape))
+                   for s in samples]
+        return pd.Series(samples, name=self.long_name)
 
     def make_tf_array(self, free_array):
         """
@@ -797,7 +798,7 @@ class Parameterized(Parentable):
         params=  [child for key, child in self.__dict__.items()
                   if isinstance(child, (Param, Parameterized)) and
                   key is not '_parent']
-        return sorted(params, key=id)
+        return sorted(params, key=lambda x: x.long_name)
 
     @property
     def data_holders(self):
