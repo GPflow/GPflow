@@ -151,25 +151,24 @@ class KeyboardRaiser:
 
 class TestKeyboardCatching(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
-        X = np.random.randn(100, 3)
-        Y = np.random.randn(100, 3)
-        Z = np.random.randn(10, 3)
+        X = np.random.randn(1000, 3)
+        Y = np.random.randn(1000, 3)
+        Z = np.random.randn(100, 3)
         self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
 
     def test_optimize_np(self):
         x0 = self.m.get_free_state()
         self.m.compile()
         self.m._objective = KeyboardRaiser(15, self.m._objective)
-        self.m.optimize(disp=0, maxiter=100, ftol=0, gtol=0) ## TODO(awav): maxiter = 1000
+        self.m.optimize(disp=0, maxiter=1000, ftol=0, gtol=0)
         x1 = self.m.get_free_state()
         self.assertFalse(np.allclose(x0, x1))
 
     def test_optimize_tf(self):
         x0 = self.m.get_free_state()
-        callback = KeyboardRaiser(2, lambda x: None)
+        callback = KeyboardRaiser(5, lambda x: None)
         o = tf.train.AdamOptimizer()
-        self.m.optimize(o, maxiter=5, callback=callback)
+        self.m.optimize(o, maxiter=10, callback=callback)
         x1 = self.m.get_free_state()
         self.assertFalse(np.allclose(x0, x1))
 

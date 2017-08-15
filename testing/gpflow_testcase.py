@@ -1,7 +1,7 @@
 import unittest
 import tensorflow as tf
 
-class GPflowTestCase(unittest.TestCase):
+class GPflowTestCase(tf.test.TestCase):
     """
     Wrapper for TestCase to avoid massive duplication of resetting
     Tensorflow Graph.

@@ -567,6 +567,29 @@ class AutoFlow:
             The graph and session being passed together make little sense as
             tensorflow session can be tied to only graph.
 
+
+            > 1.
+            > with tf.Session().as_default():
+            >     m.method(x)
+
+            > 2.
+            > graph = tf.Graph()
+            > with tf.Session(graph=graph).as_default():
+            >     m.method(x)
+
+            > 3.
+            > with tf.Graph().as_default():
+            >     with tf.Session().as_default():
+            >         m.method(x)
+
+            Examples above are special cases. The first method call uses
+            default session to compile and run model. Second example shows that
+            even when you passed only graph to the AutoFlow wrapped function
+            the default session will be used, because it owns same graph. Third
+            example depictures the case when created within context manager,
+            the session and graph passed implicitly and will be used if the
+            `method` have never been called before.
+
             :raises ValueError: when `**kwargs` contains unknown key-valued
             parameters or user passed both session and graph parameters and
             session references to different graph.
@@ -578,7 +601,7 @@ class AutoFlow:
             session = kwargs.get('session')
             graph = kwargs.get('graph')
 
-            if session and graph and session.graph != graph:
+            if (session and graph) and (session.graph is not graph):
                 raise ValueError(
                     'Ambiguous session and graph parameters passed')
 
@@ -587,16 +610,17 @@ class AutoFlow:
             if hasattr(instance, storage_name):
                 storage = getattr(instance, storage_name)
                 storage_session = storage['session']
-                storage_graph = storage['graph']
+                storage_graph = storage_session.graph
 
-            def get_session():
-                if session is None:
-                    filename = ''.join([
-                        settings.profiling.output_file_name,
-                        '_', tf_method.__name__])
-                    return session_mngr.get_session(
-                        graph=graph, output_file_name=filename)
-                return session
+            def get_session(session_, graph_):
+                default_session = tf.get_default_session()
+                if session_ is not None:
+                    return session_
+                elif default_session is not None and (
+                        graph_ is None or default_session.graph is graph_):
+                    return default_session
+                filename = ''.join([settings.profiling.output_file_name, '_', tf_method.__name__])
+                return session_mngr.get_session(graph=graph_, output_file_name=filename)
 
             def tf_init_feed_dict(instance_, storage_, session_):
                 feed_dict = {}
@@ -606,14 +630,14 @@ class AutoFlow:
                 session_.run(init, feed_dict=feed_dict)
 
             if storage is not None and (
-                    (session is None and graph is None) or
-                    (storage_session == session)):
-                # the method has been compiled already,
-                # get things out of storage
-                graph = storage_graph
+                    (session is None and graph is None) or (storage_session is session)):
+                # the method has been compiled already, get things out of storage
                 session = storage_session
-            elif storage is not None and storage_graph == graph:
-                session = get_session()
+                graph = session.graph
+            elif storage is not None and (session is None and storage_graph is graph):
+                # 1. either use new session or default one
+                # 2. initialize variables for chosen session
+                session = get_session(None, graph)
                 with graph.as_default():
                     tf_init_feed_dict(instance, storage, session)
             else:
@@ -621,7 +645,7 @@ class AutoFlow:
                 storage = {}  # an empty dict to keep things in
                 setattr(instance, storage_name, storage)
                 storage = getattr(instance, storage_name)
-                session = get_session()
+                session = get_session(session, graph)
                 graph = session.graph
                 with graph.as_default():
                     tf_args = [tf.placeholder(*a) for a in self.tf_arg_tuples]
@@ -633,7 +657,6 @@ class AutoFlow:
                     storage['feed_dict_keys'] = instance.get_feed_dict_keys()
                     tf_init_feed_dict(instance, storage, session)
 
-            storage['graph'] = graph
             storage['session'] = session
             feed_dict = dict(zip(storage['tf_args'], np_args))
             feed_dict[storage['free_vars']] = instance.get_free_state()
