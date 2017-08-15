@@ -110,9 +110,25 @@ class Laplace(Prior):
     def __str__(self):
         return "Lap.("+str(self.mu) + "," + str(self.sigma) + ")"
 
+class Beta(Prior):
+    def __init__(self, a, b):
+        Prior.__init__(self)
+        self.a = np.atleast_1d(np.array(a, np_float_type))
+        self.b = np.atleast_1d(np.array(b, np_float_type))
+
+    def logp(self, x):
+        return tf.reduce_sum(densities.beta(self.a, self.b, x))
+
+    def sample(self, shape=(1,)):
+        return np.random.beta(self.a, self.b, size=shape)
+
+    def __str__(self):
+        return "Beta(" + str(self.a) + "," + str(self.b) + ")"
+
 
 class Uniform(Prior):
     def __init__(self, lower=0, upper=1):
+        Prior.__init__(self)
         self.log_height = - np.log(upper - lower)
         self.lower, self.upper = lower, upper
 
