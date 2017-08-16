@@ -17,8 +17,11 @@ class TestProfiling(GPflowTestCase):
         self.m = GPflow.gpr.GPR(X, Y, k)
 
     def tearDown(self):
+        storage = getattr(self.m.kern, '_compute_K_symm_AF_storage', None)
         if self.m.session is not None:
             self.m.session.close()
+        if storage is not None and 'session' in storage:
+            storage['session'].close()
         super(TestProfiling, self).tearDown()
 
     def test_profile(self):
@@ -67,7 +70,7 @@ class TestProfiling(GPflowTestCase):
         s.profiling.dump_timeline = True
         s.profiling.each_time = True
         s.profiling.output_directory = './testing/each_time/'
-        with self.test_session(), GPflow.settings.temp_settings(s):
+        with GPflow.settings.temp_settings(s):
             self.m.compile()
             self.m._objective(self.m.get_free_state())
             self.m._objective(self.m.get_free_state())
