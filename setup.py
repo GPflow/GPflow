@@ -5,7 +5,6 @@ from setuptools import setup
 import re
 import os
 import sys
-import tensorflow as tf
 
 # load version form _version.py
 VERSIONFILE = "GPflow/_version.py"
@@ -32,9 +31,8 @@ setup(name='GPflow',
       package_dir={'GPflow': 'GPflow'},
       py_modules=['GPflow.__init__'],
       test_suite='testing',
-      install_requires=['numpy>=1.9', 'scipy>=0.16'],
-      extras_require={'tensorflow': ['tensorflow>=1.0.0'],
-                      'tensorflow with gpu': ['tensorflow-gpu>=1.0.0'],
+      install_requires=['numpy>=1.9', 'scipy>=0.16', 'tensorflow>=1.0.0'],
+      extras_require={'tensorflow with gpu': ['tensorflow-gpu>=1.0.0'],
                       'Export parameters as pandas dataframes': ['pandas>=0.18.1']},
       classifiers=['License :: OSI Approved :: Apache Software License',
                    'Natural Language :: English',
