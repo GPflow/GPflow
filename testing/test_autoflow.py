@@ -81,10 +81,7 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
     """AutoFlow tests for external session and graph."""
 
     def setUp(self):
-        self.m1 = AddModel()
-        self.m2 = AddModel()
-        self.m3 = AddModel()
-        self.m4 = AddModel()
+        self.models = [AddModel() for _ in range(5)]
         self.session = tf.Session()
         self.graph = tf.Graph()
         self.x = np.array([1., 1., 1.])
@@ -92,60 +89,89 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
 
     def test_wrong_arguments(self):
         """Wrong arguments for AutoFlow wrapped function."""
-        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
+        m1 = self.models[0]
+        self.assertRaises(ValueError, m1.add, [1.], [1.],
                           unknown1='argument1')
-        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
+        self.assertRaises(ValueError, m1.add, [1.], [1.],
                           graph=tf.Graph(), unknown1='argument1')
-        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
+        self.assertRaises(ValueError, m1.add, [1.], [1.],
                           session=self.session, unknown2='argument2')
-        self.assertRaises(ValueError, self.m1.add, [1.], [1.],
+        self.assertRaises(ValueError, m1.add, [1.], [1.],
                           graph=tf.Graph(), session=tf.Session())
 
     def test_storage_properties(self):
         """External graph and session passed to AutoFlow."""
-        storage_name = '_add_AF_storage'
-        self.m1.add(self.x, self.y)
-        self.m2.add(self.x, self.y, session=self.session)
-        tf.reset_default_graph()
-        self.m3.add(self.x, self.y, graph=self.graph)
-        tf.reset_default_graph()
-        with self.graph.as_default():
-            self.m4.add(self.x, self.y)
 
-        models = [self.m1, self.m2, self.m3, self.m4]
-        sessions = [getattr(m, storage_name)['session'] for m in models]
-        sess1, sess2, sess3, sess4 = sessions
+        m1, m2, m3, m4, m5 = self.models
+        storage_name = '_add_AF_storage'
+        m1.add(self.x, self.y)
+        m2.add(self.x, self.y, session=self.session)
+        m3.add(self.x, self.y, graph=self.graph)
+
+        with self.graph.as_default():
+            m4.add(self.x, self.y)
+
+        with self.test_session() as sess_default:
+            m5.add(self.x, self.y)
+
+        sessions = [getattr(m, storage_name)['session'] for m in self.models]
+        sess1, sess2, sess3, sess4, sess5 = sessions
         sessions_set = set(map(str, sessions))
-        self.assertEqual(len(sessions_set), 4)
+        self.assertEqual(len(sessions_set), 5)
         self.assertEqual(sess1.graph, sess2.graph)
         self.assertEqual(sess3.graph, sess4.graph)
+        self.assertEqual(sess5.graph, sess_default.graph)
+        self.assertEqual(sess5, sess_default)
 
-        self.m2.add(self.x, self.y)
-        sess2_second_run = getattr(self.m2, storage_name)['session']
+        m2.add(self.x, self.y)
+        sess2_second_run = getattr(m2, storage_name)['session']
         self.assertTrue(isinstance(sess2_second_run, tf.Session))
         self.assertEqual(sess2, sess2_second_run)
 
-        self.m4.add(self.x, self.y, graph=tf.get_default_graph())
-        sess4_second_run = getattr(self.m4, storage_name)['session']
+        m4.add(self.x, self.y, graph=tf.get_default_graph())
+        sess4_second_run = getattr(m4, storage_name)['session']
         self.assertTrue(isinstance(sess4_second_run, tf.Session))
         self.assertNotEqual(sess4, sess4_second_run)
+
+        with self.test_session():
+            m5.add(self.x, self.y, graph=sess_default.graph)
+        sess5_second_run = getattr(m5, storage_name)['session']
+        self.assertTrue(isinstance(sess5_second_run, tf.Session))
+        self.assertEqual(sess5, sess5_second_run)
+        self.assertEqual(sess5_second_run, sess_default)
+
+        m5.add(self.x, self.y, graph=sess_default.graph)
+        sess5_third_run = getattr(m5, storage_name)['session']
+        self.assertTrue(isinstance(sess5_third_run, tf.Session))
+        self.assertNotEqual(sess5, sess5_third_run)
+        self.assertNotEqual(sess5_third_run, sess_default)
+
+        sess5_third_run.close()
+
+        _ = [sess.close() for sess in sessions]
+        _ = [getattr(m, storage_name)['session'].close() for m in self.models]
 
 
     def test_autoflow_results(self):
         """AutoFlow computation results for external session and graph."""
         expected = self.x + self.y
 
+        m1, m2, m3, m4, m5 = self.models
+
         def assert_add(model, **kwargs):
             result = model.add(self.x, self.y, **kwargs)
             self.assertTrue(np.all(result == expected))
 
-        assert_add(self.m1)
-        assert_add(self.m2, session=self.session)
-        tf.reset_default_graph()
-        assert_add(self.m3, graph=self.graph)
-        tf.reset_default_graph()
+        assert_add(m1)
+        assert_add(m2, session=self.session)
+        assert_add(m3, graph=self.graph)
+
         with self.graph.as_default():
-            assert_add(self.m4)
+            assert_add(m4)
+
+        with self.test_session():
+            assert_add(m5)
+
 
 class TestAdd(GPflowTestCase):
     def setUp(self):

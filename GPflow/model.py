@@ -139,8 +139,11 @@ class Model(Parameterized):
 
         out_filename = settings.profiling.output_file_name + "_objective"
 
+        default_session = tf.get_default_session()
         if session is None:
-            session = tf.get_default_session()
+            if graph is None or (default_session is not None and
+                                 default_session.graph is graph):
+                session = default_session
         if session is None:
             session = session_mngr.get_session(
                 graph=graph, output_file_name=out_filename)

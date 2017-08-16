@@ -113,27 +113,40 @@ class TestModelSessionGraphArguments(GPflowTestCase):
 
     def test_session_graph_properties(self):
         models = [TestModelSessionGraphArguments.Dummy()
-                  for i in range(5)]
-        m1, m2, m3, m4, m5 = models
+                  for i in range(6)]
+        m1, m2, m3, m4, m5, m6 = models
         session = tf.Session()
         graph = tf.Graph()
         m1.compile()
         m2.compile(session=session)
         m3.compile(graph=graph)
+
         with graph.as_default():
             m4.compile()
+
         m5.compile(session=session, graph=graph)
+        with self.test_session() as sess_default:
+            m6.compile()
 
         sessions = [m.session for m in models]
-        sess1, sess2, sess3, sess4, sess5 = sessions
+        sess1, sess2, sess3, sess4, sess5, sess6 = sessions
         sessions_set = set(map(str, sessions))
-        self.assertEqual(len(sessions_set), 4)
+        self.assertNotEqual(sess_default, tf.get_default_graph())
+        self.assertEqual(len(sessions_set), 5)
         self.assertEqual(sess2, sess5)
         self.assertEqual(sess1.graph, sess2.graph)
         self.assertEqual(sess3.graph, sess4.graph)
         self.assertEqual(sess2.graph, tf.get_default_graph())
         self.assertEqual(sess3.graph, graph)
+        self.assertEqual(sess6.graph, sess_default.graph)
+        self.assertEqual(sess6, sess_default)
         self.assertNotEqual(sess1.graph, sess3.graph)
+
+        m6.compile(graph=sess_default.graph)
+        self.assertEqual(sess6.graph, sess_default.graph)
+        self.assertEqual(sess6, sess_default)
+
+        [m.session.close() for m in models]
 
 
 class KeyboardRaiser:
