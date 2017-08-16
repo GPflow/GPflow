@@ -1,17 +1,20 @@
 from __future__ import print_function
-import nbformat
-from nbconvert.preprocessors import ExecutePreprocessor
-from nbconvert.preprocessors.execute import CellExecutionError
-import glob
+
 import traceback
 import unittest
 import sys
 import time
 import os
+
+import nbformat
+
+from nbconvert.preprocessors import ExecutePreprocessor
+from nbconvert.preprocessors.execute import CellExecutionError
 from nose.plugins.attrib import attr
+from testing.gpflow_testcase import GPflowTestCase
 
 @attr(speed='slow')
-class TestNotebooks(unittest.TestCase):
+class TestNotebooks(GPflowTestCase):
     """
     Run notebook tests.
 
@@ -25,7 +28,7 @@ class TestNotebooks(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        pythonkernel = 'python'+str(sys.version_info[0])
+        pythonkernel = 'python' + str(sys.version_info[0])
         this_dir = os.path.dirname(__file__)
         cls.nbpath = os.path.join(this_dir, '../doc/source/notebooks/')
         cls.preproc = ExecutePreprocessor(
@@ -45,9 +48,10 @@ class TestNotebooks(unittest.TestCase):
                 self.fail(msg.format(notebook_filename))
 
     def _exec_notebook_ts(self, notebook_filename):
-        ts = time.time()
-        self._exec_notebook(notebook_filename)
-        print(notebook_filename, 'took {0} seconds.'.format(time.time() - ts))
+        with self.test_session():
+            ts = time.time()
+            self._exec_notebook(notebook_filename)
+            print(notebook_filename, 'took {0} seconds.'.format(time.time() - ts))
 
     def classification_test(self):
         self._exec_notebook_ts("classification.ipynb")
@@ -70,7 +74,7 @@ class TestNotebooks(unittest.TestCase):
     def multiclass_test(self):
         self._exec_notebook_ts("multiclass.ipynb")
 
-    def multiclass_test(self):
+    def ordinal_test(self):
         self._exec_notebook_ts("ordinal.ipynb")
 
     def regression_with_updated_data_test(self):

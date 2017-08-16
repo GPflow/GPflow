@@ -5,6 +5,8 @@ import collections
 import tensorflow as tf
 from collections import OrderedDict
 
+import logging
+
 
 class SettingsContextManager(object):
     def __init__(self, manager, tmp_settings):
@@ -12,9 +14,11 @@ class SettingsContextManager(object):
         self._tmp_settings = tmp_settings
 
     def __enter__(self):
+        print('Enter: ', self._tmp_settings)
         self._manager.push(self._tmp_settings)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        print('Exit: ', self._tmp_settings)
         self._manager.pop()
 
 

@@ -22,9 +22,6 @@ from GPflow.minibatch import ReplacementSampling, NoReplacementSampling
 
 
 class TestSequentialManager(GPflowTestCase):
-    def setUp(self):
-        tf.reset_default_graph()
-
     def testA(self):
         minibatch_size = 3
         total_points = 5
@@ -52,9 +49,6 @@ class TestSequentialManager(GPflowTestCase):
         self.assertTrue((indecesB==targetIndicesB).all())
 
 class TestRandomIndexManagers(GPflowTestCase):
-    def setUp(self):
-        tf.reset_default_graph()
-
     def checkUniformDist(self, indeces, nChoices):
         fTotalPoints = float(len(indeces))
         tolerance = 1e-2
@@ -97,7 +91,6 @@ class TestRandomIndexManagers(GPflowTestCase):
 
 class TestMinibatchData(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
         self.nDataPoints = 10
         self.minibatch_size = 4
         self.dummyArray = np.atleast_2d(np.arange(self.nDataPoints)).T

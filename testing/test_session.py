@@ -12,6 +12,11 @@ class TestSessionConfiguration(GPflowTestCase):
     def setUp(self):
         self.m = GPflow.gpr.GPR(np.ones((1, 1)), np.ones((1, 1)), kern=GPflow.kernels.Matern52(1))
 
+    def tearDown(self):
+        if self.m.session is not None:
+            self.m.session.close()
+        super(TestSessionConfiguration, self).tearDown()
+
     def test_option_persistance(self):
         '''
         Test configuration options are passed to tensorflow session
@@ -36,26 +41,32 @@ class TestSessionConfiguration(GPflowTestCase):
         settings.session.intra_op_parallelism_threads = dop
         settings.session.inter_op_parallelism_threads = dop
         graph = tf.Graph()
-        tf_session = session.get_session(graph=graph,
-                                         output_file_name=settings.profiling.output_file_name + "_objective",
-                                         output_directory=settings.profiling.output_directory,
-                                         each_time=settings.profiling.each_time)
+        tf_session = session.get_session(
+            graph=graph,
+            output_file_name=settings.profiling.output_file_name + "_objective",
+            output_directory=settings.profiling.output_directory,
+            each_time=settings.profiling.each_time)
         self.assertTrue(tf_session._config.intra_op_parallelism_threads == dop)
         self.assertTrue(tf_session._config.inter_op_parallelism_threads == dop)
+        tf_session.close()
+
         # change maximum degree of parallelism
         dopOverride = 12
-        tf_session = session.get_session(graph=graph,
-                                         output_file_name=settings.profiling.output_file_name + "_objective",
-                                         output_directory=settings.profiling.output_directory,
-                                         each_time=settings.profiling.each_time,
-                                         config=tf.ConfigProto(intra_op_parallelism_threads=dopOverride,
-                                                               inter_op_parallelism_threads=dopOverride))
+        tf_session = session.get_session(
+            graph=graph,
+            output_file_name=settings.profiling.output_file_name + "_objective",
+            output_directory=settings.profiling.output_directory,
+            each_time=settings.profiling.each_time,
+            config=tf.ConfigProto(intra_op_parallelism_threads=dopOverride,
+                                  inter_op_parallelism_threads=dopOverride))
         self.assertTrue(tf_session._config.intra_op_parallelism_threads == dopOverride)
         self.assertTrue(tf_session._config.inter_op_parallelism_threads == dopOverride)
+        tf_session.close()
 
     def test_session_default_graph(self):
         tf_session = session.get_session()
         self.assertEqual(tf_session.graph, tf.get_default_graph())
+        tf_session.close()
 
     def test_autoflow(self):
         dop = 4

@@ -23,7 +23,6 @@ from testing.gpflow_testcase import GPflowTestCase
 
 class TestOptimize(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
         rng = np.random.RandomState(0)
 
         class Quadratic(GPflow.model.Model):
@@ -37,58 +36,67 @@ class TestOptimize(GPflowTestCase):
         self.m = Quadratic()
 
     def test_adam(self):
-        o = tf.train.AdamOptimizer()
-        self.m.optimize(o, maxiter=5000)
-        self.assertTrue(self.m.x.value.max() < 1e-2)
+        with self.test_session():
+            o = tf.train.AdamOptimizer()
+            self.m.optimize(o, maxiter=5000)
+            self.assertTrue(self.m.x.value.max() < 1e-2)
 
     def test_lbfgsb(self):
-        self.m.optimize(disp=False)
-        self.assertTrue(self.m.x.value.max() < 1e-6)
+        with self.test_session():
+            self.m.optimize(disp=False)
+            self.assertTrue(self.m.x.value.max() < 1e-6)
 
     def test_feval_counter(self):
-        self.m.compile()
-        self.m.num_fevals = 0
-        for _ in range(10):
-            self.m._objective(self.m.get_free_state())
-        self.assertTrue(self.m.num_fevals == 10)
+        with self.test_session():
+            self.m.compile()
+            self.m.num_fevals = 0
+            for _ in range(10):
+                self.m._objective(self.m.get_free_state())
+            self.assertTrue(self.m.num_fevals == 10)
 
 
 class TestNeedsRecompile(GPflowTestCase):
     def setUp(self):
-        self.m = GPflow.model.Model()
-        self.m.p = GPflow.param.Param(1.0)
+        with self.test_session():
+            self.m = GPflow.model.Model()
+            self.m.p = GPflow.param.Param(1.0)
 
     def test_fix(self):
-        self.m._needs_recompile = False
-        self.m.p.fixed = True
-        self.assertTrue(self.m._needs_recompile)
+        with self.test_session():
+            self.m._needs_recompile = False
+            self.m.p.fixed = True
+            self.assertTrue(self.m._needs_recompile)
 
     def test_replace_param(self):
-        self.m._needs_recompile = False
-        new_p = GPflow.param.Param(3.0)
-        self.m.p = new_p
-        self.assertTrue(self.m._needs_recompile)
+        with self.test_session():
+            self.m._needs_recompile = False
+            new_p = GPflow.param.Param(3.0)
+            self.m.p = new_p
+            self.assertTrue(self.m._needs_recompile)
 
     def test_set_prior(self):
-        self.m._needs_recompile = False
-        self.m.p.prior = GPflow.priors.Gaussian(0, 1)
-        self.assertTrue(self.m._needs_recompile)
+        with self.test_session():
+            self.m._needs_recompile = False
+            self.m.p.prior = GPflow.priors.Gaussian(0, 1)
+            self.assertTrue(self.m._needs_recompile)
 
     def test_set_transform(self):
-        self.m._needs_recompile = False
-        self.m.p.transform = GPflow.transforms.Identity()
-        self.assertTrue(self.m._needs_recompile)
+        with self.test_session():
+            self.m._needs_recompile = False
+            self.m.p.transform = GPflow.transforms.Identity()
+            self.assertTrue(self.m._needs_recompile)
 
     def test_replacement(self):
-        m = GPflow.model.Model()
-        m.p = GPflow.param.Parameterized()
-        m.p.p = GPflow.param.Param(1.0)
-        m._needs_recompile = False
-        # replace Parameterized
-        new_p = GPflow.param.Parameterized()
-        new_p.p = GPflow.param.Param(1.0)
-        m.p = new_p
-        self.assertTrue(m._needs_recompile is True)
+        with self.test_session():
+            m = GPflow.model.Model()
+            m.p = GPflow.param.Parameterized()
+            m.p.p = GPflow.param.Param(1.0)
+            m._needs_recompile = False
+            # replace Parameterized
+            new_p = GPflow.param.Parameterized()
+            new_p.p = GPflow.param.Param(1.0)
+            m.p = new_p
+            self.assertTrue(m._needs_recompile is True)
 
 
 class TestModelSessionGraphArguments(GPflowTestCase):
@@ -103,12 +111,7 @@ class TestModelSessionGraphArguments(GPflowTestCase):
         def build_likelihood(self):
             return tf.negative(tf.reduce_sum(tf.square(self.x)))
 
-    def setUp(self):
-        tf.reset_default_graph()
-
     def test_session_graph_properties(self):
-        """
-        """
         models = [TestModelSessionGraphArguments.Dummy()
                   for i in range(5)]
         m1, m2, m3, m4, m5 = models
@@ -151,46 +154,50 @@ class KeyboardRaiser:
 
 class TestKeyboardCatching(GPflowTestCase):
     def setUp(self):
-        X = np.random.randn(1000, 3)
-        Y = np.random.randn(1000, 3)
-        Z = np.random.randn(100, 3)
-        self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
+        with self.test_session():
+            X = np.random.randn(1000, 3)
+            Y = np.random.randn(1000, 3)
+            Z = np.random.randn(100, 3)
+            self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
 
     def test_optimize_np(self):
-        x0 = self.m.get_free_state()
-        self.m.compile()
-        self.m._objective = KeyboardRaiser(15, self.m._objective)
-        self.m.optimize(disp=0, maxiter=1000, ftol=0, gtol=0)
-        x1 = self.m.get_free_state()
-        self.assertFalse(np.allclose(x0, x1))
+        with self.test_session():
+            x0 = self.m.get_free_state()
+            self.m.compile()
+            self.m._objective = KeyboardRaiser(15, self.m._objective)
+            self.m.optimize(disp=0, maxiter=1000, ftol=0, gtol=0)
+            x1 = self.m.get_free_state()
+            self.assertFalse(np.allclose(x0, x1))
 
     def test_optimize_tf(self):
-        x0 = self.m.get_free_state()
-        callback = KeyboardRaiser(5, lambda x: None)
-        o = tf.train.AdamOptimizer()
-        self.m.optimize(o, maxiter=10, callback=callback)
-        x1 = self.m.get_free_state()
-        self.assertFalse(np.allclose(x0, x1))
+        with self.test_session():
+            x0 = self.m.get_free_state()
+            callback = KeyboardRaiser(5, lambda x: None)
+            o = tf.train.AdamOptimizer()
+            self.m.optimize(o, maxiter=10, callback=callback)
+            x1 = self.m.get_free_state()
+            self.assertFalse(np.allclose(x0, x1))
 
 
 class TestLikelihoodAutoflow(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
-        X = np.random.randn(1000, 3)
-        Y = np.random.randn(1000, 3)
-        Z = np.random.randn(100, 3)
-        self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
+        with self.test_session():
+            X = np.random.randn(1000, 3)
+            Y = np.random.randn(1000, 3)
+            Z = np.random.randn(100, 3)
+            self.m = GPflow.sgpr.SGPR(X, Y, Z=Z, kern=GPflow.kernels.RBF(3))
 
     def test_lik_and_prior(self):
-        l0 = self.m.compute_log_likelihood()
-        p0 = self.m.compute_log_prior()
-        self.m.kern.variance.prior = GPflow.priors.Gamma(1.4, 1.6)
-        l1 = self.m.compute_log_likelihood()
-        p1 = self.m.compute_log_prior()
+        with self.test_session():
+            l0 = self.m.compute_log_likelihood()
+            p0 = self.m.compute_log_prior()
+            self.m.kern.variance.prior = GPflow.priors.Gamma(1.4, 1.6)
+            l1 = self.m.compute_log_likelihood()
+            p1 = self.m.compute_log_prior()
 
-        self.assertTrue(p0 == 0.0)
-        self.assertFalse(p0 == p1)
-        self.assertTrue(l0 == l1)
+            self.assertTrue(p0 == 0.0)
+            self.assertFalse(p0 == p1)
+            self.assertTrue(l0 == l1)
 
 
 class TestName(GPflowTestCase):
@@ -207,44 +214,74 @@ class TestNoRecompileThroughNewModelInstance(GPflowTestCase):
         self.Y = np.random.rand(10, 1)
 
     def test_gpr(self):
-        m1 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
-        m1.compile()
-        m2 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
-        self.assertFalse(m1._needs_recompile)
+        with self.test_session():
+            m1 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
+            m1.compile()
+            m2 = GPflow.gpr.GPR(self.X, self.Y, GPflow.kernels.Matern32(2))
+            self.assertFalse(m1._needs_recompile)
 
     def test_sgpr(self):
-        m1 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
-        m1.compile()
-        m2 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
-        self.assertFalse(m1._needs_recompile)
+        with self.test_session():
+            m1 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
+            m1.compile()
+            m2 = GPflow.sgpr.SGPR(self.X, self.Y, GPflow.kernels.Matern32(2), Z=self.X)
+            self.assertFalse(m1._needs_recompile)
 
     def test_gpmc(self):
-        m1 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
-        m1.compile()
-        m2 = GPflow.gpmc.GPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
-        self.assertFalse(m1._needs_recompile)
+        with self.test_session():
+            m1 = GPflow.gpmc.GPMC(
+                self.X, self.Y,
+                GPflow.kernels.Matern32(2),
+                likelihood=GPflow.likelihoods.StudentT())
+            m1.compile()
+            m2 = GPflow.gpmc.GPMC(
+                    self.X, self.Y,
+                    GPflow.kernels.Matern32(2),
+                    likelihood=GPflow.likelihoods.StudentT())
+            self.assertFalse(m1._needs_recompile)
 
     def test_sgpmc(self):
-        m1 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
-                                Z=self.X)
-        m1.compile()
-        m2 = GPflow.sgpmc.SGPMC(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
-                                Z=self.X)
-        self.assertFalse(m1._needs_recompile)
+        with self.test_session():
+            m1 = GPflow.sgpmc.SGPMC(
+                self.X, self.Y,
+                GPflow.kernels.Matern32(2),
+                likelihood=GPflow.likelihoods.StudentT(),
+                Z=self.X)
+            m1.compile()
+            m2 = GPflow.sgpmc.SGPMC(
+                self.X, self.Y,
+                GPflow.kernels.Matern32(2),
+                likelihood=GPflow.likelihoods.StudentT(),
+                Z=self.X)
+            self.assertFalse(m1._needs_recompile)
 
     def test_svgp(self):
-        m1 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
-                              Z=self.X)
-        m1.compile()
-        m2 = GPflow.svgp.SVGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT(),
-                              Z=self.X)
-        self.assertFalse(m1._needs_recompile)
+        with self.test_session():
+            m1 = GPflow.svgp.SVGP(
+                self.X, self.Y,
+                GPflow.kernels.Matern32(2),
+                likelihood=GPflow.likelihoods.StudentT(),
+                Z=self.X)
+            m1.compile()
+            m2 = GPflow.svgp.SVGP(
+                self.X, self.Y,
+                GPflow.kernels.Matern32(2),
+                likelihood=GPflow.likelihoods.StudentT(),
+                Z=self.X)
+            self.assertFalse(m1._needs_recompile)
 
     def test_vgp(self):
-        m1 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
-        m1.compile()
-        m2 = GPflow.vgp.VGP(self.X, self.Y, GPflow.kernels.Matern32(2), likelihood=GPflow.likelihoods.StudentT())
-        self.assertFalse(m1._needs_recompile)
+        with self.test_session():
+            m1 = GPflow.vgp.VGP(
+                self.X, self.Y,
+                GPflow.kernels.Matern32(2),
+                likelihood=GPflow.likelihoods.StudentT())
+            m1.compile()
+            m2 = GPflow.vgp.VGP(
+                self.X, self.Y,
+                GPflow.kernels.Matern32(2),
+                likelihood=GPflow.likelihoods.StudentT())
+            self.assertFalse(m1._needs_recompile)
 
 
 if __name__ == "__main__":

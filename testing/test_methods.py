@@ -265,37 +265,42 @@ class TestSparseMCMC(GPflowTestCase):
     points, the sparse mcmc is the same as full mcmc
     """
     def setUp(self):
-        tf.reset_default_graph()
-        rng = np.random.RandomState(0)
-        X = rng.randn(10, 1)
-        Y = rng.randn(10, 1)
-        v_vals = rng.randn(10, 1)
+        with self.test_session():
+            rng = np.random.RandomState(0)
+            X = rng.randn(10, 1)
+            Y = rng.randn(10, 1)
+            v_vals = rng.randn(10, 1)
 
-        lik = GPflow.likelihoods.StudentT
-        self.m1 = GPflow.gpmc.GPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=lik())
-        self.m2 = GPflow.sgpmc.SGPMC(X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=lik(), Z=X.copy())
+            lik = GPflow.likelihoods.StudentT
+            self.m1 = GPflow.gpmc.GPMC(
+                X=X, Y=Y, kern=GPflow.kernels.Exponential(1), likelihood=lik())
+            self.m2 = GPflow.sgpmc.SGPMC(
+                X=X, Y=Y,
+                kern=GPflow.kernels.Exponential(1),
+                likelihood=lik(), Z=X.copy())
 
-        self.m1.V = v_vals
-        self.m2.V = v_vals.copy()
-        self.m1.kern.lengthscale = .8
-        self.m2.kern.lengthscale = .8
-        self.m1.kern.variance = 4.2
-        self.m2.kern.variance = 4.2
+            self.m1.V = v_vals
+            self.m2.V = v_vals.copy()
+            self.m1.kern.lengthscale = .8
+            self.m2.kern.lengthscale = .8
+            self.m1.kern.variance = 4.2
+            self.m2.kern.variance = 4.2
 
-        self.m1.compile()
-        self.m2.compile()
+            self.m1.compile()
+            self.m2.compile()
 
     def test_likelihoods_and_gradients(self):
-        f1, _ = self.m1._objective(self.m1.get_free_state())
-        f2, _ = self.m2._objective(self.m2.get_free_state())
-        self.assertTrue(np.allclose(f1, f2))
-        # the parameters might not be in the same order, so
-        # sort the gradients before checking they're the same
-        _, g1 = self.m1._objective(self.m1.get_free_state())
-        _, g2 = self.m2._objective(self.m2.get_free_state())
-        g1 = np.sort(g1)
-        g2 = np.sort(g2)
-        self.assertTrue(np.allclose(g1, g2, 1e-4))
+        with self.test_session():
+            f1, _ = self.m1._objective(self.m1.get_free_state())
+            f2, _ = self.m2._objective(self.m2.get_free_state())
+            self.assertTrue(np.allclose(f1, f2))
+            # the parameters might not be in the same order, so
+            # sort the gradients before checking they're the same
+            _, g1 = self.m1._objective(self.m1.get_free_state())
+            _, g2 = self.m2._objective(self.m2.get_free_state())
+            g1 = np.sort(g1)
+            g2 = np.sort(g2)
+            self.assertTrue(np.allclose(g1, g2, 1e-4))
 
 
 if __name__ == "__main__":
