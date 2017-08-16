@@ -9,7 +9,7 @@ from .reference import referenceRbfKernel, referenceArcCosineKernel, referencePe
 
 class TestRbf(GPflowTestCase):
     def test_1d(self):
-        with self.test_session():
+        with self.test_session() as sess:
             lengthScale = 1.4
             variance = 2.3
             kernel = GPflow.kernels.RBF(1)
@@ -31,7 +31,7 @@ class TestRbf(GPflowTestCase):
 class TestArcCosine(GPflowTestCase):
     def evalKernelError(self, D, variance, weight_variances,
                         bias_variance, order, ARD, X_data):
-        with self.test_session():
+        with self.test_session() as sess:
             kernel = GPflow.kernels.ArcCosine(
                 D,
                 order=order,
@@ -112,7 +112,7 @@ class TestArcCosine(GPflowTestCase):
                     bias_variance, order, ARD, X_data)
 
     def test_nan_in_gradient(self):
-        with self.test_session():
+        with self.test_session() as sess:
             D = 1
             N = 4
 
@@ -132,7 +132,7 @@ class TestArcCosine(GPflowTestCase):
 
 class TestPeriodic(GPflowTestCase):
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
-        with self.test_session():
+        with self.test_session() as sess:
             kernel = GPflow.kernels.PeriodicKernel(
                 D, period=period, variance=variance, lengthscales=lengthscale)
 
@@ -357,7 +357,6 @@ class TestSlice(GPflowTestCase):
     def setUp(self):
         with self.test_session():
             self.rng = np.random.RandomState(0)
-            tf.reset_default_graph()
 
             self.X = self.rng.randn(20, 2)
             self.Z = self.rng.randn(10, 2)
@@ -374,7 +373,7 @@ class TestSlice(GPflowTestCase):
                 self.kernels.append([k1, k2, k3])
 
     def test_symm(self):
-        with self.test_session() as sess:
+        with self.test_session():
             for k1, k2, k3 in self.kernels:
                 K1 = k1.compute_K_symm(self.X)
                 K2 = k2.compute_K_symm(self.X)
@@ -384,7 +383,7 @@ class TestSlice(GPflowTestCase):
                 self.assertTrue(np.allclose(K2, K4))
 
     def test_asymm(self):
-        with self.test_session() as sess:
+        with self.test_session():
             for k1, k2, k3 in self.kernels:
                 K1 = k1.compute_K(self.X, self.Z)
                 K2 = k2.compute_K(self.X, self.Z)

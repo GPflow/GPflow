@@ -239,7 +239,6 @@ class ParamTestsDeeper(GPflowTestCase):
 
 class ParamTestsWider(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
         self.m = GPflow.param.Parameterized()
         self.m.foo = GPflow.param.Param(1.0)
         self.m.bar = GPflow.param.Param(np.arange(10))

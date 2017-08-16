@@ -74,9 +74,9 @@ class SampleModelTest(GPflowTestCase):
         class Quadratic(GPflow.model.Model):
             def __init__(self):
                 GPflow.model.Model.__init__(self)
-                self.x = GPflow.param.Param(rng.randn
+                self.x = GPflow.param.Param(rng.randn(2))
             def build_likelihood(self):
-                return -tf.reduce_sum(tf.square(self
+                return -tf.reduce_sum(tf.square(self.x))
         self.m = Quadratic()
 
     def test_mean(self):

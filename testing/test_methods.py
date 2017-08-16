@@ -22,7 +22,6 @@ from GPflow.minibatch import SequenceIndices
 
 class TestMethods(GPflowTestCase):
     def setUp(self):
-        tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
         self.X = self.rng.randn(100, 2)
         self.Y = self.rng.randn(100, 1)
@@ -52,7 +51,6 @@ class TestMethods(GPflowTestCase):
 
     def test_tf_optimize(self):
         for m in self.ms:
-            tf.reset_default_graph()
             trainer = tf.train.AdamOptimizer(learning_rate=0.001)
             if isinstance(m, (GPflow.gpr.GPR, GPflow.vgp.VGP,
                               GPflow.svgp.SVGP, GPflow.gpmc.GPMC)):
@@ -89,7 +87,6 @@ class TestSVGP(GPflowTestCase):
     both representations (as far as possible)
     """
     def setUp(self):
-        tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
         self.X = self.rng.randn(20, 1)
         self.Y = self.rng.randn(20, 2)
