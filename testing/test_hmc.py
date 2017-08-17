@@ -7,6 +7,7 @@ try:
     import pandas
 except ImportError:
     pandas = None
+
 from nose.plugins.attrib import attr
 
 from testing.gpflow_testcase import GPflowTestCase
