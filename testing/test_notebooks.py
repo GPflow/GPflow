@@ -40,12 +40,12 @@ class TestNotebooks(GPflowTestCase):
             nb = nbformat.read(notebook_file, as_version=nbformat.current_nbformat)
             try:
                 self.preproc.preprocess(nb, {'metadata': {'path': self.nbpath}})
-            except CellExecutionError:
+            except CellExecutionError as cell_error:
                 print('-' * 60)
                 traceback.print_exc(file=sys.stdout)
                 print('-' * 60)
-                msg = 'Error executing the notebook {0}. See above for error.'
-                self.fail(msg.format(notebook_filename))
+                msg = 'Error executing the notebook {0}. See above for error.\nCell error: {1}'
+                self.fail(msg.format(notebook_filename, str(cell_error)))
 
     def _exec_notebook_ts(self, notebook_filename):
         with self.test_session():
