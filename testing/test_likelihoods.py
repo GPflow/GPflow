@@ -313,6 +313,7 @@ class TestSwitchedLikelihood(unittest.TestCase):
 class TestLikelihoodChecks(unittest.TestCase):
     def run_models(self, likelihood, Y):
         X = np.random.randn(Y.shape[0], 1)
+        GPflow.gpr.GPR(X, Y, GPflow.kernels.RBF(1))
         m1 = GPflow.vgp.VGP(X, Y, GPflow.kernels.RBF(1), likelihood)
         m2 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
 
