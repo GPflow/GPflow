@@ -21,6 +21,7 @@ from contextlib import contextmanager
 from functools import wraps
 from .scoping import NameScoped
 from ._settings import settings
+from . import parentable
 
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
@@ -29,64 +30,7 @@ np_float_type = np.float32 if float_type is tf.float32 else np.float64
 recompile_keys = ['prior', 'transform', 'fixed']
 
 
-class Parentable(object):
-    """
-    A very simple class for objects in a tree, where each node contains a
-    reference to '_parent'.
-
-    This class can figure out its own name (by seeing what it's called by the
-    _parent's __dict__) and also recurse up to the highest_parent.
-    """
-
-    def __init__(self):
-        self._parent = None
-
-    @property
-    def highest_parent(self):
-        """A reference to the top of the tree, usually a Model instance"""
-        if self._parent is None:
-            return self
-        else:
-            return self._parent.highest_parent
-
-    @property
-    def name(self):
-        """An automatically generated name, given by the reference of the _parent to this instance"""
-        if self._parent is None:
-            return 'unnamed'
-        if isinstance(self._parent, ParamList):
-            return 'item%i' % self._parent._list.index(self)
-        matches = [key for key, value in self._parent.__dict__.items()
-                   if value is self]
-        if len(matches) == 0:
-            raise ValueError("mis-specified parent. This Param's\
-                             _parent does not contain a reference to it.")
-        if len(matches) > 1:
-            raise ValueError("This Param appears to be doubly\
-                             referenced by a parent")
-        return matches[0]
-
-    @property
-    def long_name(self):
-        """
-        This is a unique identifier for a param object within a structure, made
-        by concatenating the names through the tree.
-        """
-        if self._parent is None:
-            return self.name
-        return self._parent.long_name + '.' + self.name
-
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        d.pop('_parent')
-        return d
-
-    def __setstate__(self, d):
-        self.__dict__.update(d)
-        self._parent = None
-
-
-class Param(Parentable):
+class Param(parentable.Parentable):
     """
     An object to represent parameters.
 
@@ -176,7 +120,7 @@ class Param(Parentable):
     """
 
     def __init__(self, array, transform=transforms.Identity()):
-        Parentable.__init__(self)
+        parentable.Parentable.__init__(self)
         self._array = np.asarray(np.atleast_1d(array), dtype=np_float_type)
         self.transform = transform
         self._tf_array = None
@@ -363,13 +307,13 @@ class Param(Parentable):
         return html
 
     def __getstate__(self):
-        d = Parentable.__getstate__(self)
+        d = parentable.Parentable.__getstate__(self)
         for key in ['_tf_array', '_log_jacobian']:
             d.pop(key, None)
         return d
 
     def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
+        parentable.Parentable.__setstate__(self, d)
         self._log_jacobian = None
         self.fixed = self.fixed  # make self._tf_array if the parameter is fixed
         # NB the parent property will be set by the parent object, apart from
@@ -377,7 +321,7 @@ class Param(Parentable):
         # the tf_array and _log jacobian will be replaced when the model is recompiled
 
 
-class DataHolder(Parentable):
+class DataHolder(parentable.Parentable):
     """
     An object to represent data which needs to be passed to tensorflow for computation.
 
@@ -409,7 +353,7 @@ class DataHolder(Parentable):
         determines the behaviour when the data is set to a new value with a
         different shape
         """
-        Parentable.__init__(self)
+        parentable.Parentable.__init__(self)
         dt = self._get_type(array)
         self._array = np.asarray(array, dtype=dt)
         assert on_shape_change in ['raise', 'pass', 'recompile']
@@ -434,7 +378,7 @@ class DataHolder(Parentable):
         feed_dict[key_dict[self]] = self._array
 
     def __getstate__(self):
-        d = Parentable.__getstate__(self)
+        d = parentable.Parentable.__getstate__(self)
         try:
             d.pop('_tf_array')
         except KeyError:
@@ -572,7 +516,7 @@ class AutoFlow:
         return runnable
 
 
-class Parameterized(Parentable):
+class Parameterized(parentable.Parentable):
     """
     An object to contain parameters and data.
 
@@ -598,7 +542,7 @@ class Parameterized(Parentable):
     """
 
     def __init__(self):
-        Parentable.__init__(self)
+        parentable.Parentable.__init__(self)
         self.scoped_keys = []
         self._tf_mode = False
 
@@ -722,7 +666,7 @@ class Parameterized(Parentable):
         object.__setattr__(self, key, value)
 
         # make sure a new child node knows this is the _parent:
-        if isinstance(value, Parentable) and key is not '_parent':
+        if isinstance(value, parentable.Parentable) and key is not '_parent':
             value._parent = self
 
         if key == '_needs_recompile':
@@ -742,7 +686,7 @@ class Parameterized(Parentable):
         [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
 
     def __getstate__(self):
-        d = Parentable.__getstate__(self)
+        d = parentable.Parentable.__getstate__(self)
         # do not pickle autoflow
         for key in list(d.keys()):
             if key[0] == '_' and key[-11:] == '_AF_storage':
@@ -939,7 +883,7 @@ class Parameterized(Parentable):
         return ''.join(html)
 
     def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
+        parentable.Parentable.__setstate__(self, d)
         # reinstate _parent graph
         for p in self.sorted_params + self.data_holders:
             p._parent = self
@@ -993,6 +937,11 @@ class ParamList(Parameterized):
     @property
     def sorted_params(self):
         return self._list
+
+    @property
+    def name_dict(self):
+        shallow_copied_dict = {"item{}".format(i): item for i, item in enumerate(self._list)}
+        return shallow_copied_dict
 
     def __getitem__(self, key):
         """

@@ -28,7 +28,9 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
                 sample = rng.randn(10, 2)
                 # Multiclass needs a less tight tolerance due to presence of clipping.
                 tolerance = 1e-3
-                test_setups.append(TestSetup(likelihoodClass(2),  np.argmax(sample, 1).reshape(-1, 1), tolerance))
+                lik = likelihoodClass(2)
+                lik.invlink.epsilon.fixed = True
+                test_setups.append(TestSetup(lik,  np.argmax(sample, 1).reshape(-1, 1), tolerance))
         else:
             # most likelihoods follow this standard:
             test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2).astype(np_float_type), 1e-6))
@@ -69,20 +71,30 @@ class TestPredictConditional(unittest.TestCase):
         for test_setup in self.test_setups:
             l = test_setup.likelihood
             with l.tf_mode():
+
+                bfd_keys = l.get_feed_dict_keys()
+                fd = {}
+                l.update_feed_dict(bfd_keys, fd)
+                fd.update({self.x: l.get_free_state(), self.F: self.F_data})
+
                 mu1 = tf.Session().run(l.conditional_mean(self.F),
-                                       feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
+                                       feed_dict=fd)
                 mu2, _ = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0),
-                                          feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
+                                          feed_dict=fd)
             self.assertTrue(np.allclose(mu1, mu2, test_setup.tolerance, test_setup.tolerance))
 
     def test_variance(self):
         for test_setup in self.test_setups:
             l = test_setup.likelihood
             with l.tf_mode():
+                bfd_keys = l.get_feed_dict_keys()
+                fd = {}
+                l.update_feed_dict(bfd_keys, fd)
+                fd.update({self.x: l.get_free_state(), self.F: self.F_data})
                 v1 = tf.Session().run(l.conditional_variance(self.F),
-                                      feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
+                                      feed_dict=fd)
                 v2 = tf.Session().run(l.predict_mean_and_var(self.F, self.F * 0)[1],
-                                      feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
+                                      feed_dict=fd)
             self.assertTrue(np.allclose(v1, v2, atol=test_setup.tolerance))
 
     def test_var_exp(self):
@@ -94,9 +106,14 @@ class TestPredictConditional(unittest.TestCase):
             l = test_setup.likelihood
             y = test_setup.Y
             with l.tf_mode():
-                r1 = tf.Session().run(l.logp(self.F, y), feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
+
+                bfd_keys = l.get_feed_dict_keys()
+                fd = {}
+                l.update_feed_dict(bfd_keys, fd)
+                fd.update({self.x: l.get_free_state(), self.F: self.F_data})
+                r1 = tf.Session().run(l.logp(self.F, y), feed_dict=fd)
                 r2 = tf.Session().run(l.variational_expectations(self.F, self.F * 0, test_setup.Y),
-                                      feed_dict={self.x: l.get_free_state(), self.F: self.F_data})
+                                      feed_dict=fd)
             self.assertTrue(np.allclose(r1, r2, test_setup.tolerance, test_setup.tolerance))
 
 
@@ -160,6 +177,47 @@ class TestRobustMaxMulticlass(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
 
+
+    def testEpsilonK1Changes(self):
+        """
+        checks that epsilon_K1 changes as you change epsilon. This saves the user from having to explicitly reset it.
+        """
+        nClasses = 10
+        epsilon = 1e-3
+        l = GPflow.likelihoods.MultiClass(nClasses)
+        l.invlink.epsilon = epsilon
+        l.invlink.epsilon.fixed = True
+
+        expectedEpsK1 = epsilon / float(nClasses -1.)
+
+        l.make_tf_array([None])
+        with l.tf_mode():
+            bfd_keys = l.get_feed_dict_keys()
+            fd = {}
+            l.update_feed_dict(bfd_keys, fd)
+
+
+            foundEpsK1 = tf.Session().run(l.invlink._eps_K1, feed_dict=fd)
+        np.testing.assert_almost_equal(expectedEpsK1, foundEpsK1)
+
+        newEpsilon = 0.456
+        newExpectedEpsK1 = newEpsilon / float(nClasses -1.)
+
+        l.invlink.epsilon = newEpsilon
+        with l.tf_mode():
+            bfd_keys = l.get_feed_dict_keys()
+            fd = {}
+            l.update_feed_dict(bfd_keys, fd)
+
+
+            newFoundEpsK1 = tf.Session().run(l.invlink._eps_K1, feed_dict=fd)
+            np.testing.assert_almost_equal(newExpectedEpsK1, newFoundEpsK1, err_msg="updating epsilon has not updated eps K1")
+
+
+
+
+
+
     def testSymmetric(self):
         """
         This test is based on the observation that for
@@ -174,13 +232,22 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         F_data = np.ones((nPoints, nClasses))
         l = GPflow.likelihoods.MultiClass(nClasses)
         l.invlink.epsilon = epsilon
+        l.invlink.epsilon.fixed = True
+
         rng = np.random.RandomState(1)
         Y = rng.randint(nClasses, size=(nPoints, 1))
+
+        l.make_tf_array([None])
         with l.tf_mode():
-            mu, _ = tf.Session().run(l.predict_mean_and_var(F, F), feed_dict={x: l.get_free_state(), F: F_data})
-            pred = tf.Session().run(l.predict_density(F, F, Y), feed_dict={x: l.get_free_state(), F: F_data})
+            bfd_keys = l.get_feed_dict_keys()
+            fd = {}
+            l.update_feed_dict(bfd_keys, fd)
+            fd.update({x: l.get_free_state(), F: F_data})
+
+            mu, _ = tf.Session().run(l.predict_mean_and_var(F, F), feed_dict=fd)
+            pred = tf.Session().run(l.predict_density(F, F, Y), feed_dict=fd)
             variational_expectations = tf.Session().run(l.variational_expectations(F, F, Y),
-                                                        feed_dict={x: l.get_free_state(), F: F_data})
+                                                        feed_dict=fd)
         expected_mu = (1./nClasses * (1. - epsilon) + (1. - 1./nClasses) * epsilon / (nClasses - 1)) * np.ones((nPoints, 1))
         self.assertTrue(np.allclose(mu, expected_mu, tolerance, tolerance))
         expected_log_denisty = np.log(expected_mu)
@@ -198,11 +265,12 @@ class TestRobustMaxMulticlass(unittest.TestCase):
 
         class MockRobustMax(GPflow.likelihoods.RobustMax):
             def prob_is_largest(self, Y, Fmu, Fvar, gh_x, gh_w):
-                return tf.ones((num_points, 1)) * mock_prob
+                return tf.ones((num_points, 1), dtype=float_type) * mock_prob
 
         epsilon = 0.231
         num_classes = 5
         l = GPflow.likelihoods.MultiClass(num_classes, invlink=MockRobustMax(num_classes, epsilon))
+        l.invlink.epsilon.fixed = True
 
         F = tf.placeholder(float_type)
         y = tf.placeholder(float_type)
@@ -210,8 +278,14 @@ class TestRobustMaxMulticlass(unittest.TestCase):
         rng = np.random.RandomState(1)
         Y_data = rng.randint(num_classes, size=(num_points, 1))
 
+        l.make_tf_array([None,])  # can use None as fixed epsilon so can mock this array
         with l.tf_mode():
-            pred = tf.Session().run(l.predict_density(F, F, y), feed_dict={F: F_data, y: Y_data})
+            bfd_keys = l.get_feed_dict_keys()
+            fd = {}
+            l.update_feed_dict(bfd_keys, fd)
+            fd.update({F: F_data, y: Y_data})
+
+            pred = tf.Session().run(l.predict_density(F, F, y), feed_dict=fd)
 
         expected_prediction = -0.5499780059
         #^ evaluated on calculator: log( (1-\epsilon) * 0.73 + (1-0.73) * \epsilon/(num_classes -1))
@@ -234,7 +308,10 @@ class TestMulticlassIndexFix(unittest.TestCase):
         mu, var = tf.placeholder(float_type), tf.placeholder(float_type)
         Y = tf.placeholder(tf.int32)
         lik = GPflow.likelihoods.MultiClass(3)
-        ve = lik.variational_expectations(mu, var, Y)
+        lik.invlink.epsilon.fixed = True
+        lik.invlink.epsilon.make_tf_array(None)  # as fixed does not matter what hand in
+        with lik.tf_mode():
+            ve = lik.variational_expectations(mu, var, Y)
         tf.gradients(tf.reduce_sum(ve), mu)
 
 

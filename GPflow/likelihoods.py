@@ -364,7 +364,7 @@ class Beta(Likelihood):
         return (mean - tf.square(mean)) / (self.scale + 1.)
 
 
-class RobustMax(object):
+class RobustMax(Parameterized):
     """
     This class represent a multi-class inverse-link function. Given a vector
     f=[f_1, f_2, ... f_k], the result of the mapping is
@@ -380,13 +380,17 @@ class RobustMax(object):
     """
 
     def __init__(self, num_classes, epsilon=1e-3):
-        self.epsilon = epsilon
+        Parameterized.__init__(self)
+        self.epsilon = Param(epsilon, transforms.Logistic())
         self.num_classes = num_classes
-        self._eps_K1 = self.epsilon / (self.num_classes - 1.)
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
-        return tf.one_hot(i, self.num_classes, 1. - self.epsilon, self._eps_K1)
+        return tf.one_hot(i, self.num_classes, tf.squeeze(1. - self.epsilon), tf.squeeze(self._eps_K1))
+
+    @property
+    def _eps_K1(self):
+        return self.epsilon / float((self.num_classes - 1.))
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         # work out what the mean and variance is of the indicated latent function.
@@ -442,7 +446,7 @@ class MultiClass(Likelihood):
         if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
             p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * np.log(1 - self.invlink.epsilon) + (1. - p) * np.log(self.invlink._eps_K1)
+            return p * tf.log(1 - self.invlink.epsilon) + (1. - p) * tf.log(self.invlink._eps_K1)
         else:
             raise NotImplementedError
 
@@ -464,7 +468,7 @@ class MultiClass(Likelihood):
         if isinstance(self.invlink, RobustMax):
             gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
             p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1 - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
+            return p * (1. - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
         else:
             raise NotImplementedError
 
