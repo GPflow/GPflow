@@ -304,8 +304,8 @@ class Bernoulli(Likelihood):
     def _check_targets(self, Y_np):
         Likelihood._check_targets(self, Y_np)
         Y_set = set(Y_np.flatten())
-        if not (Y_set.issubset(set((1., -1.))) or Y_set.issubset(set((1., 0.)))):
-            raise ValueError('bernoulli variables must be in {1., -1.} or {1., 0.}')
+        if len(Y_set) > 2 or len(Y_set - set([1.])) > 1:
+            raise Warning('all bernoulli variables should be in {1., k}, for some k')
 
     def logp(self, F, Y):
         return densities.bernoulli(self.invlink(F), Y)

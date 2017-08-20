@@ -337,14 +337,16 @@ class TestLikelihoodChecks(unittest.TestCase):
                     [GPflow.likelihoods.Poisson(), np.array((1.1)).reshape(1, 1)],
                     [GPflow.likelihoods.Poisson(), np.array((-1)).reshape(1, 1)],
                     [GPflow.likelihoods.Exponential(), np.array((-1e-12, 1)).reshape(2, 1)],
-                    [GPflow.likelihoods.Bernoulli(), np.array((-2., 1.)).reshape(2, 1)],
-                    [GPflow.likelihoods.Bernoulli(), np.array((-1., 0)).reshape(2, 1)],
-                    [GPflow.likelihoods.Bernoulli(), np.array((1.1)).reshape(1, 1)],
                     [GPflow.likelihoods.Gamma(), np.array((-1e-12, 1)).reshape(2, 1)],
                     [GPflow.likelihoods.Beta(), np.array((-1e-12, 1.)).reshape(2, 1)],
                     [GPflow.likelihoods.Beta(), np.array((1e-12, 1.1)).reshape(2, 1)],
                     [GPflow.likelihoods.MultiClass(3), np.array((0.1, 2.)).reshape(2, 1)],
                     [GPflow.likelihoods.MultiClass(3), np.array((1., 3.)).reshape(2, 1)],
+        ]
+
+        to_warn = [
+                    [GPflow.likelihoods.Bernoulli(), np.array((2., 1., 0.)).reshape(3, 1)],
+                    [GPflow.likelihoods.Bernoulli(), np.array((2., 1.1)).reshape(2, 1)],
         ]
 
         # special case of switched likelihood
@@ -360,6 +362,10 @@ class TestLikelihoodChecks(unittest.TestCase):
 
         for l, v, in to_fail:
             with self.assertRaises(ValueError):
+                self.run_models(l, v)
+
+        for l, v, in to_warn:
+            with self.assertRaises(Warning):
                 self.run_models(l, v)
 
 
