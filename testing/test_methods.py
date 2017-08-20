@@ -82,14 +82,14 @@ class TestSVGP(unittest.TestCase):
     The SVGP has four modes of operation. with and without whitening, with and
     without diagonals.
 
-    Here we make sure thet the bound on the likelihood is the same when using
+    Here we make sure that the bound on the likelihood is the same when using
     both representations (as far as possible)
     """
     def setUp(self):
         tf.reset_default_graph()
         self.rng = np.random.RandomState(0)
         self.X = self.rng.randn(20, 1)
-        self.Y = self.rng.randn(20, 2)
+        self.Y = self.rng.randn(20, 2)**2
         self.Z = self.rng.randn(3, 1)
 
     def test_white(self):
