@@ -335,12 +335,13 @@ class TestLikelihoodChecks(unittest.TestCase):
                     [GPflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1, 1)],
                     [GPflow.likelihoods.Gaussian(), np.array((1)).reshape(1, 1)],
                     [GPflow.likelihoods.Poisson(), np.array((1.1)).reshape(1, 1)],
-                    [GPflow.likelihoods.Poisson(), np.array((-1)).reshape(1, 1)],
+                    [GPflow.likelihoods.Poisson(), np.array((-1.)).reshape(1, 1)],
                     [GPflow.likelihoods.Exponential(), np.array((-1e-12, 1)).reshape(2, 1)],
                     [GPflow.likelihoods.Gamma(), np.array((-1e-12, 1)).reshape(2, 1)],
                     [GPflow.likelihoods.Beta(), np.array((-1e-12, 1.)).reshape(2, 1)],
                     [GPflow.likelihoods.Beta(), np.array((1e-12, 1.1)).reshape(2, 1)],
                     [GPflow.likelihoods.MultiClass(3), np.array((0.1, 2.)).reshape(2, 1)],
+                    [GPflow.likelihoods.MultiClass(3), np.array((1., 2.)).reshape(1, 2)],
                     [GPflow.likelihoods.MultiClass(3), np.array((1., 3.)).reshape(2, 1)],
         ]
 

@@ -453,18 +453,6 @@ class RobustMax(object):
         # take the product over the latent functions, and the sum over the GH grid.
         return tf.matmul(tf.reduce_prod(cdfs, reduction_indices=[1]), tf.reshape(gh_w / np.sqrt(np.pi), (-1, 1)))
 
-# def extend_over_columns(F_args, Y_args):
-#     def decorator(f):
-#         return f
-#     return decorator
-
-def extend_over_cols2(f):
-    def newf(self, F, Y):
-        D = self.num_latent
-        k = self.num_classes
-        return tf.stack([f(self, F[d*k:(d+1)*k], Y[:, d, None]) for d in range(D)], -1)
-    return newf
-
 
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None):
