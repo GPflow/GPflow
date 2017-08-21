@@ -2,6 +2,10 @@ import GPflow
 import numpy as np
 import unittest
 import tensorflow as tf
+try:
+    import pandas
+except ImportError:
+    pandas = None
 from nose.plugins.attrib import attr
 
 
@@ -87,6 +91,7 @@ class SamplesDictTest(unittest.TestCase):
         X, Y = np.random.randn(2, 10, 1)
         self.m = GPflow.gpmc.GPMC(X, Y, kern=GPflow.kernels.Matern32(1), likelihood=GPflow.likelihoods.StudentT())
 
+    @unittest.skipIf(pandas is None, "Pandas module required for dataframes.")
     def test_samples_df(self):
         samples = self.m.sample(num_samples=20, Lmax=10, epsilon=0.05)
         sample_df = self.m.get_samples_df(samples)
@@ -95,6 +100,7 @@ class SamplesDictTest(unittest.TestCase):
             self.assertTrue(trace.iloc[0].shape == self.m.get_parameter_dict()[name].shape)
             self.assertTrue(trace.iloc[10].shape == self.m.get_parameter_dict()[name].shape)
 
+    @unittest.skipIf(pandas is None, "Pandas module required for dataframes.")
     def test_with_fixed(self):
         self.m.kern.lengthscales.fixed = True
         samples = self.m.sample(num_samples=20, Lmax=10, epsilon=0.05)
