@@ -207,6 +207,28 @@ class Gaussian(Likelihood):
                - 0.5 * (tf.square(Y - Fmu) + Fvar) / self.variance
 
 
+class BinnedPoisson(Likelihood):
+    def __init__(self, binsize=1., invlink=tf.exp):
+        Likelihood.__init__(self)
+        self.invlink = invlink
+        self.binsize = binsize
+
+    def logp(self, F, Y):
+        return densities.poisson(self.invlink(F)*self.binsize, Y)
+
+    def conditional_variance(self, F):
+        return self.invlink(F) * self.binsize
+
+    def conditional_mean(self, F):
+        return self.invlink(F) * self.binsize
+
+    def variational_expectations(self, Fmu, Fvar, Y):
+        if self.invlink is tf.exp:
+            return Y * Fmu - tf.exp(Fmu + Fvar / 2) * self.binsize \
+                   - tf.lgamma(Y + 1) + Y * tf.log(self.binsize) 
+        else:
+            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+
 class Poisson(Likelihood):
     """
     Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.
