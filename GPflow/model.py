@@ -360,6 +360,8 @@ class GPModel(Model):
         if isinstance(Y, np.ndarray):
             #: Y is a data matrix, rows correspond to the rows in X, columns are treated independently
             Y = DataHolder(Y)
+
+        likelihood._check_targets(Y.value)
         self.X, self.Y = X, Y
 
     def build_predict(self):
