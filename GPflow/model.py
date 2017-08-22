@@ -407,6 +407,24 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
+    @AutoFlow((float_type, [None, None]))
+    def predict_f_gradients(self, Xnew):
+        """
+        Compute the gradients of the mean and variance of the latent function(s) at the points
+        Xnew.
+        """
+        pred_f_mean, pred_f_var = self.build_predict(Xnew)
+        return tf.gradients(pred_f_mean, Xnew) + tf.gradients(pred_f_var, Xnew)
+
+    @AutoFlow((float_type, [None, None]))
+    def predict_y_gradients(self, Xnew):
+        """
+        Compute the gradients of the mean and variance of held-out data at the points Xnew
+        """
+        pred_f_mean, pred_f_var = self.build_predict(Xnew)
+        pred_y_mean, pred_y_var = self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
+        return tf.gradients(pred_y_mean, Xnew) + tf.gradients(pred_y_var, Xnew)
+
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
