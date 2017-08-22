@@ -159,6 +159,13 @@ class ParamTestsDeeper(unittest.TestCase):
         self.assertTrue(new_p.baz.highest_parent is self.m)
         self.assertFalse(old_p.highest_parent is self.m)
 
+    def testReplacement3(self):
+        self.m.foo = GPflow.param.ParamList([GPflow.param.Parameterized(), GPflow.param.Parameterized()])
+        self.m.foo[0].a = GPflow.param.Param(2.)
+        self.m.foo = GPflow.param.ParamList(self.m.foo.sorted_params)
+        self.assertTrue(self.m.foo[0].highest_parent is self.m)
+        self.assertTrue(self.m.foo[1].highest_parent is self.m)
+
     def testName(self):
         self.assertTrue(self.m.foo.name == 'foo')
         self.assertTrue(self.m.foo.bar.name == 'bar')

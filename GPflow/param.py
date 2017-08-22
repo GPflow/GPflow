@@ -41,13 +41,19 @@ class Parentable(object):
     def __init__(self):
         self._parent = None
 
+    def find_parents(self, condition=lambda x: True):
+        """
+        Returns a list of references to parents satisfying a given condition. If no parent satisfies the condition,
+        an empty list is returned. The order of list is given by the position in the tree: the first element of the list
+        corresponds to the highest parent satisfying the constraint.
+        """
+        this_node = [self] if condition(self) else []
+        return this_node if self._parent is None else self._parent.find_parents(condition) + this_node
+
     @property
     def highest_parent(self):
         """A reference to the top of the tree, usually a Model instance"""
-        if self._parent is None:
-            return self
-        else:
-            return self._parent.highest_parent
+        return self.find_parents()[0]
 
     @property
     def name(self):
@@ -329,7 +335,9 @@ class Param(Parentable):
         """
         object.__setattr__(self, key, value)
         if key in recompile_keys:
-            self.highest_parent._needs_recompile = True
+            recompileable_parents = self.find_parents(lambda x: hasattr(x, '_needs_recompile'))
+            if recompileable_parents:
+                recompileable_parents[0]._needs_recompile = True
 
     def __str__(self, prepend=''):
         return prepend + \
@@ -463,7 +471,9 @@ class DataHolder(Parentable):
                                   (perhaps make the model again from scratch?)")
             elif self.on_shape_change == 'recompile':
                 self._array = array.copy()
-                self.highest_parent._needs_recompile = True
+                recompileable_parents = self.find_parents(lambda x: hasattr(x, '_needs_recompile'))
+                if recompileable_parents:
+                    recompileable_parents[0]._needs_recompile = True
             elif self.on_shape_change == 'pass':
                 self._array = array.copy()
             else:
@@ -690,8 +700,16 @@ class Parameterized(Parentable):
             # recompile if necessary.
             if isinstance(p, (Param, Parameterized)) and isinstance(value, (Param, Parameterized)):
                 p._parent = None  # unlink the old Parameter from this tree
-                if hasattr(self.highest_parent, '_needs_recompile'):
-                    self.highest_parent._needs_recompile = True
+                recompileable_parents = self.find_parents(lambda x: hasattr(x, '_needs_recompile'))
+                if recompileable_parents:
+                    recompileable_parents[0]._needs_recompile = True
+                elif key is not '_parent':
+                    # No parent with recompile flag: for this corner case, no _needs_recompile is set in the process
+                    # so _kill_autoflow needs to be called separately.
+                    self.highest_parent._kill_autoflow()
+                elif key is '_parent':
+                    # In case the parent is altered, call _kill_autoflow on the new parent.
+                    value.highest_parent._kill_autoflow()
 
             # if the existing atribute is a DataHolder, set the value of the data inside
             if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
@@ -725,8 +743,8 @@ class Parameterized(Parentable):
         if isinstance(value, Parentable) and key is not '_parent':
             value._parent = self
 
-        if key == '_needs_recompile':
-            self._kill_autoflow()
+        if key == '_needs_recompile' and value:
+            self.highest_parent._kill_autoflow()
 
     def _kill_autoflow(self):
         """
@@ -739,7 +757,10 @@ class Parameterized(Parentable):
         for key in list(self.__dict__.keys()):
             if key[0] == '_' and key[-11:] == '_AF_storage':
                 delattr(self, key)
-        [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
+
+        for p in self.sorted_params:
+            if isinstance(p, Parameterized) and getattr(p, '_needs_recompile', True):
+                p._kill_autoflow()
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
@@ -985,10 +1006,10 @@ class ParamList(Parameterized):
     def __init__(self, list_of_params):
         Parameterized.__init__(self)
         assert isinstance(list_of_params, list)
-        for item in list_of_params:
-            assert isinstance(item, (Param, Parameterized))
-            item._parent = self
+        assert all(isinstance(item, (Param, Parameterized)) for item in list_of_params)
         self._list = list_of_params
+        for item in list_of_params:
+            item._parent = self
 
     @property
     def sorted_params(self):

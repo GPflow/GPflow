@@ -57,6 +57,13 @@ class TestDataHolderSimple(unittest.TestCase):
         self.m.Z = self.rng.randn(3, 3)
         self.assertTrue(self.m._needs_recompile)
 
+    def test_recompile_in_hierarchy(self):
+        p = GPflow.param.Parameterized()
+        p.m = self.m
+        self.m.Z = self.rng.randn(3, 3)
+        self.assertTrue(self.m._needs_recompile)
+        self.assertIsNone(getattr(self, '_needs_recompile', None))
+
 
 class TestDataHolderIntegers(unittest.TestCase):
     def setUp(self):
