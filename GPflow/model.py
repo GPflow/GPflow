@@ -42,7 +42,7 @@ class ObjectiveWrapper(object):
     def __call__(self, x):
         f, g = self._objective(x)
         g_is_fin = np.isfinite(g)
-        if np.all(g_is_fin):
+        if np.all(g_is_fin)
             self._previous_x = x  # store the last known good value
             return f, g
         else:
@@ -108,7 +108,9 @@ class Model(Parameterized):
         This method is necessary for pickling objects
         """
         d = Parameterized.__getstate__(self)
-        for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG', '_feed_dict_keys']:
+        for key in ['_graph', '_session', '_free_vars',
+                    '_objective', '_minus_func', '_minus_grad',
+                    '_feed_dict_keys']:
             d.pop(key, None)
         return d
 
@@ -133,16 +135,16 @@ class Model(Parameterized):
                 f = self.build_likelihood() + self.build_prior()
                 g, = tf.gradients(f, self._free_vars)
 
-            self._minusF = tf.negative(f, name='objective')
-            self._minusG = tf.negative(g, name='grad_objective')
+            self._objective = tf.negative(f, name='objective')
+            self._objective_gradients = tf.negative(g, name='grad_objective')
 
             # The optimiser needs to be part of the computational graph, and needs
             # to be initialised before tf.initialise_all_variables() is called.
             if optimizer is None:
                 opt_step = None
             else:
-                opt_step = optimizer.minimize(self._minusF,
-                                              var_list=[self._free_vars])
+                opt_step = optimizer.minimize(
+                    self._minusF, var_list=[self._free_vars])
             init = tf.global_variables_initializer()
         self._session.run(init)
 
@@ -157,7 +159,7 @@ class Model(Parameterized):
             self.num_fevals += 1
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
-            f, g = self._session.run([self._minusF, self._minusG],
+            f, g = self._session.run([self._minus_func, self._minus_grad],
                                      feed_dict=feed_dict)
             return f.astype(np.float64), g.astype(np.float64)
 

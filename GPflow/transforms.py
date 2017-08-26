@@ -54,7 +54,7 @@ class Transform(object):
         """
         raise NotImplementedError
 
-    def free_state_size(self, variable_shape):
+    def free_state_size(variable_shape):
         return np.prod(variable_shape)
 
     def __str__(self):
@@ -97,7 +97,7 @@ class Exp(Transform):
        y = \exp(x) + \epsilon
 
     x is a free variable, y is always positive. The epsilon value (self.lower)
-    prevents the optimizer reaching numerical zero. 
+    prevents the optimizer reaching numerical zero.
     """
     def __init__(self, lower=1e-6):
         self._lower = lower

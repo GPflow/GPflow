@@ -1,4 +1,6 @@
-# Copyright 2016 James Hensman, Mark van der Wilk, Valentine Svensson, alexggmatthews, PabloLeon, fujiisoup
+# Copyright 2016 James Hensman, Mark van der Wilk,
+#                Valentine Svensson, alexggmatthews,
+#                PabloLeon, fujiisoup
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,19 +16,24 @@
 
 
 from __future__ import absolute_import
+
+import enum
+from contextlib import contextmanager
 import numpy as np
 import tensorflow as tf
-from . import transforms, session
-from contextlib import contextmanager
-from functools import wraps
-from .scoping import NameScoped
+
+import transforms
+import session_manager
+
+from util import GPflowError
+from util import is_number, is_tensorflow_variable
+from util import add_to_trainables, remove_from_trainables
+
 from ._settings import settings
 
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
-# when one of these attributes is set, notify a recompilation
-recompile_keys = ['prior', 'transform', 'fixed']
+__FLOAT_TYPE = settings.dtypes.float_type
+__NP_FLOAT_TYPE = np.float32 if float_type is tf.float32 else np.float64
 
 
 class Parentable(object):
@@ -35,46 +42,36 @@ class Parentable(object):
     reference to '_parent'.
 
     This class can figure out its own name (by seeing what it's called by the
-    _parent's __dict__) and also recurse up to the highest_parent.
+    _parent's __dict__) and also recurse up to the root.
     """
 
-    def __init__(self):
+    def __init__(self, name=None):
         self._parent = None
+        self._name = self.__class__.__name__ if name is None else name
 
     @property
-    def highest_parent(self):
+    def root(self):
         """A reference to the top of the tree, usually a Model instance"""
         if self._parent is None:
             return self
-        else:
-            return self._parent.highest_parent
+        return self._parent.root
 
     @property
     def name(self):
-        """An automatically generated name, given by the reference of the _parent to this instance"""
-        if self._parent is None:
-            return 'unnamed'
-        if isinstance(self._parent, ParamList):
-            return 'item%i' % self._parent._list.index(self)
-        matches = [key for key, value in self._parent.__dict__.items()
-                   if value is self]
-        if len(matches) == 0:
-            raise ValueError("mis-specified parent. This Param's\
-                             _parent does not contain a reference to it.")
-        if len(matches) > 1:
-            raise ValueError("This Param appears to be doubly\
-                             referenced by a parent")
-        return matches[0]
+        return self._name
 
     @property
-    def long_name(self):
+    def full_name(self):
         """
         This is a unique identifier for a param object within a structure, made
         by concatenating the names through the tree.
         """
         if self._parent is None:
             return self.name
-        return self._parent.long_name + '.' + self.name
+        return self._parent.full_name + '/' + self.name
+
+    def compile(self, context=None):
+        raise NotImplementedError()
 
     def __getstate__(self):
         d = self.__dict__.copy()
@@ -84,7 +81,6 @@ class Parentable(object):
     def __setstate__(self, d):
         self.__dict__.update(d)
         self._parent = None
-
 
 class Param(Parentable):
     """
@@ -175,24 +171,48 @@ class Param(Parentable):
     MCMC.
     """
 
-    def __init__(self, array, transform=transforms.Identity()):
+    class ParamKeys(enum.Enum):
+        """
+        When one of these attributes is set, notify a recompilation.
+        """
+        PRIOR = 'prior'
+        TRANSFORM = 'transform'
+        FIXED = 'fixed'
+
+    def __init__(self, value, dtype=__NP_FLOAT_TYPE, transform=transforms.Identity()):
+        if value is None:
+            raise ValueError('The value must be either tensorflow variable, array or scalar.')
         Parentable.__init__(self)
-        self._array = np.asarray(np.atleast_1d(array), dtype=np_float_type)
-        self.transform = transform
-        self._tf_array = None
-        self._log_jacobian = None
+        self._variable = None
+        self._initial_value = value
+        self._externally_defined = False
+        self._fixed = False
         self.prior = None
-        self.fixed = False
+        self.transform = transform
+        self._init_variable(value, dtype)
+
+    def _init_variable(self, value, dtype):
+        if is_tensorflow_variable(value):
+            self._externally_defined = True
+            self._variable = value
+            return
+        if is_number(value):
+            value = np.array(value, dtype=dtype)
+        self._initial_value = value
+
+    @property
+    def shape(self):
+        return self._initial_value.shape
 
     @property
     def value(self):
-        return self._array.copy()
+        if not self.fixed and self.root.is_compiled:
+            return self.root.session.run(self._variable)
+        return self._init_variable
 
-    def get_parameter_dict(self, d):
-        d[self.long_name] = self.value
-
-    def set_parameter_dict(self, d):
-        self._array[...] = d[self.long_name]
+    @property
+    def fixed(self):
+        return self._fixed
 
     def get_samples_df(self, samples):
         """
@@ -202,14 +222,14 @@ class Param(Parentable):
         """
         import pandas as pd
         if self.fixed:
-            return pd.Series([self.value for _ in range(samples.shape[0])], name=self.long_name)
-        start, _ = self.highest_parent.get_param_index(self)
+            return pd.Series([self.value for _ in range(samples.shape[0])], name=self.full_name)
+        start, _ = self.root.get_param_index(self)
         free_state_size = self.transform.free_state_size(self.shape)
         end = start + free_state_size
         samples = samples[:, start:end]
         samples = [np.atleast_1d(self.transform.forward(s).reshape(self.shape))
                    for s in samples]
-        return pd.Series(samples, name=self.long_name)
+        return pd.Series(samples, name=self.full_name)
 
     def make_tf_array(self, free_array):
         """
@@ -253,10 +273,7 @@ class Param(Parentable):
         If this parameter is fixed, Return a dictionary mapping from self to self.value.
         Else return an empty dictionary.
         """
-        d = {}
-        if self.fixed:
-            d[self] = self._tf_array
-        return d
+        return {self: self._tf_array} if self.fixed else {}
 
     def update_feed_dict(self, key_dict, feed_dict):
         """
@@ -310,6 +327,16 @@ class Param(Parentable):
                         self.transform.free_state_size(self.shape))
                     self._array = self.transform.forward(randn).reshape(self.shape)
 
+    def compile(self, context=None):
+        """
+        Compile a tensorflow representation of the parameter.
+        """
+        session = session_manager.get_session(session)
+        with session.as_default():
+            if is_tensorflow_variable(self._variable):
+                return self._variable
+
+
     def build_prior(self):
         """
         Build a tensorflow representation of the prior density.
@@ -322,14 +349,35 @@ class Param(Parentable):
         else:
             return self.prior.logp(self._tf_array) + self._log_jacobian
 
+    def _set_fixed(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('Fixed property value must be boolean.')
+
+        prev_fixed = self.fixed
+        self._fixed = value
+
+        if self.root is not None and self.root.is_compiled:
+            if prev_fixed == value:
+                return
+            graph = self.root.graph
+            if value:
+                remove_from_trainables(self._variable, graph)
+            else:
+                add_to_trainables(self._variable, graph)
+
     def __setattr__(self, key, value):
         """
         When some attributes are set, we need to recompile the tf model before
         evaluation.
         """
+        try:
+            if self.ParamKeys(key) is self.ParamKeys.FIXED:
+                self._set_fixed(value)
+            elif self.root.is_compiled:
+                raise GPflowError('Model has already been compiled')
+        except ValueError:
+            pass
         object.__setattr__(self, key, value)
-        if key in recompile_keys:
-            self.highest_parent._needs_recompile = True
 
     def __str__(self, prepend=''):
         return prepend + \
@@ -371,7 +419,7 @@ class Param(Parentable):
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
         self._log_jacobian = None
-        self.fixed = self.fixed  # make self._tf_array if the parameter is fixed
+        self._fixed = self.fixed  # make self._tf_array if the parameter is fixed
         # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
@@ -463,7 +511,7 @@ class DataHolder(Parentable):
                                   (perhaps make the model again from scratch?)")
             elif self.on_shape_change == 'recompile':
                 self._array = array.copy()
-                self.highest_parent._needs_recompile = True
+                self.root._needs_recompile = True
             elif self.on_shape_change == 'pass':
                 self._array = array.copy()
             else:
@@ -487,98 +535,13 @@ class DataHolder(Parentable):
                '\n' + str(self.value)
 
 
-class AutoFlow:
-    """
-    This decorator-class is designed for use on methods of the Parameterized class
-    (below).
-
-    The idea is that methods that compute relevant quantities (such as
-    predictions) can define a tf graph which we automatically run when the
-    (decorated) function is called.
-
-    The syntax looks like:
-
-    >>> class MyClass(Parameterized):
-    >>>
-    >>>   @AutoFlow((tf.float64), (tf.float64))
-    >>>   def my_method(self, x, y):
-    >>>       #compute something, returning a tf graph.
-    >>>       return tf.foo(self.baz, x, y)
-
-    >>> m = MyClass()
-    >>> x = np.random.randn(3,1)
-    >>> y = np.random.randn(3,1)
-    >>> result = my_method(x, y)
-
-    Now the output of the method call is the _result_ of the computation,
-    equivalent to
-
-    >>> m = MyModel()
-    >>> x = np.random.randn(3,1)
-    >>> y = np.random.randn(3,1)
-    >>> x_tf = tf.placeholder(tf.float64)
-    >>> y_tf = tf.placeholder(tf.float64)
-    >>> with m.tf_mode():
-    >>>     graph = tf.foo(m.baz, x_tf, y_tf)
-    >>> result = m._session.run(graph,
-                                feed_dict={x_tf:x,
-                                           y_tf:y,
-                                           m._free_vars:m.get_free_state()})
-
-    Not only is the syntax cleaner, but multiple calls to the method will
-    result in the graph being constructed only once.
-
-    """
-
-    def __init__(self, *tf_arg_tuples):
-        # NB. TF arg_tuples is a list of tuples, each of which can be used to
-        # construct a tf placeholder.
-        self.tf_arg_tuples = tf_arg_tuples
-
-    def __call__(self, tf_method):
-        @wraps(tf_method)
-        def runnable(instance, *np_args):
-            storage_name = '_' + tf_method.__name__ + '_AF_storage'
-            if hasattr(instance, storage_name):
-                # the method has been compiled already, get things out of storage
-                storage = getattr(instance, storage_name)
-            else:
-                # the method needs to be compiled.
-                storage = {}  # an empty dict to keep things in
-                setattr(instance, storage_name, storage)
-                storage['graph'] = tf.Graph()
-                # storage['session'] = tf.Session(graph=storage['graph'])
-                storage['session'] = session.get_session(
-                    graph=storage['graph'],
-                    output_file_name=settings.profiling.output_file_name + "_" + tf_method.__name__,
-                    output_directory=settings.profiling.output_directory,
-                    each_time=settings.profiling.each_time
-                )
-                with storage['graph'].as_default():
-                    storage['tf_args'] = [tf.placeholder(*a) for a in self.tf_arg_tuples]
-                    storage['free_vars'] = tf.placeholder(float_type, [None])
-                    instance.make_tf_array(storage['free_vars'])
-                    with instance.tf_mode():
-                        storage['tf_result'] = tf_method(instance, *storage['tf_args'])
-                    storage['feed_dict_keys'] = instance.get_feed_dict_keys()
-                    feed_dict = {}
-                    instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
-                    storage['session'].run(tf.global_variables_initializer(), feed_dict=feed_dict)
-            feed_dict = dict(zip(storage['tf_args'], np_args))
-            feed_dict[storage['free_vars']] = instance.get_free_state()
-            instance.update_feed_dict(storage['feed_dict_keys'], feed_dict)
-            return storage['session'].run(storage['tf_result'], feed_dict=feed_dict)
-
-        return runnable
-
-
 class Parameterized(Parentable):
     """
     An object to contain parameters and data.
 
     This object is designed to be part of a tree, with Param and DataHolder
     objects at the leaves. We can then recurse down the tree to find all the
-    parameters and data (leaves), or recurse up the tree (using highest_parent)
+    parameters and data (leaves), or recurse up the tree (using root)
     from the leaves to the root.
 
     A useful application of such a recursion is 'tf_mode', where the parameters
@@ -597,21 +560,10 @@ class Parameterized(Parentable):
 
     """
 
-    def __init__(self):
-        Parentable.__init__(self)
+    def __init__(self, name=None):
+        Parentable.__init__(self, name=name)
         self.scoped_keys = []
         self._tf_mode = False
-
-    def get_parameter_dict(self, d=None):
-        if d is None:
-            d = {}
-        for p in self.sorted_params:
-            p.get_parameter_dict(d)
-        return d
-
-    def set_parameter_dict(self, d):
-        for p in self.sorted_params:
-            p.set_parameter_dict(d)
 
     def get_samples_df(self, samples):
         """
@@ -650,7 +602,7 @@ class Parameterized(Parentable):
 
         # in tf_mode, wrap functions is a scope
         elif key in object.__getattribute__(self, 'scoped_keys'):
-            return NameScoped(self.long_name + '.' + key)(o)
+            return NameScoped(self.full_name + '.' + key)(o)
 
         # finally, just return the object
         return o
@@ -677,21 +629,21 @@ class Parameterized(Parentable):
 
         # If we already have an atribute with that key, decide what to do:
         if key in self.__dict__.keys():
-            p = getattr(self, key)
+            param = getattr(self, key)
 
             # if the existing attribute is a parameter, and the value is an
             # array (or float, int), then set the _array of that parameter
-            if isinstance(p, Param) and isinstance(value, (np.ndarray, float, int)):
-                p._array[...] = value
+            if isinstance(param, Param) and isinstance(value, (np.ndarray, float, int)):
+                param._array[...] = value
                 return  # don't call object.setattr or set the _parent value
 
             # if the existing attribute is a Param (or Parameterized), and the
             # new attribute is too, replace the attribute and set the model to
             # recompile if necessary.
-            if isinstance(p, (Param, Parameterized)) and isinstance(value, (Param, Parameterized)):
-                p._parent = None  # unlink the old Parameter from this tree
-                if hasattr(self.highest_parent, '_needs_recompile'):
-                    self.highest_parent._needs_recompile = True
+            if isinstance(param, (Param, Parameterized)) and isinstance(value, (Param, Parameterized)):
+                param._parent = None  # unlink the old Parameter from this tree
+                if hasattr(self.root, '_needs_recompile'):
+                    self.root._needs_recompile = True
 
             # if the existing atribute is a DataHolder, set the value of the data inside
             if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
@@ -715,7 +667,7 @@ class Parameterized(Parentable):
                         for child in node.sorted_params:
                             _raise_for_existing_param(child)
 
-                root = self.highest_parent
+                root = self.root
                 _raise_for_existing_param(root)
 
         # use the standard setattr
@@ -795,10 +747,10 @@ class Parameterized(Parentable):
 
         This makes sure they're always in the same order.
         """
-        params=  [child for key, child in self.__dict__.items()
+        params = [child for key, child in self.__dict__.items()
                   if isinstance(child, (Param, Parameterized)) and
                   key is not '_parent']
-        return sorted(params, key=lambda x: x.long_name)
+        return sorted(params, key=lambda x: x.full_name)
 
     @property
     def data_holders(self):
@@ -884,13 +836,15 @@ class Parameterized(Parentable):
         self._end_tf_mode()
 
     def _begin_tf_mode(self):
-        [child._begin_tf_mode() for child in self.sorted_params
-         if isinstance(child, Parameterized)]
+        for child in self.sorted_params:
+            if isinstance(child, Parameterized):
+                child._begin_tf_mode()
         self._tf_mode = True
 
     def _end_tf_mode(self):
-        [child._end_tf_mode() for child in self.sorted_params
-         if isinstance(child, Parameterized)]
+        for child in self.sorted_params:
+            if isinstance(child, Parameterized):
+                child._end_tf_mode()
         self._tf_mode = False
 
     def randomize(self, distributions={}, skipfixed=True):

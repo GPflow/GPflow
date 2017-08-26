@@ -105,7 +105,7 @@ class SwitchedMeanFunction(MeanFunction):
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, self.num_meanfunctions)
         # apply the likelihood-function to each section of the data
-        results = [m(x) for (x, m) in zip(x_list, self.meanfunction_list)]
+        results = [m(x) for x, m in zip(x_list, self.meanfunction_list)]
         # stitch the results back together
         partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
         return tf.dynamic_stitch(partitions, results)
