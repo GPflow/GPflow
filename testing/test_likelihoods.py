@@ -1,4 +1,4 @@
-  import unittest import six
+import unittest import six
 import tensorflow as tf
 import numpy as np
 
