@@ -1,4 +1,4 @@
-import GPflow
+import gpflow
 import tensorflow as tf
 import numpy as np
 import unittest
@@ -6,17 +6,17 @@ import unittest
 from testing.gpflow_testcase import GPflowTestCase
 
 
-class DumbModel(GPflow.model.Model):
+class DumbModel(gpflow.model.Model):
     def __init__(self):
-        GPflow.model.Model.__init__(self)
-        self.a = GPflow.param.Param(3.)
+        gpflow.model.Model.__init__(self)
+        self.a = gpflow.param.Param(3.)
 
     def build_likelihood(self):
         return -tf.square(self.a)
 
 
 class NoArgsModel(DumbModel):
-    @GPflow.model.AutoFlow()
+    @gpflow.model.AutoFlow()
     def function(self):
         return self.a
 
@@ -49,7 +49,7 @@ class TestNoArgs(GPflowTestCase):
 
 
 class AddModel(DumbModel):
-    @GPflow.model.AutoFlow((tf.float64,), (tf.float64,))
+    @gpflow.model.AutoFlow((tf.float64,), (tf.float64,))
     def add(self, x, y):
         return tf.add(x, y)
 
@@ -190,9 +190,9 @@ class TestAdd(GPflowTestCase):
 class IncrementModel(DumbModel):
     def __init__(self):
         DumbModel.__init__(self)
-        self.a = GPflow.param.DataHolder(np.array([3.]))
+        self.a = gpflow.param.DataHolder(np.array([3.]))
 
-    @GPflow.model.AutoFlow((tf.float64,))
+    @gpflow.model.AutoFlow((tf.float64,))
     def inc(self, x):
         return x + self.a
 
@@ -213,8 +213,8 @@ class TestGPmodel(GPflowTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
-        self.m = GPflow.svgp.SVGP(X, Y, kern=GPflow.kernels.Matern32(1),
-                                  likelihood=GPflow.likelihoods.StudentT(),
+        self.m = gpflow.svgp.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
+                                  likelihood=gpflow.likelihoods.StudentT(),
                                   Z=X[::2].copy())
         self.Xtest = np.random.randn(100, 1)
         self.Ytest = np.random.randn(100, 1)
@@ -241,10 +241,10 @@ class TestGPmodel(GPflowTestCase):
 class TestResetGraph(GPflowTestCase):
     def setUp(self):
         tf.reset_default_graph()
-        k = GPflow.kernels.Matern32(1)
+        k = gpflow.kernels.Matern32(1)
         X, Y = np.random.randn(2, 10, 1)
         self.Xnew = np.random.randn(5, 1)
-        self.m = GPflow.gpr.GPR(X, Y, kern=k)
+        self.m = gpflow.gpr.GPR(X, Y, kern=k)
 
     def test(self):
         mu, var = self.m.predict_f(self.Xnew)
@@ -262,8 +262,8 @@ class TestFixAndPredict(GPflowTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
-        self.m = GPflow.svgp.SVGP(X, Y, kern=GPflow.kernels.Matern32(1),
-                                  likelihood=GPflow.likelihoods.StudentT(),
+        self.m = gpflow.svgp.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
+                                  likelihood=gpflow.likelihoods.StudentT(),
                                   Z=X[::2].copy())
         self.Xtest = np.random.randn(100, 1)
         self.Ytest = np.random.randn(100, 1)
@@ -283,7 +283,7 @@ class TestSVGP(GPflowTestCase):
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)
         Z = rng.randn(3, 1)
-        model = GPflow.svgp.SVGP(X=X, Y=Y, kern=GPflow.kernels.RBF(1), likelihood=GPflow.likelihoods.Gaussian(), Z=Z)
+        model = gpflow.svgp.SVGP(X=X, Y=Y, kern=gpflow.kernels.RBF(1), likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
         model.compute_log_likelihood()
 
 

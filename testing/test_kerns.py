@@ -1,5 +1,5 @@
 from __future__ import absolute_import, print_function
-import GPflow
+import gpflow
 import tensorflow as tf
 import numpy as np
 import unittest
@@ -12,7 +12,7 @@ class TestRbf(GPflowTestCase):
         with self.test_session() as sess:
             lengthScale = 1.4
             variance = 2.3
-            kernel = GPflow.kernels.RBF(1)
+            kernel = gpflow.kernels.RBF(1)
             kernel.lengthscales = lengthScale
             kernel.variance = variance
             rng = np.random.RandomState(1)
@@ -32,7 +32,7 @@ class TestArcCosine(GPflowTestCase):
     def evalKernelError(self, D, variance, weight_variances,
                         bias_variance, order, ARD, X_data):
         with self.test_session() as sess:
-            kernel = GPflow.kernels.ArcCosine(
+            kernel = gpflow.kernels.ArcCosine(
                 D,
                 order=order,
                 variance=variance,
@@ -66,7 +66,7 @@ class TestArcCosine(GPflowTestCase):
             bias_variance = 0.6
             variance = 2.3
             ARD = False
-            orders = GPflow.kernels.ArcCosine.implemented_orders
+            orders = gpflow.kernels.ArcCosine.implemented_orders
 
             rng = np.random.RandomState(1)
             X_data = rng.randn(N, D)
@@ -82,7 +82,7 @@ class TestArcCosine(GPflowTestCase):
             bias_variance = 1.9
             variance = 1e-2
             ARD = True
-            orders = GPflow.kernels.ArcCosine.implemented_orders
+            orders = gpflow.kernels.ArcCosine.implemented_orders
 
             rng = np.random.RandomState(1)
             X_data = rng.randn(N, D)
@@ -92,7 +92,7 @@ class TestArcCosine(GPflowTestCase):
 
     def test_non_implemented_order(self):
         with self.test_session(), self.assertRaises(ValueError):
-            GPflow.kernels.ArcCosine(1, order=42)
+            gpflow.kernels.ArcCosine(1, order=42)
 
     def test_weight_initializations(self):
         with self.test_session():
@@ -118,7 +118,7 @@ class TestArcCosine(GPflowTestCase):
 
             rng = np.random.RandomState(23)
             X_data = rng.rand(N, D)
-            kernel = GPflow.kernels.ArcCosine(D)
+            kernel = gpflow.kernels.ArcCosine(D)
 
             x_free = tf.placeholder('float64')
             kernel.make_tf_array(x_free)
@@ -133,7 +133,7 @@ class TestArcCosine(GPflowTestCase):
 class TestPeriodic(GPflowTestCase):
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
         with self.test_session() as sess:
-            kernel = GPflow.kernels.PeriodicKernel(
+            kernel = gpflow.kernels.PeriodicKernel(
                 D, period=period, variance=variance, lengthscales=lengthscale)
 
             x_free = tf.placeholder('float64')
@@ -174,7 +174,7 @@ class TestCoregion(GPflowTestCase):
     def setUp(self):
         with self.test_session():
             self.rng = np.random.RandomState(0)
-            self.k = GPflow.kernels.Coregion(1, output_dim=3, rank=2)
+            self.k = gpflow.kernels.Coregion(1, output_dim=3, rank=2)
             self.k.W = self.rng.randn(3, 2)
             self.k.kappa = self.rng.rand(3) + 1.
             self.X = np.random.randint(0, 3, (10, 1))
@@ -198,8 +198,8 @@ class TestCoregion(GPflowTestCase):
             # compute another kernel with additinoal inputs,
             # make sure out kernel is still okay.
             X = np.hstack((self.X, self.rng.randn(10, 1)))
-            k1 = GPflow.kernels.Coregion(1, 3, 2, active_dims=[0])
-            k2 = GPflow.kernels.RBF(1, active_dims=[1])
+            k1 = gpflow.kernels.Coregion(1, 3, 2, active_dims=[0])
+            k2 = gpflow.kernels.RBF(1, active_dims=[1])
             k = k1 * k2
             K1 = k.compute_K_symm(X)
             K2 = k1.compute_K_symm(X) * k2.compute_K_symm(X)  # slicing happens inside kernel
@@ -209,11 +209,11 @@ class TestCoregion(GPflowTestCase):
 class TestKernSymmetry(GPflowTestCase):
     def setUp(self):
         with self.test_session():
-            self.kernels = [GPflow.kernels.Constant,
-                            GPflow.kernels.Linear,
-                            GPflow.kernels.Polynomial,
-                            GPflow.kernels.ArcCosine]
-            self.kernels += GPflow.kernels.Stationary.__subclasses__()
+            self.kernels = [gpflow.kernels.Constant,
+                            gpflow.kernels.Linear,
+                            gpflow.kernels.Polynomial,
+                            gpflow.kernels.ArcCosine]
+            self.kernels += gpflow.kernels.Stationary.__subclasses__()
             self.rng = np.random.RandomState()
 
     def test_1d(self):
@@ -252,18 +252,18 @@ class TestKernDiags(GPflowTestCase):
             rng = np.random.RandomState(1)
             self.X = tf.placeholder(tf.float64, [30, inputdim])
             self.X_data = rng.randn(30, inputdim)
-            self.kernels = [k(inputdim) for k in GPflow.kernels.Stationary.__subclasses__() +
-                            [GPflow.kernels.Constant,
-                             GPflow.kernels.Linear,
-                             GPflow.kernels.Polynomial]]
-            self.kernels.append(GPflow.kernels.RBF(inputdim) + GPflow.kernels.Linear(inputdim))
-            self.kernels.append(GPflow.kernels.RBF(inputdim) * GPflow.kernels.Linear(inputdim))
-            self.kernels.append(GPflow.kernels.RBF(inputdim) +
-                                GPflow.kernels.Linear(
+            self.kernels = [k(inputdim) for k in gpflow.kernels.Stationary.__subclasses__() +
+                            [gpflow.kernels.Constant,
+                             gpflow.kernels.Linear,
+                             gpflow.kernels.Polynomial]]
+            self.kernels.append(gpflow.kernels.RBF(inputdim) + gpflow.kernels.Linear(inputdim))
+            self.kernels.append(gpflow.kernels.RBF(inputdim) * gpflow.kernels.Linear(inputdim))
+            self.kernels.append(gpflow.kernels.RBF(inputdim) +
+                                gpflow.kernels.Linear(
                                     inputdim, ARD=True, variance=rng.rand(inputdim)))
-            self.kernels.append(GPflow.kernels.PeriodicKernel(inputdim))
-            self.kernels.extend(GPflow.kernels.ArcCosine(inputdim, order=order)
-                                for order in GPflow.kernels.ArcCosine.implemented_orders)
+            self.kernels.append(gpflow.kernels.PeriodicKernel(inputdim))
+            self.kernels.extend(gpflow.kernels.ArcCosine(inputdim, order=order)
+                                for order in gpflow.kernels.ArcCosine.implemented_orders)
 
             self.x_free = tf.placeholder('float64')
             [k.make_tf_array(self.x_free) for k in self.kernels]
@@ -287,9 +287,9 @@ class TestAdd(GPflowTestCase):
 
     def setUp(self):
         with self.test_session():
-            self.rbf = GPflow.kernels.RBF(1)
-            self.lin = GPflow.kernels.Linear(1)
-            self.k = GPflow.kernels.RBF(1) + GPflow.kernels.Linear(1)
+            self.rbf = gpflow.kernels.RBF(1)
+            self.lin = gpflow.kernels.Linear(1)
+            self.k = gpflow.kernels.RBF(1) + gpflow.kernels.Linear(1)
             self.rng = np.random.RandomState(0)
 
     def test_sym(self):
@@ -329,7 +329,7 @@ class TestWhite(GPflowTestCase):
 
     def setUp(self):
         with self.test_session():
-            self.k = GPflow.kernels.White(1)
+            self.k = gpflow.kernels.White(1)
             self.rng = np.random.RandomState(0)
 
     def test(self):
@@ -361,10 +361,10 @@ class TestSlice(GPflowTestCase):
             self.X = self.rng.randn(20, 2)
             self.Z = self.rng.randn(10, 2)
 
-            kernels = [GPflow.kernels.Constant,
-                       GPflow.kernels.Linear,
-                       GPflow.kernels.Polynomial]
-            kernels += GPflow.kernels.Stationary.__subclasses__()
+            kernels = [gpflow.kernels.Constant,
+                       gpflow.kernels.Linear,
+                       gpflow.kernels.Polynomial]
+            kernels += gpflow.kernels.Stationary.__subclasses__()
             self.kernels = []
             for kernclass in kernels:
                 k1 = kernclass(1, active_dims=[0])
@@ -396,8 +396,8 @@ class TestSlice(GPflowTestCase):
 class TestProd(GPflowTestCase):
     def setUp(self):
         with self.test_session():
-            self.k1 = GPflow.kernels.Matern32(2)
-            self.k2 = GPflow.kernels.Matern52(2, lengthscales=0.3)
+            self.k1 = gpflow.kernels.Matern32(2)
+            self.k2 = gpflow.kernels.Matern52(2, lengthscales=0.3)
             self.k3 = self.k1 * self.k2
             self.x_free = tf.placeholder(tf.float64)
             self.X = tf.placeholder(tf.float64, [30, 2])
@@ -429,9 +429,9 @@ class TestARDActiveProd(GPflowTestCase):
             self.rng = np.random.RandomState(0)
 
             # k3 = k1 * k2
-            self.k1 = GPflow.kernels.RBF(3, active_dims=[0, 1, 3], ARD=True)
-            self.k2 = GPflow.kernels.RBF(1, active_dims=[2], ARD=True)
-            self.k3 = GPflow.kernels.RBF(4, ARD=True)
+            self.k1 = gpflow.kernels.RBF(3, active_dims=[0, 1, 3], ARD=True)
+            self.k2 = gpflow.kernels.RBF(1, active_dims=[2], ARD=True)
+            self.k3 = gpflow.kernels.RBF(4, ARD=True)
             self.k1.lengthscales = np.array([3.4, 4.5, 5.6])
             self.k2.lengthscales = 6.7
             self.k3.lengthscales = np.array([3.4, 4.5, 6.7, 5.6])
@@ -458,10 +458,10 @@ class TestARDActiveProd(GPflowTestCase):
 class TestKernNaming(GPflowTestCase):
     def test_no_nesting_1(self):
         with self.test_session():
-            k1 = GPflow.kernels.RBF(1)
-            k2 = GPflow.kernels.Linear(2)
+            k1 = gpflow.kernels.RBF(1)
+            k2 = gpflow.kernels.Linear(2)
             k3 = k1 + k2
-            k4 = GPflow.kernels.Matern32(1)
+            k4 = gpflow.kernels.Matern32(1)
             k5 = k3 + k4
             self.assertTrue(k5.rbf is k1)
             self.assertTrue(k5.linear is k2)
@@ -469,8 +469,8 @@ class TestKernNaming(GPflowTestCase):
 
     def test_no_nesting_2(self):
         with self.test_session():
-            k1 = GPflow.kernels.RBF(1) + GPflow.kernels.Linear(2)
-            k2 = GPflow.kernels.Matern32(1) + GPflow.kernels.Matern52(2)
+            k1 = gpflow.kernels.RBF(1) + gpflow.kernels.Linear(2)
+            k2 = gpflow.kernels.Matern32(1) + gpflow.kernels.Matern52(2)
             k = k1 + k2
             self.assertTrue(hasattr(k, 'rbf'))
             self.assertTrue(hasattr(k, 'linear'))
@@ -479,25 +479,25 @@ class TestKernNaming(GPflowTestCase):
 
     def test_simple(self):
         with self.test_session():
-            k1 = GPflow.kernels.RBF(1)
-            k2 = GPflow.kernels.Linear(2)
+            k1 = gpflow.kernels.RBF(1)
+            k2 = gpflow.kernels.Linear(2)
             k = k1 + k2
             self.assertTrue(k.rbf is k1)
             self.assertTrue(k.linear is k2)
 
     def test_duplicates_1(self):
         with self.test_session():
-            k1 = GPflow.kernels.Matern32(1)
-            k2 = GPflow.kernels.Matern32(43)
+            k1 = gpflow.kernels.Matern32(1)
+            k2 = gpflow.kernels.Matern32(43)
             k = k1 + k2
             self.assertTrue(k.matern32_1 is k1)
             self.assertTrue(k.matern32_2 is k2)
 
     def test_duplicates_2(self):
         with self.test_session():
-            k1 = GPflow.kernels.Matern32(1)
-            k2 = GPflow.kernels.Matern32(2)
-            k3 = GPflow.kernels.Matern32(3)
+            k1 = gpflow.kernels.Matern32(1)
+            k2 = gpflow.kernels.Matern32(2)
+            k3 = gpflow.kernels.Matern32(3)
             k = k1 + k2 + k3
             self.assertTrue(k.matern32_1 is k1)
             self.assertTrue(k.matern32_2 is k2)
@@ -507,10 +507,10 @@ class TestKernNaming(GPflowTestCase):
 class TestKernNamingProduct(GPflowTestCase):
     def test_no_nesting_1(self):
         with self.test_session():
-            k1 = GPflow.kernels.RBF(1)
-            k2 = GPflow.kernels.Linear(2)
+            k1 = gpflow.kernels.RBF(1)
+            k2 = gpflow.kernels.Linear(2)
             k3 = k1 * k2
-            k4 = GPflow.kernels.Matern32(1)
+            k4 = gpflow.kernels.Matern32(1)
             k5 = k3 * k4
             self.assertTrue(k5.rbf is k1)
             self.assertTrue(k5.linear is k2)
@@ -518,8 +518,8 @@ class TestKernNamingProduct(GPflowTestCase):
 
     def test_no_nesting_2(self):
         with self.test_session():
-            k1 = GPflow.kernels.RBF(1) * GPflow.kernels.Linear(2)
-            k2 = GPflow.kernels.Matern32(1) * GPflow.kernels.Matern52(2)
+            k1 = gpflow.kernels.RBF(1) * gpflow.kernels.Linear(2)
+            k2 = gpflow.kernels.Matern32(1) * gpflow.kernels.Matern52(2)
             k = k1 * k2
             self.assertTrue(hasattr(k, 'rbf'))
             self.assertTrue(hasattr(k, 'linear'))
@@ -528,25 +528,25 @@ class TestKernNamingProduct(GPflowTestCase):
 
     def test_simple(self):
         with self.test_session():
-            k1 = GPflow.kernels.RBF(1)
-            k2 = GPflow.kernels.Linear(2)
+            k1 = gpflow.kernels.RBF(1)
+            k2 = gpflow.kernels.Linear(2)
             k = k1 * k2
             self.assertTrue(k.rbf is k1)
             self.assertTrue(k.linear is k2)
 
     def test_duplicates_1(self):
         with self.test_session():
-            k1 = GPflow.kernels.Matern32(1)
-            k2 = GPflow.kernels.Matern32(43)
+            k1 = gpflow.kernels.Matern32(1)
+            k2 = gpflow.kernels.Matern32(43)
             k = k1 * k2
             self.assertTrue(k.matern32_1 is k1)
             self.assertTrue(k.matern32_2 is k2)
 
     def test_duplicates_2(self):
         with self.test_session():
-            k1 = GPflow.kernels.Matern32(1)
-            k2 = GPflow.kernels.Matern32(2)
-            k3 = GPflow.kernels.Matern32(3)
+            k1 = gpflow.kernels.Matern32(1)
+            k2 = gpflow.kernels.Matern32(2)
+            k3 = gpflow.kernels.Matern32(3)
             k = k1 * k2 * k3
             self.assertTrue(k.matern32_1 is k1)
             self.assertTrue(k.matern32_2 is k2)
@@ -561,14 +561,14 @@ class TestARDInit(GPflowTestCase):
 
     def test_scalar(self):
         with self.test_session():
-            k1 = GPflow.kernels.RBF(3, lengthscales=2.3)
-            k2 = GPflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3)
+            k1 = gpflow.kernels.RBF(3, lengthscales=2.3)
+            k2 = gpflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3)
             self.assertTrue(np.all(k1.lengthscales.value == k2.lengthscales.value))
 
     def test_MLP(self):
         with self.test_session():
-            k1 = GPflow.kernels.ArcCosine(3, weight_variances=1.23, ARD=True)
-            k2 = GPflow.kernels.ArcCosine(3, weight_variances=np.ones(3) * 1.23, ARD=True)
+            k1 = gpflow.kernels.ArcCosine(3, weight_variances=1.23, ARD=True)
+            k2 = gpflow.kernels.ArcCosine(3, weight_variances=np.ones(3) * 1.23, ARD=True)
             self.assertTrue(np.all(k1.weight_variances.value == k2.weight_variances.value))
 
 if __name__ == "__main__":

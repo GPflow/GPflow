@@ -14,7 +14,7 @@
 
 import unittest
 import tensorflow as tf
-import GPflow
+import gpflow
 import numpy as np
 import pickle
 
@@ -23,7 +23,7 @@ from testing.gpflow_testcase import GPflowTestCase
 
 class TestPickleEmpty(GPflowTestCase):
     def setUp(self):
-        self.m = GPflow.model.Model()
+        self.m = gpflow.model.Model()
 
     def test(self):
         s = pickle.dumps(self.m)
@@ -32,9 +32,9 @@ class TestPickleEmpty(GPflowTestCase):
 
 class TestPickleSimple(GPflowTestCase):
     def setUp(self):
-        self.m = GPflow.model.Model()
-        self.m.p1 = GPflow.param.Param(np.random.randn(3, 2))
-        self.m.p2 = GPflow.param.Param(np.random.randn(10))
+        self.m = gpflow.model.Model()
+        self.m.p1 = gpflow.param.Param(np.random.randn(3, 2))
+        self.m.p2 = gpflow.param.Param(np.random.randn(10))
 
     def test(self):
         s = pickle.dumps(self.m)
@@ -46,7 +46,7 @@ class TestPickleSimple(GPflowTestCase):
 class TestActiveDims(GPflowTestCase):
     def test(self):
         with self.test_session():
-            k = GPflow.kernels.RBF(2, active_dims=[0, 1])
+            k = gpflow.kernels.RBF(2, active_dims=[0, 1])
             X = np.random.randn(10, 2)
             K = k.compute_K_symm(X)
             k = pickle.loads(pickle.dumps(k))
@@ -60,7 +60,7 @@ class TestPickleGPR(GPflowTestCase):
             rng = np.random.RandomState(0)
             X = rng.randn(10, 1)
             Y = rng.randn(10, 1)
-            self.m = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
+            self.m = gpflow.gpr.GPR(X, Y, kern=gpflow.kernels.RBF(1))
 
     def test(self):
         with self.test_session():
@@ -97,7 +97,7 @@ class TestPickleFix(GPflowTestCase):
     """
     def test(self):
         with self.test_session():
-            k = GPflow.kernels.PeriodicKernel(1)
+            k = gpflow.kernels.PeriodicKernel(1)
             k.period.fixed = True
             k = pickle.loads(pickle.dumps(k))
             x = np.linspace(0,1,100).reshape([-1,1])
@@ -115,10 +115,10 @@ class TestPickleSVGP(GPflowTestCase):
             X = rng.randn(10, 1)
             Y = rng.randn(10, 1)
             Z = rng.randn(5, 1)
-            self.m = GPflow.svgp.SVGP(
+            self.m = gpflow.svgp.SVGP(
                 X, Y, Z=Z,
-                likelihood=GPflow.likelihoods.Gaussian(),
-                kern=GPflow.kernels.RBF(1))
+                likelihood=gpflow.likelihoods.Gaussian(),
+                kern=gpflow.kernels.RBF(1))
 
     def test(self):
         with self.test_session():
@@ -152,12 +152,12 @@ class TestPickleSVGP(GPflowTestCase):
 class TestTransforms(GPflowTestCase):
     def setUp(self):
         with self.test_session():
-            self.transforms = GPflow.transforms.Transform.__subclasses__()
+            self.transforms = gpflow.transforms.Transform.__subclasses__()
             self.models = []
             for T in self.transforms:
-                m = GPflow.model.Model()
-                m.x = GPflow.param.Param(1.0)
-                if T==GPflow.transforms.LowerTriangular:
+                m = gpflow.model.Model()
+                m.x = gpflow.param.Param(1.0)
+                if T==gpflow.transforms.LowerTriangular:
                     m.x.transform = T(1)
                 else:
                     m.x.transform = T()

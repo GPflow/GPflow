@@ -165,7 +165,7 @@ class Add(kernels.Add):
     Add
     This version of Add will call the corresponding kernel expectations for each of the summed kernels. This will be
     much better for kernels with analytically calculated kernel expectations. If quadrature is to be used, it's probably
-    better to do quadrature on the summed kernel function using `GPflow.kernels.Add` instead.
+    better to do quadrature on the summed kernel function using `gpflow.kernels.Add` instead.
     """
 
     def __init__(self, kern_list):
@@ -248,7 +248,7 @@ class Add(kernels.Add):
     def quad_eKzx1Kxz2(self, Ka, Kb, Z, Xmu, Xcov):
         # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
         self._check_quadrature()
-        warnings.warn("GPflow.ekernels.Add: Using numerical quadrature for kernel expectation cross terms.")
+        warnings.warn("gpflow.ekernels.Add: Using numerical quadrature for kernel expectation cross terms.")
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim

@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-import GPflow
+import gpflow
 import tensorflow as tf
 import os
 import numpy as np
@@ -28,9 +28,9 @@ def plotData(X,Y):
 
 def getRegressionModel(X,Y):
     #build the GPR object
-    k = GPflow.kernels.Matern52(1)
-    meanf = GPflow.mean_functions.Linear(1,0)
-    m = GPflow.gpr.GPR(X, Y, k, meanf)
+    k = gpflow.kernels.Matern52(1)
+    meanf = gpflow.mean_functions.Linear(1,0)
+    m = gpflow.gpr.GPR(X, Y, k, meanf)
     m.likelihood.variance = 0.01
     print "Here are the parameters before optimization"
     m
@@ -51,12 +51,12 @@ def plotOptimizationResult(X,Y,m):
     plt.plot(xx, mean + 2*np.sqrt(var), 'b--', xx, mean - 2*np.sqrt(var), 'b--', lw=1.2)
 
 def setModelPriors( m ):
-    #we'll choose rather arbitrary priors.
-    m.kern.lengthscales.prior = GPflow.priors.Gamma(1., 1.)
-    m.kern.variance.prior = GPflow.priors.Gamma(1., 1.)
-    m.likelihood.variance.prior = GPflow.priors.Gamma(1., 1.)
-    m.mean_function.A.prior = GPflow.priors.Gaussian(0., 10.)
-    m.mean_function.b.prior = GPflow.priors.Gaussian(0., 10.)
+    #we'll choose rather arbitrary priors. 
+    m.kern.lengthscales.prior = gpflow.priors.Gamma(1., 1.)
+    m.kern.variance.prior = gpflow.priors.Gamma(1., 1.)
+    m.likelihood.variance.prior = gpflow.priors.Gamma(1., 1.)
+    m.mean_function.A.prior = gpflow.priors.Gaussian(0., 10.)
+    m.mean_function.b.prior = gpflow.priors.Gaussian(0., 10.)
     print "model with priors ", m
 
 def getSamples( m ):

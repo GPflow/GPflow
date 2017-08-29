@@ -101,8 +101,8 @@ class Param(Parentable):
     numpy.ndarray.  Changing the value of the Param is as simple as assignment
     (once the Param is part of a model). Example:
 
-    >>> m = GPflow.model.Model()
-    >>> m.p = GPflow.param.Param(1.0)
+    >>> m = gpflow.model.Model()
+    >>> m.p = gpflow.param.Param(1.0)
     >>> print(m)
     model.p transform:(none) prior:None
     [ 1.]
@@ -126,14 +126,14 @@ class Param(Parentable):
     transform between self.value and the free state.
 
     To apply a transform to the Param, simply set the transform attribute
-    with a GPflow.transforms object
+    with a gpflow.transforms object
 
-    >>> m = GPflow.model.Model()
-    >>> m.p = GPflow.param.Param(1.0)
+    >>> m = gpflow.model.Model()
+    >>> m.p = gpflow.param.Param(1.0)
     >>> print(m)
     model.p transform:(none) prior:None
     [ 1.]
-    >>> m.p.transform = GPflow.transforms.Exp()
+    >>> m.p.transform = gpflow.transforms.Exp()
     >>> print(m)
     model.p transform:+ve prior:None
     [ 1.]
@@ -150,8 +150,8 @@ class Param(Parentable):
     priority over transforms, so unfixing a parameter is as simple as setting
     the flag. Example:
 
-    >>> p = Param(1.0, transform=GPflow.transforms.positive)
-    >>> m = GPflow.model.Model()
+    >>> p = Param(1.0, transform=gpflow.transforms.positive)
+    >>> m = gpflow.model.Model()
     >>> m.p = p # the model has a single parameter, constrained to be +ve
     >>> m.p.fixed = True # the model now has no free parameters
     >>> m.p.fixed = False # the model has a single parameter, constrained +ve
@@ -293,7 +293,7 @@ class Param(Parentable):
     def randomize(self, distributions={}, skipfixed=True):
         """
         Randomly assign the parameter a new value by sampling either from a
-        provided distribution from GPflow.priors, the parameter's prior, or
+        provided distribution from gpflow.priors, the parameter's prior, or
         by using a default scheme where a standard normal variable is
         propagated through the parameters transform.
         Will not change fixed parameters unless skipfixed flag is set to False.
@@ -393,8 +393,8 @@ class DataHolder(Parentable):
     --
     To get at the values of the data, use the value property:
 
-    >>> m = GPflow.model.Model()
-    >>> m.x = GPflow.param.DataHolder(np.array([ 0., 1.]))
+    >>> m = gpflow.model.Model()
+    >>> m.x = gpflow.param.DataHolder(np.array([ 0., 1.]))
     >>> print(m.x.value)
     [[ 0.], [ 1.]]
 
@@ -1046,9 +1046,9 @@ class ParamList(Parameterized):
     A list of parameters.
 
     This allows us to store parameters in a list whilst making them 'visible'
-    to the GPflow machinery. The correct usage is
+    to the gpflow machinery. The correct usage is
 
-    >>> my_list = GPflow.param.ParamList([Param1, Param2])
+    >>> my_list = gpflow.param.ParamList([Param1, Param2])
 
     You can then iterate through the list. For example, to compute the sum:
     >>> my_sum = reduce(tf.add, my_list)
@@ -1057,12 +1057,12 @@ class ParamList(Parameterized):
     >>> rmse = tf.sqrt(reduce(tf.add, map(tf.square, my_list)))
 
     You can append things:
-    >>> my_list.append(GPflow.kernels.RBF(1))
+    >>> my_list.append(gpflow.kernels.RBF(1))
 
     but only if the are Parameters (or Parameterized objects). You can set the
     value of Parameters in the list:
 
-    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
+    >>> my_list = gpflow.param.ParamList([gpflow.param.Param(2)])
     >>> print my_list
     unnamed.item0 transform:(none) prior:None
     [ 2.]
@@ -1072,8 +1072,8 @@ class ParamList(Parameterized):
     [ 12.]
 
     But you can't change elements of the list by assignment:
-    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
-    >>> new_param = GPflow.param.Param(4)
+    >>> my_list = gpflow.param.ParamList([gpflow.param.Param(2)])
+    >>> new_param = gpflow.param.Param(4)
     >>> my_list[0] = new_param # raises exception
 
     """

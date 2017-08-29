@@ -76,7 +76,7 @@ def get_session(*args, **kwargs):
         def fill_kwargs(key, value):
             """
             Internal function for filling default None values with meaningful
-            values from GPflow settings.
+            values from gpflow settings.
             """
             if kwargs.get(key) is None:
                 kwargs[key] = value

@@ -1,9 +1,10 @@
 import unittest
+from gpflow.tf_wraps import vec_to_tri
 import tensorflow as tf
 import numpy as np
 
 from testing.gpflow_testcase import GPflowTestCase
-from GPflow.tf_wraps import vec_to_tri
+from gpflow.tf_wraps import vec_to_tri
 
 
 class TestVecToTri(GPflowTestCase):

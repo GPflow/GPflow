@@ -17,8 +17,8 @@ import numpy as np
 import unittest
 
 from testing.gpflow_testcase import GPflowTestCase
-from GPflow.minibatch import SequenceIndices, MinibatchData
-from GPflow.minibatch import ReplacementSampling, NoReplacementSampling
+from gpflow.minibatch import SequenceIndices, MinibatchData
+from gpflow.minibatch import ReplacementSampling, NoReplacementSampling
 
 
 class TestSequentialManager(GPflowTestCase):

@@ -1,11 +1,11 @@
 from __future__ import print_function
-import GPflow
+import gpflow
 import tensorflow as tf
 import numpy as np
 import unittest
 
 from testing.gpflow_testcase import GPflowTestCase
-from GPflow import settings
+from gpflow import settings
 
 float_type = settings.dtypes.float_type
 
@@ -19,7 +19,7 @@ class DiagsTest(GPflowTestCase):
         with self.test_session():
             self.num_latent = 2
             self.num_data = 3
-            self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
+            self.k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
             self.k.white.variance = 0.01
             self.X = tf.placeholder(float_type)
             self.mu = tf.placeholder(float_type)
@@ -51,9 +51,9 @@ class DiagsTest(GPflowTestCase):
 
     def test_whiten(self):
         with self.test_session() as sess, self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = GPflow.conditionals.gaussian_gp_predict_whitened(
+            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.gaussian_gp_predict_whitened(
                 self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
-            Fstar_mean_2, Fstar_var_2 = GPflow.conditionals.gaussian_gp_predict_whitened(
+            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.gaussian_gp_predict_whitened(
                 self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
 
             mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
@@ -64,8 +64,8 @@ class DiagsTest(GPflowTestCase):
 
     def test_nonwhiten(self):
         with self.test_session() as sess, self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
-            Fstar_mean_2, Fstar_var_2 = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
+            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
+            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
 
             mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
             var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
@@ -77,7 +77,7 @@ class DiagsTest(GPflowTestCase):
 class WhitenTest(GPflowTestCase):
     def setUp(self):
         with self.test_session():
-            self.k = GPflow.kernels.Matern32(1) + GPflow.kernels.White(1)
+            self.k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
             self.k.white.variance = 0.01
             self.num_data = 10
             self.num_test_data = 100
@@ -112,8 +112,8 @@ class WhitenTest(GPflowTestCase):
             K = self.k.K(self.X) + tf.eye(self.num_data, dtype=float_type) * 1e-6
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, self.F, lower=True)
-            Fstar_mean, Fstar_var = GPflow.conditionals.gp_predict(self.Xs, self.X, self.k, self.F)
-            Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gp_predict_whitened(self.Xs, self.X, self.k, V)
+            Fstar_mean, Fstar_var = gpflow.conditionals.gp_predict(self.Xs, self.X, self.k, self.F)
+            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.gp_predict_whitened(self.Xs, self.X, self.k, V)
 
             mean1, var1 = sess.run([Fstar_w_mean, Fstar_w_var], feed_dict=self.feed_dict)
             mean2, var2 = sess.run([Fstar_mean, Fstar_var], feed_dict=self.feed_dict)
@@ -142,8 +142,8 @@ class WhitenTestGaussian(WhitenTest):
             V_chol = tf.matrix_triangular_solve(L, tf.diag(self.F_sqrt[:,0]), lower=True)
             V_sqrt = tf.expand_dims(V_chol, 2)
 
-            Fstar_mean, Fstar_var = GPflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt, 1)
-            Fstar_w_mean, Fstar_w_var = GPflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt, 1)
+            Fstar_mean, Fstar_var = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt, 1)
+            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt, 1)
 
             mean_difference = sess.run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
             var_difference = sess.run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)

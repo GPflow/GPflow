@@ -1,11 +1,11 @@
 import unittest
 import numpy as np
 import tensorflow as tf
-import GPflow
+import gpflow
 
 from testing.gpflow_testcase import GPflowTestCase
-from GPflow import kernels
-from GPflow import ekernels
+from gpflow import kernels
+from gpflow import ekernels
 from nose.plugins.attrib import attr
 
 def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
@@ -25,7 +25,7 @@ class TriDiagonalBlockRep(object):
     """
 
     def __init__(self):
-        GPflow.transforms.Transform.__init__(self)
+        gpflow.transforms.Transform.__init__(self)
 
     def forward(self, x):
         """
