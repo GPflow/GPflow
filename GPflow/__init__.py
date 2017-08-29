@@ -16,14 +16,15 @@
 # flake8: noqa
 from __future__ import absolute_import
 
-from . import likelihoods
+from . import misc
 from . import transforms
-from . import densities
-from . import conditionals
-from . import kernels
-from . import ekernels
 from . import param
 from . import model
+from . import conditionals
+from . import densities
+from . import likelihoods
+from . import kernels
+from . import ekernels
 from . import gpmc
 from . import gplvm
 from . import priors
@@ -32,7 +33,6 @@ from . import vgp
 from . import sgpr
 from . import svgp
 from . import sgpmc
-from . import util
 
 from ._version import __version__
 from ._settings import settings

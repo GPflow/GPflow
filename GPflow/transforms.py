@@ -17,51 +17,17 @@ from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 
-from . import tf_wraps as tfw
+from .base import ITransform
+from .misc import vec_to_tri
 from ._settings import settings
 
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
-class Transform(object):
-    def forward(self, x):
-        """
-        Map from the free-space to the variable space, using numpy
-        """
-        raise NotImplementedError
-
-    def backward(self, y):
-        """
-        Map from the variable-space to the free space, using numpy
-        """
-        raise NotImplementedError
-
-    def tf_forward(self, x):
-        """
-        Map from the free-space to the variable space, using tensorflow
-        """
-        raise NotImplementedError
-
-    def tf_log_jacobian(self, x):
-        """
-        Return the log Jacobian of the tf_forward mapping.
-
-        Note that we *could* do this using a tf manipulation of
-        self.tf_forward, but tensorflow may have difficulty: it doesn't have a
-        Jacaobian at time of writing.  We do this in the tests to make sure the
-        implementation is correct.
-        """
-        raise NotImplementedError
-
+class Transform(ITransform):
     def free_state_size(variable_shape):
         return np.prod(variable_shape)
-
-    def __str__(self):
-        """
-        A short string describing the nature of the constraint
-        """
-        raise NotImplementedError
 
     def __getstate__(self):
         return self.__dict__.copy()
@@ -361,7 +327,7 @@ class LowerTriangular(Transform):
         return y[np.tril_indices(len(y), 0)].T.flatten()
 
     def tf_forward(self, x):
-        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1)),self.N), [1, 2, 0])
+        fwd = tf.transpose(vec_to_tri(tf.reshape(x, (self.num_matrices, -1)), self.N), [1, 2, 0])
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):

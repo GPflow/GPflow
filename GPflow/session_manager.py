@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-import session_tracer
+from . import session_tracer
 
 def get_session(*args, **kwargs):
     # Pass session configuration options

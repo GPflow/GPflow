@@ -18,71 +18,25 @@
 from __future__ import absolute_import
 
 import enum
-from contextlib import contextmanager
 import numpy as np
 import tensorflow as tf
+import pandas as pd
 
-import transforms
-import session_manager
+from .base import IPrior, ITransform, ICompilable, IGraphOwner
+from .base import Parentable
+from .transforms import Identity
 
-from util import GPflowError
-from util import is_number, is_tensorflow_variable
-from util import add_to_trainables, remove_from_trainables
+from .misc import GPflowError
+from .misc import is_number, is_tensorflow_variable, norm_dtype
+from .misc import add_to_trainables, remove_from_trainables
+from .misc import tensor_name, get_tensor_by_name
 
 from ._settings import settings
 
-
-__FLOAT_TYPE = settings.dtypes.float_type
-__NP_FLOAT_TYPE = np.float32 if float_type is tf.float32 else np.float64
+FLOAT_TYPE = settings.dtypes.float_type
 
 
-class Parentable(object):
-    """
-    A very simple class for objects in a tree, where each node contains a
-    reference to '_parent'.
-
-    This class can figure out its own name (by seeing what it's called by the
-    _parent's __dict__) and also recurse up to the root.
-    """
-
-    def __init__(self, name=None):
-        self._parent = None
-        self._name = self.__class__.__name__ if name is None else name
-
-    @property
-    def root(self):
-        """A reference to the top of the tree, usually a Model instance"""
-        if self._parent is None:
-            return self
-        return self._parent.root
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def full_name(self):
-        """
-        This is a unique identifier for a param object within a structure, made
-        by concatenating the names through the tree.
-        """
-        if self._parent is None:
-            return self.name
-        return self._parent.full_name + '/' + self.name
-
-    def compile(self, context=None):
-        raise NotImplementedError()
-
-    def __getstate__(self):
-        d = self.__dict__.copy()
-        d.pop('_parent')
-        return d
-
-    def __setstate__(self, d):
-        self.__dict__.update(d)
-        self._parent = None
-
-class Param(Parentable):
+class Param(Parentable, ICompilable):
     """
     An object to represent parameters.
 
@@ -171,7 +125,7 @@ class Param(Parentable):
     MCMC.
     """
 
-    class ParamKeys(enum.Enum):
+    class ParamAttribute(enum.Enum):
         """
         When one of these attributes is set, notify a recompilation.
         """
@@ -179,112 +133,88 @@ class Param(Parentable):
         TRANSFORM = 'transform'
         FIXED = 'fixed'
 
-    def __init__(self, value, dtype=__NP_FLOAT_TYPE, transform=transforms.Identity()):
+        @property
+        def interface(self):
+            if self.value == self.PRIOR.value:
+                return IPrior
+            elif self.value == self.TRANSFORM.value:
+                return ITransform
+            return None
+
+    def __init__(self, value, transform=Identity()):
         if value is None:
             raise ValueError('The value must be either tensorflow variable, array or scalar.')
         Parentable.__init__(self)
-        self._variable = None
-        self._initial_value = value
+
+        self._tensor = None
         self._externally_defined = False
-        self._fixed = False
+        self._initial_value = None
+
+        self.fixed = False
         self.prior = None
         self.transform = transform
-        self._init_variable(value, dtype)
 
-    def _init_variable(self, value, dtype):
         if is_tensorflow_variable(value):
             self._externally_defined = True
-            self._variable = value
+            self._tensor = value
             return
+
         if is_number(value):
             value = np.array(value, dtype=dtype)
+
         self._initial_value = value
 
     @property
     def shape(self):
+        if self._tensor is not None:
+            return self._tensor.shape
         return self._initial_value.shape
 
     @property
     def value(self):
-        if not self.fixed and self.root.is_compiled:
-            return self.root.session.run(self._variable)
-        return self._init_variable
+        if self.is_compiled and not self.fixed:
+            return self.root.session.run(self._tensor)
+        return self._initial_value
 
-    @property
-    def fixed(self):
-        return self._fixed
+    #def get_samples_df(self, samples):
+    #    """
+    #    Given a numpy array where each row is a valid free-state vector, return
+    #    a pandas.DataFrame which contains the parameter name and associated samples
+    #    in the correct form (e.g. with positive constraints applied).
+    #    """
+    #    if self.fixed:
+    #        return pd.Series([self.value for _ in range(samples.shape[0])], name=self.full_name)
+    #    start, _ = self.root.get_param_index(self)
+    #    free_state_size = self.transform.free_state_size(self.shape)
+    #    end = start + free_state_size
+    #    samples = samples[:, start:end]
+    #    samples = [np.atleast_1d(self.transform.forward(s).reshape(self.shape))
+    #               for s in samples]
+    #    return pd.Series(samples, name=self.full_name)
 
-    def get_samples_df(self, samples):
-        """
-        Given a numpy array where each row is a valid free-state vector, return
-        a pandas.DataFrame which contains the parameter name and associated samples
-        in the correct form (e.g. with positive constraints applied).
-        """
-        import pandas as pd
-        if self.fixed:
-            return pd.Series([self.value for _ in range(samples.shape[0])], name=self.full_name)
-        start, _ = self.root.get_param_index(self)
-        free_state_size = self.transform.free_state_size(self.shape)
-        end = start + free_state_size
-        samples = samples[:, start:end]
-        samples = [np.atleast_1d(self.transform.forward(s).reshape(self.shape))
-                   for s in samples]
-        return pd.Series(samples, name=self.full_name)
-
-    def make_tf_array(self, free_array):
-        """
-        free_array is a tensorflow vector which will be the optimisation
-        target, i.e. it will be free to take any value.
-
-        Here we take that array, and transform and reshape it so that it can be
-        used to represent this parameter
-
-        Then we return the number of elements that we've used to construct the
-        array, so that it can be sliced for the next Param.
-        """
-        if self.fixed:
-            # fixed parameters are treated by tf.placeholder
-            self._tf_array = tf.placeholder(dtype=float_type,
-                                            shape=self._array.shape,
-                                            name=self.name)
-            # do not consider log jacobian for parameters that are fixed.
-            self._log_jacobian = 0.0
-            return 0
-        free_size = self.transform.free_state_size(self.shape)
-        x_free = free_array[:free_size]
-        mapped_array = self.transform.tf_forward(x_free)
-        self._tf_array = tf.reshape(mapped_array, self.shape)
-        self._log_jacobian = self.transform.tf_log_jacobian(x_free)
-        return free_size
-
-    def get_free_state(self):
-        """
-        Take the current state of this variable, as stored in self.value, and
-        transform it to the 'free' state.
-
-        This is a numpy method.
-        """
-        if self.fixed:
-            return np.empty((0,), np_float_type)
-        return self.transform.backward(self.value.flatten())
-
-    def get_feed_dict_keys(self):
-        """
-        If this parameter is fixed, Return a dictionary mapping from self to self.value.
-        Else return an empty dictionary.
-        """
-        return {self: self._tf_array} if self.fixed else {}
-
-    def update_feed_dict(self, key_dict, feed_dict):
-        """
-        key_dict is a dictionary which maps from objects (including self) to tensorflow placeholders.
-        feed_dict is a dictionary which will be fed to tensorflow.
-
-        If this parameter is fixed, we add self.value to the feed dict, paired
-        with the appropriate placeholder from the key_dict.
-        """
-        if self.fixed:
-            feed_dict[key_dict[self]] = self.value
+    #def compile(self, free_array):
+    #    """
+    #    free_array is a tensorflow vector which will be the optimisation
+    #    target, i.e. it will be free to take any value.
+    #    Here we take that array, and transform and reshape it so that it can be
+    #    used to represent this parameter
+    #    Then we return the number of elements that we've used to construct the
+    #    array, so that it can be sliced for the next Param.
+    #    """
+    #    if self.fixed:
+    #        # fixed parameters are treated by tf.placeholder
+    #        self._tf_array = tf.placeholder(dtype=FLOAT_TYPE,
+    #                                        shape=self._array.shape,
+    #                                        name=self.name)
+    #        # do not consider log jacobian for parameters that are fixed.
+    #        self._log_jacobian = 0.0
+    #        return 0
+    #    free_size = self.transform.free_state_size(self.shape)
+    #    x_free = free_array[:free_size]
+    #    mapped_array = self.transform.tf_forward(x_free)
+    #    self._tf_array = tf.reshape(mapped_array, self.shape)
+    #    self._log_jacobian = self.transform.tf_log_jacobian(x_free)
+    #    return free_size
 
     def set_state(self, x):
         """
@@ -327,66 +257,6 @@ class Param(Parentable):
                         self.transform.free_state_size(self.shape))
                     self._array = self.transform.forward(randn).reshape(self.shape)
 
-    def compile(self, context=None):
-        """
-        Compile a tensorflow representation of the parameter.
-        """
-        session = session_manager.get_session(session)
-        with session.as_default():
-            if is_tensorflow_variable(self._variable):
-                return self._variable
-
-
-    def build_prior(self):
-        """
-        Build a tensorflow representation of the prior density.
-        The log Jacobian is included.
-        """
-        if self.prior is None:
-            return tf.constant(0.0, float_type)
-        elif self._tf_array is None:  # pragma: no cover
-            raise ValueError("tensorflow array has not been initialized")
-        else:
-            return self.prior.logp(self._tf_array) + self._log_jacobian
-
-    def _set_fixed(self, value):
-        if not isinstance(value, bool):
-            raise TypeError('Fixed property value must be boolean.')
-
-        prev_fixed = self.fixed
-        self._fixed = value
-
-        if self.root is not None and self.root.is_compiled:
-            if prev_fixed == value:
-                return
-            graph = self.root.graph
-            if value:
-                remove_from_trainables(self._variable, graph)
-            else:
-                add_to_trainables(self._variable, graph)
-
-    def __setattr__(self, key, value):
-        """
-        When some attributes are set, we need to recompile the tf model before
-        evaluation.
-        """
-        try:
-            if self.ParamKeys(key) is self.ParamKeys.FIXED:
-                self._set_fixed(value)
-            elif self.root.is_compiled:
-                raise GPflowError('Model has already been compiled')
-        except ValueError:
-            pass
-        object.__setattr__(self, key, value)
-
-    def __str__(self, prepend=''):
-        return prepend + \
-               '\033[1m' + self.name + '\033[0m' + \
-               ' transform:' + str(self.transform) + \
-               ' prior:' + str(self.prior) + \
-               (' [FIXED]' if self.fixed else '') + \
-               '\n' + str(self.value)
-
     @property
     def size(self):
         """The size of this parameter, equivalent to self.value.size"""
@@ -397,6 +267,108 @@ class Param(Parentable):
         """The shape of this parameter, equivalent to self.value.shape"""
         return self._array.shape
 
+    @property
+    def value_tensor(self):
+        self._tensor
+
+    @property
+    def prior_tensor(self):
+        self._get_tensor_by_name('prior')
+
+    @property
+    def is_compiled(self):
+        if not isinstance(self.root, IGraphOwner):
+            return False
+        return self.root.is_compiled
+
+    def compile(self, graph=None):
+        """
+        Compile a tensorflow representation of the parameter.
+        """
+        if self.is_compiled:
+            try:
+                get_tensor_by_name(self._tensor.name, graph=graph)
+                return
+            except GPflowError:
+                raise GPflowError('Attempt to run compile with different graph.')
+
+        graph = self.root.session.graph if graph is None else graph
+        if not self._externally_defined:
+            self._tensor = self._build_tensor(graph)
+        self._build_prior(graph)
+
+    def _build_tensor(self, graph=None):
+        if graph is None:
+            raise ValueError('The graph argument cannot be empty.')
+
+        with graph.as_default():
+            init = tf.constant_initializer(self._initial_value, dtype=FLOAT_TYPE)
+            return tf.get_variable(self.full_name, initializer=init, dtype=FLOAT_TYPE)
+
+    def _build_prior(self, graph=None):
+        """
+        Build a tensorflow representation of the prior density.
+        The log Jacobian is included.
+        """
+        if graph is None:
+            raise ValueError('The graph argument cannot be empty.')
+
+        if not is_tensorflow_variable(self._tensor):  # pragma: no cover
+            raise GPflowError('Tensorflow array has not been compiled.')
+
+        prior_name = self._prior_name()
+
+        if self.prior is None:
+            return tf.constant(0.0, FLOAT_TYPE, name=prior_name)
+
+        var = self._tensor
+        log_jacobian = self.transform.tf_log_jacobian(var)
+        transformed_var = self.transform.tf_forward(self._tensor)
+        logp_var = self.prior.logp(transformed_var)
+        return tf.add(logp_var, log_jacobian, name=prior_name)
+
+    def _prior_name(self):
+        return tensor_name(self.full_name, 'prior')
+
+    def _set_fixed(self, value):
+        if not isinstance(value, bool):
+            raise TypeError('Fixed property value must be boolean.')
+
+        if self._externally_defined:
+            raise GPflowError('Externally defined parameter is not modifiable.')
+
+        prev_fixed = self.fixed
+
+        if not self.is_compiled or prev_fixed == value:
+            return
+
+        object.__setattr__(self, 'fixed', value)
+        graph = self.root.graph
+        if value:
+            remove_from_trainables(self._tensor, graph)
+        else:
+            add_to_trainables(self._tensor, graph)
+
+    def _set_parameter_attribute(self, attr, value):
+        if attr is self.ParamAttribute.FIXED:
+            self._set_fixed(value)
+            return
+
+        if self.is_compiled:
+            raise GPflowError('Parameter has already been compiled.')
+
+        key = attr.value
+        if not isinstance(key, attr.interface):
+            msg = 'Property object "{0}" must implement interface "{1}".'
+            raise GPflowError(msg.format(key, attr.interface))
+        object.__setattr__(self, key, value)
+
+    def _get_tensor_by_name(self, name):
+        if self.is_compiled:
+            raise GPflowError('Parameter is not compiled.')
+        graph = self.root.session.graph
+        return get_tensor_by_name(name, graph=graph)
+
     def _html_table_rows(self, name_prefix=''):
         """
         Construct a row of an html table, to be used in the jupyter notebook.
@@ -406,26 +378,46 @@ class Param(Parentable):
         html += "<td>{0}</td>".format(str(self._array).replace('\n', '</br>'))
         html += "<td>{0}</td>".format(str(self.prior))
         html += "<td>{0}</td>".format('[FIXED]' if self.fixed
-                                      else str(self.transform))
+                                      else str(self._transform))
         html += "</tr>"
         return html
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
-        for key in ['_tf_array', '_log_jacobian']:
+        for key in ['_tensor']:
             d.pop(key, None)
         return d
 
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
-        self._log_jacobian = None
         self._fixed = self.fixed  # make self._tf_array if the parameter is fixed
         # NB the parent property will be set by the parent object, apart from
         # for the top level, where it muct be None
         # the tf_array and _log jacobian will be replaced when the model is recompiled
 
+    def __setattr__(self, key, value):
+        """
+        When some attributes are set, we need to recompile the tf model before
+        evaluation.
+        """
+        try:
+            attr = self.ParamAttribute(key)
+            self._set_parameter_attribute(attr, value)
+            return
+        except ValueError:
+            pass
+        object.__setattr__(self, key, value)
 
-class DataHolder(Parentable):
+    def __str__(self, prepend=''):
+        return prepend + \
+               '\033[1m' + self.name + '\033[0m' + \
+               ' transform:' + str(self._transform) + \
+               ' prior:' + str(self._prior) + \
+               (' [FIXED]' if self.fixed else '') + \
+               '\n' + str(self.value)
+
+
+class DataHolder(Parentable, ICompilable):
     """
     An object to represent data which needs to be passed to tensorflow for computation.
 
@@ -458,33 +450,15 @@ class DataHolder(Parentable):
         different shape
         """
         Parentable.__init__(self)
-        dt = self._get_type(array)
-        self._array = np.asarray(array, dtype=dt)
+        dtype = norm_dtype(array)
+        self._array = np.asarray(array, dtype=dtype)
         assert on_shape_change in ['raise', 'pass', 'recompile']
         self.on_shape_change = on_shape_change
-
-    def _get_type(self, array):
-        """
-        Work out what a sensible type for the array is. if the default type
-        is float32, downcast 64bit float to float32. For ints, assume int32
-        """
-        if any([array.dtype == np.dtype(t) for t in [np.float32, np.float64]]):
-            return np_float_type
-        elif any([array.dtype == np.dtype(t) for t in [np.int16, np.int32, np.int64]]):
-            return np.int32
-        else:
-            raise NotImplementedError("unknown dtype")
-
-    def get_feed_dict_keys(self):
-        return {self: self._tf_array}
-
-    def update_feed_dict(self, key_dict, feed_dict):
-        feed_dict[key_dict[self]] = self._array
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
         try:
-            d.pop('_tf_array')
+            d.pop('_tensor')
         except KeyError:
             pass
         return d
@@ -533,445 +507,3 @@ class DataHolder(Parentable):
         return prepend + \
                '\033[1m' + self.name + '\033[0m' + \
                '\n' + str(self.value)
-
-
-class Parameterized(Parentable):
-    """
-    An object to contain parameters and data.
-
-    This object is designed to be part of a tree, with Param and DataHolder
-    objects at the leaves. We can then recurse down the tree to find all the
-    parameters and data (leaves), or recurse up the tree (using root)
-    from the leaves to the root.
-
-    A useful application of such a recursion is 'tf_mode', where the parameters
-    appear as their _tf_array variables. This allows us to build models on
-    those parameters. During _tf_mode, the __getattribute__ method is
-    overwritten to return tf arrays in place of parameters (and data).
-
-    Another recursive function is build_prior which sums the log-prior from all
-    of the tree's parameters (whilst in tf_mode!).
-
-    *Scoping*
-    Parameterized classes can define functions that operate on tf variables. To
-    wrap those functions in tensorflow scopes, the names of the scoped
-    fucntions are stored in self.scoped_keys (a list of strings). Those
-    functions are then called inside a tensorflow scope.
-
-    """
-
-    def __init__(self, name=None):
-        Parentable.__init__(self, name=name)
-        self.scoped_keys = []
-        self._tf_mode = False
-
-    def get_samples_df(self, samples):
-        """
-        Given a numpy array where each row is a valid free-state vector, return
-        a pandas.DataFrame which contains the parameter name and associated samples
-        in the correct form (e.g. with positive constraints applied).
-        """
-        import pandas as pd
-        d = pd.DataFrame()
-        for p in self.sorted_params:
-            d = pd.concat([d, p.get_samples_df(samples)], axis=1)
-        return d
-
-    def __getattribute__(self, key):
-        """
-        Here, we overwrite the getattribute method.
-
-        If tf mode is off, this does nothing.
-
-        If tf mode is on, all child parameters will appear as their tf
-        representations, and all functions that are designated in 'scoped_keys'
-        will have aname scope applied.
-        """
-        o = object.__getattribute__(self, key)
-
-        # if _tf_mode is False, or there is no _tf_mode, just return the object as normal.
-        try:
-            if not object.__getattribute__(self, '_tf_mode'):
-                return o
-        except AttributeError:
-            return o
-
-        # In tf_mode, if the object is a Param/Dataholder, ise the tf_array
-        if isinstance(o, (Param, DataHolder)):
-            return o._tf_array
-
-        # in tf_mode, wrap functions is a scope
-        elif key in object.__getattribute__(self, 'scoped_keys'):
-            return NameScoped(self.full_name + '.' + key)(o)
-
-        # finally, just return the object
-        return o
-
-    def __setattr__(self, key, value):
-        """
-        When a value is assigned to a Param, put that value in the
-        Param's array (rather than just overwriting that Param with the
-        new value). i.e. this
-
-        >>> p = Parameterized()
-        >>> p.p = Param(1.0)
-        >>> p.p = 2.0
-
-        should be equivalent to this
-
-        >>> p = Parameterized()
-        >>> p.p = Param(1.0)
-        >>> p.p._array[...] = 2.0
-
-        Additionally, when Param or Parameterized objects are added, let them
-        know that this node is the _parent
-        """
-
-        # If we already have an atribute with that key, decide what to do:
-        if key in self.__dict__.keys():
-            param = getattr(self, key)
-
-            # if the existing attribute is a parameter, and the value is an
-            # array (or float, int), then set the _array of that parameter
-            if isinstance(param, Param) and isinstance(value, (np.ndarray, float, int)):
-                param._array[...] = value
-                return  # don't call object.setattr or set the _parent value
-
-            # if the existing attribute is a Param (or Parameterized), and the
-            # new attribute is too, replace the attribute and set the model to
-            # recompile if necessary.
-            if isinstance(param, (Param, Parameterized)) and isinstance(value, (Param, Parameterized)):
-                param._parent = None  # unlink the old Parameter from this tree
-                if hasattr(self.root, '_needs_recompile'):
-                    self.root._needs_recompile = True
-
-            # if the existing atribute is a DataHolder, set the value of the data inside
-            if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
-                p.set_data(value)
-                return  # don't call object.setattr or set the _parent value
-
-        if key is not '_parent' and isinstance(value, (Param, Parameterized)):
-            # assigning a param that isn't the parent, check that it is not already in the tree
-            if not hasattr(self, key) or not self.__getattribute__(key) is value:
-                # we are not assigning the same value to the same member
-
-                def _raise_for_existing_param(node):
-                    """
-                    Find a certain param from the root of the tree we're in by depth first search. Raise if found.
-                    """
-                    if node is value:
-                        raise ValueError('The Param(eterized) object {0} is already present in the tree'.format(value))
-
-                    # search all children if we aren't at a leaf node
-                    if isinstance(node, Parameterized):
-                        for child in node.sorted_params:
-                            _raise_for_existing_param(child)
-
-                root = self.root
-                _raise_for_existing_param(root)
-
-        # use the standard setattr
-        object.__setattr__(self, key, value)
-
-        # make sure a new child node knows this is the _parent:
-        if isinstance(value, Parentable) and key is not '_parent':
-            value._parent = self
-
-        if key == '_needs_recompile':
-            self._kill_autoflow()
-
-    def _kill_autoflow(self):
-        """
-        Remove all compiled AutoFlow methods recursively.
-
-        If AutoFlow functions become invalid, because recompilation is
-        required, this function recurses the structure removing all AutoFlow
-        dicts. Subsequent calls to to those functions will casue AutoFlow to regenerate.
-        """
-        for key in list(self.__dict__.keys()):
-            if key[0] == '_' and key[-11:] == '_AF_storage':
-                delattr(self, key)
-        [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
-
-    def __getstate__(self):
-        d = Parentable.__getstate__(self)
-        # do not pickle autoflow
-        for key in list(d.keys()):
-            if key[0] == '_' and key[-11:] == '_AF_storage':
-                d.pop(key)
-        return d
-
-    def make_tf_array(self, X):
-        """
-        Distribute a flat tensorflow array amongst all the child parameter of this instance.
-
-        X is a tensorflow placeholder. It gets passed to all the children of
-        this class (that are Parameterized or Param objects), which then
-        construct their tf_array variables from consecutive sections.
-        """
-        count = 0
-        for dh in self.data_holders:
-            dh.make_tf_array()
-        for p in self.sorted_params:
-            count += p.make_tf_array(X[count:])
-        return count
-
-    def get_param_index(self, param_to_index):
-        """
-        Given a parameter, compute the position of that parameter on the free-state vector.
-
-        This returns:
-          - count: an integer representing the position
-          - found: a bool representing whether the parameter was found.
-        """
-        found = False
-        count = 0
-        for p in self.sorted_params:
-            if isinstance(p, Param):
-                if p is param_to_index:
-                    found = True
-                    break
-                else:
-                    count += p.get_free_state().size
-            elif isinstance(p, Parameterized):
-                extra, found = p.get_param_index(param_to_index)
-                count += extra
-                if found:
-                    break
-        return count, found
-
-    @property
-    def sorted_params(self):
-        """
-        Return a list of all the child parameters, sorted by id.
-
-        This makes sure they're always in the same order.
-        """
-        params = [child for key, child in self.__dict__.items()
-                  if isinstance(child, (Param, Parameterized)) and
-                  key is not '_parent']
-        return sorted(params, key=lambda x: x.full_name)
-
-    @property
-    def data_holders(self):
-        """
-        Return a list of all the child DataHolders
-        """
-        return [child for key, child in self.__dict__.items()
-                if isinstance(child, DataHolder)]
-
-    @property
-    def fixed(self):
-        """A boolean attribute to determine if all the child parameters of this node are fixed"""
-        return all(p.fixed for p in self.sorted_params)
-
-    @fixed.setter
-    def fixed(self, val):
-        for p in self.sorted_params:
-            p.fixed = val
-
-    def get_free_state(self):
-        """
-        Recurse get_free_state on all child parameters, and hstack them.
-        """
-        # Here, additional empty array allows hstacking of empty list
-        return np.hstack([p.get_free_state() for p in self.sorted_params] +
-                         [np.empty(0, np_float_type)])
-
-    def get_feed_dict_keys(self):
-        """
-        Recursively generate a dictionary of {object: _tf_array} pairs that can be used in update_feed_dict
-        """
-        d = {}
-        for p in self.sorted_params + self.data_holders:
-            d.update(p.get_feed_dict_keys())
-        return d
-
-    def update_feed_dict(self, key_dict, feed_dict):
-        for p in self.sorted_params + self.data_holders:
-            p.update_feed_dict(key_dict, feed_dict)
-        return feed_dict
-
-    def set_state(self, x):
-        """
-        Set the values of all the parameters by recursion
-        """
-        count = 0
-        for p in self.sorted_params:
-            count += p.set_state(x[count:])
-        return count
-
-    @contextmanager
-    def tf_mode(self):
-        """
-        A context for building models.
-
-        Correct usage is:
-
-        with m.tf_mode:
-            # do tf stuff, like
-            m.build_likelihood()
-            m.build_prior()
-
-
-        with this context engaged, any Param objects which are children of this
-        class will appear as their tf-variables. Example
-
-        >>> m = Parameterized()
-        >>> m.foo = Param(1.0)
-        >>> m.make_tf_array(tt.dvector())
-        >>> print m.foo
-        foo
-        [ 1.]
-        >>> with m.tf_mode():
-        >>>     print m.foo
-        Reshape{1}.0
-
-        The idea is that in tf_mode, we can easily get references to the
-        tf representation of parameters in order to construct tf
-        objective functions.
-        """
-        self._begin_tf_mode()
-        yield
-        self._end_tf_mode()
-
-    def _begin_tf_mode(self):
-        for child in self.sorted_params:
-            if isinstance(child, Parameterized):
-                child._begin_tf_mode()
-        self._tf_mode = True
-
-    def _end_tf_mode(self):
-        for child in self.sorted_params:
-            if isinstance(child, Parameterized):
-                child._end_tf_mode()
-        self._tf_mode = False
-
-    def randomize(self, distributions={}, skipfixed=True):
-        """
-        Calls randomize on all parameters in model hierarchy.
-        """
-        for param in self.sorted_params:
-            param.randomize(distributions, skipfixed)
-
-    def build_prior(self):
-        """
-        Build a tf expression for the prior by summing all child-parameter priors.
-        """
-        return sum([p.build_prior() for p in self.sorted_params])
-
-    def __str__(self, prepend=''):
-        prepend += self.name + '.'
-        return '\n'.join([p.__str__(prepend) for p in self.sorted_params])
-
-    def _html_table_rows(self, name_prefix=''):
-        """
-        Get the rows of the html table for this object
-        """
-        name_prefix += self.name + '.'
-        return ''.join([p._html_table_rows(name_prefix)
-                        for p in self.sorted_params])
-
-    def _repr_html_(self):
-        """
-        Build a small html table for display in the jupyter notebook.
-        """
-        html = ["<table id='params' width=100%>"]
-
-        # build the header
-        header = "<tr>"
-        header += "<td>Name</td>"
-        header += "<td>values</td>"
-        header += "<td>prior</td>"
-        header += "<td>constraint</td>"
-        header += "</tr>"
-        html.append(header)
-
-        html.append(self._html_table_rows())
-
-        html.append("</table>")
-        return ''.join(html)
-
-    def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
-        # reinstate _parent graph
-        for p in self.sorted_params + self.data_holders:
-            p._parent = self
-
-
-class ParamList(Parameterized):
-    """
-    A list of parameters.
-
-    This allows us to store parameters in a list whilst making them 'visible'
-    to the GPflow machinery. The correct usage is
-
-    >>> my_list = GPflow.param.ParamList([Param1, Param2])
-
-    You can then iterate through the list. For example, to compute the sum:
-    >>> my_sum = reduce(tf.add, my_list)
-
-    or the sum of the squares:
-    >>> rmse = tf.sqrt(reduce(tf.add, map(tf.square, my_list)))
-
-    You can append things:
-    >>> my_list.append(GPflow.kernels.RBF(1))
-
-    but only if the are Parameters (or Parameterized objects). You can set the
-    value of Parameters in the list:
-
-    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
-    >>> print my_list
-    unnamed.item0 transform:(none) prior:None
-    [ 2.]
-    >>> my_list[0] = 12
-    >>> print my_list
-    unnamed.item0 transform:(none) prior:None
-    [ 12.]
-
-    But you can't change elements of the list by assignment:
-    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
-    >>> new_param = GPflow.param.Param(4)
-    >>> my_list[0] = new_param # raises exception
-
-    """
-
-    def __init__(self, list_of_params):
-        Parameterized.__init__(self)
-        assert isinstance(list_of_params, list)
-        for item in list_of_params:
-            assert isinstance(item, (Param, Parameterized))
-            item._parent = self
-        self._list = list_of_params
-
-    @property
-    def sorted_params(self):
-        return self._list
-
-    def __getitem__(self, key):
-        """
-        If tf mode is off, this simply returns the corresponding Param .
-
-        If tf mode is on, all items will appear as their tf
-        representations.
-        """
-        o = self.sorted_params[key]
-        if isinstance(o, Param) and self._tf_mode:
-            return o._tf_array
-        return o
-
-    def append(self, item):
-        assert isinstance(item, (Param, Parameterized)), \
-            "this object is for containing parameters"
-        item._parent = self
-        self.sorted_params.append(item)
-
-    def __len__(self):
-        return len(self._list)
-
-    def __setitem__(self, key, value):
-        """
-        It's not possible to assign to things in the list, but it is possible
-        to set their values by assignment.
-        """
-        self.sorted_params[key]._array[...] = value

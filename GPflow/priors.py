@@ -16,34 +16,19 @@
 from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
+
+from .defs import IPrior
 from .param import Parameterized
 from . import densities
 from ._settings import settings
+
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
-class Prior(Parameterized):
-    def logp(self, x):
-        """
-        The log density of the prior as x
-
-        All priors (for the moment) are univariate, so if x is a vector or an
-        array, this is the sum of the log densities.
-        """
-        raise NotImplementedError
-
-    def sample(self, shape=(1,)):
-        """
-        a sample utility function for the prior.
-        """
-        raise NotImplementedError
-
-    def __str__(self):
-        """
-        A short string to describe the prior at print time
-        """
-        raise NotImplementedError
+class Prior(Parameterized, IPrior):
+    pass
 
 
 class Gaussian(Prior):
