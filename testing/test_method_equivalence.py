@@ -19,7 +19,6 @@ import unittest
 import gpflow
 
 
-
 @attr(speed='slow')
 class TestEquivalence(unittest.TestCase):
     """
@@ -39,13 +38,14 @@ class TestEquivalence(unittest.TestCase):
     5) Sparse variational GP Regression (as above, but there the inducing
        variables are 'collapsed' out, as in Titsias 2009)
     """
+
     def setUp(self):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
-        X = rng.rand(20, 1)*10
-        Y = np.sin(X) + 0.9 * np.cos(X*1.6) + rng.randn(*X.shape) * 0.8
-        Y = np.tile(Y, 2) # two identical columns
-        self.Xtest = rng.rand(10, 1)*10
+        X = rng.rand(20, 1) * 10
+        Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
+        Y = np.tile(Y, 2)  # two identical columns
+        self.Xtest = rng.rand(10, 1) * 10
 
         m1 = gpflow.gpr.GPR(X, Y, kern=gpflow.kernels.RBF(1),
                             mean_function=gpflow.mean_functions.Constant())
@@ -146,7 +146,7 @@ class VGPTest(unittest.TestCase):
         m_vgp_oa = gpflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
 
         q_alpha = np.random.randn(N, DX)
-        q_lambda = np.random.randn(N, DX)**2
+        q_lambda = np.random.randn(N, DX) ** 2
 
         m_vgp_oa.q_alpha = q_alpha
         m_vgp_oa.q_lambda = q_lambda
@@ -157,7 +157,7 @@ class VGPTest(unittest.TestCase):
         K_inv = np.linalg.inv(K)
 
         mean = K.dot(q_alpha)
-        prec_dnn = K_inv[None, :, :] + np.array([np.diag(l**2) for l in q_lambda.T])
+        prec_dnn = K_inv[None, :, :] + np.array([np.diag(l ** 2) for l in q_lambda.T])
         var_dnn = np.linalg.inv(prec_dnn)
 
         m_svgp_unwhitened = gpflow.svgp.SVGP(X, Y, kern, likelihood, X.copy(),
@@ -210,6 +210,32 @@ class VGPTest(unittest.TestCase):
                 m.optimize(maxiter=1)
         except:
             assert False, 'array mismatch'
+
+
+class TestUpperBound(unittest.TestCase):
+    """
+    Test for upper bound for regression marginal likelihood
+    """
+
+    def setUp(self):
+        self.X = np.random.rand(100, 1)
+        self.Y = np.sin(1.5 * 2 * np.pi * self.X) + np.random.randn(*self.X.shape) * 0.1
+
+    def test_few_inducing_points(self):
+        vfe = gpflow.sgpr.SGPR(self.X, self.Y, gpflow.kernels.RBF(1), self.X[:10, :].copy())
+        vfe.optimize()
+
+        full = gpflow.gpr.GPR(self.X, self.Y, gpflow.kernels.RBF(1))
+        full.kern.lengthscales = vfe.kern.lengthscales.value
+        full.kern.variance = vfe.kern.variance.value
+        full.likelihood.variance = vfe.likelihood.variance.value
+        full._compile()
+
+        lml_upper = vfe.compute_upper_bound()
+        lml_vfe = -vfe._objective(vfe.get_free_state())[0]
+        lml_full = -full._objective(full.get_free_state())[0]
+
+        self.assertTrue(lml_upper > lml_full > lml_vfe)
 
 
 if __name__ == '__main__':
