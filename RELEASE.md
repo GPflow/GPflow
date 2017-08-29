@@ -1,7 +1,10 @@
+# Release 0.4.0
+ - Rename python package name to `gpflow`.
+
 # Release 0.3.8
  - Change to LowerTriangular transform interface.
  - LowerTriangular transform now used by default in VGP and SVGP
- - LowerTriangular transform now used native TensorFlow 
+ - LowerTriangular transform now used native TensorFlow
  - No longer use bespoke GPflow user ops.
 
 # Release 0.3.7
