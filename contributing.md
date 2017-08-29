@@ -11,6 +11,11 @@ Due to limited scope we may not be able to review and merge every feature, howev
  - Practise good code as far as is reasonable. Simpler is usually better. Compicated language features (I'm looking at you, metaclasses) are out. Reading the existing GPflow code should give a good idea of the expected style.
 
 ## Pull requests and the master branch
+If you think that your contribution falls within the project scope (see above) please submit a Pull Request (PR) to our GitHub page. In order to maintain code quality, and make life easy for the reviewers, please ensure that your PR:
+- Only fixes one issue or adds one feature.
+- Makes the minimal amount of changes to the existing codebase.
+- Minimises the amount of changes to IPython notebooks (i.e. please do not commit notebooks which are simply re-run).
+
 All code that is destined for the master branch of GPflow goes through a PR. Only a small number of people can merge PRs onto the master branch (currently James Hensman, Alex Matthews, Mark van der Wilk and Alexis Boukouvalas).
 
 ## Tests and continuous integration
