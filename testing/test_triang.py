@@ -1,5 +1,5 @@
 import unittest
-from GPflow.tf_wraps import vec_to_tri
+from gpflow.tf_wraps import vec_to_tri
 import tensorflow as tf
 import numpy as np
 

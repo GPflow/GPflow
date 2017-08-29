@@ -16,7 +16,7 @@ import numpy as np
 import tensorflow as tf
 from nose.plugins.attrib import attr
 import unittest
-import GPflow
+import gpflow
 
 
 
@@ -24,7 +24,7 @@ import GPflow
 class TestEquivalence(unittest.TestCase):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
-    positioned at the data, many of the GPflow methods are equivalent (perhaps
+    positioned at the data, many of the gpflow methods are equivalent (perhaps
     subject to some optimization).
 
     Here, we make 5 models that should be the same, and make sure some
@@ -47,27 +47,27 @@ class TestEquivalence(unittest.TestCase):
         Y = np.tile(Y, 2) # two identical columns
         self.Xtest = rng.rand(10, 1)*10
 
-        m1 = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1),
-                            mean_function=GPflow.mean_functions.Constant())
-        m2 = GPflow.vgp.VGP(X, Y, GPflow.kernels.RBF(1), likelihood=GPflow.likelihoods.Gaussian(),
-                            mean_function=GPflow.mean_functions.Constant())
-        m3 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1),
-                              likelihood=GPflow.likelihoods.Gaussian(),
+        m1 = gpflow.gpr.GPR(X, Y, kern=gpflow.kernels.RBF(1),
+                            mean_function=gpflow.mean_functions.Constant())
+        m2 = gpflow.vgp.VGP(X, Y, gpflow.kernels.RBF(1), likelihood=gpflow.likelihoods.Gaussian(),
+                            mean_function=gpflow.mean_functions.Constant())
+        m3 = gpflow.svgp.SVGP(X, Y, gpflow.kernels.RBF(1),
+                              likelihood=gpflow.likelihoods.Gaussian(),
                               Z=X.copy(), q_diag=False,
-                              mean_function=GPflow.mean_functions.Constant())
+                              mean_function=gpflow.mean_functions.Constant())
         m3.Z.fixed = True
-        m4 = GPflow.svgp.SVGP(X, Y, GPflow.kernels.RBF(1),
-                              likelihood=GPflow.likelihoods.Gaussian(),
+        m4 = gpflow.svgp.SVGP(X, Y, gpflow.kernels.RBF(1),
+                              likelihood=gpflow.likelihoods.Gaussian(),
                               Z=X.copy(), q_diag=False, whiten=True,
-                              mean_function=GPflow.mean_functions.Constant())
+                              mean_function=gpflow.mean_functions.Constant())
         m4.Z.fixed = True
-        m5 = GPflow.sgpr.SGPR(X, Y, GPflow.kernels.RBF(1),
+        m5 = gpflow.sgpr.SGPR(X, Y, gpflow.kernels.RBF(1),
                               Z=X.copy(),
-                              mean_function=GPflow.mean_functions.Constant())
+                              mean_function=gpflow.mean_functions.Constant())
 
         m5.Z.fixed = True
-        m6 = GPflow.sgpr.GPRFITC(X, Y, GPflow.kernels.RBF(1), Z=X.copy(),
-                                 mean_function=GPflow.mean_functions.Constant())
+        m6 = gpflow.sgpr.GPRFITC(X, Y, gpflow.kernels.RBF(1), Z=X.copy(),
+                                 mean_function=gpflow.mean_functions.Constant())
         m6.Z.fixed = True
         self.models = [m1, m2, m3, m4, m5, m6]
         for m in self.models:
@@ -105,12 +105,12 @@ class VGPTest(unittest.TestCase):
         Xs = np.random.randn(Ns, DX)
         Y = np.random.randn(N, DY)
 
-        kern = GPflow.kernels.Matern52(DX)
-        likelihood = GPflow.likelihoods.StudentT()
+        kern = gpflow.kernels.Matern52(DX)
+        likelihood = gpflow.likelihoods.StudentT()
 
-        m_svgp = GPflow.svgp.SVGP(X, Y, kern, likelihood, X.copy(),
+        m_svgp = gpflow.svgp.SVGP(X, Y, kern, likelihood, X.copy(),
                                   whiten=True, q_diag=False)
-        m_vgp = GPflow.vgp.VGP(X, Y, kern, likelihood)
+        m_vgp = gpflow.vgp.VGP(X, Y, kern, likelihood)
 
         q_mu = np.random.randn(N, DY)
         q_sqrt = np.random.randn(N, N, DY)
@@ -138,12 +138,12 @@ class VGPTest(unittest.TestCase):
         Xs = np.random.randn(Ns, DX)
         Y = np.random.randn(N, DY)
 
-        kern = GPflow.kernels.Matern52(DX)
-        likelihood = GPflow.likelihoods.StudentT()
+        kern = gpflow.kernels.Matern52(DX)
+        likelihood = gpflow.likelihoods.StudentT()
 
-        m_vgp = GPflow.vgp.VGP(X, Y, kern, likelihood)
+        m_vgp = gpflow.vgp.VGP(X, Y, kern, likelihood)
 
-        m_vgp_oa = GPflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
+        m_vgp_oa = gpflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
 
         q_alpha = np.random.randn(N, DX)
         q_lambda = np.random.randn(N, DX)**2
@@ -151,7 +151,7 @@ class VGPTest(unittest.TestCase):
         m_vgp_oa.q_alpha = q_alpha
         m_vgp_oa.q_lambda = q_lambda
 
-        K = kern.compute_K_symm(X) + np.eye(N) * GPflow._settings.settings.numerics.jitter_level
+        K = kern.compute_K_symm(X) + np.eye(N) * gpflow._settings.settings.numerics.jitter_level
         L = np.linalg.cholesky(K)
         L_inv = np.linalg.inv(L)
         K_inv = np.linalg.inv(K)
@@ -160,7 +160,7 @@ class VGPTest(unittest.TestCase):
         prec_dnn = K_inv[None, :, :] + np.array([np.diag(l**2) for l in q_lambda.T])
         var_dnn = np.linalg.inv(prec_dnn)
 
-        m_svgp_unwhitened = GPflow.svgp.SVGP(X, Y, kern, likelihood, X.copy(),
+        m_svgp_unwhitened = gpflow.svgp.SVGP(X, Y, kern, likelihood, X.copy(),
                                              whiten=False, q_diag=False)
 
         m_svgp_unwhitened.q_mu = mean
@@ -196,11 +196,11 @@ class VGPTest(unittest.TestCase):
         X = np.random.randn(N, DX)
         Y = np.random.randn(N, DY)
 
-        kern = GPflow.kernels.Matern52(DX)
-        likelihood = GPflow.likelihoods.StudentT()
+        kern = gpflow.kernels.Matern52(DX)
+        likelihood = gpflow.likelihoods.StudentT()
 
-        m_vgp = GPflow.vgp.VGP(X, Y, kern, likelihood)
-        m_vgp_oa = GPflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
+        m_vgp = gpflow.vgp.VGP(X, Y, kern, likelihood)
+        m_vgp_oa = gpflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
 
         try:
             for m in [m_vgp, m_vgp_oa]:

@@ -1,9 +1,9 @@
 import unittest
 import numpy as np
 import tensorflow as tf
-import GPflow
-from GPflow import kernels
-from GPflow import ekernels
+import gpflow
+from gpflow import kernels
+from gpflow import ekernels
 from nose.plugins.attrib import attr
 
 
@@ -25,7 +25,7 @@ class TriDiagonalBlockRep(object):
     """
 
     def __init__(self):
-        GPflow.transforms.Transform.__init__(self)
+        gpflow.transforms.Transform.__init__(self)
 
     def forward(self, x):
         """

@@ -1,10 +1,10 @@
-import GPflow
+import gpflow
 import simple_regression
 
-GPflow.profiler.activateTracer('timeline_last')
+gpflow.profiler.activateTracer('timeline_last')
 simple_regression.runExperiments(sampling=False)
-GPflow.profiler.deactivateTracer()
+gpflow.profiler.deactivateTracer()
 
-GPflow.profiler.activateTracer('timeline',outputDirectory='profiler_output',eachTime=True)
+gpflow.profiler.activateTracer('timeline',outputDirectory='profiler_output',eachTime=True)
 simple_regression.runExperiments(sampling=False)
-GPflow.profiler.deactivateTracer()
+gpflow.profiler.deactivateTracer()

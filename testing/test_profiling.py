@@ -4,21 +4,21 @@ import unittest
 
 import numpy as np
 
-import GPflow
+import gpflow
 
 
 class TestProfiling(unittest.TestCase):
     def setUp(self):
         X = np.random.rand(100, 1)
         Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
-        k = GPflow.kernels.RBF(1)
-        self.m = GPflow.gpr.GPR(X, Y, k)
+        k = gpflow.kernels.RBF(1)
+        self.m = gpflow.gpr.GPR(X, Y, k)
 
     def test_profile(self):
-        s = GPflow.settings.get_settings()
+        s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
         s.profiling.output_directory = './testing/'
-        with GPflow.settings.temp_settings(s):
+        with gpflow.settings.temp_settings(s):
             self.m._compile()
             self.m._objective(self.m.get_free_state())
 
@@ -28,10 +28,10 @@ class TestProfiling(unittest.TestCase):
             os.remove(expected_file)
 
     def test_autoflow(self):
-        s = GPflow.settings.get_settings()
+        s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
         s.profiling.output_directory = './testing/'
-        with GPflow.settings.temp_settings(s):
+        with gpflow.settings.temp_settings(s):
             self.m.kern.compute_K_symm(self.m.X.value)
 
         expected_file = s.profiling.output_directory + s.profiling.output_file_name + "_compute_K_symm.json"
@@ -42,15 +42,15 @@ class TestProfiling(unittest.TestCase):
         s.profiling.output_directory = './testing/__init__.py'
         self.m.kern._kill_autoflow()
         with self.assertRaises(IOError):
-            with GPflow.settings.temp_settings(s):
+            with gpflow.settings.temp_settings(s):
                 self.m.kern.compute_K_symm(self.m.X.value)
 
     def test_eachtime(self):
-        s = GPflow.settings.get_settings()
+        s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
         s.profiling.each_time = True
         s.profiling.output_directory = './testing/each_time/'
-        with GPflow.settings.temp_settings(s):
+        with gpflow.settings.temp_settings(s):
             self.m._compile()
             self.m._objective(self.m.get_free_state())
             self.m._objective(self.m.get_free_state())

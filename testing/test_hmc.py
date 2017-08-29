@@ -1,4 +1,4 @@
-import GPflow
+import gpflow
 import numpy as np
 import unittest
 import tensorflow as tf
@@ -17,7 +17,7 @@ class SampleGaussianTest(unittest.TestCase):
         self.x0 = np.zeros(3)
 
     def test_mean_cov(self):
-        samples = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
+        samples = gpflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
                                         x0=self.x0, verbose=False, thin=10, burn=0)
         mean = samples.mean(0)
         cov = np.cov(samples.T)
@@ -28,15 +28,15 @@ class SampleGaussianTest(unittest.TestCase):
         """
         Make sure all randomness can be atributed to the rng
         """
-        samples1 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
+        samples1 = gpflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=10, burn=0,
                                          RNG=np.random.RandomState(10))
 
-        samples2 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
+        samples2 = gpflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=10, burn=0,
                                          RNG=np.random.RandomState(10))
 
-        samples3 = GPflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
+        samples3 = gpflow.hmc.sample_HMC(self.f, num_samples=1000, Lmin=10, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=10, burn=0,
                                          RNG=np.random.RandomState(11))
 
@@ -44,7 +44,7 @@ class SampleGaussianTest(unittest.TestCase):
         self.assertFalse(np.all(samples1 == samples3))
 
     def test_burn(self):
-        samples = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmin=10, Lmax=20, epsilon=0.05,
+        samples = gpflow.hmc.sample_HMC(self.f, num_samples=100, Lmin=10, Lmax=20, epsilon=0.05,
                                         x0=self.x0, verbose=False, thin=1, burn=10,
                                         RNG=np.random.RandomState(11))
 
@@ -52,7 +52,7 @@ class SampleGaussianTest(unittest.TestCase):
         self.assertFalse(np.all(samples[0] == self.x0))
 
     def test_return_logprobs(self):
-        s, logps = GPflow.hmc.sample_HMC(self.f, num_samples=100, Lmin=10, Lmax=20, epsilon=0.05,
+        s, logps = gpflow.hmc.sample_HMC(self.f, num_samples=100, Lmin=10, Lmax=20, epsilon=0.05,
                                          x0=self.x0, verbose=False, thin=1, burn=10,
                                          RNG=np.random.RandomState(11), return_logprobs=True)
 
@@ -67,10 +67,10 @@ class SampleModelTest(unittest.TestCase):
         tf.reset_default_graph()
         rng = np.random.RandomState(0)
 
-        class Quadratic(GPflow.model.Model):
+        class Quadratic(gpflow.model.Model):
             def __init__(self):
-                GPflow.model.Model.__init__(self)
-                self.x = GPflow.param.Param(rng.randn(2))
+                gpflow.model.Model.__init__(self)
+                self.x = gpflow.param.Param(rng.randn(2))
 
             def build_likelihood(self):
                 return -tf.reduce_sum(tf.square(self.x))
@@ -89,7 +89,7 @@ class SampleModelTest(unittest.TestCase):
 class SamplesDictTest(unittest.TestCase):
     def setUp(self):
         X, Y = np.random.randn(2, 10, 1)
-        self.m = GPflow.gpmc.GPMC(X, Y, kern=GPflow.kernels.Matern32(1), likelihood=GPflow.likelihoods.StudentT())
+        self.m = gpflow.gpmc.GPMC(X, Y, kern=gpflow.kernels.Matern32(1), likelihood=gpflow.likelihoods.StudentT())
 
     @unittest.skipIf(pandas is None, "Pandas module required for dataframes.")
     def test_samples_df(self):

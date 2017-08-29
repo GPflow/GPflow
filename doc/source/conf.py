@@ -280,7 +280,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'GPflow.tex', u'GPflow Documentation',
+    (master_doc, 'gpflow.tex', u'GPflow Documentation',
      u'James Hensman and Alexander G. de G. Matthews', 'manual'),
 ]
 
@@ -322,7 +322,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'gpflow', u'GPflow Documentation',
+    (master_doc, 'GPflow', u'GPflow Documentation',
      [author], 1)
 ]
 

@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import GPflow
+import gpflow
 import tensorflow as tf
 import numpy as np
 import unittest
-from GPflow import settings
+from gpflow import settings
 import warnings
 
 float_type = settings.dtypes.float_type
@@ -30,13 +30,13 @@ class TransformTests(unittest.TestCase):
         self.x_np = np.random.randn(10).astype(np_float_type)
         self.session = tf.Session()
         self.transforms = []
-        for transform in GPflow.transforms.Transform.__subclasses__():
-            if transform!=GPflow.transforms.LowerTriangular:
+        for transform in gpflow.transforms.Transform.__subclasses__():
+            if transform!=gpflow.transforms.LowerTriangular:
                 self.transforms.append(transform())
             else:
                 self.transforms.append(transform(4))
-        #self.transforms = [C() for C in GPflow.transforms.Transform.__subclasses__()]
-        self.transforms.append(GPflow.transforms.Logistic(7.3, 19.4))
+        #self.transforms = [C() for C in gpflow.transforms.Transform.__subclasses__()]
+        self.transforms.append(gpflow.transforms.Logistic(7.3, 19.4))
 
     def test_tf_np_forward(self):
         """
@@ -66,9 +66,9 @@ class TransformTests(unittest.TestCase):
             return tf.stack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
 
         tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward))) for t in self.transforms if
-                   type(t) is not GPflow.transforms.LowerTriangular]
+                   type(t) is not gpflow.transforms.LowerTriangular]
         hand_jacs = [t.tf_log_jacobian(self.x) for t in self.transforms if
-                     type(t) is not GPflow.transforms.LowerTriangular]
+                     type(t) is not gpflow.transforms.LowerTriangular]
 
         for j1, j2 in zip(tf_jacs, hand_jacs):
             self.assertTrue(np.allclose(self.session.run(j1, feed_dict={self.x: self.x_np}),
@@ -81,7 +81,7 @@ class TestOverflow(unittest.TestCase):
     """
 
     def setUp(self):
-        self.t = GPflow.transforms.Log1pe()
+        self.t = gpflow.transforms.Log1pe()
 
     def testOverflow(self):
         with warnings.catch_warnings(record=True) as w:
@@ -108,7 +108,7 @@ class TestLowerTriTransform(unittest.TestCase):
     """
 
     def setUp(self):
-        self.t = GPflow.transforms.LowerTriangular(1,3)
+        self.t = gpflow.transforms.LowerTriangular(1,3)
 
     def testErrors(self):
         self.t.free_state_size((6, 6, 3))
@@ -125,8 +125,8 @@ class TestLowerTriTransform(unittest.TestCase):
 class TestDiagMatrixTransform(unittest.TestCase):
     def setUp(self):
         self.session = tf.Session()
-        self.t1 = GPflow.transforms.DiagMatrix(dim=1)
-        self.t2 = GPflow.transforms.DiagMatrix(dim=3)
+        self.t1 = gpflow.transforms.DiagMatrix(dim=1)
+        self.t2 = gpflow.transforms.DiagMatrix(dim=3)
 
     def test_forward_backward(self):
         free_1d = np.random.randn(8)

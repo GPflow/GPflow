@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from __future__ import print_function
 from setuptools import setup
+
 import re
 import os
 import sys
 from pkg_resources import parse_version
 
 # load version form _version.py
-VERSIONFILE = "GPflow/_version.py"
+VERSIONFILE = "gpflow/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
@@ -34,7 +36,7 @@ except (ImportError, DeprecationWarning) as e:
     # Add TensorFlow to dependencies to trigger installation/update
     dependencies.append('tensorflow>={0}'.format(min_tf_version))
 
-setup(name='GPflow',
+setup(name='gpflow',
       version=verstr,
       author="James Hensman, Alex Matthews",
       author_email="james.hensman@gmail.com",
@@ -42,12 +44,12 @@ setup(name='GPflow',
       license="Apache License 2.0",
       keywords="machine-learning gaussian-processes kernels tensorflow",
       url="http://github.com/gpflow/gpflow",
-      package_data={'GPflow': ['GPflow/gpflowrc']},
+      package_data={'gpflow': ['gpflow/gpflowrc']},
       include_package_data=True,
       ext_modules=[],
-      packages=["GPflow"],
-      package_dir={'GPflow': 'GPflow'},
-      py_modules=['GPflow.__init__'],
+      packages=["gpflow"],
+      package_dir={'gpflow': 'gpflow'},
+      py_modules=['gpflow.__init__'],
       test_suite='testing',
       install_requires=dependencies,
       extras_require={'tensorflow with gpu': ['tensorflow-gpu>=1.0.0'],
@@ -59,5 +61,4 @@ setup(name='GPflow',
                    'Operating System :: POSIX :: Linux',
                    'Programming Language :: Python :: 2.7',
                    'Programming Language :: Python :: 3.5',
-                   'Topic :: Scientific/Engineering :: Artificial Intelligence']
-      )
+                   'Topic :: Scientific/Engineering :: Artificial Intelligence'])

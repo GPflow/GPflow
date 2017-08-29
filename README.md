@@ -1,6 +1,6 @@
 # GPflow
 
-GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews). 
+GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
 The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Rasmus Bonnevie, Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
 
 [![Python2.7 status](https://codeship.com/projects/26b43920-e96e-0133-3481-02cde9680eda/status?branch=master)](https://codeship.com/projects/147609)
@@ -34,6 +34,17 @@ You can run the tests with `python setup.py test`.
 
 Version history is documented [here.](https://github.com/GPflow/GPflow/blob/master/RELEASE.md)
 
+# Deprecation
+
+Python package name `GPflow` is no longer supported, it has been changed to lower-case name `gpflow`. You can adapt your code to new renamed package by running these commands:
+
+```bash
+## All files will be backed-up with `.bak` suffix
+sed -i '.bak_import' 's/^\(import *\) GPflow/\1 gpflow/g' ./project-path
+sed -i '.bak_from' 's/^\(from *\) GPflow/\1 gpflow/g' ./project-path
+sed -i '.bak_dot' 's/GPflow\(\.[a-zA-Z0-9]\)/gpflow\1/g' ./project-path
+```
+
 ## Docker image
 
 We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which can be run using
@@ -45,7 +56,7 @@ docker run -it -p 8888:8888 gpflow/gpflow
 Code to generate the image can be found [here](Dockerfile)
 
 # Getting help
-Please use gihub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs. 
+Please use gihub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.
 
 # Contributing
 All constuctive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
@@ -54,8 +65,8 @@ All constuctive input is gratefully received. For more information, see the [not
 
 A few projects building on GPflow and demonstrating its usage are listed below.
 
-| Project | Description | 
-| --- | --- | 
+| Project | Description |
+| --- | --- |
 | [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow. |
 | [VFF](https://github.com/jameshensman/VFF)       | Variational Fourier Features for Gaussian Processes. |
 | [Doubly-Stochastic-DGP](https://github.com/ICL-SML/Doubly-Stochastic-DGP)| Deep Gaussian Processes with Doubly Stochastic Variational Inference.|
@@ -69,8 +80,8 @@ To cite GPflow, please reference the [JMLR paper](http://www.jmlr.org/papers/vol
 
 ```
 @ARTICLE{GPflow2017,
-   author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and 
-	Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and 
+   author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and
+	Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and
 	Ghahramani, Zoubin and Hensman, James},
     title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
   journal = {Journal of Machine Learning Research},

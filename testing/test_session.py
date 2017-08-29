@@ -1,13 +1,13 @@
 import unittest
 import numpy as np
-import GPflow
-from GPflow import session
-from GPflow import settings
+import gpflow
+from gpflow import session
+from gpflow import settings
 import tensorflow as tf
 
 class TestSessionConfiguration(unittest.TestCase):
     def setUp(self):
-        self.m = GPflow.gpr.GPR(np.ones((1, 1)), np.ones((1, 1)), kern=GPflow.kernels.Matern52(1))
+        self.m = gpflow.gpr.GPR(np.ones((1, 1)), np.ones((1, 1)), kern=gpflow.kernels.Matern52(1))
 
     def test_option_persistance(self):
         '''

@@ -15,8 +15,8 @@
 import tensorflow as tf
 import numpy as np
 import unittest
-from GPflow.minibatch import SequenceIndices, MinibatchData
-from GPflow.minibatch import ReplacementSampling, NoReplacementSampling
+from gpflow.minibatch import SequenceIndices, MinibatchData
+from gpflow.minibatch import ReplacementSampling, NoReplacementSampling
 
 class TestSequentialManager(unittest.TestCase):
     def setUp(self):
