@@ -4,6 +4,8 @@ This file contains notes for potential contribtors to GPflow, as well as some no
 ## Project scope
 We do welcome contributions to GPflow. However, the project is deliberately of limited scope, to try to ensure a high quality codebase: if you'd like to contribute a feature, please raise discussion via a github issue. Large features also make it onto the [roadmap](roadmap.md).
 
+Due to limited scope we may not be able to review and merge every feature, however useful it may be. Particularly large contributions or changes to core code require are harder to justify against the scope of the project or future development plans. For these contributions like this, we suggest you publish them as a separate package that extends GPflow. We can link to your project from an issue discussing the topic or within the repository. Discussing a possible contribution in an issue should give an indication to how broadly it is supported to bring it into the codebase.
+
 ## Code Style
  - Python code should follow the pep8 style. To help with this, we suggest using a plugin for your editor.
  - Practise good code as far as is reasonable. Simpler is usually better. Compicated language features (I'm looking at you, metaclasses) are out. Reading the existing GPflow code should give a good idea of the expected style.

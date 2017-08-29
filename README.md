@@ -14,11 +14,15 @@ GPflow implements modern Gaussian process inference for composable kernels and l
 
 # Install
 
-## 1) Install TensorFlow. 
-Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r1.0/get_started/get_started). You will need version 1.0. We find that for most users pip installation is the fastest way to get going.
+## 1) Quick install
+GPflow can be installed by cloning the repository and running
+```
+pip install .
+```
+in the root folder. This also installs required dependencies including TensorFlow. When GPU support is needed, a manual installation of TensorFlow is recommended (next section), as one cannot rely on pip to get this running.
 
-## 2) install package
-GPflow includes some tensorflow extensions that are compiled when you run setup.py.  For those interested in modifying the source of GPflow, we recommend  
+## 2) Alternative method
+A different option to install GPflow requires installation of TensorFlow first. Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r1.0/get_started/get_started). You will need at least version 1.0 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend  
 ```
 python setup.py develop
 ```
@@ -46,6 +50,18 @@ Please use gihub issues to start discussion on the use of GPflow. Tagging enquir
 # Contributing
 All constuctive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
 
+# Projects using GPflow
+
+A few projects building on GPflow and demonstrating its usage are listed below.
+
+| Project | Description | 
+| --- | --- | 
+| [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow. |
+| [VFF](https://github.com/jameshensman/VFF)       | Variational Fourier Features for Gaussian Processes. |
+| [Doubly-Stochastic-DGP](https://github.com/ICL-SML/Doubly-Stochastic-DGP)| Deep Gaussian Processes with Doubly Stochastic Variational Inference.|
+| [BranchedGP](https://github.com/ManchesterBioinference/BranchedGP) | Gaussian processes with branching kernels.|
+
+Let us know if you would like your project listed here.
 
 # Citing GPflow
 
