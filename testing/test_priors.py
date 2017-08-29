@@ -1,4 +1,4 @@
-# Copyright 2016 the GPflow authors.
+# Copyright 2016 the gpflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -74,9 +74,9 @@ class PriorModeTests(unittest.TestCase):
         self.assertTrue(np.allclose(xmax, 3))
 
     def testBetaMode(self):
-        self.m.x = GPflow.param.Param(0.1)
-        self.m.x.prior = GPflow.priors.Beta(3., 3.)
-        self.m.x.transform = GPflow.transforms.Logistic()
+        self.m.x = gpflow.param.Param(0.1)
+        self.m.x.prior = gpflow.priors.Beta(3., 3.)
+        self.m.x.transform = gpflow.transforms.Logistic()
 
         self.m.optimize(disp=0, tol=1e-8)
 
