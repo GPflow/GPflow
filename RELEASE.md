@@ -1,5 +1,7 @@
 # Release 0.4.0
  - Rename python package name to `gpflow`.
+ - Compile function has external session and graph arguments.
+ - Tests use Tensorflow TestCase class for proper session managing.
 
 # Release 0.3.8
  - Change to LowerTriangular transform interface.
