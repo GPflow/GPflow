@@ -1,10 +1,11 @@
 import unittest
-import gpflow
 import os
 import tensorflow as tf
+import gpflow
 
+from testing.gpflow_testcase import GPflowTestCase
 
-class TestConfigParsing(unittest.TestCase):
+class TestConfigParsing(GPflowTestCase):
     def setUp(self):
         directory = os.path.dirname(os.path.realpath(__file__))
         f = os.path.join(directory, 'gpflowrc_test.txt')
@@ -20,6 +21,11 @@ class TestConfigParsing(unittest.TestCase):
             self.settings.second_section.a_bool is True,
             self.settings.second_section.another_bool is True,
             self.settings.second_section.yet_another_bool is False]))
+
+    def test_config_not_found(self):
+        """GPflow config cannot be found."""
+        filename = "./config_not_found.txt"
+        self.assertRaises(RuntimeError, gpflow._settings.read_config_file, filename)
 
     def test_parser(self):
         with self.assertRaises(ValueError):
@@ -44,7 +50,7 @@ class TestConfigParsing(unittest.TestCase):
         self.assertTrue(gpflow._settings.parse('1e-9') == 1e-9)
 
 
-class TestSettingsManager(unittest.TestCase):
+class TestSettingsManager(GPflowTestCase):
     def testRaises(self):
         with self.assertRaises(AttributeError):
             gpflow.settings.undefined_setting_to_raise_error
