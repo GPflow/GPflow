@@ -445,7 +445,7 @@ class Model(Parameterized, IGraphOwner):
         def __call__(self, x):
             f, g = self._objective(x)
             g_is_fin = np.isfinite(g)
-            if np.all(g_is_fin)
+            if np.all(g_is_fin):
                 self._previous_x = x  # store the last known good value
                 return f, g
             else:

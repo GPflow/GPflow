@@ -1,5 +1,5 @@
 import abc
-from .misc import tensor_name, get_tensor_by_name
+from .misc import tensor_name
 
 class IGraphOwner:
     __metaclass__ = abc.ABCMeta
