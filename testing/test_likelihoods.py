@@ -1,4 +1,5 @@
-import unittest import six
+import unittest
+import six
 import tensorflow as tf
 import numpy as np
 
@@ -328,9 +329,32 @@ class TestSwitchedLikelihood(GPflowTestCase):
                                        self.Y_list,
                                        self.F_list,
                                        self.Fvar_list):
-                sess.run(tf.global_variables_initializer()) with lik.tf_mode(): rslts.append(sess.run(lik.variational_expectations(f, fvar, y))) self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
-class TestLikelihoodChecks(GPflowTestCase): def run_models(self, likelihood, Y): X = np.random.randn(Y.shape[0], 1) gpflow.gpr.GPR(X, Y, gpflow.kernels.RBF(1)) m1 = gpflow.vgp.VGP(X, Y, gpflow.kernels.RBF(1), likelihood) m2 = gpflow.svgp.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
-    def test_likelihood_checks(self): to_pass = [ [gpflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1)], [gpflow.likelihoods.Poisson(), np.array((1., 1., 3.)).reshape(3, 1)], [gpflow.likelihoods.Exponential(), np.array((1e-12, 1)).reshape(2, 1)], [gpflow.likelihoods.StudentT(), np.array((-1e-12, 1)).reshape(2, 1)], [gpflow.likelihoods.Bernoulli(), np.array((0., 1.)).reshape(2, 1)], [gpflow.likelihoods.Bernoulli(), np.array((-1., 1.)).reshape(2, 1)], [gpflow.likelihoods.Gamma(), np.array((1e-12, 1)).reshape(2, 1)], [gpflow.likelihoods.Beta(), np.array((1e-12, 1.)).reshape(2, 1)], [gpflow.likelihoods.MultiClass(3), np.array((0., 2.)).reshape(2, 1)], [gpflow.likelihoods.Ordinal(np.array((1., 2.))), np.array((0., 2.)).reshape(2, 1)], ]
+                sess.run(tf.global_variables_initializer())
+                with lik.tf_mode():
+                    rslts.append(sess.run(lik.variational_expectations(f, fvar, y)))
+            self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+
+
+class TestLikelihoodChecks(GPflowTestCase):
+    def run_models(self, likelihood, Y):
+        X = np.random.randn(Y.shape[0], 1)
+        gpflow.gpr.GPR(X, Y, gpflow.kernels.RBF(1))
+        m1 = gpflow.vgp.VGP(X, Y, gpflow.kernels.RBF(1), likelihood)
+        m2 = gpflow.svgp.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
+
+    def test_likelihood_checks(self):
+        to_pass = [
+            [gpflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1)],
+            [gpflow.likelihoods.Poisson(), np.array((1., 1., 3.)).reshape(3, 1)],
+            [gpflow.likelihoods.Exponential(), np.array((1e-12, 1)).reshape(2, 1)],
+            [gpflow.likelihoods.StudentT(), np.array((-1e-12, 1)).reshape(2, 1)],
+            [gpflow.likelihoods.Bernoulli(), np.array((0., 1.)).reshape(2, 1)],
+            [gpflow.likelihoods.Bernoulli(), np.array((-1., 1.)).reshape(2, 1)],
+            [gpflow.likelihoods.Gamma(), np.array((1e-12, 1)).reshape(2, 1)],
+            [gpflow.likelihoods.Beta(), np.array((1e-12, 1.)).reshape(2, 1)],
+            [gpflow.likelihoods.MultiClass(3), np.array((0., 2.)).reshape(2, 1)],
+            [gpflow.likelihoods.Ordinal(np.array((1., 2.))), np.array((0., 2.)).reshape(2, 1)],
+        ]
 
         to_fail = [
             [gpflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1, 1)],
