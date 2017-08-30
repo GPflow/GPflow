@@ -78,7 +78,7 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
     for t in range(1, num_samples * thin):
 
         # Output acceptance rate every 100 iterations
-        if(((t+1) % 100) == 0):
+        if ((t+1) % 100) == 0:
             if verbose:
                 print("Iteration: ", t+1,
                       "\t Acc Rate: ", 1. * accept_count_batch, "%")

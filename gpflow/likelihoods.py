@@ -20,6 +20,7 @@ import numpy as np
 from .param import Parameterized, Param, ParamList
 from ._settings import settings
 from .quadrature import hermgauss
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
@@ -214,7 +215,7 @@ class Poisson(Likelihood):
     let g(.) be the inverse-link function, then this likelihood represents
 
     p(y_i | f_i) = Poisson(y_i | g(f_i) * binsize)
-    
+
     Note:binsize
     For use in a Log Gaussian Cox process (doubly stochastic model) where the
     rate function of an inhomogeneous Poisson process is given by a GP.  The
@@ -246,7 +247,7 @@ class Poisson(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return Y * Fmu - tf.exp(Fmu + Fvar / 2) * self.binsize \
-                   - tf.lgamma(Y + 1) + Y * tf.log(self.binsize) 
+                   - tf.lgamma(Y + 1) + Y * tf.log(self.binsize)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
 

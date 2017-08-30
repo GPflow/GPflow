@@ -5,6 +5,8 @@ import collections
 import tensorflow as tf
 from collections import OrderedDict
 
+import logging
+
 
 class SettingsContextManager(object):
     def __init__(self, manager, tmp_settings):
@@ -42,15 +44,14 @@ class SettingsManager(object):
         return SettingsContextManager(self, tmp_settings)
 
     def get_settings(self):
-        c = copy.deepcopy(self._cur_settings)
-        return c
+        return copy.deepcopy(self._cur_settings)
 
 
 class MutableNamedTuple(OrderedDict):
     """
-    A class that doubles as a mutable named tuple, to allow settings to be re-set during
+    A class that doubles as a mutable named tuple, to allow settings
+    to be re-set during
     """
-
     def __init__(self, *args, **kwargs):
         super(MutableNamedTuple, self).__init__(*args, **kwargs)
         self._settings_stack = []
@@ -71,35 +72,42 @@ class MutableNamedTuple(OrderedDict):
 
 # a very simple parser
 def parse(string):
-    if type(string) is not str:
-        raise ValueError
+    """
+    Very simple config values parser.
+    """
+    if not isinstance(string, str):
+        raise ValueError('Config value "{0}" expected to be string.'
+                         .format(string))
     if string in ['true', 'True']:
         return True
     elif string in ['false', 'False']:
         return False
-    elif string in ['float64', 'float32', 'float16', 'int64', 'int32', 'int16']:
+    elif string in ['float64', 'float32', 'float16',
+                    'int64', 'int32', 'int16']:
         return getattr(tf, string)
-    elif any([string.count(s) for s in '.eE']):
-        try:
-            return float(string)
-        except:
-            return string
     else:
         try:
             return int(string)
-        except:
+        except ValueError:
+            pass
+        try:
+            return float(string)
+        except ValueError:
             return string
 
 
-# make the dictionary into a nested series of named tuples. This is what allows
-# accessing by attribute: settings.numerics.jitter
-def namedtuplify(mapping):  # thank you https://gist.github.com/hangtwenty/5960435
+def namedtuplify(mapping):
+    """
+    Make the dictionary into a nested series of named tuples.
+    This is what allows accessing by attribute: settings.numerics.jitter
+    Thank you https://gist.github.com/hangtwenty/5960435
+    """
     if isinstance(mapping, collections.Mapping):
         for key, value in list(mapping.items()):
             mapping[key] = namedtuplify(value)
         try:
             mapping.pop('__name__')
-        except:
+        except KeyError:
             pass
         # return collections.namedtuple('settingsa', dict(**mapping))(**mapping)
         return MutableNamedTuple(mapping)
@@ -107,26 +115,30 @@ def namedtuplify(mapping):  # thank you https://gist.github.com/hangtwenty/59604
 
 
 def read_config_file(path=None):
-    c = configparser.ConfigParser()
+    """
+    Reads config file.
+    First look for config file in the current directory, then in the
+    user's home directory, then in the same directory as this file.
+    Tries to find config file both with and without preceeding 'dot'
+    for hidden files (prefer non-hidden).
+    """
+    cfg = configparser.ConfigParser()
 
     if path is None:  # pragma: no cover
-        # first look in the current directory,
-        # then in the user's home directory,
-        # then in the same directory as this file.
-        locations = map(os.path.abspath, [os.curdir,
-                                          os.path.expanduser('~'),
-                                          os.path.dirname(os.path.realpath(__file__))])
+        dirs = [os.curdir, os.path.expanduser('~'),
+                os.path.dirname(os.path.realpath(__file__))]
+        locations = map(os.path.abspath, dirs)
         for loc in locations:
-            # try both with and without preceeding 'dot' for hidden files (prefer non-hidden)
-            if c.read(os.path.join(loc, 'gpflowrc')):
+            if cfg.read(os.path.join(loc, 'gpflowrc')):
                 break
-            if c.read(os.path.join(loc, '.gpflowrc')):
+            if cfg.read(os.path.join(loc, '.gpflowrc')):
                 break
     else:
-        assert (c.read(path))
-    return c
+        if not cfg.read(path):
+            raise RuntimeError("Config at '{0}'cannot be read".format(path))
+    return cfg
 
 
-c = read_config_file()
-loaded_settings = namedtuplify(c._sections)
+config = read_config_file()
+loaded_settings = namedtuplify(config._sections)
 settings = SettingsManager(loaded_settings)
