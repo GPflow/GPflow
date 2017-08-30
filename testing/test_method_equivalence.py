@@ -246,7 +246,7 @@ class TestUpperBound(GPflowTestCase):
             full.kern.lengthscales = vfe.kern.lengthscales.value
             full.kern.variance = vfe.kern.variance.value
             full.likelihood.variance = vfe.likelihood.variance.value
-            full._compile()
+            full.compile()
 
             lml_upper = vfe.compute_upper_bound()
             lml_vfe = -vfe._objective(vfe.get_free_state())[0]
