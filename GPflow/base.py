@@ -135,10 +135,10 @@ class Parentable:
         return tensor_name(self._parent.full_name, self.name)
 
     def __getstate__(self):
-        d = self.__dict__.copy()
-        d.pop('_parent')
-        return d
+        state = self.__dict__.copy()
+        state.pop('_parent')
+        return state
 
-    def __setstate__(self, d):
-        self.__dict__.update(d)
+    def __setstate__(self, state):
+        self.__dict__.update(state)
         self._parent = None
