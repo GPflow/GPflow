@@ -1,5 +1,8 @@
 import abc
+import enum
+
 from .misc import tensor_name
+
 
 class IGraphOwner:
     __metaclass__ = abc.ABCMeta
@@ -12,11 +15,16 @@ class IGraphOwner:
     def session(self):
         pass
 
+    @abc.abstractproperty
+    def reset(self, session=None):
+        pass
+
+
 class ICompilable:
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
-    def is_compiled(self):
+    @abc.abstractmethod
+    def is_compiled(self, graph=None):
         pass
 
     @abc.abstractmethod
@@ -53,7 +61,7 @@ class IPrior:
         """
         A short string to describe the prior at print time
         """
-        raise NotImplementedError
+        pass
 
 
 class ITransform:
@@ -100,6 +108,12 @@ class ITransform:
         raise NotImplementedError
 
 
+class Compiled(enum.Enum):
+    COMPILED = 1
+    NOT_COMPILED = 0
+    NOT_COMPATIBLE_GRAPH = None
+
+
 class Parentable:
     """
     A very simple class for objects in a tree, where each node contains a
@@ -111,7 +125,7 @@ class Parentable:
 
     def __init__(self, name=None):
         self._parent = None
-        self._name = self.__class__.__name__ if name is None else name
+        self._name = self._define_name(name)
 
     @property
     def root(self):
@@ -134,6 +148,15 @@ class Parentable:
             return self.name
         return tensor_name(self._parent.full_name, self.name)
 
+    def set_name(self, name=None):
+        self._name = self._define_name(name)
+
+    def set_parent(self, parent=None):
+        self._parent = parent
+
+    def _define_name(self, name):
+        return self.__class__.__name__ if name is None else name
+
     def __getstate__(self):
         state = self.__dict__.copy()
         state.pop('_parent')
@@ -142,3 +165,27 @@ class Parentable:
     def __setstate__(self, state):
         self.__dict__.update(state)
         self._parent = None
+
+
+class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
+
+    def __init__(self, name=None):
+        super(CompilableNode, self).__init__(name=name)
+
+    def verified_graph(self, graph=None):
+        root_graph = None
+        if isinstance(self.root, IGraphOwner):
+            root_graph = self.root.graph
+        graph = root_graph if graph is None else graph
+        if graph is None:
+            raise ValueError('No graph specified.')
+        return graph
+
+    def verified_session(self, session=None):
+        root_session = None
+        if isinstance(self.root, IGraphOwner):
+            root_session = self.root.session
+        session = root_session if session is None else session
+        if session is None:
+            raise ValueError('No session specified.')
+        return session

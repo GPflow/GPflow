@@ -3,16 +3,11 @@ import itertools
 
 import tensorflow as tf
 import numpy as np
-from ._settings import settings
-
-float_type = settings.dtypes.float_type
-int_type = settings.dtypes.int_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
-
+from .misc import NP_FLOAT_TYPE
 
 def hermgauss(n):
     x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(np_float_type), w.astype(np_float_type)
+    x, w = x.astype(NP_FLOAT_TYPE), w.astype(NP_FLOAT_TYPE)
     return x, w
 
 
@@ -51,8 +46,8 @@ def mvnquad(f, means, covs, H, Din, Dout=()):
     N = tf.shape(means)[0]
 
     # transform points based on Gaussian parameters
-    cholXcov = tf.cholesky(covs)  # NxDxD
-    Xt = tf.matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)), transpose_b=True)  # NxDxH**D
+    chol_cov = tf.cholesky(covs)  # NxDxD
+    Xt = tf.matmul(chol_cov, tf.tile(xn[None, :, :], (N, 1, 1)), transpose_b=True)  # NxDxH**D
     X = 2.0 ** 0.5 * Xt + tf.expand_dims(means, 2)  # NxDxH**D
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
 

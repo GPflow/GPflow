@@ -20,14 +20,13 @@ import warnings
 
 import tensorflow as tf
 import numpy as np
-from .param import Param, Parameterized, AutoFlow
-from . import transforms
-from ._settings import settings
-from .quadrature import hermgauss, mvhermgauss, mvnquad
 
-float_type = settings.dtypes.float_type
-int_type = settings.dtypes.int_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+from . import transforms
+
+from .param import Param, Parameterized, AutoFlow
+from .quadrature import hermgauss, mvhermgauss, mvnquad
+from .misc import FLOAT_TYPE, NP_FLOAT_TYPE, INT_TYPE
+from ._settings import settings
 
 
 class Kern(Parameterized):
@@ -55,7 +54,7 @@ class Kern(Parameterized):
         self.input_dim = int(input_dim)
         if active_dims is None:
             self.active_dims = slice(input_dim)
-        elif type(active_dims) is slice:
+        elif isinstance(active_dims, slice):
             self.active_dims = active_dims
             if active_dims.start is not None and active_dims.stop is not None and active_dims.step is not None:
                 assert len(range(*active_dims)) == input_dim  # pragma: no cover
@@ -82,8 +81,8 @@ class Kern(Parameterized):
             if X2 is not None:
                 X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(X)[1], tf.constant(self.input_dim, dtype=settings.dtypes.int_type))
-        ]):
+                            tf.assert_equal(tf.shape(X)[1],
+                                            tf.constant(self.input_dim, dtype=INT_TYPE))]):
             X = tf.identity(X)
 
         return X, X2
@@ -116,37 +115,39 @@ class Kern(Parameterized):
     def __mul__(self, other):
         return Prod([self, other])
 
-    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
+    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @AutoFlow((float_type, [None, None]))
+    @AutoFlow((FLOAT_TYPE, [None, None]))
     def compute_K_symm(self, X):
         return self.K(X)
 
-    @AutoFlow((float_type, [None, None]))
+    @AutoFlow((FLOAT_TYPE, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @AutoFlow((float_type, [None, None]), (float_type,))
+    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE,))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type,))
+    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE, [None, None]), (FLOAT_TYPE,))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type, [None, None, None, None]))
+    @AutoFlow((FLOAT_TYPE, [None, None]),
+              (FLOAT_TYPE, [None, None]),
+              (FLOAT_TYPE, [None, None, None, None]))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((float_type, [None, None]), (float_type, [None, None]), (float_type,))
+    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE, [None, None]), (FLOAT_TYPE,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 
     def _check_quadrature(self):
         if settings.numerics.ekern_quadrature == "warn":
-            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use GPflow.ekernels instead." %
+            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use gpflow.ekernels instead." %
                           str(type(self)))
         if settings.numerics.ekern_quadrature == "error" or self.num_gauss_hermite_points == 0:
             raise RuntimeError("Settings indicate that quadrature may not be used.")
@@ -201,7 +202,7 @@ class Kern(Parameterized):
         D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
 
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=int_type),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=INT_TYPE),
                             message="Numerical quadrature needs to know correct shape of Xmu.")
         ]):
             Xmu = tf.identity(Xmu)
@@ -264,7 +265,7 @@ class White(Static):
             return tf.matrix_diag(d)
         else:
             shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
-            return tf.zeros(shape, float_type)
+            return tf.zeros(shape, FLOAT_TYPE)
 
 
 class Constant(Static):
@@ -315,10 +316,10 @@ class Stationary(Kern):
         self.variance = Param(variance, transforms.positive)
         if ARD:
             if lengthscales is None:
-                lengthscales = np.ones(input_dim, np_float_type)
+                lengthscales = np.ones(input_dim, NP_FLOAT_TYPE)
             else:
                 # accepts float or array:
-                lengthscales = lengthscales * np.ones(input_dim, np_float_type)
+                lengthscales = lengthscales * np.ones(input_dim, NP_FLOAT_TYPE)
             self.lengthscales = Param(lengthscales, transforms.positive)
             self.ARD = True
         else:
@@ -530,10 +531,10 @@ class ArcCosine(Kern):
         self.bias_variance = Param(bias_variance, transforms.positive)
         if ARD:
             if weight_variances is None:
-                weight_variances = np.ones(input_dim, np_float_type)
+                weight_variances = np.ones(input_dim, NP_FLOAT_TYPE)
             else:
                 # accepts float or array:
-                weight_variances = weight_variances * np.ones(input_dim, np_float_type)
+                weight_variances = weight_variances * np.ones(input_dim, NP_FLOAT_TYPE)
             self.weight_variances = Param(weight_variances, transforms.positive)
             self.ARD = True
         else:
@@ -586,7 +587,7 @@ class ArcCosine(Kern):
             X, _ = self._slice(X, None)
 
         X_product = self._weighted_product(X)
-        theta = tf.constant(0., float_type)
+            theta = tf.constant(0., FLOAT_TYPE)
         return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 

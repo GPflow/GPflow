@@ -1,17 +1,17 @@
 import os
 import warnings
 import tensorflow as tf
+
 from tensorflow.python.client import timeline
-from ._settings import settings
 
 
 class TracerSession(tf.Session):
     def __init__(self, output_file_name, output_directory, each_time, **kwargs):
         self.output_file_name = output_file_name
         self.output_directory = output_directory
-        self.eachTime = each_time
+        self.each_time = each_time
         self.local_run_metadata = None
-        if self.eachTime:
+        if self.each_time:
             warnings.warn("Outputting a trace for each run. May result in large disk usage.")
 
         super(TracerSession, self).__init__(**kwargs)
@@ -25,7 +25,7 @@ class TracerSession(tf.Session):
 
     def get_filename(self):
         dir_stub = self.output_directory if self.output_directory is not None else ''
-        if self.eachTime:
+        if self.each_time:
             return os.path.join(dir_stub, self.output_file_name + '_' + str(self.counter) + '.json')
         else:
             return os.path.join(dir_stub, self.output_file_name + '.json')
@@ -46,7 +46,7 @@ class TracerSession(tf.Session):
         with open(self.get_filename(), 'w') as f:
             f.write(ctf)
 
-        if self.eachTime:
+        if self.each_time:
             self.counter += 1
 
         return output

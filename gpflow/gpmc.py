@@ -15,13 +15,15 @@
 
 import numpy as np
 import tensorflow as tf
+
 from .model import GPModel
 from .param import Param, DataHolder
 from .conditionals import conditional
 from .priors import Gaussian
 from .mean_functions import Zero
+from .misc import FLOAT_TYPE
 from ._settings import settings
-float_type = settings.dtypes.float_type
+
 
 
 class GPMC(GPModel):
@@ -52,7 +54,7 @@ class GPMC(GPModel):
         self.V = Param(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    def _compile(self, optimizer=None):
+    def compile(self, session=None, graph=None, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add parameters appropriately.
@@ -65,7 +67,9 @@ class GPMC(GPModel):
             self.V = Param(np.zeros((self.num_data, self.num_latent)))
             self.V.prior = Gaussian(0., 1.)
 
-        return super(GPMC, self)._compile(optimizer=optimizer)
+        return super(GPMC, self).compile(session=session,
+                                         graph=graph,
+                                         optimizer=optimizer)
 
     def build_likelihood(self):
         """
@@ -76,7 +80,7 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = tf.cholesky(K + tf.eye(tf.shape(self.X)[0], dtype=float_type)*settings.numerics.jitter_level)
+        L = tf.cholesky(K + tf.eye(tf.shape(self.X)[0], dtype=FLOAT_TYPE)*settings.numerics.jitter_level)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))

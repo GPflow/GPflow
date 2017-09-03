@@ -17,25 +17,22 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from .defs import IPrior
-from .param import Parameterized
 from . import densities
-from ._settings import settings
+
+from .base import IPrior
+from .misc import FLOAT_TYPE, NP_FLOAT_TYPE
+from .parameterized import Parameterized
 
 
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
-
-
-class Prior(Parameterized, IPrior):
+class Prior(Parameterized, IPrior): # pylint: disable=W0223
     pass
 
 
 class Gaussian(Prior):
     def __init__(self, mu, var):
         Prior.__init__(self)
-        self.mu = np.atleast_1d(np.array(mu, np_float_type))
-        self.var = np.atleast_1d(np.array(var, np_float_type))
+        self.mu = np.atleast_1d(np.array(mu, NP_FLOAT_TYPE))
+        self.var = np.atleast_1d(np.array(var, NP_FLOAT_TYPE))
 
     def logp(self, x):
         return tf.reduce_sum(densities.gaussian(x, self.mu, self.var))
@@ -50,8 +47,8 @@ class Gaussian(Prior):
 class LogNormal(Prior):
     def __init__(self, mu, var):
         Prior.__init__(self)
-        self.mu = np.atleast_1d(np.array(mu, np_float_type))
-        self.var = np.atleast_1d(np.array(var, np_float_type))
+        self.mu = np.atleast_1d(np.array(mu, NP_FLOAT_TYPE))
+        self.var = np.atleast_1d(np.array(var, NP_FLOAT_TYPE))
 
     def logp(self, x):
         return tf.reduce_sum(densities.lognormal(x, self.mu, self.var))
@@ -67,8 +64,8 @@ class LogNormal(Prior):
 class Gamma(Prior):
     def __init__(self, shape, scale):
         Prior.__init__(self)
-        self.shape = np.atleast_1d(np.array(shape, np_float_type))
-        self.scale = np.atleast_1d(np.array(scale, np_float_type))
+        self.shape = np.atleast_1d(np.array(shape, NP_FLOAT_TYPE))
+        self.scale = np.atleast_1d(np.array(scale, NP_FLOAT_TYPE))
 
     def logp(self, x):
         return tf.reduce_sum(densities.gamma(self.shape, self.scale, x))
@@ -83,8 +80,8 @@ class Gamma(Prior):
 class Laplace(Prior):
     def __init__(self, mu, sigma):
         Prior.__init__(self)
-        self.mu = np.atleast_1d(np.array(mu, np_float_type))
-        self.sigma = np.atleast_1d(np.array(sigma, np_float_type))
+        self.mu = np.atleast_1d(np.array(mu, NP_FLOAT_TYPE))
+        self.sigma = np.atleast_1d(np.array(sigma, NP_FLOAT_TYPE))
 
     def logp(self, x):
         return tf.reduce_sum(densities.laplace(self.mu, self.sigma, x))
@@ -98,8 +95,8 @@ class Laplace(Prior):
 class Beta(Prior):
     def __init__(self, a, b):
         Prior.__init__(self)
-        self.a = np.atleast_1d(np.array(a, np_float_type))
-        self.b = np.atleast_1d(np.array(b, np_float_type))
+        self.a = np.atleast_1d(np.array(a, NP_FLOAT_TYPE))
+        self.b = np.atleast_1d(np.array(b, NP_FLOAT_TYPE))
 
     def logp(self, x):
         return tf.reduce_sum(densities.beta(self.a, self.b, x))
@@ -118,7 +115,7 @@ class Uniform(Prior):
         self.lower, self.upper = lower, upper
 
     def logp(self, x):
-        return self.log_height * tf.cast(tf.size(x), float_type)
+        return self.log_height * tf.cast(tf.size(x), FLOAT_TYPE)
 
     def sample(self, shape=(1,)):
         return (self.lower +

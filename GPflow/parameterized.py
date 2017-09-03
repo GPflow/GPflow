@@ -13,30 +13,35 @@
 # limitations under the License.
 
 from __future__ import print_function, absolute_import
+from contextlib import contextmanager
 
 import sys
 import warnings
 import numpy as np
 import tensorflow as tf
-import pandas as pd
+import session_manager
 
 from scipy.optimize import minimize, OptimizeResult
 
-from .base import ICompilable, IGraphOwner
 from . import hmc, session
-from ._settings import settings
-from .param import AutoFlow, DataHolder
+
+from .base import IGraphOwner, Parentable
+from .base import CompilableNode, Compiled
+from .param import Param
+from .autoflow import AutoFlow
 from .mean_functions import Zero
+from .misc import FLOAT_TYPE
+from .misc import GPflowError, GPflowTensorError
+from ._settings import settings
 
-float_type = settings.dtypes.float_type
 
-class Parameterized(Parentable, ICompilable):
+class Parameterized(CompilableNode):
     """
     An object to contain parameters and data.
 
     This object is designed to be part of a tree, with Param and DataHolder
     objects at the leaves. We can then recurse down the tree to find all the
-    parameters and data (leaves), or recurse up the tree (using root)
+    parameters and data (leaves), or recurse up the tree (using highest_parent)
     from the leaves to the root.
 
     A useful application of such a recursion is 'tf_mode', where the parameters
@@ -56,192 +61,107 @@ class Parameterized(Parentable, ICompilable):
     """
 
     def __init__(self, name=None):
-        Parentable.__init__(self, name=name)
+        super(Parameterized, self).__init__(name=name)
         self.scoped_keys = []
-        self._tf_mode = False
-
-    def get_samples_df(self, samples):
-        """
-        Given a numpy array where each row is a valid free-state vector, return
-        a pandas.DataFrame which contains the parameter name and associated samples
-        in the correct form (e.g. with positive constraints applied).
-        """
-        d = pd.DataFrame()
-        for p in self.sorted_params:
-            d = pd.concat([d, p.get_samples_df(samples)], axis=1)
-        return d
-
-    def make_tf_array(self, X):
-        """
-        Distribute a flat tensorflow array amongst all the child parameter of this instance.
-
-        X is a tensorflow placeholder. It gets passed to all the children of
-        this class (that are Parameterized or Param objects), which then
-        construct their tf_array variables from consecutive sections.
-        """
-        count = 0
-        for dh in self.data_holders:
-            dh.make_tf_array()
-        for p in self.sorted_params:
-            count += p.make_tf_array(X[count:])
-        return count
-
-    def get_param_index(self, param_to_index):
-        """
-        Given a parameter, compute the position of that parameter on the free-state vector.
-
-        This returns:
-          - count: an integer representing the position
-          - found: a bool representing whether the parameter was found.
-        """
-        found = False
-        count = 0
-        for p in self.sorted_params:
-            if isinstance(p, Param):
-                if p is param_to_index:
-                    found = True
-                    break
-                else:
-                    count += p.get_free_state().size
-            elif isinstance(p, Parameterized):
-                extra, found = p.get_param_index(param_to_index)
-                count += extra
-                if found:
-                    break
-        return count, found
+        self._prior_tensor = None
 
     @property
-    def sorted_params(self):
-        """
-        Return a list of all the child parameters, sorted by id.
-
-        This makes sure they're always in the same order.
-        """
-        params = [child for key, child in self.__dict__.items()
-                  if isinstance(child, (Param, Parameterized)) and
-                  key is not '_parent']
-        return sorted(params, key=lambda x: x.full_name)
+    def params(self):
+        for key, param in self.__dict__.items():
+            if not key.startswith('_') and isinstance(param, (Param, Parameterized)):
+                yield param
 
     @property
-    def data_holders(self):
-        """
-        Return a list of all the child DataHolders
-        """
-        return [child for key, child in self.__dict__.items()
-                if isinstance(child, DataHolder)]
+    def free_params(self):
+        for param in self.params:
+            if not param.fixed:
+                yield param
+
+    @property
+    def prior_tensor(self):
+        return self._prior_tensor
+
+    def is_compiled(self, graph=None):
+        graph = self.verified_graph(graph)
+        compiled = set([param.is_compiled(graph=graph) for param in self.params])
+        inconsitency_check = set([Compiled.COMPILED, Compiled.NOT_COMPATIBLE_GRAPH])
+        not_compiled_check = set([Compiled.COMPILED, Compiled.NOT_COMPILED])
+        compatibility_check = set([Compiled.NOT_COMPATIBLE_GRAPH])
+        if inconsitency_check.issubset(compiled):
+            raise GPflowTensorError('Graph inconsistency among parameters found.')
+        elif compatibility_check.issubset(compiled):
+            raise GPflowTensorError()
+        elif compiled.issubset(not_compiled_check):
+            return Compiled.NOT_COMPILED
+        return Compiled.COMPILED
+
+    def compile(self, graph=None):
+        graph = self.verified_graph(graph)
+        for param in self.params:
+            param.compile(graph=graph)
+        self._prior_tensor = self._build_prior()
 
     @property
     def fixed(self):
         """A boolean attribute to determine if all the child parameters of this node are fixed"""
-        return all(p.fixed for p in self.sorted_params)
+        for param in self.params:
+            if not param.fixed:
+                return False
+        return True
 
     @fixed.setter
-    def fixed(self, val):
-        for p in self.sorted_params:
-            p.fixed = val
+    def fixed(self, value):
+        for param in self.params:
+            param.fixed = value
 
-    def get_free_state(self):
-        """
-        Recurse get_free_state on all child parameters, and hstack them.
-        """
-        # Here, additional empty array allows hstacking of empty list
-        return np.hstack([p.get_free_state() for p in self.sorted_params] +
-                         [np.empty(0, __NP_FLOAT_TYPE)])
+    def set_fixed(self, value, graph=None):
+        for param in self.params:
+            param.set_fixed(value, graph=graph)
 
-    def get_feed_dict_keys(self):
-        """
-        Recursively generate a dictionary of {object: _tf_array} pairs that can be used in update_feed_dict
-        """
-        d = {}
-        for p in self.sorted_params + self.data_holders:
-            d.update(p.get_feed_dict_keys())
-        return d
+    # TODO(awav): # pylint: disable=W0511
+    #def randomize(self, distributions={}, skipfixed=True):
+    #    """
+    #    Calls randomize on all parameters in model hierarchy.
+    #    """
+    #    for param in self.sorted_params:
+    #        param.randomize(distributions, skipfixed)
 
-    def update_feed_dict(self, key_dict, feed_dict):
-        for p in self.sorted_params + self.data_holders:
-            p.update_feed_dict(key_dict, feed_dict)
-        return feed_dict
-
-    def set_state(self, x):
-        """
-        Set the values of all the parameters by recursion
-        """
-        count = 0
-        for p in self.sorted_params:
-            count += p.set_state(x[count:])
-        return count
-
-    @contextmanager
-    def tf_mode(self):
-        """
-        A context for building models.
-
-        Correct usage is:
-
-        with m.tf_mode:
-            # do tf stuff, like
-            m.build_likelihood()
-            m.build_prior()
-
-
-        with this context engaged, any Param objects which are children of this
-        class will appear as their tf-variables. Example
-
-        >>> m = Parameterized()
-        >>> m.foo = Param(1.0)
-        >>> m.make_tf_array(tt.dvector())
-        >>> print m.foo
-        foo
-        [ 1.]
-        >>> with m.tf_mode():
-        >>>     print m.foo
-        Reshape{1}.0
-
-        The idea is that in tf_mode, we can easily get references to the
-        tf representation of parameters in order to construct tf
-        objective functions.
-        """
-        self._begin_tf_mode()
-        yield
-        self._end_tf_mode()
-
-    def _begin_tf_mode(self):
-        for child in self.sorted_params:
-            if isinstance(child, Parameterized):
-                child._begin_tf_mode()
-        self._tf_mode = True
-
-    def _end_tf_mode(self):
-        for child in self.sorted_params:
-            if isinstance(child, Parameterized):
-                child._end_tf_mode()
-        self._tf_mode = False
-
-    def randomize(self, distributions={}, skipfixed=True):
-        """
-        Calls randomize on all parameters in model hierarchy.
-        """
-        for param in self.sorted_params:
-            param.randomize(distributions, skipfixed)
-
-    def build_prior(self):
+    def _build_prior(self):
         """
         Build a tf expression for the prior by summing all child-parameter priors.
         """
-        return sum([p.build_prior() for p in self.sorted_params])
+        if not self.is_compiled:
+            raise GPflowError('Parameterized object has not been compilied.')
+        return tf.add_n([p.prior_tensor for p in self.params], name=self._prior_name)
 
-    def _kill_autoflow(self):
-        """
-        Remove all compiled AutoFlow methods recursively.
+    @property
+    def _prior_name(self):
+        return 'prior'
 
-        If AutoFlow functions become invalid, because recompilation is
-        required, this function recurses the structure removing all AutoFlow
-        dicts. Subsequent calls to to those functions will casue AutoFlow to regenerate.
-        """
-        for key in list(self.__dict__.keys()):
-            if key[0] == '_' and key[-11:] == '_AF_storage':
-                delattr(self, key)
-        [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
+    def _update_param_attribute(self, key, value):
+        attr = getattr(self, key)
+        param_like_classes = (Param, Parameterized)
+        if not isinstance(key, param_like_classes):
+            raise ValueError('Param-like attribute expected in assignment.')
+        if isinstance(value, param_like_classes):
+            if not isinstance(value, attr.__class__):
+                # TODO(awav): change condition.
+                msg = 'Param-like attribute can be overwritten only by another parameter.'
+                raise ValueError(msg)
+            if self.is_compiled:
+                msg = 'Param-like attribute is compiled.'
+                raise GPflowError(msg)
+            attr.set_parent()
+            attr.set_name()
+            value.set_parent(self)
+            value.set_name(key)
+            object.__setattr__(self, key, value)
+        # elif - DataHolder:
+        elif isinstance(attr, Param):
+            attr.assign(value)
+        else:
+            msg = '"{0}" type cannot be assigned to param-like attribute.'
+            raise ValueError(msg.format(type(value)))
 
     def _html_table_rows(self, name_prefix=''):
         """
@@ -296,7 +216,7 @@ class Parameterized(Parentable, ICompilable):
 
         # in tf_mode, wrap functions is a scope
         elif key in object.__getattribute__(self, 'scoped_keys'):
-            return NameScoped(self.full_name + '.' + key)(o)
+            return NameScoped(self.long_name + '.' + key)(o)
 
         # finally, just return the object
         return o
@@ -321,62 +241,19 @@ class Parameterized(Parentable, ICompilable):
         know that this node is the _parent
         """
 
+        if key.startswith('_'):
+            object.__setattr__(self, key, value)
+            return
+
         # If we already have an atribute with that key, decide what to do:
         if key in self.__dict__.keys():
-            param = getattr(self, key)
-
-            # if the existing attribute is a parameter, and the value is an
-            # array (or float, int), then set the _array of that parameter
-            if isinstance(param, Param) and isinstance(value, (np.ndarray, float, int)):
-                param._array[...] = value
-                return  # don't call object.setattr or set the _parent value
-
-            # if the existing attribute is a Param (or Parameterized), and the
-            # new attribute is too, replace the attribute and set the model to
-            # recompile if necessary.
-            if isinstance(param, (Param, Parameterized)) and isinstance(value, (Param, Parameterized)):
-                param._parent = None  # unlink the old Parameter from this tree
-                if hasattr(self.root, '_needs_recompile'):
-                    self.root._needs_recompile = True
-
-            # if the existing atribute is a DataHolder, set the value of the data inside
-            if isinstance(p, DataHolder) and isinstance(value, np.ndarray):
-                p.set_data(value)
-                return  # don't call object.setattr or set the _parent value
-
-        if key is not '_parent' and isinstance(value, (Param, Parameterized)):
-            # assigning a param that isn't the parent, check that it is not already in the tree
-            if not hasattr(self, key) or not self.__getattribute__(key) is value:
-                # we are not assigning the same value to the same member
-
-                def _raise_for_existing_param(node):
-                    """
-                    Find a certain param from the root of the tree we're in by depth first search. Raise if found.
-                    """
-                    if node is value:
-                        raise ValueError('The Param(eterized) object {0} is already present in the tree'.format(value))
-
-                    # search all children if we aren't at a leaf node
-                    if isinstance(node, Parameterized):
-                        for child in node.sorted_params:
-                            _raise_for_existing_param(child)
-
-                root = self.root
-                _raise_for_existing_param(root)
-
-        # use the standard setattr
-        object.__setattr__(self, key, value)
-
-        # make sure a new child node knows this is the _parent:
-        if isinstance(value, Parentable) and key is not '_parent':
-            value._parent = self
-
-        if key == '_needs_recompile':
-            self._kill_autoflow()
-
-    def __str__(self, prepend=''):
-        prepend += self.name + '.'
-        return '\n'.join([p.__str__(prepend) for p in self.sorted_params])
+            self._update_param_attribute(key, value)
+        else:
+            # TODO(awav): check that this param is not used anywhere else. pylint: disable=W0511
+            if isinstance(value, (Param, Parameterized)):
+                value.set_name(key)
+                value.set_parent(self)
+            object.__setattr__(self, key, value)
 
     def __getstate__(self):
         d = Parentable.__getstate__(self)
@@ -391,6 +268,102 @@ class Parameterized(Parentable, ICompilable):
         # reinstate _parent graph
         for p in self.sorted_params + self.data_holders:
             p._parent = self
+
+    def __str__(self, prepend=''):
+        prepend += self.name + '.'
+        return '\n'.join([p.__str__(prepend) for p in self.sorted_params])
+
+    #def get_parameter_dict(self, d=None):
+    #    if d is None:
+    #        d = {}
+    #    for p in self.sorted_params:
+    #        p.get_parameter_dict(d)
+    #    return d
+
+    #def set_parameter_dict(self, d):
+    #    for p in self.sorted_params:
+    #        p.set_parameter_dict(d)
+
+    #def get_samples_df(self, samples):
+    #    """
+    #    Given a numpy array where each row is a valid free-state vector, return
+    #    a pandas.DataFrame which contains the parameter name and associated samples
+    #    in the correct form (e.g. with positive constraints applied).
+    #    """
+    #    d = pd.DataFrame()
+    #    for p in self.sorted_params:
+    #        d = pd.concat([d, p.get_samples_df(samples)], axis=1)
+    #    return d
+
+    #def _kill_autoflow(self):
+    #    """
+    #    Remove all compiled AutoFlow methods recursively.
+    #    If AutoFlow functions become invalid, because recompilation is
+    #    required, this function recurses the structure removing all AutoFlow
+    #    dicts. Subsequent calls to to those functions will casue AutoFlow to regenerate.
+    #    """
+    #    for key in list(self.__dict__.keys()):
+    #        if key[0] == '_' and key[-11:] == '_AF_storage':
+    #            delattr(self, key)
+    #    [p._kill_autoflow() for p in self.sorted_params if isinstance(p, Parameterized)]
+
+    #def make_tf_array(self, X):
+    #    """
+    #    Distribute a flat tensorflow array amongst all the child parameter of this instance.
+    #    X is a tensorflow placeholder. It gets passed to all the children of
+    #    this class (that are Parameterized or Param objects), which then
+    #    construct their tf_array variables from consecutive sections.
+    #    """
+    #    count = 0
+    #    for dh in self.data_holders:
+    #        dh.make_tf_array()
+    #    for p in self.sorted_params:
+    #        count += p.make_tf_array(X[count:])
+    #    return count
+
+    #def get_param_index(self, param_to_index):
+   #    """
+    #    Given a parameter, compute the position of that parameter on the free-state vector.
+    #    This returns:
+    #      - count: an integer representing the position
+    #      - found: a bool representing whether the parameter was found.
+    #    """
+    #    found = False
+    #    count = 0
+    #    for p in self.sorted_params:
+    #        if isinstance(p, Param):
+    #            if p is param_to_index:
+    #                found = True
+    #                break
+    #            else:
+    #                count += p.get_free_state().size
+    #        elif isinstance(p, Parameterized):
+    #            extra, found = p.get_param_index(param_to_index)
+    #            count += extra
+    #            if found:
+    #                break
+    #    return count, found
+
+    #@property
+    #def sorted_params(self):
+    #    """
+    #    Return a list of all the child parameters, sorted by id.
+
+    #    This makes sure they're always in the same order.
+    #    """
+    #    params = [child for key, child in self.__dict__.items()
+    #              if isinstance(child, (Param, Parameterized)) and
+    #              key is not '_parent']
+    #    return sorted(params, key=lambda x: x.long_name)
+
+    #@property
+    #def data_holders(self):
+    #    """
+    #    Return a list of all the child DataHolders
+    #    """
+    #    return [child for key, child in self.__dict__.items()
+    #            if isinstance(child, DataHolder)]
+
 
 class Model(Parameterized, IGraphOwner):
     """
@@ -452,66 +425,84 @@ class Model(Parameterized, IGraphOwner):
                 print("Warning: inf or nan in gradient: replacing with zeros")
                 return f, np.where(g_is_fin, g, 0.)
 
-    def __init__(self, name='model'):
+    def __init__(self, name=None):
         """
         name is a string describing this model.
         """
-        Parameterized.__init__(self)
+        Parameterized.__init__(self, session=None, name=name)
         self.scoped_keys.extend(['build_likelihood', 'build_prior'])
-        self._name = name
         self._needs_recompile = True
 
         self.num_fevals = 0  # Keeps track of how often _objective is called
-
+        self._session = session
+        self._is_compiled = False
 
     @property
-    def name(self):
-        return self._name
+    def graph(self):
+        return self.session.graph
+
+    @property
+    def session(self):
+        return self._session
 
     def __getstate__(self):
         """
         This method is necessary for pickling objects
         """
-        d = Parameterized.__getstate__(self)
-        for key in ['_graph', '_session', '_free_vars',
-                    '_objective', '_minus_func', '_minus_grad',
-                    '_feed_dict_keys']:
-            d.pop(key, None)
-        return d
+        state = Parameterized.__getstate__(self)
+        keys = ['_session', '_free_vars', '_objective',
+                '_minusF', '_minusG', '_feed_dict_keys']
+        for key in keys:
+            state.pop(key, None)
+        return state
 
     def __setstate__(self, d):
         Parameterized.__setstate__(self, d)
         self._needs_recompile = True
 
-    def compile(self, optimizer=None):
+    def compile(self, graph=None):
         """
-        compile the tensorflow function "self._objective"
+        Compile the tensorflow function "self._objective".
+        The `session` and `graph` parameters are mutually exclusive.
+        :param session: TensorFlow Session. This parameter prevails `graph`
+                        parameter. Custom created session will be used if
+                        this argument is left default, i.e. None.
+        :param graph: TensorFlow Graph. This argument ignored when `session`
+                      differs from default value, otherwise it is passed to
+                      new session constructor. Default TensorFlow graph value
+                      is used, when `graph` equals None.
+        :param optimizer: TensorFlow Optimizer.
         """
-        self._graph = tf.Graph()
-        self._session = session.get_session(graph=self._graph,
-                                            output_file_name=settings.profiling.output_file_name + "_objective",
-                                            output_directory=settings.profiling.output_directory,
-                                            each_time=settings.profiling.each_time)
-        with self._graph.as_default():
-            self._free_vars = tf.Variable(self.get_free_state())
 
-            self.make_tf_array(self._free_vars)
-            with self.tf_mode():
-                f = self.build_likelihood() + self.build_prior()
-                g, = tf.gradients(f, self._free_vars)
+        if self.is_compiled and (self.graph is not None) and (self.graph is not graph):
+            raise GPflowError('The model "{0}" has already been compiled.'.format(self.name))
 
-            self._objective = tf.negative(f, name='objective')
-            self._objective_gradients = tf.negative(g, name='grad_objective')
+        if self.session is None:
+            self._session = session_manager.get_session(context=graph)
 
-            # The optimiser needs to be part of the computational graph, and needs
-            # to be initialised before tf.initialise_all_variables() is called.
+        with self.graph.as_default():
+            with tf.name_scope(self.name):
+                super(Parameterized, self).compile(graph=self.graph)
+                self._is_compiled = True
+
+                f = tf.add(self.likelihood_tensor, self.prior_tensor)
+                g = tf.gradients(f, self.free_tensors())
+
+                objective = tf.negative(f, name='objective')
+                objective_gradient = tf.negative(g, name='gradient_objective')
+
+            # The optimiser needs to be part of the computational graph,
+            # and needs to be initialised before tf.initialise_all_variables()
+            # is called.
             if optimizer is None:
                 opt_step = None
             else:
                 opt_step = optimizer.minimize(
                     self._minusF, var_list=[self._free_vars])
             init = tf.global_variables_initializer()
-        self._session.run(init)
+
+        session.run(init)
+        self._session = session
 
         # build tensorflow functions for computing the likelihood
         if settings.verbosity.tf_compile_verb:
@@ -524,7 +515,7 @@ class Model(Parameterized, IGraphOwner):
             self.num_fevals += 1
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
-            f, g = self._session.run([self._minus_func, self._minus_grad],
+            f, g = self.session.run([self._minusF, self._minusG],
                                      feed_dict=feed_dict)
             return f.astype(np.float64), g.astype(np.float64)
 
@@ -730,7 +721,7 @@ class GPModel(Model):
     def build_predict(self, *args, **kwargs):
         raise NotImplementedError
 
-    @AutoFlow((float_type, [None, None]))
+    @AutoFlow((FLOAT_TYPE, [None, None]))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points
@@ -738,7 +729,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew)
 
-    @AutoFlow((float_type, [None, None]))
+    @AutoFlow((FLOAT_TYPE, [None, None]))
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -746,23 +737,23 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew, full_cov=True)
 
-    @AutoFlow((float_type, [None, None]), (tf.int32, []))
+    @AutoFlow((FLOAT_TYPE, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf.eye(tf.shape(mu)[0], dtype=float_type) * settings.numerics.jitter_level
+        jitter = tf.eye(tf.shape(mu)[0], dtype=FLOAT_TYPE) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
             shape = tf.stack([tf.shape(L)[0], num_samples])
-            V = tf.random_normal(shape, dtype=settings.dtypes.float_type)
+            V = tf.random_normal(shape, dtype=FLOAT_TYPE)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.stack(samples))
 
-    @AutoFlow((float_type, [None, None]))
+    @AutoFlow((FLOAT_TYPE, [None, None]))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -770,7 +761,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-    @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
+    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew

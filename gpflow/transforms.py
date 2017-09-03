@@ -18,21 +18,18 @@ import numpy as np
 import tensorflow as tf
 
 from .base import ITransform
+from .misc import FLOAT_TYPE, NP_FLOAT_TYPE
 from .misc import vec_to_tri
-from ._settings import settings
-
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class Transform(ITransform):
-    def free_state_size(variable_shape):
+    def free_state_size(self, variable_shape):
         return np.prod(variable_shape)
 
     def __getstate__(self):
         return self.__dict__.copy()
 
-    def __setstate__(self, d):
+    def __setstate__(self, state):
         self.__dict__ = d
 
 
@@ -50,7 +47,7 @@ class Identity(Transform):
         return y
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type)
+        return tf.zeros((1,), FLOAT_TYPE)
 
     def __str__(self):
         return '(none)'
@@ -116,7 +113,7 @@ class Log1pe(Transform):
         return tf.nn.softplus(x) + self._lower
 
     def tf_log_jacobian(self, x):
-        return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
+        return tf.negative(tf.reduce_sum(tf.log(1. + tf.exp(-x))))
 
     def backward(self, y):
         """
@@ -144,7 +141,7 @@ class Log1pe(Transform):
 
 
         """
-        ys = np.maximum(y - self._lower, np.finfo(np_float_type).eps)
+        ys = np.maximum(y - self._lower, np.finfo(NP_FLOAT_TYPE).eps)
         return ys + np.log(-np.expm1(-ys))
 
     def __str__(self):
@@ -209,7 +206,7 @@ class Rescale(Transform):
         return self.chain_transform.backward(y) / self.factor
 
     def tf_log_jacobian(self, x):
-        return tf.cast(tf.reduce_prod(tf.shape(x)), float_type) * \
+        return tf.cast(tf.reduce_prod(tf.shape(x)), FLOAT_TYPE) * \
                 self.factor * self.chain_transform.tf_log_jacobian(x * self.factor)
 
     def __str__(self):
@@ -248,7 +245,7 @@ class DiagMatrix(Transform):
         return tf.matrix_diag(tf.reshape(self._positive_transform.tf_forward(x), (-1, self.dim)))
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type) + self._positive_transform.tf_log_jacobian(x)
+        return tf.zeros((1,), FLOAT_TYPE) + self._positive_transform.tf_log_jacobian(x)
 
     def __str__(self):
         return 'DiagMatrix'
@@ -307,7 +304,7 @@ class LowerTriangular(Transform):
         L = self._validate_vector_length(len(x))
         matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
         xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((matsize, matsize, self.num_matrices), np_float_type)
+        var = np.zeros((matsize, matsize, self.num_matrices), NP_FLOAT_TYPE)
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
             var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
@@ -331,7 +328,7 @@ class LowerTriangular(Transform):
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type)
+        return tf.zeros((1,), FLOAT_TYPE)
 
     def free_state_size(self, variable_shape):
         matrix_batch = len(variable_shape) > 2

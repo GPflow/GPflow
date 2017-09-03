@@ -13,10 +13,12 @@
 # limitations under the License.
 
 
+import warnings
 import tensorflow as tf
+
 from .scoping import NameScoped
+from .misc import FLOAT_TYPE
 from ._settings import settings
-float_type = settings.dtypes.float_type
 
 
 @NameScoped("conditional")
@@ -63,7 +65,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     num_data = tf.shape(X)[0]  # M
     num_func = tf.shape(f)[1]  # K
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + tf.eye(num_data, dtype=float_type) * settings.numerics.jitter_level
+    Kmm = kern.K(X) + tf.eye(num_data, dtype=FLOAT_TYPE) * settings.numerics.jitter_level
     Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
@@ -102,9 +104,6 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     fvar = tf.transpose(fvar)  # N x K or N x N x K
 
     return fmean, fvar
-
-
-import warnings
 
 
 def gp_predict(Xnew, X, kern, F, full_cov=False):

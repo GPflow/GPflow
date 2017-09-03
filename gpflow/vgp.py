@@ -15,14 +15,16 @@
 from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
+
+from . import transforms
+
 from .param import Param, DataHolder
 from .model import GPModel
 from .mean_functions import Zero
-from ._settings import settings
-from . import transforms
 from .conditionals import conditional
 from .kullback_leiblers import gauss_kl_white
-float_type = settings.dtypes.float_type
+from .misc import FLOAT_TYPE
+from ._settings import settings
 
 
 class VGP(GPModel):
@@ -63,7 +65,7 @@ class VGP(GPModel):
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
         self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_data, self.num_latent))
 
-    def _compile(self, optimizer=None):
+    def compile(self, session=None, graph=None, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -77,7 +79,9 @@ class VGP(GPModel):
             self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] *
                                 np.ones((1, 1, self.num_latent)))
 
-        return super(VGP, self)._compile(optimizer=optimizer)
+        return super(VGP, self).compile(session=session,
+                                        graph=graph,
+                                        optimizer=optimizer)
 
     def build_likelihood(self):
         """
@@ -96,7 +100,7 @@ class VGP(GPModel):
         KL = gauss_kl_white(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=float_type) * settings.numerics.jitter_level
+        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=FLOAT_TYPE) * settings.numerics.jitter_level
         L = tf.cholesky(K)
 
         fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
@@ -162,7 +166,7 @@ class VGP_opper_archambeau(GPModel):
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
-    def _compile(self, optimizer=None):
+    def compile(self, session=None, graph=None, optimizer=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -175,7 +179,9 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        return super(VGP_opper_archambeau, self)._compile(optimizer=optimizer)
+        return super(VGP_opper_archambeau, self).compile(session=session,
+                                                         graph=graph,
+                                                         optimizer=optimizer)
 
     def build_likelihood(self):
         """
@@ -191,7 +197,7 @@ class VGP_opper_archambeau(GPModel):
         f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=float_type), 0), [self.num_latent, 1, 1])
+        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=FLOAT_TYPE), 0), [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
         L = tf.cholesky(A)

@@ -21,23 +21,36 @@ from ._settings import settings
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 
+INT_TYPE = settings.dtypes.int_type
+FLOAT_TYPE = settings.dtypes.float_type
+NP_FLOAT_TYPE = np.float32 if FLOAT_TYPE is tf.float32 else np.float64 # pylint: disable=E1101
+
 
 class GPflowError(Exception):
     pass
+
+
+class GPflowTensorError(GPflowError):
+    def __init__(self, message="Tensor uses different graph."): # pylint: disable=W0235
+        super(GPflowTensorError, self).__init__(message)
 
 
 def tensor_name(*subnames):
     return '/'.join(subnames)
 
 
-def get_tensor_by_name(name, index='0', graph=None):
+def get_tensor_by_name(name, index=None, graph=None):
     graph = _get_graph(graph)
     try:
         if index is not None:
             return graph.get_tensor_by_name(':'.join([name, index]))
         return graph.get_tensor_by_name(name)
-    except ValueError as error:
-        raise GPflowError(str(error))
+    except ValueError:
+        return None
+
+
+def is_ndarray(value):
+    return isinstance(value, np.ndarray)
 
 
 def is_tensorflow_variable(value):
@@ -46,6 +59,13 @@ def is_tensorflow_variable(value):
 
 def is_number(value):
     return not isinstance(value, str) and np.isscalar(value)
+
+
+def is_valid_param_value(value):
+    return ((value is not None)
+            or is_number(value)
+            or is_ndarray(value)
+            or is_tensorflow_variable(value))
 
 
 def add_to_trainables(variable, graph=None):
@@ -62,7 +82,7 @@ def remove_from_trainables(variable, graph=None):
         raise GPflowError(msg.format(variable=variable, graph=graph))
     trainables.remove(variable)
 
-def norm_dtype(value):
+def normalize_dtype(value):
     """
     Work out what a sensible type for the array is. if the default type
     is float32, downcast 64bit float to float32. For ints, assume int32
@@ -71,8 +91,8 @@ def norm_dtype(value):
     if isinstance(value, tf.DType):
         tf_type = True
         value = value.as_numpy_dtype
-    if value.dtype.type in [np.float32, np.float64]:
-        value = settings.dtypes.float_type
+    if value.dtype.type in [np.float32, np.float64]: # pylint: disable=E1101
+        value = FLOAT_TYPE
     elif value.dtype.type in [np.int16, np.int32, np.int64]:
         value = np.int32
     else:

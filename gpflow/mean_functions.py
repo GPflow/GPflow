@@ -15,10 +15,9 @@
 
 import tensorflow as tf
 import numpy as np
+
 from .param import Param, ParamList, Parameterized
-from ._settings import settings
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+from .misc import FLOAT_TYPE
 
 
 class MeanFunction(Parameterized):
@@ -45,7 +44,7 @@ class MeanFunction(Parameterized):
 
 class Zero(MeanFunction):
     def __call__(self, X):
-        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=float_type)
+        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=FLOAT_TYPE)
 
 
 class Linear(MeanFunction):
