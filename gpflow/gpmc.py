@@ -20,7 +20,6 @@ from .model import GPModel
 from .param import Param, DataHolder
 from .conditionals import conditional
 from .priors import Gaussian
-from .mean_functions import Zero
 from .misc import FLOAT_TYPE
 from ._settings import settings
 

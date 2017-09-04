@@ -6,7 +6,7 @@ from numpy import pi as nppi
 
 from . import kernels
 from .quadrature import mvhermgauss
-from .misc import FLOAT_TYPE
+from .misc import FLOAT_TYPE, INT_TYPE
 from ._settings import settings
 
 class RBF(kernels.RBF):
