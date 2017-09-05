@@ -28,7 +28,7 @@ from .transforms import Identity
 from .misc import GPflowError, GPflowTensorError
 from .misc import is_number, is_tensorflow_variable, is_valid_param_value
 from .misc import add_to_trainables, remove_from_trainables
-from .misc import get_tensor_by_name, normalize_dtype
+from .misc import normalize_dtype
 
 from .misc import FLOAT_TYPE
 
@@ -176,12 +176,17 @@ class Param(CompilableNode):
     def prior_tensor(self):
         return self._prior_tensor
 
+    @property
+    def graph(self):
+        if self.param_tensor is None:
+            return None
+        return self.param_tensor.graph
+
     def value(self, session=None):
-        session = self._get_session(session)
-        if self.is_compiled(session.graph) is Compiled.COMPILED:
+        session = self.verified_session(session)
+        is_compiled = self.is_compiled_check_consistency(session.graph)
+        if is_compiled is Compiled.COMPILED:
             return session.run(self.param_tensor)
-        elif self.is_compiled(session.graph) is Compiled.NOT_COMPATIBLE_GRAPH:
-            raise GPflowTensorError()
         return self._initial_value
 
     def is_compiled(self, graph=None):
@@ -190,30 +195,26 @@ class Param(CompilableNode):
         owner and owner called compile method. It returns false in other cases.
         """
         graph = self.verified_graph(graph)
+
         if self.prior_tensor is None:
             return Compiled.NOT_COMPILED
-        param_tensor = get_tensor_by_name(self.param_tensor.name, graph=graph)
-        prior_tensor = get_tensor_by_name(self.prior_tensor.name, graph=graph)
-        param_tensor_eq = self.param_tensor is not param_tensor
-        prior_tensor_eq = self.prior_tensor is not prior_tensor
-        if len(set([param_tensor_eq, prior_tensor_eq])) == 2:
-            raise GPflowError('Tensors with different graphs found.')
-        elif param_tensor_eq and prior_tensor_eq:
+
+        if self.param_tensor is None or (self.param_tensor.graph is not self.prior_tensor.graph):
+            raise GPflowTensorError('Tensor inconsistency found within parameter.')
+
+        if self.graph is graph:
             return Compiled.COMPILED
-        else:
-            return Compiled.NOT_COMPATIBLE_GRAPH
+
+        return Compiled.NOT_COMPATIBLE_GRAPH
 
     def compile(self, graph=None):
         """
         Compile parameter tensorflow representation.
         """
         graph = self.verified_graph(graph)
-        is_compiled = self.is_compiled(graph=graph)
+        is_compiled = self.is_compiled_check_consistency(graph)
         if is_compiled is Compiled.COMPILED:
             return
-        elif is_compiled is Compiled.NOT_COMPATIBLE_GRAPH:
-            raise GPflowTensorError()
-
         self._tensor = self._build_tensor(graph)
         self._prior_tensor = self._build_prior(graph)
 
@@ -234,12 +235,11 @@ class Param(CompilableNode):
         session = self.verified_session(session)
         if self.shape != value.shape:
             raise GPflowError('Assigning value has different shape.')
-        is_compiled = self.is_compiled(session.graph)
-        if is_compiled is Compiled.NOT_COMPATIBLE_GRAPH:
-            raise GPflowTensorError()
+        is_compiled = self.is_compiled_check_consistency(session.graph)
         self._initial_value[...] = value
         if is_compiled is Compiled.COMPILED:
             self.param_tensor.load(self._initial_value, session=session)
+
 
     def set_fixed(self, value, graph=None):
         if not isinstance(value, bool):
@@ -249,10 +249,9 @@ class Param(CompilableNode):
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
 
         graph = self.verified_graph(graph)
-        is_compiled = self.is_compiled(graph)
-        if is_compiled is Compiled.NOT_COMPATIBLE_GRAPH:
-            raise GPflowTensorError()
-        elif is_compiled is Compiled.COMPILED and self.fixed == value:
+        is_compiled = self.is_compiled_check_consistency(graph)
+
+        if is_compiled is Compiled.COMPILED and self.fixed == value:
             return
 
         object.__setattr__(self, 'fixed', value)
@@ -277,7 +276,7 @@ class Param(CompilableNode):
             raise ValueError('The graph argument cannot be empty.')
 
         if self._externally_defined:
-            param_tensor = get_tensor_by_name(self.param_tensor.name, graph=graph)
+            param_tensor = self.graph
             if self.param_tensor is not param_tensor:
                 raise GPflowError("Externally defined parameter's tensor uses different graph.")
             return self.param_tensor
@@ -317,10 +316,9 @@ class Param(CompilableNode):
         if attr is self.ParamAttribute.FIXED:
             self.set_fixed(value)
             return
-        elif self.is_compiled() is Compiled.COMPILED:
+        is_compiled = self.is_compiled_check_consistency()
+        if is_compiled is Compiled.COMPILED:
             raise GPflowError('Parameter has already been compiled.')
-        elif self.is_compiled() is Compiled.NOT_COMPATIBLE_GRAPH:
-            raise GPflowTensorError()
 
         key = attr.value
         if not isinstance(key, attr.interface):

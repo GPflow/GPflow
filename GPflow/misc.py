@@ -21,6 +21,7 @@ from ._settings import settings
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 
+
 INT_TYPE = settings.dtypes.int_type
 FLOAT_TYPE = settings.dtypes.float_type
 NP_FLOAT_TYPE = np.float32 if FLOAT_TYPE is tf.float32 else np.float64 # pylint: disable=E1101
@@ -28,11 +29,6 @@ NP_FLOAT_TYPE = np.float32 if FLOAT_TYPE is tf.float32 else np.float64 # pylint:
 
 class GPflowError(Exception):
     pass
-
-
-class GPflowTensorError(GPflowError):
-    def __init__(self, message="Tensor uses different graph."): # pylint: disable=W0235
-        super(GPflowTensorError, self).__init__(message)
 
 
 def tensor_name(*subnames):

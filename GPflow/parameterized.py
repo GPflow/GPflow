@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from __future__ import print_function, absolute_import
-from contextlib import contextmanager
 
 import sys
 import warnings
@@ -81,19 +80,29 @@ class Parameterized(CompilableNode):
     def prior_tensor(self):
         return self._prior_tensor
 
+    def free_param_tensors(self, graph=None):
+        if self.is_compiled_check_consistency(graph=graph) is Compiled.NOT_COMPILED:
+            return
+        for param in self.params:
+            if not param.fixed:
+                yield param
+
     def is_compiled(self, graph=None):
         graph = self.verified_graph(graph)
-        compiled = set([param.is_compiled(graph=graph) for param in self.params])
-        inconsitency_check = set([Compiled.COMPILED, Compiled.NOT_COMPATIBLE_GRAPH])
-        not_compiled_check = set([Compiled.COMPILED, Compiled.NOT_COMPILED])
-        compatibility_check = set([Compiled.NOT_COMPATIBLE_GRAPH])
-        if inconsitency_check.issubset(compiled):
-            raise GPflowTensorError('Graph inconsistency among parameters found.')
-        elif compatibility_check.issubset(compiled):
-            raise GPflowTensorError()
-        elif compiled.issubset(not_compiled_check):
+        param_graphs = set([param.graph for param in self.params])
+
+        if None in param_graphs and param_graphs.issubset([None, graph]):
             return Compiled.NOT_COMPILED
+        elif graph not in param_graphs:
+            return Compiled.NOT_COMPATIBLE_GRAPH
         return Compiled.COMPILED
+
+    @property
+    def graph(self):
+        for param in self.params:
+            if param.graph is not None:
+                return param.graph
+        return None
 
     def compile(self, graph=None):
         graph = self.verified_graph(graph)
@@ -146,8 +155,8 @@ class Parameterized(CompilableNode):
         if isinstance(value, param_like_classes):
             if not isinstance(value, attr.__class__):
                 # TODO(awav): change condition.
-                msg = 'Param-like attribute can be overwritten only by another parameter.'
-                raise ValueError(msg)
+                raise ValueError('Param-like attribute can be overwritten '
+                                 'only by another param-like object.')
             if self.is_compiled:
                 msg = 'Param-like attribute is compiled.'
                 raise GPflowError(msg)

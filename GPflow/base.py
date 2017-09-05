@@ -2,14 +2,11 @@ import abc
 import enum
 
 from .misc import tensor_name
+from .misc import GPflowError
 
 
-class IGraphOwner:
+class ISessionOwner:
     __metaclass__ = abc.ABCMeta
-
-    @abc.abstractproperty
-    def graph(self):
-        pass
 
     @abc.abstractproperty
     def session(self):
@@ -23,6 +20,10 @@ class IGraphOwner:
 class ICompilable:
     __metaclass__ = abc.ABCMeta
 
+    @abc.abstractproperty
+    def graph(self):
+        pass
+
     @abc.abstractmethod
     def is_compiled(self, graph=None):
         pass
@@ -32,7 +33,7 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
-    def destroy(self):
+    def reset(self, graph=None):
         pass
 
 
@@ -189,3 +190,9 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         if session is None:
             raise ValueError('No session specified.')
         return session
+
+    def is_compiled_check_consistency(self, graph=None):
+        is_compiled = self.is_compiled(graph)
+        if is_compiled is Compiled.NOT_COMPATIBLE_GRAPH:
+            raise GPflowError("Tensor uses different graph.")
+        return is_compiled
