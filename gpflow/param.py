@@ -21,11 +21,11 @@ import enum
 import numpy as np
 import tensorflow as tf
 
-from .base import IPrior, ITransform, IGraphOwner
+from .base import IPrior, ITransform
 from .base import Parentable, Compiled, CompilableNode
 from .transforms import Identity
 
-from .misc import GPflowError, GPflowTensorError
+from .misc import GPflowError
 from .misc import is_number, is_tensorflow_variable, is_valid_param_value
 from .misc import add_to_trainables, remove_from_trainables
 from .misc import normalize_dtype
@@ -199,9 +199,6 @@ class Param(CompilableNode):
         if self.prior_tensor is None:
             return Compiled.NOT_COMPILED
 
-        if self.param_tensor is None or (self.param_tensor.graph is not self.prior_tensor.graph):
-            raise GPflowTensorError('Tensor inconsistency found within parameter.')
-
         if self.graph is graph:
             return Compiled.COMPILED
 
@@ -215,8 +212,10 @@ class Param(CompilableNode):
         is_compiled = self.is_compiled_check_consistency(graph)
         if is_compiled is Compiled.COMPILED:
             return
-        self._tensor = self._build_tensor(graph)
-        self._prior_tensor = self._build_prior(graph)
+
+        with self.compilation_context(graph):
+            self._tensor = self._build_tensor(graph)
+            self._prior_tensor = self._build_prior(graph)
 
     def assign(self, value, session=None):
         """
@@ -276,9 +275,8 @@ class Param(CompilableNode):
             raise ValueError('The graph argument cannot be empty.')
 
         if self._externally_defined:
-            param_tensor = self.graph
-            if self.param_tensor is not param_tensor:
-                raise GPflowError("Externally defined parameter's tensor uses different graph.")
+            if self.graph is not graph:
+                raise GPflowError("Externally defined tensor uses different graph.")
             return self.param_tensor
 
         with graph.as_default():
@@ -293,19 +291,20 @@ class Param(CompilableNode):
         if graph is None:
             raise ValueError('The graph argument cannot be empty.')
 
-        if not is_tensorflow_variable(self._tensor):  # pragma: no cover
-            raise GPflowError("Parameter's tensor has not been defined.")
+        if not is_tensorflow_variable(self.param_tensor):  # pragma: no cover
+            raise GPflowError("Tensor is not compiled.")
 
         prior_name = self._prior_name
 
-        if self.prior is None:
-            return tf.constant(0.0, FLOAT_TYPE, name=prior_name)
+        with graph.as_default():
+            if self.prior is None:
+                return tf.constant(0.0, FLOAT_TYPE, name=prior_name)
 
-        var = self._tensor
-        log_jacobian = self.transform.tf_log_jacobian(var)
-        transformed_var = self.transform.tf_forward(self._tensor)
-        logp_var = self.prior.logp(transformed_var)
-        return tf.add(logp_var, log_jacobian, name=prior_name)
+            var = self._tensor
+            log_jacobian = self.transform.tf_log_jacobian(var)
+            transformed_var = self.transform.tf_forward(self._tensor)
+            logp_var = self.prior.logp(transformed_var)
+            return tf.add(logp_var, log_jacobian, name=prior_name)
 
     @property
     def _prior_name(self):
@@ -316,6 +315,7 @@ class Param(CompilableNode):
         if attr is self.ParamAttribute.FIXED:
             self.set_fixed(value)
             return
+
         is_compiled = self.is_compiled_check_consistency()
         if is_compiled is Compiled.COMPILED:
             raise GPflowError('Parameter has already been compiled.')

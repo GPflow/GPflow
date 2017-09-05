@@ -1,6 +1,9 @@
 import abc
 import enum
 
+import tensorflow as tf
+from contextlib import contextmanager
+
 from .misc import tensor_name
 from .misc import GPflowError
 
@@ -174,22 +177,35 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         super(CompilableNode, self).__init__(name=name)
 
     def verified_graph(self, graph=None):
-        root_graph = None
-        if isinstance(self.root, IGraphOwner):
-            root_graph = self.root.graph
-        graph = root_graph if graph is None else graph
         if graph is None:
-            raise ValueError('No graph specified.')
+            if isinstance(self.root, ISessionOwner):
+                return self.root.graph
+            return tf.get_default_graph()
         return graph
 
     def verified_session(self, session=None):
-        root_session = None
-        if isinstance(self.root, IGraphOwner):
-            root_session = self.root.session
-        session = root_session if session is None else session
         if session is None:
-            raise ValueError('No session specified.')
+            if isinstance(self.root, ISessionOwner):
+                session = self.root.session
+            else:
+                session = tf.get_default_session()
+            if session is None:
+                raise ValueError('No session specified.')
         return session
+
+    @contextmanager
+    def compilation_context(self, graph):
+        if graph is None:
+            raise ValueError('Passed graph must be not None.')
+        #if self.is_compiled_check_consistency(graph) is Compiled.COMPILED:
+        #    raise GPflowError('Already compiled.')
+
+        if graph is tf.get_default_graph():
+            with tf.name_scope(self.name):
+                yield graph
+        else:
+            with graph.as_default(), tf.name_scope(self.name):
+                yield graph
 
     def is_compiled_check_consistency(self, graph=None):
         is_compiled = self.is_compiled(graph)

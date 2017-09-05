@@ -24,13 +24,14 @@ from scipy.optimize import minimize, OptimizeResult
 
 from . import hmc, session
 
-from .base import IGraphOwner, Parentable
+from .base import ISessionOwner, Parentable
 from .base import CompilableNode, Compiled
 from .param import Param
 from .autoflow import AutoFlow
 from .mean_functions import Zero
+from .misc import is_valid_param_value
 from .misc import FLOAT_TYPE
-from .misc import GPflowError, GPflowTensorError
+from .misc import GPflowError
 from ._settings import settings
 
 
@@ -83,9 +84,8 @@ class Parameterized(CompilableNode):
     def free_param_tensors(self, graph=None):
         if self.is_compiled_check_consistency(graph=graph) is Compiled.NOT_COMPILED:
             return
-        for param in self.params:
-            if not param.fixed:
-                yield param
+        for param in self.free_params:
+            yield param.param_tensor
 
     def is_compiled(self, graph=None):
         graph = self.verified_graph(graph)
@@ -106,9 +106,10 @@ class Parameterized(CompilableNode):
 
     def compile(self, graph=None):
         graph = self.verified_graph(graph)
-        for param in self.params:
-            param.compile(graph=graph)
-        self._prior_tensor = self._build_prior()
+        with self.compilation_context(graph):
+            for param in self.params:
+                param.compile(graph)
+            self._prior_tensor = self._build_prior()
 
     @property
     def fixed(self):
@@ -135,13 +136,13 @@ class Parameterized(CompilableNode):
     #    for param in self.sorted_params:
     #        param.randomize(distributions, skipfixed)
 
-    def _build_prior(self):
+    def _build_prior(self, graph=None):
         """
         Build a tf expression for the prior by summing all child-parameter priors.
         """
-        if not self.is_compiled:
-            raise GPflowError('Parameterized object has not been compilied.')
-        return tf.add_n([p.prior_tensor for p in self.params], name=self._prior_name)
+        if self.is_compiled_check_consistency(graph) is Compiled.NOT_COMPILED:
+            raise GPflowError('Parameterized object is not compilied.')
+        return tf.add_n([param.prior_tensor for param in self.params], name=self._prior_name)
 
     @property
     def _prior_name(self):
@@ -149,24 +150,19 @@ class Parameterized(CompilableNode):
 
     def _update_param_attribute(self, key, value):
         attr = getattr(self, key)
-        param_like_classes = (Param, Parameterized)
-        if not isinstance(key, param_like_classes):
+        param_like = (Param, Parameterized)
+        if not isinstance(key, param_like):
             raise ValueError('Param-like attribute expected in assignment.')
-        if isinstance(value, param_like_classes):
-            if not isinstance(value, attr.__class__):
-                # TODO(awav): change condition.
-                raise ValueError('Param-like attribute can be overwritten '
-                                 'only by another param-like object.')
-            if self.is_compiled:
-                msg = 'Param-like attribute is compiled.'
-                raise GPflowError(msg)
+        if isinstance(value, param_like):
+            if self.is_compiled_check_consistency(value.graph) is Compiled.COMPILED:
+                raise GPflowError('Parameterized object is compiled.')
             attr.set_parent()
             attr.set_name()
             value.set_parent(self)
             value.set_name(key)
             object.__setattr__(self, key, value)
         # elif - DataHolder:
-        elif isinstance(attr, Param):
+        elif isinstance(attr, Param) and is_valid_param_value(value):
             attr.assign(value)
         else:
             msg = '"{0}" type cannot be assigned to param-like attribute.'
@@ -180,55 +176,25 @@ class Parameterized(CompilableNode):
         return ''.join([p._html_table_rows(name_prefix)
                         for p in self.sorted_params])
 
-    def _repr_html_(self):
-        """
-        Build a small html table for display in the jupyter notebook.
-        """
-        html = ["<table id='params' width=100%>"]
+   def _repr_html_(self):
+       """
+       Build a small html table for display in the jupyter notebook.
+       """
+       html = ["<table id='params' width=100%>"]
 
-        # build the header
-        header = "<tr>"
-        header += "<td>Name</td>"
-        header += "<td>values</td>"
-        header += "<td>prior</td>"
-        header += "<td>constraint</td>"
-        header += "</tr>"
-        html.append(header)
+       # build the header
+       header = "<tr>"
+       header += "<td>Name</td>"
+       header += "<td>values</td>"
+       header += "<td>prior</td>"
+       header += "<td>constraint</td>"
+       header += "</tr>"
+       html.append(header)
 
-        html.append(self._html_table_rows())
+       html.append(self._html_table_rows())
 
-        html.append("</table>")
-        return ''.join(html)
-
-    def __getattribute__(self, key):
-        """
-        Here, we overwrite the getattribute method.
-
-        If tf mode is off, this does nothing.
-
-        If tf mode is on, all child parameters will appear as their tf
-        representations, and all functions that are designated in 'scoped_keys'
-        will have aname scope applied.
-        """
-        o = object.__getattribute__(self, key)
-
-        # if _tf_mode is False, or there is no _tf_mode, just return the object as normal.
-        try:
-            if not object.__getattribute__(self, '_tf_mode'):
-                return o
-        except AttributeError:
-            return o
-
-        # In tf_mode, if the object is a Param/Dataholder, ise the tf_array
-        if isinstance(o, (Param, DataHolder)):
-            return o._tf_array
-
-        # in tf_mode, wrap functions is a scope
-        elif key in object.__getattribute__(self, 'scoped_keys'):
-            return NameScoped(self.long_name + '.' + key)(o)
-
-        # finally, just return the object
-        return o
+       html.append("</table>")
+       return ''.join(html)
 
     def __setattr__(self, key, value):
         """
@@ -254,16 +220,19 @@ class Parameterized(CompilableNode):
             object.__setattr__(self, key, value)
             return
 
-        # If we already have an atribute with that key, decide what to do:
+        param_like = (Param, Parameterized)
         if key in self.__dict__.keys():
-            self._update_param_attribute(key, value)
-        else:
-            # TODO(awav): check that this param is not used anywhere else. pylint: disable=W0511
-            if isinstance(value, (Param, Parameterized)):
-                value.set_name(key)
-                value.set_parent(self)
-            object.__setattr__(self, key, value)
+            if isinstance(getattr(self, key), param_like):
+                self._update_param_attribute(key, value)
+                return
+        if isinstance(value, param_like):
+            if self.is_compiled_check_consistency(value.graph) is Compiled.COMPILED:
+                raise GPflowError('Parameterized object is compiled.')
+            value.set_name(key)
+            value.set_parent(self)
+        object.__setattr__(self, key, value)
 
+# TODO(awav)
     def __getstate__(self):
         d = Parentable.__getstate__(self)
         # do not pickle autoflow
@@ -272,12 +241,14 @@ class Parameterized(CompilableNode):
                 d.pop(key)
         return d
 
+# TODO(awav)
     def __setstate__(self, d):
         Parentable.__setstate__(self, d)
         # reinstate _parent graph
         for p in self.sorted_params + self.data_holders:
             p._parent = self
 
+# TODO(awav)
     def __str__(self, prepend=''):
         prepend += self.name + '.'
         return '\n'.join([p.__str__(prepend) for p in self.sorted_params])
@@ -373,8 +344,38 @@ class Parameterized(CompilableNode):
     #    return [child for key, child in self.__dict__.items()
     #            if isinstance(child, DataHolder)]
 
+    #def __getattribute__(self, key):
+    #    """
+    #    Here, we overwrite the getattribute method.
 
-class Model(Parameterized, IGraphOwner):
+    #    If tf mode is off, this does nothing.
+
+    #    If tf mode is on, all child parameters will appear as their tf
+    #    representations, and all functions that are designated in 'scoped_keys'
+    #    will have aname scope applied.
+    #    """
+    #    o = object.__getattribute__(self, key)
+
+    #    # if _tf_mode is False, or there is no _tf_mode, just return the object as normal.
+    #    try:
+    #        if not object.__getattribute__(self, '_tf_mode'):
+    #            return o
+    #    except AttributeError:
+    #        return o
+
+    #    # In tf_mode, if the object is a Param/Dataholder, ise the tf_array
+    #    if isinstance(o, (Param, DataHolder)):
+    #        return o._tf_array
+
+    #    # in tf_mode, wrap functions is a scope
+    #    elif key in object.__getattribute__(self, 'scoped_keys'):
+    #        return NameScoped(self.long_name + '.' + key)(o)
+
+    #    # finally, just return the object
+    #    return o
+
+
+class Model(Parameterized, ISessionOwner):
     """
     The Model base class.
 
@@ -434,17 +435,13 @@ class Model(Parameterized, IGraphOwner):
                 print("Warning: inf or nan in gradient: replacing with zeros")
                 return f, np.where(g_is_fin, g, 0.)
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, session=None):
         """
         name is a string describing this model.
         """
-        Parameterized.__init__(self, session=None, name=name)
-        self.scoped_keys.extend(['build_likelihood', 'build_prior'])
-        self._needs_recompile = True
-
-        self.num_fevals = 0  # Keeps track of how often _objective is called
+        super(Model, self).__init__(name=name)
+        self._num_fevals = 0  # Keeps track of how often _objective is called
         self._session = session
-        self._is_compiled = False
 
     @property
     def graph(self):
@@ -454,22 +451,7 @@ class Model(Parameterized, IGraphOwner):
     def session(self):
         return self._session
 
-    def __getstate__(self):
-        """
-        This method is necessary for pickling objects
-        """
-        state = Parameterized.__getstate__(self)
-        keys = ['_session', '_free_vars', '_objective',
-                '_minusF', '_minusG', '_feed_dict_keys']
-        for key in keys:
-            state.pop(key, None)
-        return state
-
-    def __setstate__(self, d):
-        Parameterized.__setstate__(self, d)
-        self._needs_recompile = True
-
-    def compile(self, graph=None):
+    def compile(self):
         """
         Compile the tensorflow function "self._objective".
         The `session` and `graph` parameters are mutually exclusive.
@@ -483,22 +465,18 @@ class Model(Parameterized, IGraphOwner):
         :param optimizer: TensorFlow Optimizer.
         """
 
-        if self.is_compiled and (self.graph is not None) and (self.graph is not graph):
-            raise GPflowError('The model "{0}" has already been compiled.'.format(self.name))
+        graph = self.session.graph
+        if self.is_compiled_check_consistency(graph) is Compiled.COMPILED:
+            return
 
-        if self.session is None:
-            self._session = session_manager.get_session(context=graph)
+        with self.compilation_context(graph):
+            super(Model, self).compile(graph=graph)
 
-        with self.graph.as_default():
-            with tf.name_scope(self.name):
-                super(Parameterized, self).compile(graph=self.graph)
-                self._is_compiled = True
+            func = tf.add(self.likelihood_tensor, self.prior_tensor)
+            grad_func = tf.gradients(f, self.free_tensors())
 
-                f = tf.add(self.likelihood_tensor, self.prior_tensor)
-                g = tf.gradients(f, self.free_tensors())
-
-                objective = tf.negative(f, name='objective')
-                objective_gradient = tf.negative(g, name='gradient_objective')
+            objective = tf.negative(func, name='objective')
+            objective_gradient = tf.negative(grad_func, name='gradient_objective')
 
             # The optimiser needs to be part of the computational graph,
             # and needs to be initialised before tf.initialise_all_variables()
@@ -681,6 +659,22 @@ class Model(Parameterized, IGraphOwner):
             print("optimization terminated, setting model state")
         self.set_state(result.x)
         return result
+
+    def __getstate__(self):
+        """
+        This method is necessary for pickling objects
+        """
+        state = Parameterized.__getstate__(self)
+        keys = ['_session', '_free_vars', '_objective',
+                '_minusF', '_minusG', '_feed_dict_keys']
+        for key in keys:
+            state.pop(key, None)
+        return state
+
+    def __setstate__(self, d):
+        Parameterized.__setstate__(self, d)
+        self._needs_recompile = True
+
 
 
 class GPModel(Model):
