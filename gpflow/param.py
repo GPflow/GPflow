@@ -196,6 +196,9 @@ class Param(CompilableNode):
         """
         graph = self.verified_graph(graph)
 
+        if self.param_tensor is not None and self.graph is not graph:
+            return Compiled.NOT_COMPATIBLE_GRAPH
+
         if self.prior_tensor is None:
             return Compiled.NOT_COMPILED
 
@@ -214,8 +217,8 @@ class Param(CompilableNode):
             return
 
         with self.compilation_context(graph):
-            self._tensor = self._build_tensor(graph)
-            self._prior_tensor = self._build_prior(graph)
+            self._tensor = self._build_tensor()
+            self._prior_tensor = self._build_prior()
 
     def assign(self, value, session=None):
         """
@@ -270,41 +273,34 @@ class Param(CompilableNode):
             value = np.array(value, dtype=FLOAT_TYPE)
         return value
 
-    def _build_tensor(self, graph=None):
-        if graph is None:
-            raise ValueError('The graph argument cannot be empty.')
-
+    def _build_tensor(self):
         if self._externally_defined:
-            if self.graph is not graph:
-                raise GPflowError("Externally defined tensor uses different graph.")
+            ## Double check for externally created graph
+            #if self.graph is not tf.get_default_graph():
+            #    raise GPflowError("Externally defined tensor uses different graph.")
             return self.param_tensor
 
-        with graph.as_default():
-            init = tf.constant_initializer(self._initial_value, dtype=FLOAT_TYPE)
-            return tf.get_variable(self.full_name, initializer=init, dtype=FLOAT_TYPE)
+        init = tf.constant_initializer(self._initial_value, dtype=FLOAT_TYPE)
+        return tf.get_variable(self.full_name, initializer=init, dtype=FLOAT_TYPE)
 
-    def _build_prior(self, graph=None):
+    def _build_prior(self):
         """
         Build a tensorflow representation of the prior density.
         The log Jacobian is included.
         """
-        if graph is None:
-            raise ValueError('The graph argument cannot be empty.')
-
         if not is_tensorflow_variable(self.param_tensor):  # pragma: no cover
-            raise GPflowError("Tensor is not compiled.")
+            raise GPflowError("Parameter's tensor is not compiled.")
 
         prior_name = self._prior_name
 
-        with graph.as_default():
-            if self.prior is None:
-                return tf.constant(0.0, FLOAT_TYPE, name=prior_name)
+        if self.prior is None:
+            return tf.constant(0.0, FLOAT_TYPE, name=prior_name)
 
-            var = self._tensor
-            log_jacobian = self.transform.tf_log_jacobian(var)
-            transformed_var = self.transform.tf_forward(self._tensor)
-            logp_var = self.prior.logp(transformed_var)
-            return tf.add(logp_var, log_jacobian, name=prior_name)
+        var = self._tensor
+        log_jacobian = self.transform.tf_log_jacobian(var)
+        transformed_var = self.transform.tf_forward(self._tensor)
+        logp_var = self.prior.logp(transformed_var)
+        return tf.add(logp_var, log_jacobian, name=prior_name)
 
     @property
     def _prior_name(self):

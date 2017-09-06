@@ -36,6 +36,10 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
+    def initialize(self, session=None):
+        pass
+
+    @abc.abstractmethod
     def reset(self, graph=None):
         pass
 
@@ -175,12 +179,13 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
 
     def __init__(self, name=None):
         super(CompilableNode, self).__init__(name=name)
+        self._initiator = None
 
     def verified_graph(self, graph=None):
         if graph is None:
-            if isinstance(self.root, ISessionOwner):
-                return self.root.graph
-            return tf.get_default_graph()
+            graph = self.root.graph
+            if graph is None:
+                graph = tf.get_default_graph()
         return graph
 
     def verified_session(self, session=None):
@@ -191,7 +196,16 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
                 session = tf.get_default_session()
             if session is None:
                 raise ValueError('No session specified.')
+        graph = self.verified_graph()
+        if graph is not None and self.graph is not session.graph:
+            raise GPflowError('')
         return session
+
+    def is_compiled_check_consistency(self, graph=None):
+        is_compiled = self.is_compiled(graph)
+        if is_compiled is Compiled.NOT_COMPATIBLE_GRAPH:
+            raise GPflowError("Tensor uses different graph.")
+        return is_compiled
 
     @contextmanager
     def compilation_context(self, graph):
@@ -202,13 +216,29 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
 
         if graph is tf.get_default_graph():
             with tf.name_scope(self.name):
+                self._enter_compilation()
                 yield graph
+                self._exit_compilation()
         else:
             with graph.as_default(), tf.name_scope(self.name):
+                self._enter_compilation()
                 yield graph
+                self._exit_compilation()
 
-    def is_compiled_check_consistency(self, graph=None):
-        is_compiled = self.is_compiled(graph)
-        if is_compiled is Compiled.NOT_COMPATIBLE_GRAPH:
-            raise GPflowError("Tensor uses different graph.")
-        return is_compiled
+    def _find_initiator(self):
+        if self._initiator is None:
+            return self.root._initiator
+        return self._initiator
+
+    def _set_initiator(self, initiator=None):
+        self._initiator = initiator
+
+    def _enter_compilation(self):
+        initiator = self._find_initiator()
+        if initiator:
+            self._set_initiator(initiator)
+        else:
+            self._set_initiator(self)
+
+    def _exit_compilation(self):
+        initiator = self._find_initiator()

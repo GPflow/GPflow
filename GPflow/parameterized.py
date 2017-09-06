@@ -82,8 +82,8 @@ class Parameterized(CompilableNode):
         return self._prior_tensor
 
     def free_param_tensors(self, graph=None):
-        if self.is_compiled_check_consistency(graph=graph) is Compiled.NOT_COMPILED:
-            return
+        if self.is_compiled_check_consistency(graph) is Compiled.NOT_COMPILED:
+            raise GPflowError('')
         for param in self.free_params:
             yield param.param_tensor
 
@@ -136,10 +136,11 @@ class Parameterized(CompilableNode):
     #    for param in self.sorted_params:
     #        param.randomize(distributions, skipfixed)
 
-    def _build_prior(self, graph=None):
+    def _build_prior(self):
         """
         Build a tf expression for the prior by summing all child-parameter priors.
         """
+        graph = tf.get_default_graph()
         if self.is_compiled_check_consistency(graph) is Compiled.NOT_COMPILED:
             raise GPflowError('Parameterized object is not compilied.')
         return tf.add_n([param.prior_tensor for param in self.params], name=self._prior_name)
@@ -451,7 +452,7 @@ class Model(Parameterized, ISessionOwner):
     def session(self):
         return self._session
 
-    def compile(self):
+    def compile(self, graph=None):
         """
         Compile the tensorflow function "self._objective".
         The `session` and `graph` parameters are mutually exclusive.
@@ -465,15 +466,14 @@ class Model(Parameterized, ISessionOwner):
         :param optimizer: TensorFlow Optimizer.
         """
 
-        graph = self.session.graph
         if self.is_compiled_check_consistency(graph) is Compiled.COMPILED:
             return
 
         with self.compilation_context(graph):
-            super(Model, self).compile(graph=graph)
+            super(Model, self).compile(graph)
 
             func = tf.add(self.likelihood_tensor, self.prior_tensor)
-            grad_func = tf.gradients(f, self.free_tensors())
+            grad_func = tf.gradients(func, self.free_param_tensors(graph))
 
             objective = tf.negative(func, name='objective')
             objective_gradient = tf.negative(grad_func, name='gradient_objective')
