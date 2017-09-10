@@ -22,10 +22,9 @@ import session_manager
 
 from scipy.optimize import minimize, OptimizeResult
 
-from . import hmc, session
+from . import hmc
 
-from .base import ISessionOwner, Parentable
-from .base import CompilableNode, Compiled
+from .base import CompilableNode, Build
 from .param import Param
 from .autoflow import AutoFlow
 from .mean_functions import Zero
@@ -82,20 +81,20 @@ class Parameterized(CompilableNode):
         return self._prior_tensor
 
     def free_param_tensors(self, graph=None):
-        if self.is_compiled_check_consistency(graph) is Compiled.NOT_COMPILED:
-            raise GPflowError('')
+        if self.is_built_coherence(graph) is Build.NO:
+            raise GPflowError('Not built.')
         for param in self.free_params:
             yield param.param_tensor
 
-    def is_compiled(self, graph=None):
+    def is_built(self, graph=None):
         graph = self.verified_graph(graph)
         param_graphs = set([param.graph for param in self.params])
 
         if None in param_graphs and param_graphs.issubset([None, graph]):
-            return Compiled.NOT_COMPILED
+            return Build.NO
         elif graph not in param_graphs:
-            return Compiled.NOT_COMPATIBLE_GRAPH
-        return Compiled.COMPILED
+            return Build.NOT_COMPATIBLE_GRAPH
+        return Build.YES
 
     @property
     def graph(self):
@@ -103,13 +102,6 @@ class Parameterized(CompilableNode):
             if param.graph is not None:
                 return param.graph
         return None
-
-    def compile(self, graph=None):
-        graph = self.verified_graph(graph)
-        with self.compilation_context(graph):
-            for param in self.params:
-                param.compile(graph)
-            self._prior_tensor = self._build_prior()
 
     @property
     def fixed(self):
@@ -123,6 +115,25 @@ class Parameterized(CompilableNode):
     def fixed(self, value):
         for param in self.params:
             param.fixed = value
+
+    def compile(self, session=None, keep_session=True):
+        # TODO(awav):
+        session = self.setup_compile_session(session, keep_session)
+        is_built = self.is_built_coherence(session.graph)
+        with self.compilation_context(session):
+            if is_built is Build.NO:
+                for param in self.params:
+                    param.compile(session)
+                self._prior_tensor = self._build_prior()
+                self._prior_likelihood = self._build_likelihood()
+
+    def initialize(self, session=None):
+        session = self.verified_custom_session(session)
+        variables = [param.param_tensor for param in self.params
+                     if isinstance(param.param_tensor, tf.Variable)]
+        if variables:
+            init = tf.variables_initializer(variables)
+            session.run(init)
 
     def set_fixed(self, value, graph=None):
         for param in self.params:
@@ -141,7 +152,7 @@ class Parameterized(CompilableNode):
         Build a tf expression for the prior by summing all child-parameter priors.
         """
         graph = tf.get_default_graph()
-        if self.is_compiled_check_consistency(graph) is Compiled.NOT_COMPILED:
+        if self.is_built_coherence(graph) is Build.NO:
             raise GPflowError('Parameterized object is not compilied.')
         return tf.add_n([param.prior_tensor for param in self.params], name=self._prior_name)
 
@@ -155,8 +166,9 @@ class Parameterized(CompilableNode):
         if not isinstance(key, param_like):
             raise ValueError('Param-like attribute expected in assignment.')
         if isinstance(value, param_like):
-            if self.is_compiled_check_consistency(value.graph) is Compiled.COMPILED:
+            if self.is_built_coherence(value.graph) is Build.YES:
                 raise GPflowError('Parameterized object is compiled.')
+            # TODO(awav): Check that this is right order of assigning
             attr.set_parent()
             attr.set_name()
             value.set_parent(self)
@@ -164,7 +176,7 @@ class Parameterized(CompilableNode):
             object.__setattr__(self, key, value)
         # elif - DataHolder:
         elif isinstance(attr, Param) and is_valid_param_value(value):
-            attr.assign(value)
+            attr.assign(value, session=self.session)
         else:
             msg = '"{0}" type cannot be assigned to param-like attribute.'
             raise ValueError(msg.format(type(value)))
@@ -177,25 +189,25 @@ class Parameterized(CompilableNode):
         return ''.join([p._html_table_rows(name_prefix)
                         for p in self.sorted_params])
 
-   def _repr_html_(self):
-       """
-       Build a small html table for display in the jupyter notebook.
-       """
-       html = ["<table id='params' width=100%>"]
+    def _repr_html_(self):
+        """
+        Build a small html table for display in the jupyter notebook.
+        """
+        html = ["<table id='params' width=100%>"]
 
-       # build the header
-       header = "<tr>"
-       header += "<td>Name</td>"
-       header += "<td>values</td>"
-       header += "<td>prior</td>"
-       header += "<td>constraint</td>"
-       header += "</tr>"
-       html.append(header)
+        # build the header
+        header = "<tr>"
+        header += "<td>Name</td>"
+        header += "<td>values</td>"
+        header += "<td>prior</td>"
+        header += "<td>constraint</td>"
+        header += "</tr>"
+        html.append(header)
 
-       html.append(self._html_table_rows())
+        html.append(self._html_table_rows())
 
-       html.append("</table>")
-       return ''.join(html)
+        html.append("</table>")
+        return ''.join(html)
 
     def __setattr__(self, key, value):
         """
@@ -227,7 +239,7 @@ class Parameterized(CompilableNode):
                 self._update_param_attribute(key, value)
                 return
         if isinstance(value, param_like):
-            if self.is_compiled_check_consistency(value.graph) is Compiled.COMPILED:
+            if self.is_built_coherence(value.graph) is Build.YES:
                 raise GPflowError('Parameterized object is compiled.')
             value.set_name(key)
             value.set_parent(self)
@@ -436,23 +448,14 @@ class Model(Parameterized, ISessionOwner):
                 print("Warning: inf or nan in gradient: replacing with zeros")
                 return f, np.where(g_is_fin, g, 0.)
 
-    def __init__(self, name=None, session=None):
+    def __init__(self, name=None):
         """
         name is a string describing this model.
         """
         super(Model, self).__init__(name=name)
         self._num_fevals = 0  # Keeps track of how often _objective is called
-        self._session = session
 
-    @property
-    def graph(self):
-        return self.session.graph
-
-    @property
-    def session(self):
-        return self._session
-
-    def compile(self, graph=None):
+    def compile(self, session=None):
         """
         Compile the tensorflow function "self._objective".
         The `session` and `graph` parameters are mutually exclusive.
@@ -466,7 +469,7 @@ class Model(Parameterized, ISessionOwner):
         :param optimizer: TensorFlow Optimizer.
         """
 
-        if self.is_compiled_check_consistency(graph) is Compiled.COMPILED:
+        if self.is_built_coherence(graph) is Build.YES:
             return
 
         with self.compilation_context(graph):

@@ -48,8 +48,7 @@ def get_tensor_by_name(name, index=None, graph=None):
 def is_ndarray(value):
     return isinstance(value, np.ndarray)
 
-
-def is_tensorflow_variable(value):
+def is_tensor(value):
     return isinstance(value, (tf.Tensor, tf.Variable))
 
 
@@ -61,7 +60,7 @@ def is_valid_param_value(value):
     return ((value is not None)
             or is_number(value)
             or is_ndarray(value)
-            or is_tensorflow_variable(value))
+            or is_tensor(value))
 
 
 def add_to_trainables(variable, graph=None):

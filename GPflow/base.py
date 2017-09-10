@@ -1,23 +1,12 @@
 import abc
 import enum
 
-import tensorflow as tf
 from contextlib import contextmanager
+import tensorflow as tf
 
+from . import session_manager
 from .misc import tensor_name
 from .misc import GPflowError
-
-
-class ISessionOwner:
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractproperty
-    def session(self):
-        pass
-
-    @abc.abstractproperty
-    def reset(self, session=None):
-        pass
 
 
 class ICompilable:
@@ -28,15 +17,15 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
-    def is_compiled(self, graph=None):
-        pass
-
-    @abc.abstractmethod
-    def compile(self, graph=None):
+    def compile(self, session=None):
         pass
 
     @abc.abstractmethod
     def initialize(self, session=None):
+        pass
+
+    @abc.abstractmethod
+    def is_built(self, graph=None):
         pass
 
     @abc.abstractmethod
@@ -116,9 +105,9 @@ class ITransform:
         raise NotImplementedError
 
 
-class Compiled(enum.Enum):
-    COMPILED = 1
-    NOT_COMPILED = 0
+class Build(enum.Enum):
+    YES = 1
+    NO = 0 # pylint: disable=C0103
     NOT_COMPATIBLE_GRAPH = None
 
 
@@ -141,6 +130,12 @@ class Parentable:
         if self._parent is None:
             return self
         return self._parent.root
+
+    @property
+    def parent(self):
+        if self._parent is None:
+            return self
+        return self._parent
 
     @property
     def name(self):
@@ -180,65 +175,105 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
     def __init__(self, name=None):
         super(CompilableNode, self).__init__(name=name)
         self._initiator = None
+        self._session = None
+
+    @property
+    def session(self):
+        if self._session is not None:
+            return self._session
+        if self.root is self:
+            return self._session
+        return self.root.session
+
+
+    def compile(self, session=None, keep_session=True):
+        session = self.setup_compile_session(session, keep_session)
+        is_built = self.is_built_coherence(graph=session.graph)
+        with session.graph.as_default():
+            self._build_with_name_scope()
+        self.initialize(session)
 
     def verified_graph(self, graph=None):
         if graph is None:
-            graph = self.root.graph
+            graph = self.root.graph if self.graph is None else self.graph
             if graph is None:
                 graph = tf.get_default_graph()
         return graph
 
-    def verified_session(self, session=None):
+    def verified_compile_session(self, session):
         if session is None:
-            if isinstance(self.root, ISessionOwner):
-                session = self.root.session
-            else:
+            session = self.session
+            if session is None:
                 session = tf.get_default_session()
             if session is None:
-                raise ValueError('No session specified.')
-        graph = self.verified_graph()
-        if graph is not None and self.graph is not session.graph:
-            raise GPflowError('')
+                graph = self.verified_graph()
+                session = session_manager.get_session(graph=graph)
+        _ = self.is_built_coherence(session.graph)
         return session
 
-    def is_compiled_check_consistency(self, graph=None):
-        is_compiled = self.is_compiled(graph)
-        if is_compiled is Compiled.NOT_COMPATIBLE_GRAPH:
-            raise GPflowError("Tensor uses different graph.")
-        return is_compiled
+    def verified_custom_session(self, session):
+        if session is None and self.session is None:
+            raise ValueError('Session is not specified.')
+        session = session if session is not None else self.session
+        if self.is_built_coherence(session.graph) is Build.NO:
+            raise GPflowError('Not compiled.')
+        return session
+
+    def set_session(self, session):
+        if session is None:
+            raise ValueError('Session is None.')
+        if self.root is not self:
+            raise ValueError('Session cannot be changed for non-root compilable object.')
+        if self.is_built_coherence(session.graph) is Build.YES:
+            self.initialize(session)
+        self._session = session
+
+    def set_parent(self, parent=None):
+        if parent is None:
+            self._session = self.session
+        else:
+            if parent.graph and parent.is_built_coherence(self.graph) is Build.YES:
+                raise GPflowError('Parent is assembled.')
+            # TODO(awav): do we need implicitly pass session from child to parent
+            if parent.session is None and self.session:
+                parent.set_session(self.session)
+        self._parent = parent
+
+    def _build(self):
+        raise NotImplementedError()
+
+    def _build_with_name_scope(self, name=None):
+        name = self.name if name is None else name
+        with tf.name_scope(name):
+            self._build()
+
+    def is_built_coherence(self, graph=None):
+        if self.session and graph and self.session.graph is not graph:
+            raise GPflowError('Tensor uses different graph.')
+        is_built = self.is_built(graph)
+        if is_built is Build.NOT_COMPATIBLE_GRAPH:
+            raise GPflowError('Tensor uses different graph.')
+        return is_built
 
     @contextmanager
-    def compilation_context(self, graph):
-        if graph is None:
-            raise ValueError('Passed graph must be not None.')
-        #if self.is_compiled_check_consistency(graph) is Compiled.COMPILED:
-        #    raise GPflowError('Already compiled.')
+    def compilation_context(self, session):
+        if session is None:
+            raise ValueError('Passed session is None.')
+        with self._context_as_default(session.graph):
+            yield session
+            self._exit_compilation(session)
 
+    @contextmanager
+    def _context_as_default(self, graph):
+        if graph is None:
+            raise ValueError('Passed graph is None.')
         if graph is tf.get_default_graph():
             with tf.name_scope(self.name):
-                self._enter_compilation()
-                yield graph
-                self._exit_compilation()
+                yield
         else:
             with graph.as_default(), tf.name_scope(self.name):
-                self._enter_compilation()
-                yield graph
-                self._exit_compilation()
-
-    def _find_initiator(self):
-        if self._initiator is None:
-            return self.root._initiator
-        return self._initiator
-
-    def _set_initiator(self, initiator=None):
-        self._initiator = initiator
-
-    def _enter_compilation(self):
-        initiator = self._find_initiator()
-        if initiator:
-            self._set_initiator(initiator)
-        else:
-            self._set_initiator(self)
+                yield
 
     def _exit_compilation(self):
-        initiator = self._find_initiator()
+        if self.parent is self:
+            self.initialize(session)

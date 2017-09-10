@@ -22,11 +22,11 @@ import numpy as np
 import tensorflow as tf
 
 from .base import IPrior, ITransform
-from .base import Parentable, Compiled, CompilableNode
+from .base import Parentable, Build, CompilableNode
 from .transforms import Identity
 
 from .misc import GPflowError
-from .misc import is_number, is_tensorflow_variable, is_valid_param_value
+from .misc import is_number, is_tensor, is_valid_param_value
 from .misc import add_to_trainables, remove_from_trainables
 from .misc import normalize_dtype
 
@@ -150,7 +150,7 @@ class Param(CompilableNode):
         self.fixed = fixed
         self.transform = transform
 
-        if is_tensorflow_variable(value):
+        if is_tensor(value):
             self._externally_defined = True
             self._tensor = value
             return
@@ -182,45 +182,49 @@ class Param(CompilableNode):
             return None
         return self.param_tensor.graph
 
-    def value(self, session=None):
-        session = self.verified_session(session)
-        is_compiled = self.is_compiled_check_consistency(session.graph)
-        if is_compiled is Compiled.COMPILED:
-            return session.run(self.param_tensor)
-        return self._initial_value
-
-    def is_compiled(self, graph=None):
+    def is_built(self, graph=None):
         """
         Returns boolean value true if the parameter is assigned to the graph
         owner and owner called compile method. It returns false in other cases.
         """
         graph = self.verified_graph(graph)
 
-        if self.param_tensor is not None and self.graph is not graph:
-            return Compiled.NOT_COMPATIBLE_GRAPH
+        if self.graph and self.graph is not graph:
+            return Build.NOT_COMPATIBLE_GRAPH
 
         if self.prior_tensor is None:
-            return Compiled.NOT_COMPILED
+            return Build.NO
 
-        if self.graph is graph:
-            return Compiled.COMPILED
+        return Build.YES
 
-        return Compiled.NOT_COMPATIBLE_GRAPH
+    def initialize(self, session=None):
+        session = self.verified_custom_session(session)
+        if isinstance(self.param_tensor, tf.Variable):
+            init = tf.variables_initializer([self.param_tensor])
+            session.run(init)
 
-    def compile(self, graph=None):
+    def compile(self, session=None, keep_session):
         """
         Compile parameter tensorflow representation.
         """
-        graph = self.verified_graph(graph)
-        is_compiled = self.is_compiled_check_consistency(graph)
-        if is_compiled is Compiled.COMPILED:
-            return
+        session = self.verified_session(session)
+        is_built = self.is_built_coherence(session.graph)
+        with self.compilation_context(session):
+            if is_built is Build.NO:
+                self._tensor = self._build_param_tensor()
+                self._prior_tensor = self._build_prior_tensor()
 
-        with self.compilation_context(graph):
-            self._tensor = self._build_tensor()
-            self._prior_tensor = self._build_prior()
+        # TODO(awav)
+        session = self.setup_compile_session(session, keep_session)
+        is_built = self.is_built_coherence(graph=session.graph)
+        self._build_with_name_scope()
+        self.initialize(session)
 
-    def assign(self, value, session=None):
+    def _build(self):
+        self._tensor = self._build_param_tensor()
+        self._prior_tensor = self._build_prior_tensor()
+
+    def assign(self, value):
         """
         This operation sssigns new value to the parameter. If parameter has been
         compiled before then the value will be loaded into param's tensor.
@@ -234,13 +238,18 @@ class Param(CompilableNode):
         initializer invokes.
         """
         value = self._valid_param_value(value)
-        session = self.verified_session(session)
         if self.shape != value.shape:
             raise GPflowError('Assigning value has different shape.')
-        is_compiled = self.is_compiled_check_consistency(session.graph)
         self._initial_value[...] = value
-        if is_compiled is Compiled.COMPILED:
-            self.param_tensor.load(self._initial_value, session=session)
+        if self.session is not None and self.is_built_coherence(self.graph) is Build.YES:
+            self.param_tensor.load(self._initial_value, session=self.session)
+
+    def value(self):
+        session = self.verified_custom_session()
+        is_built = self.is_built_coherence(session.graph)
+        if is_built is Build.YES:
+            return session.run(self.param_tensor)
+        return self._initial_value
 
 
     def set_fixed(self, value, graph=None):
@@ -251,14 +260,14 @@ class Param(CompilableNode):
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
 
         graph = self.verified_graph(graph)
-        is_compiled = self.is_compiled_check_consistency(graph)
+        is_built = self.is_built_coherence(graph)
 
-        if is_compiled is Compiled.COMPILED and self.fixed == value:
+        if is_built is Build.YES and self.fixed == value:
             return
 
         object.__setattr__(self, 'fixed', value)
 
-        if is_compiled is Compiled.COMPILED:
+        if is_built is Build.YES:
             if value:
                 remove_from_trainables(self.param_tensor, graph)
             else:
@@ -273,7 +282,7 @@ class Param(CompilableNode):
             value = np.array(value, dtype=FLOAT_TYPE)
         return value
 
-    def _build_tensor(self):
+    def _build_param_tensor(self):
         if self._externally_defined:
             ## Double check for externally created graph
             #if self.graph is not tf.get_default_graph():
@@ -283,12 +292,12 @@ class Param(CompilableNode):
         init = tf.constant_initializer(self._initial_value, dtype=FLOAT_TYPE)
         return tf.get_variable(self.full_name, initializer=init, dtype=FLOAT_TYPE)
 
-    def _build_prior(self):
+    def _build_prior_tensor(self):
         """
         Build a tensorflow representation of the prior density.
         The log Jacobian is included.
         """
-        if not is_tensorflow_variable(self.param_tensor):  # pragma: no cover
+        if not is_tensor(self.param_tensor):  # pragma: no cover
             raise GPflowError("Parameter's tensor is not compiled.")
 
         prior_name = self._prior_name
@@ -312,8 +321,8 @@ class Param(CompilableNode):
             self.set_fixed(value)
             return
 
-        is_compiled = self.is_compiled_check_consistency()
-        if is_compiled is Compiled.COMPILED:
+        is_built = self.is_built_coherence()
+        if is_built is Build.YES:
             raise GPflowError('Parameter has already been compiled.')
 
         key = attr.value
@@ -323,7 +332,7 @@ class Param(CompilableNode):
         object.__setattr__(self, key, value)
 
     #def _get_tensor_by_name(self, name):
-    #    if self.is_compiled:
+    #    if self.is_built:
     #        raise GPflowError('Parameter is not compiled.')
     #    graph = self.root.session.graph
     #    return get_tensor_by_name(name, graph=graph)
