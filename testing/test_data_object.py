@@ -1,20 +1,20 @@
 from __future__ import print_function
-import GPflow
+import gpflow
 import numpy as np
 import unittest
 import tensorflow as tf
-from GPflow import settings
+from gpflow import settings
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 
 class TestDataHolderSimple(unittest.TestCase):
     def setUp(self):
-        self.m = GPflow.model.Model()
+        self.m = gpflow.model.Model()
         self.rng = np.random.RandomState()
-        self.m.X = GPflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='pass')
-        self.m.Y = GPflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='raise')
-        self.m.Z = GPflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='recompile')
+        self.m.X = gpflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='pass')
+        self.m.Y = gpflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='raise')
+        self.m.Z = gpflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='recompile')
         self.m.make_tf_array(np.empty(0))
         self.m._needs_recompile = False
 
@@ -60,9 +60,9 @@ class TestDataHolderSimple(unittest.TestCase):
 
 class TestDataHolderIntegers(unittest.TestCase):
     def setUp(self):
-        self.m = GPflow.model.Model()
+        self.m = gpflow.model.Model()
         self.rng = np.random.RandomState()
-        self.m.X = GPflow.param.DataHolder(self.rng.randint(0, 10, (2, 2)), on_shape_change='pass')
+        self.m.X = gpflow.param.DataHolder(self.rng.randint(0, 10, (2, 2)), on_shape_change='pass')
         self.m.X.make_tf_array()
         self.m._needs_recompile = False
 
@@ -88,10 +88,10 @@ class TestDataHolderModels(unittest.TestCase):
         self.rng = np.random.RandomState(0)
         self.X = self.rng.rand(20, 1)
         self.Y = np.sin(self.X) + 0.9 * np.cos(self.X*1.6) + self.rng.randn(*self.X.shape) * 0.8
-        self.kern = GPflow.kernels.Matern32(1)
+        self.kern = gpflow.kernels.Matern32(1)
 
     def test_gpr(self):
-        m = GPflow.gpr.GPR(self.X, self.Y, self.kern)
+        m = gpflow.gpr.GPR(self.X, self.Y, self.kern)
         m._compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
@@ -102,7 +102,7 @@ class TestDataHolderModels(unittest.TestCase):
                          msg="For GPR, recompilation should be avoided for the same shape data")
 
     def test_sgpr(self):
-        m = GPflow.sgpr.SGPR(self.X, self.Y, self.kern, Z=self.X[::2])
+        m = gpflow.sgpr.SGPR(self.X, self.Y, self.kern, Z=self.X[::2])
         m._compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
@@ -113,7 +113,7 @@ class TestDataHolderModels(unittest.TestCase):
                          msg="For SGPR, recompilation should be avoided for the same shape data")
 
     def test_gpmc(self):
-        m = GPflow.gpmc.GPMC(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT())
+        m = gpflow.gpmc.GPMC(self.X, self.Y, self.kern, likelihood=gpflow.likelihoods.StudentT())
         m._compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
@@ -128,7 +128,7 @@ class TestDataHolderModels(unittest.TestCase):
         m._compile()  # make sure compilation is okay for new shapes.
 
     def test_sgpmc(self):
-        m = GPflow.sgpmc.SGPMC(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT(), Z=self.X[::2])
+        m = gpflow.sgpmc.SGPMC(self.X, self.Y, self.kern, likelihood=gpflow.likelihoods.StudentT(), Z=self.X[::2])
         m._compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
@@ -140,7 +140,7 @@ class TestDataHolderModels(unittest.TestCase):
                          msg="Recompilation should not be necessary for different shape data")
 
     def test_svgp(self):
-        m = GPflow.svgp.SVGP(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT(), Z=self.X[::2])
+        m = gpflow.svgp.SVGP(self.X, self.Y, self.kern, likelihood=gpflow.likelihoods.StudentT(), Z=self.X[::2])
         m._compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,
@@ -152,7 +152,7 @@ class TestDataHolderModels(unittest.TestCase):
                          msg="For SVGP, recompilation should be avoided for new shape data")
 
     def test_vgp(self):
-        m = GPflow.vgp.VGP(self.X, self.Y, self.kern, likelihood=GPflow.likelihoods.StudentT())
+        m = gpflow.vgp.VGP(self.X, self.Y, self.kern, likelihood=gpflow.likelihoods.StudentT())
         m._compile()
         m.X = self.rng.randn(*self.X.shape)
         self.assertFalse(m._needs_recompile,

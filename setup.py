@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from __future__ import print_function
 from setuptools import setup
+
 import re
 import os
 import sys
-import tensorflow as tf
+from pkg_resources import parse_version
 
 # load version form _version.py
-VERSIONFILE = "GPflow/_version.py"
+VERSIONFILE = "gpflow/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
@@ -17,43 +19,46 @@ if mo:
 else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
-# Compile the bespoke TensorFlow ops in-place. Not sure how this would work if this script wasn't executed as `develop`.
-tf_include = tf.sysconfig.get_include()
-compile_command = "g++ -std=c++11 -shared ./GPflow/tfops/vec_to_tri.cc " \
-                  "GPflow/tfops/tri_to_vec.cc -o GPflow/tfops/matpackops.so " \
-                  "-fPIC -I {}".format(tf_include)
-if sys.platform == "darwin":
-    # Additional command for Macs, as instructed by the TensorFlow docs
-    compile_command += " -undefined dynamic_lookup"
-elif sys.platform.startswith("linux"):
-    gcc_version = int(re.search('\d+.', os.popen("gcc --version").read()).group()[0])
-    if gcc_version > 4:
-        compile_command += " -D_GLIBCXX_USE_CXX11_ABI=0"
-os.system(compile_command)
+# Dependencies of GPflow
+dependencies = ['numpy>=1.9', 'scipy>=0.16']
+min_tf_version = '1.0.0'
 
-setup(name='GPflow',
+# Only detect TF if not installed or outdated. If not, do not do not list as 
+# requirement to avoid installing over e.g. tensorflow-gpu
+# To avoid this, rely on importing rather than the package name (like pip). 
+try:
+    # If tf not installed, import raises ImportError
+    import tensorflow as tf
+    if parse_version(tf.__version__) < parse_version(min_tf_version):
+        # TF pre-installed, but below the minimum required version
+        raise DeprecationWarning("TensorFlow version below minimum requirement")
+except (ImportError, DeprecationWarning) as e:
+    # Add TensorFlow to dependencies to trigger installation/update
+    dependencies.append('tensorflow>={0}'.format(min_tf_version))
+
+setup(name='gpflow',
       version=verstr,
       author="James Hensman, Alex Matthews",
       author_email="james.hensman@gmail.com",
       description=("Gaussian process methods in tensorflow"),
-      license="BSD 3-clause",
+      license="Apache License 2.0",
       keywords="machine-learning gaussian-processes kernels tensorflow",
       url="http://github.com/gpflow/gpflow",
-      package_data={'GPflow': ['GPflow/tfops/*.so', 'GPflow/gpflowrc']},
+      package_data={'gpflow': ['gpflow/gpflowrc']},
       include_package_data=True,
       ext_modules=[],
-      packages=["GPflow"],
-      package_dir={'GPflow': 'GPflow'},
-      py_modules=['GPflow.__init__'],
+      packages=["gpflow"],
+      package_dir={'gpflow': 'gpflow'},
+      py_modules=['gpflow.__init__'],
       test_suite='testing',
-      install_requires=['numpy>=1.9', 'scipy>=0.16', 'pandas>=0.18.1'],
-      extras_require={'tensorflow': ['tensorflow>=1.0.0'],
-                      'tensorflow with gpu': ['tensorflow-gpu>=1.0.0']},
-      classifiers=['License :: OSI Approved :: BSD License',
+      install_requires=dependencies,
+      extras_require={'tensorflow with gpu': ['tensorflow-gpu>=1.0.0'],
+                      'Export parameters as pandas dataframes': ['pandas>=0.18.1']},
+      classifiers=['License :: OSI Approved :: Apache Software License',
                    'Natural Language :: English',
                    'Operating System :: MacOS :: MacOS X',
                    'Operating System :: Microsoft :: Windows',
                    'Operating System :: POSIX :: Linux',
                    'Programming Language :: Python :: 2.7',
-                   'Topic :: Scientific/Engineering :: Artificial Intelligence']
-      )
+                   'Programming Language :: Python :: 3.5',
+                   'Topic :: Scientific/Engineering :: Artificial Intelligence'])

@@ -35,7 +35,7 @@ class RBF(kernels.RBF):
         lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
 
         vec = tf.expand_dims(Xmu, 2) - tf.expand_dims(tf.transpose(Z), 0)  # NxDxM
-        chols = tf.cholesky(tf.expand_dims(tf.diag(lengthscales ** 2), 0) + Xcov)
+        chols = tf.cholesky(tf.expand_dims(tf.matrix_diag(lengthscales ** 2), 0) + Xcov)
         Lvec = tf.matrix_triangular_solve(chols, vec)
         q = tf.reduce_sum(Lvec ** 2, [1])
 
@@ -67,7 +67,7 @@ class RBF(kernels.RBF):
         Xmum = tf.slice(Xmu, [0, 0], tf.stack([N, -1]))
         Xmup = Xmu[1:, :]
         lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
-        scalemat = tf.expand_dims(tf.diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
+        scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
 
         det = tf.matrix_determinant(
             tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=float_type), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
@@ -101,7 +101,7 @@ class RBF(kernels.RBF):
         scalemat = tf.expand_dims(tf.eye(D, dtype=float_type), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
         det = tf.matrix_determinant(scalemat)
 
-        mat = Xcov + 0.5 * tf.expand_dims(tf.diag(lengthscales ** 2.0), 0)  # NxDxD
+        mat = Xcov + 0.5 * tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0)  # NxDxD
         cm = tf.cholesky(mat)  # NxDxD
         vec = 0.5 * (tf.reshape(tf.transpose(Z), [1, D, 1, M]) +
                      tf.reshape(tf.transpose(Z), [1, D, M, 1])) - tf.reshape(Xmu, [N, D, 1, 1])  # NxDxMxM
@@ -165,7 +165,7 @@ class Add(kernels.Add):
     Add
     This version of Add will call the corresponding kernel expectations for each of the summed kernels. This will be
     much better for kernels with analytically calculated kernel expectations. If quadrature is to be used, it's probably
-    better to do quadrature on the summed kernel function using `GPflow.kernels.Add` instead.
+    better to do quadrature on the summed kernel function using `gpflow.kernels.Add` instead.
     """
 
     def __init__(self, kern_list):
@@ -225,7 +225,7 @@ class Add(kernels.Add):
 
         const = rbf.variance * lin.variance * tf.reduce_prod(lengthscales)
 
-        gaussmat = Xcov + tf.diag(lengthscales2)[None, :, :]  # NxDxD
+        gaussmat = Xcov + tf.matrix_diag(lengthscales2)[None, :, :]  # NxDxD
 
         det = tf.matrix_determinant(gaussmat) ** -0.5  # N
 
@@ -248,7 +248,7 @@ class Add(kernels.Add):
     def quad_eKzx1Kxz2(self, Ka, Kb, Z, Xmu, Xcov):
         # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
         self._check_quadrature()
-        warnings.warn("GPflow.ekernels.Add: Using numerical quadrature for kernel expectation cross terms.")
+        warnings.warn("gpflow.ekernels.Add: Using numerical quadrature for kernel expectation cross terms.")
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim

@@ -1,10 +1,12 @@
 from __future__ import print_function
-import GPflow
+import gpflow
 import numpy as np
 import unittest
 import tensorflow as tf
+from nose.plugins.attrib import attr
 
 
+@attr(speed='slow')
 class TestEquivalence(unittest.TestCase):
     """
     Here we make sure the coregionalized model with diagonal coregion kernel and
@@ -24,28 +26,28 @@ class TestEquivalence(unittest.TestCase):
         Y_augumented = np.hstack([np.concatenate(Y), np.concatenate(label)])
 
         # two independent vgps for two sets of data
-        k0 = GPflow.kernels.RBF(2)
+        k0 = gpflow.kernels.RBF(2)
         k0.lengthscales.fixed = True
-        self.vgp0 = GPflow.vgp.VGP(X[0], Y[0], kern=k0,
-                                   mean_function=GPflow.mean_functions.Constant(),
-                                   likelihood=GPflow.likelihoods.Gaussian())
-        k1 = GPflow.kernels.RBF(2)
+        self.vgp0 = gpflow.vgp.VGP(X[0], Y[0], kern=k0,
+                                   mean_function=gpflow.mean_functions.Constant(),
+                                   likelihood=gpflow.likelihoods.Gaussian())
+        k1 = gpflow.kernels.RBF(2)
         k1.lengthscales.fixed = True
-        self.vgp1 = GPflow.vgp.VGP(X[1], Y[1], kern=k1,
-                                   mean_function=GPflow.mean_functions.Constant(),
-                                   likelihood=GPflow.likelihoods.Gaussian())
+        self.vgp1 = gpflow.vgp.VGP(X[1], Y[1], kern=k1,
+                                   mean_function=gpflow.mean_functions.Constant(),
+                                   likelihood=gpflow.likelihoods.Gaussian())
         # coregionalized gpr
-        lik = GPflow.likelihoods.SwitchedLikelihood(
-            [GPflow.likelihoods.Gaussian(), GPflow.likelihoods.Gaussian()])
+        lik = gpflow.likelihoods.SwitchedLikelihood(
+            [gpflow.likelihoods.Gaussian(), gpflow.likelihoods.Gaussian()])
 
-        kc = GPflow.kernels.RBF(2)
+        kc = gpflow.kernels.RBF(2)
         kc.fixed = True  # lengthscale and variance is fixed.
-        coreg = GPflow.kernels.Coregion(1, output_dim=2, rank=1, active_dims=[2])
+        coreg = gpflow.kernels.Coregion(1, output_dim=2, rank=1, active_dims=[2])
         coreg.W.fixed = True
 
-        mean_c = GPflow.mean_functions.SwitchedMeanFunction(
-            [GPflow.mean_functions.Constant(), GPflow.mean_functions.Constant()])
-        self.cvgp = GPflow.vgp.VGP(X_augumented, Y_augumented,
+        mean_c = gpflow.mean_functions.SwitchedMeanFunction(
+            [gpflow.mean_functions.Constant(), gpflow.mean_functions.Constant()])
+        self.cvgp = gpflow.vgp.VGP(X_augumented, Y_augumented,
                                    kern=kc*coreg,
                                    mean_function=mean_c,
                                    likelihood=lik,

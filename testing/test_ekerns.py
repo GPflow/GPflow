@@ -1,9 +1,10 @@
 import unittest
 import numpy as np
 import tensorflow as tf
-import GPflow
-from GPflow import kernels
-from GPflow import ekernels
+import gpflow
+from gpflow import kernels
+from gpflow import ekernels
+from nose.plugins.attrib import attr
 
 
 def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
@@ -24,7 +25,7 @@ class TriDiagonalBlockRep(object):
     """
 
     def __init__(self):
-        GPflow.transforms.Transform.__init__(self)
+        gpflow.transforms.Transform.__init__(self)
 
     def forward(self, x):
         """
@@ -211,6 +212,7 @@ class TestExpxKxzActiveDims(unittest.TestCase):
                 self.assertTrue(type(e) is tf.errors.InvalidArgumentError)
 
 
+@attr(speed='slow')
 class TestKernExpQuadrature(unittest.TestCase):
     _threshold = 0.5
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.

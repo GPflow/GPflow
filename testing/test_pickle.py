@@ -14,7 +14,7 @@
 
 import unittest
 import tensorflow as tf
-import GPflow
+import gpflow
 import numpy as np
 import pickle
 
@@ -22,7 +22,7 @@ import pickle
 class TestPickleEmpty(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.m = GPflow.model.Model()
+        self.m = gpflow.model.Model()
 
     def test(self):
         s = pickle.dumps(self.m)
@@ -32,9 +32,9 @@ class TestPickleEmpty(unittest.TestCase):
 class TestPickleSimple(unittest.TestCase):
     def setUp(self):
         tf.reset_default_graph()
-        self.m = GPflow.model.Model()
-        self.m.p1 = GPflow.param.Param(np.random.randn(3, 2))
-        self.m.p2 = GPflow.param.Param(np.random.randn(10))
+        self.m = gpflow.model.Model()
+        self.m.p1 = gpflow.param.Param(np.random.randn(3, 2))
+        self.m.p2 = gpflow.param.Param(np.random.randn(10))
 
     def test(self):
         s = pickle.dumps(self.m)
@@ -45,7 +45,7 @@ class TestPickleSimple(unittest.TestCase):
 
 class TestActiveDims(unittest.TestCase):
     def test(self):
-        k = GPflow.kernels.RBF(2, active_dims=[0, 1])
+        k = gpflow.kernels.RBF(2, active_dims=[0, 1])
         X = np.random.randn(10, 2)
         K = k.compute_K_symm(X)
         k = pickle.loads(pickle.dumps(k))
@@ -59,7 +59,7 @@ class TestPickleGPR(unittest.TestCase):
         rng = np.random.RandomState(0)
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)
-        self.m = GPflow.gpr.GPR(X, Y, kern=GPflow.kernels.RBF(1))
+        self.m = gpflow.gpr.GPR(X, Y, kern=gpflow.kernels.RBF(1))
 
     def test(self):
         s1 = pickle.dumps(self.m)  # the model without running _compile
@@ -94,7 +94,7 @@ class TestPickleFix(unittest.TestCase):
     Make sure a kernel with a fixed parameter can be computed after pickling
     """
     def test(self):
-        k = GPflow.kernels.PeriodicKernel(1)
+        k = gpflow.kernels.PeriodicKernel(1)
         k.period.fixed = True
         k = pickle.loads(pickle.dumps(k))
         x = np.linspace(0,1,100).reshape([-1,1])
@@ -112,9 +112,9 @@ class TestPickleSVGP(unittest.TestCase):
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)
         Z = rng.randn(5, 1)
-        self.m = GPflow.svgp.SVGP(X, Y, Z=Z,
-                                  likelihood=GPflow.likelihoods.Gaussian(),
-                                  kern=GPflow.kernels.RBF(1))
+        self.m = gpflow.svgp.SVGP(X, Y, Z=Z,
+                                  likelihood=gpflow.likelihoods.Gaussian(),
+                                  kern=gpflow.kernels.RBF(1))
 
     def test(self):
         s1 = pickle.dumps(self.m)  # the model without running _compile
@@ -146,12 +146,15 @@ class TestPickleSVGP(unittest.TestCase):
 
 class TestTransforms(unittest.TestCase):
     def setUp(self):
-        self.transforms = GPflow.transforms.Transform.__subclasses__()
+        self.transforms = gpflow.transforms.Transform.__subclasses__()
         self.models = []
         for T in self.transforms:
-            m = GPflow.model.Model()
-            m.x = GPflow.param.Param(1.0)
-            m.x.transform = T()
+            m = gpflow.model.Model()
+            m.x = gpflow.param.Param(1.0)
+            if T==gpflow.transforms.LowerTriangular:
+                m.x.transform = T(1)
+            else:
+                m.x.transform = T()
             self.models.append(m)
 
     def test_pickle(self):

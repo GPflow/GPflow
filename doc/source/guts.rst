@@ -2,7 +2,7 @@
 The guts of GPflow
 ==================
 
-.. automodule:: GPflow.param
+.. automodule:: gpflow.param
 
 Param
 -----
@@ -22,7 +22,7 @@ AutoFlow
 Model
 -----
 
-.. automodule:: GPflow.model
+.. automodule:: gpflow.model
 .. autoclass:: Model
 
 GPModel

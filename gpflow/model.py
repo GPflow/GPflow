@@ -15,6 +15,7 @@
 
 from __future__ import print_function, absolute_import
 from .param import Parameterized, AutoFlow, DataHolder
+from .mean_functions import Zero
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
@@ -351,8 +352,8 @@ class GPModel(Model):
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
         Model.__init__(self, name)
-        self.kern, self.likelihood, self.mean_function = \
-            kern, likelihood, mean_function
+        self.mean_function = mean_function or Zero()
+        self.kern, self.likelihood = kern, likelihood
 
         if isinstance(X, np.ndarray):
             #: X is a data matrix; each row represents one instance
@@ -360,6 +361,8 @@ class GPModel(Model):
         if isinstance(Y, np.ndarray):
             #: Y is a data matrix, rows correspond to the rows in X, columns are treated independently
             Y = DataHolder(Y)
+
+        likelihood._check_targets(Y.value)
         self.X, self.Y = X, Y
 
     def build_predict(self):
