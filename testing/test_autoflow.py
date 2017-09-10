@@ -183,11 +183,11 @@ class TestSVGP(unittest.TestCase):
 
 
 class CombinedAutoflowModel(DumbModel):
-    @GPflow.model.AutoFlow(b=(tf.float64,))
+    @gpflow.model.AutoFlow(b=(tf.float64,))
     def multiply(self, a, b):
         return a * b
 
-    @GPflow.model.AutoFlow((tf.float64,), x=(tf.float64,))
+    @gpflow.model.AutoFlow((tf.float64,), x=(tf.float64,))
     def add(self, a, b, x=-1., only_a_and_b=False, **zs):
         if only_a_and_b:
             return a + b
@@ -197,7 +197,7 @@ class CombinedAutoflowModel(DumbModel):
                 result += z
             return result
 
-    @GPflow.model.AutoFlow(x=(tf.float64,), b=(tf.float64,))
+    @gpflow.model.AutoFlow(x=(tf.float64,), b=(tf.float64,))
     def subtract(self, x, **zs):
         result = x
         for z in zs.values():
@@ -205,7 +205,7 @@ class CombinedAutoflowModel(DumbModel):
         return result
 
     if sys.version_info >= (3,):
-        @GPflow.model.AutoFlow(a=(tf.float64,))
+        @gpflow.model.AutoFlow(a=(tf.float64,))
         def divide(self, a, *cs):
             result = a
             for c in cs:
@@ -256,7 +256,7 @@ class TestMixedArgs(unittest.TestCase):
 
 
 class CachedModel(DumbModel):
-    @GPflow.model.AutoFlow(a=(tf.float64,))
+    @gpflow.model.AutoFlow(a=(tf.float64,))
     def add(self, a, b, double_result=False):
         if double_result:
             return 2 * (a + b)
