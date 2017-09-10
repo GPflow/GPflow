@@ -17,7 +17,7 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
-    def compile(self, session=None):
+    def compile(self, session=None, keep_session=True):
         pass
 
     @abc.abstractmethod
@@ -185,13 +185,15 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
             return self._session
         return self.root.session
 
-
     def compile(self, session=None, keep_session=True):
-        session = self.setup_compile_session(session, keep_session)
+        session = self.setup_compile_session(session)
         is_built = self.is_built_coherence(graph=session.graph)
-        with session.graph.as_default():
-            self._build_with_name_scope()
+        if is_built is Build.NO:
+            with session.graph.as_default():
+                self._build_with_name_scope()
         self.initialize(session)
+        if keep_session:
+            self.set_session(session)
 
     def verified_graph(self, graph=None):
         if graph is None:
@@ -200,7 +202,7 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
                 graph = tf.get_default_graph()
         return graph
 
-    def verified_compile_session(self, session):
+    def setup_compile_session(self, session):
         if session is None:
             session = self.session
             if session is None:
@@ -254,26 +256,3 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
             raise GPflowError('Tensor uses different graph.')
         return is_built
-
-    @contextmanager
-    def compilation_context(self, session):
-        if session is None:
-            raise ValueError('Passed session is None.')
-        with self._context_as_default(session.graph):
-            yield session
-            self._exit_compilation(session)
-
-    @contextmanager
-    def _context_as_default(self, graph):
-        if graph is None:
-            raise ValueError('Passed graph is None.')
-        if graph is tf.get_default_graph():
-            with tf.name_scope(self.name):
-                yield
-        else:
-            with graph.as_default(), tf.name_scope(self.name):
-                yield
-
-    def _exit_compilation(self):
-        if self.parent is self:
-            self.initialize(session)

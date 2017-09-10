@@ -203,27 +203,6 @@ class Param(CompilableNode):
             init = tf.variables_initializer([self.param_tensor])
             session.run(init)
 
-    def compile(self, session=None, keep_session):
-        """
-        Compile parameter tensorflow representation.
-        """
-        session = self.verified_session(session)
-        is_built = self.is_built_coherence(session.graph)
-        with self.compilation_context(session):
-            if is_built is Build.NO:
-                self._tensor = self._build_param_tensor()
-                self._prior_tensor = self._build_prior_tensor()
-
-        # TODO(awav)
-        session = self.setup_compile_session(session, keep_session)
-        is_built = self.is_built_coherence(graph=session.graph)
-        self._build_with_name_scope()
-        self.initialize(session)
-
-    def _build(self):
-        self._tensor = self._build_param_tensor()
-        self._prior_tensor = self._build_prior_tensor()
-
     def assign(self, value):
         """
         This operation sssigns new value to the parameter. If parameter has been
@@ -282,7 +261,11 @@ class Param(CompilableNode):
             value = np.array(value, dtype=FLOAT_TYPE)
         return value
 
-    def _build_param_tensor(self):
+    def _build(self):
+        self._tensor = self._build_param()
+        self._prior_tensor = self._build_prior()
+
+    def _build_param(self):
         if self._externally_defined:
             ## Double check for externally created graph
             #if self.graph is not tf.get_default_graph():
@@ -292,7 +275,7 @@ class Param(CompilableNode):
         init = tf.constant_initializer(self._initial_value, dtype=FLOAT_TYPE)
         return tf.get_variable(self.full_name, initializer=init, dtype=FLOAT_TYPE)
 
-    def _build_prior_tensor(self):
+    def _build_prior(self):
         """
         Build a tensorflow representation of the prior density.
         The log Jacobian is included.
@@ -300,7 +283,7 @@ class Param(CompilableNode):
         if not is_tensor(self.param_tensor):  # pragma: no cover
             raise GPflowError("Parameter's tensor is not compiled.")
 
-        prior_name = self._prior_name
+        prior_name = 'prior'
 
         if self.prior is None:
             return tf.constant(0.0, FLOAT_TYPE, name=prior_name)
@@ -310,11 +293,6 @@ class Param(CompilableNode):
         transformed_var = self.transform.tf_forward(self._tensor)
         logp_var = self.prior.logp(transformed_var)
         return tf.add(logp_var, log_jacobian, name=prior_name)
-
-    @property
-    def _prior_name(self):
-        # return tensor_name(self.full_name, 'prior')
-        return 'prior'
 
     def _set_parameter_attribute(self, attr, value):
         if attr is self.ParamAttribute.FIXED:

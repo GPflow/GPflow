@@ -80,9 +80,8 @@ class Parameterized(CompilableNode):
     def prior_tensor(self):
         return self._prior_tensor
 
-    def free_param_tensors(self, graph=None):
-        if self.is_built_coherence(graph) is Build.NO:
-            raise GPflowError('Not built.')
+    @property
+    def free_param_tensors(self):
         for param in self.free_params:
             yield param.param_tensor
 
@@ -125,7 +124,6 @@ class Parameterized(CompilableNode):
                 for param in self.params:
                     param.compile(session)
                 self._prior_tensor = self._build_prior()
-                self._prior_likelihood = self._build_likelihood()
 
     def initialize(self, session=None):
         session = self.verified_custom_session(session)
@@ -147,18 +145,17 @@ class Parameterized(CompilableNode):
     #    for param in self.sorted_params:
     #        param.randomize(distributions, skipfixed)
 
+    def _build(self):
+        if
+        for param in self.params:
+            param._build_with_name_scope() # pylint: disable=W0212
+        self._prior_tensor = self._build_prior()
+
     def _build_prior(self):
         """
         Build a tf expression for the prior by summing all child-parameter priors.
         """
-        graph = tf.get_default_graph()
-        if self.is_built_coherence(graph) is Build.NO:
-            raise GPflowError('Parameterized object is not compilied.')
-        return tf.add_n([param.prior_tensor for param in self.params], name=self._prior_name)
-
-    @property
-    def _prior_name(self):
-        return 'prior'
+        return tf.add_n([param.prior_tensor for param in self.params], name='prior')
 
     def _update_param_attribute(self, key, value):
         attr = getattr(self, key)
@@ -437,6 +434,8 @@ class Model(Parameterized, ISessionOwner):
         def __init__(self, objective):
             self._objective = objective
             self._previous_x = None
+            self._objective = None
+            self._objective_gradient = None
 
         def __call__(self, x):
             f, g = self._objective(x)
@@ -450,72 +449,65 @@ class Model(Parameterized, ISessionOwner):
 
     def __init__(self, name=None):
         """
-        name is a string describing this model.
+        Name is a string describing this model.
         """
         super(Model, self).__init__(name=name)
         self._num_fevals = 0  # Keeps track of how often _objective is called
+        self._likelihood_tensor = None
 
-    def compile(self, session=None):
-        """
-        Compile the tensorflow function "self._objective".
-        The `session` and `graph` parameters are mutually exclusive.
-        :param session: TensorFlow Session. This parameter prevails `graph`
-                        parameter. Custom created session will be used if
-                        this argument is left default, i.e. None.
-        :param graph: TensorFlow Graph. This argument ignored when `session`
-                      differs from default value, otherwise it is passed to
-                      new session constructor. Default TensorFlow graph value
-                      is used, when `graph` equals None.
-        :param optimizer: TensorFlow Optimizer.
-        """
 
-        if self.is_built_coherence(graph) is Build.YES:
-            return
+       # The optimiser needs to be part of the computational graph,
+       # and needs to be initialised before tf.initialise_all_variables()
+       # is called.
+       #if optimizer is None:
+       #    opt_step = None
+       #else:
+       #    opt_step = optimizer.minimize(
+       #        self._minusF, var_list=[self._free_vars])
+       #init = tf.global_variables_initializer()
 
-        with self.compilation_context(graph):
-            super(Model, self).compile(graph)
+       #def compile(self, session=None):
+       #    """
+       #    Compile the tensorflow function "self._objective".
+       #    The `session` and `graph` parameters are mutually exclusive.
+       #    :param session: TensorFlow Session. This parameter prevails `graph`
+       #                    parameter. Custom created session will be used if
+       #                    this argument is left default, i.e. None.
+       #    :param graph: TensorFlow Graph. This argument ignored when `session`
+       #                  differs from default value, otherwise it is passed to
+       #                  new session constructor. Default TensorFlow graph value
+       #                  is used, when `graph` equals None.
+       #    :param optimizer: TensorFlow Optimizer.
+       #    """
 
-            func = tf.add(self.likelihood_tensor, self.prior_tensor)
-            grad_func = tf.gradients(func, self.free_param_tensors(graph))
+       #    with self.compilation_context(graph):
+       #        super(Model, self).compile(graph)
 
-            objective = tf.negative(func, name='objective')
-            objective_gradient = tf.negative(grad_func, name='gradient_objective')
+       #    session.run(init)
+       #    self._session = session
 
-            # The optimiser needs to be part of the computational graph,
-            # and needs to be initialised before tf.initialise_all_variables()
-            # is called.
-            if optimizer is None:
-                opt_step = None
-            else:
-                opt_step = optimizer.minimize(
-                    self._minusF, var_list=[self._free_vars])
-            init = tf.global_variables_initializer()
+       #    # build tensorflow functions for computing the likelihood
+       #    if settings.verbosity.tf_compile_verb:
+       #        print("compiling tensorflow function...")
+       #    sys.stdout.flush()
 
-        session.run(init)
-        self._session = session
+       #    self._feed_dict_keys = self.get_feed_dict_keys()
 
-        # build tensorflow functions for computing the likelihood
-        if settings.verbosity.tf_compile_verb:
-            print("compiling tensorflow function...")
-        sys.stdout.flush()
+       #    def obj(x):
+       #        self.num_fevals += 1
+       #        feed_dict = {self._free_vars: x}
+       #        self.update_feed_dict(self._feed_dict_keys, feed_dict)
+       #        f, g = self.session.run([self._minusF, self._minusG],
+       #                                 feed_dict=feed_dict)
+       #        return f.astype(np.float64), g.astype(np.float64)
 
-        self._feed_dict_keys = self.get_feed_dict_keys()
+        #    self._objective = obj
+        #    if settings.verbosity.tf_compile_verb:
+        #        print("done")
+        #    sys.stdout.flush()
+        #    self._needs_recompile = False
 
-        def obj(x):
-            self.num_fevals += 1
-            feed_dict = {self._free_vars: x}
-            self.update_feed_dict(self._feed_dict_keys, feed_dict)
-            f, g = self.session.run([self._minusF, self._minusG],
-                                     feed_dict=feed_dict)
-            return f.astype(np.float64), g.astype(np.float64)
-
-        self._objective = obj
-        if settings.verbosity.tf_compile_verb:
-            print("done")
-        sys.stdout.flush()
-        self._needs_recompile = False
-
-        return opt_step
+        #    return opt_step
 
     @AutoFlow()
     def compute_log_prior(self):
@@ -571,6 +563,19 @@ class Model(Parameterized, ISessionOwner):
             return self._optimize_np(method, tol, callback, maxiter, **kw)
         else:
             return self._optimize_tf(method, callback, maxiter, **kw)
+
+    def _build(self):
+        super(Model, self)._build()
+
+        self._likelihood_tensor = self._build_likelihood()
+        func = tf.add(self.likelihood_tensor, self.prior_tensor)
+        grad_func = tf.gradients(func, self.free_param_tensors)
+
+        self._objective = tf.negative(func, name='objective')
+        self._objective_gradient = tf.negative(grad_func, name='gradient_objective')
+
+    def _build_likelihood(self):
+        raise NotImplementedError()
 
     def _optimize_tf(self, method, callback, maxiter):
         """
@@ -714,7 +719,8 @@ class GPModel(Model):
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
         Model.__init__(self, name)
         self.mean_function = mean_function or Zero()
-        self.kern, self.likelihood = kern, likelihood
+        self.kern = kern
+        self.likelihood = likelihood
 
         if isinstance(X, np.ndarray):
             #: X is a data matrix; each row represents one instance
