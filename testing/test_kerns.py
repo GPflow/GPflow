@@ -685,11 +685,11 @@ class TestDifferentialObservationsKernelDynamic(GPflowTestCase):
         # ^ calculated by evaluating the derivs by hand.
 
     def test_deriv_rbf_kernel_only_x(self):
-        x_ph = tf.placeholder(tf.float64, [None, 2, 2])
+        x_ph = tf.placeholder(tf.float64, [None, 4])
 
         rbf_kernel = gpflow.kernels.RBF(2, variance=self.variance, lengthscales=self.lengthscale)
         diff_kernel = gpflow.kernels.DifferentialObservationsKernelDynamic(
-            2, rbf_kernel
+            2, rbf_kernel, 2
         )
 
         with self.test_session() as sess:
@@ -705,12 +705,12 @@ class TestDifferentialObservationsKernelDynamic(GPflowTestCase):
     def test_deriv_rbf_kernel_x1_and_x2(self):
 
 
-        x_ph = tf.placeholder(tf.float64, [None, 2, 2])
-        x2_ph = tf.placeholder(tf.float64, [None, 2, 2])
+        x_ph = tf.placeholder(tf.float64, [None, 4])
+        x2_ph = tf.placeholder(tf.float64, [None, 4])
 
         rbf_kernel = gpflow.kernels.RBF(2, variance=self.variance, lengthscales=self.lengthscale)
         diff_kernel = gpflow.kernels.DifferentialObservationsKernelDynamic(
-            2, rbf_kernel
+            2, rbf_kernel, 2
         )
 
         with self.test_session() as sess:
@@ -728,11 +728,11 @@ class TestDifferentialObservationsKernelDynamic(GPflowTestCase):
 
 
     def test_deriv_rbf_kernel_x1_diag(self):
-        x_ph = tf.placeholder(tf.float64, [None, 2, 2])
+        x_ph = tf.placeholder(tf.float64, [None, 4])
 
         rbf_kernel = gpflow.kernels.RBF(2, variance=self.variance, lengthscales=self.lengthscale)
         diff_kernel = gpflow.kernels.DifferentialObservationsKernelDynamic(
-            2, rbf_kernel
+            2, rbf_kernel, 2
         )
 
         with self.test_session() as sess:
