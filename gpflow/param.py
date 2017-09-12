@@ -143,7 +143,6 @@ class Param(CompilableNode):
         super(Param, self).__init__()
         self._tensor = None
         self._prior_tensor = None
-        self._initial_value = None
         self._externally_defined = False
 
         self.prior = prior
@@ -153,9 +152,8 @@ class Param(CompilableNode):
         if is_tensor(value):
             self._externally_defined = True
             self._tensor = value
-            return
-
-        self._initial_value[...] = value
+        else:
+            self._initial_value = value.copy()
 
     @property
     def shape(self):
@@ -187,18 +185,16 @@ class Param(CompilableNode):
         Returns boolean value true if the parameter is assigned to the graph
         owner and owner called compile method. It returns false in other cases.
         """
-        graph = self.verified_graph(graph)
-
+        if graph is None:
+            raise ValueError('Graph is not specified.')
         if self.graph and self.graph is not graph:
             return Build.NOT_COMPATIBLE_GRAPH
-
-        if self.prior_tensor is None:
+        elif self.prior_tensor is None:
             return Build.NO
-
         return Build.YES
 
     def initialize(self, session=None):
-        session = self.verified_custom_session(session)
+        session = self.enquire_session(session)
         if isinstance(self.param_tensor, tf.Variable):
             init = tf.variables_initializer([self.param_tensor])
             session.run(init)
@@ -216,6 +212,8 @@ class Param(CompilableNode):
         In other words, `assign` operation has limited lifetime between global variable
         initializer invokes.
         """
+        if self._externally_defined:
+            raise GPflowError("Externally defined parameter tensor is not modifiable.")
         value = self._valid_param_value(value)
         if self.shape != value.shape:
             raise GPflowError('Assigning value has different shape.')
@@ -223,13 +221,12 @@ class Param(CompilableNode):
         if self.session is not None and self.is_built_coherence(self.graph) is Build.YES:
             self.param_tensor.load(self._initial_value, session=self.session)
 
-    def value(self):
-        session = self.verified_custom_session()
+    def value(self, session=None):
+        session = self.enquire_session(session)
         is_built = self.is_built_coherence(session.graph)
         if is_built is Build.YES:
             return session.run(self.param_tensor)
         return self._initial_value
-
 
     def set_fixed(self, value, graph=None):
         if not isinstance(value, bool):
@@ -238,7 +235,7 @@ class Param(CompilableNode):
         if self._externally_defined:
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
 
-        graph = self.verified_graph(graph)
+        graph = self.enquire_graph(graph)
         is_built = self.is_built_coherence(graph)
 
         if is_built is Build.YES and self.fixed == value:

@@ -29,6 +29,10 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
+    def _build(self):
+        pass
+
+    @abc.abstractmethod
     def reset(self, graph=None):
         pass
 
@@ -181,26 +185,34 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
     def session(self):
         if self._session is not None:
             return self._session
-        if self.root is self:
+        root = self.root
+        if root is self:
             return self._session
-        return self.root.session
+        return root.session
 
     def compile(self, session=None, keep_session=True):
         session = self.setup_compile_session(session)
-        is_built = self.is_built_coherence(graph=session.graph)
-        if is_built is Build.NO:
+        if self.is_built(graph=session.graph) is Build.NO:
             with session.graph.as_default():
                 self._build_with_name_scope()
         self.initialize(session)
         if keep_session:
-            self.set_session(session)
+            self._session = session
 
-    def verified_graph(self, graph=None):
+    def enquire_graph(self, graph=None):
         if graph is None:
             graph = self.root.graph if self.graph is None else self.graph
             if graph is None:
                 graph = tf.get_default_graph()
         return graph
+
+    def enquire_session(self, session=None):
+        if session is None and self.session is None:
+            raise ValueError('Session is not specified.')
+        session = self.session if session is None else session
+        if self.is_built_coherence(session.graph) is Build.NO:
+            raise GPflowError('Not compiled.')
+        return session
 
     def setup_compile_session(self, session):
         if session is None:
@@ -208,17 +220,9 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
             if session is None:
                 session = tf.get_default_session()
             if session is None:
-                graph = self.verified_graph()
+                graph = self.enquire_graph()
                 session = session_manager.get_session(graph=graph)
         _ = self.is_built_coherence(session.graph)
-        return session
-
-    def verified_custom_session(self, session):
-        if session is None and self.session is None:
-            raise ValueError('Session is not specified.')
-        session = session if session is not None else self.session
-        if self.is_built_coherence(session.graph) is Build.NO:
-            raise GPflowError('Not compiled.')
         return session
 
     def set_session(self, session):
@@ -246,11 +250,13 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
 
     def _build_with_name_scope(self, name=None):
         name = self.name if name is None else name
-        with tf.name_scope(name):
-            self._build()
+        if self.is_built_coherence() is Build.NO:
+            with tf.name_scope(name):
+                self._build()
 
     def is_built_coherence(self, graph=None):
-        if self.session and graph and self.session.graph is not graph:
+        graph = self.enquire_graph(graph=graph)
+        if graph and self.session and self.session.graph is not graph:
             raise GPflowError('Tensor uses different graph.')
         is_built = self.is_built(graph)
         if is_built is Build.NOT_COMPATIBLE_GRAPH:

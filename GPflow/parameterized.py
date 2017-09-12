@@ -73,22 +73,27 @@ class Parameterized(CompilableNode):
     @property
     def free_params(self):
         for param in self.params:
-            if not param.fixed:
+            if param.fixed:
+                continue
+            if isinstance(param, Parameterized):
+                for sub_param in param.free_params:
+                    if not sub_param.fixed:
+                        yield sub_param
+            elif isinstance(param, Param):
                 yield param
+
+    @property
+    def free_param_tensors(self):
+        return [param.param_tensor for param in self.free_params]
 
     @property
     def prior_tensor(self):
         return self._prior_tensor
 
-    @property
-    def free_param_tensors(self):
-        for param in self.free_params:
-            yield param.param_tensor
-
     def is_built(self, graph=None):
-        graph = self.verified_graph(graph)
+        if graph is None:
+            raise ValueError('Graph is not specified.')
         param_graphs = set([param.graph for param in self.params])
-
         if None in param_graphs and param_graphs.issubset([None, graph]):
             return Build.NO
         elif graph not in param_graphs:
@@ -115,18 +120,8 @@ class Parameterized(CompilableNode):
         for param in self.params:
             param.fixed = value
 
-    def compile(self, session=None, keep_session=True):
-        # TODO(awav):
-        session = self.setup_compile_session(session, keep_session)
-        is_built = self.is_built_coherence(session.graph)
-        with self.compilation_context(session):
-            if is_built is Build.NO:
-                for param in self.params:
-                    param.compile(session)
-                self._prior_tensor = self._build_prior()
-
     def initialize(self, session=None):
-        session = self.verified_custom_session(session)
+        session = self.enquire_session(session)
         variables = [param.param_tensor for param in self.params
                      if isinstance(param.param_tensor, tf.Variable)]
         if variables:
@@ -146,7 +141,6 @@ class Parameterized(CompilableNode):
     #        param.randomize(distributions, skipfixed)
 
     def _build(self):
-        if
         for param in self.params:
             param._build_with_name_scope() # pylint: disable=W0212
         self._prior_tensor = self._build_prior()
@@ -244,7 +238,7 @@ class Parameterized(CompilableNode):
 
 # TODO(awav)
     def __getstate__(self):
-        d = Parentable.__getstate__(self)
+        d = super(Parameterized, self).__getstate__()
         # do not pickle autoflow
         for key in list(d.keys()):
             if key[0] == '_' and key[-11:] == '_AF_storage':
@@ -253,7 +247,7 @@ class Parameterized(CompilableNode):
 
 # TODO(awav)
     def __setstate__(self, d):
-        Parentable.__setstate__(self, d)
+        super(Parameterized, self).__setstate__(d)
         # reinstate _parent graph
         for p in self.sorted_params + self.data_holders:
             p._parent = self
@@ -261,7 +255,7 @@ class Parameterized(CompilableNode):
 # TODO(awav)
     def __str__(self, prepend=''):
         prepend += self.name + '.'
-        return '\n'.join([p.__str__(prepend) for p in self.sorted_params])
+        return '\n'.join([p.__str__(prepend) for p in self.params])
 
     #def get_parameter_dict(self, d=None):
     #    if d is None:
@@ -559,10 +553,9 @@ class Model(Parameterized, ISessionOwner):
         similar object in the tensorflow case.
         """
 
-        if type(method) is str:
+        if isinstance(method, str):
             return self._optimize_np(method, tol, callback, maxiter, **kw)
-        else:
-            return self._optimize_tf(method, callback, maxiter, **kw)
+        return self._optimize_tf(method, callback, maxiter, **kw)
 
     def _build(self):
         super(Model, self)._build()
