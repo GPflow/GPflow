@@ -20,16 +20,16 @@ def plot(m, xx, x_data, y_data):
     plt.figure(figsize=(12, 6))
 
 
-    if len(xx.shape) == 3:
-        plt.plot(xx[:, :, 0], func1(xx[:, :, 0])[0], 'g', lw=4)
+    if xx.shape[1] == 2:
+        plt.plot(xx[:, 0], func1(xx[:, 0])[0], 'g', lw=4)
     else:
         plt.plot(xx, func1(xx)[0], 'g', lw=4)
 
     plt.plot(x_data, y_data, 'kx', mew=2)
 
     time_before = time.time()
-    if len(xx.shape) == 3:
-        mean, var = m.predict_y_more_dimensions(xx)
+    if xx.shape[1] == 2:
+        mean, var = m.predict_y(xx)
 
         ax = plt.gca()
 
@@ -39,14 +39,11 @@ def plot(m, xx, x_data, y_data):
         for loc, f, der in zip(derivative_obs, f, derivs):
             dx = 0.05
             ax.arrow(loc[0], f[0], dx, der[0] * dx)
-        xx = xx[:, :, 0]
+        xx = xx[:, 0:1]
 
     else:
         mean, var = m.predict_y(xx)
     print("Time making predictions is {}".format(time.time()-time_before))
-
-
-
 
 
     plt.plot(xx, mean, 'b', lw=2)
@@ -73,15 +70,15 @@ def main():
 
 
     x_full = np.concatenate((x_data, x_data), axis=0)
-    x_full = np.concatenate((x_full[:, :, None], np.zeros_like(x_full)[:, :, None]), axis=2)
-    x_full[-derivs.size:, :, 1] = 1
+    x_full = np.concatenate((x_full[:, :], np.zeros_like(x_full)[:, :]), axis=1)
+    x_full[-derivs.size:, 1] = 1
     f_full = np.concatenate((f_data, derivs), axis=0)
 
     rbf_kernel = gpflow.kernels.RBF(1)
     rbf_kernel2 = gpflow.kernels.RBF(1)
     rbf_kernel3 = gpflow.kernels.RBF(1)
-    deriv_kernel = gpflow.kernels.DifferentialObservationsKernelDynamic(1, rbf_kernel2)
-    deriv_kernel2 = gpflow.kernels.DifferentialObservationsKernelDynamic(1, rbf_kernel3)
+    deriv_kernel = gpflow.kernels.DifferentialObservationsKernelDynamic(1, rbf_kernel2, 1)
+    deriv_kernel2 = gpflow.kernels.DifferentialObservationsKernelDynamic(1, rbf_kernel3, 1)
 
 
     model_no_derivs = gpflow.gpr.GPR(x_data, f_data, kern=rbf_kernel)
@@ -93,8 +90,8 @@ def main():
     model_derivs.likelihood.variance.fixed = True
 
 
-    non_deriv_location = np.squeeze(x_full[:, :, 1] == 0)
-    model_derivs2 = gpflow.gpr.GPR(x_full[non_deriv_location, :, :], f_full[non_deriv_location, :], kern=deriv_kernel2)
+    non_deriv_location = np.squeeze(x_full[:, 1] == 0)
+    model_derivs2 = gpflow.gpr.GPR(x_full[non_deriv_location, :], f_full[non_deriv_location, :], kern=deriv_kernel2)
     model_derivs2.likelihood.variance = 1e-3
     model_derivs2.likelihood.variance.fixed = True
 
@@ -130,7 +127,7 @@ def main():
         model_derivs.optimize(maxiter=10, callback=callback)
         print(model_derivs)
         print(model_derivs.compute_log_likelihood())
-        plot(model_derivs, np.concatenate((x_axis[:, :, None], np.zeros_like(x_axis)[:, :, None]), axis=2), x_data, f_data)
+        plot(model_derivs, np.concatenate((x_axis[:, :], np.zeros_like(x_axis)[:, :]), axis=1), x_data, f_data)
         plt.show()
 
 
@@ -138,7 +135,7 @@ def main():
 
     print(model_derivs2)
     print(model_derivs2.compute_log_likelihood())
-    plot(model_derivs2, np.concatenate((x_axis[:, :, None], np.zeros_like(x_axis)[:, :, None]), axis=2), x_data, f_data)
+    plot(model_derivs2, np.concatenate((x_axis[:, :], np.zeros_like(x_axis)[:, :]), axis=1), x_data, f_data)
     plt.show()
 
 

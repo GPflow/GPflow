@@ -881,24 +881,26 @@ class DifferentialObservationsKernelDynamic(Kern):
     observation records.
 
     For instance the x tensor:
-    x = [[[a, 0],[b,1]],
-         [[c, 0],[d,0]],
-         [[e, 2],[f,0]]]
+    x = [[a,b,0,1],
+         [c,d,0,0],
+         [e,f,2,0]]
 
     would mean you have seen three observations at [a,b], [c,d] and [e,f].
     and these observations will be respectively
     df/dx_2|x=[a,b]
     f|x=[c,d]
     and d^2f/(dx_1^2)|x=[e,f].
+    (you have to pass into this class the variable obs_dims, which denotes the number of dimensions
+    of the observations, in this case 2).
 
-    The gradient observations should be positive integers otherwise undefined behaviour will occur.
-
-
-    IF YOU GIVE HIGHER THAN SECOND ORDER DERIVATIVES THEN BEHAVIOUR UNDEFINED
+    Undefined behaviour if following condiitions not met:
+        * gradient denotation should be positive integers
+        * only can do up to second derivatives
     """
 
-    def __init__(self, input_dim, base_kernel, active_dims=None):
+    def __init__(self, input_dim, base_kernel, obs_dims, active_dims=None):
         Kern.__init__(self, input_dim, active_dims)
+        self.obs_dims = obs_dims
         self.base_kernel = base_kernel
 
 
@@ -931,8 +933,8 @@ class DifferentialObservationsKernelDynamic(Kern):
         return tf.diag_part(k)
 
     def _split_x_into_locs_and_grad_information(self, x):
-        locs = x[:, :, 0]
-        grad_info = x[:, :, 1]
+        locs = x[:, :self.obs_dims]
+        grad_info = x[:, -self.obs_dims:]
         return locs, grad_info
 
     def _convert_grad_info_into_indics(self, grad_info_matrix):
@@ -1039,3 +1041,5 @@ class DifferentialObservationsKernelDynamic(Kern):
         new_kernel = tf.map_fn(calc_derivs, elems, dtype=tf.float64)
         new_kernel_reshaped = tf.reshape(new_kernel, k_shape)
         return new_kernel_reshaped
+
+

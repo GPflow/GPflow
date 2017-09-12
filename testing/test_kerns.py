@@ -663,6 +663,7 @@ class TestDifferentialObservationsKernelDynamic(GPflowTestCase):
 
     def setUp(self):
         self.x_data = np.array([[[1.7, 0], [3.2, 0]], [[0.32, 0], [1.4, 1]], [[3.1, 1], [2.1,1]]])
+        self.x_data = np.concatenate((self.x_data[:,:,0], self.x_data[:,:,1]), axis=1)
         self.lengthscale = 1.8
         self.variance = 2.32
         self.expected_kernel = np.array([
@@ -673,7 +674,9 @@ class TestDifferentialObservationsKernelDynamic(GPflowTestCase):
         # ^ calculated by hand
 
         self.x_1 = np.array([[[0.1, 1], [-0.21, 0]], [[0.32, 0], [-0.67, 1]], [[0.3,2], [-0.7, 0]]])
+        self.x_1 = np.concatenate((self.x_1[:,:,0], self.x_1[:,:,1]), axis=1)
         self.x_2 = np.array([[[0.8, 0], [-0.97, 0]], [[0.11, 0], [-0.89, 1]], [[-0.5, 0], [0.1, 0]]])
+        self.x_2 = np.concatenate((self.x_2[:,:,0], self.x_2[:,:,1]), axis=1)
         self.expected_kernel2 = np.array([
             [0.42509858395061728,  0.0013992965973174815, -0.40042949444444437],
             [-0.20445172499999995, 0.69535566997561338, 0.45355748709876537],
