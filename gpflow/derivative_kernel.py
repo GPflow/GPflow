@@ -214,3 +214,129 @@ class DifferentialObservationsKernelDynamic(kernels.Kern):
         new_kernel_reshaped = tf.reshape(new_kernel, k_shape)
         return new_kernel_reshaped
 
+
+
+class RBFDerivativeKern(DifferentialObservationsKernelDynamic):
+    """
+    Have the analytical expressions for the RBF kernel. We hope that this allows for faster
+    evaluation.
+    """
+    def __init__(self, input_dim, obs_dims, active_dims=None):
+        base_kernel = kernels.RBF(input_dim, active_dims=active_dims)
+        DifferentialObservationsKernelDynamic.__init__(self, input_dim, base_kernel,
+                                                       obs_dims, active_dims=active_dims)
+
+
+    def _k_correct_dynamic(self, orig_kern, xl, xr, deriv_info_left, deriv_info_right):
+        """
+        So for speed reasons we want this to be as vectorised as possible. Also due to static graph
+        restrictions we will define all the possible routes through. A dynamic stitch will be used
+        at the end to choose the right version.
+        See base class for indexes.
+        """
+        # Note there are different ways to do this. One may try and do dynamic partition, do the
+        # respective derivative calculations and then stitch everything back together at the end
+        # using dynamic stitch. Instead we have decided to opt for calculating everything everywhere
+        # and then selecting teh correct result via gather_nd at the end. Done this as some of
+        # the intermediate calculations actually come up again later on and so may gain speed by
+        # computing them once in a large batch. We also thought that it probably would be slightly
+        # easier to code. If this method is slow we could consider the dynamic partition and stitch
+        # equivalent instead
+
+        xl_min_xr_for_idx_i = self._compute_pairwise_distances(xl, xr, deriv_info_left[:, 1], left=True)
+        xl_min_xr_for_idx_j = self._compute_pairwise_distances(xl, xr, deriv_info_left[:, 2], left=True)
+        xl_min_xr_for_idx_k = self._compute_pairwise_distances(xl, xr, deriv_info_right[:, 1], left=False)
+        xl_min_xr_for_idx_m = self._compute_pairwise_distances(xl, xr, deriv_info_right[:, 2], left=False)
+
+        ell_sq_i = tf.gather(self.base_kernel.lengthscales, deriv_info_left[:, 1])[:, None]**(-2)
+        ell_sq_j = tf.gather(self.base_kernel.lengthscales, deriv_info_left[:, 2])[:, None]**(-2)
+        ell_sq_k = tf.gather(self.base_kernel.lengthscales, deriv_info_right[:, 1])[None, :]**(-2)
+        ell_sq_m = tf.gather(self.base_kernel.lengthscales, deriv_info_right[:, 2])[None, :]**(-2)
+
+
+        # First derivatives
+        dk__dxli = - orig_kern * xl_min_xr_for_idx_i * ell_sq_i
+        dk__dxrk = orig_kern * xl_min_xr_for_idx_k * ell_sq_k
+
+
+        # Second derivatives
+        where_i_equals_j = tf.cast(tf.equal(deriv_info_left[:, 1], deriv_info_left[:, 2])[:, None], float_type)
+        dk__dxlj_dxli = -where_i_equals_j * ell_sq_j * orig_kern + -ell_sq_j* xl_min_xr_for_idx_j * dk__dxli
+        where_i_equals_k = tf.cast(tf.equal(deriv_info_left[:, 1][:, None], deriv_info_right[:, 1][None, :]), float_type)
+        dk__dxli_dxrk = where_i_equals_k * ell_sq_i * orig_kern - ell_sq_i * xl_min_xr_for_idx_i * dk__dxrk
+        where_m_equals_k = tf.cast(tf.equal(deriv_info_right[:, 1], deriv_info_right[:, 2]), float_type)[None, :]
+        dk__dxrm_dxrk = -where_m_equals_k * ell_sq_m * orig_kern + ell_sq_m * xl_min_xr_for_idx_m * dk__dxrk
+
+
+        stacked = tf.stack([orig_kern, dk__dxli, dk__dxrk, dk__dxli_dxrk])
+        reshaped = tf.reshape(stacked, [tf.shape(stacked)[0], -1])
+
+        choice = tf.reshape(deriv_info_left[:, 0, None] + 2*tf.expand_dims(deriv_info_right[:, 0], axis=0),  (-1,))
+        arange = tf.range(tf.size(choice))
+        coords = tf.stack((choice, arange), axis=1)
+
+        new_k = tf.gather_nd(reshaped, coords)
+        new_k_correct_shape = tf.reshape(new_k, tf.shape(orig_kern))
+        return new_k_correct_shape
+
+
+
+
+    def _compute_pairwise_distances(self, x1, x2, idx, left=True):
+        """
+        :param idx:
+        :param left:  if true idx refers to the left item but if not then referes to righ
+        """
+
+
+        num_left = tf.shape(x1)[0]
+        num_right = tf.shape(x2)[0]
+
+        if left:
+            ra = tf.range(num_left)
+            idx_all = tf.stack((ra, idx), axis=1)
+            x1s = tf.gather_nd(x1, idx_all)
+            x1_full = tf.expand_dims(x1s, axis=1)
+
+            rar = tf.range(num_right)
+            rar_rep = tf.tile(rar, [num_left])
+            idxr = tensorflow_repeats(idx, num_right)
+            idx_all_r = tf.stack((rar_rep, idxr), axis=1)
+            x2_full_flat = tf.gather_nd(x2, idx_all_r)
+            x2_full = tf.reshape(x2_full_flat, (num_left, num_right))
+        else:
+            ra = tf.range(num_right)
+            idx_all = tf.stack((ra, idx), axis=1)
+            x2s = tf.gather_nd(x2, idx_all)
+            x2_full = tf.expand_dims(x2s, axis=0)
+
+            ral = tf.range(num_left)
+            ral_rep = tensorflow_repeats(ral, num_right)
+            idxl = tf.tile(idx, [num_left])
+            idx_all_l = tf.stack((ral_rep, idxl), axis=1)
+            x1_full_flat = tf.gather_nd(x1, idx_all_l)
+            x1_full = tf.reshape(x1_full_flat, (num_left, num_right))
+
+        diff = x1_full - x2_full
+
+        # ra = tf.range(tf.shape(x1)[0])
+        # idx_all = tf.stack((ra, idx), axis=1)
+        # x1s = tf.gather_nd(x1, idx_all)
+        # x2s = tf.gather_nd(x2, idx_all)
+        # x1s[:, None] - x2s[None, :]
+        return diff
+
+
+def tensorflow_repeats(vec, num_repeats):
+    """
+    This is TensorFlow version of numpy repeats.
+    # for instance to repeat vec=[0,1,2] 3 times we want:
+    # [0,0,0,1,1,1,2,2,2]
+    :param vec: vec should be one dimensional. we'll say it has length N
+    :param num_repeats: a scalar saying how many time to repeat. we'll call this R
+    """
+
+    vec = tf.expand_dims(vec, axis=1)  # it is now a column vector (Nx1)
+    vec = tf.tile(vec, [1, num_repeats])  # it is now a matrix (NxR)
+    vec = tf.reshape(vec, (-1,))  # it is now the NR vector of the form we want.
+    return vec

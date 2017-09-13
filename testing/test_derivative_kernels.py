@@ -94,3 +94,27 @@ class TestDifferentialObservationsKernelDynamic(GPflowTestCase):
 
         np.testing.assert_array_almost_equal(k_evald_diag, np.diag(self.expected_kernel))
 
+class TestRBFDerivativeKern(GPflowTestCase):
+
+    def test_self_kernel_is_correct(self):
+        x1 = np.array([[0.12, 0.], [0.67, 1]])
+
+
+        x_ph = tf.placeholder(tf.float64, [None, 2])
+        kernel = gpflow.derivative_kernel.RBFDerivativeKern(1,1)
+        # we leave kernel with default lengthscales and sigma
+
+        expected_raw_kerel = np.array([[ 1.         , 0.85963276],
+                                        [ 0.85963276,  1.        ]])
+        expected_kernel = np.array([[1, -0.4727980199813982], [-0.4727980199813982, 1]])
+
+        with self.test_session() as sess:
+            with kernel.tf_mode():
+                x_free = tf.placeholder('float64')
+                kernel.make_tf_array(x_free)
+                k = kernel.K(x_ph)
+            k_evald = sess.run(k, feed_dict={x_ph:x1, x_free: kernel.get_free_state()})
+            np.testing.assert_array_almost_equal(k_evald, expected_kernel)
+
+
+

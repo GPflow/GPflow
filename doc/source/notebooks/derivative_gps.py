@@ -77,9 +77,9 @@ def main():
     rbf_kernel = gpflow.kernels.RBF(1)
     rbf_kernel2 = gpflow.kernels.RBF(1)
     rbf_kernel3 = gpflow.kernels.RBF(1)
-    deriv_kernel = gpflow.kernels.DifferentialObservationsKernelDynamic(1, rbf_kernel2, 1)
-    deriv_kernel2 = gpflow.kernels.DifferentialObservationsKernelDynamic(1, rbf_kernel3, 1)
-
+    deriv_kernel = gpflow.derivative_kernel.DifferentialObservationsKernelDynamic(1, rbf_kernel2, 1)
+    deriv_kernel2 = gpflow.derivative_kernel.DifferentialObservationsKernelDynamic(1, rbf_kernel3, 1)
+    deriv_kernel3 = gpflow.derivative_kernel.RBFDerivativeKern(1, 1)
 
     model_no_derivs = gpflow.gpr.GPR(x_data, f_data, kern=rbf_kernel)
     model_no_derivs.likelihood.variance = 1e-3
@@ -94,6 +94,11 @@ def main():
     model_derivs2 = gpflow.gpr.GPR(x_full[non_deriv_location, :], f_full[non_deriv_location, :], kern=deriv_kernel2)
     model_derivs2.likelihood.variance = 1e-3
     model_derivs2.likelihood.variance.fixed = True
+
+
+    model_deriv_rbf = gpflow.gpr.GPR(x_full, f_full, kern=deriv_kernel3)
+    model_deriv_rbf.likelihood.variance = 1e-3
+    model_deriv_rbf.likelihood.variance.fixed = True
 
 
 
@@ -119,7 +124,15 @@ def main():
     # #plot(model_predefined_derivs, x_axis, x_data, f_data)  # this will not work
     # #plt.show()
 
+    print("Model deriv rbf")
+    model_deriv_rbf.optimize(maxiter=10, callback=callback)
+    print(model_deriv_rbf)
+    print(model_deriv_rbf.compute_log_likelihood())
+    plot(model_deriv_rbf, np.concatenate((x_axis[:, :], np.zeros_like(x_axis)[:, :]), axis=1), x_data,
+         f_data)
+    plt.show()
 
+    print("basic deriv model")
     # Model with derivative observations
     model_with_deriv = True
     if model_with_deriv:
@@ -132,11 +145,12 @@ def main():
 
 
     # Model with derivative observations but does not use them
-
-    print(model_derivs2)
-    print(model_derivs2.compute_log_likelihood())
-    plot(model_derivs2, np.concatenate((x_axis[:, :], np.zeros_like(x_axis)[:, :]), axis=1), x_data, f_data)
-    plt.show()
+    model_no_derivbative_use = False
+    if model_no_derivbative_use:
+        print(model_derivs2)
+        print(model_derivs2.compute_log_likelihood())
+        plot(model_derivs2, np.concatenate((x_axis[:, :], np.zeros_like(x_axis)[:, :]), axis=1), x_data, f_data)
+        plt.show()
 
 
 
