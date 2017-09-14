@@ -19,6 +19,7 @@ import numpy as np
 from . import transforms
 
 from .params import Param, DataHolder
+from .params import params_as_tensors
 from .model import GPModel
 from .mean_functions import Zero
 from .conditionals import conditional
@@ -65,7 +66,7 @@ class VGP(GPModel):
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
         self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_data, self.num_latent))
 
-    def compile(self, session=None, graph=None, optimizer=None):
+    def compile(self, session=None, keep_session=True):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -79,10 +80,9 @@ class VGP(GPModel):
             self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] *
                                 np.ones((1, 1, self.num_latent)))
 
-        return super(VGP, self).compile(session=session,
-                                        graph=graph,
-                                        optimizer=optimizer)
+        return super(VGP, self).compile(session=session, keep_session=keep_session)
 
+    @params_as_tensors
     def _build_likelihood(self):
         """
         This method computes the variational lower bound on the likelihood,
@@ -119,7 +119,8 @@ class VGP(GPModel):
 
         return tf.reduce_sum(var_exp) - KL
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         mu, var = conditional(Xnew, self.X, self.kern, self.q_mu,
                               q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=True)
         return mu + self.mean_function(Xnew), var
@@ -166,7 +167,7 @@ class VGP_opper_archambeau(GPModel):
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
-    def compile(self, session=None, graph=None, optimizer=None):
+    def compile(self, session=None, keep_session=True):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -179,10 +180,10 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        return super(VGP_opper_archambeau, self).compile(session=session,
-                                                         graph=graph,
-                                                         optimizer=optimizer)
+        return super(VGP_opper_archambeau, self).compile(
+            session=session, keep_session=keep_session)
 
+    @params_as_tensors
     def _build_likelihood(self):
         """
         q_alpha, q_lambda are variational parameters, size N x R
@@ -215,7 +216,8 @@ class VGP_opper_archambeau(GPModel):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         return tf.reduce_sum(v_exp) - KL
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         """
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)

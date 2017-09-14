@@ -50,7 +50,7 @@ class Kern(Parameterized):
         If active dims is None, it effectively defaults to range(input_dim),
         but we store it as a slice for efficiency.
         """
-        Parameterized.__init__(self)
+        super(Kern, self).__init__()
         self.scoped_keys.extend(['K', 'Kdiag'])
         self.input_dim = int(input_dim)
         if active_dims is None:
@@ -315,7 +315,7 @@ class Stationary(Kern):
         - ARD specifies whether the kernel has one lengthscale per dimension
           (ARD=True) or a single lengthscale (ARD=False).
         """
-        Kern.__init__(self, input_dim, active_dims)
+        super(Stationary, self).__init__(input_dim, active_dims)
         self.scoped_keys.extend(['square_dist', 'euclid_dist'])
         self.variance = Param(variance, transforms.positive)
         if ARD:

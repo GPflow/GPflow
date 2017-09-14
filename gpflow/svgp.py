@@ -20,6 +20,7 @@ import numpy as np
 from . import transforms, conditionals, kullback_leiblers
 
 from .params import Param
+from .params import params_as_tensors
 from .model import GPModel
 from .minibatch import MinibatchData
 from .misc import TF_FLOAT_TYPE
@@ -79,6 +80,7 @@ class SVGP(GPModel):
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_inducing, self.num_latent))
 
+    @params_as_tensors
     def build_prior_KL(self):
         if self.whiten:
             if self.q_diag:
@@ -93,6 +95,7 @@ class SVGP(GPModel):
                 KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
         return KL
 
+    @params_as_tensors
     def _build_likelihood(self):
         """
         This gives a variational bound on the model likelihood.
@@ -102,18 +105,18 @@ class SVGP(GPModel):
         KL = self.build_prior_KL()
 
         # Get conditionals
-        fmean, fvar = self.build_predict(self.X, full_cov=False)
+        fmean, fvar = self._build_predict(self.X, full_cov=False)
 
         # Get variational expectations.
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, TF_FLOAT_TYPE) /\
-            tf.cast(tf.shape(self.X)[0], TF_FLOAT_TYPE)
+        scale = tf.cast(self.num_data, TF_FLOAT_TYPE) / tf.cast(tf.shape(self.X)[0], TF_FLOAT_TYPE)
 
         return tf.reduce_sum(var_exp) * scale - KL
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         mu, var = conditionals.conditional(Xnew, self.Z, self.kern, self.q_mu,
                                            q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var

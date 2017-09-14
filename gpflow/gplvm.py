@@ -8,6 +8,7 @@ from . import kernels
 from .model import GPModel
 from .gpr import GPR
 from .params import Param
+from .params import params_as_tensors
 from .mean_functions import Zero
 from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 from ._settings import settings
@@ -109,6 +110,7 @@ class BayesianGPLVM(GPModel):
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent
 
+    @params_as_tensors
     def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
@@ -152,7 +154,8 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which

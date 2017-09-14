@@ -22,6 +22,7 @@ from . import likelihoods
 from .model import GPModel
 from .autoflow import AutoFlow
 from .params import Param, DataHolder
+from .params import params_as_tensors
 from .mean_functions import Zero
 from .misc import TF_FLOAT_TYPE
 from ._settings import settings
@@ -51,6 +52,7 @@ class SGPRUpperMixin(object):
     """
 
     @AutoFlow()
+    @params_as_tensors
     def compute_upper_bound(self):
         num_inducing = tf.shape(self.Z)[0]
         num_data = tf.cast(tf.shape(self.Y)[0], TF_FLOAT_TYPE)
@@ -154,7 +156,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
         return bound
 
-    def build_predict(self, Xnew, full_cov=False):
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
@@ -290,7 +292,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
 
-    def build_predict(self, Xnew, full_cov=False):
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.

@@ -7,6 +7,7 @@ from numpy import pi as nppi
 from . import kernels
 from .quadrature import mvhermgauss
 from .misc import TF_FLOAT_TYPE, TF_INT_TYPE
+from .params import params_as_tensors
 from ._settings import settings
 
 class RBF(kernels.RBF):
@@ -18,6 +19,7 @@ class RBF(kernels.RBF):
         """
         return self.Kdiag(X)
 
+    @params_as_tensors
     def eKxz(self, Z, Xmu, Xcov):
         """
         Also known as phi_1: <K_{x, Z}>_{q(x)}.
@@ -42,6 +44,7 @@ class RBF(kernels.RBF):
 
         return self.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
 
+    @params_as_tensors
     def exKxz(self, Z, Xmu, Xcov):
         """
         <x_t K_{x_{t-1}, Z}>_q_{x_{t-1:t}}
@@ -79,6 +82,7 @@ class RBF(kernels.RBF):
 
         return self.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
+    @params_as_tensors
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
         Also known as Phi_2.
@@ -112,6 +116,7 @@ class RBF(kernels.RBF):
 
 
 class Linear(kernels.Linear):
+    @params_as_tensors
     def eKdiag(self, X, Xcov):
         if self.ARD:
             raise NotImplementedError
@@ -120,6 +125,7 @@ class Linear(kernels.Linear):
         Xcov = self._slice_cov(Xcov)
         return self.variance * (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.matrix_diag_part(Xcov), 1))
 
+    @params_as_tensors
     def eKxz(self, Z, Xmu, Xcov):
         if self.ARD:
             raise NotImplementedError
@@ -127,6 +133,7 @@ class Linear(kernels.Linear):
         Z, Xmu = self._slice(Z, Xmu)
         return self.variance * tf.matmul(Xmu, Z, transpose_b=True)
 
+    @params_as_tensors
     def exKxz(self, Z, Xmu, Xcov):
         with tf.control_dependencies([
             tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, TF_INT_TYPE),
@@ -141,6 +148,7 @@ class Linear(kernels.Linear):
         op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
         return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 
+    @params_as_tensors
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
         exKxz

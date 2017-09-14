@@ -125,9 +125,6 @@ class GPModel(Model):
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 
-    def _build_predict(self, *args, **kwargs):
-        raise NotImplementedError
-
     @AutoFlow((TF_FLOAT_TYPE, [None, None]))
     def predict_f(self, Xnew):
         """
@@ -165,7 +162,7 @@ class GPModel(Model):
         """
         Compute the mean and variance of held-out data at the points Xnew
         """
-        pred_f_mean, pred_f_var = self.build_predict(Xnew)
+        pred_f_mean, pred_f_var = self._build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
     @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]))
@@ -179,3 +176,6 @@ class GPModel(Model):
         """
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
+
+    def build_predict(self, *args, **kwargs):
+        raise NotImplementedError

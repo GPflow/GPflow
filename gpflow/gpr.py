@@ -21,6 +21,7 @@ from . import likelihoods
 from .model import GPModel
 from .densities import multivariate_normal
 from .params import DataHolder
+from .params import params_as_tensors
 from .misc import TF_FLOAT_TYPE
 
 
@@ -49,6 +50,7 @@ class GPR(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name)
         self.num_latent = Y.shape[1]
 
+    @params_as_tensors
     def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the likelihood.
@@ -62,7 +64,8 @@ class GPR(GPModel):
 
         return multivariate_normal(self.Y, m, L)
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
