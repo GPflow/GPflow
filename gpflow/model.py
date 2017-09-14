@@ -125,7 +125,7 @@ class GPModel(Model):
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 
-    def build_predict(self, *args, **kwargs):
+    def _build_predict(self, *args, **kwargs):
         raise NotImplementedError
 
     @AutoFlow((TF_FLOAT_TYPE, [None, None]))

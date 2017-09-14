@@ -57,6 +57,7 @@ class Param(CompilableNode):
         super(Param, self).__init__(name)
         self._param_tensor = None
         self._prior_tensor = None
+        self._transformed_tensor = None
         self._externally_defined = False
 
         self.prior = prior
@@ -87,6 +88,10 @@ class Param(CompilableNode):
     @property
     def prior_tensor(self):
         return self._prior_tensor
+
+    @property
+    def transformed_tensor(self):
+        return self._transformed_tensor
 
     @property
     def graph(self):
@@ -166,6 +171,7 @@ class Param(CompilableNode):
 
     def _build(self):
         self._param_tensor = self._build_param()
+        self._transformed_tensor = self._build_transformed()
         self._prior_tensor = self._build_prior()
 
     def _build_param(self):
@@ -183,12 +189,17 @@ class Param(CompilableNode):
         init = tf.constant_initializer(self._initial_value, dtype=TF_FLOAT_TYPE)
         return tf.get_variable(name, shape=self.shape, initializer=init, dtype=TF_FLOAT_TYPE)
 
+    def _build_transformed(self):
+        if not is_tensor(self.param_tensor):  # pragma: no cover
+            raise GPflowError("Parameter's tensor is not compiled.")
+        return self.transform.tf_forward(self.param_tensor)
+
     def _build_prior(self):
         """
         Build a tensorflow representation of the prior density.
         The log Jacobian is included.
         """
-        if not is_tensor(self.param_tensor):  # pragma: no cover
+        if not is_tensor(self.transformed_tensor):  # pragma: no cover
             raise GPflowError("Parameter's tensor is not compiled.")
 
         prior_name = 'prior'
@@ -198,8 +209,7 @@ class Param(CompilableNode):
 
         var = self.param_tensor
         log_jacobian = self.transform.tf_log_jacobian(var)
-        transformed_var = self.transform.tf_forward(var)
-        logp_var = self.prior.logp(transformed_var)
+        logp_var = self.prior.logp(self.transformed_tensor)
         return tf.add(logp_var, log_jacobian, name=prior_name)
 
     def _set_parameter_attribute(self, attr, value):
@@ -465,7 +475,7 @@ class Parameterized(CompilableNode):
         if get_attribute(self, _TENSOR_MODE_ATTRIBUTE) is not None:
             attr = get_attribute(self, name)
             if isinstance(attr, Param):
-                return attr.param_tensor
+                return attr.transformed_tensor
         return get_attribute(self, name)
 
 # TODO(awav)
