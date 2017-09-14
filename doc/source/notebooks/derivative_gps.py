@@ -2,6 +2,8 @@
 This file demonstrates training a Gaussian Process with derivative observations.
 """
 import time
+import copy
+import collections
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,148 +11,188 @@ import matplotlib.pyplot as plt
 import gpflow
 
 
+MAX_MODEL_ITERS = 50
+NUM_OBS = 25
+SET_VARIANCE = False
+AXIS_EDGE = 0.5
+
+
+def time_preds(model, x_axis_points):
+    time_before = time.time()
+    mean, var = model.predict_y(x_axis_points)
+    time_for_predictions = time.time() - time_before
+    return mean, var, time_for_predictions
+
+
+def plot(ax, mean, var, x_axis_points, x_observations, y_observations,
+         do_derivs=False, do_second_derivs=False):
+    
+    ax.plot(x_axis_points, func1(x_axis_points)[0], 'g', lw=4)
+    ax.plot(x_observations, y_observations, 'kx', mew=2)
+
+    f, derivs, second_derivs = func1(x_observations)
+
+    ax.plot(x_axis_points, mean, 'b', lw=2)
+    ax.fill_between(x_axis_points[:, 0], mean[:, 0] - 2 * np.sqrt(var[:, 0]),
+                    mean[:, 0] + 2 * np.sqrt(var[:, 0]), color='blue', alpha=0.2)
+    if do_derivs:
+        for loc, f_i, der in zip(x_observations, f, derivs):
+            dx = 0.05
+            ax.arrow(loc[0], f_i[0], dx, der[0] * dx)
+    if do_second_derivs:
+        for loc, f_i, s_der in zip(x_observations, f, second_derivs):
+            dx = 0.05
+            ax.arrow(loc[0], f_i[0], dx, s_der[0] * dx, color='r')
+
+    return ax
+
 
 def func1(x):
     f = np.sin(12*x) + 0.66*np.cos(25*x)
     deriv = 12 * np.cos(12*x) - 0.66 * 25 * np.sin(25*x)  # the analytical deriv
-    return f, deriv
+    second_deriv = -144 * np.sin(12*x) - 412.5 * np.cos(25*x)
+    return f, deriv, second_deriv
 
 
-def plot(m, xx, x_data, y_data):
-    plt.figure(figsize=(12, 6))
+def create_random_x_data(rng):
+    x_data = rng.rand(NUM_OBS, 1)  # make it as a column vector
+    x_axis_indcs = np.linspace(x_data.min() - AXIS_EDGE, x_data.max() + AXIS_EDGE, 150)[:, None]
+    return x_data, x_axis_indcs
+    
+    
+def package_data(x_data, x_axis_idcs):
+
+    f_data, derivs, second_derivs = func1(x_data)
+
+    x_axis_for_deriv_f_and_deriv = np.concatenate((
+        np.tile(x_data, [2, 1]), np.concatenate([np.zeros_like(x_data), np.ones_like(x_data)],axis=0)
+    ), axis=1)
+    x_axis_for_deriv_f_d_and_sd = np.concatenate((
+        x_axis_for_deriv_f_and_deriv, np.concatenate(
+            [x_data, np.ones_like(x_data)*2.], axis=1
+        )
+    ), axis=0)
+
+    data = dict(
+        x_axis_plain=x_axis_idcs,
+        x_axis_for_deriv_models=np.concatenate((x_axis_idcs, np.zeros_like(x_axis_idcs)), axis=1),
+
+        x_plain=x_data,
+        x_for_deriv_f_only=np.concatenate((x_data, np.zeros_like(x_data)), axis=1),
+        x_for_deriv_f_and_deriv=x_axis_for_deriv_f_and_deriv,
+        x_for_deriv_f_and_both_derivs=x_axis_for_deriv_f_d_and_sd,
+        f=f_data,
+        f_and_d=np.vstack([f_data, derivs]),
+        f_and_d_and_sd=np.vstack([f_data, derivs, second_derivs])
+    )
+    return data
 
 
-    if xx.shape[1] == 2:
-        plt.plot(xx[:, 0], func1(xx[:, 0])[0], 'g', lw=4)
-    else:
-        plt.plot(xx, func1(xx)[0], 'g', lw=4)
 
-    plt.plot(x_data, y_data, 'kx', mew=2)
+def make_models_and_package_with_correct_axis(data):
+    input_dim = 1
+    obs_dim = 1
 
-    time_before = time.time()
-    if xx.shape[1] == 2:
-        mean, var = m.predict_y(xx)
+    # Plain model rbf
+    rbf_kern1 = gpflow.kernels.RBF(input_dim)
+    model_no_derivs = gpflow.gpr.GPR(data['x_plain'], data['f'], kern=rbf_kern1)
 
-        ax = plt.gca()
+    # Derivative dynamic kernel with gradient obs
+    rbf_kern2 = gpflow.kernels.RBF(input_dim)
+    kern2 = gpflow.derivative_kernel.DifferentialObservationsKernelDynamic(input_dim, rbf_kern2, obs_dim)
+    model_deriv_dyn_d = gpflow.gpr.GPR(data['x_for_deriv_f_and_deriv'], data['f_and_d'], kern=kern2)
 
-        derivative_obs = x_data
+    # RBF deriv with no gradient observations
+    rbf_kern3 = gpflow.kernels.RBF(input_dim)
+    kern3 = gpflow.derivative_kernel.derivative_kernel_factory(input_dim, obs_dim, rbf_kern3)
+    model_deriv_rbf =  gpflow.gpr.GPR(data['x_for_deriv_f_only'], data['f'], kern=kern3)
 
-        f, derivs = func1(derivative_obs)
-        for loc, f, der in zip(derivative_obs, f, derivs):
-            dx = 0.05
-            ax.arrow(loc[0], f[0], dx, der[0] * dx)
-        xx = xx[:, 0:1]
+    # RBF deriv with deriv information
+    rbf_kern4 = gpflow.kernels.RBF(input_dim)
+    kern4 = gpflow.derivative_kernel.derivative_kernel_factory(input_dim, obs_dim, rbf_kern4)
+    model_deriv_rbf_d = gpflow.gpr.GPR(data['x_for_deriv_f_and_deriv'], data['f_and_d'], kern=kern4)
 
-    else:
-        mean, var = m.predict_y(xx)
-    print("Time making predictions is {}".format(time.time()-time_before))
+    # RBF deriv with deriv and second deriv information
+    rbf_kern5 = gpflow.kernels.RBF(input_dim)
+    kern5 = gpflow.derivative_kernel.derivative_kernel_factory(input_dim, obs_dim, rbf_kern5)
+    model_deriv_rbf_d_and_sd = gpflow.gpr.GPR(data['x_for_deriv_f_and_both_derivs'], data['f_and_d_and_sd'], kern=kern5)
 
+    # model, data for making predictions, whether uses  deriv, whether uses first deriv, add callback
+    models = collections.OrderedDict([
+        ("Plain RBF model", (model_no_derivs, data['x_axis_plain'], False, False, False)),
+        ("Dynamic deriv. model (f, df)",
+            (model_deriv_dyn_d, data['x_axis_for_deriv_models'], True, False, True)),
+        ("RBF deriv. model (f)",
+         (model_deriv_rbf, data['x_axis_for_deriv_models'], False, False, False)),
+        ("RBF deriv. model (f, df)",
+         (model_deriv_rbf_d, data['x_axis_for_deriv_models'], True, False, False)),
+        ("RBF deriv. model (f, df, d^2f)",
+         (model_deriv_rbf_d_and_sd, data['x_axis_for_deriv_models'], True, True, False))
+    ])
 
-    plt.plot(xx, mean, 'b', lw=2)
-    plt.fill_between(xx[:,0], mean[:,0] - 2*np.sqrt(var[:,0]), mean[:,0] + 2*np.sqrt(var[:,0]), color='blue', alpha=0.2)
-    plt.xlim(-0.1, 1.1)
+    if SET_VARIANCE:
+        for model, *_ in models.values():
+            print("Setting (and fixing) the variance of all models' likelihood small")
+            model.likelihood.variance = 1e-3
+            model.likelihood.variance.fixed = True
 
-
-
+    return models
 
 
 def main():
-
     rng = np.random.RandomState(100)
+    x_data, x_axis_indcs = create_random_x_data(rng)
 
-    num_obs = 10
-    x_data = rng.rand(num_obs,1)
-    x_axis = np.linspace(x_data.min()-0.2, x_data.max()+0.2, 50)[:, None]
-    f_data, derivs = func1(x_data)
+    data = package_data(x_data, x_axis_indcs)
 
-    #plt.plot(x_axis, func1(x_axis)[0], 'g', lw=4)
-    #plt.plot(x_axis, func1(x_axis)[1], 'b', lw=4)
-    #plt.show()
+    packaged_models = make_models_and_package_with_correct_axis(data)
 
+    f, axarr = plt.subplots(2, 3, figsize=(15,12))
+    flat_ax = axarr.flatten()
 
+    for (ax, (name, (model, x_axis_data, do_derivs, do_sderivs, callback))) in zip(flat_ax, packaged_models.items()):
+        print("Training {}...".format(name))
+        time_before = time.time()
+        if callback:
+            # some models are very slow so useful to see actually doing something!
+            callback = lambda x: print("step!")
+            model.optimize(maxiter=MAX_MODEL_ITERS, callback=callback)
+        else:
+            model.optimize(maxiter=MAX_MODEL_ITERS)
+        print("training took: {}".format(time.time()-time_before))
+        mean, var, time_predcs = time_preds(model, x_axis_data)
+        print("predictions took: {}".format(time_predcs))
+        plot(ax, mean, var, data['x_axis_plain'], data['x_plain'], data['f'], do_derivs, do_sderivs)
+        ax.set_title(name + "\n prediction time: {}".format(time_predcs))
+        print("================= \n\n")
 
-    x_full = np.concatenate((x_data, x_data), axis=0)
-    x_full = np.concatenate((x_full[:, :], np.zeros_like(x_full)[:, :]), axis=1)
-    x_full[-derivs.size:, 1] = 1
-    f_full = np.concatenate((f_data, derivs), axis=0)
-
-    rbf_kernel = gpflow.kernels.RBF(1)
-    rbf_kernel2 = gpflow.kernels.RBF(1)
-    rbf_kernel3 = gpflow.kernels.RBF(1)
-    deriv_kernel = gpflow.derivative_kernel.DifferentialObservationsKernelDynamic(1, rbf_kernel2, 1)
-    deriv_kernel2 = gpflow.derivative_kernel.DifferentialObservationsKernelDynamic(1, rbf_kernel3, 1)
-    deriv_kernel3 = gpflow.derivative_kernel.RBFDerivativeKern(1, 1)
-
-    model_no_derivs = gpflow.gpr.GPR(x_data, f_data, kern=rbf_kernel)
-    model_no_derivs.likelihood.variance = 1e-3
-    model_no_derivs.likelihood.variance.fixed = True
-
-    model_derivs = gpflow.gpr.GPR(x_full, f_full, kern=deriv_kernel)
-    model_derivs.likelihood.variance = 1e-3
-    model_derivs.likelihood.variance.fixed = True
+    plt.show()
 
 
-    non_deriv_location = np.squeeze(x_full[:, 1] == 0)
-    model_derivs2 = gpflow.gpr.GPR(x_full[non_deriv_location, :], f_full[non_deriv_location, :], kern=deriv_kernel2)
-    model_derivs2.likelihood.variance = 1e-3
-    model_derivs2.likelihood.variance.fixed = True
 
-
-    model_deriv_rbf = gpflow.gpr.GPR(x_full, f_full, kern=deriv_kernel3)
+def single_deriv_observation():
+    x_in = np.array([[0.,1]])
+    y = np.array([[1.]])
+    rbf_kern = gpflow.kernels.RBF(1)
+    kern = gpflow.derivative_kernel.derivative_kernel_factory(1, 1, rbf_kern)
+    model_deriv_rbf =  gpflow.gpr.GPR(x_in, y, kern=kern)
     model_deriv_rbf.likelihood.variance = 1e-3
-    model_deriv_rbf.likelihood.variance.fixed = True
 
+    x = np.linspace(-10, 10, 100)[:, None]
+    x_data = np.hstack([x, np.zeros_like(x)])
+    mean, var = model_deriv_rbf.predict_y(x_data)
+    plt.plot(x, mean, 'b', lw=2)
+    plt.fill_between(x[:, 0], mean[:, 0] - 2 * np.sqrt(var[:, 0]),
+                    mean[:, 0] + 2 * np.sqrt(var[:, 0]), color='blue', alpha=0.2)
 
-
-    #print(x_full)
-    #print(f_full)
-    # No derivative kernel
-    steps = []
-    def callback(_):
-        steps.append(time.time())
-        print("step")
-
-    model_no_derivs.optimize(maxiter=10, callback=callback)
-    print(model_no_derivs)
-    print(np.diff(steps))
-    print(model_no_derivs.compute_log_likelihood())
-    plot(model_no_derivs, x_axis, x_data, f_data)
+    for m in model_deriv_rbf.predict_f_samples(x_data, 5):
+        plt.plot(x, m)
 
     plt.show()
-    #
-    # # model predefined derivs
-    # print(model_predefined_derivs)
-    # print(model_predefined_derivs.compute_log_likelihood())
-    # #plot(model_predefined_derivs, x_axis, x_data, f_data)  # this will not work
-    # #plt.show()
-
-    print("Model deriv rbf")
-    model_deriv_rbf.optimize(maxiter=10, callback=callback)
-    print(model_deriv_rbf)
-    print(model_deriv_rbf.compute_log_likelihood())
-    plot(model_deriv_rbf, np.concatenate((x_axis[:, :], np.zeros_like(x_axis)[:, :]), axis=1), x_data,
-         f_data)
-    plt.show()
-
-    print("basic deriv model")
-    # Model with derivative observations
-    model_with_deriv = True
-    if model_with_deriv:
-        steps.clear()
-        model_derivs.optimize(maxiter=10, callback=callback)
-        print(model_derivs)
-        print(model_derivs.compute_log_likelihood())
-        plot(model_derivs, np.concatenate((x_axis[:, :], np.zeros_like(x_axis)[:, :]), axis=1), x_data, f_data)
-        plt.show()
 
 
-    # Model with derivative observations but does not use them
-    model_no_derivbative_use = False
-    if model_no_derivbative_use:
-        print(model_derivs2)
-        print(model_derivs2.compute_log_likelihood())
-        plot(model_derivs2, np.concatenate((x_axis[:, :], np.zeros_like(x_axis)[:, :]), axis=1), x_data, f_data)
-        plt.show()
+
+
 
 
 
@@ -159,3 +201,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    print("Done!")
