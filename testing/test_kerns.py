@@ -571,7 +571,5 @@ class TestARDInit(GPflowTestCase):
             k2 = gpflow.kernels.ArcCosine(3, weight_variances=np.ones(3) * 1.23, ARD=True)
             self.assertTrue(np.all(k1.weight_variances.value == k2.weight_variances.value))
 
-
-
 if __name__ == "__main__":
     unittest.main()
