@@ -435,7 +435,6 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-
     @AutoFlow((float_type, [None, None]), (float_type, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
