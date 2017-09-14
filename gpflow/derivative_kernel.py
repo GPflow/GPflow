@@ -129,14 +129,16 @@ class DifferentialObservationsKernelDynamic(kernels.Kern):
         deriv_info_matrix = tf.to_int32(grad_info_matrix)
         number_grads = tf.reduce_sum(deriv_info_matrix, axis=1)
 
-        first_index = tf.argmax(deriv_info_matrix, axis=1)
+        first_index = tf.to_int32(tf.argmax(deriv_info_matrix, axis=1))
+        # nb TF 1.3 has output_type so this cast is unnecessary but keeping backwards compatibility
+        # with older versions.
 
         # Having worked out where the first derivative is taken from we
         #  now remove it from the records.
         remaining = deriv_info_matrix - tf.one_hot(first_index, depth=tf.shape(deriv_info_matrix)[1],
                                                    dtype=tf.int32)
 
-        second_index = tf.argmax(remaining, axis=1)
+        second_index = tf.to_int32(tf.argmax(remaining, axis=1))
 
         deriv_info_matrix = tf.transpose(tf.stack((number_grads, first_index, second_index), axis=0))
         return deriv_info_matrix
