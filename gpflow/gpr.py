@@ -21,7 +21,7 @@ from . import likelihoods
 from .model import GPModel
 from .densities import multivariate_normal
 from .params import DataHolder
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 
 
 class GPR(GPModel):
@@ -49,14 +49,14 @@ class GPR(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name)
         self.num_latent = Y.shape[1]
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the likelihood.
 
             \log p(Y | theta).
 
         """
-        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=FLOAT_TYPE) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=TF_FLOAT_TYPE) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
 
@@ -74,7 +74,7 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=FLOAT_TYPE) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=TF_FLOAT_TYPE) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
         V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))

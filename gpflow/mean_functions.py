@@ -18,7 +18,7 @@ import numpy as np
 
 from .params import Param, Parameterized, ParamList
 from .params import params_as_tensors
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 
 
 class MeanFunction(Parameterized):
@@ -45,7 +45,7 @@ class MeanFunction(Parameterized):
 
 class Zero(MeanFunction):
     def __call__(self, X):
-        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=FLOAT_TYPE)
+        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=TF_FLOAT_TYPE)
 
 
 class Linear(MeanFunction):

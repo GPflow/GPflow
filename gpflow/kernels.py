@@ -15,7 +15,6 @@
 
 from __future__ import print_function, absolute_import
 from functools import reduce
-import itertools
 import warnings
 
 import tensorflow as tf
@@ -24,9 +23,10 @@ import numpy as np
 from . import transforms
 
 from .params import Param, Parameterized
+from .params import params_as_tensors
 from .autoflow import AutoFlow
-from .quadrature import hermgauss, mvhermgauss, mvnquad
-from .misc import FLOAT_TYPE, NP_FLOAT_TYPE, INT_TYPE
+from .quadrature import mvnquad
+from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE, TF_INT_TYPE
 from ._settings import settings
 
 
@@ -83,7 +83,7 @@ class Kern(Parameterized):
                 X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
         with tf.control_dependencies([
                             tf.assert_equal(tf.shape(X)[1],
-                                            tf.constant(self.input_dim, dtype=INT_TYPE))]):
+                                            tf.constant(self.input_dim, dtype=TF_INT_TYPE))]):
             X = tf.identity(X)
 
         return X, X2
@@ -116,33 +116,33 @@ class Kern(Parameterized):
     def __mul__(self, other):
         return Prod([self, other])
 
-    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE, [None, None]))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
     def compute_K_symm(self, X):
         return self.K(X)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE,))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE, [None, None]), (FLOAT_TYPE,))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]),
-              (FLOAT_TYPE, [None, None]),
-              (FLOAT_TYPE, [None, None, None, None]))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]),
+              (TF_FLOAT_TYPE, [None, None]),
+              (TF_FLOAT_TYPE, [None, None, None, None]))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE, [None, None]), (FLOAT_TYPE,))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 
@@ -203,7 +203,7 @@ class Kern(Parameterized):
         D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
 
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=INT_TYPE),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=TF_INT_TYPE),
                             message="Numerical quadrature needs to know correct shape of Xmu.")
         ]):
             Xmu = tf.identity(Xmu)
@@ -251,6 +251,7 @@ class Static(Kern):
         Kern.__init__(self, input_dim, active_dims)
         self.variance = Param(variance, transforms.positive)
 
+    @params_as_tensors
     def Kdiag(self, X):
         return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
@@ -260,13 +261,14 @@ class White(Static):
     The White kernel
     """
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
             d = tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
             return tf.matrix_diag(d)
         else:
             shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
-            return tf.zeros(shape, FLOAT_TYPE)
+            return tf.zeros(shape, TF_FLOAT_TYPE)
 
 
 class Constant(Static):
@@ -274,6 +276,7 @@ class Constant(Static):
     The Constant (aka Bias) kernel
     """
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
             shape = tf.stack([tf.shape(X)[0], tf.shape(X)[0]])
@@ -329,6 +332,7 @@ class Stationary(Kern):
             self.lengthscales = Param(lengthscales, transforms.positive)
             self.ARD = False
 
+    @params_as_tensors
     def square_dist(self, X, X2):
         X = X / self.lengthscales
         Xs = tf.reduce_sum(tf.square(X), 1)
@@ -345,6 +349,7 @@ class Stationary(Kern):
         r2 = self.square_dist(X, X2)
         return tf.sqrt(r2 + 1e-12)
 
+    @params_as_tensors
     def Kdiag(self, X, presliced=False):
         return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
@@ -354,6 +359,7 @@ class RBF(Stationary):
     The radial basis function (RBF) or squared exponential kernel
     """
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -383,6 +389,7 @@ class Linear(Kern):
             self.variance = Param(variance, transforms.positive)
         self.parameters = [self.variance]
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -391,6 +398,7 @@ class Linear(Kern):
         else:
             return tf.matmul(X * self.variance, X2, transpose_b=True)
 
+    @params_as_tensors
     def Kdiag(self, X, presliced=False):
         if not presliced:
             X, _ = self._slice(X, None)
@@ -416,9 +424,11 @@ class Polynomial(Linear):
         self.degree = degree
         self.offset = Param(offset, transform=transforms.positive)
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         return (Linear.K(self, X, X2, presliced=presliced) + self.offset) ** self.degree
 
+    @params_as_tensors
     def Kdiag(self, X, presliced=False):
         return (Linear.Kdiag(self, X, presliced=presliced) + self.offset) ** self.degree
 
@@ -428,6 +438,7 @@ class Exponential(Stationary):
     The Exponential kernel
     """
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -440,6 +451,7 @@ class Matern12(Stationary):
     The Matern 1/2 kernel
     """
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -452,6 +464,7 @@ class Matern32(Stationary):
     The Matern 3/2 kernel
     """
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -465,6 +478,7 @@ class Matern52(Stationary):
     The Matern 5/2 kernel
     """
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -478,6 +492,7 @@ class Cosine(Stationary):
     The Cosine kernel
     """
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -544,6 +559,7 @@ class ArcCosine(Kern):
             self.weight_variances = Param(weight_variances, transforms.positive)
             self.ARD = False
 
+    @params_as_tensors
     def _weighted_product(self, X, X2=None):
         if X2 is None:
             return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
@@ -563,6 +579,7 @@ class ArcCosine(Kern):
             return 3. * tf.sin(theta) * tf.cos(theta) + \
                    (np.pi - theta) * (1. + 2. * tf.cos(theta) ** 2)
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -583,12 +600,13 @@ class ArcCosine(Kern):
                X_denominator[:, None] ** self.order * \
                X2_denominator[None, :] ** self.order
 
+    @params_as_tensors
     def Kdiag(self, X, presliced=False):
         if not presliced:
             X, _ = self._slice(X, None)
 
         X_product = self._weighted_product(X)
-        theta = tf.constant(0., FLOAT_TYPE)
+        theta = tf.constant(0., TF_FLOAT_TYPE)
         return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 
@@ -611,9 +629,11 @@ class PeriodicKernel(Kern):
         self.ARD = False
         self.period = Param(period, transforms.positive)
 
+    @params_as_tensors
     def Kdiag(self, X, presliced=False):
         return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
+    @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
@@ -663,6 +683,7 @@ class Coregion(Kern):
         self.W = Param(np.zeros((self.output_dim, self.rank)))
         self.kappa = Param(np.ones(self.output_dim), transforms.positive)
 
+    @params_as_tensors
     def K(self, X, X2=None):
         X, X2 = self._slice(X, X2)
         X = tf.cast(X[:, 0], tf.int32)
@@ -673,6 +694,7 @@ class Coregion(Kern):
         B = tf.matmul(self.W, self.W, transpose_b=True) + tf.matrix_diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
+    @params_as_tensors
     def Kdiag(self, X):
         X, _ = self._slice(X, None)
         X = tf.cast(X[:, 0], tf.int32)

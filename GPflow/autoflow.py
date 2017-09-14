@@ -1,7 +1,7 @@
 import functools
 import tensorflow as tf
 
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 
 
 class AutoFlow:
@@ -112,7 +112,7 @@ class AutoFlow:
                 with graph.as_default():
                     tf_args = [tf.placeholder(*a) for a in self.tf_arg_tuples]
                     storage['tf_args'] = tf_args
-                    storage['free_vars'] = tf.placeholder(FLOAT_TYPE, [None])
+                    storage['free_vars'] = tf.placeholder(TF_FLOAT_TYPE, [None])
                     instance.make_tf_array(storage['free_vars'])
                     with instance.tf_mode():
                         storage['tf_result'] = tf_method(instance, *tf_args)

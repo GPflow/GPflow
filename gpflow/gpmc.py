@@ -20,7 +20,7 @@ from .model import GPModel
 from .params import Param, DataHolder
 from .conditionals import conditional
 from .priors import Gaussian
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 from ._settings import settings
 
 
@@ -70,7 +70,7 @@ class GPMC(GPModel):
                                          graph=graph,
                                          optimizer=optimizer)
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         Construct a tf function to compute the likelihood of a general GP
         model.
@@ -79,7 +79,7 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = tf.cholesky(K + tf.eye(tf.shape(self.X)[0], dtype=FLOAT_TYPE)*settings.numerics.jitter_level)
+        L = tf.cholesky(K + tf.eye(tf.shape(self.X)[0], dtype=TF_FLOAT_TYPE)*settings.numerics.jitter_level)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))

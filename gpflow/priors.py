@@ -20,8 +20,8 @@ import numpy as np
 from . import densities
 
 from .base import IPrior
-from .misc import FLOAT_TYPE, NP_FLOAT_TYPE
-from .params import Parameterized
+from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
+from .params import Parameterized, params_as_tensors
 
 
 class Prior(Parameterized, IPrior): # pylint: disable=W0223
@@ -115,7 +115,7 @@ class Uniform(Prior):
         self.lower, self.upper = lower, upper
 
     def logp(self, x):
-        return self.log_height * tf.cast(tf.size(x), FLOAT_TYPE)
+        return self.log_height * tf.cast(tf.size(x), TF_FLOAT_TYPE)
 
     def sample(self, shape=(1,)):
         return (self.lower +

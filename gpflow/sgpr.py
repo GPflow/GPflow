@@ -23,7 +23,7 @@ from .model import GPModel
 from .autoflow import AutoFlow
 from .params import Param, DataHolder
 from .mean_functions import Zero
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 from ._settings import settings
 
 
@@ -53,10 +53,10 @@ class SGPRUpperMixin(object):
     @AutoFlow()
     def compute_upper_bound(self):
         num_inducing = tf.shape(self.Z)[0]
-        num_data = tf.cast(tf.shape(self.Y)[0], FLOAT_TYPE)
+        num_data = tf.cast(tf.shape(self.Y)[0], TF_FLOAT_TYPE)
 
         Kdiag = self.kern.Kdiag(self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=FLOAT_TYPE) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
         Kuf = self.kern.K(self.Z, self.X)
 
         L = tf.cholesky(Kuu)
@@ -116,7 +116,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
@@ -124,21 +124,21 @@ class SGPR(GPModel, SGPRUpperMixin):
         """
 
         num_inducing = tf.shape(self.Z)[0]
-        num_data = tf.cast(tf.shape(self.Y)[0], FLOAT_TYPE)
-        output_dim = tf.cast(tf.shape(self.Y)[1], FLOAT_TYPE)
+        num_data = tf.cast(tf.shape(self.Y)[0], TF_FLOAT_TYPE)
+        output_dim = tf.cast(tf.shape(self.Y)[1], TF_FLOAT_TYPE)
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
         jitter_level = settings.numerics.jitter_level
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=FLOAT_TYPE) * jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE) * jitter_level
         L = tf.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
         # Compute intermediate matrices
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
         AAT = tf.matmul(A, A, transpose_b=True)
-        B = AAT + tf.eye(num_inducing, dtype=FLOAT_TYPE)
+        B = AAT + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
@@ -164,12 +164,12 @@ class SGPR(GPModel, SGPRUpperMixin):
         num_inducing = tf.shape(self.Z)[0]
         err = self.Y - self.mean_function(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=FLOAT_TYPE) * jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE) * jitter_level
         Kus = self.kern.K(self.Z, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
-        B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=FLOAT_TYPE)
+        B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
@@ -229,7 +229,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
         jitter_level = settings.numerics.jitter_level
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=FLOAT_TYPE) * jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE) * jitter_level
 
         Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
@@ -237,7 +237,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
 
-        B = tf.eye(num_inducing, dtype=FLOAT_TYPE) + tf.matmul(V / nu, V, transpose_b=True)
+        B = tf.eye(num_inducing, dtype=TF_FLOAT_TYPE) + tf.matmul(V / nu, V, transpose_b=True)
         L = tf.cholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size N x R
         alpha = tf.matmul(V, beta)  # size N x R
@@ -246,7 +246,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -284,7 +284,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
-        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, FLOAT_TYPE))
+        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, TF_FLOAT_TYPE))
         logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 

@@ -23,7 +23,7 @@ from .model import GPModel
 from .mean_functions import Zero
 from .conditionals import conditional
 from .kullback_leiblers import gauss_kl_white
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 from ._settings import settings
 
 
@@ -83,7 +83,7 @@ class VGP(GPModel):
                                         graph=graph,
                                         optimizer=optimizer)
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -100,7 +100,7 @@ class VGP(GPModel):
         KL = gauss_kl_white(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=FLOAT_TYPE) * settings.numerics.jitter_level
+        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
         L = tf.cholesky(K)
 
         fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
@@ -183,7 +183,7 @@ class VGP_opper_archambeau(GPModel):
                                                          graph=graph,
                                                          optimizer=optimizer)
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         q_alpha, q_lambda are variational parameters, size N x R
         This method computes the variational lower bound on the likelihood,
@@ -197,7 +197,7 @@ class VGP_opper_archambeau(GPModel):
         f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=FLOAT_TYPE), 0), [self.num_latent, 1, 1])
+        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=TF_FLOAT_TYPE), 0), [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
         L = tf.cholesky(A)

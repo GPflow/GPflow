@@ -15,7 +15,7 @@
 
 import tensorflow as tf
 import numpy as np
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 
 
 def gaussian(x, mu, var):
@@ -46,11 +46,11 @@ def gamma(shape, scale, x):
 
 
 def student_t(x, mean, scale, deg_free):
-    const = tf.lgamma(tf.cast((deg_free + 1.) * 0.5, FLOAT_TYPE))\
-        - tf.lgamma(tf.cast(deg_free * 0.5, FLOAT_TYPE))\
-        - 0.5*(tf.log(tf.square(scale)) + tf.cast(tf.log(deg_free), FLOAT_TYPE)
+    const = tf.lgamma(tf.cast((deg_free + 1.) * 0.5, TF_FLOAT_TYPE))\
+        - tf.lgamma(tf.cast(deg_free * 0.5, TF_FLOAT_TYPE))\
+        - 0.5*(tf.log(tf.square(scale)) + tf.cast(tf.log(deg_free), TF_FLOAT_TYPE)
                + np.log(np.pi))
-    const = tf.cast(const, FLOAT_TYPE)
+    const = tf.cast(const, TF_FLOAT_TYPE)
     return const - 0.5*(deg_free + 1.) * \
         tf.log(1. + (1. / deg_free) * (tf.square((x - mean) / scale)))
 
@@ -79,8 +79,8 @@ def multivariate_normal(x, mu, L):
     d = x - mu
     alpha = tf.matrix_triangular_solve(L, d, lower=True)
     num_col = 1 if tf.rank(x) == 1 else tf.shape(x)[1]
-    num_col = tf.cast(num_col, FLOAT_TYPE)
-    num_dims = tf.cast(tf.shape(x)[0], FLOAT_TYPE)
+    num_col = tf.cast(num_col, TF_FLOAT_TYPE)
+    num_dims = tf.cast(tf.shape(x)[0], TF_FLOAT_TYPE)
     ret = - 0.5 * num_dims * num_col * np.log(2 * np.pi)
     ret += - num_col * tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
     ret += - 0.5 * tf.reduce_sum(tf.square(alpha))

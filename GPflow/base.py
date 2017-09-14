@@ -8,6 +8,12 @@ from .misc import tensor_name
 from .misc import GPflowError
 
 
+class Build(enum.Enum):
+    YES = 1
+    NO = 0 # pylint: disable=C0103
+    NOT_COMPATIBLE_GRAPH = None
+
+
 class ICompilable:
     __metaclass__ = abc.ABCMeta
 
@@ -108,12 +114,6 @@ class ITransform:
         raise NotImplementedError
 
 
-class Build(enum.Enum):
-    YES = 1
-    NO = 0 # pylint: disable=C0103
-    NOT_COMPATIBLE_GRAPH = None
-
-
 class Parentable:
     """
     A very simple class for objects in a tree, where each node contains a
@@ -179,10 +179,6 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         super(CompilableNode, self).__init__(name=name)
         self._initiator = None
         self._session = None
-
-    @property
-    def is_tensor_mode(self):
-        raise NotImplementedError()
 
     @property
     def session(self):

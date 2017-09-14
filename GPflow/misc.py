@@ -20,11 +20,12 @@ from ._settings import settings
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
+__GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 
 
-INT_TYPE = settings.dtypes.int_type
-FLOAT_TYPE = settings.dtypes.float_type
-NP_FLOAT_TYPE = np.float32 if FLOAT_TYPE is tf.float32 else np.float64 # pylint: disable=E1101
+TF_INT_TYPE = settings.dtypes.int_type
+TF_FLOAT_TYPE = settings.dtypes.float_type
+NP_FLOAT_TYPE = np.float32 if TF_FLOAT_TYPE is tf.float32 else np.float64 # pylint: disable=E1101
 
 
 class GPflowError(Exception):
@@ -35,17 +36,14 @@ def tensor_name(*subnames):
     return '/'.join(subnames)
 
 
+def get_variable_by_name(name, index=None, graph=None):
+    graph = _get_graph(graph)
+    return _get_variable(name, index=index, graph=graph)
+
+
 def get_tensor_by_name(name, index=None, graph=None):
     graph = _get_graph(graph)
-    if index is not None:
-        return _get_tensor_by_name(name, index, graph)
-    tensor = _get_tensor_by_name(name, '0', graph)
-    if tensor is None:
-        return tensor
-    if _get_tensor_by_name(name, '1', graph) is not None:
-        raise ValueError('Ambiguous tensor for "{0}" with multiple indices found.'
-                         .format(name))
-    return tensor
+    return _get_tensor(name, index=index, graph=graph)
 
 
 def is_ndarray(value):
@@ -81,6 +79,7 @@ def remove_from_trainables(variable, graph=None):
         raise GPflowError(msg.format(variable=variable, graph=graph))
     trainables.remove(variable)
 
+
 def normalize_dtype(value):
     """
     Work out what a sensible type for the array is. if the default type
@@ -91,12 +90,20 @@ def normalize_dtype(value):
         tf_type = True
         value = value.as_numpy_dtype
     if value.dtype.type in [np.float32, np.float64]: # pylint: disable=E1101
-        value = FLOAT_TYPE
+        value = TF_FLOAT_TYPE
     elif value.dtype.type in [np.int16, np.int32, np.int64]:
         value = np.int32
     else:
         raise ValueError('Unknown dtype "{0}".'.format(value))
     return value if not tf_type else tf.as_dtype(value)
+
+
+def get_attribute(obj, name):
+    try:
+        return object.__getattribute__(obj, name)
+    except AttributeError:
+        return None
+
 
 def vec_to_tri(vectors, N):
     """
@@ -122,10 +129,40 @@ def vec_to_tri(vectors, N):
 
     return tf.map_fn(vec_to_tri_vector, vectors)
 
+
 def _get_graph(graph=None):
     return tf.get_default_graph() if graph is None else graph
 
-def _get_tensor_by_name(name, index, graph):
+
+def _get_tensor(name, index=None, graph=None):
+    graph = _get_graph(graph)
+    if index is not None:
+        return _get_tensor_safe(name, index, graph)
+    tensor = _get_tensor_safe(name, '0', graph)
+    if tensor is None:
+        return tensor
+    if _get_tensor_safe(name, '1', graph) is not None:
+        raise ValueError('Ambiguous tensor for "{0}" with multiple indices found.'
+                         .format(name))
+    return tensor
+
+
+def _get_variable(name, index=None, graph=None):
+    variables = []
+    for var in graph.get_collection(__GLOBAL_VARIABLES):
+        var_name, var_index = var.name.split(':')
+        if var_name == name:
+            if index is not None and var_index == index:
+                return var
+            variables.append(var)
+    if index is not None or not variables:
+        return None
+    if len(variables) > 1:
+        raise ValueError('Ambiguous variable for "{0}" with multiple indices found.')
+    return variables[0]
+
+
+def _get_tensor_safe(name, index, graph):
     try:
         return graph.get_tensor_by_name(':'.join([name, index]))
     except KeyError:

@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from .base import ITransform
-from .misc import FLOAT_TYPE, NP_FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 from .misc import vec_to_tri
 
 
@@ -47,7 +47,7 @@ class Identity(Transform):
         return y
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), FLOAT_TYPE)
+        return tf.zeros((1,), TF_FLOAT_TYPE)
 
     def __str__(self):
         return '(none)'
@@ -206,7 +206,7 @@ class Rescale(Transform):
         return self.chain_transform.backward(y) / self.factor
 
     def tf_log_jacobian(self, x):
-        return tf.cast(tf.reduce_prod(tf.shape(x)), FLOAT_TYPE) * \
+        return tf.cast(tf.reduce_prod(tf.shape(x)), TF_FLOAT_TYPE) * \
                 self.factor * self.chain_transform.tf_log_jacobian(x * self.factor)
 
     def __str__(self):
@@ -245,7 +245,7 @@ class DiagMatrix(Transform):
         return tf.matrix_diag(tf.reshape(self._positive_transform.tf_forward(x), (-1, self.dim)))
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), FLOAT_TYPE) + self._positive_transform.tf_log_jacobian(x)
+        return tf.zeros((1,), TF_FLOAT_TYPE) + self._positive_transform.tf_log_jacobian(x)
 
     def __str__(self):
         return 'DiagMatrix'
@@ -328,7 +328,7 @@ class LowerTriangular(Transform):
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), FLOAT_TYPE)
+        return tf.zeros((1,), TF_FLOAT_TYPE)
 
     def free_state_size(self, variable_shape):
         matrix_batch = len(variable_shape) > 2

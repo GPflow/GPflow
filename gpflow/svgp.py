@@ -22,7 +22,7 @@ from . import transforms, conditionals, kullback_leiblers
 from .params import Param
 from .model import GPModel
 from .minibatch import MinibatchData
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 from ._settings import settings
 
 
@@ -86,14 +86,14 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=FLOAT_TYPE) * settings.numerics.jitter_level
+            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
                 KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
         return KL
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         This gives a variational bound on the model likelihood.
         """
@@ -108,8 +108,8 @@ class SVGP(GPModel):
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, FLOAT_TYPE) /\
-            tf.cast(tf.shape(self.X)[0], FLOAT_TYPE)
+        scale = tf.cast(self.num_data, TF_FLOAT_TYPE) /\
+            tf.cast(tf.shape(self.X)[0], TF_FLOAT_TYPE)
 
         return tf.reduce_sum(var_exp) * scale - KL
 

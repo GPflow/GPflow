@@ -29,12 +29,13 @@ from .transforms import Identity
 from .misc import GPflowError
 from .misc import is_number, is_tensor, is_valid_param_value
 from .misc import add_to_trainables, remove_from_trainables
-from .misc import normalize_dtype, get_tensor_by_name
+from .misc import normalize_dtype
+from .misc import get_variable_by_name, get_attribute
 
-from .misc import FLOAT_TYPE, NP_FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 
 
-_TENSOR_MODE_ATTRIBUTE = '_tensor_mode'
+_TENSOR_MODE_ATTRIBUTE = '__tensor_mode__'
 
 
 class Param(CompilableNode):
@@ -67,12 +68,6 @@ class Param(CompilableNode):
             self._param_tensor = value
         else:
             self._initial_value = value.copy()
-
-    @property
-    def is_tensor_mode(self):
-        if self.parent is not self:
-            return self.parent.is_tensor_mode
-        return False
 
     @property
     def shape(self):
@@ -181,12 +176,12 @@ class Param(CompilableNode):
             return self.param_tensor
 
         name = self.full_name + '/variable'
-        tensor = get_tensor_by_name(name, graph=self.graph)
+        tensor = get_variable_by_name(name, graph=self.graph)
         if tensor is not None:
             return tensor
 
-        init = tf.constant_initializer(self._initial_value, dtype=FLOAT_TYPE)
-        return tf.get_variable(name, shape=self.shape, initializer=init, dtype=FLOAT_TYPE)
+        init = tf.constant_initializer(self._initial_value, dtype=TF_FLOAT_TYPE)
+        return tf.get_variable(name, shape=self.shape, initializer=init, dtype=TF_FLOAT_TYPE)
 
     def _build_prior(self):
         """
@@ -199,7 +194,7 @@ class Param(CompilableNode):
         prior_name = 'prior'
 
         if self.prior is None:
-            return tf.constant(0.0, FLOAT_TYPE, name=prior_name)
+            return tf.constant(0.0, TF_FLOAT_TYPE, name=prior_name)
 
         var = self.param_tensor
         log_jacobian = self.transform.tf_log_jacobian(var)
@@ -216,11 +211,11 @@ class Param(CompilableNode):
         if is_built is Build.YES:
             raise GPflowError('Parameter has already been compiled.')
 
-        key = attr.value
+        name = attr.value
         if value is not None and not isinstance(value, attr.interface):
             msg = 'Attribute "{0}" must implement interface "{1}".'
-            raise GPflowError(msg.format(key, attr.interface))
-        object.__setattr__(self, key, value)
+            raise GPflowError(msg.format(name, attr.interface))
+        object.__setattr__(self, name, value)
 
     def _html_table_rows(self, name_prefix=''):
         html = "<tr>"
@@ -231,14 +226,14 @@ class Param(CompilableNode):
         html += "</tr>"
         return html
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, name, value):
         try:
-            attr = self.ParamAttribute(key)
+            attr = self.ParamAttribute(name)
             self._set_parameter_attribute(attr, value)
             return
         except ValueError:
             pass
-        object.__setattr__(self, key, value)
+        object.__setattr__(self, name, value)
 
     def __str__(self, prepend=''):
         return prepend + \
@@ -304,13 +299,10 @@ class DataHolder(CompilableNode):
 
 
 class Parameterized(CompilableNode):
+
     def __init__(self, name=None):
         super(Parameterized, self).__init__(name=name)
         self._prior_tensor = None
-
-    @property
-    def is_tensor_mode(self):
-        return getattr(self, _TENSOR_MODE_ATTRIBUTE, False)
 
     @property
     def params(self):
@@ -406,8 +398,8 @@ class Parameterized(CompilableNode):
         """
         return tf.add_n([param.prior_tensor for param in self.params], name='prior')
 
-    def _update_param_attribute(self, key, value):
-        attr = getattr(self, key)
+    def _update_param_attribute(self, name, value):
+        attr = getattr(self, name)
         param_like = (Param, Parameterized)
         if isinstance(value, param_like):
             if self.is_built_coherence(value.graph) is Build.YES:
@@ -415,14 +407,14 @@ class Parameterized(CompilableNode):
             attr.set_parent()
             attr.set_name()
             value.set_parent(self)
-            value.set_name(key)
-            object.__setattr__(self, key, value)
+            value.set_name(name)
+            object.__setattr__(self, name, value)
         # elif - DataHolder:
         elif isinstance(attr, Param) and is_valid_param_value(value):
             attr.assign(value, session=self.session)
         else:
             msg = '"{0}" type cannot be assigned to "{1}" attribute.'
-            raise ValueError(msg.format(type(value), key))
+            raise ValueError(msg.format(type(value), name))
 
     def _html_table_rows(self, name_prefix=''):
         """
@@ -468,6 +460,13 @@ class Parameterized(CompilableNode):
             value.set_name(key)
             value.set_parent(self)
         object.__setattr__(self, key, value)
+
+    def __getattribute__(self, name):
+        if get_attribute(self, _TENSOR_MODE_ATTRIBUTE) is not None:
+            attr = get_attribute(self, name)
+            if isinstance(attr, Param):
+                return attr.param_tensor
+        return get_attribute(self, name)
 
 # TODO(awav)
     def __str__(self, prepend=''):
@@ -557,15 +556,15 @@ def params_as_tensors(method):
     def tensor_mode_wrapper(obj, *args, **kwargs):
         if not isinstance(obj, (Parameterized, ParamList)):
             raise GPflowError('Tensor mode works only with parmeterized object.')
-        have_attr = hasattr(obj, _TENSOR_MODE_ATTRIBUTE)
-        prev_value = getattr(obj, _TENSOR_MODE_ATTRIBUTE, False)
-        setattr(obj, _TENSOR_MODE_ATTRIBUTE, True)
+        name = _TENSOR_MODE_ATTRIBUTE
+        attr_value = getattr(obj, name, None)
+        setattr(obj, name, True)
         try:
             result = method(obj, *args, **kwargs)
         finally:
-            if have_attr:
-                setattr(obj, _TENSOR_MODE_ATTRIBUTE, prev_value)
+            if attr_value is not None:
+                setattr(obj, name, attr_value)
             else:
-                delattr(obj, _TENSOR_MODE_ATTRIBUTE)
+                delattr(obj, name)
         return result
     return tensor_mode_wrapper

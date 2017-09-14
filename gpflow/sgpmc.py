@@ -73,7 +73,7 @@ class SGPMC(GPModel):
         self.V = Param(np.zeros((self.num_inducing, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         This function computes the optimal density for v, q*(v), up to a constant
         """

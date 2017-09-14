@@ -14,18 +14,15 @@
 
 from __future__ import print_function, absolute_import
 
-import warnings
 import numpy as np
 import tensorflow as tf
-
-from scipy.optimize import minimize, OptimizeResult
 
 from . import hmc
 
 from .params import Parameterized
 from .autoflow import AutoFlow
 from .mean_functions import Zero
-from .misc import FLOAT_TYPE
+from .misc import TF_FLOAT_TYPE
 from ._settings import settings
 
 
@@ -36,6 +33,16 @@ class Model(Parameterized):
         """
         super(Model, self).__init__(name=name)
         self._likelihood_tensor = None
+        self._objective = None
+        self._objective_gradient = None
+
+    @property
+    def objective(self):
+        return self._objective
+
+    @property
+    def objective_gradient(self):
+        return self._objective_gradient
 
     @AutoFlow()
     def compute_log_prior(self):
@@ -67,9 +74,9 @@ class Model(Parameterized):
         grad_func = tf.gradients(func, self.trainable_tensors)
 
         self._objective = tf.negative(func, name='objective')
-        self._objective_gradient = tf.negative(grad_func, name='gradient_objective')
+        self._objective_gradient = tf.negative(grad_func, name='objective_gradient')
 
-    def _build_likelihood(self):
+    def _build_likelihood(self, *args, **kwargs):
         raise NotImplementedError()
 
 
@@ -104,7 +111,7 @@ class GPModel(Model):
     >>> m.Y = Ynew
     """
 
-    def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
+    def __init__(self, X, Y, kern, likelihood, mean_function, name=None):
         super(GPModel, self).__init__(name=name)
         self.mean_function = mean_function or Zero()
         self.kern = kern
@@ -121,7 +128,7 @@ class GPModel(Model):
     def build_predict(self, *args, **kwargs):
         raise NotImplementedError
 
-    @AutoFlow((FLOAT_TYPE, [None, None]))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points
@@ -129,7 +136,7 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -137,23 +144,23 @@ class GPModel(Model):
         """
         return self.build_predict(Xnew, full_cov=True)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]), (tf.int32, []))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
         mu, var = self.build_predict(Xnew, full_cov=True)
-        jitter = tf.eye(tf.shape(mu)[0], dtype=FLOAT_TYPE) * settings.numerics.jitter_level
+        jitter = tf.eye(tf.shape(mu)[0], dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
             shape = tf.stack([tf.shape(L)[0], num_samples])
-            V = tf.random_normal(shape, dtype=FLOAT_TYPE)
+            V = tf.random_normal(shape, dtype=TF_FLOAT_TYPE)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.stack(samples))
 
-    @AutoFlow((FLOAT_TYPE, [None, None]))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -161,7 +168,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self.build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-    @AutoFlow((FLOAT_TYPE, [None, None]), (FLOAT_TYPE, [None, None]))
+    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew
