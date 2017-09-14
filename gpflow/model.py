@@ -131,7 +131,7 @@ class GPModel(Model):
         Compute the mean and variance of the latent function(s) at the points
         Xnew.
         """
-        return self.build_predict(Xnew)
+        return self._build_predict(Xnew)
 
     @AutoFlow((TF_FLOAT_TYPE, [None, None]))
     def predict_f_full_cov(self, Xnew):
@@ -139,7 +139,7 @@ class GPModel(Model):
         Compute the mean and covariance matrix of the latent function(s) at the
         points Xnew.
         """
-        return self.build_predict(Xnew, full_cov=True)
+        return self._build_predict(Xnew, full_cov=True)
 
     @AutoFlow((TF_FLOAT_TYPE, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
@@ -147,7 +147,7 @@ class GPModel(Model):
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
-        mu, var = self.build_predict(Xnew, full_cov=True)
+        mu, var = self._build_predict(Xnew, full_cov=True)
         jitter = tf.eye(tf.shape(mu)[0], dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
@@ -174,8 +174,8 @@ class GPModel(Model):
         ignoring correlations between them. The result is a matrix the same
         shape as Ynew containing the log densities.
         """
-        pred_f_mean, pred_f_var = self.build_predict(Xnew)
+        pred_f_mean, pred_f_var = self._build_predict(Xnew)
         return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
 
-    def build_predict(self, *args, **kwargs):
+    def _build_predict(self, *args, **kwargs):
         raise NotImplementedError
