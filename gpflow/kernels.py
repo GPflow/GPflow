@@ -23,7 +23,8 @@ import numpy as np
 
 from . import transforms
 
-from .param import Param, Parameterized, AutoFlow
+from .params import Param, Parameterized
+from .autoflow import AutoFlow
 from .quadrature import hermgauss, mvhermgauss, mvnquad
 from .misc import FLOAT_TYPE, NP_FLOAT_TYPE, INT_TYPE
 from ._settings import settings
@@ -587,7 +588,7 @@ class ArcCosine(Kern):
             X, _ = self._slice(X, None)
 
         X_product = self._weighted_product(X)
-            theta = tf.constant(0., FLOAT_TYPE)
+        theta = tf.constant(0., FLOAT_TYPE)
         return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 

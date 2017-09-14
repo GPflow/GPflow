@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from .param import DataHolder
+from .params import DataHolder
 
 
 class IndexManager(object):

@@ -19,7 +19,7 @@ import numpy as np
 
 from . import transforms, conditionals, kullback_leiblers
 
-from .param import Param
+from .params import Param
 from .model import GPModel
 from .minibatch import MinibatchData
 from .misc import FLOAT_TYPE

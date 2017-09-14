@@ -20,15 +20,14 @@ import numpy as np
 
 from . import densities, transforms
 
-from .param import Parameterized, Param, ParamList
+from .params import Param, Parameterized, ParamList, params_as_tensors
 from .quadrature import hermgauss
 from .misc import FLOAT_TYPE, NP_FLOAT_TYPE
 
 
 class Likelihood(Parameterized):
-    def __init__(self):
-        Parameterized.__init__(self)
-        self.scoped_keys.extend(['logp', 'variational_expectations', 'predict_mean_and_var', 'predict_density'])
+    def __init__(self, name=None):
+        super(Likelihood, self).__init__(name)
         self.num_gauss_hermite_points = 20
 
     def logp(self, F, Y):
@@ -188,21 +187,27 @@ class Gaussian(Likelihood):
         Likelihood.__init__(self)
         self.variance = Param(1.0, transforms.positive)
 
+    @params_as_tensors
     def logp(self, F, Y):
         return densities.gaussian(F, Y, self.variance)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         return tf.identity(F)
 
+    @params_as_tensors
     def conditional_variance(self, F):
         return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
+    @params_as_tensors
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
 
+    @params_as_tensors
     def predict_density(self, Fmu, Fvar, Y):
         return densities.gaussian(Fmu, Y, Fvar + self.variance)
 
+    @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
         return -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(self.variance) \
                - 0.5 * (tf.square(Y - Fmu) + Fvar) / self.variance
@@ -283,12 +288,15 @@ class StudentT(Likelihood):
         self.deg_free = deg_free
         self.scale = Param(1.0, transforms.positive)
 
+    @params_as_tensors
     def logp(self, F, Y):
         return densities.student_t(Y, F, self.scale, self.deg_free)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         return tf.identity(F)
 
+    @params_as_tensors
     def conditional_variance(self, F):
         return F * 0.0 + (self.deg_free / (self.deg_free - 2.0))
 
@@ -346,16 +354,20 @@ class Gamma(Likelihood):
         if np.any(Y_np < 0):
             raise ValueError('gamma variables must be non-negative')
 
+    @params_as_tensors
     def logp(self, F, Y):
         return densities.gamma(self.shape, self.invlink(F), Y)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         return self.shape * self.invlink(F)
 
+    @params_as_tensors
     def conditional_variance(self, F):
         scale = self.invlink(F)
         return self.shape * tf.square(scale)
 
+    @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return -self.shape * Fmu - tf.lgamma(self.shape) \
@@ -391,15 +403,18 @@ class Beta(Likelihood):
         if np.any(Y_np < 0.) or np.any(Y_np > 1.):
             raise ValueError('beta variables must be in [0, 1]')
 
+    @params_as_tensors
     def logp(self, F, Y):
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
         return densities.beta(alpha, beta, Y)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         return self.invlink(F)
 
+    @params_as_tensors
     def conditional_variance(self, F):
         mean = self.invlink(F)
         return (mean - tf.square(mean)) / (self.scale + 1.)
@@ -625,6 +640,7 @@ class Ordinal(Likelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Param(1.0, transforms.positive)
 
+    @params_as_tensors
     def logp(self, F, Y):
         Y = tf.cast(Y, tf.int64)
         scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
@@ -635,6 +651,7 @@ class Ordinal(Likelihood):
         return tf.log(probit(selected_bins_left - F / self.sigma) -
                       probit(selected_bins_right - F / self.sigma) + 1e-6)
 
+    @params_as_tensors
     def _make_phi(self, F):
         """
         A helper function for making predictions. Constructs a probability
@@ -648,11 +665,13 @@ class Ordinal(Likelihood):
         return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
             - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))
         return tf.reshape(tf.matmul(phi, Ys), tf.shape(F))
 
+    @params_as_tensors
     def conditional_variance(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))

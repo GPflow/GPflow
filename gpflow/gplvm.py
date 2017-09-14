@@ -7,7 +7,7 @@ from . import kernels
 
 from .model import GPModel
 from .gpr import GPR
-from .param import Param
+from .params import Param
 from .mean_functions import Zero
 from .misc import FLOAT_TYPE, NP_FLOAT_TYPE
 from ._settings import settings

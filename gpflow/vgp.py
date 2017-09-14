@@ -18,7 +18,7 @@ import numpy as np
 
 from . import transforms
 
-from .param import Param, DataHolder
+from .params import Param, DataHolder
 from .model import GPModel
 from .mean_functions import Zero
 from .conditionals import conditional

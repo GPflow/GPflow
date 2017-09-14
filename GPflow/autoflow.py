@@ -56,56 +56,6 @@ class AutoFlow:
     def __call__(self, tf_method):
         @functools.wraps(tf_method)
         def runnable(instance, *np_args, **kwargs):
-            """
-            AutoFlow function wrapper adds extra parameters:
-            session and graph. It allows you specify which session and graph
-            will be used during compilation. Session always prevails graph
-            presence. It means that whenever session parameter is not None,
-            the session's graph will be used for compilation.
-            Let's say we have `method(x)` wrapped in AutoFlow:
-
-            > m.method(x)
-            > m.method(x, session=tf.Session())
-            > m.method(x, graph=tf.Graph())
-
-            In first case we call method without extra parameters -
-            the default graph is used and new session is created for compiling
-            model, both are stored in model cache.
-            Second example has only session parameter which is constructed
-            with default graph, thereafter model will not be re-built, but it
-            will be initialized again and new session will replace old one.
-            In third example we passed a new graph and the model will be
-            recompiled from scratch.
-            The graph and session being passed together make little sense as
-            tensorflow session can be tied to only graph.
-
-
-            > 1.
-            > with tf.Session().as_default():
-            >     m.method(x)
-
-            > 2.
-            > graph = tf.Graph()
-            > with tf.Session(graph=graph).as_default():
-            >     m.method(x)
-
-            > 3.
-            > with tf.Graph().as_default():
-            >     with tf.Session().as_default():
-            >         m.method(x)
-
-            Examples above are special cases. The first method call uses
-            default session to compile and run model. Second example shows that
-            even when you passed only graph to the AutoFlow wrapped function
-            the default session will be used, because it owns same graph. Third
-            example depictures the case when created within context manager,
-            the session and graph passed implicitly and will be used if the
-            `method` have never been called before.
-
-            :raises ValueError: when `**kwargs` contains unknown key-valued
-            parameters or user passed both session and graph parameters and
-            session references to different graph.
-            """
 
             if not set(kwargs.keys()).issubset(['session', 'graph']):
                 raise ValueError('Unknown arguments passed.')

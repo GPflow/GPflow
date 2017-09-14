@@ -20,7 +20,7 @@ from . import likelihoods
 
 from .model import GPModel
 from .densities import multivariate_normal
-from .param import DataHolder
+from .params import DataHolder
 from .misc import FLOAT_TYPE
 
 

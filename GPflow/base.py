@@ -1,7 +1,6 @@
 import abc
 import enum
 
-from contextlib import contextmanager
 import tensorflow as tf
 
 from . import session_manager
@@ -17,7 +16,7 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
-    def compile(self, session=None, keep_session=True):
+    def compile(self, session=None, keep_session=False):
         pass
 
     @abc.abstractmethod
@@ -33,7 +32,7 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
-    def reset(self, graph=None):
+    def clear(self):
         pass
 
 
@@ -182,6 +181,10 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         self._session = None
 
     @property
+    def is_tensor_mode(self):
+        raise NotImplementedError()
+
+    @property
     def session(self):
         if self._session is not None:
             return self._session
@@ -191,6 +194,8 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         return root.session
 
     def compile(self, session=None, keep_session=True):
+        if self.parent is not self:
+            raise GPflowError('Only root can initiate compilation.')
         session = self.setup_compile_session(session)
         if self.is_built(graph=session.graph) is Build.NO:
             with session.graph.as_default():
@@ -199,6 +204,11 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         if keep_session:
             self._session = session
 
+    def clear(self):
+        if self.root is not self:
+            raise GPflowError('Only root can initiate cleaning process.')
+        self._session = None
+
     def enquire_graph(self, graph=None):
         if graph is None:
             graph = self.root.graph if self.graph is None else self.graph
@@ -206,8 +216,10 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
                 graph = tf.get_default_graph()
         return graph
 
-    def enquire_session(self, session=None):
+    def enquire_session(self, session=None, allow_none=False):
         if session is None and self.session is None:
+            if allow_none:
+                return None
             raise ValueError('Session is not specified.')
         session = self.session if session is None else session
         if self.is_built_coherence(session.graph) is Build.NO:
@@ -229,30 +241,18 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         if session is None:
             raise ValueError('Session is None.')
         if self.root is not self:
-            raise ValueError('Session cannot be changed for non-root compilable object.')
+            raise ValueError('Session cannot be changed for non-root compilable node.')
         if self.is_built_coherence(session.graph) is Build.YES:
             self.initialize(session)
         self._session = session
 
     def set_parent(self, parent=None):
-        if parent is None:
-            self._session = self.session
-        else:
-            if parent.graph and parent.is_built_coherence(self.graph) is Build.YES:
-                raise GPflowError('Parent is assembled.')
-            # TODO(awav): do we need implicitly pass session from child to parent
-            if parent.session is None and self.session:
-                parent.set_session(self.session)
-        self._parent = parent
-
-    def _build(self):
-        raise NotImplementedError()
-
-    def _build_with_name_scope(self, name=None):
-        name = self.name if name is None else name
-        if self.is_built_coherence() is Build.NO:
-            with tf.name_scope(name):
-                self._build()
+        if self.parent is not self and self.is_built_coherence() is Build.YES:
+            raise GPflowError('Parent cannot be changed for compiled node.')
+        if parent and not isinstance(parent, Parentable):
+            raise GPflowError('Argument does not implement parentable interface.')
+        self._session = None
+        self._parent = parent if parent is not None else self
 
     def is_built_coherence(self, graph=None):
         graph = self.enquire_graph(graph=graph)
@@ -262,3 +262,12 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
             raise GPflowError('Tensor uses different graph.')
         return is_built
+
+    def _build_with_name_scope(self, name=None):
+        name = self.name if name is None else name
+        is_built = self.is_built(graph=tf.get_default_graph())
+        if is_built is Build.NOT_COMPATIBLE_GRAPH:
+            raise GPflowError('Tensor uses different graph.')
+        elif is_built is Build.NO:
+            with tf.name_scope(name):
+                self._build()

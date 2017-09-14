@@ -16,7 +16,8 @@
 import tensorflow as tf
 import numpy as np
 
-from .param import Param, ParamList, Parameterized
+from .params import Param, Parameterized, ParamList
+from .params import params_as_tensors
 from .misc import FLOAT_TYPE
 
 
@@ -65,6 +66,7 @@ class Linear(MeanFunction):
         self.A = Param(np.atleast_2d(A))
         self.b = Param(b)
 
+    @params_as_tensors
     def __call__(self, X):
         return tf.matmul(X, self.A) + self.b
 
@@ -78,6 +80,7 @@ class Constant(MeanFunction):
         c = np.zeros(1) if c is None else c
         self.c = Param(c)
 
+    @params_as_tensors
     def __call__(self, X):
         shape = tf.stack([tf.shape(X)[0], 1])
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
@@ -96,6 +99,7 @@ class SwitchedMeanFunction(MeanFunction):
         self.meanfunction_list = ParamList(meanfunction_list)
         self.num_meanfunctions = len(self.meanfunction_list)
 
+    @params_as_tensors
     def __call__(self, X):
         ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)

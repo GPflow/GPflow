@@ -37,28 +37,32 @@ def tensor_name(*subnames):
 
 def get_tensor_by_name(name, index=None, graph=None):
     graph = _get_graph(graph)
-    try:
-        if index is not None:
-            return graph.get_tensor_by_name(':'.join([name, index]))
-        return graph.get_tensor_by_name(name)
-    except ValueError:
-        return None
+    if index is not None:
+        return _get_tensor_by_name(name, index, graph)
+    tensor = _get_tensor_by_name(name, '0', graph)
+    if tensor is None:
+        return tensor
+    if _get_tensor_by_name(name, '1', graph) is not None:
+        raise ValueError('Ambiguous tensor for "{0}" with multiple indices found.'
+                         .format(name))
+    return tensor
 
 
 def is_ndarray(value):
     return isinstance(value, np.ndarray)
+
 
 def is_tensor(value):
     return isinstance(value, (tf.Tensor, tf.Variable))
 
 
 def is_number(value):
-    return not isinstance(value, str) and np.isscalar(value)
+    return (not isinstance(value, str)) and np.isscalar(value)
 
 
 def is_valid_param_value(value):
     return ((value is not None)
-            or is_number(value)
+            and is_number(value)
             or is_ndarray(value)
             or is_tensor(value))
 
@@ -120,3 +124,9 @@ def vec_to_tri(vectors, N):
 
 def _get_graph(graph=None):
     return tf.get_default_graph() if graph is None else graph
+
+def _get_tensor_by_name(name, index, graph):
+    try:
+        return graph.get_tensor_by_name(':'.join([name, index]))
+    except KeyError:
+        return None

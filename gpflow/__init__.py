@@ -18,8 +18,7 @@ from __future__ import absolute_import
 
 from . import misc
 from . import transforms
-from . import param
-from . import model
+from . import params
 from . import conditionals
 from . import densities
 from . import likelihoods

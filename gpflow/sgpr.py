@@ -20,7 +20,8 @@ import numpy as np
 from . import likelihoods
 
 from .model import GPModel
-from .param import Param, DataHolder, AutoFlow
+from .autoflow import AutoFlow
+from .params import Param, DataHolder
 from .mean_functions import Zero
 from .misc import FLOAT_TYPE
 from ._settings import settings
