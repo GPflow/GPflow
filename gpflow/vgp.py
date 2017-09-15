@@ -19,7 +19,7 @@ import numpy as np
 from . import transforms
 
 from .params import Param, DataHolder
-from .params import params_as_tensors
+from .decors import params_as_tensors
 from .model import GPModel
 from .mean_functions import Zero
 from .conditionals import conditional

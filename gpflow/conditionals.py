@@ -16,12 +16,12 @@
 import warnings
 import tensorflow as tf
 
-from .scoping import NameScoped
+from .decors import name_scope
 from .misc import TF_FLOAT_TYPE
 from ._settings import settings
 
 
-@NameScoped("conditional")
+@name_scope("conditional")
 def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     """
     Given F, representing the GP at the points X, produce the mean and

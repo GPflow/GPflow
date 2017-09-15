@@ -20,9 +20,9 @@ import numpy as np
 from . import likelihoods
 
 from .model import GPModel
-from .autoflow import AutoFlow
+from .decors import autoflow
+from .decors import params_as_tensors
 from .params import Param, DataHolder
-from .params import params_as_tensors
 from .mean_functions import Zero
 from .misc import TF_FLOAT_TYPE
 from ._settings import settings
@@ -51,7 +51,7 @@ class SGPRUpperMixin(object):
       }
     """
 
-    @AutoFlow()
+    @autoflow()
     @params_as_tensors
     def compute_upper_bound(self):
         num_inducing = tf.shape(self.Z)[0]

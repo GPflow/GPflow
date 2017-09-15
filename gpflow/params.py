@@ -1,6 +1,8 @@
 # Copyright 2016 James Hensman, Mark van der Wilk,
 #                Valentine Svensson, alexggmatthews,
 #                PabloLeon, fujiisoup
+# Copyright 2017 Artem Artemev @awav
+#
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +24,7 @@ import functools
 import numpy as np
 import tensorflow as tf
 
-from .base import IPrior, ITransform
+from .base import IPrior, ITransform, IAutoFlow, ITensorTransformer
 from .base import Build, CompilableNode
 from .transforms import Identity
 
@@ -33,9 +35,6 @@ from .misc import normalize_dtype
 from .misc import get_variable_by_name, get_attribute
 
 from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
-
-
-_TENSOR_MODE_ATTRIBUTE = '__tensor_mode__'
 
 
 class Param(CompilableNode):
@@ -308,7 +307,7 @@ class DataHolder(CompilableNode):
                '\n' + str(self.value)
 
 
-class Parameterized(CompilableNode):
+class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
 
     def __init__(self, name=None):
         super(Parameterized, self).__init__(name=name)
@@ -388,6 +387,26 @@ class Parameterized(CompilableNode):
         for param in self.params:
             param.clear()
         self._prior_tensor = None
+        self.clear_autoflow()
+
+    def get_autoflow(self, name):
+        if not isinstance(name, str):
+            raise ValueError('Name must be string.')
+        autoflow_name = self.__autoflow_prefix__ + name
+        store = getattr(self, autoflow_name, default={})
+        if not store:
+            setattr(self, autoflow_name, store)
+        return store
+
+    def clear_autoflow(self, name=None):
+        if name is not None and not isinstance(name, str):
+            raise ValueError('Name must be string.')
+        if name:
+            delattr(self, self._autoflow_name(name))
+        else:
+            keys = [attr for attr in self.__dict__ if attr.startswith(self.__autoflow_prefix__)]
+            for key in keys:
+                delattr(self, key)
 
     # TODO(awav): # pylint: disable=W0511
     #def randomize(self, distributions={}, skiptrainable=True):
@@ -472,7 +491,7 @@ class Parameterized(CompilableNode):
         object.__setattr__(self, key, value)
 
     def __getattribute__(self, name):
-        if get_attribute(self, _TENSOR_MODE_ATTRIBUTE) is not None:
+        if get_attribute(self, ITensorTransformer.__tensor_mode__) is not None:
             attr = get_attribute(self, name)
             if isinstance(attr, Param):
                 return attr.transformed_tensor
@@ -559,22 +578,3 @@ class ParamList(Parameterized):
         to set their values by assignment.
         """
         self.sorted_params[key]._array[...] = value
-
-
-def params_as_tensors(method):
-    @functools.wraps(method)
-    def tensor_mode_wrapper(obj, *args, **kwargs):
-        if not isinstance(obj, (Parameterized, ParamList)):
-            raise GPflowError('Tensor mode works only with parmeterized object.')
-        name = _TENSOR_MODE_ATTRIBUTE
-        attr_value = getattr(obj, name, None)
-        setattr(obj, name, True)
-        try:
-            result = method(obj, *args, **kwargs)
-        finally:
-            if attr_value is not None:
-                setattr(obj, name, attr_value)
-            else:
-                delattr(obj, name)
-        return result
-    return tensor_mode_wrapper

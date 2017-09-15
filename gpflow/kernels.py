@@ -23,8 +23,7 @@ import numpy as np
 from . import transforms
 
 from .params import Param, Parameterized
-from .params import params_as_tensors
-from .autoflow import AutoFlow
+from .decors import params_as_tensors, autoflow
 from .quadrature import mvnquad
 from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE, TF_INT_TYPE
 from ._settings import settings
@@ -116,33 +115,33 @@ class Kern(Parameterized):
     def __mul__(self, other):
         return Prod([self, other])
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]))
+    @autoflow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
+    @autoflow((TF_FLOAT_TYPE, [None, None]))
     def compute_K_symm(self, X):
         return self.K(X)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
+    @autoflow((TF_FLOAT_TYPE, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
+    @autoflow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
+    @autoflow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]),
+    @autoflow((TF_FLOAT_TYPE, [None, None]),
               (TF_FLOAT_TYPE, [None, None]),
               (TF_FLOAT_TYPE, [None, None, None, None]))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
+    @autoflow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 

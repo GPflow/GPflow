@@ -21,7 +21,7 @@ from . import likelihoods
 from .model import GPModel
 from .densities import multivariate_normal
 from .params import DataHolder
-from .params import params_as_tensors
+from .decors import params_as_tensors
 from .misc import TF_FLOAT_TYPE
 
 

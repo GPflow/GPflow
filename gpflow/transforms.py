@@ -22,15 +22,8 @@ from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 from .misc import vec_to_tri
 
 
-class Transform(ITransform):
-    def free_state_size(self, variable_shape):
-        return np.prod(variable_shape)
-
-    def __getstate__(self):
-        return self.__dict__.copy()
-
-    def __setstate__(self, state):
-        self.__dict__ = d
+class Transform(ITransform): # pylint: disable=W0223
+    pass
 
 
 class Identity(Transform):

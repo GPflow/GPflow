@@ -15,11 +15,11 @@
 
 import tensorflow as tf
 
-from .scoping import NameScoped
+from .decors import name_scope
 from .misc import TF_FLOAT_TYPE
 
 
-@NameScoped("KL")
+@name_scope("KL")
 def gauss_kl_white(q_mu, q_sqrt):
     """
     Compute the KL divergence from
@@ -44,7 +44,7 @@ def gauss_kl_white(q_mu, q_sqrt):
     return KL
 
 
-@NameScoped("KL")
+@name_scope("KL")
 def gauss_kl_white_diag(q_mu, q_sqrt):
     """
     Compute the KL divergence from
@@ -69,7 +69,7 @@ def gauss_kl_white_diag(q_mu, q_sqrt):
     return KL
 
 
-@NameScoped("KL")
+@name_scope("KL")
 def gauss_kl_diag(q_mu, q_sqrt, K):
     """
     Compute the KL divergence from
@@ -103,7 +103,7 @@ def gauss_kl_diag(q_mu, q_sqrt, K):
     return KL
 
 
-@NameScoped("KL")
+@name_scope("KL")
 def gauss_kl(q_mu, q_sqrt, K):
     """
     Compute the KL divergence from

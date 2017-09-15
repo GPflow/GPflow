@@ -18,6 +18,7 @@ import tensorflow as tf
 
 from .model import GPModel
 from .params import Param, DataHolder
+from .decors import params_as_tensors
 from .conditionals import conditional
 from .priors import Gaussian
 from .misc import TF_FLOAT_TYPE
@@ -53,7 +54,7 @@ class GPMC(GPModel):
         self.V = Param(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    def compile(self, session=None, graph=None, optimizer=None):
+    def compile(self, session=None, keep_session=True):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add parameters appropriately.
@@ -66,9 +67,7 @@ class GPMC(GPModel):
             self.V = Param(np.zeros((self.num_data, self.num_latent)))
             self.V.prior = Gaussian(0., 1.)
 
-        return super(GPMC, self).compile(session=session,
-                                         graph=graph,
-                                         optimizer=optimizer)
+        return super(GPMC, self).compile(session=session, keep_session=keep_session)
 
     @params_as_tensors
     def _build_likelihood(self):

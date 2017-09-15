@@ -18,6 +18,7 @@ from __future__ import absolute_import
 
 from . import misc
 from . import transforms
+from . import decors
 from . import params
 from . import conditionals
 from . import densities

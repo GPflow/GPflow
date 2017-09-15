@@ -21,7 +21,7 @@ from . import densities
 
 from .base import IPrior
 from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
-from .params import Parameterized, params_as_tensors
+from .params import Parameterized
 
 
 class Prior(Parameterized, IPrior): # pylint: disable=W0223

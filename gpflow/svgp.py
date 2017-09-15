@@ -20,7 +20,7 @@ import numpy as np
 from . import transforms, conditionals, kullback_leiblers
 
 from .params import Param
-from .params import params_as_tensors
+from .decors import params_as_tensors
 from .model import GPModel
 from .minibatch import MinibatchData
 from .misc import TF_FLOAT_TYPE

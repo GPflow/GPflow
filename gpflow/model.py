@@ -20,7 +20,7 @@ import tensorflow as tf
 from . import hmc
 
 from .params import Parameterized
-from .autoflow import AutoFlow
+from .decors import autoflow
 from .mean_functions import Zero
 from .misc import TF_FLOAT_TYPE
 from ._settings import settings
@@ -44,12 +44,12 @@ class Model(Parameterized):
     def objective_gradient(self):
         return self._objective_gradient
 
-    @AutoFlow()
+    @autoflow()
     def compute_log_prior(self):
         """ Compute the log prior of the model (uses AutoFlow)"""
         return self.prior_tensor
 
-    @AutoFlow()
+    @autoflow()
     def compute_log_likelihood(self):
         """ Compute the log likelihood of the model (uses AutoFlow on ``self.build_likelihood()``)"""
         return self.likelihood_tensor
@@ -125,7 +125,7 @@ class GPModel(Model):
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
+    @autoflow((TF_FLOAT_TYPE, [None, None]))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points
@@ -133,7 +133,7 @@ class GPModel(Model):
         """
         return self._build_predict(Xnew)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
+    @autoflow((TF_FLOAT_TYPE, [None, None]))
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -141,7 +141,7 @@ class GPModel(Model):
         """
         return self._build_predict(Xnew, full_cov=True)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (tf.int32, []))
+    @autoflow((TF_FLOAT_TYPE, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
@@ -157,7 +157,7 @@ class GPModel(Model):
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.stack(samples))
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]))
+    @autoflow((TF_FLOAT_TYPE, [None, None]))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -165,7 +165,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self._build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-    @AutoFlow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]))
+    @autoflow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew

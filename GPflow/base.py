@@ -1,3 +1,17 @@
+# Copyright 2017 Artem Artemev @awav
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import abc
 import enum
 
@@ -39,6 +53,19 @@ class ICompilable:
 
     @abc.abstractmethod
     def clear(self):
+        pass
+
+
+class IAutoFlow:
+    __metaclass__ = abc.ABCMeta
+    __autoflow_prefix__ = '_autoflow_'
+
+    @abc.abstractmethod
+    def get_autoflow(self, name):
+        pass
+
+    @abc.abstractmethod
+    def clear_autoflow(self, name=None):
         pass
 
 
@@ -95,7 +122,7 @@ class ITransform:
         pass
 
     @abc.abstractmethod
-    def tf_log_jacobian(self, x):
+    def log_jacobian(self, x):
         """
         Return the log Jacobian of the tf_forward mapping.
 
@@ -267,3 +294,7 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         elif is_built is Build.NO:
             with tf.name_scope(name):
                 self._build()
+
+
+class ITensorTransformer: # pylint: disable=R0903
+    __tensor_mode__ = '_tensor_mode'

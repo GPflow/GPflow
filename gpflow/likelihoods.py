@@ -1,4 +1,5 @@
 # Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews, Alexis Boukouvalas
+# Copyright 2017 Artem Artemev @awav
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +21,8 @@ import numpy as np
 
 from . import densities, transforms
 
-from .params import Param, Parameterized, ParamList, params_as_tensors
+from .decors import params_as_tensors
+from .params import Param, Parameterized, ParamList
 from .quadrature import hermgauss
 from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 

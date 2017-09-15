@@ -17,7 +17,7 @@ import tensorflow as tf
 import numpy as np
 
 from .params import Param, Parameterized, ParamList
-from .params import params_as_tensors
+from .decors import params_as_tensors
 from .misc import TF_FLOAT_TYPE
 
 

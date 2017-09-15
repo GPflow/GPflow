@@ -7,7 +7,7 @@ from numpy import pi as nppi
 from . import kernels
 from .quadrature import mvhermgauss
 from .misc import TF_FLOAT_TYPE, TF_INT_TYPE
-from .params import params_as_tensors
+from .decors import params_as_tensors
 from ._settings import settings
 
 class RBF(kernels.RBF):

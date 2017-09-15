@@ -8,7 +8,7 @@ from . import kernels
 from .model import GPModel
 from .gpr import GPR
 from .params import Param
-from .params import params_as_tensors
+from .decors import params_as_tensors
 from .mean_functions import Zero
 from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 from ._settings import settings
