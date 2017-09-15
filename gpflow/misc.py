@@ -25,7 +25,7 @@ __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 
 TF_INT_TYPE = settings.dtypes.int_type
 TF_FLOAT_TYPE = settings.dtypes.float_type
-NP_FLOAT_TYPE = np.float32 if TF_FLOAT_TYPE is tf.float32 else np.float64 # pylint: disable=E1101
+NP_FLOAT_TYPE = np.float32 if TF_FLOAT_TYPE is tf.float32 else np.float64  # pylint: disable=E1101
 
 
 class GPflowError(Exception):
@@ -89,7 +89,7 @@ def normalize_dtype(value):
     if isinstance(value, tf.DType):
         tf_type = True
         value = value.as_numpy_dtype
-    if value.dtype.type in [np.float32, np.float64]: # pylint: disable=E1101
+    if value.dtype.type in [np.float32, np.float64]:  # pylint: disable=E1101
         value = TF_FLOAT_TYPE
     elif value.dtype.type in [np.int16, np.int32, np.int64]:
         value = np.int32
@@ -98,11 +98,13 @@ def normalize_dtype(value):
     return value if not tf_type else tf.as_dtype(value)
 
 
-def get_attribute(obj, name):
+def get_attribute(obj, name, allow_none=False):
     try:
         return object.__getattribute__(obj, name)
-    except AttributeError:
-        return None
+    except AttributeError as error:
+        if allow_none:
+            return None
+        raise error
 
 
 def vec_to_tri(vectors, N):

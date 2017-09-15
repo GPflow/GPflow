@@ -24,7 +24,7 @@ from .misc import GPflowError
 
 class Build(enum.Enum):
     YES = 1
-    NO = 0 # pylint: disable=C0103
+    NO = 0  # pylint: disable=C0103
     NOT_COMPATIBLE_GRAPH = None
 
 
@@ -204,7 +204,6 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
 
     def __init__(self, name=None):
         super(CompilableNode, self).__init__(name=name)
-        self._initiator = None
         self._session = None
 
     @property
@@ -228,8 +227,8 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
             self._session = session
 
     def clear(self):
-        if self.root is not self:
-            raise GPflowError('Only root can initiate cleaning process.')
+        # if self.root is not self:
+        #     raise GPflowError('Only root can initiate cleaning process.')
         self._session = None
 
     def enquire_graph(self, graph=None):

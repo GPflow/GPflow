@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from . import hmc
 
+from .base import Build
 from .params import Parameterized
 from .decors import autoflow
 from .mean_functions import Zero
@@ -44,6 +45,10 @@ class Model(Parameterized):
     def objective_gradient(self):
         return self._objective_gradient
 
+    @property
+    def likelihood_tensor(self):
+        return self._likelihood_tensor
+
     @autoflow()
     def compute_log_prior(self):
         """ Compute the log prior of the model (uses AutoFlow)"""
@@ -65,6 +70,14 @@ class Model(Parameterized):
     #                          Lmin=Lmin, Lmax=Lmax, epsilon=epsilon, thin=thin, burn=burn,
     #                          x0=self.get_free_state(), verbose=verbose,
     #                          return_logprobs=return_logprobs, RNG=RNG)
+
+    def is_built(self, graph=None):
+        is_built = super(Model, self).is_built(graph)
+        if is_built is not Build.YES:
+            return is_built
+        if self._likelihood_tensor is None:
+            return Build.NO
+        return Build.YES
 
     def _build(self):
         super(Model, self)._build()

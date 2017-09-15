@@ -10,6 +10,7 @@ from .misc import TF_FLOAT_TYPE, TF_INT_TYPE
 from .decors import params_as_tensors
 from ._settings import settings
 
+
 class RBF(kernels.RBF):
     def eKdiag(self, X, Xcov=None):
         """

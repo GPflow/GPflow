@@ -175,9 +175,6 @@ class Param(CompilableNode):
 
     def _build_param(self):
         if self._externally_defined:
-            ## Double check for externally created graph
-            #if self.graph is not tf.get_default_graph():
-            #    raise GPflowError("Externally defined tensor uses different graph.")
             return self.param_tensor
 
         name = self.full_name + '/variable'
@@ -392,8 +389,9 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
     def get_autoflow(self, name):
         if not isinstance(name, str):
             raise ValueError('Name must be string.')
-        autoflow_name = self.__autoflow_prefix__ + name
-        store = getattr(self, autoflow_name, default={})
+        prefix = IAutoFlow.__autoflow_prefix__
+        autoflow_name = prefix + name
+        store = getattr(self, autoflow_name, {})
         if not store:
             setattr(self, autoflow_name, store)
         return store
@@ -402,9 +400,9 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
         if name is not None and not isinstance(name, str):
             raise ValueError('Name must be string.')
         if name:
-            delattr(self, self._autoflow_name(name))
+            delattr(self, autoflow_name)
         else:
-            keys = [attr for attr in self.__dict__ if attr.startswith(self.__autoflow_prefix__)]
+            keys = [attr for attr in self.__dict__ if attr.startswith(prefix)]
             for key in keys:
                 delattr(self, key)
 
@@ -491,7 +489,7 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
         object.__setattr__(self, key, value)
 
     def __getattribute__(self, name):
-        if get_attribute(self, ITensorTransformer.__tensor_mode__) is not None:
+        if get_attribute(self, ITensorTransformer.__tensor_mode__, allow_none=True) is not None:
             attr = get_attribute(self, name)
             if isinstance(attr, Param):
                 return attr.transformed_tensor
