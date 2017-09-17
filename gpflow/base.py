@@ -227,7 +227,7 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
             self._session = session
 
     def clear(self):
-        if self.root is not self:
+        if self.is_built_coherence() is Build.YES and self.root is not self:
             raise GPflowError('Only root can initiate cleaning process.')
         self._session = None
         self._clear()
@@ -296,7 +296,7 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
                 self._build()
 
     def _clear(self):
-        raise NotImplementedError('Private method clear is not implemented.')
+        raise NotImplementedError('Private method clear must be implemented by successor.')
 
 
 class ITensorTransformer: # pylint: disable=R0903
