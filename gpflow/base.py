@@ -218,7 +218,7 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
     def compile(self, session=None, keep_session=True):
         if self.parent is not self:
             raise GPflowError('Only root can initiate compilation.')
-        session = self.setup_compile_session(session)
+        session = self._setup_compile_session(session)
         if self.is_built(graph=session.graph) is Build.NO:
             with session.graph.as_default():
                 self._build_with_name_scope()
@@ -227,9 +227,10 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
             self._session = session
 
     def clear(self):
-        # if self.root is not self:
-        #     raise GPflowError('Only root can initiate cleaning process.')
+        if self.root is not self:
+            raise GPflowError('Only root can initiate cleaning process.')
         self._session = None
+        self._clear()
 
     def enquire_graph(self, graph=None):
         if graph is None:
@@ -246,17 +247,6 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         session = self.session if session is None else session
         if self.is_built_coherence(session.graph) is Build.NO:
             raise GPflowError('Not compiled.')
-        return session
-
-    def setup_compile_session(self, session):
-        if session is None:
-            session = self.session
-            if session is None:
-                session = tf.get_default_session()
-            if session is None:
-                graph = self.enquire_graph()
-                session = session_manager.get_session(graph=graph)
-        _ = self.is_built_coherence(session.graph)
         return session
 
     def set_session(self, session):
@@ -285,6 +275,17 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
             raise GPflowError('Tensor uses different graph.')
         return is_built
 
+    def _setup_compile_session(self, session):
+        if session is None:
+            session = self.session
+            if session is None:
+                session = tf.get_default_session()
+            if session is None:
+                graph = self.enquire_graph()
+                session = session_manager.get_session(graph=graph)
+        self.is_built_coherence(session.graph)
+        return session
+
     def _build_with_name_scope(self, name=None):
         name = self.name if name is None else name
         is_built = self.is_built(graph=tf.get_default_graph())
@@ -293,6 +294,9 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         elif is_built is Build.NO:
             with tf.name_scope(name):
                 self._build()
+
+    def _clear(self):
+        raise NotImplementedError('Private method clear is not implemented.')
 
 
 class ITensorTransformer: # pylint: disable=R0903

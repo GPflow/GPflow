@@ -21,7 +21,7 @@ from .misc import TF_FLOAT_TYPE
 from ._settings import settings
 
 
-@name_scope("conditional")
+@name_scope()
 def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     """
     Given F, representing the GP at the points X, produce the mean and

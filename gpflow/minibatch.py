@@ -88,7 +88,7 @@ class MinibatchData(DataHolder):
         Note: you may want to randomize the order of the data
         if using sequential generation.
         """
-        DataHolder.__init__(self, array, on_shape_change='pass')
+        DataHolder.__init__(self, array)
         total_points = self._array.shape[0]
         self.parseGenerationMethod(batch_manager,
                                    minibatch_size,

@@ -247,7 +247,7 @@ class Static(Kern):
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None):
-        Kern.__init__(self, input_dim, active_dims)
+        super(Static, self).__init__(input_dim, active_dims)
         self.variance = Param(variance, transforms.positive)
 
     @params_as_tensors
@@ -419,7 +419,7 @@ class Polynomial(Linear):
           which columns of X are used.
         :param ARD: use variance as described
         """
-        Linear.__init__(self, input_dim, variance, active_dims, ARD)
+        super(Polynomial, self).__init__(input_dim, variance, active_dims, ARD)
         self.degree = degree
         self.offset = Param(offset, transform=transforms.positive)
 
@@ -536,7 +536,7 @@ class ArcCosine(Kern):
         - ARD specifies whether the kernel has one weight_variance per dimension
           (ARD=True) or a single weight_variance (ARD=False).
         """
-        Kern.__init__(self, input_dim, active_dims)
+        super(ArcCosine, self).__init__(input_dim, active_dims)
 
         if order not in self.implemented_orders:
             raise ValueError('Requested kernel order is not implemented.')
@@ -622,7 +622,7 @@ class PeriodicKernel(Kern):
     def __init__(self, input_dim, period=1.0, variance=1.0,
                  lengthscales=1.0, active_dims=None):
         # No ARD support for lengthscale or period yet
-        Kern.__init__(self, input_dim, active_dims)
+        super(PeriodicKernel, self).__init__(input_dim, active_dims)
         self.variance = Param(variance, transforms.positive)
         self.lengthscales = Param(lengthscales, transforms.positive)
         self.ARD = False
@@ -675,7 +675,7 @@ class Coregion(Kern):
         optimization (or MCMC chain) using a random W.
         """
         assert input_dim == 1, "Coregion kernel in 1D only"
-        Kern.__init__(self, input_dim, active_dims)
+        super(Coregion, self).__init__(input_dim, active_dims)
 
         self.output_dim = output_dim
         self.rank = rank
@@ -745,7 +745,7 @@ class Combination(Kern):
                             if type(k.active_dims) is slice else
                             np.max(k.active_dims) + 1
                             for k in kern_list])
-        Kern.__init__(self, input_dim=input_dim)
+        super(Combination, self).__init__(input_dim=input_dim)
 
         # add kernels to a list, flattening out instances of this class therein
         self.kern_list = []

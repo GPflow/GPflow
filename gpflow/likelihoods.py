@@ -32,54 +32,6 @@ class Likelihood(Parameterized):
         super(Likelihood, self).__init__(name)
         self.num_gauss_hermite_points = 20
 
-    def logp(self, F, Y):
-        """
-        Return the log density of the data given the function values.
-        """
-        raise NotImplementedError("implement the logp function\
-                                  for this likelihood")
-
-    def _check_targets(self, Y_np):
-        """
-        Check that the Y values are valid for the likelihood. Y_np is a numpy array.
-
-        The base class check is that the array has two dimensions and consists only of floats. The float requirement
-        is so that AutoFlow can work with Model.predict_density.
-        """
-        if not len(Y_np.shape) == 2:
-            raise ValueError('targets must be shape N x D')
-        if np.array(list(Y_np)).dtype != NP_FLOAT_TYPE:
-            raise ValueError('use {}, even for discrete variables'.format(NP_FLOAT_TYPE))
-
-    def conditional_mean(self, F):
-        """
-        Given a value of the latent function, compute the mean of the data
-
-        If this object represents
-
-            p(y|f)
-
-        then this method computes
-
-            \int y p(y|f) dy
-        """
-        raise NotImplementedError
-
-    def conditional_variance(self, F):
-        """
-        Given a value of the latent function, compute the variance of the data
-
-        If this object represents
-
-            p(y|f)
-
-        then this method computes
-
-            \int y^2 p(y|f) dy  - [\int y p(y|f) dy] ^ 2
-
-        """
-        raise NotImplementedError
-
     def predict_mean_and_var(self, Fmu, Fvar):
         """
         Given a Normal distribution for the latent function,
@@ -183,6 +135,20 @@ class Likelihood(Parameterized):
         logp = self.logp(X, Y)
         return tf.reshape(tf.matmul(logp, gh_w), shape)
 
+    def _check_targets(self, Y_np):  # pylint: disable=R0201
+        """
+        Check that the Y values are valid for the likelihood.
+        Y_np is a numpy array.
+
+        The base class check is that the array has two dimensions
+        and consists only of floats. The float requirement is so that AutoFlow
+        can work with Model.predict_density.
+        """
+        if not len(Y_np.shape) == 2:
+            raise ValueError('targets must be shape N x D')
+        if np.array(list(Y_np)).dtype != NP_FLOAT_TYPE:
+            raise ValueError('use {}, even for discrete variables'.format(NP_FLOAT_TYPE))
+
 
 class Gaussian(Likelihood):
     def __init__(self):
@@ -194,7 +160,7 @@ class Gaussian(Likelihood):
         return densities.gaussian(F, Y, self.variance)
 
     @params_as_tensors
-    def conditional_mean(self, F):
+    def conditional_mean(self, F):  # pylint: disable=R0201
         return tf.identity(F)
 
     @params_as_tensors
@@ -236,7 +202,7 @@ class Poisson(Likelihood):
         self.binsize = np.double(binsize)
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Poisson, self)._check_targets(Y_np)
         if np.any(Y_np < 0):
             raise ValueError('poisson variables must be positive')
         if not np.all(np.equal(np.mod(Y_np, 1), 0)):
@@ -255,8 +221,7 @@ class Poisson(Likelihood):
         if self.invlink is tf.exp:
             return Y * Fmu - tf.exp(Fmu + Fvar / 2) * self.binsize \
                    - tf.lgamma(Y + 1) + Y * tf.log(self.binsize)
-        else:
-            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+        return super(Poisson, self).variational_expectations(Fmu, Fvar, Y)
 
 class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):
@@ -264,7 +229,7 @@ class Exponential(Likelihood):
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Exponential, self)._check_targets(Y_np)
         if np.any(Y_np < 0):
             raise ValueError('exponential variables must be positive')
 
@@ -279,9 +244,8 @@ class Exponential(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return -tf.exp(-Fmu + Fvar / 2) * Y - Fmu
-        else:
-            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+            return - tf.exp(-Fmu + Fvar / 2) * Y - Fmu
+        return super(Exponential, self).variational_expectations(Fmu, Fvar, Y)
 
 
 class StudentT(Likelihood):
@@ -313,7 +277,7 @@ class Bernoulli(Likelihood):
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Bernoulli, self)._check_targets(Y_np)
         Y_set = set(Y_np.flatten())
         if len(Y_set) > 2 or len(Y_set - set([1.])) > 1:
             raise Warning('all bernoulli variables should be in {1., k}, for some k')
@@ -352,7 +316,7 @@ class Gamma(Likelihood):
         self.shape = Param(1.0, transforms.positive)
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Gamma, self)._check_targets(Y_np)
         if np.any(Y_np < 0):
             raise ValueError('gamma variables must be non-negative')
 
@@ -401,7 +365,7 @@ class Beta(Likelihood):
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Beta, self)._check_targets(Y_np)
         if np.any(Y_np < 0.) or np.any(Y_np > 1.):
             raise ValueError('beta variables must be in [0, 1]')
 
@@ -488,7 +452,7 @@ class MultiClass(Likelihood):
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(MultiClass, self)._check_targets(Y_np)
         if not set(Y_np.flatten()).issubset(set(np.arange(self.num_classes))):
             raise ValueError('multiclass likelihood expects inputs to be in {0., 1., 2.,...,k-1}')
         if Y_np.shape[1] != 1:

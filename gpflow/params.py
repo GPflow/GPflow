@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 
 import enum
-import functools
 import numpy as np
 import tensorflow as tf
 
@@ -29,9 +28,9 @@ from .base import Build, CompilableNode
 from .transforms import Identity
 
 from .misc import GPflowError
-from .misc import is_number, is_tensor, is_valid_param_value
+from .misc import is_number, is_tensor
+from .misc import is_valid_param_value, is_tensor_trainable
 from .misc import add_to_trainables, remove_from_trainables
-from .misc import normalize_dtype
 from .misc import get_variable_by_name, get_attribute
 
 from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
@@ -51,38 +50,28 @@ class Param(CompilableNode):
                 return ITransform
             return None
 
-    def __init__(self, value, name=None, transform=Identity(), prior=None, trainable=False):
-        value = self._valid_param_value(value)
+    def __init__(self, value, name=None, transform=None, prior=None, trainable=True):
+        value = _valid_input(value)
         super(Param, self).__init__(name)
-        self._param_tensor = None
-        self._prior_tensor = None
-        self._transformed_tensor = None
-        self._externally_defined = False
 
-        self.prior = prior
-        self.trainable = trainable
-        self.transform = transform
-
-        if is_tensor(value):
-            self._externally_defined = True
-            self._param_tensor = value
-        else:
-            self._initial_value = value.copy()
+        self._init_parameter_defaults()
+        self._init_parameter_attributes(prior, transform, trainable)
+        self._init_parameter_value(value)
 
     @property
     def shape(self):
-        if self.param_tensor is not None:
-            return self.param_tensor.shape
-        return self._initial_value.shape
+        if self.var_tensor is not None:
+            return tuple(self.var_tensor.shape.as_list())
+        return self._value.shape
 
     @property
     def size(self):
         """The size of this parameter, equivalent to self.value.size"""
-        return self._initial_value.size
+        return np.multiply.reduce(self.shape, dtype=np.int32)
 
     @property
-    def param_tensor(self):
-        return self._param_tensor
+    def var_tensor(self):
+        return self._var_tensor
 
     @property
     def prior_tensor(self):
@@ -94,9 +83,9 @@ class Param(CompilableNode):
 
     @property
     def graph(self):
-        if self.param_tensor is None:
+        if self.var_tensor is None:
             return None
-        return self.param_tensor.graph
+        return self.var_tensor.graph
 
     def is_built(self, graph=None):
         if graph is None:
@@ -109,15 +98,9 @@ class Param(CompilableNode):
 
     def initialize(self, session=None):
         session = self.enquire_session(session)
-        if isinstance(self.param_tensor, tf.Variable):
-            init = tf.variables_initializer([self.param_tensor])
+        if isinstance(self.var_tensor, tf.Variable):
+            init = tf.variables_initializer([self.var_tensor])
             session.run(init)
-
-    def clear(self):
-        super(Param, self).clear()
-        self._param_tensor = None
-        self._prior_tensor = None
-        self._externally_defined = False
 
     def set_trainable(self, value, graph=None):
         if not isinstance(value, bool):
@@ -129,66 +112,75 @@ class Param(CompilableNode):
         graph = self.enquire_graph(graph)
         is_built = self.is_built_coherence(graph)
 
-        if is_built is Build.YES and self.trainable == value:
-            return
+        if is_built is Build.YES:
+            if self.trainable == value:
+                return
+            elif value:
+                remove_from_trainables(self.var_tensor, graph)
+            else:
+                add_to_trainables(self.var_tensor, graph)
 
         object.__setattr__(self, 'trainable', value)
-
-        if is_built is Build.YES:
-            if value:
-                remove_from_trainables(self.param_tensor, graph)
-            else:
-                add_to_trainables(self.param_tensor, graph)
 
     def assign(self, value, session=None):
         if self._externally_defined:
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
-        value = self._valid_param_value(value)
+        value = _valid_input(value)
         if self.shape != value.shape:
             raise GPflowError('Assigning value has different shape.')
         session = self.enquire_session(session, allow_none=True)
-        self._initial_value[...] = value
+        self._value[...] = value
         if session and self.is_built_coherence(session.graph) is Build.YES:
-            self.param_tensor.load(self._initial_value, session=session)
+            self.var_tensor.load(self._value, session=session)
 
     def read_value(self, session=None):
         session = self.enquire_session(session, allow_none=True)
         if session:
             is_built = self.is_built_coherence(session.graph)
             if is_built is Build.YES:
-                return session.run(self.param_tensor)
-        return self._initial_value
+                return session.run(self.var_tensor)
+        elif self._externally_defined:
+            raise GPflowError('Externally defined parameter requires session.')
+        return self._value
 
-    @staticmethod
-    def _valid_param_value(value):
-        if not is_valid_param_value(value):
-            raise ValueError('The value must be either a tensorflow '
-                             'variable, an array or a scalar.')
-        if is_number(value):
-            value = np.array(value, dtype=NP_FLOAT_TYPE)
-        return value
+    def _clear(self):
+        self._var_tensor = None           # pylint: disable=W0201
+        self._prior_tensor = None         # pylint: disable=W0201
+        self._externally_defined = False  # pylint: disable=W0201
 
     def _build(self):
-        self._param_tensor = self._build_param()
-        self._transformed_tensor = self._build_transformed()
-        self._prior_tensor = self._build_prior()
+        self._var_tensor = self._build_parameter()            # pylint: disable=W0201
+        self._transformed_tensor = self._build_transformed()  # pylint: disable=W0201
+        self._prior_tensor = self._build_prior()              # pylint: disable=W0201
 
-    def _build_param(self):
+    def _build_parameter(self):
         if self._externally_defined:
-            return self.param_tensor
+            return self.var_tensor
 
-        name = self.full_name + '/variable'
+        name = '/'.join([self.full_name, 'variable'])
         tensor = get_variable_by_name(name, graph=self.graph)
         if tensor is not None:
+            is_trainable = is_tensor_trainable(tensor)
+            if is_trainable != self.trainable:
+                tensor_status = 'trainable' if is_trainable else 'not trainable'
+                param_status = 'trainable' if self.trainable else 'not'
+                raise GPflowError('Externally defined tensor is {0} '
+                                  'whilst parameter is {1}.'
+                                  .format(tensor_status, param_status))
             return tensor
 
-        init = tf.constant_initializer(self._initial_value, dtype=TF_FLOAT_TYPE)
-        return tf.get_variable(name, shape=self.shape, initializer=init, dtype=TF_FLOAT_TYPE)
+        init = tf.constant_initializer(self._value, dtype=TF_FLOAT_TYPE)
+        return tf.get_variable(
+            name,
+            shape=self.shape,
+            initializer=init,
+            dtype=TF_FLOAT_TYPE,
+            trainable=self.trainable)
 
     def _build_transformed(self):
-        if not is_tensor(self.param_tensor):  # pragma: no cover
+        if not is_tensor(self.var_tensor):  # pragma: no cover
             raise GPflowError("Parameter's tensor is not compiled.")
-        return self.transform.tf_forward(self.param_tensor)
+        return self.transform.tf_forward(self.var_tensor)
 
     def _build_prior(self):
         """
@@ -203,10 +195,34 @@ class Param(CompilableNode):
         if self.prior is None:
             return tf.constant(0.0, TF_FLOAT_TYPE, name=prior_name)
 
-        var = self.param_tensor
+        var = self.var_tensor
         log_jacobian = self.transform.tf_log_jacobian(var)
         logp_var = self.prior.logp(self.transformed_tensor)
         return tf.add(logp_var, log_jacobian, name=prior_name)
+
+    def _init_parameter_defaults(self):
+        self._var_tensor = None
+        self._prior_tensor = None
+        self._transformed_tensor = None
+        self._externally_defined = False
+
+    def _init_parameter_value(self, value):
+        if is_tensor(value):
+            is_trainable = is_tensor_trainable(value)
+            if is_trainable != self.trainable:
+                status = 'trainable' if is_trainable else 'not trainable'
+                ValueError('Externally defined tensor is {0}.'.format(status))
+            self._externally_defined = True
+            self._var_tensor = value
+        else:
+            self._value = value.copy()
+
+    def _init_parameter_attributes(self, prior, transform, trainable):
+        if transform is None:
+            transform = Identity()
+        self.prior = prior          # pylint: disable=W0201
+        self.transform = transform  # pylint: disable=W0201
+        self.trainable = trainable  # pylint: disable=W0201
 
     def _set_parameter_attribute(self, attr, value):
         if attr is self.ParamAttribute.TRAINABLE:
@@ -247,61 +263,35 @@ class Param(CompilableNode):
                ' transform:' + str(self.transform) + \
                ' prior:' + str(self.prior) + \
                (' [FIXED]' if self.trainable else '') + \
-               '\n' + str(self.value())
+               '\n' + str(self.read_value())
 
 
-class DataHolder(CompilableNode):
-    def __init__(self, array, on_shape_change='raise'):
-        super(DataHolder, self).__init__()
-        dtype = normalize_dtype(array)
-        self._array = np.asarray(array, dtype=dtype)
-        assert on_shape_change in ['raise', 'pass', 'recompile']
-        self.on_shape_change = on_shape_change
-
-    def make_tf_array(self):
-        self._tf_array = tf.placeholder(dtype=self._get_type(self._array),
-                                        shape=[None] * self._array.ndim,
-                                        name=self.name)
-
-    def set_data(self, array):
-        """
-        Setting a data into self._array before any TensorFlow execution.
-        If the shape of the data changes, then either:
-         - raise an exception
-         - raise the recompilation flag.
-         - do nothing
-        according to the option in self.on_shape_change.
-        """
-        if self.shape == array.shape:
-            self._array[...] = array  # just accept the new values
-        else:
-            if self.on_shape_change == 'raise':
-                raise ValueError("The shape of this data must not change. \
-                                  (perhaps make the model again from scratch?)")
-            elif self.on_shape_change == 'recompile':
-                self._array = array.copy()
-                self.root._needs_recompile = True
-            elif self.on_shape_change == 'pass':
-                self._array = array.copy()
-            else:
-                raise ValueError('invalid option')  # pragma: no cover
+class DataHolder(Param):
+    def __init__(self, value, name=None):
+        super(DataHolder, self).__init__(value, name=name)
 
     @property
-    def value(self):
-        return self._array.copy()
+    def trainable(self):
+        return False
 
-    @property
-    def size(self):
-        return self._array.size
+    def set_trainable(self, _value, graph=None):
+        raise NotImplementedError('Data holder cannot be fixed.')
 
-    @property
-    def shape(self):
-        return self._array.shape
+    def _clear(self):
+        self._var_tensor = None  # pylint: disable=W0201
 
-    def __str__(self, prepend='Data:'):
-        return prepend + \
-               '\033[1m' + self.name + '\033[0m' + \
-               '\n' + str(self.value)
+    def _build(self):
+        self._var_tensor = self._build_parameter()  # pylint: disable=W0201
+
+    def _init_parameter_defaults(self):
+        self._var_tensor = None
+        self._externally_defined = False
+
+    def _init_parameter_attributes(self, _prior, _transform, _trainable):
+        pass
+
+    def __setattr__(self, name, value):
+        object.__setattr__(self, name, value)
 
 
 class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
@@ -330,7 +320,7 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
 
     @property
     def trainable_tensors(self):
-        return [param.param_tensor for param in self.trainable_params]
+        return [param.var_tensor for param in self.trainable_params]
 
     @property
     def prior_tensor(self):
@@ -373,18 +363,11 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
 
     def initialize(self, session=None):
         session = self.enquire_session(session)
-        variables = [param.param_tensor for param in self.params
-                     if isinstance(param.param_tensor, tf.Variable)]
+        variables = [param.var_tensor for param in self.params
+                     if isinstance(param.var_tensor, tf.Variable)]
         if variables:
             init = tf.variables_initializer(variables)
             session.run(init)
-
-    def clear(self):
-        super(Parameterized, self).clear()
-        for param in self.params:
-            param.clear()
-        self._prior_tensor = None
-        self.clear_autoflow()
 
     def get_autoflow(self, name):
         if not isinstance(name, str):
@@ -399,8 +382,9 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
     def clear_autoflow(self, name=None):
         if name is not None and not isinstance(name, str):
             raise ValueError('Name must be string.')
+        prefix = IAutoFlow.__autoflow_prefix__
         if name:
-            delattr(self, autoflow_name)
+            delattr(self, prefix + name)
         else:
             keys = [attr for attr in self.__dict__ if attr.startswith(prefix)]
             for key in keys:
@@ -413,6 +397,12 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
     #    """
     #    for param in self.sorted_params:
     #        param.randomize(distributions, skiptrainable)
+
+    def _clear(self):
+        self._prior_tensor = None
+        self.clear_autoflow()
+        for param in self.params:
+            param._clear()  # pylint: disable=W0212
 
     def _build(self):
         for param in self.params:
@@ -443,34 +433,6 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
             msg = '"{0}" type cannot be assigned to "{1}" attribute.'
             raise ValueError(msg.format(type(value), name))
 
-    def _html_table_rows(self, name_prefix=''):
-        """
-        Get the rows of the html table for this object
-        """
-        name_prefix += self.name + '.'
-        return ''.join([p._html_table_rows(name_prefix)
-                        for p in self.sorted_params])
-
-    def _repr_html_(self):
-        """
-        Build a small html table for display in the jupyter notebook.
-        """
-        html = ["<table id='params' width=100%>"]
-
-        # build the header
-        header = "<tr>"
-        header += "<td>Name</td>"
-        header += "<td>values</td>"
-        header += "<td>prior</td>"
-        header += "<td>constraint</td>"
-        header += "</tr>"
-        html.append(header)
-
-        html.append(self._html_table_rows())
-
-        html.append("</table>")
-        return ''.join(html)
-
     def __setattr__(self, key, value):
         if key.startswith('_'):
             object.__setattr__(self, key, value)
@@ -495,48 +457,8 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
                 return attr.transformed_tensor
         return get_attribute(self, name)
 
-# TODO(awav)
-    def __str__(self, prepend=''):
-        prepend += self.name + '.'
-        return '\n'.join([p.__str__(prepend) for p in self.params])
 
 class ParamList(Parameterized):
-    """
-    A list of parameters.
-
-    This allows us to store parameters in a list whilst making them 'visible'
-    to the GPflow machinery. The correct usage is
-
-    >>> my_list = GPflow.param.ParamList([Param1, Param2])
-
-    You can then iterate through the list. For example, to compute the sum:
-    >>> my_sum = reduce(tf.add, my_list)
-
-    or the sum of the squares:
-    >>> rmse = tf.sqrt(reduce(tf.add, map(tf.square, my_list)))
-
-    You can append things:
-    >>> my_list.append(GPflow.kernels.RBF(1))
-
-    but only if the are Parameters (or Parameterized objects). You can set the
-    value of Parameters in the list:
-
-    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
-    >>> print my_list
-    unnamed.item0 transform:(none) prior:None
-    [ 2.]
-    >>> my_list[0] = 12
-    >>> print my_list
-    unnamed.item0 transform:(none) prior:None
-    [ 12.]
-
-    But you can't change elements of the list by assignment:
-    >>> my_list = GPflow.param.ParamList([GPflow.param.Param(2)])
-    >>> new_param = GPflow.param.Param(4)
-    >>> my_list[0] = new_param # raises exception
-
-    """
-
     def __init__(self, list_of_params):
         Parameterized.__init__(self)
         assert isinstance(list_of_params, list)
@@ -576,3 +498,12 @@ class ParamList(Parameterized):
         to set their values by assignment.
         """
         self.sorted_params[key]._array[...] = value
+
+
+def _valid_input(value):
+    if not is_valid_param_value(value):
+        raise ValueError('The value must be either a tensorflow '
+                         'variable, an array or a scalar.')
+    if is_number(value):
+        value = np.array(value, dtype=NP_FLOAT_TYPE)
+    return value

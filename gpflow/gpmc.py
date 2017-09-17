@@ -46,8 +46,8 @@ class GPMC(GPModel):
             L L^T = K
 
         """
-        X = DataHolder(X, on_shape_change='recompile')
-        Y = DataHolder(Y, on_shape_change='recompile')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
@@ -79,7 +79,8 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = tf.cholesky(K + tf.eye(tf.shape(self.X)[0], dtype=TF_FLOAT_TYPE)*settings.numerics.jitter_level)
+        L = tf.cholesky(
+            K + tf.eye(tf.shape(self.X)[0], dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))

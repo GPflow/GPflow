@@ -17,9 +17,9 @@ class TestDataHolderSimple(GPflowTestCase):
         with self.test_session():
             self.m = gpflow.model.Model()
             self.rng = np.random.RandomState()
-            self.m.X = gpflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='pass')
-            self.m.Y = gpflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='raise')
-            self.m.Z = gpflow.param.DataHolder(self.rng.randn(2, 2), on_shape_change='recompile')
+            self.m.X = gpflow.param.DataHolder(self.rng.randn(2, 2))
+            self.m.Y = gpflow.param.DataHolder(self.rng.randn(2, 2))
+            self.m.Z = gpflow.param.DataHolder(self.rng.randn(2, 2))
             self.m.make_tf_array(np.empty(0))
             self.m._needs_recompile = False
 
@@ -69,7 +69,7 @@ class TestDataHolderIntegers(GPflowTestCase):
             self.m = gpflow.model.Model()
             self.rng = np.random.RandomState()
             self.m.X = gpflow.param.DataHolder(
-                self.rng.randint(0, 10, (2, 2)), on_shape_change='pass')
+                self.rng.randint(0, 10, (2, 2)))
             self.m.X.make_tf_array()
             self.m._needs_recompile = False
 

@@ -11,12 +11,14 @@ class DumbModel(gpflow.model.Model):
         gpflow.model.Model.__init__(self)
         self.a = gpflow.param.Param(3.)
 
-    def build_likelihood(self):
+    @gpflow.decors.params_as_tensors
+    def _build_likelihood(self):
         return -tf.square(self.a)
 
 
 class NoArgsModel(DumbModel):
-    @gpflow.model.AutoFlow()
+    @gpflow.decors.autoflow()
+    @gpflow.decors.params_as_tensors
     def function(self):
         return self.a
 

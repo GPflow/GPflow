@@ -63,13 +63,13 @@ class SGPMC(GPModel):
         kern, likelihood, mean_function are appropriate GPflow objects
 
         """
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_inducing = Z.shape[0]
         self.num_latent = num_latent or Y.shape[1]
-        self.Z = DataHolder(Z, on_shape_change='raise')
+        self.Z = DataHolder(Z)
         self.V = Param(np.zeros((self.num_inducing, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 

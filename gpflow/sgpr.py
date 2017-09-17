@@ -110,8 +110,8 @@ class SGPR(GPModel, SGPRUpperMixin):
 
         This method only works with a Gaussian likelihood.
         """
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.Z = Param(Z)
@@ -217,8 +217,8 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         This method only works with a Gaussian likelihood.
 
         """
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.Z = Param(Z)

@@ -55,8 +55,8 @@ class VGP(GPModel):
 
         """
 
-        X = DataHolder(X, on_shape_change='recompile')
-        Y = DataHolder(Y, on_shape_change='recompile')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
@@ -158,8 +158,8 @@ class VGP_opper_archambeau(GPModel):
         Y is a data matrix, size N x R
         kern, likelihood, mean_function are appropriate GPflow objects
         """
-        X = DataHolder(X, on_shape_change='recompile')
-        Y = DataHolder(Y, on_shape_change='recompile')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]

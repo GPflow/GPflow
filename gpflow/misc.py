@@ -65,6 +65,10 @@ def is_valid_param_value(value):
             or is_tensor(value))
 
 
+def is_tensor_trainable(tensor):
+    return tensor in tensor.graph.get_collection(__TRAINABLES)
+
+
 def add_to_trainables(variable, graph=None):
     graph = _get_graph(graph)
     if variable not in graph.get_collection(__TRAINABLES):

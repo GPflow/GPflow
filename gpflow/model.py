@@ -17,15 +17,14 @@ from __future__ import print_function, absolute_import
 import numpy as np
 import tensorflow as tf
 
-from . import hmc
-
 from .base import Build
-from .params import Parameterized
+from .params import Parameterized, DataHolder
 from .decors import autoflow
 from .mean_functions import Zero
 from .misc import TF_FLOAT_TYPE
 from ._settings import settings
 
+# from . import hmc
 
 class Model(Parameterized):
     def __init__(self, name=None):
@@ -33,9 +32,9 @@ class Model(Parameterized):
         Name is a string describing this model.
         """
         super(Model, self).__init__(name=name)
-        self._likelihood_tensor = None
         self._objective = None
         self._objective_gradient = None
+        self._likelihood_tensor = None
 
     @property
     def objective(self):
@@ -51,12 +50,12 @@ class Model(Parameterized):
 
     @autoflow()
     def compute_log_prior(self):
-        """ Compute the log prior of the model (uses AutoFlow)"""
+        """Compute the log prior of the model."""
         return self.prior_tensor
 
     @autoflow()
     def compute_log_likelihood(self):
-        """ Compute the log likelihood of the model (uses AutoFlow on ``self.build_likelihood()``)"""
+        """Compute the log likelihood of the model."""
         return self.likelihood_tensor
 
     #def sample(self, num_samples, Lmin=5, Lmax=20, epsilon=0.01, thin=1, burn=0,
@@ -83,13 +82,19 @@ class Model(Parameterized):
         super(Model, self)._build()
 
         self._likelihood_tensor = self._build_likelihood()
-        func = tf.add(self.likelihood_tensor, self.prior_tensor)
+        func = tf.add(self.likelihood_tensor, self.prior_tensor, name='nonneg_objective')
         grad_func = tf.gradients(func, self.trainable_tensors)
 
         self._objective = tf.negative(func, name='objective')
         self._objective_gradient = tf.negative(grad_func, name='objective_gradient')
 
-    def _build_likelihood(self, *args, **kwargs):
+    def _clear(self):
+        super(Model, self)._clear()
+        self._likelihood_tensor = None
+        self._objective_gradient = None
+        self._objective = None
+
+    def _build_likelihood(self):
         raise NotImplementedError()
 
 
@@ -131,10 +136,11 @@ class GPModel(Model):
         self.likelihood = likelihood
 
         if isinstance(X, np.ndarray):
-            #: X is a data matrix; each row represents one instance
+            # X is a data matrix; each row represents one instance
             X = DataHolder(X)
         if isinstance(Y, np.ndarray):
-            #: Y is a data matrix, rows correspond to the rows in X, columns are treated independently
+            # Y is a data matrix, rows correspond to the rows in X,
+            # columns are treated independently
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 

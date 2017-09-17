@@ -45,8 +45,8 @@ class GPR(GPModel):
         kern, mean_function are appropriate GPflow objects
         """
         likelihood = likelihoods.Gaussian()
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name)
         self.num_latent = Y.shape[1]
 
