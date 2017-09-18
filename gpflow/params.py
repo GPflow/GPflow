@@ -155,18 +155,13 @@ class Param(CompilableNode):
 
     def _build_parameter(self):
         if self._externally_defined:
+            self._check_tensor_trainable(self.var_tensor)
             return self.var_tensor
 
         name = '/'.join([self.full_name, 'variable'])
         tensor = get_variable_by_name(name, graph=self.graph)
         if tensor is not None:
-            is_trainable = is_tensor_trainable(tensor)
-            if is_trainable != self.trainable:
-                tensor_status = 'trainable' if is_trainable else 'not trainable'
-                param_status = 'trainable' if self.trainable else 'not'
-                raise GPflowError('Externally defined tensor is {0} '
-                                  'whilst parameter is {1}.'
-                                  .format(tensor_status, param_status))
+            self._check_tensor_trainable(tensor)
             return tensor
 
         init = tf.constant_initializer(self._value, dtype=TF_FLOAT_TYPE)
@@ -199,6 +194,14 @@ class Param(CompilableNode):
         log_jacobian = self.transform.tf_log_jacobian(var)
         logp_var = self.prior.logp(self.transformed_tensor)
         return tf.add(logp_var, log_jacobian, name=prior_name)
+
+    def _check_tensor_trainable(self, tensor):
+        is_trainable = is_tensor_trainable(tensor)
+        if is_trainable != self.trainable:
+            tensor_status = 'trainable' if is_trainable else 'not trainable'
+            param_status = 'trainable' if self.trainable else 'not'
+            msg = 'Externally defined tensor is {0} whilst parameter is {1}.'
+            raise GPflowError(msg.format(tensor_status, param_status))
 
     def _init_parameter_defaults(self):
         self._var_tensor = None
@@ -290,6 +293,9 @@ class DataHolder(Param):
     def _init_parameter_attributes(self, _prior, _transform, _trainable):
         pass
 
+    def _set_parameter_attribute(self, attr, value):
+        raise NotImplementedError('Data holder does not have parameter attributes.')
+
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
 
@@ -305,6 +311,12 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
         for key, param in self.__dict__.items():
             if not key.startswith('_') and isinstance(param, (Param, Parameterized)):
                 yield param
+
+    @property
+    def data_holders(self):
+        for key, data_holder in self.__dict__.items():
+            if not key.startswith('_') and isinstance(data_holder, DataHolder):
+                yield data_holder
 
     @property
     def trainable_params(self):
@@ -426,7 +438,6 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
             value.set_parent(self)
             value.set_name(name)
             object.__setattr__(self, name, value)
-        # elif - DataHolder:
         elif isinstance(attr, Param) and is_valid_param_value(value):
             attr.assign(value, session=self.session)
         else:
