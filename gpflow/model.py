@@ -14,17 +14,19 @@
 
 from __future__ import print_function, absolute_import
 
+import abc
+
 import numpy as np
 import tensorflow as tf
 
-from .base import Build
-from .params import Parameterized, DataHolder
-from .decors import autoflow
-from .mean_functions import Zero
-from .misc import TF_FLOAT_TYPE
-from ._settings import settings
+from gpflow.base import Build
+from gpflow.params import Parameterized, DataHolder
+from gpflow.decors import autoflow
+from gpflow.mean_functions import Zero
+from gpflow.misc import TF_FLOAT_TYPE
+from gpflow import settings
 
-# from . import hmc
+# from gpflow import hmc
 
 class Model(Parameterized):
     def __init__(self, name=None):
@@ -33,16 +35,11 @@ class Model(Parameterized):
         """
         super(Model, self).__init__(name=name)
         self._objective = None
-        self._objective_gradient = None
         self._likelihood_tensor = None
 
     @property
     def objective(self):
         return self._objective
-
-    @property
-    def objective_gradient(self):
-        return self._objective_gradient
 
     @property
     def likelihood_tensor(self):
@@ -82,20 +79,22 @@ class Model(Parameterized):
         super(Model, self)._build()
 
         self._likelihood_tensor = self._build_likelihood()
-        func = tf.add(self.likelihood_tensor, self.prior_tensor, name='nonneg_objective')
-        grad_func = tf.gradients(func, self.trainable_tensors)
 
+        func = tf.add(self.likelihood_tensor, self.prior_tensor, name='nonneg_objective')
         self._objective = tf.negative(func, name='objective')
-        self._objective_gradient = tf.negative(grad_func, name='objective_gradient')
+
+        # grad_func = tf.gradients(func, self.trainable_tensors)
+        # There is no need in objective gradient function.
+        # self._objective_gradient = tf.negative(grad_func, name='objective_gradient')
 
     def _clear(self):
         super(Model, self)._clear()
         self._likelihood_tensor = None
-        self._objective_gradient = None
         self._objective = None
 
+    @abc.abstractmethod
     def _build_likelihood(self):
-        raise NotImplementedError()
+        raise NotImplementedError('') # TODO(awav): write error message
 
 
 class GPModel(Model):
@@ -196,5 +195,6 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self._build_predict(Xnew)
         return self.likelihood.predict_density(pred_f_mean, pred_f_var, Ynew)
 
+    @abc.abstractmethod
     def _build_predict(self, *args, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError('') # TODO(awav): write error message

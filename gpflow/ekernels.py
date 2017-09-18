@@ -4,11 +4,11 @@ import tensorflow as tf
 
 from numpy import pi as nppi
 
-from . import kernels
-from .quadrature import mvhermgauss
-from .misc import TF_FLOAT_TYPE, TF_INT_TYPE
-from .decors import params_as_tensors
-from ._settings import settings
+from gpflow import kernels
+from gpflow.quadrature import mvhermgauss
+from gpflow.misc import TF_FLOAT_TYPE, TF_INT_TYPE
+from gpflow.decors import params_as_tensors
+from gpflow import settings
 
 
 class RBF(kernels.RBF):

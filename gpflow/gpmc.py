@@ -16,13 +16,13 @@
 import numpy as np
 import tensorflow as tf
 
-from .model import GPModel
-from .params import Param, DataHolder
-from .decors import params_as_tensors
-from .conditionals import conditional
-from .priors import Gaussian
-from .misc import TF_FLOAT_TYPE
-from ._settings import settings
+from gpflow.model import GPModel
+from gpflow.params import Param, DataHolder
+from gpflow.decors import params_as_tensors
+from gpflow.conditionals import conditional
+from gpflow.priors import Gaussian
+from gpflow.misc import TF_FLOAT_TYPE
+from gpflow import settings
 
 
 

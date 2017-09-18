@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import numpy as np
-from .params import DataHolder
+from gpflow.params import DataHolder
 
 
 class IndexManager(object):

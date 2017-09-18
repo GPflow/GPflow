@@ -16,7 +16,7 @@
 import tensorflow as tf
 import numpy as np
 
-from ._settings import settings
+from gpflow import settings
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES

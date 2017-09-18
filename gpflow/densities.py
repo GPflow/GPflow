@@ -15,7 +15,7 @@
 
 import tensorflow as tf
 import numpy as np
-from .misc import TF_FLOAT_TYPE
+from gpflow.misc import TF_FLOAT_TYPE
 
 
 def gaussian(x, mu, var):

@@ -15,11 +15,11 @@
 
 import numpy as np
 import tensorflow as tf
-from .model import GPModel
-from .params import Param, DataHolder
-from .conditionals import conditional
-from .priors import Gaussian
-from .mean_functions import Zero
+from gpflow.model import GPModel
+from gpflow.params import Param, DataHolder
+from gpflow.conditionals import conditional
+from gpflow.priors import Gaussian
+from gpflow.mean_functions import Zero
 
 
 class SGPMC(GPModel):

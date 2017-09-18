@@ -15,9 +15,9 @@
 import functools
 import tensorflow as tf
 
-from .misc import GPflowError
-from .base import IAutoFlow, ITensorTransformer
-from .base import Build, CompilableNode
+from gpflow.misc import GPflowError
+from gpflow.base import AutoFlow, ITensorTransformer
+from gpflow.base import Build, CompilableNode
 
 
 def params_as_tensors(method):
@@ -54,7 +54,7 @@ def autoflow(*af_args, **af_kwargs):
     def autoflow_wrapper(method):
         @functools.wraps(method)
         def runnable(obj, *args, **kwargs):
-            if not (isinstance(obj, IAutoFlow) and isinstance(obj, CompilableNode)):
+            if not (isinstance(obj, AutoFlow) and isinstance(obj, CompilableNode)):
                 raise ValueError('Object doesn not implement AutoFlow interface.')
             if obj.is_built_coherence(obj.graph) is Build.NO:
                 raise GPflowError('Compilable object must be built.')

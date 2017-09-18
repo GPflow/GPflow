@@ -19,12 +19,12 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from . import densities, transforms
+from gpflow import densities, transforms
 
-from .decors import params_as_tensors
-from .params import Param, Parameterized, ParamList
-from .quadrature import hermgauss
-from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
+from gpflow.decors import params_as_tensors
+from gpflow.params import Param, Parameterized, ParamList
+from gpflow.quadrature import hermgauss
+from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 
 
 class Likelihood(Parameterized):

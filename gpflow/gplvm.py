@@ -1,17 +1,17 @@
 import tensorflow as tf
 import numpy as np
 
-from . import likelihoods
-from . import transforms
-from . import kernels
+from gpflow import likelihoods
+from gpflow import transforms
+from gpflow import kernels
 
-from .model import GPModel
-from .gpr import GPR
-from .params import Param
-from .decors import params_as_tensors
-from .mean_functions import Zero
-from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
-from ._settings import settings
+from gpflow.model import GPModel
+from gpflow.gpr import GPR
+from gpflow.params import Param
+from gpflow.decors import params_as_tensors
+from gpflow.mean_functions import Zero
+from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
+from gpflow import settings
 
 
 def PCA_reduce(X, Q):

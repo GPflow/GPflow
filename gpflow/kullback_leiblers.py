@@ -15,8 +15,8 @@
 
 import tensorflow as tf
 
-from .decors import name_scope
-from .misc import TF_FLOAT_TYPE
+from gpflow.decors import name_scope
+from gpflow.misc import TF_FLOAT_TYPE
 
 
 @name_scope("KL")

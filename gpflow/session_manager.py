@@ -14,8 +14,8 @@
 
 import tensorflow as tf
 
-from .session_tracer import TracerSession
-from ._settings import settings
+from gpflow.session_tracer import TracerSession
+from gpflow import settings
 
 def get_session(*args, **kwargs):
     """

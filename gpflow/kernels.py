@@ -20,13 +20,13 @@ import warnings
 import tensorflow as tf
 import numpy as np
 
-from . import transforms
+from gpflow import transforms
 
-from .params import Param, Parameterized
-from .decors import params_as_tensors, autoflow
-from .quadrature import mvnquad
-from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE, TF_INT_TYPE
-from ._settings import settings
+from gpflow.params import Param, Parameterized
+from gpflow.decors import params_as_tensors, autoflow
+from gpflow.quadrature import mvnquad
+from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE, TF_INT_TYPE
+from gpflow import settings
 
 
 class Kern(Parameterized):

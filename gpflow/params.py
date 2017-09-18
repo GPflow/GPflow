@@ -23,17 +23,17 @@ import enum
 import numpy as np
 import tensorflow as tf
 
-from .base import IPrior, ITransform, IAutoFlow, ITensorTransformer
-from .base import Build, CompilableNode
-from .transforms import Identity
+from gpflow.base import IPrior, ITransform, ITensorTransformer
+from gpflow.base import Build, CompilableNode, AutoFlow
+from gpflow.transforms import Identity
 
-from .misc import GPflowError
-from .misc import is_number, is_tensor
-from .misc import is_valid_param_value, is_tensor_trainable
-from .misc import add_to_trainables, remove_from_trainables
-from .misc import get_variable_by_name, get_attribute
+from gpflow.misc import GPflowError
+from gpflow.misc import is_number, is_tensor
+from gpflow.misc import is_valid_param_value, is_tensor_trainable
+from gpflow.misc import add_to_trainables, remove_from_trainables
+from gpflow.misc import get_variable_by_name, get_attribute
 
-from .misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
+from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 
 
 class Param(CompilableNode):
@@ -300,7 +300,7 @@ class DataHolder(Param):
         object.__setattr__(self, name, value)
 
 
-class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
+class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
 
     def __init__(self, name=None):
         super(Parameterized, self).__init__(name=name)
@@ -380,27 +380,6 @@ class Parameterized(CompilableNode, IAutoFlow, ITensorTransformer):
         if variables:
             init = tf.variables_initializer(variables)
             session.run(init)
-
-    def get_autoflow(self, name):
-        if not isinstance(name, str):
-            raise ValueError('Name must be string.')
-        prefix = IAutoFlow.__autoflow_prefix__
-        autoflow_name = prefix + name
-        store = getattr(self, autoflow_name, {})
-        if not store:
-            setattr(self, autoflow_name, store)
-        return store
-
-    def clear_autoflow(self, name=None):
-        if name is not None and not isinstance(name, str):
-            raise ValueError('Name must be string.')
-        prefix = IAutoFlow.__autoflow_prefix__
-        if name:
-            delattr(self, prefix + name)
-        else:
-            keys = [attr for attr in self.__dict__ if attr.startswith(prefix)]
-            for key in keys:
-                delattr(self, key)
 
     # TODO(awav): # pylint: disable=W0511
     #def randomize(self, distributions={}, skiptrainable=True):

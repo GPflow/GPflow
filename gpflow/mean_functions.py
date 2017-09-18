@@ -16,9 +16,9 @@
 import tensorflow as tf
 import numpy as np
 
-from .params import Param, Parameterized, ParamList
-from .decors import params_as_tensors
-from .misc import TF_FLOAT_TYPE
+from gpflow.params import Param, Parameterized, ParamList
+from gpflow.decors import params_as_tensors
+from gpflow.misc import TF_FLOAT_TYPE
 
 
 class MeanFunction(Parameterized):

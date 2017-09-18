@@ -17,14 +17,14 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from . import transforms, conditionals, kullback_leiblers
+from gpflow import transforms, conditionals, kullback_leiblers
 
-from .params import Param
-from .decors import params_as_tensors
-from .model import GPModel
-from .minibatch import MinibatchData
-from .misc import TF_FLOAT_TYPE
-from ._settings import settings
+from gpflow.params import Param
+from gpflow.decors import params_as_tensors
+from gpflow.model import GPModel
+from gpflow.minibatch import MinibatchData
+from gpflow.misc import TF_FLOAT_TYPE
+from gpflow import settings
 
 
 class SVGP(GPModel):

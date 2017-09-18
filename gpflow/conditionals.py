@@ -16,9 +16,9 @@
 import warnings
 import tensorflow as tf
 
-from .decors import name_scope
-from .misc import TF_FLOAT_TYPE
-from ._settings import settings
+from gpflow.decors import name_scope
+from gpflow.misc import TF_FLOAT_TYPE
+from gpflow import settings
 
 
 @name_scope()

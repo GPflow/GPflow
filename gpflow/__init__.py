@@ -16,22 +16,32 @@
 # flake8: noqa
 from __future__ import absolute_import
 
-from . import misc
-from . import transforms
-from . import decors
-from . import conditionals
-from . import densities
-from . import likelihoods
-from . import kernels
-from . import ekernels
-from . import gpmc
-from . import gplvm
-from . import priors
-from . import gpr
-from . import vgp
-from . import sgpr
-from . import svgp
-from . import sgpmc
+from gpflow._version import __version__
+from gpflow._settings import SETTINGS as settings
 
-from ._version import __version__
-from ._settings import settings
+from gpflow import misc
+from gpflow import transforms
+from gpflow import decors
+from gpflow import conditionals
+from gpflow import densities
+from gpflow import likelihoods
+from gpflow import kernels
+from gpflow import ekernels
+from gpflow import model
+from gpflow import gpmc
+from gpflow import gplvm
+from gpflow import priors
+from gpflow import gpr
+from gpflow import vgp
+from gpflow import sgpr
+from gpflow import svgp
+from gpflow import sgpmc
+
+from gpflow.base import Build
+
+from gpflow.params import Param
+from gpflow.params import DataHolder
+
+from gpflow.decors import autoflow
+from gpflow.decors import name_scope
+from gpflow.decors import params_as_tensors

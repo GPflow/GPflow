@@ -3,7 +3,7 @@ import itertools
 
 import tensorflow as tf
 import numpy as np
-from .misc import NP_FLOAT_TYPE
+from gpflow.misc import NP_FLOAT_TYPE
 
 def hermgauss(n):
     x, w = np.polynomial.hermite.hermgauss(n)

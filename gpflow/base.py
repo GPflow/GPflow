@@ -17,9 +17,9 @@ import enum
 
 import tensorflow as tf
 
-from . import session_manager
-from .misc import tensor_name
-from .misc import GPflowError
+from gpflow import session_manager
+from gpflow.misc import tensor_name
+from gpflow.misc import GPflowError
 
 
 class Build(enum.Enum):
@@ -53,19 +53,6 @@ class ICompilable:
 
     @abc.abstractmethod
     def clear(self):
-        pass
-
-
-class IAutoFlow:
-    __metaclass__ = abc.ABCMeta
-    __autoflow_prefix__ = '_autoflow_'
-
-    @abc.abstractmethod
-    def get_autoflow(self, name):
-        pass
-
-    @abc.abstractmethod
-    def clear_autoflow(self, name=None):
         pass
 
 
@@ -295,9 +282,35 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
             with tf.name_scope(name):
                 self._build()
 
+    @abc.abstractmethod
     def _clear(self):
         raise NotImplementedError('Private method clear must be implemented by successor.')
 
 
 class ITensorTransformer: # pylint: disable=R0903
     __tensor_mode__ = '_tensor_mode'
+
+
+class AutoFlow:
+    __autoflow_prefix__ = '_autoflow_'
+
+    def get_autoflow(self, name):
+        if not isinstance(name, str):
+            raise ValueError('Name must be string.')
+        prefix = AutoFlow.__autoflow_prefix__
+        autoflow_name = prefix + name
+        store = getattr(self, autoflow_name, {})
+        if not store:
+            setattr(self, autoflow_name, store)
+        return store
+
+    def clear_autoflow(self, name=None):
+        if name is not None and not isinstance(name, str):
+            raise ValueError('Name must be a string.')
+        prefix = AutoFlow.__autoflow_prefix__
+        if name:
+            delattr(self, prefix + name)
+        else:
+            keys = [attr for attr in self.__dict__ if attr.startswith(prefix)]
+            for key in keys:
+                delattr(self, key)
