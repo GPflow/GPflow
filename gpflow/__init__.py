@@ -21,7 +21,6 @@ from gpflow._settings import SETTINGS as settings
 
 from gpflow import misc
 from gpflow import transforms
-from gpflow import decors
 from gpflow import conditionals
 from gpflow import densities
 from gpflow import likelihoods
@@ -40,6 +39,7 @@ from gpflow import sgpmc
 from gpflow.base import Build
 
 from gpflow.params import Param
+from gpflow.params import ParamList
 from gpflow.params import DataHolder
 
 from gpflow.decors import autoflow

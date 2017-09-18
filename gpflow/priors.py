@@ -24,7 +24,7 @@ from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 from gpflow.params import Parameterized
 
 
-class Prior(Parameterized, IPrior): # pylint: disable=W0223
+class Prior(Parameterized, IPrior):  # pylint: disable=W0223
     pass
 
 
@@ -91,6 +91,7 @@ class Laplace(Prior):
 
     def __str__(self):
         return "Lap.("+str(self.mu) + "," + str(self.sigma) + ")"
+
 
 class Beta(Prior):
     def __init__(self, a, b):

@@ -8,7 +8,6 @@ from gpflow import kernels
 from gpflow.quadrature import mvhermgauss
 from gpflow.misc import TF_FLOAT_TYPE, TF_INT_TYPE
 from gpflow.decors import params_as_tensors
-from gpflow import settings
 
 
 class RBF(kernels.RBF):

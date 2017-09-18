@@ -87,7 +87,7 @@ class Param(CompilableNode):
             return None
         return self.var_tensor.graph
 
-    def is_built(self, graph=None):
+    def is_built(self, graph):
         if graph is None:
             raise ValueError('Graph is not specified.')
         if self.graph and self.graph is not graph:
@@ -280,6 +280,15 @@ class DataHolder(Param):
     def set_trainable(self, _value, graph=None):
         raise NotImplementedError('Data holder cannot be fixed.')
 
+    def is_built(self, graph):
+        if graph is None:
+            raise ValueError('Graph is not specified.')
+        if self.graph is not None:
+            if self.graph is not graph:
+                return Build.NOT_COMPATIBLE_GRAPH
+            return Build.YES
+        return Build.NO
+
     def _clear(self):
         self._var_tensor = None  # pylint: disable=W0201
 
@@ -313,32 +322,36 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
                 yield param
 
     @property
+    def parameters(self):
+        for param in self.params:
+            if isinstance(param, Param):
+                yield param
+            elif isinstance(param, Parameterized):
+                for sub_param in param.parameters:
+                    yield sub_param
+
+    @property
     def data_holders(self):
-        for key, data_holder in self.__dict__.items():
-            if not key.startswith('_') and isinstance(data_holder, DataHolder):
+        for data_holder in self.parameters:
+            if isinstance(data_holder, DataHolder):
                 yield data_holder
 
     @property
-    def trainable_params(self):
-        for param in self.params:
-            if param.trainable:
-                continue
-            if isinstance(param, Parameterized):
-                for sub_param in param.trainable_params:
-                    if not sub_param.trainable:
-                        yield sub_param
-            elif isinstance(param, Param):
-                yield param
+    def trainable_parameters(self):
+        for parameter in self.parameters:
+            if parameter.trainable:
+                yield parameter
 
     @property
     def trainable_tensors(self):
-        return [param.var_tensor for param in self.trainable_params]
+        for parameter in self.trainable_parameters:
+            yield parameter.var_tensor
 
     @property
     def prior_tensor(self):
         return self._prior_tensor
 
-    def is_built(self, graph=None):
+    def is_built(self, graph):
         if graph is None:
             raise ValueError('Graph is not specified.')
         param_graphs = set([param.graph for param in self.params])
@@ -359,8 +372,8 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
 
     @property
     def trainable(self):
-        for param in self.params:
-            if not param.trainable:
+        for parameter in self.parameters:
+            if not parameter.trainable:
                 return False
         return True
 
@@ -375,8 +388,8 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
 
     def initialize(self, session=None):
         session = self.enquire_session(session)
-        variables = [param.var_tensor for param in self.params
-                     if isinstance(param.var_tensor, tf.Variable)]
+        variables = [parameter.var_tensor for parameter in self.parameters
+                     if isinstance(parameter.var_tensor, tf.Variable)]
         if variables:
             init = tf.variables_initializer(variables)
             session.run(init)
@@ -404,7 +417,10 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
         """
         Build a tf expression for the prior by summing all child-parameter priors.
         """
-        return tf.add_n([param.prior_tensor for param in self.params], name='prior')
+        priors = [param.prior_tensor for param in self.params
+                  if not isinstance(param, DataHolder)]
+        print(priors, self.full_name)
+        return tf.add_n(priors, name='prior')
 
     def _update_param_attribute(self, name, value):
         attr = getattr(self, name)
@@ -444,6 +460,8 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
         if get_attribute(self, ITensorTransformer.__tensor_mode__, allow_none=True) is not None:
             attr = get_attribute(self, name)
             if isinstance(attr, Param):
+                if isinstance(attr, DataHolder):
+                    return attr.var_tensor
                 return attr.transformed_tensor
         return get_attribute(self, name)
 

@@ -14,22 +14,6 @@ from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
 from gpflow import settings
 
 
-def PCA_reduce(X, Q):
-    """
-    A helpful function for linearly reducing the dimensionality of the data X
-    to Q.
-    :param X: data array of size N (number of points) x D (dimensions)
-    :param Q: Number of latent dimensions, Q < D
-    :return: PCA projection array of size N x Q.
-    """
-    assert Q <= X.shape[1], 'Cannot have more latent dimensions than observed'
-    evecs, evals = np.linalg.eigh(np.cov(X.T))
-    i = np.argsort(evecs)[::-1]
-    W = evals[:, i]
-    W = W[:, :Q]
-    return (X - X.mean(0)).dot(W)
-
-
 class GPLVM(GPR):
     """
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
@@ -47,7 +31,7 @@ class GPLVM(GPR):
         if kern is None:
             kern = kernels.RBF(latent_dim, ARD=True)
         if X_mean is None:
-            X_mean = PCA_reduce(Y, latent_dim)
+            X_mean = _PCA_reduce(Y, latent_dim)
         assert X_mean.shape[1] == latent_dim, \
             'Passed in number of latent ' + str(latent_dim) + ' does not match initial X ' + str(X_mean.shape[1])
         self.num_latent = X_mean.shape[1]
@@ -191,3 +175,19 @@ class BayesianGPLVM(GPModel):
             shape = tf.stack([1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
+
+
+def _PCA_reduce(X, Q):
+    """
+    A helpful function for linearly reducing the dimensionality of the data X
+    to Q.
+    :param X: data array of size N (number of points) x D (dimensions)
+    :param Q: Number of latent dimensions, Q < D
+    :return: PCA projection array of size N x Q.
+    """
+    assert Q <= X.shape[1], 'Cannot have more latent dimensions than observed'
+    evecs, evals = np.linalg.eigh(np.cov(X.T))
+    i = np.argsort(evecs)[::-1]
+    W = evals[:, i]
+    W = W[:, :Q]
+    return (X - X.mean(0)).dot(W)

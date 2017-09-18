@@ -67,7 +67,7 @@ class Model(Parameterized):
     #                          x0=self.get_free_state(), verbose=verbose,
     #                          return_logprobs=return_logprobs, RNG=RNG)
 
-    def is_built(self, graph=None):
+    def is_built(self, graph):
         is_built = super(Model, self).is_built(graph)
         if is_built is not Build.YES:
             return is_built

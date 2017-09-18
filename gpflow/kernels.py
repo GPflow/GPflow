@@ -50,7 +50,6 @@ class Kern(Parameterized):
         but we store it as a slice for efficiency.
         """
         super(Kern, self).__init__()
-        self.scoped_keys.extend(['K', 'Kdiag'])
         self.input_dim = int(input_dim)
         if active_dims is None:
             self.active_dims = slice(input_dim)
@@ -315,7 +314,6 @@ class Stationary(Kern):
           (ARD=True) or a single lengthscale (ARD=False).
         """
         super(Stationary, self).__init__(input_dim, active_dims)
-        self.scoped_keys.extend(['square_dist', 'euclid_dist'])
         self.variance = Param(variance, transforms.positive)
         if ARD:
             if lengthscales is None:
@@ -386,7 +384,6 @@ class Linear(Kern):
             self.variance = Param(variance, transforms.positive)
         else:
             self.variance = Param(variance, transforms.positive)
-        self.parameters = [self.variance]
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):

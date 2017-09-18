@@ -54,10 +54,12 @@ def autoflow(*af_args, **af_kwargs):
     def autoflow_wrapper(method):
         @functools.wraps(method)
         def runnable(obj, *args, **kwargs):
-            if not (isinstance(obj, AutoFlow) and isinstance(obj, CompilableNode)):
-                raise ValueError('Object doesn not implement AutoFlow interface.')
+            if not isinstance(obj, AutoFlow):
+                raise ValueError('Passed object is not part of AutoFlow.')
+            if not isinstance(obj, CompilableNode):
+                raise ValueError('Passed object does not implement CompilableNode interface.')
             if obj.is_built_coherence(obj.graph) is Build.NO:
-                raise GPflowError('Compilable object must be built.')
+                raise GPflowError('Compilable object is not built.')
             name = method.__name__
             store = obj.get_autoflow(name)
             session = kwargs.pop('session', None)

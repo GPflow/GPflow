@@ -44,7 +44,7 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
-    def is_built(self, graph=None):
+    def is_built(self, graph):
         pass
 
     @abc.abstractmethod
@@ -206,7 +206,7 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         if self.parent is not self:
             raise GPflowError('Only root can initiate compilation.')
         session = self._setup_compile_session(session)
-        if self.is_built(graph=session.graph) is Build.NO:
+        if self.is_built(session.graph) is Build.NO:
             with session.graph.as_default():
                 self._build_with_name_scope()
         self.initialize(session)
@@ -275,7 +275,7 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
 
     def _build_with_name_scope(self, name=None):
         name = self.name if name is None else name
-        is_built = self.is_built(graph=tf.get_default_graph())
+        is_built = self.is_built(tf.get_default_graph())
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
             raise GPflowError('Tensor uses different graph.')
         elif is_built is Build.NO:
