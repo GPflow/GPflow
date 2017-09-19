@@ -38,7 +38,7 @@ class GPR(GPModel):
 
        \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
-    def __init__(self, X, Y, kern, mean_function=None, name='name'):
+    def __init__(self, X, Y, kern, mean_function=None, name=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -47,7 +47,7 @@ class GPR(GPModel):
         likelihood = likelihoods.Gaussian()
         X = DataHolder(X)
         Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name=name)
         self.num_latent = Y.shape[1]
 
     @params_as_tensors

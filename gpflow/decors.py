@@ -16,14 +16,14 @@ import functools
 import tensorflow as tf
 
 from gpflow.misc import GPflowError
-from gpflow.base import AutoFlow, ITensorTransformer
+from gpflow.base import AutoFlow, TensorConverter
 from gpflow.base import Build, CompilableNode
 
 
 def params_as_tensors(method):
     @functools.wraps(method)
     def tensor_mode_wrapper(obj, *args, **kwargs):
-        if not isinstance(obj, ITensorTransformer):
+        if not isinstance(obj, TensorConverter):
             raise GPflowError('Tensor mode works only with parmeterized object.')
         name = obj.__tensor_mode__
         attr_value = getattr(obj, name, None)

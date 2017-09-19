@@ -23,7 +23,7 @@ import enum
 import numpy as np
 import tensorflow as tf
 
-from gpflow.base import IPrior, ITransform, ITensorTransformer
+from gpflow.base import IPrior, ITransform, TensorConverter
 from gpflow.base import Build, CompilableNode, AutoFlow
 from gpflow.transforms import Identity
 
@@ -309,7 +309,7 @@ class DataHolder(Param):
         object.__setattr__(self, name, value)
 
 
-class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
+class Parameterized(CompilableNode, AutoFlow, TensorConverter):
 
     def __init__(self, name=None):
         super(Parameterized, self).__init__(name=name)
@@ -320,6 +320,17 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
         for key, param in self.__dict__.items():
             if not key.startswith('_') and isinstance(param, (Param, Parameterized)):
                 yield param
+
+    @property
+    def params_non_empty(self):
+        for param in self.params:
+            if isinstance(param, Parameterized) and param.empty:
+                continue
+            yield param
+
+    @property
+    def empty(self):
+        return len(list(self.params)) == 0
 
     @property
     def parameters(self):
@@ -354,8 +365,10 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
     def is_built(self, graph):
         if graph is None:
             raise ValueError('Graph is not specified.')
-        param_graphs = set([param.graph for param in self.params])
-        if not param_graphs or None in param_graphs and param_graphs.issubset([None, graph]):
+        param_graphs = set([param.graph for param in self.params_non_empty])
+        if not param_graphs:
+            return Build.YES
+        if None in param_graphs and param_graphs.issubset([None, graph]):
             return Build.NO
         elif graph not in param_graphs:
             return Build.NOT_COMPATIBLE_GRAPH
@@ -417,9 +430,12 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
         """
         Build a tf expression for the prior by summing all child-parameter priors.
         """
-        priors = [param.prior_tensor for param in self.params
-                  if not isinstance(param, DataHolder)]
-        print(priors, self.full_name)
+        priors = []
+        for param in self.params:
+            if isinstance(param, Param) and not isinstance(param, DataHolder):
+                priors.append(param.prior_tensor)
+            elif isinstance(param, Parameterized) and not param.empty:
+                priors.append(param.prior_tensor)
         return tf.add_n(priors, name='prior')
 
     def _update_param_attribute(self, name, value):
@@ -439,6 +455,15 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
             msg = '"{0}" type cannot be assigned to "{1}" attribute.'
             raise ValueError(msg.format(type(value), name))
 
+    def __getattribute__(self, name):
+        if TensorConverter.tensor_mode(self):
+            attr = get_attribute(self, name)
+            if isinstance(attr, Param):
+                if isinstance(attr, DataHolder):
+                    return attr.var_tensor
+                return attr.transformed_tensor
+        return get_attribute(self, name)
+
     def __setattr__(self, key, value):
         if key.startswith('_'):
             object.__setattr__(self, key, value)
@@ -450,20 +475,11 @@ class Parameterized(CompilableNode, AutoFlow, ITensorTransformer):
                 self._update_param_attribute(key, value)
                 return
         if isinstance(value, param_like):
-            if self.is_built_coherence(value.graph) is Build.YES:
+            if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
                 raise GPflowError('Attribute cannot be added to assembled node.')
             value.set_name(key)
             value.set_parent(self)
         object.__setattr__(self, key, value)
-
-    def __getattribute__(self, name):
-        if get_attribute(self, ITensorTransformer.__tensor_mode__, allow_none=True) is not None:
-            attr = get_attribute(self, name)
-            if isinstance(attr, Param):
-                if isinstance(attr, DataHolder):
-                    return attr.var_tensor
-                return attr.transformed_tensor
-        return get_attribute(self, name)
 
 
 class ParamList(Parameterized):

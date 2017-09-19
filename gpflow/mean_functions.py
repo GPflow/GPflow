@@ -33,8 +33,7 @@ class MeanFunction(Parameterized):
     example.
     """
     def __call__(self, X):
-        raise NotImplementedError("Implement the __call__\
-                                  method for this mean function")
+        raise NotImplementedError("Implement the __call__ method for this mean function")
 
     def __add__(self, other):
         return Additive(self, other)

@@ -18,7 +18,7 @@ import enum
 import tensorflow as tf
 
 from gpflow import session_manager
-from gpflow.misc import tensor_name
+from gpflow.misc import tensor_name, get_attribute
 from gpflow.misc import GPflowError
 
 
@@ -48,11 +48,11 @@ class ICompilable:
         pass
 
     @abc.abstractmethod
-    def _build(self):
+    def clear(self):
         pass
 
     @abc.abstractmethod
-    def clear(self):
+    def _build(self):
         pass
 
 
@@ -287,8 +287,23 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         raise NotImplementedError('Private method clear must be implemented by successor.')
 
 
-class ITensorTransformer: # pylint: disable=R0903
+class TensorConverter:  # pylint: disable=R0903
     __tensor_mode__ = '_tensor_mode'
+
+    @classmethod
+    def tensor_mode(cls, obj):
+        if not isinstance(obj, Parentable):
+            raise ValueError('Object must be parentable.')
+        while True:
+            if get_attribute(obj, cls.__tensor_mode__, allow_none=True) is not None:
+                return True
+            parent = get_attribute(obj, '_parent')
+            if parent is None:
+                break
+            if parent is obj:
+                raise GPflowError('Inconsistency in parentable object found.')
+            obj = parent
+        return False
 
 
 class AutoFlow:
