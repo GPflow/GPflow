@@ -237,6 +237,8 @@ class CompilableNode(Parentable, ICompilable): # pylint: disable=W0223
         return session
 
     def set_session(self, session):
+        if not isinstance(session, tf.Session):
+            raise ValueError('Argument is not session type.')
         if session is None:
             raise ValueError('Session is None.')
         if self.root is not self:

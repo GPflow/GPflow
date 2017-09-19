@@ -322,7 +322,7 @@ class Parameterized(CompilableNode, AutoFlow, TensorConverter):
                 yield param
 
     @property
-    def params_non_empty(self):
+    def non_empty_params(self):
         for param in self.params:
             if isinstance(param, Parameterized) and param.empty:
                 continue
@@ -365,7 +365,7 @@ class Parameterized(CompilableNode, AutoFlow, TensorConverter):
     def is_built(self, graph):
         if graph is None:
             raise ValueError('Graph is not specified.')
-        param_graphs = set([param.graph for param in self.params_non_empty])
+        param_graphs = set([param.graph for param in self.non_empty_params])
         if not param_graphs:
             return Build.YES
         if None in param_graphs and param_graphs.issubset([None, graph]):
