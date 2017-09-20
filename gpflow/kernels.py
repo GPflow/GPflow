@@ -63,57 +63,6 @@ class Kern(Parameterized):
 
         self.num_gauss_hermite_points = 20
 
-    def _slice(self, X, X2):
-        """
-        Slice the correct dimensions for use in the kernel, as indicated by
-        `self.active_dims`.
-        :param X: Input 1 (NxD).
-        :param X2: Input 2 (MxD), may be None.
-        :return: Sliced X, X2, (Nxself.input_dim).
-        """
-        if isinstance(self.active_dims, slice):
-            X = X[:, self.active_dims]
-            if X2 is not None:
-                X2 = X2[:, self.active_dims]
-        else:
-            X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
-            if X2 is not None:
-                X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
-        with tf.control_dependencies([
-                            tf.assert_equal(tf.shape(X)[1],
-                                            tf.constant(self.input_dim, dtype=TF_INT_TYPE))]):
-            X = tf.identity(X)
-
-        return X, X2
-
-    def _slice_cov(self, cov):
-        """
-        Slice the correct dimensions for use in the kernel, as indicated by
-        `self.active_dims` for covariance matrices. This requires slicing the
-        rows *and* columns. This will also turn flattened diagonal
-        matrices into a tensor of full diagonal matrices.
-        :param cov: Tensor of covariance matrices (NxDxD or NxD).
-        :return: N x self.input_dim x self.input_dim.
-        """
-        cov = tf.cond(tf.equal(tf.rank(cov), 2), lambda: tf.matrix_diag(cov), lambda: cov)
-
-        if isinstance(self.active_dims, slice):
-            cov = cov[..., self.active_dims, self.active_dims]
-        else:
-            cov_shape = tf.shape(cov)
-            covr = tf.reshape(cov, [-1, cov_shape[-1], cov_shape[-1]])
-            gather1 = tf.gather(tf.transpose(covr, [2, 1, 0]), self.active_dims)
-            gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), self.active_dims)
-            cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
-        return cov
-
-    def __add__(self, other):
-        return Add([self, other])
-
-    def __mul__(self, other):
-        return Prod([self, other])
-
     @autoflow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
@@ -143,13 +92,6 @@ class Kern(Parameterized):
     @autoflow((TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE, [None, None]), (TF_FLOAT_TYPE,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
-
-    def _check_quadrature(self):
-        if settings.numerics.ekern_quadrature == "warn":
-            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use gpflow.ekernels instead." %
-                          str(type(self)))
-        if settings.numerics.ekern_quadrature == "error" or self.num_gauss_hermite_points == 0:
-            raise RuntimeError("Settings indicate that quadrature may not be used.")
 
     def eKdiag(self, Xmu, Xcov):
         """
@@ -237,6 +179,64 @@ class Kern(Parameterized):
         return mvnquad(KzxKxz,
                        Xmu, Xcov, self.num_gauss_hermite_points,
                        self.input_dim, Dout=(M, M))
+
+    def _check_quadrature(self):
+        if settings.numerics.ekern_quadrature == "warn":
+            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use gpflow.ekernels instead." %
+                          str(type(self)))
+        if settings.numerics.ekern_quadrature == "error" or self.num_gauss_hermite_points == 0:
+            raise RuntimeError("Settings indicate that quadrature may not be used.")
+
+    def _slice(self, X, X2):
+        """
+        Slice the correct dimensions for use in the kernel, as indicated by
+        `self.active_dims`.
+        :param X: Input 1 (NxD).
+        :param X2: Input 2 (MxD), may be None.
+        :return: Sliced X, X2, (Nxself.input_dim).
+        """
+        if isinstance(self.active_dims, slice):
+            X = X[:, self.active_dims]
+            if X2 is not None:
+                X2 = X2[:, self.active_dims]
+        else:
+            X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
+            if X2 is not None:
+                X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
+        with tf.control_dependencies([
+                            tf.assert_equal(tf.shape(X)[1],
+                                            tf.constant(self.input_dim, dtype=TF_INT_TYPE))]):
+            X = tf.identity(X)
+
+        return X, X2
+
+    def _slice_cov(self, cov):
+        """
+        Slice the correct dimensions for use in the kernel, as indicated by
+        `self.active_dims` for covariance matrices. This requires slicing the
+        rows *and* columns. This will also turn flattened diagonal
+        matrices into a tensor of full diagonal matrices.
+        :param cov: Tensor of covariance matrices (NxDxD or NxD).
+        :return: N x self.input_dim x self.input_dim.
+        """
+        cov = tf.cond(tf.equal(tf.rank(cov), 2), lambda: tf.matrix_diag(cov), lambda: cov)
+
+        if isinstance(self.active_dims, slice):
+            cov = cov[..., self.active_dims, self.active_dims]
+        else:
+            cov_shape = tf.shape(cov)
+            covr = tf.reshape(cov, [-1, cov_shape[-1], cov_shape[-1]])
+            gather1 = tf.gather(tf.transpose(covr, [2, 1, 0]), self.active_dims)
+            gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), self.active_dims)
+            cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
+                             tf.concat([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
+        return cov
+
+    def __add__(self, other):
+        return Add([self, other])
+
+    def __mul__(self, other):
+        return Prod([self, other])
 
 
 class Static(Kern):
