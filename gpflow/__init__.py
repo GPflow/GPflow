@@ -33,6 +33,8 @@ from gpflow.training import training as train
 
 from gpflow.base import Build
 
+from gpflow.misc import GPflowError
+
 from gpflow.params import Param
 from gpflow.params import ParamList
 from gpflow.params import DataHolder

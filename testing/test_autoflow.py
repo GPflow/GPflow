@@ -9,16 +9,16 @@ from testing.gpflow_testcase import GPflowTestCase
 class DumbModel(gpflow.model.Model):
     def __init__(self):
         gpflow.model.Model.__init__(self)
-        self.a = gpflow.param.Param(3.)
+        self.a = gpflow.Param(3.)
 
-    @gpflow.decors.params_as_tensors
+    @gpflow.params_as_tensors
     def _build_likelihood(self):
         return -tf.square(self.a)
 
 
 class NoArgsModel(DumbModel):
-    @gpflow.decors.autoflow()
-    @gpflow.decors.params_as_tensors
+    @gpflow.autoflow()
+    @gpflow.params_as_tensors
     def function(self):
         return self.a
 
