@@ -18,7 +18,7 @@ import tensorflow as tf
 
 from gpflow import likelihoods
 
-from gpflow.model import GPModel
+from gpflow.models.model import GPModel
 from gpflow.densities import multivariate_normal
 from gpflow.params import DataHolder
 from gpflow.decors import params_as_tensors

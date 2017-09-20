@@ -26,15 +26,10 @@ from gpflow import densities
 from gpflow import likelihoods
 from gpflow import kernels
 from gpflow import ekernels
-from gpflow import model
-from gpflow import gpmc
-from gpflow import gplvm
 from gpflow import priors
-from gpflow import gpr
-from gpflow import vgp
-from gpflow import sgpr
-from gpflow import svgp
-from gpflow import sgpmc
+
+from gpflow.models import models as model
+from gpflow.training import training as train
 
 from gpflow.base import Build
 

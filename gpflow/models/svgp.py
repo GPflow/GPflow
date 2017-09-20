@@ -21,7 +21,7 @@ from gpflow import transforms, conditionals, kullback_leiblers
 
 from gpflow.params import Param
 from gpflow.decors import params_as_tensors
-from gpflow.model import GPModel
+from gpflow.models.model import GPModel
 from gpflow.minibatch import MinibatchData
 from gpflow.misc import TF_FLOAT_TYPE
 from gpflow import settings

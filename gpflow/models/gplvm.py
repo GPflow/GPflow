@@ -5,8 +5,8 @@ from gpflow import likelihoods
 from gpflow import transforms
 from gpflow import kernels
 
-from gpflow.model import GPModel
-from gpflow.gpr import GPR
+from gpflow.models.model import GPModel
+from gpflow.models.gpr import GPR
 from gpflow.params import Param
 from gpflow.decors import params_as_tensors
 from gpflow.mean_functions import Zero

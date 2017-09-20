@@ -19,7 +19,7 @@ import numpy as np
 
 from gpflow import likelihoods
 
-from gpflow.model import GPModel
+from gpflow.models.model import GPModel
 from gpflow.decors import autoflow
 from gpflow.decors import params_as_tensors
 from gpflow.params import Param, DataHolder

@@ -15,7 +15,7 @@
 
 import numpy as np
 import tensorflow as tf
-from gpflow.model import GPModel
+from gpflow.models.model import GPModel
 from gpflow.params import Param, DataHolder
 from gpflow.conditionals import conditional
 from gpflow.priors import Gaussian

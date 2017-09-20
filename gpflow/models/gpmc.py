@@ -16,7 +16,7 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow.model import GPModel
+from gpflow.models.model import GPModel
 from gpflow.params import Param, DataHolder
 from gpflow.decors import params_as_tensors
 from gpflow.conditionals import conditional

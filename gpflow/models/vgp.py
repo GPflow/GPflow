@@ -20,7 +20,7 @@ from gpflow import transforms
 
 from gpflow.params import Param, DataHolder
 from gpflow.decors import params_as_tensors
-from gpflow.model import GPModel
+from gpflow.models.model import GPModel
 from gpflow.mean_functions import Zero
 from gpflow.conditionals import conditional
 from gpflow.kullback_leiblers import gauss_kl_white
