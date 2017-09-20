@@ -146,7 +146,7 @@ class Kern(Parameterized):
 
     def _check_quadrature(self):
         if settings.numerics.ekern_quadrature == "warn":
-            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use GPflow.ekernels instead." %
+            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use gpflow.ekernels instead." %
                           str(type(self)))
         if settings.numerics.ekern_quadrature == "error" or self.num_gauss_hermite_points == 0:
             raise RuntimeError("Settings indicate that quadrature may not be used.")
@@ -261,7 +261,7 @@ class White(Static):
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
             d = tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
-            return tf.diag(d)
+            return tf.matrix_diag(d)
         else:
             shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
             return tf.zeros(shape, float_type)
@@ -668,7 +668,7 @@ class Coregion(Kern):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.diag(self.kappa)
+        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.matrix_diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def Kdiag(self, X):

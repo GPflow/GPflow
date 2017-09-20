@@ -10,7 +10,7 @@ from . import kernels
 from ._settings import settings
 
 float_type = settings.dtypes.float_type
-
+np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
 def PCA_reduce(X, Q):
     """
@@ -97,15 +97,16 @@ class BayesianGPLVM(GPModel):
         # deal with parameters for the prior mean variance of X
         if X_prior_mean is None:
             X_prior_mean = np.zeros((self.num_data, self.num_latent))
-        self.X_prior_mean = X_prior_mean
         if X_prior_var is None:
             X_prior_var = np.ones((self.num_data, self.num_latent))
-        self.X_prior_var = X_prior_var
 
-        assert X_prior_mean.shape[0] == self.num_data
-        assert X_prior_mean.shape[1] == self.num_latent
-        assert X_prior_var.shape[0] == self.num_data
-        assert X_prior_var.shape[1] == self.num_latent
+        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=np_float_type)
+        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=np_float_type)
+
+        assert self.X_prior_mean.shape[0] == self.num_data
+        assert self.X_prior_mean.shape[1] == self.num_latent
+        assert self.X_prior_var.shape[0] == self.num_data
+        assert self.X_prior_var.shape[1] == self.num_latent
 
     def build_likelihood(self):
         """
@@ -116,7 +117,7 @@ class BayesianGPLVM(GPModel):
         psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * 1e-6
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -127,7 +128,7 @@ class BayesianGPLVM(GPModel):
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
-        log_det_B = 2. * tf.reduce_sum(tf.log(tf.diag_part(LB)))
+        log_det_B = 2. * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
@@ -146,7 +147,7 @@ class BayesianGPLVM(GPModel):
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 -
-                             tf.reduce_sum(tf.diag_part(AAT)))
+                             tf.reduce_sum(tf.matrix_diag_part(AAT)))
         bound -= KL
         return bound
 
@@ -160,7 +161,7 @@ class BayesianGPLVM(GPModel):
         num_inducing = tf.shape(self.Z)[0]
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * 1e-6
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
         Kus = self.kern.K(self.Z, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)

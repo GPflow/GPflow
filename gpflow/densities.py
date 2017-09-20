@@ -1,11 +1,11 @@
 # Copyright 2016 James Hensman, alexggmatthews
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -83,6 +83,6 @@ def multivariate_normal(x, mu, L):
     num_col = tf.cast(num_col, float_type)
     num_dims = tf.cast(tf.shape(x)[0], float_type)
     ret = - 0.5 * num_dims * num_col * np.log(2 * np.pi)
-    ret += - num_col * tf.reduce_sum(tf.log(tf.diag_part(L)))
+    ret += - num_col * tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
     ret += - 0.5 * tf.reduce_sum(tf.square(alpha))
     return ret

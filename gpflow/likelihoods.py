@@ -20,6 +20,7 @@ import numpy as np
 from .param import Parameterized, Param, ParamList
 from ._settings import settings
 from .quadrature import hermgauss
+
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
@@ -36,6 +37,18 @@ class Likelihood(Parameterized):
         """
         raise NotImplementedError("implement the logp function\
                                   for this likelihood")
+
+    def _check_targets(self, Y_np):
+        """
+        Check that the Y values are valid for the likelihood. Y_np is a numpy array.
+
+        The base class check is that the array has two dimensions and consists only of floats. The float requirement
+        is so that AutoFlow can work with Model.predict_density.
+        """
+        if not len(Y_np.shape) == 2:
+            raise ValueError('targets must be shape N x D')
+        if np.array(list(Y_np)).dtype != np_float_type:
+            raise ValueError('use {}, even for discrete variables'.format(np_float_type))
 
     def conditional_mean(self, F):
         """
@@ -196,30 +209,57 @@ class Gaussian(Likelihood):
 
 
 class Poisson(Likelihood):
-    def __init__(self, invlink=tf.exp):
+    """
+    Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.
+
+    let g(.) be the inverse-link function, then this likelihood represents
+
+    p(y_i | f_i) = Poisson(y_i | g(f_i) * binsize)
+
+    Note:binsize
+    For use in a Log Gaussian Cox process (doubly stochastic model) where the
+    rate function of an inhomogeneous Poisson process is given by a GP.  The
+    intractable likelihood can be approximated by gridding the space (into bins
+    of size 'binsize') and using this Poisson likelihood.
+    """
+
+    def __init__(self, invlink=tf.exp, binsize=1.):
         Likelihood.__init__(self)
         self.invlink = invlink
+        self.binsize = np.double(binsize)
+
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if np.any(Y_np < 0):
+            raise ValueError('poisson variables must be positive')
+        if not np.all(np.equal(np.mod(Y_np, 1), 0)):
+            raise ValueError('poisson variables must be integer valued')
 
     def logp(self, F, Y):
-        return densities.poisson(self.invlink(F), Y)
+        return densities.poisson(self.invlink(F) * self.binsize, Y)
 
     def conditional_variance(self, F):
-        return self.invlink(F)
+        return self.invlink(F) * self.binsize
 
     def conditional_mean(self, F):
-        return self.invlink(F)
+        return self.invlink(F) * self.binsize
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return Y * Fmu - tf.exp(Fmu + Fvar / 2) - tf.lgamma(Y + 1)
+            return Y * Fmu - tf.exp(Fmu + Fvar / 2) * self.binsize \
+                   - tf.lgamma(Y + 1) + Y * tf.log(self.binsize)
         else:
             return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
-
 
 class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):
         Likelihood.__init__(self)
         self.invlink = invlink
+
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if np.any(Y_np < 0):
+            raise ValueError('exponential variables must be positive')
 
     def logp(self, F, Y):
         return densities.exponential(self.invlink(F), Y)
@@ -262,6 +302,12 @@ class Bernoulli(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
 
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        Y_set = set(Y_np.flatten())
+        if len(Y_set) > 2 or len(Y_set - set([1.])) > 1:
+            raise Warning('all bernoulli variables should be in {1., k}, for some k')
+
     def logp(self, F, Y):
         return densities.bernoulli(self.invlink(F), Y)
 
@@ -294,6 +340,11 @@ class Gamma(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
         self.shape = Param(1.0, transforms.positive)
+
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if np.any(Y_np < 0):
+            raise ValueError('gamma variables must be non-negative')
 
     def logp(self, F, Y):
         return densities.gamma(self.shape, self.invlink(F), Y)
@@ -335,6 +386,11 @@ class Beta(Likelihood):
         self.scale = Param(scale, transforms.positive)
         self.invlink = invlink
 
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if np.any(Y_np < 0.) or np.any(Y_np > 1.):
+            raise ValueError('beta variables must be in [0, 1]')
+
     def logp(self, F, Y):
         mean = self.invlink(F)
         alpha = mean * self.scale
@@ -374,6 +430,7 @@ class RobustMax(object):
         return tf.one_hot(i, self.num_classes, 1. - self.epsilon, self._eps_K1)
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
+        Y = tf.cast(Y, tf.int64)
         # work out what the mean and variance is of the indicated latent function.
         oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), float_type)
         mu_selected = tf.reduce_sum(oh_on * mu, 1)
@@ -413,9 +470,16 @@ class MultiClass(Likelihood):
             raise NotImplementedError
         self.invlink = invlink
 
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if not set(Y_np.flatten()).issubset(set(np.arange(self.num_classes))):
+            raise ValueError('multiclass likelihood expects inputs to be in {0., 1., 2.,...,k-1}')
+        if Y_np.shape[1] != 1:
+            raise ValueError('only one dimension currently supported for multiclass likelihood')
+
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
-            hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), Y)
+            hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
             yes = tf.ones(tf.shape(Y), dtype=float_type) - self.invlink.epsilon
             no = tf.zeros(tf.shape(Y), dtype=float_type) + self.invlink._eps_K1
             p = tf.where(hits, yes, no)
@@ -453,7 +517,6 @@ class MultiClass(Likelihood):
         else:
             raise NotImplementedError
 
-
     def conditional_mean(self, F):
         return self.invlink(F)
 
@@ -473,6 +536,11 @@ class SwitchedLikelihood(Likelihood):
             assert isinstance(l, Likelihood)
         self.likelihood_list = ParamList(likelihood_list)
         self.num_likelihoods = len(self.likelihood_list)
+
+    def _check_targets(self, Y_np):
+        Likelihood._check_targets(self, Y_np)
+        if not set(Y_np[:, -1]).issubset(set(np.arange(self.num_likelihoods))):
+            raise ValueError('switched likelihood expects final column values in {0,1,...,k-1}')
 
     def _partition_and_stitch(self, args, func_name):
         """
@@ -558,7 +626,7 @@ class Ordinal(Likelihood):
         self.sigma = Param(1.0, transforms.positive)
 
     def logp(self, F, Y):
-        Y = tf.cast(Y, tf.int32)
+        Y = tf.cast(Y, tf.int64)
         scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
         selected_bins_left = tf.gather(scaled_bins_left, Y)

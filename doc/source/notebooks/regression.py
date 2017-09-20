@@ -1,18 +1,18 @@
 from matplotlib import pyplot as plt
-import GPflow
+import gpflow
 import tensorflow as tf
 import os
 import numpy as np
 import cProfile
 
 def outputGraph( model, dirName, fileName ):
-    model._compile()
+    model.compile()
     if not( os.path.isdir(dirName) ):
         os.mkdir(dirName)
     fullFileName = os.path.join( dirName, fileName )
     if os.path.isfile( fullFileName ):
         os.remove( fullFileName )
-    tf.train.write_graph(model._session.graph_def, dirName+'/', fileName, as_text=False)
+    tf.train.write_graph(model.session.graph_def, dirName+'/', fileName, as_text=False)
 
 # build a very simple data set:
 def getData():
@@ -28,9 +28,9 @@ def plotData(X,Y):
 
 def getRegressionModel(X,Y):
     #build the GPR object
-    k = GPflow.kernels.Matern52(1)
-    meanf = GPflow.mean_functions.Linear(1,0)
-    m = GPflow.gpr.GPR(X, Y, k, meanf)
+    k = gpflow.kernels.Matern52(1)
+    meanf = gpflow.mean_functions.Linear(1,0)
+    m = gpflow.gpr.GPR(X, Y, k, meanf)
     m.likelihood.variance = 0.01
     print "Here are the parameters before optimization"
     m
@@ -52,11 +52,11 @@ def plotOptimizationResult(X,Y,m):
 
 def setModelPriors( m ):
     #we'll choose rather arbitrary priors. 
-    m.kern.lengthscales.prior = GPflow.priors.Gamma(1., 1.)
-    m.kern.variance.prior = GPflow.priors.Gamma(1., 1.)
-    m.likelihood.variance.prior = GPflow.priors.Gamma(1., 1.)
-    m.mean_function.A.prior = GPflow.priors.Gaussian(0., 10.)
-    m.mean_function.b.prior = GPflow.priors.Gaussian(0., 10.)
+    m.kern.lengthscales.prior = gpflow.priors.Gamma(1., 1.)
+    m.kern.variance.prior = gpflow.priors.Gamma(1., 1.)
+    m.likelihood.variance.prior = gpflow.priors.Gamma(1., 1.)
+    m.mean_function.A.prior = gpflow.priors.Gaussian(0., 10.)
+    m.mean_function.b.prior = gpflow.priors.Gaussian(0., 10.)
     print "model with priors ", m
 
 def getSamples( m ):
@@ -67,7 +67,7 @@ def plotSamples( X, Y, m, samples ):
     xx = np.linspace(-0.1, 1.1, 100)[:,None]
     plt.figure()
     plt.plot(samples)
-    
+
     f, axs = plt.subplots(1,3, figsize=(12,4), tight_layout=True)
     axs[0].plot(samples[:,0], samples[:,1], 'k.', alpha = 0.15)
     axs[0].set_xlabel('noise_variance')
@@ -80,8 +80,8 @@ def plotSamples( X, Y, m, samples ):
     axs[2].set_ylabel('signal_variance')
 
     #an attempt to plot the function posterior
-    #Note that we should really sample the function values here, instead of just using the mean. 
-    #We are under-representing the uncertainty here. 
+    #Note that we should really sample the function values here, instead of just using the mean.
+    #We are under-representing the uncertainty here.
     # TODO: get full_covariance of the predictions (predict_f only?)
 
     plt.figure()
@@ -90,7 +90,7 @@ def plotSamples( X, Y, m, samples ):
         m.set_state(s)
         mean, _ = m.predict_y(xx)
         plt.plot(xx, mean, 'b', lw=2, alpha = 0.05)
-    
+
     plt.plot(X, Y, 'kx', mew=2)
 
 def showAllPlots():

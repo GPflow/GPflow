@@ -1,4 +1,4 @@
-import GPflow
+import gpflow
 import numpy as np
 from matplotlib import pyplot as plt
 from IPython import embed
@@ -9,13 +9,13 @@ X = np.atleast_2d( rng.rand(nPoints)*10 ).T
 Y = np.sin(X) + 0.9 * np.cos(X*1.6) + np.random.randn(*X.shape)* 0.8
 
 def kernel():
-    return GPflow.kernels.RBF(1)
+    return gpflow.kernels.RBF(1)
 
 plt.plot(X, Y, 'kx')
 
-m2 = GPflow.vgp.VGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian())
-m3 = GPflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
-m4 = GPflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=GPflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
+m2 = gpflow.vgp.VGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian())
+m3 = gpflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
+m4 = gpflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
 
 m3.Z.fixed = True
 m4.Z.fixed = True

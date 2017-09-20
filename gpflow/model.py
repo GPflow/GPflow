@@ -15,10 +15,12 @@
 
 from __future__ import print_function, absolute_import
 from .param import Parameterized, AutoFlow, DataHolder
+from .mean_functions import Zero
 from scipy.optimize import minimize, OptimizeResult
 import numpy as np
 import tensorflow as tf
-from . import hmc, session
+from . import hmc
+from . import session as session_mngr
 from ._settings import settings
 import sys
 
@@ -96,54 +98,79 @@ class Model(Parameterized):
         self._needs_recompile = True
 
         self.num_fevals = 0  # Keeps track of how often _objective is called
-
+        self._session = None
 
     @property
     def name(self):
         return self._name
 
+    @property
+    def session(self):
+        return self._session
+
     def __getstate__(self):
         """
         This method is necessary for pickling objects
         """
-        d = Parameterized.__getstate__(self)
-        for key in ['_graph', '_session', '_free_vars', '_objective', '_minusF', '_minusG', '_feed_dict_keys']:
-            d.pop(key, None)
-        return d
+        state = Parameterized.__getstate__(self)
+        keys = ['_session', '_free_vars', '_objective',
+                '_minusF', '_minusG', '_feed_dict_keys']
+        for key in keys:
+            state.pop(key, None)
+        return state
 
     def __setstate__(self, d):
         Parameterized.__setstate__(self, d)
         self._needs_recompile = True
 
-    def _compile(self, optimizer=None):
+    def compile(self, session=None, graph=None, optimizer=None):
         """
-        compile the tensorflow function "self._objective"
+        Compile the tensorflow function "self._objective".
+        The `session` and `graph` parameters are mutually exclusive.
+        :param session: TensorFlow Session. This parameter prevails `graph`
+                        parameter. Custom created session will be used if
+                        this argument is left default, i.e. None.
+        :param graph: TensorFlow Graph. This argument ignored when `session`
+                      differs from default value, otherwise it is passed to
+                      new session constructor. Default TensorFlow graph value
+                      is used, when `graph` equals None.
+        :param optimizer: TensorFlow Optimizer.
         """
-        self._graph = tf.Graph()
-        self._session = session.get_session(graph=self._graph,
-                                            output_file_name=settings.profiling.output_file_name + "_objective",
-                                            output_directory=settings.profiling.output_directory,
-                                            each_time=settings.profiling.each_time)
-        with self._graph.as_default():
+
+        out_filename = settings.profiling.output_file_name + "_objective"
+
+        default_session = tf.get_default_session()
+        if session is None:
+            if graph is None or (default_session is not None and
+                                 default_session.graph is graph):
+                session = default_session
+        if session is None:
+            session = session_mngr.get_session(
+                graph=graph, output_file_name=out_filename)
+
+        with session.graph.as_default():
             self._free_vars = tf.Variable(self.get_free_state())
 
             self.make_tf_array(self._free_vars)
             with self.tf_mode():
                 f = self.build_likelihood() + self.build_prior()
-                g, = tf.gradients(f, self._free_vars)
+                g = tf.gradients(f, self._free_vars)[0]
 
             self._minusF = tf.negative(f, name='objective')
             self._minusG = tf.negative(g, name='grad_objective')
 
-            # The optimiser needs to be part of the computational graph, and needs
-            # to be initialised before tf.initialise_all_variables() is called.
+            # The optimiser needs to be part of the computational graph,
+            # and needs to be initialised before tf.initialise_all_variables()
+            # is called.
             if optimizer is None:
                 opt_step = None
             else:
-                opt_step = optimizer.minimize(self._minusF,
-                                              var_list=[self._free_vars])
+                opt_step = optimizer.minimize(
+                    self._minusF, var_list=[self._free_vars])
             init = tf.global_variables_initializer()
-        self._session.run(init)
+
+        session.run(init)
+        self._session = session
 
         # build tensorflow functions for computing the likelihood
         if settings.verbosity.tf_compile_verb:
@@ -156,7 +183,7 @@ class Model(Parameterized):
             self.num_fevals += 1
             feed_dict = {self._free_vars: x}
             self.update_feed_dict(self._feed_dict_keys, feed_dict)
-            f, g = self._session.run([self._minusF, self._minusG],
+            f, g = self.session.run([self._minusF, self._minusG],
                                      feed_dict=feed_dict)
             return f.astype(np.float64), g.astype(np.float64)
 
@@ -178,13 +205,14 @@ class Model(Parameterized):
         """ Compute the log likelihood of the model (uses AutoFlow on ``self.build_likelihood()``)"""
         return self.build_likelihood()
 
-    def sample(self, num_samples, Lmin=5, Lmax=20, epsilon=0.01, thin=1, burn=0,
-               verbose=False, return_logprobs=False, RNG=np.random.RandomState(0)):
+    def sample(self, num_samples, Lmin=5, Lmax=20, epsilon=0.01, thin=1,
+               burn=0, verbose=False, return_logprobs=False,
+               RNG=np.random.RandomState(0)):
         """
         Use Hamiltonian Monte Carlo to draw samples from the model posterior.
         """
         if self._needs_recompile:
-            self._compile()
+            self.compile()
         return hmc.sample_HMC(self._objective, num_samples,
                               Lmin=Lmin, Lmax=Lmax, epsilon=epsilon, thin=thin, burn=burn,
                               x0=self.get_free_state(), verbose=verbose,
@@ -220,32 +248,31 @@ class Model(Parameterized):
 
         if type(method) is str:
             return self._optimize_np(method, tol, callback, maxiter, **kw)
-        else:
-            return self._optimize_tf(method, callback, maxiter, **kw)
+        return self._optimize_tf(method, callback, maxiter, **kw)
 
     def _optimize_tf(self, method, callback, maxiter):
         """
         Optimize the model using a tensorflow optimizer. See self.optimize()
         """
-        opt_step = self._compile(optimizer=method)
+        opt_step = self.compile(optimizer=method)
         feed_dict = {}
 
         try:
             iteration = 0
             while iteration < maxiter:
                 self.update_feed_dict(self._feed_dict_keys, feed_dict)
-                self._session.run(opt_step, feed_dict=feed_dict)
+                self.session.run(opt_step, feed_dict=feed_dict)
                 self.num_fevals += 1
                 if callback is not None:
-                    callback(self._session.run(self._free_vars))
+                    callback(self.session.run(self._free_vars))
                 iteration += 1
         except KeyboardInterrupt:
             print("Caught KeyboardInterrupt, setting model\
                   with most recent state.")
-            self.set_state(self._session.run(self._free_vars))
+            self.set_state(self.session.run(self._free_vars))
             return None
 
-        final_x = self._session.run(self._free_vars)
+        final_x = self.session.run(self._free_vars)
         self.set_state(final_x)
         fun, jac = self._objective(final_x)
         r = OptimizeResult(x=final_x,
@@ -279,8 +306,9 @@ class Model(Parameterized):
         max_iters is the maximum number of iterations (used in the options dict
             for the optimization routine)
         """
+
         if self._needs_recompile:
-            self._compile()
+            self.compile()
 
         options = dict(disp=settings.verbosity.optimisation_verb, maxiter=maxiter)
         if 'max_iters' in kw:  # pragma: no cover
@@ -350,8 +378,8 @@ class GPModel(Model):
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name='model'):
         Model.__init__(self, name)
-        self.kern, self.likelihood, self.mean_function = \
-            kern, likelihood, mean_function
+        self.mean_function = mean_function or Zero()
+        self.kern, self.likelihood = kern, likelihood
 
         if isinstance(X, np.ndarray):
             #: X is a data matrix; each row represents one instance
@@ -359,16 +387,19 @@ class GPModel(Model):
         if isinstance(Y, np.ndarray):
             #: Y is a data matrix, rows correspond to the rows in X, columns are treated independently
             Y = DataHolder(Y)
-        self.X, self.Y = X, Y
 
-    def build_predict(self):
+        likelihood._check_targets(Y.value)
+        self.X, self.Y = X, Y
+        self._session = None
+
+    def build_predict(self, *args, **kwargs):
         raise NotImplementedError
 
     @AutoFlow((float_type, [None, None]))
     def predict_f(self, Xnew):
         """
-        Compute the mean and variance of the latent function(s) at the points
-        Xnew.
+        Compute the mean and variance of the latent function(s)
+        at the points `Xnew`.
         """
         return self.build_predict(Xnew)
 

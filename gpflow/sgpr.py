@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, alexggmatthews
+# Copyright 2016 James Hensman, alexggmatthews, Mark van der Wilk
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,14 +17,67 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 from .model import GPModel
-from .param import Param, DataHolder
+from .param import Param, DataHolder, AutoFlow
 from .mean_functions import Zero
 from . import likelihoods
 from ._settings import settings
+
 float_type = settings.dtypes.float_type
 
 
-class SGPR(GPModel):
+class SGPRUpperMixin(object):
+    """
+    Upper bound for the GP regression marginal likelihood.
+    It is implemented here as a Mixin class which works with SGPR and GPRFITC. Note that the same inducing points are
+    used for calculating the upper bound, as are used for computing the likelihood approximation. This may not lead to
+    the best upper bound. The upper bound can be tightened by optimising Z, just as just like the lower bound. This is
+    especially important in FITC, as FITC is known to produce poor inducing point locations. An optimisable upper bound
+    can be found in https://github.com/markvdw/gp_upper.
+
+    The key reference is
+
+    ::
+
+      @misc{titsias_2014,
+        title={Variational Inference for Gaussian and Determinantal Point Processes},
+        url={http://www2.aueb.gr/users/mtitsias/papers/titsiasNipsVar14.pdf},
+        publisher={Workshop on Advances in Variational Inference (NIPS 2014)},
+        author={Titsias, Michalis K.},
+        year={2014},
+        month={Dec}
+      }
+    """
+
+    @AutoFlow()
+    def compute_upper_bound(self):
+        num_inducing = tf.shape(self.Z)[0]
+        num_data = tf.cast(tf.shape(self.Y)[0], float_type)
+
+        Kdiag = self.kern.Kdiag(self.X)
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        Kuf = self.kern.K(self.Z, self.X)
+
+        L = tf.cholesky(Kuu)
+        LB = tf.cholesky(Kuu + self.likelihood.variance ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
+
+        LinvKuf = tf.matrix_triangular_solve(L, Kuf, lower=True)
+        c = tf.reduce_sum(Kdiag) - tf.reduce_sum(LinvKuf ** 2.0)  # Using the Trace bound, from Titsias' presentation
+        # Kff = self.kern.K(self.X)
+        # Qff = tf.matmul(Kuf, LinvKuf, transpose_a=True)
+        # c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))  # Alternative bound on max eigenval
+        corrected_noise = self.likelihood.variance + c
+
+        const = -0.5 * num_data * tf.log(2 * np.pi * self.likelihood.variance)
+        logdet = tf.reduce_sum(tf.log(tf.diag_part(L))) - tf.reduce_sum(tf.log(tf.diag_part(LB)))
+
+        LC = tf.cholesky(Kuu + corrected_noise ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
+        v = tf.matrix_triangular_solve(LC, corrected_noise ** -1.0 * tf.matmul(Kuf, self.Y), lower=True)
+        quad = -0.5 * corrected_noise ** -1.0 * tf.reduce_sum(self.Y ** 2.0) + 0.5 * tf.reduce_sum(v ** 2.0)
+
+        return const + logdet + quad
+
+
+class SGPR(GPModel, SGPRUpperMixin):
     """
     Sparse Variational GP regression. The key reference is
 
@@ -44,7 +97,7 @@ class SGPR(GPModel):
 
     """
 
-    def __init__(self, X, Y, kern, Z, mean_function=Zero()):
+    def __init__(self, X, Y, kern, Z, mean_function=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -89,12 +142,12 @@ class SGPR(GPModel):
 
         # compute log marginal bound
         bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
-        bound += - output_dim * tf.reduce_sum(tf.log(tf.diag_part(LB)))
+        bound += - output_dim * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         bound -= 0.5 * num_data * output_dim * tf.log(self.likelihood.variance)
         bound += -0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * output_dim * tf.reduce_sum(Kdiag) / self.likelihood.variance
-        bound += 0.5 * output_dim * tf.reduce_sum(tf.diag_part(AAT))
+        bound += 0.5 * output_dim * tf.reduce_sum(tf.matrix_diag_part(AAT))
 
         return bound
 
@@ -132,7 +185,7 @@ class SGPR(GPModel):
         return mean + self.mean_function(Xnew), var
 
 
-class GPRFITC(GPModel):
+class GPRFITC(GPModel, SGPRUpperMixin):
     def __init__(self, X, Y, kern, Z, mean_function=Zero()):
         """
         This implements GP regression with the FITC approximation.
@@ -227,7 +280,7 @@ class GPRFITC(GPModel):
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
         constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.dtypes.float_type))
-        logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.diag_part(L)))
+        logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
