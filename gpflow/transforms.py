@@ -17,9 +17,9 @@ from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 
-from gpflow.base import ITransform
-from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
+from gpflow import settings
 from gpflow.misc import vec_to_tri
+from gpflow.core.base import ITransform
 
 
 class Transform(ITransform): # pylint: disable=W0223
@@ -40,7 +40,7 @@ class Identity(Transform):
         return y
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), TF_FLOAT_TYPE)
+        return tf.zeros((1,), settings.tf_float)
 
     def __str__(self):
         return '(none)'
@@ -134,7 +134,7 @@ class Log1pe(Transform):
 
 
         """
-        ys = np.maximum(y - self._lower, np.finfo(NP_FLOAT_TYPE).eps)
+        ys = np.maximum(y - self._lower, np.finfo(settings.np_float).eps)
         return ys + np.log(-np.expm1(-ys))
 
     def __str__(self):
@@ -199,7 +199,7 @@ class Rescale(Transform):
         return self.chain_transform.backward(y) / self.factor
 
     def tf_log_jacobian(self, x):
-        return tf.cast(tf.reduce_prod(tf.shape(x)), TF_FLOAT_TYPE) * \
+        return tf.cast(tf.reduce_prod(tf.shape(x)), settings.tf_float) * \
                 self.factor * self.chain_transform.tf_log_jacobian(x * self.factor)
 
     def __str__(self):
@@ -238,7 +238,7 @@ class DiagMatrix(Transform):
         return tf.matrix_diag(tf.reshape(self._positive_transform.tf_forward(x), (-1, self.dim)))
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), TF_FLOAT_TYPE) + self._positive_transform.tf_log_jacobian(x)
+        return tf.zeros((1,), settings.tf_float) + self._positive_transform.tf_log_jacobian(x)
 
     def __str__(self):
         return 'DiagMatrix'
@@ -297,7 +297,7 @@ class LowerTriangular(Transform):
         L = self._validate_vector_length(len(x))
         matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
         xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((matsize, matsize, self.num_matrices), NP_FLOAT_TYPE)
+        var = np.zeros((matsize, matsize, self.num_matrices), settings.np_float)
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
             var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
@@ -321,7 +321,7 @@ class LowerTriangular(Transform):
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def tf_log_jacobian(self, x):
-        return tf.zeros((1,), TF_FLOAT_TYPE)
+        return tf.zeros((1,), settings.tf_float)
 
     def free_state_size(self, variable_shape):
         matrix_batch = len(variable_shape) > 2

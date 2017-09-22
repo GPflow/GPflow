@@ -23,11 +23,6 @@ __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 
 
-TF_INT_TYPE = settings.dtypes.int_type
-TF_FLOAT_TYPE = settings.dtypes.float_type
-NP_FLOAT_TYPE = np.float32 if TF_FLOAT_TYPE is tf.float32 else np.float64  # pylint: disable=E1101
-
-
 class GPflowError(Exception):
     pass
 
@@ -94,7 +89,7 @@ def normalize_dtype(value):
         tf_type = True
         value = value.as_numpy_dtype
     if value.dtype.type in [np.float32, np.float64]:  # pylint: disable=E1101
-        value = TF_FLOAT_TYPE
+        value = settings.tf_float
     elif value.dtype.type in [np.int16, np.int32, np.int64]:
         value = np.int32
     else:

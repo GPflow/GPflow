@@ -17,7 +17,6 @@ import warnings
 import tensorflow as tf
 
 from gpflow.decors import name_scope
-from gpflow.misc import TF_FLOAT_TYPE
 from gpflow import settings
 
 
@@ -65,7 +64,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     num_data = tf.shape(X)[0]  # M
     num_func = tf.shape(f)[1]  # K
     Kmn = kern.K(X, Xnew)
-    Kmm = kern.K(X) + tf.eye(num_data, dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
+    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.tf_float) * settings.numerics.jitter_level
     Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A

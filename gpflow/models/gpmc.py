@@ -16,13 +16,12 @@
 import numpy as np
 import tensorflow as tf
 
+from gpflow import settings
 from gpflow.models.model import GPModel
 from gpflow.params import Param, DataHolder
 from gpflow.decors import params_as_tensors
 from gpflow.conditionals import conditional
 from gpflow.priors import Gaussian
-from gpflow.misc import TF_FLOAT_TYPE
-from gpflow import settings
 
 
 
@@ -80,7 +79,7 @@ class GPMC(GPModel):
         """
         K = self.kern.K(self.X)
         L = tf.cholesky(
-            K + tf.eye(tf.shape(self.X)[0], dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level)
+            K + tf.eye(tf.shape(self.X)[0], dtype=settings.tf_float) * settings.numerics.jitter_level)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))

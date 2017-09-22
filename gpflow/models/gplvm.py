@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
+from gpflow import settings
 from gpflow import likelihoods
 from gpflow import transforms
 from gpflow import kernels
@@ -10,8 +11,6 @@ from gpflow.models.gpr import GPR
 from gpflow.params import Param
 from gpflow.decors import params_as_tensors
 from gpflow.mean_functions import Zero
-from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
-from gpflow import settings
 
 
 class GPLVM(GPR):
@@ -86,8 +85,8 @@ class BayesianGPLVM(GPModel):
         if X_prior_var is None:
             X_prior_var = np.ones((self.num_data, self.num_latent))
 
-        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=NP_FLOAT_TYPE)
-        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=NP_FLOAT_TYPE)
+        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=settings.np_float)
+        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=settings.np_float)
 
         assert self.X_prior_mean.shape[0] == self.num_data
         assert self.X_prior_mean.shape[1] == self.num_latent
@@ -104,7 +103,7 @@ class BayesianGPLVM(GPModel):
         psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -113,22 +112,22 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE)
+        B = AAT + tf.eye(num_inducing, dtype=settings.tf_float)
         LB = tf.cholesky(B)
         log_det_B = 2. * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
         dX_var = self.X_var if len(self.X_var.get_shape()) == 2 else tf.matrix_diag_part(self.X_var)
-        NQ = tf.cast(tf.size(self.X_mean), TF_FLOAT_TYPE)
-        D = tf.cast(tf.shape(self.Y)[1], TF_FLOAT_TYPE)
+        NQ = tf.cast(tf.size(self.X_mean), settings.tf_float)
+        D = tf.cast(tf.shape(self.Y)[1], settings.tf_float)
         KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
              + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
              - 0.5 * NQ \
              + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
 
         # compute log marginal bound
-        ND = tf.cast(tf.size(self.Y), TF_FLOAT_TYPE)
+        ND = tf.cast(tf.size(self.Y), settings.tf_float)
         bound = -0.5 * ND * tf.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
@@ -149,7 +148,7 @@ class BayesianGPLVM(GPModel):
         num_inducing = tf.shape(self.Z)[0]
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
         Kus = self.kern.K(self.Z, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -158,7 +157,7 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + tf.eye(num_inducing, dtype=TF_FLOAT_TYPE)
+        B = AAT + tf.eye(num_inducing, dtype=settings.tf_float)
         LB = tf.cholesky(B)
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)

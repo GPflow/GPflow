@@ -9,7 +9,7 @@ from gpflow import settings
 from testing.gpflow_testcase import GPflowTestCase
 
 float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+settings.np_float = np.float32 if float_type is tf.float32 else np.float64
 
 class TestSetup(object):
     def __init__(self, likelihood, Y, tolerance):
@@ -34,20 +34,20 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
                 test_setups.append(TestSetup(likelihoodClass(2),  np.argmax(sample, 1).reshape(-1, 1), tolerance))
         else:
             # most likelihoods follow this standard:
-            test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2).astype(np_float_type), 1e-6))
+            test_setups.append(TestSetup(likelihoodClass(), rng.rand(10, 2).astype(settings.np_float), 1e-6))
 
     if addNonStandardLinks:
         test_setups.append(TestSetup(gpflow.likelihoods.Poisson(invlink=tf.square),
-                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
+                                     rng.rand(10, 2).astype(settings.np_float), 1e-6))
         test_setups.append(TestSetup(gpflow.likelihoods.Exponential(invlink=tf.square),
-                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
+                                     rng.rand(10, 2).astype(settings.np_float), 1e-6))
         test_setups.append(TestSetup(gpflow.likelihoods.Gamma(invlink=tf.square),
-                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
+                                     rng.rand(10, 2).astype(settings.np_float), 1e-6))
 
         def sigmoid(x):
             return 1./(1 + tf.exp(-x))
         test_setups.append(TestSetup(gpflow.likelihoods.Bernoulli(invlink=sigmoid),
-                                     rng.rand(10, 2).astype(np_float_type), 1e-6))
+                                     rng.rand(10, 2).astype(settings.np_float), 1e-6))
     return test_setups
 
 
@@ -65,7 +65,7 @@ class TestPredictConditional(GPflowTestCase):
                 test_setup.likelihood.make_tf_array(self.x)
             self.F = tf.placeholder(float_type)
             rng = np.random.RandomState(0)
-            self.F_data = rng.randn(10, 2).astype(np_float_type)
+            self.F_data = rng.randn(10, 2).astype(settings.np_float)
 
     def test_mean(self):
         with self.test_session() as sess:
@@ -120,7 +120,7 @@ class TestQuadrature(GPflowTestCase):
     def setUp(self):
         with self.test_session() as sess:
             self.rng = np.random.RandomState()
-            self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(np_float_type)
+            self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(settings.np_float)
             self.Fvar = 0.01 * self.Fvar ** 2
             self.test_setups = getTestSetups(includeMultiClass=False)
 

@@ -16,6 +16,7 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
+from gpflow import settings
 from gpflow import transforms
 
 from gpflow.params import Param, DataHolder
@@ -24,8 +25,6 @@ from gpflow.models.model import GPModel
 from gpflow.mean_functions import Zero
 from gpflow.conditionals import conditional
 from gpflow.kullback_leiblers import gauss_kl_white
-from gpflow.misc import TF_FLOAT_TYPE
-from gpflow import settings
 
 
 class VGP(GPModel):
@@ -100,7 +99,7 @@ class VGP(GPModel):
         KL = gauss_kl_white(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
+        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=settings.tf_float) * settings.numerics.jitter_level
         L = tf.cholesky(K)
 
         fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
@@ -198,7 +197,7 @@ class VGP_opper_archambeau(GPModel):
         f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=TF_FLOAT_TYPE), 0), [self.num_latent, 1, 1])
+        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=settings.tf_float), 0), [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
         L = tf.cholesky(A)

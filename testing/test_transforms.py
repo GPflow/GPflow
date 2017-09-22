@@ -24,14 +24,14 @@ from gpflow import settings
 
 
 float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+settings.np_float = np.float32 if float_type is tf.float32 else np.float64
 
 
 class TransformTests(GPflowTestCase):
     def setUp(self):
         with self.test_session():
             self.x = tf.placeholder(float_type, 10)
-            self.x_np = np.random.randn(10).astype(np_float_type)
+            self.x_np = np.random.randn(10).astype(settings.np_float)
             self.transforms = []
             for transform in gpflow.transforms.Transform.__subclasses__():
                 if transform!=gpflow.transforms.LowerTriangular:

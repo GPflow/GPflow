@@ -3,11 +3,13 @@ import itertools
 
 import tensorflow as tf
 import numpy as np
-from gpflow.misc import NP_FLOAT_TYPE
+
+from gpflow import settings
+
 
 def hermgauss(n):
     x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(NP_FLOAT_TYPE), w.astype(NP_FLOAT_TYPE)
+    x, w = x.astype(settings.np_float), w.astype(settings.np_float)
     return x, w
 
 

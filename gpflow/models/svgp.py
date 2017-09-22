@@ -17,14 +17,13 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
+from gpflow import settings
 from gpflow import transforms, conditionals, kullback_leiblers
 
 from gpflow.params import Param
 from gpflow.decors import params_as_tensors
 from gpflow.models.model import GPModel
 from gpflow.minibatch import MinibatchData
-from gpflow.misc import TF_FLOAT_TYPE
-from gpflow import settings
 
 
 class SVGP(GPModel):
@@ -88,7 +87,7 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=TF_FLOAT_TYPE) * settings.numerics.jitter_level
+            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
@@ -111,7 +110,7 @@ class SVGP(GPModel):
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, TF_FLOAT_TYPE) / tf.cast(tf.shape(self.X)[0], TF_FLOAT_TYPE)
+        scale = tf.cast(self.num_data, settings.tf_float) / tf.cast(tf.shape(self.X)[0], settings.tf_float)
 
         return tf.reduce_sum(var_exp) * scale - KL
 

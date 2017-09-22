@@ -16,9 +16,9 @@
 import tensorflow as tf
 import numpy as np
 
+from gpflow import settings
 from gpflow.params import Param, Parameterized, ParamList
 from gpflow.decors import params_as_tensors
-from gpflow.misc import TF_FLOAT_TYPE
 
 
 class MeanFunction(Parameterized):
@@ -44,7 +44,7 @@ class MeanFunction(Parameterized):
 
 class Zero(MeanFunction):
     def __call__(self, X):
-        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=TF_FLOAT_TYPE)
+        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=settings.tf_float)
 
 
 class Linear(MeanFunction):

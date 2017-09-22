@@ -15,15 +15,19 @@
 import functools
 import tensorflow as tf
 
-from gpflow.misc import GPflowError
-from gpflow.base import AutoFlow, TensorConverter
-from gpflow.base import Build, CompilableNode
+
+from gpflow.core.base import GPflowError
+from gpflow.core.base import Build
+from gpflow.core.node import Node
+from gpflow.core.autoflow import AutoFlow, IAutoFlow
+
+from gpflow.params import Parameterized
 
 
 def params_as_tensors(method):
     @functools.wraps(method)
     def tensor_mode_wrapper(obj, *args, **kwargs):
-        if not isinstance(obj, TensorConverter):
+        if not isinstance(obj, Parameterized):
             raise GPflowError('Tensor mode works only with parmeterized object.')
         name = obj.__tensor_mode__
         attr_value = getattr(obj, name, None)
@@ -54,14 +58,14 @@ def autoflow(*af_args, **af_kwargs):
     def autoflow_wrapper(method):
         @functools.wraps(method)
         def runnable(obj, *args, **kwargs):
-            if not isinstance(obj, AutoFlow):
-                raise ValueError('Passed object is not part of AutoFlow.')
+            if not isinstance(obj, IAutoFlow):
+                raise ValueError('Passed object does not support AutoFlow.')
             if not isinstance(obj, CompilableNode):
                 raise ValueError('Passed object does not implement CompilableNode interface.')
             if obj.is_built_coherence(obj.graph) is Build.NO:
                 raise GPflowError('Compilable object is not built.')
             name = method.__name__
-            store = obj.get_autoflow(name)
+            store = AutoFlow.get_autoflow(obj, name)
             session = kwargs.pop('session', None)
             session = obj.enquire_session(session=session)
             if not store:

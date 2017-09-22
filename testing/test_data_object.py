@@ -9,7 +9,7 @@ from gpflow import settings
 from testing.gpflow_testcase import GPflowTestCase
 
 float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+settings.np_float = np.float32 if float_type is tf.float32 else np.float64
 
 
 class TestDataHolderSimple(GPflowTestCase):
@@ -24,9 +24,9 @@ class TestDataHolderSimple(GPflowTestCase):
             self.m._needs_recompile = False
 
     def test_types(self):
-        assert self.m.X.value.dtype == np_float_type
-        assert self.m.Y.value.dtype == np_float_type
-        assert self.m.Z.value.dtype == np_float_type
+        assert self.m.X.value.dtype == settings.np_float
+        assert self.m.Y.value.dtype == settings.np_float
+        assert self.m.Z.value.dtype == settings.np_float
 
     def test_same_shape(self):
         new_X = self.rng.randn(2, 2)

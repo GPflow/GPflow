@@ -23,20 +23,24 @@ import enum
 import numpy as np
 import tensorflow as tf
 
-from gpflow.base import IPrior, ITransform, TensorConverter
-from gpflow.base import Build, CompilableNode, AutoFlow
-from gpflow.transforms import Identity
+from gpflow import settings
 
-from gpflow.misc import GPflowError
+from gpflow.core.base import GPflowError
+from gpflow.core.base import Build
+from gpflow.core.node import Node
+from gpflow.core.base import IPrior, ITransform
+from gpflow.core.autoflow import IAutoFlow, AutoFlow
+from gpflow.core.tensor_converter import ITensorConverter, TensorConverter
+
 from gpflow.misc import is_number, is_tensor
 from gpflow.misc import is_valid_param_value, is_tensor_trainable
 from gpflow.misc import add_to_trainables, remove_from_trainables
 from gpflow.misc import get_variable_by_name, get_attribute
 
-from gpflow.misc import TF_FLOAT_TYPE, NP_FLOAT_TYPE
+from gpflow.transforms import Identity
 
 
-class Param(CompilableNode):
+class Param(Node):
     class ParamAttribute(enum.Enum):
         PRIOR = 'prior'
         TRANSFORM = 'transform'
@@ -164,12 +168,12 @@ class Param(CompilableNode):
             self._check_tensor_trainable(tensor)
             return tensor
 
-        init = tf.constant_initializer(self._value, dtype=TF_FLOAT_TYPE)
+        init = tf.constant_initializer(self._value, dtype=settings.tf_float)
         return tf.get_variable(
             name,
             shape=self.shape,
             initializer=init,
-            dtype=TF_FLOAT_TYPE,
+            dtype=settings.tf_float,
             trainable=self.trainable)
 
     def _build_transformed(self):
@@ -188,7 +192,7 @@ class Param(CompilableNode):
         prior_name = 'prior'
 
         if self.prior is None:
-            return tf.constant(0.0, TF_FLOAT_TYPE, name=prior_name)
+            return tf.constant(0.0, settings.tf_float, name=prior_name)
 
         var = self.var_tensor
         log_jacobian = self.transform.tf_log_jacobian(var)
@@ -309,7 +313,7 @@ class DataHolder(Param):
         object.__setattr__(self, name, value)
 
 
-class Parameterized(CompilableNode, AutoFlow, TensorConverter):
+class Parameterized(Node, IAutoFlow, ITensorConverter):
 
     def __init__(self, name=None):
         super(Parameterized, self).__init__(name=name)
@@ -417,7 +421,7 @@ class Parameterized(CompilableNode, AutoFlow, TensorConverter):
 
     def _clear(self):
         self._prior_tensor = None
-        self.clear_autoflow()
+        AutoFlow.clear_autoflow(self)
         for param in self.params:
             param._clear()  # pylint: disable=W0212
 
@@ -529,5 +533,5 @@ def _valid_input(value):
         raise ValueError('The value must be either a tensorflow '
                          'variable, an array or a scalar.')
     if is_number(value):
-        value = np.array(value, dtype=NP_FLOAT_TYPE)
+        value = np.array(value, dtype=settings.np_float)
     return value

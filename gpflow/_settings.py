@@ -5,6 +5,7 @@ import collections
 from collections import OrderedDict
 from six.moves import configparser
 
+import numpy as np
 import tensorflow as tf
 
 
@@ -45,6 +46,22 @@ class _SettingsManager(object):
 
     def get_settings(self):
         return copy.deepcopy(self._cur_settings)
+
+    @property
+    def jitter(self):
+        return self.numerics.jitter_level
+
+    @property
+    def tf_float(self):
+        return self.dtypes.float_type
+
+    @property
+    def tf_int(self):
+        return self.dtypes.int_type
+
+    @property
+    def np_float(self):
+        return np.float32 if self.tf_float is tf.float32 else np.float64
 
 
 class _MutableNamedTuple(OrderedDict):

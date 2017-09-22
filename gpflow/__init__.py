@@ -27,13 +27,13 @@ from gpflow import likelihoods
 from gpflow import kernels
 from gpflow import ekernels
 from gpflow import priors
+from gpflow import core
 
-from gpflow.models import models as model
+from gpflow.models import models
 from gpflow.training import training as train
 
-from gpflow.base import Build
-
-from gpflow.misc import GPflowError
+from gpflow.core.base import GPflowError
+from gpflow.core.base import Build
 
 from gpflow.params import Param
 from gpflow.params import ParamList
