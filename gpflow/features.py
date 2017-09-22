@@ -7,11 +7,13 @@ import tensorflow as tf
 from . import conditionals, transforms, kernels
 from ._settings import settings
 from .param import Param, Parameterized
+import six
 
 float_type = settings.dtypes.float_type
 
 
-class InducingFeature(Parameterized, metaclass=ABCMeta):
+# class InducingFeature(Parameterized, metaclass=ABCMeta):  # Pure python3. Not ready to support yet.
+class InducingFeature(six.with_metaclass(ABCMeta, Parameterized)):
     """
     Abstract base class for inducing features.
     """
