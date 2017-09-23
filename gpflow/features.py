@@ -69,7 +69,7 @@ class InducingPoints(InducingFeature):
 
 
 class Multiscale(InducingFeature):
-    """
+    r"""
     Multi-scale inducing features
     Originally proposed in
 
@@ -121,13 +121,23 @@ class Multiscale(InducingFeature):
 @singledispatch
 def conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
     """
-    Note the changed function signature compared to conditionals.conditional() to allow for dispatch.
+    Note the changed function signature compared to conditionals.conditional()
+    to allow for single dispatch on the first argument.
     """
     raise NotImplementedError("No implementation for {} found".format(type(feat).__name__))
 
 
 @conditional.register(InducingPoints)
-def _(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
+@conditional.register(Multiscale)
+def default_feature_conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
+    """
+    Uses the same code path as conditionals.conditional(), except Kuu/Kuf
+    matrices are constructed using the feature.
+    To use this with features defined in external modules, register your
+    feature class using
+    >>> gpflow.features.conditional.register(YourFeatureClass,
+    ...             gpflow.features.default_feature_conditional)
+    """
     return conditionals.feature_conditional(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt, whiten=whiten)
 
 
