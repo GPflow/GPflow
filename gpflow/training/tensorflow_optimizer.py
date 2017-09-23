@@ -35,29 +35,42 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         self._minimize_operation = None
         super(_TensorFlowOptimizer, self).__init__()
 
-    def minimize(self, *args, **kwargs):
+    def minimize(self, **kwargs):
         model = self._pop_model(kwargs)
         session = self._pop_session(model, kwargs)
         if model is None:
-            mode = self.model
-        if mode is None:
+            model = self.model
+        if model is None:
             raise GPflowError('Model is not specified.')
-        if model and model.is_build_coherence(graph=session.graph) is Build.NO:
+        if model and model.is_built_coherence(graph=session.graph) is Build.NO:
             raise GPflowError('Model is not built.')
 
+        var_list = self._pop_var_list(model, kwargs)
         if self.minimize_operation is None:
-            objective = model.objective
-            self._model = model
-            self._minimize_operation = self.optimizer.minimize(objective, *args, **kwargs)
+            self._create_minimize_operation(model, var_list, session, **kwargs)
 
         feed_dict = self._pop_feed_dict(kwargs)
         maxiter = self._pop_maxiter(kwargs)
 
         try:
-            for _ in range(maxiter):
+            for _i in range(maxiter):
                 session.run(self.minimize_operation, feed_dict=feed_dict)
         except KeyboardInterrupt:
             warnings.warn('Optimization interrupted.')
+
+    def _create_minimize_operation(self, model, var_list, session, **kwargs):
+        objective = model.objective
+        self._model = model
+        with session.graph.as_default():
+            self._minimize_operation = self.optimizer.minimize(
+                objective, var_list=var_list, **kwargs)
+            self._initialize_optimizer(var_list, session)
+
+    def _initialize_optimizer(self, var_list, session):
+        optimizer_vars = [self.optimizer.get_slot(var, name)
+                          for name in self.optimizer.get_slot_names()
+                          for var in var_list]
+        session.run(tf.variables_initializer(optimizer_vars))
 
     @property
     def minimize_operation(self):

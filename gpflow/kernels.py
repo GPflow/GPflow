@@ -143,7 +143,7 @@ class Kern(Parameterized):
         D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
 
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=settings.np_int),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=settings.tf_int),
                             message="Numerical quadrature needs to know correct shape of Xmu.")
         ]):
             Xmu = tf.identity(Xmu)
@@ -205,7 +205,7 @@ class Kern(Parameterized):
                 X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
         with tf.control_dependencies([
                             tf.assert_equal(tf.shape(X)[1],
-                                            tf.constant(self.input_dim, dtype=settings.np_int))]):
+                                            tf.constant(self.input_dim, dtype=settings.tf_int))]):
             X = tf.identity(X)
 
         return X, X2

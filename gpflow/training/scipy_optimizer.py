@@ -16,23 +16,26 @@ import warnings
 
 from gpflow.core.base import GPflowError
 from gpflow.core.base import Build
+from gpflow.models.model import Model
 
 from gpflow.training import optimizer
 from gpflow.training import external_optimizer
 
 class ScipyOptimizer(optimizer.Optimizer):
-    def __init__(self, model, *args, **kwargs):
-        self._model = self._pop_model(kwargs)
+    def __init__(self, model, **kwargs):
+        if model is None or not isinstance(model, Model):
+            raise ValueError('Unknown type passed for optimization.')
 
-        if self.model.is_built_coherence() is Build.NO:
+        self._model = model
+        if model.is_built_coherence() is Build.NO:
             raise GPflowError('Model is not specified.')
 
         with model.graph.as_default():
             objective = model.objective
             self._optimizer = external_optimizer.ScipyOptimizerInterface(
-                objective, *args, **kwargs)
+                objective, **kwargs)
 
-    def minimize(self, **kwargs):
+    def minimize(self, *_args, **kwargs):
         session = self._pop_session(self.model, kwargs)
         if self.model.is_built_coherence(session.graph) is Build.NO:
             raise GPflowError('Model is not specified.')

@@ -28,18 +28,27 @@ class Optimizer:
         raise NotImplementedError()
 
     def _pop_model(self, kwargs):
-        return kwargs.pop('model')
+        return kwargs.pop('model', None)
 
     def _pop_session(self, model, kwargs):
-        session = kwargs.pop('session')
+        print(kwargs)
+        session = kwargs.pop('session', model.session)
         if session is None:
-            if model.session is None:
-                raise ValueError('Session is not specified.')
-            session = model.session
+            raise ValueError('Session is not specified.')
         return session
 
+    def _pop_var_list(self, model, kwargs):
+        print(kwargs)
+        var_set = set(model.trainable_tensors).union(set(kwargs.pop('var_list', [])))
+        var_list = list(var_set)
+        #if not var_list:
+        #    raise ValueError('List of trainable variables is not empty.')
+        return var_list
+
     def _pop_feed_dict(self, kwargs):
+        print(kwargs)
         return kwargs.pop('feed_dict', {})
 
     def _pop_maxiter(self, kwargs, default=1000):
+        print(kwargs)
         return kwargs.pop('maxiter', default)

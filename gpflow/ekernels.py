@@ -54,7 +54,7 @@ class RBF(kernels.RBF):
         :return: NxMxD
         """
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, dtype=settings.np_int),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, dtype=settings.tf_int),
                             message="Currently cannot handle slicing in exKxz."),
             tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
         ]):
@@ -136,7 +136,7 @@ class Linear(kernels.Linear):
     @params_as_tensors
     def exKxz(self, Z, Xmu, Xcov):
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.np_int),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.tf_int),
                             message="Currently cannot handle slicing in exKxz."),
             tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
         ]):
