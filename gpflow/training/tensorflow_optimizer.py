@@ -87,6 +87,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
     @model.setter
     def model(self, value):
         self._model = value
+        self._optimizer = None
         self._minimize_operation = None
 
 
