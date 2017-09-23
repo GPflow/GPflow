@@ -21,6 +21,7 @@ from gpflow.models.model import Model
 from gpflow.training import optimizer
 from gpflow.training import external_optimizer
 
+
 class ScipyOptimizer(optimizer.Optimizer):
     def __init__(self, model, **kwargs):
         if model is None or not isinstance(model, Model):
