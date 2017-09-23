@@ -19,28 +19,10 @@ import tensorflow as tf
 from gpflow.core.base import GPflowError
 from gpflow.core.base import Build
 from gpflow.core.node import Node
-from gpflow.core.autoflow import AutoFlow, IAutoFlow
+from gpflow.core.autoflow import AutoFlow
+from gpflow.core.tensor_converter import TensorConverter
 
 from gpflow.params import Parameterized
-
-
-def params_as_tensors(method):
-    @functools.wraps(method)
-    def tensor_mode_wrapper(obj, *args, **kwargs):
-        if not isinstance(obj, Parameterized):
-            raise GPflowError('Tensor mode works only with parmeterized object.')
-        name = obj.__tensor_mode__
-        attr_value = getattr(obj, name, None)
-        setattr(obj, name, True)
-        try:
-            result = method(obj, *args, **kwargs)
-        finally:
-            if attr_value is not None:
-                setattr(obj, name, attr_value)
-            else:
-                delattr(obj, name)
-        return result
-    return tensor_mode_wrapper
 
 
 def name_scope(name=None):
@@ -54,14 +36,31 @@ def name_scope(name=None):
     return name_scope_wrapper
 
 
+def params_as_tensors(method):
+    @functools.wraps(method)
+    def tensor_mode_wrapper(obj, *args, **kwargs):
+        if not isinstance(obj, Parameterized):
+            raise GPflowError('Tensor mode works only for parmeterized object.')
+        name = TensorConverter.__tensor_mode__
+        attr_value = getattr(obj, name, None)
+        setattr(obj, name, True)
+        try:
+            result = method(obj, *args, **kwargs)
+        finally:
+            if attr_value is not None:
+                setattr(obj, name, attr_value)
+            else:
+                delattr(obj, name)
+        return result
+    return tensor_mode_wrapper
+
+
 def autoflow(*af_args, **af_kwargs):
     def autoflow_wrapper(method):
         @functools.wraps(method)
         def runnable(obj, *args, **kwargs):
-            if not isinstance(obj, IAutoFlow):
-                raise ValueError('Passed object does not support AutoFlow.')
-            if not isinstance(obj, CompilableNode):
-                raise ValueError('Passed object does not implement CompilableNode interface.')
+            if not isinstance(obj, Node):
+                raise GPflowError('Tensor mode works only for node-like object.')
             if obj.is_built_coherence(obj.graph) is Build.NO:
                 raise GPflowError('Compilable object is not built.')
             name = method.__name__

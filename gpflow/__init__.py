@@ -29,8 +29,8 @@ from gpflow import ekernels
 from gpflow import priors
 from gpflow import core
 
-from gpflow.models import models
-from gpflow.training import training as train
+from gpflow import training as train
+from gpflow import models
 
 from gpflow.core.base import GPflowError
 from gpflow.core.base import Build

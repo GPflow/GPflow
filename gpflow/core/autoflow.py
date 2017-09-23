@@ -16,17 +16,11 @@
 from gpflow.misc import get_attribute
 
 
-class IAutoFlow:
-    pass
-
-
 class AutoFlow:
     __autoflow_prefix__ = '_autoflow_'
 
     @classmethod
     def get_autoflow(cls, obj, name):
-        if not isinstance(obj, IAutoFlow):
-            raise ValueError('Object must be successor of IAutoFlow.')
         if not isinstance(name, str):
             raise ValueError('Name must be string.')
         prefix = cls.__autoflow_prefix__

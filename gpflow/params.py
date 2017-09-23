@@ -29,8 +29,9 @@ from gpflow.core.base import GPflowError
 from gpflow.core.base import Build
 from gpflow.core.node import Node
 from gpflow.core.base import IPrior, ITransform
-from gpflow.core.autoflow import IAutoFlow, AutoFlow
-from gpflow.core.tensor_converter import ITensorConverter, TensorConverter
+
+from gpflow.core.autoflow import AutoFlow
+from gpflow.core.tensor_converter import TensorConverter
 
 from gpflow.misc import is_number, is_tensor
 from gpflow.misc import is_valid_param_value, is_tensor_trainable
@@ -313,7 +314,7 @@ class DataHolder(Param):
         object.__setattr__(self, name, value)
 
 
-class Parameterized(Node, IAutoFlow, ITensorConverter):
+class Parameterized(Node):
 
     def __init__(self, name=None):
         super(Parameterized, self).__init__(name=name)

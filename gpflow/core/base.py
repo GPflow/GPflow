@@ -33,27 +33,27 @@ class ICompilable:
 
     @abc.abstractproperty
     def graph(self):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def compile(self, session=None, keep_session=False):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def initialize(self, session=None):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def is_built(self, graph):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def clear(self):
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def _build(self):
-        pass
+        raise NotImplementedError()
 
 
 class IPrior:
@@ -67,21 +67,21 @@ class IPrior:
         All priors (for the moment) are univariate, so if x is a vector or an
         array, this is the sum of the log densities.
         """
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def sample(self, shape=(1,)):
         """
         A sample utility function for the prior.
         """
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def __str__(self):
         """
         A short string to describe the prior at print time
         """
-        pass
+        raise NotImplementedError()
 
 
 class ITransform:
@@ -92,21 +92,21 @@ class ITransform:
         """
         Map from the free-space to the variable space, using numpy
         """
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def backward(self, y):
         """
         Map from the variable-space to the free space, using numpy
         """
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def tf_forward(self, x):
         """
         Map from the free-space to the variable space, using tensorflow
         """
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def log_jacobian(self, x):
@@ -118,7 +118,7 @@ class ITransform:
         Jacobian at time of writing. We do this in the tests to make sure the
         implementation is correct.
         """
-        pass
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def __str__(self):
