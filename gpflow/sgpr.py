@@ -110,7 +110,6 @@ class SGPR(GPModel, SGPRUpperMixin):
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.feat = features.inducingpoint_wrapper(feat, Z)
-        self.num_inducing = len(self.feat)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
@@ -121,6 +120,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         SGPR notebook.
         """
 
+        num_inducing = len(self.feat)
         num_data = tf.cast(tf.shape(self.Y)[0], settings.dtypes.float_type)
         output_dim = tf.cast(tf.shape(self.Y)[1], settings.dtypes.float_type)
 
@@ -134,7 +134,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         # Compute intermediate matrices
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
         AAT = tf.matmul(A, A, transpose_b=True)
-        B = AAT + tf.eye(self.num_inducing, dtype=float_type)
+        B = AAT + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
@@ -156,6 +156,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
+        num_inducing = len(self.feat)
         err = self.Y - self.mean_function(self.X)
         Kuf = self.feat.Kuf(self.kern, self.X)
         Kuu = self.feat.Kuu(self.kern)
@@ -163,7 +164,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
-        B = tf.matmul(A, A, transpose_b=True) + tf.eye(self.num_inducing, dtype=float_type)
+        B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=float_type)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
@@ -214,11 +215,11 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.feat = features.inducingpoint_wrapper(feat, Z)
-        self.num_inducing = len(self.feat)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
     def build_common_terms(self):
+        num_inducing = len(self.feat)
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.feat.Kuf(self.kern, self.X)
@@ -230,7 +231,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
 
-        B = tf.eye(self.num_inducing, dtype=float_type) + tf.matmul(V / nu, V, transpose_b=True)
+        B = tf.eye(num_inducing, dtype=float_type) + tf.matmul(V / nu, V, transpose_b=True)
         L = tf.cholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size N x R
         alpha = tf.matmul(V, beta)  # size N x R
