@@ -18,7 +18,7 @@ import numpy as np
 import unittest
 from .reference import referenceRbfKernel
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 
 
 def referenceUnivariateLogMarginalLikelihood(y, K, noiseVariance):
@@ -94,7 +94,7 @@ class VariationalUnivariateTest(GPflowTestCase):
         return m
 
     def test_prior_KL(self):
-        with self.test_session():
+        with self.test_context():
             meanA = self.posteriorMean
             varA = self.posteriorVariance
             meanB = self.meanZero  # Assumes a zero
@@ -110,7 +110,7 @@ class VariationalUnivariateTest(GPflowTestCase):
                     self.assertTrue(np.abs(referenceKL - test_prior_KL) < 1e-4)
 
     def test_build_likelihood(self):
-        with self.test_session():
+        with self.test_context():
             # reference marginal likelihood
             log_marginal_likelihood = referenceUnivariateLogMarginalLikelihood(
                 y=self.y_real, K=self.K, noiseVariance=self.noiseVariance)
@@ -123,7 +123,7 @@ class VariationalUnivariateTest(GPflowTestCase):
                         np.abs(model_likelihood - log_marginal_likelihood) < 1e-4)
 
     def testUnivariateConditionals(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             for is_diagonal in [True, False]:
                 for is_whitened in [True, False]:
                     m = self.get_model(is_diagonal, is_whitened)
@@ -187,7 +187,7 @@ class VariationalMultivariateTest(GPflowTestCase):
         return model
 
     def test_refrence_implementation_consistency(self):
-        with self.test_session():
+        with self.test_context():
             rng = np.random.RandomState(10)
             qMean = rng.randn()
             qCov = rng.rand()
@@ -200,7 +200,7 @@ class VariationalMultivariateTest(GPflowTestCase):
             self.assertTrue(np.abs(univariate_KL - multivariate_KL) < 1e-4)
 
     def test_prior_KL_fullQ(self):
-        with self.test_session():
+        with self.test_context():
             covQ = np.dot(self.q_sqrt_full, self.q_sqrt_full.T)
             mean_prior = np.zeros((self.nDimensions, 1))
             for is_whitened in [True, False]:

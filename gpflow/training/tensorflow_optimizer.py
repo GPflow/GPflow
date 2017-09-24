@@ -30,10 +30,10 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         tf_optimizer = _get_registered_optimizer(name)
         if tf_optimizer is None:
             raise ValueError('Optimizer not found.')
-        self._optimizer = tf_optimizer(*args, **kwargs)
         self._model = None
-        self._minimize_operation = None
         super(_TensorFlowOptimizer, self).__init__()
+        self._optimizer = tf_optimizer(*args, **kwargs)
+        self._minimize_operation = None
 
     def minimize(self, **kwargs):
         model = self._pop_model(kwargs)

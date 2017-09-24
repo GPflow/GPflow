@@ -18,7 +18,7 @@ from nose.plugins.attrib import attr
 import unittest
 import gpflow
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 
 
 @attr(speed='slow')
@@ -42,7 +42,7 @@ class TestEquivalence(GPflowTestCase):
     """
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             rng = np.random.RandomState(0)
             X = rng.rand(20, 1) * 10
             Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
@@ -85,7 +85,7 @@ class TestEquivalence(GPflowTestCase):
                 print('.')  # stop travis timing out
 
     def test_all(self):
-        with self.test_session():
+        with self.test_context():
             likelihoods = np.array([
                 -m._objective(m.get_free_state())[0].squeeze()
                 for m in self.models])
@@ -110,7 +110,7 @@ class TestEquivalence(GPflowTestCase):
 
 class VGPTest(GPflowTestCase):
     def test_vgp_vs_svgp(self):
-        with self.test_session():
+        with self.test_context():
             N, Ns, DX, DY = 100, 10, 2, 2
 
             np.random.seed(1)
@@ -144,7 +144,7 @@ class VGPTest(GPflowTestCase):
             assert np.allclose(pred_svgp[1], pred_vgp[1])
 
     def test_vgp_vs_opper_archambeau(self):
-        with self.test_session():
+        with self.test_context():
             N, Ns, DX, DY = 100, 10, 2, 2
 
             np.random.seed(1)
@@ -205,7 +205,7 @@ class VGPTest(GPflowTestCase):
             assert np.allclose(pred_vgp[1], pred_svgp_unwhitened[1], rtol=1e-4)
 
     def test_recompile(self):
-        with self.test_session():
+        with self.test_context():
             N, DX, DY = 100, 2, 2
 
             np.random.seed(1)
@@ -238,7 +238,7 @@ class TestUpperBound(GPflowTestCase):
         self.Y = np.sin(1.5 * 2 * np.pi * self.X) + np.random.randn(*self.X.shape) * 0.1
 
     def test_few_inducing_points(self):
-        with self.test_session():
+        with self.test_context():
             vfe = gpflow.sgpr.SGPR(self.X, self.Y, gpflow.kernels.RBF(1), self.X[:10, :].copy())
             vfe.optimize()
 

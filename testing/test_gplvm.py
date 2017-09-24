@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import unittest
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from gpflow import ekernels
 from gpflow import kernels
 from nose.plugins.attrib import attr
@@ -22,14 +22,14 @@ class TestGPLVM(GPflowTestCase):
         self.Q = 2  # latent dimensions
 
     def test_optimise(self):
-        with self.test_session():
+        with self.test_context():
             m = gpflow.gplvm.GPLVM(self.Y, self.Q)
             linit = m.compute_log_likelihood()
             m.optimize(maxiter=2)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_otherkernel(self):
-        with self.test_session():
+        with self.test_context():
             k = kernels.PeriodicKernel(self.Q)
             XInit = self.rng.rand(self.N, self.Q)
             m = gpflow.gplvm.GPLVM(self.Y, self.Q, XInit, k)
@@ -50,7 +50,7 @@ class TestBayesianGPLVM(GPflowTestCase):
         self.M = 10  # inducing points
 
     def test_1d(self):
-        with self.test_session():
+        with self.test_context():
             Q = 1  # latent dimensions
             k = ekernels.RBF(Q)
             Z = np.linspace(0, 1, self.M)
@@ -67,7 +67,7 @@ class TestBayesianGPLVM(GPflowTestCase):
             self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_2d(self):
-        with self.test_session():
+        with self.test_context():
             # test default Z on 2_D example
             Q = 2  # latent dimensions
             X_mean = gpflow.gplvm.PCA_reduce(self.Y, Q)
@@ -93,7 +93,7 @@ class TestBayesianGPLVM(GPflowTestCase):
 
     def test_kernelsActiveDims(self):
         ''' Test sum and product compositional kernels '''
-        with self.test_session():
+        with self.test_context():
             Q = 2  # latent dimensions
             X_mean = gpflow.gplvm.PCA_reduce(self.Y, Q)
             kernsQuadratu = [

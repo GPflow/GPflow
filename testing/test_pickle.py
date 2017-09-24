@@ -18,7 +18,7 @@ import gpflow
 import numpy as np
 import pickle
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 
 
 class TestPickleEmpty(GPflowTestCase):
@@ -45,7 +45,7 @@ class TestPickleSimple(GPflowTestCase):
 
 class TestActiveDims(GPflowTestCase):
     def test(self):
-        with self.test_session():
+        with self.test_context():
             k = gpflow.kernels.RBF(2, active_dims=[0, 1])
             X = np.random.randn(10, 2)
             K = k.compute_K_symm(X)
@@ -56,14 +56,14 @@ class TestActiveDims(GPflowTestCase):
 
 class TestPickleGPR(GPflowTestCase):
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             rng = np.random.RandomState(0)
             X = rng.randn(10, 1)
             Y = rng.randn(10, 1)
             self.m = gpflow.gpr.GPR(X, Y, kern=gpflow.kernels.RBF(1))
 
     def test(self):
-        with self.test_session():
+        with self.test_context():
             s1 = pickle.dumps(self.m)  # the model without running compile
             self.m.compile()
             s2 = pickle.dumps(self.m)  # the model after compile
@@ -96,7 +96,7 @@ class TestPickleFix(GPflowTestCase):
     Make sure a kernel with a fixed parameter can be computed after pickling
     """
     def test(self):
-        with self.test_session():
+        with self.test_context():
             k = gpflow.kernels.PeriodicKernel(1)
             k.period.fixed = True
             k = pickle.loads(pickle.dumps(k))
@@ -110,7 +110,7 @@ class TestPickleSVGP(GPflowTestCase):
     """
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             rng = np.random.RandomState(0)
             X = rng.randn(10, 1)
             Y = rng.randn(10, 1)
@@ -121,7 +121,7 @@ class TestPickleSVGP(GPflowTestCase):
                 kern=gpflow.kernels.RBF(1))
 
     def test(self):
-        with self.test_session():
+        with self.test_context():
             s1 = pickle.dumps(self.m)  # the model without running compile
             self.m.compile()
             s2 = pickle.dumps(self.m)  # the model after compile
@@ -151,7 +151,7 @@ class TestPickleSVGP(GPflowTestCase):
 
 class TestTransforms(GPflowTestCase):
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.transforms = gpflow.transforms.Transform.__subclasses__()
             self.models = []
             for T in self.transforms:

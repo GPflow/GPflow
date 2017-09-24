@@ -7,7 +7,7 @@ import numpy as np
 
 import gpflow
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 
 
 class TestProfiling(GPflowTestCase):

@@ -6,7 +6,7 @@ import numpy as np
 import gpflow
 from gpflow import settings
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 
 float_type = settings.dtypes.float_type
 settings.np_float = np.float32 if float_type is tf.float32 else np.float64
@@ -58,7 +58,7 @@ class TestPredictConditional(GPflowTestCase):
     has no uncertainty.
     """
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.test_setups = getTestSetups(addNonStandardLinks=True)
             self.x = tf.placeholder(float_type)
             for test_setup in self.test_setups:
@@ -68,7 +68,7 @@ class TestPredictConditional(GPflowTestCase):
             self.F_data = rng.randn(10, 2).astype(settings.np_float)
 
     def test_mean(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             for test_setup in self.test_setups:
                 l = test_setup.likelihood
                 with l.tf_mode():
@@ -81,7 +81,7 @@ class TestPredictConditional(GPflowTestCase):
                 self.assertTrue(np.allclose(mu1, mu2, test_setup.tolerance, test_setup.tolerance))
 
     def test_variance(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             for test_setup in self.test_setups:
                 l = test_setup.likelihood
                 with l.tf_mode():
@@ -98,7 +98,7 @@ class TestPredictConditional(GPflowTestCase):
         Here we make sure that the variational_expectations gives the same result
         as logp if the latent function has no uncertainty.
         """
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             for test_setup in self.test_setups:
                 l = test_setup.likelihood
                 y = test_setup.Y
@@ -118,14 +118,14 @@ class TestQuadrature(GPflowTestCase):
      does something close to the quadrature
     """
     def setUp(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             self.rng = np.random.RandomState()
             self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(settings.np_float)
             self.Fvar = 0.01 * self.Fvar ** 2
             self.test_setups = getTestSetups(includeMultiClass=False)
 
     def test_var_exp(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             # get all the likelihoods where variational expectations has been overwritten
             for test_setup in self.test_setups:
                 if not test_setup.is_analytic:
@@ -146,7 +146,7 @@ class TestQuadrature(GPflowTestCase):
 
     def test_pred_density(self):
         # get all the likelihoods where predict_density  has been overwritten.
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             for test_setup in self.test_setups:
                 if not test_setup.is_analytic:
                     continue
@@ -175,7 +175,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
         This test is based on the observation that for
         symmetric inputs the class predictions must have equal probability.
         """
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             nClasses = 5
             nPoints = 10
             tolerance = 1e-4
@@ -221,7 +221,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             def prob_is_largest(self, Y, Fmu, Fvar, gh_x, gh_w):
                 return tf.ones((num_points, 1)) * mock_prob
 
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             epsilon = 0.231
             num_classes = 5
             l = gpflow.likelihoods.MultiClass(
@@ -248,7 +248,7 @@ class TestMulticlassIndexFix(GPflowTestCase):
     A regression test for a bug in multiclass likelihood.
     """
     def testA(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             mu, var = tf.placeholder(float_type), tf.placeholder(float_type)
             Y = tf.placeholder(tf.int32)
             lik = gpflow.likelihoods.MultiClass(3)
@@ -262,7 +262,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
     Here, we make sure the partition-stictch works fine.
     """
     def setUp(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             rng = np.random.RandomState(1)
             self.Y_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
             self.F_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
@@ -290,7 +290,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
 
     def test_logp(self):
         # switchedlikelihood
-        with self.test_session() as sess, self.switched_likelihood.tf_mode():
+        with self.test_context() as sess, self.switched_likelihood.tf_mode():
             switched_rslt = sess.run(self.switched_likelihood.logp(self.F_sw, self.Y_sw))
             # likelihood
             rslts = []
@@ -301,7 +301,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
             self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
 
     def test_predict_density(self):
-        with self.test_session() as sess, self.switched_likelihood.tf_mode():
+        with self.test_context() as sess, self.switched_likelihood.tf_mode():
             # switchedlikelihood
             switched_rslt = sess.run(
                 self.switched_likelihood.predict_density(self.F_sw, self.Fvar_sw, self.Y_sw))
@@ -319,7 +319,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
 
     def test_variational_expectations(self):
         # switchedlikelihood
-        with self.test_session() as sess, self.switched_likelihood.tf_mode():
+        with self.test_context() as sess, self.switched_likelihood.tf_mode():
             switched_rslt = sess.run(
                 self.switched_likelihood.variational_expectations(
                     self.F_sw, self.Fvar_sw, self.Y_sw))
@@ -384,16 +384,16 @@ class TestLikelihoodChecks(GPflowTestCase):
         to_fail.append([sl, B])
 
         for l, v in to_pass:
-            with self.test_session(graph=tf.Graph()):
+            with self.test_context(graph=tf.Graph()):
                 self.run_models(l, v)
 
         for l, v, in to_fail:
-            with self.test_session(graph=tf.Graph()):
+            with self.test_context(graph=tf.Graph()):
                 with self.assertRaises(ValueError):
                     self.run_models(l, v)
 
         for l, v, in to_warn:
-            with self.test_session(graph=tf.Graph()):
+            with self.test_context(graph=tf.Graph()):
                 with self.assertRaises(Warning):
                     self.run_models(l, v)
 

@@ -10,7 +10,7 @@ except ImportError:
 
 from nose.plugins.attrib import attr
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from nose.plugins.attrib import attr
 
 @attr(speed='slow')
@@ -81,26 +81,26 @@ class SampleModelTest(GPflowTestCase):
         self.m = Quadratic()
 
     def test_mean(self):
-        with self.test_session():
+        with self.test_context():
             samples = self.m.sample(num_samples=400, Lmin=10, Lmax=20, epsilon=0.05)
             self.assertTrue(samples.shape == (400, 2))
             self.assertTrue(np.allclose(samples.mean(0), np.zeros(2), 1e-1, 1e-1))
 
     def test_return_logprobs(self):
-        with self.test_session():
+        with self.test_context():
             s, logps = self.m.sample(num_samples=200, Lmax=20,
                                      epsilon=0.05, return_logprobs=True)
 
 
 class SamplesDictTest(GPflowTestCase):
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             X, Y = np.random.randn(2, 10, 1)
             self.m = gpflow.gpmc.GPMC(X, Y, kern=gpflow.kernels.Matern32(1), likelihood=gpflow.likelihoods.StudentT())
 
     @unittest.skipIf(pandas is None, "Pandas module required for dataframes.")
     def test_samples_df(self):
-        with self.test_session():
+        with self.test_context():
             samples = self.m.sample(num_samples=20, Lmax=10, epsilon=0.05)
             sample_df = self.m.get_samples_df(samples)
             for name, trace in sample_df.iteritems():
@@ -110,7 +110,7 @@ class SamplesDictTest(GPflowTestCase):
 
     @unittest.skipIf(pandas is None, "Pandas module required for dataframes.")
     def test_with_fixed(self):
-        with self.test_session():
+        with self.test_context():
             self.m.kern.lengthscales.fixed = True
             samples = self.m.sample(num_samples=20, Lmax=10, epsilon=0.05)
             sample_dict = self.m.get_samples_df(samples)

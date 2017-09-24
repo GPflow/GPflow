@@ -3,7 +3,7 @@ from gpflow.tf_wraps import vec_to_tri
 import tensorflow as tf
 import numpy as np
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from gpflow.tf_wraps import vec_to_tri
 
 
@@ -31,7 +31,7 @@ class TestVecToTri(GPflowTestCase):
         return random_matrices
 
     def testBasicFunctionality(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             N = 3
             D = 3
             reference_matrices = self.getExampleMatrices(D, N)
@@ -42,7 +42,7 @@ class TestVecToTri(GPflowTestCase):
             np.testing.assert_array_almost_equal(reference_matrices, test_matrices)
 
     def testDifferentiable(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             N = 3
             D = 3
             reference_matrices = self.getExampleMatrices(D, N)

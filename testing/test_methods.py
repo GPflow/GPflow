@@ -19,7 +19,7 @@ import unittest
 import tensorflow as tf
 import gpflow
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from gpflow.minibatch import SequenceIndices
 
 class TestMethods(GPflowTestCase):
@@ -264,7 +264,7 @@ class TestSparseMCMC(GPflowTestCase):
     points, the sparse mcmc is the same as full mcmc
     """
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             rng = np.random.RandomState(0)
             X = rng.randn(10, 1)
             Y = rng.randn(10, 1)
@@ -289,7 +289,7 @@ class TestSparseMCMC(GPflowTestCase):
             self.m2.compile()
 
     def test_likelihoods_and_gradients(self):
-        with self.test_session():
+        with self.test_context():
             f1, _ = self.m1._objective(self.m1.get_free_state())
             f2, _ = self.m2._objective(self.m2.get_free_state())
             self.assertTrue(np.allclose(f1, f2))

@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 import tensorflow as tf
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from nose.plugins.attrib import attr
 
 
@@ -15,7 +15,7 @@ class TestEquivalence(GPflowTestCase):
     with fixed lengthscale is equivalent with normal GP regression.
     """
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             rng = np.random.RandomState(0)
             X = [rng.rand(10, 2)*10, rng.rand(20, 2)*10]
             Y = [np.sin(x) + 0.9 * np.cos(x*1.6) + rng.randn(*x.shape) * 0.8 for x in X]
@@ -60,7 +60,7 @@ class TestEquivalence(GPflowTestCase):
             self.cvgp.optimize(disp=False, maxiter=300)
 
     def test_all(self):
-        with self.test_session():
+        with self.test_context():
             # check variance
             self.assertTrue(np.allclose(
                 self.vgp0.likelihood.variance.value,

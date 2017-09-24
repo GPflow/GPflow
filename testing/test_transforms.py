@@ -19,7 +19,7 @@ import unittest
 from gpflow import settings
 import warnings
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from gpflow import settings
 
 
@@ -29,7 +29,7 @@ settings.np_float = np.float32 if float_type is tf.float32 else np.float64
 
 class TransformTests(GPflowTestCase):
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.x = tf.placeholder(float_type, 10)
             self.x_np = np.random.randn(10).astype(settings.np_float)
             self.transforms = []
@@ -45,7 +45,7 @@ class TransformTests(GPflowTestCase):
         """
         Make sure the np forward transforms are the same as the tensorflow ones
         """
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             ys = [t.tf_forward(self.x) for t in self.transforms]
             ys_tf = [sess.run(y, feed_dict={self.x: self.x_np}) for y in ys]
             ys_np = [t.forward(self.x_np) for t in self.transforms]
@@ -53,7 +53,7 @@ class TransformTests(GPflowTestCase):
                 self.assertTrue(np.allclose(y1, y2))
 
     def test_forward_backward(self):
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             ys_np = [t.forward(self.x_np) for t in self.transforms]
             xs_np = [t.backward(y) for t, y in zip(self.transforms, ys_np)]
             for t, x, y in zip(self.transforms, xs_np, ys_np):
@@ -70,7 +70,7 @@ class TransformTests(GPflowTestCase):
         def jacobian(f):
             return tf.stack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
 
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward)))
                        for t in self.transforms
                        if type(t) is not gpflow.transforms.LowerTriangular]
@@ -152,7 +152,7 @@ class TestDiagMatrixTransform(GPflowTestCase):
         """
         Make sure the np forward transforms are the same as the tensorflow ones
         """
-        with self.test_session() as sess:
+        with self.test_context() as sess:
             free = np.random.randn(8, self.t2.dim).flatten()
             x = tf.placeholder(float_type)
             ys = sess.run(self.t2.tf_forward(x), feed_dict={x: free})

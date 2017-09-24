@@ -3,7 +3,7 @@ import numpy as np
 import gpflow
 import tensorflow as tf
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from gpflow import session
 from gpflow import settings
 

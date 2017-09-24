@@ -16,7 +16,7 @@ import tensorflow as tf
 import numpy as np
 import unittest
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from gpflow.minibatch import SequenceIndices, MinibatchData
 from gpflow.minibatch import ReplacementSampling, NoReplacementSampling
 

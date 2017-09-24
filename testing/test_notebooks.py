@@ -11,7 +11,7 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 from nose.plugins.attrib import attr
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 
 @attr(speed='slow')
 class TestNotebooks(GPflowTestCase):
@@ -48,7 +48,7 @@ class TestNotebooks(GPflowTestCase):
                 self.fail(msg.format(notebook_filename, str(cell_error)))
 
     def _exec_notebook_ts(self, notebook_filename):
-        with self.test_session():
+        with self.test_context():
             ts = time.time()
             self._exec_notebook(notebook_filename)
             print(notebook_filename, 'took {0} seconds.'.format(time.time() - ts))
