@@ -14,8 +14,8 @@
 
 
 from gpflow.core.base import GPflowError
+from gpflow.core.base import Parentable
 from gpflow.misc import get_attribute
-from gpflow.params import Parameterized
 
 
 class TensorConverter:  # pylint: disable=R0903
@@ -23,10 +23,10 @@ class TensorConverter:  # pylint: disable=R0903
 
     @classmethod
     def tensor_mode(cls, obj):
-        if not isinstance(obj, Parameterized):
-            raise ValueError('Tensor mode works only for Parameterized objects.')
+        if not isinstance(obj, Parentable):
+            raise ValueError('Tensor mode works only with parentable objects.')
         while True:
-            if get_attribute(obj, cls.__tensor_mode__, allow_none=True) is not None:
+            if get_attribute(obj, cls.__tensor_mode__, allow_fail=True) is not None:
                 return True
             parent = get_attribute(obj, '_parent')
             if parent is None:

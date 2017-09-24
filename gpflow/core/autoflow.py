@@ -25,7 +25,7 @@ class AutoFlow:
             raise ValueError('Name must be string.')
         prefix = cls.__autoflow_prefix__
         autoflow_name = prefix + name
-        store = get_attribute(obj, autoflow_name, {})
+        store = get_attribute(obj, autoflow_name, allow_fail=True, default={})
         if not store:
             setattr(obj, autoflow_name, store)
         return store

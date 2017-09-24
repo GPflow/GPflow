@@ -97,12 +97,12 @@ def normalize_dtype(value):
     return value if not tf_type else tf.as_dtype(value)
 
 
-def get_attribute(obj, name, allow_none=False):
+def get_attribute(obj, name, allow_fail=False, default=None):
     try:
         return object.__getattribute__(obj, name)
     except AttributeError as error:
-        if allow_none:
-            return None
+        if allow_fail:
+            return default
         raise error
 
 

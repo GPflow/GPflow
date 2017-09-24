@@ -443,47 +443,50 @@ class Parameterized(Node):
                 priors.append(param.prior_tensor)
         return tf.add_n(priors, name='prior')
 
+    def _set_param(self, name, value):
+        object.__setattr__(self, name, value)
+
+    def _get_param(self, name):
+        return getattr(self, name)
+
     def _update_param_attribute(self, name, value):
-        attr = getattr(self, name)
-        param_like = (Param, Parameterized)
-        if isinstance(value, param_like):
+        param = self._get_param(name)
+        if _is_param_like(value):
             if self.is_built_coherence(value.graph) is Build.YES:
-                raise GPflowError('Built node cannot be changed.')
-            attr.set_parent()
-            attr.set_name()
+                raise GPflowError('Parameterized object is built.')
+            param.set_parent()
+            param.set_name()
             value.set_parent(self)
             value.set_name(name)
-            object.__setattr__(self, name, value)
-        elif isinstance(attr, Param) and is_valid_param_value(value):
-            attr.assign(value, session=self.session)
+            self._set_param(name, value)
+        elif isinstance(param, Param) and is_valid_param_value(value):
+            param.assign(value, session=self.session)
         else:
-            msg = '"{0}" type cannot be assigned to "{1}" attribute.'
+            msg = '"{0}" type cannot be assigned to "{1}".'
             raise ValueError(msg.format(type(value), name))
 
     def __getattribute__(self, name):
-        if TensorConverter.tensor_mode(self):
-            attr = get_attribute(self, name)
-            if isinstance(attr, Param):
-                if isinstance(attr, DataHolder):
-                    return attr.var_tensor
-                return attr.transformed_tensor
-        return get_attribute(self, name)
+        attr = get_attribute(self, name)
+        if TensorConverter.tensor_mode(self) and isinstance(attr, Param):
+            return _tensor_mode_parameter(attr)
+        return attr
 
     def __setattr__(self, key, value):
         if key.startswith('_'):
             object.__setattr__(self, key, value)
             return
 
-        param_like = (Param, Parameterized)
         if key in self.__dict__.keys():
-            if isinstance(getattr(self, key), param_like):
+            if _is_param_like(getattr(self, key)):
                 self._update_param_attribute(key, value)
                 return
-        if isinstance(value, param_like):
+
+        if _is_param_like(value):
             if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
                 raise GPflowError('Attribute cannot be added to assembled node.')
             value.set_name(key)
             value.set_parent(self)
+
         object.__setattr__(self, key, value)
 
 
@@ -505,35 +508,43 @@ class ParamList(Parameterized):
             yield item
 
     def append(self, item):
-        if not isinstance(item, (Param, Parameterized)):
+        if not _is_param_like(item):
             raise ValueError('Not acceptable item type: {0}.'.format(type(item)))
         length = self.__len__()
         item.set_parent(self)
         item.set_name('{index}/{name}'.format(index=length, name=item.name))
         self._list.append(item)
 
+    def _get_param(self, name):
+        return self._list[name]
+
+    def _set_param(self, name, value):
+        self._list[name] = value
+
     def __len__(self):
         return len(self._list)
 
     def __getitem__(self, key):
-        """
-        If tf mode is off, this simply returns the corresponding Param .
+        param = self._get_param(key)
+        if TensorConverter.tensor_mode(self):
+            return _tensor_mode_parameter(param)
+        return param
 
-        If tf mode is on, all items will appear as their tf
-        representations.
-        """
-        o = self.sorted_params[key]
-        if isinstance(o, Param) and self._tf_mode:
-            return o._tf_array
-        return o
+    def __setitem__(self, index, value):
+        if not _is_param_like(value):
+            raise ValueError('Item must be parameter-like object.')
+        if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
+            raise GPflowError('ParamList is compiled and items are not modifiable.')
+        self._update_param_attribute(index, value)
 
-    def __setitem__(self, key, value):
-        """
-        It's not possible to assign to things in the list, but it is possible
-        to set their values by assignment.
-        """
-        self.params[key]._array[...] = value
+def _is_param_like(value):
+    return isinstance(value, (Param, Parameterized))
 
+def _tensor_mode_parameter(obj):
+    if isinstance(obj, Param):
+        if isinstance(obj, DataHolder):
+            return obj.var_tensor
+        return obj.transformed_tensor
 
 def _valid_input(value):
     if not is_valid_param_value(value):

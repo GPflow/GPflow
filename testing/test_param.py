@@ -40,7 +40,7 @@ class NamingTests(test_util.GPflowTestCase):
         self.assertEqual(m.p.full_name, 'Model/p')
 
 
-class ParamTestsScalar(test_util.GPflowTestCase):
+class ParamTests(test_util.GPflowTestCase):
     def setUp(self):
         self.p = gpflow.Param(1.0)
         self.m = gpflow.params.Parameterized()
@@ -48,10 +48,31 @@ class ParamTestsScalar(test_util.GPflowTestCase):
         self.m.b = gpflow.Param(1.0)
 
     def testAssign(self):
-        self.p.assign(2.0)
-        self.m.p = 2.0
-        self.assertTrue(self.p.read_value() == 2.0)
-        self.assertTrue(self.m.p.read_value() == 2.0)
+        with self.test_context():
+            self.p.assign(2.0)
+            self.assertTrue(self.p.read_value() == 2.0)
+            self.m.p = 2.0
+            self.assertTrue(self.m.p.read_value() == 2.0)
+
+    def testCreate(self):
+        with self.test_context():
+            tensor = tf.get_variable('a', shape=()) + 1.0
+            param = gpflow.Param(1e3)
+            external_param = gpflow.Param(tensor)
+            new_param = gpflow.Param(1.0, name='new_param')
+
+            self.m.b = external_param
+            self.assertEqual(self.m.b, external_param)
+
+            p = self.m.p
+            self.m.p = param
+            self.assertEqual(self.m.p, param)
+            self.assertEqual(p.root, p)
+            self.assertEqual(p.name, 'Param')
+
+            self.m.d = new_param
+            self.assertEqual(self.m.d, new_param)
+            self.assertEqual(self.m.d.full_name, self.m.name + '/d')
 
     def testAssignWithCompile(self):
         with self.test_context():
@@ -96,14 +117,16 @@ class ParamCompileTests(test_util.GPflowTestCase):
             self.m.p = gpflow.params.Parameterized()
             self.m.a = gpflow.Param(tensor, trainable=False)
             self.m.b = gpflow.Param(1.0)
-            self.m.c = gpflow.Param(np.array([1.0, 2,0]))
+            self.m.c = gpflow.Param(np.array([1.0, 2.0]))
             self.m.p.d = gpflow.Param(1.0)
 
     def testCompile(self):
         with self.test_context(self.graph):
+            tensor = self.m.a.var_tensor
             self.m.compile()
             self.assertEqual(len(list(self.m.parameters)), 4)
             self.assertEqual(len(list(self.m.trainable_tensors)), 3)
+            self.assertEqual(self.m.a.var_tensor, tensor)
             for param in self.m.parameters:
                 self.assertTrue(gpflow.misc.is_tensor(param.var_tensor))
                 self.assertTrue(gpflow.misc.is_tensor(param.transformed_tensor))
@@ -119,6 +142,27 @@ class ParamCompileTests(test_util.GPflowTestCase):
                 self.assertTrue(gpflow.misc.is_tensor(param.transformed_tensor))
                 self.assertTrue(gpflow.misc.is_tensor(param.prior_tensor))
 
+    def testFailsAfterCompile(self):
+        with self.test_context():
+            self.m.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                self.m.d = gpflow.Param(1.0)
+            with self.assertRaises(AttributeError):
+                param = self.m.d
+
+    def testFailsAtCompile(self):
+        with self.test_context():
+            with self.assertRaises(gpflow.GPflowError):
+                self.m.p.d.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                self.m.p.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                self.m.a.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                self.m.b.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                self.m.c.compile()
+            self.m.compile()
 
 
 class ParamTestsDeeper(test_util.GPflowTestCase):
@@ -140,15 +184,15 @@ class ParamTestsDeeper(test_util.GPflowTestCase):
         self.m.foo.bar.baz = new_p
         # Parameterized instances should not have _needs_recompile
         self.assertFalse(hasattr(self.m, '_needs_recompile'))
-        self.assertFalse(old_p.highest_parent is self.m)
+        self.assertFalse(old_p.root is self.m)
 
     def testReplacement2(self):
         old_p = self.m.foo.bar
         new_p = gpflow.params.Parameterized()
         new_p.baz = gpflow.Param(3.0)
         self.m.foo.bar = new_p
-        self.assertTrue(new_p.baz.highest_parent is self.m)
-        self.assertFalse(old_p.highest_parent is self.m)
+        self.assertTrue(new_p.baz.root is self.m)
+        self.assertFalse(old_p.root is self.m)
 
     def testName(self):
         self.assertTrue(self.m.foo.name == 'foo')
@@ -209,9 +253,9 @@ class ParamTestsWider(test_util.GPflowTestCase):
         self.m.baz = gpflow.Param(np.random.randn(3, 3))
 
     def testHighestParent(self):
-        self.assertTrue(self.m.foo.highest_parent is self.m)
-        self.assertTrue(self.m.bar.highest_parent is self.m)
-        self.assertTrue(self.m.baz.highest_parent is self.m)
+        self.assertTrue(self.m.foo.root is self.m)
+        self.assertTrue(self.m.bar.root is self.m)
+        self.assertTrue(self.m.baz.root is self.m)
 
     def testName(self):
         self.assertTrue(self.m.foo.name == 'foo')
