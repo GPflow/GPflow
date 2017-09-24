@@ -13,9 +13,8 @@
 # limitations under the License.
 
 
-import unittest
-import tensorflow as tf
 import contextlib
+import tensorflow as tf
 
 
 class GPflowTestCase(tf.test.TestCase):
@@ -27,8 +26,9 @@ class GPflowTestCase(tf.test.TestCase):
     _multiprocess_can_split_ = True
 
     @contextlib.contextmanager
-    def test_context(self):
-        with self.test_session(graph=tf.Graph()) as session:
+    def test_context(self, graph=None):
+        graph = graph if graph is not None else tf.Graph()
+        with self.test_session(graph=graph) as session:
             yield session
 
     def tearDown(self):

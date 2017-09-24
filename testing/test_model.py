@@ -89,11 +89,11 @@ class TestNeedsRecompile(GPflowTestCase):
     def test_replacement(self):
         with self.test_context():
             m = gpflow.models.Model()
-            m.p = gpflow.Parameterized()
+            m.p = gpflow.params.Parameterized()
             m.p.p = gpflow.Param(1.0)
             m._needs_recompile = False
             # replace Parameterized
-            new_p = gpflow.Parameterized()
+            new_p = gpflow.params.Parameterized()
             new_p.p = gpflow.Param(1.0)
             m.p = new_p
             self.assertTrue(m._needs_recompile is True)
