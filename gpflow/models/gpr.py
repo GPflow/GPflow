@@ -15,13 +15,14 @@
 
 from __future__ import absolute_import
 import tensorflow as tf
-from .model import GPModel
-from .densities import multivariate_normal
-from .mean_functions import Zero
-from . import likelihoods
-from .param import DataHolder
-from ._settings import settings
-float_type = settings.dtypes.float_type
+
+from gpflow import likelihoods
+
+from gpflow import settings
+from gpflow.models.model import GPModel
+from gpflow.densities import multivariate_normal
+from gpflow.params import DataHolder
+from gpflow.decors import params_as_tensors
 
 
 class GPR(GPModel):
@@ -37,32 +38,34 @@ class GPR(GPModel):
 
        \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
-    def __init__(self, X, Y, kern, mean_function=None, name='name'):
+    def __init__(self, X, Y, kern, mean_function=None, name=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         kern, mean_function are appropriate GPflow objects
         """
         likelihood = likelihoods.Gaussian()
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name)
+        X = DataHolder(X)
+        Y = DataHolder(Y)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name=name)
         self.num_latent = Y.shape[1]
 
-    def build_likelihood(self):
+    @params_as_tensors
+    def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the likelihood.
 
             \log p(Y | theta).
 
         """
-        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=float_type) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.tf_float) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
 
         return multivariate_normal(self.Y, m, L)
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -74,7 +77,7 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=float_type) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.tf_float) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
         V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))

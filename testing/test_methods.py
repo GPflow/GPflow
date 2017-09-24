@@ -19,7 +19,7 @@ import unittest
 import tensorflow as tf
 import gpflow
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from gpflow.minibatch import SequenceIndices
 
 class TestMethods(GPflowTestCase):
@@ -34,14 +34,14 @@ class TestMethods(GPflowTestCase):
 
         # make one of each model
         self.ms = []
-        #for M in (gpflow.gpmc.GPMC, gpflow.vgp.VGP):
-        for M in (gpflow.vgp.VGP, gpflow.gpmc.GPMC):
+        #for M in (gpflow.models.GPMC, gpflow.models.VGP):
+        for M in (gpflow.models.VGP, gpflow.models.GPMC):
             self.ms.append(M(self.X, self.Y, self.kern, self.lik))
-        for M in (gpflow.sgpmc.SGPMC, gpflow.svgp.SVGP):
+        for M in (gpflow.models.SGPMC, gpflow.models.SVGP):
             self.ms.append(M(self.X, self.Y, self.kern, self.lik, self.Z))
-        self.ms.append(gpflow.gpr.GPR(self.X, self.Y, self.kern))
-        self.ms.append(gpflow.sgpr.SGPR(self.X, self.Y, self.kern, Z=self.Z))
-        self.ms.append(gpflow.sgpr.GPRFITC(self.X, self.Y, self.kern, Z=self.Z))
+        self.ms.append(gpflow.models.GPR(self.X, self.Y, self.kern))
+        self.ms.append(gpflow.models.SGPR(self.X, self.Y, self.kern, Z=self.Z))
+        self.ms.append(gpflow.models.GPRFITC(self.X, self.Y, self.kern, Z=self.Z))
 
     def test_all(self):
         # test sizes.
@@ -54,8 +54,8 @@ class TestMethods(GPflowTestCase):
     def test_tf_optimize(self):
         for m in self.ms:
             trainer = tf.train.AdamOptimizer(learning_rate=0.001)
-            if isinstance(m, (gpflow.gpr.GPR, gpflow.vgp.VGP,
-                              gpflow.svgp.SVGP, gpflow.gpmc.GPMC)):
+            if isinstance(m, (gpflow.models.GPR, gpflow.models.VGP,
+                              gpflow.models.SVGP, gpflow.models.GPMC)):
                 optimizeOp = m.compile(optimizer=trainer)
                 self.assertTrue(optimizeOp is not None)
 
@@ -95,11 +95,11 @@ class TestSVGP(GPflowTestCase):
         self.Z = self.rng.randn(3, 1)
 
     def test_white(self):
-        m1 = gpflow.svgp.SVGP(self.X, self.Y,
+        m1 = gpflow.models.SVGP(self.X, self.Y,
                               kern=gpflow.kernels.RBF(1),
                               likelihood=gpflow.likelihoods.Exponential(),
                               Z=self.Z, q_diag=True, whiten=True)
-        m2 = gpflow.svgp.SVGP(self.X, self.Y,
+        m2 = gpflow.models.SVGP(self.X, self.Y,
                               kern=gpflow.kernels.RBF(1),
                               likelihood=gpflow.likelihoods.Exponential(),
                               Z=self.Z, q_diag=False, whiten=True)
@@ -117,7 +117,7 @@ class TestSVGP(GPflowTestCase):
                                     m2._objective(m2.get_free_state())[0]))
 
     def test_notwhite(self):
-        m1 = gpflow.svgp.SVGP(self.X,
+        m1 = gpflow.models.SVGP(self.X,
                               self.Y,
                               kern=gpflow.kernels.RBF(1) +
                                    gpflow.kernels.White(1),
@@ -125,7 +125,7 @@ class TestSVGP(GPflowTestCase):
                               Z=self.Z,
                               q_diag=True,
                               whiten=False)
-        m2 = gpflow.svgp.SVGP(self.X,
+        m2 = gpflow.models.SVGP(self.X,
                               self.Y,
                               kern=gpflow.kernels.RBF(1) +
                                    gpflow.kernels.White(1),
@@ -149,7 +149,7 @@ class TestSVGP(GPflowTestCase):
         """
         In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
         """
-        m1 = gpflow.svgp.SVGP(self.X, self.Y,
+        m1 = gpflow.models.SVGP(self.X, self.Y,
                               kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
                               likelihood=gpflow.likelihoods.Exponential(),
                               Z=self.Z)
@@ -183,7 +183,7 @@ class TestStochasticGradients(GPflowTestCase):
         return newX, newY
 
     def getModel(self,X,Y,Z,minibatch_size):
-        model = gpflow.svgp.SVGP(X,
+        model = gpflow.models.SVGP(X,
                                  Y,
                                  kern = gpflow.kernels.RBF(1),
                                  likelihood = gpflow.likelihoods.Gaussian(),
@@ -264,16 +264,16 @@ class TestSparseMCMC(GPflowTestCase):
     points, the sparse mcmc is the same as full mcmc
     """
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             rng = np.random.RandomState(0)
             X = rng.randn(10, 1)
             Y = rng.randn(10, 1)
             v_vals = rng.randn(10, 1)
 
             lik = gpflow.likelihoods.StudentT
-            self.m1 = gpflow.gpmc.GPMC(
+            self.m1 = gpflow.models.GPMC(
                 X=X, Y=Y, kern=gpflow.kernels.Exponential(1), likelihood=lik())
-            self.m2 = gpflow.sgpmc.SGPMC(
+            self.m2 = gpflow.models.SGPMC(
                 X=X, Y=Y,
                 kern=gpflow.kernels.Exponential(1),
                 likelihood=lik(), Z=X.copy())
@@ -289,7 +289,7 @@ class TestSparseMCMC(GPflowTestCase):
             self.m2.compile()
 
     def test_likelihoods_and_gradients(self):
-        with self.test_session():
+        with self.test_context():
             f1, _ = self.m1._objective(self.m1.get_free_state())
             f2, _ = self.m2._objective(self.m2.get_free_state())
             self.assertTrue(np.allclose(f1, f2))

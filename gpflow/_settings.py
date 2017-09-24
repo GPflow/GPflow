@@ -1,14 +1,15 @@
-from six.moves import configparser
-import copy
 import os
+import copy
 import collections
-import tensorflow as tf
+
 from collections import OrderedDict
+from six.moves import configparser
 
-import logging
+import numpy as np
+import tensorflow as tf
 
 
-class SettingsContextManager(object):
+class _SettingsContextManager(object):
     def __init__(self, manager, tmp_settings):
         self._manager = manager
         self._tmp_settings = tmp_settings
@@ -20,9 +21,9 @@ class SettingsContextManager(object):
         self._manager.pop()
 
 
-class SettingsManager(object):
-    def __init__(self, set):
-        self._cur_settings = set
+class _SettingsManager(object):
+    def __init__(self, cur_settings):
+        self._cur_settings = cur_settings
         self._settings_stack = []
 
     def __getattr__(self, name):
@@ -31,9 +32,9 @@ class SettingsManager(object):
         except KeyError:
             raise AttributeError("Unknown setting.")
 
-    def push(self, settings):
+    def push(self, extra_settings):
         self._settings_stack.append(self._cur_settings)
-        self._cur_settings = settings
+        self._cur_settings = extra_settings
 
     def pop(self):
         rem = self._cur_settings
@@ -41,19 +42,35 @@ class SettingsManager(object):
         return rem
 
     def temp_settings(self, tmp_settings):
-        return SettingsContextManager(self, tmp_settings)
+        return _SettingsContextManager(self, tmp_settings)
 
     def get_settings(self):
         return copy.deepcopy(self._cur_settings)
 
+    @property
+    def jitter(self):
+        return self.numerics.jitter_level
 
-class MutableNamedTuple(OrderedDict):
+    @property
+    def tf_float(self):
+        return self.dtypes.float_type
+
+    @property
+    def tf_int(self):
+        return self.dtypes.int_type
+
+    @property
+    def np_float(self):
+        return np.float32 if self.tf_float is tf.float32 else np.float64
+
+
+class _MutableNamedTuple(OrderedDict):
     """
     A class that doubles as a mutable named tuple, to allow settings
     to be re-set during
     """
     def __init__(self, *args, **kwargs):
-        super(MutableNamedTuple, self).__init__(*args, **kwargs)
+        super(_MutableNamedTuple, self).__init__(*args, **kwargs)
         self._settings_stack = []
         self._initialised = True
 
@@ -65,13 +82,13 @@ class MutableNamedTuple(OrderedDict):
 
     def __setattr__(self, name, value):
         if not hasattr(self, "_initialised"):
-            super(MutableNamedTuple, self).__setattr__(name, value)
+            super(_MutableNamedTuple, self).__setattr__(name, value)
         else:
-            super(MutableNamedTuple, self).__setitem__(name, value)
+            super(_MutableNamedTuple, self).__setitem__(name, value)
 
 
 # a very simple parser
-def parse(string):
+def _parse(string):
     """
     Very simple config values parser.
     """
@@ -96,7 +113,7 @@ def parse(string):
             return string
 
 
-def namedtuplify(mapping):
+def _namedtuplify(mapping):
     """
     Make the dictionary into a nested series of named tuples.
     This is what allows accessing by attribute: settings.numerics.jitter
@@ -104,17 +121,17 @@ def namedtuplify(mapping):
     """
     if isinstance(mapping, collections.Mapping):
         for key, value in list(mapping.items()):
-            mapping[key] = namedtuplify(value)
+            mapping[key] = _namedtuplify(value)
         try:
             mapping.pop('__name__')
         except KeyError:
             pass
         # return collections.namedtuple('settingsa', dict(**mapping))(**mapping)
-        return MutableNamedTuple(mapping)
-    return parse(mapping)
+        return _MutableNamedTuple(mapping)
+    return _parse(mapping)
 
 
-def read_config_file(path=None):
+def _read_config_file(path=None):
     """
     Reads config file.
     First look for config file in the current directory, then in the
@@ -139,6 +156,7 @@ def read_config_file(path=None):
     return cfg
 
 
-config = read_config_file()
-loaded_settings = namedtuplify(config._sections)
-settings = SettingsManager(loaded_settings)
+__CONFIG = _read_config_file()
+__LOADED_SETTINGS = _namedtuplify(__CONFIG._sections)
+
+SETTINGS = _SettingsManager(__LOADED_SETTINGS) # pylint: disable=C0103

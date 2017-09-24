@@ -1,39 +1,41 @@
-import gpflow
+import unittest
 import tensorflow as tf
 import numpy as np
-import unittest
 
-from testing.gpflow_testcase import GPflowTestCase
+import gpflow
+from gpflow.test_util import GPflowTestCase
 
 
-class DumbModel(gpflow.model.Model):
+class DumbModel(gpflow.models.Model):
     def __init__(self):
-        gpflow.model.Model.__init__(self)
-        self.a = gpflow.param.Param(3.)
+        gpflow.models.Model.__init__(self)
+        self.a = gpflow.Param(3.)
 
-    def build_likelihood(self):
+    @gpflow.params_as_tensors
+    def _build_likelihood(self):
         return -tf.square(self.a)
 
 
 class NoArgsModel(DumbModel):
-    @gpflow.model.AutoFlow()
+    @gpflow.autoflow()
+    @gpflow.params_as_tensors
     def function(self):
         return self.a
 
 
 class TestNoArgs(GPflowTestCase):
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.m = NoArgsModel()
             self.m.compile()
 
     def test_return(self):
-        with self.test_session():
+        with self.test_context():
             self.assertTrue(np.allclose(self.m.function(), 3.))
 
     def test_kill(self):
         # make sure autoflow dicts are removed when _needs_recompile is set.
-        with self.test_session():
+        with self.test_context():
             keys = [k for k in self.m.__dict__.keys() if k[-11:] == '_AF_storage']
             self.assertTrue(len(keys) == 0, msg="no AF storage should be present to start.")
 
@@ -49,7 +51,7 @@ class TestNoArgs(GPflowTestCase):
 
 
 class AddModel(DumbModel):
-    @gpflow.model.AutoFlow((tf.float64,), (tf.float64,))
+    @gpflow.models.AutoFlow((tf.float64,), (tf.float64,))
     def add(self, x, y):
         return tf.add(x, y)
 
@@ -61,7 +63,7 @@ class TestShareArgs(GPflowTestCase):
     instances.
     """
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.m1 = AddModel()
             self.m1.compile()
             self.m2 = AddModel()
@@ -71,7 +73,7 @@ class TestShareArgs(GPflowTestCase):
             self.y = rng.randn(10, 20)
 
     def test_share_args(self):
-        with self.test_session():
+        with self.test_context():
             self.m1.add(self.x, self.y)
             self.m2.add(self.x, self.y)
             self.m1.add(self.x, self.y)
@@ -111,7 +113,7 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
         with self.graph.as_default():
             m4.add(self.x, self.y)
 
-        with self.test_session() as sess_default:
+        with self.test_context() as sess_default:
             m5.add(self.x, self.y)
 
         sessions = [getattr(m, storage_name)['session'] for m in self.models]
@@ -133,7 +135,7 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
         self.assertTrue(isinstance(sess4_second_run, tf.Session))
         self.assertNotEqual(sess4, sess4_second_run)
 
-        with self.test_session():
+        with self.test_context():
             m5.add(self.x, self.y, graph=sess_default.graph)
         sess5_second_run = getattr(m5, storage_name)['session']
         self.assertTrue(isinstance(sess5_second_run, tf.Session))
@@ -169,13 +171,13 @@ class TestAutoFlowSessionGraphArguments(GPflowTestCase):
         with self.graph.as_default():
             assert_add(m4)
 
-        with self.test_session():
+        with self.test_context():
             assert_add(m5)
 
 
 class TestAdd(GPflowTestCase):
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.m = AddModel()
             self.m.compile()
             rng = np.random.RandomState(0)
@@ -183,29 +185,29 @@ class TestAdd(GPflowTestCase):
             self.y = rng.randn(10, 20)
 
     def test_add(self):
-        with self.test_session():
+        with self.test_context():
             self.assertTrue(np.allclose(self.x + self.y, self.m.add(self.x, self.y)))
 
 
 class IncrementModel(DumbModel):
     def __init__(self):
         DumbModel.__init__(self)
-        self.a = gpflow.param.DataHolder(np.array([3.]))
+        self.a = gpflow.DataHolder(np.array([3.]))
 
-    @gpflow.model.AutoFlow((tf.float64,))
+    @gpflow.models.AutoFlow((tf.float64,))
     def inc(self, x):
         return x + self.a
 
 
 class TestDataHolder(GPflowTestCase):
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.m = IncrementModel()
             rng = np.random.RandomState(0)
             self.x = rng.randn(10, 20)
 
     def test_add(self):
-        with self.test_session():
+        with self.test_context():
             self.assertTrue(np.allclose(self.x + 3, self.m.inc(self.x)))
 
 
@@ -213,26 +215,26 @@ class TestGPmodel(GPflowTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
-        self.m = gpflow.svgp.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
+        self.m = gpflow.models.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
                                   likelihood=gpflow.likelihoods.StudentT(),
                                   Z=X[::2].copy())
         self.Xtest = np.random.randn(100, 1)
         self.Ytest = np.random.randn(100, 1)
 
     def test_predict_f(self):
-        with self.test_session():
+        with self.test_context():
             mu, var = self.m.predict_f(self.Xtest)
 
     def test_predict_y(self):
-        with self.test_session():
+        with self.test_context():
             mu, var = self.m.predict_y(self.Xtest)
 
     def test_predict_density(self):
-        with self.test_session():
+        with self.test_context():
             self.m.predict_density(self.Xtest, self.Ytest)
 
     def test_multiple_AFs(self):
-        with self.test_session():
+        with self.test_context():
             self.m.compute_log_likelihood()
             self.m.compute_log_prior()
             self.m.compute_log_likelihood()
@@ -244,7 +246,7 @@ class TestResetGraph(GPflowTestCase):
         k = gpflow.kernels.Matern32(1)
         X, Y = np.random.randn(2, 10, 1)
         self.Xnew = np.random.randn(5, 1)
-        self.m = gpflow.gpr.GPR(X, Y, kern=k)
+        self.m = gpflow.models.GPR(X, Y, kern=k)
 
     def test(self):
         mu, var = self.m.predict_f(self.Xnew)
@@ -262,7 +264,7 @@ class TestFixAndPredict(GPflowTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
-        self.m = gpflow.svgp.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
+        self.m = gpflow.models.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
                                   likelihood=gpflow.likelihoods.StudentT(),
                                   Z=X[::2].copy())
         self.Xtest = np.random.randn(100, 1)
@@ -283,7 +285,7 @@ class TestSVGP(GPflowTestCase):
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)
         Z = rng.randn(3, 1)
-        model = gpflow.svgp.SVGP(X=X, Y=Y, kern=gpflow.kernels.RBF(1), likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
+        model = gpflow.models.SVGP(X=X, Y=Y, kern=gpflow.kernels.RBF(1), likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
         model.compute_log_likelihood()
 
 

@@ -1,4 +1,5 @@
 # Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews, Alexis Boukouvalas
+# Copyright 2017 Artem Artemev @awav
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,70 +15,23 @@
 
 
 from __future__ import absolute_import
-from . import densities, transforms
+
 import tensorflow as tf
 import numpy as np
-from .param import Parameterized, Param, ParamList
-from ._settings import settings
-from .quadrature import hermgauss
 
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+from gpflow import settings
+from gpflow import densities
+from gpflow import transforms
+
+from gpflow.decors import params_as_tensors
+from gpflow.params import Param, Parameterized, ParamList
+from gpflow.quadrature import hermgauss
 
 
 class Likelihood(Parameterized):
-    def __init__(self):
-        Parameterized.__init__(self)
-        self.scoped_keys.extend(['logp', 'variational_expectations', 'predict_mean_and_var', 'predict_density'])
+    def __init__(self, name=None):
+        super(Likelihood, self).__init__(name)
         self.num_gauss_hermite_points = 20
-
-    def logp(self, F, Y):
-        """
-        Return the log density of the data given the function values.
-        """
-        raise NotImplementedError("implement the logp function\
-                                  for this likelihood")
-
-    def _check_targets(self, Y_np):
-        """
-        Check that the Y values are valid for the likelihood. Y_np is a numpy array.
-
-        The base class check is that the array has two dimensions and consists only of floats. The float requirement
-        is so that AutoFlow can work with Model.predict_density.
-        """
-        if not len(Y_np.shape) == 2:
-            raise ValueError('targets must be shape N x D')
-        if np.array(list(Y_np)).dtype != np_float_type:
-            raise ValueError('use {}, even for discrete variables'.format(np_float_type))
-
-    def conditional_mean(self, F):
-        """
-        Given a value of the latent function, compute the mean of the data
-
-        If this object represents
-
-            p(y|f)
-
-        then this method computes
-
-            \int y p(y|f) dy
-        """
-        raise NotImplementedError
-
-    def conditional_variance(self, F):
-        """
-        Given a value of the latent function, compute the variance of the data
-
-        If this object represents
-
-            p(y|f)
-
-        then this method computes
-
-            \int y^2 p(y|f) dy  - [\int y p(y|f) dy] ^ 2
-
-        """
-        raise NotImplementedError
 
     def predict_mean_and_var(self, Fmu, Fvar):
         """
@@ -182,27 +136,47 @@ class Likelihood(Parameterized):
         logp = self.logp(X, Y)
         return tf.reshape(tf.matmul(logp, gh_w), shape)
 
+    def _check_targets(self, Y_np):  # pylint: disable=R0201
+        """
+        Check that the Y values are valid for the likelihood.
+        Y_np is a numpy array.
+
+        The base class check is that the array has two dimensions
+        and consists only of floats. The float requirement is so that AutoFlow
+        can work with Model.predict_density.
+        """
+        if not len(Y_np.shape) == 2:
+            raise ValueError('targets must be shape N x D')
+        if np.array(list(Y_np)).dtype != settings.np_float:
+            raise ValueError('use {}, even for discrete variables'.format(settings.np_float))
+
 
 class Gaussian(Likelihood):
     def __init__(self):
         Likelihood.__init__(self)
         self.variance = Param(1.0, transforms.positive)
 
+    @params_as_tensors
     def logp(self, F, Y):
         return densities.gaussian(F, Y, self.variance)
 
-    def conditional_mean(self, F):
+    @params_as_tensors
+    def conditional_mean(self, F):  # pylint: disable=R0201
         return tf.identity(F)
 
+    @params_as_tensors
     def conditional_variance(self, F):
         return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
+    @params_as_tensors
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
 
+    @params_as_tensors
     def predict_density(self, Fmu, Fvar, Y):
         return densities.gaussian(Fmu, Y, Fvar + self.variance)
 
+    @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
         return -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(self.variance) \
                - 0.5 * (tf.square(Y - Fmu) + Fvar) / self.variance
@@ -229,7 +203,7 @@ class Poisson(Likelihood):
         self.binsize = np.double(binsize)
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Poisson, self)._check_targets(Y_np)
         if np.any(Y_np < 0):
             raise ValueError('poisson variables must be positive')
         if not np.all(np.equal(np.mod(Y_np, 1), 0)):
@@ -248,8 +222,7 @@ class Poisson(Likelihood):
         if self.invlink is tf.exp:
             return Y * Fmu - tf.exp(Fmu + Fvar / 2) * self.binsize \
                    - tf.lgamma(Y + 1) + Y * tf.log(self.binsize)
-        else:
-            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+        return super(Poisson, self).variational_expectations(Fmu, Fvar, Y)
 
 class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):
@@ -257,7 +230,7 @@ class Exponential(Likelihood):
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Exponential, self)._check_targets(Y_np)
         if np.any(Y_np < 0):
             raise ValueError('exponential variables must be positive')
 
@@ -272,9 +245,8 @@ class Exponential(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return -tf.exp(-Fmu + Fvar / 2) * Y - Fmu
-        else:
-            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+            return - tf.exp(-Fmu + Fvar / 2) * Y - Fmu
+        return super(Exponential, self).variational_expectations(Fmu, Fvar, Y)
 
 
 class StudentT(Likelihood):
@@ -283,12 +255,15 @@ class StudentT(Likelihood):
         self.deg_free = deg_free
         self.scale = Param(1.0, transforms.positive)
 
+    @params_as_tensors
     def logp(self, F, Y):
         return densities.student_t(Y, F, self.scale, self.deg_free)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         return tf.identity(F)
 
+    @params_as_tensors
     def conditional_variance(self, F):
         return F * 0.0 + (self.deg_free / (self.deg_free - 2.0))
 
@@ -303,7 +278,7 @@ class Bernoulli(Likelihood):
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Bernoulli, self)._check_targets(Y_np)
         Y_set = set(Y_np.flatten())
         if len(Y_set) > 2 or len(Y_set - set([1.])) > 1:
             raise Warning('all bernoulli variables should be in {1., k}, for some k')
@@ -342,20 +317,24 @@ class Gamma(Likelihood):
         self.shape = Param(1.0, transforms.positive)
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Gamma, self)._check_targets(Y_np)
         if np.any(Y_np < 0):
             raise ValueError('gamma variables must be non-negative')
 
+    @params_as_tensors
     def logp(self, F, Y):
         return densities.gamma(self.shape, self.invlink(F), Y)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         return self.shape * self.invlink(F)
 
+    @params_as_tensors
     def conditional_variance(self, F):
         scale = self.invlink(F)
         return self.shape * tf.square(scale)
 
+    @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return -self.shape * Fmu - tf.lgamma(self.shape) \
@@ -387,19 +366,22 @@ class Beta(Likelihood):
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(Beta, self)._check_targets(Y_np)
         if np.any(Y_np < 0.) or np.any(Y_np > 1.):
             raise ValueError('beta variables must be in [0, 1]')
 
+    @params_as_tensors
     def logp(self, F, Y):
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
         return densities.beta(alpha, beta, Y)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         return self.invlink(F)
 
+    @params_as_tensors
     def conditional_variance(self, F):
         mean = self.invlink(F)
         return (mean - tf.square(mean)) / (self.scale + 1.)
@@ -432,7 +414,7 @@ class RobustMax(object):
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         Y = tf.cast(Y, tf.int64)
         # work out what the mean and variance is of the indicated latent function.
-        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), float_type)
+        oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 1., 0.), settings.tf_float)
         mu_selected = tf.reduce_sum(oh_on * mu, 1)
         var_selected = tf.reduce_sum(oh_on * var, 1)
 
@@ -448,7 +430,7 @@ class RobustMax(object):
         cdfs = cdfs * (1 - 2e-4) + 1e-4
 
         # blank out all the distances on the selected latent function
-        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), float_type)
+        oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1,)), self.num_classes, 0., 1.), settings.tf_float)
         cdfs = cdfs * tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
 
         # take the product over the latent functions, and the sum over the GH grid.
@@ -471,7 +453,7 @@ class MultiClass(Likelihood):
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
+        super(MultiClass, self)._check_targets(Y_np)
         if not set(Y_np.flatten()).issubset(set(np.arange(self.num_classes))):
             raise ValueError('multiclass likelihood expects inputs to be in {0., 1., 2.,...,k-1}')
         if Y_np.shape[1] != 1:
@@ -480,8 +462,8 @@ class MultiClass(Likelihood):
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
             hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
-            yes = tf.ones(tf.shape(Y), dtype=float_type) - self.invlink.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=float_type) + self.invlink._eps_K1
+            yes = tf.ones(tf.shape(Y), dtype=settings.tf_float) - self.invlink.epsilon
+            no = tf.zeros(tf.shape(Y), dtype=settings.tf_float) + self.invlink._eps_K1
             p = tf.where(hits, yes, no)
             return tf.log(p)
         else:
@@ -625,6 +607,7 @@ class Ordinal(Likelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Param(1.0, transforms.positive)
 
+    @params_as_tensors
     def logp(self, F, Y):
         Y = tf.cast(Y, tf.int64)
         scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
@@ -635,6 +618,7 @@ class Ordinal(Likelihood):
         return tf.log(probit(selected_bins_left - F / self.sigma) -
                       probit(selected_bins_right - F / self.sigma) + 1e-6)
 
+    @params_as_tensors
     def _make_phi(self, F):
         """
         A helper function for making predictions. Constructs a probability
@@ -648,11 +632,13 @@ class Ordinal(Likelihood):
         return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
             - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
+    @params_as_tensors
     def conditional_mean(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))
         return tf.reshape(tf.matmul(phi, Ys), tf.shape(F))
 
+    @params_as_tensors
     def conditional_variance(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))

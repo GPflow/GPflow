@@ -4,7 +4,7 @@ import numpy as np
 import unittest
 import tensorflow as tf
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from nose.plugins.attrib import attr
 
 
@@ -15,7 +15,7 @@ class TestEquivalence(GPflowTestCase):
     with fixed lengthscale is equivalent with normal GP regression.
     """
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             rng = np.random.RandomState(0)
             X = [rng.rand(10, 2)*10, rng.rand(20, 2)*10]
             Y = [np.sin(x) + 0.9 * np.cos(x*1.6) + rng.randn(*x.shape) * 0.8 for x in X]
@@ -30,12 +30,12 @@ class TestEquivalence(GPflowTestCase):
             # two independent vgps for two sets of data
             k0 = gpflow.kernels.RBF(2)
             k0.lengthscales.fixed = True
-            self.vgp0 = gpflow.vgp.VGP(X[0], Y[0], kern=k0,
+            self.vgp0 = gpflow.models.VGP(X[0], Y[0], kern=k0,
                                        mean_function=gpflow.mean_functions.Constant(),
                                        likelihood=gpflow.likelihoods.Gaussian())
             k1 = gpflow.kernels.RBF(2)
             k1.lengthscales.fixed = True
-            self.vgp1 = gpflow.vgp.VGP(X[1], Y[1], kern=k1,
+            self.vgp1 = gpflow.models.VGP(X[1], Y[1], kern=k1,
                                        mean_function=gpflow.mean_functions.Constant(),
                                        likelihood=gpflow.likelihoods.Gaussian())
             # coregionalized gpr
@@ -49,7 +49,7 @@ class TestEquivalence(GPflowTestCase):
 
             mean_c = gpflow.mean_functions.SwitchedMeanFunction(
                 [gpflow.mean_functions.Constant(), gpflow.mean_functions.Constant()])
-            self.cvgp = gpflow.vgp.VGP(X_augumented, Y_augumented,
+            self.cvgp = gpflow.models.VGP(X_augumented, Y_augumented,
                                        kern=kc*coreg,
                                        mean_function=mean_c,
                                        likelihood=lik,
@@ -60,7 +60,7 @@ class TestEquivalence(GPflowTestCase):
             self.cvgp.optimize(disp=False, maxiter=300)
 
     def test_all(self):
-        with self.test_session():
+        with self.test_context():
             # check variance
             self.assertTrue(np.allclose(
                 self.vgp0.likelihood.variance.value,

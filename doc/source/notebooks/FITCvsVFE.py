@@ -20,59 +20,59 @@ def readCsvFile( fileName ):
     dataList = []
     for row in reader:
         dataList.append( [float(elem) for elem in row ] )
-    
+
     return np.array( dataList )
-    
+
 def getTrainingTestData():
     overallX = readCsvFile( 'data/snelson_train_inputs' )
     overallY = readCsvFile( 'data/snelson_train_outputs' )
-    
+
     trainIndeces = []
     testIndeces = []
-    
+
     nPoints = overallX.shape[0]
-    
+
     for index in range(nPoints):
         if ( (index%4) == 0):
             trainIndeces.append( index )
         else:
             testIndeces.append( index )
-            
+
     xtrain = overallX[ trainIndeces,: ]
     xtest = overallX[ testIndeces, : ]
     ytrain = overallY[ trainIndeces, : ]
     ytest  = overallY[ testIndeces, : ]
-    
+
     return xtrain,ytrain,xtest,ytest
 
 def getLogPredictiveDensities( targetValues, means, variances ):
     assert( targetValues.flatten().shape == targetValues.shape )
     assert( means.flatten().shape == means.shape )
     assert( variances.flatten().shape == variances.shape )
-    
+
     assert( len(targetValues) == len(means) )
-    assert( len(variances) == len(means) ) 
-    
+    assert( len(variances) == len(means) )
+
     deltas = targetValues - means
     mahalanobisTerms = -0.5*deltas**2/variances
     normalizationTerms = -0.5 * np.log( variances ) - 0.5 * np.log(2.*np.pi)
     return mahalanobisTerms + normalizationTerms
-    
+
 def getKernel():
     return gpflow.kernels.RBF(1)
 
 def getRegressionModel(X,Y):
-    m = gpflow.gpr.GPR(X, Y, kern=getKernel() )
+    m = gpflow.models.GPR(X, Y, kern=getKernel() )
     m.likelihood.variance = 1.
     m.kern.lengthscales = 1.
     m.kern.variance = 1.
     return m
-    
+
 def getSparseModel(X,Y,isFITC=False):
     if not(isFITC):
-        m = gpflow.sgpr.SGPR(X, Y, kern=getKernel(),  Z=X.copy() )
+        m = gpflow.models.SGPR(X, Y, kern=getKernel(),  Z=X.copy() )
     else:
-        m = gpflow.sgpr.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy() )
+        m = gpflow.models.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy() )
     return m
 
 def printModelParameters( model ):
@@ -96,7 +96,7 @@ def trainSparseModel(xtrain,ytrain,exact_model,isFITC, xtest, ytest):
     for repeatIndex in range(nRepeats):
         print("repeatIndex ",repeatIndex)
         sparse_model.optimize(disp=False, maxiter= 2000, tol=tol, callback=callback)
-    return sparse_model, callback    
+    return sparse_model, callback
 
 def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_inducing_points, ax_optimization, iterations, log_likelihoods,hold_out_likelihood, title):
     plotPredictions( ax_predictions, exact_model, 'g', label='Exact' )
@@ -129,7 +129,7 @@ class cb():
         self.hold_out_likelihood = []
         self.n_iters = []
         self.counter = 0
-        
+
     def __call__(self, info):
         if (self.counter%self.holdout_inverval)==0 or (self.counter<=10):
             predictive_mean, predictive_variance = self.model.predict_y( self.xtest )
@@ -142,7 +142,7 @@ def stretch( lenNIters, initialValues ):
     stretched = np.ones(lenNIters) * initialValues[-1]
     stretched[0:len(initialValues)] = initialValues
     return stretched
-        
+
 def snelsonDemo():
     from matplotlib import pyplot as plt
     from IPython import embed
@@ -158,7 +158,7 @@ def snelsonDemo():
     plotPredictions( axes, exact_model, 'g', None )
 
     figB, axes = plt.subplots(3,2)
-   
+
     #run sparse model on training data intialized from exact optimal solution.
     VFEmodel, VFEcb = trainSparseModel(xtrain,ytrain,exact_model,False,xtest,ytest)
     FITCmodel, FITCcb = trainSparseModel(xtrain,ytrain,exact_model,True,xtest,ytest)
@@ -169,20 +169,19 @@ def snelsonDemo():
     printModelParameters( VFEmodel )
     print("Sparse model parameters for FITC optimization \n")
     printModelParameters( FITCmodel )
-    
+
     VFEiters = FITCcb.n_iters
     VFElog_likelihoods = stretch( len(VFEiters), VFEcb.log_likelihoods )
     VFEhold_out_likelihood = stretch(  len(VFEiters), VFEcb.hold_out_likelihood )
-    
+
     plotComparisonFigure( xtrain, VFEmodel, exact_model, axes[0,0], axes[1,0], axes[2,0], VFEiters, VFElog_likelihoods.tolist(), VFEhold_out_likelihood.tolist(), "VFE" )
     plotComparisonFigure( xtrain, FITCmodel, exact_model, axes[0,1], axes[1,1], axes[2,1],FITCcb.n_iters, FITCcb.log_likelihoods, FITCcb.hold_out_likelihood , "FITC" )
 
     axes[0,0].set_title('VFE', loc='center', fontdict = {'fontsize': 22} )
     axes[0,1].set_title('FITC', loc='center', fontdict = {'fontsize': 22} )
-        
+
     embed()
 
-    
+
 if __name__ == '__main__':
     snelsonDemo()
-    

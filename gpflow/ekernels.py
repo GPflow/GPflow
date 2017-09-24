@@ -1,14 +1,13 @@
 from functools import reduce
 import warnings
 import tensorflow as tf
-from . import kernels
-from ._settings import settings
 
-from .quadrature import mvhermgauss
 from numpy import pi as nppi
 
-int_type = settings.dtypes.int_type
-float_type = settings.dtypes.float_type
+from gpflow import settings
+from gpflow import kernels
+from gpflow.quadrature import mvhermgauss
+from gpflow.decors import params_as_tensors
 
 
 class RBF(kernels.RBF):
@@ -20,6 +19,7 @@ class RBF(kernels.RBF):
         """
         return self.Kdiag(X)
 
+    @params_as_tensors
     def eKxz(self, Z, Xmu, Xcov):
         """
         Also known as phi_1: <K_{x, Z}>_{q(x)}.
@@ -32,7 +32,7 @@ class RBF(kernels.RBF):
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
         D = tf.shape(Xmu)[1]
-        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.tf_float) + self.lengthscales
 
         vec = tf.expand_dims(Xmu, 2) - tf.expand_dims(tf.transpose(Z), 0)  # NxDxM
         chols = tf.cholesky(tf.expand_dims(tf.matrix_diag(lengthscales ** 2), 0) + Xcov)
@@ -44,6 +44,7 @@ class RBF(kernels.RBF):
 
         return self.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
 
+    @params_as_tensors
     def exKxz(self, Z, Xmu, Xcov):
         """
         <x_t K_{x_{t-1}, Z}>_q_{x_{t-1:t}}
@@ -53,7 +54,7 @@ class RBF(kernels.RBF):
         :return: NxMxD
         """
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, dtype=int_type),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, dtype=settings.tf_int),
                             message="Currently cannot handle slicing in exKxz."),
             tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
         ]):
@@ -66,11 +67,11 @@ class RBF(kernels.RBF):
         Xsigmc = Xsigmb[1, :, :, :]  # NxDxD
         Xmum = tf.slice(Xmu, [0, 0], tf.stack([N, -1]))
         Xmup = Xmu[1:, :]
-        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.tf_float) + self.lengthscales
         scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
 
         det = tf.matrix_determinant(
-            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=float_type), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
+            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.tf_float), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
         )  # N
 
         vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmum, 2)  # NxDxM
@@ -81,6 +82,7 @@ class RBF(kernels.RBF):
 
         return self.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
+    @params_as_tensors
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
         Also known as Phi_2.
@@ -95,10 +97,10 @@ class RBF(kernels.RBF):
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
-        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=float_type) + self.lengthscales
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.tf_float) + self.lengthscales
 
         Kmms = tf.sqrt(self.K(Z, presliced=True)) / self.variance ** 0.5
-        scalemat = tf.expand_dims(tf.eye(D, dtype=float_type), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
+        scalemat = tf.expand_dims(tf.eye(D, dtype=settings.tf_float), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
         det = tf.matrix_determinant(scalemat)
 
         mat = Xcov + 0.5 * tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0)  # NxDxD
@@ -114,6 +116,7 @@ class RBF(kernels.RBF):
 
 
 class Linear(kernels.Linear):
+    @params_as_tensors
     def eKdiag(self, X, Xcov):
         if self.ARD:
             raise NotImplementedError
@@ -122,6 +125,7 @@ class Linear(kernels.Linear):
         Xcov = self._slice_cov(Xcov)
         return self.variance * (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.matrix_diag_part(Xcov), 1))
 
+    @params_as_tensors
     def eKxz(self, Z, Xmu, Xcov):
         if self.ARD:
             raise NotImplementedError
@@ -129,9 +133,10 @@ class Linear(kernels.Linear):
         Z, Xmu = self._slice(Z, Xmu)
         return self.variance * tf.matmul(Xmu, Z, transpose_b=True)
 
+    @params_as_tensors
     def exKxz(self, Z, Xmu, Xcov):
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, int_type),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.tf_int),
                             message="Currently cannot handle slicing in exKxz."),
             tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
         ]):
@@ -143,6 +148,7 @@ class Linear(kernels.Linear):
         op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
         return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 
+    @params_as_tensors
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
         exKxz
@@ -220,7 +226,7 @@ class Add(kernels.Add):
         D = tf.shape(Xmu)[1]
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
-        lengthscales = rbf.lengthscales if rbf.ARD else tf.zeros((D,), dtype=float_type) + rbf.lengthscales
+        lengthscales = rbf.lengthscales if rbf.ARD else tf.zeros((D,), dtype=settings.tf_float) + rbf.lengthscales
         lengthscales2 = lengthscales ** 2.0
 
         const = rbf.variance * lin.variance * tf.reduce_prod(lengthscales)

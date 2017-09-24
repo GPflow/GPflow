@@ -13,9 +13,9 @@ def kernel():
 
 plt.plot(X, Y, 'kx')
 
-m2 = gpflow.vgp.VGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian())
-m3 = gpflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
-m4 = gpflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
+m2 = gpflow.models.VGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian())
+m3 = gpflow.models.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
+m4 = gpflow.models.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
 
 m3.Z.fixed = True
 m4.Z.fixed = True

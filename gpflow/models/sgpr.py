@@ -16,13 +16,15 @@
 from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .model import GPModel
-from .param import Param, DataHolder, AutoFlow
-from .mean_functions import Zero
-from . import likelihoods
-from ._settings import settings
 
-float_type = settings.dtypes.float_type
+from gpflow import settings
+from gpflow import likelihoods
+
+from gpflow.models.model import GPModel
+from gpflow.decors import autoflow
+from gpflow.decors import params_as_tensors
+from gpflow.params import Param, DataHolder
+from gpflow.mean_functions import Zero
 
 
 class SGPRUpperMixin(object):
@@ -48,13 +50,14 @@ class SGPRUpperMixin(object):
       }
     """
 
-    @AutoFlow()
+    @autoflow()
+    @params_as_tensors
     def compute_upper_bound(self):
         num_inducing = tf.shape(self.Z)[0]
-        num_data = tf.cast(tf.shape(self.Y)[0], float_type)
+        num_data = tf.cast(tf.shape(self.Y)[0], settings.tf_float)
 
         Kdiag = self.kern.Kdiag(self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
         Kuf = self.kern.K(self.Z, self.X)
 
         L = tf.cholesky(Kuu)
@@ -106,15 +109,15 @@ class SGPR(GPModel, SGPRUpperMixin):
 
         This method only works with a Gaussian likelihood.
         """
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.Z = Param(Z)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
@@ -122,27 +125,28 @@ class SGPR(GPModel, SGPRUpperMixin):
         """
 
         num_inducing = tf.shape(self.Z)[0]
-        num_data = tf.cast(tf.shape(self.Y)[0], settings.dtypes.float_type)
-        output_dim = tf.cast(tf.shape(self.Y)[1], settings.dtypes.float_type)
+        num_data = tf.cast(tf.shape(self.Y)[0], settings.tf_float)
+        output_dim = tf.cast(tf.shape(self.Y)[1], settings.tf_float)
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        jitter_level = settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * jitter_level
         L = tf.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
         # Compute intermediate matrices
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
         AAT = tf.matmul(A, A, transpose_b=True)
-        B = AAT + tf.eye(num_inducing, dtype=float_type)
+        B = AAT + tf.eye(num_inducing, dtype=settings.tf_float)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
 
         # compute log marginal bound
         bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
-        bound += - output_dim * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
+        bound += tf.negative(output_dim) * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         bound -= 0.5 * num_data * output_dim * tf.log(self.likelihood.variance)
         bound += -0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
         bound += 0.5 * tf.reduce_sum(tf.square(c))
@@ -151,21 +155,22 @@ class SGPR(GPModel, SGPRUpperMixin):
 
         return bound
 
-    def build_predict(self, Xnew, full_cov=False):
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
+        jitter_level = settings.numerics.jitter_level
         num_inducing = tf.shape(self.Z)[0]
         err = self.Y - self.mean_function(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * jitter_level
         Kus = self.kern.K(self.Z, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
-        B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=float_type)
+        B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=settings.tf_float)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
@@ -211,8 +216,8 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         This method only works with a Gaussian likelihood.
 
         """
-        X = DataHolder(X, on_shape_change='pass')
-        Y = DataHolder(Y, on_shape_change='pass')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.Z = Param(Z)
@@ -224,7 +229,8 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        jitter_level = settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * jitter_level
 
         Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
@@ -232,7 +238,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
 
-        B = tf.eye(num_inducing, dtype=float_type) + tf.matmul(V / nu, V, transpose_b=True)
+        B = tf.eye(num_inducing, dtype=settings.tf_float) + tf.matmul(V / nu, V, transpose_b=True)
         L = tf.cholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size N x R
         alpha = tf.matmul(V, beta)  # size N x R
@@ -241,7 +247,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def build_likelihood(self):
+    def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -279,13 +285,13 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
-        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.dtypes.float_type))
+        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.tf_float))
         logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
 
-    def build_predict(self, Xnew, full_cov=False):
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.

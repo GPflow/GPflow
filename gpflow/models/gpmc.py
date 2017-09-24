@@ -15,13 +15,14 @@
 
 import numpy as np
 import tensorflow as tf
-from .model import GPModel
-from .param import Param, DataHolder
-from .conditionals import conditional
-from .priors import Gaussian
-from .mean_functions import Zero
-from ._settings import settings
-float_type = settings.dtypes.float_type
+
+from gpflow import settings
+from gpflow.models.model import GPModel
+from gpflow.params import Param, DataHolder
+from gpflow.decors import params_as_tensors
+from gpflow.conditionals import conditional
+from gpflow.priors import Gaussian
+
 
 
 class GPMC(GPModel):
@@ -44,15 +45,15 @@ class GPMC(GPModel):
             L L^T = K
 
         """
-        X = DataHolder(X, on_shape_change='recompile')
-        Y = DataHolder(Y, on_shape_change='recompile')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
         self.V = Param(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    def compile(self, session=None, graph=None, optimizer=None):
+    def compile(self, session=None, keep_session=True):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add parameters appropriately.
@@ -65,11 +66,10 @@ class GPMC(GPModel):
             self.V = Param(np.zeros((self.num_data, self.num_latent)))
             self.V.prior = Gaussian(0., 1.)
 
-        return super(GPMC, self).compile(session=session,
-                                         graph=graph,
-                                         optimizer=optimizer)
+        return super(GPMC, self).compile(session=session, keep_session=keep_session)
 
-    def build_likelihood(self):
+    @params_as_tensors
+    def _build_likelihood(self):
         """
         Construct a tf function to compute the likelihood of a general GP
         model.
@@ -78,12 +78,14 @@ class GPMC(GPModel):
 
         """
         K = self.kern.K(self.X)
-        L = tf.cholesky(K + tf.eye(tf.shape(self.X)[0], dtype=float_type)*settings.numerics.jitter_level)
+        L = tf.cholesky(
+            K + tf.eye(tf.shape(self.X)[0], dtype=settings.tf_float) * settings.numerics.jitter_level)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 

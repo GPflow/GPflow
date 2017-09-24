@@ -14,12 +14,12 @@
 
 
 import tensorflow as tf
-from .scoping import NameScoped
-from ._settings import settings
-float_type = settings.dtypes.float_type
+
+from gpflow import settings
+from gpflow.decors import name_scope
 
 
-@NameScoped("KL")
+@name_scope("KL")
 def gauss_kl_white(q_mu, q_sqrt):
     """
     Compute the KL divergence from
@@ -37,14 +37,14 @@ def gauss_kl_white(q_mu, q_sqrt):
         matrix of the covariance.
     """
     KL = 0.5 * tf.reduce_sum(tf.square(q_mu))  # Mahalanobis term
-    KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), float_type)  # constant term
+    KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), settings.tf_float)  # constant term
     L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
     KL -= 0.5 * tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(L))))  # logdet
     KL += 0.5 * tf.reduce_sum(tf.square(L))  # Trace term.
     return KL
 
 
-@NameScoped("KL")
+@name_scope("KL")
 def gauss_kl_white_diag(q_mu, q_sqrt):
     """
     Compute the KL divergence from
@@ -63,13 +63,13 @@ def gauss_kl_white_diag(q_mu, q_sqrt):
     """
 
     KL = 0.5 * tf.reduce_sum(tf.square(q_mu))  # Mahalanobis term
-    KL += -0.5 * tf.cast(tf.size(q_sqrt), float_type)
+    KL += -0.5 * tf.cast(tf.size(q_sqrt), settings.tf_float)
     KL += -0.5 * tf.reduce_sum(tf.log(tf.square(q_sqrt)))  # Log-det of q-cov
     KL += 0.5 * tf.reduce_sum(tf.square(q_sqrt))  # Trace term
     return KL
 
 
-@NameScoped("KL")
+@name_scope("KL")
 def gauss_kl_diag(q_mu, q_sqrt, K):
     """
     Compute the KL divergence from
@@ -91,19 +91,19 @@ def gauss_kl_diag(q_mu, q_sqrt, K):
     L = tf.cholesky(K)
     alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
     KL = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
-    num_latent = tf.cast(tf.shape(q_sqrt)[1], float_type)
+    num_latent = tf.cast(tf.shape(q_sqrt)[1], settings.tf_float)
     KL += num_latent * 0.5 * tf.reduce_sum(
         tf.log(tf.square(tf.matrix_diag_part(L))))  # Prior log-det term.
-    KL += -0.5 * tf.cast(tf.size(q_sqrt), float_type)  # constant term
+    KL += -0.5 * tf.cast(tf.size(q_sqrt), settings.tf_float)  # constant term
     KL += -0.5 * tf.reduce_sum(tf.log(tf.square(q_sqrt)))  # Log-det of q-cov
-    L_inv = tf.matrix_triangular_solve(L, tf.eye(tf.shape(L)[0], dtype=float_type), lower=True)
+    L_inv = tf.matrix_triangular_solve(L, tf.eye(tf.shape(L)[0], dtype=settings.tf_float), lower=True)
     K_inv = tf.matrix_triangular_solve(tf.transpose(L), L_inv, lower=False)
     KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.matrix_diag_part(K_inv), 1) *
                               tf.square(q_sqrt))  # Trace term.
     return KL
 
 
-@NameScoped("KL")
+@name_scope("KL")
 def gauss_kl(q_mu, q_sqrt, K):
     """
     Compute the KL divergence from
@@ -125,9 +125,9 @@ def gauss_kl(q_mu, q_sqrt, K):
     L = tf.cholesky(K)
     alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
     KL = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
-    num_latent = tf.cast(tf.shape(q_sqrt)[2], float_type)
+    num_latent = tf.cast(tf.shape(q_sqrt)[2], settings.tf_float)
     KL += num_latent * 0.5 * tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(L))))  # Prior log-det term.
-    KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), float_type)  # constant term
+    KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), settings.tf_float)  # constant term
     Lq = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
     KL += -0.5*tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(Lq))))  # logdet
     L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([tf.shape(Lq)[0], 1, 1]))

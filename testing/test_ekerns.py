@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import gpflow
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 from gpflow import kernels
 from gpflow import ekernels
 from nose.plugins.attrib import attr
@@ -59,7 +59,7 @@ class TestKernExpDelta(GPflowTestCase):
     """
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.D = 2
             self.rng = np.random.RandomState(0)
             self.Xmu = self.rng.rand(10, self.D)
@@ -76,7 +76,7 @@ class TestKernExpDelta(GPflowTestCase):
             self.kernels = [k1, klin, k2]
 
     def test_eKzxKxz(self):
-        with self.test_session():
+        with self.test_context():
             for k in self.kernels:
                 psi2 = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
                 kernmat = k.compute_K(self.Z, self.Xmu)  # MxN
@@ -84,14 +84,14 @@ class TestKernExpDelta(GPflowTestCase):
                 self.assertTrue(np.allclose(kernouter, psi2))
 
     def test_eKdiag(self):
-        with self.test_session():
+        with self.test_context():
             for k in self.kernels:
                 kdiag = k.compute_eKdiag(self.Xmu, self.Xcov)
                 orig = k.compute_Kdiag(self.Xmu)
                 self.assertTrue(np.allclose(orig, kdiag))
 
     def test_exKxz(self):
-        with self.test_session():
+        with self.test_context():
             covall = np.array([self.Xcov, self.Xcovc])
             for k in self.kernels:
                 if type(k) is ekernels.Linear:
@@ -102,7 +102,7 @@ class TestKernExpDelta(GPflowTestCase):
                 self.assertTrue(np.allclose(xKxz, exKxz))
 
     def test_Kxz(self):
-        with self.test_session():
+        with self.test_context():
             for k in self.kernels:
                 psi1 = k.compute_eKxz(self.Z, self.Xmu, self.Xcov)
                 kernmat = k.compute_K(self.Z, self.Xmu)  # MxN
@@ -113,7 +113,7 @@ class TestKernExpActiveDims(GPflowTestCase):
     _threshold = 0.5
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.N = 4
             self.D = 2
             self.rng = np.random.RandomState(0)
@@ -144,7 +144,7 @@ class TestKernExpActiveDims(GPflowTestCase):
             self.pkernels = [k1, klin]
 
     def test_quad_active_dims(self):
-        with self.test_session():
+        with self.test_context():
             for k, pk in zip(self.kernels + self.ekernels, self.pkernels + self.pekernels):
                 a = k.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
                 sliced = np.take(
@@ -178,7 +178,7 @@ class TestExpxKxzActiveDims(GPflowTestCase):
     _threshold = 0.5
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.rng = np.random.RandomState(0)
 
             self.N = 4
@@ -210,7 +210,7 @@ class TestExpxKxzActiveDims(GPflowTestCase):
             self.pkernels = [k1, klin]
 
     def test_quad_active_dims(self):
-        with self.test_session():
+        with self.test_context():
             for k, pk in zip(self.kernels, self.pkernels):
 
                 # TODO(@markvdw):
@@ -244,7 +244,7 @@ class TestKernExpQuadrature(GPflowTestCase):
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.rng = np.random.RandomState(1)  # this seed works with 60 GH points
             self.N = 4
             self.D = 2
@@ -307,14 +307,14 @@ class TestKernExpQuadrature(GPflowTestCase):
             self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
 
     def test_eKdiag(self):
-        with self.test_session():
+        with self.test_context():
             for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
                 a = k.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
                 b = ek.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
                 _assert_pdeq(self, a, b, k, i, len(self.kernels))
 
     def test_eKxz(self):
-        with self.test_session():
+        with self.test_context():
             aa, bb = [], []
             for k, ek in zip(self.kernels, self.ekernels):
                 k.num_gauss_hermite_points = self.num_gauss_hermite_points
@@ -324,7 +324,7 @@ class TestKernExpQuadrature(GPflowTestCase):
             [_assert_pdeq(self, a, b, k) for a, b, k in zip(aa, bb, self.kernels)]
 
     def test_eKzxKxz(self):
-        with self.test_session():
+        with self.test_context():
             for k, ek in zip(self.kernels, self.ekernels):
                 k._kill_autoflow()
                 k.num_gauss_hermite_points = self.num_gauss_hermite_points
@@ -333,7 +333,7 @@ class TestKernExpQuadrature(GPflowTestCase):
                 _assert_pdeq(self, a, b, k)
 
     def test_exKxz(self):
-        with self.test_session():
+        with self.test_context():
             for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
                 if type(k) is kernels.Add and hasattr(k, 'input_size'):
                     # xKxz does not work with slicing yet
@@ -346,7 +346,7 @@ class TestKernExpQuadrature(GPflowTestCase):
                 _assert_pdeq(self, a, b, k, i, len(self.kernels))
 
     def test_switch_quadrature(self):
-        with self.test_session():
+        with self.test_context():
             k = self.kernels[0]
             k._kill_autoflow()
             k.num_gauss_hermite_points = 0
@@ -361,7 +361,7 @@ class TestKernProd(GPflowTestCase):
     """
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self._threshold = 0.5
             self.rng = np.random.RandomState(0)
             self.N = 4
@@ -387,19 +387,19 @@ class TestKernProd(GPflowTestCase):
             self.Z = self.rng.rand(2, self.D)
 
     def test_eKdiag(self):
-        with self.test_session():
+        with self.test_context():
             a = self.kernel.compute_eKdiag(self.Xmu, self.Xcov)
             b = self.ekernel.compute_eKdiag(self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b)
 
     def test_eKxz(self):
-        with self.test_session():
+        with self.test_context():
             a = self.kernel.compute_eKxz(self.Z, self.Xmu, self.Xcov)
             b = self.ekernel.compute_eKxz(self.Z, self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b)
 
     def test_eKzxKxz(self):
-        with self.test_session():
+        with self.test_context():
             a = self.kernel.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
             b = self.ekernel.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b)
@@ -409,7 +409,7 @@ class TestKernExpDiagXcov(GPflowTestCase):
     _threshold = 1e-6
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.rng = np.random.RandomState(0)
             self.N = 4
             self.D = 2
@@ -472,21 +472,21 @@ class TestKernExpDiagXcov(GPflowTestCase):
             self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
 
     def test_eKdiag(self):
-        with self.test_session():
+        with self.test_context():
             for i, k in enumerate(self.kernels + self.ekernels):
                 d = k.compute_eKdiag(self.Xmu, self.Xcov)
                 e = k.compute_eKdiag(self.Xmu, self.Xcov_diag)
                 _assert_pdeq(self, d, e, k, i, len(self.kernels))
 
     def test_eKxz(self):
-        with self.test_session():
+        with self.test_context():
             for i, k in enumerate(self.kernels + self.ekernels):
                 a = k.compute_eKxz(self.Z, self.Xmu, self.Xcov)
                 b = k.compute_eKxz(self.Z, self.Xmu, self.Xcov_diag)
                 _assert_pdeq(self, a, b, k)
 
     def test_eKzxKxz(self):
-        with self.test_session():
+        with self.test_context():
             for i, k in enumerate(self.kernels + self.ekernels):
                 a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
                 b = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov_diag)
@@ -497,7 +497,7 @@ class TestAddCrossCalcs(GPflowTestCase):
     _threshold = 0.5
 
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.rng = np.random.RandomState(0)
             self.N = 4
             self.D = 2
@@ -516,7 +516,7 @@ class TestAddCrossCalcs(GPflowTestCase):
             self.Xcov = t.forward(unconstrained)[0, :, :, :]
 
     def test_cross_quad(self):
-        with self.test_session():
+        with self.test_context():
             self.add.num_gauss_hermite_points = 50
             free_vars, tfZ, tfXmu, tfXcov = tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64)
             self.add.make_tf_array(free_vars)

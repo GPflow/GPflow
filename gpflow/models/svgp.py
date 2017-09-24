@@ -16,13 +16,14 @@
 from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .param import Param
-from .model import GPModel
-from . import transforms, conditionals, kullback_leiblers
-from .mean_functions import Zero
-from ._settings import settings
-from .minibatch import MinibatchData
-float_type = settings.dtypes.float_type
+
+from gpflow import settings
+from gpflow import transforms, conditionals, kullback_leiblers
+
+from gpflow.params import Param
+from gpflow.decors import params_as_tensors
+from gpflow.models.model import GPModel
+from gpflow.minibatch import MinibatchData
 
 
 class SVGP(GPModel):
@@ -78,6 +79,7 @@ class SVGP(GPModel):
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_inducing, self.num_latent))
 
+    @params_as_tensors
     def build_prior_KL(self):
         if self.whiten:
             if self.q_diag:
@@ -85,14 +87,15 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=float_type) * settings.numerics.jitter_level
+            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
                 KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
         return KL
 
-    def build_likelihood(self):
+    @params_as_tensors
+    def _build_likelihood(self):
         """
         This gives a variational bound on the model likelihood.
         """
@@ -101,18 +104,18 @@ class SVGP(GPModel):
         KL = self.build_prior_KL()
 
         # Get conditionals
-        fmean, fvar = self.build_predict(self.X, full_cov=False)
+        fmean, fvar = self._build_predict(self.X, full_cov=False)
 
         # Get variational expectations.
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, settings.dtypes.float_type) /\
-            tf.cast(tf.shape(self.X)[0], settings.dtypes.float_type)
+        scale = tf.cast(self.num_data, settings.tf_float) / tf.cast(tf.shape(self.X)[0], settings.tf_float)
 
         return tf.reduce_sum(var_exp) * scale - KL
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         mu, var = conditionals.conditional(Xnew, self.Z, self.kern, self.q_mu,
                                            q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var

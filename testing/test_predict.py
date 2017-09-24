@@ -17,12 +17,12 @@ import numpy as np
 import unittest
 import tensorflow as tf
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 
 
 class TestGaussian(GPflowTestCase):
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.rng = np.random.RandomState(0)
             self.X = self.rng.randn(100,2)
             self.Y = self.rng.randn(100, 1)
@@ -30,10 +30,10 @@ class TestGaussian(GPflowTestCase):
             self.Xtest = self.rng.randn(10, 2)
             self.Ytest = self.rng.randn(10, 1)
             # make a Gaussian model
-            self.m = gpflow.gpr.GPR(self.X, self.Y, kern=self.kern)
+            self.m = gpflow.models.GPR(self.X, self.Y, kern=self.kern)
 
     def test_all(self):
-        with self.test_session():
+        with self.test_context():
             mu_f, var_f = self.m.predict_f(self.Xtest)
             mu_y, var_y = self.m.predict_y(self.Xtest)
 
@@ -41,7 +41,7 @@ class TestGaussian(GPflowTestCase):
             self.assertTrue(np.allclose(var_f, var_y - 1.))
 
     def test_density(self):
-        with self.test_session():
+        with self.test_context():
             mu_y, var_y = self.m.predict_y(self.Xtest)
             density = self.m.predict_density(self.Xtest, self.Ytest)
 
@@ -49,7 +49,7 @@ class TestGaussian(GPflowTestCase):
             self.assertTrue(np.allclose(density_hand, density))
 
     def test_recompile(self):
-        with self.test_session():
+        with self.test_context():
             mu_f, var_f = self.m.predict_f(self.Xtest)
             mu_y, var_y = self.m.predict_y(self.Xtest)
             density = self.m.predict_density(self.Xtest, self.Ytest)
@@ -73,7 +73,7 @@ class TestFullCov(GPflowTestCase):
     if a test fails, it should be clearer where the error is.
     """
     def setUp(self):
-        with self.test_session():
+        with self.test_context():
             self.input_dim = 3
             self.output_dim = 2
             self.N = 20
@@ -89,10 +89,10 @@ class TestFullCov(GPflowTestCase):
                 rng.randn(self.M, self.input_dim),
                 rng.randn(self.Ntest, self.input_dim))
             self.k = lambda: gpflow.kernels.Matern32(self.input_dim)
-            self.model = gpflow.gpr.GPR(self.X, self.Y, kern=self.k())
+            self.model = gpflow.models.GPR(self.X, self.Y, kern=self.k())
 
     def test_cov(self):
-        with self.test_session():
+        with self.test_context():
             mu1, var = self.model.predict_f(self.Xtest)
             mu2, covar = self.model.predict_f_full_cov(self.Xtest)
             self.assertTrue(np.all(mu1 == mu2))
@@ -102,7 +102,7 @@ class TestFullCov(GPflowTestCase):
                 self.assertTrue(np.allclose(var[:, i], np.diag(covar[:, :, i])))
 
     def test_samples(self):
-        with self.test_session():
+        with self.test_context():
             samples = self.model.predict_f_samples(self.Xtest, self.num_samples)
             self.assertTrue(samples.shape == self.samples_shape)
 
@@ -110,15 +110,15 @@ class TestFullCov(GPflowTestCase):
 class TestFullCovSGPR(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.sgpr.SGPR(self.X, self.Y, Z=self.Z, kern=self.k())
+        with self.test_context():
+            self.model = gpflow.models.SGPR(self.X, self.Y, Z=self.Z, kern=self.k())
 
 
 class TestFullCovGPRFITC(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.sgpr.GPRFITC(
+        with self.test_context():
+            self.model = gpflow.models.GPRFITC(
                 self.X, self.Y,
                 Z=self.Z, kern=self.k())
 
@@ -126,8 +126,8 @@ class TestFullCovGPRFITC(TestFullCov):
 class TestFullCovSVGP1(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.svgp.SVGP(
+        with self.test_context():
+            self.model = gpflow.models.SVGP(
                 self.X, self.Y, Z=self.Z, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 whiten=False, q_diag=True)
@@ -136,8 +136,8 @@ class TestFullCovSVGP1(TestFullCov):
 class TestFullCovSVGP2(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.svgp.SVGP(
+        with self.test_context():
+            self.model = gpflow.models.SVGP(
                 self.X, self.Y, Z=self.Z, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 whiten=True, q_diag=False)
@@ -146,8 +146,8 @@ class TestFullCovSVGP2(TestFullCov):
 class TestFullCovSVGP3(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.svgp.SVGP(
+        with self.test_context():
+            self.model = gpflow.models.SVGP(
                 self.X, self.Y, Z=self.Z, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 whiten=True, q_diag=True)
@@ -156,8 +156,8 @@ class TestFullCovSVGP3(TestFullCov):
 class TestFullCovSVGP4(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.svgp.SVGP(
+        with self.test_context():
+            self.model = gpflow.models.SVGP(
                 self.X, self.Y, Z=self.Z, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 whiten=True, q_diag=False)
@@ -166,8 +166,8 @@ class TestFullCovSVGP4(TestFullCov):
 class TestFullCovVGP(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.vgp.VGP(
+        with self.test_context():
+            self.model = gpflow.models.VGP(
                 self.X, self.Y, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian())
 
@@ -175,8 +175,8 @@ class TestFullCovVGP(TestFullCov):
 class TestFullCovGPMC(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.gpmc.GPMC(
+        with self.test_context():
+            self.model = gpflow.models.GPMC(
                 self.X, self.Y, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian())
 
@@ -184,8 +184,8 @@ class TestFullCovGPMC(TestFullCov):
 class TestFullCovSGPMC(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
-        with self.test_session():
-            self.model = gpflow.sgpmc.SGPMC(
+        with self.test_context():
+            self.model = gpflow.models.SGPMC(
                 self.X, self.Y, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 Z=self.Z)

@@ -15,14 +15,16 @@
 from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .param import Param, DataHolder
-from .model import GPModel
-from .mean_functions import Zero
-from ._settings import settings
-from . import transforms
-from .conditionals import conditional
-from .kullback_leiblers import gauss_kl_white
-float_type = settings.dtypes.float_type
+
+from gpflow import settings
+from gpflow import transforms
+
+from gpflow.params import Param, DataHolder
+from gpflow.decors import params_as_tensors
+from gpflow.models.model import GPModel
+from gpflow.mean_functions import Zero
+from gpflow.conditionals import conditional
+from gpflow.kullback_leiblers import gauss_kl_white
 
 
 class VGP(GPModel):
@@ -52,8 +54,8 @@ class VGP(GPModel):
 
         """
 
-        X = DataHolder(X, on_shape_change='recompile')
-        Y = DataHolder(Y, on_shape_change='recompile')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
@@ -63,7 +65,7 @@ class VGP(GPModel):
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
         self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_data, self.num_latent))
 
-    def compile(self, session=None, graph=None, optimizer=None):
+    def compile(self, session=None, keep_session=True):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -77,11 +79,10 @@ class VGP(GPModel):
             self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] *
                                 np.ones((1, 1, self.num_latent)))
 
-        return super(VGP, self).compile(session=session,
-                                        graph=graph,
-                                        optimizer=optimizer)
+        return super(VGP, self).compile(session=session, keep_session=keep_session)
 
-    def build_likelihood(self):
+    @params_as_tensors
+    def _build_likelihood(self):
         """
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -98,7 +99,7 @@ class VGP(GPModel):
         KL = gauss_kl_white(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=float_type) * settings.numerics.jitter_level
+        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=settings.tf_float) * settings.numerics.jitter_level
         L = tf.cholesky(K)
 
         fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
@@ -117,7 +118,8 @@ class VGP(GPModel):
 
         return tf.reduce_sum(var_exp) - KL
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         mu, var = conditional(Xnew, self.X, self.kern, self.q_mu,
                               q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=True)
         return mu + self.mean_function(Xnew), var
@@ -155,8 +157,8 @@ class VGP_opper_archambeau(GPModel):
         Y is a data matrix, size N x R
         kern, likelihood, mean_function are appropriate GPflow objects
         """
-        X = DataHolder(X, on_shape_change='recompile')
-        Y = DataHolder(Y, on_shape_change='recompile')
+        X = DataHolder(X)
+        Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
@@ -164,7 +166,7 @@ class VGP_opper_archambeau(GPModel):
         self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
-    def compile(self, session=None, graph=None, optimizer=None):
+    def compile(self, session=None, keep_session=True):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -177,11 +179,11 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
-        return super(VGP_opper_archambeau, self).compile(session=session,
-                                                         graph=graph,
-                                                         optimizer=optimizer)
+        return super(VGP_opper_archambeau, self).compile(
+            session=session, keep_session=keep_session)
 
-    def build_likelihood(self):
+    @params_as_tensors
+    def _build_likelihood(self):
         """
         q_alpha, q_lambda are variational parameters, size N x R
         This method computes the variational lower bound on the likelihood,
@@ -195,7 +197,7 @@ class VGP_opper_archambeau(GPModel):
         f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=float_type), 0), [self.num_latent, 1, 1])
+        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=settings.tf_float), 0), [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
         L = tf.cholesky(A)
@@ -213,7 +215,8 @@ class VGP_opper_archambeau(GPModel):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         return tf.reduce_sum(v_exp) - KL
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         """
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)

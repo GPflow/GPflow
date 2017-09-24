@@ -3,7 +3,7 @@ import os
 import tensorflow as tf
 import gpflow
 
-from testing.gpflow_testcase import GPflowTestCase
+from gpflow.test_util import GPflowTestCase
 
 class TestConfigParsing(GPflowTestCase):
     def setUp(self):

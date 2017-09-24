@@ -1,31 +1,16 @@
 import tensorflow as tf
 import numpy as np
-from .model import GPModel
-from .gpr import GPR
-from .param import Param
-from .mean_functions import Zero
-from . import likelihoods
-from . import transforms
-from . import kernels
-from ._settings import settings
 
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+from gpflow import settings
+from gpflow import likelihoods
+from gpflow import transforms
+from gpflow import kernels
 
-def PCA_reduce(X, Q):
-    """
-    A helpful function for linearly reducing the dimensionality of the data X
-    to Q.
-    :param X: data array of size N (number of points) x D (dimensions)
-    :param Q: Number of latent dimensions, Q < D
-    :return: PCA projection array of size N x Q.
-    """
-    assert Q <= X.shape[1], 'Cannot have more latent dimensions than observed'
-    evecs, evals = np.linalg.eigh(np.cov(X.T))
-    i = np.argsort(evecs)[::-1]
-    W = evals[:, i]
-    W = W[:, :Q]
-    return (X - X.mean(0)).dot(W)
+from gpflow.models.model import GPModel
+from gpflow.models.gpr import GPR
+from gpflow.params import Param
+from gpflow.decors import params_as_tensors
+from gpflow.mean_functions import Zero
 
 
 class GPLVM(GPR):
@@ -45,7 +30,7 @@ class GPLVM(GPR):
         if kern is None:
             kern = kernels.RBF(latent_dim, ARD=True)
         if X_mean is None:
-            X_mean = PCA_reduce(Y, latent_dim)
+            X_mean = _PCA_reduce(Y, latent_dim)
         assert X_mean.shape[1] == latent_dim, \
             'Passed in number of latent ' + str(latent_dim) + ' does not match initial X ' + str(X_mean.shape[1])
         self.num_latent = X_mean.shape[1]
@@ -100,15 +85,16 @@ class BayesianGPLVM(GPModel):
         if X_prior_var is None:
             X_prior_var = np.ones((self.num_data, self.num_latent))
 
-        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=np_float_type)
-        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=np_float_type)
+        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=settings.np_float)
+        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=settings.np_float)
 
         assert self.X_prior_mean.shape[0] == self.num_data
         assert self.X_prior_mean.shape[1] == self.num_latent
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent
 
-    def build_likelihood(self):
+    @params_as_tensors
+    def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -117,7 +103,7 @@ class BayesianGPLVM(GPModel):
         psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -126,22 +112,22 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + tf.eye(num_inducing, dtype=float_type)
+        B = AAT + tf.eye(num_inducing, dtype=settings.tf_float)
         LB = tf.cholesky(B)
         log_det_B = 2. * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
         dX_var = self.X_var if len(self.X_var.get_shape()) == 2 else tf.matrix_diag_part(self.X_var)
-        NQ = tf.cast(tf.size(self.X_mean), float_type)
-        D = tf.cast(tf.shape(self.Y)[1], float_type)
+        NQ = tf.cast(tf.size(self.X_mean), settings.tf_float)
+        D = tf.cast(tf.shape(self.Y)[1], settings.tf_float)
         KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
              + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
              - 0.5 * NQ \
              + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
 
         # compute log marginal bound
-        ND = tf.cast(tf.size(self.Y), float_type)
+        ND = tf.cast(tf.size(self.Y), settings.tf_float)
         bound = -0.5 * ND * tf.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
@@ -151,7 +137,8 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def build_predict(self, Xnew, full_cov=False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
@@ -161,7 +148,7 @@ class BayesianGPLVM(GPModel):
         num_inducing = tf.shape(self.Z)[0]
         psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
         psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
         Kus = self.kern.K(self.Z, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -170,7 +157,7 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + tf.eye(num_inducing, dtype=float_type)
+        B = AAT + tf.eye(num_inducing, dtype=settings.tf_float)
         LB = tf.cholesky(B)
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
@@ -187,3 +174,19 @@ class BayesianGPLVM(GPModel):
             shape = tf.stack([1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
+
+
+def _PCA_reduce(X, Q):
+    """
+    A helpful function for linearly reducing the dimensionality of the data X
+    to Q.
+    :param X: data array of size N (number of points) x D (dimensions)
+    :param Q: Number of latent dimensions, Q < D
+    :return: PCA projection array of size N x Q.
+    """
+    assert Q <= X.shape[1], 'Cannot have more latent dimensions than observed'
+    evecs, evals = np.linalg.eigh(np.cov(X.T))
+    i = np.argsort(evecs)[::-1]
+    W = evals[:, i]
+    W = W[:, :Q]
+    return (X - X.mean(0)).dot(W)
