@@ -58,12 +58,12 @@ class SVGP(GPModel):
         # sort out the X, Y into MiniBatch objects.
         if minibatch_size is None:
             minibatch_size = X.shape[0]
-        self.num_data = X.shape[0]
         X = MinibatchData(X, minibatch_size, np.random.RandomState(0))
         Y = MinibatchData(Y, minibatch_size, np.random.RandomState(0))
 
         # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
+        self.num_data = X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
         self.Z = Param(Z)
         self.num_latent = num_latent or Y.shape[1]

@@ -35,7 +35,6 @@ class NamingTests(test_util.GPflowTestCase):
         p = gpflow.Param(1)
         self.assertEqual(p.full_name, 'Param')
         m = gpflow.models.Model()
-        self.assertEqual(m.p.full_name, 'Model')
         m.p = p
         self.assertEqual(m.p.full_name, 'Model/p')
 
@@ -54,7 +53,7 @@ class ParamTests(test_util.GPflowTestCase):
             self.m.p = 2.0
             self.assertTrue(self.m.p.read_value() == 2.0)
 
-    def testCreate(self):
+    def testCreateAndReplace(self):
         with self.test_context():
             tensor = tf.get_variable('a', shape=()) + 1.0
             param = gpflow.Param(1e3)
@@ -67,8 +66,8 @@ class ParamTests(test_util.GPflowTestCase):
             p = self.m.p
             self.m.p = param
             self.assertEqual(self.m.p, param)
-            self.assertEqual(p.root, p)
             self.assertEqual(p.name, 'Param')
+            self.assertEqual(p.root, p)
 
             self.m.d = new_param
             self.assertEqual(self.m.d, new_param)
@@ -92,21 +91,24 @@ class ParamTests(test_util.GPflowTestCase):
         self.assertFalse(self.p.trainable)
 
         self.assertTrue(self.m.trainable)
-        self.m.p.fixed = False
-        self.assertTrue(self.m.trainable)
-        self.assertFalse(self.m.p.trainable)
+        self.m.p.trainable = True
+        self.assertFalse(self.m.trainable)
+        self.assertTrue(self.m.p.trainable)
 
     def testTrainableWithCompile(self):
-        self.p.compile()
-        self.m.compile()
-        self.assertTrue(self.p.trainable)
-        self.p.trainable = False
-        self.assertFalse(self.p.trainable)
+        with self.test_context():
+            self.p.compile()
+            self.m.compile()
+            self.assertTrue(self.p.trainable)
+            self.p.trainable = False
+            self.assertFalse(self.p.trainable)
 
-        self.assertTrue(self.m.trainable)
-        self.m.p.fixed = False
-        self.assertTrue(self.m.trainable)
-        self.assertFalse(self.m.p.trainable)
+            self.assertTrue(self.m.trainable)
+            self.m.p.trainable = True
+            self.assertFalse(self.m.trainable)
+            self.assertTrue(self.m.p.trainable)
+            _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
+
 
 class ParamCompileTests(test_util.GPflowTestCase):
     def setUp(self):
@@ -143,15 +145,15 @@ class ParamCompileTests(test_util.GPflowTestCase):
                 self.assertTrue(gpflow.misc.is_tensor(param.prior_tensor))
 
     def testFailsAfterCompile(self):
-        with self.test_context():
+        with self.test_context(self.graph):
             self.m.compile()
             with self.assertRaises(gpflow.GPflowError):
                 self.m.d = gpflow.Param(1.0)
             with self.assertRaises(AttributeError):
-                param = self.m.d
+                _param = self.m.d
 
     def testFailsAtCompile(self):
-        with self.test_context():
+        with self.test_context(self.graph):
             with self.assertRaises(gpflow.GPflowError):
                 self.m.p.d.compile()
             with self.assertRaises(gpflow.GPflowError):
@@ -165,10 +167,10 @@ class ParamCompileTests(test_util.GPflowTestCase):
             self.m.compile()
 
 
-class ParamTestsDeeper(test_util.GPflowTestCase):
+class ParamDeepTest(test_util.GPflowTestCase):
     def setUp(self):
         with self.test_context():
-            self.m = gpflow.params.Parameterized()
+            self.m = gpflow.params.Parameterized(name='m')
             self.m.foo = gpflow.params.Parameterized()
             self.m.foo.bar = gpflow.params.Parameterized()
             self.m.foo.bar.baz = gpflow.Param(1.0)
@@ -178,291 +180,83 @@ class ParamTestsDeeper(test_util.GPflowTestCase):
         self.assertTrue(self.m.foo.bar.root is self.m)
         self.assertTrue(self.m.foo.bar.baz.root is self.m)
 
-    def testReplacement(self):
-        old_p = self.m.foo.bar.baz
-        new_p = gpflow.Param(3.0)
-        self.m.foo.bar.baz = new_p
-        # Parameterized instances should not have _needs_recompile
-        self.assertFalse(hasattr(self.m, '_needs_recompile'))
-        self.assertFalse(old_p.root is self.m)
-
-    def testReplacement2(self):
-        old_p = self.m.foo.bar
-        new_p = gpflow.params.Parameterized()
-        new_p.baz = gpflow.Param(3.0)
-        self.m.foo.bar = new_p
-        self.assertTrue(new_p.baz.root is self.m)
-        self.assertFalse(old_p.root is self.m)
-
-    def testName(self):
+    def testDeepName(self):
         self.assertTrue(self.m.foo.name == 'foo')
         self.assertTrue(self.m.foo.bar.name == 'bar')
         self.assertTrue(self.m.foo.bar.baz.name == 'baz')
+        self.assertTrue(self.m.foo.full_name == 'm/foo')
+        self.assertTrue(self.m.foo.bar.name == 'm/foo/bar')
+        self.assertTrue(self.m.foo.bar.baz.name == 'm/foo/bar/baz')
 
-    def testFreeState(self):
+    def testDeepTrainable(self):
         with self.test_context():
-            xx = self.m.get_free_state()
-            self.assertTrue(np.allclose(xx, np.ones(1)))
-
-            y = np.array([34.0], settings.np_float)
-            self.m.set_state(y)
-            self.assertTrue(np.allclose(self.m.get_free_state(), y))
-
-    def testFixed(self):
-        self.m.foo.bar.baz.fixed = True
-        self.assertTrue(len(self.m.get_free_state()) == 0)
-
-    def testFixing(self):
-        self.m.fixed = False
-        self.m.foo.bar.fixed = True
-        self.assertTrue(self.m.fixed)
-        self.assertTrue(self.m.foo.fixed)
-        self.assertTrue(self.m.foo.bar.fixed)
-        self.assertTrue(self.m.foo.bar.baz.fixed)
-        self.m.foo.bar.baz.fixed = False
-        self.assertFalse(self.m.fixed)
-        self.assertFalse(self.m.foo.fixed)
-        self.assertFalse(self.m.foo.bar.fixed)
-        self.assertFalse(self.m.foo.bar.baz.fixed)
-
-    def testRecompile(self):
-        with self.test_context():
-            self.m._needs_recompile = False
-            self.m.foo.bar.baz.fixed = True
-            self.assertTrue(self.m._needs_recompile)
-
-            self.m._needs_recompile = False
-            self.m.foo.bar.baz.prior = gpflow.priors.Gaussian(0, 1)
-            self.assertTrue(self.m._needs_recompile)
-
-    def testTFMode(self):
-        with self.test_context():
-            x = tf.placeholder('float64')
-
-            self.m.make_tf_array(x)
-            self.assertTrue(isinstance(self.m.foo.bar.baz, gpflow.Param))
-            with self.m.tf_mode():
-                self.assertTrue(isinstance(self.m.foo.bar.baz, tf.Tensor))
+            self.m.compile()
+            self.m.trainable = False
+            _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
+            self.assertEqual(len(list(self.m.trainable_tensors)), 0)
+            self.m.trainable = True
+            self.assertEqual(
+                len(list(self.m.parameters)),
+                len(list(self.m.trainable_tensors)))
+            _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
 
 
-class ParamTestsWider(test_util.GPflowTestCase):
-    def setUp(self):
-        self.m = gpflow.params.Parameterized()
-        self.m.foo = gpflow.Param(1.0)
-        self.m.bar = gpflow.Param(np.arange(10))
-        self.m.baz = gpflow.Param(np.random.randn(3, 3))
-
-    def testHighestParent(self):
-        self.assertTrue(self.m.foo.root is self.m)
-        self.assertTrue(self.m.bar.root is self.m)
-        self.assertTrue(self.m.baz.root is self.m)
-
-    def testName(self):
-        self.assertTrue(self.m.foo.name == 'foo')
-        self.assertTrue(self.m.bar.name == 'bar')
-        self.assertTrue(self.m.baz.name == 'baz')
-
-    def testMakeTF(self):
-        with self.test_context():
-            x = tf.placeholder('float64')
-
-            l = self.m.make_tf_array(x)
-            self.assertTrue(l == 20)
-
-            l = self.m.foo.make_tf_array(x)
-            self.assertTrue(l == 1)
-
-            l = self.m.bar.make_tf_array(x)
-            self.assertTrue(l == 10)
-
-            l = self.m.baz.make_tf_array(x)
-            self.assertTrue(l == 9)
-
-    def testFreeState(self):
-        with self.test_context():
-            xx = self.m.get_free_state()
-            self.assertTrue(len(xx) == 20)
-
-            y = np.random.randn(20)
-            self.m.set_state(y)
-
-            self.assertTrue(np.allclose(self.m.get_free_state(), y))
-
-    def testIndexParam(self):
-        with self.test_context():
-            fs = self.m.get_free_state()
-            for p in [self.m.foo, self.m.bar, self.m.baz]:
-                index, found = self.m.get_param_index(p)
-                self.assertTrue(found)
-                self.assertTrue(fs[index] == p.get_free_state()[0])
-
-    def testFixed(self):
-        with self.test_context():
-            self.m.foo.fixed = True
-            self.assertTrue(len(self.m.get_free_state()) == 19)
-
-            self.m.foo.fixed = False
-            self.m.bar.fixed = True
-            self.assertTrue(len(self.m.get_free_state()) == 10)
-
-    def testFixing(self):
-        self.m.fixed = False
-        self.m.foo.fixed = True
-        self.assertFalse(self.m.fixed)
-        self.assertTrue(self.m.foo.fixed)
-        self.assertFalse(self.m.bar.fixed)
-        self.assertFalse(self.m.baz.fixed)
-        self.m.bar.fixed = True
-        self.m.baz.fixed = True
-        self.assertTrue(self.m.fixed)
-        self.assertTrue(self.m.foo.fixed)
-        self.assertTrue(self.m.bar.fixed)
-        self.assertTrue(self.m.baz.fixed)
-
-    def testRecompile(self):
-        with self.test_context():
-            self.m._needs_recompile = False
-            self.m.foo.fixed = True
-            self.assertTrue(self.m._needs_recompile)
-
-            self.m._needs_recompile = False
-            self.m.bar.prior = gpflow.priors.Gaussian(0, 1)
-            self.assertTrue(self.m._needs_recompile)
-
-    def testTFMode(self):
-        with self.test_context():
-            x = tf.placeholder('float64')
-            self.m.make_tf_array(x)
-            self.assertTrue(all([isinstance(p, gpflow.Param) for p in (self.m.foo, self.m.bar, self.m.baz)]))
-            with self.m.tf_mode():
-                self.assertTrue(all([isinstance(p, tf.Tensor)
-                                     for p in (self.m.foo, self.m.bar, self.m.baz)]))
-
-
-class SingleParamterizedInvariantTest(test_util.GPflowTestCase):
-    """
-    Tests that invariants of only allowing a single reference to a given Parameterized in a tree
-    """
+class ParamLikeInvariantTest(test_util.GPflowTestCase):
     def testSelfReference(self):
-        """
-        Test we raise when a Parameterized object references itself
-        """
         m = gpflow.params.Parameterized()
-
         with self.assertRaises(ValueError):
             m.foo = m
-
-    def testReferenceBelow(self):
-        """
-        Test we raise when we reference the same Parameterized object in a descendent node
-        """
-        m = gpflow.params.Parameterized()
         m.foo = gpflow.params.Parameterized()
-
         with self.assertRaises(ValueError):
             m.foo.bar = m
 
-    def testReferenceAbove(self):
-        """
-        Test we raise when we reference the same Parameterized object in an ancestor node
-        """
-        m = gpflow.params.Parameterized()
-        m.foo = gpflow.params.Parameterized()
-        m.foo.bar = gpflow.params.Parameterized()
-
-        with self.assertRaises(ValueError):
-            m.baz = m.foo.bar
-
-    def testReferenceAccross(self):
-        """
-        Test we raise when we reference the same Parameterized object in a sibling node
-        """
-        m = gpflow.params.Parameterized()
-        m.foo = gpflow.params.Parameterized()
-        m.foo.bar = gpflow.params.Parameterized()
-
-        m.boo = gpflow.params.Parameterized()
-
-        with self.assertRaises(ValueError):
-            m.boo.far = m.foo.bar
-
-    def testAddingToAnother(self):
-        """
-        Adding the same Paramterized object to another tree is fine.
-        """
-        m1 = gpflow.params.Parameterized()
-        m1.foo = gpflow.params.Parameterized()
-
-        m2 = gpflow.params.Parameterized()
-        m2.foo = m1.foo
-
     def testReassign(self):
-        """
-        We should be able to reassign the same value to the same param
-        """
-        m1 = gpflow.params.Parameterized()
+        m = gpflow.params.Parameterized()
         p = gpflow.params.Parameterized()
-        m1.foo = p  # assign
-        m1.foo = p  # reassign
+        m.foo = p  # assign
+        m.foo = p  # reassign
 
+    def testCompileFromRoot(self):
+        with self.test_context():
+            m = gpflow.params.Parameterized()
+            m.a = gpflow.Param(1.0)
+            m.b = gpflow.Param(1.0)
+            m.c = gpflow.params.Parameterized()
+            m.c.a = gpflow.Param(1.0)
+            with self.assertRaises(gpflow.GPflowError):
+                m.c.a.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                m.c.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                m.b.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                m.a.compile()
 
-class SingleParamInvariantTest(test_util.GPflowTestCase):
-    """
-    Tests that invariants of only allowing a single reference to a given Param in a tree
-    """
-    def testReferenceBelow(self):
-        """
-        Test we raise when the same Param object is added further down the tree
-        """
-        m = gpflow.params.Parameterized()
-        m.p = gpflow.Param(1)
-        m.foo = gpflow.params.Parameterized()
+        # TODO(awav):
+        # m = gpflow.params.Parameterized()
+        # m.foo = gpflow.params.Parameterized()
+        # m.foo.bar = gpflow.params.Parameterized()
+        # with self.assertRaises(ValueError):
+        #     m.baz = m.foo.bar
 
-        with self.assertRaises(ValueError):
-            m.foo.p = m.p
+        # TODO(awav):
+        #m = gpflow.params.Parameterized()
+        #m.foo = gpflow.params.Parameterized()
+        #m.foo.bar = gpflow.params.Parameterized()
+        #m.boo = gpflow.params.Parameterized()
+        #with self.assertRaises(ValueError):
+        #    m.boo.far = m.foo.bar
 
-    def testReferenceAbove(self):
-        """
-        Test we raise when we reference the same Param object in a an ancestor node
-        """
-        m = gpflow.params.Parameterized()
-        m.foo = gpflow.params.Parameterized()
-        m.foo.p = gpflow.Param(1)
-
-        with self.assertRaises(ValueError):
-            m.p = m.foo.p
-
-    def testReferenceAccross(self):
-        """
-        Test we raise when we reference the same Param object in a sibling node
-        """
-        m = gpflow.params.Parameterized()
-        m.foo = gpflow.params.Parameterized()
-        m.foo.p = gpflow.Param(1)
-
-        m.bar = gpflow.params.Parameterized()
-
-        with self.assertRaises(ValueError):
-            m.bar.p = m.foo.p
-
-    def testAddingToAnother(self):
-        """
-        Adding the same Param object to another tree is fine.
-        """
-        m1 = gpflow.params.Parameterized()
-        m1.foo = gpflow.Param(1)
-
-        m2 = gpflow.params.Parameterized()
-        m2.foo = m1.foo
-
-    def testReassign(self):
-        """
-        We should be able to reassign the same value to the same param
-        """
-        m1 = gpflow.params.Parameterized()
-        p = gpflow.Param(1)
-        m1.foo = p  # assign
-        m1.foo = p  # reassign
+    # TODO(awav):
+    # def testAddingToAnother(self):
+    #     """
+    #     Adding the same Paramterized object to another tree is fine.
+    #     """
+    #     m1 = gpflow.params.Parameterized()
+    #     m1.foo = gpflow.params.Parameterized()
+    #     m2 = gpflow.params.Parameterized()
+    #     with self.assertRaises(gpflow.GPflowError):
+    #         m2.foo = m1.foo
 
 
 class TestParamList(test_util.GPflowTestCase):
@@ -641,7 +435,7 @@ class TestFixWithPrior(test_util.GPflowTestCase):
             m.pp = gpflow.Param(1.0, gpflow.transforms.positive)
             m.p.prior = gpflow.priors.Gamma(1, 1)
             m.pp.prior = gpflow.priors.Gamma(1, 1)
-            m.p.fixed = True
+            m.p.trainable = False
             m.build_likelihood = lambda: tf.zeros([1], tf.float64)
             m.optimize(disp=1, maxiter=10)
 
@@ -657,7 +451,7 @@ class TestRandomizeDefault(test_util.GPflowTestCase):
             m.p = gpflow.Param(1.0)
             m.pp = gpflow.Param(1.0, gpflow.transforms.Log1pe())
             m.pf = gpflow.Param(1.0)
-            m.pf.fixed = True
+            m.pf.trainable = False
 
             m.pmd = gpflow.Param(np.ones((5, 2)))
             ltr = gpflow.transforms.LowerTriangular(1,2).forward(np.ones(2 * 10))
@@ -798,6 +592,13 @@ class TestScopes(test_util.GPflowTestCase):
             with self.m.tf_mode():
                 K = self.m.kern.K(self.m.X)
             self.assertTrue('kern.K' in K.name)
+
+def _check_trainable_flag(m, assert_true, assert_false):
+    for param in m.parameters:
+        assert_bool = assert_false
+        if param.trainable:
+            assert_bool = assert_true
+        assert_bool(gpflow.misc.is_tensor_trainable(param.var_tensor))
 
 
 if __name__ == "__main__":

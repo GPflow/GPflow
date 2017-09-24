@@ -73,7 +73,7 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
         if parent and not isinstance(parent, Parentable):
             raise GPflowError('Argument does not implement parentable interface.')
         self._session = None
-        self._parent = parent if parent is not None else self
+        self._parent = parent if parent is not None else None
 
     def is_built_coherence(self, graph=None):
         graph = self.enquire_graph(graph=graph)

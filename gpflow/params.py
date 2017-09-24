@@ -335,7 +335,7 @@ class Parameterized(Node):
 
     @property
     def empty(self):
-        return len(list(self.params)) == 0
+        return len(list(self.parameters)) == 0
 
     @property
     def parameters(self):
@@ -452,6 +452,8 @@ class Parameterized(Node):
     def _update_param_attribute(self, name, value):
         param = self._get_param(name)
         if _is_param_like(value):
+            if param is value:
+                return
             if self.is_built_coherence(value.graph) is Build.YES:
                 raise GPflowError('Parameterized object is built.')
             param.set_parent()
@@ -476,6 +478,9 @@ class Parameterized(Node):
             object.__setattr__(self, key, value)
             return
 
+        if self.root is value:
+            raise ValueError('Cannot be assigned as parameter to itself.')
+
         if key in self.__dict__.keys():
             if _is_param_like(getattr(self, key)):
                 self._update_param_attribute(key, value)
@@ -493,11 +498,16 @@ class Parameterized(Node):
 class ParamList(Parameterized):
     def __init__(self, list_of_params, name=None):
         super(ParamList, self).__init__(name=None)
+        self._list = []
         if not isinstance(list_of_params, list):
-            raise ValueError('Not acceptable argument type for list_of_params.')
+            raise ValueError('Not acceptable argument type at list_of_params.')
         for i, item in enumerate(list_of_params):
-            if not isinstance(item, (Param, Parameterized)):
-                raise ValueError('Not acceptable item type: {0}.'.format(type(item)))
+            if not _is_param_like(item):
+                try:
+                    item = Param(_valid_input(item))
+                except ValueError:
+                    raise ValueError('A list item must be either parameter, '
+                                     'tensorflow variable, an array or a scalar.')
             item.set_parent(self)
             item.set_name('{index}/{name}'.format(index=i, name=item.name))
         self._list = list_of_params
@@ -532,7 +542,7 @@ class ParamList(Parameterized):
 
     def __setitem__(self, index, value):
         if not _is_param_like(value):
-            raise ValueError('Item must be parameter-like object.')
+            value = _valid_input(value)
         if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
             raise GPflowError('ParamList is compiled and items are not modifiable.')
         self._update_param_attribute(index, value)
