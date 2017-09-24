@@ -23,7 +23,7 @@ from gpflow.test_util import GPflowTestCase
 
 class TestPickleEmpty(GPflowTestCase):
     def setUp(self):
-        self.m = gpflow.model.Model()
+        self.m = gpflow.models.Model()
 
     def test(self):
         s = pickle.dumps(self.m)
@@ -32,9 +32,9 @@ class TestPickleEmpty(GPflowTestCase):
 
 class TestPickleSimple(GPflowTestCase):
     def setUp(self):
-        self.m = gpflow.model.Model()
-        self.m.p1 = gpflow.param.Param(np.random.randn(3, 2))
-        self.m.p2 = gpflow.param.Param(np.random.randn(10))
+        self.m = gpflow.models.Model()
+        self.m.p1 = gpflow.Param(np.random.randn(3, 2))
+        self.m.p2 = gpflow.Param(np.random.randn(10))
 
     def test(self):
         s = pickle.dumps(self.m)
@@ -60,7 +60,7 @@ class TestPickleGPR(GPflowTestCase):
             rng = np.random.RandomState(0)
             X = rng.randn(10, 1)
             Y = rng.randn(10, 1)
-            self.m = gpflow.gpr.GPR(X, Y, kern=gpflow.kernels.RBF(1))
+            self.m = gpflow.models.GPR(X, Y, kern=gpflow.kernels.RBF(1))
 
     def test(self):
         with self.test_context():
@@ -115,7 +115,7 @@ class TestPickleSVGP(GPflowTestCase):
             X = rng.randn(10, 1)
             Y = rng.randn(10, 1)
             Z = rng.randn(5, 1)
-            self.m = gpflow.svgp.SVGP(
+            self.m = gpflow.models.SVGP(
                 X, Y, Z=Z,
                 likelihood=gpflow.likelihoods.Gaussian(),
                 kern=gpflow.kernels.RBF(1))
@@ -155,8 +155,8 @@ class TestTransforms(GPflowTestCase):
             self.transforms = gpflow.transforms.Transform.__subclasses__()
             self.models = []
             for T in self.transforms:
-                m = gpflow.model.Model()
-                m.x = gpflow.param.Param(1.0)
+                m = gpflow.models.Model()
+                m.x = gpflow.Param(1.0)
                 if T==gpflow.transforms.LowerTriangular:
                     m.x.transform = T(1)
                 else:

@@ -15,7 +15,7 @@ class TestProfiling(GPflowTestCase):
         X = np.random.rand(100, 1)
         Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
         k = gpflow.kernels.RBF(1)
-        self.m = gpflow.gpr.GPR(X, Y, k)
+        self.m = gpflow.models.GPR(X, Y, k)
 
     def tearDown(self):
         storage = getattr(self.m.kern, '_compute_K_symm_AF_storage', None)

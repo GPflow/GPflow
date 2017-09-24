@@ -51,7 +51,7 @@ class TestNoArgs(GPflowTestCase):
 
 
 class AddModel(DumbModel):
-    @gpflow.model.AutoFlow((tf.float64,), (tf.float64,))
+    @gpflow.models.AutoFlow((tf.float64,), (tf.float64,))
     def add(self, x, y):
         return tf.add(x, y)
 
@@ -192,9 +192,9 @@ class TestAdd(GPflowTestCase):
 class IncrementModel(DumbModel):
     def __init__(self):
         DumbModel.__init__(self)
-        self.a = gpflow.param.DataHolder(np.array([3.]))
+        self.a = gpflow.DataHolder(np.array([3.]))
 
-    @gpflow.model.AutoFlow((tf.float64,))
+    @gpflow.models.AutoFlow((tf.float64,))
     def inc(self, x):
         return x + self.a
 
@@ -215,7 +215,7 @@ class TestGPmodel(GPflowTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
-        self.m = gpflow.svgp.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
+        self.m = gpflow.models.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
                                   likelihood=gpflow.likelihoods.StudentT(),
                                   Z=X[::2].copy())
         self.Xtest = np.random.randn(100, 1)
@@ -246,7 +246,7 @@ class TestResetGraph(GPflowTestCase):
         k = gpflow.kernels.Matern32(1)
         X, Y = np.random.randn(2, 10, 1)
         self.Xnew = np.random.randn(5, 1)
-        self.m = gpflow.gpr.GPR(X, Y, kern=k)
+        self.m = gpflow.models.GPR(X, Y, kern=k)
 
     def test(self):
         mu, var = self.m.predict_f(self.Xnew)
@@ -264,7 +264,7 @@ class TestFixAndPredict(GPflowTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
-        self.m = gpflow.svgp.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
+        self.m = gpflow.models.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
                                   likelihood=gpflow.likelihoods.StudentT(),
                                   Z=X[::2].copy())
         self.Xtest = np.random.randn(100, 1)
@@ -285,7 +285,7 @@ class TestSVGP(GPflowTestCase):
         X = rng.randn(10, 1)
         Y = rng.randn(10, 1)
         Z = rng.randn(3, 1)
-        model = gpflow.svgp.SVGP(X=X, Y=Y, kern=gpflow.kernels.RBF(1), likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
+        model = gpflow.models.SVGP(X=X, Y=Y, kern=gpflow.kernels.RBF(1), likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
         model.compute_log_likelihood()
 
 

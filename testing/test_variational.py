@@ -81,7 +81,7 @@ class VariationalUnivariateTest(GPflowTestCase):
         self.posteriorStd = np.sqrt(self.posteriorVariance)
 
     def get_model(self, is_diagonal, is_whitened):
-        m = gpflow.svgp.SVGP(X=self.X, Y=self.Y,
+        m = gpflow.models.SVGP(X=self.X, Y=self.Y,
                              kern=kernel(kernelVariance=self.K),
                              likelihood=self.lik, Z=self.Z, q_diag=is_diagonal, whiten=is_whitened)
         if is_diagonal:
@@ -172,7 +172,7 @@ class VariationalMultivariateTest(GPflowTestCase):
         self.q_sqrt_full = np.tril(self.rng.rand(self.nDimensions, self.nDimensions))
 
     def getModel(self, is_diagonal, is_whitened):
-        model = gpflow.svgp.SVGP(
+        model = gpflow.models.SVGP(
             X=self.X, Y=self.Y,
             kern=kernel(kernelVariance=self.signalVariance, lengthScale=self.lengthScale),
             likelihood=self.lik,

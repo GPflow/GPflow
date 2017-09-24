@@ -30,12 +30,12 @@ class TestEquivalence(GPflowTestCase):
             # two independent vgps for two sets of data
             k0 = gpflow.kernels.RBF(2)
             k0.lengthscales.fixed = True
-            self.vgp0 = gpflow.vgp.VGP(X[0], Y[0], kern=k0,
+            self.vgp0 = gpflow.models.VGP(X[0], Y[0], kern=k0,
                                        mean_function=gpflow.mean_functions.Constant(),
                                        likelihood=gpflow.likelihoods.Gaussian())
             k1 = gpflow.kernels.RBF(2)
             k1.lengthscales.fixed = True
-            self.vgp1 = gpflow.vgp.VGP(X[1], Y[1], kern=k1,
+            self.vgp1 = gpflow.models.VGP(X[1], Y[1], kern=k1,
                                        mean_function=gpflow.mean_functions.Constant(),
                                        likelihood=gpflow.likelihoods.Gaussian())
             # coregionalized gpr
@@ -49,7 +49,7 @@ class TestEquivalence(GPflowTestCase):
 
             mean_c = gpflow.mean_functions.SwitchedMeanFunction(
                 [gpflow.mean_functions.Constant(), gpflow.mean_functions.Constant()])
-            self.cvgp = gpflow.vgp.VGP(X_augumented, Y_augumented,
+            self.cvgp = gpflow.models.VGP(X_augumented, Y_augumented,
                                        kern=kc*coreg,
                                        mean_function=mean_c,
                                        likelihood=lik,

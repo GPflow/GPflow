@@ -338,9 +338,9 @@ class TestSwitchedLikelihood(GPflowTestCase):
 class TestLikelihoodChecks(GPflowTestCase):
     def run_models(self, likelihood, Y):
         X = np.random.randn(Y.shape[0], 1)
-        gpflow.gpr.GPR(X, Y, gpflow.kernels.RBF(1))
-        m1 = gpflow.vgp.VGP(X, Y, gpflow.kernels.RBF(1), likelihood)
-        m2 = gpflow.svgp.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
+        gpflow.models.GPR(X, Y, gpflow.kernels.RBF(1))
+        m1 = gpflow.models.VGP(X, Y, gpflow.kernels.RBF(1), likelihood)
+        m2 = gpflow.models.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
 
     def test_likelihood_checks(self):
         to_pass = [

@@ -10,7 +10,7 @@ from gpflow import settings
 
 class TestSessionConfiguration(GPflowTestCase):
     def setUp(self):
-        self.m = gpflow.gpr.GPR(np.ones((1, 1)), np.ones((1, 1)), kern=gpflow.kernels.Matern52(1))
+        self.m = gpflow.models.GPR(np.ones((1, 1)), np.ones((1, 1)), kern=gpflow.kernels.Matern52(1))
 
     def tearDown(self):
         if self.m.session is not None:

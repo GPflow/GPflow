@@ -72,10 +72,10 @@ class SampleModelTest(GPflowTestCase):
     """
     def setUp(self):
         rng = np.random.RandomState(0)
-        class Quadratic(gpflow.model.Model):
+        class Quadratic(gpflow.models.Model):
             def __init__(self):
-                gpflow.model.Model.__init__(self)
-                self.x = gpflow.param.Param(rng.randn(2))
+                gpflow.models.Model.__init__(self)
+                self.x = gpflow.Param(rng.randn(2))
             def build_likelihood(self):
                 return -tf.reduce_sum(tf.square(self.x))
         self.m = Quadratic()
@@ -96,7 +96,7 @@ class SamplesDictTest(GPflowTestCase):
     def setUp(self):
         with self.test_context():
             X, Y = np.random.randn(2, 10, 1)
-            self.m = gpflow.gpmc.GPMC(X, Y, kern=gpflow.kernels.Matern32(1), likelihood=gpflow.likelihoods.StudentT())
+            self.m = gpflow.models.GPMC(X, Y, kern=gpflow.kernels.Matern32(1), likelihood=gpflow.likelihoods.StudentT())
 
     @unittest.skipIf(pandas is None, "Pandas module required for dataframes.")
     def test_samples_df(self):

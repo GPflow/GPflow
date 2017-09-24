@@ -448,7 +448,7 @@ class Parameterized(Node):
         param_like = (Param, Parameterized)
         if isinstance(value, param_like):
             if self.is_built_coherence(value.graph) is Build.YES:
-                raise GPflowError('Attribute cannot be changed in assembled node.')
+                raise GPflowError('Built node cannot be changed.')
             attr.set_parent()
             attr.set_name()
             value.set_parent(self)
@@ -488,17 +488,32 @@ class Parameterized(Node):
 
 
 class ParamList(Parameterized):
-    def __init__(self, list_of_params):
-        Parameterized.__init__(self)
-        assert isinstance(list_of_params, list)
-        for item in list_of_params:
-            assert isinstance(item, (Param, Parameterized))
-            item._parent = self
+    def __init__(self, list_of_params, name=None):
+        super(ParamList, self).__init__(name=None)
+        if not isinstance(list_of_params, list):
+            raise ValueError('Not acceptable argument type for list_of_params.')
+        for i, item in enumerate(list_of_params):
+            if not isinstance(item, (Param, Parameterized)):
+                raise ValueError('Not acceptable item type: {0}.'.format(type(item)))
+            item.set_parent(self)
+            item.set_name('{index}/{name}'.format(index=i, name=item.name))
         self._list = list_of_params
 
     @property
-    def sorted_params(self):
-        return self._list
+    def params(self):
+        for item in self._list:
+            yield item
+
+    def append(self, item):
+        if not isinstance(item, (Param, Parameterized)):
+            raise ValueError('Not acceptable item type: {0}.'.format(type(item)))
+        length = self.__len__()
+        item.set_parent(self)
+        item.set_name('{index}/{name}'.format(index=length, name=item.name))
+        self._list.append(item)
+
+    def __len__(self):
+        return len(self._list)
 
     def __getitem__(self, key):
         """
@@ -512,21 +527,12 @@ class ParamList(Parameterized):
             return o._tf_array
         return o
 
-    def append(self, item):
-        assert isinstance(item, (Param, Parameterized)), \
-            "this object is for containing parameters"
-        item._parent = self
-        self.sorted_params.append(item)
-
-    def __len__(self):
-        return len(self._list)
-
     def __setitem__(self, key, value):
         """
         It's not possible to assign to things in the list, but it is possible
         to set their values by assignment.
         """
-        self.sorted_params[key]._array[...] = value
+        self.params[key]._array[...] = value
 
 
 def _valid_input(value):

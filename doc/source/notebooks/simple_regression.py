@@ -14,7 +14,7 @@ def getRegressionModel(X,Y):
     #build the GPR object
     k = gpflow.kernels.Matern52(1)
     meanf = gpflow.mean_functions.Linear(1,0)
-    m = gpflow.gpr.GPR(X, Y, k, meanf)
+    m = gpflow.models.GPR(X, Y, k, meanf)
     m.likelihood.variance = 0.01
     print "Here are the parameters before optimization"
     m

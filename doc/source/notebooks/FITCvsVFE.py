@@ -62,7 +62,7 @@ def getKernel():
     return gpflow.kernels.RBF(1)
 
 def getRegressionModel(X,Y):
-    m = gpflow.gpr.GPR(X, Y, kern=getKernel() )
+    m = gpflow.models.GPR(X, Y, kern=getKernel() )
     m.likelihood.variance = 1.
     m.kern.lengthscales = 1.
     m.kern.variance = 1.
@@ -70,9 +70,9 @@ def getRegressionModel(X,Y):
 
 def getSparseModel(X,Y,isFITC=False):
     if not(isFITC):
-        m = gpflow.sgpr.SGPR(X, Y, kern=getKernel(),  Z=X.copy() )
+        m = gpflow.models.SGPR(X, Y, kern=getKernel(),  Z=X.copy() )
     else:
-        m = gpflow.sgpr.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy() )
+        m = gpflow.models.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy() )
     return m
 
 def printModelParameters( model ):

@@ -49,32 +49,32 @@ class TestEquivalence(GPflowTestCase):
             Y = np.tile(Y, 2)  # two identical columns
             self.Xtest = rng.rand(10, 1) * 10
 
-            m1 = gpflow.gpr.GPR(
+            m1 = gpflow.models.GPR(
                 X, Y, kern=gpflow.kernels.RBF(1),
                 mean_function=gpflow.mean_functions.Constant())
-            m2 = gpflow.vgp.VGP(
+            m2 = gpflow.models.VGP(
                 X, Y, gpflow.kernels.RBF(1), likelihood=gpflow.likelihoods.Gaussian(),
                 mean_function=gpflow.mean_functions.Constant())
-            m3 = gpflow.svgp.SVGP(
+            m3 = gpflow.models.SVGP(
                 X, Y, gpflow.kernels.RBF(1),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 Z=X.copy(),
                 q_diag=False,
                 mean_function=gpflow.mean_functions.Constant())
             m3.Z.fixed = True
-            m4 = gpflow.svgp.SVGP(
+            m4 = gpflow.models.SVGP(
                 X, Y, gpflow.kernels.RBF(1),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 Z=X.copy(), q_diag=False, whiten=True,
                 mean_function=gpflow.mean_functions.Constant())
             m4.Z.fixed = True
-            m5 = gpflow.sgpr.SGPR(
+            m5 = gpflow.models.SGPR(
                 X, Y, gpflow.kernels.RBF(1),
                 Z=X.copy(),
                 mean_function=gpflow.mean_functions.Constant())
 
             m5.Z.fixed = True
-            m6 = gpflow.sgpr.GPRFITC(
+            m6 = gpflow.models.GPRFITC(
                 X, Y, gpflow.kernels.RBF(1), Z=X.copy(),
                 mean_function=gpflow.mean_functions.Constant())
             m6.Z.fixed = True
@@ -121,9 +121,9 @@ class VGPTest(GPflowTestCase):
             kern = gpflow.kernels.Matern52(DX)
             likelihood = gpflow.likelihoods.StudentT()
 
-            m_svgp = gpflow.svgp.SVGP(X, Y, kern, likelihood, X.copy(),
+            m_svgp = gpflow.models.SVGP(X, Y, kern, likelihood, X.copy(),
                                       whiten=True, q_diag=False)
-            m_vgp = gpflow.vgp.VGP(X, Y, kern, likelihood)
+            m_vgp = gpflow.models.VGP(X, Y, kern, likelihood)
 
             q_mu = np.random.randn(N, DY)
             q_sqrt = np.random.randn(N, N, DY)
@@ -155,9 +155,9 @@ class VGPTest(GPflowTestCase):
             kern = gpflow.kernels.Matern52(DX)
             likelihood = gpflow.likelihoods.StudentT()
 
-            m_vgp = gpflow.vgp.VGP(X, Y, kern, likelihood)
+            m_vgp = gpflow.models.VGP(X, Y, kern, likelihood)
 
-            m_vgp_oa = gpflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
+            m_vgp_oa = gpflow.models.VGP_opper_archambeau(X, Y, kern, likelihood)
 
             q_alpha = np.random.randn(N, DX)
             q_lambda = np.random.randn(N, DX) ** 2
@@ -174,7 +174,7 @@ class VGPTest(GPflowTestCase):
             prec_dnn = K_inv[None, :, :] + np.array([np.diag(l ** 2) for l in q_lambda.T])
             var_dnn = np.linalg.inv(prec_dnn)
 
-            m_svgp_unwhitened = gpflow.svgp.SVGP(
+            m_svgp_unwhitened = gpflow.models.SVGP(
                 X, Y, kern, likelihood, X.copy(),
                 whiten=False, q_diag=False)
 
@@ -215,8 +215,8 @@ class VGPTest(GPflowTestCase):
             kern = gpflow.kernels.Matern52(DX)
             likelihood = gpflow.likelihoods.StudentT()
 
-            m_vgp = gpflow.vgp.VGP(X, Y, kern, likelihood)
-            m_vgp_oa = gpflow.vgp.VGP_opper_archambeau(X, Y, kern, likelihood)
+            m_vgp = gpflow.models.VGP(X, Y, kern, likelihood)
+            m_vgp_oa = gpflow.models.VGP_opper_archambeau(X, Y, kern, likelihood)
 
             try:
                 for m in [m_vgp, m_vgp_oa]:
@@ -239,10 +239,10 @@ class TestUpperBound(GPflowTestCase):
 
     def test_few_inducing_points(self):
         with self.test_context():
-            vfe = gpflow.sgpr.SGPR(self.X, self.Y, gpflow.kernels.RBF(1), self.X[:10, :].copy())
+            vfe = gpflow.models.SGPR(self.X, self.Y, gpflow.kernels.RBF(1), self.X[:10, :].copy())
             vfe.optimize()
 
-            full = gpflow.gpr.GPR(self.X, self.Y, gpflow.kernels.RBF(1))
+            full = gpflow.models.GPR(self.X, self.Y, gpflow.kernels.RBF(1))
             full.kern.lengthscales = vfe.kern.lengthscales.value
             full.kern.variance = vfe.kern.variance.value
             full.likelihood.variance = vfe.likelihood.variance.value

@@ -13,9 +13,9 @@
 # limitations under the License.
 
 
-from gpflow.misc import get_attribute
 from gpflow.core.base import GPflowError
-from gpflow.core.base import Parentable
+from gpflow.misc import get_attribute
+from gpflow.params import Parameterized
 
 
 class TensorConverter:  # pylint: disable=R0903
@@ -23,8 +23,8 @@ class TensorConverter:  # pylint: disable=R0903
 
     @classmethod
     def tensor_mode(cls, obj):
-        if not isinstance(obj, Parentable):
-            raise ValueError('Object must be .')
+        if not isinstance(obj, Parameterized):
+            raise ValueError('Tensor mode works only for Parameterized objects.')
         while True:
             if get_attribute(obj, cls.__tensor_mode__, allow_none=True) is not None:
                 return True

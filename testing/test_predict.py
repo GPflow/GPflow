@@ -30,7 +30,7 @@ class TestGaussian(GPflowTestCase):
             self.Xtest = self.rng.randn(10, 2)
             self.Ytest = self.rng.randn(10, 1)
             # make a Gaussian model
-            self.m = gpflow.gpr.GPR(self.X, self.Y, kern=self.kern)
+            self.m = gpflow.models.GPR(self.X, self.Y, kern=self.kern)
 
     def test_all(self):
         with self.test_context():
@@ -89,7 +89,7 @@ class TestFullCov(GPflowTestCase):
                 rng.randn(self.M, self.input_dim),
                 rng.randn(self.Ntest, self.input_dim))
             self.k = lambda: gpflow.kernels.Matern32(self.input_dim)
-            self.model = gpflow.gpr.GPR(self.X, self.Y, kern=self.k())
+            self.model = gpflow.models.GPR(self.X, self.Y, kern=self.k())
 
     def test_cov(self):
         with self.test_context():
@@ -111,14 +111,14 @@ class TestFullCovSGPR(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.sgpr.SGPR(self.X, self.Y, Z=self.Z, kern=self.k())
+            self.model = gpflow.models.SGPR(self.X, self.Y, Z=self.Z, kern=self.k())
 
 
 class TestFullCovGPRFITC(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.sgpr.GPRFITC(
+            self.model = gpflow.models.GPRFITC(
                 self.X, self.Y,
                 Z=self.Z, kern=self.k())
 
@@ -127,7 +127,7 @@ class TestFullCovSVGP1(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.svgp.SVGP(
+            self.model = gpflow.models.SVGP(
                 self.X, self.Y, Z=self.Z, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 whiten=False, q_diag=True)
@@ -137,7 +137,7 @@ class TestFullCovSVGP2(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.svgp.SVGP(
+            self.model = gpflow.models.SVGP(
                 self.X, self.Y, Z=self.Z, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 whiten=True, q_diag=False)
@@ -147,7 +147,7 @@ class TestFullCovSVGP3(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.svgp.SVGP(
+            self.model = gpflow.models.SVGP(
                 self.X, self.Y, Z=self.Z, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 whiten=True, q_diag=True)
@@ -157,7 +157,7 @@ class TestFullCovSVGP4(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.svgp.SVGP(
+            self.model = gpflow.models.SVGP(
                 self.X, self.Y, Z=self.Z, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 whiten=True, q_diag=False)
@@ -167,7 +167,7 @@ class TestFullCovVGP(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.vgp.VGP(
+            self.model = gpflow.models.VGP(
                 self.X, self.Y, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian())
 
@@ -176,7 +176,7 @@ class TestFullCovGPMC(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.gpmc.GPMC(
+            self.model = gpflow.models.GPMC(
                 self.X, self.Y, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian())
 
@@ -185,7 +185,7 @@ class TestFullCovSGPMC(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         with self.test_context():
-            self.model = gpflow.sgpmc.SGPMC(
+            self.model = gpflow.models.SGPMC(
                 self.X, self.Y, kern=self.k(),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 Z=self.Z)

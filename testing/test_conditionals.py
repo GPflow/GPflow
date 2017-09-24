@@ -64,8 +64,10 @@ class DiagsTest(GPflowTestCase):
 
     def test_nonwhiten(self):
         with self.test_context() as sess, self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
-            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
+            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.gaussian_gp_predict(
+                self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
+            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.gaussian_gp_predict(
+                self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
 
             mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
             var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
