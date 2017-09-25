@@ -121,9 +121,9 @@ class Param(Node):
             if self.trainable == value:
                 return
             elif value:
-                remove_from_trainables(self.var_tensor, graph)
-            else:
                 add_to_trainables(self.var_tensor, graph)
+            else:
+                remove_from_trainables(self.var_tensor, graph)
 
         object.__setattr__(self, 'trainable', value)
 
@@ -265,13 +265,13 @@ class Param(Node):
             pass
         object.__setattr__(self, name, value)
 
-    def __str__(self, prepend=''):
-        return prepend + \
-               '\033[1m' + self.name + '\033[0m' + \
-               ' transform:' + str(self.transform) + \
-               ' prior:' + str(self.prior) + \
-               (' [FIXED]' if self.trainable else '') + \
-               '\n' + str(self.read_value())
+    def __str__(self):
+        msg = '\033[1m{name}\033[0m transform:{transform} prior:{prior} {trainable} \n {value}'
+        trainable = "[TRAINABLE]" if self.trainable else ""
+        value = "[EXTERNAL TENSOR]" if self._externally_defined else self.read_value()
+        return msg.format(name=self.name, transform=self.transform,
+                          prior=self.prior, trainable=trainable,
+                          value=value)
 
 
 class DataHolder(Param):
@@ -391,9 +391,9 @@ class Parameterized(Node):
     @property
     def trainable(self):
         for parameter in self.parameters:
-            if not parameter.trainable:
-                return False
-        return True
+            if parameter.trainable:
+                return True
+        return False
 
     @trainable.setter
     def trainable(self, value):
@@ -445,6 +445,8 @@ class Parameterized(Node):
 
     def _set_param(self, name, value):
         object.__setattr__(self, name, value)
+        value.set_parent(self)
+        value.set_name(name)
 
     def _get_param(self, name):
         return getattr(self, name)
@@ -456,11 +458,9 @@ class Parameterized(Node):
                 return
             if self.is_built_coherence(value.graph) is Build.YES:
                 raise GPflowError('Parameterized object is built.')
+            self._set_param(name, value)
             param.set_parent()
             param.set_name()
-            value.set_parent(self)
-            value.set_name(name)
-            self._set_param(name, value)
         elif isinstance(param, Param) and is_valid_param_value(value):
             param.assign(value, session=self.session)
         else:
@@ -496,21 +496,13 @@ class Parameterized(Node):
 
 
 class ParamList(Parameterized):
-    def __init__(self, list_of_params, name=None):
+    def __init__(self, list_of_params, trainable=True, name=None):
         super(ParamList, self).__init__(name=None)
-        self._list = []
         if not isinstance(list_of_params, list):
             raise ValueError('Not acceptable argument type at list_of_params.')
-        for i, item in enumerate(list_of_params):
-            if not _is_param_like(item):
-                try:
-                    item = Param(_valid_input(item))
-                except ValueError:
-                    raise ValueError('A list item must be either parameter, '
-                                     'tensorflow variable, an array or a scalar.')
-            item.set_parent(self)
-            item.set_name('{index}/{name}'.format(index=i, name=item.name))
-        self._list = list_of_params
+        self._list = [self._valid_list_input(item, trainable) for item in list_of_params]
+        for index, item in enumerate(self._list):
+            self._set_param(index, item)
 
     @property
     def params(self):
@@ -518,18 +510,33 @@ class ParamList(Parameterized):
             yield item
 
     def append(self, item):
-        if not _is_param_like(item):
-            raise ValueError('Not acceptable item type: {0}.'.format(type(item)))
+        if not isinstance(item, Param):
+            raise ValueError('Non parameter type cannot be appended to the list.')
         length = self.__len__()
         item.set_parent(self)
-        item.set_name('{index}/{name}'.format(index=length, name=item.name))
+        item.set_name(self._item_name(length))
         self._list.append(item)
 
     def _get_param(self, name):
         return self._list[name]
 
-    def _set_param(self, name, value):
-        self._list[name] = value
+    def _set_param(self, index, value):
+        self._list[index] = value
+        value.set_parent(self)
+        value.set_name(self._item_name(index))
+
+    def _item_name(self, index):
+        return '{name}{index}'.format(name='item', index=index)
+
+    def _valid_list_input(self, value, trainable):
+        if not _is_param_like(value):
+            try:
+                return Param(value, trainable=trainable)
+            except ValueError:
+                raise ValueError(
+                    'A list item must be either parameter, '
+                    'tensorflow variable, an array or a scalar.')
+        return value
 
     def __len__(self):
         return len(self._list)
@@ -541,20 +548,23 @@ class ParamList(Parameterized):
         return param
 
     def __setitem__(self, index, value):
-        if not _is_param_like(value):
-            value = _valid_input(value)
+        if not isinstance(value, Param):
+            raise ValueError('Non parameter type cannot be assigned to the list.')
         if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
             raise GPflowError('ParamList is compiled and items are not modifiable.')
         self._update_param_attribute(index, value)
 
+
 def _is_param_like(value):
     return isinstance(value, (Param, Parameterized))
+
 
 def _tensor_mode_parameter(obj):
     if isinstance(obj, Param):
         if isinstance(obj, DataHolder):
             return obj.var_tensor
         return obj.transformed_tensor
+
 
 def _valid_input(value):
     if not is_valid_param_value(value):

@@ -27,11 +27,11 @@ except ImportError:
 
 
 class NamingTests(test_util.GPflowTestCase):
-    def testStandardName(self):
+    def test_standard_name(self):
         p = gpflow.Param(1)
         self.assertTrue(p.name == 'Param')
 
-    def testFullName(self):
+    def test_full_fame(self):
         p = gpflow.Param(1)
         self.assertEqual(p.full_name, 'Param')
         m = gpflow.models.Model()
@@ -46,14 +46,14 @@ class ParamTests(test_util.GPflowTestCase):
         self.m.p = gpflow.Param(1.0)
         self.m.b = gpflow.Param(1.0)
 
-    def testAssign(self):
+    def test_assign(self):
         with self.test_context():
             self.p.assign(2.0)
             self.assertTrue(self.p.read_value() == 2.0)
             self.m.p = 2.0
             self.assertTrue(self.m.p.read_value() == 2.0)
 
-    def testCreateAndReplace(self):
+    def test_create_and_replace(self):
         with self.test_context():
             tensor = tf.get_variable('a', shape=()) + 1.0
             param = gpflow.Param(1e3)
@@ -73,7 +73,7 @@ class ParamTests(test_util.GPflowTestCase):
             self.assertEqual(self.m.d, new_param)
             self.assertEqual(self.m.d.full_name, self.m.name + '/d')
 
-    def testAssignWithCompile(self):
+    def test_assign_with_compile(self):
         with self.test_context():
             self.p.compile()
             self.m.compile()
@@ -82,20 +82,20 @@ class ParamTests(test_util.GPflowTestCase):
             self.assertTrue(self.p.read_value() == 2.0)
             self.assertTrue(self.m.p.read_value() == 2.0)
 
-    def testRoot(self):
+    def test_root(self):
         self.assertTrue(self.m.p.root is self.m)
 
-    def testTrainable(self):
+    def test_trainable(self):
         self.assertTrue(self.p.trainable)
         self.p.trainable = False
         self.assertFalse(self.p.trainable)
 
         self.assertTrue(self.m.trainable)
-        self.m.p.trainable = True
-        self.assertFalse(self.m.trainable)
-        self.assertTrue(self.m.p.trainable)
+        self.m.p.trainable = False
+        self.assertFalse(self.m.p.trainable)
+        self.assertTrue(self.m.trainable)
 
-    def testTrainableWithCompile(self):
+    def test_trainable_with_compile(self):
         with self.test_context():
             self.p.compile()
             self.m.compile()
@@ -104,9 +104,9 @@ class ParamTests(test_util.GPflowTestCase):
             self.assertFalse(self.p.trainable)
 
             self.assertTrue(self.m.trainable)
-            self.m.p.trainable = True
-            self.assertFalse(self.m.trainable)
-            self.assertTrue(self.m.p.trainable)
+            self.m.p.trainable = False
+            self.assertTrue(self.m.trainable)
+            self.assertFalse(self.m.p.trainable)
             _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
 
 
@@ -122,7 +122,7 @@ class ParamCompileTests(test_util.GPflowTestCase):
             self.m.c = gpflow.Param(np.array([1.0, 2.0]))
             self.m.p.d = gpflow.Param(1.0)
 
-    def testCompile(self):
+    def test_compile(self):
         with self.test_context(self.graph):
             tensor = self.m.a.var_tensor
             self.m.compile()
@@ -134,7 +134,7 @@ class ParamCompileTests(test_util.GPflowTestCase):
                 self.assertTrue(gpflow.misc.is_tensor(param.transformed_tensor))
                 self.assertTrue(gpflow.misc.is_tensor(param.prior_tensor))
 
-    def testModifyCompiled(self):
+    def test_modify_compiled(self):
         with self.test_context(self.graph):
             self.m.compile()
             self.assertEqual(len(list(self.m.parameters)), 4)
@@ -144,7 +144,7 @@ class ParamCompileTests(test_util.GPflowTestCase):
                 self.assertTrue(gpflow.misc.is_tensor(param.transformed_tensor))
                 self.assertTrue(gpflow.misc.is_tensor(param.prior_tensor))
 
-    def testFailsAfterCompile(self):
+    def test_fails_after_compile(self):
         with self.test_context(self.graph):
             self.m.compile()
             with self.assertRaises(gpflow.GPflowError):
@@ -152,7 +152,7 @@ class ParamCompileTests(test_util.GPflowTestCase):
             with self.assertRaises(AttributeError):
                 _param = self.m.d
 
-    def testFailsAtCompile(self):
+    def test_fails_at_compile(self):
         with self.test_context(self.graph):
             with self.assertRaises(gpflow.GPflowError):
                 self.m.p.d.compile()
@@ -175,25 +175,25 @@ class ParamDeepTest(test_util.GPflowTestCase):
             self.m.foo.bar = gpflow.params.Parameterized()
             self.m.foo.bar.baz = gpflow.Param(1.0)
 
-    def testRoot(self):
+    def test_root(self):
         self.assertTrue(self.m.foo.root is self.m)
         self.assertTrue(self.m.foo.bar.root is self.m)
         self.assertTrue(self.m.foo.bar.baz.root is self.m)
 
-    def testDeepName(self):
+    def test_deep_name(self):
         self.assertTrue(self.m.foo.name == 'foo')
         self.assertTrue(self.m.foo.bar.name == 'bar')
         self.assertTrue(self.m.foo.bar.baz.name == 'baz')
         self.assertTrue(self.m.foo.full_name == 'm/foo')
-        self.assertTrue(self.m.foo.bar.name == 'm/foo/bar')
-        self.assertTrue(self.m.foo.bar.baz.name == 'm/foo/bar/baz')
+        self.assertTrue(self.m.foo.bar.full_name == 'm/foo/bar')
+        self.assertTrue(self.m.foo.bar.baz.full_name == 'm/foo/bar/baz')
 
-    def testDeepTrainable(self):
+    def test_deep_trainable(self):
         with self.test_context():
             self.m.compile()
             self.m.trainable = False
-            _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
             self.assertEqual(len(list(self.m.trainable_tensors)), 0)
+            _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
             self.m.trainable = True
             self.assertEqual(
                 len(list(self.m.parameters)),
@@ -202,7 +202,7 @@ class ParamDeepTest(test_util.GPflowTestCase):
 
 
 class ParamLikeInvariantTest(test_util.GPflowTestCase):
-    def testSelfReference(self):
+    def test_self_reference(self):
         m = gpflow.params.Parameterized()
         with self.assertRaises(ValueError):
             m.foo = m
@@ -210,13 +210,13 @@ class ParamLikeInvariantTest(test_util.GPflowTestCase):
         with self.assertRaises(ValueError):
             m.foo.bar = m
 
-    def testReassign(self):
+    def test_reassign(self):
         m = gpflow.params.Parameterized()
         p = gpflow.params.Parameterized()
         m.foo = p  # assign
         m.foo = p  # reassign
 
-    def testCompileFromRoot(self):
+    def test_compile_from_root(self):
         with self.test_context():
             m = gpflow.params.Parameterized()
             m.a = gpflow.Param(1.0)
@@ -263,12 +263,13 @@ class TestParamList(test_util.GPflowTestCase):
     def test_construction(self):
         gpflow.ParamList([])
         gpflow.ParamList([gpflow.Param(1)])
-        with self.assertRaises(AssertionError):
+        gpflow.ParamList([1.0, np.array([1, 2]), gpflow.Param(1.0)])
+        with self.assertRaises(ValueError):
             gpflow.ParamList([gpflow.Param(1), 'stringsnotallowed'])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             # tuples not valid in constuctor:
             gpflow.ParamList((gpflow.Param(1),))
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             # param objects not valid in constructor (must be in list)
             gpflow.ParamList(gpflow.Param(1))
 
@@ -276,40 +277,40 @@ class TestParamList(test_util.GPflowTestCase):
         p1 = gpflow.Param(1.2)
         p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
         gpflow.ParamList([p1, p2])
-        self.assertTrue(p1.name == 'item0')
-        self.assertTrue(p2.name == 'item1')
+        self.assertEqual(p1.name, 'item0')
+        self.assertEqual(p2.name, 'item1')
 
-    def test_connected(self):
+    def test_setitem(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
             p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
-            l = gpflow.ParamList([p1, p2])
-            x = l.get_free_state()
-            x.sort()
-            self.assertTrue(np.all(x == np.array([1.2, 3.4, 5.6], settings.np_float)))
+            param_list = gpflow.ParamList([p1, p2], name='param_list')
 
-    def test_setitem(self):
-        p1 = gpflow.Param(1.2)
-        p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
-        l = gpflow.ParamList([p1, p2])
+            self.assertEqual(p1.read_value(), param_list[0].read_value())
+            self.assertTrue(np.all(param_list[1].read_value() == p2.read_value()))
 
-        l[0] = 1.2
-        self.assertTrue(p1._array == 1.2)
+            param_list[0] = gpflow.Param(2.0)
+            self.assertEqual(p1.read_value(), 1.2)
+            self.assertEqual(p1.root, p1)
+            self.assertEqual(param_list[0].read_value(), 2.0)
 
-        l[1] = np.array([1.1, 2.2], settings.np_float)
-        self.assertTrue(np.all(p2._array == np.array([1.1, 2.2], settings.np_float)))
+            arr = np.array([1.1, 2.2], settings.np_float)
+            param_list[1] = gpflow.Param(arr)
+            self.assertEqual(p2.root, p2)
+            self.assertTrue(np.all(param_list[1].read_value() == arr))
 
-        with self.assertRaises(TypeError):
-            l[0] = gpflow.Param(12)
+            param_list.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                param_list[0] = gpflow.Param(12)
 
     def test_append(self):
         p1 = gpflow.Param(1.2)
         p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
-        l = gpflow.ParamList([p1])
-        l.append(p2)
-        self.assertTrue(p2 in l.sorted_params)
-        with self.assertRaises(AssertionError):
-            l.append('foo')
+        param_list = gpflow.ParamList([p1])
+        param_list.append(p2)
+        self.assertTrue(p2 in param_list.params)
+        with self.assertRaises(ValueError):
+            param_list.append('foo')
 
     def test_len(self):
         p1 = gpflow.Param(1.2)
@@ -323,104 +324,46 @@ class TestParamList(test_util.GPflowTestCase):
             pzd = gpflow.params.Parameterized()
             p = gpflow.Param(1.2)
             pzd.p = p
-            l = gpflow.ParamList([pzd])
-
-            # test assignment:
-            l[0].p = 5
-            self.assertTrue(l.get_free_state() == 5)
-
-            # test to make sure tf_mode get turned on and off
-            self.assertFalse(pzd._tf_mode)
-            with l.tf_mode():
-                self.assertTrue(pzd._tf_mode)
-            self.assertFalse(pzd._tf_mode)
+            param_list = gpflow.ParamList([pzd])
+            param_list[0].p = 5
+            self.assertEqual(param_list[0].p.read_value(), 5)
 
     def test_in_model(self):
         class Foo(gpflow.models.Model):
             def __init__(self):
                 gpflow.models.Model.__init__(self)
-                self.l = gpflow.ParamList([
-                    gpflow.Param(1), gpflow.Param(12)])
+                self.param_list = gpflow.ParamList([gpflow.Param(1), gpflow.Param(12)])
 
-            def build_likelihood(self):
-                return -reduce(tf.add, [tf.square(x) for x in self.l])
+            @gpflow.params_as_tensors
+            def _build_likelihood(self):
+                return -tf.add_n([tf.square(x) for x in self.param_list])
 
         with self.test_context():
             m = Foo()
-            self.assertTrue(m.get_free_state().size == 2)
-            m.optimize(disp=False)
+            m.compile()
+            optimizer = gpflow.train.ScipyOptimizer(options={'disp': False, 'maxiter': 10})
+            optimizer.minimize(m)
             atol = 1e-6 if settings.np_float is np.float32 else 1e-8
-            self.assertTrue(np.allclose(m.get_free_state(), 0., atol=atol))
+            params = [param.read_value() for param in m.parameters]
+            self.assertTrue(np.allclose(params, 0., atol=atol))
 
 
-class TestPickleAndDict(test_util.GPflowTestCase):
-    def setUp(self):
-        with self.test_context():
-            rng = np.random.RandomState(0)
-            X = rng.randn(10, 1)
-            Y = rng.randn(10, 1)
-            self.m = gpflow.models.GPR(X, Y, kern=gpflow.kernels.RBF(1))
-
-    def test(self):
-        # pickle and reload the model
-        s1 = pickle.dumps(self.m)
-        m1 = pickle.loads(s1)
-        d1 = self.m.get_parameter_dict()
-        d2 = m1.get_parameter_dict()
-        for key, val in d1.items():
-            assert np.all(val == d2[key])
-
-
-class TestDictEmpty(test_util.GPflowTestCase):
-    def setUp(self):
-        self.m = gpflow.models.Model()
-
-    def test(self):
-        d = self.m.get_parameter_dict()
-        self.assertTrue(len(d.keys()) == 0)
-        self.m.set_parameter_dict(d)
-
-
-class TestDictSimple(test_util.GPflowTestCase):
-    def setUp(self):
-        self.m = gpflow.models.Model()
-        self.m.p1 = gpflow.Param(np.random.randn(3, 2))
-        self.m.p2 = gpflow.Param(np.random.randn(10))
-
-    def test(self):
-        d = self.m.get_parameter_dict()
-        self.assertTrue(len(d.keys()) == 2)
-        state1 = self.m.get_free_state().copy()
-        self.m.set_state(state1 * 0)
-        self.m.set_parameter_dict(d)
-        self.assertTrue(np.all(state1 == self.m.get_free_state()))
-
-
-class TestDictSVGP(test_util.GPflowTestCase):
-    def setUp(self):
-        self.rng = np.random.RandomState(0)
-        X = self.rng.randn(10, 1)
-        Y = self.rng.randn(10, 1)
-        Z = self.rng.randn(5, 1)
-        self.m = gpflow.models.SVGP(
-            X, Y, Z=Z,
-            likelihood=gpflow.likelihoods.Gaussian(),
-            kern=gpflow.kernels.RBF(1))
-
-    def test(self):
-        loglik1 = self.m.compute_log_likelihood()
-        d = self.m.get_parameter_dict()
-
-        # muck up the model
-        self.m.set_state(self.rng.randn(self.m.get_free_state().size))
-        loglik2 = self.m.compute_log_likelihood()
-
-        # reset the model
-        self.m.set_parameter_dict(d)
-        loglik3 = self.m.compute_log_likelihood()
-
-        self.assertFalse(np.allclose(loglik1, loglik2))
-        self.assertTrue(np.allclose(loglik1, loglik3))
+#class TestPickleAndDict(test_util.GPflowTestCase):
+#    def setUp(self):
+#        with self.test_context():
+#            rng = np.random.RandomState(0)
+#            X = rng.randn(10, 1)
+#            Y = rng.randn(10, 1)
+#            self.m = gpflow.models.GPR(X, Y, kern=gpflow.kernels.RBF(1))
+#
+#    def test(self):
+#        # pickle and reload the model
+#        s1 = pickle.dumps(self.m)
+#        m1 = pickle.loads(s1)
+#        d1 = self.m.get_parameter_dict()
+#        d2 = m1.get_parameter_dict()
+#        for key, val in d1.items():
+#            assert np.all(val == d2[key])
 
 
 class TestFixWithPrior(test_util.GPflowTestCase):
@@ -428,7 +371,7 @@ class TestFixWithPrior(test_util.GPflowTestCase):
     This tests that models with a fixed parameter which has a prior continue to work
     """
 
-    def test(self):
+    def test_non_trainable_with_prior(self):
         with self.test_context():
             m = gpflow.models.Model()
             m.p = gpflow.Param(1.0, gpflow.transforms.positive)
@@ -436,162 +379,168 @@ class TestFixWithPrior(test_util.GPflowTestCase):
             m.p.prior = gpflow.priors.Gamma(1, 1)
             m.pp.prior = gpflow.priors.Gamma(1, 1)
             m.p.trainable = False
-            m.build_likelihood = lambda: tf.zeros([1], tf.float64)
-            m.optimize(disp=1, maxiter=10)
+            m._build_likelihood = lambda: tf.zeros([1], tf.float64)
+            m.compile()
+            optimizer = gpflow.train.ScipyOptimizer(options={'maxiter': 10})
+            optimizer.minimize(m)
 
-class TestRandomizeDefault(test_util.GPflowTestCase):
-    """
-    This tests that distributions can sample random values without priors
-    """
-
-    def test(self):
-        with self.test_context():
-            np.random.seed(1)
-            m = gpflow.models.Model()
-            m.p = gpflow.Param(1.0)
-            m.pp = gpflow.Param(1.0, gpflow.transforms.Log1pe())
-            m.pf = gpflow.Param(1.0)
-            m.pf.trainable = False
-
-            m.pmd = gpflow.Param(np.ones((5, 2)))
-            ltr = gpflow.transforms.LowerTriangular(1,2).forward(np.ones(2 * 10))
-            m.pmd2 = gpflow.Param(
-                ltr, transform=gpflow.transforms.LowerTriangular(1,2))
-
-            #should work as (pseudo) random vals a.s. are not 1.0
-            m.p.randomize()
-            self.assertFalse(m.p.value == 1.0)
-            m.pp.randomize()
-            self.assertFalse(m.pp.value == 1.0 or m.pp.value <= 0.0)
-
-            #check if fixing works
-            m.pf.randomize()
-            self.assertTrue(m.pf.value == 1.0)
-            m.pf.randomize(skipfixed=False)
-            self.assertFalse(m.pf.value == 1.0)
-
-            #check multidimensional
-            pmd_shape = m.pmd.shape
-            m.pmd.randomize()
-            self.assertFalse(np.any(m.pmd.value == 1.0))
-            self.assertEquals(m.pmd.shape, pmd_shape)
-
-            #check non size-preserving transform
-            pmd2_shape = m.pmd2.shape
-            m.pmd2.randomize()
-            self.assertFalse(np.any(m.pmd2.value == 1.0))
-            self.assertEquals(m.pmd2.shape, pmd2_shape)
-
-class TestRandomizePrior(test_util.GPflowTestCase):
-    """
-    This tests that distributions can sample random values from priors
-    """
-
-    def test(self):
-        with self.test_context():
-            np.random.seed(1)
-            from inspect import getargspec
-
-            m = gpflow.models.Model()
-            m.p = gpflow.Param(1.0)
-            m.pmd = gpflow.Param(
-                np.eye(5), transform=gpflow.transforms.DiagMatrix())
-
-            priors = [obj for obj in gpflow.priors.__dict__.values() if
-                      isinstance(obj, type) and
-                      issubclass(obj, gpflow.priors.Prior) and
-                      obj is not gpflow.priors.Prior]
-
-            with self.assertRaises(NotImplementedError):
-                m.p = 1.0
-                m.p.prior = gpflow.priors.Prior()
-                m.p.randomize()
-
-            for prior in priors:
-                signature = getargspec(prior.__init__)
-                params = {}
-                if signature.defaults is not None:
-                    param_names = signature.args[:-len(signature.defaults)]
-                else:
-                    param_names = signature.args
-                for param in param_names:
-                    if param not in params.keys() and param is not 'self':
-                        params[param] = 1.
-
-                m.p = 1.0
-                m.p.prior = prior(**params)
-                m.pmd.prior = prior(**params)
-                m.p.randomize()
-                m.pmd.randomize()
-                self.assertFalse(m.p.value == 1.0)
-                self.assertFalse(np.any(m.pmd.value == np.ones(5)))
-                self.assertTrue(m.pmd.value.shape == (5,5))
-
-
-class TestRandomizeFeedPriors(test_util.GPflowTestCase):
-    """
-    Test if standard randomize behavior can be overriden using
-    distributions keyword.
-    """
-
-    def test(self):
-        with self.test_context():
-            np.random.seed(1)
-            m = gpflow.models.Model()
-            m.p = gpflow.Param(1.0)
-            with self.assertRaises(NotImplementedError):
-                m.p.randomize(distributions={m.p: gpflow.priors.Prior()})
-            m.p.randomize(distributions={m.p: gpflow.priors.Gaussian(0, 1)})
-            self.assertFalse(m.p.value == 1.0)
-
-
-class TestRandomizeHierarchical(test_util.GPflowTestCase):
-    """
-    This tests that models can randomize all contained parameters
-    """
-
-    def test(self):
-        with self.test_context():
-            np.random.seed(1)
-            m = gpflow.models.Model()
-            m.p = gpflow.Param(1.0)
-            m.p2 = gpflow.Param(1.0)
-            m.m = gpflow.models.Model()
-            m.m.p = gpflow.Param(1.0)
-            m.m.p2 = gpflow.Param(1.0)
-
-            m.p2.prior = gpflow.priors.Gaussian(0, 1)
-            m.m.p2.prior = gpflow.priors.Gaussian(0, 1)
-            m.randomize()
-
-            self.assertFalse(m.p.value == 1.0)
-            self.assertFalse(m.p2.value == 1.0)
-            self.assertFalse(m.m.p.value == 1.0)
-            self.assertFalse(m.m.p2.value == 1.0)
+#class TestRandomizeDefault(test_util.GPflowTestCase):
+#    """
+#    This tests that distributions can sample random values without priors
+#    """
+#
+#    def test(self):
+#        with self.test_context():
+#            np.random.seed(1)
+#            m = gpflow.models.Model()
+#            m.p = gpflow.Param(1.0)
+#            m.pp = gpflow.Param(1.0, gpflow.transforms.Log1pe())
+#            m.pf = gpflow.Param(1.0)
+#            m.pf.trainable = False
+#
+#            m.pmd = gpflow.Param(np.ones((5, 2)))
+#            ltr = gpflow.transforms.LowerTriangular(1,2).forward(np.ones(2 * 10))
+#            m.pmd2 = gpflow.Param(
+#                ltr, transform=gpflow.transforms.LowerTriangular(1,2))
+#
+#            #should work as (pseudo) random vals a.s. are not 1.0
+#            m.p.randomize()
+#            self.assertFalse(m.p.value == 1.0)
+#            m.pp.randomize()
+#            self.assertFalse(m.pp.value == 1.0 or m.pp.value <= 0.0)
+#
+#            #check if fixing works
+#            m.pf.randomize()
+#            self.assertTrue(m.pf.value == 1.0)
+#            m.pf.randomize(skipfixed=False)
+#            self.assertFalse(m.pf.value == 1.0)
+#
+#            #check multidimensional
+#            pmd_shape = m.pmd.shape
+#            m.pmd.randomize()
+#            self.assertFalse(np.any(m.pmd.value == 1.0))
+#            self.assertEquals(m.pmd.shape, pmd_shape)
+#
+#            #check non size-preserving transform
+#            pmd2_shape = m.pmd2.shape
+#            m.pmd2.randomize()
+#            self.assertFalse(np.any(m.pmd2.value == 1.0))
+#            self.assertEquals(m.pmd2.shape, pmd2_shape)
+#
+#class TestRandomizePrior(test_util.GPflowTestCase):
+#    """
+#    This tests that distributions can sample random values from priors
+#    """
+#
+#    def test(self):
+#        with self.test_context():
+#            np.random.seed(1)
+#            from inspect import getargspec
+#
+#            m = gpflow.models.Model()
+#            m.p = gpflow.Param(1.0)
+#            m.pmd = gpflow.Param(
+#                np.eye(5), transform=gpflow.transforms.DiagMatrix())
+#
+#            priors = [obj for obj in gpflow.priors.__dict__.values() if
+#                      isinstance(obj, type) and
+#                      issubclass(obj, gpflow.priors._prior) and
+#                      obj is not gpflow.priors._prior]
+#
+#            with self.assertRaises(NotImplementedError):
+#                m.p = 1.0
+#                m.p.prior = gpflow.priors._prior()
+#                m.p.randomize()
+#
+#            for prior in priors:
+#                signature = getargspec(prior.__init__)
+#                params = {}
+#                if signature.defaults is not None:
+#                    param_names = signature.args[:-len(signature.defaults)]
+#                else:
+#                    param_names = signature.args
+#                for param in param_names:
+#                    if param not in params.keys() and param is not 'self':
+#                        params[param] = 1.
+#
+#                m.p = 1.0
+#                m.p.prior = prior(**params)
+#                m.pmd.prior = prior(**params)
+#                m.p.randomize()
+#                m.pmd.randomize()
+#                self.assertFalse(m.p.value == 1.0)
+#                self.assertFalse(np.any(m.pmd.value == np.ones(5)))
+#                self.assertTrue(m.pmd.value.shape == (5,5))
+#
+#
+#class TestRandomizeFeedPriors(test_util.GPflowTestCase):
+#    """
+#    Test if standard randomize behavior can be overriden using
+#    distributions keyword.
+#    """
+#
+#    def test(self):
+#        with self.test_context():
+#            np.random.seed(1)
+#            m = gpflow.models.Model()
+#            m.p = gpflow.Param(1.0)
+#            with self.assertRaises(NotImplementedError):
+#                m.p.randomize(distributions={m.p: gpflow.priors._prior()})
+#            m.p.randomize(distributions={m.p: gpflow.priors.Gaussian(0, 1)})
+#            self.assertFalse(m.p.value == 1.0)
+#
+#
+#class TestRandomizeHierarchical(test_util.GPflowTestCase):
+#    """
+#    This tests that models can randomize all contained parameters
+#    """
+#
+#    def test(self):
+#        with self.test_context():
+#            np.random.seed(1)
+#            m = gpflow.models.Model()
+#            m.p = gpflow.Param(1.0)
+#            m.p2 = gpflow.Param(1.0)
+#            m.m = gpflow.models.Model()
+#            m.m.p = gpflow.Param(1.0)
+#            m.m.p2 = gpflow.Param(1.0)
+#
+#            m.p2.prior = gpflow.priors.Gaussian(0, 1)
+#            m.m.p2.prior = gpflow.priors.Gaussian(0, 1)
+#            m.randomize()
+#
+#            self.assertFalse(m.p.value == 1.0)
+#            self.assertFalse(m.p2.value == 1.0)
+#            self.assertFalse(m.m.p.value == 1.0)
+#            self.assertFalse(m.m.p2.value == 1.0)
 
 
 class TestScopes(test_util.GPflowTestCase):
     def setUp(self):
-        with self.test_context():
+        with self.test_context() as session:
+            self.graph = session.graph
             rng = np.random.RandomState(0)
             X = rng.randn(10, 1)
-            k = gpflow.kernels.RBF(1)
             Y = rng.randn(10, 1)
+            k = gpflow.kernels.RBF(1)
             self.m = gpflow.models.GPR(X, Y, k)
             self.m.compile()
 
     def test_likelihood_name(self):
-        with self.test_context():
-            with self.m.tf_mode():
-                l = self.m.build_likelihood()
-            expected_name = self.m.name + '.build_likelihood'
-            self.assertTrue(expected_name in l.name)
+        likelihood = self.m.likelihood_tensor
+        expected_name = self.m.name + '/likelihood'
+        self.assertTrue(likelihood.name.startswith(expected_name))
 
     def test_kern_name(self):
-        with self.test_context():
-            with self.m.tf_mode():
-                K = self.m.kern.K(self.m.X)
-            self.assertTrue('kern.K' in K.name)
+        with self.test_context(self.graph):
+            @gpflow.name_scope('test_kernel')
+            @gpflow.params_as_tensors
+            def run_kernel(m):
+                return m.kern.K(m.X)
+            K = run_kernel(self.m)
+            print("Kernel name: {0}".format(K.name))
+            self.assertTrue(K.name.startswith('test_kernel/'))
+
 
 def _check_trainable_flag(m, assert_true, assert_false):
     for param in m.parameters:

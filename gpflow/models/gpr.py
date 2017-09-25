@@ -23,6 +23,7 @@ from gpflow.models.model import GPModel
 from gpflow.densities import multivariate_normal
 from gpflow.params import DataHolder
 from gpflow.decors import params_as_tensors
+from gpflow.decors import name_scope
 
 
 class GPR(GPModel):
@@ -50,6 +51,7 @@ class GPR(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, name=name)
         self.num_latent = Y.shape[1]
 
+    @name_scope('likelihood')
     @params_as_tensors
     def _build_likelihood(self):
         """
@@ -64,6 +66,7 @@ class GPR(GPModel):
 
         return multivariate_normal(self.Y, m, L)
 
+    @name_scope('predict')
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
         """

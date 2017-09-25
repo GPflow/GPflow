@@ -21,19 +21,21 @@ from __future__ import print_function
 
 import abc
 
+from gpflow.core.base import Build
+from gpflow.core.base import GPflowError
+
 
 class Optimizer:
     @abc.abstractmethod
-    def minimize(self, *args, **kwargs):
+    def minimize(self, model, **kwargs):
         raise NotImplementedError()
-
-    def _pop_model(self, kwargs):
-        return kwargs.pop('model', None)
 
     def _pop_session(self, model, kwargs):
         session = kwargs.pop('session', model.session)
         if session is None:
             raise ValueError('Session is not specified.')
+        if model.is_built_coherence(session.graph) is Build.NO:
+            raise GPflowError('Session has different graph.')
         return session
 
     def _pop_var_list(self, model, kwargs):

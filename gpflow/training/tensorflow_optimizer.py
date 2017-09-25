@@ -18,6 +18,7 @@ import tensorflow as tf
 
 from gpflow.core.base import Build
 from gpflow.core.base import GPflowError
+from gpflow.models.model import Model
 from gpflow.training import optimizer
 
 
@@ -35,19 +36,15 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         self._optimizer = tf_optimizer(*args, **kwargs)
         self._minimize_operation = None
 
-    def minimize(self, **kwargs):
-        model = self._pop_model(kwargs)
+    def minimize(self, model, **kwargs):
+        if model is None or not isinstance(model, Model):
+            raise ValueError('Unknown type passed for optimization.')
+
         session = self._pop_session(model, kwargs)
-        if model is None:
-            model = self.model
-        if model is None:
-            raise GPflowError('Model is not specified.')
-        if model and model.is_built_coherence(graph=session.graph) is Build.NO:
-            raise GPflowError('Model is not built.')
+        self._model = model
 
         var_list = self._pop_var_list(model, kwargs)
-        if self.minimize_operation is None:
-            self._create_minimize_operation(model, var_list, session, **kwargs)
+        self._create_minimize_operation(model, var_list, session, **kwargs)
 
         feed_dict = self._pop_feed_dict(kwargs)
         maxiter = self._pop_maxiter(kwargs)
@@ -60,7 +57,6 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
 
     def _create_minimize_operation(self, model, var_list, session, **kwargs):
         objective = model.objective
-        self._model = model
         with session.graph.as_default():
             self._minimize_operation = self.optimizer.minimize(
                 objective, var_list=var_list, **kwargs)

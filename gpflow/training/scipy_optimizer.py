@@ -18,28 +18,31 @@ from gpflow.core.base import GPflowError
 from gpflow.core.base import Build
 from gpflow.models.model import Model
 
-from gpflow.training import optimizer
-from gpflow.training import external_optimizer
+from . import optimizer
+from . import external_optimizer
 
 
 class ScipyOptimizer(optimizer.Optimizer):
-    def __init__(self, model, **kwargs):
+    def __init__(self, **kwargs):
+        self._optimizer_kwargs = kwargs
+        self._optimizer = None
+        self._model = None
+
+    def minimize(self, model, **kwargs):
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
 
-        self._model = model
         if model.is_built_coherence() is Build.NO:
-            raise GPflowError('Model is not specified.')
+            raise GPflowError('Model is not built.')
 
+        session = self._pop_session(model, kwargs)
+        self._model = model
+
+        var_list = self._pop_var_list(model, kwargs)
         with model.graph.as_default():
             objective = model.objective
             self._optimizer = external_optimizer.ScipyOptimizerInterface(
-                objective, **kwargs)
-
-    def minimize(self, *_args, **kwargs):
-        session = self._pop_session(self.model, kwargs)
-        if self.model.is_built_coherence(session.graph) is Build.NO:
-            raise GPflowError('Model is not specified.')
+                objective, var_list=var_list, **self._optimizer_kwargs)
 
         try:
             self._optimizer.minimize(session=session, **kwargs)
@@ -49,3 +52,7 @@ class ScipyOptimizer(optimizer.Optimizer):
     @property
     def model(self):
         return self._model
+
+    @property
+    def optimizer(self):
+        return self._optimizer

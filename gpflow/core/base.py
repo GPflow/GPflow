@@ -35,8 +35,12 @@ class ICompilable:
     def graph(self):
         raise NotImplementedError()
 
+    @abc.abstractproperty
+    def session(self):
+        raise NotImplementedError()
+
     @abc.abstractmethod
-    def compile(self, session=None, keep_session=False):
+    def compile(self, session=None, keep_session=True):
         raise NotImplementedError()
 
     @abc.abstractmethod
