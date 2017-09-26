@@ -64,10 +64,13 @@ class SGPRUpperMixin(object):
         LB = tf.cholesky(Kuu + self.likelihood.variance ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
 
         LinvKuf = tf.matrix_triangular_solve(L, Kuf, lower=True)
-        c = tf.reduce_sum(Kdiag) - tf.reduce_sum(LinvKuf ** 2.0)  # Using the Trace bound, from Titsias' presentation
+        # Using the Trace bound, from Titsias' presentation
+        c = tf.reduce_sum(Kdiag) - tf.reduce_sum(LinvKuf ** 2.0)
         # Kff = self.kern.K(self.X)
         # Qff = tf.matmul(Kuf, LinvKuf, transpose_a=True)
-        # c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))  # Alternative bound on max eigenval
+
+        # Alternative bound on max eigenval:
+        # c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
         corrected_noise = self.likelihood.variance + c
 
         const = -0.5 * num_data * tf.log(2 * np.pi * self.likelihood.variance)
@@ -117,6 +120,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
+    @params_as_tensors
     def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
@@ -131,8 +135,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        jitter_level = settings.numerics.jitter_level
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.jitter
         L = tf.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -224,13 +227,13 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
-    def build_common_terms(self):
+    @params_as_tensors
+    def _build_common_terms(self):
         num_inducing = tf.shape(self.Z)[0]
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.kern.K(self.Z, self.X)
-        jitter_level = settings.numerics.jitter_level
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * jitter_level
+        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.jitter
 
         Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
@@ -271,7 +274,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         # and let \alpha = V \beta
         # then Mahalanobis term = -0.5* ( \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha ) )
 
-        err, nu, Luu, L, alpha, beta, gamma = self.build_common_terms()
+        err, nu, Luu, L, alpha, beta, gamma = self._build_common_terms()
 
         mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) \
                           + 0.5 * tf.reduce_sum(tf.square(gamma))
@@ -291,12 +294,13 @@ class GPRFITC(GPModel, SGPRUpperMixin):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
 
+    @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.
         """
-        _, _, Luu, L, _, _, gamma = self.build_common_terms()
+        _, _, Luu, L, _, _, gamma = self._build_common_terms()
         Kus = self.kern.K(self.Z, Xnew)  # size  M x Xnew
 
         w = tf.matrix_triangular_solve(Luu, Kus, lower=True)  # size M x Xnew

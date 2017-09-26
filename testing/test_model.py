@@ -13,15 +13,15 @@
 # limitations under the License.from __future__ import print_function
 
 from __future__ import print_function
-import gpflow
 import tensorflow as tf
 import numpy as np
 import unittest
 
-from gpflow.test_util import GPflowTestCase
+import gpflow
+from gpflow import test_util
 
 
-class TestOptimize(GPflowTestCase):
+class TestOptimize(test_util.GPflowTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
 
@@ -30,123 +30,27 @@ class TestOptimize(GPflowTestCase):
                 gpflow.models.Model.__init__(self)
                 self.x = gpflow.Param(rng.randn(10))
 
-            def build_likelihood(self):
-                return -tf.reduce_sum(tf.square(self.x))
+            @gpflow.params_as_tensors
+            def _build_likelihood(self):
+                return tf.negative(tf.reduce_sum(tf.square(self.x)))
 
         self.m = Quadratic()
 
     def test_adam(self):
         with self.test_context():
-            o = tf.train.AdamOptimizer()
-            self.m.optimize(o, maxiter=5000)
-            self.assertTrue(self.m.x.value.max() < 1e-2)
+            m = self.m
+            opt = gpflow.train.AdamOptimizer(0.01)
+            m.comiple()
+            opt.minimize(m, maxiter=5000)
+            self.assertTrue(m.x.read_value().max() < 1e-2)
 
     def test_lbfgsb(self):
         with self.test_context():
-            self.m.optimize(disp=False)
+            m = self.m
+            m.compile()
+            opt = gpflow.train.ScipyOptimizer(options={'disp': False, 'maxiter': 1000})
+            opt.minimize(m)
             self.assertTrue(self.m.x.value.max() < 1e-6)
-
-    def test_feval_counter(self):
-        with self.test_context():
-            self.m.compile()
-            self.m.num_fevals = 0
-            for _ in range(10):
-                self.m._objective(self.m.get_free_state())
-            self.assertTrue(self.m.num_fevals == 10)
-
-
-class TestNeedsRecompile(GPflowTestCase):
-    def setUp(self):
-        with self.test_context():
-            self.m = gpflow.models.Model()
-            self.m.p = gpflow.Param(1.0)
-
-    def test_fix(self):
-        with self.test_context():
-            self.m._needs_recompile = False
-            self.m.p.fixed = True
-            self.assertTrue(self.m._needs_recompile)
-
-    def test_replace_param(self):
-        with self.test_context():
-            self.m._needs_recompile = False
-            new_p = gpflow.Param(3.0)
-            self.m.p = new_p
-            self.assertTrue(self.m._needs_recompile)
-
-    def test_set_prior(self):
-        with self.test_context():
-            self.m._needs_recompile = False
-            self.m.p.prior = gpflow.priors.Gaussian(0, 1)
-            self.assertTrue(self.m._needs_recompile)
-
-    def test_set_transform(self):
-        with self.test_context():
-            self.m._needs_recompile = False
-            self.m.p.transform = gpflow.transforms.Identity()
-            self.assertTrue(self.m._needs_recompile)
-
-    def test_replacement(self):
-        with self.test_context():
-            m = gpflow.models.Model()
-            m.p = gpflow.params.Parameterized()
-            m.p.p = gpflow.Param(1.0)
-            m._needs_recompile = False
-            # replace Parameterized
-            new_p = gpflow.params.Parameterized()
-            new_p.p = gpflow.Param(1.0)
-            m.p = new_p
-            self.assertTrue(m._needs_recompile is True)
-
-
-class TestModelSessionGraphArguments(GPflowTestCase):
-    """Tests for external graph and session passed to model."""
-
-    class Dummy(gpflow.models.Model):
-        """Dummy class with naive build_likelihood function"""
-        def __init__(self):
-            gpflow.models.Model.__init__(self)
-            self.x = gpflow.Param(10)
-
-        def build_likelihood(self):
-            return tf.negative(tf.reduce_sum(tf.square(self.x)))
-
-    def test_session_graph_properties(self):
-        models = [TestModelSessionGraphArguments.Dummy()
-                  for i in range(6)]
-        m1, m2, m3, m4, m5, m6 = models
-        session = tf.Session()
-        graph = tf.Graph()
-        m1.compile()
-        m2.compile(session=session)
-        m3.compile(graph=graph)
-
-        with graph.as_default():
-            m4.compile()
-
-        m5.compile(session=session, graph=graph)
-        with self.test_context() as sess_default:
-            m6.compile()
-
-        sessions = [m.session for m in models]
-        sess1, sess2, sess3, sess4, sess5, sess6 = sessions
-        sessions_set = set(map(str, sessions))
-        self.assertNotEqual(sess_default, tf.get_default_graph())
-        self.assertEqual(len(sessions_set), 5)
-        self.assertEqual(sess2, sess5)
-        self.assertEqual(sess1.graph, sess2.graph)
-        self.assertEqual(sess3.graph, sess4.graph)
-        self.assertEqual(sess2.graph, tf.get_default_graph())
-        self.assertEqual(sess3.graph, graph)
-        self.assertEqual(sess6.graph, sess_default.graph)
-        self.assertEqual(sess6, sess_default)
-        self.assertNotEqual(sess1.graph, sess3.graph)
-
-        m6.compile(graph=sess_default.graph)
-        self.assertEqual(sess6.graph, sess_default.graph)
-        self.assertEqual(sess6, sess_default)
-
-        [m.session.close() for m in models]
 
 
 class KeyboardRaiser:
@@ -154,72 +58,80 @@ class KeyboardRaiser:
     This wraps a function and makes it raise a KeyboardInterrupt after some number of calls
     """
 
-    def __init__(self, iters_to_raise, f):
-        self.iters_to_raise, self.f = iters_to_raise, f
+    def __init__(self, iters_to_raise):
+        self.iters_to_raise = iters_to_raise
         self.count = 0
 
     def __call__(self, *a, **kw):
         self.count += 1
         if self.count >= self.iters_to_raise:
             raise KeyboardInterrupt
-        return self.f(*a, **kw)
 
 
-class TestKeyboardCatching(GPflowTestCase):
+class TestKeyboardCatching(test_util.GPflowTestCase):
     def setUp(self):
-        with self.test_context():
-            X = np.random.randn(1000, 3)
-            Y = np.random.randn(1000, 3)
-            Z = np.random.randn(100, 3)
-            self.m = gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
+        X = np.random.randn(1000, 3)
+        Y = np.random.randn(1000, 3)
+        Z = np.random.randn(100, 3)
+        self.m = gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
     def test_optimize_np(self):
         with self.test_context():
-            x0 = self.m.get_free_state()
-            self.m.compile()
-            self.m._objective = KeyboardRaiser(15, self.m._objective)
-            self.m.optimize(disp=0, maxiter=1000, ftol=0, gtol=0)
-            x1 = self.m.get_free_state()
-            self.assertFalse(np.allclose(x0, x1))
+            m = self.m
+            m.compile()
+            x_before = m.read_trainable_values()
+            options = {'disp': 0, 'maxiter': 1000, 'ftol': 0, 'gtol': 0}
+            opt = gpflow.train.ScipyOptimizer(options=options)
+            with self.assertRaises(KeyboardInterrupt):
+                opt.minimize(m, step_callback=KeyboardRaiser(15))
+            x_after = m.read_trainable_values()
+            self.assertFalse(np.allclose(x_before, x_after))
 
-    def test_optimize_tf(self):
-        with self.test_context():
-            x0 = self.m.get_free_state()
-            callback = KeyboardRaiser(5, lambda x: None)
-            o = tf.train.AdamOptimizer()
-            self.m.optimize(o, maxiter=10, callback=callback)
-            x1 = self.m.get_free_state()
-            self.assertFalse(np.allclose(x0, x1))
+    # TODO(awav)
+    #def test_optimize_tf(self):
+    #    with self.test_context():
+    #        x0 = self.m.get_free_state()
+    #        callback = KeyboardRaiser(5, lambda x: None)
+    #        o = tf.train.AdamOptimizer()
+    #        self.m.optimize(o, maxiter=10, callback=callback)
+    #        x1 = self.m.get_free_state()
+    #        self.assertFalse(np.allclose(x0, x1))
 
 
-class TestLikelihoodAutoflow(GPflowTestCase):
+class TestLikelihoodAutoflow(test_util.GPflowTestCase):
     def setUp(self):
-        with self.test_context():
-            X = np.random.randn(1000, 3)
-            Y = np.random.randn(1000, 3)
-            Z = np.random.randn(100, 3)
-            self.m = gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
+        X = np.random.randn(1000, 3)
+        Y = np.random.randn(1000, 3)
+        Z = np.random.randn(100, 3)
+        self.m = gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
     def test_lik_and_prior(self):
+        m = self.m
         with self.test_context():
-            l0 = self.m.compute_log_likelihood()
-            p0 = self.m.compute_log_prior()
-            self.m.kern.variance.prior = gpflow.priors.Gamma(1.4, 1.6)
-            l1 = self.m.compute_log_likelihood()
-            p1 = self.m.compute_log_prior()
+            m.compile()
+            l0 = m.compute_log_likelihood()
+            p0 = m.compute_log_prior()
+            m.clear()
 
-            self.assertTrue(p0 == 0.0)
-            self.assertFalse(p0 == p1)
-            self.assertTrue(l0 == l1)
+        with self.test_context():
+            m.kern.variance.prior = gpflow.priors.Gamma(1.4, 1.6)
+            m.compile()
+            l1 = m.compute_log_likelihood()
+            p1 = m.compute_log_prior()
+            m.clear()
+
+        self.assertEqual(p0, 0.0)
+        self.assertEqual(p0, p1)
+        self.assertEqual(l0, l1)
 
 
-class TestName(GPflowTestCase):
+class TestName(test_util.GPflowTestCase):
     def test_name(self):
         m = gpflow.models.Model(name='foo')
         self.assertEqual(m.name, 'foo')
 
 
-class TestNoRecompileThroughNewModelInstance(GPflowTestCase):
+class TestNoRecompileThroughNewModelInstance(test_util.GPflowTestCase):
     """ Regression tests for Bug #454 """
 
     def setUp(self):

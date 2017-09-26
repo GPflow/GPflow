@@ -367,6 +367,10 @@ class Parameterized(Node):
     def prior_tensor(self):
         return self._prior_tensor
 
+    def read_trainable_values(self, session=None):
+        session = self.enquire_session(session, allow_none=True)
+        return [param.read_value(session) for param in self.trainable_parameters]
+
     def is_built(self, graph):
         if graph is None:
             raise ValueError('Graph is not specified.')

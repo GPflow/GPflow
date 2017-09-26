@@ -243,9 +243,6 @@ class DiagMatrix(Transform):
     def __str__(self):
         return 'DiagMatrix'
 
-    def free_state_size(self, variable_shape):
-        return variable_shape[0] * variable_shape[1]
-
 
 class LowerTriangular(Transform):
     """

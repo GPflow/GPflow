@@ -16,10 +16,8 @@ import sys
 import warnings
 import tensorflow as tf
 
-from gpflow.core.base import Build
-from gpflow.core.base import GPflowError
-from gpflow.models.model import Model
-from gpflow.training import optimizer
+from ..models.model import Model
+from . import optimizer
 
 
 _REGISTERED_TENSORFLOW_OPTIMIZERS = {}
@@ -66,6 +64,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         optimizer_vars = [self.optimizer.get_slot(var, name)
                           for name in self.optimizer.get_slot_names()
                           for var in var_list]
+        print(optimizer_vars)
         session.run(tf.variables_initializer(optimizer_vars))
 
     @property
