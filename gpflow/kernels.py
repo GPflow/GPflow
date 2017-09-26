@@ -395,8 +395,8 @@ class Stationary(Kern):
         # this gives us better performance! I assume this is down to getting some correlated
         # examples between the omega random samples and the b's!!
         omegas, alphas = self._sample_from_spectral_density(random_seed+89)
-        uniform_dist = tf.distributions.Uniform(np_float_type(0.), np_float_type(2*np.pi))
-        bs = uniform_dist.sample((1, self.num_features_to_approx), seed=random_seed)
+        rng = np.random.RandomState(random_seed)
+        bs = rng.uniform(0, 2*np.pi, size=(1, self.num_features_to_approx)).astype(np_float_type)
 
         def feature_map(X):
             X_sliced, _ = self._slice(X, None)
@@ -423,10 +423,8 @@ class RBF(Stationary):
 
     def _sample_from_spectral_density(self, random_seed):
         # RBF kernel also has a Gaussian form in the spectral domain.
-
-        normal = tf.distributions.Normal(np_float_type(0.), np_float_type(1.))
-        samples = normal.sample((self.num_features_to_approx, self.input_dim), seed=random_seed)
-
+        rng = np.random.RandomState(random_seed)
+        samples = rng.randn(self.num_features_to_approx, self.input_dim).astype(np_float_type)
         broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=float_type) + self.lengthscales
         omegas = samples / broadcasted_lengthscales
         alpha = self.variance
@@ -534,8 +532,8 @@ class Exponential(Stationary):
     def _sample_from_spectral_density(self, random_seed):
         # Exponenital kernel is the same as Matern 1/2. Just lengthscale is scaled.
         # RBF kernel also has a Gaussian form in the spectral domain.
-        student_t = tf.distributions.StudentT(np_float_type(1.), np_float_type(0.), np_float_type(1.))
-        samples = student_t.sample((self.num_features_to_approx, self.input_dim), seed=random_seed)
+        rng = np.random.RandomState(random_seed)
+        samples = rng.standard_t(1, size=(self.num_features_to_approx, self.input_dim)).astype(np_float_type)
         broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=float_type) + self.lengthscales
         omegas = samples / (2.*broadcasted_lengthscales)
         alpha = self.variance
@@ -556,8 +554,8 @@ class Matern12(Stationary):
         return self.variance * tf.exp(-r)
 
     def _sample_from_spectral_density(self, random_seed):
-        student_t = tf.distributions.StudentT(np_float_type(1.), np_float_type(0.), np_float_type(1.))
-        samples = student_t.sample((self.num_features_to_approx, self.input_dim), seed=random_seed)
+        rng = np.random.RandomState(random_seed)
+        samples = rng.standard_t(1, size=(self.num_features_to_approx, self.input_dim)).astype(np_float_type)
         broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=float_type) + self.lengthscales
         omegas = samples / broadcasted_lengthscales
         alpha = self.variance
@@ -578,8 +576,8 @@ class Matern32(Stationary):
                tf.exp(-np.sqrt(3.) * r)
 
     def _sample_from_spectral_density(self, random_seed):
-        student_t_2dof = tf.distributions.StudentT(np_float_type(2.), np_float_type(0.), np_float_type(1.))
-        samples = student_t_2dof.sample((self.num_features_to_approx, self.input_dim), seed=random_seed)
+        rng = np.random.RandomState(random_seed)
+        samples = rng.standard_t(2, size=(self.num_features_to_approx, self.input_dim)).astype(np_float_type)
         broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=float_type) + self.lengthscales
         omegas = samples / broadcasted_lengthscales
         alpha = self.variance
@@ -600,8 +598,8 @@ class Matern52(Stationary):
                * tf.exp(-np.sqrt(5.) * r)
 
     def _sample_from_spectral_density(self, random_seed):
-        student_t_3dof = tf.distributions.StudentT(np_float_type(3.), np_float_type(0.), np_float_type(1.))
-        samples = student_t_3dof.sample((self.num_features_to_approx, self.input_dim), seed=random_seed)
+        rng = np.random.RandomState(random_seed)
+        samples = rng.standard_t(3, size=(self.num_features_to_approx, self.input_dim)).astype(np_float_type)
         broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=float_type) + self.lengthscales
         omegas = samples / broadcasted_lengthscales
         alpha = self.variance
@@ -779,19 +777,18 @@ class PeriodicKernel(Kern):
         return self.variance * tf.exp(-0.5 * r)
 
     def create_feature_map_func(self, random_seed=False):
-        # So this uses the rbf kernel approximation on top of the cosine and sine transfrom
+        # So this uses the rbf kernel approximation on top of the cosine and sine transform
 
         # RBF kernel also has a Gaussian form in the spectral domain.
-        normal = tf.distributions.Normal(np_float_type(0.), np_float_type(1.))
-        samples = normal.sample((self.num_features_to_approx, self.input_dim*2), seed=random_seed)
+        rng = np.random.RandomState(random_seed)
+        samples = rng.randn(self.num_features_to_approx, self.input_dim*2).astype(np_float_type)
         omegas = samples / (2. * self.lengthscales)
         # this two exists as we usually a factor of 2 in the exponential whereas in this version of
         # the periodic kernel we have 0.5. So effectively the actual lengthscale for a normal rbf
         # is dou8ble what it is here.
         alpha = self.variance
 
-        uniform_dist = tf.distributions.Uniform(np_float_type(0.), np_float_type(2.*np.pi))
-        bs = uniform_dist.sample((1, self.num_features_to_approx), seed=random_seed+101)
+        bs = rng.uniform(0., 2*np.pi, size=(1, self.num_features_to_approx)).astype(np_float_type)
 
 
         def feature_map(X):
