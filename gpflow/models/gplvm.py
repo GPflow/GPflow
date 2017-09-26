@@ -61,7 +61,7 @@ class BayesianGPLVM(GPModel):
         # self.X_var = Param(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
         #                    diag_transform)
         assert X_var.ndim == 2
-        self.X_var = Param(X_var, transforms.positive)
+        self.X_var = Param(X_var, transform=transforms.positive)
         self.num_data = X_mean.shape[0]
         self.output_dim = Y.shape[1]
 

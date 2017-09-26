@@ -154,7 +154,7 @@ class Likelihood(Parameterized):
 class Gaussian(Likelihood):
     def __init__(self):
         Likelihood.__init__(self)
-        self.variance = Param(1.0, transforms.positive)
+        self.variance = Param(1.0, transform=transforms.positive)
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -253,7 +253,7 @@ class StudentT(Likelihood):
     def __init__(self, deg_free=3.0):
         Likelihood.__init__(self)
         self.deg_free = deg_free
-        self.scale = Param(1.0, transforms.positive)
+        self.scale = Param(1.0, transform=transforms.positive)
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -314,7 +314,7 @@ class Gamma(Likelihood):
     def __init__(self, invlink=tf.exp):
         Likelihood.__init__(self)
         self.invlink = invlink
-        self.shape = Param(1.0, transforms.positive)
+        self.shape = Param(1.0, transform=transforms.positive)
 
     def _check_targets(self, Y_np):
         super(Gamma, self)._check_targets(Y_np)
@@ -362,7 +362,7 @@ class Beta(Likelihood):
 
     def __init__(self, invlink=probit, scale=1.0):
         Likelihood.__init__(self)
-        self.scale = Param(scale, transforms.positive)
+        self.scale = Param(scale, transform=transforms.positive)
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
@@ -605,7 +605,7 @@ class Ordinal(Likelihood):
         Likelihood.__init__(self)
         self.bin_edges = bin_edges
         self.num_bins = bin_edges.size + 1
-        self.sigma = Param(1.0, transforms.positive)
+        self.sigma = Param(1.0, transform=transforms.positive)
 
     @params_as_tensors
     def logp(self, F, Y):

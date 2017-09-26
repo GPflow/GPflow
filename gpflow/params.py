@@ -55,7 +55,7 @@ class Param(Node):
                 return ITransform
             return None
 
-    def __init__(self, value, name=None, transform=None, prior=None, trainable=True):
+    def __init__(self, value, transform=None, prior=None, trainable=True, name=None):
         value = _valid_input(value)
         super(Param, self).__init__(name)
 

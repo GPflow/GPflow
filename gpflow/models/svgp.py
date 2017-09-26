@@ -77,7 +77,7 @@ class SVGP(GPModel):
         else:
             q_sqrt = np.array([np.eye(self.num_inducing)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-            self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_inducing, self.num_latent))
+            self.q_sqrt = Param(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
 
     @params_as_tensors
     def build_prior_KL(self):

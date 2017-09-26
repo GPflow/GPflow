@@ -63,7 +63,7 @@ class VGP(GPModel):
         self.q_mu = Param(np.zeros((self.num_data, self.num_latent)))
         q_sqrt = np.array([np.eye(self.num_data)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-        self.q_sqrt = Param(q_sqrt, transforms.LowerTriangular(self.num_data, self.num_latent))
+        self.q_sqrt = Param(q_sqrt, transform=transforms.LowerTriangular(self.num_data, self.num_latent))
 
     def compile(self, session=None, keep_session=True):
         """
