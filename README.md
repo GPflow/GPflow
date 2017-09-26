@@ -8,6 +8,17 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=latest)](http://gpflow.readthedocs.io/en/latest/?badge=latest)
 
+# Coming soon: GPflow 1.0
+We're working to improve GPflow, and @awav has undertaken a considerable reconfigurration of the code. There are several objectives:
+ - make GPflow variable names line up with tensorflow scopes
+ - line up GPflow params and tensorflow variables
+ - allow GPflow to integrate into other projects (you can pass your own tensors into GPflow models)
+ - better handling of tf.graphs and sessions
+ - cleaner autoflow implementation
+ - more transparent code
+ 
+ This update will break backward-compatibility, but the current version of GPflow will still be available. Brave GPflowers can check out the code here: https://github.com/GPflow/GPflow/tree/GPflow-1.0-RC
+
 # What does GPflow do?
 
 GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online user manual](http://gpflow.readthedocs.io/en/latest/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), for more discussion of the comparison see [this page](http://gpflow.readthedocs.io/en/latest/intro.html#what-s-the-difference-between-gpy-and-gpflow).
