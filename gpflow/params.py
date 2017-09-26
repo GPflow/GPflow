@@ -335,20 +335,22 @@ class Parameterized(Node):
 
     @property
     def empty(self):
-        return len(list(self.parameters)) == 0
+        parameters = bool(list(self.parameters))
+        data_holders = bool(list(self.data_holders))
+        return not (parameters or data_holders)
 
     @property
     def parameters(self):
         for param in self.params:
-            if isinstance(param, Param):
-                yield param
-            elif isinstance(param, Parameterized):
+            if isinstance(param, Parameterized):
                 for sub_param in param.parameters:
                     yield sub_param
+            elif not isinstance(param, DataHolder):
+                yield param
 
     @property
     def data_holders(self):
-        for data_holder in self.parameters:
+        for data_holder in self.params:
             if isinstance(data_holder, DataHolder):
                 yield data_holder
 
@@ -374,14 +376,12 @@ class Parameterized(Node):
     def is_built(self, graph):
         if graph is None:
             raise ValueError('Graph is not specified.')
-        param_graphs = set([param.graph for param in self.non_empty_params])
-        if not param_graphs:
-            return Build.YES
-        if None in param_graphs and param_graphs.issubset([None, graph]):
-            return Build.NO
-        elif graph not in param_graphs:
+        statuses = set([param.is_built(graph) for param in self.non_empty_params])
+        if Build.NOT_COMPATIBLE_GRAPH in statuses:
             return Build.NOT_COMPATIBLE_GRAPH
-        elif self.prior_tensor is None:
+        elif Build.NO in statuses:
+            return Build.NO
+        elif self.prior_tensor is None and list(self.parameters):
             return Build.NO
         return Build.YES
 
@@ -445,7 +445,9 @@ class Parameterized(Node):
                 priors.append(param.prior_tensor)
             elif isinstance(param, Parameterized) and not param.empty:
                 priors.append(param.prior_tensor)
+
         # TODO(awav): What prior must represent empty list of parameters?
+        if not priors:
             return None
         return tf.add_n(priors, name='prior')
 
@@ -494,6 +496,9 @@ class Parameterized(Node):
 
         if _is_param_like(value):
             if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
+                print('{}'.format(self.empty))
+                print('{}'.format(list(self.parameters)))
+                print('{}'.format(list(self.data_holders)))
                 raise GPflowError('Attribute cannot be added to assembled node.')
             value.set_name(key)
             value.set_parent(self)
