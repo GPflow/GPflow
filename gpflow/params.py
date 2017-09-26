@@ -445,6 +445,8 @@ class Parameterized(Node):
                 priors.append(param.prior_tensor)
             elif isinstance(param, Parameterized) and not param.empty:
                 priors.append(param.prior_tensor)
+        # TODO(awav): What prior must represent empty list of parameters?
+            return None
         return tf.add_n(priors, name='prior')
 
     def _set_param(self, name, value):
