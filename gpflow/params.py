@@ -412,8 +412,10 @@ class Parameterized(Node):
         session = self.enquire_session(session)
         variables = [parameter.var_tensor for parameter in self.parameters
                      if isinstance(parameter.var_tensor, tf.Variable)]
+        data_holders = [data_holder.var_tensor for data_holder in self.data_holders
+                        if isinstance(data_holder.var_tensor, tf.Variable)]
         if variables:
-            init = tf.variables_initializer(variables)
+            init = tf.variables_initializer(data_holders + variables)
             session.run(init)
 
     # TODO(awav): # pylint: disable=W0511

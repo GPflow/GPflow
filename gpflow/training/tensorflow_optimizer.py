@@ -39,19 +39,14 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             raise ValueError('Unknown type passed for optimization.')
 
         session = self._pop_session(model, kwargs)
-        self._model = model
-
-        var_list = self._pop_var_list(model, kwargs)
-        self._create_minimize_operation(model, var_list, session, **kwargs)
-
         feed_dict = self._pop_feed_dict(kwargs)
         maxiter = self._pop_maxiter(kwargs)
+        var_list = self._pop_var_list(model, kwargs)
 
-        try:
-            for _i in range(maxiter):
-                session.run(self.minimize_operation, feed_dict=feed_dict)
-        except KeyboardInterrupt:
-            warnings.warn('Optimization interrupted.')
+        self._model = model
+        self._create_minimize_operation(model, var_list, session, **kwargs)
+        for _i in range(maxiter):
+            session.run(self.minimize_operation, feed_dict=feed_dict)
 
     def _create_minimize_operation(self, model, var_list, session, **kwargs):
         objective = model.objective

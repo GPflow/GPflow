@@ -44,10 +44,7 @@ class ScipyOptimizer(optimizer.Optimizer):
             self._optimizer = external_optimizer.ScipyOptimizerInterface(
                 objective, var_list=var_list, **self._optimizer_kwargs)
 
-        try:
-            self._optimizer.minimize(session=session, **kwargs)
-        except KeyboardInterrupt:
-            warnings.warn('Optimization interrupted.')
+        self._optimizer.minimize(session=session, **kwargs)
 
     @property
     def model(self):

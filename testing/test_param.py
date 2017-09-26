@@ -46,6 +46,12 @@ class ParamTests(test_util.GPflowTestCase):
         self.m.p = gpflow.Param(1.0)
         self.m.b = gpflow.Param(1.0)
 
+    def test_generators(self):
+        with self.test_context():
+            self.assertEqual(len(list(self.m.parameters)), 2)
+            self.assertEqual(len(list(self.m.data_holders)), 0)
+            self.assertEqual(len(list(self.m.params)), 2)
+
     def test_assign(self):
         with self.test_context():
             self.p.assign(2.0)
@@ -110,7 +116,40 @@ class ParamTests(test_util.GPflowTestCase):
             _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
 
 
-class ParamCompileTests(test_util.GPflowTestCase):
+class ParameterizedNoParametersTests(test_util.GPflowTestCase):
+    def setUp(self):
+        self.m = gpflow.params.Parameterized(name='m')
+        self.m.p = gpflow.params.Parameterized()
+        self.m.b = gpflow.params.Parameterized()
+
+    def test_is_built(self):
+        with self.test_context():
+            self.assertEqual(self.m.is_built_coherence(), gpflow.Build.YES)
+
+    def test_compile(self):
+        with self.test_context():
+            self.m.compile()
+            self.assertEqual(self.m.is_built_coherence(), gpflow.Build.YES)
+
+    def test_generators(self):
+        with self.test_context():
+            self.assertEqual(list(self.m.parameters), [])
+            self.assertEqual(list(self.m.data_holders), [])
+            self.assertEqual(len(list(self.m.params)), 2)
+
+    def test_add_parameter_to_empty_parameterized(self):
+        with self.test_context():
+            self.m.compile()
+            self.m.a = gpflow.Param(10)
+            self.assertEqual(self.m.is_built_coherence(), gpflow.Build.NO)
+            self.m.compile()
+            self.assertEqual(self.m.is_built_coherence(), gpflow.Build.YES)
+            with self.assertRaises(gpflow.GPflowError):
+                self.m.b = gpflow.Param(20)
+
+
+
+class ParameterizedCompileTests(test_util.GPflowTestCase):
     def setUp(self):
         with self.test_context() as session:
             self.graph = session.graph
@@ -167,13 +206,20 @@ class ParamCompileTests(test_util.GPflowTestCase):
             self.m.compile()
 
 
-class ParamDeepTest(test_util.GPflowTestCase):
+class ParameterizedDeepTest(test_util.GPflowTestCase):
     def setUp(self):
         with self.test_context():
             self.m = gpflow.params.Parameterized(name='m')
+            self.m.a = gpflow.Param(1.0, trainable=False)
             self.m.foo = gpflow.params.Parameterized()
             self.m.foo.bar = gpflow.params.Parameterized()
             self.m.foo.bar.baz = gpflow.Param(1.0)
+
+    def test_generators(self):
+        with self.test_context():
+            self.assertEqual(len(list(self.m.parameters)), 2)
+            self.assertEqual(len(list(self.m.data_holders)), 0)
+            self.assertEqual(len(list(self.m.params)), 2)
 
     def test_root(self):
         self.assertTrue(self.m.foo.root is self.m)
