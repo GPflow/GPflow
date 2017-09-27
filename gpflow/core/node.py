@@ -34,7 +34,7 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
             self._session = session
 
     def clear(self):
-        if self.is_built_coherence() is Build.YES and self.root is not self:
+        if self.root is not self:
             raise GPflowError('Only root can initiate cleaning process.')
         self._session = None
         self._clear()

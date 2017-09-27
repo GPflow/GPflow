@@ -278,14 +278,14 @@ class ParamLikeInvariantTest(test_util.GPflowTestCase):
             with self.assertRaises(gpflow.GPflowError):
                 m.a.compile()
 
-        # TODO(awav):
+        # TODO(@awav):
         # m = gpflow.params.Parameterized()
         # m.foo = gpflow.params.Parameterized()
         # m.foo.bar = gpflow.params.Parameterized()
         # with self.assertRaises(ValueError):
         #     m.baz = m.foo.bar
 
-        # TODO(awav):
+        # TODO(@awav):
         #m = gpflow.params.Parameterized()
         #m.foo = gpflow.params.Parameterized()
         #m.foo.bar = gpflow.params.Parameterized()
@@ -293,7 +293,7 @@ class ParamLikeInvariantTest(test_util.GPflowTestCase):
         #with self.assertRaises(ValueError):
         #    m.boo.far = m.foo.bar
 
-    # TODO(awav):
+    # TODO(@awav):
     # def testAddingToAnother(self):
     #     """
     #     Adding the same Paramterized object to another tree is fine.

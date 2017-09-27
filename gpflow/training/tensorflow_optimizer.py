@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import sys
-import warnings
 import tensorflow as tf
 
 from ..models.model import Model
@@ -56,7 +59,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             self._initialize_optimizer(var_list, session)
 
     def _initialize_optimizer(self, variables, session):
-        # TODO(awav): AdamOptimizer creates beta1 and beta2 variables which are
+        # TODO(@awav): AdamOptimizer creates beta1 and beta2 variables which are
         #             not included in slots.
         extra_vars = [v for v in self.optimizer.__dict__.values() if isinstance(v, tf.Variable)]
         optimizer_vars = [self.optimizer.get_slot(var, name)

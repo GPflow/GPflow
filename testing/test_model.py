@@ -80,17 +80,18 @@ class TestKeyboardCatching(test_util.GPflowTestCase):
             m = self.m
             m.compile()
             x_before = m.read_trainable_values()
-            options = {'disp': 0, 'maxiter': 1000, 'ftol': 0, 'gtol': 0}
+            options = {'maxiter': 1000, 'gtol': 0, 'ftol': 0}
             opt = gpflow.train.ScipyOptimizer(options=options)
-            with self.assertRaises(KeyboardInterrupt):
-                opt.minimize(m, step_callback=KeyboardRaiser(15))
+            step = 15
+            raiser = KeyboardRaiser(step)
+            opt.minimize(m, step_callback=raiser)
+            self.assertEqual(raiser.count, step)
             x_after = m.read_trainable_values()
             before = np.hstack([np.hstack(np.hstack([x])) for x in x_before])
             after = np.hstack([np.hstack(np.hstack([x])) for x in x_after])
-            # TODO(awav): Should trainable variables be equal?
-            self.assertTrue(np.allclose(before, after))
+            self.assertFalse(np.allclose(before, after))
 
-    # TODO(awav)
+    # TODO(@awav)
     #def test_optimize_tf(self):
     #    with self.test_context():
     #        x0 = self.m.get_free_state()
@@ -130,8 +131,10 @@ class TestLikelihoodAutoflow(test_util.GPflowTestCase):
 
 class TestName(test_util.GPflowTestCase):
     def test_name(self):
-        m = gpflow.models.Model(name='foo')
-        self.assertEqual(m.name, 'foo')
+        m1 = gpflow.models.Model()
+        self.assertEqual(m1.name, 'Model')
+        m2 = gpflow.models.Model(name='foo')
+        self.assertEqual(m2.name, 'foo')
 
 
 # class TestNoRecompileThroughNewModelInstance(test_util.GPflowTestCase):

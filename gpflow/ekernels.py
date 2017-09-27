@@ -175,9 +175,8 @@ class Add(kernels.Add):
     """
 
     def __init__(self, kern_list):
-        self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
-        # self.crossexp_funcs = {}
         kernels.Add.__init__(self, kern_list)
+        self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
 
     def eKdiag(self, X, Xcov):
         return reduce(tf.add, [k.eKdiag(X, Xcov) for k in self.kern_list])

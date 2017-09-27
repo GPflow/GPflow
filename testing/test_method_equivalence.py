@@ -81,7 +81,7 @@ class TestEquivalence(GPflowTestCase):
             self.models = [m1, m2, m3, m4, m5, m6]
             for m in self.models:
                 m.optimize(disp=False, maxiter=300)
-                # TODO(awav): Instead of this hack the test must be splitted up
+                # TODO(@awav): Instead of this hack the test must be splitted up
                 print('.')  # stop travis timing out
 
     def test_all(self):

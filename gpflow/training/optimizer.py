@@ -39,11 +39,9 @@ class Optimizer:
         return session
 
     def _pop_var_list(self, model, kwargs):
-        var_set = set(model.trainable_tensors).union(set(kwargs.pop('var_list', [])))
-        var_list = list(var_set)
         #if not var_list:
         #    raise ValueError('List of trainable variables is not empty.')
-        return var_list
+        return list(set(model.trainable_tensors).union(kwargs.pop('var_list', [])))
 
     def _pop_feed_dict(self, kwargs):
         return kwargs.pop('feed_dict', {})

@@ -418,7 +418,7 @@ class Parameterized(Node):
             init = tf.variables_initializer(data_holders + variables)
             session.run(init)
 
-    # TODO(awav): # pylint: disable=W0511
+    # TODO(@awav): # pylint: disable=W0511
     #def randomize(self, distributions={}, skiptrainable=True):
     #    """
     #    Calls randomize on all parameters in model hierarchy.
@@ -448,7 +448,7 @@ class Parameterized(Node):
             elif isinstance(param, Parameterized) and not param.empty:
                 priors.append(param.prior_tensor)
 
-        # TODO(awav): What prior must represent empty list of parameters?
+        # TODO(@awav): What prior must represent empty list of parameters?
         if not priors:
             return None
         return tf.add_n(priors, name='prior')
