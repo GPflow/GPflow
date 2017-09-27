@@ -44,6 +44,8 @@ def get_tensor_by_name(name, index=None, graph=None):
 def is_ndarray(value):
     return isinstance(value, np.ndarray)
 
+def is_list(value):
+    return isinstance(value, list)
 
 def is_tensor(value):
     return isinstance(value, (tf.Tensor, tf.Variable))
@@ -54,6 +56,11 @@ def is_number(value):
 
 
 def is_valid_param_value(value):
+    if isinstance(value, list):
+        if not value:
+            return False
+        zero_type = type(value[0])
+        return all(isinstance(val, zero_type) for val in value[1:])
     return ((value is not None)
             and is_number(value)
             or is_ndarray(value)

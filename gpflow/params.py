@@ -33,7 +33,7 @@ from gpflow.core.base import IPrior, ITransform
 from gpflow.core.autoflow import AutoFlow
 from gpflow.core.tensor_converter import TensorConverter
 
-from gpflow.misc import is_number, is_tensor
+from gpflow.misc import is_number, is_tensor, is_list
 from gpflow.misc import is_valid_param_value, is_tensor_trainable
 from gpflow.misc import add_to_trainables, remove_from_trainables
 from gpflow.misc import get_variable_by_name, get_attribute
@@ -268,12 +268,16 @@ class Param(Node):
         object.__setattr__(self, name, value)
 
     def __str__(self):
-        msg = '\033[1m{name}\033[0m transform:{transform} prior:{prior} {trainable} \n {value}'
         trainable = "[TRAINABLE]" if self.trainable else ""
-        value = "[EXTERNAL TENSOR]" if self._externally_defined else self.read_value()
-        return msg.format(name=self.name, transform=self.transform,
-                          prior=self.prior, trainable=trainable,
-                          value=value)
+        external = "[EXTERNAL TENSOR]" if self._externally_defined else ""
+        msg = ' '.join(['{name}',
+                        'shape:{shape}',
+                        'transform:{transform}',
+                        'prior:{prior}',
+                        trainable,
+                        external])
+        return msg.format(name=self.name, shape=self.shape,
+                          transform=self.transform, prior=self.transform).strip()
 
 
 class DataHolder(Param):
@@ -586,6 +590,6 @@ def _valid_input(value):
     if not is_valid_param_value(value):
         raise ValueError('The value must be either a tensorflow '
                          'variable, an array or a scalar.')
-    if is_number(value):
-        value = np.array(value, dtype=settings.np_float)
+    if is_number(value) or is_list(value):
+        value = np.array(value)
     return value

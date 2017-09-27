@@ -214,24 +214,30 @@ class Add(kernels.Add):
                     crossexps.append(crossexp)
             return all_sum + reduce(tf.add, crossexps)
 
+    @params_as_tensors
     def Linear_RBF_eKxzKzx(self, Ka, Kb, Z, Xmu, Xcov):
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
-        lin, rbf = (Ka, Kb) if type(Ka) is Linear else (Kb, Ka)
-        assert type(lin) is Linear, "%s is not %s" % (str(type(lin)), str(Linear))
-        assert type(rbf) is RBF, "%s is not %s" % (str(type(rbf)), str(RBF))
+        lin, rbf = (Ka, Kb) if isinstance(Ka, Linear) else (Kb, Ka)
+        if not isinstance(lin, Linear):
+            TypeError("{in_lin} is not {linear}".format(in_lin=str(type(lin)), linear=str(Linear)))
+        if not isinstance(rbf, RBF):
+            TypeError("{in_rbf} is not {rbf}".format(in_rbf=str(type(rbf)), rbf=str(RBF)))
         if lin.ARD or type(lin.active_dims) is not slice or type(rbf.active_dims) is not slice:
-            raise NotImplementedError("Active dims and/or Linear ARD not implemented. Switching to quadrature.")
+            raise NotImplementedError("Active dims and/or Linear ARD not implemented. "
+                                      "Switching to quadrature.")
         D = tf.shape(Xmu)[1]
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
-        lengthscales = rbf.lengthscales if rbf.ARD else tf.zeros((D,), dtype=settings.tf_float) + rbf.lengthscales
+
+        if rbf.ARD:
+            lengthscales = rbf.lengthscales
+        else:
+            lengthscales = tf.zeros((D, ), dtype=settings.tf_float) + rbf.lengthscales
+
         lengthscales2 = lengthscales ** 2.0
-
         const = rbf.variance * lin.variance * tf.reduce_prod(lengthscales)
-
         gaussmat = Xcov + tf.matrix_diag(lengthscales2)[None, :, :]  # NxDxD
-
         det = tf.matrix_determinant(gaussmat) ** -0.5  # N
 
         cgm = tf.cholesky(gaussmat)  # NxDxD
@@ -243,11 +249,11 @@ class Add(kernels.Add):
 
         vecplus = (Z[None, :, :, None] / lengthscales2[None, None, :, None] +
                    tf.matrix_solve(Xcov, Xmu[:, :, None])[:, None, :, :])  # NxMxDx1
-        mean = tf.cholesky_solve(tcgm,
-                                 tf.matmul(tf.tile(Xcov[:, None, :, :], [1, M, 1, 1]), vecplus)
-                                 )[:, :, :, 0] * lengthscales2[None, None, :]  # NxMxD
+        mean = tf.cholesky_solve(
+            tcgm, tf.matmul(tf.tile(Xcov[:, None, :, :], [1, M, 1, 1]), vecplus))
+        mean = mean[:, :, :, 0] * lengthscales2[None, None, :]  # NxMxD
         a = tf.matmul(tf.tile(Z[None, :, :], [N, 1, 1]),
-                            mean * exp[:, :, None] * det[:, None, None] * const, transpose_b=True)
+                      mean * exp[:, :, None] * det[:, None, None] * const, transpose_b=True)
         return a + tf.transpose(a, [0, 2, 1])
 
     def quad_eKzx1Kxz2(self, Ka, Kb, Z, Xmu, Xcov):

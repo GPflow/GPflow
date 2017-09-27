@@ -8,12 +8,13 @@ from gpflow import kernels
 from gpflow import ekernels
 from nose.plugins.attrib import attr
 
-def _assert_pdeq(self, a, b, k=None, i=-1, l=-1):
-    self.assertTrue(np.all(a.shape == b.shape))
+def _assert_pdeq(obj, a, b, k=None, i=-1, l=-1):
+    obj.assertTrue(np.all(a.shape == b.shape))
     pdmax = np.max(np.abs(a / b - 1) * 100)
     # print("%s, %f" % (str(type(k)), pdmax))
     msg = "Percentage difference above threshold: {0}\nOn kernel: {1} ({2} / {3})"
-    self.assertTrue(pdmax < self._threshold, msg=msg.format(pdmax, str(type(k)), i + 1, l))
+    obj.assertTrue(pdmax < obj._threshold, msg=msg.format(pdmax, str(type(k)), i + 1, l))
+
 
 def index_block(y, x, D):
     return np.s_[y * D:(y + 1) * D, x * D:(x + 1) * D]
@@ -93,11 +94,12 @@ class TestKernExpDelta(GPflowTestCase):
                 self.assertTrue(np.allclose(orig, kdiag))
 
     def test_exKxz(self):
-        with self.test_context():
-            covall = np.array([self.Xcov, self.Xcovc])
-            for k in self.kernels:
-                if type(k) is ekernels.Linear:
+        covall = np.array([self.Xcov, self.Xcovc])
+        for k in self.kernels:
+            with self.test_context():
+                if isinstance(k, ekernels.Linear):
                     continue
+                k.compile()
                 exKxz = k.compute_exKxz(self.Z, self.Xmu, covall)
                 Kxz = k.compute_K(self.Xmu[:-1, :], self.Z)  # NxM
                 xKxz = np.einsum('nm,nd->nmd', Kxz, self.Xmu[1:, :])
@@ -320,40 +322,46 @@ class TestKernExpQuadrature(GPflowTestCase):
             self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
 
     def test_eKdiag(self):
-        with self.test_context():
-            for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
+        for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
+            with self.test_context():
+                k.compile()
+                ek.compile()
                 a = k.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
                 b = ek.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
                 _assert_pdeq(self, a, b, k, i, len(self.kernels))
 
     def test_eKxz(self):
-        with self.test_context():
-            aa, bb = [], []
-            for k, ek in zip(self.kernels, self.ekernels):
+        aa, bb = [], []
+        for k, ek in zip(self.kernels, self.ekernels):
+            with self.test_context():
                 k.num_gauss_hermite_points = self.num_gauss_hermite_points
+                k.compile()
+                ek.compile()
                 a = k.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
                 b = ek.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
-                aa.append(a); bb.append(b)
-            [_assert_pdeq(self, a, b, k) for a, b, k in zip(aa, bb, self.kernels)]
+                aa.append(a)
+                bb.append(b)
+                [_assert_pdeq(self, a, b, k) for a, b, k in zip(aa, bb, self.kernels)]
 
     def test_eKzxKxz(self):
-        with self.test_context():
-            for k, ek in zip(self.kernels, self.ekernels):
-                k._kill_autoflow()
+        for k, ek in zip(self.kernels, self.ekernels):
+            with self.test_context():
                 k.num_gauss_hermite_points = self.num_gauss_hermite_points
+                k.compile()
+                ek.compile()
                 a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
                 b = ek.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
                 _assert_pdeq(self, a, b, k)
 
     def test_exKxz(self):
-        with self.test_context():
-            for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
-                if type(k) is kernels.Add and hasattr(k, 'input_size'):
+        for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
+            with self.test_context():
+                if isinstance(k, kernels.Add) and hasattr(k, 'input_size'):
                     # xKxz does not work with slicing yet
                     continue
-
-                k._kill_autoflow()
                 k.num_gauss_hermite_points = self.num_gauss_hermite_points
+                k.compile()
+                ek.compile()
                 a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
                 b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov)
                 _assert_pdeq(self, a, b, k, i, len(self.kernels))
@@ -361,7 +369,7 @@ class TestKernExpQuadrature(GPflowTestCase):
     def test_switch_quadrature(self):
         with self.test_context():
             k = self.kernels[0]
-            k._kill_autoflow()
+            k.compile()
             k.num_gauss_hermite_points = 0
             with self.assertRaises(RuntimeError):
                 k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
@@ -401,18 +409,24 @@ class TestKernProd(GPflowTestCase):
 
     def test_eKdiag(self):
         with self.test_context():
+            self.kernel.compile()
+            self.ekernel.compile()
             a = self.kernel.compute_eKdiag(self.Xmu, self.Xcov)
             b = self.ekernel.compute_eKdiag(self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b)
 
     def test_eKxz(self):
         with self.test_context():
+            self.kernel.compile()
+            self.ekernel.compile()
             a = self.kernel.compute_eKxz(self.Z, self.Xmu, self.Xcov)
             b = self.ekernel.compute_eKxz(self.Z, self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b)
 
     def test_eKzxKxz(self):
         with self.test_context():
+            self.kernel.compile()
+            self.ekernel.compile()
             a = self.kernel.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
             b = self.ekernel.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
             _assert_pdeq(self, a, b)
@@ -447,7 +461,10 @@ class TestKernExpDiagXcov(GPflowTestCase):
             linvariance = 0.3 + self.rng.rand()
             self.kernels.append(
                 kernels.Add([
-                    kernels.RBF(1, rbfvariance, rbfard, [1], False),
+                    kernels.RBF(1, variance=rbfvariance,
+                                lengthscales=rbfard,
+                                active_dims=[1],
+                                ARD=False),
                     kernels.Linear(1, linvariance, [0])
                 ])
             )
@@ -485,22 +502,25 @@ class TestKernExpDiagXcov(GPflowTestCase):
             self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
 
     def test_eKdiag(self):
-        with self.test_context():
-            for i, k in enumerate(self.kernels + self.ekernels):
+        for i, k in enumerate(self.kernels + self.ekernels):
+            with self.test_context():
+                k.compile()
                 d = k.compute_eKdiag(self.Xmu, self.Xcov)
                 e = k.compute_eKdiag(self.Xmu, self.Xcov_diag)
                 _assert_pdeq(self, d, e, k, i, len(self.kernels))
 
     def test_eKxz(self):
-        with self.test_context():
-            for i, k in enumerate(self.kernels + self.ekernels):
+        for _, k in enumerate(self.kernels + self.ekernels):
+            with self.test_context():
+                k.compile()
                 a = k.compute_eKxz(self.Z, self.Xmu, self.Xcov)
                 b = k.compute_eKxz(self.Z, self.Xmu, self.Xcov_diag)
                 _assert_pdeq(self, a, b, k)
 
     def test_eKzxKxz(self):
-        with self.test_context():
-            for i, k in enumerate(self.kernels + self.ekernels):
+        for _, k in enumerate(self.kernels + self.ekernels):
+            with self.test_context():
+                k.compile()
                 a = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
                 b = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov_diag)
                 _assert_pdeq(self, a, b, k)
