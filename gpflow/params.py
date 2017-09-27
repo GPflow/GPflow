@@ -131,12 +131,14 @@ class Param(Node):
         if self._externally_defined:
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
         value = _valid_input(value)
-        if self.shape != value.shape:
-            raise GPflowError('Assigning value has different shape.')
-        session = self.enquire_session(session, allow_none=True)
-        self._value[...] = value
-        if session and self.is_built_coherence(session.graph) is Build.YES:
-            self.var_tensor.load(self._value, session=session)
+        if self.is_built_coherence() is Build.YES:
+            if self.shape != value.shape:
+                raise GPflowError('Value has different shape.')
+            session = self.enquire_session(session)
+            self.is_built_coherence(graph=session.graph)
+            self.var_tensor.load(value, session=session)
+        else:
+            self._value[...] = value
 
     def read_value(self, session=None):
         session = self.enquire_session(session, allow_none=True)
@@ -414,8 +416,9 @@ class Parameterized(Node):
                      if isinstance(parameter.var_tensor, tf.Variable)]
         data_holders = [data_holder.var_tensor for data_holder in self.data_holders
                         if isinstance(data_holder.var_tensor, tf.Variable)]
-        if variables:
-            init = tf.variables_initializer(data_holders + variables)
+        var_list = variables + data_holders
+        if var_list:
+            init = tf.variables_initializer(var_list)
             session.run(init)
 
     # TODO(@awav): # pylint: disable=W0511

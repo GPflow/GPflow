@@ -85,8 +85,8 @@ class ParamTests(test_util.GPflowTestCase):
             self.m.compile()
             self.p.assign(2.0)
             self.m.p = 2.0
-            self.assertTrue(self.p.read_value() == 2.0)
-            self.assertTrue(self.m.p.read_value() == 2.0)
+            self.assertEqual(self.p.read_value(), 2.0)
+            self.assertEqual(self.m.p.read_value(), 2.0)
 
     def test_root(self):
         self.assertTrue(self.m.p.root is self.m)

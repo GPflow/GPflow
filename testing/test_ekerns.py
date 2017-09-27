@@ -76,16 +76,18 @@ class TestKernExpDelta(GPflowTestCase):
             self.kernels = [k1, klin, k2]
 
     def test_eKzxKxz(self):
-        with self.test_context():
-            for k in self.kernels:
+        for k in self.kernels:
+            with self.test_context():
+                k.compile()
                 psi2 = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
                 kernmat = k.compute_K(self.Z, self.Xmu)  # MxN
                 kernouter = np.einsum('in,jn->nij', kernmat, kernmat)
                 self.assertTrue(np.allclose(kernouter, psi2))
 
     def test_eKdiag(self):
-        with self.test_context():
-            for k in self.kernels:
+        for k in self.kernels:
+            with self.test_context():
+                k.compile()
                 kdiag = k.compute_eKdiag(self.Xmu, self.Xcov)
                 orig = k.compute_Kdiag(self.Xmu)
                 self.assertTrue(np.allclose(orig, kdiag))
@@ -102,8 +104,9 @@ class TestKernExpDelta(GPflowTestCase):
                 self.assertTrue(np.allclose(xKxz, exKxz))
 
     def test_Kxz(self):
-        with self.test_context():
-            for k in self.kernels:
+        for k in self.kernels:
+            with self.test_context():
+                k.compile()
                 psi1 = k.compute_eKxz(self.Z, self.Xmu, self.Xcov)
                 kernmat = k.compute_K(self.Z, self.Xmu)  # MxN
                 self.assertTrue(np.allclose(kernmat, psi1.T))
@@ -146,6 +149,8 @@ class TestKernExpActiveDims(GPflowTestCase):
     def test_quad_active_dims(self):
         with self.test_context():
             for k, pk in zip(self.kernels + self.ekernels, self.pkernels + self.pekernels):
+                k.compile()
+                pk.compile()
                 a = k.compute_eKdiag(self.Xmu, self.Xcov[0, :, :, :])
                 sliced = np.take(
                     np.take(self.Xcov, k.active_dims, axis=-1),
@@ -211,7 +216,7 @@ class TestExpxKxzActiveDims(GPflowTestCase):
 
     def test_quad_active_dims(self):
         for k, pk in zip(self.kernels, self.pkernels):
-            with self.test_context(graph=tf.Graph()):
+            with self.test_context():
                 # TODO(@markvdw):
                 # exKxz is interacts slightly oddly with `active_dims`.
                 # It can't be implemented by simply dropping the dependence on certain inputs.
@@ -230,13 +235,20 @@ class TestExpxKxzActiveDims(GPflowTestCase):
                 exp_shape = np.array([self.N - 1, self.Z.shape[0], self.D])
                 self.assertTrue(np.all(a.shape == exp_shape),
                                 msg="Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape)))
+                k.clear()
+                pk.clear()
 
-            for k, pk in zip(self.ekernels, self.pekernels):
+        for k, pk in zip(self.ekernels, self.pekernels):
+            with self.test_context():
+                k.compile()
+                pk.compile()
                 try:
                     k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
                     pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
                 except Exception as e:
                     self.assertTrue(type(e) is tf.errors.InvalidArgumentError)
+                k.clear()
+                pk.clear()
 
 
 @attr(speed='slow')
