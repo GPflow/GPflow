@@ -56,12 +56,12 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 
     if q_sqrt.get_shape().ndims == 2:
         diag = True
-        num_latent = tf.cast(tf.shape(q_sqrt)[1], float_type)
+        num_latent = tf.shape(q_sqrt)[1]
         NM = tf.size(q_sqrt)
         Lq = Lq_diag = q_sqrt
     elif q_sqrt.get_shape().ndims == 3:
         diag = False
-        num_latent = tf.cast(tf.shape(q_sqrt)[2], float_type)
+        num_latent = tf.shape(q_sqrt)[2]
         NM = tf.reduce_prod(tf.shape(q_sqrt)[1:])
         Lq = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
         Lq_diag = tf.matrix_diag_part(Lq)
@@ -70,37 +70,38 @@ def gauss_kl(q_mu, q_sqrt, K=None):
                          str(q_sqrt.get_shape().ndims))
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
-    mahalanobis = 0.5 * tf.reduce_sum(tf.square(alpha))
+    mahalanobis = tf.reduce_sum(tf.square(alpha))
     
     # Constant term: - N x M
-    constant = -0.5 * tf.cast(NM, float_type)
+    constant = - tf.cast(NM, float_type)
 
     # Log-determinant of the covariance of q(x):
-    logdet_qcov = -0.5 * tf.reduce_sum(tf.log(tf.square(Lq_diag)))
+    logdet_qcov = tf.reduce_sum(tf.log(tf.square(Lq_diag)))
 
     # Trace term: tr(Σp⁻¹ Σq)
     if white:
-        trace = 0.5 * tf.reduce_sum(tf.square(Lq))
+        trace = tf.reduce_sum(tf.square(Lq))
     else:
         if diag:
-            Lp_inv = tf.matrix_triangular_solve(Lp, tf.eye(tf.shape(Lp)[0], dtype=float_type), lower=True)
+            M = tf.shape(Lp)[0]
+            Lp_inv = tf.matrix_triangular_solve(Lp, tf.eye(M, dtype=float_type), lower=True)
             K_inv = tf.matrix_triangular_solve(tf.transpose(Lp), Lp_inv, lower=False)
-            trace = 0.5 * tf.reduce_sum(tf.expand_dims(tf.matrix_diag_part(K_inv), 1) *
+            trace = tf.reduce_sum(tf.expand_dims(tf.matrix_diag_part(K_inv), 1) *
                                       tf.square(q_sqrt))
         else:
-            Lp_tiled = tf.tile(tf.expand_dims(Lp, 0), tf.stack([tf.shape(Lq)[0], 1, 1]))
+            Lp_tiled = tf.tile(tf.expand_dims(Lp, 0), [num_latent, 1, 1])
             LpiLq = tf.matrix_triangular_solve(Lp_tiled, Lq, lower=True)
-            trace = 0.5 * tf.reduce_sum(tf.square(LpiLq))
+            trace = tf.reduce_sum(tf.square(LpiLq))
 
-    KL = mahalanobis + constant + logdet_qcov + trace
+    twoKL = mahalanobis + constant - logdet_qcov + trace
 
     # Log-determinant of the covariance of p(x):
     if not white:
-        prior_logdet = num_latent * 0.5 * tf.reduce_sum(
+        prior_logdet = tf.cast(num_latent, float_type) * tf.reduce_sum(
             tf.log(tf.square(tf.matrix_diag_part(Lp))))
-        KL += prior_logdet
+        twoKL += prior_logdet
 
-    return KL
+    return 0.5 * twoKL
 
 
 import warnings
