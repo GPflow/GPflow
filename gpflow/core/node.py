@@ -35,7 +35,7 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
 
     def clear(self):
         if self.root is not self:
-            raise GPflowError('Only root can initiate cleaning process.')
+            raise GPflowError('Only root can initiate clear process.')
         self._session = None
         self._clear()
 

@@ -25,9 +25,15 @@ class GPflowTestCase(tf.test.TestCase):
 
     _multiprocess_can_split_ = True
 
+    def __init__(self, *args, **kwargs):
+        super(GPflowTestCase, self).__init__(*args, **kwargs)
+        self.test_graph = None
+
     @contextlib.contextmanager
     def test_context(self, graph=None):
-        graph = graph if graph is not None else tf.Graph()
+        graph = graph if graph else self.test_graph
+        if graph is None:
+            graph = tf.Graph()
         with self.test_session(graph=graph) as session:
             yield session
 

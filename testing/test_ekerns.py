@@ -76,6 +76,11 @@ class TestKernExpDelta(GPflowTestCase):
             klin = ekernels.Linear(self.D, variance=0.3 + self.rng.rand())
             self.kernels = [k1, klin, k2]
 
+    def tearDown(self):
+        GPflowTestCase.tearDown(self)
+        for kernel in self.kernels:
+            kernel.clear()
+
     def test_eKzxKxz(self):
         for k in self.kernels:
             with self.test_context():
@@ -148,6 +153,11 @@ class TestKernExpActiveDims(GPflowTestCase):
             klin = kernels.Linear(1, variance)
             self.pkernels = [k1, klin]
 
+    def tearDown(self):
+        GPflowTestCase.tearDown(self)
+        for kernel in self.kernels + self.ekernels + self.pekernels + self.pkernels:
+            kernel.clear()
+
     def test_quad_active_dims(self):
         with self.test_context():
             for k, pk in zip(self.kernels + self.ekernels, self.pkernels + self.pekernels):
@@ -216,6 +226,11 @@ class TestExpxKxzActiveDims(GPflowTestCase):
             klin = kernels.Linear(2, variance)
             self.pkernels = [k1, klin]
 
+    def tearDown(self):
+        GPflowTestCase.tearDown(self)
+        for kernel in self.kernels + self.ekernels + self.pekernels + self.pkernels:
+            kernel.clear()
+
     def test_quad_active_dims(self):
         for k, pk in zip(self.kernels, self.pkernels):
             with self.test_context():
@@ -237,20 +252,14 @@ class TestExpxKxzActiveDims(GPflowTestCase):
                 exp_shape = np.array([self.N - 1, self.Z.shape[0], self.D])
                 self.assertTrue(np.all(a.shape == exp_shape),
                                 msg="Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape)))
-                k.clear()
-                pk.clear()
 
         for k, pk in zip(self.ekernels, self.pekernels):
             with self.test_context():
                 k.compile()
                 pk.compile()
-                try:
+                with self.assertRaises(tf.errors.InvalidArgumentError):
                     k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
                     pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
-                except Exception as e:
-                    self.assertTrue(type(e) is tf.errors.InvalidArgumentError)
-                k.clear()
-                pk.clear()
 
 
 @attr(speed='slow')
@@ -259,67 +268,71 @@ class TestKernExpQuadrature(GPflowTestCase):
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.
 
     def setUp(self):
-        with self.test_context():
-            self.rng = np.random.RandomState(1)  # this seed works with 60 GH points
-            self.N = 4
-            self.D = 2
-            self.Xmu = self.rng.rand(self.N, self.D)
-            self.Z = self.rng.rand(2, self.D)
+        self.rng = np.random.RandomState(1)  # this seed works with 60 GH points
+        self.N = 4
+        self.D = 2
+        self.Xmu = self.rng.rand(self.N, self.D)
+        self.Z = self.rng.rand(2, self.D)
 
-            unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
-            t = TriDiagonalBlockRep()
-            self.Xcov = t.forward(unconstrained)
+        unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
+        t = TriDiagonalBlockRep()
+        self.Xcov = t.forward(unconstrained)
 
-            # Set up "normal" kernels
-            ekernel_classes = [ekernels.RBF, ekernels.Linear]
-            kernel_classes = [kernels.RBF, kernels.Linear]
-            params = [(self.D, 0.3 + self.rng.rand(), self.rng.rand(2) + [0.5, 1.5], None, True),
-                      (self.D, 0.3 + self.rng.rand(), None)]
-            self.ekernels = [c(*p) for c, p in zip(ekernel_classes, params)]
-            self.kernels = [c(*p) for c, p in zip(kernel_classes, params)]
+        # Set up "normal" kernels
+        ekernel_classes = [ekernels.RBF, ekernels.Linear]
+        kernel_classes = [kernels.RBF, kernels.Linear]
+        params = [(self.D, 0.3 + self.rng.rand(), self.rng.rand(2) + [0.5, 1.5], None, True),
+                  (self.D, 0.3 + self.rng.rand(), None)]
+        self.ekernels = [c(*p) for c, p in zip(ekernel_classes, params)]
+        self.kernels = [c(*p) for c, p in zip(kernel_classes, params)]
 
-            # Test summed kernels, non-overlapping
-            rbfvariance = 0.3 + self.rng.rand()
-            rbfard = [self.rng.rand() + 0.5]
-            linvariance = 0.3 + self.rng.rand()
-            self.kernels.append(
-                kernels.Add([
-                    kernels.RBF(1, rbfvariance, rbfard, [1], False),
-                    kernels.Linear(1, linvariance, [0])
-                ])
-            )
-            self.kernels[-1].input_size = self.kernels[-1].input_dim
-            for k in self.kernels[-1].kern_list:
-                k.input_size = self.kernels[-1].input_size
-            self.ekernels.append(
-                ekernels.Add([
-                    ekernels.RBF(1, rbfvariance, rbfard, [1], False),
-                    ekernels.Linear(1, linvariance, [0])
-                ])
-            )
-            self.ekernels[-1].input_size = self.ekernels[-1].input_dim
-            for k in self.ekernels[-1].kern_list:
-                k.input_size = self.ekernels[-1].input_size
+        # Test summed kernels, non-overlapping
+        rbfvariance = 0.3 + self.rng.rand()
+        rbfard = [self.rng.rand() + 0.5]
+        linvariance = 0.3 + self.rng.rand()
+        self.kernels.append(
+            kernels.Add([
+                kernels.RBF(1, rbfvariance, rbfard, [1], False),
+                kernels.Linear(1, linvariance, [0])
+            ])
+        )
+        self.kernels[-1].input_size = self.kernels[-1].input_dim
+        for k in self.kernels[-1].kern_list:
+            k.input_size = self.kernels[-1].input_size
+        self.ekernels.append(
+            ekernels.Add([
+                ekernels.RBF(1, rbfvariance, rbfard, [1], False),
+                ekernels.Linear(1, linvariance, [0])
+            ])
+        )
+        self.ekernels[-1].input_size = self.ekernels[-1].input_dim
+        for k in self.ekernels[-1].kern_list:
+            k.input_size = self.ekernels[-1].input_size
 
-            # Test summed kernels, overlapping
-            rbfvariance = 0.3 + self.rng.rand()
-            rbfard = [self.rng.rand() + 0.5]
-            linvariance = 0.3 + self.rng.rand()
-            self.kernels.append(
-                kernels.Add([
-                    kernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
-                    kernels.Linear(self.D, linvariance, active_dims=[0, 1])
-                ])
-            )
-            self.ekernels.append(
-                ekernels.Add([
-                    ekernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
-                    ekernels.Linear(self.D, linvariance, active_dims=[0, 1])
-                ])
-            )
+        # Test summed kernels, overlapping
+        rbfvariance = 0.3 + self.rng.rand()
+        rbfard = [self.rng.rand() + 0.5]
+        linvariance = 0.3 + self.rng.rand()
+        self.kernels.append(
+            kernels.Add([
+                kernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
+                kernels.Linear(self.D, linvariance, active_dims=[0, 1])
+            ])
+        )
+        self.ekernels.append(
+            ekernels.Add([
+                ekernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
+                ekernels.Linear(self.D, linvariance, active_dims=[0, 1])
+            ])
+        )
 
-            self.assertTrue(self.ekernels[-2].on_separate_dimensions)
-            self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
+        self.assertTrue(self.ekernels[-2].on_separate_dimensions)
+        self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
+
+    def tearDown(self):
+        GPflowTestCase.tearDown(self)
+        for kernel in self.kernels + self.ekernels:
+            kernel.clear()
 
     def test_eKdiag(self):
         for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
@@ -341,7 +354,7 @@ class TestKernExpQuadrature(GPflowTestCase):
                 b = ek.compute_eKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
                 aa.append(a)
                 bb.append(b)
-                [_assert_pdeq(self, a, b, k) for a, b, k in zip(aa, bb, self.kernels)]
+                _ = [_assert_pdeq(self, a, b, k) for a, b, k in zip(aa, bb, self.kernels)]
 
     def test_eKzxKxz(self):
         for k, ek in zip(self.kernels, self.ekernels):
@@ -530,38 +543,41 @@ class TestAddCrossCalcs(GPflowTestCase):
     _threshold = 0.5
 
     def setUp(self):
+        self.rng = np.random.RandomState(0)
+        self.N = 4
+        self.D = 2
+
+        self.rbf = ekernels.RBF(self.D, ARD=True)
+        self.rbf.lengthscales = self.rng.rand(2) + [0.5, 1.5]
+        self.rbf.variance = 0.3 + self.rng.rand()
+        self.lin = ekernels.Linear(self.D)
+        self.lin.variance = 0.3 + self.rng.rand()
+        self.add = ekernels.Add([self.rbf, self.lin])
+
+        self.Xmu = self.rng.rand(self.N, self.D)
+        self.Z = self.rng.rand(2, self.D)
+        unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
+        t = TriDiagonalBlockRep()
+        self.Xcov = t.forward(unconstrained)[0, :, :, :]
+
+    def tearDown(self):
+        GPflowTestCase.tearDown(self)
+        self.add.clear()
+
+    def test_cross_quad(self):
         with self.test_context():
-            self.rng = np.random.RandomState(0)
-            self.N = 4
-            self.D = 2
-
-            self.rbf = ekernels.RBF(self.D, ARD=True)
-            self.rbf.lengthscales = self.rng.rand(2) + [0.5, 1.5]
-            self.rbf.variance = 0.3 + self.rng.rand()
-            self.lin = ekernels.Linear(self.D)
-            self.lin.variance = 0.3 + self.rng.rand()
-            self.add = ekernels.Add([self.rbf, self.lin])
-
-            self.Xmu = self.rng.rand(self.N, self.D)
-            self.Z = self.rng.rand(2, self.D)
-            unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
-            t = TriDiagonalBlockRep()
-            self.Xcov = t.forward(unconstrained)[0, :, :, :]
-
-    #def test_cross_quad(self):
-    #    with self.test_context():
-    #        self.add.num_gauss_hermite_points = 50
-    #        free_vars, tfZ, tfXmu, tfXcov = tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64), tf.placeholder(tf.float64)
-    #        self.add.make_tf_array(free_vars)
-    #        with self.add.tf_mode():
-    #            tfa = self.add.Linear_RBF_eKxzKzx(self.add.kern_list[0], self.add.kern_list[1], tfZ, tfXmu, tfXcov)
-    #            tfb = self.add.quad_eKzx1Kxz2(self.add.kern_list[0], self.add.kern_list[1], tfZ, tfXmu, tfXcov)
-#
-    #        sess = tf.Session()
-    #        feed_dict = {tfZ: self.Z, tfXmu: self.Xmu, tfXcov: self.Xcov, free_vars: self.add.get_free_state()}
-    #        feed_dict = self.add.update_feed_dict(self.add.get_feed_dict_keys(), feed_dict)
-    #        a, b = sess.run((tfa, tfb), feed_dict=feed_dict)
-    #        _assert_pdeq(self, a, b)
+            self.add.num_gauss_hermite_points = 50
+            self.add.compile()
+            tfZ = tf.placeholder(tf.float64)
+            tfXmu = tf.placeholder(tf.float64)
+            tfXcov = tf.placeholder(tf.float64)
+            tfa = self.add.Linear_RBF_eKxzKzx(self.add.kern_list[0], self.add.kern_list[1], tfZ, tfXmu, tfXcov)
+            tfb = self.add.quad_eKzx1Kxz2(self.add.kern_list[0], self.add.kern_list[1], tfZ, tfXmu, tfXcov)
+            feed_dict = {tfZ: self.Z,
+                         tfXmu: self.Xmu,
+                         tfXcov: self.Xcov}
+            a, b = self.add.session.run((tfa, tfb), feed_dict=feed_dict)
+            _assert_pdeq(self, a, b)
 
 
 if __name__ == '__main__':

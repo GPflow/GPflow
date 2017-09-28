@@ -35,7 +35,7 @@ class Kern(Parameterized):
     generic '_slice' function to implement them.
     """
 
-    def __init__(self, input_dim, active_dims=None):
+    def __init__(self, input_dim, active_dims=None, name=None):
         """
         input dim is an integer
         active dims is either an iterable of integers or None.
@@ -49,7 +49,7 @@ class Kern(Parameterized):
         If active dims is None, it effectively defaults to range(input_dim),
         but we store it as a slice for efficiency.
         """
-        super(Kern, self).__init__()
+        super(Kern, self).__init__(name=name)
         self.input_dim = int(input_dim)
         if active_dims is None:
             self.active_dims = slice(input_dim)
@@ -559,8 +559,7 @@ class ArcCosine(Kern):
     def _weighted_product(self, X, X2=None):
         if X2 is None:
             return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
-        else:
-            return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
+        return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
 
     def _J(self, theta):
         """
