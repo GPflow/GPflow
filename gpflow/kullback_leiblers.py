@@ -22,23 +22,23 @@ float_type = settings.dtypes.float_type
 @NameScoped("KL")
 def gauss_kl(q_mu, q_sqrt, K=None):
     """
-    Compute the KL divergence from
+    Compute the KL divergence KL[q || p] between
 
           q(x) = N(q_mu, q_sqrt^2)
-    to
+    and
           p(x) = N(0, K)
 
-    We assume multiple independent distributions, given by the columns of
+    We assume N multiple independent distributions, given by the columns of
     q_mu and the last dimension of q_sqrt.
 
-    q_mu is a matrix, each column contains a mean.
+    q_mu is a matrix (M x N), each column contains a mean.
 
-    q_sqrt can be a 3D tensor, each matrix within is a lower triangular
+    q_sqrt can be a 3D tensor (M x M x N), each matrix within is a lower
+        triangular square-root matrix of the covariance of q.
+    q_sqrt can be a matrix (M x N), each column represents the diagonal of a
         square-root matrix of the covariance of q.
-    q_sqrt can be a matrix, each column represents the diagonal of a square-root
-        matrix of the covariance of q.
 
-    K is a positive definite matrix: the covariance of p.
+    K is a positive definite matrix (M x M): the covariance of p.
     If K is None, compute the KL divergence to p(x) = N(0, I) instead.
 
     These functions are now considered deprecated, subsumed into this one:
@@ -69,29 +69,35 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         raise ValueError("Bad dimension for q_sqrt: %s" %
                          str(q_sqrt.get_shape().ndims))
 
-    mahalanobis = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
+    # Mahalanobis term: μqᵀ Σp⁻¹ μq
+    mahalanobis = 0.5 * tf.reduce_sum(tf.square(alpha))
     
-    constant = -0.5 * tf.cast(NM, float_type)  # constant term
-    logdet_qcov = -0.5 * tf.reduce_sum(tf.log(tf.square(Lq_diag)))  # Log-det of q-cov
+    # Constant term: - N x M
+    constant = -0.5 * tf.cast(NM, float_type)
 
+    # Log-determinant of the covariance of q(x):
+    logdet_qcov = -0.5 * tf.reduce_sum(tf.log(tf.square(Lq_diag)))
+
+    # Trace term: tr(Σp⁻¹ Σq)
     if white:
-        trace = 0.5 * tf.reduce_sum(tf.square(Lq))  # Trace term.
+        trace = 0.5 * tf.reduce_sum(tf.square(Lq))
     else:
         if diag:
             Lp_inv = tf.matrix_triangular_solve(Lp, tf.eye(tf.shape(Lp)[0], dtype=float_type), lower=True)
             K_inv = tf.matrix_triangular_solve(tf.transpose(Lp), Lp_inv, lower=False)
             trace = 0.5 * tf.reduce_sum(tf.expand_dims(tf.matrix_diag_part(K_inv), 1) *
-                                      tf.square(q_sqrt))  # Trace term.
+                                      tf.square(q_sqrt))
         else:
             Lp_tiled = tf.tile(tf.expand_dims(Lp, 0), tf.stack([tf.shape(Lq)[0], 1, 1]))
             LpiLq = tf.matrix_triangular_solve(Lp_tiled, Lq, lower=True)
-            trace = 0.5 * tf.reduce_sum(tf.square(LpiLq))  # Trace term
+            trace = 0.5 * tf.reduce_sum(tf.square(LpiLq))
 
     KL = mahalanobis + constant + logdet_qcov + trace
 
+    # Log-determinant of the covariance of p(x):
     if not white:
         prior_logdet = num_latent * 0.5 * tf.reduce_sum(
-            tf.log(tf.square(tf.matrix_diag_part(Lp))))  # Prior log-det term.
+            tf.log(tf.square(tf.matrix_diag_part(Lp))))
         KL += prior_logdet
 
     return KL
