@@ -1,7 +1,7 @@
 import numpy as np
 
 def referenceRbfKernel(X, lengthScale, signalVariance):
-    nDataPoints, inputDimensions = X.shape
+    nDataPoints, _ = X.shape
     kernel = np.zeros((nDataPoints, nDataPoints))
     for row_index in range(nDataPoints):
         for column_index in range(nDataPoints):
@@ -9,7 +9,7 @@ def referenceRbfKernel(X, lengthScale, signalVariance):
             vecB = X[column_index,:]
             delta = vecA - vecB
             distanceSquared = np.dot(delta.T, delta)
-            kernel[row_index, column_index] = signalVariance * np.exp(-0.5*distanceSquared / lengthScale**2)
+            kernel[row_index, column_index] = signalVariance * np.exp(-0.5 * distanceSquared / lengthScale**2)
     return kernel
 
 
@@ -33,7 +33,8 @@ def referenceArcCosineKernel( X, order, weightVariances, biasVariance, signalVar
             elif order == 1:
                 J = np.sin(theta) + (np.pi - theta) * np.cos(theta)
             elif order == 2:
-                J = 3. * np.sin(theta) * np.cos(theta) + (np.pi - theta) * (1. + 2. * np.cos(theta) ** 2)
+                J = 3. * np.sin(theta) * np.cos(theta)
+                J += (np.pi - theta) * (1. + 2. * np.cos(theta) ** 2)
 
             kernel[row, col] = signalVariance * (1. / np.pi) * J * \
                                x_denominator ** order * \

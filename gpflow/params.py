@@ -75,6 +75,12 @@ class Param(Node):
         return np.multiply.reduce(self.shape, dtype=np.int32)
 
     @property
+    def dtype(self):
+        if self.var_tensor is None:
+            return self._value.dtype
+        return np.dtype(self.var_tensor.dtype.as_numpy_dtype)
+
+    @property
     def var_tensor(self):
         return self._var_tensor
 
@@ -540,10 +546,10 @@ class ParamList(Parameterized):
     def _get_param(self, name):
         return self._list[name]
 
-    def _set_param(self, index, value):
-        self._list[index] = value
+    def _set_param(self, name, value):
+        self._list[name] = value
         value.set_parent(self)
-        value.set_name(self._item_name(index))
+        value.set_name(self._item_name(name))
 
     def _item_name(self, index):
         return '{name}{index}'.format(name='item', index=index)

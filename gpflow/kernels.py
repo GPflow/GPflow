@@ -63,7 +63,8 @@ class Kern(Parameterized):
 
         self.num_gauss_hermite_points = 20
 
-    @autoflow((settings.tf_float, [None, None]), (settings.tf_float, [None, None]))
+    @autoflow((settings.tf_float, [None, None]),
+              (settings.tf_float, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
@@ -75,11 +76,14 @@ class Kern(Parameterized):
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @autoflow((settings.tf_float, [None, None]), (settings.tf_float,))
+    @autoflow((settings.tf_float, [None, None]),
+              (settings.tf_float,))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]), (settings.tf_float, [None, None]), (settings.tf_float,))
+    @autoflow((settings.tf_float, [None, None]),
+              (settings.tf_float, [None, None]),
+              (settings.tf_float,))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
@@ -332,15 +336,19 @@ class Stationary(Kern):
     @params_as_tensors
     def square_dist(self, X, X2):
         X = X / self.lengthscales
-        Xs = tf.reduce_sum(tf.square(X), 1)
+        Xs = tf.reduce_sum(tf.square(X), axis=1)
+
         if X2 is None:
-            return -2 * tf.matmul(X, X, transpose_b=True) + \
-                   tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
-        else:
-            X2 = X2 / self.lengthscales
-            X2s = tf.reduce_sum(tf.square(X2), 1)
-            return -2 * tf.matmul(X, X2, transpose_b=True) + \
-                   tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
+            dist = -2 * tf.matmul(X, X, transpose_b=True)
+            dist += tf.reshape(Xs, (-1, 1))  + tf.reshape(Xs, (1, -1))
+            return dist
+
+        X2 = X2 / self.lengthscales
+        X2s = tf.reduce_sum(tf.square(X2), axis=1)
+        dist = -2 * tf.matmul(X, X2, transpose_b=True)
+        dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
+        return dist
+
 
     def euclid_dist(self, X, X2):
         r2 = self.square_dist(X, X2)
@@ -360,7 +368,7 @@ class RBF(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        return self.variance * tf.exp(-self.square_dist(X, X2) / 2)
+        return self.variance * tf.exp(-0.5 * self.square_dist(X, X2))
 
 
 class Linear(Kern):

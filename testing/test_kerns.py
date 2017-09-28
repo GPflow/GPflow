@@ -23,10 +23,10 @@ class TestRbf(GPflowTestCase):
             X_data = rng.randn(3, 1)
 
             kernel.compile()
+            for param in kernel.parameters:
+                val = kernel.session.run(param.transformed_tensor)
             gram_matrix = kernel.session.run(kernel.K(X), feed_dict={X: X_data})
             reference_gram_matrix = referenceRbfKernel(X_data, lengthscale, variance)
-            print(gram_matrix)
-            print(reference_gram_matrix)
             self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
 
 

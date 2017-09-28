@@ -32,7 +32,10 @@ class RBF(kernels.RBF):
         Xcov = self._slice_cov(Xcov)
         Z, Xmu = self._slice(Z, Xmu)
         D = tf.shape(Xmu)[1]
-        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.tf_float) + self.lengthscales
+        if self.ARD:
+            lengthscales = self.lengthscales
+        else:
+            lengthscales = tf.zeros((D,), dtype=settings.tf_float) + self.lengthscales
 
         vec = tf.expand_dims(Xmu, 2) - tf.expand_dims(tf.transpose(Z), 0)  # NxDxM
         chols = tf.cholesky(tf.expand_dims(tf.matrix_diag(lengthscales ** 2), 0) + Xcov)
