@@ -163,14 +163,14 @@ class ParameterizedCompileTests(test_util.GPflowTestCase):
 
     def test_compile(self):
         with self.test_context(self.graph):
-            tensor = self.m.a.var_tensor
+            tensor = self.m.a.parameter_tensor
             self.m.compile()
             self.assertEqual(len(list(self.m.parameters)), 4)
             self.assertEqual(len(list(self.m.trainable_tensors)), 3)
-            self.assertEqual(self.m.a.var_tensor, tensor)
+            self.assertEqual(self.m.a.parameter_tensor, tensor)
             for param in self.m.parameters:
-                self.assertTrue(gpflow.misc.is_tensor(param.var_tensor))
-                self.assertTrue(gpflow.misc.is_tensor(param.transformed_tensor))
+                self.assertTrue(gpflow.misc.is_tensor(param.parameter_tensor))
+                self.assertTrue(gpflow.misc.is_tensor(param.constrained_tensor))
                 self.assertTrue(gpflow.misc.is_tensor(param.prior_tensor))
 
     def test_modify_compiled(self):
@@ -179,8 +179,8 @@ class ParameterizedCompileTests(test_util.GPflowTestCase):
             self.assertEqual(len(list(self.m.parameters)), 4)
             self.assertEqual(len(list(self.m.trainable_tensors)), 3)
             for param in self.m.parameters:
-                self.assertTrue(gpflow.misc.is_tensor(param.var_tensor))
-                self.assertTrue(gpflow.misc.is_tensor(param.transformed_tensor))
+                self.assertTrue(gpflow.misc.is_tensor(param.parameter_tensor))
+                self.assertTrue(gpflow.misc.is_tensor(param.constrained_tensor))
                 self.assertTrue(gpflow.misc.is_tensor(param.prior_tensor))
 
     def test_fails_after_compile(self):
@@ -593,7 +593,7 @@ def _check_trainable_flag(m, assert_true, assert_false):
         assert_bool = assert_false
         if param.trainable:
             assert_bool = assert_true
-        assert_bool(gpflow.misc.is_tensor_trainable(param.var_tensor))
+        assert_bool(gpflow.misc.is_tensor_trainable(param.parameter_tensor))
 
 
 if __name__ == "__main__":

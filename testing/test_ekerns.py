@@ -41,7 +41,7 @@ class TriDiagonalBlockRep(object):
         offblocks = np.vstack((ob, np.zeros((1, D, D))))
         return np.array([diagblocks, offblocks])
 
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         N, D = tf.shape(x)[0], tf.shape(x)[2]
         xm = tf.slice(x, [0, 0, 0], tf.stack([N - 1, -1, -1]))
         xp = x[1:, :, :]

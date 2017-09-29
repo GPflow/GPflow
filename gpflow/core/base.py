@@ -106,7 +106,7 @@ class ITransform:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         """
         Map from the free-space to the variable space, using tensorflow
         """
@@ -115,10 +115,10 @@ class ITransform:
     @abc.abstractmethod
     def log_jacobian(self, x):
         """
-        Return the log Jacobian of the tf_forward mapping.
+        Return the log Jacobian of the forward_tensor mapping.
 
         Note that we *could* do this using a tf manipulation of
-        self.tf_forward, but tensorflow may have difficulty: it doesn't have a
+        self.forward_tensor, but tensorflow may have difficulty: it doesn't have a
         Jacobian at time of writing. We do this in the tests to make sure the
         implementation is correct.
         """

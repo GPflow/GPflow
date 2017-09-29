@@ -55,7 +55,7 @@ class Param(Node):
                 return ITransform
             return None
 
-    def __init__(self, value, transform=None, prior=None, trainable=True, name=None):
+    def __init__(self, value=None, transform=None, prior=None, trainable=True, name=None):
         value = _valid_input(value)
         super(Param, self).__init__(name)
 
@@ -65,8 +65,8 @@ class Param(Node):
 
     @property
     def shape(self):
-        if self.var_tensor is not None:
-            return tuple(self.var_tensor.shape.as_list())
+        if self.parameter_tensor is not None:
+            return tuple(self.parameter_tensor.shape.as_list())
         return self._value.shape
 
     @property
@@ -76,27 +76,31 @@ class Param(Node):
 
     @property
     def dtype(self):
-        if self.var_tensor is None:
+        if self.parameter_tensor is None:
             return self._value.dtype
-        return np.dtype(self.var_tensor.dtype.as_numpy_dtype)
+        return np.dtype(self.parameter_tensor.dtype.as_numpy_dtype)
 
     @property
-    def var_tensor(self):
-        return self._var_tensor
+    def parameter_tensor(self):
+        return self._unconstrained_tensor
+
+    @property
+    def unconstrained_tensor(self):
+        return self._unconstrained_tensor
+
+    @property
+    def constrained_tensor(self):
+        return self._constrained_tensor
 
     @property
     def prior_tensor(self):
         return self._prior_tensor
 
     @property
-    def transformed_tensor(self):
-        return self._transformed_tensor
-
-    @property
     def graph(self):
-        if self.var_tensor is None:
+        if self.parameter_tensor is None:
             return None
-        return self.var_tensor.graph
+        return self.parameter_tensor.graph
 
     def is_built(self, graph):
         if graph is None:
@@ -109,8 +113,8 @@ class Param(Node):
 
     def initialize(self, session=None):
         session = self.enquire_session(session)
-        if isinstance(self.var_tensor, tf.Variable):
-            init = tf.variables_initializer([self.var_tensor])
+        if isinstance(self.parameter_tensor, tf.Variable):
+            init = tf.variables_initializer([self.parameter_tensor])
             session.run(init)
 
     def set_trainable(self, value, graph=None):
@@ -127,9 +131,9 @@ class Param(Node):
             if self.trainable == value:
                 return
             elif value:
-                add_to_trainables(self.var_tensor, graph)
+                add_to_trainables(self.parameter_tensor, graph)
             else:
-                remove_from_trainables(self.var_tensor, graph)
+                remove_from_trainables(self.parameter_tensor, graph)
 
         object.__setattr__(self, 'trainable', value)
 
@@ -142,7 +146,8 @@ class Param(Node):
                 raise GPflowError('Value has different shape.')
             session = self.enquire_session(session)
             self.is_built_coherence(graph=session.graph)
-            self.var_tensor.load(value, session=session)
+            value = self._convert_to_unconstrained(value)
+            self.parameter_tensor.load(value, session=session)
         else:
             self._value[...] = value
 
@@ -151,33 +156,34 @@ class Param(Node):
         if session:
             is_built = self.is_built_coherence(session.graph)
             if is_built is Build.YES:
-                return session.run(self.var_tensor)
+                return self._read_constrained_tensor(session)
         elif self._externally_defined:
             raise GPflowError('Externally defined parameter requires session.')
         return self._value
 
     def _clear(self):
-        self._var_tensor = None           # pylint: disable=W0201
-        self._prior_tensor = None         # pylint: disable=W0201
-        self._externally_defined = False  # pylint: disable=W0201
+        self._unconstrained_tensor = None  # pylint: disable=W0201
+        self._prior_tensor = None          # pylint: disable=W0201
+        self._externally_defined = False   # pylint: disable=W0201
 
     def _build(self):
-        self._var_tensor = self._build_parameter()            # pylint: disable=W0201
-        self._transformed_tensor = self._build_transformed()  # pylint: disable=W0201
+        self._unconstrained_tensor = self._build_parameter()  # pylint: disable=W0201
+        self._constrained_tensor = self._build_constrained()  # pylint: disable=W0201
         self._prior_tensor = self._build_prior()              # pylint: disable=W0201
 
     def _build_parameter(self):
         if self._externally_defined:
-            self._check_tensor_trainable(self.var_tensor)
-            return self.var_tensor
+            self._check_tensor_trainable(self.parameter_tensor)
+            return self.parameter_tensor
 
-        name = '/'.join([self.full_name, 'variable'])
+        name = self._parameter_name()
         tensor = get_variable_by_name(name, graph=self.graph)
         if tensor is not None:
             self._check_tensor_trainable(tensor)
             return tensor
 
-        init = tf.constant_initializer(self._value, dtype=settings.tf_float)
+        value = self._convert_to_unconstrained(self._value)
+        init = tf.constant_initializer(value, dtype=settings.tf_float)
         return tf.get_variable(
             name,
             shape=self.shape,
@@ -185,17 +191,17 @@ class Param(Node):
             dtype=settings.tf_float,
             trainable=self.trainable)
 
-    def _build_transformed(self):
-        if not is_tensor(self.var_tensor):  # pragma: no cover
-            raise GPflowError("Parameter's tensor is not compiled.")
-        return self.transform.tf_forward(self.var_tensor)
+    def _build_constrained(self):
+        if not is_tensor(self.parameter_tensor):  # pragma: no cover
+            raise GPflowError("Parameter's unconstrained tensor is not compiled.")
+        return self.transform.forward_tensor(self.parameter_tensor)
 
     def _build_prior(self):
         """
         Build a tensorflow representation of the prior density.
         The log Jacobian is included.
         """
-        if not is_tensor(self.transformed_tensor):  # pragma: no cover
+        if not is_tensor(self.constrained_tensor):  # pragma: no cover
             raise GPflowError("Parameter's tensor is not compiled.")
 
         prior_name = 'prior'
@@ -203,9 +209,9 @@ class Param(Node):
         if self.prior is None:
             return tf.constant(0.0, settings.tf_float, name=prior_name)
 
-        var = self.var_tensor
-        log_jacobian = self.transform.tf_log_jacobian(var)
-        logp_var = self.prior.logp(self.transformed_tensor)
+        var = self.parameter_tensor
+        log_jacobian = self.transform.log_jacobian_tensor(var)
+        logp_var = self.prior.logp(self.constrained_tensor)
         return tf.add(logp_var, log_jacobian, name=prior_name)
 
     def _check_tensor_trainable(self, tensor):
@@ -217,9 +223,9 @@ class Param(Node):
             raise GPflowError(msg.format(tensor_status, param_status))
 
     def _init_parameter_defaults(self):
-        self._var_tensor = None
+        self._unconstrained_tensor = None
         self._prior_tensor = None
-        self._transformed_tensor = None
+        self._constrained_tensor = None
         self._externally_defined = False
 
     def _init_parameter_value(self, value):
@@ -229,7 +235,7 @@ class Param(Node):
                 status = 'trainable' if is_trainable else 'not trainable'
                 ValueError('Externally defined tensor is {0}.'.format(status))
             self._externally_defined = True
-            self._var_tensor = value
+            self._set_parameter_tensor(value)
         else:
             self._value = value.copy()
 
@@ -239,6 +245,18 @@ class Param(Node):
         self.prior = prior          # pylint: disable=W0201
         self.transform = transform  # pylint: disable=W0201
         self.trainable = trainable  # pylint: disable=W0201
+
+    def _read_constrained_tensor(self, session):
+        return session.run(self.constrained_tensor)
+
+    def _convert_to_unconstrained(self, value):
+        return self.transform.backward(value)
+
+    def _parameter_name(self):
+        return '/'.join([self.full_name, 'unconstrained'])
+
+    def _set_parameter_tensor(self, tensor):
+        self._unconstrained_tensor = tensor
 
     def _set_parameter_attribute(self, attr, value):
         if attr is self.ParamAttribute.TRAINABLE:
@@ -294,6 +312,10 @@ class DataHolder(Param):
     def trainable(self):
         return False
 
+    @property
+    def parameter_tensor(self):
+        return self._dataholder_tensor
+
     def set_trainable(self, _value, graph=None):
         raise NotImplementedError('Data holder cannot be fixed.')
 
@@ -307,13 +329,13 @@ class DataHolder(Param):
         return Build.NO
 
     def _clear(self):
-        self._var_tensor = None  # pylint: disable=W0201
+        self._dataholder_tensor = None  # pylint: disable=W0201
 
     def _build(self):
-        self._var_tensor = self._build_parameter()  # pylint: disable=W0201
+        self._dataholder_tensor = self._build_parameter()  # pylint: disable=W0201
 
     def _init_parameter_defaults(self):
-        self._var_tensor = None
+        self._dataholder_tensor = None
         self._externally_defined = False
 
     def _init_parameter_attributes(self, _prior, _transform, _trainable):
@@ -321,6 +343,19 @@ class DataHolder(Param):
 
     def _set_parameter_attribute(self, attr, value):
         raise NotImplementedError('Data holder does not have parameter attributes.')
+
+    def _read_constrained_tensor(self, session):
+        return session.run(self.parameter_tensor)
+
+    def _convert_to_unconstrained(self, value):
+        return value
+
+    def _parameter_name(self):
+        return '/'.join([self.full_name, 'dataholder'])
+
+    def _set_parameter_tensor(self, tensor):
+        self._dataholder_tensor = tensor
+
 
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
@@ -375,7 +410,7 @@ class Parameterized(Node):
     @property
     def trainable_tensors(self):
         for parameter in self.trainable_parameters:
-            yield parameter.var_tensor
+            yield parameter.parameter_tensor
 
     @property
     def prior_tensor(self):
@@ -422,10 +457,10 @@ class Parameterized(Node):
 
     def initialize(self, session=None):
         session = self.enquire_session(session)
-        variables = [parameter.var_tensor for parameter in self.parameters
-                     if isinstance(parameter.var_tensor, tf.Variable)]
-        data_holders = [data_holder.var_tensor for data_holder in self.data_holders
-                        if isinstance(data_holder.var_tensor, tf.Variable)]
+        variables = [parameter.parameter_tensor for parameter in self.parameters
+                     if isinstance(parameter.parameter_tensor, tf.Variable)]
+        data_holders = [data_holder.parameter_tensor for data_holder in self.data_holders
+                        if isinstance(data_holder.parameter_tensor, tf.Variable)]
         var_list = variables + data_holders
         if var_list:
             init = tf.variables_initializer(var_list)
@@ -588,8 +623,8 @@ def _is_param_like(value):
 def _tensor_mode_parameter(obj):
     if isinstance(obj, Param):
         if isinstance(obj, DataHolder):
-            return obj.var_tensor
-        return obj.transformed_tensor
+            return obj.parameter_tensor
+        return obj.constrained_tensor
 
 
 def _valid_input(value):

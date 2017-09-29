@@ -46,7 +46,7 @@ class TransformTests(GPflowTestCase):
         Make sure the np forward transforms are the same as the tensorflow ones
         """
         with self.test_context() as sess:
-            ys = [t.tf_forward(self.x) for t in self.transforms]
+            ys = [t.forward_tensor(self.x) for t in self.transforms]
             ys_tf = [sess.run(y, feed_dict={self.x: self.x_np}) for y in ys]
             ys_np = [t.forward(self.x_np) for t in self.transforms]
             for y1, y2 in zip(ys_tf, ys_np):
@@ -71,10 +71,10 @@ class TransformTests(GPflowTestCase):
             return tf.stack([tf.gradients(f(self.x)[i], self.x)[0] for i in range(10)])
 
         with self.test_context() as sess:
-            tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.tf_forward)))
+            tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.forward_tensor)))
                        for t in self.transforms
                        if type(t) is not gpflow.transforms.LowerTriangular]
-            hand_jacs = [t.tf_log_jacobian(self.x)
+            hand_jacs = [t.log_jacobian_tensor(self.x)
                          for t in self.transforms
                          if type(t) is not gpflow.transforms.LowerTriangular]
 
@@ -155,12 +155,12 @@ class TestDiagMatrixTransform(GPflowTestCase):
         with self.test_context() as sess:
             free = np.random.randn(8, self.t2.dim).flatten()
             x = tf.placeholder(float_type)
-            ys = sess.run(self.t2.tf_forward(x), feed_dict={x: free})
+            ys = sess.run(self.t2.forward_tensor(x), feed_dict={x: free})
             self.assertTrue(np.allclose(ys, self.t2.forward(free)))
 
             free = np.random.randn(1, self.t1.dim).flatten()
             x = tf.placeholder(float_type)
-            ys = sess.run(self.t1.tf_forward(x), feed_dict={x: free})
+            ys = sess.run(self.t1.forward_tensor(x), feed_dict={x: free})
             self.assertTrue(np.allclose(ys, self.t1.forward(free)))
 
 
