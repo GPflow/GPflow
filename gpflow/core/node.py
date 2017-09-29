@@ -68,10 +68,10 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
         self._session = session
 
     def set_parent(self, parent=None):
-        if self.parent is not self and self.is_built_coherence() is Build.YES:
-            raise GPflowError('Parent cannot be changed for compiled node.')
+        if parent is self:
+            raise ValueError('Self references are prohibited.')
         if parent and not isinstance(parent, Parentable):
-            raise GPflowError('Argument does not implement parentable interface.')
+            raise ValueError('Parent object must implement parentable interface.')
         self._session = None
         self._parent = parent if parent is not None else None
 

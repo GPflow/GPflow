@@ -546,12 +546,9 @@ class Parameterized(Node):
 
         if _is_param_like(value):
             if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
-                print('{}'.format(self.empty))
-                print('{}'.format(list(self.parameters)))
-                print('{}'.format(list(self.data_holders)))
-                raise GPflowError('Attribute cannot be added to assembled node.')
-            value.set_name(key)
+                raise GPflowError('Cannot be added to assembled node.')
             value.set_parent(self)
+            value.set_name(key)
 
         object.__setattr__(self, key, value)
 

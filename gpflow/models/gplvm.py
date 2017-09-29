@@ -30,11 +30,13 @@ class GPLVM(GPR):
         if kern is None:
             kern = kernels.RBF(latent_dim, ARD=True)
         if X_mean is None:
-            X_mean = _PCA_reduce(Y, latent_dim)
-        assert X_mean.shape[1] == latent_dim, \
-            'Passed in number of latent ' + str(latent_dim) + ' does not match initial X ' + str(X_mean.shape[1])
-        self.num_latent = X_mean.shape[1]
-        assert Y.shape[1] >= self.num_latent, 'More latent dimensions than observed.'
+            X_mean = PCA_reduce(Y, latent_dim)
+        num_latent = X_mean.shape[1]
+        if num_latent != latent_dim:
+            msg = 'Passed in number of latent {0} does not match initial X {1}.'
+            raise ValueError(msg.format(latent_dim, num_latent))
+        if Y.shape[1] < num_latent:
+            raise ValueError('More latent dimensions than observed.')
         GPR.__init__(self, X_mean, Y, kern, mean_function=mean_function)
         del self.X  # in GPLVM this is a Param
         self.X = Param(X_mean)
@@ -176,7 +178,7 @@ class BayesianGPLVM(GPModel):
         return mean + self.mean_function(Xnew), var
 
 
-def _PCA_reduce(X, Q):
+def PCA_reduce(X, Q):
     """
     A helpful function for linearly reducing the dimensionality of the data X
     to Q.

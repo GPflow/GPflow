@@ -23,8 +23,6 @@ class TestRbf(GPflowTestCase):
             X_data = rng.randn(3, 1)
 
             kernel.compile()
-            for param in kernel.parameters:
-                val = kernel.session.run(param.constrained_tensor)
             gram_matrix = kernel.session.run(kernel.K(X), feed_dict={X: X_data})
             reference_gram_matrix = referenceRbfKernel(X_data, lengthscale, variance)
             self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
@@ -545,6 +543,7 @@ class TestARDInit(GPflowTestCase):
             k1_variances = k1.weight_variances.read_value()
             k2_variances = k2.weight_variances.read_value()
             self.assertTrue(np.all(k1_variances == k2_variances))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -584,7 +584,6 @@ class TestScopes(test_util.GPflowTestCase):
             def run_kernel(m):
                 return m.kern.K(m.X)
             K = run_kernel(self.m)
-            print("Kernel name: {0}".format(K.name))
             self.assertTrue(K.name.startswith('test_kernel/'))
 
 

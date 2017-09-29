@@ -24,8 +24,10 @@ class TestGPLVM(GPflowTestCase):
     def test_optimise(self):
         with self.test_context():
             m = gpflow.models.GPLVM(self.Y, self.Q)
+            m.compile()
             linit = m.compute_log_likelihood()
-            m.optimize(maxiter=2)
+            opt = gpflow.train.ScipyOptimizer(options={'maxiter': 2})
+            opt.minimize(m)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_otherkernel(self):
@@ -33,8 +35,10 @@ class TestGPLVM(GPflowTestCase):
             k = kernels.PeriodicKernel(self.Q)
             XInit = self.rng.rand(self.N, self.Q)
             m = gpflow.models.GPLVM(self.Y, self.Q, XInit, k)
+            m.compile()
             linit = m.compute_log_likelihood()
-            m.optimize(maxiter=2)
+            opt = gpflow.train.ScipyOptimizer(options={'maxiter': 2})
+            opt.minimize(m)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
 
@@ -62,8 +66,10 @@ class TestBayesianGPLVM(GPflowTestCase):
                 kern=k,
                 M=self.M,
                 Z=Z)
+            m.compile()
             linit = m.compute_log_likelihood()
-            m.optimize(maxiter=2)
+            opt = gpflow.train.ScipyOptimizer(options={'maxiter': 2})
+            opt.minimize(m)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_2d(self):
@@ -78,8 +84,10 @@ class TestBayesianGPLVM(GPflowTestCase):
                 Y=self.Y,
                 kern=k,
                 M=self.M)
+            m.compile()
             linit = m.compute_log_likelihood()
-            m.optimize(maxiter=2)
+            opt = gpflow.train.ScipyOptimizer(options={'maxiter': 2})
+            opt.minimize(m)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
             # test prediction
@@ -93,35 +101,35 @@ class TestBayesianGPLVM(GPflowTestCase):
 
     def test_kernelsActiveDims(self):
         ''' Test sum and product compositional kernels '''
-        with self.test_context():
-            Q = 2  # latent dimensions
-            X_mean = gpflow.models.PCA_reduce(self.Y, Q)
-            kernsQuadratu = [
-                kernels.RBF(1, active_dims=[0])+kernels.Linear(1, active_dims=[1]),
-                kernels.RBF(1, active_dims=[0])+kernels.PeriodicKernel(1, active_dims=[1]),
-                kernels.RBF(1, active_dims=[0])*kernels.Linear(1, active_dims=[1]),
-                kernels.RBF(Q)+kernels.Linear(Q)]  # non-overlapping
-            kernsAnalytic = [
-                ekernels.Add([
-                    ekernels.RBF(1, active_dims=[0]),
-                    ekernels.Linear(1, active_dims=[1])]),
-                ekernels.Add([
-                    ekernels.RBF(1, active_dims=[0]),
-                    kernels.PeriodicKernel(1, active_dims=[1])]),
-                ekernels.Prod([
-                    ekernels.RBF(1, active_dims=[0]),
-                    ekernels.Linear(1, active_dims=[1])]),
-                ekernels.Add([
-                    ekernels.RBF(Q),
-                    ekernels.Linear(Q)])
-            ]
-            fOnSeparateDims = [True, True, True, False]
-            Z = np.random.permutation(X_mean.copy())[:self.M]
-            # Also test default N(0,1) is used
-            X_prior_mean = np.zeros((self.N, Q))
-            X_prior_var = np.ones((self.N, Q))
-            Xtest = self.rng.randn(10, Q)
-            for kq, ka, sepDims in zip(kernsQuadratu, kernsAnalytic, fOnSeparateDims):
+        Q = 2  # latent dimensions
+        X_mean = gpflow.models.PCA_reduce(self.Y, Q)
+        kernsQuadratu = [
+            kernels.RBF(1, active_dims=[0])+kernels.Linear(1, active_dims=[1]),
+            kernels.RBF(1, active_dims=[0])+kernels.PeriodicKernel(1, active_dims=[1]),
+            kernels.RBF(1, active_dims=[0])*kernels.Linear(1, active_dims=[1]),
+            kernels.RBF(Q)+kernels.Linear(Q)]  # non-overlapping
+        kernsAnalytic = [
+            ekernels.Add([
+                ekernels.RBF(1, active_dims=[0]),
+                ekernels.Linear(1, active_dims=[1])]),
+            ekernels.Add([
+                ekernels.RBF(1, active_dims=[0]),
+                kernels.PeriodicKernel(1, active_dims=[1])]),
+            ekernels.Prod([
+                ekernels.RBF(1, active_dims=[0]),
+                ekernels.Linear(1, active_dims=[1])]),
+            ekernels.Add([
+                ekernels.RBF(Q),
+                ekernels.Linear(Q)])
+        ]
+        fOnSeparateDims = [True, True, True, False]
+        Z = np.random.permutation(X_mean.copy())[:self.M]
+        # Also test default N(0,1) is used
+        X_prior_mean = np.zeros((self.N, Q))
+        X_prior_var = np.ones((self.N, Q))
+        Xtest = self.rng.randn(10, Q)
+        for kq, ka, sepDims in zip(kernsQuadratu, kernsAnalytic, fOnSeparateDims):
+            with self.test_context():
                 kq.num_gauss_hermite_points = 20  # speed up quadratic for tests
                 # RBF should throw error if quadrature is used
                 ka.kern_list[0].num_gauss_hermite_points = 0
