@@ -778,7 +778,7 @@ class PeriodicKernel(Kern):
 
     def create_feature_map_func(self, random_seed=False):
         # So this uses the rbf kernel approximation on top of the cosine and sine transform
-
+        raise NotImplementedError("Not convinced I have got this quite correct at the moment.")
         # RBF kernel also has a Gaussian form in the spectral domain.
         rng = np.random.RandomState(random_seed)
         samples = rng.randn(self.num_features_to_approx, self.input_dim*2).astype(np_float_type)

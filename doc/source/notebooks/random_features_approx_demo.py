@@ -72,7 +72,7 @@ def main():
     x_data, x_axis_points = create_random_x_data(rng)
     data = package_data(x_data, x_axis_points, rng)
 
-    kernel = gpflow.kernels.RBF(1)
+    kernel = gpflow.kernels.Matern32(1)
     model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
 
     model.optimize()
