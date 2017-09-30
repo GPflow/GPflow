@@ -563,7 +563,8 @@ class SwitchedLikelihood(Likelihood):
         return self._partition_and_stitch([Fmu, Fvar, Y], 'variational_expectations')
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        mu_list, var_list = zip(*[lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list])
+        mvs = [lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list]
+        mu_list, var_list = zip(*mvs)
         mu = tf.concat(mu_list, 1)
         var = tf.concat(var_list, 1)
         return mu, var
@@ -627,18 +628,16 @@ class Ordinal(Likelihood):
 
         Note that a matrix of F values is flattened.
         """
-        scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
+        scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
         return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
             - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
-    @params_as_tensors
     def conditional_mean(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))
         return tf.reshape(tf.matmul(phi, Ys), tf.shape(F))
 
-    @params_as_tensors
     def conditional_variance(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=np.float64), (-1, 1))
