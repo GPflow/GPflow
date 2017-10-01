@@ -21,8 +21,7 @@ from gpflow import settings
 
 
 def gaussian(x, mu, var):
-    return -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(var)\
-        - 0.5 * tf.square(mu-x)/var
+    return -0.5 * (np.log(2 * np.pi) + tf.log(var) + tf.square(mu-x)/var)
 
 
 def lognormal(x, mu, var):

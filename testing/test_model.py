@@ -79,14 +79,14 @@ class TestKeyboardCatching(test_util.GPflowTestCase):
         with self.test_context():
             m = self.m
             m.compile()
-            x_before = m.read_trainable_values()
+            x_before = m.read_trainables()
             options = {'maxiter': 1000, 'gtol': 0, 'ftol': 0}
             opt = gpflow.train.ScipyOptimizer(options=options)
             step = 15
             raiser = KeyboardRaiser(step)
             opt.minimize(m, step_callback=raiser)
             self.assertEqual(raiser.count, step)
-            x_after = m.read_trainable_values()
+            x_after = m.read_trainables()
             before = np.hstack([np.hstack(np.hstack([x])) for x in x_before])
             after = np.hstack([np.hstack(np.hstack([x])) for x in x_after])
             self.assertFalse(np.allclose(before, after))

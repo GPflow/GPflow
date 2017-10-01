@@ -170,6 +170,7 @@ class Param(Node):
         self._unconstrained_tensor = self._build_parameter()  # pylint: disable=W0201
         self._constrained_tensor = self._build_constrained()  # pylint: disable=W0201
         self._prior_tensor = self._build_prior()              # pylint: disable=W0201
+        print(self._prior_tensor)
 
     def _build_parameter(self):
         if self._externally_defined:
@@ -207,10 +208,10 @@ class Param(Node):
         prior_name = 'prior'
 
         if self.prior is None:
+            print("Prior as constant")
             return tf.constant(0.0, settings.tf_float, name=prior_name)
 
-        var = self.parameter_tensor
-        log_jacobian = self.transform.log_jacobian_tensor(var)
+        log_jacobian = self.transform.log_jacobian_tensor(self.unconstrained_tensor)
         logp_var = self.prior.logp(self.constrained_tensor)
         return tf.add(logp_var, log_jacobian, name=prior_name)
 
@@ -416,7 +417,7 @@ class Parameterized(Node):
     def prior_tensor(self):
         return self._prior_tensor
 
-    def read_trainable_values(self, session=None):
+    def read_trainables(self, session=None):
         session = self.enquire_session(session, allow_none=True)
         return [param.read_value(session) for param in self.trainable_parameters]
 
@@ -491,9 +492,8 @@ class Parameterized(Node):
         """
         priors = []
         for param in self.params:
-            if isinstance(param, Param) and not isinstance(param, DataHolder):
-                priors.append(param.prior_tensor)
-            elif isinstance(param, Parameterized) and not param.empty:
+            if not (isinstance(param, DataHolder) or
+                    (isinstance(param, Parameterized) and param.empty)):
                 priors.append(param.prior_tensor)
 
         # TODO(@awav): What prior must represent empty list of parameters?

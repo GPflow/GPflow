@@ -22,6 +22,7 @@ import gpflow
 from gpflow.test_util import GPflowTestCase
 from gpflow.minibatch import SequenceIndices
 
+
 class TestMethods(GPflowTestCase):
     def setUp(self):
         self.rng = np.random.RandomState(0)

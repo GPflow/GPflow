@@ -7,9 +7,6 @@ import unittest
 from gpflow.test_util import GPflowTestCase
 from gpflow import settings
 
-float_type = settings.dtypes.float_type
-settings.np_float = np.float32 if float_type is tf.float32 else np.float64
-
 
 class TestMeanFuncs(GPflowTestCase):
     """
@@ -44,14 +41,9 @@ class TestMeanFuncs(GPflowTestCase):
                 self.composition_mfs_mult.extend([mean_f1 * mean_f2])
 
             self.composition_mfs = self.composition_mfs_add + self.composition_mfs_mult
-            self.x = tf.placeholder(float_type)
 
-            for mf in self.mfs1:
-                mf.make_tf_array(self.x)
-            for mf in self.mfs2:
-                mf.make_tf_array(self.x)
-
-            self.X = tf.placeholder(float_type, [self.N, self.input_dim])
+            self.x = tf.placeholder(settings.tf_float)
+            self.X = tf.placeholder(settings.tf_float, [self.N, self.input_dim])
             self.X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
 
     def test_basic_output_shape(self):

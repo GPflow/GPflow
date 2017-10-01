@@ -220,7 +220,8 @@ class TestRobustMaxMulticlass(GPflowTestCase):
 
             pred = l.session.run(l.predict_density(F, F, y), feed_dict=feed)
             expected_prediction = -0.5499780059
-            #^ evaluated on calculator: log((1-\epsilon) * 0.73 + (1-0.73) * \epsilon/(num_classes -1))
+            # ^^^ evaluated on calculator:
+            # log((1-\epsilon) * 0.73 + (1-0.73) * \epsilon/(num_classes -1))
 
             self.assertTrue(np.allclose(pred, expected_prediction, tol, tol))
 

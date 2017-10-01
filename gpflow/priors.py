@@ -110,7 +110,7 @@ class Beta(Prior):
 
 
 class Uniform(Prior):
-    def __init__(self, lower=0, upper=1):
+    def __init__(self, lower=0., upper=1.):
         Prior.__init__(self)
         self.log_height = - np.log(upper - lower)
         self.lower, self.upper = lower, upper

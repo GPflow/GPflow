@@ -25,28 +25,28 @@ class TestSequentialManager(GPflowTestCase):
     def testA(self):
         minibatch_size = 3
         total_points = 5
-        sequenceManager = SequenceIndices(minibatch_size,total_points)
+        sequenceManager = SequenceIndices(minibatch_size, total_points)
 
         indecesA = sequenceManager.nextIndices()
-        self.assertTrue((indecesA==np.arange(0,minibatch_size)).all())
+        self.assertTrue((indecesA == np.arange(0, minibatch_size)).all())
 
         indecesB = sequenceManager.nextIndices()
-        self.assertTrue((indecesB==np.array([3,4,0 ])).all())
+        self.assertTrue((indecesB == np.array([3, 4, 0])).all())
 
     def testB(self):
         minibatch_size = 5
         total_points = 2
-        sequenceManager = SequenceIndices(minibatch_size,total_points)
+        sequenceManager = SequenceIndices(minibatch_size, total_points)
 
         indecesA = sequenceManager.nextIndices()
-        targetIndicesA = np.array([0,1,0,1,0])
+        targetIndicesA = np.array([0, 1, 0, 1, 0])
 
-        self.assertTrue((indecesA==targetIndicesA).all())
+        self.assertTrue((indecesA == targetIndicesA).all())
 
         indecesB = sequenceManager.nextIndices()
-        targetIndicesB = np.array([1,0,1,0,1])
+        targetIndicesB = np.array([1, 0, 1, 0, 1])
 
-        self.assertTrue((indecesB==targetIndicesB).all())
+        self.assertTrue((indecesB == targetIndicesB).all())
 
 class TestRandomIndexManagers(GPflowTestCase):
     def checkUniformDist(self, indeces, nChoices):
