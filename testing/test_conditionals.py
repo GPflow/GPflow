@@ -11,7 +11,7 @@ float_type = settings.dtypes.float_type
 
 class DiagsTest(GPflowTestCase):
     """
-    The conditionals can take cholesky matrices or diagaonal matrices.
+    The conditionals can take cholesky matrices or diagonal matrices.
 
     Here we make sure the behaviours overlap.
     """

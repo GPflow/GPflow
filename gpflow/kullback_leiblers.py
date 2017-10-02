@@ -29,7 +29,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
           p(x) = N(0, K)
 
     We assume N multiple independent distributions, given by the columns of
-    q_mu and the last dimension of q_sqrt.
+    q_mu and the last dimension of q_sqrt. Returns the sum of the divergences.
 
     q_mu is a matrix (M x N), each column contains a mean.
 
