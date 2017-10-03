@@ -106,7 +106,7 @@ class Log1pe(Transform):
         return tf.nn.softplus(x) + self._lower
 
     def log_jacobian_tensor(self, x):
-        return tf.negative(tf.reduce_sum(tf.log(1. + tf.exp(-x))))
+        return tf.negative(tf.reduce_sum(tf.nn.softplus(tf.negative(x))))
 
     def backward(self, y):
         """
