@@ -48,20 +48,11 @@ class TestMethods(GPflowTestCase):
         # test sizes.
         for m in self.ms:
             m.compile()
-            f, g = m._objective(m.get_free_state())
-            self.assertTrue(f.size == 1)
-            self.assertTrue(g.size == m.get_free_state().size)
-
-    def test_tf_optimize(self):
-        for m in self.ms:
-            trainer = tf.train.AdamOptimizer(learning_rate=0.001)
-            if isinstance(m, (gpflow.models.GPR, gpflow.models.VGP,
-                              gpflow.models.SVGP, gpflow.models.GPMC)):
-                optimizeOp = m.compile(optimizer=trainer)
-                self.assertTrue(optimizeOp is not None)
+            self.assertEqual(m.objective.size == 1)
 
     def test_predict_f(self):
         for m in self.ms:
+            m.compile()
             mf, vf = m.predict_f(self.Xs)
             self.assertTrue(mf.shape == vf.shape)
             self.assertTrue(mf.shape == (10, 1))
@@ -69,6 +60,7 @@ class TestMethods(GPflowTestCase):
 
     def test_predict_y(self):
         for m in self.ms:
+            m.compile()
             mf, vf = m.predict_y(self.Xs)
             self.assertTrue(mf.shape == vf.shape)
             self.assertTrue(mf.shape == (10, 1))
@@ -77,6 +69,7 @@ class TestMethods(GPflowTestCase):
     def test_predict_density(self):
         self.Ys = self.rng.randn(10, 1)
         for m in self.ms:
+            m.compile()
             d = m.predict_density(self.Xs, self.Ys)
             self.assertTrue(d.shape == (10, 1))
 
@@ -96,55 +89,63 @@ class TestSVGP(GPflowTestCase):
         self.Z = self.rng.randn(3, 1)
 
     def test_white(self):
-        m1 = gpflow.models.SVGP(self.X, self.Y,
-                              kern=gpflow.kernels.RBF(1),
-                              likelihood=gpflow.likelihoods.Exponential(),
-                              Z=self.Z, q_diag=True, whiten=True)
-        m2 = gpflow.models.SVGP(self.X, self.Y,
-                              kern=gpflow.kernels.RBF(1),
-                              likelihood=gpflow.likelihoods.Exponential(),
-                              Z=self.Z, q_diag=False, whiten=True)
-        m1.compile()
-        m2.compile()
+        with self.test_context():
+            m1 = gpflow.models.SVGP(
+                self.X, self.Y,
+                kern=gpflow.kernels.RBF(1),
+                likelihood=gpflow.likelihoods.Exponential(),
+                Z=self.Z,
+                q_diag=True,
+                whiten=True)
+            m2 = gpflow.models.SVGP(
+                self.X, self.Y,
+                kern=gpflow.kernels.RBF(1),
+                likelihood=gpflow.likelihoods.Exponential(),
+                Z=self.Z,
+                q_diag=False,
+                whiten=True)
+            qsqrt, qmean = self.rng.randn(2, 3, 2)
+            qsqrt = (qsqrt**2) * 0.01
+            m1.q_sqrt = qsqrt
+            m1.q_mu = qmean
+            m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]),
+                                  np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
+            m2.q_mu = qmean
 
-        qsqrt, qmean = self.rng.randn(2, 3, 2)
-        qsqrt = (qsqrt**2)*0.01
-        m1.q_sqrt = qsqrt
-        m1.q_mu = qmean
-        m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]),
-                              np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
-        m2.q_mu = qmean
-        self.assertTrue(np.allclose(m1._objective(m1.get_free_state())[0],
-                                    m2._objective(m2.get_free_state())[0]))
+            m1.compile()
+            m2.compile()
+            obj1 = m1.session.run(m1.objective, feed_dict=m1.feeds)
+            obj2 = m2.session.run(m2.objective, feed_dict=m2.feeds)
+            self.assertTrue(np.allclose(obj1[0], obj2[0]))
 
     def test_notwhite(self):
-        m1 = gpflow.models.SVGP(self.X,
-                              self.Y,
-                              kern=gpflow.kernels.RBF(1) +
-                                   gpflow.kernels.White(1),
-                              likelihood=gpflow.likelihoods.Exponential(),
-                              Z=self.Z,
-                              q_diag=True,
-                              whiten=False)
-        m2 = gpflow.models.SVGP(self.X,
-                              self.Y,
-                              kern=gpflow.kernels.RBF(1) +
-                                   gpflow.kernels.White(1),
-                              likelihood=gpflow.likelihoods.Exponential(),
-                              Z=self.Z,
-                              q_diag=False,
-                              whiten=False)
-        m1.compile()
-        m2.compile()
-
+        m1 = gpflow.models.SVGP(
+            self.X,
+            self.Y,
+            kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
+            likelihood=gpflow.likelihoods.Exponential(),
+            Z=self.Z,
+            q_diag=True,
+            whiten=False)
+        m2 = gpflow.models.SVGP(
+            self.X,
+            self.Y,
+            kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
+            likelihood=gpflow.likelihoods.Exponential(),
+            Z=self.Z,
+            q_diag=False,
+            whiten=False)
         qsqrt, qmean = self.rng.randn(2, 3, 2)
         qsqrt = (qsqrt**2)*0.01
         m1.q_sqrt = qsqrt
         m1.q_mu = qmean
         m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
         m2.q_mu = qmean
-        self.assertTrue(np.allclose(m1._objective(m1.get_free_state())[0],
-                                    m2._objective(m2.get_free_state())[0]))
+        m1.compile()
+        m2.compile()
+        obj1 = m1.session.run(m1.objective, feed_dict=m1.feeds)
+        obj2 = m2.session.run(m2.objective, feed_dict=m2.feeds)
+        self.assertTrue(np.allclose(obj1[0], obj2[0]))
 
     def test_q_sqrt_fixing(self):
         """

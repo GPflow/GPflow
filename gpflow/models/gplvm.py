@@ -8,7 +8,7 @@ from gpflow import kernels
 
 from gpflow.models.model import GPModel
 from gpflow.models.gpr import GPR
-from gpflow.params import Param
+from gpflow.params import Parameter
 from gpflow.decors import params_as_tensors
 from gpflow.mean_functions import Zero
 
@@ -39,7 +39,7 @@ class GPLVM(GPR):
             raise ValueError('More latent dimensions than observed.')
         GPR.__init__(self, X_mean, Y, kern, mean_function=mean_function)
         del self.X  # in GPLVM this is a Param
-        self.X = Param(X_mean)
+        self.X = Parameter(X_mean)
 
 
 class BayesianGPLVM(GPModel):
@@ -58,12 +58,12 @@ class BayesianGPLVM(GPModel):
         """
         GPModel.__init__(self, X_mean, Y, kern, likelihood=likelihoods.Gaussian(), mean_function=Zero())
         del self.X  # in GPLVM this is a Param
-        self.X_mean = Param(X_mean)
+        self.X_mean = Parameter(X_mean)
         # diag_transform = transforms.DiagMatrix(X_var.shape[1])
-        # self.X_var = Param(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
+        # self.X_var = Parameter(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
         #                    diag_transform)
         assert X_var.ndim == 2
-        self.X_var = Param(X_var, transform=transforms.positive)
+        self.X_var = Parameter(X_var, transform=transforms.positive)
         self.num_data = X_mean.shape[0]
         self.output_dim = Y.shape[1]
 
@@ -77,7 +77,7 @@ class BayesianGPLVM(GPModel):
             Z = np.random.permutation(X_mean.copy())[:M]
         else:
             assert Z.shape[0] == M
-        self.Z = Param(Z)
+        self.Z = Parameter(Z)
         self.num_latent = Z.shape[1]
         assert X_mean.shape[1] == self.num_latent
 

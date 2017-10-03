@@ -72,7 +72,7 @@ def autoflow(*af_args, **af_kwargs):
                 with session.graph.as_default(), tf.name_scope(scope_name):
                     _setup_storage(store, *af_args, **af_kwargs)
                     _build_method(method, obj, store)
-            return _session_run(session, store, *args)
+            return _session_run(session, obj, store, *args)
         return runnable
     return autoflow_wrapper
 
@@ -85,8 +85,10 @@ def _name_scope_name(obj, name):
     return '/'.join(['autoflow', obj.name, name])
 
 
-def _session_run(session, store, *args):
+def _session_run(session, obj, store, *args):
     feed_dict = dict(zip(store['arguments'], args))
+    if obj.feeds:
+        feed_dict.update(obj.feeds)
     return session.run(store['result'], feed_dict=feed_dict)
 
 

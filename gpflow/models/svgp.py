@@ -17,13 +17,15 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
-from gpflow import transforms, conditionals, kullback_leiblers
+from .. import settings
+from .. import transforms, conditionals, kullback_leiblers
 
-from gpflow.params import Param
-from gpflow.decors import params_as_tensors
-from gpflow.models.model import GPModel
-from gpflow.minibatch import MinibatchData
+from ..params import Parameter
+from ..params import Minibatch
+
+from ..decors import params_as_tensors
+
+from ..models.model import GPModel
 
 
 class SVGP(GPModel):
@@ -58,26 +60,26 @@ class SVGP(GPModel):
         # sort out the X, Y into MiniBatch objects.
         if minibatch_size is None:
             minibatch_size = X.shape[0]
-        X = MinibatchData(X, minibatch_size, np.random.RandomState(0))
-        Y = MinibatchData(Y, minibatch_size, np.random.RandomState(0))
+        X = Minibatch(X, batch_size=minibatch_size, seed=0)
+        Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
 
         # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
-        self.Z = Param(Z)
+        self.Z = Parameter(Z)
         self.num_latent = num_latent or Y.shape[1]
         self.num_inducing = Z.shape[0]
 
         # init variational parameters
-        self.q_mu = Param(np.zeros((self.num_inducing, self.num_latent)))
+        self.q_mu = Parameter(np.zeros((self.num_inducing, self.num_latent)))
         if self.q_diag:
-            self.q_sqrt = Param(np.ones((self.num_inducing, self.num_latent)),
+            self.q_sqrt = Parameter(np.ones((self.num_inducing, self.num_latent)),
                                 transforms.positive)
         else:
             q_sqrt = np.array([np.eye(self.num_inducing)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-            self.q_sqrt = Param(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
+            self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
 
     @params_as_tensors
     def build_prior_KL(self):

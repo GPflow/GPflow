@@ -39,6 +39,10 @@ class ICompilable:
     def session(self):
         raise NotImplementedError()
 
+    @abc.abstractproperty
+    def feeds(self):
+        raise NotImplementedError()
+
     @abc.abstractmethod
     def compile(self, session=None, keep_session=True):
         raise NotImplementedError()

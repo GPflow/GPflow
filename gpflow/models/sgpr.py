@@ -23,7 +23,7 @@ from gpflow import likelihoods
 from gpflow.models.model import GPModel
 from gpflow.decors import autoflow
 from gpflow.decors import params_as_tensors
-from gpflow.params import Param, DataHolder
+from gpflow.params import Parameter, DataHolder
 from gpflow.mean_functions import Zero
 
 
@@ -116,7 +116,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
-        self.Z = Param(Z)
+        self.Z = Parameter(Z)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
@@ -223,7 +223,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
-        self.Z = Param(Z)
+        self.Z = Parameter(Z)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 

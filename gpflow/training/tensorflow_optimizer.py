@@ -49,6 +49,8 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         self._model = model
         self._create_minimize_operation(model, var_list, session, **kwargs)
         for _i in range(maxiter):
+            if model.feeds:
+                feed_dict.update(model.feeds)
             session.run(self.minimize_operation, feed_dict=feed_dict)
 
     def _create_minimize_operation(self, model, var_list, session, **kwargs):

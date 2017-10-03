@@ -46,7 +46,10 @@ class ScipyOptimizer(optimizer.Optimizer):
             self._optimizer = external_optimizer.ScipyOptimizerInterface(
                 objective, var_list=var_list, **self._optimizer_kwargs)
 
-        self._optimizer.minimize(session=session, **kwargs)
+        feed_dict = self._pop_feed_dict(kwargs)
+        if model.feeds:
+            feed_dict.update(model.feeds)
+        self._optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
 
     @property
     def model(self):

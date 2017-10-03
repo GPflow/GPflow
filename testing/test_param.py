@@ -29,11 +29,11 @@ except ImportError:
 class NamingTests(test_util.GPflowTestCase):
     def test_standard_name(self):
         p = gpflow.Param(1)
-        self.assertTrue(p.name == 'Param')
+        self.assertTrue(p.name == 'Parameter')
 
     def test_full_fame(self):
         p = gpflow.Param(1)
-        self.assertEqual(p.full_name, 'Param')
+        self.assertEqual(p.full_name, 'Parameter')
         m = gpflow.models.Model()
         m.p = p
         self.assertEqual(m.p.full_name, 'Model/p')
@@ -72,7 +72,7 @@ class ParamTests(test_util.GPflowTestCase):
             p = self.m.p
             self.m.p = param
             self.assertEqual(self.m.p, param)
-            self.assertEqual(p.name, 'Param')
+            self.assertEqual(p.name, 'Parameter')
             self.assertEqual(p.root, p)
 
             self.m.d = new_param

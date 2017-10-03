@@ -22,7 +22,7 @@ import numpy as np
 
 from gpflow import transforms
 
-from gpflow.params import Param, Parameterized
+from gpflow.params import Parameter, Parameterized
 from gpflow.decors import params_as_tensors, autoflow
 from gpflow.quadrature import mvnquad
 
@@ -251,7 +251,7 @@ class Static(Kern):
 
     def __init__(self, input_dim, variance=1.0, active_dims=None):
         super(Static, self).__init__(input_dim, active_dims)
-        self.variance = Param(variance, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive)
 
     @params_as_tensors
     def Kdiag(self, X):
@@ -318,19 +318,19 @@ class Stationary(Kern):
           (ARD=True) or a single lengthscale (ARD=False).
         """
         super(Stationary, self).__init__(input_dim, active_dims)
-        self.variance = Param(variance, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive)
         if ARD:
             if lengthscales is None:
                 lengthscales = np.ones(input_dim, settings.np_float)
             else:
                 # accepts float or array:
                 lengthscales = lengthscales * np.ones(input_dim, settings.np_float)
-            self.lengthscales = Param(lengthscales, transform=transforms.positive)
+            self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
             self.ARD = True
         else:
             if lengthscales is None:
                 lengthscales = 1.0
-            self.lengthscales = Param(lengthscales, transform=transforms.positive)
+            self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
             self.ARD = False
 
     @params_as_tensors
@@ -389,9 +389,9 @@ class Linear(Kern):
         if ARD:
             # accept float or array:
             variance = np.ones(self.input_dim) * variance
-            self.variance = Param(variance, transform=transforms.positive)
+            self.variance = Parameter(variance, transform=transforms.positive)
         else:
-            self.variance = Param(variance, transform=transforms.positive)
+            self.variance = Parameter(variance, transform=transforms.positive)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -426,7 +426,7 @@ class Polynomial(Linear):
         """
         super(Polynomial, self).__init__(input_dim, variance, active_dims, ARD)
         self.degree = degree
-        self.offset = Param(offset, transform=transforms.positive)
+        self.offset = Parameter(offset, transform=transforms.positive)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -547,20 +547,20 @@ class ArcCosine(Kern):
             raise ValueError('Requested kernel order is not implemented.')
         self.order = order
 
-        self.variance = Param(variance, transform=transforms.positive)
-        self.bias_variance = Param(bias_variance, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive)
+        self.bias_variance = Parameter(bias_variance, transform=transforms.positive)
         if ARD:
             if weight_variances is None:
                 weight_variances = np.ones(input_dim, settings.np_float)
             else:
                 # accepts float or array:
                 weight_variances = weight_variances * np.ones(input_dim, settings.np_float)
-            self.weight_variances = Param(weight_variances, transform=transforms.positive)
+            self.weight_variances = Parameter(weight_variances, transform=transforms.positive)
             self.ARD = True
         else:
             if weight_variances is None:
                 weight_variances = 1.0
-            self.weight_variances = Param(weight_variances, transform=transforms.positive)
+            self.weight_variances = Parameter(weight_variances, transform=transforms.positive)
             self.ARD = False
 
     @params_as_tensors
@@ -627,10 +627,10 @@ class PeriodicKernel(Kern):
                  lengthscales=1.0, active_dims=None):
         # No ARD support for lengthscale or period yet
         super(PeriodicKernel, self).__init__(input_dim, active_dims)
-        self.variance = Param(variance, transform=transforms.positive)
-        self.lengthscales = Param(lengthscales, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive)
+        self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
         self.ARD = False
-        self.period = Param(period, transform=transforms.positive)
+        self.period = Parameter(period, transform=transforms.positive)
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -683,8 +683,8 @@ class Coregion(Kern):
 
         self.output_dim = output_dim
         self.rank = rank
-        self.W = Param(np.zeros((self.output_dim, self.rank)))
-        self.kappa = Param(np.ones(self.output_dim), transform=transforms.positive)
+        self.W = Parameter(np.zeros((self.output_dim, self.rank)))
+        self.kappa = Parameter(np.ones(self.output_dim), transform=transforms.positive)
 
     @params_as_tensors
     def K(self, X, X2=None):

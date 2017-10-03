@@ -17,7 +17,7 @@ import tensorflow as tf
 import numpy as np
 
 from gpflow import settings
-from gpflow.params import Param, Parameterized, ParamList
+from gpflow.params import Parameter, Parameterized, ParamList
 from gpflow.decors import params_as_tensors
 
 
@@ -62,8 +62,8 @@ class Linear(MeanFunction):
         A = np.ones((1, 1)) if A is None else A
         b = np.zeros(1) if b is None else b
         MeanFunction.__init__(self)
-        self.A = Param(np.atleast_2d(A))
-        self.b = Param(b)
+        self.A = Parameter(np.atleast_2d(A))
+        self.b = Parameter(b)
 
     @params_as_tensors
     def __call__(self, X):
@@ -77,7 +77,7 @@ class Constant(MeanFunction):
     def __init__(self, c=None):
         MeanFunction.__init__(self)
         c = np.zeros(1) if c is None else c
-        self.c = Param(c)
+        self.c = Parameter(c)
 
     @params_as_tensors
     def __call__(self, X):

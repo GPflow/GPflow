@@ -320,16 +320,6 @@ class LowerTriangular(Transform):
     def log_jacobian_tensor(self, x):
         return tf.zeros((1,), settings.tf_float)
 
-    def free_state_size(self, variable_shape):
-        matrix_batch = len(variable_shape) > 2
-        if ((not matrix_batch and self.num_matrices != 1) or
-                (matrix_batch and variable_shape[2] != self.num_matrices)):
-            raise ValueError("Number of matrices must be consistent with what was passed to the constructor.")
-        if variable_shape[0] != variable_shape[1]:
-            raise ValueError("Matrices passed must be square.")
-        N = variable_shape[0]
-        return int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1)
-
     def __str__(self):
         return "LoTri->vec"
 

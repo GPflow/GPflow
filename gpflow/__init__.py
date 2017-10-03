@@ -33,13 +33,16 @@ from gpflow import test_util
 
 from gpflow import training as train
 
-from gpflow.core.base import GPflowError
-from gpflow.core.base import Build
-
-from gpflow.params import Param
-from gpflow.params import ParamList
-from gpflow.params import DataHolder
-
 from gpflow.decors import autoflow
 from gpflow.decors import name_scope
 from gpflow.decors import params_as_tensors
+
+from gpflow.core.base import GPflowError
+from gpflow.core.base import Build
+
+from gpflow.params import Parameter as Param
+from gpflow.params import ParamList
+from gpflow.params import DataHolder
+from gpflow.params import FormlessData
+from gpflow.params import Minibatch
+from gpflow.params import Parameterized

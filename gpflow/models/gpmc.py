@@ -18,7 +18,7 @@ import tensorflow as tf
 
 from gpflow import settings
 from gpflow.models.model import GPModel
-from gpflow.params import Param, DataHolder
+from gpflow.params import Parameter, DataHolder
 from gpflow.decors import params_as_tensors
 from gpflow.conditionals import conditional
 from gpflow.priors import Gaussian
@@ -50,7 +50,7 @@ class GPMC(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
-        self.V = Param(np.zeros((self.num_data, self.num_latent)))
+        self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
     def compile(self, session=None, keep_session=True):
@@ -63,7 +63,7 @@ class GPMC(GPModel):
         """
         if not self.num_data == self.X.shape[0]:
             self.num_data = self.X.shape[0]
-            self.V = Param(np.zeros((self.num_data, self.num_latent)))
+            self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
             self.V.prior = Gaussian(0., 1.)
 
         return super(GPMC, self).compile(session=session, keep_session=keep_session)

@@ -19,7 +19,7 @@ import numpy as np
 from gpflow import settings
 from gpflow import transforms
 
-from gpflow.params import Param, DataHolder
+from gpflow.params import Parameter, DataHolder
 from gpflow.decors import params_as_tensors
 from gpflow.models.model import GPModel
 from gpflow.mean_functions import Zero
@@ -60,10 +60,10 @@ class VGP(GPModel):
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
 
-        self.q_mu = Param(np.zeros((self.num_data, self.num_latent)))
+        self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
         q_sqrt = np.array([np.eye(self.num_data)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-        self.q_sqrt = Param(q_sqrt, transform=transforms.LowerTriangular(self.num_data, self.num_latent))
+        self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(self.num_data, self.num_latent))
 
     def compile(self, session=None, keep_session=True):
         """
@@ -75,8 +75,8 @@ class VGP(GPModel):
         """
         if not self.num_data == self.X.shape[0]:
             self.num_data = self.X.shape[0]
-            self.q_mu = Param(np.zeros((self.num_data, self.num_latent)))
-            self.q_sqrt = Param(np.eye(self.num_data)[:, :, None] *
+            self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
+            self.q_sqrt = Parameter(np.eye(self.num_data)[:, :, None] *
                                 np.ones((1, 1, self.num_latent)))
 
         return super(VGP, self).compile(session=session, keep_session=keep_session)
@@ -162,8 +162,8 @@ class VGP_opper_archambeau(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
-        self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
-        self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
+        self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
+        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
                               transforms.positive)
 
     def compile(self, session=None, keep_session=True):
@@ -176,8 +176,8 @@ class VGP_opper_archambeau(GPModel):
         """
         if not self.num_data == self.X.shape[0]:
             self.num_data = self.X.shape[0]
-            self.q_alpha = Param(np.zeros((self.num_data, self.num_latent)))
-            self.q_lambda = Param(np.ones((self.num_data, self.num_latent)),
+            self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
+            self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
         return super(VGP_opper_archambeau, self).compile(
             session=session, keep_session=keep_session)

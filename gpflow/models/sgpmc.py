@@ -16,7 +16,7 @@
 import numpy as np
 import tensorflow as tf
 from gpflow.models.model import GPModel
-from gpflow.params import Param, DataHolder
+from gpflow.params import Parameter, DataHolder
 from gpflow.conditionals import conditional
 from gpflow.priors import Gaussian
 from gpflow.mean_functions import Zero
@@ -70,7 +70,7 @@ class SGPMC(GPModel):
         self.num_inducing = Z.shape[0]
         self.num_latent = num_latent or Y.shape[1]
         self.Z = DataHolder(Z)
-        self.V = Param(np.zeros((self.num_inducing, self.num_latent)))
+        self.V = Parameter(np.zeros((self.num_inducing, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
     def _build_likelihood(self):
