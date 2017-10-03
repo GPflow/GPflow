@@ -39,7 +39,8 @@ class TestGPRRandomFeaturesApprox(GPflowTestCase):
             # Sample theta
             model = model_cls(x_data, y_data, self.kern_cls(1))
             model.optimize()
-            mean, L_precision = model.linear_weights_posterior()
+            mean, prec_or_var, var_flag = model.linear_weights_posterior()
+            L = sla.cholesky(prec_or_var, lower=True)
 
             # Map new points through to the linear space:
             feature_mapper = create_approx_features_func(model, 1)
@@ -47,7 +48,12 @@ class TestGPRRandomFeaturesApprox(GPflowTestCase):
 
             # predicted mean and variance. This matches up to Eqn 2.9 of GPML.
             mean_predicted = feats_at_sample_points @ mean
-            intermediate = sla.solve_triangular(L_precision, feats_at_sample_points.T, lower=True)
+            if var_flag:
+                # using the Cholesky of the variance
+                intermediate = L.T @ feats_at_sample_points.T
+            else:
+                # using the Cholesky of the precision.
+                intermediate = sla.solve_triangular(L, feats_at_sample_points.T, lower=True)
             var_predicted = intermediate.T @ intermediate
             # variance is X * (LL^T)^-1 XT
 
@@ -91,8 +97,15 @@ class TestGPRRandomFeaturesApprox(GPflowTestCase):
             # Sample theta
             model = model_cls(x_data, y_data, self.kern_cls(1))
             model.optimize()
-            mean, L_precision = model.linear_weights_posterior()
-            sampled_var = sla.solve_triangular(L_precision.T, rng.randn(mean.shape[0]),
+            mean, prec_or_var, var_flag = model.linear_weights_posterior()
+
+            L = sla.cholesky(prec_or_var, lower=True)
+            if var_flag:
+                # got given a variance matrix so can use the Cholesky as is to get samples.
+                sampled_var = (L @ rng.randn(mean.shape[0]))[:, None]
+            else:
+                # got given a Precision matrix so need to invert the transpose to get samples.
+                sampled_var = sla.solve_triangular(L.T, rng.randn(mean.shape[0]),
                                                lower=False)[:, None]
             theta_sample = mean + sampled_var
 
