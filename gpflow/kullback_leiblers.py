@@ -1,3 +1,4 @@
+# -*- coding: iso-8859-15 -*-
 # Copyright 2016 James Hensman, alexggmatthews
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
