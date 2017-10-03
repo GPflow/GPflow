@@ -18,7 +18,7 @@ class GPLVM(GPR):
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
 
-    def __init__(self, Y, latent_dim, X_mean=None, kern=None, mean_function=Zero()):
+    def __init__(self, Y, latent_dim, X_mean=None, kern=None, mean_function=Zero(), **kwargs):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
         :param Y: data matrix, size N (number of points) x D (dimensions)
@@ -37,7 +37,7 @@ class GPLVM(GPR):
             raise ValueError(msg.format(latent_dim, num_latent))
         if Y.shape[1] < num_latent:
             raise ValueError('More latent dimensions than observed.')
-        GPR.__init__(self, X_mean, Y, kern, mean_function=mean_function)
+        GPR.__init__(self, X_mean, Y, kern, mean_function=mean_function, **kwargs)
         del self.X  # in GPLVM this is a Param
         self.X = Parameter(X_mean)
 

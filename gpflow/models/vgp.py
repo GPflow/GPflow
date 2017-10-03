@@ -46,7 +46,9 @@ class VGP(GPModel):
 
     """
     def __init__(self, X, Y, kern, likelihood,
-                 mean_function=None, num_latent=None):
+                 mean_function=None,
+                 num_latent=None,
+                 **kwargs):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -56,7 +58,7 @@ class VGP(GPModel):
 
         X = DataHolder(X)
         Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
 
@@ -151,7 +153,9 @@ class VGP_opper_archambeau(GPModel):
 
     """
     def __init__(self, X, Y, kern, likelihood,
-                 mean_function=Zero(), num_latent=None):
+                 mean_function=Zero(),
+                 num_latent=None,
+                 **kwargs):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -159,7 +163,7 @@ class VGP_opper_archambeau(GPModel):
         """
         X = DataHolder(X)
         Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kargs)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))

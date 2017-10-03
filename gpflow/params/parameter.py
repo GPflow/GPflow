@@ -155,8 +155,8 @@ class Parameter(Node):
                 raise GPflowError('Value has different shape.')
             session = self.enquire_session(session)
             self.is_built_coherence(graph=session.graph)
-            value = self._apply_transform(value)
-            self.parameter_tensor.load(value, session=session)
+            transformed_value = self._apply_transform(value)
+            self.parameter_tensor.load(transformed_value, session=session)
         else:
             self._value[...] = value
 
@@ -180,9 +180,10 @@ class Parameter(Node):
         return value
 
     def _clear(self):
-        self._unconstrained_tensor = None  # pylint: disable=W0201
-        self._prior_tensor = None          # pylint: disable=W0201
         self._externally_defined = False   # pylint: disable=W0201
+        self._prior_tensor = None          # pylint: disable=W0201
+        self._unconstrained_tensor = None  # pylint: disable=W0201
+        self._constrained_tensor = None    # pylint: disable=W0201
 
     def _build(self):
         self._unconstrained_tensor = self._build_parameter()  # pylint: disable=W0201
@@ -204,7 +205,7 @@ class Parameter(Node):
         init = tf.constant_initializer(value, dtype=settings.tf_float)
         return tf.get_variable(
             name,
-            shape=self.shape,
+            shape=value.shape,
             initializer=init,
             dtype=settings.tf_float,
             trainable=self.trainable)

@@ -309,12 +309,15 @@ class LowerTriangular(Transform):
         Returns:
             Free state.
         """
-        N = int((y.size / self.num_matrices) ** 0.5)
-        y = np.reshape(y, (N, N, self.num_matrices))
-        return y[np.tril_indices(len(y), 0)].T.flatten()
+        N = int(np.sqrt(y.size / self.num_matrices))
+        reshaped = np.reshape(y, (N, N, self.num_matrices))
+        size = len(reshaped)
+        triangular = reshaped[np.tril_indices(size, 0)].T
+        return triangular
 
     def forward_tensor(self, x):
-        fwd = tf.transpose(vec_to_tri(tf.reshape(x, (self.num_matrices, -1)), self.N), [1, 2, 0])
+        reshaped = tf.reshape(x, (self.num_matrices, -1))
+        fwd = tf.transpose(vec_to_tri(reshaped, self.N), [1, 2, 0])
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def log_jacobian_tensor(self, x):

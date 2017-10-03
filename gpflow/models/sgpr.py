@@ -103,7 +103,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
     """
 
-    def __init__(self, X, Y, kern, Z, mean_function=None):
+    def __init__(self, X, Y, kern, Z, mean_function=None, **kwargs):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -115,7 +115,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         X = DataHolder(X)
         Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.Z = Parameter(Z)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
@@ -194,7 +194,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
 
 class GPRFITC(GPModel, SGPRUpperMixin):
-    def __init__(self, X, Y, kern, Z, mean_function=Zero()):
+    def __init__(self, X, Y, kern, Z, mean_function=Zero(), **kwargs):
         """
         This implements GP regression with the FITC approximation.
         The key reference is
@@ -222,7 +222,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         X = DataHolder(X)
         Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.Z = Parameter(Z)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
