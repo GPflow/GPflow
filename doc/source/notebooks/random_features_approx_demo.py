@@ -6,12 +6,14 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from scipy import linalg as sla
+from scipy import optimize
 import gpflow
 
 
 NUM_OBS = 200
 AXIS_EDGE = 0.5
 NOISE_STD = 0.05
+SVGP = True  # switch between using GPR or SVGP.
 
 def func1(x):
     f = np.sin(12 * x) + 0.66 * np.cos(25 * x)
@@ -42,14 +44,13 @@ def package_data(x_data, x_axis_idcs, rng):
 
 
 
-def create_approx_features_func(model, data_dim):
+def create_approx_features_func(model, data_dim, get_grads=False):
 
     tf_graph = tf.Graph()
     tf_sess = tf.Session(graph=tf_graph)
 
     with tf_graph.as_default():
         x_ph = tf.placeholder(tf.float64, [None, data_dim])
-
         with model.kern.tf_mode():
             x_free = tf.placeholder('float64')
             model.kern.make_tf_array(x_free)
@@ -66,7 +67,11 @@ def create_approx_features_func(model, data_dim):
 
 
 
-def main2():
+def draw_samples():
+    """
+    Train a GP and then use the random features approximations to draw samples. Try to spot the
+    difference between samples generated this way and samples generated via the true Kernel!
+    """
 
     rng = np.random.RandomState(100)
     x_data, x_axis_points = create_random_x_data(rng)
@@ -74,17 +79,17 @@ def main2():
 
     kernel = gpflow.kernels.RBF(1)
     kernel.lengthscales = 0.1
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    import copy
-    num_inducing = 20
-    inducing_starts = rng.choice(data['x_data'].shape[0], num_inducing, replace=False)
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    model = gpflow.svgp.SVGP(data['x_data'], data['y'], kern=kernel, Z=copy.copy(data['x_data'][inducing_starts, :]),
-                             likelihood=gpflow.likelihoods.Gaussian(), whiten=False)
+
+    if SVGP:
+        num_inducing = 30
+        inducing_starts = rng.choice(data['x_data'].shape[0], num_inducing, replace=False)
+        model = gpflow.svgp.SVGP(data['x_data'], data['y'], kern=kernel,
+                                 Z=np.copy(data['x_data'][inducing_starts, :]),
+                                 likelihood=gpflow.likelihoods.Gaussian(), whiten=True)
+    else:
+        model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
 
     model.optimize()
-
-
 
     mean, var = model.predict_y(x_axis_points)
     f, ax = plt.subplots()
@@ -94,25 +99,25 @@ def main2():
                     mean[:, 0] + 2 * np.sqrt(var[:, 0]), color='blue', alpha=0.2)
 
     approx_features_func = create_approx_features_func(model, x_data.shape[1])
-    #mean, L_precision = model.linear_weights_posterior()
-    mean = model.linear_weights_posterior()
-    #L_var += 1 * np.eye(L_var.shape[0])
-    #L_var = sla.cholesky(L_var, lower=True)
+
+    mean, precision_or_var, var_flag = model.linear_weights_posterior()
+    L = sla.cholesky(precision_or_var, lower=True)
+
     for j in range(2):
-        #sampled_var = sla.solve_triangular(L_precision.T, rng.randn(mean.shape[0]), lower=False)[:, None]
-        #sampled_var = (L_var @ rng.randn(mean.shape[0]))[:, None]
 
-        theta_sample = mean #+ sampled_var
+        if var_flag:
+            sampled_var = (L @ rng.randn(mean.shape[0]))[:, None]
+        else:
+            sampled_var = sla.solve_triangular(L.T, rng.randn(mean.shape[0]), lower=False)[:, None]
 
+        theta_sample = mean + sampled_var
 
         phi_at_xindcs = approx_features_func(x_axis_points)
         f_sample = phi_at_xindcs @ theta_sample
-        plt.plot(x_axis_points, f_sample, '--', color='#727882')
+        plt.plot(x_axis_points, f_sample, '--', color='#727882', label="approx_{}".format(j))
 
-
-    for m in model.predict_f_samples(x_axis_points, 2):
-        plt.plot(x_axis_points, m, 'gray')
-
+    for i, m in enumerate(model.predict_f_samples(x_axis_points, 2)):
+        plt.plot(x_axis_points, m, 'gray', label="actual_{}".format(i))
 
     try:
         inducing_values = model.Z.value
@@ -120,11 +125,41 @@ def main2():
     except AttributeError:
         pass
 
-
     plt.show()
 
 
-def main():
+
+def create_approx_func_val(model, data_dim, theta):
+
+    tf_graph = tf.Graph()
+    tf_sess = tf.Session(graph=tf_graph)
+
+    with tf_graph.as_default():
+        x_ph = tf.placeholder(tf.float64, [None, data_dim])
+        with model.kern.tf_mode():
+            x_free = tf.placeholder('float64')
+            model.kern.make_tf_array(x_free)
+            feats_func = model.kern.create_feature_map_func(model.random_seed_for_random_features)
+            feats = feats_func(x_ph)
+
+            func = tf.matmul(feats, theta)
+            func_deriv = tf.squeeze(tf.gradients(func, x_ph))
+
+
+    def approx_func(X):
+        X = np.atleast_2d(X)
+        func_evald = tf_sess.run(func, feed_dict={x_ph:X, x_free: model.kern.get_free_state()})
+        deriv_evald = tf_sess.run(func_deriv, feed_dict={x_ph:X, x_free: model.kern.get_free_state()})
+        return func_evald, deriv_evald
+
+    return approx_func
+
+
+
+def thompson_sample_min():
+    """
+    Show how Thompson Sampling can be used using the random features to sample from continuous domain.
+    """
 
     rng = np.random.RandomState(100)
     x_data, x_axis_points = create_random_x_data(rng)
@@ -132,17 +167,17 @@ def main():
 
     kernel = gpflow.kernels.RBF(1)
     kernel.lengthscales = 0.1
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    import copy
-    num_inducing = 20
-    inducing_starts = rng.choice(data['x_data'].shape[0], num_inducing, replace=False)
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    model = gpflow.svgp.SVGP(data['x_data'], data['y'], kern=kernel, Z=copy.copy(data['x_data'][inducing_starts, :]),
-                             likelihood=gpflow.likelihoods.Gaussian(), whiten=True)
+
+    if SVGP:
+        num_inducing = 30
+        inducing_starts = rng.choice(data['x_data'].shape[0], num_inducing, replace=False)
+        model = gpflow.svgp.SVGP(data['x_data'], data['y'], kern=kernel,
+                                 Z=np.copy(data['x_data'][inducing_starts, :]),
+                                 likelihood=gpflow.likelihoods.Gaussian(), whiten=True)
+    else:
+        model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
 
     model.optimize()
-
-
 
     mean, var = model.predict_y(x_axis_points)
     f, ax = plt.subplots()
@@ -151,32 +186,30 @@ def main():
     ax.fill_between(x_axis_points[:, 0], mean[:, 0] - 2 * np.sqrt(var[:, 0]),
                     mean[:, 0] + 2 * np.sqrt(var[:, 0]), color='blue', alpha=0.2)
 
-    approx_features_func = create_approx_features_func(model, x_data.shape[1])
-    #mean, L_precision = model.linear_weights_posterior()
-    mean1, mean2, mean3, mean4 = model.linear_weights_posterior()
-    #L_var += 1 * np.eye(L_var.shape[0])
-    #L_var = sla.cholesky(L_var, lower=True)
+    approx_features_func = create_approx_features_func(model, x_data.shape[1], get_grads=True)
 
-    phi_at_xindcs = approx_features_func(x_axis_points)
-    f_sample = phi_at_xindcs @ mean1
-    plt.plot(x_axis_points, f_sample, '-', lw=2, color='#2fb1fc', label="mean1")
+    mean, precision_or_var, var_flag = model.linear_weights_posterior()
+    L = sla.cholesky(precision_or_var, lower=True)
 
-    f_sample = phi_at_xindcs @ mean2
-    plt.plot(x_axis_points, f_sample, ':', lw=3.5, color='#f21f96', label="mean2")
+    for j in range(10):
 
-    phi_at_xindcs = approx_features_func(x_axis_points)
-    f_sample = phi_at_xindcs @ mean3
-    plt.plot(x_axis_points, f_sample, '--', lw=2, color='#e08002', label="mean5")
+        if var_flag:
+            sampled_var = (L @ rng.randn(mean.shape[0]))[:, None]
+        else:
+            sampled_var = sla.solve_triangular(L.T, rng.randn(mean.shape[0]), lower=False)[:, None]
 
-    f_sample = phi_at_xindcs @ mean4
-    plt.plot(x_axis_points, f_sample, '-.', lw=2.5, color='#6ff252', label="mean6")
+        theta_sample = mean + sampled_var
 
-    # #
-    # f_sample = phi_at_xindcs @ mean3
-    # plt.plot(x_axis_points, f_sample, '--', lw=2, color='#e000c2', label="mean3")
+        f_sample = create_approx_func_val(model, x_data.shape[1], theta_sample)
 
+        initial_sample = np.array([rng.choice(x_data.flatten())])[:, None]
+        opt_res = optimize.minimize(lambda x: f_sample(x), x0=initial_sample, method="L-BFGS-B",
+                                    jac=True)
 
+        x = opt_res.x
+        f = f_sample(opt_res.x)[0]
 
+        plt.plot(x, f, 'o', color='#727882', label="min_{}".format(j))
 
     try:
         inducing_values = model.Z.value
@@ -184,164 +217,11 @@ def main():
     except AttributeError:
         pass
 
-    plt.legend()
-    plt.show()
-
-
-def main3():
-
-    rng = np.random.RandomState(100)
-    x_data, x_axis_points = create_random_x_data(rng)
-    data = package_data(x_data, x_axis_points, rng)
-
-    kernel = gpflow.kernels.RBF(1)
-    kernel.lengthscales = 0.1
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    import copy
-    num_inducing = 20
-    inducing_starts = rng.choice(data['x_data'].shape[0], num_inducing, replace=False)
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    model = gpflow.svgp.SVGP(data['x_data'], data['y'], kern=kernel, Z=copy.copy(data['x_data'][inducing_starts, :]),
-                             likelihood=gpflow.likelihoods.Gaussian(), whiten=True)
-
-    model.optimize()
-
-
-
-    mean, var = model.predict_f(x_axis_points)
-    f, ax = plt.subplots()
-    ax.plot(x_data, data['f'], 'kx', mew=2)
-    ax.plot(x_axis_points, var[:, 0], 'b', lw=2)
-
-
-    approx_features_func = create_approx_features_func(model, x_data.shape[1])
-    L_var1, L_var2 = model.linear_weights_posterior_variance_play()
-
-
-
-    phi_at_xindcs = approx_features_func(x_axis_points)
-    f_sample = phi_at_xindcs @ L_var1 @ phi_at_xindcs.T
-    plt.plot(x_axis_points, np.diag(f_sample), '-', lw=2, color='#e07b00', label="var1")
-
-    f_sample = phi_at_xindcs @ L_var2 @ phi_at_xindcs.T
-    plt.plot(x_axis_points, np.diag(f_sample), ':', lw=3, color='#00e01d', label="var2")
-
-
-
-    try:
-        inducing_values = model.Z.value
-        plt.plot(inducing_values, np.zeros_like(inducing_values), 'bo')
-    except AttributeError:
-        pass
-
-    plt.legend()
-    plt.show()
-
-
-
-
-def main4():
-
-    rng = np.random.RandomState(100)
-    x_data, x_axis_points = create_random_x_data(rng)
-    data = package_data(x_data, x_axis_points, rng)
-
-    kernel = gpflow.kernels.RBF(1)
-    kernel.lengthscales = 0.1
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    import copy
-    num_inducing = 20
-    inducing_starts = rng.choice(data['x_data'].shape[0], num_inducing, replace=False)
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    model = gpflow.svgp.SVGP(data['x_data'], data['y'], kern=kernel, Z=copy.copy(data['x_data'][inducing_starts, :]),
-                             likelihood=gpflow.likelihoods.Gaussian(), whiten=True)
-
-    model.optimize()
-
-    mean, var = model.predict_f(x_axis_points)
-    f, ax = plt.subplots()
-    ax.plot(x_data, data['f'], 'kx', mew=2)
-    ax.plot(x_axis_points, mean, 'b', lw=2)
-    ax.fill_between(x_axis_points[:, 0], mean[:, 0] - 2 * np.sqrt(var[:, 0]),
-                    mean[:, 0] + 2 * np.sqrt(var[:, 0]), color='blue', alpha=0.2)
-
-
-
-    approx_features_func = create_approx_features_func(model, x_data.shape[1])
-    mean1, var1, mean2, precchol2 = model.linear_weights_posterior_methods_play()
-
-    phi_at_xindcs = approx_features_func(x_axis_points)
-    f_sample = phi_at_xindcs @ mean1
-    plt.plot(x_axis_points, f_sample, '-', lw=2, color='#e07b00', label="mean_orig")
-
-    f_sample = phi_at_xindcs @ mean2
-    plt.plot(x_axis_points, f_sample, ':', lw=3, color='#00e01d', label="mean_new")
-
-
-
-    try:
-        inducing_values = model.Z.value
-        plt.plot(inducing_values, np.zeros_like(inducing_values), 'bo')
-    except AttributeError:
-        pass
-
-    plt.legend()
-    plt.show()
-
-
-
-def gpr_marginal_vars():
-
-    rng = np.random.RandomState(100)
-    x_data, x_axis_points = create_random_x_data(rng)
-    data = package_data(x_data, x_axis_points, rng)
-
-    kernel = gpflow.kernels.RBF(1)
-    kernel.lengthscales = 0.1
-    #model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-    import copy
-
-    model = gpflow.gpr.GPR(data['x_data'], data['y'], kern=kernel)
-
-
-    model.optimize()
-
-
-
-    mean, var = model.predict_f(x_axis_points)
-    f, ax = plt.subplots()
-    ax.plot(x_data, data['f'], 'kx', mew=2)
-    ax.plot(x_axis_points, var[:, 0], 'b', lw=2)
-
-
-    approx_features_func = create_approx_features_func(model, x_data.shape[1])
-    mean, chol = model.linear_weights_posterior()
-
-
-
-    phi_at_xindcs = approx_features_func(x_axis_points)
-    #f_sample = phi_at_xindcs @ L_var1 @ phi_at_xindcs.T
-
-    half = sla.solve_triangular(chol, phi_at_xindcs.T, lower=True)
-    var = half.T @ half
-
-    plt.plot(x_axis_points, np.diag(var), '-', lw=2, color='#e07b00', label="var1")
-
-
-
-
-    try:
-        inducing_values = model.Z.value
-        plt.plot(inducing_values, np.zeros_like(inducing_values), 'bo')
-    except AttributeError:
-        pass
-
-    plt.legend()
     plt.show()
 
 
 
 if __name__ == '__main__':
-    main3()
+    thompson_sample_min()
 
 

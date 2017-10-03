@@ -1,9 +1,10 @@
 
 from __future__ import print_function
 
+import functools
+
 import numpy as np
 import tensorflow as tf
-
 from scipy import linalg as sla
 
 import gpflow
@@ -21,13 +22,15 @@ class TestGPRRandomFeaturesApprox(GPflowTestCase):
         def create_gpr(x_data, y_data, kern):
             return gpflow.gpr.GPR(x_data, y_data, kern)
 
-        def create_svgp(x_data, y_data, kern):
-            num_inducing = 30
+        def create_svgp(whiten, x_data, y_data, kern):
+            num_inducing = 10
             indices = self.rng.choice(x_data.shape[0], num_inducing, replace=False)
             initial_z = np.copy(x_data[indices, :])
-            return gpflow.svgp.SVGP(x_data, y_data, kern, gpflow.likelihoods.Gaussian(), Z=initial_z)
+            return gpflow.svgp.SVGP(x_data, y_data, kern, gpflow.likelihoods.Gaussian(),
+                                    Z=initial_z, whiten=whiten)
 
-        self.models_to_test = [create_svgp, create_gpr]
+        self.models_to_test = [functools.partial(create_svgp, True),
+                               functools.partial(create_svgp, False), create_gpr]
 
     def test_models_a_gp_well(self):
         """
@@ -98,9 +101,9 @@ class TestGPRRandomFeaturesApprox(GPflowTestCase):
 
 
         # Set up the x and y data
-        x_data = np.linspace(0, 10, 40)[:, np.newaxis]
+        x_data = np.linspace(0, 10, 50)[:, np.newaxis]
         y_data = func(x_data)
-        x_preds_points = np.linspace(0, 10, 50)[:, np.newaxis]
+        x_preds_points = np.linspace(0, 10, 80)[:, np.newaxis]
         rng = np.random.RandomState(100)
 
         # Loop through and test all applicable models for which this should work on.
