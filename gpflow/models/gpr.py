@@ -128,6 +128,7 @@ class GPR(GPModel):
         linear weights.
         Note that this method may not always work. If the kernel does not have a feature mapping
         (even a random approximation) then a NotImplementedError will be raised.
+        :returns mean, matrix of precision/variance, flag set to true is matrix is variance opr false for precision
         """
         assert self.num_latent == 1, "Only yet implemented for one latent variable GP."
         # Pretty sure that it should work fine for more dimensional latent GP but just need
@@ -153,6 +154,6 @@ class GPR(GPModel):
 
         # we return the precision matrix Cholesky decomposed as this is useful representation when
         # wanting to sample from this function.
-        cholesky_for_precision = L_A
-        return mean, cholesky_for_precision
+        precision_mat = A
+        return mean, precision_mat, tf.constant(False, dtype=tf.bool)
 
