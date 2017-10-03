@@ -134,7 +134,7 @@ class GPR(GPModel):
         num_obs = tf.shape(feats)[0]
         num_feats = tf.shape(feats)[1]
         # NB we currently run a naive version. However, if number of data points is smaller than
-        # the feature dimnension then I think we can use the Matrix Inversion Lemma to cut down on
+        # the feature dimension then I think we can use the Matrix Inversion Lemma to cut down on
         # computation
         Sigma_obs_inversed = tf.eye(num_obs, num_obs, dtype=float_type) / self.likelihood.variance
 
