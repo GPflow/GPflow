@@ -11,7 +11,7 @@ float_type = settings.dtypes.float_type
 
 class DiagsTest(GPflowTestCase):
     """
-    The conditionals can take cholesky matrices or diagaonal matrices.
+    The conditionals can take cholesky matrices or diagonal matrices.
 
     Here we make sure the behaviours overlap.
     """
@@ -26,7 +26,7 @@ class DiagsTest(GPflowTestCase):
             self.Xs = tf.placeholder(float_type)
             self.sqrt = tf.placeholder(float_type, [self.num_data, self.num_latent])
 
-            #make tf array shenanigans
+            # make tf array shenanigans
             self.free_x = tf.placeholder(float_type)
             self.k.make_tf_array(self.free_x)
 
@@ -45,33 +45,33 @@ class DiagsTest(GPflowTestCase):
                 self.sqrt:self.sqrt_data,
                 self.free_x:self.free_x_data}
 
-            #the chols are diagonal matrices, with the same entries as the diag representation.
+            # the chols are diagonal matrices, with the same entries as the diag representation.
             self.chol = tf.stack([tf.diag(self.sqrt[:,i]) for i in range(self.num_latent)])
             self.chol = tf.transpose(self.chol, perm=[1,2,0])
 
     def test_whiten(self):
         with self.test_session() as sess, self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.gaussian_gp_predict_whitened(
-                self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
-            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.gaussian_gp_predict_whitened(
-                self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
+            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(
+                self.Xs, self.X, self.k, self.mu, q_sqrt=self.sqrt, whiten=True)
+            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.conditional(
+                self.Xs, self.X, self.k, self.mu, q_sqrt=self.chol, whiten=True)
 
-            mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
-            self.assertTrue(np.allclose(mean_diff, 0))
+            mean1, var1 = sess.run([Fstar_mean_1, Fstar_var_1], feed_dict=self.feed_dict)
+            mean2, var2 = sess.run([Fstar_mean_2, Fstar_var_2], feed_dict=self.feed_dict)
 
-            var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
-            self.assertTrue(np.allclose(var_diff, 0))
+            np.testing.assert_allclose(mean1, mean2)
+            np.testing.assert_allclose(var1, var2)
 
     def test_nonwhiten(self):
         with self.test_session() as sess, self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
-            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
+            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(self.Xs, self.X, self.k, self.mu, q_sqrt=self.sqrt)
+            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.conditional(self.Xs, self.X, self.k, self.mu, q_sqrt=self.chol)
 
-            mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
-            var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
+            mean1, var1 = sess.run([Fstar_mean_1, Fstar_var_1], feed_dict=self.feed_dict)
+            mean2, var2 = sess.run([Fstar_mean_2, Fstar_var_2], feed_dict=self.feed_dict)
 
-            self.assertTrue(np.allclose(mean_diff, 0))
-            self.assertTrue(np.allclose(var_diff, 0))
+            np.testing.assert_allclose(mean1, mean2)
+            np.testing.assert_allclose(var1, var2)
 
 
 class WhitenTest(GPflowTestCase):
@@ -85,7 +85,7 @@ class WhitenTest(GPflowTestCase):
             self.F = tf.placeholder(float_type, [self.num_data, 1])
             self.Xs = tf.placeholder(float_type, [self.num_test_data, 1])
 
-            #make tf array shenanigans
+            # make tf array shenanigans
             self.free_x = tf.placeholder(float_type)
             self.k.make_tf_array(self.free_x)
 
@@ -105,21 +105,21 @@ class WhitenTest(GPflowTestCase):
     def test_whiten(self):
         """
         make sure that predicting using the whitened representation is the
-        sameas the non-whitened one.
+        same as the non-whitened one.
         """
 
         with self.test_session() as sess, self.k.tf_mode():
             K = self.k.K(self.X) + tf.eye(self.num_data, dtype=float_type) * 1e-6
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, self.F, lower=True)
-            Fstar_mean, Fstar_var = gpflow.conditionals.gp_predict(self.Xs, self.X, self.k, self.F)
-            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.gp_predict_whitened(self.Xs, self.X, self.k, V)
+            Fstar_mean, Fstar_var = gpflow.conditionals.conditional(self.Xs, self.X, self.k, self.F)
+            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.conditional(self.Xs, self.X, self.k, V, whiten=True)
 
             mean1, var1 = sess.run([Fstar_w_mean, Fstar_w_var], feed_dict=self.feed_dict)
             mean2, var2 = sess.run([Fstar_mean, Fstar_var], feed_dict=self.feed_dict)
 
-            self.assertTrue(np.allclose(mean1, mean2, 1e-6, 1e-6)) # TODO: should tolerance be type dependent?
-            self.assertTrue(np.allclose(var1, var2, 1e-6, 1e-6))
+            np.testing.assert_allclose(mean1, mean2, 1e-6, 1e-6)  # TODO: should tolerance be type dependent?
+            np.testing.assert_allclose(var1, var2, 1e-6, 1e-6)
 
 
 class WhitenTestGaussian(WhitenTest):
@@ -133,7 +133,7 @@ class WhitenTestGaussian(WhitenTest):
     def test_whiten(self):
         """
         make sure that predicting using the whitened representation is the
-        sameas the non-whitened one.
+        same as the non-whitened one.
         """
         with self.test_session() as sess, self.k.tf_mode():
             K = self.k.K(self.X)
@@ -142,14 +142,14 @@ class WhitenTestGaussian(WhitenTest):
             V_chol = tf.matrix_triangular_solve(L, tf.diag(self.F_sqrt[:,0]), lower=True)
             V_sqrt = tf.expand_dims(V_chol, 2)
 
-            Fstar_mean, Fstar_var = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt, 1)
-            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt, 1)
+            Fstar_mean, Fstar_var = gpflow.conditionals.conditional(self.Xs, self.X, self.k, self.F, q_sqrt=self.F_sqrt)
+            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.conditional(self.Xs, self.X, self.k, V, q_sqrt=V_sqrt, whiten=True)
 
-            mean_difference = sess.run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
-            var_difference = sess.run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
+            mean1, var1 = sess.run([Fstar_w_mean, Fstar_w_var], feed_dict=self.feed_dict)
+            mean2, var2 = sess.run([Fstar_mean, Fstar_var], feed_dict=self.feed_dict)
 
-            self.assertTrue(np.all(np.abs(mean_difference) < 1e-4))
-            self.assertTrue(np.all(np.abs(var_difference) < 1e-4))
+            np.testing.assert_almost_equal(mean1, mean2, 4)
+            np.testing.assert_almost_equal(var1, var2, 4)
 
 if __name__ == "__main__":
     unittest.main()
