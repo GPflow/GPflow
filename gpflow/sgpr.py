@@ -19,7 +19,7 @@ import numpy as np
 from .model import GPModel
 from .param import Param, DataHolder, AutoFlow
 from .mean_functions import Zero
-from . import likelihoods
+from . import likelihoods, features
 from ._settings import settings
 
 float_type = settings.dtypes.float_type
@@ -50,12 +50,11 @@ class SGPRUpperMixin(object):
 
     @AutoFlow()
     def compute_upper_bound(self):
-        num_inducing = tf.shape(self.Z)[0]
         num_data = tf.cast(tf.shape(self.Y)[0], float_type)
 
         Kdiag = self.kern.Kdiag(self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
-        Kuf = self.kern.K(self.Z, self.X)
+        Kuu = self.feat.Kuu(self.kern)
+        Kuf = self.feat.Kuf(self.kern, self.X)
 
         L = tf.cholesky(Kuu)
         LB = tf.cholesky(Kuu + self.likelihood.variance ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
@@ -97,7 +96,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
     """
 
-    def __init__(self, X, Y, kern, Z, mean_function=None):
+    def __init__(self, X, Y, kern, feat=None, mean_function=None, Z=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -110,7 +109,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         Y = DataHolder(Y, on_shape_change='pass')
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
-        self.Z = Param(Z)
+        self.feat = features.inducingpoint_wrapper(feat, Z)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
@@ -121,14 +120,14 @@ class SGPR(GPModel, SGPRUpperMixin):
         SGPR notebook.
         """
 
-        num_inducing = tf.shape(self.Z)[0]
+        num_inducing = len(self.feat)
         num_data = tf.cast(tf.shape(self.Y)[0], settings.dtypes.float_type)
         output_dim = tf.cast(tf.shape(self.Y)[1], settings.dtypes.float_type)
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
-        Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        Kuf = self.feat.Kuf(self.kern, self.X)
+        Kuu = self.feat.Kuu(self.kern)
         L = tf.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -157,11 +156,11 @@ class SGPR(GPModel, SGPRUpperMixin):
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
-        num_inducing = tf.shape(self.Z)[0]
+        num_inducing = len(self.feat)
         err = self.Y - self.mean_function(self.X)
-        Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
-        Kus = self.kern.K(self.Z, Xnew)
+        Kuf = self.feat.Kuf(self.kern, self.X)
+        Kuu = self.feat.Kuu(self.kern)
+        Kus = self.feat.Kuf(self.kern, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
@@ -186,7 +185,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
 
 class GPRFITC(GPModel, SGPRUpperMixin):
-    def __init__(self, X, Y, kern, Z, mean_function=Zero()):
+    def __init__(self, X, Y, kern, feat=None, mean_function=Zero(), Z=None):
         """
         This implements GP regression with the FITC approximation.
         The key reference is
@@ -215,16 +214,16 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         Y = DataHolder(Y, on_shape_change='pass')
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function)
-        self.Z = Param(Z)
+        self.feat = features.inducingpoint_wrapper(feat, Z)
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
     def build_common_terms(self):
-        num_inducing = tf.shape(self.Z)[0]
+        num_inducing = len(self.feat)
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
-        Kuf = self.kern.K(self.Z, self.X)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=float_type) * settings.numerics.jitter_level
+        Kuf = self.feat.Kuf(self.kern, self.X)
+        Kuu = self.feat.Kuu(self.kern)
 
         Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
@@ -291,7 +290,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         Xnew.
         """
         _, _, Luu, L, _, _, gamma = self.build_common_terms()
-        Kus = self.kern.K(self.Z, Xnew)  # size  M x Xnew
+        Kus = self.feat.Kuf(self.kern, Xnew)  # size  M x Xnew
 
         w = tf.matrix_triangular_solve(Luu, Kus, lower=True)  # size M x Xnew
 

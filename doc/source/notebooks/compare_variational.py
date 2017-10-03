@@ -17,8 +17,8 @@ m2 = gpflow.vgp.VGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(
 m3 = gpflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
 m4 = gpflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
 
-m3.Z.fixed = True
-m4.Z.fixed = True
+m3.feat.fixed = True
+m4.feat.fixed = True
 
 model_list = [m2,m3,m4]
 
