@@ -16,7 +16,18 @@ class TestGPRRandomFeaturesApprox(GPflowTestCase):
 
     def setUp(self):
         self.kern_cls = gpflow.kernels.RBF
-        self.models_to_test = [gpflow.gpr.GPR]
+        self.rng = np.random.RandomState(1021)
+
+        def create_gpr(x_data, y_data, kern):
+            return gpflow.gpr.GPR(x_data, y_data, kern)
+
+        def create_svgp(x_data, y_data, kern):
+            num_inducing = 30
+            indices = self.rng.choice(x_data.shape[0], num_inducing, replace=False)
+            initial_z = np.copy(x_data[indices, :])
+            return gpflow.svgp.SVGP(x_data, y_data, kern, gpflow.likelihoods.Gaussian(), Z=initial_z)
+
+        self.models_to_test = [create_svgp, create_gpr]
 
     def test_models_a_gp_well(self):
         """
