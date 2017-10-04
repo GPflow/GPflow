@@ -129,13 +129,20 @@ class Minibatch(DataHolder):
 
     @property
     def initializables(self):
-        return [self._iterator]
+        return [self._iterator_tensor]
 
     @property
     def initializable_feeds(self):
         if self._dataholder_tensor is None:
             return None
-        return {self._cache_tensor: self._value}
+        return {self._cache_tensor: self._value,
+                self._batch_size_tensor: self._batch_size}
+
+    def set_batch_size(self, size):
+        self._batch_size = size
+        session = self.enquire_session(allow_none=True)
+        if session is not None:
+            self.initialize(session=session)
 
     def _build(self):
         self._cache_tensor = self._build_placeholder_cache()
@@ -154,15 +161,17 @@ class Minibatch(DataHolder):
         if self._shuffle:
             shape = self._value.shape
             data = data.shuffle(buffer_size=shape[0], seed=self._seed)
-        data = data.batch(batch_size=self._batch_size)
-        self._iterator = data.make_initializable_iterator()
+        self._batch_size_tensor = tf.placeholder(tf.int64, shape=())
+        data = data.batch(batch_size=self._batch_size_tensor)
+        self._iterator_tensor = data.make_initializable_iterator()
         name = self._parameter_name()
-        return self._iterator.get_next(name=name)
+        return self._iterator_tensor.get_next(name=name)
 
     def _init_parameter_defaults(self):
         self._cache_tensor = None
+        self._batch_size_tensor = None
         self._dataholder_tensor = None
-        self._iterator = None
+        self._iterator_tensor = None
         self._shuffle = True
         self._batch_size = 1
         self._seed = None

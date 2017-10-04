@@ -54,8 +54,7 @@ class LogNormal(Prior):
         return tf.reduce_sum(densities.lognormal(x, self.mu, self.var))
 
     def sample(self, shape=(1,)):
-        return np.exp(self.mu +
-                      np.sqrt(self.var)*np.random.randn(*shape))
+        return np.exp(self.mu + np.sqrt(self.var) * np.random.randn(*shape))
 
     def __str__(self):
         return "logN("+str(self.mu) + "," + str(self.var) + ")"
