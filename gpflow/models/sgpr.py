@@ -158,6 +158,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
         return bound
 
+    @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points
