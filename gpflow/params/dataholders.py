@@ -84,6 +84,9 @@ class DataHolder(Parameter):
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
 
+    def __str__(self):
+        return self.format_parameter(shape=self.shape)
+
 
 class FormlessData(DataHolder):
     def __init__(self, value, name=None):

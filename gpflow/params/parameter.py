@@ -293,10 +293,10 @@ class Parameter(Node):
 
     def _html_table_rows(self, name_prefix=''):
         html = "<tr>"
-        html += "<td>{0}</td>".format(name_prefix + self.name)
-        html += "<td>{0}</td>".format(str(self._array).replace('\n', '</br>'))
+        html += "<td>{0}</td>".format(name_prefix + self.full_name)
+        html += "<td>{0}</td>".format(str(self.read_value()).replace('\n', '</br>'))
         html += "<td>{0}</td>".format(str(self.prior))
-        html += "<td>{0}</td>".format('[FIXED]' if self.trainable else str(self.transform))
+        html += "<td>{0}</td>".format('[trainable]' if self.trainable else str(self.transform))
         html += "</tr>"
         return html
 
@@ -310,13 +310,30 @@ class Parameter(Node):
         object.__setattr__(self, name, value)
 
     def __str__(self):
-        trainable = "[TRAINABLE]" if self.trainable else ""
-        external = "[EXTERNAL TENSOR]" if self._externally_defined else ""
-        msg = ' '.join(['{name}',
-                        'shape:{shape}',
-                        'transform:{transform}',
-                        'prior:{prior}',
-                        trainable,
-                        external])
-        return msg.format(name=self.name, shape=self.shape,
-                          transform=self.transform, prior=self.transform).strip()
+        return self.format_parameter(
+            external=self._externally_defined,
+            trainable=self.trainable,
+            shape=self.shape,
+            transform=self.transform,
+            prior=self.prior)
+
+    def format_parameter(self, **kwargs):
+        begin = '<{otype} name:{name}'.format(
+            otype=self.__class__.__name__, name=self.name)
+        if self._externally_defined and self.session is None:
+            end = ' value:unknown'
+        else:
+            end = ' value:{value}>'.format(value=self.read_value())
+        args = {}
+        body = ''
+        for key, value in kwargs.items():
+            if isinstance(value, bool):
+                if not value:
+                    continue
+                arg_value = '[{}]'.format(key)
+                body = ' {{{key}}}'.format(key=key) + body
+            else:
+                arg_value = '{key}:{value}'.format(key=key, value=value)
+                body += ' {{{key}}}'.format(key=key)
+            args[key] = arg_value
+        return (begin + body + end).format(**args)
