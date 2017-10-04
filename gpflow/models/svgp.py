@@ -21,7 +21,7 @@ from .. import settings
 from .. import transforms, conditionals, kullback_leiblers
 
 from ..params import Parameter
-from ..params import Minibatch
+from ..params import Minibatch, DataHolder
 
 from ..decors import params_as_tensors
 
@@ -62,11 +62,13 @@ class SVGP(GPModel):
         - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
         """
-        # sort out the X, Y into MiniBatch objects.
+        # sort out the X, Y into MiniBatch objects if required.
         if minibatch_size is None:
-            minibatch_size = X.shape[0]
-        X = Minibatch(X, batch_size=minibatch_size, seed=0)
-        Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
+            X = DataHolder(X)
+            Y = DataHolder(Y)
+        else:
+            X = Minibatch(X, batch_size=minibatch_size, seed=0)
+            Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
 
         # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
