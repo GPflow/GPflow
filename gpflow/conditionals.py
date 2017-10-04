@@ -37,7 +37,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     In this case 'f' represents the values taken by v.
 
     The method can either return the diagonals of the covariance matrix for
-    each output of the full covariance matrix (full_cov).
+    each output or the full covariance matrix (full_cov).
 
     We assume K independent GPs, represented by the columns of f (and the
     last dimension of q_sqrt).
@@ -56,7 +56,6 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
         gaussian_gp_predict
         gp_predict_whitened
         gaussian_gp_predict_whitened
-
     """
 
     # compute kernel stuff
@@ -107,31 +106,31 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
 import warnings
 
 
-def gp_predict(Xnew, X, kern, F, full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
+def gp_predict(Xnew, X, kern, F, full_cov=False):  # pragma: no cover
+    warnings.warn('gp_predict is deprecated: use conditional(...) instead',
                   DeprecationWarning)
     return conditional(Xnew, X, kern, F,
                        full_cov=full_cov, q_sqrt=None, whiten=False)
 
 
 def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns,
-                        full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
+                        full_cov=False):  # pragma: no cover
+    warnings.warn('gaussian_gp_predict is deprecated: use conditional(...) instead',
                   DeprecationWarning)
     return conditional(Xnew, X, kern, q_mu,
                        full_cov=full_cov, q_sqrt=q_sqrt, whiten=False)
 
 
 def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns,
-                                 full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
+                                 full_cov=False):  # pragma: no cover
+    warnings.warn('gaussian_gp_predict_whitened is deprecated: use conditional(...) instead',
                   DeprecationWarning)
     return conditional(Xnew, X, kern, q_mu,
                        full_cov=full_cov, q_sqrt=q_sqrt, whiten=True)
 
 
-def gp_predict_whitened(Xnew, X, kern, V, full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
+def gp_predict_whitened(Xnew, X, kern, V, full_cov=False):  # pragma: no cover
+    warnings.warn('gp_predict_whitened is deprecated: use conditional(...) instead',
                   DeprecationWarning)
     return conditional(Xnew, X, kern, V,
                        full_cov=full_cov, q_sqrt=None, whiten=True)
