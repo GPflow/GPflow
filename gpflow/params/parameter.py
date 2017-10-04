@@ -53,6 +53,8 @@ class Parameter(Node):
         value = Parameter._valid_input(value)
         super(Parameter, self).__init__(name)
 
+        self._externally_defined = False
+
         self._init_parameter_defaults()
         self._init_parameter_attributes(prior, transform, trainable)
         self._init_parameter_value(value)
@@ -244,7 +246,6 @@ class Parameter(Node):
         self._unconstrained_tensor = None
         self._prior_tensor = None
         self._constrained_tensor = None
-        self._externally_defined = False
 
     def _init_parameter_value(self, value):
         if misc.is_tensor(value):
@@ -300,26 +301,11 @@ class Parameter(Node):
         html += "</tr>"
         return html
 
-    def __setattr__(self, name, value):
-        try:
-            attr = self.ParameterAttribute(name)
-            self._set_parameter_attribute(attr, value)
-            return
-        except ValueError:
-            pass
-        object.__setattr__(self, name, value)
-
-    def __str__(self):
-        return self.format_parameter(
-            external=self._externally_defined,
-            trainable=self.trainable,
-            shape=self.shape,
-            transform=self.transform,
-            prior=self.prior)
-
-    def format_parameter(self, **kwargs):
+    def _format_parameter(self, **kwargs):
         begin = '<{otype} name:{name}'.format(
             otype=self.__class__.__name__, name=self.name)
+        if self._externally_defined:
+            begin += ' [external tensor]'
         if self._externally_defined and self.session is None:
             end = ' value:unknown'
         else:
@@ -337,3 +323,19 @@ class Parameter(Node):
                 body += ' {{{key}}}'.format(key=key)
             args[key] = arg_value
         return (begin + body + end).format(**args)
+
+    def __setattr__(self, name, value):
+        try:
+            attr = self.ParameterAttribute(name)
+            self._set_parameter_attribute(attr, value)
+            return
+        except ValueError:
+            pass
+        object.__setattr__(self, name, value)
+
+    def __str__(self):
+        return self._format_parameter(
+            trainable=self.trainable,
+            shape=self.shape,
+            transform=self.transform,
+            prior=self.prior)

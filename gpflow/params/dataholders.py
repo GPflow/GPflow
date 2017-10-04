@@ -28,6 +28,7 @@ from ..core.base import Build
 
 from .parameter import Parameter
 
+
 class DataHolder(Parameter):
     def __init__(self, value, name=None):
         self._dataholder_tensor = None
@@ -64,7 +65,6 @@ class DataHolder(Parameter):
 
     def _init_parameter_defaults(self):
         self._dataholder_tensor = None
-        self._externally_defined = False
 
     def _init_parameter_attributes(self, _prior, _transform, _trainable):
         pass
@@ -85,7 +85,7 @@ class DataHolder(Parameter):
         object.__setattr__(self, name, value)
 
     def __str__(self):
-        return self.format_parameter(shape=self.shape)
+        return self._format_parameter(shape=self.shape)
 
 
 class FormlessData(DataHolder):
@@ -160,7 +160,6 @@ class Minibatch(DataHolder):
         return self._iterator.get_next(name=name)
 
     def _init_parameter_defaults(self):
-        self._externally_defined = False
         self._cache_tensor = None
         self._dataholder_tensor = None
         self._iterator = None
