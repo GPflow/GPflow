@@ -1,13 +1,16 @@
+# -*- coding: utf-8 -*-
 from __future__ import print_function
-import gpflow
-import tensorflow as tf
-import numpy as np
+
 import unittest
 
-from testing.gpflow_testcase import GPflowTestCase
+import gpflow
+import numpy as np
+import tensorflow as tf
 from gpflow import settings
+from testing.gpflow_testcase import GPflowTestCase
 
 float_type = settings.dtypes.float_type
+
 
 def squareT(A):
     """
@@ -15,12 +18,14 @@ def squareT(A):
     """
     return A.dot(A.T)
 
+
 class DiagsTest(GPflowTestCase):
     """
     The covariance of q(x) can be Cholesky matrices or diagonal matrices.
 
     Here we make sure the behaviours overlap.
     """
+
     def setUp(self):
         with self.test_session():
             N = 4
@@ -39,11 +44,11 @@ class DiagsTest(GPflowTestCase):
                 self.mu: self.mu_data,
                 self.sqrt: self.sqrt_data,
                 self.K: self.K_data,
-                }
+            }
 
             # the chols are diagonal matrices, with the same entries as the diag representation.
-            self.chol = tf.stack([tf.diag(self.sqrt[:,i]) for i in range(N)])
-            self.chol = tf.transpose(self.chol, perm=[1,2,0])
+            self.chol = tf.stack([tf.diag(self.sqrt[:, i]) for i in range(N)])
+            self.chol = tf.transpose(self.chol, perm=[1, 2, 0])
 
     def test_white(self):
         with self.test_session() as sess:
@@ -92,7 +97,7 @@ class WhitenedTest(GPflowTestCase):
                 self.sqrt: self.sqrt_data,
                 self.chol: self.chol_data,
                 self.I: np.eye(M),
-                }
+            }
 
     def test_diag(self):
         with self.test_session() as sess:
@@ -143,7 +148,7 @@ class EqualityTest(GPflowTestCase):
                 self.chol: self.chol_data,
                 self.K: squareT(sqrt_chol),
                 self.Kdiag: np.diag(sqrt_diag ** 2),
-                }
+            }
 
     def test_diag(self):
         with self.test_session() as sess:
@@ -162,9 +167,11 @@ def np_kl_1d(q_mu, q_sigma, p_var=1.0):
     q_var = q_sigma ** 2
     return 0.5 * (q_var / p_var + q_mu ** 2 / p_var - 1 + np.log(p_var / q_var))
 
+
 def np_kl_1d_many(q_mus, q_sigmas, p_var=1.0):
     kls = [np_kl_1d(q_mu, q_sigma, p_var) for q_mu, q_sigma in zip(q_mus, q_sigmas)]
     return np.sum(kls)
+
 
 class OneDTest(GPflowTestCase):
     """
@@ -191,7 +198,7 @@ class OneDTest(GPflowTestCase):
                 self.sqrt: self.sqrt_data,
                 self.chol: self.chol_data,
                 self.K: self.K_data,
-                }
+            }
 
     def test_diag_white(self):
         with self.test_session() as sess:
