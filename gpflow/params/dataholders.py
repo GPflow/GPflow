@@ -138,9 +138,9 @@ class Minibatch(DataHolder):
         return {self._cache_tensor: self._value,
                 self._batch_size_tensor: self._batch_size}
 
-    def set_batch_size(self, size):
+    def set_batch_size(self, size, session=None):
         self._batch_size = size
-        session = self.enquire_session(allow_none=True)
+        session = self.enquire_session(session, allow_none=True)
         if session is not None:
             self.initialize(session=session)
 
