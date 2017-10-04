@@ -113,7 +113,7 @@ class TestFullCovSGPR(TestFullCov):
     def setUp(self):
         TestFullCov.setUp(self)
         self.model = gpflow.models.SGPR(self.X, self.Y, Z=self.Z, kern=self.k())
-        self.modle.compile()
+        self.model.compile()
 
 
 class TestFullCovGPRFITC(TestFullCov):

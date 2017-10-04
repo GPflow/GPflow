@@ -15,11 +15,13 @@
 
 import numpy as np
 import tensorflow as tf
-from gpflow.models.model import GPModel
-from gpflow.params import Parameter, DataHolder
-from gpflow.conditionals import conditional
-from gpflow.priors import Gaussian
-from gpflow.mean_functions import Zero
+
+from ..models.model import GPModel
+
+from ..params import Parameter, DataHolder
+from ..conditionals import conditional
+from ..priors import Gaussian
+from ..decors import params_as_tensors
 
 
 class SGPMC(GPModel):
@@ -75,6 +77,7 @@ class SGPMC(GPModel):
         self.V = Parameter(np.zeros((self.num_inducing, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
+    @params_as_tensors
     def _build_likelihood(self):
         """
         This function computes the optimal density for v, q*(v), up to a constant
@@ -83,6 +86,7 @@ class SGPMC(GPModel):
         fmean, fvar = self._build_predict(self.X, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y))
 
+    @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
