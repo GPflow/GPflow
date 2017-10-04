@@ -108,19 +108,19 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 import warnings
 
 
-def gauss_kl_white(q_mu, q_sqrt):
+def gauss_kl_white(q_mu, q_sqrt):  # pragma: no cover
     warnings.warn('gauss_kl_white is deprecated: use gauss_kl(...) instead',
                   DeprecationWarning)
     return gauss_kl(q_mu, q_sqrt)
 
 
-def gauss_kl_white_diag(q_mu, q_sqrt):
+def gauss_kl_white_diag(q_mu, q_sqrt):  # pragma: no cover
     warnings.warn('gauss_kl_white_diag is deprecated: use gauss_kl(...) instead',
                   DeprecationWarning)
     return gauss_kl(q_mu, q_sqrt)
 
 
-def gauss_kl_diag(q_mu, q_sqrt, K):
+def gauss_kl_diag(q_mu, q_sqrt, K):  # pragma: no cover
     warnings.warn('gauss_kl_diag is deprecated: use gauss_kl(...) instead',
                   DeprecationWarning)
     return gauss_kl(q_mu, q_sqrt, K)
