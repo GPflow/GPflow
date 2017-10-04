@@ -9,6 +9,12 @@ from gpflow import settings
 
 float_type = settings.dtypes.float_type
 
+def squareT(A):
+    """
+    Returns (A Aᵀ)
+    """
+    return A.dot(A.T)
+
 class DiagsTest(GPflowTestCase):
     """
     The covariance of q(x) can be Cholesky matrices or diagonal matrices.
@@ -27,7 +33,7 @@ class DiagsTest(GPflowTestCase):
             self.mu_data = self.rng.randn(M, N)
             self.sqrt_data = self.rng.randn(M, N)
             Ksqrt = self.rng.randn(M, M)
-            self.K_data = Ksqrt @ Ksqrt.T + 1e-6 * np.eye(M)
+            self.K_data = squareT(Ksqrt) + 1e-6 * np.eye(M)
 
             self.feed_dict = {
                 self.mu: self.mu_data,
@@ -135,7 +141,7 @@ class EqualityTest(GPflowTestCase):
                 self.mu: np.zeros((M, N)),
                 self.sqrt: self.sqrt_data,
                 self.chol: self.chol_data,
-                self.K: sqrt_chol @ sqrt_chol.T,
+                self.K: squareT(sqrt_chol),
                 self.Kdiag: np.diag(sqrt_diag ** 2),
                 }
 
