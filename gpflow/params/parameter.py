@@ -230,7 +230,7 @@ class Parameter(Node):
 
         log_jacobian = self.transform.log_jacobian_tensor(self.unconstrained_tensor)
         logp_var = self.prior.logp(self.constrained_tensor)
-        return tf.add(logp_var, log_jacobian, name=prior_name)
+        return tf.squeeze(tf.add(logp_var, log_jacobian, name=prior_name))
 
     def _check_tensor_trainable(self, tensor):
         is_trainable = misc.is_tensor_trainable(tensor)
