@@ -143,14 +143,14 @@ def create_approx_func_val(model, data_dim, theta):
             feats = feats_func(x_ph)
 
             func = tf.matmul(feats, theta)
-            func_deriv = tf.squeeze(tf.gradients(func, x_ph))
+            func_deriv = tf.gradients(func, x_ph)
 
 
     def approx_func(X):
         X = np.atleast_2d(X)
-        func_evald = tf_sess.run(func, feed_dict={x_ph:X, x_free: model.kern.get_free_state()})
-        deriv_evald = tf_sess.run(func_deriv, feed_dict={x_ph:X, x_free: model.kern.get_free_state()})
-        return func_evald, deriv_evald
+        func_evald, deriv_evald = tf_sess.run([func, func_deriv],
+                                              feed_dict={x_ph:X, x_free: model.kern.get_free_state()})
+        return func_evald[0].astype(np.float64), deriv_evald[0].astype(np.float64)
 
     return approx_func
 
@@ -158,8 +158,10 @@ def create_approx_func_val(model, data_dim, theta):
 
 def thompson_sample_min():
     """
-    Show how Thompson Sampling can be used using the random features to sample from continuous domain.
+    Show how Thompson Sampling can be used using the random features to sample from
+    a continuous domain.
     """
+    PLOT_EACH_SAMPLE = False
 
     rng = np.random.RandomState(100)
     x_data, x_axis_points = create_random_x_data(rng)
@@ -209,7 +211,15 @@ def thompson_sample_min():
         x = opt_res.x
         f = f_sample(opt_res.x)[0]
 
+        if PLOT_EACH_SAMPLE:
+            phi_at_xindcs = approx_features_func(x_axis_points)
+            sample = phi_at_xindcs @ theta_sample
+            plt.plot(x_axis_points, sample)
+
         plt.plot(x, f, 'o', color='#727882', label="min_{}".format(j))
+
+        if PLOT_EACH_SAMPLE:
+            plt.show()
 
     try:
         inducing_values = model.Z.value
@@ -222,6 +232,6 @@ def thompson_sample_min():
 
 
 if __name__ == '__main__':
-    thompson_sample_min()
+    draw_samples()
 
 
