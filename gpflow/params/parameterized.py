@@ -210,8 +210,9 @@ class Parameterized(Node):
         """
         priors = []
         for param in self.params:
-            if not (isinstance(param, DataHolder) or
-                    (isinstance(param, Parameterized) and param.empty)):
+            if not isinstance(param, DataHolder):
+                if isinstance(param, Parameterized) and param.prior_tensor is None:
+                    continue
                 priors.append(param.prior_tensor)
 
         # TODO(@awav): What prior must represent empty list of parameters?
