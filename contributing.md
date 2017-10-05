@@ -1,5 +1,5 @@
 # Contributing to GPflow
-This file contains notes for potential contribtors to GPflow, as well as some notes that may be helpful for maintainance.
+This file contains notes for potential contributors to GPflow, as well as some notes that may be helpful for maintenance.
 
 ## Project scope
 We do welcome contributions to GPflow. However, the project is deliberately of limited scope, to try to ensure a high quality codebase: if you'd like to contribute a feature, please raise discussion via a github issue. Large features also make it onto the [roadmap](roadmap.md).
@@ -8,7 +8,7 @@ Due to limited scope we may not be able to review and merge every feature, howev
 
 ## Code Style
  - Python code should follow the pep8 style. To help with this, we suggest using a plugin for your editor.
- - Practise good code as far as is reasonable. Simpler is usually better. Compicated language features (I'm looking at you, metaclasses) are out. Reading the existing GPflow code should give a good idea of the expected style.
+ - Practise good code as far as is reasonable. Simpler is usually better. Complicated language features (I'm looking at you, metaclasses) are out. Reading the existing GPflow code should give a good idea of the expected style.
 
 ## Pull requests and the master branch
 If you think that your contribution falls within the project scope (see above) please submit a Pull Request (PR) to our GitHub page. In order to maintain code quality, and make life easy for the reviewers, please ensure that your PR:
@@ -31,15 +31,15 @@ GPflow's documentation is not comprehensive, but covers enough to get users star
 
 ## Keeping up with tensorflow
 GPflow tries to keep up with api changes in tensorflow as far as is reasonable, so that the latest GPflow will work with the latest (stable) tensorflow. Changing the version of tensorflow that we're compatible with requires a few tasks:
- - update version used on travis via `travis.yml`
- - update version used on codeship (requires codeship login)
- - update `README.md`
- - update version ussed by readthedocs.org via `docsrequire.txt`
+ - Update version used on travis via `travis.yml`
+ - Update version used on codeship (requires codeship login)
+ - Update `README.md`
+ - Update version used by readthedocs.org via `docsrequire.txt`
  - Increment the GPflow version (see below).
 
 ## Version numbering
-The main purpose of versioning GPflow is user convenience: to keep the number of releases down, we try to combine seversal PRs into one increment. As we work towards something that we might call 1.0, minor version bumps (X.1.X) are reserved for changes that alter the underlying code or code structure significantly. Minor-minor version bumps (X.X.1) are used for changes that change the GPflow API, update to a follow a new TensorFlow API, or introduce incremental new features.
+The main purpose of versioning GPflow is user convenience: to keep the number of releases down, we try to combine several PRs into one increment. As we work towards something that we might call 1.0, minor version bumps (X.1.X) are reserved for changes that alter the underlying code or code structure significantly. Minor-minor version bumps (X.X.1) are used for changes that change the GPflow API, update to a follow a new TensorFlow API, or introduce incremental new features.
 When incrementing the version number, the following tasks are required:
  - Update the version in `gpflow/_version.py`
- - Udate the version in the `doc/source/conf.py`
+ - Update the version in the `doc/source/conf.py`
  - Add a note to `RELEASE.md`
