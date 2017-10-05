@@ -21,7 +21,7 @@ from .mean_functions import Zero
 from ._settings import settings
 from . import transforms
 from .conditionals import conditional
-from .kullback_leiblers import gauss_kl_white
+from .kullback_leiblers import gauss_kl
 float_type = settings.dtypes.float_type
 
 
@@ -95,7 +95,7 @@ class VGP(GPModel):
         """
 
         # Get prior KL.
-        KL = gauss_kl_white(self.q_mu, self.q_sqrt)
+        KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
         K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=float_type) * settings.numerics.jitter_level

@@ -90,15 +90,25 @@ class TestKernExpDelta(GPflowTestCase):
                 orig = k.compute_Kdiag(self.Xmu)
                 self.assertTrue(np.allclose(orig, kdiag))
 
-    def test_exKxz(self):
+    def test_exKxz_pairwise(self):
         with self.test_session():
             covall = np.array([self.Xcov, self.Xcovc])
             for k in self.kernels:
                 if type(k) is ekernels.Linear:
                     continue
-                exKxz = k.compute_exKxz(self.Z, self.Xmu, covall)
+                exKxz = k.compute_exKxz_pairwise(self.Z, self.Xmu, covall)
                 Kxz = k.compute_K(self.Xmu[:-1, :], self.Z)  # NxM
                 xKxz = np.einsum('nm,nd->nmd', Kxz, self.Xmu[1:, :])
+                self.assertTrue(np.allclose(xKxz, exKxz))
+
+    def test_exKxz(self):
+        with self.test_session():
+            for k in self.kernels:
+                if type(k) is ekernels.Linear:
+                    continue
+                exKxz = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
+                Kxz = k.compute_K(self.Xmu, self.Z)  # NxM
+                xKxz = np.einsum('nm,nd->nmd', Kxz, self.Xmu)
                 self.assertTrue(np.allclose(xKxz, exKxz))
 
     def test_Kxz(self):
@@ -187,7 +197,8 @@ class TestExpxKxzActiveDims(GPflowTestCase):
             self.Z = self.rng.rand(3, self.D)
             unconstrained = self.rng.randn(self.N, 2 * self.D, self.D)
             t = TriDiagonalBlockRep()
-            self.Xcov = t.forward(unconstrained)
+            self.Xcov_pairwise = t.forward(unconstrained)
+            self.Xcov = self.Xcov_pairwise[0]  # no cross-covariances
 
             variance = 0.3 + self.rng.rand()
 
@@ -209,7 +220,7 @@ class TestExpxKxzActiveDims(GPflowTestCase):
             klin = kernels.Linear(2, variance)
             self.pkernels = [k1, klin]
 
-    def test_quad_active_dims(self):
+    def test_quad_active_dims_pairwise(self):
         with self.test_session():
             for k, pk in zip(self.kernels, self.pkernels):
 
@@ -223,10 +234,36 @@ class TestExpxKxzActiveDims(GPflowTestCase):
 
                 k.input_size = self.Xmu.shape[1]
                 pk.input_size = self.Xmu.shape[1]
+                a = k.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov_pairwise)
+                b = pk.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov_pairwise)
+                self.assertFalse(np.all(a == b))
+                exp_shape = np.array([self.N - 1, self.Z.shape[0], self.D])
+                self.assertTrue(np.all(a.shape == exp_shape),
+                                msg="Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape)))
+
+            for k, pk in zip(self.ekernels, self.pekernels):
+                try:
+                    k.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov_pairwise)
+                    pk.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov_pairwise)
+                except Exception as e:
+                    self.assertTrue(type(e) is tf.errors.InvalidArgumentError)
+
+    def test_quad_active_dims(self):
+        with self.test_session():
+            for k, pk in zip(self.kernels, self.pkernels):
+                # TODO(@markvdw):
+                # exKxz is interacts slightly oddly with `active_dims`.
+                # It can't be implemented by simply dropping the dependence on certain inputs.
+                # As we still need to output the outer product between x_{t-1} and K_{x_t, Z}.
+                # So we can't do a comparison to a kernel that just takes a smaller X as an input.
+                # It may be possible to do this though for a carefully crafted `Xcov`.
+                # However, I'll leave that as a todo for now.
+                k.input_size = self.Xmu.shape[1]
+                pk.input_size = self.Xmu.shape[1]
                 a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
                 b = pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
                 self.assertFalse(np.all(a == b))
-                exp_shape = np.array([self.N - 1, self.Z.shape[0], self.D])
+                exp_shape = np.array([self.N, self.Z.shape[0], self.D])
                 self.assertTrue(np.all(a.shape == exp_shape),
                                 msg="Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape)))
 
@@ -332,7 +369,7 @@ class TestKernExpQuadrature(GPflowTestCase):
                 b = ek.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov[0, :, :, :])
                 _assert_pdeq(self, a, b, k)
 
-    def test_exKxz(self):
+    def test_exKxz_pairwise(self):
         with self.test_session():
             for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
                 if type(k) is kernels.Add and hasattr(k, 'input_size'):
@@ -341,9 +378,21 @@ class TestKernExpQuadrature(GPflowTestCase):
 
                 k._kill_autoflow()
                 k.num_gauss_hermite_points = self.num_gauss_hermite_points
-                a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
-                b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov)
+                a = k.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov)
+                b = ek.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov)
                 _assert_pdeq(self, a, b, k, i, len(self.kernels))
+
+    def test_exKxz(self):
+        for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
+            if type(k) is kernels.Add and hasattr(k, 'input_size'):
+                # xKxz does not work with slicing yet
+                continue
+
+            k._kill_autoflow()
+            k.num_gauss_hermite_points = self.num_gauss_hermite_points
+            a = k.compute_exKxz(self.Z, self.Xmu, self.Xcov[0])
+            b = ek.compute_exKxz(self.Z, self.Xmu, self.Xcov[0])
+            _assert_pdeq(self, a, b, k, i, len(self.kernels))
 
     def test_switch_quadrature(self):
         with self.test_session():
