@@ -9,15 +9,15 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=latest)](http://gpflow.readthedocs.io/en/latest/?badge=latest)
 
 # Coming soon: GPflow 1.0
-We're working to improve GPflow, and @awav has undertaken a considerable reconfigurration of the code. There are several objectives:
- - make GPflow variable names line up with tensorflow scopes
- - line up GPflow params and tensorflow variables
+We're working to improve GPflow, and @awav has undertaken a considerable reconfiguration of the code. There are several objectives:
+ - make GPflow variable names line up with TensorFlow scopes
+ - line up GPflow params and TensorFlow variables
  - allow GPflow to integrate into other projects (you can pass your own tensors into GPflow models)
  - better handling of tf.graphs and sessions
  - cleaner autoflow implementation
  - more transparent code
  
- This update will break backward-compatibility, but the current version of GPflow will still be available. Brave GPflowers can check out the code here: https://github.com/GPflow/GPflow/tree/GPflow-1.0-RC
+This update will break backward-compatibility, but the current version of GPflow will still be available. Brave GPflowers can check out the code here: https://github.com/GPflow/GPflow/tree/GPflow-1.0-RC
 
 # What does GPflow do?
 
@@ -33,7 +33,7 @@ pip install .
 in the root folder. This also installs required dependencies including TensorFlow. When GPU support is needed, a manual installation of TensorFlow is recommended (next section), as one cannot rely on pip to get this running.
 
 ## 2) Alternative method
-A different option to install GPflow requires installation of TensorFlow first. Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r1.0/get_started/get_started). You will need at least version 1.0 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend  
+A different option to install GPflow requires installation of TensorFlow first. Please see instructions on the main [TensorFlow webpage](https://www.tensorflow.org/get_started/get_started). You will need at least version 1.0 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend  
 ```
 python setup.py develop
 ```
@@ -43,11 +43,11 @@ python setup.py install
 ```
 You can run the tests with `python setup.py test`.
 
-Version history is documented [here.](https://github.com/GPflow/GPflow/blob/master/RELEASE.md)
+We document the [version history](https://github.com/GPflow/GPflow/blob/master/RELEASE.md).
 
 # Deprecation
 
-Python package name `GPflow` is no longer supported, it has been changed to lower-case name `gpflow`. You can adapt your code to new renamed package by running these commands:
+The python package name `GPflow` is no longer supported, it has been changed to the lower-case name `gpflow`. You can adapt your code to the new renamed package by running these commands:
 
 ```bash
 ## All files will be backed-up with `.bak` suffix
@@ -64,13 +64,13 @@ We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which 
 docker run -it -p 8888:8888 gpflow/gpflow
 ```
 
-Code to generate the image can be found [here](Dockerfile)
+The image can be generated using our [Dockerfile](Dockerfile).
 
 # Getting help
-Please use gihub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.
+Please use GitHub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.
 
 # Contributing
-All constuctive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
+All constructive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
 
 # Projects using GPflow
 
