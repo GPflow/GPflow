@@ -12,3 +12,4 @@ from gpflow.models.sgpr import GPRFITC
 from gpflow.models.svgp import SVGP
 from gpflow.models.vgp import VGP
 from gpflow.models.vgp import VGP_opper_archambeau
+from gpflow.models.bin_class_ep_gp import EPBinClassGP
