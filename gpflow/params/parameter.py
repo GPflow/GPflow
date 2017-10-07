@@ -66,15 +66,15 @@ class Parameter(Node):
         return self._value.shape
 
     @property
-    def size(self):
-        """The size of this parameter, equivalent to self.value.size"""
-        return np.multiply.reduce(self.shape, dtype=np.int32)
-
-    @property
     def dtype(self):
         if self.parameter_tensor is None:
             return self._value.dtype
         return np.dtype(self.parameter_tensor.dtype.as_numpy_dtype)
+
+    @property
+    def size(self):
+        """The size of this parameter, equivalent to self.value.size"""
+        return np.multiply.reduce(self.shape, dtype=np.int32)
 
     @property
     def parameter_tensor(self):
@@ -187,9 +187,10 @@ class Parameter(Node):
 
     def _clear(self):
         self._externally_defined = False   # pylint: disable=W0201
-        self._prior_tensor = None          # pylint: disable=W0201
+        self._initial_value_tensor = None  # pylint: disable=W0201
         self._unconstrained_tensor = None  # pylint: disable=W0201
         self._constrained_tensor = None    # pylint: disable=W0201
+        self._prior_tensor = None          # pylint: disable=W0201
 
     def _build(self):
         self._unconstrained_tensor = self._build_parameter()  # pylint: disable=W0201

@@ -42,6 +42,12 @@ class DataHolder(Parameter):
     def parameter_tensor(self):
         return self._dataholder_tensor
 
+    @property
+    def shape(self):
+        if self.parameter_tensor is not None:
+            return tuple(self.parameter_tensor.shape.as_list())
+        return self._value.shape
+
     def set_trainable(self, _value, graph=None):
         raise NotImplementedError('Data holder cannot be fixed.')
 
@@ -64,6 +70,7 @@ class DataHolder(Parameter):
         self._dataholder_tensor = self._build_parameter()  # pylint: disable=W0201
 
     def _init_parameter_defaults(self):
+        self._initial_value_tensor = None
         self._dataholder_tensor = None
 
     def _init_parameter_attributes(self, _prior, _transform, _trainable):
