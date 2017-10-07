@@ -1,10 +1,11 @@
 import abc
 import tensorflow as tf
 
-from gpflow import session_manager
-from gpflow.core.base import Build
-from gpflow.core.base import GPflowError
-from gpflow.core.base import Parentable, ICompilable
+from .. import session_manager
+from ..core.base import Build
+from ..core.base import GPflowError
+from ..core.base import ICompilable
+from ..core.parentable import Parentable
 
 
 class Node(Parentable, ICompilable): # pylint: disable=W0223

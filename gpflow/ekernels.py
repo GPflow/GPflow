@@ -177,8 +177,8 @@ class Add(kernels.Add):
     better to do quadrature on the summed kernel function using `gpflow.kernels.Add` instead.
     """
 
-    def __init__(self, kern_list):
-        kernels.Add.__init__(self, kern_list)
+    def __init__(self, kern_list, name=None):
+        kernels.Add.__init__(self, kern_list, name=name)
         self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
 
     def eKdiag(self, X, Xcov):

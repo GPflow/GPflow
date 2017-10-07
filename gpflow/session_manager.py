@@ -47,7 +47,6 @@ class TracerSession(tf.Session):
         dir_stub = ''
         if self.output_directory is not None:
             dir_stub = self.output_directory
-        print(dir_stub, self.output_directory, self.output_file_name)
         if self.each_time:
             filename = '{0}_{1}.json'.format(
                 self.output_file_name, self.counter)

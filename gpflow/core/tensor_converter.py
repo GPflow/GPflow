@@ -13,10 +13,9 @@
 # limitations under the License.
 
 
-from gpflow.core.base import GPflowError
-from gpflow.core.base import Parentable
-from gpflow.misc import get_attribute
-
+from .. import misc
+from ..core.base import GPflowError
+from ..core.parentable import Parentable
 
 class TensorConverter:  # pylint: disable=R0903
     __tensor_mode__ = '_tensor_mode'
@@ -26,9 +25,9 @@ class TensorConverter:  # pylint: disable=R0903
         if not isinstance(obj, Parentable):
             raise ValueError('Tensor mode works only with parentable objects.')
         while True:
-            if get_attribute(obj, cls.__tensor_mode__, allow_fail=True) is not None:
+            if misc.get_attribute(obj, cls.__tensor_mode__, allow_fail=True) is not None:
                 return True
-            parent = get_attribute(obj, '_parent')
+            parent = misc.get_attribute(obj, '_parent')
             if parent is None:
                 break
             if parent is obj:

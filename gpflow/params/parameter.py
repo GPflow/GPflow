@@ -62,7 +62,7 @@ class Parameter(Node):
     @property
     def shape(self):
         if self.parameter_tensor is not None:
-            return tuple(self.parameter_tensor.shape.as_list())
+            return tuple(self._constrained_tensor.shape.as_list())
         return self._value.shape
 
     @property
@@ -104,7 +104,9 @@ class Parameter(Node):
 
     @property
     def initializable_feeds(self):
-        return None
+        if self._externally_defined:
+            return None
+        return {self._initial_value_tensor: self._apply_transform(self._value)}
 
     @property
     def graph(self):
@@ -154,13 +156,15 @@ class Parameter(Node):
         value = Parameter._valid_input(value)
         if self.is_built_coherence() is Build.YES:
             if self.shape != value.shape:
-                raise GPflowError('Value has different shape.')
+                raise GPflowError('Value has different shape. '
+                                  'Parameter shape {0}, value shape {1}.'
+                                  .format(self.shape, value.shape))
+            self._value[...] = value.copy()
             session = self.enquire_session(session)
             self.is_built_coherence(graph=session.graph)
-            transformed_value = self._apply_transform(value)
-            self.parameter_tensor.load(transformed_value, session=session)
+            self.initialize(session=session)
         else:
-            self._value[...] = value
+            self._value[...] = value.copy()
 
     def read_value(self, session=None):
         session = self.enquire_session(session, allow_none=True)
@@ -200,17 +204,17 @@ class Parameter(Node):
         name = self._parameter_name()
         tensor = misc.get_variable_by_name(name)
         if tensor is not None:
-            self._check_tensor_trainable(tensor)
-            return tensor
+            raise GPflowError('Tensor with name "{name}" already exists, {tensor}.'
+                              .format(name=name, tensor=tensor))
+            # self._check_tensor_trainable(tensor)
+            # return tensor
 
         value = self._apply_transform(self._value)
-        init = tf.constant_initializer(value, dtype=settings.tf_float)
-        return tf.get_variable(
-            name,
-            shape=value.shape,
-            initializer=init,
-            dtype=settings.tf_float,
-            trainable=self.trainable)
+        dtype = value.dtype
+        shape = value.shape
+        init = tf.placeholder(dtype, shape=shape, name='initial_unconstrained_value')
+        self._initial_value_tensor = init
+        return tf.get_variable(name, initializer=init, trainable=self.trainable)
 
     def _build_constrained(self):
         if not misc.is_tensor(self.parameter_tensor):  # pragma: no cover
@@ -243,6 +247,7 @@ class Parameter(Node):
             raise GPflowError(msg.format(tensor_status, param_status))
 
     def _init_parameter_defaults(self):
+        self._initial_value_tensor = None
         self._unconstrained_tensor = None
         self._prior_tensor = None
         self._constrained_tensor = None

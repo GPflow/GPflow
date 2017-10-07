@@ -15,8 +15,6 @@
 import abc
 import enum
 
-from gpflow.misc import tensor_name
-
 
 class GPflowError(Exception):
     pass
@@ -134,62 +132,3 @@ class ITransform:
         A short string describing the nature of the constraint
         """
         raise NotImplementedError
-
-
-class Parentable:
-    """
-    A very simple class for objects in a tree, where each node contains a
-    reference to '_parent'.
-
-    This class can figure out its own name (by seeing what it's called by the
-    _parent's __dict__) and also recurse up to the root.
-    """
-
-    def __init__(self, name=None):
-        self._parent = None
-        self._name = self._define_name(name)
-
-    @property
-    def root(self):
-        """A reference to the top of the tree, usually a Model instance"""
-        if self._parent is None:
-            return self
-        return self._parent.root
-
-    @property
-    def parent(self):
-        if self._parent is None:
-            return self
-        return self._parent
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def full_name(self):
-        """
-        This is a unique identifier for a param object within a structure, made
-        by concatenating the names through the tree.
-        """
-        if self._parent is None:
-            return self.name
-        return tensor_name(self._parent.full_name, self.name)
-
-    def set_name(self, name=None):
-        self._name = self._define_name(name)
-
-    def set_parent(self, parent=None):
-        self._parent = parent
-
-    def _define_name(self, name):
-        return self.__class__.__name__ if name is None else name
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        state.pop('_parent')
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self._parent = None
