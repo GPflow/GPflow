@@ -14,6 +14,13 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
         super(Node, self).__init__(name=name)
         self._session = None
 
+    @abc.abstractmethod
+    def anchor(self):
+        raise NotImplementedError('Public method anchor must be implemented by successor.')
+
+    @abc.abstractmethod
+    def _clear(self):
+        raise NotImplementedError('Private method clear must be implemented by successor.')
     @property
     def session(self):
         if self._session is not None:
@@ -104,7 +111,3 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
         elif is_built is Build.NO:
             with tf.name_scope(name):
                 self._build()
-
-    @abc.abstractmethod
-    def _clear(self):
-        raise NotImplementedError('Private method clear must be implemented by successor.')

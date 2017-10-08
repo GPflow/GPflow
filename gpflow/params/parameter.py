@@ -114,6 +114,10 @@ class Parameter(Node):
             return None
         return self.parameter_tensor.graph
 
+    def anchor(self):
+        if self.trainable:
+            self.assign(self.read_value())
+
     def is_built(self, graph):
         if graph is None:
             raise ValueError('Graph is not specified.')
@@ -186,6 +190,7 @@ class Parameter(Node):
         return value
 
     def _clear(self):
+        self._reset_name()
         self._externally_defined = False   # pylint: disable=W0201
         self._initial_value_tensor = None  # pylint: disable=W0201
         self._unconstrained_tensor = None  # pylint: disable=W0201

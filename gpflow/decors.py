@@ -13,17 +13,17 @@
 # limitations under the License.
 
 import functools
-import tensorflow as tf
-
 import contextlib
 
-from gpflow.core.base import GPflowError
-from gpflow.core.base import Build
-from gpflow.core.node import Node
-from gpflow.core.autoflow import AutoFlow
-from gpflow.core.tensor_converter import TensorConverter
+import tensorflow as tf
 
-from gpflow.params import Parameterized
+from .core.base import GPflowError
+from .core.base import Build
+from .core.node import Node
+from .core.autoflow import AutoFlow
+from .core.tensor_converter import TensorConverter
+
+from .params import Parameterized
 
 
 def name_scope(name=None):
@@ -41,7 +41,8 @@ def params_as_tensors(method):
     @functools.wraps(method)
     def tensor_mode_wrapper(obj, *args, **kwargs):
         if not isinstance(obj, Parameterized):
-            raise GPflowError('Tensor mode works only for parmeterized object.')
+            raise GPflowError(
+                'Tensor mode works only for parmeterized object.')
         prev_value = _params_as_tensors_enter(obj, True)
         try:
             result = method(obj, *args, **kwargs)
@@ -65,7 +66,8 @@ def autoflow(*af_args, **af_kwargs):
         @functools.wraps(method)
         def runnable(obj, *args, **kwargs):
             if not isinstance(obj, Node):
-                raise GPflowError('Tensor mode works only for node-like object.')
+                raise GPflowError(
+                    'Tensor mode works only for node-like object.')
             if obj.is_built_coherence(obj.graph) is Build.NO:
                 raise GPflowError('Compilable object is not built.')
             name = method.__name__
@@ -88,12 +90,14 @@ def _params_as_tensors_enter(obj, convert=True):
     setattr(obj, name, convert)
     return attr_value
 
+
 def _params_as_tensors_exit(obj, previous):
     name = TensorConverter.__tensor_mode__
     if previous is not None:
         setattr(obj, name, previous)
     else:
         delattr(obj, name)
+
 
 def _setup_storage(store, *args, **_kwargs):
     store['arguments'] = [tf.placeholder(*arg) for arg in args]

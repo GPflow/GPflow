@@ -63,7 +63,8 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
     def _initialize_optimizer(self, variables, session):
         # TODO(@awav): AdamOptimizer creates beta1 and beta2 variables which are
         #             not included in slots.
-        extra_vars = [v for v in self.optimizer.__dict__.values() if isinstance(v, tf.Variable)]
+        extra_vars = [v for v in self.optimizer.__dict__.values()
+                      if isinstance(v, tf.Variable)]
         optimizer_vars = [self.optimizer.get_slot(var, name)
                           for name in self.optimizer.get_slot_names()
                           for var in variables]

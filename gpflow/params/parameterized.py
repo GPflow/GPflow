@@ -147,6 +147,10 @@ class Parameterized(Node):
         for param in self.params:
             param.trainable = value
 
+    def anchor(self):
+        for parameter in self.trainable_parameters:
+            parameter.assign(parameter.read_value())
+
     def read_trainables(self, session=None):
         session = self.enquire_session(session, allow_none=True)
         return [param.read_value(session) for param in self.trainable_parameters]
@@ -196,6 +200,7 @@ class Parameterized(Node):
     def _clear(self):
         self._prior_tensor = None
         AutoFlow.clear_autoflow(self)
+        self._reset_name()
         for param in self.params:
             param._clear()  # pylint: disable=W0212
 

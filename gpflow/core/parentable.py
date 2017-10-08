@@ -70,6 +70,10 @@ class Parentable:
     def set_parent(self, parent=None):
         self._parent = parent
 
+    def _reset_name(self):
+        if self.raw_name != self.name:
+            self._name = self._define_name(None)
+
     def _define_name(self, name):
         if name:
             return name

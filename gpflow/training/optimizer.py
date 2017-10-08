@@ -21,8 +21,8 @@ from __future__ import print_function
 
 import abc
 
-from gpflow.core.base import Build
-from gpflow.core.base import GPflowError
+from ..core.base import Build
+from ..core.base import GPflowError
 
 
 class Optimizer:
@@ -39,7 +39,7 @@ class Optimizer:
         return session
 
     def _pop_var_list(self, model, kwargs):
-        #if not var_list:
+        # if not var_list:
         #    raise ValueError('List of trainable variables is not empty.')
         return list(set(model.trainable_tensors).union(kwargs.pop('var_list', [])))
 
