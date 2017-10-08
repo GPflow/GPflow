@@ -25,8 +25,9 @@ class TensorConverter:  # pylint: disable=R0903
         if not isinstance(obj, Parentable):
             raise ValueError('Tensor mode works only with parentable objects.')
         while True:
-            if misc.get_attribute(obj, cls.__tensor_mode__, allow_fail=True) is not None:
-                return True
+            mode = misc.get_attribute(obj, cls.__tensor_mode__, allow_fail=True)
+            if mode is not None:
+                return mode
             parent = misc.get_attribute(obj, '_parent')
             if parent is None:
                 break

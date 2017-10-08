@@ -18,10 +18,13 @@ import tensorflow as tf
 import numpy as np
 
 from .. import settings
-from .. import transforms, conditionals, kullback_leiblers
+from .. import transforms
+from .. import conditionals
+from .. import kullback_leiblers
 
 from ..params import Parameter
-from ..params import Minibatch, DataHolder
+from ..params import Minibatch
+from ..params import DataHolder
 
 from ..decors import params_as_tensors
 

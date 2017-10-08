@@ -15,6 +15,7 @@
 import functools
 import tensorflow as tf
 
+import contextlib
 
 from gpflow.core.base import GPflowError
 from gpflow.core.base import Build
@@ -41,18 +42,22 @@ def params_as_tensors(method):
     def tensor_mode_wrapper(obj, *args, **kwargs):
         if not isinstance(obj, Parameterized):
             raise GPflowError('Tensor mode works only for parmeterized object.')
-        name = TensorConverter.__tensor_mode__
-        attr_value = getattr(obj, name, None)
-        setattr(obj, name, True)
+        prev_value = _params_as_tensors_enter(obj, True)
         try:
             result = method(obj, *args, **kwargs)
         finally:
-            if attr_value is not None:
-                setattr(obj, name, attr_value)
-            else:
-                delattr(obj, name)
+            _params_as_tensors_exit(obj, prev_value)
         return result
     return tensor_mode_wrapper
+
+
+@contextlib.contextmanager
+def params_as_tensors_for(obj, convert=True):
+    prev_value = _params_as_tensors_enter(obj, convert)
+    try:
+        yield
+    finally:
+        _params_as_tensors_exit(obj, prev_value)
 
 
 def autoflow(*af_args, **af_kwargs):
@@ -76,6 +81,19 @@ def autoflow(*af_args, **af_kwargs):
         return runnable
     return autoflow_wrapper
 
+
+def _params_as_tensors_enter(obj, convert=True):
+    name = TensorConverter.__tensor_mode__
+    attr_value = getattr(obj, name, None)
+    setattr(obj, name, convert)
+    return attr_value
+
+def _params_as_tensors_exit(obj, previous):
+    name = TensorConverter.__tensor_mode__
+    if previous is not None:
+        setattr(obj, name, previous)
+    else:
+        delattr(obj, name)
 
 def _setup_storage(store, *args, **_kwargs):
     store['arguments'] = [tf.placeholder(*arg) for arg in args]

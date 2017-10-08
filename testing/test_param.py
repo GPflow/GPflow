@@ -28,8 +28,10 @@ except ImportError:
 
 class NamingTests(test_util.GPflowTestCase):
     def test_standard_name(self):
+        p_index = gpflow.core.parentable.Parentable._read_index() + 1
         p = gpflow.Param(1)
-        self.assertTrue(p.name == 'Parameter')
+        self.assertEqual(p.name, 'Parameter')
+        self.assertEqual(p.raw_name, '{}/Parameter'.format(p_index))
 
     def test_full_fame(self):
         p1_index = gpflow.core.parentable.Parentable._read_index() + 1
@@ -42,6 +44,8 @@ class NamingTests(test_util.GPflowTestCase):
         m.p = p1
         self.assertEqual(m.full_name, '{index}/Model'.format(index=model_index))
         self.assertEqual(m.p.full_name, '{index}/Model/p'.format(index=model_index))
+        self.assertEqual(m.full_name, m.raw_name)
+        self.assertEqual(m.p.full_name, '{}/p'.format(m.raw_name))
 
 
 class ParamTests(test_util.GPflowTestCase):
@@ -582,7 +586,7 @@ class TestScopes(test_util.GPflowTestCase):
 
     def test_likelihood_name(self):
         likelihood = self.m.likelihood_tensor
-        expected_name = self.m.name + '/likelihood'
+        expected_name = self.m.raw_name + '/likelihood'
         self.assertTrue(likelihood.name.startswith(expected_name))
 
     def test_kern_name(self):

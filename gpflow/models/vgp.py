@@ -16,16 +16,17 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
-from gpflow import transforms
+from .. import settings
+from .. import transforms
 
-from gpflow.params import Parameter, DataHolder
-from gpflow.decors import params_as_tensors
-from gpflow.models.model import GPModel
-from gpflow.mean_functions import Zero
-from gpflow.conditionals import conditional
-from gpflow.kullback_leiblers import gauss_kl_white
+from ..params import Parameter
+from ..params import DataHolder
+from ..decors import params_as_tensors
 
+from ..mean_functions import Zero
+from ..conditionals import conditional
+from ..kullback_leiblers import gauss_kl_white
+from ..models.model import GPModel
 
 class VGP(GPModel):
     """

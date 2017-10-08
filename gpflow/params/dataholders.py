@@ -61,7 +61,7 @@ class DataHolder(Parameter):
         return Build.NO
 
     def _parameter_name(self):
-        return '/'.join([self.full_name, 'dataholder'])
+        return misc.tensor_name(self.full_name, 'dataholder')
 
     def _clear(self):
         self._dataholder_tensor = None  # pylint: disable=W0201
@@ -120,7 +120,10 @@ class FormlessData(DataHolder):
         return tf.placeholder(dtype, shape=None, name=name)
 
     def _parameter_name(self):
-        return '/'.join([self.full_name, 'formlessdata'])
+        name = 'formlessdata'
+        if self.parent is self:
+            return misc.tensor_name(self.full_name, name)
+        return name
 
 
 class Minibatch(DataHolder):
@@ -184,4 +187,7 @@ class Minibatch(DataHolder):
         self._seed = None
 
     def _parameter_name(self):
-        return '/'.join([self.full_name, 'minibatch'])
+        name = 'minibatch'
+        if self.parent is self:
+            return misc.tensor_name(self.full_name, name)
+        return name

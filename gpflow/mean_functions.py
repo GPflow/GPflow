@@ -16,9 +16,11 @@
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
-from gpflow.params import Parameter, Parameterized, ParamList
-from gpflow.decors import params_as_tensors
+from . import settings
+from .params import Parameter
+from .params import Parameterized
+from .params import ParamList
+from .decors import params_as_tensors
 
 
 class MeanFunction(Parameterized):

@@ -97,7 +97,7 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
         return session
 
     def _build_with_name_scope(self, name=None):
-        name = self.name if name is None else name
+        name = self.raw_name if name is None else name
         is_built = self.is_built(tf.get_default_graph())
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
             raise GPflowError('Tensor uses different graph.')

@@ -51,6 +51,10 @@ class Parentable:
         return self._name
 
     @property
+    def raw_name(self):
+        return self._name
+
+    @property
     def full_name(self):
         """
         This is a unique identifier for a param object within a structure, made
