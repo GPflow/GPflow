@@ -15,6 +15,7 @@ from .. import settings
 from .. import mean_functions
 from ..decors import params_as_tensors
 from gpflow.decors import autoflow
+from .. import gaussian_utils
 
 
 float_type = settings.dtypes.float_type
@@ -60,8 +61,8 @@ class EPBinClassGP(GPModel):
         self.tau_tilde = Parameter(np.zeros(Y.shape, dtype=np_float_type), trainable=False,
                                   name="tau_tilde")
 
-        self.max_ep_steps = 5
-        self.convergent_tol = 1e-4
+        self.max_ep_steps = 3
+        self.convergent_tol = 1e-6
 
 
     @params_as_tensors
@@ -80,8 +81,8 @@ class EPBinClassGP(GPModel):
 
                 # Have the old ones be moved far enough away from the new one to make sure that we
                 # go through the conditions initially
-                nu_tilde_old=10 * self.convergent_tol * tf.ones_like(self.nu_tilde, dtype=float_type),
-                tau_tilde_old=10 * self.convergent_tol * tf.ones_like(self.nu_tilde, dtype=float_type),
+                nu_tilde_old=tf.ones_like(self.nu_tilde, dtype=float_type),
+                tau_tilde_old=tf.ones_like(self.nu_tilde, dtype=float_type),
 
                 # See GPML Algo 3.5 for good initial starting values for Sigma and mu
                 sigma=K, mu=tf.zeros_like(self.nu_tilde, dtype=float_type),
@@ -95,14 +96,15 @@ class EPBinClassGP(GPModel):
 
         def condition(ep_iter_vals):
 
-            nu_change = tf.reduce_max(tf.abs(ep_iter_vals.nu_tilde_new - ep_iter_vals.nu_tilde_old))
-            #tau_change = tf.reduce_max(tf.abs(ep_iter_vals.tau_tilde_new - ep_iter_vals.tau_tilde_old))
-            #converged = tf.logical_and(tf.less_equal(nu_change, self.convergent_tol),
-            #                           tf.less_equal(tau_change, self.convergent_tol))
-            converged = tf.less_equal(nu_change, self.convergent_tol)
+            nu_change = tf.reduce_mean(tf.square(ep_iter_vals.nu_tilde_new - ep_iter_vals.nu_tilde_old), name="mean_nu_change")
+            tau_change = tf.reduce_mean(tf.square(ep_iter_vals.tau_tilde_new - ep_iter_vals.tau_tilde_old), name="mean_tau_change")
+            converged = tf.logical_and(tf.less_equal(nu_change, self.convergent_tol),
+                                       tf.less_equal(tau_change, self.convergent_tol), name="converged_bool")
+            #converged = tf.less_equal(nu_change, self.convergent_tol)
             # We carry on if we have not converged and we are less than the maximum number of steps.
-            return tf.logical_and(tf.less(ep_iter_vals.counter, self.max_ep_steps),
-                                  tf.logical_not(converged))
+            return tf.logical_or(tf.less(ep_iter_vals.counter, 1), # ensure run at least once.
+                                 tf.logical_and(tf.less(ep_iter_vals.counter, self.max_ep_steps),
+                                               tf.logical_not(converged)))
 
 
         def body(ep_iter_vals):
@@ -112,27 +114,25 @@ class EPBinClassGP(GPModel):
                                                          ep_iter_vals.tau_tilde_new, ep_iter_vals.mu,
                                                          ep_iter_vals.nu_tilde_new)
 
-
             # Line 7 of GPML Algo 3.5
             sigma_sq_mi = tf.reciprocal(tau_mi, name="sigma_sq_mi")
             mu_mi = tf.multiply(nu_mi, sigma_sq_mi, name="mu_mi")
             sqrt_one_plus_sigma_sq_mi = tf.sqrt(1 + sigma_sq_mi, name="sqrt_one_plus_sigma_sq_mi")
             zi = tf.identity(Y_between_m1_and_1 * mu_mi / sqrt_one_plus_sigma_sq_mi, name="zi")
-            norm_pdf_over_cdf_for_zi = tf.divide(std_normal_dist.prob(zi, name="prob_zi"), (VERY_SMALL_NUMBER + std_normal_dist.cdf(zi, name="cdf_zi")), name="norm_pdf_over_cdf_for_zi")
-            #TODO more stable way to do this^^^^^ look at other libraries.
+            norm_pdf_over_cdf_for_zi = gaussian_utils.deriv_log_cdf_normal(zi)
             mu_hat_i = tf.add(mu_mi, (Y_between_m1_and_1 * sigma_sq_mi * norm_pdf_over_cdf_for_zi / sqrt_one_plus_sigma_sq_mi),
                               name="mu_hat_i")
             sigma_sq_hat_i = tf.subtract(sigma_sq_mi, (tf.square(sigma_sq_mi) * norm_pdf_over_cdf_for_zi / (1 + sigma_sq_mi)) * \
                                            (zi + norm_pdf_over_cdf_for_zi), name="sigma_sq_hat_i")
 
             # Lines 8-9 of GPML Algo 3.5
-            tau_hat = tf.reciprocal(sigma_sq_hat_i)
+            tau_hat = tf.reciprocal(sigma_sq_hat_i, name="tau_hat")
             tau_tilde_newest = tf.maximum(tf.identity(tau_hat - tau_mi, name="tau_tilde_newest"), VERY_SMALL_NUMBER, name="tau_tilde_new_positive_enforced")
             nu_tilde_newest = tf.identity(tau_hat * mu_hat_i - nu_mi, name="nu_tilde_newest")
 
             # Lines 13-15 of GPML Algo 3.5 (as doing all at once do not bother with rank one updates)
             L, S_half_K = _cholesky_b(tau_tilde_newest, K, num_data=tf.shape(self.Y)[0])
-            V = tf.matrix_triangular_solve(tf.transpose(L), S_half_K, lower=False)
+            V = tf.matrix_triangular_solve(tf.transpose(L), S_half_K, lower=False, name="V")
             Sigma_newest = tf.subtract(K, tf.matmul(V, V, transpose_a=True), name="Sigma_new")
             mu_newest = tf.matmul(Sigma_newest, nu_tilde_newest, name="mu_new")
 
@@ -233,7 +233,11 @@ class EPBinClassGP(GPModel):
         v = tf.matrix_triangular_solve(L, tf.matmul(S_tilde_half, Kmn))
         Knn = self.kern.K(Xnew)
         var = Knn - tf.matmul(v, v, transpose_a=True)
-        #fixme convert back out into new space
+
+        if not full_cov:
+            var = tf.expand_dims(tf.diag_part(var), -1)
+            # ^ Consider whether faster way to do this.
+
         return f_new, var
 
     @autoflow()
@@ -271,6 +275,7 @@ def _calc_tau_mi(sigma, tau_tilde, mu, nu_tilde):
     with tf.name_scope("calc_tau_mi"):
         sigma_sq_i_inv = tf.reciprocal(tf.expand_dims(tf.diag_part(sigma), -1), name="sigma_sq_i_inv")
         tau_mi = tf.maximum(tf.subtract(sigma_sq_i_inv, tau_tilde, name="tau_mi"), VERY_SMALL_NUMBER, name="tau_mi_limited_to_zero")
+        #tau_mi = tf.subtract(sigma_sq_i_inv, tau_tilde, name="tau_mi")
         #FIXME --  can tau_mi actually be negative? is this a good thing to be doing?
         nu_mi = tf.subtract(sigma_sq_i_inv * mu, nu_tilde, name="nu_mi")
     return sigma_sq_i_inv, tau_mi, nu_mi
