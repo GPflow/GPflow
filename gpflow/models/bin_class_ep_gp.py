@@ -16,6 +16,7 @@ from .. import likelihoods
 from .. import settings
 from .. import mean_functions
 from ..decors import params_as_tensors
+from ..decors import params_as_tensors_for
 from gpflow.decors import autoflow
 from .. import gaussian_utils
 
@@ -160,7 +161,7 @@ class EPBinClassGP(GPModel):
         # A bit of a hack but I want to get hold of the Parameter objects and set the unconstrained
         # tensor -- which is the actual variable that I can assign to.
         #TODO: remove need of hack by breaking this method up into multiple functions...?
-        with self._temp_out_of_tensor_mode():
+        with params_as_tensors_for(self, convert=False):
             update_ops = [self.tau_tilde.unconstrained_tensor.assign(final_params.tau_tilde_new),
                           self.nu_tilde.unconstrained_tensor.assign(final_params.nu_tilde_new)]
 
@@ -198,7 +199,7 @@ class EPBinClassGP(GPModel):
             # compute the latest sigma and mu as it depends on the Kernel and so needs to be updated.
             Sigma_newest, mu_newest, L = self._compute_sigma_and_mu_newest(self.tau_tilde, self.nu_tilde, self.kern.K(self.X))
 
-            with self._temp_out_of_tensor_mode():
+            with params_as_tensors_for(self, convert=False):
                 results = self.EPResults(nu_tilde=self.nu_tilde.unconstrained_tensor.read_value(),
                                          tau_tilde=self.tau_tilde.unconstrained_tensor.read_value(),
                                          sigma=Sigma_newest,
@@ -306,12 +307,6 @@ class EPBinClassGP(GPModel):
         Sigma_newest = tf.subtract(K, tf.matmul(V, V, transpose_a=True), name="Sigma_new")
         mu_newest = tf.matmul(Sigma_newest, nu_tilde, name="mu_new")
         return Sigma_newest, mu_newest, L
-
-    @contextlib.contextmanager
-    def _temp_out_of_tensor_mode(self):
-        setattr(self, TensorConverter.__tensor_mode__, None)
-        yield
-        setattr(self, TensorConverter.__tensor_mode__, True)
 
 
 def _cholesky_b(tau_tilde, K, num_data):
