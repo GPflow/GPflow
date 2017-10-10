@@ -28,20 +28,30 @@ except ImportError:
 
 class NamingTests(test_util.GPflowTestCase):
     def test_standard_name(self):
+        p_index = gpflow.core.parentable.Parentable._read_index() + 1
         p = gpflow.Param(1)
-        self.assertTrue(p.name == 'Parameter')
+        self.assertEqual(p.name, 'Parameter')
+        self.assertEqual(p.raw_name, '{}/Parameter'.format(p_index))
 
     def test_full_fame(self):
-        p = gpflow.Param(1)
-        self.assertEqual(p.full_name, 'Parameter')
+        p1_index = gpflow.core.parentable.Parentable._read_index() + 1
+        p1 = gpflow.Param(1)
+        p2 = gpflow.Param(1, name='test_name')
+        self.assertEqual(p1.full_name, '{index}/Parameter'.format(index=p1_index))
+        self.assertEqual(p2.full_name, 'test_name')
+        model_index = gpflow.core.parentable.Parentable._read_index() + 1
         m = gpflow.models.Model()
-        m.p = p
-        self.assertEqual(m.p.full_name, 'Model/p')
+        m.p = p1
+        self.assertEqual(m.full_name, '{index}/Model'.format(index=model_index))
+        self.assertEqual(m.p.full_name, '{index}/Model/p'.format(index=model_index))
+        self.assertEqual(m.full_name, m.raw_name)
+        self.assertEqual(m.p.full_name, '{}/p'.format(m.raw_name))
 
 
 class ParamTests(test_util.GPflowTestCase):
     def setUp(self):
         self.p = gpflow.Param(1.0)
+        self.m_index = gpflow.core.parentable.Parentable._read_index() + 1
         self.m = gpflow.params.Parameterized()
         self.m.p = gpflow.Param(1.0)
         self.m.b = gpflow.Param(1.0)
@@ -77,7 +87,9 @@ class ParamTests(test_util.GPflowTestCase):
 
             self.m.d = new_param
             self.assertEqual(self.m.d, new_param)
-            self.assertEqual(self.m.d.full_name, self.m.name + '/d')
+            self.assertEqual(self.m.d.full_name,
+                             '{index}/{name}/d'
+                             .format(index=self.m_index, name=self.m.name))
 
     def test_assign_with_compile(self):
         with self.test_context():
@@ -371,14 +383,14 @@ class TestParamList(test_util.GPflowTestCase):
             p = gpflow.Param(1.2)
             pzd.p = p
             param_list = gpflow.ParamList([pzd])
-            param_list[0].p = 5
+            param_list[0].p = 5.
             self.assertEqual(param_list[0].p.read_value(), 5)
 
     def test_in_model(self):
         class Foo(gpflow.models.Model):
             def __init__(self):
                 gpflow.models.Model.__init__(self)
-                self.param_list = gpflow.ParamList([gpflow.Param(1), gpflow.Param(12)])
+                self.param_list = gpflow.ParamList([gpflow.Param(1.), gpflow.Param(12.)])
 
             @gpflow.params_as_tensors
             def _build_likelihood(self):
@@ -574,7 +586,7 @@ class TestScopes(test_util.GPflowTestCase):
 
     def test_likelihood_name(self):
         likelihood = self.m.likelihood_tensor
-        expected_name = self.m.name + '/likelihood'
+        expected_name = self.m.raw_name + '/likelihood'
         self.assertTrue(likelihood.name.startswith(expected_name))
 
     def test_kern_name(self):

@@ -1,10 +1,11 @@
 import abc
 import tensorflow as tf
 
-from gpflow import session_manager
-from gpflow.core.base import Build
-from gpflow.core.base import GPflowError
-from gpflow.core.base import Parentable, ICompilable
+from .. import session_manager
+from ..core.base import Build
+from ..core.base import GPflowError
+from ..core.base import ICompilable
+from ..core.parentable import Parentable
 
 
 class Node(Parentable, ICompilable): # pylint: disable=W0223
@@ -13,6 +14,13 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
         super(Node, self).__init__(name=name)
         self._session = None
 
+    @abc.abstractmethod
+    def anchor(self):
+        raise NotImplementedError('Public method anchor must be implemented by successor.')
+
+    @abc.abstractmethod
+    def _clear(self):
+        raise NotImplementedError('Private method clear must be implemented by successor.')
     @property
     def session(self):
         if self._session is not None:
@@ -96,14 +104,10 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
         return session
 
     def _build_with_name_scope(self, name=None):
-        name = self.name if name is None else name
+        name = self.raw_name if name is None else name
         is_built = self.is_built(tf.get_default_graph())
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
             raise GPflowError('Tensor uses different graph.')
         elif is_built is Build.NO:
             with tf.name_scope(name):
                 self._build()
-
-    @abc.abstractmethod
-    def _clear(self):
-        raise NotImplementedError('Private method clear must be implemented by successor.')

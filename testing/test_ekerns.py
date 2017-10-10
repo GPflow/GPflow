@@ -73,7 +73,7 @@ class TestKernExpDelta(GPflowTestCase):
             k2 = ekernels.RBF(self.D)
             k2.lengthscales = self.rng.rand(1) + [0.5]
             k2.variance = 0.3 + self.rng.rand()
-            klin = ekernels.Linear(self.D, variance=0.3 + self.rng.rand())
+            klin = ekernels.Linear(self.D, variance=0.3+self.rng.rand())
             self.kernels = [k1, klin, k2]
 
     def tearDown(self):

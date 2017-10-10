@@ -18,7 +18,7 @@ import numpy as np
 
 
 def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
-               thin=1, burn=0, RNG=np.random.RandomState(0),
+               thin=1, burn=0, seed=None,
                return_logprobs=False):
     """
     A straight-forward HMC implementation. The mass matrix is assumed to be the
@@ -78,9 +78,9 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
     for t in range(1, num_samples * thin):
 
         # Output acceptance rate every 100 iterations
-        if ((t+1) % 100) == 0:
+        if ((t + 1) % 100) == 0:
             if verbose:
-                print("Iteration: ", t+1,
+                print("Iteration: ", t + 1,
                       "\t Acc Rate: ", 1. * accept_count_batch, "%")
             accept_count_batch = 0
 
@@ -99,7 +99,7 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
                 premature_reject = True
                 break
             p += epsilon * grad
-        p -= 0.5*epsilon * grad
+        p -= 0.5 * epsilon * grad
         # leapfrogging done
 
         # reject the proposal if there are numerical errors.
@@ -131,3 +131,17 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
         return samples, logprob_track
     else:
         return samples
+
+        # Standard HMC - begin leapfrogging
+        premature_reject = False
+        p = p_old + 0.5 * epsilon * grad
+        for l in range(RNG.randint(Lmin, Lmax)):
+            x += epsilon * p
+            logprob, grad = f(x)
+            logprob, grad = -logprob, -grad
+            if np.any(np.isnan(grad)):  # pragma: no cover
+                premature_reject = True
+                break
+            p += epsilon * grad
+        p -= 0.5 * epsilon * grad
+        # leapfrogging done

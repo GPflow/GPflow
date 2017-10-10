@@ -273,7 +273,7 @@ class TestAdd(GPflowTestCase):
     def setUp(self):
         rbf = gpflow.kernels.RBF(1)
         lin = gpflow.kernels.Linear(1)
-        k = gpflow.kernels.RBF(1) + gpflow.kernels.Linear(1)
+        k = gpflow.kernels.RBF(1, name='RBFInAdd') + gpflow.kernels.Linear(1, name='LinearInAdd')
         self.rng = np.random.RandomState(0)
         self.kernels = [rbf, lin, k]
 
@@ -331,10 +331,11 @@ class TestSlice(GPflowTestCase):
                        gpflow.kernels.Polynomial]
             kernels += gpflow.kernels.Stationary.__subclasses__()
             self.kernels = []
+            kernname = lambda cls, index: '_'.join([cls.__name__, str(index)])
             for kernclass in kernels:
-                k1 = kernclass(1, active_dims=[0])
-                k2 = kernclass(1, active_dims=[1])
-                k3 = kernclass(1, active_dims=slice(0, 1))
+                k1 = kernclass(1, active_dims=[0], name=kernname(kernclass, 1))
+                k2 = kernclass(1, active_dims=[1], name=kernname(kernclass, 2))
+                k3 = kernclass(1, active_dims=slice(0, 1), name=kernname(kernclass, 3))
                 self.kernels.append([k1, k2, k3])
 
     def test_symm(self):
@@ -342,6 +343,7 @@ class TestSlice(GPflowTestCase):
             with self.test_context():
                 rng = np.random.RandomState(0)
                 X = rng.randn(20, 2)
+                print("k1: {0}, k2: {1}, k3: {2}".format(k1, k2, k3))
                 k1.compile()
                 k2.compile()
                 k3.compile()
@@ -405,7 +407,7 @@ class TestARDActiveProd(GPflowTestCase):
         self.k2 = gpflow.kernels.RBF(1, active_dims=[2], ARD=True)
         self.k3 = gpflow.kernels.RBF(4, ARD=True)
         self.k1.lengthscales = np.array([3.4, 4.5, 5.6])
-        self.k2.lengthscales = 6.7
+        self.k2.lengthscales = np.array([6.7])
         self.k3.lengthscales = np.array([3.4, 4.5, 6.7, 5.6])
         self.k3a = self.k1 * self.k2
 

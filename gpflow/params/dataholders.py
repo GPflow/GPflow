@@ -42,6 +42,12 @@ class DataHolder(Parameter):
     def parameter_tensor(self):
         return self._dataholder_tensor
 
+    @property
+    def shape(self):
+        if self.parameter_tensor is not None:
+            return tuple(self.parameter_tensor.shape.as_list())
+        return self._value.shape
+
     def set_trainable(self, _value, graph=None):
         raise NotImplementedError('Data holder cannot be fixed.')
 
@@ -55,15 +61,18 @@ class DataHolder(Parameter):
         return Build.NO
 
     def _parameter_name(self):
-        return '/'.join([self.full_name, 'dataholder'])
+        return misc.tensor_name(self.full_name, 'dataholder')
 
     def _clear(self):
-        self._dataholder_tensor = None  # pylint: disable=W0201
+        self._reset_name()
+        self._initial_value_tensor = None
+        self._dataholder_tensor = None
 
     def _build(self):
         self._dataholder_tensor = self._build_parameter()  # pylint: disable=W0201
 
     def _init_parameter_defaults(self):
+        self._initial_value_tensor = None
         self._dataholder_tensor = None
 
     def _init_parameter_attributes(self, _prior, _transform, _trainable):
@@ -113,7 +122,10 @@ class FormlessData(DataHolder):
         return tf.placeholder(dtype, shape=None, name=name)
 
     def _parameter_name(self):
-        return '/'.join([self.full_name, 'formlessdata'])
+        name = 'formlessdata'
+        if self.parent is self:
+            return misc.tensor_name(self.full_name, name)
+        return name
 
 
 class Minibatch(DataHolder):
@@ -144,13 +156,23 @@ class Minibatch(DataHolder):
         if session is not None:
             self.initialize(session=session)
 
+    def _clear(self):
+        self._reset_name()
+        self._cache_tensor = None
+        self._batch_size_tensor = None
+        self._dataholder_tensor = None
+        self._iterator_tensor = None
+        self._shuffle = True
+        self._batch_size = 1
+        self._seed = None
+
     def _build(self):
         self._cache_tensor = self._build_placeholder_cache()
         self._dataholder_tensor = self._build_dataholder()
 
     def _build_placeholder_cache(self):
         value = self._value
-        return tf.placeholder(dtype=value.dtype, shape=value.shape, name='cache')
+        return tf.placeholder(dtype=value.dtype, shape=value.shape, name='minibatch_init')
 
     def _build_dataholder(self):
         if self._cache_tensor is None:
@@ -177,4 +199,7 @@ class Minibatch(DataHolder):
         self._seed = None
 
     def _parameter_name(self):
-        return '/'.join([self.full_name, 'minibatch'])
+        name = 'minibatch'
+        if self.parent is self:
+            return misc.tensor_name(self.full_name, name)
+        return name

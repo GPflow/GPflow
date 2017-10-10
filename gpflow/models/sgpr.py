@@ -30,10 +30,12 @@ from gpflow.mean_functions import Zero
 class SGPRUpperMixin(object):
     """
     Upper bound for the GP regression marginal likelihood.
-    It is implemented here as a Mixin class which works with SGPR and GPRFITC. Note that the same inducing points are
-    used for calculating the upper bound, as are used for computing the likelihood approximation. This may not lead to
-    the best upper bound. The upper bound can be tightened by optimising Z, just as just like the lower bound. This is
-    especially important in FITC, as FITC is known to produce poor inducing point locations. An optimisable upper bound
+    It is implemented here as a Mixin class which works with SGPR and GPRFITC.
+    Note that the same inducing points are used for calculating the upper bound,
+    as are used for computing the likelihood approximation. This may not lead to
+    the best upper bound. The upper bound can be tightened by optimising Z, just
+    as just like the lower bound. This is especially important in FITC, as FITC
+    is known to produce poor inducing point locations. An optimisable upper bound
     can be found in https://github.com/markvdw/gp_upper.
 
     The key reference is

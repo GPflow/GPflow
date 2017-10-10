@@ -249,8 +249,8 @@ class Static(Kern):
     parameter is a variance.
     """
 
-    def __init__(self, input_dim, variance=1.0, active_dims=None):
-        super(Static, self).__init__(input_dim, active_dims)
+    def __init__(self, input_dim, variance=1.0, active_dims=None, name=None):
+        super(Static, self).__init__(input_dim, active_dims, name=name)
         self.variance = Parameter(variance, transform=transforms.positive)
 
     @params_as_tensors
@@ -306,7 +306,7 @@ class Stationary(Kern):
     """
 
     def __init__(self, input_dim, variance=1.0, lengthscales=None,
-                 active_dims=None, ARD=False):
+                 active_dims=None, ARD=False, name=None):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter
@@ -317,7 +317,7 @@ class Stationary(Kern):
         - ARD specifies whether the kernel has one lengthscale per dimension
           (ARD=True) or a single lengthscale (ARD=False).
         """
-        super(Stationary, self).__init__(input_dim, active_dims)
+        super(Stationary, self).__init__(input_dim, active_dims, name=name)
         self.variance = Parameter(variance, transform=transforms.positive)
         if ARD:
             if lengthscales is None:
@@ -376,7 +376,7 @@ class Linear(Kern):
     The linear kernel
     """
 
-    def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=False):
+    def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=False, name=None):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter(s)
@@ -384,7 +384,7 @@ class Linear(Kern):
         - active_dims is a list of length input_dim which controls
           which columns of X are used.
         """
-        Kern.__init__(self, input_dim, active_dims)
+        Kern.__init__(self, input_dim, active_dims, name=name)
         self.ARD = ARD
         if ARD:
             # accept float or array:
@@ -414,7 +414,13 @@ class Polynomial(Linear):
     The Polynomial kernel. Samples are polynomials of degree `d`.
     """
 
-    def __init__(self, input_dim, degree=3.0, variance=1.0, offset=1.0, active_dims=None, ARD=False):
+    def __init__(self, input_dim,
+                 degree=3.0,
+                 variance=1.0,
+                 offset=1.0,
+                 active_dims=None,
+                 ARD=False,
+                 name=None):
         """
         :param input_dim: the dimension of the input to the kernel
         :param variance: the (initial) value for the variance parameter(s)
@@ -424,7 +430,7 @@ class Polynomial(Linear):
           which columns of X are used.
         :param ARD: use variance as described
         """
-        super(Polynomial, self).__init__(input_dim, variance, active_dims, ARD)
+        super(Polynomial, self).__init__(input_dim, variance, active_dims, ARD, name=name)
         self.degree = degree
         self.offset = Parameter(offset, transform=transforms.positive)
 
@@ -526,7 +532,7 @@ class ArcCosine(Kern):
     def __init__(self, input_dim,
                  order=0,
                  variance=1.0, weight_variances=1., bias_variance=1.,
-                 active_dims=None, ARD=False):
+                 active_dims=None, ARD=False, name=None):
         """
         - input_dim is the dimension of the input to the kernel
         - order specifies the activation function of the neural network
@@ -541,7 +547,7 @@ class ArcCosine(Kern):
         - ARD specifies whether the kernel has one weight_variance per dimension
           (ARD=True) or a single weight_variance (ARD=False).
         """
-        super(ArcCosine, self).__init__(input_dim, active_dims)
+        super(ArcCosine, self).__init__(input_dim, active_dims, name=name)
 
         if order not in self.implemented_orders:
             raise ValueError('Requested kernel order is not implemented.')
@@ -624,9 +630,9 @@ class PeriodicKernel(Kern):
     """
 
     def __init__(self, input_dim, period=1.0, variance=1.0,
-                 lengthscales=1.0, active_dims=None):
+                 lengthscales=1.0, active_dims=None, name=None):
         # No ARD support for lengthscale or period yet
-        super(PeriodicKernel, self).__init__(input_dim, active_dims)
+        super(PeriodicKernel, self).__init__(input_dim, active_dims, name=name)
         self.variance = Parameter(variance, transform=transforms.positive)
         self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
         self.ARD = False
@@ -654,7 +660,7 @@ class PeriodicKernel(Kern):
 
 
 class Coregion(Kern):
-    def __init__(self, input_dim, output_dim, rank, active_dims=None):
+    def __init__(self, input_dim, output_dim, rank, active_dims=None, name=None):
         """
         A Coregionalization kernel. The inputs to this kernel are _integers_
         (we cast them from floats as needed) which usually specify the
@@ -679,7 +685,7 @@ class Coregion(Kern):
         optimization (or MCMC chain) using a random W.
         """
         assert input_dim == 1, "Coregion kernel in 1D only"
-        super(Coregion, self).__init__(input_dim, active_dims)
+        super(Coregion, self).__init__(input_dim, active_dims, name=name)
 
         self.output_dim = output_dim
         self.rank = rank
@@ -741,7 +747,7 @@ class Combination(Kern):
     names.
     """
 
-    def __init__(self, kern_list):
+    def __init__(self, kern_list, name=None):
         for k in kern_list:
             assert isinstance(k, Kern), "can only add Kern instances"
 
@@ -749,7 +755,7 @@ class Combination(Kern):
                             if type(k.active_dims) is slice else
                             np.max(k.active_dims) + 1
                             for k in kern_list])
-        super(Combination, self).__init__(input_dim=input_dim)
+        super(Combination, self).__init__(input_dim=input_dim, name=name)
 
         # add kernels to a list, flattening out instances of this class therein
         self.kern_list = []

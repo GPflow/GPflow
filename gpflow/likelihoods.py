@@ -19,12 +19,15 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
-from gpflow import densities
-from gpflow import transforms
+from . import settings
+from . import densities
+from . import transforms
 
-from gpflow.decors import params_as_tensors
-from gpflow.params import Parameter, Parameterized, ParamList
+from .decors import params_as_tensors
+from .decors import params_as_tensors_for
+from .params import Parameter
+from .params import Parameterized
+from .params import ParamList
 from gpflow.quadrature import hermgauss
 
 
@@ -544,7 +547,9 @@ class SwitchedLikelihood(Likelihood):
         args = zip(*[tf.dynamic_partition(X, ind, self.num_likelihoods) for X in args])
 
         # apply the likelihood-function to each section of the data
-        funcs = [getattr(lik, func_name) for lik in self.likelihood_list]
+
+        with params_as_tensors_for(self, convert=False):
+            funcs = [getattr(lik, func_name) for lik in self.likelihood_list]
         results = [f(*args_i) for f, args_i in zip(funcs, args)]
 
         # stitch the results back together
