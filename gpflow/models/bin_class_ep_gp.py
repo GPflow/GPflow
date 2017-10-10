@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import
 import collections
+import enum
+import contextlib
 
 
 import tensorflow as tf
@@ -21,7 +23,13 @@ from .. import gaussian_utils
 float_type = settings.dtypes.float_type
 np_float_type = np.float32 if float_type is tf.float32 else np.float64
 
-VERY_SMALL_NUMBER = 1e-6
+VERY_VERY_SMALL_NUMBER = 1e-20
+
+
+class EPForLikelihood(enum.Enum):
+    EVERYTIME = 1
+    USE_CACHE = 2
+
 
 class EPBinClassGP(GPModel):
     """
@@ -42,7 +50,7 @@ class EPBinClassGP(GPModel):
     EPResults = collections.namedtuple("EPResults", 'nu_tilde, tau_tilde, sigma, mu, chol_b, num_iter')
 
 
-    def __init__(self, X, Y, kern, name='name'):
+    def __init__(self, X, Y, kern, name='name', use_cache_on_like=True):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x 1. It is labels of the classes. 0 and 1s.
@@ -61,8 +69,9 @@ class EPBinClassGP(GPModel):
         self.tau_tilde = Parameter(np.zeros(Y.shape, dtype=np_float_type), trainable=False,
                                   name="tau_tilde")
 
-        self.max_ep_steps = 3
+        self.max_ep_steps = 100
         self.convergent_tol = 1e-6
+        self.run_ep_for_likelihood_flag = EPForLikelihood.USE_CACHE if use_cache_on_like else EPForLikelihood.EVERYTIME
 
 
     @params_as_tensors
@@ -79,13 +88,12 @@ class EPBinClassGP(GPModel):
                 # Start the current params from their last value to help convergence be faster
                 nu_tilde_new=self.nu_tilde, tau_tilde_new=self.tau_tilde,
 
-                # Have the old ones be moved far enough away from the new one to make sure that we
-                # go through the conditions initially
                 nu_tilde_old=tf.ones_like(self.nu_tilde, dtype=float_type),
                 tau_tilde_old=tf.ones_like(self.nu_tilde, dtype=float_type),
 
                 # See GPML Algo 3.5 for good initial starting values for Sigma and mu
-                sigma=K, mu=tf.zeros_like(self.nu_tilde, dtype=float_type),
+                sigma=K + 1e-6*tf.eye(tf.shape(K)[0], dtype=float_type),
+                mu=tf.zeros_like(self.nu_tilde, dtype=float_type),
 
                 chol_b=tf.eye(tf.shape(self.Y)[0], dtype=float_type),
 
@@ -118,23 +126,25 @@ class EPBinClassGP(GPModel):
             sigma_sq_mi = tf.reciprocal(tau_mi, name="sigma_sq_mi")
             mu_mi = tf.multiply(nu_mi, sigma_sq_mi, name="mu_mi")
             sqrt_one_plus_sigma_sq_mi = tf.sqrt(1 + sigma_sq_mi, name="sqrt_one_plus_sigma_sq_mi")
+
+            tau_mi_plus_tau_mi_sq = tau_mi + tf.square(tau_mi)
+
             zi = tf.identity(Y_between_m1_and_1 * mu_mi / sqrt_one_plus_sigma_sq_mi, name="zi")
             norm_pdf_over_cdf_for_zi = gaussian_utils.deriv_log_cdf_normal(zi)
-            mu_hat_i = tf.add(mu_mi, (Y_between_m1_and_1 * sigma_sq_mi * norm_pdf_over_cdf_for_zi / sqrt_one_plus_sigma_sq_mi),
+            #norm_pdf_over_cdf_for_zi = std_normal_dist.prob(zi) / (std_normal_dist.cdf(zi) + 1e-15)
+
+            mu_hat_i = tf.add(mu_mi, (Y_between_m1_and_1 * norm_pdf_over_cdf_for_zi / tf.sqrt(tau_mi_plus_tau_mi_sq)),
                               name="mu_hat_i")
-            sigma_sq_hat_i = tf.subtract(sigma_sq_mi, (tf.square(sigma_sq_mi) * norm_pdf_over_cdf_for_zi / (1 + sigma_sq_mi)) * \
+            sigma_sq_hat_i = tf.subtract(sigma_sq_mi, (norm_pdf_over_cdf_for_zi / tau_mi_plus_tau_mi_sq) * \
                                            (zi + norm_pdf_over_cdf_for_zi), name="sigma_sq_hat_i")
 
             # Lines 8-9 of GPML Algo 3.5
             tau_hat = tf.reciprocal(sigma_sq_hat_i, name="tau_hat")
-            tau_tilde_newest = tf.maximum(tf.identity(tau_hat - tau_mi, name="tau_tilde_newest"), VERY_SMALL_NUMBER, name="tau_tilde_new_positive_enforced")
+            tau_tilde_newest = tf.maximum(tf.identity(tau_hat - tau_mi, name="tau_tilde_newest"), VERY_VERY_SMALL_NUMBER, name="tau_tilde_new_positive_enforced")
             nu_tilde_newest = tf.identity(tau_hat * mu_hat_i - nu_mi, name="nu_tilde_newest")
 
-            # Lines 13-15 of GPML Algo 3.5 (as doing all at once do not bother with rank one updates)
-            L, S_half_K = _cholesky_b(tau_tilde_newest, K, num_data=tf.shape(self.Y)[0])
-            V = tf.matrix_triangular_solve(tf.transpose(L), S_half_K, lower=False, name="V")
-            Sigma_newest = tf.subtract(K, tf.matmul(V, V, transpose_a=True), name="Sigma_new")
-            mu_newest = tf.matmul(Sigma_newest, nu_tilde_newest, name="mu_new")
+            #(as doing all at once do not bother with rank one updates)
+            Sigma_newest, mu_newest, L = self._compute_sigma_and_mu_newest(tau_tilde_newest, nu_tilde_newest, K)
 
             # Pack everything up for next time around.
             new_iter_vals = EPIterVars(
@@ -144,20 +154,21 @@ class EPBinClassGP(GPModel):
             )
             return (new_iter_vals,)
 
-
         final_params = tf.while_loop(cond=condition, body=body, loop_vars=(initial_vars,), back_prop=False)[0]
 
 
         # A bit of a hack but I want to get hold of the Parameter objects and set the unconstrained
         # tensor -- which is the actual variable that I can assign to.
-        #TODO: remove need of hack by breaking this method up into multiple functions.
-        setattr(self, TensorConverter.__tensor_mode__, None)
-        update_ops = [self.tau_tilde.unconstrained_tensor.assign(final_params.tau_tilde_new),
-                      self.nu_tilde.unconstrained_tensor.assign(final_params.nu_tilde_new)]
-        setattr(self, TensorConverter.__tensor_mode__, True)
+        #TODO: remove need of hack by breaking this method up into multiple functions...?
+        with self._temp_out_of_tensor_mode():
+            update_ops = [self.tau_tilde.unconstrained_tensor.assign(final_params.tau_tilde_new),
+                          self.nu_tilde.unconstrained_tensor.assign(final_params.nu_tilde_new)]
 
 
-
+        # I'm stopping all the gradients below. Im not quite sure how necessary this is
+        # as I put back prop on the while loop to be False.
+        # Note that the final sigma matrix depends on K so you do need to rerun
+        # with allowing grads if want to actually optimise.
         return_results = self.EPResults(nu_tilde=tf.stop_gradient(final_params.nu_tilde_new),
                                tau_tilde=tf.stop_gradient(final_params.tau_tilde_new),
                                sigma=tf.stop_gradient(final_params.sigma),
@@ -170,9 +181,33 @@ class EPBinClassGP(GPModel):
 
     @params_as_tensors
     def _build_likelihood(self):
-        results, update_ops = self._run_ep()
+        if self.run_ep_for_likelihood_flag is EPForLikelihood.USE_CACHE:
+            update_ops = [tf.no_op(name="no_ep_update")]
+            counter = -1
 
-        # Recalculate these based on latest sigma.
+        elif self.run_ep_for_likelihood_flag is EPForLikelihood.EVERYTIME:
+            with tf.name_scope("updating_ep_for_ll"):
+                results_from_ep, update_ops = self._run_ep()
+                counter = results_from_ep.num_iter
+                # Dont want to use the results here as I stopped the gradient on the kernel, which
+                # will be bad if you use this method for optimisation.
+        else:
+            raise NotImplementedError("Unsupported method: {}".format(self.run_ep_for_likelihood_flag.name))
+
+        with tf.control_dependencies(update_ops):
+            # compute the latest sigma and mu as it depends on the Kernel and so needs to be updated.
+            Sigma_newest, mu_newest, L = self._compute_sigma_and_mu_newest(self.tau_tilde, self.nu_tilde, self.kern.K(self.X))
+
+            with self._temp_out_of_tensor_mode():
+                results = self.EPResults(nu_tilde=self.nu_tilde.unconstrained_tensor.read_value(),
+                                         tau_tilde=self.tau_tilde.unconstrained_tensor.read_value(),
+                                         sigma=Sigma_newest,
+                                     mu=mu_newest, chol_b=L, num_iter=counter)
+            # ^ use read_value to force TF to use the assigned variables if for some reason we have
+            # done the assign on another device.
+
+
+        # Recalculate these based on latest sigma:
         sigma_sq_i_inv, tau_mi, nu_mi = _calc_tau_mi(results.sigma,
                                                      results.tau_tilde, results.mu,
                                                      results.nu_tilde)
@@ -180,36 +215,39 @@ class EPBinClassGP(GPModel):
         mu_mi = nu_mi * sigma_sq_mi
 
         # Eqn 3.73 of GPML
-        term_one_and_four = 0.5 * tf.reduce_sum(tf.log1p(results.tau_tilde/tau_mi)) - \
-            tf.reduce_sum(tf.log(tf.diag_part(results.chol_b)))
+        term_one_and_four = tf.identity(0.5 * tf.reduce_sum(tf.log1p(results.tau_tilde * sigma_sq_mi)) - \
+            tf.reduce_sum(tf.log(tf.diag_part(results.chol_b))), name="term_one_and_four")
 
         # Some general terms useful for all equations.
         S_tilde = tf.diag(tf.squeeze(results.tau_tilde), name="Stilde")
-        T = tf.diag(tf.squeeze(tau_mi))
-        T_p_S_tilde_inv = tf.reciprocal(S_tilde + T)  # inverse is just reciprocal as have diagonal matrix
-        K = self.kern.K(self.X)
+        T = tf.diag(tf.squeeze(tau_mi), name="T")
+        T_plus_S_tilde_inv = tf.diag(tf.reciprocal(tf.diag_part(S_tilde + T)), name="T_plus_S_tilde_inv")
+        # ^  inverse is just reciprocal as have diagonal matrix
+        K = tf.identity(self.kern.K(self.X), name='Kernel_at_x')
 
         # Eqn 3.74 of GPML.
         Stilde_sqrt_K = tf.matmul(tf.sqrt(S_tilde), K, name="Stilde_sqrt_K_")
         Li_S_tilde_sqrt_K = tf.matrix_triangular_solve(results.chol_b, Stilde_sqrt_K)
         Li_S_tilde_sqrt_K_sq = tf.matmul(Li_S_tilde_sqrt_K, Li_S_tilde_sqrt_K, transpose_a=True)
-        bracketted_term = K - Li_S_tilde_sqrt_K_sq - T_p_S_tilde_inv
-        first_half_term_five_and_second = 0.5 * tf.matmul(results.nu_tilde,
-                                    tf.matmul(bracketted_term, results.nu_tilde), transpose_a=True)
+        bracketted_term = K - Li_S_tilde_sqrt_K_sq - T_plus_S_tilde_inv
+        first_half_term_five_and_second = tf.identity(0.5 * tf.matmul(results.nu_tilde,
+                                    tf.matmul(bracketted_term, results.nu_tilde), transpose_a=True),
+                                                      name="first_half_term_five_and_second")
 
         # Eqn 3.75 of GPML
-        right_half = tf.matmul(T_p_S_tilde_inv, (tf.matmul(S_tilde, mu_mi) - 2 * results.nu_tilde))
-        second_half_fifth_term = 0.5 * tf.matmul(mu_mi, tf.matmul(T, right_half), transpose_a=True)
+        right_half = tf.matmul(T_plus_S_tilde_inv, (tf.matmul(S_tilde, mu_mi) - 2 * results.nu_tilde))
+        second_half_fifth_term = tf.identity(0.5 * tf.matmul(mu_mi, tf.matmul(T, right_half), transpose_a=True),
+                                             name="second_half_fifth_term")
 
         # Third term of eqn 3.65 of GPML
         std_normal = _create_std_normal()
-        third_term = tf.reduce_sum(std_normal.log_cdf((self._switch_targets_to_minus_one_one(self.Y) *mu_mi) / tf.sqrt(1 + sigma_sq_mi)))
+        third_term = tf.reduce_sum(std_normal.log_cdf((self._switch_targets_to_minus_one_one(self.Y) *mu_mi) / tf.sqrt(1 + sigma_sq_mi)),
+                                   name="third_term")
 
-        # We update our store of the parameters to try to ensure faster convergence next time.
-        with tf.control_dependencies(update_ops):
-            log_likelihood = term_one_and_four + first_half_term_five_and_second + \
+
+        log_likelihood = term_one_and_four + first_half_term_five_and_second + \
                              second_half_fifth_term + third_term
-        return log_likelihood
+        return tf.identity(tf.squeeze(log_likelihood), name="log_likelihood")
 
 
 
@@ -220,7 +258,7 @@ class EPBinClassGP(GPModel):
         #TODO: there is some computation here that could get cached.
         #TODO Consider whether we can reuse any existing code.
         num_data = tf.shape(self.Y)[0]
-        S_tilde_half = tf.diag(tf.squeeze(self.tau_tilde))
+        S_tilde_half = tf.diag(tf.sqrt(tf.squeeze(self.tau_tilde)))
         Kmm = self.kern.K(self.X)
         B = tf.eye(num_data, dtype=float_type) + tf.matmul(S_tilde_half, tf.matmul(Kmm, S_tilde_half))
         L = tf.cholesky(B)
@@ -249,7 +287,7 @@ class EPBinClassGP(GPModel):
         """
         return_res, update_ops = self._run_ep()
 
-        # Get these assigned to the resepective params objects.
+        # Get these assigned to the respective params objects.
         with tf.control_dependencies(update_ops):
             tau_tilde = tf.identity(return_res.tau_tilde, name="tau_tilde_final")
             nu_tilde = tf.identity(return_res.nu_tilde, name="nu_tilde_final")
@@ -257,9 +295,23 @@ class EPBinClassGP(GPModel):
 
         return tau_tilde, nu_tilde, num_iters
 
-    def _switch_targets_to_minus_one_one(self, targets):
+    @staticmethod
+    def _switch_targets_to_minus_one_one(targets):
         return 2 * targets - 1  # matches the scale of targets in GPML. ie between -1 and 1.
 
+    def _compute_sigma_and_mu_newest(self, tau_tilde, nu_tilde, K):
+        # Lines 13-15 of GPML Algo 3.5
+        L, S_half_K = _cholesky_b(tau_tilde, K, num_data=tf.shape(self.Y)[0])
+        V = tf.matrix_triangular_solve(L, S_half_K, lower=True, name="V")
+        Sigma_newest = tf.subtract(K, tf.matmul(V, V, transpose_a=True), name="Sigma_new")
+        mu_newest = tf.matmul(Sigma_newest, nu_tilde, name="mu_new")
+        return Sigma_newest, mu_newest, L
+
+    @contextlib.contextmanager
+    def _temp_out_of_tensor_mode(self):
+        setattr(self, TensorConverter.__tensor_mode__, None)
+        yield
+        setattr(self, TensorConverter.__tensor_mode__, True)
 
 
 def _cholesky_b(tau_tilde, K, num_data):
@@ -271,18 +323,20 @@ def _cholesky_b(tau_tilde, K, num_data):
         chol_B = tf.cholesky(B, name="Cholesky_B")
     return chol_B, S_half_K
 
+
 def _calc_tau_mi(sigma, tau_tilde, mu, nu_tilde):
     with tf.name_scope("calc_tau_mi"):
         sigma_sq_i_inv = tf.reciprocal(tf.expand_dims(tf.diag_part(sigma), -1), name="sigma_sq_i_inv")
-        tau_mi = tf.maximum(tf.subtract(sigma_sq_i_inv, tau_tilde, name="tau_mi"), VERY_SMALL_NUMBER, name="tau_mi_limited_to_zero")
+        tau_mi = tf.maximum(tf.subtract(sigma_sq_i_inv, tau_tilde, name="tau_mi"), VERY_VERY_SMALL_NUMBER, name="tau_mi_limited_to_zero")
         #tau_mi = tf.subtract(sigma_sq_i_inv, tau_tilde, name="tau_mi")
-        #FIXME --  can tau_mi actually be negative? is this a good thing to be doing?
+        #TODO --  consider whether max is necessary here...
         nu_mi = tf.subtract(sigma_sq_i_inv * mu, nu_tilde, name="nu_mi")
     return sigma_sq_i_inv, tau_mi, nu_mi
 
 
 def _normal_cdf(x):
     return (1. + tf.erf(x / np.sqrt(2.))) / 2.
+
 
 def _create_std_normal():
     return tf.distributions.Normal(np_float_type(0.), np_float_type(1.))
