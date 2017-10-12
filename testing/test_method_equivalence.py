@@ -61,23 +61,23 @@ class TestEquivalence(GPflowTestCase):
                 Z=X.copy(),
                 q_diag=False,
                 mean_function=gpflow.mean_functions.Constant())
-            m3.Z.fixed = True
+            m3.feat.fixed = True
             m4 = gpflow.models.SVGP(
                 X, Y, gpflow.kernels.RBF(1),
                 likelihood=gpflow.likelihoods.Gaussian(),
                 Z=X.copy(), q_diag=False, whiten=True,
                 mean_function=gpflow.mean_functions.Constant())
-            m4.Z.fixed = True
+            m4.feat.fixed = True
             m5 = gpflow.models.SGPR(
                 X, Y, gpflow.kernels.RBF(1),
                 Z=X.copy(),
                 mean_function=gpflow.mean_functions.Constant())
 
-            m5.Z.fixed = True
+            m5.feat.fixed = True
             m6 = gpflow.models.GPRFITC(
                 X, Y, gpflow.kernels.RBF(1), Z=X.copy(),
                 mean_function=gpflow.mean_functions.Constant())
-            m6.Z.fixed = True
+            m6.feat.fixed = True
             self.models = [m1, m2, m3, m4, m5, m6]
             for m in self.models:
                 m.optimize(disp=False, maxiter=300)

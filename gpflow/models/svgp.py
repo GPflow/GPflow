@@ -20,7 +20,7 @@ import numpy as np
 from .. import settings
 from .. import transforms
 from .. import conditionals
-from .. import kullback_leiblers
+from .. import kullback_leiblers, features
 
 from ..params import Parameter
 from ..params import Minibatch
@@ -46,12 +46,13 @@ class SVGP(GPModel):
       }
 
     """
-    def __init__(self, X, Y, kern, likelihood, Z,
+    def __init__(self, X, Y, kern, likelihood, feat=None,
                  mean_function=None,
                  num_latent=None,
                  q_diag=False,
                  whiten=True,
                  minibatch_size=None,
+                 Z=None,
                  **kwargs):
         """
         - X is a data matrix, size N x D
@@ -77,9 +78,9 @@ class SVGP(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_data = X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
-        self.Z = Parameter(Z)
+        self.feat = features.inducingpoint_wrapper(feat, Z)
         self.num_latent = num_latent or Y.shape[1]
-        self.num_inducing = Z.shape[0]
+        self.num_inducing = len(self.feat)
 
         # init variational parameters
         self.q_mu = Parameter(np.zeros((self.num_inducing, self.num_latent)))
@@ -99,7 +100,7 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
+            K = self.feat.Kuu(self.kern) + tf.eye(self.num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:
@@ -128,6 +129,6 @@ class SVGP(GPModel):
 
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
-        mu, var = conditionals.conditional(Xnew, self.Z, self.kern, self.q_mu,
+        mu, var = features.conditional(self.feat, self.kern, Xnew, self.q_mu,
                                            q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var
