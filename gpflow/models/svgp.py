@@ -53,7 +53,6 @@ class SVGP(GPModel):
                  q_diag=False,
                  whiten=True,
                  minibatch_size=None,
-                 random_seed_for_random_features=27184,
                  **kwargs):
         """
         - X is a data matrix, size N x D
@@ -92,7 +91,6 @@ class SVGP(GPModel):
             q_sqrt = np.array([np.eye(self.num_inducing)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
-        self.random_seed_for_random_features = random_seed_for_random_features
 
 
     @params_as_tensors

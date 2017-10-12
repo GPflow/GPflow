@@ -40,7 +40,7 @@ class GPR(GPModel):
 
        \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
-    def __init__(self, X, Y, kern, mean_function=None, random_seed_for_random_features=897, **kwargs):
+    def __init__(self, X, Y, kern, mean_function=None, **kwargs):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -51,7 +51,6 @@ class GPR(GPModel):
         Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_latent = Y.shape[1]
-        self.random_seed_for_random_features = random_seed_for_random_features
 
     @name_scope('likelihood')
     @params_as_tensors
