@@ -27,6 +27,7 @@ from ..params import Minibatch
 from ..params import DataHolder
 
 from ..decors import params_as_tensors
+from ..decors import autoflow
 
 from ..models.model import GPModel
 
@@ -135,7 +136,8 @@ class SVGP(GPModel):
                                            q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var
 
-    @AutoFlow()
+    @autoflow()
+    @params_as_tensors
     def linear_weights_posterior(self):
         """
         Some kernels have finite dimensional feature maps. Others although not having finite
@@ -171,18 +173,19 @@ class SVGP(GPModel):
         """
         assert self.num_latent == 1, "Only yet implemented for one latent variable GP."
         # We squeeze the q_sqrt below to get it for one latent factor, this needs to be changed
-        # possibly in addition to
+        # if want more latent values in addition to perhaps other stuff.
 
-        feat_map = self.kern.create_feature_map_func(self.random_seed_for_random_features)
-        feats = feat_map(self.Z)
+        feats = self.kern._feature_map(self.Z)
         num_obs = tf.shape(feats)[0]
         num_feats = tf.shape(feats)[1]
 
-        kernel_at_z_true = self.kern.K(self.Z) #
-        chol_kzz_true = tf.cholesky(kernel_at_z_true + tf.eye(num_obs, dtype=float_type) * settings.numerics.jitter_level)
+        kernel_at_z_true = self.kern.K(self.Z)
+        chol_kzz_true = tf.cholesky(kernel_at_z_true + tf.eye(num_obs, dtype=settings.tf_float)
+                                    * settings.numerics.jitter_level)
 
         kernel_at_z_approx = tf.matmul(feats, feats, transpose_b=True)
-        chol_kzz_approx = tf.cholesky(kernel_at_z_approx + tf.eye(num_obs, dtype=float_type) * settings.numerics.jitter_level)
+        chol_kzz_approx = tf.cholesky(kernel_at_z_approx + tf.eye(num_obs, dtype=settings.tf_float)
+                                      * settings.numerics.jitter_level)
 
         # === Mean ===
         if self.whiten:
@@ -214,7 +217,7 @@ class SVGP(GPModel):
         # term 2
         term2 = -tf.matmul(LiPhi, LiPhi, transpose_a=True)
 
-        variance = term1 + term2 + tf.eye(num_feats, num_feats, dtype=float_type)
+        variance = term1 + term2 + tf.eye(num_feats, num_feats, dtype=settings.tf_float)
 
         return mean, variance, tf.constant(True, dtype=tf.bool)
 

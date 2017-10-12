@@ -96,7 +96,8 @@ class GPR(GPModel):
             fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, tf.shape(self.Y)[1]])
         return fmean, fvar
 
-    @autoflow
+    @autoflow()
+    @params_as_tensors
     def linear_weights_posterior(self):
         """
         Some kernels have finite dimensional feature maps. Others although not having finite
@@ -135,17 +136,16 @@ class GPR(GPModel):
         # to check that TF's Cholesky solve can deal with this.
 
         # This follows almost exactly the example 2.1 of GPML as we have a tractable likelihood
-        feat_map = self.kern.create_feature_map_func(self.random_seed_for_random_features)
-        feats = feat_map(self.X)
+        feats = self.kern._feature_map(self.X)
         num_obs = tf.shape(feats)[0]
         num_feats = tf.shape(feats)[1]
         # NB we currently run a naive version. However, if number of data points is smaller than
         # the feature dimension then I think we can use the Matrix Inversion Lemma to cut down on
         # computation
-        Sigma_obs_inversed = tf.eye(num_obs, num_obs, dtype=float_type) / self.likelihood.variance
+        Sigma_obs_inversed = tf.eye(num_obs, num_obs, dtype=settings.tf_float) / self.likelihood.variance
 
         A = tf.matmul(feats, tf.matmul(Sigma_obs_inversed, feats), transpose_a=True) + \
-            tf.eye(num_feats, num_feats, dtype=float_type)
+            tf.eye(num_feats, num_feats, dtype=settings.tf_float)
         L_A = tf.cholesky(A)
 
         unscaled_mean = tf.matmul(feats, tf.matmul(Sigma_obs_inversed, (self.Y - self.mean_function(self.X))),

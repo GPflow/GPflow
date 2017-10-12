@@ -6,6 +6,7 @@ import numpy as np
 
 import gpflow
 from gpflow.test_util import GPflowTestCase
+from gpflow import decors
 
 from .reference import referenceRbfKernel, referenceArcCosineKernel, referencePeriodicKernel
 
@@ -547,37 +548,60 @@ class TestARDInit(GPflowTestCase):
             self.assertTrue(np.all(k1_variances == k2_variances))
 
 
-
 class TestFeatureMap(GPflowTestCase):
+
+    def setUp(self):
+        self.kernels_with_approx = [gpflow.kernels.RBF, gpflow.kernels.Exponential,
+                                    gpflow.kernels.Matern12, gpflow.kernels.Matern52,
+                                    gpflow.kernels.Matern32]
+        self.exact_kernels = [gpflow.kernels.Linear, gpflow.kernels.Constant, gpflow.kernels.Bias]
+        ka = gpflow.kernels.Cosine(10)
+        kb = gpflow.kernels.RBF(10)
+        k_list = [ka, kb]
+        self.non_implemented_kerns = [gpflow.kernels.Cosine(10), gpflow.kernels.ArcCosine(10),
+                                      gpflow.kernels.Polynomial(1), gpflow.kernels.Add(k_list),
+                                      gpflow.kernels.Prod(k_list),
+                                      gpflow.kernels.PeriodicKernel(1)]
+        # nb for some of these kernels we could define a feature transform but these have not been
+        # implemented yet. For instance the Periodic is just RBF after cos/sin transform and
+        # polynomial has a closed form solution.
+
+    def _inner_k_evals(self, kern, x):
+        feature_map = kern.feature_map
+        kern.compile()
+
+        with kern.graph.as_default():
+            x_ph = tf.placeholder(tf.float64, x.shape)
+
+        mapped_x = feature_map(x)
+        k_via_lin = mapped_x @ mapped_x.T
+
+        with decors.params_as_tensors_for(kern):
+            k_via_k = kern.K(x_ph)
+
+        fd = {x_ph: x}
+        if kern.feeds:
+            fd.update(kern.feeds)
+        k_via_lin_evald = k_via_lin
+        k_via_k_evald = kern.session.run(k_via_k, feed_dict=fd)
+        return k_via_k_evald, k_via_lin_evald
+
+
     def test_feature_dot_product_matches_kernel_exactly(self):
-        kernels_to_test = [gpflow.kernels.Linear,
-                           gpflow.kernels.Constant, gpflow.kernels.Bias]
+        kernels_to_test = self.exact_kernels
 
         num_items = 1000
         rng = np.random.RandomState(100)
 
         x = rng.randn(num_items, 1)
-        x_ph = tf.placeholder(tf.float64, x.shape)
         for kernel_class in kernels_to_test:
             kern = kernel_class(1, variance=4.41564)
-            feature_map = kern.create_feature_map_func(10)
-            with kern.tf_mode():
-                x_free = tf.placeholder('float64')
-                kern.make_tf_array(x_free)
-                mapped_x = feature_map(x_ph)
-                k_via_lin = tf.matmul(mapped_x, mapped_x, transpose_b=True)
-                k_via_k = kern.K(x_ph)
-
-            with tf.Session() as sess:
-                fd = {x_ph: x,  x_free: kern.get_free_state()}
-                k_via_lin_evald = sess.run(k_via_lin, feed_dict=fd)
-                k_via_k_evald = sess.run(k_via_k, feed_dict=fd)
+            k_via_k_evald, k_via_lin_evald = self._inner_k_evals(kern, x)
             np.testing.assert_almost_equal(k_via_k_evald, k_via_lin_evald,
                                            err_msg="Failed on kernel: {}".format(str(type(kern))))
 
     def test_feature_dot_product_matches_kernel_exactly_multi_dimension(self):
-        kernels_to_test = [gpflow.kernels.Linear,
-                           gpflow.kernels.Constant, gpflow.kernels.Bias]
+        kernels_to_test = self.exact_kernels
 
         num_items = 1000
         num_orig_dims = 4
@@ -585,21 +609,9 @@ class TestFeatureMap(GPflowTestCase):
         rng = np.random.RandomState(100)
 
         x = rng.randn(num_items, num_orig_dims)
-        x_ph = tf.placeholder(tf.float64, x.shape)
         for kernel_class in kernels_to_test:
             kern = kernel_class(2, variance=7.456, active_dims=slice_to_use)
-            feature_map = kern.create_feature_map_func(10)
-            with kern.tf_mode():
-                x_free = tf.placeholder('float64')
-                kern.make_tf_array(x_free)
-                mapped_x = feature_map(x_ph)
-                k_via_lin = tf.matmul(mapped_x, mapped_x, transpose_b=True)
-                k_via_k = kern.K(x_ph)
-
-            with tf.Session() as sess:
-                fd = {x_ph: x,  x_free: kern.get_free_state()}
-                k_via_lin_evald = sess.run(k_via_lin, feed_dict=fd)
-                k_via_k_evald = sess.run(k_via_k, feed_dict=fd)
+            k_via_k_evald, k_via_lin_evald = self._inner_k_evals(kern, x)
             np.testing.assert_almost_equal(k_via_k_evald, k_via_lin_evald,
                                            err_msg="Failed on kernel: {}".format(str(type(kern))))
 
@@ -608,34 +620,15 @@ class TestFeatureMap(GPflowTestCase):
         # this one checks the approximate random features.
         # as these are not guaranteed to be exact they do not have to match exactly
         # so this is a really rough test and probably can only catch very large regressions
-        kernels_to_test = [gpflow.kernels.RBF
-            , gpflow.kernels.Exponential,
-                           gpflow.kernels.Matern12, gpflow.kernels.Matern52,
-                           gpflow.kernels.Matern32, gpflow.kernels.PeriodicKernel]
+        kernels_to_test = self.kernels_with_approx
 
         num_items = 10
         rng = np.random.RandomState(100)
 
         x = rng.uniform(0, 10, (num_items, 1))
-        x_ph = tf.placeholder(tf.float64, x.shape)
         for kernel_class in kernels_to_test:
             kern = kernel_class(1, variance=1.2, num_features_to_approx=10000, lengthscales=5.4)
-            with kern.tf_mode():
-
-                x_free = tf.placeholder('float64')
-                kern.make_tf_array(x_free)
-
-                # Needs to be made before call feature map function.
-                feature_map = kern.create_feature_map_func(1000)
-
-                mapped_x = feature_map(x_ph)
-                k_via_lin = tf.matmul(mapped_x, mapped_x, transpose_b=True)
-                k_via_k = kern.K(x_ph)
-
-            with tf.Session() as sess:
-                fd = {x_ph: x, x_free: kern.get_free_state()}
-                k_via_lin_evald = sess.run(k_via_lin, feed_dict=fd)
-                k_via_k_evald = sess.run(k_via_k, feed_dict=fd)
+            k_via_k_evald, k_via_lin_evald = self._inner_k_evals(kern, x)
 
             abs_diff = np.abs((k_via_k_evald - k_via_lin_evald))
             print("Max abs diff for kernel {} is {}. Max abs kernel value is {}.".format(str(type(kern)),
@@ -646,42 +639,23 @@ class TestFeatureMap(GPflowTestCase):
 
     def test_random_features_are_correct_dims(self):
         # Checks random features are correct shape.
-        kernels_to_test = [gpflow.kernels.RBF
-            , gpflow.kernels.Exponential,
-                           gpflow.kernels.Matern12, gpflow.kernels.Matern52,
-                           gpflow.kernels.Matern32, gpflow.kernels.PeriodicKernel]
+        kernels_to_test = self.kernels_with_approx
 
         num_items = 10
         rng = np.random.RandomState(100)
 
         x = rng.uniform(0, 10, (num_items, 1))
-        x_ph = tf.placeholder(tf.float64, x.shape)
         for kernel_class in kernels_to_test:
             kern = kernel_class(1, variance=1.2, num_features_to_approx=10000, lengthscales=5.4)
-            with kern.tf_mode():
-
-                x_free = tf.placeholder('float64')
-                kern.make_tf_array(x_free)
-
-                # Needs to be made before call feature map function.
-                feature_map = kern.create_feature_map_func(10)
-
-                mapped_x = feature_map(x_ph)
-
-            with tf.Session() as sess:
-                fd = {x_ph: x, x_free: kern.get_free_state()}
-                mapped_x_evald = sess.run(mapped_x, feed_dict=fd)
-
-            self.assertEqual(mapped_x_evald.shape, (num_items, 10000))
+            kern.compile()
+            mapped_x = kern.feature_map(x)
+            self.assertEqual(mapped_x.shape, (num_items, 10000))
 
     def test_feature_dot_product_matches_kernel_roughly_multi_dim(self):
         # this one checks the approximate random features.
         # as these are not guaranteed to be exact they do not have to match exactly
         # so this is a really rough test and probably can only catch very large regressions
-        kernels_to_test = [gpflow.kernels.RBF
-            , gpflow.kernels.Exponential,
-                           gpflow.kernels.Matern12, gpflow.kernels.Matern52,
-                           gpflow.kernels.Matern32, gpflow.kernels.PeriodicKernel]
+        kernels_to_test = self.kernels_with_approx
 
         num_items = 10
         num_orig_dims = 4
@@ -689,48 +663,27 @@ class TestFeatureMap(GPflowTestCase):
         rng = np.random.RandomState(100)
 
         x = rng.uniform(0, 10, (num_items, num_orig_dims))
-        x_ph = tf.placeholder(tf.float64, x.shape)
         for kernel_class in kernels_to_test:
             kern = kernel_class(2, variance=1.2, num_features_to_approx=10000, lengthscales=5.4, active_dims=slice_to_use)
-            with kern.tf_mode():
-
-                x_free = tf.placeholder('float64')
-                kern.make_tf_array(x_free)
-
-                # Needs to be made before call feature map function.
-                feature_map = kern.create_feature_map_func(1000)
-
-                mapped_x = feature_map(x_ph)
-                k_via_lin = tf.matmul(mapped_x, mapped_x, transpose_b=True)
-                k_via_k = kern.K(x_ph)
-
-            with tf.Session() as sess:
-                fd = {x_ph: x, x_free: kern.get_free_state()}
-                k_via_lin_evald = sess.run(k_via_lin, feed_dict=fd)
-                k_via_k_evald = sess.run(k_via_k, feed_dict=fd)
-
+            k_via_k_evald, k_via_lin_evald = self._inner_k_evals(kern, x)
             abs_diff = np.abs((k_via_k_evald - k_via_lin_evald))
-            print("Max abs diff for kernel {} is {}. Max abs kernel value is {}.".format(str(type(kern)),
-                                            np.max(abs_diff), np.max(np.abs(k_via_k_evald))))
-            np.testing.assert_array_less(abs_diff, 0.15 * np.max(k_via_k_evald) * np.ones_like(k_via_lin_evald),
-                                           err_msg="Failed on kernel: {}. Max absolute diff was {}".format(
+
+            DEBUG_STR = False
+            if DEBUG_STR:
+                print("Max abs diff for kernel {} is {}. Max abs kernel value is {}.".format(
+                    str(type(kern)), np.max(abs_diff), np.max(np.abs(k_via_k_evald))))
+            np.testing.assert_array_less(abs_diff,
+                                         0.15 * np.max(k_via_k_evald) * np.ones_like(k_via_lin_evald),
+                                         err_msg="Failed on kernel: {}. Max absolute diff was {}".format(
                                                str(type(kern)), str(np.max(abs_diff))))
 
     def test_non_implemented_kernels_give_correct_error(self):
-        ka = gpflow.kernels.Cosine(10)
-        kb = gpflow.kernels.RBF(10)
-        k_list = [ka, kb]
-        kernels_with_no_linear_features = [gpflow.kernels.Cosine(10), gpflow.kernels.ArcCosine(10),
-                                           gpflow.kernels.Polynomial(1), gpflow.kernels.Add(k_list),
-                                           gpflow.kernels.Prod(k_list)]
-        # nb for some of these kernels we could define a feature transform but these have not been
-        # implemented yet.
+        kernels_with_no_linear_features = self.non_implemented_kerns
         for kernel_class in kernels_with_no_linear_features:
+            kernel_class.compile()
             with self.assertRaises(NotImplementedError):
-                kernel_class.create_feature_map_func(100)
-
-
-
+                res = kernel_class.feature_map(np.ones((10, 3), dtype=np.float64))
+                print(res)
 
 
 if __name__ == "__main__":

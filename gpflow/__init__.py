@@ -34,6 +34,7 @@ from gpflow import test_util
 from gpflow import training as train
 
 from gpflow.decors import autoflow
+from gpflow.decors import templateflow
 from gpflow.decors import name_scope
 from gpflow.decors import params_as_tensors
 
