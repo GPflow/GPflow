@@ -2,14 +2,13 @@ from abc import ABCMeta, abstractmethod
 from functools import singledispatch
 
 import numpy as np
+import six
 import tensorflow as tf
 
-from . import conditionals, transforms, kernels
-from ._settings import settings
-from .param import Param, Parameterized
-import six
-
-float_type = settings.dtypes.float_type
+import gpflow
+from gpflow import conditionals, transforms, kernels
+from gpflow import settings
+from gpflow.params import Parameter, Parameterized
 
 
 # class InducingFeature(Parameterized, metaclass=ABCMeta):  # Pure python3. Not ready to support yet.
@@ -27,7 +26,7 @@ class InducingFeature(six.with_metaclass(ABCMeta, Parameterized)):
         pass
 
     @abstractmethod
-    def Kuu(self, kern):
+    def Kuu(self, kern, jitter=0.0):
         """
         Calculates the covariance matrix between features for kernel `kern`.
         """
@@ -52,15 +51,15 @@ class InducingPoints(InducingFeature):
         :param Z: the initial positions of the inducing points, size M x D
         """
         super().__init__()
-        self.Z = Param(Z)
-        self._Mfeat = len(Z)
+        self._Mfeat = len(Z)  # Todo: Fix the static assignment of M
+        self.Z = Parameter(Z)
 
     def __len__(self):
         return self._Mfeat
 
-    def Kuu(self, kern):
+    def Kuu(self, kern, jitter=0.0):
         Kzz = kern.K(self.Z)
-        Kzz += settings.numerics.jitter_level * tf.eye(self._Mfeat, dtype=float_type)
+        Kzz += jitter * tf.eye(self._Mfeat, dtype=settings.dtypes.float_type)
         return Kzz
 
     def Kuf(self, kern, Xnew):
@@ -69,7 +68,7 @@ class InducingPoints(InducingFeature):
 
 
 class Multiscale(InducingFeature):
-    r"""
+    """
     Multi-scale inducing features
     Originally proposed in
 
@@ -83,10 +82,12 @@ class Multiscale(InducingFeature):
       }
 
     """
+
     def __init__(self, Z, scales):
         super().__init__()
-        self.Z = Param(Z)  # Multi-scale feature centres
-        self.scales = Param(scales, transform=transforms.positive)  # Multi-scale feature widths (std. dev. of Gaussian)
+        self.Z = Parameter(Z)  # Multi-scale feature centres
+        self.scales = Parameter(scales,
+                                transform=transforms.positive)  # Multi-scale feature widths (std. dev. of Gaussian)
         self._M = len(Z)
 
     def __len__(self):
@@ -102,20 +103,26 @@ class Multiscale(InducingFeature):
             idlengthscales = kern.lengthscales + Zlen
             d = self._cust_square_dist(Xnew, Zmu, idlengthscales)
             return tf.transpose(self.variance * tf.exp(-d / 2) *
-                                tf.reshape(tf.reduce_prod(kern.lengthscales / idlengthscales, 1), (1, -1)))
+                                tf.reshape(tf.reduce_prod(kern.lengthscales / idlengthscales, 1),
+                                           (1, -1)))
         else:
-            raise NotImplementedError("Multiscale features not implemented for `%s`." % str(type(kern)))
+            raise NotImplementedError(
+                "Multiscale features not implemented for `%s`." % str(type(kern)))
 
-    def Kuu(self, kern):
+    def Kuu(self, kern, jitter=0.0):
         if isinstance(kern, kernels.RBF):
             Zmu, Zlen = kern._slice(self.Z, self.scales)
             idlengthscales2 = tf.square(kern.lengthscales + Zlen)
             sc = tf.sqrt(
-                tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(kern.lengthscales))
+                tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(
+                    kern.lengthscales))
             d = self._cust_square_dist(Zmu, Zmu, sc)
-            return self.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
+            Kzz = self.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
+            Kzz += jitter * tf.eye(self._Mfeat, dtype=settings.tf_float)
+            return Kzz
         else:
-            raise NotImplementedError("Multiscale features not implemented for `%s`." % str(type(kern)))
+            raise NotImplementedError(
+                "Multiscale features not implemented for `%s`." % str(type(kern)))
 
 
 @singledispatch
@@ -138,7 +145,8 @@ def default_feature_conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None
     >>> gpflow.features.conditional.register(YourFeatureClass,
     ...             gpflow.features.default_feature_conditional)
     """
-    return conditionals.feature_conditional(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt, whiten=whiten)
+    return conditionals.feature_conditional(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
+                                            whiten=whiten)
 
 
 def inducingpoint_wrapper(feat, Z):

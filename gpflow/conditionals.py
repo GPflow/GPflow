@@ -60,10 +60,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
 
     """
     num_data = tf.shape(X)[0]  # M
-    num_func = tf.shape(f)[1]  # K
-    Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.tf_float) * settings.numerics.jitter_level
-    Kmm = kern.K(X) + tf.eye(num_data, dtype=float_type) * settings.numerics.jitter_level
     Kmn = kern.K(X, Xnew)
     if full_cov:
         Knn = kern.K(Xnew)
@@ -71,9 +68,10 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
         Knn = kern.Kdiag(Xnew)
     return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, whiten=whiten)
 
-@name_scope
+
+@name_scope()
 def feature_conditional(Xnew, feat, kern, f, full_cov=False, q_sqrt=None, whiten=False):
-    Kmm = feat.Kuu(kern)
+    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)
     Kmn = feat.Kuf(kern, Xnew)
     if full_cov:
         Knn = kern.K(Xnew)
@@ -81,7 +79,8 @@ def feature_conditional(Xnew, feat, kern, f, full_cov=False, q_sqrt=None, whiten
         Knn = kern.Kdiag(Xnew)
     return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, whiten=whiten)
 
-@name_scope
+
+@name_scope()
 def base_conditional(Kmn, Kmm, Knn, f, full_cov=False, q_sqrt=None, whiten=False):
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # K

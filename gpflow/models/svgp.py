@@ -100,7 +100,7 @@ class SVGP(GPModel):
             else:
                 KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
         else:
-            K = self.feat.Kuu(self.kern) + tf.eye(self.num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
+            K = self.feat.Kuu(self.kern, jitter=settings.numerics.jitter_level)
             if self.q_diag:
                 KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
             else:

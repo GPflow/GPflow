@@ -60,7 +60,7 @@ class SGPRUpperMixin(object):
         num_data = tf.cast(tf.shape(self.Y)[0], settings.tf_float)
 
         Kdiag = self.kern.Kdiag(self.X)
-        Kuu = self.feat.Kuu(self.kern) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
+        Kuu = self.feat.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         Kuf = self.feat.Kuf(self.kern, self.X)
 
         L = tf.cholesky(Kuu)
@@ -138,7 +138,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.feat.Kuf(self.kern, self.X)
-        Kuu = self.feat.Kuu(self.kern) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.jitter
+        Kuu = self.feat.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         L = tf.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -172,7 +172,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         num_inducing = len(self.feat)
         err = self.Y - self.mean_function(self.X)
         Kuf = self.feat.Kuf(self.kern, self.X)
-        Kuu = self.feat.Kuu(self.kern) + tf.eye(num_inducing, dtype=settings.tf_float) * jitter_level
+        Kuu = self.feat.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         Kus = self.feat.Kuf(self.kern, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
@@ -237,7 +237,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
         Kuf = self.feat.Kuf(self.kern, self.X)
-        Kuu = self.feat.Kuu(self.kern) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.jitter
+        Kuu = self.feat.Kuu(self.kern, jitter=settings.numerics.jitter_level)
 
         Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
