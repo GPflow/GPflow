@@ -207,23 +207,22 @@ class Parameterized(Node):
     def _build(self):
         for param in self.params:
             param._build_with_name_scope() # pylint: disable=W0212
-        self._prior_tensor = self._build_prior()
-
-    def _build_prior(self):
-        """
-        Build a tf expression for the prior by summing all child-parameter priors.
-        """
         priors = []
         for param in self.params:
             if not isinstance(param, DataHolder):
                 if isinstance(param, Parameterized) and param.prior_tensor is None:
                     continue
                 priors.append(param.prior_tensor)
+        self._prior_tensor = self._build_prior(priors)
 
+    def _build_prior(self, prior_tensors):
+        """
+        Build a tf expression for the prior by summing all child-parameter priors.
+        """
         # TODO(@awav): What prior must represent empty list of parameters?
-        if not priors:
+        if not prior_tensors:
             return None
-        return tf.add_n(priors, name='prior')
+        return tf.add_n(prior_tensors, name='prior')
 
     def _set_param(self, name, value):
         object.__setattr__(self, name, value)
