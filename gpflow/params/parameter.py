@@ -198,9 +198,12 @@ class Parameter(Node):
         self._prior_tensor = None          # pylint: disable=W0201
 
     def _build(self):
-        self._unconstrained_tensor = self._build_parameter()  # pylint: disable=W0201
-        self._constrained_tensor = self._build_constrained()  # pylint: disable=W0201
-        self._prior_tensor = self._build_prior()              # pylint: disable=W0201
+        unconstrained = self._build_parameter()
+        constrained = self._build_constrained(unconstrained)
+        prior = self._build_prior(unconstrained, constrained)
+        self._unconstrained_tensor = unconstrained  # pylint: disable=W0201
+        self._constrained_tensor = constrained      # pylint: disable=W0201
+        self._prior_tensor = prior                  # pylint: disable=W0201
 
     def _build_parameter(self):
         if self._externally_defined:
@@ -222,26 +225,29 @@ class Parameter(Node):
         self._initial_value_tensor = init
         return tf.get_variable(name, initializer=init, trainable=self.trainable)
 
-    def _build_constrained(self):
-        if not misc.is_tensor(self.parameter_tensor):  # pragma: no cover
-            raise GPflowError("Parameter's unconstrained tensor is not compiled.")
-        return self.transform.forward_tensor(self.parameter_tensor)
+    def _build_constrained(self, parameter_tensor):
+        if not misc.is_tensor(parameter_tensor):  # pragma: no cover
+            raise GPflowError("Input must be a tensor.")
+        return self.transform.forward_tensor(parameter_tensor)
 
-    def _build_prior(self):
+    def _build_prior(self, unconstrained_tensor, constrained_tensor):
         """
         Build a tensorflow representation of the prior density.
         The log Jacobian is included.
         """
-        if not misc.is_tensor(self.constrained_tensor):  # pragma: no cover
-            raise GPflowError("Parameter's tensor is not compiled.")
+        if not misc.is_tensor(unconstrained_tensor):
+            raise GPflowError("Unconstrained input must be a tensor.")
+
+        if not misc.is_tensor(constrained_tensor):
+            raise GPflowError("Constrained input must be a tensor.")
 
         prior_name = 'prior'
 
         if self.prior is None:
             return tf.constant(0.0, settings.tf_float, name=prior_name)
 
-        log_jacobian = self.transform.log_jacobian_tensor(self.unconstrained_tensor)
-        logp_var = self.prior.logp(self.constrained_tensor)
+        log_jacobian = self.transform.log_jacobian_tensor(unconstrained_tensor)
+        logp_var = self.prior.logp(constrained_tensor)
         return tf.squeeze(tf.add(logp_var, log_jacobian, name=prior_name))
 
     def _check_tensor_trainable(self, tensor):

@@ -14,6 +14,8 @@
 
 
 from __future__ import division, print_function
+
+import tensorflow as tf
 import numpy as np
 
 
@@ -59,8 +61,8 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
         if verbose:
             print("burn-in sampling started")
         samples = sample_HMC(f, num_samples=burn, Lmin=Lmin, Lmax=Lmax,
-                             epsilon=epsilon, x0=x0,
-                             verbose=verbose, thin=1, burn=0, RNG=RNG)
+                             epsilon=epsilon,
+                             thin=1, burn=0)
         if verbose:
             print("burn-in sampling ended")
         x0 = samples[-1]
@@ -69,24 +71,26 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
     samples = np.zeros((num_samples, D))
     samples[0] = x0.copy()
     x = x0.copy()
-    logprob, grad = f(x0)
-    logprob, grad = -logprob, -grad
+    logprob = tf.negative(model.objective)
+    grads = tf.gradient(logprob, model.trainable_variables)
     logprob_track[0] = logprob
 
     accept_count_batch = 0
 
-    for t in range(1, num_samples * thin):
-
-        # Output acceptance rate every 100 iterations
-        if ((t + 1) % 100) == 0:
-            if verbose:
-                print("Iteration: ", t + 1,
-                      "\t Acc Rate: ", 1. * accept_count_batch, "%")
-            accept_count_batch = 0
-
+    steps = num_samples * thin
+    for i in range(1, steps):
         # make a copy of the old state.
-        x_old, logprob_old, grad_old = x.copy(), logprob, grad.copy()
-        p_old = RNG.randn(D)
+        xs = _do_map(lambda x_i: x_i.read_value(), x)
+        # grad_old = x.copy(), logprob, grad.copy()
+        # p_old = RNG.randn(D)
+
+        def random_ps(x):
+            return tf.random_normal(tf.shape(x), seed, dtype=x.dtype)
+        ps_prev = _do_map(random_ps, xs)
+
+        ps = _do_map(lambda x: p_prev + 0.5 * epsilon * x, zip(xs_grad_prev, ps_prev))
+        premature_reject = tf.convert_to_tensor(False, dtype=tf.bool)
+        iter_max = tf.random_uniform(lmin, lmax, dtype=tf.int32, seed=seed)
 
         # Standard HMC - begin leapfrogging
         premature_reject = False
@@ -113,8 +117,7 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
             continue
 
         # work out whether to accept the proposal
-        log_accept_ratio = logprob - 0.5 * p.dot(p) -\
-            logprob_old + 0.5 * p_old.dot(p_old)
+        log_accept_ratio = logprob - 0.5 * p.dot(p) - logprob_old + 0.5 * p_old.dot(p_old)
         logu = np.log(RNG.rand())
 
         if logu < log_accept_ratio:  # accept
@@ -132,16 +135,27 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
     else:
         return samples
 
-        # Standard HMC - begin leapfrogging
-        premature_reject = False
-        p = p_old + 0.5 * epsilon * grad
-        for l in range(RNG.randint(Lmin, Lmax)):
-            x += epsilon * p
-            logprob, grad = f(x)
-            logprob, grad = -logprob, -grad
-            if np.any(np.isnan(grad)):  # pragma: no cover
-                premature_reject = True
-                break
-            p += epsilon * grad
-        p -= 0.5 * epsilon * grad
-        # leapfrogging done
+def _do_map(tensors, func):
+    return list(map(func, tensors))
+
+def _leapfrog_steps(xs, xs_grad_prev, ps_prev, epsilon, lmin, lmax, seed=None):
+    def build_ps(x, p_prev):
+        return p_prev + 0.5 * epsilon * x
+    ps = _do_map(build_ps, zip(xs_grad_prev, ps_prev))
+    premature_reject = tf.convert_to_tensor(False, dtype=tf.bool)
+    iter_max = tf.random_uniform(lmin, lmax, dtype=tf.int32, seed=seed)
+
+    def cond(i, _ps):
+        return tf.less(i, iter_max)
+
+     = tf.while_loop(cond, body, loop_vars, back_prop=False)
+    for l in range(RNG.randint(Lmin, Lmax)):
+        x += epsilon * p
+        logprob, grad = f(x)
+        logprob, grad = -logprob, -grad
+        if np.any(np.isnan(grad)):  # pragma: no cover
+            premature_reject = True
+            break
+        p += epsilon * grad
+    p -= 0.5 * epsilon * grad
+    # leapfrogging done
