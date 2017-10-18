@@ -18,10 +18,7 @@ from __future__ import division, print_function
 import tensorflow as tf
 import numpy as np
 
-
-def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
-               thin=1, burn=0, seed=None,
-               return_logprobs=False):
+def sample(model, num_samples, epsilon, lmin=1, lmax=1, thin=1, burn=0):
     """
     A straight-forward HMC implementation. The mass matrix is assumed to be the
     identity.
@@ -53,144 +50,134 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
     uniformly between Lmin and Lmax, and taking steps of length epsilon.
     """
 
-    # an array to store the logprobs in (even if the user doesn't want them)
-    logprob_track = np.empty(num_samples)
-
-    # burn some samples if needed.
-    if burn > 0:
-        if verbose:
-            print("burn-in sampling started")
-        samples = sample_HMC(f, num_samples=burn, Lmin=Lmin, Lmax=Lmax,
-                             epsilon=epsilon,
-                             thin=1, burn=0)
-        if verbose:
-            print("burn-in sampling ended")
-        x0 = samples[-1]
-
-    def logprob_and_grad():
+    def logprob_and_grads():
         logprob = tf.negative(model.objective)
-        grads = tf.gradient(logprob, model.trainable_variables)
+        grads = tf.gradients(logprob, model.trainable_variables)
         return logprob, grads
 
-    xs = _do_map(lambda x_i: x_i.read_value(), x)
-    logprob, grads = logprob_and_grad()
+    xs = model.trainable_variables
+    args = [thin, xs, epsilon, lmin, lmax, logprob_and_grads]
 
-    accept_count_batch = 0
+    if burn > 0:
+        _burning(burn, *args)
 
-    steps = num_samples * thin
-    for i in range(1, steps):
-        # make a copy of the old state.
-        # grad_old = x.copy(), logprob, grad.copy()
-        # p_old = RNG.randn(D)
+    result = tf.map_fn(lambda _: _thinning(*args), np.arange(num_samples), dtypes=...)
+    session.run(result, )
+    return
 
-        logprob, grads = logprob_and_grad()
 
-        def init_ps_fn(x):
-            return tf.random_normal(tf.shape(x), seed, dtype=x.dtype)
-        ps_init = _do_map(init_ps, xs)
+def _assign_variables(variables, values):
+    return _map(lambda var, value: var.assign(value), variables, values)
 
-        def update_p_fn(args, p, grad, coeff=1):
-            return p + coeff * epsilon * grad
 
-        leapfrog_iter_max = tf.random_uniform(lmin, lmax, dtype=tf.int32, seed=seed)
+def _copy_variables(variables):
+    # NOTE: read_value with control_dependencies does not guarantee that
+    #       that expected value will be returned.
+    # return _map(lambda v: v.read_value(), variables)
+    return _map(lambda var: var + 0, variables)
 
-        def leapfrog_update_x_fn(args, x, p):
-            return x.assign_add(epsilon * p)
+def _init_ps(xs):
+    return _map(lambda x: tf.random_normal(tf.shape(x), dtype=x.dtype), xs)
 
-        def leapfrog_check_premature(grads):
-            fins = _do_map(lambda tensor: tf.reduce_all(tf.is_finite(tensor)), grads)
-            return tf.reduce_all(fins)
 
-        def leapfrog_loop_cond_fn(i, early_stop, _):
-            return not stop and i < leapfrog_iter_max
+def _update_ps(ps, grads, epsilon, coeff=1):
+    return _map(lambda p, grad: p + coeff * epsilon * grad, ps, grads)
 
-        def leapfrog_loop_body_fn(i, _stop, ps, _xs):
-            new_xs = _do_map(leapfrog_update_x_fn, xs, ps)
-            with tf.control_dependencies(new_xs):
-                logprob, grads = logprob_and_grad()
-                proceed = leapfrog_check_premature(grads)
-                new_ps = tf.cond(proceed, _do_map(update_p, ps, grads), ps)
-                return i + 1, proceed, new_ps, new_xs
 
-        i = tf.convert_to_tensor(0, dtype=tf.int32)
-        stop = tf.convert_to_tensor(False, dtype=tf.bool)
-        ps = _do_map(update_p, ps_init, grads, coeff=0.5)
-        _i, premature_reject, ps_loop, xs_loop = tf.while_loop(
-            leapfrog_loop_cond,
-            leapfrog_loop_body,
-            [i, stop, ps, xs],
-            parallel_iterations=1)
+def _leapfrog_step(xs, ps, epsilon, max_iterations,
+                   logprob_and_grads_fn):
+    def update_xs(ps_values):
+        return _map(lambda x, p: x.assign_add(epsilon * p), xs, ps_values)
 
-        tf.cond(premature_reject, normal_proposal())
+    def premature_check(grads):
+        fins = _map(lambda grad: tf.reduce_all(tf.is_finite(grad)), grads)
+        return tf.reduce_all(fins)
 
-        def normal_proposal():
-            ps_new = _do_map(update_p, ps_loop, grad_loop, coeff=-0.5)
+    def cond(iteration, stop, _ps, _xs):
+        return (not stop) and (iteration < max_iterations)
 
-        # Standard HMC - begin leapfrogging
-        premature_reject = False
-        p = p_old + 0.5 * epsilon * grad
-        for l in range(RNG.randint(Lmin, Lmax)):
-            x += epsilon * p
-            logprob, grad = f(x)
-            logprob, grad = -logprob, -grad
-            if np.any(np.isnan(grad)):  # pragma: no cover
-                premature_reject = True
-                break
-            p += epsilon * grad
-        p -= 0.5 * epsilon * grad
-        # leapfrogging done
+    def body(iteration, _stop, ps, _xs):
+        xs_new = update_xs(ps)
+        with tf.control_dependencies(xs_new):
+            _, grads = logprob_and_grads_fn()
+            proceed = premature_check(grads)
+            ps_new = tf.cond(proceed, _update_ps(ps, grads, epsilon), ps)
+            return iteration + 1, proceed, ps_new, xs_new
 
-        # reject the proposal if there are numerical errors.
-        if premature_reject:  # pragma: no cover
-            print("warning: numerical instability.\
-                  Rejecting this proposal prematurely")
-            x, logprob, grad = x_old, logprob_old, grad_old
-            if t % thin == 0:
-                samples[t // thin] = x_old
-                logprob_track[t // thin] = logprob_old
-            continue
+    i = tf.convert_to_tensor(0, dtype=tf.int32)
+    stop = tf.convert_to_tensor(False, dtype=tf.bool)
+    result = tf.while_loop(cond, body,
+                           [i, stop, ps, xs],
+                           parallel_iterations=1,
+                           back_prop=False)
+    with tf.control_dependencies(result):
+        logprob_out, grads_out = logprob_and_grads_fn()
+        _i, premature, ps_out, _xs  = result
+        return premature, ps_out, logprob_out, grads_out
 
-        # work out whether to accept the proposal
-        def compute_proposal():
-        log_accept_ratio = logprob - 0.5 * p.dot(p) - logprob_old + 0.5 * p_old.dot(p_old)
-        logu = np.log(RNG.rand())
 
-        if logu < log_accept_ratio:  # accept
-            if t % thin == 0:
-                samples[t // thin] = x
-                logprob_track[t // thin] = logprob
-            accept_count_batch += 1
-        else:  # reject
-            if t % thin == 0:
-                samples[t // thin] = x_old
-                logprob_track[t // thin] = logprob_old
-            x, logprob, grad = x_old, logprob_old, grad_old
-    if return_logprobs:
-        return samples, logprob_track
-    else:
-        return samples
+def _premature_reject(xs, xs_prev, logprob_and_grads):
+    xs_new = _copy_variables(_assign_variables(xs, xs_prev))
+    with tf.control_dependencies(xs_new):
+        logprob, _ = logprob_and_grads()
+        return xs_new, logprob
 
-def _do_map(func, *args, **kwargs):
+def _thinning(thin, xs, epsilon, lmin, lmax, logprob_and_grads_fn):
+    def cond(i, _sample, _logprob):
+        return i < thin
+
+    def body(i, _xs, logprob_prev):
+        xs_copy = _copy_variables(xs)
+        with tf.control_dependencies(xs_copy):
+            _, grads = logprob_and_grads_fn()
+
+            ps_init = _init_ps(xs)
+            ps = _update_ps(ps_init, grads, epsilon, coeff=+0.5)
+            max_iters = tf.random_uniform(lmin, lmax, dtype=tf.int32)
+
+            leapfrog_result = _leapfrog_step(xs, ps, epsilon, max_iters, logprob_and_grads_fn)
+            reject, ps_new, logprob_new, grads_new = leapfrog_result
+
+            xs_out, logprob_out = tf.cond(
+                reject,
+                _premature_reject(xs, xs_copy, logprob_prev),
+                _reject_accept_proposal(
+                    xs, xs_copy,
+                    ps_new, ps_init,
+                    logprob_new, logprob_prev,
+                    grads_new, epsilon))
+
+            return i + 1, xs_out, logprob_out
+
+    i = tf.convert_to_tensor(0, dtype=tf.int32)
+    logprob, _grads = logprob_and_grads_fn()
+    _, xs_sample, logprob = tf.while_loop(cond, body,
+                                          [i, xs, logprob],
+                                          back_prop=False,
+                                          parallel_iterations=1)
+    return xs_sample, logprob
+
+# work out whether to accept the proposal
+def _reject_accept_proposal(xs, xs_prev,
+                            ps, ps_prev,
+                            logprob, logprob_prev,
+                            grads, epsilon):
+    ps = _update_ps(ps, grads, epsilon, coeff=-0.5)
+
+    def dot(ps_values):
+        return tf.reduce_sum(_map(lambda p: tf.reduce_sum(tf.square(p)), ps_values))
+
+    log_accept_ratio = logprob - 0.5 * dot(ps) - logprob_prev + 0.5 * dot(ps_prev)
+    logu = tf.log(tf.random_normal(shape=tf.shape(logprob)))
+
+    def accept():
+        return _copy_variables(xs), logprob
+
+    def reject():
+        return _copy_variables(_assign_variables(xs, xs_prev)), logprob_prev
+
+    return tf.cond(logu < log_accept_ratio, accept(), reject())
+
+
+def _map(func, *args, **kwargs):
     return [func(*a, **kwargs) for a in zip(*args)]
-
-def _leapfrog_steps(xs, xs_grad_prev, ps_prev, epsilon, lmin, lmax, seed=None):
-    def build_ps(x, p_prev):
-        return p_prev + 0.5 * epsilon * x
-    ps = _do_map(build_ps, zip(xs_grad_prev, ps_prev))
-    premature_reject = tf.convert_to_tensor(False, dtype=tf.bool)
-    iter_max = tf.random_uniform(lmin, lmax, dtype=tf.int32, seed=seed)
-
-    def cond(i, _ps):
-        return tf.less(i, iter_max)
-
-     = tf.while_loop(cond, body, loop_vars, back_prop=False)
-    for l in range(RNG.randint(Lmin, Lmax)):
-        x += epsilon * p
-        logprob, grad = f(x)
-        logprob, grad = -logprob, -grad
-        if np.any(np.isnan(grad)):  # pragma: no cover
-            premature_reject = True
-            break
-        p += epsilon * grad
-    p -= 0.5 * epsilon * grad
-    # leapfrogging done
