@@ -67,30 +67,64 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
             print("burn-in sampling ended")
         x0 = samples[-1]
 
-    D = x0.size
-    samples = np.zeros((num_samples, D))
-    samples[0] = x0.copy()
-    x = x0.copy()
-    logprob = tf.negative(model.objective)
-    grads = tf.gradient(logprob, model.trainable_variables)
-    logprob_track[0] = logprob
+    def logprob_and_grad():
+        logprob = tf.negative(model.objective)
+        grads = tf.gradient(logprob, model.trainable_variables)
+        return logprob, grads
+
+    xs = _do_map(lambda x_i: x_i.read_value(), x)
+    logprob, grads = logprob_and_grad()
 
     accept_count_batch = 0
 
     steps = num_samples * thin
     for i in range(1, steps):
         # make a copy of the old state.
-        xs = _do_map(lambda x_i: x_i.read_value(), x)
         # grad_old = x.copy(), logprob, grad.copy()
         # p_old = RNG.randn(D)
 
-        def random_ps(x):
-            return tf.random_normal(tf.shape(x), seed, dtype=x.dtype)
-        ps_prev = _do_map(random_ps, xs)
+        logprob, grads = logprob_and_grad()
 
-        ps = _do_map(lambda x: p_prev + 0.5 * epsilon * x, zip(xs_grad_prev, ps_prev))
-        premature_reject = tf.convert_to_tensor(False, dtype=tf.bool)
-        iter_max = tf.random_uniform(lmin, lmax, dtype=tf.int32, seed=seed)
+        def init_ps_fn(x):
+            return tf.random_normal(tf.shape(x), seed, dtype=x.dtype)
+        ps_init = _do_map(init_ps, xs)
+
+        def update_p_fn(args, p, grad, coeff=1):
+            return p + coeff * epsilon * grad
+
+        leapfrog_iter_max = tf.random_uniform(lmin, lmax, dtype=tf.int32, seed=seed)
+
+        def leapfrog_update_x_fn(args, x, p):
+            return x.assign_add(epsilon * p)
+
+        def leapfrog_check_premature(grads):
+            fins = _do_map(lambda tensor: tf.reduce_all(tf.is_finite(tensor)), grads)
+            return tf.reduce_all(fins)
+
+        def leapfrog_loop_cond_fn(i, early_stop, _):
+            return not stop and i < leapfrog_iter_max
+
+        def leapfrog_loop_body_fn(i, _stop, ps, _xs):
+            new_xs = _do_map(leapfrog_update_x_fn, xs, ps)
+            with tf.control_dependencies(new_xs):
+                logprob, grads = logprob_and_grad()
+                proceed = leapfrog_check_premature(grads)
+                new_ps = tf.cond(proceed, _do_map(update_p, ps, grads), ps)
+                return i + 1, proceed, new_ps, new_xs
+
+        i = tf.convert_to_tensor(0, dtype=tf.int32)
+        stop = tf.convert_to_tensor(False, dtype=tf.bool)
+        ps = _do_map(update_p, ps_init, grads, coeff=0.5)
+        _i, premature_reject, ps_loop, xs_loop = tf.while_loop(
+            leapfrog_loop_cond,
+            leapfrog_loop_body,
+            [i, stop, ps, xs],
+            parallel_iterations=1)
+
+        tf.cond(premature_reject, normal_proposal())
+
+        def normal_proposal():
+            ps_new = _do_map(update_p, ps_loop, grad_loop, coeff=-0.5)
 
         # Standard HMC - begin leapfrogging
         premature_reject = False
@@ -117,6 +151,7 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
             continue
 
         # work out whether to accept the proposal
+        def compute_proposal():
         log_accept_ratio = logprob - 0.5 * p.dot(p) - logprob_old + 0.5 * p_old.dot(p_old)
         logu = np.log(RNG.rand())
 
@@ -135,8 +170,8 @@ def sample_HMC(f, num_samples, Lmin, Lmax, epsilon, x0, verbose=False,
     else:
         return samples
 
-def _do_map(tensors, func):
-    return list(map(func, tensors))
+def _do_map(func, *args, **kwargs):
+    return [func(*a, **kwargs) for a in zip(*args)]
 
 def _leapfrog_steps(xs, xs_grad_prev, ps_prev, epsilon, lmin, lmax, seed=None):
     def build_ps(x, p_prev):
