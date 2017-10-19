@@ -80,6 +80,11 @@ class HMC(Optimizer):
         tracks = session.run(hmc_op, feed_dict=model.feeds)
         return list(zip(*tracks))
 
+
+    def minimize(self, model, **kwargs):
+        raise NotImplementedError("HMC doesn't provide minimize method, use `sample` instead.")
+
+
 def _burning(burn, logprob_grads_fn, xs, *thin_args):
     def cond(i, _xs, _logprob):
         return i < burn
@@ -90,6 +95,7 @@ def _burning(burn, logprob_grads_fn, xs, *thin_args):
 
     logprob, _grads = logprob_grads_fn()
     return _while_loop(cond, body, [0, xs, logprob])
+
 
 def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
     def cond(i, _sample, _logprob, _grads):
@@ -152,6 +158,7 @@ def _reject_accept_proposal(xs, xs_prev,
 
     return tf.cond(logu < log_accept_ratio, accept, reject)
 
+
 def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
     def update_xs(ps_values):
         return _map(lambda x, p: x.assign_add(epsilon * p), xs, ps_values)
@@ -189,6 +196,7 @@ def _copy_variables(variables):
     # return _map(lambda v: v.read_value(), variables)
     return _map(lambda var: var + 0, variables)
 
+
 def _init_ps(xs):
     return _map(lambda x: tf.random_normal(tf.shape(x), dtype=x.dtype.as_numpy_dtype), xs)
 
@@ -196,8 +204,10 @@ def _init_ps(xs):
 def _update_ps(ps, grads, epsilon, coeff=1):
     return _map(lambda p, grad: p + coeff * epsilon * grad, ps, grads)
 
+
 def _while_loop(cond, body, args):
     return tf.while_loop(cond, body, args, parallel_iterations=1, back_prop=False)
+
 
 def _map(func, *args, **kwargs):
     return [func(*a, **kwargs) for a in zip(*args)]
