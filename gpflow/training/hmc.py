@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from __future__ import division, print_function
 
 import tensorflow as tf
 import numpy as np
 
 from .optimizer import Optimizer
-from .. import misc
+
 
 class HMC(Optimizer):
     def sample(self, model, num_samples, epsilon, lmin=1, lmax=1, thin=1, burn=0, session=None):
@@ -70,13 +69,16 @@ class HMC(Optimizer):
 
         xs_dtypes = _map(lambda x: x.dtype, xs)
         logprob_dtype = model.objective.dtype
-        dtypes = xs_dtypes + [logprob_dtype]
-        hmc_op = tf.map_fn(lambda _: _thinning(*thin_args),
-                           np.arange(num_samples), dtype=dtypes)
-        xs_samples, logprobs = session.run(hmc_op, feed_dict=model.feeds)
-        combined = xs_samples + [logprobs]
-        track = list(zip(*combined))
-        return track
+        dtypes = xs_dtypes.append(logprob_dtype)
+        indices = np.arange(num_samples)
+
+        def map_body(_):
+            xs_sample, logprob_sample = _thinning(*thin_args)
+            return xs_sample.append(logprob_sample)
+
+        hmc_op = tf.map_fn(map_body, indices, dtype=dtypes)
+        tracks = session.run(hmc_op, feed_dict=model.feeds)
+        return list(zip(*tracks))
 
 def _burning(burn, logprob_grads_fn, xs, *thin_args):
     def cond(i, _xs, _logprob):
@@ -87,55 +89,53 @@ def _burning(burn, logprob_grads_fn, xs, *thin_args):
         return i + 1, xs_new, logprob
 
     logprob, _grads = logprob_grads_fn()
-    return tf.while_loop(cond, body, [0, xs, logprob])
+    return _while_loop(cond, body, [0, xs, logprob])
 
 def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
-    def cond(i, _sample, _logprob):
+    def cond(i, _sample, _logprob, _grads):
         return i < thin
 
-    def body(i, _xs, logprob_prev):
+    def body(i, _xs, logprob_prev, grads_prev):
         xs_copy = _copy_variables(xs)
         with tf.control_dependencies(xs_copy):
-            _, grads = logprob_grads_fn()
-
             ps_init = _init_ps(xs)
-            ps = _update_ps(ps_init, grads, epsilon, coeff=+0.5)
-            max_iters = tf.random_uniform(lmin, lmax, dtype=tf.int32)
+            ps = _update_ps(ps_init, grads_prev, epsilon, coeff=+0.5)
+            max_iters = tf.random_uniform((), minval=lmin, maxval=lmax, dtype=tf.int32)
 
             leapfrog_result = _leapfrog_step(xs, ps, epsilon, max_iters, logprob_grads_fn)
-            reject, ps_new, logprob_new, grads_new = leapfrog_result
+            proceed, ps_new, logprob_new, grads_new = leapfrog_result
 
-            xs_out, logprob_out = tf.cond(
-                reject,
-                _premature_reject(xs, xs_copy, logprob_prev),
-                _reject_accept_proposal(
-                    xs, xs_copy,
-                    ps_new, ps_init,
-                    logprob_new, logprob_prev,
-                    grads_new, epsilon))
+            def standard_proposal():
+                return _reject_accept_proposal(xs, xs_copy,
+                                               ps_new, ps_init,
+                                               logprob_new, logprob_prev,
+                                               grads_new, grads_prev,
+                                               epsilon)
 
-            return i + 1, xs_out, logprob_out
+            def premature_reject():
+                return _premature_reject(xs, xs_copy, logprob_prev, grads_prev)
 
-    logprob, _grads = logprob_grads_fn()
-    with tf.control_dependencies([logprob]):
-        _, xs_sample, logprob = tf.while_loop(cond, body, [0, xs, logprob],
-                                              back_prop=False,
-                                              parallel_iterations=1)
-        return xs_sample, logprob
+            xs_out, logprob_out, grads_out = tf.cond(proceed, standard_proposal, premature_reject)
+            with tf.control_dependencies(xs_out):
+                return i + 1, xs_out, logprob_out, grads_out
+
+    logprob, grads = logprob_grads_fn()
+    with tf.control_dependencies([logprob] + grads):
+        _, xs_out, logprob_out, _grads = tf.while_loop(cond, body, [0, xs, logprob, grads])
+        return xs_out, logprob_out
 
 
-def _premature_reject(xs, xs_prev, logprob_grads_fn):
-    xs_new = _copy_variables(_assign_variables(xs, xs_prev))
-    with tf.control_dependencies(xs_new):
-        logprob, _ = logprob_grads_fn()
-        return xs_new, logprob
+def _premature_reject(xs, xs_prev, logprob_prev, grads_prev):
+    xs_back = _copy_variables(_assign_variables(xs, xs_prev))
+    return xs_back, logprob_prev, grads_prev
 
 
 # work out whether to accept the proposal
 def _reject_accept_proposal(xs, xs_prev,
                             ps, ps_prev,
                             logprob, logprob_prev,
-                            grads, epsilon):
+                            grads, grads_prev,
+                            epsilon):
     ps = _update_ps(ps, grads, epsilon, coeff=-0.5)
 
     def dot(ps_values):
@@ -145,40 +145,38 @@ def _reject_accept_proposal(xs, xs_prev,
     logu = tf.log(tf.random_normal(shape=tf.shape(logprob)))
 
     def accept():
-        return _copy_variables(xs), logprob
+        return _copy_variables(xs), logprob, grads
 
     def reject():
-        return _copy_variables(_assign_variables(xs, xs_prev)), logprob_prev
+        return _copy_variables(_assign_variables(xs, xs_prev)), logprob_prev, grads_prev
 
-    return tf.cond(logu < log_accept_ratio, accept(), reject())
+    return tf.cond(logu < log_accept_ratio, accept, reject)
 
 def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
     def update_xs(ps_values):
         return _map(lambda x, p: x.assign_add(epsilon * p), xs, ps_values)
 
-    def premature_check(grads):
+    def whether_proceed(grads):
         fins = _map(lambda grad: tf.reduce_all(tf.is_finite(grad)), grads)
         return tf.reduce_all(fins)
 
-    def cond(i, stop, _ps, _xs):
-        return (not stop) and (i < max_iterations)
+    def cond(i, proceed, _ps, _xs):
+        return tf.logical_and(proceed, i < max_iterations)
 
-    def body(i, _stop, ps, _xs):
+    def body(i, _proceed, ps, _xs):
         xs_new = update_xs(ps)
         with tf.control_dependencies(xs_new):
             _, grads = logprob_grads_fn()
-            proceed = premature_check(grads)
-            ps_new = tf.cond(proceed, _update_ps(ps, grads, epsilon), ps)
+            proceed = whether_proceed(grads)
+            ps_new = tf.cond(proceed, lambda: _update_ps(ps, grads, epsilon), lambda: ps)
             return i + 1, proceed, ps_new, xs_new
 
-    result = tf.while_loop(cond, body, [0, False, ps, xs],
-                           parallel_iterations=1,
-                           back_prop=False)
+    result = _while_loop(cond, body, [0, True, ps, xs])
 
-    with tf.control_dependencies(result):
+    _i, proceed_out, ps_out, xs_out = result
+    with tf.control_dependencies(ps_out + xs_out):
         logprob_out, grads_out = logprob_grads_fn()
-        _i, premature, ps_out, _xs = result
-        return premature, ps_out, logprob_out, grads_out
+        return proceed_out, ps_out, logprob_out, grads_out
 
 
 def _assign_variables(variables, values):
@@ -192,12 +190,14 @@ def _copy_variables(variables):
     return _map(lambda var: var + 0, variables)
 
 def _init_ps(xs):
-    return _map(lambda x: tf.random_normal(tf.shape(x), dtype=x.dtype), xs)
+    return _map(lambda x: tf.random_normal(tf.shape(x), dtype=x.dtype.as_numpy_dtype), xs)
 
 
 def _update_ps(ps, grads, epsilon, coeff=1):
     return _map(lambda p, grad: p + coeff * epsilon * grad, ps, grads)
 
+def _while_loop(cond, body, args):
+    return tf.while_loop(cond, body, args, parallel_iterations=1, back_prop=False)
 
 def _map(func, *args, **kwargs):
     return [func(*a, **kwargs) for a in zip(*args)]
