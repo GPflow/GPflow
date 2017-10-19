@@ -108,6 +108,11 @@ def normalize_dtype(value):
     return value if not tf_type else tf.as_dtype(value)
 
 
+def types_array(tensor, shape=None):
+    shape = shape if shape is not None else tensor.shape.as_list()
+    return np.full(shape, tensor.dtype).tolist()
+
+
 def get_attribute(obj, name, allow_fail=False, default=None):
     try:
         return object.__getattribute__(obj, name)
