@@ -55,12 +55,16 @@ class HMC(Optimizer):
 
         session = model.enquire_session(session)
 
+        xs = list(model.trainable_tensors)
+
         def logprob_grads():
             logprob = tf.negative(model.objective)
-            grads = tf.gradients(logprob, model.trainable_tensors)
+            grads = tf.gradients(logprob, xs)
             return logprob, grads
 
-        xs = model.trainable_tensors
+        print(xs)
+        print(logprob_grads())
+
         thin_args = [logprob_grads, xs, thin, epsilon, lmin, lmax]
 
         if burn > 0:
@@ -102,6 +106,7 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
         return i < thin
 
     def body(i, _xs, logprob_prev, grads_prev):
+        print("Inside body thinning: ", logprob_prev, grads_prev)
         xs_copy = _copy_variables(xs)
         with tf.control_dependencies(xs_copy):
             ps_init = _init_ps(xs)
@@ -126,6 +131,7 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
                 return i + 1, xs_out, logprob_out, grads_out
 
     logprob, grads = logprob_grads_fn()
+    print("Inside thinning: ", logprob, grads)
     with tf.control_dependencies([logprob] + grads):
         _, xs_out, logprob_out, _grads = tf.while_loop(cond, body, [0, xs, logprob, grads])
         return xs_out, logprob_out
@@ -148,7 +154,7 @@ def _reject_accept_proposal(xs, xs_prev,
         return tf.reduce_sum(_map(lambda p: tf.reduce_sum(tf.square(p)), ps_values))
 
     log_accept_ratio = logprob - 0.5 * dot(ps) - logprob_prev + 0.5 * dot(ps_prev)
-    logu = tf.log(tf.random_normal(shape=tf.shape(logprob)))
+    logu = tf.log(tf.random_normal(shape=tf.shape(logprob), dtype=logprob.dtype))
 
     def accept():
         return _copy_variables(xs), logprob, grads
