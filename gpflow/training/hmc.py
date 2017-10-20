@@ -57,7 +57,7 @@ class HMC(Optimizer):
 
         def logprob_grads():
             logprob = tf.negative(model.objective)
-            grads = tf.gradients(logprob, model.trainable_variables)
+            grads = tf.gradients(logprob, model.trainable_tensors)
             return logprob, grads
 
         xs = model.trainable_tensors
