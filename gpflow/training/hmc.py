@@ -21,7 +21,7 @@ from .optimizer import Optimizer
 
 
 class HMC(Optimizer):
-    def sample(self, model, num_samples, epsilon, lmin=1, lmax=1, thin=1, burn=0, session=None):
+    def sample(self, model, num_samples, epsilon, lmin=1, lmax=2, thin=1, burn=0, session=None):
         """
         A straight-forward HMC implementation. The mass matrix is assumed to be the
         identity.
@@ -62,9 +62,6 @@ class HMC(Optimizer):
             grads = tf.gradients(logprob, xs)
             return logprob, grads
 
-        print(xs)
-        print(logprob_grads())
-
         thin_args = [logprob_grads, xs, thin, epsilon, lmin, lmax]
 
         if burn > 0:
@@ -73,12 +70,12 @@ class HMC(Optimizer):
 
         xs_dtypes = _map(lambda x: x.dtype, xs)
         logprob_dtype = model.objective.dtype
-        dtypes = xs_dtypes.append(logprob_dtype)
+        dtypes = xs_dtypes + [logprob_dtype]
         indices = np.arange(num_samples)
 
         def map_body(_):
             xs_sample, logprob_sample = _thinning(*thin_args)
-            return xs_sample.append(logprob_sample)
+            return xs_sample + [logprob_sample]
 
         hmc_op = tf.map_fn(map_body, indices, dtype=dtypes)
         tracks = session.run(hmc_op, feed_dict=model.feeds)
@@ -106,7 +103,6 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
         return i < thin
 
     def body(i, _xs, logprob_prev, grads_prev):
-        print("Inside body thinning: ", logprob_prev, grads_prev)
         xs_copy = _copy_variables(xs)
         with tf.control_dependencies(xs_copy):
             ps_init = _init_ps(xs)
@@ -131,7 +127,6 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
                 return i + 1, xs_out, logprob_out, grads_out
 
     logprob, grads = logprob_grads_fn()
-    print("Inside thinning: ", logprob, grads)
     with tf.control_dependencies([logprob] + grads):
         _, xs_out, logprob_out, _grads = tf.while_loop(cond, body, [0, xs, logprob, grads])
         return xs_out, logprob_out
