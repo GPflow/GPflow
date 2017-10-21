@@ -122,7 +122,10 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
             def premature_reject():
                 return _premature_reject(xs, xs_copy, logprob_prev, grads_prev)
 
-            xs_out, logprob_out, grads_out = tf.cond(proceed, standard_proposal, premature_reject)
+            xs_out, logprob_out, grads_out = tf.cond(proceed,
+                                                     standard_proposal,
+                                                     premature_reject,
+                                                     strict=True)
             with tf.control_dependencies(xs_out):
                 return i + 1, xs_out, logprob_out, grads_out
 
@@ -157,7 +160,7 @@ def _reject_accept_proposal(xs, xs_prev,
     def reject():
         return _copy_variables(_assign_variables(xs, xs_prev)), logprob_prev, grads_prev
 
-    return tf.cond(logu < log_accept_ratio, accept, reject)
+    return tf.cond(logu < log_accept_ratio, accept, reject, strict=True)
 
 
 def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
@@ -176,7 +179,10 @@ def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
         with tf.control_dependencies(xs_new):
             _, grads = logprob_grads_fn()
             proceed = whether_proceed(grads)
-            ps_new = tf.cond(proceed, lambda: _update_ps(ps, grads, epsilon), lambda: ps)
+            ps_new = tf.cond(proceed,
+                             lambda: _update_ps(ps, grads, epsilon),
+                             lambda: ps,
+                             strict=True)
             return i + 1, proceed, ps_new, xs_new
 
     result = _while_loop(cond, body, [0, True, ps, xs])
