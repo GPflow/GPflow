@@ -49,8 +49,9 @@ class Parameter(Node):
                 return ITransform
             return None
 
-    def __init__(self, value=None, transform=None, prior=None, trainable=True, name=None):
-        value = Parameter._valid_input(value)
+    def __init__(self, value=None, transform=None, prior=None,
+                 trainable=True, dtype=None, name=None):
+        value = self._valid_input(value, dtype=dtype)
         super(Parameter, self).__init__(name)
 
         self._externally_defined = False
@@ -154,10 +155,10 @@ class Parameter(Node):
 
         object.__setattr__(self, 'trainable', value)
 
-    def assign(self, value, session=None):
+    def assign(self, value, session=None, dtype=None):
         if self._externally_defined:
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
-        value = Parameter._valid_input(value)
+        value = self._valid_input(value, dtype)
         if self.is_built_coherence() is Build.YES:
             if self.shape != value.shape:
                 raise GPflowError('Value has different shape. '
@@ -180,13 +181,19 @@ class Parameter(Node):
             raise GPflowError('Externally defined parameter requires session.')
         return self._value
 
-    @staticmethod
-    def _valid_input(value):
+    def _valid_input(self, value, dtype=None):
         if not misc.is_valid_param_value(value):
-            raise ValueError('The value must be either a tensorflow '
-                             'variable, an array or a scalar.')
+            msg = 'The value must be either a tensorflow variable, an array or a scalar.'
+            raise ValueError(msg)
+        if hasattr(self, '_value'):
+            if dtype is not None and self.dtype != dtype:
+                msg = 'The value has different data type "{0}". Parameter type is "{1}".'
+                raise ValueError(msg.format(self._value.dtype, dtype))
+            dtype = self._value.dtype
+        if dtype is None:
+            dtype = settings.np_float
         if misc.is_number(value) or misc.is_list(value):
-            value = np.array(value)
+            value = np.array(value, dtype=dtype)
         return value
 
     def _clear(self):
