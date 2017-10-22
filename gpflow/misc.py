@@ -90,20 +90,22 @@ def remove_from_trainables(variable, graph=None):
     trainables.remove(variable)
 
 
-def normalize_dtype(dtype):
+def normalize_num_type(num_type):
     """
     Work out what a sensible type for the array is. if the default type
     is float32, downcast 64bit float to float32. For ints, assume int32
     """
-    if isinstance(dtype, tf.DType):
-        dtype = dtype.as_numpy_dtype
-    if dtype.type in [np.float32, np.float64]:  # pylint: disable=E1101
-        dtype = settings.tf_float
-    elif dtype.type in [np.int16, np.int32, np.int64]:
-        dtype = tf.int32
+    if isinstance(num_type, tf.DType):
+        num_type = num_type.as_numpy_dtype.type
+
+    if num_type in [np.float32, np.float64]:  # pylint: disable=E1101
+        num_type = settings.np_float
+    elif num_type in [np.int16, np.int32, np.int64]:
+        num_type = settings.np_int
     else:
-        raise ValueError('Unknown dtype "{0}" passed to normalizer.'.format(dtype))
-    return dtype
+        raise ValueError('Unknown dtype "{0}" passed to normalizer.'.format(num_type))
+
+    return num_type
 
 
 def types_array(tensor, shape=None):
