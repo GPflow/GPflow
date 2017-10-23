@@ -17,6 +17,7 @@ from __future__ import division, print_function
 import itertools
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 from .optimizer import Optimizer
 
@@ -53,12 +54,11 @@ class HMC(Optimizer):
         :param thin: an integer which specifies the thinning interval.
         :param burn: an integer which specifies how many initial samples to discard.
 
-        :returns
-
         """
 
         session = model.enquire_session(session)
 
+        xs_names = [param.full_name for param in model.trainable_parameters]
         xs = list(model.trainable_tensors)
 
         def logprob_grads():
@@ -82,10 +82,10 @@ class HMC(Optimizer):
             return _flat(xs_sample, [logprob_sample])
 
         hmc_op = tf.map_fn(map_body, indices, dtype=dtypes)
-        tracks = session.run(hmc_op, feed_dict=model.feeds)
-        vars_track = tracks[:-1]
-        logprobs_track = tracks[-1]
-        return vars_track, logprobs_track
+        raw_tracks = session.run(hmc_op, feed_dict=model.feeds)
+        tracks = dict(zip(xs_names, raw_tracks[:-1]))
+        tracks.update({'logprobs': raw_tracks[-1]})
+        return tracks
 
 
     def minimize(self, model, **kwargs):
