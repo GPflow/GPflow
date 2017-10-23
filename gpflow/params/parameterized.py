@@ -178,14 +178,6 @@ class Parameterized(Node):
             init = tf.variables_initializer(initializables)
             session.run(init, feed_dict=self.initializable_feeds)
 
-    # TODO(@awav): # pylint: disable=W0511
-    #def randomize(self, distributions={}, skiptrainable=True):
-    #    """
-    #    Calls randomize on all parameters in model hierarchy.
-    #    """
-    #    for param in self.sorted_params:
-    #        param.randomize(distributions, skiptrainable)
-
     @staticmethod
     def _is_param_like(value):
         return isinstance(value, (Parameter, Parameterized))
