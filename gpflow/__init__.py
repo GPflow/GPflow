@@ -25,6 +25,7 @@ from gpflow import conditionals
 from gpflow import densities
 from gpflow import likelihoods
 from gpflow import kernels
+from gpflow import features
 from gpflow import ekernels
 from gpflow import priors
 from gpflow import core
