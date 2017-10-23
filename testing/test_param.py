@@ -47,6 +47,10 @@ class NamingTests(test_util.GPflowTestCase):
         self.assertEqual(m.full_name, m.raw_name)
         self.assertEqual(m.p.full_name, '{}/p'.format(m.raw_name))
 
+class TypesTests(test_util.GPflowTestCase):
+    def test_default_type(self):
+        pass
+
 
 class ParamTests(test_util.GPflowTestCase):
     def setUp(self):
