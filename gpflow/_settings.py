@@ -61,7 +61,11 @@ class _SettingsManager(object):
 
     @property
     def np_float(self):
-        return np.float32 if self.tf_float is tf.float32 else np.float64
+        return self.tf_float.as_numpy_dtype
+
+    @property
+    def np_int(self):
+        return self.tf_int.as_numpy_dtype
 
     @property
     def np_int(self):

@@ -49,8 +49,9 @@ class Parameter(Node):
                 return ITransform
             return None
 
-    def __init__(self, value=None, transform=None, prior=None, trainable=True, name=None):
-        value = Parameter._valid_input(value)
+    def __init__(self, value=None, transform=None, prior=None,
+                 trainable=True, dtype=None, name=None):
+        value = self._valid_input(value, dtype=dtype)
         super(Parameter, self).__init__(name)
 
         self._externally_defined = False
@@ -154,10 +155,10 @@ class Parameter(Node):
 
         object.__setattr__(self, 'trainable', value)
 
-    def assign(self, value, session=None):
+    def assign(self, value, session=None, dtype=None):
         if self._externally_defined:
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
-        value = Parameter._valid_input(value)
+        value = self._valid_input(value, dtype)
         if self.is_built_coherence() is Build.YES:
             if self.shape != value.shape:
                 raise GPflowError('Value has different shape. '
@@ -180,13 +181,20 @@ class Parameter(Node):
             raise GPflowError('Externally defined parameter requires session.')
         return self._value
 
-    @staticmethod
-    def _valid_input(value):
+    def _valid_input(self, value, dtype=None):
         if not misc.is_valid_param_value(value):
-            raise ValueError('The value must be either a tensorflow '
-                             'variable, an array or a scalar.')
-        if misc.is_number(value) or misc.is_list(value):
-            value = np.array(value)
+            msg = 'The value must be either a tensorflow variable, an array or a scalar.'
+            raise ValueError(msg)
+        if hasattr(self, '_value'):
+            if dtype is not None and self.dtype != dtype:
+                msg = 'The value has different data type "{0}". Parameter type is "{1}".'
+                raise ValueError(msg.format(self._value.dtype, dtype))
+            dtype = self._value.dtype
+        if misc.is_number(value):
+            num_type = misc.normalize_num_type(np.result_type(value).type)
+            value = np.array(value, dtype=num_type)
+        elif misc.is_list(value):
+            value = np.array(value, dtype=settings.np_float)
         return value
 
     def _clear(self):
@@ -198,9 +206,12 @@ class Parameter(Node):
         self._prior_tensor = None          # pylint: disable=W0201
 
     def _build(self):
-        self._unconstrained_tensor = self._build_parameter()  # pylint: disable=W0201
-        self._constrained_tensor = self._build_constrained()  # pylint: disable=W0201
-        self._prior_tensor = self._build_prior()              # pylint: disable=W0201
+        unconstrained = self._build_parameter()
+        constrained = self._build_constrained(unconstrained)
+        prior = self._build_prior(unconstrained, constrained)
+        self._unconstrained_tensor = unconstrained  # pylint: disable=W0201
+        self._constrained_tensor = constrained      # pylint: disable=W0201
+        self._prior_tensor = prior                  # pylint: disable=W0201
 
     def _build_parameter(self):
         if self._externally_defined:
@@ -222,26 +233,29 @@ class Parameter(Node):
         self._initial_value_tensor = init
         return tf.get_variable(name, initializer=init, trainable=self.trainable)
 
-    def _build_constrained(self):
-        if not misc.is_tensor(self.parameter_tensor):  # pragma: no cover
-            raise GPflowError("Parameter's unconstrained tensor is not compiled.")
-        return self.transform.forward_tensor(self.parameter_tensor)
+    def _build_constrained(self, parameter_tensor):
+        if not misc.is_tensor(parameter_tensor):  # pragma: no cover
+            raise GPflowError("Input must be a tensor.")
+        return self.transform.forward_tensor(parameter_tensor)
 
-    def _build_prior(self):
+    def _build_prior(self, unconstrained_tensor, constrained_tensor):
         """
         Build a tensorflow representation of the prior density.
         The log Jacobian is included.
         """
-        if not misc.is_tensor(self.constrained_tensor):  # pragma: no cover
-            raise GPflowError("Parameter's tensor is not compiled.")
+        if not misc.is_tensor(unconstrained_tensor):
+            raise GPflowError("Unconstrained input must be a tensor.")
+
+        if not misc.is_tensor(constrained_tensor):
+            raise GPflowError("Constrained input must be a tensor.")
 
         prior_name = 'prior'
 
         if self.prior is None:
             return tf.constant(0.0, settings.tf_float, name=prior_name)
 
-        log_jacobian = self.transform.log_jacobian_tensor(self.unconstrained_tensor)
-        logp_var = self.prior.logp(self.constrained_tensor)
+        log_jacobian = self.transform.log_jacobian_tensor(unconstrained_tensor)
+        logp_var = self.prior.logp(constrained_tensor)
         return tf.squeeze(tf.add(logp_var, log_jacobian, name=prior_name))
 
     def _check_tensor_trainable(self, tensor):
