@@ -723,17 +723,17 @@ def make_kernel_names(kern_list):
     names = []
     counting_dict = {}
     for k in kern_list:
-        raw_name = k.__class__.__name__.lower()
+        inner_name = k.__class__.__name__.lower()
 
         # check for duplicates: start numbering if needed
-        if raw_name in counting_dict:
-            if counting_dict[raw_name] == 1:
-                names[names.index(raw_name)] = raw_name + '_1'
-            counting_dict[raw_name] += 1
-            name = raw_name + '_' + str(counting_dict[raw_name])
+        if inner_name in counting_dict:
+            if counting_dict[inner_name] == 1:
+                names[names.index(inner_name)] = inner_name + '_1'
+            counting_dict[inner_name] += 1
+            name = inner_name + '_' + str(counting_dict[inner_name])
         else:
-            counting_dict[raw_name] = 1
-            name = raw_name
+            counting_dict[inner_name] = 1
+            name = inner_name
         names.append(name)
     return names
 

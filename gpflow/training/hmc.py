@@ -27,31 +27,34 @@ class HMC(Optimizer):
         A straight-forward HMC implementation. The mass matrix is assumed to be the
         identity.
 
-        f is a python function that returns the energy and its gradient
+        The gpflow model must implement `build_objective` method to build `f` function
+        (tensor) which in turn based on model's internal trainable parameters `x`.
 
-          f(x) = E(x), dE(x)/dx
+            f(x) = E(x)
 
         we then generate samples from the distribution
 
-          pi(x) = exp(-E(x))/Z
+            pi(x) = exp(-E(x))/Z
 
-        - num_samples is the number of samples to generate.
-        - Lmin, Lmax, epsilon are parameters of the HMC procedure to be tuned.
-        - x0 is the starting position for the procedure.
-        - verbose is a flag which turns on the display of the running accept ratio.
-        - thin is an integer which specifies the thinning interval
-        - burn is an integer which specifies how many initial samples to discard.
-        - RNG is a random number generator
-        - return_logprobs is a boolean indicating whether to return the log densities alongside the samples.
+        The total number of iterations is given by:
 
-        The total number of iterations is given by
-
-          burn + thin * num_samples
-
-        The return shape is always num_samples x D.
+            burn + thin * num_samples
 
         The leafrog (Verlet) integrator works by picking a random number of steps
-        uniformly between Lmin and Lmax, and taking steps of length epsilon.
+        uniformly between lmin and lmax, and taking steps of length epsilon.
+
+        :param model: gpflow model with `build_objective` method implementation.
+        :param num_samples: number of samples to generate.
+        :param epsilon: HMC parameter - stepsize.
+        :param lmin: HMC parameters - lowest integer `a` of uniform `[a, b)` distribution
+            used for drawing number of leapfrog iterations.
+        :param lmax: HMC parameters - largest integer `b` from uniform `[a, b)` distribution
+            used for drawing number of leapfrog iterations.
+        :param thin: an integer which specifies the thinning interval.
+        :param burn: an integer which specifies how many initial samples to discard.
+
+        :returns
+
         """
 
         session = model.enquire_session(session)
@@ -80,7 +83,9 @@ class HMC(Optimizer):
 
         hmc_op = tf.map_fn(map_body, indices, dtype=dtypes)
         tracks = session.run(hmc_op, feed_dict=model.feeds)
-        return list(zip(*tracks))
+        vars_track = tracks[:-1]
+        logprobs_track = tracks[-1]
+        return vars_track, logprobs_track
 
 
     def minimize(self, model, **kwargs):
