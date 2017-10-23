@@ -190,10 +190,11 @@ class Parameter(Node):
                 msg = 'The value has different data type "{0}". Parameter type is "{1}".'
                 raise ValueError(msg.format(self._value.dtype, dtype))
             dtype = self._value.dtype
-        if dtype is None:
-            dtype = settings.np_float
-        if misc.is_number(value) or misc.is_list(value):
-            value = np.array(value, dtype=dtype)
+        if misc.is_number(value):
+            num_type = misc.normalize_num_type(np.result_type(value).type)
+            value = np.array(value, dtype=num_type)
+        elif misc.is_list(value):
+            value = np.array(value, dtype=settings.np_float)
         return value
 
     def _clear(self):
