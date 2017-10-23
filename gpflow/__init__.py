@@ -31,6 +31,7 @@ from . import core
 from . import models
 from . import test_util
 from . import training as train
+from . import features
 
 from .decors import autoflow
 from .decors import name_scope
