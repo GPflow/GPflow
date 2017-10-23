@@ -9,6 +9,7 @@ import numpy as np
 
 
 import gpflow
+from gpflow_external_models import ep_approximated_like
 
 Xtrain = np.loadtxt('data/banana_X_train', delimiter=',')
 Ytrain = np.loadtxt('data/banana_Y_train', delimiter=',').reshape(-1,1)
@@ -71,13 +72,14 @@ def main():
     print("VGP model's final kernel lengthscale: {}".format(m.kern.lengthscales.read_value()))
     print("=================================\n\n")
 
-
-    # EP Binary Classificaiton Model:
+    # EP Binary Classification Model:
     print("Running Binary EP Classification Model")
     sess = tf.Session()
     #sess = tf_debug.LocalCLIDebugWrapperSession(sess)
     # ^ if debugging run with this uncommented and ` python -m ep_classification_demo --debug`
-    m2 = gpflow.models.EPBinClassGP(Xtrain, Ytrain, kern=gpflow.kernels.RBF(2), use_cache_on_like=False)
+    m2 = ep_approximated_like.EPLikeApproxGP(Xtrain, Ytrain, kern=gpflow.kernels.RBF(2),
+                                             likelihood=gpflow.likelihoods.Bernoulli(),
+                                             use_cache_on_like=False)
     m2.compile(session=sess)
     tau_tilde, nu_tilde, num_iter = m2.run_ep()
     print("Number iterations pre optimisation for EP convergence {}".format(num_iter))
@@ -93,7 +95,6 @@ def main():
     print("EPBinGP model's final kernel variance: {}".format(m2.kern.variance.read_value()))
     print("EPBinGP model's final kernel lengthscale: {}".format(m2.kern.lengthscales.read_value()))
     print("=================================\n\n")
-
     plt.show()
 
 

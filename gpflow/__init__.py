@@ -30,6 +30,7 @@ from gpflow import priors
 from gpflow import core
 from gpflow import models
 from gpflow import test_util
+from gpflow import inference_helpers
 
 from gpflow import training as train
 

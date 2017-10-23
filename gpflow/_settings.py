@@ -63,6 +63,10 @@ class _SettingsManager(object):
     def np_float(self):
         return np.float32 if self.tf_float is tf.float32 else np.float64
 
+    @property
+    def np_int(self):
+        return np.int32 if self.tf_int is tf.int32 else np.int64
+
 
 class _MutableNamedTuple(OrderedDict):
     """

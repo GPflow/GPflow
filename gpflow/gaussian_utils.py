@@ -1,6 +1,4 @@
-
 import tensorflow as tf
-
 
 from . import decors
 
@@ -12,8 +10,22 @@ M_SQRTPI = 1.77245385090551602729816748334
 M_SQRT2 = 1.41421356237309504880168872421
 
 
+def convert_from_natural_to_params(nu, tau):
+    """
+    elementise
+    """
+    mu = nu / tau
+    sigma_sq = 1. / tau
+    return mu, sigma_sq
 
 
+def convert_from_params_to_natural(mu, sigma_sq):
+    """
+    elementwise
+    """
+    tau = 1. / sigma_sq
+    nu = mu * tau
+    return nu, tau
 
 
 def log_pdf_normal(z):
@@ -29,7 +41,7 @@ def deriv_log_cdf_normal(z, name=None):
     Also see the GPy project:
     https://github.com/SheffieldML/GPy/blob/devel/GPy/util/univariate_Gaussian.py
 
-    NB only currently works on 1d vectors.
+    Works elementise.
     """
     name = name or "deriv_log_cdf_normal"
 
@@ -71,16 +83,11 @@ def deriv_log_cdf_normal(z, name=None):
         low_than_zero_res = lower_than_zero(data_split[2])
 
         results_stitched = tf.dynamic_stitch(partitions, [default_res, inbetween_res, low_than_zero_res])
-
-        # res = tf.case([(tf.less(tf.abs(z), ERF_CODY_LIMIT1), inbetween_erf_cody_limit),
-        #                (tf.less(z, 0.0), lower_than_zero)],
-        #                default=default, exclusive=False)
-
         results = tf.reshape(results_stitched, orig_shape, name="final_reshaped")
     return results
 
 
-decors.name_scope("erf_rational_helper")
+@decors.name_scope("erf_rational_helper")
 def _erf_rational_helper(x):
     assertion = tf.assert_positive(x)
 
@@ -158,7 +165,7 @@ def _erf_rational_helper(x):
     return result
 
 
-decors.name_scope("erf_rational_helper_r3")
+@decors.name_scope("erf_rational_helper_r3")
 def _erf_rational_helper_r3(y):
     assertion = tf.assert_non_negative(y)
 
