@@ -185,16 +185,22 @@ class Parameter(Node):
         if not misc.is_valid_param_value(value):
             msg = 'The value must be either a tensorflow variable, an array or a scalar.'
             raise ValueError(msg)
+        cast = False if dtype is None else True
         if hasattr(self, '_value'):
             if dtype is not None and self.dtype != dtype:
                 msg = 'The value has different data type "{0}". Parameter type is "{1}".'
                 raise ValueError(msg.format(self._value.dtype, dtype))
+            cast = False
             dtype = self._value.dtype
         if misc.is_number(value):
             num_type = misc.normalize_num_type(np.result_type(value).type)
-            value = np.array(value, dtype=num_type)
+            dtype = num_type if dtype is None else dtype
+            value = np.array(value, dtype=dtype)
         elif misc.is_list(value):
-            value = np.array(value, dtype=settings.np_float)
+            dtype = settings.np_float if dtype is None else dtype
+            value = np.array(value, dtype=dtype)
+        elif cast:
+            value = value.astype(dtype)
         return value
 
     def _clear(self):
