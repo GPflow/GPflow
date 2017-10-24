@@ -46,14 +46,16 @@ class HMC(Optimizer):
 
         :param model: gpflow model with `build_objective` method implementation.
         :param num_samples: number of samples to generate.
-        :param epsilon: HMC parameter - stepsize.
-        :param lmin: HMC parameters - lowest integer `a` of uniform `[a, b)` distribution
+        :param epsilon: HMC tuning parameter - stepsize.
+        :param lmin: HMC tuning parameter - lowest integer `a` of uniform `[a, b)` distribution
             used for drawing number of leapfrog iterations.
-        :param lmax: HMC parameters - largest integer `b` from uniform `[a, b)` distribution
+        :param lmax: HMC tuning parameter - largest integer `b` from uniform `[a, b)` distribution
             used for drawing number of leapfrog iterations.
         :param thin: an integer which specifies the thinning interval.
         :param burn: an integer which specifies how many initial samples to discard.
 
+        :return: data frame with `num_samples` traces, where columns are full names of
+            trainable parameters except last column, which is `logprobs`.
         """
 
         session = model.enquire_session(session)
