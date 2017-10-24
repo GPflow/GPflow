@@ -187,8 +187,10 @@ class Parameter(Node):
             raise ValueError(msg)
         cast = False if dtype is None else True
         if hasattr(self, '_value'):
-            if dtype is not None and self.dtype != dtype:
-                msg = 'The value has different data type "{0}". Parameter type is "{1}".'
+            inner_dtype = self.dtype
+            msg = 'The value has different data type "{0}". Parameter type is "{1}".'
+            if ((dtype is not None and inner_dtype != dtype) or
+                    (isinstance(value, np.ndarray) and inner_dtype != value.dtype)):
                 raise ValueError(msg.format(self._value.dtype, dtype))
             cast = False
             dtype = self._value.dtype
