@@ -147,6 +147,24 @@ class Parameterized(Node):
         for param in self.params:
             param.trainable = value
 
+    def assign(self, values, session=None):
+        session = self.enquire_session(session=session, allow_none=True)
+        params = {param.full_name: param for param in self.parameters}
+        val_keys = set(values.keys())
+        if not val_keys.issubset(params.keys()):
+            keys_not_found = val_keys.difference(params.keys())
+            raise ValueError('Input values are not coherent with parameters. '
+                             'There keys are not found: {}.'.format(keys_not_found))
+        prev_values = {}
+        for key in val_keys:
+            try:
+                prev_values[key] = params[key].read_value()
+                params[key].assign(values[key], session=session)
+            except (GPflowError, ValueError) as error:
+                for rkey, rvalue in prev_values.items():
+                    params[rkey].assign(rvalue, session=session)
+                raise error
+
     def anchor(self):
         for parameter in self.trainable_parameters:
             parameter.assign(parameter.read_value())

@@ -297,7 +297,7 @@ class Parameter(Node):
         return self.transform.backward(value)
 
     def _parameter_name(self):
-        return '/'.join([self.full_name, 'unconstrained'])
+        return '/'.join([self.hidden_full_name, 'unconstrained'])
 
     def _set_parameter_tensor(self, tensor):
         self._unconstrained_tensor = tensor

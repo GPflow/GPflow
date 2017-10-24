@@ -51,18 +51,24 @@ class Parentable:
         return self._name
 
     @property
-    def raw_name(self):
+    def hidden_name(self):
         return self._name
 
     @property
     def full_name(self):
+        if self._parent is None:
+            return self.name
+        return misc.tensor_name(self._parent.full_name, self.name)
+
+    @property
+    def hidden_full_name(self):
         """
         This is a unique identifier for a param object within a structure, made
         by concatenating the names through the tree.
         """
         if self._parent is None:
             return self._name
-        return misc.tensor_name(self._parent.full_name, self.name)
+        return misc.tensor_name(self._parent.hidden_full_name, self.name)
 
     def set_name(self, name=None):
         self._name = self._define_name(name)
@@ -71,7 +77,7 @@ class Parentable:
         self._parent = parent
 
     def _reset_name(self):
-        if self.raw_name != self.name:
+        if self.hidden_name != self.name:
             self._name = self._define_name(None)
 
     def _define_name(self, name):
