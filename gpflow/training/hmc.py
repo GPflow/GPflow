@@ -83,9 +83,9 @@ class HMC(Optimizer):
 
         hmc_op = tf.map_fn(map_body, indices, dtype=dtypes)
         raw_tracks = session.run(hmc_op, feed_dict=model.feeds)
-        tracks = dict(zip(xs_names, raw_tracks[:-1]))
+        tracks = dict(zip(xs_names, map(list, raw_tracks[:-1])))
         tracks.update({'logprobs': raw_tracks[-1]})
-        return tracks
+        return pd.DataFrame(tracks)
 
 
     def minimize(self, model, **kwargs):
