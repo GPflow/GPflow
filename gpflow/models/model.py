@@ -54,18 +54,6 @@ class Model(Parameterized):
         """Compute the log likelihood of the model."""
         return self.likelihood_tensor
 
-    #def sample(self, num_samples, Lmin=5, Lmax=20, epsilon=0.01, thin=1, burn=0,
-    #           verbose=False, return_logprobs=False, RNG=np.random.RandomState(0)):
-    #    """
-    #    Use Hamiltonian Monte Carlo to draw samples from the model posterior.
-    #    """
-    #    if self._needs_recompile:
-    #        self._compile()
-    #    return hmc.sample_HMC(self._objective, num_samples,
-    #                          Lmin=Lmin, Lmax=Lmax, epsilon=epsilon, thin=thin, burn=burn,
-    #                          x0=self.get_free_state(), verbose=verbose,
-    #                          return_logprobs=return_logprobs, RNG=RNG)
-
     def is_built(self, graph):
         is_built = super(Model, self).is_built(graph)
         if is_built is not Build.YES:
@@ -74,22 +62,32 @@ class Model(Parameterized):
             return Build.NO
         return Build.YES
 
-    def _build(self):
-        super(Model, self)._build()
-
-        self._likelihood_tensor = self._build_likelihood()
-
-        func = tf.add(self.likelihood_tensor, self.prior_tensor, name='nonneg_objective')
-        self._objective = tf.negative(func, name='objective')
-
-        # grad_func = tf.gradients(func, self.trainable_tensors)
-        # There is no need in objective gradient function.
-        # self._objective_gradient = tf.negative(grad_func, name='objective_gradient')
+    def build_objective(self):
+        likelihood = self._build_likelihood()
+        priors = []
+        for param in self.parameters:
+            unconstrained = param.unconstrained_tensor
+            constrained = param._build_constrained(unconstrained)
+            priors.append(param._build_prior(unconstrained, constrained))
+        prior = self._build_prior(priors)
+        return self._build_objective(likelihood, prior)
 
     def _clear(self):
         super(Model, self)._clear()
         self._likelihood_tensor = None
         self._objective = None
+
+    def _build(self):
+        super(Model, self)._build()
+        likelihood = self._build_likelihood()
+        prior = self.prior_tensor
+        objective = self._build_objective(likelihood, prior)
+        self._likelihood_tensor = likelihood
+        self._objective = objective
+
+    def _build_objective(self, likelihood_tensor, prior_tensor):
+        func = tf.add(likelihood_tensor, prior_tensor, name='nonneg_objective')
+        return tf.negative(func, name='objective')
 
     @abc.abstractmethod
     def _build_likelihood(self):

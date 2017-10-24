@@ -114,7 +114,7 @@ def autoflow(*af_args, **af_kwargs):
                     session.run(tf.variables_initializer(
                       _collect_vars_with_name(current_unitialised_vars - previous_unitialised_vars)
                     ))
-            return _session_run(session, obj, store, *args)
+            return _session_run(session, obj, store, *args, **kwargs)
         return runnable
     return autoflow_wrapper
 
@@ -156,11 +156,15 @@ def _name_scope_name(obj, name):
     return '/'.join(['autoflow', obj.name, name])
 
 
-def _session_run(session, obj, store, *args):
-    feed_dict = dict(zip(store['arguments'], args))
+def _session_run(session, obj, store, *args, **kwargs):
+    feed_dict_key = 'feed_dict'
+    if feed_dict_key not in kwargs:
+        kwargs[feed_dict_key] = {}
+    feed_dict = kwargs.get(feed_dict_key)
+    feed_dict.update(dict(zip(store['arguments'], args)))
     if obj.feeds:
         feed_dict.update(obj.feeds)
-    return session.run(store['result'], feed_dict=feed_dict)
+    return session.run(store['result'], **kwargs)
 
 
 def _build_method(method, obj, store):

@@ -1,3 +1,17 @@
+# Copyright 2017 Artem Artemev @awav
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import abc
 import tensorflow as tf
 
@@ -104,7 +118,7 @@ class Node(Parentable, ICompilable): # pylint: disable=W0223
         return session
 
     def _build_with_name_scope(self, name=None):
-        name = self.raw_name if name is None else name
+        name = self.hidden_name if name is None else name
         is_built = self.is_built(tf.get_default_graph())
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
             raise GPflowError('Tensor uses different graph.')

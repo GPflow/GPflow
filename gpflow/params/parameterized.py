@@ -147,6 +147,24 @@ class Parameterized(Node):
         for param in self.params:
             param.trainable = value
 
+    def assign(self, values, session=None):
+        session = self.enquire_session(session=session, allow_none=True)
+        params = {param.full_name: param for param in self.parameters}
+        val_keys = set(values.keys())
+        if not val_keys.issubset(params.keys()):
+            keys_not_found = val_keys.difference(params.keys())
+            raise ValueError('Input values are not coherent with parameters. '
+                             'There keys are not found: {}.'.format(keys_not_found))
+        prev_values = {}
+        for key in val_keys:
+            try:
+                prev_values[key] = params[key].read_value()
+                params[key].assign(values[key], session=session)
+            except (GPflowError, ValueError) as error:
+                for rkey, rvalue in prev_values.items():
+                    params[rkey].assign(rvalue, session=session)
+                raise error
+
     def anchor(self):
         for parameter in self.trainable_parameters:
             parameter.assign(parameter.read_value())
@@ -178,14 +196,6 @@ class Parameterized(Node):
             init = tf.variables_initializer(initializables)
             session.run(init, feed_dict=self.initializable_feeds)
 
-    # TODO(@awav): # pylint: disable=W0511
-    #def randomize(self, distributions={}, skiptrainable=True):
-    #    """
-    #    Calls randomize on all parameters in model hierarchy.
-    #    """
-    #    for param in self.sorted_params:
-    #        param.randomize(distributions, skiptrainable)
-
     @staticmethod
     def _is_param_like(value):
         return isinstance(value, (Parameter, Parameterized))
@@ -207,23 +217,22 @@ class Parameterized(Node):
     def _build(self):
         for param in self.params:
             param._build_with_name_scope() # pylint: disable=W0212
-        self._prior_tensor = self._build_prior()
-
-    def _build_prior(self):
-        """
-        Build a tf expression for the prior by summing all child-parameter priors.
-        """
         priors = []
         for param in self.params:
             if not isinstance(param, DataHolder):
                 if isinstance(param, Parameterized) and param.prior_tensor is None:
                     continue
                 priors.append(param.prior_tensor)
+        self._prior_tensor = self._build_prior(priors)
 
+    def _build_prior(self, prior_tensors):
+        """
+        Build a tf expression for the prior by summing all child-parameter priors.
+        """
         # TODO(@awav): What prior must represent empty list of parameters?
-        if not priors:
+        if not prior_tensors:
             return None
-        return tf.add_n(priors, name='prior')
+        return tf.add_n(prior_tensors, name='prior')
 
     def _set_param(self, name, value):
         object.__setattr__(self, name, value)
