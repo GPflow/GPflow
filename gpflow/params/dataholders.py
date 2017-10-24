@@ -61,7 +61,7 @@ class DataHolder(Parameter):
         return Build.NO
 
     def _parameter_name(self):
-        return misc.tensor_name(self.full_name, 'dataholder')
+        return misc.tensor_name(self.hidden_full_name, 'dataholder')
 
     def _clear(self):
         self._reset_name()
@@ -124,7 +124,7 @@ class FormlessData(DataHolder):
     def _parameter_name(self):
         name = 'formlessdata'
         if self.parent is self:
-            return misc.tensor_name(self.full_name, name)
+            return misc.tensor_name(self.hidden_full_name, name)
         return name
 
 
@@ -201,5 +201,5 @@ class Minibatch(DataHolder):
     def _parameter_name(self):
         name = 'minibatch'
         if self.parent is self:
-            return misc.tensor_name(self.full_name, name)
+            return misc.tensor_name(self.hidden_full_name, name)
         return name
