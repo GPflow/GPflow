@@ -115,6 +115,14 @@ class Parameter(Node):
             return None
         return self.parameter_tensor.graph
 
+    def __str__(self, prepend=''):
+        return prepend + \
+               '\033[1m' + self.name + '\033[0m' + \
+               ' transform:' + str(self.transform) + \
+               ' prior:' + str(self.prior) + \
+               (' [TRAINABLE]' if self.trainable else '[FIXED]') + \
+               '\n' + str(self.read_value())
+
     def anchor(self):
         if self.trainable:
             self.assign(self.read_value())
@@ -335,14 +343,24 @@ class Parameter(Node):
         return html
 
     def _format_parameter(self, **kwargs):
-        begin = '<{otype} name:{name}'.format(
-            otype=self.__class__.__name__, name=self.name)
+        begin = '<{otype} name:\033[1m{name}\033[0m'.format(
+            otype=self.__class__.__name__, name=self.full_name)
         if self._externally_defined:
             begin += ' [external tensor]'
         if self._externally_defined and self.session is None:
-            end = ' value:unknown'
+            end = ' value: unknown'
         else:
-            end = ' value:{value}>'.format(value=self.read_value())
+            # hijack numpy print options for a moment
+            opt = np.get_printoptions()
+            np.set_printoptions(threshold=6)
+            value_repr = self.read_value().__repr__()
+            np.set_printoptions(**opt)
+
+            #reformat numpy repr to our own:
+            value_repr = value_repr.replace('\n', '\n ')\
+                    .replace('array', '')\
+                    .replace('(', '').replace(')', '')
+            end = '>\nvalue: {value}'.format(value=value_repr)
         args = {}
         body = ''
         for key, value in kwargs.items():

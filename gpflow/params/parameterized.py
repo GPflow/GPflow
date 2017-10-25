@@ -147,6 +147,9 @@ class Parameterized(Node):
         for param in self.params:
             param.trainable = value
 
+    def __str__(self):
+        return '\n\n'.join([p.__str__() for p in self.parameters])
+
     def assign(self, values, session=None):
         session = self.enquire_session(session=session, allow_none=True)
         params = {param.full_name: param for param in self.parameters}
