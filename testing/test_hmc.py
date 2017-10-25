@@ -15,9 +15,14 @@ from nose.plugins.attrib import attr
 
 @attr(speed='slow')
 class SampleGaussianTest(GPflowTestCase):
+    class GuassTest(gpflow.Model):
+        def __init__(self, **kwargs):
+            self.x = gpflow.Parameter(np.zeros(3))
+        def build_objective(self):
+            return 0.5 * tf.reduce_sum(tf.square(self.x))
+
     def setUp(self):
-        self.f = lambda x: (0.5 * np.sum(np.square(x)), x)
-        self.x0 = np.zeros(3)
+        self.guass =
 
     def test_mean_cov(self):
         samples = gpflow.hmc.sample_HMC(

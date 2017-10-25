@@ -52,7 +52,7 @@ class NamingTests(test_util.GPflowTestCase):
         self.assertEqual(m.p.hidden_full_name, '{}/p'.format(m.hidden_name))
         self.assertEqual(m.p.full_name, '{}/p'.format(m.name))
 
-class TypesTests(test_util.GPflowTestCase):
+class TypeTests(test_util.GPflowTestCase):
     def setUp(self):
         int_type = tf.int16
         float_type = tf.float16
@@ -94,7 +94,7 @@ class TypesTests(test_util.GPflowTestCase):
                 p.compile()
                 self.assertEqual(p.dtype, vtype)
 
-    def test_invariant_type_in_assign(self):
+    def test_assign_fail_types(self):
         param = gpflow.Param(np.array([1]), dtype=np.int32)
         def fail_assigns(p):
             with self.assertRaises(ValueError):
@@ -103,6 +103,8 @@ class TypesTests(test_util.GPflowTestCase):
                 p.assign(np.array([2], dtype=np.float32))
             with self.assertRaises(ValueError):
                 p.assign(np.array([2]), dtype=np.float32)
+            with self.assertRaises(ValueError):
+                p.assign([2], dtype=np.int64)
         fail_assigns(param)
         param.compile()
         fail_assigns(param)
