@@ -56,7 +56,7 @@ class HMC(Optimizer):
 
         :return: data frame with `num_samples` traces, where columns are full names of
             trainable parameters except last column, which is `logprobs`.
-            Trainable parameters are constrained values.
+            Trainable parameters are represented as constrained values in output.
         """
 
         session = model.enquire_session(session)
