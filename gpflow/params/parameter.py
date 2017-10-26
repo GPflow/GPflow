@@ -36,6 +36,8 @@ from ..transforms import Identity
 
 
 class Parameter(Node):
+    """
+    """
     class ParameterAttribute(enum.Enum):
         PRIOR = 'prior'
         TRANSFORM = 'transform'
@@ -114,14 +116,6 @@ class Parameter(Node):
         if self.parameter_tensor is None:
             return None
         return self.parameter_tensor.graph
-
-    def __str__(self, prepend=''):
-        return prepend + \
-               '\033[1m' + self.name + '\033[0m' + \
-               ' transform:' + str(self.transform) + \
-               ' prior:' + str(self.prior) + \
-               (' [TRAINABLE]' if self.trainable else '[FIXED]') + \
-               '\n' + str(self.read_value())
 
     def anchor(self):
         if self.trainable:
