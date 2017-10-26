@@ -321,10 +321,10 @@ class Stationary(Kern):
         self.variance = Parameter(variance, transform=transforms.positive)
         if ARD:
             if lengthscales is None:
-                lengthscales = np.ones(input_dim, settings.np_float)
+                lengthscales = np.ones(input_dim, dtype=settings.np_float)
             else:
                 # accepts float or array:
-                lengthscales = lengthscales * np.ones(input_dim, settings.np_float)
+                lengthscales = lengthscales * np.ones(input_dim, dtype=settings.np_float)
             self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
             self.ARD = True
         else:
@@ -388,7 +388,7 @@ class Linear(Kern):
         self.ARD = ARD
         if ARD:
             # accept float or array:
-            variance = np.ones(self.input_dim) * variance
+            variance = np.ones(self.input_dim, dtype=settings.np_float) * variance
             self.variance = Parameter(variance, transform=transforms.positive)
         else:
             self.variance = Parameter(variance, transform=transforms.positive)
@@ -689,8 +689,8 @@ class Coregion(Kern):
 
         self.output_dim = output_dim
         self.rank = rank
-        self.W = Parameter(np.zeros((self.output_dim, self.rank)))
-        self.kappa = Parameter(np.ones(self.output_dim), transform=transforms.positive)
+        self.W = Parameter(np.zeros((self.output_dim, self.rank), dtype=settings.np_float))
+        self.kappa = Parameter(np.ones(self.output_dim, dtype=settings.np_float), transform=transforms.positive)
 
     @params_as_tensors
     def K(self, X, X2=None):
