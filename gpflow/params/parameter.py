@@ -115,6 +115,14 @@ class Parameter(Node):
             return None
         return self.parameter_tensor.graph
 
+    def __str__(self, prepend=''):
+        return prepend + \
+               '\033[1m' + self.name + '\033[0m' + \
+               ' transform:' + str(self.transform) + \
+               ' prior:' + str(self.prior) + \
+               (' [TRAINABLE]' if self.trainable else '[FIXED]') + \
+               '\n' + str(self.read_value())
+
     def anchor(self):
         if self.trainable:
             self.assign(self.read_value())
@@ -185,16 +193,24 @@ class Parameter(Node):
         if not misc.is_valid_param_value(value):
             msg = 'The value must be either a tensorflow variable, an array or a scalar.'
             raise ValueError(msg)
+        cast = False if dtype is None else True
         if hasattr(self, '_value'):
-            if dtype is not None and self.dtype != dtype:
-                msg = 'The value has different data type "{0}". Parameter type is "{1}".'
+            inner_dtype = self.dtype
+            msg = 'The value has different data type "{0}". Parameter type is "{1}".'
+            if ((dtype is not None and inner_dtype != dtype) or
+                    (isinstance(value, np.ndarray) and inner_dtype != value.dtype)):
                 raise ValueError(msg.format(self._value.dtype, dtype))
+            cast = False
             dtype = self._value.dtype
         if misc.is_number(value):
             num_type = misc.normalize_num_type(np.result_type(value).type)
-            value = np.array(value, dtype=num_type)
+            dtype = num_type if dtype is None else dtype
+            value = np.array(value, dtype=dtype)
         elif misc.is_list(value):
-            value = np.array(value, dtype=settings.np_float)
+            dtype = settings.np_float if dtype is None else dtype
+            value = np.array(value, dtype=dtype)
+        elif cast:
+            value = value.astype(dtype)
         return value
 
     def _clear(self):
@@ -327,14 +343,24 @@ class Parameter(Node):
         return html
 
     def _format_parameter(self, **kwargs):
-        begin = '<{otype} name:{name}'.format(
-            otype=self.__class__.__name__, name=self.name)
+        begin = '<{otype} name:\033[1m{name}\033[0m'.format(
+            otype=self.__class__.__name__, name=self.full_name)
         if self._externally_defined:
             begin += ' [external tensor]'
         if self._externally_defined and self.session is None:
-            end = ' value:unknown'
+            end = ' value: unknown'
         else:
-            end = ' value:{value}>'.format(value=self.read_value())
+            # hijack numpy print options for a moment
+            opt = np.get_printoptions()
+            np.set_printoptions(threshold=6)
+            value_repr = self.read_value().__repr__()
+            np.set_printoptions(**opt)
+
+            #reformat numpy repr to our own:
+            value_repr = value_repr.replace('\n', '\n ')\
+                    .replace('array', '')\
+                    .replace('(', '').replace(')', '')
+            end = '>\nvalue: {value}'.format(value=value_repr)
         args = {}
         body = ''
         for key, value in kwargs.items():

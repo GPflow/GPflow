@@ -52,9 +52,62 @@ class NamingTests(test_util.GPflowTestCase):
         self.assertEqual(m.p.hidden_full_name, '{}/p'.format(m.hidden_name))
         self.assertEqual(m.p.full_name, '{}/p'.format(m.name))
 
-class TypesTests(test_util.GPflowTestCase):
+class TypeTests(test_util.GPflowTestCase):
+    def setUp(self):
+        int_type = tf.int16
+        float_type = tf.float16
+
+        test_data = [(1, int_type.as_numpy_dtype),
+                     (1.0, float_type.as_numpy_dtype),
+                     ([1], float_type.as_numpy_dtype),
+                     ([1.0], float_type.as_numpy_dtype),
+                     (np.array([1, 1], dtype=np.float32), np.float32),
+                     (np.array([1, 1], dtype=np.int32), np.int32)]
+
+        self.int_type = int_type
+        self.float_type = float_type
+        self.test_data = test_data
+
+    def test_specific_dtype(self):
+        test_data = self.test_data + [
+            (1, np.float32),
+            (1.0, np.float64),
+            ([1.0], np.float32),
+            (np.array([1, 2, 3], dtype=np.float64), np.float16)
+        ]
+        for v, vtype in test_data:
+            p = gpflow.Param(v, dtype=vtype)
+            self.assertEqual(p.dtype, vtype)
+            p.compile()
+            self.assertEqual(p.dtype, vtype)
+
     def test_default_type(self):
-        pass
+        s = gpflow.settings.get_settings()
+        s.dtypes.int_type = self.int_type
+        s.dtypes.float_type = self.float_type
+
+        with gpflow.settings.temp_settings(s):
+            for v, vtype in self.test_data:
+                print(v, vtype)
+                p = gpflow.Param(v)
+                self.assertEqual(p.dtype, vtype)
+                p.compile()
+                self.assertEqual(p.dtype, vtype)
+
+    def test_assign_fail_types(self):
+        param = gpflow.Param(np.array([1]), dtype=np.int32)
+        def fail_assigns(p):
+            with self.assertRaises(ValueError):
+                p.assign([2], dtype=np.float32)
+            with self.assertRaises(ValueError):
+                p.assign(np.array([2], dtype=np.float32))
+            with self.assertRaises(ValueError):
+                p.assign(np.array([2]), dtype=np.float32)
+            with self.assertRaises(ValueError):
+                p.assign([2], dtype=np.int64)
+        fail_assigns(param)
+        param.compile()
+        fail_assigns(param)
 
 
 class ParamTests(test_util.GPflowTestCase):

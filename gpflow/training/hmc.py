@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from .optimizer import Optimizer
-
+from ..decors import name_scope
 
 class HMC(Optimizer):
     def sample(self, model, num_samples, epsilon, lmin=1, lmax=2, thin=1, burn=0, session=None):
@@ -56,11 +56,12 @@ class HMC(Optimizer):
 
         :return: data frame with `num_samples` traces, where columns are full names of
             trainable parameters except last column, which is `logprobs`.
+            Trainable parameters are represented as constrained values in output.
         """
 
         session = model.enquire_session(session)
 
-        xs_names = [param.full_name for param in model.trainable_parameters]
+        params = list(model.trainable_parameters)
         xs = list(model.trainable_tensors)
 
         def logprob_grads():
@@ -83,17 +84,24 @@ class HMC(Optimizer):
             xs_sample, logprob_sample = _thinning(*thin_args)
             return _flat(xs_sample, [logprob_sample])
 
-        hmc_op = tf.map_fn(map_body, indices, dtype=dtypes)
-        raw_tracks = session.run(hmc_op, feed_dict=model.feeds)
-        tracks = dict(zip(xs_names, map(list, raw_tracks[:-1])))
-        tracks.update({'logprobs': raw_tracks[-1]})
-        return pd.DataFrame(tracks)
+        hmc_output = tf.map_fn(map_body, indices, dtype=dtypes)
+        unconstrained_trace, logprob_trace = hmc_output[:-1], hmc_output[-1]
+        constrained_trace = _map(lambda x, param: param.transform.forward_tensor(x),
+                                 unconstrained_trace, params)
+        hmc_output = constrained_trace + [logprob_trace]
+
+        names = [param.full_name for param in params]
+        raw_traces = session.run(hmc_output, feed_dict=model.feeds)
+        traces = dict(zip(names, map(list, raw_traces[:-1])))
+        traces.update({'logprobs': raw_traces[-1]})
+        return pd.DataFrame(traces)
 
 
     def minimize(self, model, **kwargs):
         raise NotImplementedError("HMC doesn't provide minimize method, use `sample` instead.")
 
 
+@name_scope("burning")
 def _burning(burn, logprob_grads_fn, xs, *thin_args):
     def cond(i, _xs, _logprob):
         return i < burn
@@ -106,6 +114,7 @@ def _burning(burn, logprob_grads_fn, xs, *thin_args):
     return _while_loop(cond, body, [0, xs, logprob])
 
 
+@name_scope("thinning")
 def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
     def cond(i, _sample, _logprob, _grads):
         return i < thin
@@ -144,12 +153,13 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
         return xs_out, logprob_out
 
 
+@name_scope("premature_reject")
 def _premature_reject(xs, xs_prev, logprob_prev, grads_prev):
     xs_back = _copy_variables(_assign_variables(xs, xs_prev))
     return xs_back, logprob_prev, grads_prev
 
 
-# work out whether to accept the proposal
+@name_scope("reject_accept_proposal")
 def _reject_accept_proposal(xs, xs_prev,
                             ps, ps_prev,
                             logprob, logprob_prev,
@@ -173,6 +183,7 @@ def _reject_accept_proposal(xs, xs_prev,
         return tf.cond(logu < log_accept_ratio, accept, reject, strict=True)
 
 
+@name_scope("leapfrog")
 def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
     def update_xs(ps_values):
         return _map(lambda x, p: x.assign_add(epsilon * p), xs, ps_values)
