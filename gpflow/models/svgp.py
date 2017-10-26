@@ -82,12 +82,12 @@ class SVGP(GPModel):
         self.num_inducing = Z.shape[0]
 
         # init variational parameters
-        self.q_mu = Parameter(np.zeros((self.num_inducing, self.num_latent)))
+        self.q_mu = Parameter(np.zeros((self.num_inducing, self.num_latent), dtype=settings.np_float))
         if self.q_diag:
-            self.q_sqrt = Parameter(np.ones((self.num_inducing, self.num_latent)),
+            self.q_sqrt = Parameter(np.ones((self.num_inducing, self.num_latent), dtype=settings.np_float),
                                 transforms.positive)
         else:
-            q_sqrt = np.array([np.eye(self.num_inducing)
+            q_sqrt = np.array([np.eye(self.num_inducing, dtype=settings.np_float)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
 
