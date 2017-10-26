@@ -243,9 +243,8 @@ class Parameter(Node):
             # return tensor
 
         value = self._apply_transform(self._value)
-        dtype = value.dtype
         shape = value.shape
-        init = tf.placeholder(dtype, shape=shape, name='initial_unconstrained_value')
+        init = tf.placeholder(self.dtype, shape=shape, name='initial_unconstrained_value')
         self._initial_value_tensor = init
         return tf.get_variable(name, initializer=init, trainable=self.trainable)
 
