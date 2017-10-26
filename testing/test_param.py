@@ -31,25 +31,83 @@ class NamingTests(test_util.GPflowTestCase):
         p_index = gpflow.core.parentable.Parentable._read_index() + 1
         p = gpflow.Param(1)
         self.assertEqual(p.name, 'Parameter')
-        self.assertEqual(p.raw_name, '{}/Parameter'.format(p_index))
+        self.assertEqual(p.hidden_name, '{}/Parameter'.format(p_index))
 
     def test_full_fame(self):
         p1_index = gpflow.core.parentable.Parentable._read_index() + 1
         p1 = gpflow.Param(1)
         p2 = gpflow.Param(1, name='test_name')
-        self.assertEqual(p1.full_name, '{index}/Parameter'.format(index=p1_index))
+        self.assertEqual(p1.hidden_full_name, '{index}/Parameter'.format(index=p1_index))
+        self.assertEqual(p1.full_name, 'Parameter')
+        self.assertEqual(p2.hidden_full_name, 'test_name')
         self.assertEqual(p2.full_name, 'test_name')
         model_index = gpflow.core.parentable.Parentable._read_index() + 1
         m = gpflow.models.Model()
         m.p = p1
-        self.assertEqual(m.full_name, '{index}/Model'.format(index=model_index))
-        self.assertEqual(m.p.full_name, '{index}/Model/p'.format(index=model_index))
-        self.assertEqual(m.full_name, m.raw_name)
-        self.assertEqual(m.p.full_name, '{}/p'.format(m.raw_name))
+        self.assertEqual(m.hidden_full_name, '{index}/Model'.format(index=model_index))
+        self.assertEqual(m.full_name, 'Model')
+        self.assertEqual(m.p.hidden_full_name, '{index}/Model/p'.format(index=model_index))
+        self.assertEqual(m.p.full_name, 'Model/p')
+        self.assertEqual(m.full_name, m.name)
+        self.assertEqual(m.p.hidden_full_name, '{}/p'.format(m.hidden_name))
+        self.assertEqual(m.p.full_name, '{}/p'.format(m.name))
 
-class TypesTests(test_util.GPflowTestCase):
+class TypeTests(test_util.GPflowTestCase):
+    def setUp(self):
+        int_type = tf.int16
+        float_type = tf.float16
+
+        test_data = [(1, int_type.as_numpy_dtype),
+                     (1.0, float_type.as_numpy_dtype),
+                     ([1], float_type.as_numpy_dtype),
+                     ([1.0], float_type.as_numpy_dtype),
+                     (np.array([1, 1], dtype=np.float32), np.float32),
+                     (np.array([1, 1], dtype=np.int32), np.int32)]
+
+        self.int_type = int_type
+        self.float_type = float_type
+        self.test_data = test_data
+
+    def test_specific_dtype(self):
+        test_data = self.test_data + [
+            (1, np.float32),
+            (1.0, np.float64),
+            ([1.0], np.float32),
+            (np.array([1, 2, 3], dtype=np.float64), np.float16)
+        ]
+        for v, vtype in test_data:
+            p = gpflow.Param(v, dtype=vtype)
+            self.assertEqual(p.dtype, vtype)
+            p.compile()
+            self.assertEqual(p.dtype, vtype)
+
     def test_default_type(self):
-        pass
+        s = gpflow.settings.get_settings()
+        s.dtypes.int_type = self.int_type
+        s.dtypes.float_type = self.float_type
+
+        with gpflow.settings.temp_settings(s):
+            for v, vtype in self.test_data:
+                print(v, vtype)
+                p = gpflow.Param(v)
+                self.assertEqual(p.dtype, vtype)
+                p.compile()
+                self.assertEqual(p.dtype, vtype)
+
+    def test_assign_fail_types(self):
+        param = gpflow.Param(np.array([1]), dtype=np.int32)
+        def fail_assigns(p):
+            with self.assertRaises(ValueError):
+                p.assign([2], dtype=np.float32)
+            with self.assertRaises(ValueError):
+                p.assign(np.array([2], dtype=np.float32))
+            with self.assertRaises(ValueError):
+                p.assign(np.array([2]), dtype=np.float32)
+            with self.assertRaises(ValueError):
+                p.assign([2], dtype=np.int64)
+        fail_assigns(param)
+        param.compile()
+        fail_assigns(param)
 
 
 class ParamTests(test_util.GPflowTestCase):
@@ -91,9 +149,10 @@ class ParamTests(test_util.GPflowTestCase):
 
             self.m.d = new_param
             self.assertEqual(self.m.d, new_param)
-            self.assertEqual(self.m.d.full_name,
+            self.assertEqual(self.m.d.hidden_full_name,
                              '{index}/{name}/d'
                              .format(index=self.m_index, name=self.m.name))
+            self.assertEqual(self.m.d.full_name, '{name}/d'.format(name=self.m.name))
 
     def test_assign_with_compile(self):
         with self.test_context():
@@ -249,6 +308,9 @@ class ParameterizedDeepTest(test_util.GPflowTestCase):
         self.assertTrue(self.m.foo.full_name == 'm/foo')
         self.assertTrue(self.m.foo.bar.full_name == 'm/foo/bar')
         self.assertTrue(self.m.foo.bar.baz.full_name == 'm/foo/bar/baz')
+        self.assertTrue(self.m.foo.hidden_full_name == 'm/foo')
+        self.assertTrue(self.m.foo.bar.hidden_full_name == 'm/foo/bar')
+        self.assertTrue(self.m.foo.bar.baz.hidden_full_name == 'm/foo/bar/baz')
 
     def test_deep_trainable(self):
         with self.test_context():
@@ -590,7 +652,7 @@ class TestScopes(test_util.GPflowTestCase):
 
     def test_likelihood_name(self):
         likelihood = self.m.likelihood_tensor
-        expected_name = self.m.raw_name + '/likelihood'
+        expected_name = self.m.hidden_name + '/likelihood'
         self.assertTrue(likelihood.name.startswith(expected_name))
 
     def test_kern_name(self):
