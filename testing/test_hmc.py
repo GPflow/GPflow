@@ -21,7 +21,7 @@ class SampleGaussianTest(GPflowTestCase):
 
     def setUp(self):
         tf.set_random_seed(1)
-        self.m = SampleGaussianTest.Gauss(name='gauss')
+        self.m = SampleGaussianTest.Gauss()
         self.hmc = gpflow.train.HMC()
 
     def test_mean_cov(self):
@@ -38,16 +38,17 @@ class SampleGaussianTest(GPflowTestCase):
             # the operation seed is still assigned by tensorflow automatically
             # and hence sample output numbers are not deterministic.
             print(mean)
-            self.assertTrue(np.sum(np.abs(mean) < 0.1) >= mean.size/2)
+            # self.assertTrue(np.sum(np.abs(mean) < 0.1) >= mean.size/2)
             print(cov)
-            self.assertTrue(np.sum(np.abs(cov) < 0.1) > cov.size/2)
+            # self.assertTrue(np.sum(np.abs(cov) < 0.1) > cov.size/2)
+            self.assertTrue(False)
 
     def test_rng(self):
         """
         Make sure all randomness can be atributed to the rng
         """
         def get_samples():
-            num_samples = 1000
+            num_samples = 100
             m = SampleGaussianTest.Gauss()
             m.compile()
             hmc = gpflow.train.HMC()
@@ -102,6 +103,7 @@ class SampleModelTest(GPflowTestCase):
     Create a very simple model and make sure samples form is make sense.
     """
     def setUp(self):
+        tf.set_random_seed(1)
         rng = np.random.RandomState(0)
         class Quadratic(gpflow.models.Model):
             def __init__(self):
@@ -113,7 +115,7 @@ class SampleModelTest(GPflowTestCase):
         self.m = Quadratic()
 
         def get_samples():
-            num_samples = 1000
+            num_samples = 100
             m = SampleGaussianTest.Gauss()
             m.compile()
             hmc = gpflow.train.HMC()
@@ -131,7 +133,7 @@ class SampleModelTest(GPflowTestCase):
             xs = np.array(samples[self.m.x.full_name].tolist(), dtype=np.float32)
             self.assertEqual(samples.shape, (400, 2))
             self.assertEqual(xs.shape, (400, 2))
-            self.assertTrue(np.allclose(xs.mean(0), np.zeros(2), 1e-1, 1e-1))
+            assert_almost_equal(xs.mean(0), np.zeros(2), decimal=1)
 
 
 class CheckTrainingVariableState(GPflowTestCase):

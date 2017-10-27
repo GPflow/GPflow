@@ -32,8 +32,8 @@ class ParamList(Parameterized):
         super(ParamList, self).__init__(name=None)
         if not isinstance(list_of_params, list):
             raise ValueError('Not acceptable argument type at list_of_params.')
-        self._list = [self._valid_list_input(
-            item, trainable) for item in list_of_params]
+        self._list = [self._valid_list_input(item, trainable)
+                      for item in list_of_params]
         for index, item in enumerate(self._list):
             self._set_param(index, item)
 
@@ -77,7 +77,7 @@ class ParamList(Parameterized):
 
     def __getitem__(self, key):
         param = self._get_param(key)
-        if TensorConverter.tensor_mode(self):
+        if TensorConverter.tensor_mode(self) and isinstance(param, Parameter):
             return Parameterized._tensor_mode_parameter(param)
         return param
 
