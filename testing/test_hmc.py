@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from nose.plugins.attrib import attr
 from gpflow.test_util import GPflowTestCase
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_allclose
 
 @attr(speed='slow')
 class SampleGaussianTest(GPflowTestCase):
@@ -37,11 +37,9 @@ class SampleGaussianTest(GPflowTestCase):
             # TODO(@awav): inspite of the fact that we set up graph's random seed,
             # the operation seed is still assigned by tensorflow automatically
             # and hence sample output numbers are not deterministic.
-            print(mean)
-            # self.assertTrue(np.sum(np.abs(mean) < 0.1) >= mean.size/2)
-            print(cov)
-            # self.assertTrue(np.sum(np.abs(cov) < 0.1) > cov.size/2)
-            self.assertTrue(False)
+            self.assertTrue(np.sum(np.abs(mean) < 0.1) >= mean.size/2)
+            cov_standard = np.eye(cov.shape[0])
+            assert_allclose(cov, cov_standard, rtol=1e-1, atol=1e-1)
 
     def test_rng(self):
         """
