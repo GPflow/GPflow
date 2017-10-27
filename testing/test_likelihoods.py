@@ -318,8 +318,14 @@ class TestLikelihoodChecks(GPflowTestCase):
         m1 = gpflow.models.VGP(X, Y, gpflow.kernels.RBF(1), likelihood)
         m2 = gpflow.models.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
         m0.compile()
+        print(m0.hidden_full_name)
         m1.compile()
+        print(m1.hidden_full_name)
         m2.compile()
+        print(m2.hidden_full_name)
+        m0.clear()
+        m1.clear()
+        m2.clear()
 
     def test_likelihood_checks(self):
         to_pass = [
@@ -333,34 +339,36 @@ class TestLikelihoodChecks(GPflowTestCase):
             [gpflow.likelihoods.Beta(), np.array((1e-12, 1.)).reshape(2, 1)],
             [gpflow.likelihoods.MultiClass(3), np.array((0., 2.)).reshape(2, 1)],
             [gpflow.likelihoods.Ordinal(np.array((1., 2.))), np.array((0., 2.)).reshape(2, 1)],
+
+            # Failed before GPflow-1.0
+            [gpflow.likelihoods.Exponential(), np.array((-1e-12, 1)).reshape(2, 1)],
+            [gpflow.likelihoods.Poisson(), np.array((1.1)).reshape(1, 1)],
+            [gpflow.likelihoods.Poisson(), np.array((-1.)).reshape(1, 1)],
+            [gpflow.likelihoods.Gamma(), np.array((-1e-12, 1)).reshape(2, 1)],
+            [gpflow.likelihoods.Beta(), np.array((-1e-12, 1.)).reshape(2, 1)],
+            [gpflow.likelihoods.Beta(), np.array((1e-12, 1.1)).reshape(2, 1)],
+            [gpflow.likelihoods.MultiClass(3), np.array((0.1, 2.)).reshape(2, 1)],
+            [gpflow.likelihoods.MultiClass(3), np.array((1., 3.)).reshape(2, 1)],
+
+            # Special case of switched likelihood
+            [gpflow.likelihoods.SwitchedLikelihood(
+                [gpflow.likelihoods.Gamma(), gpflow.likelihoods.Gaussian()]),
+                np.array(((0, 1), (0, 1), (2, 0.))).reshape(3, 2)],
+            # Failed before GPflow-1.0
+            [gpflow.likelihoods.SwitchedLikelihood(
+                [gpflow.likelihoods.Gamma(), gpflow.likelihoods.Gaussian()]),
+                np.array(((0, 1), (0, 1), (2, 3.))).reshape(3, 2)],
+
+            # Raised warning before GPflow-1.0
+            [gpflow.likelihoods.Bernoulli(), np.array((2., 1., 0.)).reshape(3, 1)],
+            [gpflow.likelihoods.Bernoulli(), np.array((2., 1.1)).reshape(2, 1)],
         ]
 
         to_fail = [
             [gpflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1, 1)],
             [gpflow.likelihoods.Gaussian(), np.array((1)).reshape(1, 1)],
-            # TODO(@awav): [gpflow.likelihoods.Poisson(), np.array((1.1)).reshape(1, 1)],
-            # TODO(@awav): [gpflow.likelihoods.Poisson(), np.array((-1.)).reshape(1, 1)],
-            [gpflow.likelihoods.Exponential(), np.array((-1e-12, 1)).reshape(2, 1)],
-            [gpflow.likelihoods.Gamma(), np.array((-1e-12, 1)).reshape(2, 1)],
-            [gpflow.likelihoods.Beta(), np.array((-1e-12, 1.)).reshape(2, 1)],
-            [gpflow.likelihoods.Beta(), np.array((1e-12, 1.1)).reshape(2, 1)],
-            [gpflow.likelihoods.MultiClass(3), np.array((0.1, 2.)).reshape(2, 1)],
             [gpflow.likelihoods.MultiClass(3), np.array((1., 2.)).reshape(1, 2)],
-            [gpflow.likelihoods.MultiClass(3), np.array((1., 3.)).reshape(2, 1)],
         ]
-
-        to_warn = [
-            [gpflow.likelihoods.Bernoulli(), np.array((2., 1., 0.)).reshape(3, 1)],
-            [gpflow.likelihoods.Bernoulli(), np.array((2., 1.1)).reshape(2, 1)],
-        ]
-
-        # special case of switched likelihood
-        sl = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gamma(),
-                                                    gpflow.likelihoods.Gaussian()])
-        A = np.array(((0, 1), (0, 1), (2, 0.))).reshape(3, 2)
-        B = np.array(((0, 1), (0, 1), (2, 3.))).reshape(3, 2)
-        to_pass.append([sl, A])
-        to_fail.append([sl, B])
 
         for l, v in to_pass:
             with self.test_context():
@@ -368,13 +376,8 @@ class TestLikelihoodChecks(GPflowTestCase):
 
         for l, v, in to_fail:
             with self.test_context():
-                with self.assertRaises(ValueError):
-                    print(l)
-                    self.run_models(l, v)
-
-        for l, v, in to_warn:
-            with self.test_context():
-                with self.assertRaises(Warning):
+                print("> likelihood: ", l)
+                with self.assertRaises(Exception):
                     self.run_models(l, v)
 
 
