@@ -67,9 +67,9 @@ def autoflow(*af_args, **af_kwargs):
         def runnable(obj, *args, **kwargs):
             if not isinstance(obj, Node):
                 raise GPflowError(
-                    'Tensor mode works only for node-like object.')
+                    'AutoFlow works only with node-like objects.')
             if obj.is_built_coherence(obj.graph) is Build.NO:
-                raise GPflowError('Compilable object is not built.')
+                raise GPflowError('Not built with "{graph}".'.format(graph=obj.graph))
             name = method.__name__
             store = AutoFlow.get_autoflow(obj, name)
             session = kwargs.pop('session', None)

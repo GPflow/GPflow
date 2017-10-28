@@ -9,8 +9,8 @@ class TestConfigParsing(GPflowTestCase):
     def setUp(self):
         directory = os.path.dirname(os.path.realpath(__file__))
         f = os.path.join(directory, 'gpflowrc_test.txt')
-        self.conf = gpflow._settings.read_config_file(f)
-        self.settings = gpflow._settings.namedtuplify(self.conf._sections)
+        self.conf = gpflow._settings._read_config_file(f)
+        self.settings = gpflow._settings._namedtuplify(self.conf._sections)
 
     def test(self):
         self.assertTrue(all([
@@ -23,31 +23,31 @@ class TestConfigParsing(GPflowTestCase):
             self.settings.second_section.yet_another_bool is False]))
 
     def test_config_not_found(self):
-        """GPflow config cannot be found."""
         filename = "./config_not_found.txt"
-        self.assertRaises(RuntimeError, gpflow._settings.read_config_file, filename)
+        with self.assertRaises(RuntimeError):
+            gpflow._settings._read_config_file(filename)
 
     def test_parser(self):
         with self.assertRaises(ValueError):
-            gpflow._settings.parse(None)
+            gpflow._settings._parse(None)
 
         with self.assertRaises(ValueError):
-            gpflow._settings.parse(12)
+            gpflow._settings._parse(12)
 
         with self.assertRaises(ValueError):
-            gpflow._settings.parse([])
+            gpflow._settings._parse([])
 
-        self.assertTrue(gpflow._settings.parse('false') is False)
-        self.assertTrue(gpflow._settings.parse('False') is False)
-        self.assertTrue(gpflow._settings.parse('true') is True)
-        self.assertTrue(gpflow._settings.parse('True') is True)
-        self.assertTrue(gpflow._settings.parse('int32') is tf.int32)
-        self.assertTrue(gpflow._settings.parse('32') is 32)
-        self.assertTrue(gpflow._settings.parse('32.') == 32.)
-        self.assertTrue(gpflow._settings.parse('int') == 'int')
-        self.assertTrue(gpflow._settings.parse('hello') == 'hello')
-        self.assertTrue(gpflow._settings.parse('1E2') == 1e2)
-        self.assertTrue(gpflow._settings.parse('1e-9') == 1e-9)
+        self.assertEqual(gpflow._settings._parse('false'), False)
+        self.assertEqual(gpflow._settings._parse('False'), False)
+        self.assertEqual(gpflow._settings._parse('true'), True)
+        self.assertEqual(gpflow._settings._parse('True'), True)
+        self.assertEqual(gpflow._settings._parse('int32'), tf.int32)
+        self.assertEqual(gpflow._settings._parse('32'), 32)
+        self.assertEqual(gpflow._settings._parse('32.'), 32.)
+        self.assertEqual(gpflow._settings._parse('int'), 'int')
+        self.assertEqual(gpflow._settings._parse('hello'), 'hello')
+        self.assertEqual(gpflow._settings._parse('1E2'), 1e2)
+        self.assertEqual(gpflow._settings._parse('1e-9'), 1e-9)
 
 
 class TestSettingsManager(GPflowTestCase):
@@ -58,9 +58,9 @@ class TestSettingsManager(GPflowTestCase):
     def testMutability(self):
         orig = gpflow.settings.verbosity.hmc_verb
         gpflow.settings.verbosity.hmc_verb = False
-        self.assertTrue(gpflow.settings.verbosity.hmc_verb is False)
+        self.assertEqual(gpflow.settings.verbosity.hmc_verb, False)
         gpflow.settings.verbosity.hmc_verb = True
-        self.assertTrue(gpflow.settings.verbosity.hmc_verb is True)
+        self.assertEqual(gpflow.settings.verbosity.hmc_verb, True)
         gpflow.settings.verbosity.hmc_verb = orig
 
     def testContextManager(self):
@@ -68,10 +68,10 @@ class TestSettingsManager(GPflowTestCase):
         gpflow.settings.verbosity.hmc_verb = True
         config = gpflow.settings.get_settings()
         config.verbosity.hmc_verb = False
-        self.assertTrue(gpflow.settings.verbosity.hmc_verb is True)
+        self.assertEqual(gpflow.settings.verbosity.hmc_verb, True)
         with gpflow.settings.temp_settings(config):
-            self.assertTrue(gpflow.settings.verbosity.hmc_verb is False)
-        self.assertTrue(gpflow.settings.verbosity.hmc_verb is True)
+            self.assertEqual(gpflow.settings.verbosity.hmc_verb, False)
+        self.assertEqual(gpflow.settings.verbosity.hmc_verb, True)
         gpflow.settings.verbosity.hmc_verb = orig
 
 

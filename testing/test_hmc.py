@@ -1,11 +1,12 @@
 import gpflow
-import numpy as np
 import unittest
 import tensorflow as tf
 
+import numpy as np
+from numpy.testing import assert_almost_equal, assert_allclose
+
 from nose.plugins.attrib import attr
 from gpflow.test_util import GPflowTestCase
-from numpy.testing import assert_almost_equal, assert_allclose
 
 @attr(speed='slow')
 class SampleGaussianTest(GPflowTestCase):

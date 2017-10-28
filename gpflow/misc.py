@@ -67,6 +67,21 @@ def is_valid_param_value(value):
             or is_tensor(value))
 
 
+def initialize_variables(variables=None, session=None, force=False, **run_kwargs):
+    session = tf.get_default_session() if session is None else session
+    if variables is None:
+        initializer = tf.global_variables_initializer()
+    else:
+        if not force:
+            initializer = tf.variables_initializer(variables)
+        else:
+            uninitialized = tf.report_uninitialized_variables(var_list=variables)
+            names = set(session.run(uninitialized))
+            vars_for_init = [v for v in variables if v.name.split(':')[0] in names]
+            initializer = tf.variables_initializer(vars_for_init)
+    session.run(initializer, **run_kwargs)
+
+
 def is_tensor_trainable(tensor):
     return tensor in tensor.graph.get_collection(__TRAINABLES)
 

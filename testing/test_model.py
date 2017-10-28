@@ -13,9 +13,12 @@
 # limitations under the License.from __future__ import print_function
 
 from __future__ import print_function
-import tensorflow as tf
-import numpy as np
+
 import unittest
+import tensorflow as tf
+
+import numpy as np
+from numpy.testing import assert_almost_equal
 
 import gpflow
 from gpflow import test_util
@@ -51,6 +54,84 @@ class TestOptimize(test_util.GPflowTestCase):
             opt = gpflow.train.ScipyOptimizer(options={'disp': False, 'maxiter': 1000})
             opt.minimize(m)
             self.assertTrue(m.x.read_value().max() < 1e-6)
+
+
+class EmptyTest(test_util.GPflowTestCase):
+    class Empty(gpflow.models.Model):
+        def _build_likelihood(self):
+            return tf.convert_to_tensor(1., dtype=gpflow.settings.tf_float)
+
+    def test_compile_model_without_parameters(self):
+        with self.test_context():
+            m = EmptyTest.Empty()
+            m.compile()
+            assert_almost_equal(m.compute_log_likelihood(), 1.0)
+            assert_almost_equal(m.compute_log_prior(), 0.0)
+
+    def test_parameters_list_empty(self):
+        with self.test_context():
+            m = EmptyTest.Empty()
+            self.assertEqual(list(m.parameters), [])
+            self.assertEqual(list(m.trainable_parameters), [])
+            self.assertEqual(list(m.params), [])
+            m.compile()
+            self.assertEqual(list(m.parameters), [])
+            self.assertEqual(list(m.trainable_parameters), [])
+            self.assertEqual(list(m.params), [])
+
+    def test_objective_tensor(self):
+        with self.test_context():
+            m = EmptyTest.Empty()
+            self.assertEqual(m.objective, None)
+            m.compile()
+            self.assertTrue(gpflow.misc.is_tensor(m.objective))
+
+
+class NotImplementedModelTest(test_util.GPflowTestCase):
+    def no_likelihood_model_test(self):
+        class NoLikelihoodModel(gpflow.models.Model):
+            pass
+
+        with self.assertRaises(NotImplementedError):
+            m = NoLikelihoodModel()
+            m.compile()
+
+class ReplaceParameterTest(test_util.GPflowTestCase):
+
+    class Origin(gpflow.models.Model):
+        def __init__(self):
+            super(ReplaceParameterTest.Origin, self).__init__()
+            self.a = gpflow.Param(1.)
+            self.b = gpflow.Param(2.)
+
+        @gpflow.params_as_tensors
+        def _build_likelihood(self):
+            return tf.square(self.a) + tf.square(self.b)
+
+    def test_replace_parameter(self):
+        class OriginSuccess(ReplaceParameterTest.Origin):
+            def __init__(self):
+                super(OriginSuccess, self).__init__()
+                self.b = gpflow.Param(np.array(3.))
+
+        class OriginAllDataholders(ReplaceParameterTest.Origin):
+            def __init__(self):
+                super(OriginAllDataholders, self).__init__()
+                self.a = gpflow.DataHolder(np.array(2.))
+                self.b = gpflow.DataHolder(np.array(2.))
+
+        with self.test_context():
+            m0 = self.Origin()
+            m0.compile()
+            assert_almost_equal(m0.compute_log_likelihood(), 5.0)
+
+            m1 = OriginSuccess()
+            m1.compile()
+            assert_almost_equal(m1.compute_log_likelihood(), 10.0)
+
+            m2 = OriginAllDataholders()
+            m2.compile()
+            assert_almost_equal(m2.compute_log_likelihood(), 8.0)
 
 
 class KeyboardRaiser:
