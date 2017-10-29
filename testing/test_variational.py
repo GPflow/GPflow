@@ -12,34 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import gpflow
-import tensorflow as tf
-import numpy as np
 import unittest
-from .reference import referenceRbfKernel
+import tensorflow as tf
 
+import numpy as np
+from numpy.testing import assert_allclose
+
+import gpflow
 from gpflow.test_util import GPflowTestCase
 
+from .reference import referenceRbfKernel
 
-def referenceUnivariateLogMarginalLikelihood(y, K, noiseVariance):
+
+def univariate_log_marginal_likelihood(y, K, noiseVariance):
     return (-0.5 * y * y / (K + noiseVariance)
             -0.5 * np.log(K + noiseVariance)
             -0.5 * np.log(np.pi * 2.))
 
 
-def referenceUnivariatePosterior(y, K, noiseVariance):
+def univariate_posterior(y, K, noiseVariance):
     mean = K * y / (K + noiseVariance)
     variance = K - K / (K + noiseVariance)
     return mean, variance
 
 
-def referenceUnivariatePriorKL(meanA, meanB, varA, varB):
+def univariate_prior_KL(meanA, meanB, varA, varB):
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and qB are univariate normal distributions.
     return (0.5 * (np.log(varB) - np.log(varA) - 1. + varA/varB +
                    (meanB-meanA) * (meanB - meanA) / varB))
 
 
-def referenceMultivariatePriorKL(meanA, covA, meanB, covB):
+def multivariate_prior_KL(meanA, covA, meanB, covB):
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and aB are
     # K dimensional multivariate normal distributions.
     # Analytically tractable and equal to...
@@ -52,7 +55,11 @@ def referenceMultivariatePriorKL(meanA, covA, meanB, covB):
     constantTerm = -0.5 * K
     priorLogDeterminantTerm = 0.5*np.linalg.slogdet(covB)[1]
     variationalLogDeterminantTerm = -0.5 * np.linalg.slogdet(covA)[1]
-    return traceTerm + mahalanobisTerm + constantTerm + priorLogDeterminantTerm + variationalLogDeterminantTerm
+    return (traceTerm +
+            mahalanobisTerm +
+            constantTerm +
+            priorLogDeterminantTerm +
+            variationalLogDeterminantTerm)
 
 
 def kernel(kernelVariance=1, lengthScale=1.):
@@ -75,22 +82,29 @@ class VariationalUnivariateTest(GPflowTestCase):
         self.Z = self.X.copy()
         self.lik = gpflow.likelihoods.Gaussian()
         self.lik.variance = self.noiseVariance
-        self.posteriorMean, self.posteriorVariance = referenceUnivariatePosterior(
+        self.posteriorMean, self.posteriorVariance = univariate_posterior(
             y=self.y_real, K=self.K,
             noiseVariance=self.noiseVariance)
         self.posteriorStd = np.sqrt(self.posteriorVariance)
 
     def get_model(self, is_diagonal, is_whitened):
-        m = gpflow.models.SVGP(X=self.X, Y=self.Y,
-                             kern=kernel(kernelVariance=self.K),
-                             likelihood=self.lik, Z=self.Z, q_diag=is_diagonal, whiten=is_whitened)
+        m = gpflow.models.SVGP(
+            X=self.X, Y=self.Y,
+            kern=kernel(kernelVariance=self.K),
+            likelihood=self.lik,
+            Z=self.Z,
+            q_diag=is_diagonal,
+            whiten=is_whitened)
+
         if is_diagonal:
-            m.q_sqrt = (np.ones((self.univariate, self.oneLatentFunction))
-                        * self.posteriorStd)
+            ones = np.ones((self.univariate, self.univariate, self.oneLatentFunction))
+            m.q_sqrt = ones * self.posteriorStd
         else:
-            m.q_sqrt = (np.ones((self.univariate, self.univariate, self.oneLatentFunction))
-                        * self.posteriorStd)
+            ones = np.ones((self.univariate, self.univariate, self.oneLatentFunction))
+            m.q_sqrt = ones * self.posteriorStd
+
         m.q_mu = np.ones((self.univariate, self.oneLatentFunction)) * self.posteriorMean
+        m.compile()
         return m
 
     def test_prior_KL(self):
@@ -100,56 +114,52 @@ class VariationalUnivariateTest(GPflowTestCase):
             meanB = self.meanZero  # Assumes a zero
             varB = self.K
 
-            referenceKL = referenceUnivariatePriorKL(meanA, meanB, varA, varB)
+            referenceKL = univariate_prior_KL(meanA, meanB, varA, varB)
 
             for is_diagonal in [True, False]:
                 for is_whitened in [True, False]:
                     m = self.get_model(is_diagonal, is_whitened)
 
-                    test_prior_KL = gpflow.param.AutoFlow()(m.build_prior_KL.__func__)(m)
-                    self.assertTrue(np.abs(referenceKL - test_prior_KL) < 1e-4)
+                    test_prior_KL = gpflow.autoflow()(m.build_prior_KL.__func__)(m)
+                    assert_allclose(referenceKL - test_prior_KL, 0, atol=4)
 
     def test_build_likelihood(self):
         with self.test_context():
             # reference marginal likelihood
-            log_marginal_likelihood = referenceUnivariateLogMarginalLikelihood(
+            log_marginal_likelihood = univariate_log_marginal_likelihood(
                 y=self.y_real, K=self.K, noiseVariance=self.noiseVariance)
 
             for is_diagonal in [True, False]:
                 for is_whitened in [True, False]:
                     model = self.get_model(is_diagonal, is_whitened)
                     model_likelihood = model.compute_log_likelihood()
-                    self.assertTrue(
-                        np.abs(model_likelihood - log_marginal_likelihood) < 1e-4)
+                    assert_allclose(model_likelihood - log_marginal_likelihood, 0, atol=4)
 
     def testUnivariateConditionals(self):
         with self.test_context() as sess:
             for is_diagonal in [True, False]:
                 for is_whitened in [True, False]:
                     m = self.get_model(is_diagonal, is_whitened)
-                    free_vars = tf.placeholder(tf.float64)
-                    m.make_tf_array(free_vars)
-                    with m.tf_mode():
+                    with gpflow.params_as_tensors_for(m):
                         if is_whitened:
                             fmean_func, fvar_func = gpflow.conditionals.conditional(
                                 self.X, self.Z, m.kern, m.q_mu, q_sqrt=m.q_sqrt)
                         else:
                             fmean_func, fvar_func = gpflow.conditionals.conditional(
                                 self.X, self.Z, m.kern, m.q_mu, q_sqrt=m.q_sqrt, whiten=True)
-                    mean_value = fmean_func.eval(
-                        session=sess, feed_dict={free_vars: m.get_free_state()})[0, 0]
-                    var_value = fvar_func.eval(
-                        session=sess, feed_dict={free_vars: m.get_free_state()})[0, 0]
-                    self.assertTrue(np.abs(mean_value - self.posteriorMean) < 1e-4)
-                    self.assertTrue(np.abs(var_value - self.posteriorVariance) < 1e-4)
+                    mean_value = fmean_func.eval(session=sess)[0, 0]
+                    var_value = fvar_func.eval(session=sess)[0, 0]
+                    assert_allclose(mean_value - self.posteriorMean, 0, atol=4)
+                    assert_allclose(var_value - self.posteriorVariance, 0, atol=4)
 
 
 class VariationalMultivariateTest(GPflowTestCase):
     def setUp(self):
         self.nDimensions = 3
-        self.rng = np.random.RandomState(1)
-        self.Y = self.rng.randn(self.nDimensions, 1)
-        self.X = self.rng.randn(self.nDimensions, 1)
+        rng = np.random.RandomState(1)
+        self.rng = rng
+        self.Y = rng.randn(self.nDimensions, 1)
+        self.X = rng.randn(self.nDimensions, 1)
         self.Z = self.X.copy()
         self.noiseVariance = 0.5
         self.signalVariance = 1.5
@@ -157,12 +167,12 @@ class VariationalMultivariateTest(GPflowTestCase):
         self.oneLatentFunction = 1
         self.lik = gpflow.likelihoods.Gaussian()
         self.lik.variance = self.noiseVariance
-        self.q_mean = self.rng.randn(self.nDimensions, self.oneLatentFunction)
-        self.q_sqrt_diag = self.rng.rand(self.nDimensions, self.oneLatentFunction)
+        self.q_mean = rng.randn(self.nDimensions, self.oneLatentFunction)
+        self.q_sqrt_diag = rng.rand(self.nDimensions, self.oneLatentFunction)
         self.q_sqrt_full = np.tril(self.rng.rand(self.nDimensions, self.nDimensions))
 
-    def getModel(self, is_diagonal, is_whitened):
-        model = gpflow.models.SVGP(
+    def get_model(self, is_diagonal, is_whitened):
+        m = gpflow.models.SVGP(
             X=self.X, Y=self.Y,
             kern=kernel(kernelVariance=self.signalVariance, lengthScale=self.lengthScale),
             likelihood=self.lik,
@@ -170,11 +180,12 @@ class VariationalMultivariateTest(GPflowTestCase):
             q_diag=is_diagonal,
             whiten=is_whitened)
         if is_diagonal:
-            model.q_sqrt = self.q_sqrt_diag
+            m.q_sqrt = self.q_sqrt_diag
         else:
-            model.q_sqrt = self.q_sqrt_full[:, :, None]
-        model.q_mu = self.q_mean
-        return model
+            m.q_sqrt = self.q_sqrt_full[:, :, None]
+        m.q_mu = self.q_mean
+        m.compile()
+        return m
 
     def test_refrence_implementation_consistency(self):
         with self.test_context():
@@ -183,28 +194,28 @@ class VariationalMultivariateTest(GPflowTestCase):
             qCov = rng.rand()
             pMean = rng.rand()
             pCov = rng.rand()
-            univariate_KL = referenceUnivariatePriorKL(qMean, pMean, qCov, pCov)
-            multivariate_KL = referenceMultivariatePriorKL(
+            univariate_KL = univariate_prior_KL(qMean, pMean, qCov, pCov)
+            multivariate_KL = multivariate_prior_KL(
                 np.array([[qMean]]), np.array([[qCov]]),
                 np.array([[pMean]]), np.array([[pCov]]))
-            self.assertTrue(np.abs(univariate_KL - multivariate_KL) < 1e-4)
+            assert_allclose(univariate_KL - multivariate_KL, 0, atol=4)
 
     def test_prior_KL_fullQ(self):
         with self.test_context():
             covQ = np.dot(self.q_sqrt_full, self.q_sqrt_full.T)
             mean_prior = np.zeros((self.nDimensions, 1))
             for is_whitened in [True, False]:
-                m = self.getModel(False, is_whitened)
+                m = self.get_model(False, is_whitened)
                 if is_whitened:
                     cov_prior = np.eye(self.nDimensions)
                 else:
                     cov_prior = referenceRbfKernel(
                         self.X, self.lengthScale, self.signalVariance)
-                referenceKL = referenceMultivariatePriorKL(
+                referenceKL = multivariate_prior_KL(
                     self.q_mean, covQ, mean_prior, cov_prior)
                 # now get test KL.
-                test_prior_KL = gpflow.param.AutoFlow()(m.build_prior_KL.__func__)(m)
-                self.assertTrue(np.abs(referenceKL - test_prior_KL) < 1e-4)
+                test_prior_KL = gpflow.autoflow()(m.build_prior_KL.__func__)(m)
+                assert_allclose(referenceKL - test_prior_KL, 0, atol=4)
 
 if __name__ == "__main__":
     unittest.main()

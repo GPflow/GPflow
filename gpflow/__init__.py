@@ -36,6 +36,7 @@ from . import training as train
 from .decors import autoflow
 from .decors import name_scope
 from .decors import params_as_tensors
+from .decors import params_as_tensors_for
 
 from .core.base import GPflowError
 from .core.base import Build
