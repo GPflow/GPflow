@@ -465,8 +465,8 @@ class TestParamList(test_util.GPflowTestCase):
         with self.test_context():
             m = Foo()
             m.compile()
-            optimizer = gpflow.train.ScipyOptimizer(options={'disp': False, 'maxiter': 10})
-            optimizer.minimize(m)
+            optimizer = gpflow.train.ScipyOptimizer()
+            optimizer.minimize(m, maxiter=10)
             atol = 1e-6 if settings.np_float is np.float32 else 1e-8
             params = [param.read_value() for param in m.parameters]
             self.assertTrue(np.allclose(params, 0., atol=atol))
@@ -505,8 +505,8 @@ class TestFixWithPrior(test_util.GPflowTestCase):
             m.p.trainable = False
             m._build_likelihood = lambda: tf.zeros([1], tf.float64)
             m.compile()
-            optimizer = gpflow.train.ScipyOptimizer(options={'maxiter': 10})
-            optimizer.minimize(m)
+            optimizer = gpflow.train.ScipyOptimizer()
+            optimizer.minimize(m, maxiter=10)
 
 #class TestRandomizeDefault(test_util.GPflowTestCase):
 #    """

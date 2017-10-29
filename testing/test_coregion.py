@@ -17,8 +17,8 @@ class TestEquivalence(GPflowTestCase):
     def setUp(self):
         with self.test_context():
             rng = np.random.RandomState(0)
-            X = [rng.rand(10, 2)*10, rng.rand(20, 2)*10]
-            Y = [np.sin(x) + 0.9 * np.cos(x*1.6) + rng.randn(*x.shape) * 0.8 for x in X]
+            X = [rng.rand(10, 2) * 10, rng.rand(20, 2) * 10]
+            Y = [np.sin(x) + 0.9 * np.cos(x * 1.6) + rng.randn(*x.shape) * 0.8 for x in X]
             label = [np.zeros((10, 1)), np.ones((20, 1))]
             perm = list(range(30))
             rng.shuffle(perm)

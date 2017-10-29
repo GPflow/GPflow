@@ -1,3 +1,6 @@
+
+# pylint: disable=W0212
+
 import unittest
 import os
 import tensorflow as tf

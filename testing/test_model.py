@@ -51,8 +51,8 @@ class TestOptimize(test_util.GPflowTestCase):
         with self.test_context():
             m = self.m
             m.compile()
-            opt = gpflow.train.ScipyOptimizer(options={'disp': False, 'maxiter': 1000})
-            opt.minimize(m)
+            opt = gpflow.train.ScipyOptimizer()
+            opt.minimize(m, maxiter=1000)
             self.assertTrue(m.x.read_value().max() < 1e-6)
 
 
@@ -161,11 +161,10 @@ class TestKeyboardCatching(test_util.GPflowTestCase):
             m = self.m
             m.compile()
             x_before = m.read_trainables()
-            options = {'maxiter': 1000, 'gtol': 0, 'ftol': 0}
-            opt = gpflow.train.ScipyOptimizer(options=options)
+            opt = gpflow.train.ScipyOptimizer()
             step = 15
             raiser = KeyboardRaiser(step)
-            opt.minimize(m, step_callback=raiser)
+            opt.minimize(m, step_callback=raiser, maxiter=1000)
             self.assertEqual(raiser.count, step)
             x_after = m.read_trainables()
             before = np.hstack([np.hstack(np.hstack([x])) for x in x_before])
