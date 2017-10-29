@@ -131,21 +131,11 @@ class VariationalUnivariateTest(GPflowTestCase):
                     m.make_tf_array(free_vars)
                     with m.tf_mode():
                         if is_whitened:
-                            args = (self.X,
-                                    self.Z,
-                                    m.kern,
-                                    m.q_mu,
-                                    m.q_sqrt,
-                                    self.oneLatentFunction)
-                            fmean_func, fvar_func = gpflow.conditionals.gaussian_gp_predict_whitened(*args)
+                            fmean_func, fvar_func = gpflow.conditionals.conditional(
+                                self.X, self.Z, m.kern, m.q_mu, q_sqrt=m.q_sqrt)
                         else:
-                            args = (self.X,
-                                    self.Z,
-                                    m.kern,
-                                    m.q_mu,
-                                    m.q_sqrt,
-                                    self.oneLatentFunction)
-                            fmean_func, fvar_func = gpflow.conditionals.gaussian_gp_predict(*args)
+                            fmean_func, fvar_func = gpflow.conditionals.conditional(
+                                self.X, self.Z, m.kern, m.q_mu, q_sqrt=m.q_sqrt, whiten=True)
                     mean_value = fmean_func.eval(
                         session=sess, feed_dict={free_vars: m.get_free_state()})[0, 0]
                     var_value = fvar_func.eval(
