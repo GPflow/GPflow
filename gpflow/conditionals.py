@@ -43,21 +43,17 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     We assume K independent GPs, represented by the columns of f (and the
     last dimension of q_sqrt).
 
-     - Xnew is a data matrix, size N x D
-     - X are data points, size M x D
-     - kern is a GPflow kernel
-     - f is a data matrix, M x K, representing the function values at X, for K functions.
-     - q_sqrt (optional) is a matrix of standard-deviations or Cholesky
-       matrices, size M x K or M x M x K
-     - whiten (optional) is a boolean: whether to whiten the representation
-       as described above.
+    :param Xnew: data matrix, size N x D.
+    :param X: data points, size M x D.
+    :param kern: GPflow kernel.
+    :param f: data matrix, M x K, representing the function values at X,
+        for K functions.
+    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
+        size M x K or M x M x K.
+    :param whiten: boolean of whether to whiten the representation as
+        described above.
 
-    These functions are now considered deprecated, subsumed into this one:
-        gp_predict
-        gaussian_gp_predict
-        gp_predict_whitened
-        gaussian_gp_predict_whitened
-
+    :return: two element tuple with conditional mean and variance.
     """
 
     # compute kernel stuff
