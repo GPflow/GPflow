@@ -14,10 +14,46 @@
 
 
 import warnings
-import tensorflow as tf
 
-from gpflow.decors import name_scope
+import tensorflow as tf
 from gpflow import settings
+from gpflow.decors import name_scope
+
+
+@name_scope()
+def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, f, q_sqrt=None, whiten=False):
+    assert whiten
+    # Xnew_mu: N x D
+    # Xnew_var: N x D x D
+    # f: M x D
+    eKuf = tf.transpose(feat.eKfu(kern, Xnew_mu, Xnew_var))  # M x N
+    Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)
+
+    num_func = tf.shape(f)[1]
+    Lm = tf.cholesky(Kuu)
+
+    A = tf.matrix_triangular_solve(Lm, eKuf, lower=True)
+
+    eKff = kern.eKdiag(Xnew_mu, Xnew_var)
+    eKuffu = feat.eKufKfu(kern, Xnew_mu, Xnew_var)  # NxMxM
+    Li_eKuffu_Lit = tf.matrix_triangular_solve(Lm[None, :, :], tf.transpose(eKuffu, (0, 2, 1)), lower=True,
+                                               adjoint=True)
+    Li_eKuffu_Lit = tf.matrix_triangular_solve(Lm[None, :, :], tf.transpose(Li_eKuffu_Lit, (0, 2, 1)))
+    print(Li_eKuffu_Lit.get_shape())
+    q_sqrt_r = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)
+    cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True)
+    fvar = (
+        tf.matrix_diag(eKff - tf.trace(Li_eKuffu_Lit))
+        # tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit[:, None, :, :], cov[None, :, :, :]))) +
+        # tf.matmul(f[None, :, :], tf.matmul(Li_eKuffu_Lit, f[None, :, :]), transpose_a=True)
+    )
+
+    if not whiten:
+        A = tf.matrix_triangular_solve(Lm, A, lower=True, adjoint=True)  # Now A = Kmm^-1 eKuf
+
+    fmean = tf.matmul(A, f, transpose_a=True)
+
+    return fmean, tf.Print(fvar, [eKff, tf.trace(Li_eKuffu_Lit)])
 
 
 @name_scope()

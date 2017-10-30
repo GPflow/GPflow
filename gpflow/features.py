@@ -69,13 +69,13 @@ class InducingPoints(InducingFeature):
     def eKdiag(self, kern, X, Xcov=None):
         return kern.eKdiag(X, Xcov)
 
-    def eKxz(self, kern, Xmu, Xcov):
+    def eKfu(self, kern, Xmu, Xcov):
         return kern.eKxz(self.Z, Xmu, Xcov)
 
-    def exKxz(self, kern, Xmu, Xcov):
+    def efKfu(self, kern, Xmu, Xcov):
         return kern.exKxz(self.Z, Xmu, Xcov)
 
-    def eKzxKxz(self, kern, Xmu, Xcov):
+    def eKufKfu(self, kern, Xmu, Xcov):
         return kern.eKzxKxz(self.Z, Xmu, Xcov)
 
 class Multiscale(InducingFeature):
