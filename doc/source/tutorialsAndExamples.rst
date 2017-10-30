@@ -11,6 +11,7 @@ Tutorials and examples
    notebooks/multiclass
    notebooks/mcmc
    notebooks/ordinal
+   notebooks/coreg_demo
    notebooks/svi_test
    notebooks/GPLVM
    notebooks/Sanity_check
