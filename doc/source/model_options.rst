@@ -9,12 +9,12 @@ The following table summarizes the six core model options in GPflow.
 |                      | Gaussian                 | Non-Gaussian (variational) | Non-Gaussian                |
 |                      | Likelihood               |                            | (MCMC)                      |
 +======================+==========================+============================+=============================+
-| Full-covariance      | :class:`gpflow.gpr.GPR`  | :class:`gpflow.vgp.VGP`    | :class:`gpflow.gpmc.GPMC`   |
+| Full covariance      | :class:`gpflow.gpr.GPR`  | :class:`gpflow.vgp.VGP`    | :class:`gpflow.gpmc.GPMC`   |
 +----------------------+--------------------------+----------------------------+-----------------------------+
 | Sparse approximation | :class:`gpflow.sgpr.SGPR`| :class:`gpflow.svgp.SVGP`  | :class:`gpflow.sgpmc.SGPMC` |
 +----------------------+--------------------------+----------------------------+-----------------------------+
 
-The GPLVM, which add latent variables is also included (`notebook <notebooks/GPLVM.html>`_).
+The GPLVM which adds latent variables is also included (`notebook <notebooks/GPLVM.html>`_).
 
 GP Regression
 -------------
