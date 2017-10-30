@@ -1,88 +1,91 @@
 from __future__ import print_function
-import numpy as np
 import unittest
-import numpy as np
 import tensorflow as tf
+
+
+import numpy as np
+from numpy.testing import assert_array_equal
 
 import gpflow
 from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
-float_type = settings.dtypes.float_type
-settings.np_float = np.float32 if float_type is tf.float32 else np.float64
-
 
 class TestDataHolderSimple(GPflowTestCase):
-    def setUp(self):
-        with self.test_context():
-            self.m = gpflow.models.Model()
-            self.rng = np.random.RandomState()
-            self.m.X = gpflow.DataHolder(self.rng.randn(2, 2))
-            self.m.Y = gpflow.DataHolder(self.rng.randn(2, 2))
-            self.m.Z = gpflow.DataHolder(self.rng.randn(2, 2))
-            self.m.make_tf_array(np.empty(0))
-            self.m._needs_recompile = False
+    def setup(self):
+        m = gpflow.models.Model()
+        rng = np.random.RandomState()
+        m.X = gpflow.DataHolder(rng.randn(2, 2))
+        m.Y = gpflow.DataHolder(rng.randn(2, 2))
+        m.Z = gpflow.DataHolder(rng.randn(2, 2))
+        m._build_likelihood = lambda: tf.constant(0, dtype=gpflow.settings.np_float)
+        return m, rng
 
     def test_types(self):
-        assert self.m.X.value.dtype == settings.np_float
-        assert self.m.Y.value.dtype == settings.np_float
-        assert self.m.Z.value.dtype == settings.np_float
+        with self.test_context():
+            m, _ = self.setup()
+            self.assertEqual(m.X.dtype, settings.np_float)
+            self.assertEqual(m.Y.dtype, settings.np_float)
+            self.assertEqual(m.Z.dtype, settings.np_float)
+            self.assertEqual(m.X.read_value().dtype, settings.np_float)
+            self.assertEqual(m.Y.read_value().dtype, settings.np_float)
+            self.assertEqual(m.Z.read_value().dtype, settings.np_float)
+            m.compile()
+            self.assertEqual(m.X.dtype, settings.np_float)
+            self.assertEqual(m.Y.dtype, settings.np_float)
+            self.assertEqual(m.Z.dtype, settings.np_float)
+            self.assertEqual(m.X.read_value().dtype, settings.np_float)
+            self.assertEqual(m.Y.read_value().dtype, settings.np_float)
+            self.assertEqual(m.Z.read_value().dtype, settings.np_float)
 
     def test_same_shape(self):
-        new_X = self.rng.randn(2, 2)
-        self.m.X = new_X
-        fd = {}
-        self.m.update_feed_dict(self.m.get_feed_dict_keys(), fd)
-        assert np.all(fd[self.m.X._tf_array] == new_X)
-        self.assertFalse(self.m._needs_recompile)
+        with self.test_context():
+            m, rng = self.setup()
+            m.compile()
 
-        new_Y = self.rng.randn(2, 2)
-        self.m.Y = new_Y
-        fd = {}
-        self.m.update_feed_dict(self.m.get_feed_dict_keys(), fd)
-        assert np.all(fd[self.m.Y._tf_array] == new_Y)
-        self.assertFalse(self.m._needs_recompile)
+            new_X = rng.randn(2, 2)
+            m.X = new_X
+            assert_array_equal(m.X.shape, new_X.shape)
+            assert_array_equal(m.X.read_value(), new_X)
 
-        new_Z = self.rng.randn(2, 2)
-        self.m.Z = new_Z
-        fd = {}
-        self.m.update_feed_dict(self.m.get_feed_dict_keys(), fd)
-        assert np.all(fd[self.m.Z._tf_array] == new_Z)
-        self.assertFalse(self.m._needs_recompile)
+            new_Y = rng.randn(2, 2)
+            m.Y = new_Y
+            assert_array_equal(m.Y.shape, new_Y.shape)
+            assert_array_equal(m.Y.read_value(), new_Y)
 
-    def test_pass(self):
-        self.m.X = self.rng.randn(3, 3)
-        self.assertFalse(self.m._needs_recompile)
+            new_Z = rng.randn(2, 2)
+            m.Z = new_Z
+            assert_array_equal(m.Z.shape, new_Z.shape)
+            assert_array_equal(m.Z.read_value(), new_Z)
 
     def test_raise(self):
-        with self.assertRaises(ValueError):
-            self.m.Y = self.rng.randn(3, 3)
-
-    def test_recompile(self):
-        self.m.Z = self.rng.randn(3, 3)
-        self.assertTrue(self.m._needs_recompile)
+        with self.test_context():
+            m, rng = self.setup()
+            m.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                m.Y = rng.randn(3, 3)
 
 
 class TestDataHolderIntegers(GPflowTestCase):
-    def setUp(self):
-        with self.test_context():
-            self.m = gpflow.models.Model()
-            self.rng = np.random.RandomState()
-            self.m.X = gpflow.DataHolder(
-                self.rng.randint(0, 10, (2, 2)))
-            self.m.X.make_tf_array()
-            self.m._needs_recompile = False
+    def setup(self):
+        m = gpflow.models.Model()
+        rng = np.random.RandomState()
+        m.X = gpflow.DataHolder(rng.randint(0, 10, (2, 2)), dtype=gpflow.settings.np_int)
+        return m, rng
 
     def test_types(self):
-        assert self.m.X.value.dtype == np.int32
+        with self.test_context():
+            m, _ = self.setup()
+            self.assertEqual(m.X.read_value().dtype, gpflow.settings.np_int)
+            self.assertEqual(m.X.dtype, gpflow.settings.np_int)
 
     def test_same_shape(self):
-        new_X = self.rng.randint(0, 10, (2, 2))
-        self.m.X = new_X
-        fd = {}
-        self.m.update_feed_dict(self.m.get_feed_dict_keys(), fd)
-        assert np.all(fd[self.m.X._tf_array] == new_X)
-        self.assertFalse(self.m._needs_recompile)
+        with self.test_context():
+            m, rng = self.setup()
+            new_X = rng.randint(0, 10, (2, 2), dtype=gpflow.settings.np_int)
+            m.X = new_X
+            assert_array_equal(m.X.shape, new_X.shape)
+            assert_array_equal(m.X.read_value(), new_X)
 
 
 class TestDataHolderModels(GPflowTestCase):
@@ -90,111 +93,74 @@ class TestDataHolderModels(GPflowTestCase):
     We make test for Dataholder that enables to reuse model for different data
     with the same shape to the original.  We tested this for the six models.
     """
-    def setUp(self):
-        with self.test_context():
-            self.rng = np.random.RandomState(0)
-            self.X = self.rng.rand(20, 1)
-            self.Y = np.sin(self.X) + 0.9 * np.cos(self.X*1.6) + self.rng.randn(*self.X.shape) * 0.8
-            self.kern = gpflow.kernels.Matern32(1)
+    def setup(self):
+        rng = np.random.RandomState(0)
+        X = rng.rand(20, 1)
+        Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
+        kern = gpflow.kernels.Matern32(1)
+        return X, Y, kern, rng
 
     def test_gpr(self):
         with self.test_context():
-            m = gpflow.models.GPR(self.X, self.Y, self.kern)
+            X, Y, kern, rng = self.setup()
+            m = gpflow.models.GPR(X, Y, kern)
             m.compile()
-            m.X = self.rng.randn(*self.X.shape)
-            self.assertFalse(m._needs_recompile,
-                             msg="Recompilation should be avoided for the same shape data")
-
-            m.X = self.rng.randn(30, 1)
-            self.assertFalse(m._needs_recompile,
-                             msg="For GPR, recompilation should be avoided for the same shape data")
+            m.X = rng.randn(*X.shape)
+            with self.assertRaises(gpflow.GPflowError):
+                m.X = rng.randn(30, 1)
 
     def test_sgpr(self):
         with self.test_context():
-            m = gpflow.models.SGPR(self.X, self.Y, self.kern, Z=self.X[::2])
+            X, Y, kern, rng = self.setup()
+            m = gpflow.models.SGPR(X, Y, kern, Z=X[::2])
             m.compile()
-            m.X = self.rng.randn(*self.X.shape)
-            self.assertFalse(
-                m._needs_recompile,
-                msg="Recompilation should be avoided for the same shape data")
-
-            m.X = self.rng.randn(30, 1)
-            self.assertFalse(
-                m._needs_recompile,
-                msg="For SGPR, recompilation should be avoided for the same shape data")
+            m.X = rng.randn(*X.shape)
+            with self.assertRaises(gpflow.GPflowError):
+                m.X = rng.randn(30, 1)
 
     def test_gpmc(self):
         with self.test_context():
-            m = gpflow.models.GPMC(self.X, self.Y, self.kern, likelihood=gpflow.likelihoods.StudentT())
+            X, Y, kern, rng = self.setup()
+            m = gpflow.models.GPMC(X, Y, kern, likelihood=gpflow.likelihoods.StudentT())
             m.compile()
-            m.X = self.rng.randn(*self.X.shape)
-            self.assertFalse(
-                m._needs_recompile,
-                msg="Recompilation should be avoided for the same shape data")
-
-            Xnew = self.rng.randn(30, 1)
-            Ynew = np.sin(Xnew) + 0.9 * np.cos(Xnew*1.6) + self.rng.randn(*Xnew.shape)
-            m.X = Xnew
-            m.Y = Ynew
-            self.assertTrue(
-                m._needs_recompile,
-                msg="Recompilation should be necessary for different shape data")
-            m.compile()  # make sure compilation is okay for new shapes.
+            m.X = rng.randn(*X.shape)
+            Xnew = rng.randn(30, 1)
+            Ynew = np.sin(Xnew) + 0.9 * np.cos(Xnew*1.6) + rng.randn(*Xnew.shape)
+            with self.assertRaises(gpflow.GPflowError):
+                m.X = Xnew
+            with self.assertRaises(gpflow.GPflowError):
+                m.Y = Ynew
 
     def test_sgpmc(self):
         with self.test_context():
-            m = gpflow.models.SGPMC(
-                self.X, self.Y, self.kern,
-                likelihood=gpflow.likelihoods.StudentT(),
-                Z=self.X[::2])
+            X, Y, kern, rng = self.setup()
+            m = gpflow.models.SGPMC(X, Y, kern, likelihood=gpflow.likelihoods.StudentT(), Z=X[::2])
             m.compile()
-            m.X = self.rng.randn(*self.X.shape)
-            self.assertFalse(
-                m._needs_recompile,
-                msg="Recompilation should be avoided for the same shape data")
-
-            m.X = self.rng.randn(30, 1)
-
-            self.assertFalse(
-                m._needs_recompile,
-                msg="Recompilation should not be necessary for different shape data")
+            m.X = rng.randn(*X.shape)
+            with self.assertRaises(gpflow.GPflowError):
+                m.X = rng.randn(30, 1)
 
     def test_svgp(self):
         with self.test_context():
-            m = gpflow.models.SVGP(
-                self.X, self.Y, self.kern,
-                likelihood=gpflow.likelihoods.StudentT(),
-                Z=self.X[::2])
+            X, Y, kern, rng = self.setup()
+            m = gpflow.models.SVGP(X, Y, kern, likelihood=gpflow.likelihoods.StudentT(), Z=X[::2])
             m.compile()
-            m.X = self.rng.randn(*self.X.shape)
-            self.assertFalse(
-                m._needs_recompile,
-                msg="Recompilation should be avoided for the same shape data")
-
-            m.X = self.rng.randn(30, 1)
-
-            self.assertFalse(
-                m._needs_recompile,
-                msg="For SVGP, recompilation should be avoided for new shape data")
+            m.X = rng.randn(*X.shape)
+            with self.assertRaises(gpflow.GPflowError):
+                m.X = rng.randn(30, 1)
 
     def test_vgp(self):
         with self.test_context():
-            m = gpflow.models.VGP(self.X, self.Y, self.kern,
-                               likelihood=gpflow.likelihoods.StudentT())
+            X, Y, kern, rng = self.setup()
+            m = gpflow.models.VGP(X, Y, kern, likelihood=gpflow.likelihoods.StudentT())
             m.compile()
-            m.X = self.rng.randn(*self.X.shape)
-            self.assertFalse(
-                m._needs_recompile,
-                msg="Recompilation should be avoided for the same shape data")
-
-            Xnew = self.rng.randn(30, 1)
-            Ynew = np.sin(Xnew) + 0.9 * np.cos(Xnew*1.6) + self.rng.randn(*Xnew.shape)
-            m.X = Xnew
-            m.Y = Ynew
-            self.assertTrue(
-                m._needs_recompile,
-                msg="Recompilation should be necessary for different shape data")
-            m.compile()  # make sure compilation is okay for new shapes.
+            m.X = rng.randn(*X.shape)
+            Xnew = rng.randn(30, 1)
+            Ynew = np.sin(Xnew) + 0.9 * np.cos(Xnew * 1.6) + rng.randn(*Xnew.shape)
+            with self.assertRaises(gpflow.GPflowError):
+                m.X = Xnew
+            with self.assertRaises(gpflow.GPflowError):
+                m.Y = Ynew
 
 
 if __name__ == '__main__':

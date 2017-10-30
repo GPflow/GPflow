@@ -30,9 +30,9 @@ from .parameter import Parameter
 
 
 class DataHolder(Parameter):
-    def __init__(self, value, name=None):
+    def __init__(self, value, name=None, dtype=None):
         self._dataholder_tensor = None
-        super(DataHolder, self).__init__(value=value, name=name)
+        super(DataHolder, self).__init__(value=value, name=name, dtype=dtype)
 
     @property
     def trainable(self):
@@ -129,11 +129,12 @@ class FormlessData(DataHolder):
 
 
 class Minibatch(DataHolder):
-    def __init__(self, value, batch_size=1, shuffle=True, seed=None, name=None):
+    def __init__(self, value, batch_size=1, shuffle=True,
+                 seed=None, name=None, dtype=None):
         if not misc.is_valid_param_value(value) or misc.is_tensor(value):
             raise ValueError('The value must be either an array or a scalar.')
 
-        super(Minibatch, self).__init__(value, name=name)
+        super(Minibatch, self).__init__(value, name=name, dtype=dtype)
 
         self._batch_size = batch_size
         self._shuffle = shuffle

@@ -190,10 +190,12 @@ class Parameter(Node):
         cast = False if dtype is None else True
         if hasattr(self, '_value'):
             inner_dtype = self.dtype
-            msg = 'The value has different data type "{0}". Parameter type is "{1}".'
-            if ((dtype is not None and inner_dtype != dtype) or
-                    (isinstance(value, np.ndarray) and inner_dtype != value.dtype)):
-                raise ValueError(msg.format(self._value.dtype, dtype))
+            if dtype is not None and inner_dtype != dtype:
+                msg = 'Overriding parameter\'s type "{0}" with "{1}" is not possible.'
+                raise ValueError(msg.format(inner_dtype, dtype))
+            elif isinstance(value, np.ndarray) and inner_dtype != value.dtype:
+                msg = 'The value has different data type "{0}". Parameter type is "{1}".'
+                raise ValueError(msg.format(value.dtype, inner_dtype))
             cast = False
             dtype = self._value.dtype
         if misc.is_number(value):
