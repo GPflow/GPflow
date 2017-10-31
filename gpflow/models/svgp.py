@@ -52,6 +52,7 @@ class SVGP(GPModel):
                  q_diag=False,
                  whiten=True,
                  minibatch_size=None,
+                 num_data=None,
                  **kwargs):
         """
         - X is a data matrix, size N x D
@@ -64,6 +65,9 @@ class SVGP(GPModel):
           diagonal matrix.
         - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
+        - minibatch_size, if not None, turns on mini-batching with that size.
+        - num_data is the total number of observations, default to X.shape[0]
+          (relevant when feeding in external minibatches)
         """
         # sort out the X, Y into MiniBatch objects if required.
         if minibatch_size is None:
@@ -75,7 +79,7 @@ class SVGP(GPModel):
 
         # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
-        self.num_data = X.shape[0]
+        self.num_data = num_data or X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
         self.Z = Parameter(Z)
         self.num_latent = num_latent or Y.shape[1]
