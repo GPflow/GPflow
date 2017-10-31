@@ -65,6 +65,9 @@ class SVGP(GPModel):
           diagonal matrix.
         - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
+        - minibatch_size, if not None, turns on mini-batching with that size.
+        - num_data is the total number of observations, default to X.shape[0]
+          (relevant when feeding in external minibatches)
         """
         # sort out the X, Y into MiniBatch objects if required.
         if minibatch_size is None:
