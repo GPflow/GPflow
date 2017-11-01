@@ -1,7 +1,7 @@
 # Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
+# you may not use this q_muile except in compliance with the License.
 # You may obtain a copy of the License at
 #
 # http://www.apache.org/licenses/LICENSE-2.0
@@ -16,48 +16,62 @@
 import warnings
 
 import tensorflow as tf
+from gpflow.features import InducingPoints
 from gpflow import settings
 from gpflow.decors import name_scope
 
-
 @name_scope()
-def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, f, q_sqrt=None, whiten=False):
-    # TODO: matrix_triangular_solve doens't support broadcasting over its trailing dimensions (see TF issue 216).
-    #       This is currently circumvented by tiling the inputs, once this issue is solved this can be removed.
+def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, whiten=False):
+    """
+    Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
+    See ``conditional`` documentation for further reference.
+
+    :param Xnew_mu: mean of the inputs, size N x D
+    :param Xnew_var: covariance matrix of the inputs, size N x D x D
+    :param feat: gpflow.InducingFeature object, only InducingPoints is supported
+    :param kern: gpflow kernel or ekernel object.
+    :param q_mu: mean inducing points, size M x D
+    :param q_sqrt: covariance inducing points, size M x M x D
+    :param whiten: boolean whether to whiten the representation. Default is False.
+    """
+
+    # TODO: Tensorflow 1.3 doesn't support broadcasting in``tf.matmul`` and
+    # ``tf.matrix_triangular_solve``. This is reported in issue 216.
+    # As a temporary workaround, we are using ``tf.einsum`` for the matrix
+    # multiplications and tiling in the triangular solves.
+    # The code that should be used once the bug is resolved is added in comments.
+
+    assert isinstance(feat, InducingPoints)
     assert whiten
-    # Xnew_mu: N x D
-    # Xnew_var: N x D x D
-    # f: M x D
+
+    num_data = tf.shape(Xnew_mu)[0] # number of new inputs (referred to as N)
+    num_func = tf.shape(q_mu)[1] # output dimension (referred to as D)
+
     eKuf = tf.transpose(feat.eKfu(kern, Xnew_mu, Xnew_var))  # M x N
     Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level) # M x M
-
-    num_data = tf.shape(Xnew_mu)[0] # referred to as N
-    num_func = tf.shape(f)[1] # output dimension (referred to as D)
     Lm = tf.cholesky(Kuu) # M x M
-    Lm_tiled = tf.tile(Lm[None, :, :], [num_data ,1, 1])
 
     A = tf.matrix_triangular_solve(Lm, eKuf, lower=True) # M x N
 
     if not whiten:
         A = tf.matrix_triangular_solve(Lm, A, lower=True, adjoint=True)  # Now A = Kmm^-1 eKuf
 
-    fmean = tf.matmul(A, f, transpose_a=True)
+    fmean = tf.matmul(A, q_mu, transpose_a=True)
 
     eKff = kern.eKdiag(Xnew_mu, Xnew_var) # N
     eKuffu = feat.eKufKfu(kern, Xnew_mu, Xnew_var)  # N x M x M
-    Li_eKuffu_Lit = tf.matrix_triangular_solve(Lm_tiled, tf.matrix_transpose(eKuffu), lower=True)
-    Li_eKuffu_Lit = tf.matrix_triangular_solve(Lm_tiled, tf.matrix_transpose(Li_eKuffu_Lit), lower=True) # N x M x M
+    Lm = tf.tile(Lm[None, :, :], [num_data, 1, 1]) # remove this line, once issue 216 is fixed
+    Li_eKuffu_Lit = tf.matrix_triangular_solve(Lm, tf.matrix_transpose(eKuffu), lower=True)
+    Li_eKuffu_Lit = tf.matrix_triangular_solve(Lm, tf.matrix_transpose(Li_eKuffu_Lit), lower=True) # N x M x M
     q_sqrt_r = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0) # D x M x M
     cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True) # D x M x M
 
-    f_tiled = tf.tile(f[None, :, :], [num_data, 1, 1]) # N x M x D
-    Li_eKuffu_Lit_tiled = tf.tile(Li_eKuffu_Lit[:, None, :, :], [1, num_func, 1, 1]) # N x D x M x M
-    cov_tiled = tf.tile(cov[None, :, :, :], [num_data, 1, 1, 1]) # N x D x M x M
-
     fvar = (
             tf.matrix_diag(tf.tile(tf.expand_dims(eKff - tf.trace(Li_eKuffu_Lit), axis=1), [1, num_func])) +
-            tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit_tiled, cov_tiled))) +
-            tf.matmul(f_tiled, tf.matmul(Li_eKuffu_Lit, f_tiled), transpose_a=True) -
+            tf.matrix_diag(tf.trace(tf.einsum("nmj,djk->ndmk", Li_eKuffu_Lit, cov))) +
+            # tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit, cov))) +
+            tf.einsum("kd,nkj->ndj", q_mu, tf.einsum("nmk,kd->nmd", Li_eKuffu_Lit, q_mu)) -
+            # tf.matmul(q_mu, tf.matmul(Li_eKuffu_Lit, q_mu), transpose_a=True) -
             tf.matmul(fmean[:, :, None], fmean[:, :, None], transpose_b=True)
     )
 
