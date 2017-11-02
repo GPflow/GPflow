@@ -45,7 +45,8 @@ class NoUncertaintyTest(GPflowTestCase):
         mean2, var2 = model.uncertain_predict_f_moment_matching(self.Xnew_mu, self.Xnew_covar)
 
         np.testing.assert_allclose(mean1, mean2)
-        (np.testing.assert_allclose(var1[n,:], np.diag(var2[n,...])) for n in range(self.Nnew))
+        for n in range(self.Nnew):
+            np.testing.assert_allclose(var1[n,:], np.diag(var2[n,...]))
 
     def test_non_whiten(self):
         k = gpflow.ekernels.RBF(1, variance=np.random.randn() ** 2)
@@ -57,7 +58,8 @@ class NoUncertaintyTest(GPflowTestCase):
         mean2, var2 = model.uncertain_predict_f_moment_matching(self.Xnew_mu, self.Xnew_covar)
 
         np.testing.assert_allclose(mean1, mean2)
-        (np.testing.assert_allclose(var1[n,:], np.diag(var2[n,...])) for n in range(self.Nnew))
+        for n in range(self.Nnew):
+            np.testing.assert_allclose(var1[n,:], np.diag(var2[n,...]))
 
 
 
