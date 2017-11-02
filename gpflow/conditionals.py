@@ -126,20 +126,24 @@ def base_conditional(Kmn, Kmm, Knn, f, full_cov=False, q_sqrt=None, whiten=False
 
 
 @name_scope()
-def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, whiten=False):
+def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, full_cov_output=False, full_cov=False, whiten=False):
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
 
-    :param Xnew_mu: mean of the inputs, size N x D
-    :param Xnew_var: covariance matrix of the inputs, size N x D x D
+    :param Xnew_mu: mean of the inputs, size N x Din
+    :param Xnew_var: covariance matrix of the inputs, size N x Din x Din
     :param feat: gpflow.InducingFeature object, only InducingPoints is supported
     :param kern: gpflow kernel or ekernel object.
-    :param q_mu: mean inducing points, size M x D
-    :param q_sqrt: covariance inducing points, size M x M x D
+    :param q_mu: mean inducing points, size M x Dout
+    :param q_sqrt: cholesky of the covariance matrix of the inducing points, size M x M x Dout
+    :param full_cov_output: boolean wheter to compute covariance between output dimension.
+                            Influences the shape of return value ``fvar``. Default is False
     :param whiten: boolean whether to whiten the representation. Default is False.
 
-    :return fmean, fvar: mean and covariance of the conditional, size N x D and N x D x D
+    :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is N x Dout,
+            size ``fvar`` depends on ``full_cov_output``: if True ``f_var`` is N x Dout x Dout,
+            if False then ``f_var`` is N x Dout
     """
 
     # TODO: Tensorflow 1.3 doesn't support broadcasting in``tf.matmul`` and
@@ -148,7 +152,15 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, whiten=Fa
     # multiplications and tiling in the triangular solves.
     # The code that should be used once the bug is resolved is added in comments.
 
-    assert isinstance(feat, InducingPoints)
+    if not isinstance(feat, InducingPoints):
+        raise NotImplementedError
+
+    if full_cov:
+        # TODO: ``full_cov`` True would return a ``fvar`` of shape N x N x D x D,
+        # encoding the covariance between input datapoints as well.
+        # This is not implemented as this feature is only used for plotting purposes.
+        raise NotImplementedError
+
 
     num_data = tf.shape(Xnew_mu)[0] # number of new inputs (N)
     num_func = tf.shape(q_mu)[1] # output dimension (D)
@@ -175,14 +187,22 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, whiten=Fa
 
     cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True) # D x M x M
 
-    fvar = (
-            tf.matrix_diag(tf.tile((eKff - tf.trace(Li_eKuffu_Lit))[:, None], [1, num_func])) +
-            tf.matrix_diag(tf.trace(tf.einsum("nmj,djk->ndmk", Li_eKuffu_Lit, cov))) +
-            # tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit, cov))) +
-            tf.einsum("kd,nkj->ndj", q_mu, tf.einsum("nmk,kd->nmd", Li_eKuffu_Lit, q_mu)) -
-            # tf.matmul(q_mu, tf.matmul(Li_eKuffu_Lit, q_mu), transpose_a=True) -
-            tf.matmul(fmean[:, :, None], fmean[:, :, None], transpose_b=True)
-    )
+    if full_cov_output:
+        fvar = (
+                tf.matrix_diag(tf.tile((eKff - tf.trace(Li_eKuffu_Lit))[:, None], [1, num_func])) +
+                tf.matrix_diag(tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov)) +
+                # tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit, cov))) +
+                tf.einsum("ig,nij,jh->ngh", q_mu, Li_eKuffu_Lit, q_mu) -
+                # tf.matmul(q_mu, tf.matmul(Li_eKuffu_Lit, q_mu), transpose_a=True) -
+                tf.matmul(fmean[:, :, None], fmean[:, :, None], transpose_b=True)
+        )
+    else:
+        fvar = (
+                eKff - tf.trace(Li_eKuffu_Lit) +
+                tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov) +
+                tf.einsum("ig,nij,jg->ng", q_mu, Li_eKuffu_Lit, q_mu) -
+                fmean ** 2
+        )
 
     return fmean, fvar
 
