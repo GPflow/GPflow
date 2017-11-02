@@ -31,7 +31,7 @@ class GPflowTestCase(tf.test.TestCase):
 
     @contextlib.contextmanager
     def test_context(self, graph=None):
-        graph = graph if graph else self.test_graph
+        graph = graph if graph is None else self.test_graph
         if graph is None:
             graph = tf.Graph()
             with graph.as_default(), self.test_session(graph=graph) as session:

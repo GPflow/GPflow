@@ -12,66 +12,73 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import gpflow
-from gpflow.minibatch import SequenceIndices
-import numpy as np
 import unittest
 import tensorflow as tf
-import gpflow
 
+import numpy as np
+from numpy.testing import assert_array_equal, assert_array_less, assert_allclose
+
+import gpflow
 from gpflow.test_util import GPflowTestCase
-from gpflow.minibatch import SequenceIndices
 
 
 class TestMethods(GPflowTestCase):
-    def setUp(self):
-        self.rng = np.random.RandomState(0)
-        self.X = self.rng.randn(100, 2)
-        self.Y = self.rng.randn(100, 1)
-        self.Z = self.rng.randn(10, 2)
-        self.lik = gpflow.likelihoods.Gaussian()
-        self.kern = gpflow.kernels.Matern32(2)
-        self.Xs = self.rng.randn(10, 2)
+    def setup(self):
+        rng = np.random.RandomState(0)
+        X = rng.randn(100, 2)
+        Y = rng.randn(100, 1)
+        Z = rng.randn(10, 2)
+        lik = gpflow.likelihoods.Gaussian()
+        kern = gpflow.kernels.Matern32(2)
+        Xs = rng.randn(10, 2)
 
         # make one of each model
-        self.ms = []
+        ms = []
         #for M in (gpflow.models.GPMC, gpflow.models.VGP):
         for M in (gpflow.models.VGP, gpflow.models.GPMC):
-            self.ms.append(M(self.X, self.Y, self.kern, self.lik))
+            ms.append(M(X, Y, kern, lik))
         for M in (gpflow.models.SGPMC, gpflow.models.SVGP):
-            self.ms.append(M(self.X, self.Y, self.kern, self.lik, self.Z))
-        self.ms.append(gpflow.models.GPR(self.X, self.Y, self.kern))
-        self.ms.append(gpflow.models.SGPR(self.X, self.Y, self.kern, Z=self.Z))
-        self.ms.append(gpflow.models.GPRFITC(self.X, self.Y, self.kern, Z=self.Z))
+            ms.append(M(X, Y, kern, lik, Z))
+        ms.append(gpflow.models.GPR(X, Y, kern))
+        ms.append(gpflow.models.SGPR(X, Y, kern, Z=Z))
+        ms.append(gpflow.models.GPRFITC(X, Y, kern, Z=Z))
+        return ms, Xs, rng
 
     def test_all(self):
         # test sizes.
-        for m in self.ms:
-            m.compile()
-            self.assertEqual(m.objective.size == 1)
+        with self.test_context():
+            ms, _Xs, _rng = self.setup()
+            for m in ms:
+                m.compile()
 
     def test_predict_f(self):
-        for m in self.ms:
-            m.compile()
-            mf, vf = m.predict_f(self.Xs)
-            self.assertTrue(mf.shape == vf.shape)
-            self.assertTrue(mf.shape == (10, 1))
-            self.assertTrue(np.all(vf >= 0.0))
+        with self.test_context():
+            ms, Xs, _rng = self.setup()
+            for m in ms:
+                m.compile()
+                mf, vf = m.predict_f(Xs)
+                assert_array_equal(mf.shape, vf.shape)
+                assert_array_equal(mf.shape, (10, 1))
+                assert_array_less(np.full_like(vf, -1e-6), vf)
 
     def test_predict_y(self):
-        for m in self.ms:
-            m.compile()
-            mf, vf = m.predict_y(self.Xs)
-            self.assertTrue(mf.shape == vf.shape)
-            self.assertTrue(mf.shape == (10, 1))
-            self.assertTrue(np.all(vf >= 0.0))
+        with self.test_context():
+            ms, Xs, _rng = self.setup()
+            for m in ms:
+                m.compile()
+                mf, vf = m.predict_y(Xs)
+                assert_array_equal(mf.shape, vf.shape)
+                assert_array_equal(mf.shape, (10, 1))
+                assert_array_less(np.full_like(vf, -1e-6), vf)
 
     def test_predict_density(self):
-        self.Ys = self.rng.randn(10, 1)
-        for m in self.ms:
-            m.compile()
-            d = m.predict_density(self.Xs, self.Ys)
-            self.assertTrue(d.shape == (10, 1))
+        with self.test_context():
+            ms, Xs, rng = self.setup()
+            Ys = rng.randn(10, 1)
+            for m in ms:
+                m.compile()
+                d = m.predict_density(Xs, Ys)
+                assert_array_equal(d.shape, (10, 1))
 
 
 class TestSVGP(GPflowTestCase):
@@ -116,47 +123,50 @@ class TestSVGP(GPflowTestCase):
             m2.compile()
             obj1 = m1.session.run(m1.objective, feed_dict=m1.feeds)
             obj2 = m2.session.run(m2.objective, feed_dict=m2.feeds)
-            self.assertTrue(np.allclose(obj1[0], obj2[0]))
+            assert_allclose(obj1, obj2)
 
     def test_notwhite(self):
-        m1 = gpflow.models.SVGP(
-            self.X,
-            self.Y,
-            kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
-            likelihood=gpflow.likelihoods.Exponential(),
-            Z=self.Z,
-            q_diag=True,
-            whiten=False)
-        m2 = gpflow.models.SVGP(
-            self.X,
-            self.Y,
-            kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
-            likelihood=gpflow.likelihoods.Exponential(),
-            Z=self.Z,
-            q_diag=False,
-            whiten=False)
-        qsqrt, qmean = self.rng.randn(2, 3, 2)
-        qsqrt = (qsqrt**2)*0.01
-        m1.q_sqrt = qsqrt
-        m1.q_mu = qmean
-        m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
-        m2.q_mu = qmean
-        m1.compile()
-        m2.compile()
-        obj1 = m1.session.run(m1.objective, feed_dict=m1.feeds)
-        obj2 = m2.session.run(m2.objective, feed_dict=m2.feeds)
-        self.assertTrue(np.allclose(obj1[0], obj2[0]))
+        with self.test_context():
+            m1 = gpflow.models.SVGP(
+                self.X,
+                self.Y,
+                kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
+                likelihood=gpflow.likelihoods.Exponential(),
+                Z=self.Z,
+                q_diag=True,
+                whiten=False)
+            m2 = gpflow.models.SVGP(
+                self.X,
+                self.Y,
+                kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
+                likelihood=gpflow.likelihoods.Exponential(),
+                Z=self.Z,
+                q_diag=False,
+                whiten=False)
+            qsqrt, qmean = self.rng.randn(2, 3, 2)
+            qsqrt = (qsqrt**2)*0.01
+            m1.q_sqrt = qsqrt
+            m1.q_mu = qmean
+            m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
+            m2.q_mu = qmean
+            m1.compile()
+            m2.compile()
+            obj1 = m1.session.run(m1.objective, feed_dict=m1.feeds)
+            obj2 = m2.session.run(m2.objective, feed_dict=m2.feeds)
+            assert_allclose(obj1, obj2)
 
     def test_q_sqrt_fixing(self):
         """
         In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
         """
-        m1 = gpflow.models.SVGP(self.X, self.Y,
-                              kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
-                              likelihood=gpflow.likelihoods.Exponential(),
-                              Z=self.Z)
-        m1.q_sqrt.fixed = True
-        m1.compile()
+        with self.test_context():
+            m1 = gpflow.models.SVGP(
+                self.X, self.Y,
+                kern=gpflow.kernels.RBF(1) + gpflow.kernels.White(1),
+                likelihood=gpflow.likelihoods.Exponential(),
+                Z=self.Z)
+            m1.q_sqrt.trainable = False
+            m1.compile()
 
 class TestStochasticGradients(GPflowTestCase):
     """
@@ -173,99 +183,92 @@ class TestStochasticGradients(GPflowTestCase):
     sampler for which we can predict the effects of different updates.
     """
     def setUp(self):
-        self.XAB = np.atleast_2d(np.array([0.,1.])).T
-        self.YAB = np.atleast_2d(np.array([-1.,3.])).T
+        tf.set_random_seed(1)
+        self.XAB = np.atleast_2d(np.array([0., 1.])).T
+        self.YAB = np.atleast_2d(np.array([-1., 3.])).T
         self.sharedZ = np.atleast_2d(np.array([0.5]) )
         self.indexA = 0
         self.indexB = 1
 
-    def getIndexedData(self,baseX,baseY,indeces):
-        newX = baseX[indeces]
-        newY = baseY[indeces]
+    def get_indexed_data(self, baseX, baseY, indices):
+        newX = baseX[indices]
+        newY = baseY[indices]
         return newX, newY
 
-    def getModel(self,X,Y,Z,minibatch_size):
-        model = gpflow.models.SVGP(X,
-                                 Y,
-                                 kern = gpflow.kernels.RBF(1),
-                                 likelihood = gpflow.likelihoods.Gaussian(),
-                                 Z = Z,
-                                 minibatch_size=minibatch_size)
-        #This step changes the batch indeces to cycle.
-        model.X.index_manager = SequenceIndices(minibatch_size,X.shape[0])
-        model.Y.index_manager = SequenceIndices(minibatch_size,X.shape[0])
+    def get_model(self, X, Y, Z, minibatch_size):
+        model = gpflow.models.SVGP(
+            X, Y, kern=gpflow.kernels.RBF(1),
+            likelihood=gpflow.likelihoods.Gaussian(),
+            Z=Z, minibatch_size=minibatch_size)
         return model
 
-    def getTfOptimizer(self):
+    def get_opt(self):
         learning_rate = .1
-        opt = tf.train.GradientDescentOptimizer(learning_rate,
-                                                use_locking=True)
+        opt = gpflow.train.GradientDescentOptimizer(learning_rate, use_locking=True)
         return opt
 
-    def getIndexedModel(self,X,Y,Z,minibatch_size,indeces):
-        Xindeces,Yindeces = self.getIndexedData(X,Y,indeces)
-        indexedModel = self.getModel(Xindeces,Yindeces,Z,minibatch_size)
+    def get_indexed_model(self, X, Y, Z, minibatch_size, indices):
+        Xindices, Yindices = self.get_indexed_data(X, Y, indices)
+        indexedModel = self.get_model(Xindices, Yindices, Z, minibatch_size)
         return indexedModel
 
-    def checkModelsClose(self,modelA,modelB,tolerance=1e-2):
-        modelA_dict = modelA.get_parameter_dict()
-        modelB_dict = modelB.get_parameter_dict()
-        if sorted(modelA_dict.keys())!=sorted(modelB_dict.keys()):
+    def check_models_close(self, m1, m2, tolerance=1e-2):
+        m1_params = {p.name: p for p in list(m1.trainable_parameters)}
+        m2_params = {p.name: p for p in list(m2.trainable_parameters)}
+        if set(m1_params.keys()) != set(m2_params.keys()):
             return False
-        for key in modelA_dict:
-            if ((modelA_dict[key] - modelB_dict[key])>tolerance).any():
+        for key in m1_params:
+            p1 = m1_params[key]
+            p2 = m2_params[key]
+            if ((p1.read_value() - p2.read_value()) > tolerance).any():
                 return False
         return True
 
-    def compareTwoModels(self,indecesOne,indecesTwo,
-                              batchOne,batchTwo,
-                              maxiter,
-                              checkSame=True):
-        modelOne = self.getIndexedModel(self.XAB,
-                                        self.YAB,
-                                        self.sharedZ,
-                                        batchOne,
-                                        indecesOne)
-        modelTwo = self.getIndexedModel(self.XAB,
-                                        self.YAB,
-                                        self.sharedZ,
-                                        batchTwo,
-                                        indecesTwo)
-        modelOne.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
-        modelTwo.optimize(method=self.getTfOptimizer(),maxiter=maxiter)
+    def compare_models(self, indicesOne, indicesTwo,
+                         batchOne, batchTwo, maxiter, checkSame=True):
+        m1 = self.get_indexed_model(self.XAB, self.YAB, self.sharedZ, batchOne, indicesOne)
+        m2 = self.get_indexed_model(self.XAB, self.YAB, self.sharedZ, batchTwo, indicesTwo)
+
+        m1.compile()
+        m2.compile()
+
+        opt1 = self.get_opt()
+        opt2 = self.get_opt()
+
+        opt1.minimize(m1, maxiter=maxiter)
+        opt2.minimize(m2, maxiter=maxiter)
         if checkSame:
-            self.assertTrue(self.checkModelsClose(modelOne,modelTwo))
+            self.assertTrue(self.check_models_close(m1, m2))
         else:
-            self.assertFalse(self.checkModelsClose(modelOne,modelTwo))
+            self.assertFalse(self.check_models_close(m1, m2))
 
     def testOne(self):
-        self.compareTwoModels([self.indexA,self.indexB],
-                              [self.indexB,self.indexA],
-                              2,
-                              2,
-                              3)
+        with self.test_context():
+            self.compare_models(
+                [self.indexA, self.indexB],
+                [self.indexB, self.indexA],
+                batchOne=2, batchTwo=2, maxiter=3)
 
     def testTwo(self):
-        self.compareTwoModels([self.indexA,self.indexB],
-                              [self.indexA,self.indexA],
-                              1,
-                              2,
-                              1)
+        with self.test_context():
+            self.compare_models(
+                [self.indexA, self.indexB],
+                [self.indexA, self.indexA],
+                batchOne=1, batchTwo=2, maxiter=1)
 
     def testThree(self):
-        self.compareTwoModels([self.indexA,self.indexA],
-                              [self.indexA,self.indexB],
-                              1,
-                              1,
-                              2,
-                              False)
+        with self.test_context():
+            self.compare_models(
+                [self.indexA, self.indexA],
+                [self.indexA, self.indexB],
+                batchOne=1, batchTwo=1, maxiter=2, checkSame=False)
 
 class TestSparseMCMC(GPflowTestCase):
     """
     This test makes sure that when the inducing points are the same as the data
     points, the sparse mcmc is the same as full mcmc
     """
-    def setUp(self):
+    def test_likelihoods_and_gradients(self):
         with self.test_context():
             rng = np.random.RandomState(0)
             X = rng.randn(10, 1)
@@ -273,35 +276,38 @@ class TestSparseMCMC(GPflowTestCase):
             v_vals = rng.randn(10, 1)
 
             lik = gpflow.likelihoods.StudentT
-            self.m1 = gpflow.models.GPMC(
-                X=X, Y=Y, kern=gpflow.kernels.Exponential(1), likelihood=lik())
-            self.m2 = gpflow.models.SGPMC(
+
+            m1 = gpflow.models.GPMC(
+                X=X, Y=Y,
+                kern=gpflow.kernels.Exponential(1),
+                likelihood=lik())
+
+            m2 = gpflow.models.SGPMC(
                 X=X, Y=Y,
                 kern=gpflow.kernels.Exponential(1),
                 likelihood=lik(), Z=X.copy())
 
-            self.m1.V = v_vals
-            self.m2.V = v_vals.copy()
-            self.m1.kern.lengthscale = .8
-            self.m2.kern.lengthscale = .8
-            self.m1.kern.variance = 4.2
-            self.m2.kern.variance = 4.2
+            m1.V = v_vals
+            m2.V = v_vals.copy()
+            m1.kern.lengthscale = .8
+            m2.kern.lengthscale = .8
+            m1.kern.variance = 4.2
+            m2.kern.variance = 4.2
 
-            self.m1.compile()
-            self.m2.compile()
+            m1.compile()
+            m2.compile()
 
-    def test_likelihoods_and_gradients(self):
-        with self.test_context():
-            f1, _ = self.m1._objective(self.m1.get_free_state())
-            f2, _ = self.m2._objective(self.m2.get_free_state())
-            self.assertTrue(np.allclose(f1, f2))
+            f1 = m1.session.run(m1.objective)
+            f2 = m2.session.run(m2.objective)
+            assert_allclose(f1, f2)
+
             # the parameters might not be in the same order, so
             # sort the gradients before checking they're the same
-            _, g1 = self.m1._objective(self.m1.get_free_state())
-            _, g2 = self.m2._objective(self.m2.get_free_state())
-            g1 = np.sort(g1)
-            g2 = np.sort(g2)
-            self.assertTrue(np.allclose(g1, g2, 1e-4))
+            # g1 = self.m1.objective(self.m1.get_free_state())
+            # g2 = self.m2.objective(self.m2.get_free_state())
+            # g1 = np.sort(g1)
+            # g2 = np.sort(g2)
+            # self.assertTrue(np.allclose(g1, g2, 1e-4))
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ from .optimizer import Optimizer
 from ..decors import name_scope
 
 class HMC(Optimizer):
-    def sample(self, model, num_samples, epsilon, lmin=1, lmax=2, thin=1, burn=0, session=None):
+    def sample(self, model, num_samples, epsilon, lmin=1, lmax=1, thin=1, burn=0, session=None):
         """
         A straight-forward HMC implementation. The mass matrix is assumed to be the
         identity.
@@ -47,9 +47,9 @@ class HMC(Optimizer):
         :param model: gpflow model with `build_objective` method implementation.
         :param num_samples: number of samples to generate.
         :param epsilon: HMC tuning parameter - stepsize.
-        :param lmin: HMC tuning parameter - lowest integer `a` of uniform `[a, b)` distribution
+        :param lmin: HMC tuning parameter - lowest integer `a` of uniform `[a, b]` distribution
             used for drawing number of leapfrog iterations.
-        :param lmax: HMC tuning parameter - largest integer `b` from uniform `[a, b)` distribution
+        :param lmax: HMC tuning parameter - largest integer `b` from uniform `[a, b]` distribution
             used for drawing number of leapfrog iterations.
         :param thin: an integer which specifies the thinning interval.
         :param burn: an integer which specifies how many initial samples to discard.
@@ -59,6 +59,14 @@ class HMC(Optimizer):
             Trainable parameters are represented as constrained values in output.
         """
 
+        if lmax <= 0 or lmin <= 0:
+            raise ValueError('The lmin and lmax parameters must be greater zero.')
+        if thin <= 0:
+            raise ValueError('The thin parameter must be greater zero.')
+        if burn < 0:
+            raise ValueError('The burn parameter must be equal or greater zero.')
+
+        lmax += 1
         session = model.enquire_session(session)
 
         params = list(model.trainable_parameters)
@@ -84,14 +92,17 @@ class HMC(Optimizer):
             xs_sample, logprob_sample = _thinning(*thin_args)
             return _flat(xs_sample, [logprob_sample])
 
-        hmc_output = tf.map_fn(map_body, indices, dtype=dtypes)
-        unconstrained_trace, logprob_trace = hmc_output[:-1], hmc_output[-1]
-        constrained_trace = _map(lambda x, param: param.transform.forward_tensor(x),
-                                 unconstrained_trace, params)
-        hmc_output = constrained_trace + [logprob_trace]
+        hmc_output = tf.map_fn(map_body, indices, dtype=dtypes,
+                               back_prop=False, parallel_iterations=1)
+        with tf.control_dependencies(hmc_output):
+            unconstrained_trace, logprob_trace = hmc_output[:-1], hmc_output[-1]
+            constrained_trace = _map(lambda x, param: param.transform.forward_tensor(x),
+                                     unconstrained_trace, params)
+            hmc_output = constrained_trace + [logprob_trace]
 
         names = [param.full_name for param in params]
         raw_traces = session.run(hmc_output, feed_dict=model.feeds)
+        print(names)
         traces = dict(zip(names, map(list, raw_traces[:-1])))
         traces.update({'logprobs': raw_traces[-1]})
         return pd.DataFrame(traces)
@@ -119,44 +130,50 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
     def cond(i, _sample, _logprob, _grads):
         return i < thin
 
-    def body(i, _xs, logprob_prev, grads_prev):
-        xs_copy = _copy_variables(xs)
-        with tf.control_dependencies(xs_copy):
-            ps_init = _init_ps(xs)
-            ps = _update_ps(ps_init, grads_prev, epsilon, coeff=+0.5)
-            max_iters = tf.random_uniform((), minval=lmin, maxval=lmax, dtype=tf.int32)
+    def body(i, xs_copy, logprob_prev, grads_prev):
+        ps_init = _init_ps(xs_copy)
+        ps = _update_ps(ps_init, grads_prev, epsilon, coeff=+0.5)
+        max_iters = tf.random_uniform((), minval=lmin, maxval=lmax, dtype=tf.int32)
 
+        dep_list = _flat([max_iters], ps, ps_init)
+        with tf.control_dependencies(dep_list):
             leapfrog_result = _leapfrog_step(xs, ps, epsilon, max_iters, logprob_grads_fn)
-            proceed, ps_new, logprob_new, grads_new = leapfrog_result
+            proceed, xs_new, ps_new, logprob_new, grads_new = leapfrog_result
+            dep_list = _flat([proceed], [logprob_new], xs_new, ps_new, grads_new)
 
             def standard_proposal():
-                return _reject_accept_proposal(xs, xs_copy,
-                                               ps_new, ps_init,
-                                               logprob_new, logprob_prev,
-                                               grads_new, grads_prev,
-                                               epsilon)
+                with tf.control_dependencies(dep_list):
+                    return _reject_accept_proposal(
+                        xs_new, xs_copy, ps_new, ps_init,
+                        logprob_new, logprob_prev,
+                        grads_new, grads_prev, epsilon)
 
             def premature_reject():
-                return _premature_reject(xs, xs_copy, logprob_prev, grads_prev)
+                with tf.control_dependencies(dep_list):
+                    return _premature_reject(
+                        xs_copy, logprob_prev, grads_prev)
 
-            with tf.control_dependencies([proceed]):
-                xs_out, logprob_out, grads_out = tf.cond(proceed,
-                                                         standard_proposal,
-                                                         premature_reject,
-                                                         strict=True)
-                with tf.control_dependencies(xs_out):
-                    return i + 1, xs_out, logprob_out, grads_out
+            xs_out, logprob_out, grads_out = tf.cond(proceed,
+                                                     standard_proposal,
+                                                     premature_reject,
+                                                     strict=True)
 
+            xs_assign = _assign_variables(xs, xs_out)
+            with tf.control_dependencies(xs_assign):
+                xs_out_copy = _copy_variables(xs_assign)
+                with tf.control_dependencies(xs_copy):
+                    return i + 1, xs_out_copy, logprob_out, grads_out
+
+    xs_in = _copy_variables(xs)
     logprob, grads = logprob_grads_fn()
-    with tf.control_dependencies(_flat([logprob], grads)):
-        _, xs_out, logprob_out, _grads = tf.while_loop(cond, body, [0, xs, logprob, grads])
-        return xs_out, logprob_out
+    with tf.control_dependencies(_flat([logprob], xs_in, grads)):
+        _, xs_res, logprob_res, _grads = _while_loop(cond, body, [0, xs_in, logprob, grads])
+        return xs_res, logprob_res
 
 
 @name_scope("premature_reject")
-def _premature_reject(xs, xs_prev, logprob_prev, grads_prev):
-    xs_back = _copy_variables(_assign_variables(xs, xs_prev))
-    return xs_back, logprob_prev, grads_prev
+def _premature_reject(xs, logprob_prev, grads_prev):
+    return xs, logprob_prev, grads_prev
 
 
 @name_scope("reject_accept_proposal")
@@ -165,22 +182,25 @@ def _reject_accept_proposal(xs, xs_prev,
                             logprob, logprob_prev,
                             grads, grads_prev,
                             epsilon):
-    ps_upd = _update_ps(ps, grads, epsilon, coeff=-0.5)
-
     def dot(ps_values):
         return tf.reduce_sum(_map(lambda p: tf.reduce_sum(tf.square(p)), ps_values))
 
+    ps_upd = _update_ps(ps, grads, epsilon, coeff=-0.5)
+
     with tf.control_dependencies(ps_upd):
         log_accept_ratio = logprob - 0.5 * dot(ps_upd) - logprob_prev + 0.5 * dot(ps_prev)
-        logu = tf.log(tf.random_normal(shape=tf.shape(log_accept_ratio), dtype=logprob.dtype))
+        logu = tf.log(tf.random_uniform(shape=tf.shape(log_accept_ratio), dtype=logprob.dtype))
 
         def accept():
-            return _copy_variables(xs), logprob, grads
+            with tf.control_dependencies([logu, log_accept_ratio]):
+                return xs, logprob, grads
 
         def reject():
-            return _copy_variables(_assign_variables(xs, xs_prev)), logprob_prev, grads_prev
+            with tf.control_dependencies([logu, log_accept_ratio]):
+                return xs_prev, logprob_prev, grads_prev
 
-        return tf.cond(logu < log_accept_ratio, accept, reject, strict=True)
+        decision = logu < log_accept_ratio
+        return tf.cond(decision, accept, reject, strict=True)
 
 
 @name_scope("leapfrog")
@@ -189,8 +209,8 @@ def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
         return _map(lambda x, p: x.assign_add(epsilon * p), xs, ps_values)
 
     def whether_proceed(grads):
-        fins = _map(lambda grad: tf.reduce_all(tf.is_finite(grad)), grads)
-        return tf.reduce_all(fins)
+        finits = _map(lambda grad: tf.reduce_all(tf.is_finite(grad)), grads)
+        return tf.reduce_all(finits)
 
     def cond(i, proceed, _ps, _xs):
         return tf.logical_and(proceed, i < max_iterations)
@@ -200,12 +220,15 @@ def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
         with tf.control_dependencies(xs_new):
             _, grads = logprob_grads_fn()
             proceed = whether_proceed(grads)
-            with tf.control_dependencies([proceed]):
-                ps_new = tf.cond(proceed,
-                                 lambda: _update_ps(ps, grads, epsilon),
-                                 lambda: ps,
-                                 strict=True)
-                return i + 1, proceed, ps_new, xs_new
+            def ps_step():
+                with tf.control_dependencies(grads):
+                    return _update_ps(ps, grads, epsilon)
+            def ps_no_step():
+                with tf.control_dependencies(grads):
+                    return ps
+
+            ps_new = tf.cond(proceed, ps_step, ps_no_step, strict=True)
+            return i + 1, proceed, ps_new, xs_new
 
     result = _while_loop(cond, body, [0, True, ps, xs])
 
@@ -213,7 +236,7 @@ def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
     deps = _flat([proceed_out], ps_out, xs_out)
     with tf.control_dependencies(deps):
         logprob_out, grads_out = logprob_grads_fn()
-        return proceed_out, ps_out, logprob_out, grads_out
+        return proceed_out, xs_out, ps_out, logprob_out, grads_out
 
 
 def _assign_variables(variables, values):

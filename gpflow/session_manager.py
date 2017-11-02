@@ -14,9 +14,10 @@
 
 import os
 import warnings
-import tensorflow as tf
 
+import tensorflow as tf
 from tensorflow.python.client import timeline
+
 from gpflow import settings
 
 

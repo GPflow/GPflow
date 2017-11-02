@@ -2,7 +2,9 @@ from __future__ import absolute_import, print_function
 
 import unittest
 import tensorflow as tf
+
 import numpy as np
+from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.test_util import GPflowTestCase
@@ -14,13 +16,11 @@ class TestRbf(GPflowTestCase):
         with self.test_context():
             lengthscale = 1.4
             variance = 2.3
-            kernel = gpflow.kernels.RBF(1)
-            kernel.lengthscales = lengthscale
-            kernel.variance = variance
+            kernel = gpflow.kernels.RBF(1, lengthscales=lengthscale, variance=variance)
             rng = np.random.RandomState(1)
 
-            X = tf.placeholder(tf.float64)
-            X_data = rng.randn(3, 1)
+            X = tf.placeholder(gpflow.settings.np_float)
+            X_data = rng.randn(3, 1).astype(gpflow.settings.np_float)
 
             kernel.compile()
             gram_matrix = kernel.session.run(kernel.K(X), feed_dict={X: X_data})
@@ -43,7 +43,7 @@ class TestArcCosine(GPflowTestCase):
             if weight_variances is None:
                 weight_variances = 1.
             kernel.compile()
-            X = tf.placeholder(tf.float64)
+            X = tf.placeholder(gpflow.settings.np_float)
             gram_matrix = kernel.session.run(kernel.K(X), feed_dict={X: X_data})
             reference_gram_matrix = referenceArcCosineKernel(
                 X_data, order,
@@ -51,7 +51,7 @@ class TestArcCosine(GPflowTestCase):
                 bias_variance,
                 variance)
 
-            self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
+            assert_allclose(gram_matrix, reference_gram_matrix)
 
     def test_1d(self):
         with self.test_context():
@@ -128,19 +128,19 @@ class TestPeriodic(GPflowTestCase):
             kernel = gpflow.kernels.PeriodicKernel(
                 D, period=period, variance=variance, lengthscales=lengthscale)
 
-            X = tf.placeholder(tf.float64)
+            X = tf.placeholder(gpflow.settings.np_float)
             reference_gram_matrix = referencePeriodicKernel(
                 X_data, lengthscale, variance, period)
             kernel.compile()
             gram_matrix = kernel.session.run(kernel.K(X), feed_dict={X: X_data})
-            self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
+            assert_allclose(gram_matrix, reference_gram_matrix)
 
     def test_1d(self):
         with self.test_context():
             D = 1
-            lengthScale = 2
+            lengthScale = 2.0
             variance = 2.3
-            period = 2
+            period = 2.
             rng = np.random.RandomState(1)
             X_data = rng.randn(3, 1)
             self.evalKernelError(D, lengthScale, variance, period, X_data)
@@ -151,7 +151,7 @@ class TestPeriodic(GPflowTestCase):
             N = 5
             lengthScale = 11.5
             variance = 1.3
-            period = 20
+            period = 20.
             rng = np.random.RandomState(1)
             X_data = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
             self.evalKernelError(D, lengthScale, variance, period, X_data)

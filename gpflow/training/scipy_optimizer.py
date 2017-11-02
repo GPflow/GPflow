@@ -42,9 +42,15 @@ class ScipyOptimizer(optimizer.Optimizer):
 
         var_list = self._pop_var_list(model, kwargs)
         with model.graph.as_default():
+            maxiter = self._pop_maxiter(kwargs)
+            disp = kwargs.pop('disp', False)
+            options = dict(options={'maxiter': maxiter, 'disp': disp})
+            optimizer_kwargs = self._optimizer_kwargs.copy()
+            optimizer_kwargs.update(options)
+
             objective = model.objective
             self._optimizer = external_optimizer.ScipyOptimizerInterface(
-                objective, var_list=var_list, **self._optimizer_kwargs)
+                objective, var_list=var_list, **optimizer_kwargs)
 
         feed_dict = self._pop_feed_dict(kwargs)
         if model.feeds:

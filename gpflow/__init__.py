@@ -14,6 +14,7 @@
 
 
 # flake8: noqa
+
 from __future__ import absolute_import
 
 from ._version import __version__
@@ -36,6 +37,7 @@ from . import features
 from .decors import autoflow
 from .decors import name_scope
 from .decors import params_as_tensors
+from .decors import params_as_tensors_for
 
 from .core.base import GPflowError
 from .core.base import Build

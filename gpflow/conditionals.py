@@ -43,21 +43,17 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     We assume K independent GPs, represented by the columns of f (and the
     last dimension of q_sqrt).
 
-     - Xnew is a data matrix, size N x D
-     - X are data points, size M x D
-     - kern is a GPflow kernel
-     - f is a data matrix, M x K, representing the function values at X, for K functions.
-     - q_sqrt (optional) is a matrix of standard-deviations or Cholesky
-       matrices, size M x K or M x M x K
-     - whiten (optional) is a boolean: whether to whiten the representation
-       as described above.
+    :param Xnew: data matrix, size N x D.
+    :param X: data points, size M x D.
+    :param kern: GPflow kernel.
+    :param f: data matrix, M x K, representing the function values at X,
+        for K functions.
+    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
+        size M x K or M x M x K.
+    :param whiten: boolean of whether to whiten the representation as
+        described above.
 
-    These functions are now considered deprecated, subsumed into this one:
-        gp_predict
-        gaussian_gp_predict
-        gp_predict_whitened
-        gaussian_gp_predict_whitened
-
+    :return: two element tuple with conditional mean and variance.
     """
     num_data = tf.shape(X)[0]  # M
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.tf_float) * settings.numerics.jitter_level
@@ -122,33 +118,3 @@ def base_conditional(Kmn, Kmm, Knn, f, full_cov=False, q_sqrt=None, whiten=False
     fvar = tf.transpose(fvar)  # N x K or N x N x K
 
     return fmean, fvar
-
-
-def gp_predict(Xnew, X, kern, F, full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
-                  DeprecationWarning)
-    return conditional(Xnew, X, kern, F,
-                       full_cov=full_cov, q_sqrt=None, whiten=False)
-
-
-def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns,
-                        full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
-                  DeprecationWarning)
-    return conditional(Xnew, X, kern, q_mu,
-                       full_cov=full_cov, q_sqrt=q_sqrt, whiten=False)
-
-
-def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns,
-                                 full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
-                  DeprecationWarning)
-    return conditional(Xnew, X, kern, q_mu,
-                       full_cov=full_cov, q_sqrt=q_sqrt, whiten=True)
-
-
-def gp_predict_whitened(Xnew, X, kern, V, full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
-                  DeprecationWarning)
-    return conditional(Xnew, X, kern, V,
-                       full_cov=full_cov, q_sqrt=None, whiten=True)

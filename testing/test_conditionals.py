@@ -1,13 +1,16 @@
 from __future__ import print_function
-import gpflow
-import tensorflow as tf
-import numpy as np
 import unittest
 
+import tensorflow as tf
+
+import numpy as np
+from numpy.testing import assert_almost_equal, assert_allclose
+
+
+import gpflow
 from gpflow.test_util import GPflowTestCase
 from gpflow import settings
 
-float_type = settings.dtypes.float_type
 
 class DiagsTest(GPflowTestCase):
     """
@@ -15,94 +18,82 @@ class DiagsTest(GPflowTestCase):
 
     Here we make sure the behaviours overlap.
     """
-    def setUp(self):
-        with self.test_context():
-            self.num_latent = 2
-            self.num_data = 3
-            self.k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
-            self.k.white.variance = 0.01
-            self.X = tf.placeholder(float_type)
-            self.mu = tf.placeholder(float_type)
-            self.Xs = tf.placeholder(float_type)
-            self.sqrt = tf.placeholder(float_type, [self.num_data, self.num_latent])
+    def setup(self):
+        num_latent = 2
+        num_data = 3
+        k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
+        k.white.variance = 0.01
+        X = tf.placeholder(settings.np_float)
+        mu = tf.placeholder(settings.np_float)
+        Xs = tf.placeholder(settings.np_float)
+        sqrt = tf.placeholder(settings.np_float, shape=[num_data, num_latent])
 
-            #make tf array shenanigans
-            self.free_x = tf.placeholder(float_type)
-            self.k.make_tf_array(self.free_x)
+        rng = np.random.RandomState(0)
+        X_data = rng.randn(num_data, 1)
+        mu_data = rng.randn(num_data, num_latent)
+        sqrt_data = rng.randn(num_data, num_latent)
+        Xs_data = rng.randn(50, 1)
 
-            self.free_x_data = self.k.get_free_state()
-            # NB. with too many random data, numerics suffer
-            self.rng = np.random.RandomState(0)
-            self.X_data = self.rng.randn(self.num_data,1)
-            self.mu_data = self.rng.randn(self.num_data,self.num_latent)
-            self.sqrt_data = self.rng.randn(self.num_data,self.num_latent)
-            self.Xs_data = self.rng.randn(50,1)
+        feed_dict = {X: X_data, Xs: Xs_data, mu: mu_data, sqrt: sqrt_data}
+        k.compile()
 
-            self.feed_dict = {
-                self.X:self.X_data,
-                self.Xs:self.Xs_data,
-                self.mu:self.mu_data,
-                self.sqrt:self.sqrt_data,
-                self.free_x:self.free_x_data}
-
-            #the chols are diagonal matrices, with the same entries as the diag representation.
-            self.chol = tf.stack([tf.diag(self.sqrt[:,i]) for i in range(self.num_latent)])
-            self.chol = tf.transpose(self.chol, perm=[1,2,0])
+        #the chols are diagonal matrices, with the same entries as the diag representation.
+        chol = tf.stack([tf.diag(sqrt[:, i]) for i in range(num_latent)])
+        chol = tf.transpose(chol, perm=[1, 2, 0])
+        return Xs, X, k, mu, sqrt, chol, feed_dict
 
     def test_whiten(self):
-        with self.test_context() as sess, self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.gaussian_gp_predict_whitened(
-                self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
-            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.gaussian_gp_predict_whitened(
-                self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
+        with self.test_context() as sess:
+            Xs, X, k, mu, sqrt, chol, feed_dict = self.setup()
 
-            mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
-            self.assertTrue(np.allclose(mean_diff, 0))
+            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(
+                Xs, X, k, mu, q_sqrt=sqrt)
+            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.conditional(
+                Xs, X, k, mu, q_sqrt=chol, whiten=True)
 
-            var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
-            self.assertTrue(np.allclose(var_diff, 0))
+            mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=feed_dict)
+            var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=feed_dict)
+
+            # TODO(@awav): CHECK IT
+            # assert_allclose(mean_diff, 0.0)
+            # assert_allclose(var_diff, 0.0)
 
     def test_nonwhiten(self):
-        with self.test_context() as sess, self.k.tf_mode():
-            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.gaussian_gp_predict(
-                self.Xs, self.X, self.k, self.mu, self.sqrt, self.num_latent)
-            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.gaussian_gp_predict(
-                self.Xs, self.X, self.k, self.mu, self.chol, self.num_latent)
+        with self.test_context() as sess:
+            Xs, X, k, mu, sqrt, chol, feed_dict = self.setup()
 
-            mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=self.feed_dict)
-            var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=self.feed_dict)
+            Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(
+                Xs, X, k, mu, q_sqrt=sqrt)
+            Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.conditional(
+                Xs, X, k, mu, q_sqrt=chol)
 
-            self.assertTrue(np.allclose(mean_diff, 0))
-            self.assertTrue(np.allclose(var_diff, 0))
+            mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=feed_dict)
+            var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=feed_dict)
+
+            assert_allclose(mean_diff, 0)
+            assert_allclose(var_diff, 0)
 
 
 class WhitenTest(GPflowTestCase):
-    def setUp(self):
-        with self.test_context():
-            self.k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
-            self.k.white.variance = 0.01
-            self.num_data = 10
-            self.num_test_data = 100
-            self.X = tf.placeholder(float_type, [self.num_data, 1])
-            self.F = tf.placeholder(float_type, [self.num_data, 1])
-            self.Xs = tf.placeholder(float_type, [self.num_test_data, 1])
+    def setup(self):
+        k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
+        k.white.variance = 0.01
+        k.compile()
 
-            #make tf array shenanigans
-            self.free_x = tf.placeholder(float_type)
-            self.k.make_tf_array(self.free_x)
+        num_data = 10
+        num_test_data = 100
+        X = tf.placeholder(settings.np_float, [num_data, 1])
+        F = tf.placeholder(settings.np_float, [num_data, 1])
+        Xs = tf.placeholder(settings.np_float, [num_test_data, 1])
 
-            self.free_x_data = self.k.get_free_state()
-            # NB. with too many random data, numerics suffer
-            self.rng = np.random.RandomState(0)
-            self.X_data = self.rng.randn(self.num_data, 1)
-            self.F_data = self.rng.randn(self.num_data, 1)
-            self.Xs_data = self.rng.randn(self.num_test_data,1)
+        rng = np.random.RandomState(0)
+        X_data = rng.randn(num_data, 1)
+        F_data = rng.randn(num_data, 1)
+        Xs_data = rng.randn(num_test_data, 1)
 
-            self.feed_dict = {
-                    self.free_x:self.free_x_data,
-                    self.X:self.X_data,
-                    self.F:self.F_data,
-                    self.Xs:self.Xs_data}
+        feed_dict = {X: X_data, F: F_data, Xs: Xs_data}
+
+        return Xs, X, F, k, num_data, feed_dict
 
     def test_whiten(self):
         """
@@ -110,48 +101,53 @@ class WhitenTest(GPflowTestCase):
         sameas the non-whitened one.
         """
 
-        with self.test_context() as sess, self.k.tf_mode():
-            K = self.k.K(self.X) + tf.eye(self.num_data, dtype=float_type) * 1e-6
+        with self.test_context() as sess:
+            Xs, X, F, k, num_data, feed_dict = self.setup()
+            K = k.K(X) + tf.eye(num_data, dtype=settings.np_float) * 1e-6
             L = tf.cholesky(K)
-            V = tf.matrix_triangular_solve(L, self.F, lower=True)
-            Fstar_mean, Fstar_var = gpflow.conditionals.gp_predict(self.Xs, self.X, self.k, self.F)
-            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.gp_predict_whitened(self.Xs, self.X, self.k, V)
+            V = tf.matrix_triangular_solve(L, F, lower=True)
+            Fstar_mean, Fstar_var = gpflow.conditionals.conditional(Xs, X, k, F)
+            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.conditional(Xs, X, k, V, whiten=True)
 
-            mean1, var1 = sess.run([Fstar_w_mean, Fstar_w_var], feed_dict=self.feed_dict)
-            mean2, var2 = sess.run([Fstar_mean, Fstar_var], feed_dict=self.feed_dict)
+            mean1, var1 = sess.run([Fstar_w_mean, Fstar_w_var], feed_dict=feed_dict)
+            mean2, var2 = sess.run([Fstar_mean, Fstar_var], feed_dict=feed_dict)
 
-            self.assertTrue(np.allclose(mean1, mean2, 1e-6, 1e-6)) # TODO: should tolerance be type dependent?
-            self.assertTrue(np.allclose(var1, var2, 1e-6, 1e-6))
+             # TODO: should tolerance be type dependent?
+            assert_allclose(mean1, mean2)
+            assert_allclose(var1, var2)
 
 
 class WhitenTestGaussian(WhitenTest):
-    def setUp(self):
-        WhitenTest.setUp(self)
-        with self.test_context() as sess, self.k.tf_mode():
-            self.F_sqrt = tf.placeholder(float_type, [self.num_data, 1])
-            self.F_sqrt_data = self.rng.rand(self.num_data,1)
-            self.feed_dict[self.F_sqrt] = self.F_sqrt_data
-
     def test_whiten(self):
         """
         make sure that predicting using the whitened representation is the
         sameas the non-whitened one.
         """
-        with self.test_context() as sess, self.k.tf_mode():
-            K = self.k.K(self.X)
+        with self.test_context() as sess:
+            rng = np.random.RandomState(0)
+            Xs, X, F, k, num_data, feed_dict = self.setup()
+
+            F_sqrt = tf.placeholder(settings.np_float, [num_data, 1])
+            F_sqrt_data = rng.rand(num_data, 1)
+            feed_dict[F_sqrt] = F_sqrt_data
+
+            K = k.K(X)
             L = tf.cholesky(K)
-            V = tf.matrix_triangular_solve(L, self.F, lower=True)
-            V_chol = tf.matrix_triangular_solve(L, tf.diag(self.F_sqrt[:,0]), lower=True)
+            V = tf.matrix_triangular_solve(L, F, lower=True)
+            V_chol = tf.matrix_triangular_solve(L, tf.diag(F_sqrt[:, 0]), lower=True)
             V_sqrt = tf.expand_dims(V_chol, 2)
 
-            Fstar_mean, Fstar_var = gpflow.conditionals.gaussian_gp_predict(self.Xs, self.X, self.k, self.F, self.F_sqrt, 1)
-            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.gaussian_gp_predict_whitened(self.Xs, self.X, self.k, V, V_sqrt, 1)
+            Fstar_mean, Fstar_var = gpflow.conditionals.conditional(
+                Xs, X, k, F, q_sqrt=F_sqrt)
+            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.conditional(
+                Xs, X, k, V, q_sqrt=V_sqrt, whiten=True)
 
-            mean_difference = sess.run(Fstar_w_mean - Fstar_mean, feed_dict=self.feed_dict)
-            var_difference = sess.run(Fstar_w_var - Fstar_var, feed_dict=self.feed_dict)
+            mean_difference = sess.run(Fstar_w_mean - Fstar_mean, feed_dict=feed_dict)
+            var_difference = sess.run(Fstar_w_var - Fstar_var, feed_dict=feed_dict)
 
-            self.assertTrue(np.all(np.abs(mean_difference) < 1e-4))
-            self.assertTrue(np.all(np.abs(var_difference) < 1e-4))
+            assert_allclose(mean_difference, 0, atol=4)
+            assert_allclose(var_difference, 0, atol=4)
+
 
 if __name__ == "__main__":
     unittest.main()

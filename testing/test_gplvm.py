@@ -1,12 +1,12 @@
 from __future__ import print_function
-import gpflow
-import numpy as np
-import tensorflow as tf
-import unittest
 
+import numpy as np
+
+import gpflow
 from gpflow.test_util import GPflowTestCase
 from gpflow import ekernels
 from gpflow import kernels
+
 from nose.plugins.attrib import attr
 
 np.random.seed(0)
@@ -26,8 +26,8 @@ class TestGPLVM(GPflowTestCase):
             m = gpflow.models.GPLVM(self.Y, self.Q)
             m.compile()
             linit = m.compute_log_likelihood()
-            opt = gpflow.train.ScipyOptimizer(options={'maxiter': 2})
-            opt.minimize(m)
+            opt = gpflow.train.ScipyOptimizer()
+            opt.minimize(m, maxiter=2)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_otherkernel(self):
@@ -37,8 +37,8 @@ class TestGPLVM(GPflowTestCase):
             m = gpflow.models.GPLVM(self.Y, self.Q, XInit, k)
             m.compile()
             linit = m.compute_log_likelihood()
-            opt = gpflow.train.ScipyOptimizer(options={'maxiter': 2})
-            opt.minimize(m)
+            opt = gpflow.train.ScipyOptimizer()
+            opt.minimize(m, maxiter=2)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
 
@@ -68,8 +68,8 @@ class TestBayesianGPLVM(GPflowTestCase):
                 Z=Z)
             m.compile()
             linit = m.compute_log_likelihood()
-            opt = gpflow.train.ScipyOptimizer(options={'maxiter': 2})
-            opt.minimize(m)
+            opt = gpflow.train.ScipyOptimizer()
+            opt.minimize(m, maxiter=2)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
     def test_2d(self):
@@ -86,8 +86,8 @@ class TestBayesianGPLVM(GPflowTestCase):
                 M=self.M)
             m.compile()
             linit = m.compute_log_likelihood()
-            opt = gpflow.train.ScipyOptimizer(options={'maxiter': 2})
-            opt.minimize(m)
+            opt = gpflow.train.ScipyOptimizer()
+            opt.minimize(m, maxiter=2)
             self.assertTrue(m.compute_log_likelihood() > linit)
 
             # test prediction

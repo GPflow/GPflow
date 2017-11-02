@@ -37,7 +37,7 @@ class PriorModeTests(GPflowTestCase):
             self.m.x.prior = gpflow.priors.Gaussian(3., 1.)
 
             self.m.compile()
-            opt = gpflow.train.ScipyOptimizer(options={'disp': 0})
+            opt = gpflow.train.ScipyOptimizer()
             opt.minimize(self.m)
             xmax = self.m.read_trainables()
             self.assertTrue(np.allclose(xmax, 3))
@@ -48,7 +48,7 @@ class PriorModeTests(GPflowTestCase):
             self.m.x.prior = gpflow.priors.Gaussian(-1., 10.)
 
             self.m.compile()
-            opt = gpflow.train.ScipyOptimizer(options={'disp': 0})
+            opt = gpflow.train.ScipyOptimizer()
             opt.minimize(self.m)
             xmax = self.m.read_trainables()
             self.assertTrue(np.allclose(xmax, -1.))
@@ -60,7 +60,7 @@ class PriorModeTests(GPflowTestCase):
             self.m.x.prior = gpflow.priors.Gamma(shape, scale)
 
             self.m.compile()
-            opt = gpflow.train.ScipyOptimizer(options={'disp': 0})
+            opt = gpflow.train.ScipyOptimizer()
             opt.minimize(self.m)
 
             true_mode = (shape - 1.) * scale
@@ -72,7 +72,7 @@ class PriorModeTests(GPflowTestCase):
             self.m.x.prior = gpflow.priors.Laplace(3., 10.)
 
             self.m.compile()
-            opt = gpflow.train.ScipyOptimizer(options={'disp': 0})
+            opt = gpflow.train.ScipyOptimizer()
             opt.minimize(self.m)
             xmax = self.m.read_trainables()
             self.assertTrue(np.allclose(xmax, 3))
@@ -98,7 +98,7 @@ class PriorModeTests(GPflowTestCase):
             self.m.x.transform = transform
 
             self.m.compile()
-            opt = gpflow.train.ScipyOptimizer(options={'disp': 0})
+            opt = gpflow.train.ScipyOptimizer()
             opt.minimize(self.m)
             xmax = [transform.backward(x) for x in self.m.read_trainables()]
             self.assertTrue(np.allclose(0.0, xmax, atol=1.e-6))

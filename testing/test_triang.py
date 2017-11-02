@@ -1,16 +1,17 @@
 import unittest
-from gpflow.tf_wraps import vec_to_tri
 import tensorflow as tf
-import numpy as np
 
+import numpy as np
+from numpy.testing import assert_array_almost_equal
+
+
+from gpflow import misc
 from gpflow.test_util import GPflowTestCase
-from gpflow.tf_wraps import vec_to_tri
 
 
 class TestVecToTri(GPflowTestCase):
-    def referenceInverse(self, matrices):
-		#this is the inverse operation of the vec_to_tri
-		#op being tested.
+    def reference_inverse(self, matrices):
+		# This is the inverse operation of the vec_to_tri op being tested.
         D, N, _ = matrices.shape
         M = (N * (N + 1)) // 2
         tril_indices = np.tril_indices(N)
@@ -20,7 +21,7 @@ class TestVecToTri(GPflowTestCase):
             output[vector_index, :] = matrix[tril_indices]
         return output
 
-    def getExampleMatrices(self, D, N ):
+    def get_example_matrices(self, D, N ):
         rng = np.random.RandomState(1)
         random_matrices = rng.randn(D, N, N)
         for matrix_index in range(D):
@@ -30,31 +31,32 @@ class TestVecToTri(GPflowTestCase):
                         random_matrices[matrix_index, row_index, col_index] = 0.
         return random_matrices
 
-    def testBasicFunctionality(self):
+    def test_basic_functionality(self):
         with self.test_context() as sess:
             N = 3
             D = 3
-            reference_matrices = self.getExampleMatrices(D, N)
-            input_vector_tensor = tf.constant(self.referenceInverse(reference_matrices))
+            reference_matrices = self.get_example_matrices(D, N)
+            input_vector_tensor = tf.constant(self.reference_inverse(reference_matrices))
 
-            test_matrices_tensor = vec_to_tri(input_vector_tensor, N)
+            test_matrices_tensor = misc.vec_to_tri(input_vector_tensor, N)
             test_matrices = sess.run(test_matrices_tensor)
-            np.testing.assert_array_almost_equal(reference_matrices, test_matrices)
+            assert_array_almost_equal(reference_matrices, test_matrices)
 
-    def testDifferentiable(self):
+    def test_differentiable(self):
         with self.test_context() as sess:
             N = 3
             D = 3
-            reference_matrices = self.getExampleMatrices(D, N)
-            input_vector_array = self.referenceInverse(reference_matrices)
+            reference_matrices = self.get_example_matrices(D, N)
+            input_vector_array = self.reference_inverse(reference_matrices)
             input_vector_tensor = tf.constant(input_vector_array)
 
-            test_matrices_tensor = vec_to_tri(input_vector_tensor, N)
+            test_matrices_tensor = misc.vec_to_tri(input_vector_tensor, N)
             reduced_sum = tf.reduce_sum(test_matrices_tensor)
             gradient = tf.gradients(reduced_sum, input_vector_tensor)[0]
             reference_gradient = np.ones_like(input_vector_array)
             test_gradient = sess.run(gradient)
-            np.testing.assert_array_almost_equal(reference_gradient, test_gradient)
+            assert_array_almost_equal(reference_gradient, test_gradient)
+
 
 if __name__ == "__main__":
     unittest.main()

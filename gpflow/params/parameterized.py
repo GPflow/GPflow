@@ -29,6 +29,7 @@ from ..core.autoflow import AutoFlow
 from ..core.tensor_converter import TensorConverter
 
 from .. import misc
+from .. import settings
 
 from .parameter import Parameter
 from .dataholders import DataHolder
@@ -234,7 +235,7 @@ class Parameterized(Node):
         """
         # TODO(@awav): What prior must represent empty list of parameters?
         if not prior_tensors:
-            return None
+            return tf.constant(0, dtype=settings.tf_float)
         return tf.add_n(prior_tensors, name='prior')
 
     def _set_param(self, name, value):

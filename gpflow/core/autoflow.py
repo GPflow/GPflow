@@ -36,6 +36,7 @@ class AutoFlow:
             raise ValueError('Name must be a string.')
         prefix = cls.__autoflow_prefix__
         if name:
+            prefix = "" if name.startswith(prefix) else prefix
             delattr(obj, prefix + name)
         else:
             keys = [attr for attr in obj.__dict__ if attr.startswith(prefix)]
