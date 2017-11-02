@@ -1,7 +1,9 @@
 import unittest
 import six
 import tensorflow as tf
+
 import numpy as np
+from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import settings
@@ -60,50 +62,52 @@ class TestPredictConditional(GPflowTestCase):
     give the same result as the predict_mean_and_var function if the prediction
     has no uncertainty.
     """
-    def setUp(self):
-        with self.test_context() as session:
-            self.graph = session.graph
-            self.test_setups = getTestSetups(addNonStandardLinks=True)
-            rng = np.random.RandomState(0)
-            self.F = tf.placeholder(settings.tf_float)
-            F_data = rng.randn(10, 2).astype(settings.np_float)
-            self.feed = {self.F: F_data}
+    def setup(self):
+        test_setups = getTestSetups(addNonStandardLinks=True)
+        rng = np.random.RandomState(0)
+        F = tf.placeholder(settings.tf_float)
+        F_data = rng.randn(10, 2).astype(settings.np_float)
+        feed = {F: F_data}
+        return test_setups, F, feed
 
     def test_mean(self):
-        for test_setup in self.test_setups:
-            with self.test_context(self.graph):
+        with self.test_context():
+            test_setups, F, feed = self.setup()
+            for test_setup in test_setups:
                 l = test_setup.likelihood
                 l.compile()
-                mu1 = l.session.run(l.conditional_mean(self.F), feed_dict=self.feed)
-                zero = self.F * 0.
-                mu2, _ = l.session.run(l.predict_mean_and_var(self.F, zero), feed_dict=self.feed)
-                self.assertTrue(np.allclose(mu1, mu2, test_setup.tolerance, test_setup.tolerance))
+                mu1 = l.session.run(l.conditional_mean(F), feed_dict=feed)
+                zero = F * 0.
+                mu2, _ = l.session.run(l.predict_mean_and_var(F, zero), feed_dict=feed)
+                assert_allclose(mu1, mu2, test_setup.tolerance, test_setup.tolerance)
 
     def test_variance(self):
-        for test_setup in self.test_setups:
-            with self.test_context(self.graph):
+        with self.test_context():
+            test_setups, F, feed = self.setup()
+            for test_setup in test_setups:
                 l = test_setup.likelihood
                 l.compile()
-                zero = self.F * 0.
-                v1 = l.session.run(l.conditional_variance(self.F), feed_dict=self.feed)
-                v2 = l.session.run(l.predict_mean_and_var(self.F, zero)[1], feed_dict=self.feed)
-                self.assertTrue(np.allclose(v1, v2, atol=test_setup.tolerance))
+                zero = F * 0.
+                v1 = l.session.run(l.conditional_variance(F), feed_dict=feed)
+                v2 = l.session.run(l.predict_mean_and_var(F, zero)[1], feed_dict=feed)
+                assert_allclose(v1, v2, atol=test_setup.tolerance)
 
     def test_var_exp(self):
         """
         Here we make sure that the variational_expectations gives the same result
         as logp if the latent function has no uncertainty.
         """
-        for test_setup in self.test_setups:
-            with self.test_context(self.graph):
+        with self.test_context():
+            test_setups, F, feed = self.setup()
+            for test_setup in test_setups:
                 l = test_setup.likelihood
                 y = test_setup.Y
                 l.compile()
-                r1 = l.session.run(l.logp(self.F, y), feed_dict=self.feed)
-                zero = self.F * 0.
-                r2 = l.session.run(l.variational_expectations(self.F, zero, test_setup.Y),
-                                   feed_dict=self.feed)
-                self.assertTrue(np.allclose(r1, r2, test_setup.tolerance, test_setup.tolerance))
+                r1 = l.session.run(l.logp(F, y), feed_dict=feed)
+                zero = F * 0.
+                r2 = l.session.run(
+                    l.variational_expectations(F, zero, test_setup.Y), feed_dict=feed)
+                assert_allclose(r1, r2, atol=test_setup.tolerance, rtol=test_setup.tolerance)
 
 
 class TestQuadrature(GPflowTestCase):
