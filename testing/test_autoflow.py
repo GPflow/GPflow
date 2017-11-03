@@ -22,12 +22,12 @@ class DumbModel(gpflow.models.Model):
 class NoArgsModel(DumbModel):
     @gpflow.autoflow()
     @gpflow.params_as_tensors
-    def function(self):
+    def function1(self):
         return self.a
 
     @gpflow.autoflow()
     @gpflow.params_as_tensors
-    def function_another(self):
+    def function2(self):
         return self.a + 1.0
 
 class TestNoArgs(GPflowTestCase):
@@ -39,31 +39,33 @@ class TestNoArgs(GPflowTestCase):
             def get_keys():
                 return [k for k in m.__dict__ if k.startswith(AutoFlow.__autoflow_prefix__)]
 
-            assert_allclose(m.function(), 3.)
-            assert_allclose(m.function_another(), 4.)
-            keys = get_keys()
-            self.assertEqual(len(keys), 2)
+            names = [m.function1.__name__, m.function2.__name__]
+            names = [AutoFlow.__autoflow_prefix__ + name for name in names]
+            first_key = names[0]
+            second_key = names[1]
+            print("first_key={0}, second_key={1}".format(first_key, second_key))
 
-            first_key = keys[0]
+            assert_allclose(m.function1(), 3.)
+            assert_allclose(m.function2(), 4.)
+            self.assertEqual(len(get_keys()), 2)
+
             AutoFlow.clear_autoflow(m, name=first_key)
             self.assertEqual(len(get_keys()), 1)
-            assert_allclose(m.function(), 3.)
+            assert_allclose(m.function1(), 3.)
             print(get_keys())
             self.assertEqual(len(get_keys()), 2)
 
-            second_key = keys[1]
             AutoFlow.clear_autoflow(m, name=second_key)
             self.assertEqual(len(get_keys()), 1)
-            assert_allclose(m.function_another(), 4.)
+            assert_allclose(m.function2(), 4.)
             self.assertEqual(len(get_keys()), 2)
 
             AutoFlow.clear_autoflow(m, name=first_key)
             AutoFlow.clear_autoflow(m, name=second_key)
             self.assertEqual(len(get_keys()), 0)
-            assert_allclose(m.function(), 3.)
-            assert_allclose(m.function_another(), 4.)
+            assert_allclose(m.function1(), 3.)
+            assert_allclose(m.function2(), 4.)
             self.assertEqual(len(get_keys()), 2)
-
 
             AutoFlow.clear_autoflow(m)
             self.assertEqual(len(get_keys()), 0)
