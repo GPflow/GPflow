@@ -203,7 +203,7 @@ class TestStochasticGradients(GPflowTestCase):
         return model
 
     def get_opt(self):
-        learning_rate = .01
+        learning_rate = .001
         opt = gpflow.train.GradientDescentOptimizer(learning_rate, use_locking=True)
         return opt
 
