@@ -183,7 +183,7 @@ class TestStochasticGradients(GPflowTestCase):
     sampler for which we can predict the effects of different updates.
     """
     def setUp(self):
-        tf.set_random_seed(1)
+        tf.set_random_seed(0)
         self.XAB = np.atleast_2d(np.array([0., 1.])).T
         self.YAB = np.atleast_2d(np.array([-1., 3.])).T
         self.sharedZ = np.atleast_2d(np.array([0.5]) )
@@ -213,8 +213,8 @@ class TestStochasticGradients(GPflowTestCase):
         return indexedModel
 
     def check_models_close(self, m1, m2, tolerance=1e-2):
-        m1_params = {p.name: p for p in list(m1.trainable_parameters)}
-        m2_params = {p.name: p for p in list(m2.trainable_parameters)}
+        m1_params = {p.full_name: p for p in list(m1.trainable_parameters)}
+        m2_params = {p.full_name: p for p in list(m2.trainable_parameters)}
         if set(m1_params.keys()) != set(m2_params.keys()):
             print("parameter names = {0}, {1}".format(m1_params.keys(), m2_params.keys()))
             return False
@@ -222,8 +222,8 @@ class TestStochasticGradients(GPflowTestCase):
             p1 = m1_params[key]
             p2 = m2_params[key]
             if not np.allclose(p1.read_value(), p2.read_value(), atol=tolerance):
-                print("p1 = {0}".format(p1.read_value()))
-                print("p2 = {0}".format(p2.read_value()))
+                print("p1({0}) = {1}".format(key, p1.read_value()))
+                print("p2({0}) = {1}".format(key, p2.read_value()))
                 return False
         return True
 

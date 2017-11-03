@@ -75,7 +75,7 @@ class SVGP(GPModel):
             Y = DataHolder(Y)
         else:
             X = Minibatch(X, batch_size=minibatch_size, seed=0)
-            Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
+            Y = Minibatch(Y, batch_size=minibatch_size, seed=1)
 
         # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
