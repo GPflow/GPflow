@@ -43,7 +43,6 @@ class TestNoArgs(GPflowTestCase):
             names = [AutoFlow.__autoflow_prefix__ + name for name in names]
             first_key = names[0]
             second_key = names[1]
-            print("first_key={0}, second_key={1}".format(first_key, second_key))
 
             assert_allclose(m.function1(), 3.)
             assert_allclose(m.function2(), 4.)
@@ -52,7 +51,6 @@ class TestNoArgs(GPflowTestCase):
             AutoFlow.clear_autoflow(m, name=first_key)
             self.assertEqual(len(get_keys()), 1)
             assert_allclose(m.function1(), 3.)
-            print(get_keys())
             self.assertEqual(len(get_keys()), 2)
 
             AutoFlow.clear_autoflow(m, name=second_key)

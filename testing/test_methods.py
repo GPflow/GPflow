@@ -220,7 +220,7 @@ class TestStochasticGradients(GPflowTestCase):
         for key in m1_params:
             p1 = m1_params[key]
             p2 = m2_params[key]
-            if ((p1.read_value() - p2.read_value()) > tolerance).any():
+            if not np.allclose(p1.read_value(), p2.read_value(), atol=tolerance):
                 return False
         return True
 
