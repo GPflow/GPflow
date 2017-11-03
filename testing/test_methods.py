@@ -203,7 +203,7 @@ class TestStochasticGradients(GPflowTestCase):
         return model
 
     def get_opt(self):
-        learning_rate = .1
+        learning_rate = .01
         opt = gpflow.train.GradientDescentOptimizer(learning_rate, use_locking=True)
         return opt
 
@@ -221,7 +221,7 @@ class TestStochasticGradients(GPflowTestCase):
         for key in m1_params:
             p1 = m1_params[key]
             p2 = m2_params[key]
-            if not np.allclose(p1.read_value(), p2.read_value(), atol=tolerance):
+            if not np.allclose(p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance):
                 print("p1({0}) = {1}".format(key, p1.read_value()))
                 print("p2({0}) = {1}".format(key, p2.read_value()))
                 return False

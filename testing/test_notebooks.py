@@ -89,9 +89,6 @@ class TestNotebooks(GPflowTestCase):
     def SGPR_notes_test(self):
         self._exec_notebook_ts("SGPR_notes.ipynb")
 
-    def structure_test(self):
-        self._exec_notebook_ts("structure.ipynb")
-
     def vgp_notes_test(self):
         self._exec_notebook_ts("vgp_notes.ipynb")
 
