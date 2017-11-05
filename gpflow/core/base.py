@@ -28,9 +28,9 @@ class Build(enum.Enum):
 
 
 class AutoBuildTag(enum.Enum):
-    BUILD = enum.auto()
-    IGNORE = enum.auto()
-    FOLLOW = enum.auto()
+    BUILD = 1
+    IGNORE = 2
+    FOLLOW = 3
 
 
 class AutoBuild(abc.ABCMeta):
