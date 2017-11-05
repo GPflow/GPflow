@@ -160,7 +160,7 @@ class VGP_opper_archambeau(GPModel):
     """
 
     def __init__(self, X, Y, kern, likelihood,
-                 mean_function=Zero(),
+                 mean_function=None,
                  num_latent=None,
                  **kwargs):
         """
@@ -168,6 +168,9 @@ class VGP_opper_archambeau(GPModel):
         Y is a data matrix, size N x R
         kern, likelihood, mean_function are appropriate GPflow objects
         """
+
+        mean_function = Zero() if mean_function is None else mean_function
+
         X = DataHolder(X)
         Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)

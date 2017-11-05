@@ -30,19 +30,19 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._optimizer = None
         self._model = None
 
-    def minimize(self, model, **kwargs):
+    def minimize(self, model, session=None, var_list=None, feed_dict=None,
+                 maxiter=1000, initialize=True, anchor=True, **kwargs):
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
 
         if model.is_built_coherence() is Build.NO:
             raise GPflowError('Model is not built.')
 
-        session = self._pop_session(model, kwargs)
+        var_list = self._gen_var_list(model, var_list)
+        session = model.enquire_session(session)
         self._model = model
 
-        var_list = self._pop_var_list(model, kwargs)
         with model.graph.as_default():
-            maxiter = self._pop_maxiter(kwargs)
             disp = kwargs.pop('disp', False)
             options = dict(options={'maxiter': maxiter, 'disp': disp})
             optimizer_kwargs = self._optimizer_kwargs.copy()
@@ -52,10 +52,12 @@ class ScipyOptimizer(optimizer.Optimizer):
             self._optimizer = external_optimizer.ScipyOptimizerInterface(
                 objective, var_list=var_list, **optimizer_kwargs)
 
-        feed_dict = self._pop_feed_dict(kwargs)
-        if model.feeds:
-            feed_dict.update(model.feeds)
+        model.initialize(session=session, force=initialize)
+
+        # feed_dict = self._gen_feed_dict(model, feed_dict)
         self._optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
+        if anchor:
+            model.anchor(session)
 
     @property
     def model(self):

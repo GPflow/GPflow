@@ -153,7 +153,7 @@ class Minibatch(DataHolder):
 
     def set_batch_size(self, size, session=None):
         self._batch_size = size
-        session = self.enquire_session(session, allow_none=True)
+        session = self.enquire_session(session)
         if session is not None:
             self.initialize(session=session)
 

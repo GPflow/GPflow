@@ -245,6 +245,10 @@ class TestStochasticGradients(GPflowTestCase):
         else:
             self.assertFalse(self.check_models_close(m1, m2))
 
+    # TODO(@awav):
+    # These three tests below can be extremly unstable on different machines
+    # and different settings.
+
     def testOne(self):
         with self.test_context():
             self.compare_models(

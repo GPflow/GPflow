@@ -117,9 +117,12 @@ class Parameter(Node):
             return None
         return self.parameter_tensor.graph
 
-    def anchor(self):
+    def anchor(self, session):
+        if session is None:
+            ValueError('Session is required when anchoring.')
         if self.trainable:
-            self.assign(self.read_value())
+            value = self.read_value(session=session)
+            self.assign(value, session=session)
 
     def is_built(self, graph):
         if graph is None:
@@ -129,13 +132,6 @@ class Parameter(Node):
         elif self.prior_tensor is None:
             return Build.NO
         return Build.YES
-
-    def initialize(self, session=None):
-        session = self.enquire_session(session)
-        initializables = self.initializables
-        if initializables:
-            init = tf.variables_initializer(initializables)
-            session.run(init, feed_dict=self.initializable_feeds)
 
     def set_trainable(self, value, graph=None):
         if not isinstance(value, bool):
@@ -157,7 +153,7 @@ class Parameter(Node):
 
         object.__setattr__(self, 'trainable', value)
 
-    def assign(self, value, session=None, dtype=None):
+    def assign(self, value, session=None, dtype=None, force=True):
         if self._externally_defined:
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
         value = self._valid_input(value, dtype)
@@ -169,12 +165,11 @@ class Parameter(Node):
             self._value[...] = value.copy()
             session = self.enquire_session(session)
             self.is_built_coherence(graph=session.graph)
-            self.initialize(session=session)
+            self.initialize(session=session, force=force)
         else:
             self._value[...] = value.copy()
 
     def read_value(self, session=None):
-        session = self.enquire_session(session, allow_none=True)
         if session:
             is_built = self.is_built_coherence(session.graph)
             if is_built is Build.YES:
@@ -235,14 +230,19 @@ class Parameter(Node):
         if tensor is not None:
             raise GPflowError('Tensor with name "{name}" already exists, {tensor}.'
                               .format(name=name, tensor=tensor))
-            # self._check_tensor_trainable(tensor)
-            # return tensor
 
         value = self._apply_transform(self._value)
         shape = value.shape
         init = tf.placeholder(self.dtype, shape=shape, name='initial_unconstrained_value')
         self._initial_value_tensor = init
         return tf.get_variable(name, initializer=init, trainable=self.trainable)
+
+        # init = tf.placeholder(self.dtype, name='initial_unconstrained_value')
+        # self._initial_value_tensor = init
+        # return tf.get_variable(name, initializer=init,
+        #                        trainable=self.trainable,
+        #                        validate_shape=False)
+
 
     def _build_constrained(self, parameter_tensor):
         if not misc.is_tensor(parameter_tensor):  # pragma: no cover
@@ -342,7 +342,7 @@ class Parameter(Node):
             otype=self.__class__.__name__, name=self.full_name)
         if self._externally_defined:
             begin += ' [external tensor]'
-        if self._externally_defined and self.session is None:
+        if self._externally_defined:
             end = ' value: unknown'
         else:
             # hijack numpy print options for a moment

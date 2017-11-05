@@ -197,7 +197,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
 
 class GPRFITC(GPModel, SGPRUpperMixin):
-    def __init__(self, X, Y, kern, Z, mean_function=Zero(), **kwargs):
+    def __init__(self, X, Y, kern, Z, mean_function=None, **kwargs):
         """
         This implements GP regression with the FITC approximation.
         The key reference is
@@ -222,6 +222,9 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         This method only works with a Gaussian likelihood.
 
         """
+
+        mean_function = Zero() if mean_function is None else mean_function
+
         X = DataHolder(X)
         Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
