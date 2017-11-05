@@ -12,18 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-from functools import reduce
+# pylint: disable=E1123
+
 import unittest
+from functools import reduce
+
 import tensorflow as tf
 import numpy as np
 
 import gpflow
 from gpflow import settings, test_util
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+
+class Foo(gpflow.models.Model):
+    def _build_likelihood(self):
+        return tf.zeros([1], dtype=gpflow.settings.np_float)
 
 
 class NamingTests(test_util.GPflowTestCase):
@@ -42,12 +45,12 @@ class NamingTests(test_util.GPflowTestCase):
         self.assertEqual(p2.hidden_full_name, 'test_name')
         self.assertEqual(p2.full_name, 'test_name')
         model_index = gpflow.core.parentable.Parentable._read_index() + 1
-        m = gpflow.models.Model()
+        m = gpflow.params.Parameterized()
         m.p = p1
-        self.assertEqual(m.hidden_full_name, '{index}/Model'.format(index=model_index))
-        self.assertEqual(m.full_name, 'Model')
-        self.assertEqual(m.p.hidden_full_name, '{index}/Model/p'.format(index=model_index))
-        self.assertEqual(m.p.full_name, 'Model/p')
+        self.assertEqual(m.hidden_full_name, '{index}/Parameterized'.format(index=model_index))
+        self.assertEqual(m.full_name, 'Parameterized')
+        self.assertEqual(m.p.hidden_full_name, '{index}/Parameterized/p'.format(index=model_index))
+        self.assertEqual(m.p.full_name, 'Parameterized/p')
         self.assertEqual(m.full_name, m.name)
         self.assertEqual(m.p.hidden_full_name, '{}/p'.format(m.hidden_name))
         self.assertEqual(m.p.full_name, '{}/p'.format(m.name))
@@ -112,11 +115,12 @@ class TypeTests(test_util.GPflowTestCase):
 
 class ParamTests(test_util.GPflowTestCase):
     def setUp(self):
-        self.p = gpflow.Param(1.0)
-        self.m_index = gpflow.core.parentable.Parentable._read_index() + 1
-        self.m = gpflow.params.Parameterized()
-        self.m.p = gpflow.Param(1.0)
-        self.m.b = gpflow.Param(1.0)
+        with self.test_context():
+            self.p = gpflow.Param(1.0)
+            self.m_index = gpflow.core.parentable.Parentable._read_index() + 1
+            self.m = gpflow.params.Parameterized()
+            self.m.p = gpflow.Param(1.0)
+            self.m.b = gpflow.Param(1.0)
 
     def test_generators(self):
         with self.test_context():
@@ -125,17 +129,28 @@ class ParamTests(test_util.GPflowTestCase):
             self.assertEqual(len(list(self.m.params)), 2)
 
     def test_assign(self):
-        with self.test_context():
+        with self.test_context() as session:
+            with self.assertRaises(tf.errors.FailedPreconditionError):
+                self.p.read_value(session)
+
             self.p.assign(2.0)
-            self.assertTrue(self.p.read_value() == 2.0)
+            self.assertEqual(self.p.read_value(), 2.0)
+
             self.m.p = 2.0
-            self.assertTrue(self.m.p.read_value() == 2.0)
+            self.assertEqual(self.m.p.read_value(), 2.0)
+
+            self.p.assign(100.0, session=session)
+            self.assertEqual(self.p.read_value(session), 100.0)
 
     def test_create_and_replace(self):
         with self.test_context():
             tensor = tf.get_variable('a', shape=()) + 1.0
             param = gpflow.Param(1e3)
-            external_param = gpflow.Param(tensor)
+
+            with self.assertRaises(ValueError):
+                external_param = gpflow.Param(tensor)
+
+            external_param = gpflow.Param(tensor, trainable=False)
             new_param = gpflow.Param(1.0, name='new_param')
 
             self.m.b = external_param
@@ -226,18 +241,19 @@ class ParameterizedNoParametersTests(test_util.GPflowTestCase):
 
 class ParameterizedCompileTests(test_util.GPflowTestCase):
     def setUp(self):
+        self.test_graph = tf.Graph()
         with self.test_context() as session:
             self.graph = session.graph
-            tensor = tf.get_variable('a', shape=(), trainable=False)
+            tensor = tf.get_variable('a', shape=())
             self.m = gpflow.params.Parameterized(name='m')
             self.m.p = gpflow.params.Parameterized()
-            self.m.a = gpflow.Param(tensor, trainable=False)
-            self.m.b = gpflow.Param(1.0)
+            self.m.a = gpflow.Param(tensor)
+            self.m.b = gpflow.Param(1.0, trainable=False)
             self.m.c = gpflow.Param(np.array([1.0, 2.0]))
             self.m.p.d = gpflow.Param(1.0)
 
     def test_compile(self):
-        with self.test_context(self.graph):
+        with self.test_context():
             tensor = self.m.a.parameter_tensor
             self.m.compile()
             self.assertEqual(len(list(self.m.parameters)), 4)
@@ -249,8 +265,7 @@ class ParameterizedCompileTests(test_util.GPflowTestCase):
                 self.assertTrue(gpflow.misc.is_tensor(param.prior_tensor))
 
     def test_modify_compiled(self):
-        with self.test_context(self.graph):
-            self.m.compile()
+        with self.test_context():
             self.assertEqual(len(list(self.m.parameters)), 4)
             self.assertEqual(len(list(self.m.trainable_tensors)), 3)
             for param in self.m.parameters:
@@ -266,20 +281,47 @@ class ParameterizedCompileTests(test_util.GPflowTestCase):
             with self.assertRaises(AttributeError):
                 _param = self.m.d
 
-    def test_fails_at_compile(self):
-        with self.test_context(self.graph):
-            with self.assertRaises(gpflow.GPflowError):
-                self.m.p.d.compile()
-            with self.assertRaises(gpflow.GPflowError):
-                self.m.p.compile()
-            with self.assertRaises(gpflow.GPflowError):
-                self.m.a.compile()
-            with self.assertRaises(gpflow.GPflowError):
-                self.m.b.compile()
-            with self.assertRaises(gpflow.GPflowError):
-                self.m.c.compile()
+    def test_compile(self):
+        with self.test_context():
             self.m.compile()
+        with self.test_context() as session:
+            self.m.compile(session=session)
 
+class AutobuildTest(test_util.GPflowTestCase):
+    def test_autobuild_option(self):
+        with self.test_context():
+            foo = Foo(autobuild=False)
+            equal = self.assertEqual
+            equal(foo.is_built(tf.get_default_graph()), gpflow.Build.NO)
+            equal(foo.is_built_coherence(), gpflow.Build.NO)
+
+            p = gpflow.Param(10)
+            equal(p.is_built(tf.get_default_graph()), gpflow.Build.YES)
+            equal(p.is_built_coherence(), gpflow.Build.YES)
+
+            b = gpflow.Param(10, autobuild=False)
+            equal(b.is_built(tf.get_default_graph()), gpflow.Build.NO)
+            equal(b.is_built_coherence(), gpflow.Build.NO)
+
+            foo.p = p
+            equal(foo.p, p)
+            equal(hasattr(foo, 'p'), True)
+            equal(foo.is_built(tf.get_default_graph()), gpflow.Build.NO)
+            equal(foo.is_built_coherence(), gpflow.Build.NO)
+
+            foo.b = b
+            equal(foo.b, b)
+            equal(hasattr(foo, 'b'), True)
+            equal(foo.is_built(tf.get_default_graph()), gpflow.Build.NO)
+            equal(foo.is_built_coherence(), gpflow.Build.NO)
+
+            foo.compile()
+            equal(foo.is_built(tf.get_default_graph()), gpflow.Build.YES)
+            equal(foo.is_built_coherence(), gpflow.Build.YES)
+            equal(p.is_built(tf.get_default_graph()), gpflow.Build.YES)
+            equal(p.is_built_coherence(), gpflow.Build.YES)
+            equal(b.is_built(tf.get_default_graph()), gpflow.Build.YES)
+            equal(b.is_built_coherence(), gpflow.Build.YES)
 
 class ParameterizedDeepTest(test_util.GPflowTestCase):
     def setUp(self):
@@ -340,22 +382,6 @@ class ParamLikeInvariantTest(test_util.GPflowTestCase):
         m.foo = p  # assign
         m.foo = p  # reassign
 
-    def test_compile_from_root(self):
-        with self.test_context():
-            m = gpflow.params.Parameterized()
-            m.a = gpflow.Param(1.0)
-            m.b = gpflow.Param(1.0)
-            m.c = gpflow.params.Parameterized()
-            m.c.a = gpflow.Param(1.0)
-            with self.assertRaises(gpflow.GPflowError):
-                m.c.a.compile()
-            with self.assertRaises(gpflow.GPflowError):
-                m.c.compile()
-            with self.assertRaises(gpflow.GPflowError):
-                m.b.compile()
-            with self.assertRaises(gpflow.GPflowError):
-                m.a.compile()
-
         # TODO(@awav):
         # m = gpflow.params.Parameterized()
         # m.foo = gpflow.params.Parameterized()
@@ -408,7 +434,7 @@ class TestParamList(test_util.GPflowTestCase):
         with self.test_context():
             p1 = gpflow.Param(1.2)
             p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
-            param_list = gpflow.ParamList([p1, p2], name='param_list')
+            param_list = gpflow.ParamList([p1, p2], name='param_list', autobuild=False)
 
             self.assertEqual(p1.read_value(), param_list[0].read_value())
             self.assertTrue(np.all(param_list[1].read_value() == p2.read_value()))
@@ -472,24 +498,6 @@ class TestParamList(test_util.GPflowTestCase):
             self.assertTrue(np.allclose(params, 0., atol=atol))
 
 
-#class TestPickleAndDict(test_util.GPflowTestCase):
-#    def setUp(self):
-#        with self.test_context():
-#            rng = np.random.RandomState(0)
-#            X = rng.randn(10, 1)
-#            Y = rng.randn(10, 1)
-#            self.m = gpflow.models.GPR(X, Y, kern=gpflow.kernels.RBF(1))
-#
-#    def test(self):
-#        # pickle and reload the model
-#        s1 = pickle.dumps(self.m)
-#        m1 = pickle.loads(s1)
-#        d1 = self.m.get_parameter_dict()
-#        d2 = m1.get_parameter_dict()
-#        for key, val in d1.items():
-#            assert np.all(val == d2[key])
-
-
 class TestFixWithPrior(test_util.GPflowTestCase):
     """
     This tests that models with a fixed parameter which has a prior continue to work
@@ -497,13 +505,12 @@ class TestFixWithPrior(test_util.GPflowTestCase):
 
     def test_non_trainable_with_prior(self):
         with self.test_context():
-            m = gpflow.models.Model()
-            m.p = gpflow.Param(1.0, gpflow.transforms.positive)
-            m.pp = gpflow.Param(1.0, gpflow.transforms.positive)
+            m = Foo(autobuild=False)
+            m.p = gpflow.Param(1.0, gpflow.transforms.positive, autobuild=False)
+            m.pp = gpflow.Param(1.0, gpflow.transforms.positive, autobuild=False)
             m.p.prior = gpflow.priors.Gamma(1, 1)
             m.pp.prior = gpflow.priors.Gamma(1, 1)
             m.p.trainable = False
-            m._build_likelihood = lambda: tf.zeros([1], tf.float64)
             m.compile()
             optimizer = gpflow.train.ScipyOptimizer()
             optimizer.minimize(m, maxiter=10)

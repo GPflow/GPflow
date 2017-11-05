@@ -84,7 +84,7 @@ class Node(Parentable, ICompilable):
         graph = self.enquire_graph(graph=graph)
         is_built = self.is_built(graph)
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
-            raise GPflowError('Tensor {} uses different graph.'.format(self.full_name))
+            raise GPflowError('Tensor "{}" uses different graph.'.format(self.full_name))
         return is_built
 
     def build(self):

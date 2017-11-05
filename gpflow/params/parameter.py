@@ -57,7 +57,6 @@ class Parameter(Node):
         super(Parameter, self).__init__(name)
 
         self._externally_defined = False
-
         self._init_parameter_defaults()
         self._init_parameter_attributes(prior, transform, trainable)
         self._init_parameter_value(value)
@@ -288,7 +287,7 @@ class Parameter(Node):
             is_trainable = misc.is_tensor_trainable(value)
             if is_trainable != self.trainable:
                 status = 'trainable' if is_trainable else 'not trainable'
-                ValueError('Externally defined tensor is {0}.'.format(status))
+                raise ValueError('Externally defined tensor is {0}.'.format(status))
             self._externally_defined = True
             self._set_parameter_tensor(value)
         else:
