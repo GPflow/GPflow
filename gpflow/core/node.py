@@ -40,7 +40,7 @@ class Node(Parentable, ICompilable):
         if self.is_built(session.graph) is Build.NO:
             with session.graph.as_default():
                 self.build()
-        self.initialize(session)
+        self.initialize(session, force=True)
 
     def initialize(self, session=None, force=False):
         session = self.enquire_session(session)

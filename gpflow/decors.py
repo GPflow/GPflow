@@ -53,10 +53,15 @@ def params_as_tensors(method):
     return tensor_mode_wrapper
 
 
-# @contextlib.contextmanager
-# def no_autobuild():
-#     __execute_autobuild__ = AutoBuildTag.IGNORE
-#     yield
+def autobuild(switch=True):
+    def autobuild_wrapper(method):
+        @functools.wraps(method)
+        def runnable(*args, **kwargs):
+            if not switch:
+                __execute_autobuild__ = AutoBuildTag.IGNORE
+            return method(*args, **kwargs)
+        return runnable
+    return autobuild_wrapper
 
 
 @contextlib.contextmanager

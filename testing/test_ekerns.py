@@ -59,7 +59,9 @@ class TestKernExpDelta(GPflowTestCase):
     indicate whether things work or not.
     """
 
+    @gpflow.autobuild(False)
     def setUp(self):
+        self.test_graph = tf.Graph()
         with self.test_context():
             self.D = 2
             self.rng = np.random.RandomState(0)
@@ -122,7 +124,9 @@ class TestKernExpDelta(GPflowTestCase):
 class TestKernExpActiveDims(GPflowTestCase):
     _threshold = 0.5
 
+    @gpflow.autobuild(False)
     def setUp(self):
+        self.test_graph = tf.Graph()
         with self.test_context():
             self.N = 4
             self.D = 2
@@ -194,7 +198,9 @@ class TestKernExpActiveDims(GPflowTestCase):
 class TestExpxKxzActiveDims(GPflowTestCase):
     _threshold = 0.5
 
+    @gpflow.autobuild(False)
     def setUp(self):
+        self.test_graph = tf.Graph()
         with self.test_context():
             self.rng = np.random.RandomState(0)
 
@@ -267,7 +273,9 @@ class TestKernExpQuadrature(GPflowTestCase):
     _threshold = 0.5
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.
 
+    @gpflow.autobuild(False)
     def setUp(self):
+        self.test_graph = tf.Graph()
         self.rng = np.random.RandomState(1)  # this seed works with 60 GH points
         self.N = 4
         self.D = 2
@@ -394,7 +402,9 @@ class TestKernProd(GPflowTestCase):
     Need a separate test for this as Prod currently only supports diagonal Xcov matrices with non-overlapping kernels.
     """
 
+    @gpflow.autobuild(False)
     def setUp(self):
+        self.test_graph = tf.Graph()
         with self.test_context():
             self._threshold = 0.5
             self.rng = np.random.RandomState(0)
@@ -448,7 +458,9 @@ class TestKernProd(GPflowTestCase):
 class TestKernExpDiagXcov(GPflowTestCase):
     _threshold = 1e-6
 
+    @gpflow.autobuild(False)
     def setUp(self):
+        self.test_graph = tf.Graph()
         with self.test_context():
             self.rng = np.random.RandomState(0)
             self.N = 4
@@ -542,7 +554,9 @@ class TestKernExpDiagXcov(GPflowTestCase):
 class TestAddCrossCalcs(GPflowTestCase):
     _threshold = 0.5
 
+    @gpflow.autobuild(False)
     def setUp(self):
+        self.test_graph = tf.Graph()
         self.rng = np.random.RandomState(0)
         self.N = 4
         self.D = 2
@@ -565,7 +579,7 @@ class TestAddCrossCalcs(GPflowTestCase):
         self.add.clear()
 
     def test_cross_quad(self):
-        with self.test_context():
+        with self.test_context() as session:
             self.add.num_gauss_hermite_points = 50
             self.add.compile()
             tfZ = tf.placeholder(tf.float64)
@@ -576,7 +590,7 @@ class TestAddCrossCalcs(GPflowTestCase):
             feed_dict = {tfZ: self.Z,
                          tfXmu: self.Xmu,
                          tfXcov: self.Xcov}
-            a, b = self.add.session.run((tfa, tfb), feed_dict=feed_dict)
+            a, b = session.run((tfa, tfb), feed_dict=feed_dict)
             _assert_pdeq(self, a, b)
 
 
