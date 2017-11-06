@@ -16,6 +16,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
+import tensorflow as tf
+
 from gpflow.core.base import GPflowError
 from gpflow.core.base import Build
 from gpflow.models.model import Model
@@ -42,7 +45,7 @@ class ScipyOptimizer(optimizer.Optimizer):
         session = model.enquire_session(session)
         self._model = model
 
-        with model.graph.as_default():
+        with session.graph.as_default():
             disp = kwargs.pop('disp', False)
             options = dict(options={'maxiter': maxiter, 'disp': disp})
             optimizer_kwargs = self._optimizer_kwargs.copy()

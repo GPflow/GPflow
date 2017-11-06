@@ -70,31 +70,32 @@ def kernel(kernelVariance=1, lengthScale=1.):
 
 
 class VariationalUnivariateTest(GPflowTestCase):
-    def setUp(self):
-        self.y_real = 2.
-        self.K = 1.
-        self.noiseVariance = 0.5
-        self.univariate = 1
-        self.oneLatentFunction = 1
-        self.meanZero = 0.
-        self.X = np.atleast_2d(np.array([0.]))
-        self.Y = np.atleast_2d(np.array([self.y_real]))
-        self.Z = self.X.copy()
-        self.lik = gpflow.likelihoods.Gaussian()
-        self.lik.variance = self.noiseVariance
-        self.posteriorMean, self.posteriorVariance = univariate_posterior(
-            y=self.y_real, K=self.K,
-            noiseVariance=self.noiseVariance)
-        self.posteriorStd = np.sqrt(self.posteriorVariance)
+
+    y_real = 2.
+    K = 1.
+    noiseVariance = 0.5
+    univariate = 1
+    oneLatentFunction = 1
+    meanZero = 0.
+    X = np.atleast_2d(np.array([0.]))
+    Y = np.atleast_2d(np.array([y_real]))
+    Z = X.copy()
+    posteriorMean, posteriorVariance = univariate_posterior(
+        y=y_real, K=K, noiseVariance=noiseVariance)
+    posteriorStd = np.sqrt(posteriorVariance)
+
+    def likelihood(self):
+        return gpflow.likelihoods.Gaussian(var=self.noiseVariance)
 
     def get_model(self, is_diagonal, is_whitened):
         m = gpflow.models.SVGP(
             X=self.X, Y=self.Y,
             kern=kernel(kernelVariance=self.K),
-            likelihood=self.lik,
+            likelihood=self.likelihood(),
             Z=self.Z,
             q_diag=is_diagonal,
-            whiten=is_whitened)
+            whiten=is_whitened,
+            autobuild=False)
 
         if is_diagonal:
             ones = np.ones((self.univariate, self.univariate, self.oneLatentFunction))
@@ -154,28 +155,29 @@ class VariationalUnivariateTest(GPflowTestCase):
 
 
 class VariationalMultivariateTest(GPflowTestCase):
-    def setUp(self):
-        self.nDimensions = 3
-        rng = np.random.RandomState(1)
-        self.rng = rng
-        self.Y = rng.randn(self.nDimensions, 1)
-        self.X = rng.randn(self.nDimensions, 1)
-        self.Z = self.X.copy()
-        self.noiseVariance = 0.5
-        self.signalVariance = 1.5
-        self.lengthScale = 1.7
-        self.oneLatentFunction = 1
-        self.lik = gpflow.likelihoods.Gaussian()
-        self.lik.variance = self.noiseVariance
-        self.q_mean = rng.randn(self.nDimensions, self.oneLatentFunction)
-        self.q_sqrt_diag = rng.rand(self.nDimensions, self.oneLatentFunction)
-        self.q_sqrt_full = np.tril(self.rng.rand(self.nDimensions, self.nDimensions))
+
+    nDimensions = 3
+    rng = np.random.RandomState(1)
+    rng = rng
+    Y = rng.randn(nDimensions, 1)
+    X = rng.randn(nDimensions, 1)
+    Z = X.copy()
+    noiseVariance = 0.5
+    signalVariance = 1.5
+    lengthScale = 1.7
+    oneLatentFunction = 1
+    q_mean = rng.randn(nDimensions, oneLatentFunction)
+    q_sqrt_diag = rng.rand(nDimensions, oneLatentFunction)
+    q_sqrt_full = np.tril(rng.rand(nDimensions, nDimensions))
+
+    def likelihood(self):
+        return gpflow.likelihoods.Gaussian(self.noiseVariance)
 
     def get_model(self, is_diagonal, is_whitened):
         m = gpflow.models.SVGP(
             X=self.X, Y=self.Y,
             kern=kernel(kernelVariance=self.signalVariance, lengthScale=self.lengthScale),
-            likelihood=self.lik,
+            likelihood=self.likelihood(),
             Z=self.Z,
             q_diag=is_diagonal,
             whiten=is_whitened)
@@ -184,7 +186,6 @@ class VariationalMultivariateTest(GPflowTestCase):
         else:
             m.q_sqrt = self.q_sqrt_full[:, :, None]
         m.q_mu = self.q_mean
-        m.compile()
         return m
 
     def test_refrence_implementation_consistency(self):

@@ -16,6 +16,8 @@ import abc
 import enum
 import inspect
 
+import tensorflow as tf
+
 
 class GPflowError(Exception):
     pass
