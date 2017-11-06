@@ -115,7 +115,7 @@ class ITransform:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def log_jacobian(self, x):
+    def log_jacobian_tensor(self, x):
         """
         Return the log Jacobian of the forward_tensor mapping.
 
