@@ -178,8 +178,8 @@ class Logistic(Transform):
        s(x) = 1 / (1 + \exp(-x))
     """
     def __init__(self, a=0., b=1.):
-        Transform.__init__(self)
-        assert b > a
+        if a >= b:
+            raise ValueError("a must be smaller than b")
         self.a, self.b = float(a), float(b)
 
     def forward_tensor(self, x):
@@ -202,16 +202,17 @@ class Logistic(Transform):
 
 class Rescale(Transform):
     """
-    A transform that can linearly rescale parameters, in conjucntion with
-    another transform. By default, the identity transform is wrapped so
+    A transform that can linearly rescale parameters:
     .. math::
        y = factor * x
 
-    If another transform t() is passed to the constructor, then this transform becomes
-    .. math::
+    Use `Chain` to combine this with another transform such as Log1pe:
+    `Chain(Rescale(), otherTransform())` results in
        y = factor * t(x)
+    `Chain(otherTransform(), Rescale())` results in
+       y = t(factor * x)
 
-    This is useful for avoiding optimization or MCMC over large or small scales.
+    This is useful for avoiding overly large or small scales in optimization/MCMC.
     """
     def __init__(self, factor=1.0):
         self.factor = float(factor)
@@ -238,7 +239,7 @@ class DiagMatrix(Transform):
     A transform to represent diagonal matrices.
 
     The output of this transform is a N x dim x dim array of diagonal matrices.
-    The contructor argumnet dim specifies the size of the matrixes.
+    The constructor argument `dim` specifies the size of the matrices.
 
     Additionally, to ensure that the matrices are positive definite, the
     diagonal elements are pushed through a 'positive' transform, defaulting to
