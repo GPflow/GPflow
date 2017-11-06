@@ -126,7 +126,8 @@ def base_conditional(Kmn, Kmm, Knn, f, full_cov=False, q_sqrt=None, whiten=False
 
 
 @name_scope()
-def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, full_cov_output=False, full_cov=False, whiten=False):
+def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt,
+                          full_cov_output=False, full_cov=False, whiten=False):
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
@@ -198,7 +199,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, full_cov_
         )
     else:
         fvar = (
-                eKff - tf.trace(Li_eKuffu_Lit) +
+                (eKff - tf.trace(Li_eKuffu_Lit))[:, None] +
                 tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov) +
                 tf.einsum("ig,nij,jg->ng", q_mu, Li_eKuffu_Lit, q_mu) -
                 fmean ** 2
