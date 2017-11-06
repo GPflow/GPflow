@@ -52,7 +52,7 @@ class AutoBuild(abc.ABCMeta):
                 frame = frame.f_back
             origin_init(self, *args, **kwargs)
             if __execute_autobuild__ == AutoBuildTag.BUILD:
-                self.build()
+                self.compile()
         setattr(new_cls, '__init__', __init__)
         return new_cls
 
