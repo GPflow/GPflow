@@ -24,6 +24,7 @@ from gpflow.densities import multivariate_normal
 from gpflow.params import DataHolder
 from gpflow.decors import params_as_tensors
 from gpflow.decors import name_scope
+from gpflow.decors import autoflow
 
 
 class GPR(GPModel):
@@ -93,3 +94,65 @@ class GPR(GPModel):
             fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
             fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, tf.shape(self.Y)[1]])
         return fmean, fvar
+
+    @autoflow()
+    @params_as_tensors
+    def linear_weights_posterior(self):
+        """
+        Some kernels have finite dimensional feature maps. Others although not having finite
+        feature maps can have approximated feature vectors see eg.
+
+        ::
+            @inproceedings{rahimi2008random,
+              title={Random features for large-scale kernel machines},
+              author={Rahimi, Ali and Recht, Benjamin},
+              booktitle={Advances in neural information processing systems},
+              pages={1177--1184},
+              year={2008}
+            }
+
+        With these features, GP regression can be seen as Bayesian linear regression with Gaussian
+        priors on the initial weights vector. See Section 2.1 of:
+        ::
+            @book{rasmussen2006gaussian,
+              title={Gaussian processes for machine learning},
+              author={Rasmussen, Carl Edward and Williams, Christopher KI},
+              volume={1},
+              year={2006},
+              publisher={MIT press Cambridge}
+            }
+
+
+        This method compute the posterior mean and the lower trainglular decomposition of the
+        precision matrix for the distribution over the
+        linear weights.
+        Note that this method may not always work. If the kernel does not have a feature mapping
+        (even a random approximation) then a NotImplementedError will be raised.
+        :returns mean, matrix of precision/variance, flag set to true is matrix is variance opr false for precision
+        """
+        assert self.num_latent == 1, "Only yet implemented for one latent variable GP."
+        # Pretty sure that it should work fine for more dimensional latent GP but just need
+        # to check that TF's Cholesky solve can deal with this.
+
+        # This follows almost exactly the example 2.1 of GPML as we have a tractable likelihood
+        feats = self.kern._feature_map(self.X)
+        num_obs = tf.shape(feats)[0]
+        num_feats = tf.shape(feats)[1]
+        # NB we currently run a naive version. However, if number of data points is smaller than
+        # the feature dimension then I think we can use the Matrix Inversion Lemma to cut down on
+        # computation
+        Sigma_obs_inversed = tf.eye(num_obs, num_obs, dtype=settings.tf_float) / self.likelihood.variance
+
+        A = tf.matmul(feats, tf.matmul(Sigma_obs_inversed, feats), transpose_a=True) + \
+            tf.eye(num_feats, num_feats, dtype=settings.tf_float)
+        L_A = tf.cholesky(A)
+
+        unscaled_mean = tf.matmul(feats, tf.matmul(Sigma_obs_inversed, (self.Y - self.mean_function(self.X))),
+                                  transpose_a=True)
+        mean = tf.cholesky_solve(L_A, unscaled_mean)
+
+        # we return the precision matrix Cholesky decomposed as this is useful representation when
+        # wanting to sample from this function.
+        precision_mat = A
+        return mean, precision_mat, tf.constant(False, dtype=tf.bool)
+

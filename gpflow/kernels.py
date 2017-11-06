@@ -23,7 +23,7 @@ import numpy as np
 from gpflow import transforms
 
 from gpflow.params import Parameter, Parameterized
-from gpflow.decors import params_as_tensors, autoflow
+from gpflow.decors import params_as_tensors, autoflow, templateflow
 from gpflow.quadrature import mvnquad
 
 from gpflow import settings
@@ -236,6 +236,24 @@ class Kern(Parameterized):
                              tf.concat([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
         return cov
 
+    def _feature_map(self, X):
+        """
+        Takes in tensors X and returns the feature map that is equivalent
+        to the kernel. Some kernels do not have a finite representation. However, for stationary
+        kernels we can approximate these using random features. Therefore this function takes in
+        a number of features argument that approximates these kernels with that number of features.
+
+        The key reference for stationary kernels is therefore:
+        Rahimi, A. and Recht, B., 2008.
+        Random features for large-scale kernel machines.
+        In Advances in neural information processing systems (pp. 1177-1184).
+        """
+        raise NotImplementedError
+
+    @autoflow((settings.tf_float, [None, None]))
+    def feature_map(self, X):
+        return self._feature_map(X)
+
     def __add__(self, other):
         return Add([self, other])
 
@@ -286,6 +304,13 @@ class Constant(Static):
             shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
         return tf.fill(shape, tf.squeeze(self.variance))
 
+    @params_as_tensors
+    def _feature_map(self, X):
+        feats = tf.ones((tf.shape(X)[0], 1), dtype=settings.tf_float) \
+                * tf.sqrt(tf.squeeze(self.variance))
+        return feats
+
+
 
 class Bias(Constant):
     """
@@ -306,7 +331,8 @@ class Stationary(Kern):
     """
 
     def __init__(self, input_dim, variance=1.0, lengthscales=None,
-                 active_dims=None, ARD=False, name=None):
+                 active_dims=None, ARD=False, name=None, num_features_to_approx=1000,
+                 random_seed=12):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter
@@ -316,6 +342,9 @@ class Stationary(Kern):
           columns of X are used.
         - ARD specifies whether the kernel has one lengthscale per dimension
           (ARD=True) or a single lengthscale (ARD=False).
+        - num_features_to_approx is the number of features to use as an approximation in the random
+        features approximation.
+        - random seed is an int to set TF Random variables.
         """
         super(Stationary, self).__init__(input_dim, active_dims, name=name)
         self.variance = Parameter(variance, transform=transforms.positive)
@@ -332,6 +361,9 @@ class Stationary(Kern):
                 lengthscales = 1.0
             self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
             self.ARD = False
+        self._num_features_to_approx = num_features_to_approx
+        self._random_seed = random_seed
+
 
     @params_as_tensors
     def square_dist(self, X, X2):
@@ -358,6 +390,27 @@ class Stationary(Kern):
     def Kdiag(self, X, presliced=False):
         return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
+    @templateflow("stationary_feature_map")
+    def _feature_map(self, X):
+        # we transform the random seed for the spectral density samples as we find that
+        # this gives us better performance! I assume this is down to getting some correlated
+        # examples between the omega random samples and the b's.
+        omegas, alphas = self._sample_from_spectral_density(random_seed=self._random_seed + 12)
+
+        bs = tf.get_variable("bs",
+                             initializer=tf.random_uniform_initializer(
+                settings.np_float(0.), settings.np_float(2 * np.pi), seed=self._random_seed + 45,
+                dtype=settings.tf_float
+        ), dtype=settings.tf_float, shape=(1, self._num_features_to_approx), trainable=False)
+
+        X_sliced, _ = self._slice(X, None)
+        projected_feats = tf.matmul(X_sliced, omegas, transpose_b=True) + bs
+        feats = tf.sqrt(2. * alphas / self._num_features_to_approx) * tf.cos(projected_feats)
+        return feats
+
+    def _sample_from_spectral_density(self, random_seed):
+        raise NotImplementedError
+
 
 class RBF(Stationary):
     """
@@ -369,6 +422,20 @@ class RBF(Stationary):
         if not presliced:
             X, X2 = self._slice(X, X2)
         return self.variance * tf.exp(-0.5 * self.square_dist(X, X2))
+
+    @params_as_tensors
+    def _sample_from_spectral_density(self, random_seed):
+        # RBF kernel also has a Gaussian form in the spectral domain.
+        rng = np.random.RandomState(random_seed)
+        init = lambda shape, dtype, partition_info: rng.randn(*shape).astype(settings.np_float)
+        samples = tf.get_variable("random_normal_samples_for_omegas",
+                                  shape=(self._num_features_to_approx, self.input_dim),
+                                  dtype=settings.tf_float, initializer=init, trainable=False)
+        broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=settings.tf_float) \
+                                   + self.lengthscales
+        omegas = samples / broadcasted_lengthscales
+        alpha = self.variance
+        return omegas, alpha
 
 
 class Linear(Kern):
@@ -408,6 +475,13 @@ class Linear(Kern):
             X, _ = self._slice(X, None)
         return tf.reduce_sum(tf.square(X) * self.variance, 1)
 
+    @params_as_tensors
+    def _feature_map(self, X):
+        X_sliced, _ = self._slice(X, None)
+        broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=settings.tf_float) + \
+                                   tf.sqrt(self.variance)
+        return X_sliced * broadcasted_lengthscales
+
 
 class Polynomial(Linear):
     """
@@ -442,6 +516,11 @@ class Polynomial(Linear):
     def Kdiag(self, X, presliced=False):
         return (Linear.Kdiag(self, X, presliced=presliced) + self.offset) ** self.degree
 
+    def _feature_map(self, X):
+        # This has an exact form. See https://en.wikipedia.org/wiki/Polynomial_kernel
+        # Just not been implemented.
+        raise NotImplementedError
+
 
 class Exponential(Stationary):
     """
@@ -455,6 +534,23 @@ class Exponential(Stationary):
         r = self.euclid_dist(X, X2)
         return self.variance * tf.exp(-0.5 * r)
 
+    @params_as_tensors
+    def _sample_from_spectral_density(self, random_seed):
+        # Exponential kernel is the same as Matern 1/2. Just lengthscale is scaled.
+        rng = np.random.RandomState(random_seed)
+
+        def init(shape, dtype, partition_info):
+            return rng.standard_t(1, size=shape).astype(settings.np_float)
+
+        samples = tf.get_variable("random_cauchy_samples_for_omegas",
+                                  shape=(self._num_features_to_approx, self.input_dim),
+                                  dtype=settings.tf_float, initializer=init, trainable=False)
+        broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=settings.tf_float) \
+                                   + self.lengthscales
+        omegas = samples / (2.*broadcasted_lengthscales)
+        alpha = self.variance
+        return omegas, alpha
+
 
 class Matern12(Stationary):
     """
@@ -467,6 +563,22 @@ class Matern12(Stationary):
             X, X2 = self._slice(X, X2)
         r = self.euclid_dist(X, X2)
         return self.variance * tf.exp(-r)
+
+    @params_as_tensors
+    def _sample_from_spectral_density(self, random_seed):
+        rng = np.random.RandomState(random_seed)
+
+        def init(shape, dtype, partition_info):
+            return rng.standard_t(1, size=shape).astype(settings.np_float)
+
+        samples = tf.get_variable("random_cauchy_samples_for_omegas",
+                                  shape=(self._num_features_to_approx, self.input_dim),
+                                  dtype=settings.tf_float, initializer=init, trainable=False)
+        broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=settings.tf_float) \
+                                   + self.lengthscales
+        omegas = samples / broadcasted_lengthscales
+        alpha = self.variance
+        return omegas, alpha
 
 
 class Matern32(Stationary):
@@ -482,6 +594,22 @@ class Matern32(Stationary):
         return self.variance * (1. + np.sqrt(3.) * r) * \
                tf.exp(-np.sqrt(3.) * r)
 
+    @params_as_tensors
+    def _sample_from_spectral_density(self, random_seed):
+        rng = np.random.RandomState(random_seed)
+
+        def init(shape, dtype, partition_info):
+            return rng.standard_t(2, size=shape).astype(settings.np_float)
+
+        samples = tf.get_variable("random_t_samples_for_omegas",
+                                  shape=(self._num_features_to_approx, self.input_dim),
+                                  dtype=settings.tf_float, initializer=init, trainable=False)
+        broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=settings.tf_float) \
+                                   + self.lengthscales
+        omegas = samples / broadcasted_lengthscales
+        alpha = self.variance
+        return omegas, alpha
+
 
 class Matern52(Stationary):
     """
@@ -495,6 +623,22 @@ class Matern52(Stationary):
         r = self.euclid_dist(X, X2)
         return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) \
                * tf.exp(-np.sqrt(5.) * r)
+
+    @params_as_tensors
+    def _sample_from_spectral_density(self, random_seed):
+        rng = np.random.RandomState(random_seed)
+
+        def init(shape, dtype, partition_info):
+            return rng.standard_t(3, size=shape).astype(settings.np_float)
+
+        samples = tf.get_variable("random_t_samples_for_omegas",
+                                  shape=(self._num_features_to_approx, self.input_dim),
+                                  dtype=settings.tf_float, initializer=init, trainable=False)
+        broadcasted_lengthscales = tf.zeros((1, self.input_dim), dtype=settings.tf_float) \
+                                   + self.lengthscales
+        omegas = samples / broadcasted_lengthscales
+        alpha = self.variance
+        return omegas, alpha
 
 
 class Cosine(Stationary):
@@ -626,17 +770,26 @@ class PeriodicKernel(Kern):
     D.J.C.MacKay. Introduction to Gaussian processes. In C.M.Bishop, editor,
     Neural Networks and Machine Learning, pages 133--165. Springer, 1998.
 
-    Derived using the mapping u=(cos(x), sin(x)) on the inputs.
+    Derived using an RBF kernel once mapped the original inputs through
+    the mapping u=(cos(x), sin(x)).
+
+    The resulting kernel can be expressed as:
+    k_per(x, x') = variance * exp( -0.5 Sum_i sin^2((x_i-x'_i) * pi /period)/ell^2)
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into ell
+    hyperparameter).
     """
 
     def __init__(self, input_dim, period=1.0, variance=1.0,
-                 lengthscales=1.0, active_dims=None, name=None):
+                 lengthscales=1.0, active_dims=None, name=None,  num_features_to_approx=1000):
         # No ARD support for lengthscale or period yet
+        # this is very important -- as also assumed this for the random features too.
         super(PeriodicKernel, self).__init__(input_dim, active_dims, name=name)
         self.variance = Parameter(variance, transform=transforms.positive)
         self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
         self.ARD = False
         self.period = Parameter(period, transform=transforms.positive)
+        self.num_features_to_approx = num_features_to_approx
+
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):

@@ -27,6 +27,7 @@ from ..params import Minibatch
 from ..params import DataHolder
 
 from ..decors import params_as_tensors
+from ..decors import autoflow
 
 from ..models.model import GPModel
 
@@ -95,6 +96,7 @@ class SVGP(GPModel):
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
 
+
     @params_as_tensors
     def build_prior_KL(self):
         if self.whiten:
@@ -135,3 +137,93 @@ class SVGP(GPModel):
         mu, var = conditionals.conditional(Xnew, self.Z, self.kern, self.q_mu,
                                            q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var
+
+    @autoflow()
+    @params_as_tensors
+    def linear_weights_posterior(self):
+        """
+        Some kernels have finite dimensional feature maps. Others although not having finite
+        feature maps can have approximated feature vectors see eg.
+
+        ::
+            @inproceedings{rahimi2008random,
+              title={Random features for large-scale kernel machines},
+              author={Rahimi, Ali and Recht, Benjamin},
+              booktitle={Advances in neural information processing systems},
+              pages={1177--1184},
+              year={2008}
+            }
+
+        With these features, GP regression can be seen as Bayesian linear regression with Gaussian
+        priors on the initial weights vector. See Section 2.1 of:
+        ::
+            @book{rasmussen2006gaussian,
+              title={Gaussian processes for machine learning},
+              author={Rasmussen, Carl Edward and Williams, Christopher KI},
+              volume={1},
+              year={2006},
+              publisher={MIT press Cambridge}
+            }
+
+
+        This method compute the posterior mean and the lower trainglular decomposition of the
+        precision matrix for the distribution over the
+        linear weights.
+        Note that this method may not always work. If the kernel does not have a feature mapping
+        (even a random approximation) then a NotImplementedError will be raised.
+        :returns mean, matrix of precision/variance, flag set to true is matrix is variance.
+        """
+        assert self.num_latent == 1, "Only yet implemented for one latent variable GP."
+        # We squeeze the q_sqrt below to get it for one latent factor, this needs to be changed
+        # if want more latent values in addition to perhaps other stuff.
+
+        feats = self.kern._feature_map(self.Z)
+        num_obs = tf.shape(feats)[0]
+        num_feats = tf.shape(feats)[1]
+
+        kernel_at_z_true = self.kern.K(self.Z)
+        chol_kzz_true = tf.cholesky(kernel_at_z_true + tf.eye(num_obs, dtype=settings.tf_float)
+                                    * settings.numerics.jitter_level)
+
+        kernel_at_z_approx = tf.matmul(feats, feats, transpose_b=True)
+        chol_kzz_approx = tf.cholesky(kernel_at_z_approx + tf.eye(num_obs, dtype=settings.tf_float)
+                                      * settings.numerics.jitter_level)
+
+        # === Mean ===
+        if self.whiten:
+            # empirically we have found that going from the whitened representation to the
+            # non-whitened representation first using the true kernel and then using the kernel
+            # approximation to compute the posterior mean of the weights works better.
+            # however may still give poor estimates away from inducing points.
+            u = tf.matmul(chol_kzz_true, self.q_mu)
+        else:
+            u = self.q_mu
+
+        # Going via the O(N^3) complexity route:
+        Kzzinv_u = tf.cholesky_solve(chol_kzz_approx, u)
+        mean = tf.matmul(feats, Kzzinv_u, transpose_a=True)
+
+        # === Variance ===
+        LiPhi = tf.matrix_triangular_solve(chol_kzz_approx, feats)
+
+        if self.whiten:
+            R = tf.matmul(chol_kzz_true, tf.squeeze(self.q_sqrt))
+        else:
+            R = tf.squeeze(self.q_sqrt)
+        LitLiPhi = tf.matrix_triangular_solve(tf.transpose(chol_kzz_approx), LiPhi, lower=False)
+
+        QsrttLiPhi = tf.matmul(R, LitLiPhi, transpose_a=True)
+
+        term1 = tf.matmul(QsrttLiPhi, QsrttLiPhi, transpose_a=True)
+
+        # term 2
+        term2 = -tf.matmul(LiPhi, LiPhi, transpose_a=True)
+
+        variance = term1 + term2 + tf.eye(num_feats, num_feats, dtype=settings.tf_float)
+
+        return mean, variance, tf.constant(True, dtype=tf.bool)
+
+
+
+
+

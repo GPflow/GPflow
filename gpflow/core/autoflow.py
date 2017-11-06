@@ -16,9 +16,7 @@
 from gpflow.misc import get_attribute
 
 
-class AutoFlow:
-    __autoflow_prefix__ = '_autoflow_'
-
+class Flow:
     @classmethod
     def get_autoflow(cls, obj, name):
         if not isinstance(name, str):
@@ -42,3 +40,12 @@ class AutoFlow:
             keys = [attr for attr in obj.__dict__ if attr.startswith(prefix)]
             for key in keys:
                 delattr(obj, key)
+
+
+class AutoFlow(Flow):
+    __autoflow_prefix__ = '_autoflow_'
+
+
+class TemplateFlow(Flow):
+    __autoflow_prefix__ = '_templateflow_'
+

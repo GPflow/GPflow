@@ -21,6 +21,7 @@ from .core.base import GPflowError
 from .core.base import Build
 from .core.node import Node
 from .core.autoflow import AutoFlow
+from .core.autoflow import TemplateFlow
 from .core.tensor_converter import TensorConverter
 
 from .params import Parameterized
@@ -61,6 +62,35 @@ def params_as_tensors_for(obj, convert=True):
         _params_as_tensors_exit(obj, prev_value)
 
 
+def templateflow(template_name_for_tf, create_scope_now_=False, unique_name_=None,
+                 custom_getter_=None, **kwargs_template):
+    def templateflow_wrapper(method_to_be_wrapped):
+        @functools.wraps(method_to_be_wrapped)
+        def runnable(obj, *args, **kwargs):
+            if not isinstance(obj, Node):
+                raise GPflowError('Templateflow mode works only for node-like object.')
+            graph = obj.enquire_graph()
+            if obj.is_built(graph) is not Build.YES:
+                raise ValueError("Trying to use a templated function before the node upon which it"
+                                 " is defined on has been built.")
+            name = method_to_be_wrapped.__name__
+            store = TemplateFlow.get_autoflow(obj, name)
+            template = store.pop("template", None)
+            if template is None:
+                scope_name = _name_scope_name(obj, name)
+                with graph.as_default(), tf.name_scope(scope_name):
+                    template_name = template_name_for_tf
+                    method = functools.partial(method_to_be_wrapped, obj)
+                    template = tf.make_template(template_name, method,
+                                                create_scope_now_=create_scope_now_,
+                                                unique_name_=unique_name_,
+                                                custom_getter_=custom_getter_, **kwargs_template)
+                    store["template"] = template
+            return template(*args, **kwargs)
+        return runnable
+    return templateflow_wrapper
+
+
 def autoflow(*af_args, **af_kwargs):
     def autoflow_wrapper(method):
         @functools.wraps(method)
@@ -78,10 +108,29 @@ def autoflow(*af_args, **af_kwargs):
                 scope_name = _name_scope_name(obj, name)
                 with session.graph.as_default(), tf.name_scope(scope_name):
                     _setup_storage(store, *af_args, **af_kwargs)
+                    previous_unitialised_vars = _get_set_of_unit_var_names(session)
                     _build_method(method, obj, store)
+                    current_unitialised_vars = _get_set_of_unit_var_names(session)
+                    session.run(tf.variables_initializer(
+                      _collect_vars_with_name(current_unitialised_vars - previous_unitialised_vars)
+                    ))
             return _session_run(session, obj, store, *args, **kwargs)
         return runnable
     return autoflow_wrapper
+
+
+def _collect_vars_with_name(names):
+    return [v for v in tf.global_variables() if v.name.split(':')[0]
+     in names]
+
+
+def _get_set_of_unit_var_names(session):
+    return set(_convert_bytes_to_strings(
+        session.run(tf.report_uninitialized_variables(tf.global_variables()))))
+
+
+def _convert_bytes_to_strings(byte_iter):
+    return (x.decode("utf-8") for x in byte_iter)
 
 
 def _params_as_tensors_enter(obj, convert=True):
