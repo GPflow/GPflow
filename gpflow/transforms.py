@@ -46,6 +46,34 @@ class Identity(Transform):
         return '(none)'
 
 
+class Chain(Transform):
+    """
+    Chain two transformations together:
+    .. math::
+       y = t_1(t_2(x))
+    where y is the natural parameter and x is the free state
+    """
+
+    def __init__(self, t1, t2):
+        self.t1 = t1
+        self.t2 = t2
+
+    def forward_tensor(self, x):
+        return self.t1.forward_tensor(self.t2.forward_tensor(x))
+
+    def forward(self, x):
+        return self.t1.forward(self.t2.forward(x))
+
+    def backward(self, y):
+        return self.t2.backward(self.t1.backward(y))
+
+    def log_jacobian_tensor(self, x):
+        return self.t1.log_jacobian_tensor(self.t2.forward_tensor(x)) + self.t2.log_jacobian_tensor(x)
+
+    def __str__(self):
+        return "{} {}".format(self.t1.__str__(), self.t2.__str__())
+
+
 class Exp(Transform):
     """
     The exponential transform:
@@ -71,7 +99,7 @@ class Exp(Transform):
         return tf.reduce_sum(x)
 
     def __str__(self):
-        return '+ve'
+        return 'Exp'
 
 
 class Log1pe(Transform):
@@ -79,7 +107,7 @@ class Log1pe(Transform):
     A transform of the form
     .. math::
 
-       y = \log ( 1 + \exp(x))
+       y = \log(1 + \exp(x))
 
     x is a free variable, y is always positive.
 
@@ -143,12 +171,12 @@ class Log1pe(Transform):
 
 class Logistic(Transform):
     """
-    The logictic transform, useful for keeping variables constrained between the limits a and b:
+    The logistic transform, useful for keeping variables constrained between the limits a and b:
     .. math::
 
        y = a + (b-a) s(x)
        s(x) = 1 / (1 + \exp(-x))
-   """
+    """
     def __init__(self, a=0., b=1.):
         Transform.__init__(self)
         assert b > a
@@ -169,7 +197,7 @@ class Logistic(Transform):
         return tf.reduce_sum(x - 2. * tf.log(tf.exp(x) + 1.) + np.log(self.b - self.a))
 
     def __str__(self):
-        return '[' + str(self.a) + ', ' + str(self.b) + ']'
+        return "[{}, {}]".format(self.a, self.b)
 
 
 class Rescale(Transform):
@@ -185,26 +213,24 @@ class Rescale(Transform):
 
     This is useful for avoiding optimization or MCMC over large or small scales.
     """
-    def __init__(self, factor=1.0, chain_transform=Identity()):
-        self.factor = factor
-        self.chain_transform = chain_transform
+    def __init__(self, factor=1.0):
+        self.factor = float(factor)
 
     def forward_tensor(self, x):
-        return self.chain_transform.forward_tensor(x * self.factor)
+        return x * self.factor
 
     def forward(self, x):
-        return self.chain_transform.forward(x * self.factor)
+        return x * self.factor
 
     def backward(self, y):
-        return self.chain_transform.backward(y) / self.factor
+        return y / self.factor
 
     def log_jacobian_tensor(self, x):
         N = tf.reduce_prod(tf.shape(x))
-        return tf.cast(N, settings.tf_float) * tf.log(self.factor) + \
-                self.chain_transform.log_jacobian_tensor(x * self.factor)
+        return tf.cast(N, settings.tf_float) * tf.log(self.factor)
 
     def __str__(self):
-        return "R" + self.chain_transform.__str__()
+        return "{}*".format(self.factor)
 
 
 class DiagMatrix(Transform):
