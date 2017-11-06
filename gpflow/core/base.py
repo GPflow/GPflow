@@ -14,6 +14,9 @@
 
 import abc
 import enum
+import inspect
+
+import tensorflow as tf
 
 
 class GPflowError(Exception):
@@ -26,27 +29,63 @@ class Build(enum.Enum):
     NOT_COMPATIBLE_GRAPH = None
 
 
-class ICompilable:
-    __metaclass__ = abc.ABCMeta
+class AutoBuildTag(enum.Enum):
+    BUILD = 1
+    IGNORE = 2
+    FOLLOW = 3
 
+
+class AutoBuild(abc.ABCMeta):
+    _autobuild_arg = 'autobuild'
+    _tag = '__execute_autobuild__'
+
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        new_cls = super(AutoBuild, mcs).__new__(mcs, name, bases, namespace, **kwargs)
+        origin_init = new_cls.__init__
+        def __init__(self, *args, **kwargs):
+            autobuild = kwargs.pop(AutoBuild._autobuild_arg, True)
+            __execute_autobuild__ = AutoBuildTag.BUILD if autobuild else AutoBuildTag.IGNORE
+            tag = AutoBuild._tag
+            frame = inspect.currentframe().f_back
+            while autobuild and frame:
+                if isinstance(frame.f_locals.get(tag, None), AutoBuildTag):
+                    __execute_autobuild__ = AutoBuildTag.FOLLOW
+                    break
+                frame = frame.f_back
+            origin_init(self, *args, **kwargs)
+            if __execute_autobuild__ == AutoBuildTag.BUILD:
+                self.compile()
+        setattr(new_cls, '__init__', __init__)
+        return new_cls
+
+
+class ICompilable(metaclass=AutoBuild):
     @abc.abstractproperty
     def graph(self):
-        raise NotImplementedError()
-
-    @abc.abstractproperty
-    def session(self):
         raise NotImplementedError()
 
     @abc.abstractproperty
     def feeds(self):
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def compile(self, session=None, keep_session=True):
+    @abc.abstractproperty
+    def initializables(self):
+        raise NotImplementedError()
+
+    @abc.abstractproperty
+    def initializable_feeds(self):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def initialize(self, session=None):
+    def build(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def initialize(self, session=None, force=False):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def compile(self, session=None):
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -62,8 +101,7 @@ class ICompilable:
         raise NotImplementedError()
 
 
-class IPrior:
-    __metaclass__ = abc.ABCMeta
+class IPrior(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def logp(self, x):

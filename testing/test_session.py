@@ -12,6 +12,8 @@ from gpflow.test_util import GPflowTestCase
 
 
 class TestSessionConfiguration(GPflowTestCase):
+
+    @gpflow.autobuild(False)
     def setup(self):
         m = gpflow.models.GPR(
             np.ones((1, 1)),
@@ -29,10 +31,11 @@ class TestSessionConfiguration(GPflowTestCase):
         settings.session.inter_op_parallelism_threads = dop
         settings.session.allow_soft_placement = True
         m.compile()
-        self.assertTrue(m.session._config.inter_op_parallelism_threads == dop)
-        self.assertTrue(isinstance(m.session._config.inter_op_parallelism_threads, int))
-        self.assertTrue(m.session._config.allow_soft_placement)
-        self.assertTrue(isinstance(m.session._config.allow_soft_placement, bool))
+        session = gpflow.session_manager.get_default_session()
+        self.assertTrue(session._config.inter_op_parallelism_threads == dop)
+        self.assertTrue(isinstance(session._config.inter_op_parallelism_threads, int))
+        self.assertTrue(session._config.allow_soft_placement)
+        self.assertTrue(isinstance(session._config.allow_soft_placement, bool))
         opt = gpflow.train.ScipyOptimizer()
         opt.minimize(m, maxiter=1)
 

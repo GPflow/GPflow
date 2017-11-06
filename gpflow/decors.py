@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from .core.base import GPflowError
 from .core.base import Build
+from .core.base import AutoBuildTag
 from .core.node import Node
 from .core.autoflow import AutoFlow
 from .core.tensor_converter import TensorConverter
@@ -50,6 +51,17 @@ def params_as_tensors(method):
             _params_as_tensors_exit(obj, prev_value)
         return result
     return tensor_mode_wrapper
+
+
+def autobuild(switch=True):
+    def autobuild_wrapper(method):
+        @functools.wraps(method)
+        def runnable(*args, **kwargs):
+            if not switch:
+                __execute_autobuild__ = AutoBuildTag.IGNORE
+            return method(*args, **kwargs)
+        return runnable
+    return autobuild_wrapper
 
 
 @contextlib.contextmanager
@@ -115,6 +127,8 @@ def _session_run(session, obj, store, *args, **kwargs):
     feed_dict.update(dict(zip(store['arguments'], args)))
     if obj.feeds:
         feed_dict.update(obj.feeds)
+    initialize = kwargs.pop('initialize', True)
+    obj.initialize(session=session, force=initialize)
     return session.run(store['result'], **kwargs)
 
 

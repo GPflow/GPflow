@@ -20,10 +20,12 @@ class SampleGaussianTest(GPflowTestCase):
         def _build_likelihood(self):
             return tf.constant(0.0, dtype=gpflow.settings.np_float)
 
+    @gpflow.autobuild(False)
     def setUp(self):
-        tf.set_random_seed(1)
-        self.m = SampleGaussianTest.Gauss()
-        self.hmc = gpflow.train.HMC()
+        with self.test_context():
+            tf.set_random_seed(1)
+            self.m = SampleGaussianTest.Gauss()
+            self.hmc = gpflow.train.HMC()
 
     def test_mean_cov(self):
         with self.test_context():
@@ -99,76 +101,69 @@ class SampleGaussianTest(GPflowTestCase):
             self.assertEqual(col_names, names)
 
 
+class Quadratic(gpflow.models.Model):
+    def __init__(self):
+        super(Quadratic, self).__init__()
+        rng = np.random.RandomState(0)
+        self.x = gpflow.Param(rng.randn(2), dtype=gpflow.settings.np_float)
+    @gpflow.params_as_tensors
+    def _build_likelihood(self):
+        return -tf.reduce_sum(tf.square(self.x))
+
+
 class SampleModelTest(GPflowTestCase):
     """
     Create a very simple model and make sure samples form is make sense.
     """
+
     def setUp(self):
         tf.set_random_seed(1)
-        rng = np.random.RandomState(0)
-        class Quadratic(gpflow.models.Model):
-            def __init__(self):
-                super(Quadratic, self).__init__()
-                self.x = gpflow.Param(rng.randn(2), dtype=gpflow.settings.np_float)
-            @gpflow.params_as_tensors
-            def _build_likelihood(self):
-                return -tf.reduce_sum(tf.square(self.x))
-        self.m = Quadratic()
-
-        def get_samples():
-            num_samples = 100
-            m = SampleGaussianTest.Gauss()
-            m.compile()
-            hmc = gpflow.train.HMC()
-            samples = hmc.sample(m, num_samples=num_samples, epsilon=0.05,
-                                 lmin=10, lmax=20, thin=10)
-            return np.array(samples[m.x.full_name].values.tolist(), dtype=np.float32)
 
     def test_mean(self):
         with self.test_context():
-            self.m.compile()
+            m = Quadratic()
             hmc = gpflow.train.HMC()
             num_samples = 400
-            samples = hmc.sample(self.m, num_samples=num_samples, epsilon=0.05,
-                                 lmin=10, lmax=20, thin=10)
-            xs = np.array(samples[self.m.x.full_name].tolist(), dtype=np.float32)
+            samples = hmc.sample(m, num_samples=num_samples,
+                                 epsilon=0.05, lmin=10, lmax=20, thin=10)
+            xs = np.array(samples[m.x.full_name].tolist(), dtype=np.float32)
             self.assertEqual(samples.shape, (400, 2))
             self.assertEqual(xs.shape, (400, 2))
             assert_almost_equal(xs.mean(0), np.zeros(2), decimal=1)
 
 
 class CheckTrainingVariableState(GPflowTestCase):
-    def setUp(self):
+    def model(self):
         X, Y = np.random.randn(2, 10, 1)
-        self.m = gpflow.models.GPMC(
+        return gpflow.models.GPMC(
             X, Y,
             kern=gpflow.kernels.Matern32(1),
             likelihood=gpflow.likelihoods.StudentT())
 
     def test_last_update(self):
         with self.test_context():
-            self.m.compile()
+            m = self.model()
             hmc = gpflow.train.HMC()
-            samples = hmc.sample(self.m, num_samples=10, lmin=1, lmax=10, epsilon=0.05, thin=10)
-            self.check_last_variables_state(self.m, samples)
+            samples = hmc.sample(m, num_samples=10, lmin=1, lmax=10, epsilon=0.05, thin=10)
+            self.check_last_variables_state(m, samples)
 
     def test_with_fixed(self):
         with self.test_context():
-            self.m.kern.lengthscales.trainable = False
-            self.m.compile()
+            m = self.model()
+            m.kern.lengthscales.trainable = False
             hmc = gpflow.train.HMC()
-            samples = hmc.sample(self.m, num_samples=10, lmax=10, epsilon=0.05)
-            missing_param = self.m.kern.lengthscales.full_name
+            samples = hmc.sample(m, num_samples=10, lmax=10, epsilon=0.05)
+            missing_param = m.kern.lengthscales.full_name
             self.assertTrue(missing_param not in samples)
-            self.check_last_variables_state(self.m, samples)
+            self.check_last_variables_state(m, samples)
 
     def test_multiple_runs(self):
         with self.test_context():
-            self.m.compile()
+            m = self.model()
             hmc = gpflow.train.HMC()
             for n in range(1, 5):
-                samples = hmc.sample(self.m, num_samples=n, lmax=10, epsilon=0.05)
-                self.check_last_variables_state(self.m, samples)
+                samples = hmc.sample(m, num_samples=n, lmax=10, epsilon=0.05)
+                self.check_last_variables_state(m, samples)
 
     def check_last_variables_state(self, m, samples):
         xs = samples.drop('logprobs', axis=1)

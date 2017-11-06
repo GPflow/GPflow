@@ -11,19 +11,24 @@ from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
 
+class Foo(gpflow.models.Model):
+    def _build_likelihood(self):
+        return tf.constant(0, dtype=gpflow.settings.np_float)
+
 class TestDataHolderSimple(GPflowTestCase):
-    def setup(self):
-        m = gpflow.models.Model()
+    def setup(self, autobuild=True):
+        m = Foo()
         rng = np.random.RandomState()
-        m.X = gpflow.DataHolder(rng.randn(2, 2))
-        m.Y = gpflow.DataHolder(rng.randn(2, 2))
-        m.Z = gpflow.DataHolder(rng.randn(2, 2))
-        m._build_likelihood = lambda: tf.constant(0, dtype=gpflow.settings.np_float)
+        m.X = gpflow.DataHolder(rng.randn(2, 2), autobuild=False)
+        m.Y = gpflow.DataHolder(rng.randn(2, 2), autobuild=False)
+        m.Z = gpflow.DataHolder(rng.randn(2, 2), autobuild=False)
+        if autobuild:
+            m.compile()
         return m, rng
 
     def test_types(self):
         with self.test_context():
-            m, _ = self.setup()
+            m, _ = self.setup(False)
             self.assertEqual(m.X.dtype, settings.np_float)
             self.assertEqual(m.Y.dtype, settings.np_float)
             self.assertEqual(m.Z.dtype, settings.np_float)
@@ -41,7 +46,6 @@ class TestDataHolderSimple(GPflowTestCase):
     def test_same_shape(self):
         with self.test_context():
             m, rng = self.setup()
-            m.compile()
 
             new_X = rng.randn(2, 2)
             m.X = new_X
@@ -60,17 +64,17 @@ class TestDataHolderSimple(GPflowTestCase):
 
     def test_raise(self):
         with self.test_context():
-            m, rng = self.setup()
-            m.compile()
+            m, rng = self.setup(True)
             with self.assertRaises(gpflow.GPflowError):
                 m.Y = rng.randn(3, 3)
 
 
 class TestDataHolderIntegers(GPflowTestCase):
     def setup(self):
-        m = gpflow.models.Model()
+        m = Foo(autobuild=False)
         rng = np.random.RandomState()
         m.X = gpflow.DataHolder(rng.randint(0, 10, (2, 2)), dtype=gpflow.settings.np_int)
+        m.compile()
         return m, rng
 
     def test_types(self):

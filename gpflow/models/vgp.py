@@ -71,7 +71,7 @@ class VGP(GPModel):
         transform = transforms.LowerTriangular(self.num_data, self.num_latent)
         self.q_sqrt = Parameter(q_sqrt, transform=transform)
 
-    def compile(self, session=None, keep_session=True):
+    def compile(self, session=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -85,7 +85,7 @@ class VGP(GPModel):
             self.q_sqrt = Parameter(np.eye(self.num_data)[:, :, None] *
                                     np.ones((1, 1, self.num_latent)))
 
-        return super(VGP, self).compile(session=session, keep_session=keep_session)
+        return super(VGP, self).compile(session=session)
 
     @params_as_tensors
     def _build_likelihood(self):
@@ -160,7 +160,7 @@ class VGP_opper_archambeau(GPModel):
     """
 
     def __init__(self, X, Y, kern, likelihood,
-                 mean_function=Zero(),
+                 mean_function=None,
                  num_latent=None,
                  **kwargs):
         """
@@ -168,6 +168,9 @@ class VGP_opper_archambeau(GPModel):
         Y is a data matrix, size N x R
         kern, likelihood, mean_function are appropriate GPflow objects
         """
+
+        mean_function = Zero() if mean_function is None else mean_function
+
         X = DataHolder(X)
         Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
@@ -177,7 +180,7 @@ class VGP_opper_archambeau(GPModel):
         self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
 
-    def compile(self, session=None, keep_session=True):
+    def compile(self, session=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -190,8 +193,7 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
                                       transforms.positive)
-        return super(VGP_opper_archambeau, self).compile(
-            session=session, keep_session=keep_session)
+        return super(VGP_opper_archambeau, self).compile(session=session)
 
     @params_as_tensors
     def _build_likelihood(self):

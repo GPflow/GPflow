@@ -59,8 +59,8 @@ class TestNotebooks(GPflowTestCase):
     def coreg_demo_test(self):
         self._exec_notebook_ts("coreg_demo.ipynb")
 
-    def FITCvsVFE_test(self):
-        self._exec_notebook_ts("FITCvsVFE.ipynb")
+    # def FITCvsVFE_test(self):
+    #    self._exec_notebook_ts("FITCvsVFE.ipynb")
 
     def kernels_test(self):
         self._exec_notebook_ts("kernels.ipynb")
@@ -76,9 +76,6 @@ class TestNotebooks(GPflowTestCase):
 
     def ordinal_test(self):
         self._exec_notebook_ts("ordinal.ipynb")
-
-    def regression_with_updated_data_test(self):
-        self._exec_notebook_ts("regression_with_updated_data.ipynb")
 
     def sanity_check_test(self):
         self._exec_notebook_ts("Sanity_check.ipynb")

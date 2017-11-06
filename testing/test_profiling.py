@@ -2,12 +2,14 @@ import glob
 import os
 
 import numpy as np
+import tensorflow as tf
 
 import gpflow
 from gpflow.test_util import GPflowTestCase
 
 
 class TestProfiling(GPflowTestCase):
+    @gpflow.autobuild(False)
     def setup(self):
         X = np.random.rand(100, 1)
         Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
@@ -22,21 +24,20 @@ class TestProfiling(GPflowTestCase):
         s.profiling.output_file_name = 'test_trace_profile'
 
         with gpflow.settings.temp_settings(s):
-            m.compile()
-            opt = gpflow.train.ScipyOptimizer()
-            opt.minimize(m, maxiter=10)
+            with gpflow.session_manager.get_session():
+                m.compile()
+                opt = gpflow.train.ScipyOptimizer()
+                opt.minimize(m, maxiter=10)
 
         expected_file = os.path.join(s.profiling.output_directory,
                                      s.profiling.output_file_name + '.json')
 
-        print(expected_file)
         self.assertTrue(os.path.exists(expected_file))
         os.remove(expected_file)
 
 
     def test_autoflow(self):
         m = self.setup()
-
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
         s.profiling.output_directory = os.path.dirname(__file__)
@@ -68,9 +69,10 @@ class TestProfiling(GPflowTestCase):
         name = 'test_eachtime'
         s.profiling.output_file_name = name
         with gpflow.settings.temp_settings(s):
-            m.compile()
-            opt = gpflow.train.ScipyOptimizer()
-            opt.minimize(m, maxiter=2)
+            with gpflow.session_manager.get_session():
+                m.compile()
+                opt = gpflow.train.ScipyOptimizer()
+                opt.minimize(m, maxiter=2)
 
         pattern = s.profiling.output_directory + '/{name}*.json'.format(name=name)
         for filename in glob.glob(pattern):

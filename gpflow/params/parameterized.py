@@ -151,8 +151,8 @@ class Parameterized(Node):
     def __str__(self):
         return '\n\n'.join([p.__str__() for p in self.parameters])
 
-    def assign(self, values, session=None):
-        session = self.enquire_session(session=session, allow_none=True)
+    def assign(self, values, session=None, force=True):
+        session = self.enquire_session(session=session)
         params = {param.full_name: param for param in self.parameters}
         val_keys = set(values.keys())
         if not val_keys.issubset(params.keys()):
@@ -162,19 +162,22 @@ class Parameterized(Node):
         prev_values = {}
         for key in val_keys:
             try:
-                prev_values[key] = params[key].read_value()
-                params[key].assign(values[key], session=session)
+                prev_values[key] = params[key].read_value(session=session)
+                params[key].assign(values[key], session=session, force=force)
             except (GPflowError, ValueError) as error:
                 for rkey, rvalue in prev_values.items():
-                    params[rkey].assign(rvalue, session=session)
+                    params[rkey].assign(rvalue, session=session, force=True)
                 raise error
 
-    def anchor(self):
+    def anchor(self, session):
+        if session is None:
+            ValueError('Session is required when anchoring.')
         for parameter in self.trainable_parameters:
-            parameter.assign(parameter.read_value())
+            value = parameter.read_value(session)
+            parameter.assign(value, session=session)
 
     def read_trainables(self, session=None):
-        session = self.enquire_session(session, allow_none=True)
+        session = self.enquire_session(session)
         return [param.read_value(session) for param in self.trainable_parameters]
 
     def is_built(self, graph):
@@ -192,13 +195,6 @@ class Parameterized(Node):
     def set_trainable(self, value, graph=None):
         for param in self.params:
             param.set_trainable(value, graph=graph)
-
-    def initialize(self, session=None):
-        session = self.enquire_session(session)
-        initializables = self.initializables
-        if initializables:
-            init = tf.variables_initializer(initializables)
-            session.run(init, feed_dict=self.initializable_feeds)
 
     @staticmethod
     def _is_param_like(value):
@@ -220,7 +216,7 @@ class Parameterized(Node):
 
     def _build(self):
         for param in self.params:
-            param._build_with_name_scope() # pylint: disable=W0212
+            param.build()
         priors = []
         for param in self.params:
             if not isinstance(param, DataHolder):
@@ -257,7 +253,7 @@ class Parameterized(Node):
             param.set_parent()
             param.set_name()
         elif isinstance(param, Parameter) and misc.is_valid_param_value(value):
-            param.assign(value, session=self.session)
+            param.assign(value)
         else:
             msg = '"{0}" type cannot be assigned to "{1}".'
             raise ValueError(msg.format(type(value), name))
@@ -277,7 +273,8 @@ class Parameterized(Node):
             raise ValueError('Cannot be assigned as parameter to itself.')
 
         if key in self.__dict__.keys():
-            if Parameterized._is_param_like(getattr(self, key)):
+            assignee_param = getattr(self, key)
+            if Parameterized._is_param_like(assignee_param):
                 self._update_param_attribute(key, value)
                 return
 

@@ -44,8 +44,10 @@ def get_tensor_by_name(name, index=None, graph=None):
 def is_ndarray(value):
     return isinstance(value, np.ndarray)
 
+
 def is_list(value):
     return isinstance(value, list)
+
 
 def is_tensor(value):
     return isinstance(value, (tf.Tensor, tf.Variable))
@@ -72,7 +74,7 @@ def initialize_variables(variables=None, session=None, force=False, **run_kwargs
     if variables is None:
         initializer = tf.global_variables_initializer()
     else:
-        if not force:
+        if force:
             initializer = tf.variables_initializer(variables)
         else:
             uninitialized = tf.report_uninitialized_variables(var_list=variables)

@@ -83,13 +83,12 @@ class TestShareArgs(GPflowTestCase):
     instances.
     """
     def setUp(self):
-        self.m1 = AddModel()
-        self.m2 = AddModel()
+        with self.test_context():
+            self.m1 = AddModel()
+            self.m2 = AddModel()
 
     def test_share_args(self):
         with self.test_context():
-            self.m1.compile()
-            self.m2.compile()
             rng = np.random.RandomState(0)
             x = rng.randn(10, 20)
             y = rng.randn(10, 20)
@@ -155,25 +154,6 @@ class TestGPmodel(GPflowTestCase):
             m.compute_log_likelihood()
             m.compute_log_prior()
             m.compute_log_likelihood()
-
-
-class TestResetGraph(GPflowTestCase):
-    def setup(self):
-        k = gpflow.kernels.Matern32(1)
-        X, Y = np.random.randn(2, 10, 1)
-        xnew = np.random.randn(5, 1)
-        m = gpflow.models.GPR(X, Y, kern=k)
-        session = tf.Session(graph=tf.Graph())
-        m.compile(session=session)
-        return m, xnew
-
-    def test_reset_graph(self):
-        m, x = self.setup()
-        mu0, var0 = m.predict_f(x)
-        tf.reset_default_graph()
-        mu1, var1 = m.predict_f(x)
-        assert_almost_equal(mu0, mu1)
-        assert_almost_equal(var0, var1)
 
 
 class TestFixAndPredict(GPflowTestCase):

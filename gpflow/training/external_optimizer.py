@@ -82,64 +82,26 @@ class ExternalOptimizerInterface(object):
           `var[0, 1]` less than 2, etc.
       **optimizer_kwargs: Other subclass-specific keyword arguments.
     """
+    self.optimizer_kwargs = optimizer_kwargs
+
     self._loss = loss
     self._equalities = equalities or []
     self._inequalities = inequalities or []
+    self._var_to_bounds = var_to_bounds
 
     if var_list is None:
       self._vars = variables.trainable_variables()
     else:
       self._vars = list(var_list)
 
-    packed_bounds = None
-    if var_to_bounds is not None:
-      left_packed_bounds = []
-      right_packed_bounds = []
-      for var in self._vars:
-        shape = var.get_shape().as_list()
-        bounds = (-np.infty, np.infty)
-        if var in var_to_bounds:
-          bounds = var_to_bounds[var]
-        left_packed_bounds.extend(list(np.broadcast_to(bounds[0], shape).flat))
-        right_packed_bounds.extend(list(np.broadcast_to(bounds[1], shape).flat))
-      packed_bounds = list(zip(left_packed_bounds, right_packed_bounds))
-    self._packed_bounds = packed_bounds
-
-    self._update_placeholders = [
-        array_ops.placeholder(var.dtype) for var in self._vars
-    ]
-    self._var_updates = [
-        var.assign(array_ops.reshape(placeholder, _get_shape_tuple(var)))
-        for var, placeholder in zip(self._vars, self._update_placeholders)
-    ]
-
-    loss_grads = _compute_gradients(loss, self._vars)
-    equalities_grads = [
-        _compute_gradients(equality, self._vars)
-        for equality in self._equalities
-    ]
-    inequalities_grads = [
-        _compute_gradients(inequality, self._vars)
-        for inequality in self._inequalities
-    ]
-
-    self.optimizer_kwargs = optimizer_kwargs
-
-    self._packed_var = self._pack(self._vars)
-    self._packed_loss_grad = self._pack(loss_grads)
-    self._packed_equality_grads = [
-        self._pack(equality_grads) for equality_grads in equalities_grads
-    ]
-    self._packed_inequality_grads = [
-        self._pack(inequality_grads) for inequality_grads in inequalities_grads
-    ]
-
-    dims = [_prod(_get_shape_tuple(var)) for var in self._vars]
-    accumulated_dims = list(_accumulate(dims))
-    self._packing_slices = [
-        slice(start, end)
-        for start, end in zip(accumulated_dims[:-1], accumulated_dims[1:])
-    ]
+    self._initialized = False
+    self._packed_bounds = []
+    self._update_placeholders = []
+    self._var_updates = []
+    self._packed_var = None
+    self._packed_loss_grad = None
+    self._packed_equality_grads = []
+    self._packed_inequality_grads = []
 
   def minimize(self,
                session=None,
@@ -175,6 +137,10 @@ class ExternalOptimizerInterface(object):
 
     loss_callback = loss_callback or (lambda *fetches: None)
     step_callback = step_callback or (lambda xk: None)
+
+
+    if not self._initialized:
+      self._initialize(session)
 
     # Construct loss function and associated gradient.
     loss_grad_func = self._make_eval_func([self._loss,
@@ -216,6 +182,63 @@ class ExternalOptimizerInterface(object):
         self._var_updates,
         feed_dict=dict(zip(self._update_placeholders, var_vals)),
         **run_kwargs)
+
+  def _initialize(self, session):
+    shapes = array_ops.shape_n(self._vars)
+    self._var_shapes = list(map(tuple, session.run(shapes)))
+    vars_and_shapes = zip(self._vars, self._var_shapes)
+    vars_and_shapes_dict = dict(vars_and_shapes)
+
+    packed_bounds = None
+    if self._var_to_bounds is not None:
+      left_packed_bounds = []
+      right_packed_bounds = []
+      for var, var_shape in vars_and_shapes:
+        shape = list(var_shape)
+        bounds = (-np.infty, np.infty)
+        if var in var_to_bounds:
+          bounds = var_to_bounds[var]
+        left_packed_bounds.extend(list(np.broadcast_to(bounds[0], shape).flat))
+        right_packed_bounds.extend(list(np.broadcast_to(bounds[1], shape).flat))
+      packed_bounds = list(zip(left_packed_bounds, right_packed_bounds))
+    self._packed_bounds = packed_bounds
+
+    self._update_placeholders = [
+        array_ops.placeholder(var.dtype) for var in self._vars
+    ]
+    self._var_updates = [
+        var.assign(array_ops.reshape(placeholder, vars_and_shapes_dict[var]))
+        for var, placeholder in zip(self._vars, self._update_placeholders)
+    ]
+
+    loss_grads = _compute_gradients(self._loss, self._vars)
+    equalities_grads = [
+        _compute_gradients(equality, self._vars)
+        for equality in self._equalities
+    ]
+    inequalities_grads = [
+        _compute_gradients(inequality, self._vars)
+        for inequality in self._inequalities
+    ]
+
+    self._packed_var = self._pack(self._vars)
+    self._packed_loss_grad = self._pack(loss_grads)
+    self._packed_equality_grads = [
+        self._pack(equality_grads) for equality_grads in equalities_grads
+    ]
+    self._packed_inequality_grads = [
+        self._pack(inequality_grads) for inequality_grads in inequalities_grads
+    ]
+
+    dims = [_prod(vars_and_shapes_dict[var]) for var in self._vars]
+    accumulated_dims = list(_accumulate(dims))
+    self._packing_slices = [
+        slice(start, end)
+        for start, end in zip(accumulated_dims[:-1], accumulated_dims[1:])
+    ]
+
+    self._initialize = True
+
 
   def _minimize(self, initial_val, loss_grad_func, equality_funcs,
                 equality_grad_funcs, inequality_funcs, inequality_grad_funcs,
@@ -269,8 +292,9 @@ class ExternalOptimizerInterface(object):
 
     def eval_func(x):
       """Function to evaluate a `Tensor`."""
+      shapes = dict(zip(self._vars, self._var_shapes))
       augmented_feed_dict = {
-          var: x[packing_slice].reshape(_get_shape_tuple(var))
+          var: x[packing_slice].reshape(shapes[var])
           for var, packing_slice in zip(self._vars, self._packing_slices)
       }
       augmented_feed_dict.update(feed_dict)
@@ -421,10 +445,6 @@ def _accumulate(list_):
   for x in list_:
     total += x
     yield total
-
-
-def _get_shape_tuple(tensor):
-  return tuple(dim.value for dim in tensor.get_shape())
 
 
 def _prod(array):

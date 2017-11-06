@@ -21,6 +21,10 @@ from tensorflow.python.client import timeline
 from gpflow import settings
 
 
+class _DefaultSessionKeeper:
+    session = None
+
+
 class TracerSession(tf.Session):
     def __init__(self, output_file_name=None, output_directory=None,
                  each_time=None, **kwargs):
@@ -79,6 +83,18 @@ class TracerSession(tf.Session):
             self.counter += 1
 
         return output
+
+
+def reset_default_session(*args, **kwargs):
+    _DefaultSessionKeeper.session = get_session(*args, **kwargs)
+
+
+def get_default_session(*args, **kwargs):
+    reset = kwargs.pop('reset', False)
+    if reset or _DefaultSessionKeeper.session is None:
+        _DefaultSessionKeeper.session = get_session(*args, **kwargs)
+    return _DefaultSessionKeeper.session
+
 
 def get_session(*args, **kwargs):
     """

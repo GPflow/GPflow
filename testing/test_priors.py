@@ -13,111 +13,113 @@
 # limitations under the License.from __future__ import print_function
 
 import unittest
+
 import numpy as np
+from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
+class FlatModel(gpflow.models.Model):
+    def _build_likelihood(self):
+        return np.array(0., dtype=settings.np_float)
 
 class PriorModeTests(GPflowTestCase):
     """
     these tests optimize the prior to find the mode numerically. Make sure the
     mode is the same as the known mode.
     """
-    def setUp(self):
-        class FlatModel(gpflow.models.Model):
-            def _build_likelihood(self):
-                return np.array(0., dtype=settings.np_float)
-        self.m = FlatModel()
+    def setup(self, autobuild=False):
+        return FlatModel(autobuild=autobuild)
 
     def testGaussianMode(self):
         with self.test_context():
-            self.m.x = gpflow.Param(1.)
-            self.m.x.prior = gpflow.priors.Gaussian(3., 1.)
+            m = self.setup()
+            m.x = gpflow.Param(1., autobuild=False)
+            m.x.prior = gpflow.priors.Gaussian(3., 1.)
 
-            self.m.compile()
+            m.compile()
             opt = gpflow.train.ScipyOptimizer()
-            opt.minimize(self.m)
-            xmax = self.m.read_trainables()
-            self.assertTrue(np.allclose(xmax, 3))
+            opt.minimize(m)
+            xmax = m.read_trainables()
+            assert_allclose(xmax, 3)
 
     def testGaussianModeMatrix(self):
         with self.test_context():
-            self.m.x = gpflow.Param(np.random.randn(4, 4))
-            self.m.x.prior = gpflow.priors.Gaussian(-1., 10.)
+            m = self.setup()
+            m.x = gpflow.Param(np.random.randn(4, 4), prior=gpflow.priors.Gaussian(-1., 10.))
 
-            self.m.compile()
+            m.compile()
             opt = gpflow.train.ScipyOptimizer()
-            opt.minimize(self.m)
-            xmax = self.m.read_trainables()
-            self.assertTrue(np.allclose(xmax, -1.))
+            opt.minimize(m)
+            xmax = m.read_trainables()
+            assert_allclose(xmax, -1.)
 
     def testGammaMode(self):
         with self.test_context():
-            self.m.x = gpflow.Param(1.0)
+            m = self.setup()
+            m.x = gpflow.Param(1.0, autobuild=False)
             shape, scale = 4., 5.
-            self.m.x.prior = gpflow.priors.Gamma(shape, scale)
+            m.x.prior = gpflow.priors.Gamma(shape, scale)
 
-            self.m.compile()
+            m.compile()
             opt = gpflow.train.ScipyOptimizer()
-            opt.minimize(self.m)
+            opt.minimize(m)
 
             true_mode = (shape - 1.) * scale
-            self.assertTrue(np.allclose(self.m.x.read_value(), true_mode, 1e-3))
+            assert_allclose(m.x.read_value(), true_mode, 1e-3)
 
     def testLaplaceMode(self):
         with self.test_context():
-            self.m.x = gpflow.Param(1.0)
-            self.m.x.prior = gpflow.priors.Laplace(3., 10.)
-
-            self.m.compile()
+            m = self.setup()
+            m.x = gpflow.Param(1.0, prior=gpflow.priors.Laplace(3., 10.))
+            m.compile()
             opt = gpflow.train.ScipyOptimizer()
-            opt.minimize(self.m)
-            xmax = self.m.read_trainables()
-            self.assertTrue(np.allclose(xmax, 3))
+            opt.minimize(m)
+            xmax = m.read_trainables()
+            assert_allclose(xmax, 3)
 
     def testLogNormalMode(self):
         with self.test_context():
-            self.m.x = gpflow.Param(1.0)
-            self.m.x.prior = gpflow.priors.LogNormal(3., 10.)
+            m = self.setup()
             transform = gpflow.transforms.Exp()
-            self.m.x.transform = transform
-
-            self.m.compile()
+            prior = gpflow.priors.LogNormal(3., 10.)
+            m.x = gpflow.Param(1.0, prior=prior, transform=transform)
+            m.compile()
             opt = gpflow.train.ScipyOptimizer()
-            opt.minimize(self.m)
-            xmax = [transform.backward(x) for x in self.m.read_trainables()]
-            self.assertTrue(np.allclose(xmax, 3))
+            opt.minimize(m)
+            xmax = [transform.backward(x) for x in m.read_trainables()]
+            assert_allclose(xmax, 3, rtol=1e4)
 
     def testBetaMode(self):
         with self.test_context():
-            self.m.x = gpflow.Param(0.1)
-            self.m.x.prior = gpflow.priors.Beta(3., 3.)
+            m = self.setup()
             transform = gpflow.transforms.Logistic()
-            self.m.x.transform = transform
+            m.x = gpflow.Param(0.1, prior=gpflow.priors.Beta(3., 3.), transform=transform)
 
-            self.m.compile()
+            m.compile()
             opt = gpflow.train.ScipyOptimizer()
-            opt.minimize(self.m)
-            xmax = [transform.backward(x) for x in self.m.read_trainables()]
-            self.assertTrue(np.allclose(0.0, xmax, atol=1.e-6))
+            opt.minimize(m)
+            xmax = [transform.backward(x) for x in m.read_trainables()]
+            assert_allclose(0.0, xmax, atol=1.e-5)
 
     def testUniform(self):
         with self.test_context():
-            self.m.x = gpflow.Param(1.0)
-            self.m.x.prior = gpflow.priors.Uniform(-2., 3.)
-            self.m.x.transform = gpflow.transforms.Logistic(-2., 3.)
-            self.m.compile()
+            m = self.setup()
+            m.x = gpflow.Param(
+                1.0, prior=gpflow.priors.Uniform(-2., 3.),
+                transform=gpflow.transforms.Logistic(-2., 3.))
 
-            self.m.x = np.random.randn(1)[0]
-            p1 = self.m.compute_log_prior()
+            m.compile()
+            m.x = np.random.randn(1)[0]
+            p1 = m.compute_log_prior()
 
-            self.m.x = np.random.randn(1)[0]
-            p2 = self.m.compute_log_prior()
+            m.x = np.random.randn(1)[0]
+            p2 = m.compute_log_prior()
 
             # prior should no be the same because a transformation has been applied.
-            self.assertFalse(p1 == p2)
+            self.assertTrue(p1 != p2)
 
 
 if __name__ == "__main__":

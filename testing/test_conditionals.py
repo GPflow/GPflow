@@ -78,7 +78,6 @@ class WhitenTest(GPflowTestCase):
     def setup(self):
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
         k.white.variance = 0.01
-        k.compile()
 
         num_data = 10
         num_test_data = 100
@@ -103,6 +102,8 @@ class WhitenTest(GPflowTestCase):
 
         with self.test_context() as sess:
             Xs, X, F, k, num_data, feed_dict = self.setup()
+            k.compile(session=sess)
+            
             K = k.K(X) + tf.eye(num_data, dtype=settings.np_float) * 1e-6
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, F, lower=True)
@@ -126,6 +127,7 @@ class WhitenTestGaussian(WhitenTest):
         with self.test_context() as sess:
             rng = np.random.RandomState(0)
             Xs, X, F, k, num_data, feed_dict = self.setup()
+            k.compile(session=sess)
 
             F_sqrt = tf.placeholder(settings.np_float, [num_data, 1])
             F_sqrt_data = rng.rand(num_data, 1)

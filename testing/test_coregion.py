@@ -24,7 +24,7 @@ class TestEquivalence(GPflowTestCase):
         label = [np.zeros((10, 1)), np.ones((20, 1))]
         perm = list(range(30))
         rng.shuffle(perm)
-        Xtest = rng.rand(10, 2)*10
+        Xtest = rng.rand(10, 2) * 10
 
         X_augumented = np.hstack([np.concatenate(X), np.concatenate(label)])
         Y_augumented = np.hstack([np.concatenate(Y), np.concatenate(label)])
@@ -68,12 +68,9 @@ class TestEquivalence(GPflowTestCase):
         if hasattr(self, '_optimized'):
             return
 
-        self.session = tf.Session(graph=tf.Graph())
-        with self.session.graph.as_default(), self.session.as_default():
+        self.test_graph = tf.Graph()
+        with self.test_context():
             vgp0, vgp1, cvgp, Xtest = self.setup()
-            vgp0.compile()
-            vgp1.compile()
-            cvgp.compile()
             opt1 = gpflow.train.ScipyOptimizer()
             opt2 = gpflow.train.ScipyOptimizer()
             opt3 = gpflow.train.ScipyOptimizer()
@@ -87,7 +84,7 @@ class TestEquivalence(GPflowTestCase):
             self._optimized = True
 
     def test_likelihood_variance(self):
-        with self.session.graph.as_default(), self.session.as_default():
+        with self.test_context():
             assert_allclose(self.vgp0.likelihood.variance.read_value(),
                             self.cvgp.likelihood.likelihood_list[0].variance.read_value(),
                             atol=1e-2)
@@ -96,7 +93,7 @@ class TestEquivalence(GPflowTestCase):
                             atol=1e-2)
 
     def test_kernel_variance(self):
-        with self.session.graph.as_default(), self.session.as_default():
+        with self.test_context():
             assert_allclose(self.vgp0.kern.variance.read_value(),
                             self.cvgp.kern.coregion.kappa.read_value()[0],
                             atol=1.0e-2)
@@ -105,7 +102,7 @@ class TestEquivalence(GPflowTestCase):
                             atol=1.0e-2)
 
     def test_mean_values(self):
-        with self.session.graph.as_default(), self.session.as_default():
+        with self.test_context():
             assert_allclose(self.vgp0.mean_function.c.read_value(),
                             self.cvgp.mean_function.meanfunction_list[0].c.read_value(),
                             atol=1.0e-2)
@@ -114,7 +111,7 @@ class TestEquivalence(GPflowTestCase):
                             atol=1.0e-2)
 
     def test_predicts(self):
-        with self.session.graph.as_default(), self.session.as_default():
+        with self.test_context():
             X_augumented0 = np.hstack([self.Xtest, np.zeros((self.Xtest.shape[0], 1))])
             X_augumented1 = np.hstack([self.Xtest, np.ones((self.Xtest.shape[0], 1))])
             Ytest = [np.sin(x) + 0.9 * np.cos(x*1.6) for x in self.Xtest]

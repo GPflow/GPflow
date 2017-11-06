@@ -207,11 +207,11 @@ class Kern(Parameterized):
             X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
             if X2 is not None:
                 X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
-        with tf.control_dependencies([
-                            tf.assert_equal(tf.shape(X)[1],
-                                            tf.constant(self.input_dim, dtype=settings.tf_int))]):
+        input_dim_shape = tf.shape(X)[1]
+        input_dim = tf.convert_to_tensor(self.input_dim, dtype=settings.tf_int)
+        with tf.control_dependencies([tf.assert_equal(input_dim_shape, input_dim)]):
             X = tf.identity(X)
-
+            
         return X, X2
 
     def _slice_cov(self, cov):
