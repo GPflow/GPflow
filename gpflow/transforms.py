@@ -243,8 +243,9 @@ class Rescale(Transform):
         return self.chain_transform.backward(y) / self.factor
 
     def tf_log_jacobian(self, x):
-        return tf.cast(tf.reduce_prod(tf.shape(x)), float_type) * \
-                self.factor * self.chain_transform.tf_log_jacobian(x * self.factor)
+        N = tf.reduce_prod(tf.shape(x))
+        return tf.cast(N, float_type) * tf.log(tf.cast(self.factor, float_type)) + \
+                self.chain_transform.tf_log_jacobian(x * self.factor)
 
     def __str__(self):
         return "R" + self.chain_transform.__str__()
