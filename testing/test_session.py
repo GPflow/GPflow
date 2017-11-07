@@ -13,7 +13,7 @@ from gpflow.test_util import GPflowTestCase
 
 class TestSessionConfiguration(GPflowTestCase):
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setup(self):
         m = gpflow.models.GPR(
             np.ones((1, 1)),

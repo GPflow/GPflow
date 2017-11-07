@@ -20,7 +20,7 @@ class SampleGaussianTest(GPflowTestCase):
         def _build_likelihood(self):
             return tf.constant(0.0, dtype=gpflow.settings.np_float)
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setUp(self):
         with self.test_context():
             tf.set_random_seed(1)

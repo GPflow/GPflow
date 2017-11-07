@@ -59,7 +59,7 @@ class TestKernExpDelta(GPflowTestCase):
     indicate whether things work or not.
     """
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setUp(self):
         self.test_graph = tf.Graph()
         with self.test_context():
@@ -124,7 +124,7 @@ class TestKernExpDelta(GPflowTestCase):
 class TestKernExpActiveDims(GPflowTestCase):
     _threshold = 0.5
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setUp(self):
         self.test_graph = tf.Graph()
         with self.test_context():
@@ -198,7 +198,7 @@ class TestKernExpActiveDims(GPflowTestCase):
 class TestExpxKxzActiveDims(GPflowTestCase):
     _threshold = 0.5
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setUp(self):
         self.test_graph = tf.Graph()
         with self.test_context():
@@ -273,7 +273,7 @@ class TestKernExpQuadrature(GPflowTestCase):
     _threshold = 0.5
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setUp(self):
         self.test_graph = tf.Graph()
         self.rng = np.random.RandomState(1)  # this seed works with 60 GH points
@@ -402,7 +402,7 @@ class TestKernProd(GPflowTestCase):
     Need a separate test for this as Prod currently only supports diagonal Xcov matrices with non-overlapping kernels.
     """
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setUp(self):
         self.test_graph = tf.Graph()
         with self.test_context():
@@ -458,7 +458,7 @@ class TestKernProd(GPflowTestCase):
 class TestKernExpDiagXcov(GPflowTestCase):
     _threshold = 1e-6
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setUp(self):
         self.test_graph = tf.Graph()
         with self.test_context():
@@ -554,7 +554,7 @@ class TestKernExpDiagXcov(GPflowTestCase):
 class TestAddCrossCalcs(GPflowTestCase):
     _threshold = 0.5
 
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setUp(self):
         self.test_graph = tf.Graph()
         self.rng = np.random.RandomState(0)

@@ -19,13 +19,13 @@ import tensorflow as tf
 
 from .core.base import GPflowError
 from .core.base import Build
-from .core.base import AutoBuildTag
 from .core.node import Node
 from .core.autoflow import AutoFlow
 from .core.tensor_converter import TensorConverter
 
 from .params import Parameterized
 
+from .core.base import _AutoBuildStatus
 
 def name_scope(name=None):
     def name_scope_wrapper(method):
@@ -53,15 +53,18 @@ def params_as_tensors(method):
     return tensor_mode_wrapper
 
 
-def autobuild(switch=True):
-    def autobuild_wrapper(method):
-        @functools.wraps(method)
-        def runnable(*args, **kwargs):
-            if not switch:
-                __execute_autobuild__ = AutoBuildTag.IGNORE
-            return method(*args, **kwargs)
-        return runnable
-    return autobuild_wrapper
+class defer_build(contextlib.ContextDecorator):
+    def __init__(self, defer=True):
+        self.disable_build = not defer
+        self.prev_autobuild_status = None
+
+    def __enter__(self):
+        self.prev_autobuild_status = _AutoBuildStatus.__autobuild_enabled_global__
+        _AutoBuildStatus.__autobuild_enabled_global__ = self.disable_build
+
+    def __exit__(self, *exc):
+        _AutoBuildStatus.__autobuild_enabled_global__ = self.prev_autobuild_status
+        return False
 
 
 @contextlib.contextmanager

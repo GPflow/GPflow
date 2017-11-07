@@ -319,7 +319,7 @@ class Parameter(Node):
 
         is_built = self.is_built_coherence(self.graph)
         if is_built is Build.YES:
-            raise GPflowError('Parameter has already been compiled.')
+            raise GPflowError('Parameter "{}" has already been compiled.'.format(self.full_name))
 
         name = attr.value
         if value is not None and not isinstance(value, attr.interface):

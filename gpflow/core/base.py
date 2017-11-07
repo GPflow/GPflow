@@ -29,7 +29,13 @@ class Build(enum.Enum):
     NOT_COMPATIBLE_GRAPH = None
 
 
-class AutoBuildTag(enum.Enum):
+class _AutoBuildStatus(enum.Enum):
+    # TODO(@awav): Introducing global variable is not best idea for managing compilation.
+    # Inspect approach works well, except that I have a concern that it can be slow when
+    # nesting is too deep and it doesn't work well with context managers.
+
+    __autobuild_enabled_global__ = True
+
     BUILD = 1
     IGNORE = 2
     FOLLOW = 3
@@ -44,17 +50,20 @@ class AutoBuild(abc.ABCMeta):
         origin_init = new_cls.__init__
         def __init__(self, *args, **kwargs):
             autobuild = kwargs.pop(AutoBuild._autobuild_arg, True)
-            __execute_autobuild__ = AutoBuildTag.BUILD if autobuild else AutoBuildTag.IGNORE
+            __execute_autobuild__ = _AutoBuildStatus.BUILD if autobuild else _AutoBuildStatus.IGNORE
             tag = AutoBuild._tag
             frame = inspect.currentframe().f_back
             while autobuild and frame:
-                if isinstance(frame.f_locals.get(tag, None), AutoBuildTag):
-                    __execute_autobuild__ = AutoBuildTag.FOLLOW
+                if isinstance(frame.f_locals.get(tag, None), _AutoBuildStatus):
+                    __execute_autobuild__ = _AutoBuildStatus.FOLLOW
                     break
                 frame = frame.f_back
             origin_init(self, *args, **kwargs)
-            if __execute_autobuild__ == AutoBuildTag.BUILD:
-                self.compile()
+            autobuild_on = __execute_autobuild__ == _AutoBuildStatus.BUILD
+            global_autobuild_on = _AutoBuildStatus.__autobuild_enabled_global__
+            if autobuild_on and global_autobuild_on:
+                self.build()
+                self.initialize(force=True)
         setattr(new_cls, '__init__', __init__)
         return new_cls
 
@@ -128,8 +137,7 @@ class IPrior(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
-class ITransform:
-    __metaclass__ = abc.ABCMeta
+class ITransform(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def forward(self, x):
@@ -153,7 +161,7 @@ class ITransform:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def log_jacobian(self, x):
+    def log_jacobian_tensor(self, x):
         """
         Return the log Jacobian of the forward_tensor mapping.
 

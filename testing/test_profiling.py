@@ -9,7 +9,7 @@ from gpflow.test_util import GPflowTestCase
 
 
 class TestProfiling(GPflowTestCase):
-    @gpflow.autobuild(False)
+    @gpflow.defer_build()
     def setup(self):
         X = np.random.rand(100, 1)
         Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
