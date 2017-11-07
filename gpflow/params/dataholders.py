@@ -30,9 +30,12 @@ from .parameter import Parameter
 
 
 class DataHolder(Parameter):
-    def __init__(self, value, name=None, dtype=None):
+    def __init__(self, value, dtype=None, fix_shape=False, name=None):
         self._dataholder_tensor = None
-        super(DataHolder, self).__init__(value=value, name=name, dtype=dtype)
+        super().__init__(value=value,
+                         name=name,
+                         dtype=dtype,
+                         fix_shape=fix_shape)
 
     @property
     def trainable(self):
@@ -44,8 +47,8 @@ class DataHolder(Parameter):
 
     @property
     def shape(self):
-        if self.parameter_tensor is not None:
-            return tuple(self.parameter_tensor.shape.as_list())
+        # if self.parameter_tensor is not None:
+        #     return tuple(self.parameter_tensor.shape.as_list())
         return self._value.shape
 
     def set_trainable(self, _value, graph=None):
@@ -95,37 +98,6 @@ class DataHolder(Parameter):
 
     def __str__(self):
         return self._format_parameter(shape=self.shape)
-
-
-class FormlessData(DataHolder):
-    def __init__(self, value, name=None):
-        if not misc.is_valid_param_value(value) or misc.is_tensor(value):
-            raise ValueError('The value must be either an array or a scalar.')
-        super(FormlessData, self).__init__(value, name=name)
-
-    @property
-    def feeds(self):
-        if self.parameter_tensor is None:
-            return {self.parameter_tensor: self._value}
-        return None
-
-    @property
-    def initializables(self):
-        return None
-
-    def initialize(self, session=None):
-        pass
-
-    def _build_parameter(self):
-        dtype = self._value.dtype
-        name = self._parameter_name()
-        return tf.placeholder(dtype, shape=None, name=name)
-
-    def _parameter_name(self):
-        name = 'formlessdata'
-        if self.parent is self:
-            return misc.tensor_name(self.hidden_full_name, name)
-        return name
 
 
 class Minibatch(DataHolder):

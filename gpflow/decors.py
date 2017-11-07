@@ -25,7 +25,8 @@ from .core.tensor_converter import TensorConverter
 
 from .params import Parameterized
 
-from .core.base import _AutoBuildStatus
+from .core.autobuild import AutoBuildStatus
+
 
 def name_scope(name=None):
     def name_scope_wrapper(method):
@@ -59,11 +60,11 @@ class defer_build(contextlib.ContextDecorator):
         self.prev_autobuild_status = None
 
     def __enter__(self):
-        self.prev_autobuild_status = _AutoBuildStatus.__autobuild_enabled_global__
-        _AutoBuildStatus.__autobuild_enabled_global__ = self.disable_build
+        self.prev_autobuild_status = AutoBuildStatus.__autobuild_enabled_global__
+        AutoBuildStatus.__autobuild_enabled_global__ = self.disable_build
 
     def __exit__(self, *exc):
-        _AutoBuildStatus.__autobuild_enabled_global__ = self.prev_autobuild_status
+        AutoBuildStatus.__autobuild_enabled_global__ = self.prev_autobuild_status
         return False
 
 

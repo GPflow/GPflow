@@ -51,20 +51,22 @@ class Parameter(Node):
                 return ITransform
             return None
 
-    def __init__(self, value=None, transform=None, prior=None,
-                 trainable=True, dtype=None, name=None):
-        value = self._valid_input(value, dtype=dtype)
-        super(Parameter, self).__init__(name)
-
+    def __init__(self, value, transform=None, prior=None,
+                 trainable=True, dtype=None, fix_shape=True,
+                 name=None):
         self._externally_defined = False
+        self._fixed_shape = fix_shape
+        value = self._valid_input(value, dtype=dtype)
+
+        super().__init__(name)
         self._init_parameter_defaults()
         self._init_parameter_attributes(prior, transform, trainable)
         self._init_parameter_value(value)
 
     @property
     def shape(self):
-        if self.parameter_tensor is not None:
-            return tuple(self._constrained_tensor.shape.as_list())
+        # if self.parameter_tensor is not None:
+        #     return tuple(self._constrained_tensor.shape.as_list())
         return self._value.shape
 
     @property
@@ -116,6 +118,17 @@ class Parameter(Node):
             return None
         return self.parameter_tensor.graph
 
+    @property
+    def fixed_shape(self):
+        return self._fixed_shape
+
+    def fix_shape(self):
+        if self._fixed_shape:
+            return
+        if self.parameter_tensor is not None:
+            self.parameter_tensor.set_shape(self.shape)
+        self._fixed_shape = True
+
     def anchor(self, session):
         if session is None:
             ValueError('Session is required when anchoring.')
@@ -155,18 +168,16 @@ class Parameter(Node):
     def assign(self, value, session=None, dtype=None, force=True):
         if self._externally_defined:
             raise GPflowError("Externally defined parameter tensor is not modifiable.")
+
         value = self._valid_input(value, dtype)
-        if self.is_built_coherence() is Build.YES:
-            if self.shape != value.shape:
-                raise GPflowError('Value has different shape. '
-                                  'Parameter shape {0}, value shape {1}.'
-                                  .format(self.shape, value.shape))
+        if self.fixed_shape:
             self._value[...] = value.copy()
+        else:
+            self._value = value.copy()
+        if self.is_built_coherence() is Build.YES:
             session = self.enquire_session(session)
             self.is_built_coherence(graph=session.graph)
             self.initialize(session=session, force=force)
-        else:
-            self._value[...] = value.copy()
 
     def read_value(self, session=None):
         if session:
@@ -182,7 +193,11 @@ class Parameter(Node):
             msg = 'The value must be either a tensorflow variable, an array or a scalar.'
             raise ValueError(msg)
         cast = False if dtype is None else True
-        if hasattr(self, '_value'):
+        is_built = False
+        shape = None
+        if hasattr(self, '_value'): # The parameter has not initialized yet.
+            is_built = self.is_built_coherence() == Build.YES
+            shape = self.shape
             inner_dtype = self.dtype
             if dtype is not None and inner_dtype != dtype:
                 msg = 'Overriding parameter\'s type "{0}" with "{1}" is not possible.'
@@ -201,6 +216,9 @@ class Parameter(Node):
             value = np.array(value, dtype=dtype)
         elif cast:
             value = value.astype(dtype)
+        if shape is not None and self.fixed_shape and is_built and shape != value.shape:
+            msg = 'Value has different shape. Parameter shape {0}, value shape {1}.'
+            raise ValueError(msg.format(shape, value.shape))
         return value
 
     def _clear(self):
@@ -231,16 +249,14 @@ class Parameter(Node):
                               .format(name=name, tensor=tensor))
 
         value = self._apply_transform(self._value)
-        shape = value.shape
+        shape = value.shape if self.fixed_shape else None
         init = tf.placeholder(self.dtype, shape=shape, name='initial_unconstrained_value')
         self._initial_value_tensor = init
-        return tf.get_variable(name, initializer=init, trainable=self.trainable)
-
-        # init = tf.placeholder(self.dtype, name='initial_unconstrained_value')
-        # self._initial_value_tensor = init
-        # return tf.get_variable(name, initializer=init,
-        #                        trainable=self.trainable,
-        #                        validate_shape=False)
+        if self.fixed_shape:
+            return tf.get_variable(name, initializer=init, trainable=self.trainable)
+        return tf.get_variable(name, initializer=init,
+                               validate_shape=False,
+                               trainable=self.trainable)
 
 
     def _build_constrained(self, parameter_tensor):

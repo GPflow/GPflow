@@ -45,6 +45,5 @@ from .core.base import Build
 from .params import Parameter as Param
 from .params import ParamList
 from .params import DataHolder
-from .params import FormlessData
 from .params import Minibatch
 from .params import Parameterized

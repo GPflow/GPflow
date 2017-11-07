@@ -17,11 +17,12 @@ class Foo(gpflow.models.Model):
 
 class TestDataHolderSimple(GPflowTestCase):
     def setup(self, autobuild=True):
-        m = Foo()
         rng = np.random.RandomState()
-        m.X = gpflow.DataHolder(rng.randn(2, 2), autobuild=False)
-        m.Y = gpflow.DataHolder(rng.randn(2, 2), autobuild=False)
-        m.Z = gpflow.DataHolder(rng.randn(2, 2), autobuild=False)
+        with gpflow.defer_build():
+            m = Foo()
+            m.X = gpflow.DataHolder(rng.randn(2, 2))
+            m.Y = gpflow.DataHolder(rng.randn(2, 2))
+            m.Z = gpflow.DataHolder(rng.randn(2, 2))
         if autobuild:
             m.compile()
         return m, rng
@@ -65,8 +66,7 @@ class TestDataHolderSimple(GPflowTestCase):
     def test_raise(self):
         with self.test_context():
             m, rng = self.setup(True)
-            with self.assertRaises(gpflow.GPflowError):
-                m.Y = rng.randn(3, 3)
+            m.Y = rng.randn(3, 3)
 
 
 class TestDataHolderIntegers(GPflowTestCase):
@@ -110,8 +110,7 @@ class TestDataHolderModels(GPflowTestCase):
             m = gpflow.models.GPR(X, Y, kern)
             m.compile()
             m.X = rng.randn(*X.shape)
-            with self.assertRaises(gpflow.GPflowError):
-                m.X = rng.randn(30, 1)
+            m.X = rng.randn(30, 1)
 
     def test_sgpr(self):
         with self.test_context():
@@ -119,8 +118,7 @@ class TestDataHolderModels(GPflowTestCase):
             m = gpflow.models.SGPR(X, Y, kern, Z=X[::2])
             m.compile()
             m.X = rng.randn(*X.shape)
-            with self.assertRaises(gpflow.GPflowError):
-                m.X = rng.randn(30, 1)
+            m.X = rng.randn(30, 1)
 
     def test_gpmc(self):
         with self.test_context():
@@ -130,10 +128,8 @@ class TestDataHolderModels(GPflowTestCase):
             m.X = rng.randn(*X.shape)
             Xnew = rng.randn(30, 1)
             Ynew = np.sin(Xnew) + 0.9 * np.cos(Xnew*1.6) + rng.randn(*Xnew.shape)
-            with self.assertRaises(gpflow.GPflowError):
-                m.X = Xnew
-            with self.assertRaises(gpflow.GPflowError):
-                m.Y = Ynew
+            m.X = Xnew
+            m.Y = Ynew
 
     def test_sgpmc(self):
         with self.test_context():
@@ -141,8 +137,7 @@ class TestDataHolderModels(GPflowTestCase):
             m = gpflow.models.SGPMC(X, Y, kern, likelihood=gpflow.likelihoods.StudentT(), Z=X[::2])
             m.compile()
             m.X = rng.randn(*X.shape)
-            with self.assertRaises(gpflow.GPflowError):
-                m.X = rng.randn(30, 1)
+            m.X = rng.randn(30, 1)
 
     def test_svgp(self):
         with self.test_context():
@@ -150,8 +145,7 @@ class TestDataHolderModels(GPflowTestCase):
             m = gpflow.models.SVGP(X, Y, kern, likelihood=gpflow.likelihoods.StudentT(), Z=X[::2])
             m.compile()
             m.X = rng.randn(*X.shape)
-            with self.assertRaises(gpflow.GPflowError):
-                m.X = rng.randn(30, 1)
+            m.X = rng.randn(30, 1)
 
     def test_vgp(self):
         with self.test_context():
@@ -161,10 +155,8 @@ class TestDataHolderModels(GPflowTestCase):
             m.X = rng.randn(*X.shape)
             Xnew = rng.randn(30, 1)
             Ynew = np.sin(Xnew) + 0.9 * np.cos(Xnew * 1.6) + rng.randn(*Xnew.shape)
-            with self.assertRaises(gpflow.GPflowError):
-                m.X = Xnew
-            with self.assertRaises(gpflow.GPflowError):
-                m.Y = Ynew
+            m.X = Xnew
+            m.Y = Ynew
 
 
 if __name__ == '__main__':

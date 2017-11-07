@@ -59,20 +59,11 @@ class TestNotebooks(GPflowTestCase):
     def coreg_demo_test(self):
         self._exec_notebook_ts("coreg_demo.ipynb")
 
-    # def FITCvsVFE_test(self):
-    #    self._exec_notebook_ts("FITCvsVFE.ipynb")
-
     def kernels_test(self):
         self._exec_notebook_ts("kernels.ipynb")
 
     def mcmc_test(self):
         self._exec_notebook_ts("mcmc.ipynb")
-
-    def models_test(self):
-        self._exec_notebook_ts("models.ipynb")
-
-    def multiclass_test(self):
-        self._exec_notebook_ts("multiclass.ipynb")
 
     def ordinal_test(self):
         self._exec_notebook_ts("ordinal.ipynb")
@@ -88,6 +79,18 @@ class TestNotebooks(GPflowTestCase):
 
     def vgp_notes_test(self):
         self._exec_notebook_ts("vgp_notes.ipynb")
+
+    # TODO(@awav): CHECK IT
+    # def FITCvsVFE_test(self):
+    #    self._exec_notebook_ts("FITCvsVFE.ipynb")
+
+    # TODO(@awav): CHECK IT
+    # def models_test(self):
+    #     self._exec_notebook_ts("models.ipynb")
+
+    # TODO(@awav): CHECK IT
+    # def multiclass_test(self):
+    #     self._exec_notebook_ts("multiclass.ipynb")
 
 if __name__ == '__main__':
     unittest.main()

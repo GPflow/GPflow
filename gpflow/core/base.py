@@ -14,9 +14,8 @@
 
 import abc
 import enum
-import inspect
 
-import tensorflow as tf
+from .autobuild import AutoBuild
 
 
 class GPflowError(Exception):
@@ -27,45 +26,6 @@ class Build(enum.Enum):
     YES = 1
     NO = 0  # pylint: disable=C0103
     NOT_COMPATIBLE_GRAPH = None
-
-
-class _AutoBuildStatus(enum.Enum):
-    # TODO(@awav): Introducing global variable is not best idea for managing compilation.
-    # Inspect approach works well, except that I have a concern that it can be slow when
-    # nesting is too deep and it doesn't work well with context managers.
-
-    __autobuild_enabled_global__ = True
-
-    BUILD = 1
-    IGNORE = 2
-    FOLLOW = 3
-
-
-class AutoBuild(abc.ABCMeta):
-    _autobuild_arg = 'autobuild'
-    _tag = '__execute_autobuild__'
-
-    def __new__(mcs, name, bases, namespace, **kwargs):
-        new_cls = super(AutoBuild, mcs).__new__(mcs, name, bases, namespace, **kwargs)
-        origin_init = new_cls.__init__
-        def __init__(self, *args, **kwargs):
-            autobuild = kwargs.pop(AutoBuild._autobuild_arg, True)
-            __execute_autobuild__ = _AutoBuildStatus.BUILD if autobuild else _AutoBuildStatus.IGNORE
-            tag = AutoBuild._tag
-            frame = inspect.currentframe().f_back
-            while autobuild and frame:
-                if isinstance(frame.f_locals.get(tag, None), _AutoBuildStatus):
-                    __execute_autobuild__ = _AutoBuildStatus.FOLLOW
-                    break
-                frame = frame.f_back
-            origin_init(self, *args, **kwargs)
-            autobuild_on = __execute_autobuild__ == _AutoBuildStatus.BUILD
-            global_autobuild_on = _AutoBuildStatus.__autobuild_enabled_global__
-            if autobuild_on and global_autobuild_on:
-                self.build()
-                self.initialize(force=True)
-        setattr(new_cls, '__init__', __init__)
-        return new_cls
 
 
 class ICompilable(metaclass=AutoBuild):

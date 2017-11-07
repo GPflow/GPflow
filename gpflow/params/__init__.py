@@ -18,7 +18,6 @@ from __future__ import absolute_import
 
 from gpflow.params.parameter import Parameter
 from gpflow.params.dataholders import DataHolder
-from gpflow.params.dataholders import FormlessData
 from gpflow.params.dataholders import Minibatch
 from gpflow.params.parameterized import Parameterized
 from gpflow.params.paramlist import ParamList
