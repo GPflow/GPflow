@@ -28,6 +28,7 @@ from .decors import params_as_tensors_for
 from .params import Parameter
 from .params import Parameterized
 from .params import ParamList
+from .inference_helpers import central_moment_calculators
 from gpflow.quadrature import hermgauss
 
 
@@ -138,6 +139,15 @@ class Likelihood(Parameterized):
 
         logp = self.logp(X, Y)
         return tf.reshape(tf.matmul(logp, gh_w), shape)
+
+    def return_central_moment_calculator(self, Y):
+        """
+        Returns an instance of BaseCentralMomentCalculator which can be used for calculating the
+        central moments of a Gaussian multiplied by this likelihood for Y.
+        """
+        raise NotImplementedError("No central moment calculator found for {} likelihood.".format(
+            type(self)
+        ))
 
     def _check_targets(self, Y_np):  # pylint: disable=R0201
         """
@@ -307,6 +317,15 @@ class Bernoulli(Likelihood):
     def conditional_variance(self, F):
         p = self.invlink(F)
         return p - tf.square(p)
+
+    def return_central_moment_calculator(self,  Y):
+        if self.invlink is not probit:
+            raise NotImplementedError("Bernoulli moments only currently work with probit invlinks.")
+        Y_scaled = tf.where(tf.equal(Y, 1),
+                            tf.ones_like(Y, dtype=settings.tf_float),
+                            -tf.ones_like(Y, dtype=settings.tf_float), name="Y_scaled")
+        cmc = central_moment_calculators.CDFNormalGaussian(0., Y_scaled)
+        return cmc
 
 
 class Gamma(Likelihood):

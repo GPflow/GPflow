@@ -67,6 +67,10 @@ class _SettingsManager(object):
     def np_int(self):
         return self.tf_int.as_numpy_dtype
 
+    @property
+    def np_int(self):
+        return np.int32 if self.tf_int is tf.int32 else np.int64
+
 
 class _MutableNamedTuple(OrderedDict):
     """

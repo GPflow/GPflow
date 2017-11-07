@@ -32,6 +32,8 @@ from . import core
 from . import models
 from . import test_util
 from . import training as train
+from . import inference_helpers
+
 
 from .decors import autoflow
 from .decors import autobuild

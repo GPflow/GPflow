@@ -252,6 +252,37 @@ class TestMulticlassIndexFix(GPflowTestCase):
             tf.gradients(tf.reduce_sum(ve), mu)
 
 
+class TestMoments(GPflowTestCase):
+    def test_raises_not_implemented(self):
+        not_implemented_likelihoods = [gpflow.likelihoods.Gaussian(), gpflow.likelihoods.MultiClass(10),
+                                       gpflow.likelihoods.Exponential(), gpflow.likelihoods.StudentT(),
+                                       gpflow.likelihoods.Poisson(), gpflow.likelihoods.Bernoulli(invlink=tf.sigmoid)]
+        for like in not_implemented_likelihoods:
+            with self.assertRaises(NotImplementedError):
+                like.return_central_moment_calculator(None)
+
+    def test_bernoulli_converts_to_plus_minus_one(self):
+        class MockCDFNormal(object):
+            def __init__(self, *args):
+                self.args = args
+
+        old_cdf_normal = gpflow.likelihoods.central_moment_calculators.CDFNormalGaussian
+        try:
+            gpflow.likelihoods.central_moment_calculators.CDFNormalGaussian = MockCDFNormal
+
+            with tf.Session() as sess:
+                y = np.array([0, 1., 0, 1, 1.])[:, None]
+                y_ph = tf.placeholder(settings.tf_float, shape=[None, 1])
+                moments_class = gpflow.likelihoods.Bernoulli().return_central_moment_calculator(
+                    y_ph)
+                y_back = sess.run(moments_class.args[1], feed_dict={y_ph: y})
+                np.testing.assert_equal(y_back, np.array([-1, 1, -1, 1, 1])[:, None])
+        except:
+            raise
+        finally:
+            gpflow.likelihoods.central_moment_calculators.CDFNormalGaussian = old_cdf_normal
+
+
 class TestSwitchedLikelihood(GPflowTestCase):
     """
     SwitchedLikelihood is saparately tested here.
