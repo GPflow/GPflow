@@ -18,6 +18,7 @@
 
 
 from __future__ import absolute_import
+from pkg_resources import parse_version
 
 import tensorflow as tf
 
@@ -32,10 +33,7 @@ from .parameter import Parameter
 class DataHolder(Parameter):
     def __init__(self, value, dtype=None, fix_shape=False, name=None):
         self._dataholder_tensor = None
-        super().__init__(value=value,
-                         name=name,
-                         dtype=dtype,
-                         fix_shape=fix_shape)
+        super(DataHolder, self).__init__(value=value, name=name, dtype=dtype, fix_shape=fix_shape)
 
     @property
     def trainable(self):
@@ -150,7 +148,11 @@ class Minibatch(DataHolder):
     def _build_dataholder(self):
         if self._cache_tensor is None:
             raise GPflowError("Minibatch state corrupted.")
-        from tensorflow.contrib.data import Dataset
+        if parse_version(tf.VERSION) < parse_version('1.4.0rc0'):
+            from tensorflow.contrib.data import Dataset
+        else:
+            from tensorflow import data
+            Dataset = data.Dataset
         data = Dataset.from_tensor_slices(self._cache_tensor)
         data = data.repeat()
         if self._shuffle:

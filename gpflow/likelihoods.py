@@ -157,7 +157,8 @@ class Likelihood(Parameterized):
 class Gaussian(Likelihood):
     def __init__(self, var=1.0):
         super().__init__()
-        self.variance = Parameter(var, transform=transforms.positive)
+        self.variance = Parameter(
+            var, transform=transforms.positive, dtype=settings.np_float)
 
     @params_as_tensors
     def logp(self, F, Y):

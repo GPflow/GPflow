@@ -330,6 +330,7 @@ class TestLikelihoodChecks(GPflowTestCase):
 
     def run_models(self, likelihood, Y):
         X = np.random.randn(Y.shape[0], 1)
+        Xnew = np.random.randn(Y.shape[0], 1)
         m0 = gpflow.models.GPR(X, Y, gpflow.kernels.RBF(1))
         m1 = gpflow.models.VGP(X, Y, gpflow.kernels.RBF(1), likelihood)
         m2 = gpflow.models.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
@@ -370,16 +371,19 @@ class TestLikelihoodChecks(GPflowTestCase):
                 # Raised warning before GPflow-1.0
                 [gpflow.likelihoods.Bernoulli(), np.array((2., 1., 0.)).reshape(3, 1)],
                 [gpflow.likelihoods.Bernoulli(), np.array((2., 1.1)).reshape(2, 1)],
+
+                # Raised error before GPflow-1.0
+                [gpflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1, 1)],
             ]
 
             to_fail = [
-                [gpflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1, 1)],
                 [gpflow.likelihoods.Gaussian(), np.array((1)).reshape(1, 1)],
                 [gpflow.likelihoods.MultiClass(3), np.array((1., 2.)).reshape(1, 2)],
             ]
 
         for l, v in to_pass:
             with self.test_context():
+                print(l, v)
                 self.run_models(l, v)
 
         for l, v, in to_fail:

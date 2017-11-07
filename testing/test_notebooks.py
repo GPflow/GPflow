@@ -19,7 +19,7 @@ class TestNotebooks(GPflowTestCase):
     Run notebook tests.
 
     Blacklist:
-    - svi_test.ipynb
+    - svi.ipynb
     - GPLVM.ipynb
     - regression.ipynb
     """
@@ -53,44 +53,45 @@ class TestNotebooks(GPflowTestCase):
             self._exec_notebook(notebook_filename)
             print(notebook_filename, 'took {0} seconds.'.format(time.time() - ts))
 
-    def classification_test(self):
+    def test_classification(self):
         self._exec_notebook_ts("classification.ipynb")
 
-    def coreg_demo_test(self):
+    def test_coreg_demo(self):
         self._exec_notebook_ts("coreg_demo.ipynb")
 
-    def kernels_test(self):
+    def test_kernels(self):
         self._exec_notebook_ts("kernels.ipynb")
 
-    def mcmc_test(self):
+    def test_mcmc(self):
         self._exec_notebook_ts("mcmc.ipynb")
 
-    def ordinal_test(self):
+    def test_ordinal(self):
         self._exec_notebook_ts("ordinal.ipynb")
 
-    def sanity_check_test(self):
+    def test_sanity_check(self):
         self._exec_notebook_ts("Sanity_check.ipynb")
 
-    def settings_test(self):
+    def test_settings(self):
         self._exec_notebook_ts("settings.ipynb")
 
-    def SGPR_notes_test(self):
+    def test_SGPR_notes(self):
         self._exec_notebook_ts("SGPR_notes.ipynb")
 
-    def vgp_notes_test(self):
+    def test_vgp_notes(self):
         self._exec_notebook_ts("vgp_notes.ipynb")
 
     # TODO(@awav): CHECK IT
-    # def FITCvsVFE_test(self):
+    # def FITCvsVFE(self):
     #    self._exec_notebook_ts("FITCvsVFE.ipynb")
 
     # TODO(@awav): CHECK IT
-    # def models_test(self):
+    # def models(self):
     #     self._exec_notebook_ts("models.ipynb")
 
     # TODO(@awav): CHECK IT
-    # def multiclass_test(self):
+    # def multiclass(self):
     #     self._exec_notebook_ts("multiclass.ipynb")
+
 
 if __name__ == '__main__':
     unittest.main()

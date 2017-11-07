@@ -32,28 +32,30 @@ class Foo(gpflow.models.Model):
 class NamingTests(test_util.GPflowTestCase):
     def test_standard_name(self):
         p_index = gpflow.core.parentable.Parentable._read_index() + 1
-        p = gpflow.Param(1)
-        self.assertEqual(p.name, 'Parameter')
-        self.assertEqual(p.hidden_name, '{}/Parameter'.format(p_index))
+        with self.test_context():
+            p = gpflow.Param(1)
+            self.assertEqual(p.name, 'Parameter')
+            self.assertEqual(p.hidden_name, '{}/Parameter'.format(p_index))
 
     def test_full_fame(self):
-        p1_index = gpflow.core.parentable.Parentable._read_index() + 1
-        p1 = gpflow.Param(1)
-        p2 = gpflow.Param(1, name='test_name')
-        self.assertEqual(p1.hidden_full_name, '{index}/Parameter'.format(index=p1_index))
-        self.assertEqual(p1.full_name, 'Parameter')
-        self.assertEqual(p2.hidden_full_name, 'test_name')
-        self.assertEqual(p2.full_name, 'test_name')
-        model_index = gpflow.core.parentable.Parentable._read_index() + 1
-        m = gpflow.params.Parameterized()
-        m.p = p1
-        self.assertEqual(m.hidden_full_name, '{index}/Parameterized'.format(index=model_index))
-        self.assertEqual(m.full_name, 'Parameterized')
-        self.assertEqual(m.p.hidden_full_name, '{index}/Parameterized/p'.format(index=model_index))
-        self.assertEqual(m.p.full_name, 'Parameterized/p')
-        self.assertEqual(m.full_name, m.name)
-        self.assertEqual(m.p.hidden_full_name, '{}/p'.format(m.hidden_name))
-        self.assertEqual(m.p.full_name, '{}/p'.format(m.name))
+        with self.test_context():
+            p1_index = gpflow.core.parentable.Parentable._read_index() + 1
+            p1 = gpflow.Param(1)
+            p2 = gpflow.Param(1, name='test_name')
+            self.assertEqual(p1.hidden_full_name, '{index}/Parameter'.format(index=p1_index))
+            self.assertEqual(p1.full_name, 'Parameter')
+            self.assertEqual(p2.hidden_full_name, 'test_name')
+            self.assertEqual(p2.full_name, 'test_name')
+            model_index = gpflow.core.parentable.Parentable._read_index() + 1
+            m = gpflow.params.Parameterized()
+            m.p = p1
+            self.assertEqual(m.hidden_full_name, '{index}/Parameterized'.format(index=model_index))
+            self.assertEqual(m.full_name, 'Parameterized')
+            self.assertEqual(m.p.hidden_full_name, '{index}/Parameterized/p'.format(index=model_index))
+            self.assertEqual(m.p.full_name, 'Parameterized/p')
+            self.assertEqual(m.full_name, m.name)
+            self.assertEqual(m.p.hidden_full_name, '{}/p'.format(m.hidden_name))
+            self.assertEqual(m.p.full_name, '{}/p'.format(m.name))
 
 class TypeTests(test_util.GPflowTestCase):
     def setUp(self):
@@ -78,39 +80,38 @@ class TypeTests(test_util.GPflowTestCase):
             ([1.0], np.float32),
             (np.array([1, 2, 3], dtype=np.float64), np.float16)
         ]
-        for v, vtype in test_data:
-            p = gpflow.Param(v, dtype=vtype)
-            self.assertEqual(p.dtype, vtype)
-            p.compile()
-            self.assertEqual(p.dtype, vtype)
+        with self.test_context():
+            for v, vtype in test_data:
+                p = gpflow.Param(v, dtype=vtype, autobuild=False)
+                self.assertEqual(p.dtype, vtype)
+                p.compile()
+                self.assertEqual(p.dtype, vtype)
 
     def test_default_type(self):
         s = gpflow.settings.get_settings()
         s.dtypes.int_type = self.int_type
         s.dtypes.float_type = self.float_type
 
-        with gpflow.settings.temp_settings(s):
+        with gpflow.settings.temp_settings(s), self.test_context():
             for v, vtype in self.test_data:
-                print(v, vtype)
                 p = gpflow.Param(v)
-                self.assertEqual(p.dtype, vtype)
-                p.compile()
                 self.assertEqual(p.dtype, vtype)
 
     def test_assign_fail_types(self):
-        param = gpflow.Param(np.array([1]), dtype=np.int32)
-        def fail_assigns(p):
-            with self.assertRaises(ValueError):
-                p.assign([2], dtype=np.float32)
-            with self.assertRaises(ValueError):
-                p.assign(np.array([2], dtype=np.float32))
-            with self.assertRaises(ValueError):
-                p.assign(np.array([2]), dtype=np.float32)
-            with self.assertRaises(ValueError):
-                p.assign([2], dtype=np.int64)
-        fail_assigns(param)
-        param.compile()
-        fail_assigns(param)
+        with self.test_context():
+            param = gpflow.Param(np.array([1]), dtype=np.int32, autobuild=False)
+            def fail_assigns(p):
+                with self.assertRaises(ValueError):
+                    p.assign([2], dtype=np.float32)
+                with self.assertRaises(ValueError):
+                    p.assign(np.array([2], dtype=np.float32))
+                with self.assertRaises(ValueError):
+                    p.assign(np.array([2]), dtype=np.float32)
+                with self.assertRaises(ValueError):
+                    p.assign([2], dtype=np.int64)
+            fail_assigns(param)
+            param.compile()
+            fail_assigns(param)
 
 
 class ParamTests(test_util.GPflowTestCase):
@@ -129,10 +130,11 @@ class ParamTests(test_util.GPflowTestCase):
             self.assertEqual(len(list(self.m.params)), 2)
 
     def test_assign(self):
-        with self.test_context() as session:
-            with self.assertRaises(tf.errors.FailedPreconditionError):
+        with self.test_context(tf.Graph()) as session:
+            with self.assertRaises(gpflow.GPflowError):
                 self.p.read_value(session)
 
+        with self.test_context() as session:
             self.p.assign(2.0)
             self.assertEqual(self.p.read_value(), 2.0)
 
@@ -208,9 +210,10 @@ class ParamTests(test_util.GPflowTestCase):
 
 class ParameterizedNoParametersTests(test_util.GPflowTestCase):
     def setUp(self):
-        self.m = gpflow.params.Parameterized(name='m')
-        self.m.p = gpflow.params.Parameterized()
-        self.m.b = gpflow.params.Parameterized()
+        with self.test_context(), gpflow.defer_build():
+            self.m = gpflow.params.Parameterized(name='m')
+            self.m.p = gpflow.params.Parameterized()
+            self.m.b = gpflow.params.Parameterized()
 
     def test_is_built(self):
         with self.test_context():
@@ -236,7 +239,6 @@ class ParameterizedNoParametersTests(test_util.GPflowTestCase):
             self.assertEqual(self.m.is_built_coherence(), gpflow.Build.YES)
             with self.assertRaises(gpflow.GPflowError):
                 self.m.b = gpflow.Param(20)
-
 
 
 class ParameterizedCompileTests(test_util.GPflowTestCase):
@@ -411,24 +413,26 @@ class ParamLikeInvariantTest(test_util.GPflowTestCase):
 
 class TestParamList(test_util.GPflowTestCase):
     def test_construction(self):
-        gpflow.ParamList([])
-        gpflow.ParamList([gpflow.Param(1)])
-        gpflow.ParamList([1.0, np.array([1, 2]), gpflow.Param(1.0)])
-        with self.assertRaises(ValueError):
-            gpflow.ParamList([gpflow.Param(1), 'stringsnotallowed'])
-        with self.assertRaises(ValueError):
-            # tuples not valid in constuctor:
-            gpflow.ParamList((gpflow.Param(1),))
-        with self.assertRaises(ValueError):
-            # param objects not valid in constructor (must be in list)
-            gpflow.ParamList(gpflow.Param(1))
+        with self.test_context():
+            gpflow.ParamList([])
+            gpflow.ParamList([gpflow.Param(1)])
+            gpflow.ParamList([1.0, np.array([1, 2]), gpflow.Param(1.0)])
+            with self.assertRaises(ValueError):
+                gpflow.ParamList([gpflow.Param(1), 'stringsnotallowed'])
+            with self.assertRaises(ValueError):
+                # tuples not valid in constuctor:
+                gpflow.ParamList((gpflow.Param(1),))
+            with self.assertRaises(ValueError):
+                # param objects not valid in constructor (must be in list)
+                gpflow.ParamList(gpflow.Param(1))
 
     def test_naming(self):
-        p1 = gpflow.Param(1.2)
-        p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
-        gpflow.ParamList([p1, p2])
-        self.assertEqual(p1.name, 'item0')
-        self.assertEqual(p2.name, 'item1')
+        with self.test_context():
+            p1 = gpflow.Param(1.2)
+            p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
+            gpflow.ParamList([p1, p2])
+            self.assertEqual(p1.name, 'item0')
+            self.assertEqual(p2.name, 'item1')
 
     def test_setitem(self):
         with self.test_context():
@@ -454,20 +458,22 @@ class TestParamList(test_util.GPflowTestCase):
                 param_list[0] = gpflow.Param(12)
 
     def test_append(self):
-        p1 = gpflow.Param(1.2)
-        p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
-        param_list = gpflow.ParamList([p1])
-        param_list.append(p2)
-        self.assertTrue(p2 in param_list.params)
-        with self.assertRaises(ValueError):
-            param_list.append('foo')
+        with self.test_context():
+            p1 = gpflow.Param(1.2)
+            p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
+            param_list = gpflow.ParamList([p1])
+            param_list.append(p2)
+            self.assertTrue(p2 in param_list.params)
+            with self.assertRaises(ValueError):
+                param_list.append('foo')
 
     def test_len(self):
-        p1 = gpflow.Param(1.2)
-        p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
-        l = gpflow.ParamList([p1])
-        l.append(p2)
-        self.assertTrue(len(l) == 2)
+        with self.test_context():
+            p1 = gpflow.Param(1.2)
+            p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
+            l = gpflow.ParamList([p1])
+            l.append(p2)
+            self.assertTrue(len(l) == 2)
 
     def test_with_parameterized(self):
         with self.test_context():
