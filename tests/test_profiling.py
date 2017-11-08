@@ -24,7 +24,7 @@ class TestProfiling(GPflowTestCase):
         s.profiling.output_file_name = 'test_trace_profile'
 
         with gpflow.settings.temp_settings(s):
-            with gpflow.session_manager.get_session():
+            with gpflow.session_manager.get_session().as_default():
                 m.compile()
                 opt = gpflow.train.ScipyOptimizer()
                 opt.minimize(m, maxiter=10)
@@ -40,7 +40,7 @@ class TestProfiling(GPflowTestCase):
         m = self.prepare()
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
-        s.profiling.output_directory = '/tmp/'
+        s.profiling.output_directory = os.path.dirname(__file__)
         s.profiling.output_file_name = 'test_trace_autoflow'
 
         with gpflow.settings.temp_settings(s):

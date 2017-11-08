@@ -9,20 +9,20 @@ from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
 
-class TestSetup(object):
+class LikelihoodSetup(object):
     def __init__(self, likelihood, Y, tolerance):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
         self.is_analytic = six.get_unbound_function(likelihood.predict_density) is not\
             six.get_unbound_function(gpflow.likelihoods.Likelihood.predict_density)
 
 
-def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
+def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
     for likelihoodClass in gpflow.likelihoods.Likelihood.__subclasses__():
         if likelihoodClass == gpflow.likelihoods.Ordinal:
             test_setups.append(
-                TestSetup(likelihoodClass(np.array([-1, 1])),
+                LikelihoodSetup(likelihoodClass(np.array([-1, 1])),
                           rng.randint(0, 3, (10, 2)), 1e-6))
         elif likelihoodClass == gpflow.likelihoods.SwitchedLikelihood:
             continue  # switched likelihood tested separately
@@ -32,25 +32,25 @@ def getTestSetups(includeMultiClass=True, addNonStandardLinks=False):
                 # Multiclass needs a less tight tolerance due to presence of clipping.
                 tolerance = 1e-3
                 test_setups.append(
-                    TestSetup(likelihoodClass(2),
+                    LikelihoodSetup(likelihoodClass(2),
                               np.argmax(sample, 1).reshape(-1, 1), tolerance))
         else:
             # most likelihoods follow this standard:
             test_setups.append(
-                TestSetup(likelihoodClass(),
+                LikelihoodSetup(likelihoodClass(),
                           rng.rand(10, 2).astype(settings.np_float), 1e-6))
 
     if addNonStandardLinks:
-        test_setups.append(TestSetup(gpflow.likelihoods.Poisson(invlink=tf.square),
+        test_setups.append(LikelihoodSetup(gpflow.likelihoods.Poisson(invlink=tf.square),
                                      rng.rand(10, 2).astype(settings.np_float), 1e-6))
-        test_setups.append(TestSetup(gpflow.likelihoods.Exponential(invlink=tf.square),
+        test_setups.append(LikelihoodSetup(gpflow.likelihoods.Exponential(invlink=tf.square),
                                      rng.rand(10, 2).astype(settings.np_float), 1e-6))
-        test_setups.append(TestSetup(gpflow.likelihoods.Gamma(invlink=tf.square),
+        test_setups.append(LikelihoodSetup(gpflow.likelihoods.Gamma(invlink=tf.square),
                                      rng.rand(10, 2).astype(settings.np_float), 1e-6))
 
         def sigmoid(x):
             return 1./(1 + tf.exp(-x))
-        test_setups.append(TestSetup(gpflow.likelihoods.Bernoulli(invlink=sigmoid),
+        test_setups.append(LikelihoodSetup(gpflow.likelihoods.Bernoulli(invlink=sigmoid),
                                      rng.rand(10, 2).astype(settings.np_float), 1e-6))
     return test_setups
 
@@ -65,7 +65,7 @@ class TestPredictConditional(GPflowTestCase):
         self.test_graph = tf.Graph()
 
     def prepare(self):
-        test_setups = getTestSetups(addNonStandardLinks=True)
+        test_setups = getLikelihoodSetups(addNonStandardLinks=True)
         rng = np.random.RandomState(0)
         F = tf.placeholder(settings.tf_float)
         F_data = rng.randn(10, 2).astype(settings.np_float)
@@ -123,7 +123,7 @@ class TestQuadrature(GPflowTestCase):
         self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(settings.np_float)
         self.Fvar = 0.01 * (self.Fvar ** 2)
         with self.test_context():
-            self.test_setups = getTestSetups(includeMultiClass=False)
+            self.test_setups = getLikelihoodSetups(includeMultiClass=False)
 
     def test_var_exp(self):
         for test_setup in self.test_setups:
