@@ -65,7 +65,7 @@ class TestPredictConditional(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
 
-    def setup(self):
+    def prepare(self):
         test_setups = getTestSetups(addNonStandardLinks=True)
         rng = np.random.RandomState(0)
         F = tf.placeholder(settings.tf_float)
@@ -75,7 +75,7 @@ class TestPredictConditional(GPflowTestCase):
 
     def test_mean(self):
         with self.test_context() as session:
-            test_setups, F, feed = self.setup()
+            test_setups, F, feed = self.prepare()
             for test_setup in test_setups:
                 l = test_setup.likelihood
                 l.compile()
@@ -86,7 +86,7 @@ class TestPredictConditional(GPflowTestCase):
 
     def test_variance(self):
         with self.test_context() as session:
-            test_setups, F, feed = self.setup()
+            test_setups, F, feed = self.prepare()
             for test_setup in test_setups:
                 l = test_setup.likelihood
                 l.compile()
@@ -101,7 +101,7 @@ class TestPredictConditional(GPflowTestCase):
         as logp if the latent function has no uncertainty.
         """
         with self.test_context() as session:
-            test_setups, F, feed = self.setup()
+            test_setups, F, feed = self.prepare()
             for test_setup in test_setups:
                 l = test_setup.likelihood
                 y = test_setup.Y

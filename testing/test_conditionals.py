@@ -18,7 +18,7 @@ class DiagsTest(GPflowTestCase):
 
     Here we make sure the behaviours overlap.
     """
-    def setup(self):
+    def prepare(self):
         num_latent = 2
         num_data = 3
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
@@ -44,7 +44,7 @@ class DiagsTest(GPflowTestCase):
 
     def test_whiten(self):
         with self.test_context() as sess:
-            Xs, X, k, mu, sqrt, chol, feed_dict = self.setup()
+            Xs, X, k, mu, sqrt, chol, feed_dict = self.prepare()
 
             Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(
                 Xs, X, k, mu, q_sqrt=sqrt)
@@ -60,7 +60,7 @@ class DiagsTest(GPflowTestCase):
 
     def test_nonwhiten(self):
         with self.test_context() as sess:
-            Xs, X, k, mu, sqrt, chol, feed_dict = self.setup()
+            Xs, X, k, mu, sqrt, chol, feed_dict = self.prepare()
 
             Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(
                 Xs, X, k, mu, q_sqrt=sqrt)
@@ -75,7 +75,7 @@ class DiagsTest(GPflowTestCase):
 
 
 class WhitenTest(GPflowTestCase):
-    def setup(self):
+    def prepare(self):
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
         k.white.variance = 0.01
 
@@ -101,7 +101,7 @@ class WhitenTest(GPflowTestCase):
         """
 
         with self.test_context() as sess:
-            Xs, X, F, k, num_data, feed_dict = self.setup()
+            Xs, X, F, k, num_data, feed_dict = self.prepare()
             k.compile(session=sess)
             
             K = k.K(X) + tf.eye(num_data, dtype=settings.np_float) * 1e-6
@@ -126,7 +126,7 @@ class WhitenTestGaussian(WhitenTest):
         """
         with self.test_context() as sess:
             rng = np.random.RandomState(0)
-            Xs, X, F, k, num_data, feed_dict = self.setup()
+            Xs, X, F, k, num_data, feed_dict = self.prepare()
             k.compile(session=sess)
 
             F_sqrt = tf.placeholder(settings.np_float, [num_data, 1])

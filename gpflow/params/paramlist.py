@@ -20,8 +20,8 @@
 from __future__ import absolute_import
 
 from ..core.tensor_converter import TensorConverter
-from ..core.base import GPflowError
-from ..core.base import Build
+from ..core.errors import GPflowError
+from ..core.compilable import Build
 
 from .parameter import Parameter
 from .parameterized import Parameterized

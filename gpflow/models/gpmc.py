@@ -16,13 +16,13 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow import settings
-from gpflow.models.model import GPModel
-from gpflow.params import Parameter, DataHolder
-from gpflow.decors import params_as_tensors
-from gpflow.conditionals import conditional
-from gpflow.priors import Gaussian
+from .. import settings
+from ..params import Parameter, DataHolder
+from ..decors import params_as_tensors
+from ..priors import Gaussian
+from ..conditionals import conditional
 
+from .model import GPModel
 
 
 class GPMC(GPModel):

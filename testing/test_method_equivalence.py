@@ -44,7 +44,7 @@ class TestEquivalence(GPflowTestCase):
        variables are 'collapsed' out, as in Titsias 2009)
     """
 
-    def setup(self):
+    def prepare(self):
         rng = np.random.RandomState(0)
         X = rng.rand(20, 1) * 10
         Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
@@ -84,7 +84,7 @@ class TestEquivalence(GPflowTestCase):
 
     def test_all(self):
         with self.test_context() as session:
-            models = self.setup()
+            models = self.prepare()
             likelihoods = []
             for m in models:
                 opt = gpflow.train.ScipyOptimizer()

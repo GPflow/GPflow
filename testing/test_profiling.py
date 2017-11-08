@@ -10,14 +10,14 @@ from gpflow.test_util import GPflowTestCase
 
 class TestProfiling(GPflowTestCase):
     @gpflow.defer_build()
-    def setup(self):
+    def prepare(self):
         X = np.random.rand(100, 1)
         Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
         k = gpflow.kernels.RBF(1)
         return gpflow.models.GPR(X, Y, k)
 
     def test_profile(self):
-        m = self.setup()
+        m = self.prepare()
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
         s.profiling.output_directory = os.path.dirname(__file__)
@@ -37,7 +37,7 @@ class TestProfiling(GPflowTestCase):
 
 
     def test_autoflow(self):
-        m = self.setup()
+        m = self.prepare()
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
         s.profiling.output_directory = os.path.dirname(__file__)
@@ -61,7 +61,7 @@ class TestProfiling(GPflowTestCase):
         #        m.kern.compute_K_symm(m.X.read_value())
 
     def test_eachtime(self):
-        m = self.setup()
+        m = self.prepare()
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
         s.profiling.each_time = True

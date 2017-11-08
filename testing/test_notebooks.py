@@ -91,7 +91,3 @@ class TestNotebooks(GPflowTestCase):
     # TODO(@awav): CHECK IT
     # def multiclass(self):
     #     self._exec_notebook_ts("multiclass.ipynb")
-
-
-if __name__ == '__main__':
-    unittest.main()

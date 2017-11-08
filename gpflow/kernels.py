@@ -20,13 +20,12 @@ import warnings
 import tensorflow as tf
 import numpy as np
 
-from gpflow import transforms
+from . import transforms
+from . import settings
 
-from gpflow.params import Parameter, Parameterized
-from gpflow.decors import params_as_tensors, autoflow
-from gpflow.quadrature import mvnquad
-
-from gpflow import settings
+from .params import Parameter, Parameterized
+from .decors import params_as_tensors, autoflow
+from .quadrature import mvnquad
 
 
 class Kern(Parameterized):
@@ -211,7 +210,7 @@ class Kern(Parameterized):
         input_dim = tf.convert_to_tensor(self.input_dim, dtype=settings.tf_int)
         with tf.control_dependencies([tf.assert_equal(input_dim_shape, input_dim)]):
             X = tf.identity(X)
-            
+
         return X, X2
 
     def _slice_cov(self, cov):

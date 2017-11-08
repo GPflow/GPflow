@@ -4,7 +4,7 @@ import itertools
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
+from . import settings
 
 
 def hermgauss(n):

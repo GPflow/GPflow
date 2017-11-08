@@ -39,8 +39,8 @@ from .decors import name_scope
 from .decors import params_as_tensors
 from .decors import params_as_tensors_for
 
-from .core.base import GPflowError
-from .core.base import Build
+from .core.errors import GPflowError
+from .core.compilable import Build
 
 from .params import Parameter as Param
 from .params import ParamList

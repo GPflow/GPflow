@@ -13,61 +13,6 @@
 # limitations under the License.
 
 import abc
-import enum
-
-from .autobuild import AutoBuild
-
-
-class GPflowError(Exception):
-    pass
-
-
-class Build(enum.Enum):
-    YES = 1
-    NO = 0  # pylint: disable=C0103
-    NOT_COMPATIBLE_GRAPH = None
-
-
-class ICompilable(metaclass=AutoBuild):
-    @abc.abstractproperty
-    def graph(self):
-        raise NotImplementedError()
-
-    @abc.abstractproperty
-    def feeds(self):
-        raise NotImplementedError()
-
-    @abc.abstractproperty
-    def initializables(self):
-        raise NotImplementedError()
-
-    @abc.abstractproperty
-    def initializable_feeds(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def build(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def initialize(self, session=None, force=False):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def compile(self, session=None):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def is_built(self, graph):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def clear(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _build(self):
-        raise NotImplementedError()
 
 
 class IPrior(metaclass=abc.ABCMeta):

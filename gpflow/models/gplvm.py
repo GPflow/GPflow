@@ -1,16 +1,17 @@
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
-from gpflow import likelihoods
-from gpflow import transforms
-from gpflow import kernels
+from .. import settings
+from .. import likelihoods
+from .. import transforms
+from .. import kernels
 
-from gpflow.models.model import GPModel
-from gpflow.models.gpr import GPR
-from gpflow.params import Parameter
-from gpflow.decors import params_as_tensors
-from gpflow.mean_functions import Zero
+from ..params import Parameter
+from ..decors import params_as_tensors
+from ..mean_functions import Zero
+
+from .model import GPModel
+from .gpr import GPR
 
 
 class GPLVM(GPR):

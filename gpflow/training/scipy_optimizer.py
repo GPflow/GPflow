@@ -17,11 +17,9 @@ from __future__ import division
 from __future__ import print_function
 
 
-import tensorflow as tf
-
-from gpflow.core.base import GPflowError
-from gpflow.core.base import Build
-from gpflow.models.model import Model
+from ..core.errors import GPflowError
+from ..core.compilable import Build
+from ..models.model import Model
 
 from . import optimizer
 from . import external_optimizer

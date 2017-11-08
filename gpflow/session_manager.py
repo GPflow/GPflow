@@ -18,7 +18,7 @@ import warnings
 import tensorflow as tf
 from tensorflow.python.client import timeline
 
-from gpflow import settings
+from . import settings
 
 
 class _DefaultSessionKeeper:

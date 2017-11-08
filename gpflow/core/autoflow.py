@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from gpflow.misc import get_attribute
+from .. import misc
 
 
 class AutoFlow:
@@ -25,7 +25,7 @@ class AutoFlow:
             raise ValueError('Name must be string.')
         prefix = cls.__autoflow_prefix__
         autoflow_name = prefix + name
-        store = get_attribute(obj, autoflow_name, allow_fail=True, default={})
+        store = misc.get_attribute(obj, autoflow_name, allow_fail=True, default={})
         if not store:
             setattr(obj, autoflow_name, store)
         return store

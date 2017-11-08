@@ -19,8 +19,8 @@ from __future__ import print_function
 import sys
 import tensorflow as tf
 
-from ..models.model import Model
 from . import optimizer
+from ..models.model import Model
 
 
 _REGISTERED_TENSORFLOW_OPTIMIZERS = {}

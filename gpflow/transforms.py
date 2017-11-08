@@ -17,9 +17,9 @@ from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 
-from gpflow import settings
-from gpflow.misc import vec_to_tri
-from gpflow.core.base import ITransform
+from . import settings
+from .misc import vec_to_tri
+from .core.base import ITransform
 
 
 class Transform(ITransform): # pylint: disable=W0223

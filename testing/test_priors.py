@@ -30,12 +30,12 @@ class PriorModeTests(GPflowTestCase):
     these tests optimize the prior to find the mode numerically. Make sure the
     mode is the same as the known mode.
     """
-    def setup(self, autobuild=False):
+    def prepare(self, autobuild=False):
         return FlatModel(autobuild=autobuild)
 
     def testGaussianMode(self):
         with self.test_context():
-            m = self.setup()
+            m = self.prepare()
             m.x = gpflow.Param(1., autobuild=False)
             m.x.prior = gpflow.priors.Gaussian(3., 1.)
 
@@ -47,7 +47,7 @@ class PriorModeTests(GPflowTestCase):
 
     def testGaussianModeMatrix(self):
         with self.test_context():
-            m = self.setup()
+            m = self.prepare()
             m.x = gpflow.Param(np.random.randn(4, 4), prior=gpflow.priors.Gaussian(-1., 10.))
 
             m.compile()
@@ -58,7 +58,7 @@ class PriorModeTests(GPflowTestCase):
 
     def testGammaMode(self):
         with self.test_context():
-            m = self.setup()
+            m = self.prepare()
             m.x = gpflow.Param(1.0, autobuild=False)
             shape, scale = 4., 5.
             m.x.prior = gpflow.priors.Gamma(shape, scale)
@@ -72,7 +72,7 @@ class PriorModeTests(GPflowTestCase):
 
     def testLaplaceMode(self):
         with self.test_context():
-            m = self.setup()
+            m = self.prepare()
             m.x = gpflow.Param(1.0, prior=gpflow.priors.Laplace(3., 10.))
             m.compile()
             opt = gpflow.train.ScipyOptimizer()
@@ -82,7 +82,7 @@ class PriorModeTests(GPflowTestCase):
 
     def testLogNormalMode(self):
         with self.test_context():
-            m = self.setup()
+            m = self.prepare()
             transform = gpflow.transforms.Exp()
             prior = gpflow.priors.LogNormal(3., 10.)
             m.x = gpflow.Param(1.0, prior=prior, transform=transform)
@@ -94,7 +94,7 @@ class PriorModeTests(GPflowTestCase):
 
     def testBetaMode(self):
         with self.test_context():
-            m = self.setup()
+            m = self.prepare()
             transform = gpflow.transforms.Logistic()
             m.x = gpflow.Param(0.1, prior=gpflow.priors.Beta(3., 3.), transform=transform)
 
@@ -106,7 +106,7 @@ class PriorModeTests(GPflowTestCase):
 
     def testUniform(self):
         with self.test_context():
-            m = self.setup()
+            m = self.prepare()
             m.x = gpflow.Param(
                 1.0, prior=gpflow.priors.Uniform(-2., 3.),
                 transform=gpflow.transforms.Logistic(-2., 3.))

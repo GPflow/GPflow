@@ -21,9 +21,6 @@ from __future__ import print_function
 
 import abc
 
-from ..core.base import Build
-from ..core.base import GPflowError
-
 
 class Optimizer:
     @abc.abstractmethod

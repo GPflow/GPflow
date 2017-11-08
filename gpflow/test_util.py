@@ -26,7 +26,7 @@ class GPflowTestCase(tf.test.TestCase):
     _multiprocess_can_split_ = True
 
     def __init__(self, *args, **kwargs):
-        super(GPflowTestCase, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.test_graph = tf.Graph()
 
     @contextlib.contextmanager
@@ -36,6 +36,3 @@ class GPflowTestCase(tf.test.TestCase):
             graph = tf.Graph()
         with graph.as_default(), self.test_session(graph=graph) as session:
             yield session
-
-    def tearDown(self):
-        super(GPflowTestCase, self).tearDown()

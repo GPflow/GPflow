@@ -23,10 +23,8 @@ from pkg_resources import parse_version
 import tensorflow as tf
 
 from .. import misc
-
-from ..core.base import GPflowError
-from ..core.base import Build
-
+from ..core.errors import GPflowError
+from ..core.compilable import Build
 from .parameter import Parameter
 
 

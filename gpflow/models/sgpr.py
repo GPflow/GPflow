@@ -17,15 +17,15 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
-from gpflow import likelihoods
+from .. import settings
+from .. import likelihoods
 
-from gpflow.models.model import GPModel
-from gpflow.decors import autoflow
-from gpflow.decors import params_as_tensors
-from gpflow.params import Parameter, DataHolder
-from gpflow.mean_functions import Zero
+from ..decors import autoflow
+from ..decors import params_as_tensors
+from ..params import Parameter, DataHolder
+from ..mean_functions import Zero
 
+from .model import GPModel
 
 class SGPRUpperMixin(object):
     """

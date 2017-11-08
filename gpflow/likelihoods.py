@@ -28,7 +28,7 @@ from .decors import params_as_tensors_for
 from .params import Parameter
 from .params import Parameterized
 from .params import ParamList
-from gpflow.quadrature import hermgauss
+from .quadrature import hermgauss
 
 
 class Likelihood(Parameterized):

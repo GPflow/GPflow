@@ -25,8 +25,8 @@ import tensorflow as tf
 
 from .. import settings
 
-from ..core.base import GPflowError
-from ..core.base import Build
+from ..core.errors import GPflowError
+from ..core.compilable import Build
 from ..core.node import Node
 from ..core.base import IPrior, ITransform
 

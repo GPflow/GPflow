@@ -21,7 +21,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 
 import gpflow
-from gpflow import test_util
+from gpflow.test_util import GPflowTestCase
 
 
 class Quadratic(gpflow.models.Model):
@@ -34,7 +34,7 @@ class Quadratic(gpflow.models.Model):
         return tf.negative(tf.reduce_sum(tf.square(self.x)))
 
 
-class TestOptimize(test_util.GPflowTestCase):
+class TestOptimize(GPflowTestCase):
     def setUp(self):
         rng = np.random.RandomState(0)
 
@@ -58,7 +58,7 @@ class Empty(gpflow.models.Model):
         return tf.convert_to_tensor(1., dtype=gpflow.settings.tf_float)
 
 
-class EmptyTest(test_util.GPflowTestCase):
+class EmptyTest(GPflowTestCase):
     def test_compile_model_without_parameters(self):
         with self.test_context():
             m = Empty()
@@ -84,7 +84,7 @@ class EmptyTest(test_util.GPflowTestCase):
             self.assertTrue(gpflow.misc.is_tensor(m.objective))
 
 
-class ReplaceParameterTest(test_util.GPflowTestCase):
+class ReplaceParameterTest(GPflowTestCase):
 
     class Origin(gpflow.models.Model):
         def __init__(self):
@@ -142,7 +142,7 @@ def setup_sgpr():
     Z = np.random.randn(100, 3)
     return gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
-class TestKeyboardCatching(test_util.GPflowTestCase):
+class TestKeyboardCatching(GPflowTestCase):
     def test_optimize_np(self):
         with self.test_context():
             m = setup_sgpr()
@@ -168,7 +168,7 @@ class TestKeyboardCatching(test_util.GPflowTestCase):
     #        self.assertFalse(np.allclose(x0, x1))
 
 
-class TestLikelihoodAutoflow(test_util.GPflowTestCase):
+class TestLikelihoodAutoflow(GPflowTestCase):
     def test_lik_and_prior(self):
         with self.test_context():
             m = setup_sgpr()
@@ -188,7 +188,7 @@ class TestLikelihoodAutoflow(test_util.GPflowTestCase):
         self.assertEqual(l0, l1)
 
 
-class TestName(test_util.GPflowTestCase):
+class TestName(GPflowTestCase):
     def test_name(self):
         with self.test_context():
             m1 = gpflow.models.Empty()
@@ -197,7 +197,7 @@ class TestName(test_util.GPflowTestCase):
             self.assertEqual(m2.name, 'foo')
 
 
-# class TestNoRecompileThroughNewModelInstance(test_util.GPflowTestCase):
+# class TestNoRecompileThroughNewModelInstance(GPflowTestCase):
 #     """ Regression tests for Bug #454 """
 
 #     def setUp(self):

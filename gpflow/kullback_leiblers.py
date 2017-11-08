@@ -15,8 +15,8 @@
 
 import tensorflow as tf
 
-from gpflow import settings
-from gpflow.decors import name_scope
+from . import settings
+from .decors import name_scope
 
 
 @name_scope("KL")

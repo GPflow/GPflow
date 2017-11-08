@@ -16,15 +16,13 @@
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
+from . import settings
+from .core.errors import GPflowError
+
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
-
-
-class GPflowError(Exception):
-    pass
 
 
 def tensor_name(*subnames):

@@ -121,7 +121,7 @@ class TestDataHolder(GPflowTestCase):
 
 
 class TestGPmodel(GPflowTestCase):
-    def setup(self):
+    def prepare(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
         m = gpflow.models.SVGP(X, Y,
@@ -135,22 +135,22 @@ class TestGPmodel(GPflowTestCase):
 
     def test_predict_f(self):
         with self.test_context():
-            m, x, _y = self.setup()
+            m, x, _y = self.prepare()
             _mu, _var = m.predict_f(x)
 
     def test_predict_y(self):
         with self.test_context():
-            m, x, _y = self.setup()
+            m, x, _y = self.prepare()
             _mu, _var = m.predict_y(x)
 
     def test_predict_density(self):
         with self.test_context():
-            m, x, y = self.setup()
+            m, x, y = self.prepare()
             m.predict_density(x, y)
 
     def test_multiple_AFs(self):
         with self.test_context():
-            m, _x, _y = self.setup()
+            m, _x, _y = self.prepare()
             m.compute_log_likelihood()
             m.compute_log_prior()
             m.compute_log_likelihood()
@@ -163,7 +163,7 @@ class TestFixAndPredict(GPflowTestCase):
     that and ensures that the bugfix remains in furure.
     """
 
-    def setup(self):
+    def prepare(self):
         rng = np.random.RandomState(0)
         X, Y = rng.randn(2, 10, 1)
         m = gpflow.models.SVGP(X, Y, kern=gpflow.kernels.Matern32(1),
@@ -175,7 +175,7 @@ class TestFixAndPredict(GPflowTestCase):
 
     def test(self):
         with self.test_context():
-            m, x, y = self.setup()
+            m, x, y = self.prepare()
             m.compile()
             m.kern.variance.trainable = False
             _, _ = m.predict_f(m.X.read_value())
@@ -195,7 +195,3 @@ class TestSVGP(GPflowTestCase):
             likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
         model.compile()
         model.compute_log_likelihood()
-
-
-if __name__ == "__main__":
-    unittest.main()

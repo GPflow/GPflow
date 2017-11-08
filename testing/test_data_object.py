@@ -16,7 +16,7 @@ class Foo(gpflow.models.Model):
         return tf.constant(0, dtype=gpflow.settings.np_float)
 
 class TestDataHolderSimple(GPflowTestCase):
-    def setup(self, autobuild=True):
+    def prepare(self, autobuild=True):
         rng = np.random.RandomState()
         with gpflow.defer_build():
             m = Foo()
@@ -29,7 +29,7 @@ class TestDataHolderSimple(GPflowTestCase):
 
     def test_types(self):
         with self.test_context():
-            m, _ = self.setup(False)
+            m, _ = self.prepare(False)
             self.assertEqual(m.X.dtype, settings.np_float)
             self.assertEqual(m.Y.dtype, settings.np_float)
             self.assertEqual(m.Z.dtype, settings.np_float)
@@ -46,7 +46,7 @@ class TestDataHolderSimple(GPflowTestCase):
 
     def test_same_shape(self):
         with self.test_context():
-            m, rng = self.setup()
+            m, rng = self.prepare()
 
             new_X = rng.randn(2, 2)
             m.X = new_X
@@ -65,12 +65,12 @@ class TestDataHolderSimple(GPflowTestCase):
 
     def test_raise(self):
         with self.test_context():
-            m, rng = self.setup(True)
+            m, rng = self.prepare(True)
             m.Y = rng.randn(3, 3)
 
 
 class TestDataHolderIntegers(GPflowTestCase):
-    def setup(self):
+    def prepare(self):
         m = Foo(autobuild=False)
         rng = np.random.RandomState()
         m.X = gpflow.DataHolder(rng.randint(0, 10, (2, 2)), dtype=gpflow.settings.np_int)
@@ -79,13 +79,13 @@ class TestDataHolderIntegers(GPflowTestCase):
 
     def test_types(self):
         with self.test_context():
-            m, _ = self.setup()
+            m, _ = self.prepare()
             self.assertEqual(m.X.read_value().dtype, gpflow.settings.np_int)
             self.assertEqual(m.X.dtype, gpflow.settings.np_int)
 
     def test_same_shape(self):
         with self.test_context():
-            m, rng = self.setup()
+            m, rng = self.prepare()
             new_X = rng.randint(0, 10, (2, 2), dtype=gpflow.settings.np_int)
             m.X = new_X
             assert_array_equal(m.X.shape, new_X.shape)
@@ -97,7 +97,7 @@ class TestDataHolderModels(GPflowTestCase):
     We make test for Dataholder that enables to reuse model for different data
     with the same shape to the original.  We tested this for the six models.
     """
-    def setup(self):
+    def prepare(self):
         rng = np.random.RandomState(0)
         X = rng.rand(20, 1)
         Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
@@ -106,7 +106,7 @@ class TestDataHolderModels(GPflowTestCase):
 
     def test_gpr(self):
         with self.test_context():
-            X, Y, kern, rng = self.setup()
+            X, Y, kern, rng = self.prepare()
             m = gpflow.models.GPR(X, Y, kern)
             m.compile()
             m.X = rng.randn(*X.shape)
@@ -114,7 +114,7 @@ class TestDataHolderModels(GPflowTestCase):
 
     def test_sgpr(self):
         with self.test_context():
-            X, Y, kern, rng = self.setup()
+            X, Y, kern, rng = self.prepare()
             m = gpflow.models.SGPR(X, Y, kern, Z=X[::2])
             m.compile()
             m.X = rng.randn(*X.shape)
@@ -122,7 +122,7 @@ class TestDataHolderModels(GPflowTestCase):
 
     def test_gpmc(self):
         with self.test_context():
-            X, Y, kern, rng = self.setup()
+            X, Y, kern, rng = self.prepare()
             m = gpflow.models.GPMC(X, Y, kern, likelihood=gpflow.likelihoods.StudentT())
             m.compile()
             m.X = rng.randn(*X.shape)
@@ -133,7 +133,7 @@ class TestDataHolderModels(GPflowTestCase):
 
     def test_sgpmc(self):
         with self.test_context():
-            X, Y, kern, rng = self.setup()
+            X, Y, kern, rng = self.prepare()
             m = gpflow.models.SGPMC(X, Y, kern, likelihood=gpflow.likelihoods.StudentT(), Z=X[::2])
             m.compile()
             m.X = rng.randn(*X.shape)
@@ -141,7 +141,7 @@ class TestDataHolderModels(GPflowTestCase):
 
     def test_svgp(self):
         with self.test_context():
-            X, Y, kern, rng = self.setup()
+            X, Y, kern, rng = self.prepare()
             m = gpflow.models.SVGP(X, Y, kern, likelihood=gpflow.likelihoods.StudentT(), Z=X[::2])
             m.compile()
             m.X = rng.randn(*X.shape)
@@ -149,7 +149,7 @@ class TestDataHolderModels(GPflowTestCase):
 
     def test_vgp(self):
         with self.test_context():
-            X, Y, kern, rng = self.setup()
+            X, Y, kern, rng = self.prepare()
             m = gpflow.models.VGP(X, Y, kern, likelihood=gpflow.likelihoods.StudentT())
             m.compile()
             m.X = rng.randn(*X.shape)

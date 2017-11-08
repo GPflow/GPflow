@@ -23,7 +23,7 @@ from gpflow.test_util import GPflowTestCase
 
 
 class TestMethods(GPflowTestCase):
-    def setup(self):
+    def prepare(self):
         rng = np.random.RandomState(0)
         X = rng.randn(100, 2)
         Y = rng.randn(100, 1)
@@ -47,13 +47,13 @@ class TestMethods(GPflowTestCase):
     def test_all(self):
         # test sizes.
         with self.test_context():
-            ms, _Xs, _rng = self.setup()
+            ms, _Xs, _rng = self.prepare()
             for m in ms:
                 self.assertEqual(m.is_built_coherence(), gpflow.Build.YES)
 
     def test_predict_f(self):
         with self.test_context():
-            ms, Xs, _rng = self.setup()
+            ms, Xs, _rng = self.prepare()
             for m in ms:
                 mf, vf = m.predict_f(Xs)
                 assert_array_equal(mf.shape, vf.shape)
@@ -62,7 +62,7 @@ class TestMethods(GPflowTestCase):
 
     def test_predict_y(self):
         with self.test_context():
-            ms, Xs, _rng = self.setup()
+            ms, Xs, _rng = self.prepare()
             for m in ms:
                 mf, vf = m.predict_y(Xs)
                 assert_array_equal(mf.shape, vf.shape)
@@ -71,7 +71,7 @@ class TestMethods(GPflowTestCase):
 
     def test_predict_density(self):
         with self.test_context():
-            ms, Xs, rng = self.setup()
+            ms, Xs, rng = self.prepare()
             Ys = rng.randn(10, 1)
             for m in ms:
                 d = m.predict_density(Xs, Ys)

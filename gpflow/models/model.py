@@ -19,13 +19,12 @@ import abc
 import numpy as np
 import tensorflow as tf
 
-from gpflow import settings
-from gpflow.params import Parameterized, DataHolder
-from gpflow.decors import autoflow
-from gpflow.mean_functions import Zero
-from gpflow.core.base import Build
+from .. import settings
+from ..core.compilable import Build
+from ..params import Parameterized, DataHolder
+from ..decors import autoflow
+from ..mean_functions import Zero
 
-# from gpflow import hmc
 
 class Model(Parameterized):
     def __init__(self, name=None):

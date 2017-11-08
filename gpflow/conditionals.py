@@ -13,11 +13,10 @@
 # limitations under the License.
 
 
-import warnings
 import tensorflow as tf
 
-from gpflow.decors import name_scope
-from gpflow import settings
+from . import settings
+from .decors import name_scope
 
 
 @name_scope()

@@ -17,15 +17,15 @@ import contextlib
 
 import tensorflow as tf
 
-from .core.base import GPflowError
-from .core.base import Build
+from .core.errors import GPflowError
+from .core.compilable import Build
+from .core.compilable import AutoBuildStatus
 from .core.node import Node
 from .core.autoflow import AutoFlow
 from .core.tensor_converter import TensorConverter
 
 from .params import Parameterized
 
-from .core.autobuild import AutoBuildStatus
 
 
 def name_scope(name=None):

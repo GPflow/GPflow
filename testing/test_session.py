@@ -14,7 +14,7 @@ from gpflow.test_util import GPflowTestCase
 class TestSessionConfiguration(GPflowTestCase):
 
     @gpflow.defer_build()
-    def setup(self):
+    def prepare(self):
         m = gpflow.models.GPR(
             np.ones((1, 1)),
             np.ones((1, 1)),
@@ -25,7 +25,7 @@ class TestSessionConfiguration(GPflowTestCase):
         '''
         Test configuration options are passed to tensorflow session
         '''
-        m = self.setup()
+        m = self.prepare()
         dop = 3
         settings.session.intra_op_parallelism_threads = dop
         settings.session.inter_op_parallelism_threads = dop

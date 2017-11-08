@@ -15,13 +15,13 @@
 # pylint: disable=E1123
 
 import unittest
-from functools import reduce
 
 import tensorflow as tf
 import numpy as np
 
 import gpflow
-from gpflow import settings, test_util
+from gpflow import settings
+from gpflow.test_util import GPflowTestCase
 
 
 class Foo(gpflow.models.Model):
@@ -29,7 +29,7 @@ class Foo(gpflow.models.Model):
         return tf.zeros([1], dtype=gpflow.settings.np_float)
 
 
-class NamingTests(test_util.GPflowTestCase):
+class TestNaming(GPflowTestCase):
     def test_standard_name(self):
         p_index = gpflow.core.parentable.Parentable._read_index() + 1
         with self.test_context():
@@ -57,7 +57,7 @@ class NamingTests(test_util.GPflowTestCase):
             self.assertEqual(m.p.hidden_full_name, '{}/p'.format(m.hidden_name))
             self.assertEqual(m.p.full_name, '{}/p'.format(m.name))
 
-class TypeTests(test_util.GPflowTestCase):
+class TestType(GPflowTestCase):
     def setUp(self):
         int_type = tf.int16
         float_type = tf.float16
@@ -114,7 +114,7 @@ class TypeTests(test_util.GPflowTestCase):
             fail_assigns(param)
 
 
-class ParamTests(test_util.GPflowTestCase):
+class TestParam(GPflowTestCase):
     def setUp(self):
         with self.test_context():
             self.p = gpflow.Param(1.0)
@@ -208,7 +208,7 @@ class ParamTests(test_util.GPflowTestCase):
             _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
 
 
-class ParameterizedNoParametersTests(test_util.GPflowTestCase):
+class TestParameterizedNoParameters(GPflowTestCase):
     def setUp(self):
         with self.test_context(), gpflow.defer_build():
             self.m = gpflow.params.Parameterized(name='m')
@@ -241,7 +241,7 @@ class ParameterizedNoParametersTests(test_util.GPflowTestCase):
                 self.m.b = gpflow.Param(20)
 
 
-class ParameterizedCompileTests(test_util.GPflowTestCase):
+class ParameterizedCompileTests(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
         with self.test_context() as session:
@@ -289,7 +289,7 @@ class ParameterizedCompileTests(test_util.GPflowTestCase):
         with self.test_context() as session:
             self.m.compile(session=session)
 
-class AutobuildTest(test_util.GPflowTestCase):
+class TestAutobuild(GPflowTestCase):
     def test_autobuild_option(self):
         with self.test_context():
             foo = Foo(autobuild=False)
@@ -325,7 +325,7 @@ class AutobuildTest(test_util.GPflowTestCase):
             equal(b.is_built(tf.get_default_graph()), gpflow.Build.YES)
             equal(b.is_built_coherence(), gpflow.Build.YES)
 
-class ParameterizedDeepTest(test_util.GPflowTestCase):
+class TestParameterizedDeep(GPflowTestCase):
     def setUp(self):
         with self.test_context():
             self.m = gpflow.params.Parameterized(name='m')
@@ -369,7 +369,7 @@ class ParameterizedDeepTest(test_util.GPflowTestCase):
             _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
 
 
-class ParamLikeInvariantTest(test_util.GPflowTestCase):
+class TestParamLikeInvariant(GPflowTestCase):
     def test_self_reference(self):
         m = gpflow.params.Parameterized()
         with self.assertRaises(ValueError):
@@ -411,7 +411,7 @@ class ParamLikeInvariantTest(test_util.GPflowTestCase):
     #         m2.foo = m1.foo
 
 
-class TestParamList(test_util.GPflowTestCase):
+class TestParamList(GPflowTestCase):
     def test_construction(self):
         with self.test_context():
             gpflow.ParamList([])
@@ -504,7 +504,7 @@ class TestParamList(test_util.GPflowTestCase):
             self.assertTrue(np.allclose(params, 0., atol=atol))
 
 
-class TestFixWithPrior(test_util.GPflowTestCase):
+class TestFixWithPrior(GPflowTestCase):
     """
     This tests that models with a fixed parameter which has a prior continue to work
     """
@@ -521,7 +521,7 @@ class TestFixWithPrior(test_util.GPflowTestCase):
             optimizer = gpflow.train.ScipyOptimizer()
             optimizer.minimize(m, maxiter=10)
 
-#class TestRandomizeDefault(test_util.GPflowTestCase):
+#class TestRandomizeDefault(GPflowTestCase):
 #    """
 #    This tests that distributions can sample random values without priors
 #    """
@@ -564,7 +564,7 @@ class TestFixWithPrior(test_util.GPflowTestCase):
 #            self.assertFalse(np.any(m.pmd2.value == 1.0))
 #            self.assertEquals(m.pmd2.shape, pmd2_shape)
 #
-#class TestRandomizePrior(test_util.GPflowTestCase):
+#class TestRandomizePrior(GPflowTestCase):
 #    """
 #    This tests that distributions can sample random values from priors
 #    """
@@ -610,7 +610,7 @@ class TestFixWithPrior(test_util.GPflowTestCase):
 #                self.assertTrue(m.pmd.value.shape == (5,5))
 #
 #
-#class TestRandomizeFeedPriors(test_util.GPflowTestCase):
+#class TestRandomizeFeedPriors(GPflowTestCase):
 #    """
 #    Test if standard randomize behavior can be overriden using
 #    distributions keyword.
@@ -627,7 +627,7 @@ class TestFixWithPrior(test_util.GPflowTestCase):
 #            self.assertFalse(m.p.value == 1.0)
 #
 #
-#class TestRandomizeHierarchical(test_util.GPflowTestCase):
+#class TestRandomizeHierarchical(GPflowTestCase):
 #    """
 #    This tests that models can randomize all contained parameters
 #    """
@@ -652,7 +652,7 @@ class TestFixWithPrior(test_util.GPflowTestCase):
 #            self.assertFalse(m.m.p2.value == 1.0)
 
 
-class TestScopes(test_util.GPflowTestCase):
+class TestScopes(GPflowTestCase):
     def setUp(self):
         with self.test_context() as session:
             self.graph = session.graph
@@ -684,7 +684,3 @@ def _check_trainable_flag(m, assert_true, assert_false):
         if param.trainable:
             assert_bool = assert_true
         assert_bool(gpflow.misc.is_tensor_trainable(param.parameter_tensor))
-
-
-if __name__ == "__main__":
-    unittest.main()

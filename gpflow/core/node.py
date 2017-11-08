@@ -17,10 +17,10 @@ import tensorflow as tf
 
 from .. import misc
 from .. import session_manager
-from ..core.base import Build
-from ..core.base import GPflowError
-from ..core.base import ICompilable
-from ..core.parentable import Parentable
+from .errors import GPflowError
+from .compilable import Build
+from .compilable import ICompilable
+from .parentable import Parentable
 
 class Node(Parentable, ICompilable):
 

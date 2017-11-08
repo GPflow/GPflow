@@ -26,7 +26,7 @@ from gpflow import settings
 
 
 class TransformTests(GPflowTestCase):
-    def setup(self):
+    def prepare(self):
         x = tf.placeholder(settings.np_float, 10)
         x_np = np.random.randn(10).astype(settings.np_float)
         transforms = []
@@ -44,7 +44,7 @@ class TransformTests(GPflowTestCase):
         Make sure the np forward transforms are the same as the tensorflow ones
         """
         with self.test_context() as sess:
-            x, x_np, transforms = self.setup()
+            x, x_np, transforms = self.prepare()
             ys = [t.forward_tensor(x) for t in transforms]
             ys_tf = [sess.run(y, feed_dict={x: x_np}) for y in ys]
             ys_np = [t.forward(x_np) for t in transforms]
@@ -53,7 +53,7 @@ class TransformTests(GPflowTestCase):
 
     def test_forward_backward(self):
         with self.test_context():
-            x, x_np, transforms = self.setup()
+            x, x_np, transforms = self.prepare()
             ys_np = [t.forward(x_np) for t in transforms]
             xs_np = [t.backward(y) for t, y in zip(transforms, ys_np)]
             for _t, x, _y in zip(transforms, xs_np, ys_np):
@@ -67,7 +67,7 @@ class TransformTests(GPflowTestCase):
         wrt a tensorflow derived version
         """
         with self.test_context() as sess:
-            x, x_np, transforms = self.setup()
+            x, x_np, transforms = self.prepare()
 
             # there is no jacobian: loop manually
             def jacobian(f):

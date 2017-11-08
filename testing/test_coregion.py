@@ -17,7 +17,7 @@ class TestEquivalence(GPflowTestCase):
     Here we make sure the coregionalized model with diagonal coregion kernel and
     with fixed lengthscale is equivalent with normal GP regression.
     """
-    def setup(self):
+    def prepare(self):
         rng = np.random.RandomState(0)
         X = [rng.rand(10, 2) * 10, rng.rand(20, 2) * 10]
         Y = [np.sin(x) + 0.9 * np.cos(x * 1.6) + rng.randn(*x.shape) * 0.8 for x in X]
@@ -70,7 +70,7 @@ class TestEquivalence(GPflowTestCase):
 
         self.test_graph = tf.Graph()
         with self.test_context():
-            vgp0, vgp1, cvgp, Xtest = self.setup()
+            vgp0, vgp1, cvgp, Xtest = self.prepare()
             opt1 = gpflow.train.ScipyOptimizer()
             opt2 = gpflow.train.ScipyOptimizer()
             opt3 = gpflow.train.ScipyOptimizer()
