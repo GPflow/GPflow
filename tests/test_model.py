@@ -23,6 +23,7 @@ from gpflow.test_util import GPflowTestCase
 
 class Quadratic(gpflow.models.Model):
     def __init__(self):
+        rng = np.random.RandomState(0)
         gpflow.models.Model.__init__(self)
         self.x = gpflow.Param(rng.randn(10))
 
@@ -32,9 +33,6 @@ class Quadratic(gpflow.models.Model):
 
 
 class TestOptimize(GPflowTestCase):
-    def setUp(self):
-        rng = np.random.RandomState(0)
-
     def test_adam(self):
         with self.test_context():
             m = Quadratic()
@@ -139,20 +137,21 @@ def setup_sgpr():
     Z = np.random.randn(100, 3)
     return gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
-class TestKeyboardCatching(GPflowTestCase):
-    def test_optimize_np(self):
-        with self.test_context():
-            m = setup_sgpr()
-            x_before = m.read_trainables()
-            opt = gpflow.train.ScipyOptimizer()
-            step = 15
-            raiser = KeyboardRaiser(step)
-            opt.minimize(m, step_callback=raiser, maxiter=1000)
-            self.assertEqual(raiser.count, step)
-            x_after = m.read_trainables()
-            before = np.hstack([np.hstack(np.hstack([x])) for x in x_before])
-            after = np.hstack([np.hstack(np.hstack([x])) for x in x_after])
-            self.assertFalse(np.allclose(before, after))
+# # TODO(@awav): KeyboardInterrupt is never 
+# class TestKeyboardCatching(GPflowTestCase):
+#     def test_optimize_np(self):
+#         with self.test_context():
+#             m = setup_sgpr()
+#             x_before = m.read_trainables()
+#             opt = gpflow.train.ScipyOptimizer()
+#             step = 15
+#             raiser = KeyboardRaiser(step)
+#             opt.minimize(m, step_callback=raiser, maxiter=1000)
+#             self.assertEqual(raiser.count, step)
+#             x_after = m.read_trainables()
+#             before = np.hstack([np.hstack(np.hstack([x])) for x in x_before])
+#             after = np.hstack([np.hstack(np.hstack([x])) for x in x_after])
+#             self.assertFalse(np.allclose(before, after))
 
     # TODO(@awav)
     #def test_optimize_tf(self):

@@ -23,8 +23,8 @@ else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 # Dependencies of GPflow
-dependencies = ['numpy>=1.9', 'scipy>=0.16']
-min_tf_version = '1.0.0'
+dependencies = ['numpy>=1.9', 'scipy>=0.16', 'pandas>=0.18']
+min_tf_version = '1.4.0'
 
 # Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu
@@ -51,6 +51,8 @@ setup(name='gpflow',
       url="http://github.com/GPflow/gpflow",
       packages=packages,
       install_requires=dependencies,
+      setup_requires=['pytest-runner'],
+      tests_require=['pytest'],
       package_data={'gpflow': ['gpflow/gpflowrc']},
       include_package_data=True,
       test_suite='tests',
