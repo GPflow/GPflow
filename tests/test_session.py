@@ -2,9 +2,9 @@
 # pylint: disable=W0212
 
 import numpy as np
-import gpflow
 import tensorflow as tf
 
+import gpflow
 from gpflow import settings
 from gpflow import session_manager
 from gpflow.test_util import GPflowTestCase
@@ -12,31 +12,30 @@ from gpflow.test_util import GPflowTestCase
 
 class TestSessionConfiguration(GPflowTestCase):
 
-    @gpflow.defer_build()
     def prepare(self):
-        m = gpflow.models.GPR(
-            np.ones((1, 1)),
-            np.ones((1, 1)),
-            kern=gpflow.kernels.Matern52(1))
-        return m
+        with gpflow.defer_build():
+            return gpflow.models.GPR(
+                np.ones((1, 1)),
+                np.ones((1, 1)),
+                kern=gpflow.kernels.Matern52(1))
 
     def test_option_persistance(self):
         '''
         Test configuration options are passed to tensorflow session
         '''
-        m = self.prepare()
         dop = 3
         settings.session.intra_op_parallelism_threads = dop
         settings.session.inter_op_parallelism_threads = dop
         settings.session.allow_soft_placement = True
-        m.compile()
-        session = gpflow.session_manager.get_default_session()
+        session = gpflow.session_manager.get_session()
         self.assertTrue(session._config.inter_op_parallelism_threads == dop)
         self.assertTrue(isinstance(session._config.inter_op_parallelism_threads, int))
         self.assertTrue(session._config.allow_soft_placement)
         self.assertTrue(isinstance(session._config.allow_soft_placement, bool))
-        opt = gpflow.train.ScipyOptimizer()
-        opt.minimize(m, maxiter=1)
+        # m = self.prepare()
+        # m.compile()
+        # opt = gpflow.train.ScipyOptimizer()
+        # opt.minimize(m, maxiter=1)
 
     def test_option_mutability(self):
         '''
