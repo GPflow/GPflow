@@ -50,32 +50,32 @@ class TestNotebooks(GPflowTestCase):
             self._exec_notebook(notebook_filename)
             print(notebook_filename, 'took {0} seconds.'.format(time.time() - ts))
 
-    def test_classification(self):
-        self._exec_notebook_ts("classification.ipynb")
+    # def test_classification(self):
+    #     self._exec_notebook_ts("classification.ipynb")
 
-    def test_coreg_demo(self):
-        self._exec_notebook_ts("coreg_demo.ipynb")
+    # def test_coreg_demo(self):
+    #     self._exec_notebook_ts("coreg_demo.ipynb")
 
-    def test_kernels(self):
-        self._exec_notebook_ts("kernels.ipynb")
+    # def test_kernels(self):
+    #     self._exec_notebook_ts("kernels.ipynb")
 
-    def test_mcmc(self):
-        self._exec_notebook_ts("mcmc.ipynb")
+    # def test_mcmc(self):
+    #     self._exec_notebook_ts("mcmc.ipynb")
 
-    def test_ordinal(self):
-        self._exec_notebook_ts("ordinal.ipynb")
+    # def test_ordinal(self):
+    #     self._exec_notebook_ts("ordinal.ipynb")
 
-    def test_sanity_check(self):
-        self._exec_notebook_ts("Sanity_check.ipynb")
+    # def test_sanity_check(self):
+    #     self._exec_notebook_ts("Sanity_check.ipynb")
 
-    def test_settings(self):
-        self._exec_notebook_ts("settings.ipynb")
+    # def test_settings(self):
+    #     self._exec_notebook_ts("settings.ipynb")
 
-    def test_SGPR_notes(self):
-        self._exec_notebook_ts("SGPR_notes.ipynb")
+    # def test_SGPR_notes(self):
+    #     self._exec_notebook_ts("SGPR_notes.ipynb")
 
-    def test_vgp_notes(self):
-        self._exec_notebook_ts("vgp_notes.ipynb")
+    # def test_vgp_notes(self):
+    #     self._exec_notebook_ts("vgp_notes.ipynb")
 
     # TODO(@awav): CHECK IT
     # def FITCvsVFE(self):

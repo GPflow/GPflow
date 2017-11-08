@@ -199,9 +199,11 @@ class Rescale(Transform):
         return self.chain_transform.backward(y) / self.factor
 
     def log_jacobian_tensor(self, x):
-        N = tf.reduce_prod(tf.shape(x))
-        return tf.cast(N, settings.tf_float) * tf.log(self.factor) + \
-                self.chain_transform.log_jacobian_tensor(x * self.factor)
+        N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.tf_float)
+        factor = tf.cast(self.factor, dtype=settings.tf_float)
+        log_factor = tf.log(factor)
+        log_jacobian = self.chain_transform.log_jacobian_tensor(x * self.factor)
+        return N * log_factor + log_jacobian
 
     def __str__(self):
         return "R" + self.chain_transform.__str__()
