@@ -24,7 +24,7 @@ else:
 
 # Dependencies of GPflow
 dependencies = ['numpy>=1.9', 'scipy>=0.16', 'pandas>=0.18']
-min_tf_version = '1.4.0'
+min_tf_version = '1.0.0'
 
 # Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu

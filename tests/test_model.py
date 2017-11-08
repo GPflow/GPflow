@@ -137,7 +137,7 @@ def setup_sgpr():
     Z = np.random.randn(100, 3)
     return gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
-# # TODO(@awav): KeyboardInterrupt is never 
+# # TODO(@awav): KeyboardInterrupt is never caught.
 # class TestKeyboardCatching(GPflowTestCase):
 #     def test_optimize_np(self):
 #         with self.test_context():
@@ -174,8 +174,8 @@ class TestLikelihoodAutoflow(GPflowTestCase):
         m.clear()
 
         with self.test_context():
-            m.compile()
             m.kern.variance.prior = gpflow.priors.Gamma(1.4, 1.6)
+            m.compile()
             l1 = m.compute_log_likelihood()
             p1 = m.compute_log_prior()
 
@@ -187,9 +187,9 @@ class TestLikelihoodAutoflow(GPflowTestCase):
 class TestName(GPflowTestCase):
     def test_name(self):
         with self.test_context():
-            m1 = gpflow.models.Empty()
+            m1 = Empty()
             self.assertEqual(m1.name, 'Empty')
-            m2 = gpflow.models.Empty(name='foo')
+            m2 = Empty(name='foo')
             self.assertEqual(m2.name, 'foo')
 
 

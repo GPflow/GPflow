@@ -592,6 +592,6 @@ class TestAddCrossCalcs(GPflowTestCase):
             a, b = session.run((tfa, tfb), feed_dict=feed_dict)
             _assert_pdeq(self, a, b)
 
-            
+
 if __name__ == "__main__":
     tf.test.main()
