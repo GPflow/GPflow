@@ -1,4 +1,3 @@
-import unittest
 import tensorflow as tf
 
 import numpy as np
@@ -195,3 +194,7 @@ class TestSVGP(GPflowTestCase):
             likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
         model.compile()
         model.compute_log_likelihood()
+
+
+if __name__ == '__main__':
+    tf.test.main()

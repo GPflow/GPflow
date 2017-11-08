@@ -1,6 +1,3 @@
-from __future__ import absolute_import, print_function
-
-import unittest
 import tensorflow as tf
 
 import numpy as np
@@ -568,4 +565,4 @@ class TestARDInit(GPflowTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()

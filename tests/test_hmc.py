@@ -1,12 +1,13 @@
-import gpflow
-import unittest
 import tensorflow as tf
 
-import numpy as np
-from numpy.testing import assert_almost_equal, assert_allclose
-
 from nose.plugins.attrib import attr
+
+import numpy as np
+from numpy.testing import assert_almost_equal
+
+import gpflow
 from gpflow.test_util import GPflowTestCase
+
 
 @attr(speed='slow')
 class SampleGaussianTest(GPflowTestCase):
@@ -174,5 +175,5 @@ class CheckTrainingVariableState(GPflowTestCase):
             assert_almost_equal(last[col], params[col].read_value())
 
 
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == '__main__':
+    tf.test.main()

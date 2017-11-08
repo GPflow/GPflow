@@ -1,6 +1,3 @@
-from __future__ import print_function
-import unittest
-
 import tensorflow as tf
 
 import numpy as np
@@ -103,7 +100,7 @@ class WhitenTest(GPflowTestCase):
         with self.test_context() as sess:
             Xs, X, F, k, num_data, feed_dict = self.prepare()
             k.compile(session=sess)
-            
+
             K = k.K(X) + tf.eye(num_data, dtype=settings.np_float) * 1e-6
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, F, lower=True)
@@ -151,5 +148,5 @@ class WhitenTestGaussian(WhitenTest):
             assert_allclose(var_difference, 0, atol=4)
 
 
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == '__main__':
+    tf.test.main()

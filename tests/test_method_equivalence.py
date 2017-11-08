@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import unittest
 import tensorflow as tf
 
 from nose.plugins.attrib import attr
@@ -258,4 +257,4 @@ class TestUpperBound(GPflowTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    tf.test.main()

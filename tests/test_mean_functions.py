@@ -1,6 +1,5 @@
 import itertools
 import tensorflow as tf
-import unittest
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -381,4 +380,4 @@ class TestBug277Regression(GPflowTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()

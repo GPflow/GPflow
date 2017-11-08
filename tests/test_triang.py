@@ -1,4 +1,3 @@
-import unittest
 import tensorflow as tf
 
 import numpy as np
@@ -59,4 +58,4 @@ class TestVecToTri(GPflowTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()

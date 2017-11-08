@@ -1,7 +1,4 @@
-from __future__ import print_function
-import unittest
 import tensorflow as tf
-
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -160,4 +157,4 @@ class TestDataHolderModels(GPflowTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    tf.test.main()

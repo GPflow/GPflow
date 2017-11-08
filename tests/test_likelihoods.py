@@ -1,4 +1,3 @@
-import unittest
 import six
 import tensorflow as tf
 
@@ -393,4 +392,4 @@ class TestLikelihoodChecks(GPflowTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()

@@ -1,7 +1,6 @@
 
 # pylint: disable=W0212
 
-import unittest
 import os
 import tensorflow as tf
 import gpflow
@@ -78,5 +77,5 @@ class TestSettingsManager(GPflowTestCase):
         gpflow.settings.verbosity.hmc_verb = orig
 
 
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == '__main__':
+    tf.test.main()

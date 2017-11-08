@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import unittest
+import tensorflow as tf
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -25,7 +25,7 @@ class FlatModel(gpflow.models.Model):
     def _build_likelihood(self):
         return np.array(0., dtype=settings.np_float)
 
-class PriorModeTests(GPflowTestCase):
+class TestPriorMode(GPflowTestCase):
     """
     these tests optimize the prior to find the mode numerically. Make sure the
     mode is the same as the known mode.
@@ -123,4 +123,4 @@ class PriorModeTests(GPflowTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()

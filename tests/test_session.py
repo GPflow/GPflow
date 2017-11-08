@@ -1,7 +1,6 @@
 
 # pylint: disable=W0212
 
-import unittest
 import numpy as np
 import gpflow
 import tensorflow as tf
@@ -76,4 +75,4 @@ class TestSessionConfiguration(GPflowTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    tf.test.main()

@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-from __future__ import print_function
-
-import unittest
 import tensorflow as tf
 
 import numpy as np
@@ -276,4 +273,4 @@ class TestName(GPflowTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()

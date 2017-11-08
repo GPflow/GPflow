@@ -55,6 +55,7 @@ class TestProfiling(GPflowTestCase):
         m.clear()
         s.profiling.output_directory = __file__
         m.compile()
+
         # TODO(@awav): CHECK IT
         # with self.assertRaises(IOError):
         #     with gpflow.settings.temp_settings(s):
@@ -80,3 +81,6 @@ class TestProfiling(GPflowTestCase):
 
         if os.path.exists(s.profiling.output_directory):
             os.rmdir(s.profiling.output_directory)
+
+if __name__ == "__main__":
+    tf.test.main()

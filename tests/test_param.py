@@ -14,8 +14,6 @@
 
 # pylint: disable=E1123
 
-import unittest
-
 import tensorflow as tf
 import numpy as np
 
@@ -241,7 +239,7 @@ class TestParameterizedNoParameters(GPflowTestCase):
                 self.m.b = gpflow.Param(20)
 
 
-class ParameterizedCompileTests(GPflowTestCase):
+class TestParameterizedCompile(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
         with self.test_context() as session:
@@ -684,3 +682,6 @@ def _check_trainable_flag(m, assert_true, assert_false):
         if param.trainable:
             assert_bool = assert_true
         assert_bool(gpflow.misc.is_tensor_trainable(param.parameter_tensor))
+
+if __name__ == '__main__':
+    tf.test.main()

@@ -1,5 +1,4 @@
-from __future__ import print_function
-
+import tensorflow as tf
 import numpy as np
 
 import gpflow
@@ -164,4 +163,4 @@ class TestBayesianGPLVM(GPflowTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()

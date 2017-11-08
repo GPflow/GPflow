@@ -40,7 +40,6 @@ except (ImportError, DeprecationWarning) as e:
     dependencies.append('tensorflow>={0}'.format(min_tf_version))
 
 packages = find_packages('.')
-packages.remove('testing')
 
 setup(name='gpflow',
       version=verstr,
@@ -54,7 +53,7 @@ setup(name='gpflow',
       install_requires=dependencies,
       package_data={'gpflow': ['gpflow/gpflowrc']},
       include_package_data=True,
-      test_suite='testing',
+      test_suite='tests',
       extras_require={'tensorflow with gpu': ['tensorflow-gpu>=1.0.0'],
                       'Export parameters as pandas dataframes': ['pandas>=0.18.1']},
       classifiers=['License :: OSI Approved :: Apache Software License',
