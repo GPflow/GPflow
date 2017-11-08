@@ -9,12 +9,12 @@ from gpflow.test_util import GPflowTestCase
 
 
 class TestProfiling(GPflowTestCase):
-    @gpflow.defer_build()
     def prepare(self):
-        X = np.random.rand(100, 1)
-        Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
-        k = gpflow.kernels.RBF(1)
-        return gpflow.models.GPR(X, Y, k)
+        with gpflow.defer_build():
+            X = np.random.rand(100, 1)
+            Y = np.sin(X) + np.random.randn(*X.shape) * 0.01
+            k = gpflow.kernels.RBF(1)
+            return gpflow.models.GPR(X, Y, k)
 
     def test_profile(self):
         m = self.prepare()
@@ -44,11 +44,14 @@ class TestProfiling(GPflowTestCase):
         s.profiling.output_file_name = 'test_trace_autoflow'
 
         with gpflow.settings.temp_settings(s):
-            m.compile()
-            m.kern.compute_K_symm(m.X.read_value())
+            with gpflow.session_manager.get_session().as_default():
+                m.compile()
+                m.kern.compute_K_symm(m.X.read_value())
 
-        expected_file = os.path.join(s.profiling.output_directory,
-                                     s.profiling.output_file_name + '.json')
+        directory = s.profiling.output_directory
+        filename = s.profiling.output_file_name + '.json'
+        expected_file = os.path.join(directory, filename)
+        print(expected_file)
         self.assertTrue(os.path.exists(expected_file))
         os.remove(expected_file)
 
