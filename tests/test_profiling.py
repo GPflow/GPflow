@@ -40,7 +40,7 @@ class TestProfiling(GPflowTestCase):
         m = self.prepare()
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
-        s.profiling.output_directory = os.path.dirname(__file__)
+        s.profiling.output_directory = '/tmp/'
         s.profiling.output_file_name = 'test_trace_autoflow'
 
         with gpflow.settings.temp_settings(s):
