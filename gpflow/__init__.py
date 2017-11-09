@@ -20,6 +20,10 @@ from __future__ import absolute_import
 from ._version import __version__
 from ._settings import SETTINGS as settings
 
+from .session_manager import get_session
+from .session_manager import get_default_session
+from .session_manager import reset_default_session
+
 from . import misc
 from . import transforms
 from . import conditionals
