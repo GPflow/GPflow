@@ -193,8 +193,13 @@ class Parameterized(Node):
         for param in self.params:
             param.trainable = value
 
-    def __str__(self):
-        return '\n\n'.join([p.__str__() for p in self.parameters])
+    def fix_shape(self, parameters=True, data_holders=True):
+        if parameters:
+            for parameter in self.parameters:
+                parameter.fix_shape()
+        if data_holders:
+            for data_holder in self.data_holders:
+                data_holder.fix_shape()
 
     def assign(self, values, session=None, force=True):
         session = self.enquire_session(session=session)
@@ -330,3 +335,7 @@ class Parameterized(Node):
             value.set_name(key)
 
         object.__setattr__(self, key, value)
+
+
+    def __str__(self):
+        return '\n\n'.join([p.__str__() for p in self.parameters])

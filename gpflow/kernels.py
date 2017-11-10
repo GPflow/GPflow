@@ -95,7 +95,7 @@ class Kern(Parameterized):
 
     @autoflow((settings.tf_float, [None, None]),
               (settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None, None, None]))
+              (settings.tf_float, [None, None, None]))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
@@ -191,14 +191,16 @@ class Kern(Parameterized):
         # Number of actual input dimensions
         D = self.input_size if hasattr(self, 'input_size') else self.input_dim
 
-        with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=settings.tf_int),
-                            message="Numerical quadrature needs to know correct shape of Xmu.")
-        ]):
+        msg = "Numerical quadrature needs to know correct shape of Xmu."
+        assert_shape = tf.assert_equal(tf.shape(Xmu)[1], D, message=msg)
+        with tf.control_dependencies([assert_shape]):
             Xmu = tf.identity(Xmu)
 
-        return mvnquad(lambda x: tf.expand_dims(self.K(x, Z), 2) * tf.expand_dims(x, 1),
-                       Xmu, Xcov, self.num_gauss_hermite_points, D, Dout=(M, D))
+        def integrand(x):
+            return tf.expand_dims(self.K(x, Z), 2) * tf.expand_dims(x, 1)
+
+        num_points = self.num_gauss_hermite_points
+        return mvnquad(integrand, Xmu, Xcov, num_points, D, Dout=(M, D))
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         """

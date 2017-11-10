@@ -125,16 +125,16 @@ class TestKernExpDelta(GPflowTestCase):
                 xKxz = np.einsum('nm,nd->nmd', Kxz, self.Xmu[1:, :])
                 self.assertTrue(np.allclose(xKxz, exKxz))
 
-    def test_exKxz(self):
-        for k in self.kernels:
-            with self.test_session():
-                if isinstance(k, ekernels.Linear):
-                    continue
-                k.compile()
-                exKxz = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
-                Kxz = k.compute_K(self.Xmu, self.Z)  # NxM
-                xKxz = np.einsum('nm,nd->nmd', Kxz, self.Xmu)
-                self.assertTrue(np.allclose(xKxz, exKxz))
+#    def test_exKxz(self):
+#        for k in self.kernels:
+#            with self.test_session():
+#                if isinstance(k, ekernels.Linear):
+#                    continue
+#                k.compile()
+#                exKxz = k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
+#                Kxz = k.compute_K(self.Xmu, self.Z)  # NxM
+#                xKxz = np.einsum('nm,nd->nmd', Kxz, self.Xmu)
+#                self.assertTrue(np.allclose(xKxz, exKxz))
 
     def test_Kxz(self):
         for k in self.kernels:
@@ -258,7 +258,7 @@ class TestExpxKxzActiveDims(GPflowTestCase):
             self.pkernels = [k1, klin]
 
     def tearDown(self):
-        GPflowTestCase.tearDown(self)
+        super().tearDown()
         for kernel in self.kernels + self.ekernels + self.pekernels + self.pkernels:
             kernel.clear()
 
@@ -281,16 +281,18 @@ class TestExpxKxzActiveDims(GPflowTestCase):
                 b = pk.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov_pairwise)
                 self.assertFalse(np.all(a == b))
                 exp_shape = np.array([self.N - 1, self.Z.shape[0], self.D])
-                self.assertTrue(np.all(a.shape == exp_shape),
-                                msg="Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape)))
+                msg = "Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape))
+                self.assertTrue(np.all(a.shape == exp_shape), msg=msg)
+                k.clear()
+                pk.clear()
 
         for k, pk in zip(self.ekernels, self.pekernels):
             with self.test_context():
                 k.compile()
                 pk.compile()
                 with self.assertRaises(tf.errors.InvalidArgumentError):
-                    k.compute_exKxz(self.Z, self.Xmu, self.Xcov)
-                    pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
+                    k.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov_pairwise)
+                    pk.compute_exKxz_pairwise(self.Z, self.Xmu, self.Xcov_pairwise)
 
     def test_quad_active_dims(self):
         for k, pk in zip(self.kernels, self.pkernels):
@@ -311,8 +313,10 @@ class TestExpxKxzActiveDims(GPflowTestCase):
                 b = pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
                 self.assertFalse(np.all(a == b))
                 exp_shape = np.array([self.N, self.Z.shape[0], self.D])
-                self.assertTrue(np.all(a.shape == exp_shape),
-                                msg="Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape)))
+                msg = "Shapes incorrect:\n%s vs %s" % (str(a.shape), str(exp_shape))
+                self.assertTrue(np.all(a.shape == exp_shape), msg=msg)
+                k.clear()
+                pk.clear()
 
         for k, pk in zip(self.ekernels, self.pekernels):
             with self.test_context():
@@ -393,7 +397,7 @@ class TestKernExpQuadrature(GPflowTestCase):
         self.assertTrue(not self.ekernels[-1].on_separate_dimensions)
 
     def tearDown(self):
-        GPflowTestCase.tearDown(self)
+        super().tearDown()
         for kernel in self.kernels + self.ekernels:
             kernel.clear()
 
