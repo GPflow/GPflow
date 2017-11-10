@@ -28,6 +28,17 @@ from .parameterized import Parameterized
 
 
 class ParamList(Parameterized):
+    """
+    ParamList is special case of parameterized object. It implements different
+    access pattern for its childres. Instead saving node like objects as attributes
+    it keeps them in the list, providing indexed access and acts as simple list.
+
+    :param list_of_params: list of node like objects.
+    :param trainable: Boolean flag. It indicates whether children parameters
+        should be trainable or not.
+    :param name: ParamList name.
+    """
+
     def __init__(self, list_of_params, trainable=True, name=None):
         super(ParamList, self).__init__(name=None)
         if not isinstance(list_of_params, list):

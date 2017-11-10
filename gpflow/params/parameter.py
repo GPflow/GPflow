@@ -38,9 +38,85 @@ from ..transforms import Identity
 class Parameter(Node):
     """
     Paramater class is a cornerstone of the GPflow package. It wraps TensorFlow
-    variables and operations like building prior or transformation of the variable.
+    variable and its prior and transformation building operations. In GPflow
+    computation graph the parameter is a leaf in the tree.
 
-    Constrained and unconstrained representation:
+    *Constrained* and *unconstrained* values of the parameter.
+
+    These definitions arise from optimization topic, constrained and unconstrained
+    optimization accordingly.
+
+    _Constrained_ value has acceptable value boundaries and user always works with
+    such values. It means that when you pass value to create parameter object, the
+    parameter assumes that this is _constrained_ value. When user reads value of
+    the parameter, the user gets _constrained_ value.
+
+    For example, variance cannot be negative, hence the constraint is [0, ∞).
+
+    ```
+    param = gpflow.Param(1.0)  # Here `1.0` is constrained value.
+    value = param.read_value() # `value` is constrained value too.
+    ```
+
+    *Unconstrained* value doesn't have any limits. The necessity in this value
+    is caused by available set of TensorFlow optimizers. In fact, internal
+    parameter tensor is unconstrained and will be trained as unconstrained variable.
+
+    ```
+    param = gpflow.Param(1.0)  # `1.0` is constrained value.
+    param.parameter_tensor     # unconstrained TensorFlow variable.
+    ```
+
+    User can manage contraint type which will be used at a parameter. There is special
+    *transform* property and option in constructor for that. The user can pass one of
+    the implementations of `ITransform` interface. By default Identity transform is
+    applied, so that constrained has no difference from unconstrained, and variable
+    is simply considered as unconstrained.
+
+    ```
+    param = gpflow.Param(1.0) # Identity transform is applied.
+    ```
+
+    In example below, the parameter has exponential transform. It means that input
+    value is always must be positive [0, ∞), but internal unconstrained tensor has
+    no boundaries (∞, ∞).
+
+    ```
+    param = gpflow.Param(1.0, transform=gpflow.transforms.Exp())
+    param.read_value()
+    # 1.0
+    gpflow.get_default_session().run(param.parameter_tensor)
+    # -1.0000005000290891e-06
+    ```
+
+    *Parameter's shape*.
+
+    The parameter's shape is always fixed by default. It means that user is
+    not allowed to modify shape when parameter's tensors are built. User can
+    modify default behavior by setting up `fix_shape` option to `False`, the
+    parameter will be able to change its shape and internal parameter's tensor
+    will have floating shape - None. *NOTE: trainable parameters with floating
+    shape cannot be trained by a bunch of TensorFlow optimizers like RMSProp,
+    Adam as they require shape information for trainable variables in advance of
+    optimizer's tensors construction.*
+
+    :param value: Constrained input value. It can be a float, an integer,
+        a float or integer like list, numpy array or TensorFlow variable.
+    :param transform: Instance of GPflow.ITransform implementation.
+    :param prior: Instance of GPflow.IPrior implementation.
+    :param trainable: Boolean flag. It indicates whether variables
+        will be added to trainbles TensorFlow set or not.
+    :param dtype: Type of new parameter.
+    :param fix_shape: Default value is `True` and indicates that shape
+        of internal tensor will be the same as the shape of the input
+        variable and can not be changed. `False` will turn on floating
+        shape mode for the tensor.
+    :param name: Name of the parameter.
+
+    :raises: ValueError exception if value is not valid. In cases when
+        default graph used for building parameter differs from the graph
+        used during construction of priors or transformations, the GPflowError
+        exception is raised.
     """
 
     class ParameterAttribute(enum.Enum):
@@ -59,23 +135,6 @@ class Parameter(Node):
     def __init__(self, value, transform=None, prior=None,
                  trainable=True, dtype=None, fix_shape=True,
                  name=None):
-        """
-        Parameter init method.
-
-        :param value: Constrained input value. It can be a float, an integer,
-            a float or integer like list, numpy array or TensorFlow variable.
-        :param transform: Instance of GPflow.ITransform implementation.
-        :param prior: Instance of GPflow.IPrior implementation.
-        :param trainable: Boolean flag. It indicates whether variables
-            will be added to trainbles TensorFlow set or not.
-        :param dtype: Type of new parameter.
-        :param fix_shape: Default value is `True` and indicates that shape
-            of internal tensor will be the same as the shape of the input
-            variable and can not be changed. `False` will turn on floating
-            shape mode for the tensor.
-        :param name: Name of the parameter.
-        """
-
         self._externally_defined = False
         self._fixed_shape = fix_shape
         value = self._valid_input(value, dtype=dtype)

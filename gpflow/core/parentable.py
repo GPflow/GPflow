@@ -22,18 +22,15 @@ class Parentable:
     established implicitly via attributes.
 
     The Parentable class stores static variable which is used for assining unique
-    prefix name identificator for each newly created object inherited it.
+    prefix name identificator for each newly created object inherited from Parentable.
+
+    :param name: Parentable nodes name. When name is None, unique index identifier
+        will be attached to the hidden name (internal representation name).
     """
 
     __index = 0
 
     def __init__(self, name=None):
-        """
-        Parentable init method.
-
-        :param name: parentable nodes name. When name is None, unique index identifier
-            will be attached to the hidden name (internal representation name).
-        """
         self._parent = None
         self._name = self._define_name(name)
 
@@ -54,9 +51,7 @@ class Parentable:
     @property
     def name(self):
         """
-        Returns assigned name for this particular parenable node. If it doesn't have parents,
-        the name with unique identifier, if it was used during object construction,
-        will be returned.
+        Returns assigned name for this particular parenable node.
         """
         name = self._name.split(sep='/', maxsplit=1)
         if len(name) > 1 and name[0].isdigit():
@@ -65,7 +60,8 @@ class Parentable:
 
     @property
     def hidden_name(self):
-        """Returns fully qualified name of the parentable node."""
+        """Returns fully qualified name of the parentable node. Hidden name includes
+        names of parents separated by slash, e.g. 'parent0/parent1/node'."""
         return self._name
 
     @property

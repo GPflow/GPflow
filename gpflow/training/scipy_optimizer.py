@@ -32,7 +32,23 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._model = None
 
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=True, anchor=True, **kwargs):
+                 maxiter=1000, initialize=True, anchor=True, **run_kwargs):
+        """
+        Minimizes objective function of the model.
+
+        :param model: GPflow model with objective tensor.
+        :param session: Session where optimization will be run.
+        :param var_list: List of extra variables which should be trained during optimization.
+        :param feed_dict: Feed dictionary of tensors passed to session run method.
+        :param maxiter: Number of run interation. Note: scipy optimizer can do early stopping
+            if model converged.
+        :param initialize: If `True` model parameters will be re-initialized even if they were
+            initialized before for gotten session.
+        :param anchor: If `True` trained parameters computed during optimization at
+            particular session will be synchronized with internal parameter values.
+        :param kwargs: This is a dictionary of extra parameters for session run method and
+            one `disp` option which will be passed to scipy optimizer.
+        """
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
 

@@ -35,6 +35,51 @@ from .parameter import Parameter
 from .dataholders import DataHolder
 
 class Parameterized(Node):
+    """
+    Parameterized object represents a set of computations over children nodes and
+    one of the main purposes is to store these children node like objects.
+    They can be parameters, data holders or even another parameterized objects.
+    Parameterized object links to childrens via python object attributes, changing
+    their parentable names.
+
+    ```
+    p = gpflow.Parameterized()
+    p.full_name
+    # 'Parameterized'
+
+    p.a = gpflow.Param(0)
+    p.a.full_name
+    # 'Parameter'
+    # ^^^ This is explained by the fact that the parameter is
+    #     constructed before assignement.
+    ```
+
+    All parameters, data holders and other parameterized objects which are created
+    inside parameterized __init__ method will be built in compliant build order of
+    the parameterized object which was initiating construction.
+
+    ```
+    class Demo(gpflow.Parameterized):
+        def __init__(self):
+            self.a = gpflow.Param(0)
+
+    demo = Demo()
+    demo.full_name
+    # 'Demo'
+
+    demo.a.full_name
+    # 'Demo/a'
+    ```
+
+    Caveats:
+
+    * Empty parameterized object, in other words without any node like attributes,
+      always has status `Build.YES`.
+    * If assignee object has been built, right before assign operation, its tensor
+      name will not change its name according to new tree structure.
+
+    :param name: Parentable name of the object. Class name is used, when name is None.
+    """
 
     def __init__(self, name=None):
         super(Parameterized, self).__init__(name=name)

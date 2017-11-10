@@ -29,9 +29,28 @@ from .parameter import Parameter
 
 
 class DataHolder(Parameter):
+    """
+    DataHolder is similar to the Parameter with only difference that
+    default values for `fix_shape` and `trainable` options are opposite
+    to the Parameter's and it does not have prior and transform options.
+
+    By default shape of data holders is in floating mode and data holder
+    does not provide a trainable option at all.
+
+    :param value: Data input value. It can be a float, an integer,
+        a float or integer like list, numpy array or TensorFlow variable.
+    :param dtype: Type of new data holder.
+    :param fix_shape: Default value is `False` and indicates that shape
+        of internal tensor does not have specific shape, in other words,
+        it is None.
+    :param name: Name of the parameter.
+
+    :raises: ValueError exception if value is not valid.
+    """
+
     def __init__(self, value, dtype=None, fix_shape=False, name=None):
         self._dataholder_tensor = None
-        super(DataHolder, self).__init__(value=value, name=name, dtype=dtype, fix_shape=fix_shape)
+        super().__init__(value=value, name=name, dtype=dtype, fix_shape=fix_shape)
 
     @property
     def trainable(self):
@@ -97,12 +116,30 @@ class DataHolder(Parameter):
 
 
 class Minibatch(DataHolder):
+    """
+    Minibatch is a special case of data holders. As the name implies the minibatch
+    object provides shuffling and endless batching mechanism for input data.
+    Minibatch formes batches along zero axe of the input array.
+
+    Minibatch is shape agnostic for zero axe. Once you created the minibatch you can
+    vary size of the dataset, but shape of the features must be fixed.
+
+    :param value: Numpy array.
+    :param batch_size: Size of the batches.
+    :param shuffle: If `True` then input data will be shuffled before batching.
+    :param seed: Seed value for TensorFlow random generator.
+    :param dtype: Type of new minibatch.
+    :param name: Minibatch name.
+
+    :raises: ValueError exception if input value is not a numpy array or a list.
+    """
+
     def __init__(self, value, batch_size=1, shuffle=True,
-                 seed=None, name=None, dtype=None):
+                 seed=None, dtype=None, name=None):
         if not misc.is_valid_param_value(value) or misc.is_tensor(value):
             raise ValueError('The value must be either an array or a scalar.')
 
-        super(Minibatch, self).__init__(value, name=name, dtype=dtype)
+        super().__init__(value, name=name, dtype=dtype)
 
         self._batch_size = batch_size
         self._shuffle = shuffle

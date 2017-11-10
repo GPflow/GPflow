@@ -95,11 +95,11 @@ class AutoBuild(abc.ABCMeta):
 
 class Build(enum.Enum):
     """
-    Compilable object status.
-    Compilable object can be built within one and only one graph, therefore this status
+    ICompilable object status.
+    ICompilable object can be built within one and only one graph, therefore this status
     express either object was built using particular graph. NOT_COMPATIBLE_GRAPH is
-    a special status, wich shows that compilable object embedded in a graph,
-    but the user is checking status for different graph.
+    a special case of status, which shows that compilable object embedded in a graph,
+    but the user is checking status for different one.
     """
 
     YES = 1
