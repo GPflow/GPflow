@@ -98,17 +98,10 @@ class SVGP(GPModel):
     @params_as_tensors
     def build_prior_KL(self):
         if self.whiten:
-            if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu, self.q_sqrt)
-            else:
-                KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
+            K = None
         else:
             K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
-            if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
-            else:
-                KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
-        return KL
+        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     @params_as_tensors
     def _build_likelihood(self):

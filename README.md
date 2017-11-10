@@ -31,7 +31,7 @@ python setup.py install
 ```
 You can run the tests with `python setup.py test`.
 
-Version history is documented [here.](https://github.com/GPflow/GPflow/blob/master/RELEASE.md)
+We document the [version history](https://github.com/GPflow/GPflow/blob/master/RELEASE.md).
 
 ## Docker image
 
@@ -41,13 +41,13 @@ We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which 
 docker run -it -p 8888:8888 gpflow/gpflow
 ```
 
-Code to generate the image can be found [here](Dockerfile)
+The image can be generated using our [Dockerfile](Dockerfile).
 
 # Getting help
-Please use gihub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.
+Please use GitHub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.
 
 # Contributing
-All constuctive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
+All constructive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
 
 # Projects using GPflow
 

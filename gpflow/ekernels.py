@@ -49,7 +49,7 @@ class RBF(kernels.RBF):
         return self.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
 
     @params_as_tensors
-    def exKxz(self, Z, Xmu, Xcov):
+    def exKxz_pairwise(self, Z, Xmu, Xcov):
         """
         <x_t K_{x_{t-1}, Z}>_q_{x_{t-1:t}}
         :param Z: MxD inducing inputs
@@ -57,11 +57,11 @@ class RBF(kernels.RBF):
         :param Xcov: 2x(N+1)xDxD
         :return: NxMxD
         """
-        with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, dtype=settings.tf_int),
-                            message="Currently cannot handle slicing in exKxz."),
-            tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
-        ]):
+
+        msg_input_shape = "Currently cannot handle slicing in exKxz_pairwise."
+        assert_input_shape = tf.assert_equal(tf.shape(Xmu)[1], self.input_dim, message=msg_input_shape)
+        assert_cov_shape = tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
+        with tf.control_dependencies([assert_input_shape, assert_cov_shape]):
             Xmu = tf.identity(Xmu)
 
         N = tf.shape(Xmu)[0] - 1
@@ -75,14 +75,49 @@ class RBF(kernels.RBF):
         scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
 
         det = tf.matrix_determinant(
-            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.tf_float), 0) + tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm
-        )  # N
+            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.tf_float), 0) +
+            tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm)  # N
 
         vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmum, 2)  # NxDxM
         smIvec = tf.matrix_solve(scalemat, vec)  # NxDxM
         q = tf.reduce_sum(smIvec * vec, [1])  # NxM
 
         addvec = tf.matmul(smIvec, Xsigmc, transpose_a=True) + tf.expand_dims(Xmup, 1)  # NxMxD
+
+        return self.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
+
+    @params_as_tensors
+    def exKxz(self, Z, Xmu, Xcov):
+        """
+        It computes the expectation:
+        <x_t K_{x_t, Z}>_q_{x_t}
+        :param Z: MxD inducing inputs
+        :param Xmu: X mean (NxD)
+        :param Xcov: NxDxD
+        :return: NxMxD
+        """
+
+        msg_input_shape = "Currently cannot handle slicing in exKxz."
+        assert_input_shape = tf.assert_equal(tf.shape(Xmu)[1], self.input_dim, message=msg_input_shape)
+        assert_cov_shape = tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
+        with tf.control_dependencies([assert_input_shape, assert_cov_shape]):
+            Xmu = tf.identity(Xmu)
+
+        N = tf.shape(Xmu)[0]
+        D = tf.shape(Xmu)[1]
+
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.np_float) + self.lengthscales
+        scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xcov  # NxDxD
+
+        det = tf.matrix_determinant(
+            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.np_float), 0) +
+            tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xcov)  # N
+
+        vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmu, 2)  # NxDxM
+        smIvec = tf.matrix_solve(scalemat, vec)  # NxDxM
+        q = tf.reduce_sum(smIvec * vec, [1])  # NxM
+
+        addvec = tf.matmul(smIvec, Xcov, transpose_a=True) + tf.expand_dims(Xmu, 1)  # NxMxD
 
         return self.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
@@ -138,7 +173,7 @@ class Linear(kernels.Linear):
         return self.variance * tf.matmul(Xmu, Z, transpose_b=True)
 
     @params_as_tensors
-    def exKxz(self, Z, Xmu, Xcov):
+    def exKxz_pairwise(self, Z, Xmu, Xcov):
         with tf.control_dependencies([
             tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.tf_int),
                             message="Currently cannot handle slicing in exKxz."),
@@ -150,6 +185,19 @@ class Linear(kernels.Linear):
         Xmum = Xmu[:-1, :]
         Xmup = Xmu[1:, :]
         op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
+        return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
+
+    @params_as_tensors
+    def exKxz(self, Z, Xmu, Xcov):
+        with tf.control_dependencies([
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.np_int),
+                            message="Currently cannot handle slicing in exKxz."),
+            tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
+        ]):
+            Xmu = tf.identity(Xmu)
+
+        N = tf.shape(Xmu)[0]
+        op = tf.expand_dims(Xmu, 2) * tf.expand_dims(Xmu, 1) + Xcov  # NxDxD
         return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 
     @params_as_tensors
@@ -187,6 +235,9 @@ class Add(kernels.Add):
 
     def eKxz(self, Z, Xmu, Xcov):
         return reduce(tf.add, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
+
+    def exKxz_pairwise(self, Z, Xmu, Xcov):
+        return reduce(tf.add, [k.exKxz_pairwise(Z, Xmu, Xcov) for k in self.kern_list])
 
     def exKxz(self, Z, Xmu, Xcov):
         return reduce(tf.add, [k.exKxz(Z, Xmu, Xcov) for k in self.kern_list])

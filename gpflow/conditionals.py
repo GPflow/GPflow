@@ -37,7 +37,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     In this case 'f' represents the values taken by v.
 
     The method can either return the diagonals of the covariance matrix for
-    each output of the full covariance matrix (full_cov).
+    each output or the full covariance matrix (full_cov).
 
     We assume K independent GPs, represented by the columns of f (and the
     last dimension of q_sqrt).

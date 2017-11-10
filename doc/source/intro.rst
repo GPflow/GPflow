@@ -65,16 +65,16 @@ A unified view of many of the relevant references, along with some extensions, a
 GPLVM
 ~~~~~~~~~~~~~~~~~~~~~
 For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
-in GPflow. (`notebook <notebooks/GPLVM.html>`_).
+in GPflow (`notebook <notebooks/GPLVM.html>`_).
 
 Contributing
 ------------
-All constuctive input is gratefully received. For more information, see the `notes for contributors <https://github.com/GPflow/GPflow/blob/master/contributing.md>`_.
+All constructive input is gratefully received. For more information, see the `notes for contributors <https://github.com/GPflow/GPflow/blob/master/contributing.md>`_.
 
 Citing GPflow
-------------
+-------------
 
-To cite GPflow, please reference the [JMLR paper](http://www.jmlr.org/papers/volume18/16-537/16-537.pdf). Sample Bibtex is given below:
+To cite GPflow, please reference the `JMLR paper <http://www.jmlr.org/papers/volume18/16-537/16-537.pdf>`_. Sample BibTeX is given below:
 
 
 | @ARTICLE{GPflow2017,

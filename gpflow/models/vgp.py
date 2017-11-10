@@ -25,7 +25,7 @@ from ..decors import params_as_tensors
 
 from ..mean_functions import Zero
 from ..conditionals import conditional
-from ..kullback_leiblers import gauss_kl_white
+from ..kullback_leiblers import gauss_kl
 from ..models.model import GPModel
 
 
@@ -102,7 +102,7 @@ class VGP(GPModel):
         """
 
         # Get prior KL.
-        KL = gauss_kl_white(self.q_mu, self.q_sqrt)
+        KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
         K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=settings.tf_float) * \
