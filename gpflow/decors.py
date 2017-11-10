@@ -47,8 +47,9 @@ def name_scope(name=None):
 
 def params_as_tensors(method):
     """
-    Converts representation for parameters into their unconstrained tensors,
-    and data holders to their data tensors.
+    The `params_as_tensors` decorator converts representation for parameters into
+    their unconstrained tensors, and data holders to their data tensors inside
+    wrapped function, subject to this function is a member of parameterized object.
     """
     @functools.wraps(method)
     def tensor_mode_wrapper(obj, *args, **kwargs):
@@ -109,6 +110,23 @@ class defer_build(contextlib.ContextDecorator):
 
 @contextlib.contextmanager
 def params_as_tensors_for(obj, convert=True):
+    """
+    Context manager which changes respresentation of parameters and data holders
+    for specific parameterized object.
+
+    User can turn off tensor conversion inside `params_as_tensors` wrapped function.
+    ```
+    @gpflow.params_as_tensors
+    def compute_something(self):  # self is parameterized object.
+        s = tf.reduce_sum(self.a) # self.a is a parameter.
+        with params_as_tensors_for(self, convert=False):
+            b = self.c.constrained_tensor
+        return s + b
+    ```
+
+    :param convert: Flag which is used for turning tensor convertion
+        feature on, `True`, or turning it off, `False`.
+    """
     prev_value = _params_as_tensors_enter(obj, convert)
     try:
         yield
