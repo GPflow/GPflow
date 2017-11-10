@@ -37,16 +37,43 @@ class AutoBuildStatus(enum.Enum):
 
 class AutoBuild(abc.ABCMeta):
     """
-    AutoBuild meta class is used for change behavior of all its `compilable` decendants.
-    Whenever an object defined with this metaclass is created - the build and initialization
-    methods of compilable interface are called immediately after object's __init__ function.
+    AutoBuild meta class is used for changing an initializing behaviour at its descendants.
+    Whenever an object defined with this metaclass is created - the `build` and `initialize`
+    methods of ICompilable interface are called immediately after object's __init__ function.
+
+    It also modifies input dictionary arguments for any class which uses
+    AutoBuild as metaclass. It adds `autobuild` option, using it you can control either
+    ICompilable object builds itself at instantiation or delay it, so that you could run
+    compilation later.
+
+    For example a class defined without AutoBuild metaclass will raise TypeError. But if you
+    defined a class with AutoBuild metaclass, then it modifies the class __init__ method and
+    adds `autobuild` option to any successor of that class.
+
+    ```
+    class A(metaclass=AutoBuild):
+        def __init__(self):
+            pass
+
+    class B():
+        def __init__(self):
+            pass
+
+    a = A(autobuild=False) # works fine, even when __init__ arguemnt list is empty.
+    b = B(autobuild=False) # raises TypeError exception.
+    ```
     """
+
     _autobuild_arg = 'autobuild'
 
     def __new__(mcs, name, bases, namespace, **kwargs):
         new_cls = super(AutoBuild, mcs).__new__(mcs, name, bases, namespace, **kwargs)
         origin_init = new_cls.__init__
         def __init__(self, *args, **kwargs):
+            """
+            The `kwargs` may or may not contain 'autobuild' option. This option is
+            inherited implicitly by all classes.
+            """
             autobuild = kwargs.pop(AutoBuild._autobuild_arg, True)
             __execute_autobuild__ = AutoBuildStatus.BUILD if autobuild else AutoBuildStatus.IGNORE
             tag = '__execute_autobuild__'
@@ -67,6 +94,14 @@ class AutoBuild(abc.ABCMeta):
 
 
 class Build(enum.Enum):
+    """
+    Compilable object status.
+    Compilable object can be built within one and only one graph, therefore this status
+    express either object was built using particular graph. NOT_COMPATIBLE_GRAPH is
+    a special status, wich shows that compilable object embedded in a graph,
+    but the user is checking status for different graph.
+    """
+
     YES = 1
     NO = 0  # pylint: disable=C0103
     NOT_COMPATIBLE_GRAPH = None

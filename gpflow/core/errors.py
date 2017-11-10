@@ -13,4 +13,7 @@
 # limitations under the License.
 
 class GPflowError(Exception):
+    """
+    Generic GPflow error. Created to distinguish what really cause the issue.
+    """
     pass

@@ -23,6 +23,11 @@ from .compilable import ICompilable
 from .parentable import Parentable
 
 class Node(Parentable, ICompilable):
+    """
+    The Node class merges two simple conceptions: _parentable structure_ with rich naming
+    feature and _compilable interface_ which gives enough flexibility to build and
+    run TensorFlow operations and forces user to implement them.
+    """
 
     def __init__(self, name=None):
         super(Node, self).__init__(name=name)
@@ -36,13 +41,39 @@ class Node(Parentable, ICompilable):
         raise NotImplementedError('Private method clear must be implemented by successor.')
 
     def compile(self, session=None):
+        """
+        Compile is two phase operation: at first it calls `build` method and then
+        intializes the node for passed session. The policy around `session` is defined
+        inside an initialize method.
+
+        :param session: TensorFlow session used for initializing. If the node is built the
+            session's graph value must be equal to the node tensor's graph.
+
+        :raises: GPflowError exception if session's graph is different from the graph
+            used by node tensors.
+        """
         session = self.enquire_session(session)
-        if self.is_built(session.graph) is Build.NO:
+        if self.is_built_coherence(session.graph) is Build.NO:
             with session.graph.as_default():
                 self.build()
         self.initialize(session, force=True)
 
     def initialize(self, session=None, force=False):
+        """
+        Initializes TensorFlow variables, which are returned by `initializables` property and
+        uses feed dictionary returned by `initializable_feeds` property defined at ICompilable
+        interface and implemented by descendants.
+
+        :param session: TensorFlow session used for initializing. In case when session is None,
+            default TensorFlow session will be checked first, if session is still None, then
+            default GPflowFlow session will used, but there is *no garuantee* that GPflow
+            session's graph is compliant with node's tensors graph.
+        :param force: inidicates either the initialized TensorFlow variables must be
+            re-initialized or not.
+
+        :raises: GPflowError exception if session's graph is different from the graph
+            used by node tensors.
+        """
         session = self.enquire_session(session)
         initializables = self.initializables
         if initializables:
@@ -53,6 +84,11 @@ class Node(Parentable, ICompilable):
                 feed_dict=self.initializable_feeds)
 
     def clear(self):
+        """
+        Calls `_clear` abstract method which must be implemented by descendants.
+
+        :raises: GPflowError exception when parent of the node is built.
+        """
         parent = self.parent
         if parent is not self and parent.is_built_coherence(self.graph) is Build.YES:
             raise GPflowError('Clear method cannot be started. Upper nodes are built.')

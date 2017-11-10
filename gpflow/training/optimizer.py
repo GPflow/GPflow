@@ -30,12 +30,12 @@ class Optimizer:
 
     @staticmethod
     def _gen_var_list(model, var_list):
-        var_list = [] if var_list is None else var_list
+        var_list = var_list or []
         return list(set(model.trainable_tensors).union(var_list))
 
     @staticmethod
     def _gen_feed_dict(model, feed_dict):
-        feed_dict = {} if feed_dict is None else feed_dict
+        feed_dict = feed_dict or {}
         model_feeds = {} if model.feeds is None else model.feeds
         feed_dict.update(model_feeds)
         return feed_dict

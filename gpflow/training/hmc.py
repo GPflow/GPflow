@@ -66,6 +66,8 @@ class HMC(Optimizer):
         :return: data frame with `num_samples` traces, where columns are full names of
             trainable parameters except last column, which is `logprobs`.
             Trainable parameters are represented as constrained values in output.
+
+        :raises: ValueError exception in case when wrong parameter ranges were passed.
         """
 
         if lmax <= 0 or lmin <= 0:

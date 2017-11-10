@@ -37,7 +37,12 @@ from ..transforms import Identity
 
 class Parameter(Node):
     """
+    Paramater class is a cornerstone of the GPflow package. It wraps TensorFlow
+    variables and operations like building prior or transformation of the variable.
+
+    Constrained and unconstrained representation:
     """
+
     class ParameterAttribute(enum.Enum):
         PRIOR = 'prior'
         TRANSFORM = 'transform'
@@ -54,6 +59,23 @@ class Parameter(Node):
     def __init__(self, value, transform=None, prior=None,
                  trainable=True, dtype=None, fix_shape=True,
                  name=None):
+        """
+        Parameter init method.
+
+        :param value: Constrained input value. It can be a float, an integer,
+            a float or integer like list, numpy array or TensorFlow variable.
+        :param transform: Instance of GPflow.ITransform implementation.
+        :param prior: Instance of GPflow.IPrior implementation.
+        :param trainable: Boolean flag. It indicates whether variables
+            will be added to trainbles TensorFlow set or not.
+        :param dtype: Type of new parameter.
+        :param fix_shape: Default value is `True` and indicates that shape
+            of internal tensor will be the same as the shape of the input
+            variable and can not be changed. `False` will turn on floating
+            shape mode for the tensor.
+        :param name: Name of the parameter.
+        """
+
         self._externally_defined = False
         self._fixed_shape = fix_shape
         value = self._valid_input(value, dtype=dtype)
@@ -65,8 +87,6 @@ class Parameter(Node):
 
     @property
     def shape(self):
-        # if self.parameter_tensor is not None:
-        #     return tuple(self._constrained_tensor.shape.as_list())
         return self._value.shape
 
     @property
