@@ -32,7 +32,7 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._model = None
 
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=True, anchor=True, **run_kwargs):
+                 maxiter=1000, initialize=True, anchor=True, **kwargs):
         """
         Minimizes objective function of the model.
 

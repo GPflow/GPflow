@@ -29,6 +29,12 @@ from .params import Parameterized
 
 
 def name_scope(name=None):
+    """
+    Name scope decorator does little trick with scope naming. The wrapped
+    function will be run inside TensorFlow name scope with name specified
+    by either `name` option or `name` option is None then name of the
+    function will be used.
+    """
     def name_scope_wrapper(method):
         @functools.wraps(method)
         def runnable(*args, **kwargs):
@@ -40,6 +46,10 @@ def name_scope(name=None):
 
 
 def params_as_tensors(method):
+    """
+    Converts representation for parameters into their unconstrained tensors,
+    and data holders to their data tensors.
+    """
     @functools.wraps(method)
     def tensor_mode_wrapper(obj, *args, **kwargs):
         if not isinstance(obj, Parameterized):
@@ -55,6 +65,35 @@ def params_as_tensors(method):
 
 
 class defer_build(contextlib.ContextDecorator):
+    """
+    The `defer_build` can be either context manager or decorator. In both cases it
+    cancels autobuild feature for all gpflow ICompilable objects. Sometimes,
+    it is require to build model with aligned names or for some other reasons.
+
+    Example below shows that `defer_build` allows you to create kernel and
+    change parameters in it without running into an exception that the model
+    has already been changed.
+
+    ```
+    X = np.linspace(-3,3,20)
+    Y = np.random.exponential(np.sin(X)**2)
+
+    with gpflow.defer_build():
+        k = gpflow.kernels.Matern32(1, ARD=False) + gpflow.kernels.Bias(1)
+        l = gpflow.likelihoods.Exponential()
+        m = gpflow.models.GPMC(X, Y, k, l)
+        m.kern.matern32.lengthscales.prior = gpflow.priors.Gamma(1., 1.)
+        m.kern.matern32.variance.prior = gpflow.priors.Gamma(1., 1.)
+        m.kern.bias.variance.prior = gpflow.priors.Gamma(1., 1.)
+
+    ...
+    m.compile()
+    ```
+
+    :param defer: Option to control defer mechanics. If `defer` is `False` AutoBuild
+        feature will as usual.
+    """
+
     def __init__(self, defer=True):
         self.disable_build = not defer
         self.prev_autobuild_status = None
