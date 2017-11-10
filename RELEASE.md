@@ -1,3 +1,6 @@
+# Release 0.5
+ - bugfix for log_jacobian in transforms
+
 # Release 0.4.1
  - Different variants of `gauss_kl_*` are now deprecated in favour of a unified `gauss_kl` implementation 
 
