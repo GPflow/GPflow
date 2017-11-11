@@ -67,8 +67,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         Lq = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
         Lq_diag = tf.matrix_diag_part(Lq)
     else: # pragma: no cover
-        raise ValueError("Bad dimension for q_sqrt: %s" %
-                         str(q_sqrt.get_shape().ndims))
+        raise ValueError("Bad dimension for q_sqrt: {}".format(q_sqrt.get_shape().ndims))
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
     mahalanobis = tf.reduce_sum(tf.square(alpha))
