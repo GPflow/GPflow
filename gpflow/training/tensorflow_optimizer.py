@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import sys
 import tensorflow as tf
 
 from . import optimizer
+from .. import misc
 from ..models.model import Model
 
 
@@ -63,16 +60,19 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         objective = model.objective
 
         with session.graph.as_default():
-            self._minimize_operation = self.optimizer.minimize(
-                objective, var_list=var_list, **kwargs)
-            model.initialize(session=session, force=initialize)
             full_var_list = self._gen_var_list(model, var_list)
+
+            # Create optimizer variables before initialization.
+            self._minimize_operation = self.optimizer.minimize(
+                objective, var_list=full_var_list, **kwargs)
+
+            model.initialize(session=session, force=initialize)
             self._initialize_optimizer(session, full_var_list)
 
-        for _i in range(maxiter):
-            if model.feeds:
-                feed_dict.update(model.feeds)
-            session.run(self.minimize_operation, feed_dict=feed_dict)
+            for _i in range(maxiter):
+                if model.feeds:
+                    feed_dict.update(model.feeds)
+                session.run(self.minimize_operation, feed_dict=feed_dict)
 
         if anchor:
             model.anchor(session)
@@ -83,15 +83,15 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         not included in slots.
         """
         def get_optimizer_slots():
-            for var in var_list:
-                for name in self.optimizer.get_slot_names():
+            for name in self.optimizer.get_slot_names():
+                for var in var_list:
                     slot = self.optimizer.get_slot(var, name)
                     if slot is not None:
                         yield slot
         extra_vars = [v for v in self.optimizer.__dict__.values() if isinstance(v, tf.Variable)]
         optimizer_vars = list(get_optimizer_slots())
-        var_list = list(set(optimizer_vars + extra_vars))
-        session.run(tf.variables_initializer(var_list))
+        full_var_list = list(set(optimizer_vars + extra_vars))
+        misc.initialize_variables(full_var_list, session=session, force=True)
 
     @property
     def minimize_operation(self):

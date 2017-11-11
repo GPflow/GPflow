@@ -14,7 +14,7 @@
 
 import tensorflow as tf
 
-from nose.plugins.attrib import attr
+
 
 import numpy as np
 from numpy.testing import assert_almost_equal
@@ -23,7 +23,6 @@ import gpflow
 from gpflow.test_util import GPflowTestCase
 
 
-@attr(speed='slow')
 class SampleGaussianTest(GPflowTestCase):
     class Gauss(gpflow.models.Model):
         def __init__(self, **kwargs):

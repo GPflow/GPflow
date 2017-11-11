@@ -21,10 +21,10 @@ import nbformat
 
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
-from nose.plugins.attrib import attr
+
 from gpflow.test_util import GPflowTestCase
 
-@attr(speed='slow')
+
 class TestNotebooks(GPflowTestCase):
     """
     Run notebook tests.

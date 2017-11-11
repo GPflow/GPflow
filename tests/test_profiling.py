@@ -34,7 +34,7 @@ class TestProfiling(GPflowTestCase):
         m = self.prepare()
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
-        s.profiling.output_directory = os.path.dirname(__file__)
+        s.profiling.output_directory = tf.test.get_temp_dir()
         s.profiling.output_file_name = 'test_trace_profile'
 
         with gpflow.settings.temp_settings(s):
@@ -54,7 +54,7 @@ class TestProfiling(GPflowTestCase):
         m = self.prepare()
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
-        s.profiling.output_directory = os.path.dirname(__file__)
+        s.profiling.output_directory = tf.test.get_temp_dir()
         s.profiling.output_file_name = 'test_trace_autoflow'
 
         with gpflow.settings.temp_settings(s):
@@ -70,7 +70,7 @@ class TestProfiling(GPflowTestCase):
         os.remove(expected_file)
 
         m.clear()
-        s.profiling.output_directory = __file__
+        s.profiling.output_directory = tf.test.get_temp_dir()
         m.compile()
 
         # TODO(@awav): CHECK IT
@@ -83,7 +83,7 @@ class TestProfiling(GPflowTestCase):
         s = gpflow.settings.get_settings()
         s.profiling.dump_timeline = True
         s.profiling.each_time = True
-        s.profiling.output_directory = os.path.dirname(__file__) + '/each_time/'
+        s.profiling.output_directory = tf.test.get_temp_dir() + '/each_time/'
         name = 'test_eachtime'
         s.profiling.output_file_name = name
         with gpflow.settings.temp_settings(s):

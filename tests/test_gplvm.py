@@ -20,7 +20,7 @@ from gpflow.test_util import GPflowTestCase
 from gpflow import ekernels
 from gpflow import kernels
 
-from nose.plugins.attrib import attr
+
 
 np.random.seed(0)
 
@@ -53,7 +53,6 @@ class TestGPLVM(GPflowTestCase):
             self.assertTrue(m.compute_log_likelihood() > linit)
 
 
-@attr(speed='slow')
 class TestBayesianGPLVM(GPflowTestCase):
     def setUp(self):
         # data

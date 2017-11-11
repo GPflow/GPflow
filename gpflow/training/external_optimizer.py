@@ -91,6 +91,8 @@ class ExternalOptimizerInterface(object):
 
     if var_list is None:
       self._vars = variables.trainable_variables()
+    elif var_list == []:
+      raise ValueError("No variables to optimize.")
     else:
       self._vars = list(var_list)
 

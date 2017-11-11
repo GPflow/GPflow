@@ -19,7 +19,7 @@ import tensorflow as tf
 
 class GPflowTestCase(tf.test.TestCase):
     """
-    Wrapper for TestCase to avoid massive duplication of resetting
+    Wrapper for TensorFlow TestCase to avoid massive duplication of resetting
     Tensorflow Graph.
     """
 

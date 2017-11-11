@@ -19,7 +19,7 @@ import gpflow
 from gpflow.test_util import GPflowTestCase
 from gpflow import kernels
 from gpflow import ekernels
-from nose.plugins.attrib import attr
+
 
 def _assert_pdeq(obj, a, b, k=None, i=-1, l=-1):
     obj.assertTrue(np.all(a.shape == b.shape))
@@ -327,7 +327,6 @@ class TestExpxKxzActiveDims(GPflowTestCase):
                     pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
 
 
-@attr(speed='slow')
 class TestKernExpQuadrature(GPflowTestCase):
     _threshold = 0.5
     num_gauss_hermite_points = 50  # more may be needed to reach tighter tolerances, try 100.

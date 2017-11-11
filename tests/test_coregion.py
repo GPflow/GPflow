@@ -19,10 +19,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.test_util import GPflowTestCase
 
-from nose.plugins.attrib import attr
 
-
-@attr(speed='slow')
 class TestEquivalence(GPflowTestCase):
     """
     Here we make sure the coregionalized model with diagonal coregion kernel and

@@ -14,7 +14,7 @@
 
 import tensorflow as tf
 
-from nose.plugins.attrib import attr
+
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -23,7 +23,6 @@ import gpflow
 from gpflow.test_util import GPflowTestCase
 
 
-@attr(speed='slow')
 class TestEquivalence(GPflowTestCase):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
