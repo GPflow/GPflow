@@ -25,8 +25,6 @@ class TestConfigParsing(GPflowTestCase):
     def setUp(self):
         directory = os.path.dirname(os.path.realpath(__file__))
         f = os.path.join(directory, 'gpflowrc_test.txt')
-        print("Directory: {}".format(os.path.curdir))
-        print("Config file = {}".format(f))
         self.conf = gpflow._settings._read_config_file(f)
         self.settings = gpflow._settings._namedtuplify(self.conf._sections)
 
