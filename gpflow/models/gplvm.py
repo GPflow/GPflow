@@ -22,6 +22,7 @@ class GPLVM(GPR):
     def __init__(self, Y, latent_dim, X_mean=None, kern=None, mean_function=None, **kwargs):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
+
         :param Y: data matrix, size N (number of points) x D (dimensions)
         :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions)
         :param X_mean: latent positions (N x Q), for the initialisation of the latent space.

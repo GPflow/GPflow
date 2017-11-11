@@ -20,7 +20,6 @@ from . import settings
 from .core.errors import GPflowError
 
 
-
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 

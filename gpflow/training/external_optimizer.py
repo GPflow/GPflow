@@ -94,7 +94,6 @@ class ExternalOptimizerInterface(object):
     else:
       self._vars = list(var_list)
 
-    self._initialized = False
     self._packed_bounds = []
     self._update_placeholders = []
     self._var_updates = []
@@ -102,6 +101,7 @@ class ExternalOptimizerInterface(object):
     self._packed_loss_grad = None
     self._packed_equality_grads = []
     self._packed_inequality_grads = []
+    self._var_shapes = None
 
   def minimize(self,
                session=None,
@@ -138,9 +138,7 @@ class ExternalOptimizerInterface(object):
     loss_callback = loss_callback or (lambda *fetches: None)
     step_callback = step_callback or (lambda xk: None)
 
-
-    if not self._initialized:
-      self._initialize(session)
+    self._initialize_updated_shapes(session)
 
     # Construct loss function and associated gradient.
     loss_grad_func = self._make_eval_func([self._loss,
@@ -183,9 +181,16 @@ class ExternalOptimizerInterface(object):
         feed_dict=dict(zip(self._update_placeholders, var_vals)),
         **run_kwargs)
 
-  def _initialize(self, session):
+  def _initialize_updated_shapes(self, session):
     shapes = array_ops.shape_n(self._vars)
-    self._var_shapes = list(map(tuple, session.run(shapes)))
+    var_shapes = list(map(tuple, session.run(shapes)))
+
+    if self._var_shapes is not None:
+      new_old_shapes = zip(self._var_shapes, var_shapes)
+      if all([old == new for old, new in new_old_shapes]):
+        return
+
+    self._var_shapes = var_shapes
     vars_and_shapes = zip(self._vars, self._var_shapes)
     vars_and_shapes_dict = dict(vars_and_shapes)
 
@@ -236,8 +241,6 @@ class ExternalOptimizerInterface(object):
         slice(start, end)
         for start, end in zip(accumulated_dims[:-1], accumulated_dims[1:])
     ]
-
-    self._initialize = True
 
 
   def _minimize(self, initial_val, loss_grad_func, equality_funcs,

@@ -121,8 +121,8 @@ class Minibatch(DataHolder):
     object provides shuffling and endless batching mechanism for input data.
     Minibatch formes batches along zero axe of the input array.
 
-    Minibatch is shape agnostic for zero axe. Once you created the minibatch you can
-    vary size of the dataset, but shape of the features must be fixed.
+    Minibatch is shape agnostic at zero axe. Once you created a minibatch you can
+    vary size of the dataset, but feature shapes must be fixed.
 
     :param value: Numpy array.
     :param batch_size: Size of the batches.
