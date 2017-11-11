@@ -18,6 +18,8 @@ install:
   - conda create -q -n test-environment python=3.5 numpy scipy pandas nose nbformat nbconvert jupyter_client jupyter matplotlib
   - source activate test-environment
   - pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.2.1-cp35-cp35m-linux_x86_64.whl
+  - pip install codecov
   - python setup.py install
 script:
-  - nosetests -v --nologcapture testing
+  - nosetests -v --nologcapture testing --with-coverage
+  - codecov --token=2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
