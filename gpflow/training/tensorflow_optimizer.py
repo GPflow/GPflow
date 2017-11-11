@@ -78,12 +78,18 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             model.anchor(session)
 
     def _initialize_optimizer(self, session, var_list):
-        # TODO(@awav): AdamOptimizer creates beta1 and beta2 variables which are
-        #             not included in slots.
+        """
+        TODO(@awav): AdamOptimizer creates beta1 and beta2 variables which are
+        not included in slots.
+        """
+        def get_optimizer_slots():
+            for var in var_list:
+                for name in self.optimizer.get_slot_names():
+                    slot = self.optimizer.get_slot(var, name)
+                    if slot is not None:
+                        yield slot
         extra_vars = [v for v in self.optimizer.__dict__.values() if isinstance(v, tf.Variable)]
-        optimizer_vars = [self.optimizer.get_slot(var, name)
-                          for name in self.optimizer.get_slot_names()
-                          for var in var_list]
+        optimizer_vars = list(get_optimizer_slots())
         var_list = list(set(optimizer_vars + extra_vars))
         session.run(tf.variables_initializer(var_list))
 

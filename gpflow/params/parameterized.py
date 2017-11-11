@@ -130,8 +130,7 @@ class Parameterized(Node):
 
     @property
     def trainable_tensors(self):
-        for parameter in self.trainable_parameters:
-            yield parameter.parameter_tensor
+        return [param.parameter_tensor for param in self.trainable_parameters]
 
     @property
     def prior_tensor(self):
