@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2016 James Hensman, alexggmatthews
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# -*- coding: utf-8 -*-
 
 
 import tensorflow as tf
@@ -41,12 +42,8 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 
     K is a positive definite matrix (M x M): the covariance of p.
     If K is None, compute the KL divergence to p(x) = N(0, I) instead.
-
-    These functions are now considered deprecated, subsumed into this one:
-        gauss_kl_white
-        gauss_kl_white_diag
-        gauss_kl_diag
     """
+
     if K is None:
         white = True
         alpha = q_mu
