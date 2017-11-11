@@ -9,12 +9,12 @@ def getData():
     X = rng.rand(N,1)
     Y = np.sin(12*X) + 0.66*np.cos(25*X) + rng.randn(N,1)*0.1 + 3
     return X,Y
-    
+
 def getRegressionModel(X,Y):
     #build the GPR object
     k = gpflow.kernels.Matern52(1)
     meanf = gpflow.mean_functions.Linear(1,0)
-    m = gpflow.gpr.GPR(X, Y, k, meanf)
+    m = gpflow.models.GPR(X, Y, k, meanf)
     m.likelihood.variance = 0.01
     print "Here are the parameters before optimization"
     m
@@ -26,7 +26,7 @@ def optimizeModel(m):
     m
 
 def setModelPriors( m ):
-    #we'll choose rather arbitrary priors. 
+    #we'll choose rather arbitrary priors.
     m.kern.lengthscales.prior = gpflow.priors.Gamma(1., 1.)
     m.kern.variance.prior = gpflow.priors.Gamma(1., 1.)
     m.likelihood.variance.prior = gpflow.priors.Gamma(1., 1.)
