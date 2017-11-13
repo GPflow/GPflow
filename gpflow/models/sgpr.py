@@ -56,7 +56,6 @@ class SGPRUpperMixin(object):
     @autoflow()
     @params_as_tensors
     def compute_upper_bound(self):
-        num_inducing = tf.shape(self.Z)[0]
         num_data = tf.cast(tf.shape(self.Y)[0], settings.tf_float)
 
         Kdiag = self.kern.Kdiag(self.X)
@@ -168,7 +167,6 @@ class SGPR(GPModel, SGPRUpperMixin):
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
-        jitter_level = settings.numerics.jitter_level
         num_inducing = len(self.feat)
         err = self.Y - self.mean_function(self.X)
         Kuf = self.feat.Kuf(self.kern, self.X)

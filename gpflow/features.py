@@ -51,15 +51,14 @@ class InducingPoints(InducingFeature):
         :param Z: the initial positions of the inducing points, size M x D
         """
         super().__init__()
-        self._Mfeat = len(Z)  # Todo: Fix the static assignment of M
         self.Z = Parameter(Z)
 
     def __len__(self):
-        return self._Mfeat
+        return self.Z.shape[0]
 
     def Kuu(self, kern, jitter=0.0):
         Kzz = kern.K(self.Z)
-        Kzz += jitter * tf.eye(self._Mfeat, dtype=settings.dtypes.float_type)
+        Kzz += jitter * tf.eye(len(self), dtype=settings.dtypes.float_type)
         return Kzz
 
     def Kuf(self, kern, Xnew):

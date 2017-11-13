@@ -84,17 +84,17 @@ class SVGP(GPModel):
         self.q_diag, self.whiten = q_diag, whiten
         self.feat = features.inducingpoint_wrapper(feat, Z)
         self.num_latent = num_latent or Y.shape[1]
-        self.num_inducing = len(self.feat)
 
         # init variational parameters
-        self.q_mu = Parameter(np.zeros((self.num_inducing, self.num_latent), dtype=settings.np_float))
+        num_inducing = len(self.feat)
+        self.q_mu = Parameter(np.zeros((num_inducing, self.num_latent), dtype=settings.np_float))
         if self.q_diag:
-            self.q_sqrt = Parameter(np.ones((self.num_inducing, self.num_latent), dtype=settings.np_float),
+            self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.np_float),
                                 transforms.positive)
         else:
-            q_sqrt = np.array([np.eye(self.num_inducing, dtype=settings.np_float)
+            q_sqrt = np.array([np.eye(num_inducing, dtype=settings.np_float)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-            self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
+            self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))
 
     @params_as_tensors
     def build_prior_KL(self):
