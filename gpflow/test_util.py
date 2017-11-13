@@ -19,27 +19,20 @@ import tensorflow as tf
 
 class GPflowTestCase(tf.test.TestCase):
     """
-    Wrapper for TestCase to avoid massive duplication of resetting
+    Wrapper for TensorFlow TestCase to avoid massive duplication of resetting
     Tensorflow Graph.
     """
 
     _multiprocess_can_split_ = True
 
     def __init__(self, *args, **kwargs):
-        super(GPflowTestCase, self).__init__(*args, **kwargs)
-        self.test_graph = None
+        super().__init__(*args, **kwargs)
+        self.test_graph = tf.Graph()
 
     @contextlib.contextmanager
     def test_context(self, graph=None):
-        graph = graph if graph is None else self.test_graph
+        graph = self.test_graph if graph is None else graph
         if graph is None:
             graph = tf.Graph()
-            with graph.as_default(), self.test_session(graph=graph) as session:
-                yield session
-        else:
-            with self.test_session(graph=graph) as session:
-                yield session
-
-    def tearDown(self):
-        tf.reset_default_graph()
-        super(GPflowTestCase, self).tearDown()
+        with graph.as_default(), self.test_session(graph=graph) as session:
+            yield session

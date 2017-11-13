@@ -17,9 +17,9 @@ from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 
-from gpflow import settings
-from gpflow.misc import vec_to_tri
-from gpflow.core.base import ITransform
+from . import settings
+from .misc import vec_to_tri
+from .core.base import ITransform
 
 
 class Transform(ITransform): # pylint: disable=W0223
@@ -199,8 +199,11 @@ class Rescale(Transform):
         return self.chain_transform.backward(y) / self.factor
 
     def log_jacobian_tensor(self, x):
-        return tf.cast(tf.reduce_prod(tf.shape(x)), settings.tf_float) * \
-                self.factor * self.chain_transform.log_jacobian_tensor(x * self.factor)
+        N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.tf_float)
+        factor = tf.cast(self.factor, dtype=settings.tf_float)
+        log_factor = tf.log(factor)
+        log_jacobian = self.chain_transform.log_jacobian_tensor(x * self.factor)
+        return N * log_factor + log_jacobian
 
     def __str__(self):
         return "R" + self.chain_transform.__str__()

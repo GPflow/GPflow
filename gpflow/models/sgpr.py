@@ -17,16 +17,16 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
-from gpflow import likelihoods
+from .. import settings
+from .. import likelihoods
+from .. import features
 
-from gpflow.models.model import GPModel
-from gpflow.decors import autoflow
-from gpflow.decors import params_as_tensors
-from gpflow.params import Parameter, DataHolder
-from gpflow.mean_functions import Zero
-from gpflow import features
+from ..decors import autoflow
+from ..decors import params_as_tensors
+from ..params import Parameter, DataHolder
+from ..mean_functions import Zero
 
+from .model import GPModel
 
 class SGPRUpperMixin(object):
     """
@@ -198,7 +198,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
 
 class GPRFITC(GPModel, SGPRUpperMixin):
-    def __init__(self, X, Y, kern, feat=None, mean_function=Zero(), Z=None, **kwargs):
+    def __init__(self, X, Y, kern, feat=None, mean_function=None, Z=None, **kwargs):
         """
         This implements GP regression with the FITC approximation.
         The key reference is
@@ -223,6 +223,9 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         This method only works with a Gaussian likelihood.
 
         """
+
+        mean_function = Zero() if mean_function is None else mean_function
+
         X = DataHolder(X)
         Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()

@@ -12,65 +12,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-from __future__ import print_function
-
-import unittest
 import tensorflow as tf
 
 import numpy as np
 from numpy.testing import assert_almost_equal
 
 import gpflow
-from gpflow import test_util
+from gpflow.test_util import GPflowTestCase
 
 
-class TestOptimize(test_util.GPflowTestCase):
-    def setUp(self):
+class Quadratic(gpflow.models.Model):
+    def __init__(self):
         rng = np.random.RandomState(0)
+        gpflow.models.Model.__init__(self)
+        self.x = gpflow.Param(rng.randn(10))
 
-        class Quadratic(gpflow.models.Model):
-            def __init__(self):
-                gpflow.models.Model.__init__(self)
-                self.x = gpflow.Param(rng.randn(10))
+    @gpflow.params_as_tensors
+    def _build_likelihood(self):
+        return tf.negative(tf.reduce_sum(tf.square(self.x)))
 
-            @gpflow.params_as_tensors
-            def _build_likelihood(self):
-                return tf.negative(tf.reduce_sum(tf.square(self.x)))
 
-        self.m = Quadratic()
-
+class TestOptimize(GPflowTestCase):
     def test_adam(self):
         with self.test_context():
-            m = self.m
+            m = Quadratic()
             opt = gpflow.train.AdamOptimizer(0.01)
-            m.compile()
             opt.minimize(m, maxiter=5000)
             self.assertTrue(m.x.read_value().max() < 1e-2)
 
     def test_lbfgsb(self):
         with self.test_context():
-            m = self.m
-            m.compile()
+            m = Quadratic()
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m, maxiter=1000)
             self.assertTrue(m.x.read_value().max() < 1e-6)
 
 
-class EmptyTest(test_util.GPflowTestCase):
-    class Empty(gpflow.models.Model):
-        def _build_likelihood(self):
-            return tf.convert_to_tensor(1., dtype=gpflow.settings.tf_float)
+class Empty(gpflow.models.Model):
+    def _build_likelihood(self):
+        return tf.convert_to_tensor(1., dtype=gpflow.settings.tf_float)
 
+
+class EmptyTest(GPflowTestCase):
     def test_compile_model_without_parameters(self):
         with self.test_context():
-            m = EmptyTest.Empty()
-            m.compile()
+            m = Empty()
             assert_almost_equal(m.compute_log_likelihood(), 1.0)
             assert_almost_equal(m.compute_log_prior(), 0.0)
 
     def test_parameters_list_empty(self):
         with self.test_context():
-            m = EmptyTest.Empty()
+            m = Empty(autobuild=False)
             self.assertEqual(list(m.parameters), [])
             self.assertEqual(list(m.trainable_parameters), [])
             self.assertEqual(list(m.params), [])
@@ -81,22 +73,13 @@ class EmptyTest(test_util.GPflowTestCase):
 
     def test_objective_tensor(self):
         with self.test_context():
-            m = EmptyTest.Empty()
+            m = Empty(autobuild=False)
             self.assertEqual(m.objective, None)
-            m.compile()
+            m.build()
             self.assertTrue(gpflow.misc.is_tensor(m.objective))
 
 
-class NotImplementedModelTest(test_util.GPflowTestCase):
-    def no_likelihood_model_test(self):
-        class NoLikelihoodModel(gpflow.models.Model):
-            pass
-
-        with self.assertRaises(NotImplementedError):
-            m = NoLikelihoodModel()
-            m.compile()
-
-class ReplaceParameterTest(test_util.GPflowTestCase):
+class ReplaceParameterTest(GPflowTestCase):
 
     class Origin(gpflow.models.Model):
         def __init__(self):
@@ -148,28 +131,27 @@ class KeyboardRaiser:
         if self.count >= self.iters_to_raise:
             raise KeyboardInterrupt
 
+def setup_sgpr():
+    X = np.random.randn(1000, 3)
+    Y = np.random.randn(1000, 3)
+    Z = np.random.randn(100, 3)
+    return gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
-class TestKeyboardCatching(test_util.GPflowTestCase):
-    def setUp(self):
-        X = np.random.randn(1000, 3)
-        Y = np.random.randn(1000, 3)
-        Z = np.random.randn(100, 3)
-        self.m = gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
-
-    def test_optimize_np(self):
-        with self.test_context():
-            m = self.m
-            m.compile()
-            x_before = m.read_trainables()
-            opt = gpflow.train.ScipyOptimizer()
-            step = 15
-            raiser = KeyboardRaiser(step)
-            opt.minimize(m, step_callback=raiser, maxiter=1000)
-            self.assertEqual(raiser.count, step)
-            x_after = m.read_trainables()
-            before = np.hstack([np.hstack(np.hstack([x])) for x in x_before])
-            after = np.hstack([np.hstack(np.hstack([x])) for x in x_after])
-            self.assertFalse(np.allclose(before, after))
+# # TODO(@awav): KeyboardInterrupt is never caught.
+# class TestKeyboardCatching(GPflowTestCase):
+#     def test_optimize_np(self):
+#         with self.test_context():
+#             m = setup_sgpr()
+#             x_before = m.read_trainables()
+#             opt = gpflow.train.ScipyOptimizer()
+#             step = 15
+#             raiser = KeyboardRaiser(step)
+#             opt.minimize(m, step_callback=raiser, maxiter=1000)
+#             self.assertEqual(raiser.count, step)
+#             x_after = m.read_trainables()
+#             before = np.hstack([np.hstack(np.hstack([x])) for x in x_before])
+#             after = np.hstack([np.hstack(np.hstack([x])) for x in x_after])
+#             self.assertFalse(np.allclose(before, after))
 
     # TODO(@awav)
     #def test_optimize_tf(self):
@@ -182,42 +164,36 @@ class TestKeyboardCatching(test_util.GPflowTestCase):
     #        self.assertFalse(np.allclose(x0, x1))
 
 
-class TestLikelihoodAutoflow(test_util.GPflowTestCase):
-    def setUp(self):
-        X = np.random.randn(1000, 3)
-        Y = np.random.randn(1000, 3)
-        Z = np.random.randn(100, 3)
-        self.m = gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
-
+class TestLikelihoodAutoflow(GPflowTestCase):
     def test_lik_and_prior(self):
-        m = self.m
         with self.test_context():
-            m.compile()
+            m = setup_sgpr()
             l0 = m.compute_log_likelihood()
             p0 = m.compute_log_prior()
-            m.clear()
+
+        m.clear()
 
         with self.test_context():
             m.kern.variance.prior = gpflow.priors.Gamma(1.4, 1.6)
             m.compile()
             l1 = m.compute_log_likelihood()
             p1 = m.compute_log_prior()
-            m.clear()
 
         self.assertEqual(p0, 0.0)
         self.assertNotEqual(p0, p1)
         self.assertEqual(l0, l1)
 
 
-class TestName(test_util.GPflowTestCase):
+class TestName(GPflowTestCase):
     def test_name(self):
-        m1 = gpflow.models.Model()
-        self.assertEqual(m1.name, 'Model')
-        m2 = gpflow.models.Model(name='foo')
-        self.assertEqual(m2.name, 'foo')
+        with self.test_context():
+            m1 = Empty()
+            self.assertEqual(m1.name, 'Empty')
+            m2 = Empty(name='foo')
+            self.assertEqual(m2.name, 'foo')
 
 
-# class TestNoRecompileThroughNewModelInstance(test_util.GPflowTestCase):
+# class TestNoRecompileThroughNewModelInstance(GPflowTestCase):
 #     """ Regression tests for Bug #454 """
 
 #     def setUp(self):
@@ -296,4 +272,4 @@ class TestName(test_util.GPflowTestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()

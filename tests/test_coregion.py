@@ -1,5 +1,16 @@
-from __future__ import print_function
-import unittest
+# Copyright 2017 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
 
 import tensorflow as tf
 import numpy as np
@@ -8,23 +19,20 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.test_util import GPflowTestCase
 
-from nose.plugins.attrib import attr
 
-
-@attr(speed='slow')
 class TestEquivalence(GPflowTestCase):
     """
     Here we make sure the coregionalized model with diagonal coregion kernel and
     with fixed lengthscale is equivalent with normal GP regression.
     """
-    def setup(self):
+    def prepare(self):
         rng = np.random.RandomState(0)
         X = [rng.rand(10, 2) * 10, rng.rand(20, 2) * 10]
         Y = [np.sin(x) + 0.9 * np.cos(x * 1.6) + rng.randn(*x.shape) * 0.8 for x in X]
         label = [np.zeros((10, 1)), np.ones((20, 1))]
         perm = list(range(30))
         rng.shuffle(perm)
-        Xtest = rng.rand(10, 2)*10
+        Xtest = rng.rand(10, 2) * 10
 
         X_augumented = np.hstack([np.concatenate(X), np.concatenate(label)])
         Y_augumented = np.hstack([np.concatenate(Y), np.concatenate(label)])
@@ -68,12 +76,9 @@ class TestEquivalence(GPflowTestCase):
         if hasattr(self, '_optimized'):
             return
 
-        self.session = tf.Session(graph=tf.Graph())
-        with self.session.graph.as_default(), self.session.as_default():
-            vgp0, vgp1, cvgp, Xtest = self.setup()
-            vgp0.compile()
-            vgp1.compile()
-            cvgp.compile()
+        self.test_graph = tf.Graph()
+        with self.test_context():
+            vgp0, vgp1, cvgp, Xtest = self.prepare()
             opt1 = gpflow.train.ScipyOptimizer()
             opt2 = gpflow.train.ScipyOptimizer()
             opt3 = gpflow.train.ScipyOptimizer()
@@ -87,7 +92,7 @@ class TestEquivalence(GPflowTestCase):
             self._optimized = True
 
     def test_likelihood_variance(self):
-        with self.session.graph.as_default(), self.session.as_default():
+        with self.test_context():
             assert_allclose(self.vgp0.likelihood.variance.read_value(),
                             self.cvgp.likelihood.likelihood_list[0].variance.read_value(),
                             atol=1e-2)
@@ -96,7 +101,7 @@ class TestEquivalence(GPflowTestCase):
                             atol=1e-2)
 
     def test_kernel_variance(self):
-        with self.session.graph.as_default(), self.session.as_default():
+        with self.test_context():
             assert_allclose(self.vgp0.kern.variance.read_value(),
                             self.cvgp.kern.coregion.kappa.read_value()[0],
                             atol=1.0e-2)
@@ -105,7 +110,7 @@ class TestEquivalence(GPflowTestCase):
                             atol=1.0e-2)
 
     def test_mean_values(self):
-        with self.session.graph.as_default(), self.session.as_default():
+        with self.test_context():
             assert_allclose(self.vgp0.mean_function.c.read_value(),
                             self.cvgp.mean_function.meanfunction_list[0].c.read_value(),
                             atol=1.0e-2)
@@ -114,7 +119,7 @@ class TestEquivalence(GPflowTestCase):
                             atol=1.0e-2)
 
     def test_predicts(self):
-        with self.session.graph.as_default(), self.session.as_default():
+        with self.test_context():
             X_augumented0 = np.hstack([self.Xtest, np.zeros((self.Xtest.shape[0], 1))])
             X_augumented1 = np.hstack([self.Xtest, np.ones((self.Xtest.shape[0], 1))])
             Ytest = [np.sin(x) + 0.9 * np.cos(x*1.6) for x in self.Xtest]
@@ -165,4 +170,4 @@ class TestEquivalence(GPflowTestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    tf.test.main()

@@ -76,7 +76,7 @@ class SVGP(GPModel):
             Y = DataHolder(Y)
         else:
             X = Minibatch(X, batch_size=minibatch_size, seed=0)
-            Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
+            Y = Minibatch(Y, batch_size=minibatch_size, seed=1)
 
         # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
@@ -99,17 +99,10 @@ class SVGP(GPModel):
     @params_as_tensors
     def build_prior_KL(self):
         if self.whiten:
-            if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu, self.q_sqrt)
-            else:
-                KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
+            K = None
         else:
             K = self.feat.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-            if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
-            else:
-                KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
-        return KL
+        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     @params_as_tensors
     def _build_likelihood(self):
