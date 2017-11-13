@@ -112,7 +112,7 @@ class Node(Parentable, ICompilable):
     def set_parent(self, parent=None):
         if parent is self:
             raise ValueError('Self references are prohibited.')
-        if parent and not isinstance(parent, Parentable):
+        if parent is not None and not isinstance(parent, Parentable):
             raise ValueError('Parent object must implement parentable interface.')
         self._parent = parent if parent is not None else None
 
