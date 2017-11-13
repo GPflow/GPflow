@@ -1,18 +1,30 @@
+# Copyright 2017 st--, Mark van der Wilk
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
+
 from abc import ABCMeta, abstractmethod
 from functools import singledispatch
 
 import numpy as np
-import six
 import tensorflow as tf
 
 import gpflow
-from gpflow import conditionals, transforms, kernels
+from gpflow import conditionals, transforms, kernels, decors
 from gpflow import settings
 from gpflow.params import Parameter, Parameterized
 
 
-# class InducingFeature(Parameterized, metaclass=ABCMeta):  # Pure python3. Not ready to support yet.
-class InducingFeature(six.with_metaclass(ABCMeta, Parameterized)):
+class InducingFeature(Parameterized, metaclass=ABCMeta):
     """
     Abstract base class for inducing features.
     """
@@ -56,17 +68,19 @@ class InducingPoints(InducingFeature):
     def __len__(self):
         return self.Z.shape[0]
 
+    @decors.params_as_tensors
     def Kuu(self, kern, jitter=0.0):
         Kzz = kern.K(self.Z)
         Kzz += jitter * tf.eye(len(self), dtype=settings.dtypes.float_type)
         return Kzz
 
+    @decors.params_as_tensors
     def Kuf(self, kern, Xnew):
         Kzx = kern.K(self.Z, Xnew)
         return Kzx
 
 
-class Multiscale(InducingFeature):
+class Multiscale(InducingPoints):
     """
     Multi-scale inducing features
     Originally proposed in
@@ -83,41 +97,42 @@ class Multiscale(InducingFeature):
     """
 
     def __init__(self, Z, scales):
-        super().__init__()
-        self.Z = Parameter(Z)  # Multi-scale feature centres
+        super().__init__(Z)
         self.scales = Parameter(scales,
                                 transform=transforms.positive)  # Multi-scale feature widths (std. dev. of Gaussian)
-        self._M = len(Z)
-
-    def __len__(self):
-        return self._M
+        assert self.Z.shape == scales.shape
 
     def _cust_square_dist(self, A, B, sc):
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
 
+    @decors.params_as_tensors
     def Kuf(self, kern, Xnew):
         if isinstance(kern, kernels.RBF):
-            Xnew, _ = kern._slice(Xnew, None)
-            Zmu, Zlen = kern._slice(self.Z, self.scales)
-            idlengthscales = kern.lengthscales + Zlen
-            d = self._cust_square_dist(Xnew, Zmu, idlengthscales)
-            return tf.transpose(self.variance * tf.exp(-d / 2) *
-                                tf.reshape(tf.reduce_prod(kern.lengthscales / idlengthscales, 1),
-                                           (1, -1)))
+            with gpflow.decors.params_as_tensors_for(kern):
+                Xnew, _ = kern._slice(Xnew, None)
+                Zmu, Zlen = kern._slice(self.Z, self.scales)
+                idlengthscales = kern.lengthscales + Zlen
+                d = self._cust_square_dist(Xnew, Zmu, idlengthscales)
+                Kuf = tf.transpose(kern.variance * tf.exp(-d / 2) *
+                                   tf.reshape(tf.reduce_prod(kern.lengthscales / idlengthscales, 1),
+                                              (1, -1)))
+            return Kuf
         else:
             raise NotImplementedError(
                 "Multiscale features not implemented for `%s`." % str(type(kern)))
 
+    @decors.params_as_tensors
     def Kuu(self, kern, jitter=0.0):
         if isinstance(kern, kernels.RBF):
-            Zmu, Zlen = kern._slice(self.Z, self.scales)
-            idlengthscales2 = tf.square(kern.lengthscales + Zlen)
-            sc = tf.sqrt(
-                tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(
-                    kern.lengthscales))
-            d = self._cust_square_dist(Zmu, Zmu, sc)
-            Kzz = self.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
-            Kzz += jitter * tf.eye(self._Mfeat, dtype=settings.tf_float)
+            with gpflow.decors.params_as_tensors_for(kern):
+                Zmu, Zlen = kern._slice(self.Z, self.scales)
+                idlengthscales2 = tf.square(kern.lengthscales + Zlen)
+                sc = tf.sqrt(
+                    tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(
+                        kern.lengthscales))
+                d = self._cust_square_dist(Zmu, Zmu, sc)
+                Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
+                Kzz += jitter * tf.eye(len(self), dtype=settings.tf_float)
             return Kzz
         else:
             raise NotImplementedError(
