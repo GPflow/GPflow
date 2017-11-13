@@ -211,7 +211,7 @@ class Parameterized(Node):
         prev_values = {}
         for key in val_keys:
             try:
-                prev_values[key] = params[key].read_value(session=session)
+                prev_values[key] = params[key].read_value()
                 params[key].assign(values[key], session=session, force=force)
             except (GPflowError, ValueError) as error:
                 for rkey, rvalue in prev_values.items():
@@ -223,7 +223,7 @@ class Parameterized(Node):
             ValueError('Session is required when anchoring.')
         for parameter in self.trainable_parameters:
             value = parameter.read_value(session)
-            parameter.assign(value, session=session)
+            parameter.assign(value, session=session, force=False)
 
     def read_trainables(self, session=None):
         session = self.enquire_session(session)

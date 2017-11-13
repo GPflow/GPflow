@@ -253,6 +253,7 @@ class Parameter(Node):
             self._value[...] = value.copy()
         else:
             self._value = value.copy()
+
         if self.is_built_coherence() is Build.YES:
             session = self.enquire_session(session)
             self.is_built_coherence(graph=session.graph)

@@ -24,7 +24,7 @@ class Empty(gpflow.models.Model):
         return tf.constant(0.0, dtype=gpflow.settings.tf_float)
 
 class Demo(gpflow.models.Model):
-    def __init__(self, add_to_inits, add_to_trainables, name=None):
+    def __init__(self, add_to_inits=[], add_to_trainables=[], name=None):
         super().__init__(name=name)
         data = np.random.randn(10, 10)
         self.a = gpflow.Param(data, dtype=gpflow.settings.np_float)
@@ -52,7 +52,7 @@ class OptimizerCase:
 
     def test_different_sessions(self):
         with self.test_context():
-            demo = Demo([], [])
+            demo = Demo()
 
         # Force initialization.
         with self.test_context() as session1:
@@ -74,11 +74,11 @@ class OptimizerCase:
 
     def test_optimizer_with_var_list(self):
         with self.test_context():
-            demo = Demo([], [])
+            demo = Demo()
             dfloat = gpflow.settings.np_float
-            var1 = tf.get_variable('var1', shape=(), dtype=dfloat)
-            var2 = tf.get_variable('var2', shape=(), trainable=False, dtype=dfloat)
-            var3 = tf.get_variable('var3', shape=(), dtype=dfloat)
+            var1 = tf.get_variable('var_a1', shape=(), dtype=dfloat)
+            var2 = tf.get_variable('var_b2', shape=(), trainable=False, dtype=dfloat)
+            var3 = tf.get_variable('var_c3', shape=(), dtype=dfloat)
 
         with self.test_context() as session:
             opt = self.optimizer()
@@ -102,10 +102,12 @@ class OptimizerCase:
             session.run(var2.initializer)
             opt.minimize(demo, var_list=[var2], maxiter=5, initialize=False)
 
-            # NOTE(@awav): TensorFlow optimizers initializes var3 variables
-            # # External var list variable is not intialized
-            # with self.assertRaises(tf.errors.FailedPreconditionError):
-            #     opt.minimize(demo, var_list=[var3], maxiter=5)
+            # NOTE(@awav): TensorFlow optimizer skips uninitialized values which
+            # are not present in objective.
+            demo._objective += var3
+            with self.assertRaises(tf.errors.FailedPreconditionError):
+                opt.minimize(demo, session=session, var_list=[var3], maxiter=5,
+                             initialize=False, anchor=False)
 
     def test_external_variables_in_model(self):
         with self.test_context():

@@ -82,7 +82,7 @@ def initialize_variables(variables=None, session=None, force=False, **run_kwargs
                     elif isinstance(uv, str):
                         yield uv
                     else:
-                        msg = 'Unknown output type "{}"from `tf.report_uninitialized_variables`'
+                        msg = 'Unknown output type "{}" from `tf.report_uninitialized_variables`'
                         raise ValueError(msg.format(type(uv)))
             names = set(uninitialized_names())
             vars_for_init = [v for v in variables if v.name.split(':')[0] in names]
