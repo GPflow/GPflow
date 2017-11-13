@@ -44,6 +44,7 @@ class TestMultiScaleInducing(GPflowTestCase):
         return [rbf, feature, feature_0lengthscale, feature_inducingpoint]
 
     def test_equivalence_inducing_points(self):
+        # Multiscale must be equivalent to inducing points when variance is zero
         with self.test_context() as session:
             rbf, feature, feature_0lengthscale, feature_inducingpoint = self.prepare()
             Xnew = np.random.randn(13, 3)
@@ -55,6 +56,16 @@ class TestMultiScaleInducing(GPflowTestCase):
             ms, point = session.run([feature_0lengthscale.Kuu(rbf), feature_inducingpoint.Kuu(rbf)])
             pd = np.max(np.abs(ms - point) / point * 100)
             self.assertTrue(pd < 0.1)
+
+    def test_matrix_psd(self):
+        # Conditional variance must be PSD.
+        Xnew = np.random.randn(13, 3)
+        with self.test_context() as session:
+            rbf, feature, feature_0lengthscale, feature_inducingpoint = self.prepare()
+            Kuf, Kuu = session.run([feature.Kuf(rbf, Xnew), feature.Kuu(rbf, jitter=gpflow.settings.jitter)])
+            Kff = rbf.compute_K_symm(Xnew)
+        Qff = Kuf.T @ np.linalg.solve(Kuu, Kuf)
+        self.assertTrue(np.all(np.linalg.eig(Kff - Qff)[0] > 0.0))
 
 
 if __name__ == "__main__":
