@@ -20,7 +20,7 @@ import tensorflow as tf
 from .core.base import GPflowError
 from .core.base import Build
 from .core.node import Node
-from .core.autoflow import AutoFlow
+from .core.autoflow import AutoFlow, TensorType
 from .core.tensor_converter import TensorConverter
 
 from .params import Parameterized
@@ -100,7 +100,7 @@ def _params_as_tensors_exit(obj, previous):
 
 
 def _setup_storage(store, *args, **_kwargs):
-    store['arguments'] = [tf.placeholder(*arg) for arg in args]
+    store['arguments'] = TensorType.make_structure(args)
 
 
 def _name_scope_name(obj, name):

@@ -24,6 +24,7 @@ from gpflow import transforms
 
 from gpflow.params import Parameter, Parameterized
 from gpflow.decors import params_as_tensors, autoflow
+from gpflow.core.autoflow import TensorType
 from gpflow.quadrature import mvnquad
 
 from gpflow import settings
@@ -63,37 +64,34 @@ class Kern(Parameterized):
 
         self.num_gauss_hermite_points = 20
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None]))
+    @autoflow(TensorType(float, dims=2), TensorType(float, dims=2))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @autoflow((settings.tf_float, [None, None]))
+    @autoflow(TensorType(float, dims=2))
     def compute_K_symm(self, X):
         return self.K(X)
 
-    @autoflow((settings.tf_float, [None, None]))
+    @autoflow(TensorType(float, dims=2))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float,))
+    @autoflow(TensorType(float, dims=2), TensorType(float))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None]),
-              (settings.tf_float,))
+    @autoflow(TensorType(float, dims=2), TensorType(float, dims=2),
+              TensorType(float))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None, None, None]))
+    @autoflow(TensorType(float, dims=2), TensorType(float, dims=2),
+              TensorType(float, dims=4))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]), (settings.tf_float, [None, None]), (settings.tf_float,))
+    @autoflow(TensorType(float, dims=2), TensorType(float, dims=2),
+              TensorType(float))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 

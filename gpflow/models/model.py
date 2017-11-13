@@ -22,6 +22,7 @@ import tensorflow as tf
 from gpflow import settings
 from gpflow.params import Parameterized, DataHolder
 from gpflow.decors import autoflow
+from gpflow.core.autoflow import TensorType
 from gpflow.mean_functions import Zero
 from gpflow.core.base import Build
 
@@ -140,7 +141,7 @@ class GPModel(Model):
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 
-    @autoflow((settings.tf_float, [None, None]))
+    @autoflow(TensorType(float, dims=2))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points
@@ -148,7 +149,7 @@ class GPModel(Model):
         """
         return self._build_predict(Xnew)
 
-    @autoflow((settings.tf_float, [None, None]))
+    @autoflow(TensorType(float, dims=2))
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -156,7 +157,7 @@ class GPModel(Model):
         """
         return self._build_predict(Xnew, full_cov=True)
 
-    @autoflow((settings.tf_float, [None, None]), (tf.int32, []))
+    @autoflow(TensorType(float, dims=2), TensorType(tf.int32, dims=0))
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
@@ -172,7 +173,7 @@ class GPModel(Model):
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.stack(samples))
 
-    @autoflow((settings.tf_float, [None, None]))
+    @autoflow(TensorType(float, dims=2))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -180,7 +181,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self._build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-    @autoflow((settings.tf_float, [None, None]), (settings.tf_float, [None, None]))
+    @autoflow(TensorType(float, dims=2), TensorType(float, dims=2))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew
