@@ -13,12 +13,11 @@
 # limitations under the License.
 
 
-import warnings
-
 import tensorflow as tf
+
 from gpflow.features import InducingPoints
-from gpflow import settings
-from gpflow.decors import name_scope
+from . import settings
+from .decors import name_scope
 
 
 @name_scope()
@@ -39,26 +38,22 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
     In this case 'f' represents the values taken by v.
 
     The method can either return the diagonals of the covariance matrix for
-    each output of the full covariance matrix (full_cov).
+    each output or the full covariance matrix (full_cov).
 
     We assume K independent GPs, represented by the columns of f (and the
     last dimension of q_sqrt).
 
-     - Xnew is a data matrix, size N x D
-     - X are data points, size M x D
-     - kern is a GPflow kernel
-     - f is a data matrix, M x K, representing the function values at X, for K functions.
-     - q_sqrt (optional) is a matrix of standard-deviations or Cholesky
-       matrices, size M x K or M x M x K
-     - whiten (optional) is a boolean: whether to whiten the representation
-       as described above.
+    :param Xnew: data matrix, size N x D.
+    :param X: data points, size M x D.
+    :param kern: GPflow kernel.
+    :param f: data matrix, M x K, representing the function values at X,
+        for K functions.
+    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
+        size M x K or M x M x K.
+    :param whiten: boolean of whether to whiten the representation as
+        described above.
 
-    These functions are now considered deprecated, subsumed into this one:
-        gp_predict
-        gaussian_gp_predict
-        gp_predict_whitened
-        gaussian_gp_predict_whitened
-
+    :return: two element tuple with conditional mean and variance.
     """
     num_data = tf.shape(X)[0]  # M
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.tf_float) * settings.numerics.jitter_level
@@ -162,77 +157,46 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt,
         # This is not implemented as this feature is only used for plotting purposes.
         raise NotImplementedError
 
+    num_data = tf.shape(Xnew_mu)[0]  # number of new inputs (N)
+    num_func = tf.shape(q_mu)[1]  # output dimension (D)
 
-    num_data = tf.shape(Xnew_mu)[0] # number of new inputs (N)
-    num_func = tf.shape(q_mu)[1] # output dimension (D)
-
-    q_sqrt_r = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0) # D x M x M
+    q_sqrt_r = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
 
     eKuf = tf.transpose(feat.eKfu(kern, Xnew_mu, Xnew_var))  # M x N
-    Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level) # M x M
-    Luu = tf.cholesky(Kuu) # M x M
+    Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
+    Luu = tf.cholesky(Kuu)  # M x M
 
     if not whiten:
         q_mu = tf.matrix_triangular_solve(Luu, q_mu, lower=True)
-        Luu_tiled = tf.tile(Luu[None, :, :], [num_func, 1, 1]) # remove line once issue 216 is fixed
+        Luu_tiled = tf.tile(Luu[None, :, :], [num_func, 1, 1])  # remove line once issue 216 is fixed
         q_sqrt_r = tf.matrix_triangular_solve(Luu_tiled, q_sqrt_r, lower=True)
 
-    Li_eKuf = tf.matrix_triangular_solve(Luu, eKuf, lower=True) # M x N
+    Li_eKuf = tf.matrix_triangular_solve(Luu, eKuf, lower=True)  # M x N
     fmean = tf.matmul(Li_eKuf, q_mu, transpose_a=True)
 
-    eKff = kern.eKdiag(Xnew_mu, Xnew_var) # N
+    eKff = kern.eKdiag(Xnew_mu, Xnew_var)  # N
     eKuffu = feat.eKufKfu(kern, Xnew_mu, Xnew_var)  # N x M x M
     Luu_tiled = tf.tile(Luu[None, :, :], [num_data, 1, 1])  # remove this line, once issue 216 is fixed
     Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(eKuffu), lower=True)
-    Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(Li_eKuffu_Lit), lower=True) # N x M x M
+    Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(Li_eKuffu_Lit), lower=True)  # N x M x M
 
-    cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True) # D x M x M
+    cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True)  # D x M x M
 
     if full_cov_output:
         fvar = (
-                tf.matrix_diag(tf.tile((eKff - tf.trace(Li_eKuffu_Lit))[:, None], [1, num_func])) +
-                tf.matrix_diag(tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov)) +
-                # tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit, cov))) +
-                tf.einsum("ig,nij,jh->ngh", q_mu, Li_eKuffu_Lit, q_mu) -
-                # tf.matmul(q_mu, tf.matmul(Li_eKuffu_Lit, q_mu), transpose_a=True) -
-                tf.matmul(fmean[:, :, None], fmean[:, :, None], transpose_b=True)
+            tf.matrix_diag(tf.tile((eKff - tf.trace(Li_eKuffu_Lit))[:, None], [1, num_func])) +
+            tf.matrix_diag(tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov)) +
+            # tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit, cov))) +
+            tf.einsum("ig,nij,jh->ngh", q_mu, Li_eKuffu_Lit, q_mu) -
+            # tf.matmul(q_mu, tf.matmul(Li_eKuffu_Lit, q_mu), transpose_a=True) -
+            tf.matmul(fmean[:, :, None], fmean[:, :, None], transpose_b=True)
         )
     else:
         fvar = (
-                (eKff - tf.trace(Li_eKuffu_Lit))[:, None] +
-                tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov) +
-                tf.einsum("ig,nij,jg->ng", q_mu, Li_eKuffu_Lit, q_mu) -
-                fmean ** 2
+            (eKff - tf.trace(Li_eKuffu_Lit))[:, None] +
+            tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov) +
+            tf.einsum("ig,nij,jg->ng", q_mu, Li_eKuffu_Lit, q_mu) -
+            fmean ** 2
         )
 
     return fmean, fvar
-
-
-def gp_predict(Xnew, X, kern, F, full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
-                  DeprecationWarning)
-    return conditional(Xnew, X, kern, F,
-                       full_cov=full_cov, q_sqrt=None, whiten=False)
-
-
-def gaussian_gp_predict(Xnew, X, kern, q_mu, q_sqrt, num_columns,
-                        full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
-                  DeprecationWarning)
-    return conditional(Xnew, X, kern, q_mu,
-                       full_cov=full_cov, q_sqrt=q_sqrt, whiten=False)
-
-
-def gaussian_gp_predict_whitened(Xnew, X, kern, q_mu, q_sqrt, num_columns,
-                                 full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
-                  DeprecationWarning)
-    return conditional(Xnew, X, kern, q_mu,
-                       full_cov=full_cov, q_sqrt=q_sqrt, whiten=True)
-
-
-def gp_predict_whitened(Xnew, X, kern, V, full_cov=False):
-    warnings.warn('gp_predict is deprecated: use conditonal(...) instead',
-                  DeprecationWarning)
-    return conditional(Xnew, X, kern, V,
-                       full_cov=full_cov, q_sqrt=None, whiten=True)

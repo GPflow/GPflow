@@ -28,7 +28,7 @@ from .decors import params_as_tensors_for
 from .params import Parameter
 from .params import Parameterized
 from .params import ParamList
-from gpflow.quadrature import hermgauss
+from .quadrature import hermgauss
 
 
 class Likelihood(Parameterized):
@@ -155,9 +155,10 @@ class Likelihood(Parameterized):
 
 
 class Gaussian(Likelihood):
-    def __init__(self):
-        Likelihood.__init__(self)
-        self.variance = Parameter(1.0, transform=transforms.positive)
+    def __init__(self, var=1.0):
+        super().__init__()
+        self.variance = Parameter(
+            var, transform=transforms.positive, dtype=settings.np_float)
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -229,11 +230,11 @@ class Poisson(Likelihood):
 
 class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):
-        Likelihood.__init__(self)
+        super().__init__()
         self.invlink = invlink
 
     def _check_targets(self, Y_np):
-        super(Exponential, self)._check_targets(Y_np)
+        super()._check_targets(Y_np)
         if np.any(Y_np < 0):
             raise ValueError('exponential variables must be positive')
 
@@ -249,7 +250,7 @@ class Exponential(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return - tf.exp(-Fmu + Fvar / 2) * Y - Fmu
-        return super(Exponential, self).variational_expectations(Fmu, Fvar, Y)
+        return super().variational_expectations(Fmu, Fvar, Y)
 
 
 class StudentT(Likelihood):

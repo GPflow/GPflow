@@ -20,20 +20,31 @@
 from __future__ import absolute_import
 
 from ..core.tensor_converter import TensorConverter
-from ..core.base import GPflowError
-from ..core.base import Build
+from ..core.errors import GPflowError
+from ..core.compilable import Build
 
 from .parameter import Parameter
 from .parameterized import Parameterized
 
 
 class ParamList(Parameterized):
+    """
+    ParamList is special case of parameterized object. It implements different
+    access pattern for its childres. Instead saving node like objects as attributes
+    it keeps them in the list, providing indexed access and acts as simple list.
+
+    :param list_of_params: list of node like objects.
+    :param trainable: Boolean flag. It indicates whether children parameters
+        should be trainable or not.
+    :param name: ParamList name.
+    """
+
     def __init__(self, list_of_params, trainable=True, name=None):
         super(ParamList, self).__init__(name=None)
         if not isinstance(list_of_params, list):
             raise ValueError('Not acceptable argument type at list_of_params.')
-        self._list = [self._valid_list_input(
-            item, trainable) for item in list_of_params]
+        self._list = [self._valid_list_input(item, trainable)
+                      for item in list_of_params]
         for index, item in enumerate(self._list):
             self._set_param(index, item)
 
@@ -77,7 +88,7 @@ class ParamList(Parameterized):
 
     def __getitem__(self, key):
         param = self._get_param(key)
-        if TensorConverter.tensor_mode(self):
+        if TensorConverter.tensor_mode(self) and isinstance(param, Parameter):
             return Parameterized._tensor_mode_parameter(param)
         return param
 

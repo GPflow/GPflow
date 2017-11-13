@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # flake8: noqa
+
 from __future__ import absolute_import
 
-from gpflow.params.parameter import Parameter
-from gpflow.params.dataholders import DataHolder
-from gpflow.params.dataholders import FormlessData
-from gpflow.params.dataholders import Minibatch
-from gpflow.params.parameterized import Parameterized
-from gpflow.params.paramlist import ParamList
+from .parameter import Parameter
+from .dataholders import DataHolder
+from .dataholders import Minibatch
+from .parameterized import Parameterized
+from .paramlist import ParamList

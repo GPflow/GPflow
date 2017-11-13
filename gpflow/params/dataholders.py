@@ -18,21 +18,39 @@
 
 
 from __future__ import absolute_import
+from pkg_resources import parse_version
 
 import tensorflow as tf
 
 from .. import misc
-
-from ..core.base import GPflowError
-from ..core.base import Build
-
+from ..core.errors import GPflowError
+from ..core.compilable import Build
 from .parameter import Parameter
 
 
 class DataHolder(Parameter):
-    def __init__(self, value, name=None):
+    """
+    DataHolder is similar to the Parameter with only difference that
+    default values for `fix_shape` and `trainable` options are opposite
+    to the Parameter's and it does not have prior and transform options.
+
+    By default shape of data holders is in floating mode and data holder
+    does not provide a trainable option at all.
+
+    :param value: Data input value. It can be a float, an integer,
+        a float or integer like list, numpy array or TensorFlow variable.
+    :param dtype: Type of new data holder.
+    :param fix_shape: Default value is `False` and indicates that shape
+        of internal tensor does not have specific shape, in other words,
+        it is None.
+    :param name: Name of the parameter.
+
+    :raises: ValueError exception if value is not valid.
+    """
+
+    def __init__(self, value, dtype=None, fix_shape=False, name=None):
         self._dataholder_tensor = None
-        super(DataHolder, self).__init__(value=value, name=name)
+        super().__init__(value=value, name=name, dtype=dtype, fix_shape=fix_shape)
 
     @property
     def trainable(self):
@@ -44,8 +62,8 @@ class DataHolder(Parameter):
 
     @property
     def shape(self):
-        if self.parameter_tensor is not None:
-            return tuple(self.parameter_tensor.shape.as_list())
+        # if self.parameter_tensor is not None:
+        #     return tuple(self.parameter_tensor.shape.as_list())
         return self._value.shape
 
     def set_trainable(self, _value, graph=None):
@@ -97,43 +115,31 @@ class DataHolder(Parameter):
         return self._format_parameter(shape=self.shape)
 
 
-class FormlessData(DataHolder):
-    def __init__(self, value, name=None):
-        if not misc.is_valid_param_value(value) or misc.is_tensor(value):
-            raise ValueError('The value must be either an array or a scalar.')
-        super(FormlessData, self).__init__(value, name=name)
-
-    @property
-    def feeds(self):
-        if self.parameter_tensor is None:
-            return {self.parameter_tensor: self._value}
-        return None
-
-    @property
-    def initializables(self):
-        return None
-
-    def initialize(self, session=None):
-        pass
-
-    def _build_parameter(self):
-        dtype = self._value.dtype
-        name = self._parameter_name()
-        return tf.placeholder(dtype, shape=None, name=name)
-
-    def _parameter_name(self):
-        name = 'formlessdata'
-        if self.parent is self:
-            return misc.tensor_name(self.hidden_full_name, name)
-        return name
-
-
 class Minibatch(DataHolder):
-    def __init__(self, value, batch_size=1, shuffle=True, seed=None, name=None):
+    """
+    Minibatch is a special case of data holders. As the name implies the minibatch
+    object provides shuffling and endless batching mechanism for input data.
+    Minibatch formes batches along zero axe of the input array.
+
+    Minibatch is shape agnostic at zero axe. Once you created a minibatch you can
+    vary size of the dataset, but feature shapes must be fixed.
+
+    :param value: Numpy array.
+    :param batch_size: Size of the batches.
+    :param shuffle: If `True` then input data will be shuffled before batching.
+    :param seed: Seed value for TensorFlow random generator.
+    :param dtype: Type of new minibatch.
+    :param name: Minibatch name.
+
+    :raises: ValueError exception if input value is not a numpy array or a list.
+    """
+
+    def __init__(self, value, batch_size=1, shuffle=True,
+                 seed=None, dtype=None, name=None):
         if not misc.is_valid_param_value(value) or misc.is_tensor(value):
             raise ValueError('The value must be either an array or a scalar.')
 
-        super(Minibatch, self).__init__(value, name=name)
+        super().__init__(value, name=name, dtype=dtype)
 
         self._batch_size = batch_size
         self._shuffle = shuffle
@@ -152,7 +158,7 @@ class Minibatch(DataHolder):
 
     def set_batch_size(self, size, session=None):
         self._batch_size = size
-        session = self.enquire_session(session, allow_none=True)
+        session = self.enquire_session(session)
         if session is not None:
             self.initialize(session=session)
 
@@ -177,7 +183,11 @@ class Minibatch(DataHolder):
     def _build_dataholder(self):
         if self._cache_tensor is None:
             raise GPflowError("Minibatch state corrupted.")
-        from tensorflow.contrib.data import Dataset
+        if parse_version(tf.VERSION) < parse_version('1.4.0rc0'):
+            from tensorflow.contrib.data import Dataset
+        else:
+            from tensorflow import data
+            Dataset = data.Dataset
         data = Dataset.from_tensor_slices(self._cache_tensor)
         data = data.repeat()
         if self._shuffle:

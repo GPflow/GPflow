@@ -1,21 +1,37 @@
-import unittest
+# Copyright 2017 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
+
+
+# pylint: disable=W0212
+
 import numpy as np
-import gpflow
 import tensorflow as tf
 
-from gpflow.test_util import GPflowTestCase
-from gpflow import session
+import gpflow
 from gpflow import settings
+from gpflow import session_manager
+from gpflow.test_util import GPflowTestCase
 
 
 class TestSessionConfiguration(GPflowTestCase):
-    def setUp(self):
-        self.m = gpflow.models.GPR(np.ones((1, 1)), np.ones((1, 1)), kern=gpflow.kernels.Matern52(1))
 
-    def tearDown(self):
-        if self.m.session is not None:
-            self.m.session.close()
-        super(TestSessionConfiguration, self).tearDown()
+    def prepare(self):
+        with gpflow.defer_build():
+            return gpflow.models.GPR(
+                np.ones((1, 1)),
+                np.ones((1, 1)),
+                kern=gpflow.kernels.Matern52(1))
 
     def test_option_persistance(self):
         '''
@@ -25,13 +41,15 @@ class TestSessionConfiguration(GPflowTestCase):
         settings.session.intra_op_parallelism_threads = dop
         settings.session.inter_op_parallelism_threads = dop
         settings.session.allow_soft_placement = True
-        self.m.compile()
-        self.assertTrue(self.m.session._config.intra_op_parallelism_threads == dop)
-        self.assertTrue(self.m.session._config.inter_op_parallelism_threads == dop)
-        self.assertTrue(isinstance(self.m.session._config.inter_op_parallelism_threads, int))
-        self.assertTrue(self.m.session._config.allow_soft_placement)
-        self.assertTrue(isinstance(self.m.session._config.allow_soft_placement, bool))
-        self.m.optimize(maxiter=1)
+        session = gpflow.session_manager.get_session()
+        self.assertTrue(session._config.inter_op_parallelism_threads == dop)
+        self.assertTrue(isinstance(session._config.inter_op_parallelism_threads, int))
+        self.assertTrue(session._config.allow_soft_placement)
+        self.assertTrue(isinstance(session._config.allow_soft_placement, bool))
+        # m = self.prepare()
+        # m.compile()
+        # opt = gpflow.train.ScipyOptimizer()
+        # opt.minimize(m, maxiter=1)
 
     def test_option_mutability(self):
         '''
@@ -41,7 +59,7 @@ class TestSessionConfiguration(GPflowTestCase):
         settings.session.intra_op_parallelism_threads = dop
         settings.session.inter_op_parallelism_threads = dop
         graph = tf.Graph()
-        tf_session = session.get_session(
+        tf_session = session_manager.get_session(
             graph=graph,
             output_file_name=settings.profiling.output_file_name + "_objective",
             output_directory=settings.profiling.output_directory,
@@ -52,7 +70,7 @@ class TestSessionConfiguration(GPflowTestCase):
 
         # change maximum degree of parallelism
         dopOverride = 12
-        tf_session = session.get_session(
+        tf_session = session_manager.get_session(
             graph=graph,
             output_file_name=settings.profiling.output_file_name + "_objective",
             output_directory=settings.profiling.output_directory,
@@ -64,20 +82,10 @@ class TestSessionConfiguration(GPflowTestCase):
         tf_session.close()
 
     def test_session_default_graph(self):
-        tf_session = session.get_session()
+        tf_session = session_manager.get_session()
         self.assertEqual(tf_session.graph, tf.get_default_graph())
         tf_session.close()
 
-    def test_autoflow(self):
-        dop = 4
-        settings.session.intra_op_parallelism_threads = dop
-        settings.session.inter_op_parallelism_threads = dop
-        self.m.compile()  # clear pick up new settings
-        self.m.compute_log_likelihood()  # causes Autoflow to create log likelihood graph
-        afsession = self.m.__dict__['_compute_log_likelihood_AF_storage']['session']
-        self.assertTrue(afsession._config.intra_op_parallelism_threads == dop)
-        self.assertTrue(afsession._config.inter_op_parallelism_threads == dop)
-
 
 if __name__ == '__main__':
-    unittest.main()
+    tf.test.main()

@@ -16,13 +16,13 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow import settings
-from gpflow.models.model import GPModel
-from gpflow.params import Parameter, DataHolder
-from gpflow.decors import params_as_tensors
-from gpflow.conditionals import conditional
-from gpflow.priors import Gaussian
+from .. import settings
+from ..params import Parameter, DataHolder
+from ..decors import params_as_tensors
+from ..priors import Gaussian
+from ..conditionals import conditional
 
+from .model import GPModel
 
 
 class GPMC(GPModel):
@@ -55,7 +55,8 @@ class GPMC(GPModel):
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    def compile(self, session=None, keep_session=True):
+    # TODO(@awav): CHECK IT.
+    def compile(self, session=None):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add parameters appropriately.
@@ -68,7 +69,7 @@ class GPMC(GPModel):
             self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
             self.V.prior = Gaussian(0., 1.)
 
-        return super(GPMC, self).compile(session=session, keep_session=keep_session)
+        return super(GPMC, self).compile(session=session)
 
     @params_as_tensors
     def _build_likelihood(self):

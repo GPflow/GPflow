@@ -1,3 +1,9 @@
+# Release 0.5
+ - bugfix for log_jacobian in transforms
+
+# Release 0.4.1
+ - Different variants of `gauss_kl_*` are now deprecated in favour of a unified `gauss_kl` implementation
+
 # Release 0.4.0
  - Rename python package name to `gpflow`.
  - Compile function has external session and graph arguments.

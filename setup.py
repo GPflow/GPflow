@@ -3,7 +3,6 @@
 
 #  pylint: skip-file
 
-from __future__ import print_function
 from setuptools import setup
 from setuptools import find_packages
 
@@ -23,8 +22,8 @@ else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 # Dependencies of GPflow
-dependencies = ['numpy>=1.9', 'scipy>=0.16']
-min_tf_version = '1.0.0'
+dependencies = ['numpy>=1.10.0', 'scipy>=0.18.0', 'pandas>=0.18.1']
+min_tf_version = '1.3.0'
 
 # Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu
@@ -40,7 +39,7 @@ except (ImportError, DeprecationWarning) as e:
     dependencies.append('tensorflow>={0}'.format(min_tf_version))
 
 packages = find_packages('.')
-packages.remove('testing')
+package_data={'gpflow': ['gpflow/gpflowrc']}
 
 setup(name='gpflow',
       version=verstr,
@@ -49,13 +48,14 @@ setup(name='gpflow',
       description=("Gaussian process methods in tensorflow"),
       license="Apache License 2.0",
       keywords="machine-learning gaussian-processes kernels tensorflow",
-      url="http://github.com/GPflow/gpflow",
+      url="http://github.com/GPflow/GPflow",
       packages=packages,
       install_requires=dependencies,
-      package_data={'gpflow': ['gpflow/gpflowrc']},
+      tests_require=['pytest'],
+      package_data=package_data,
       include_package_data=True,
-      test_suite='testing',
-      extras_require={'tensorflow with gpu': ['tensorflow-gpu>=1.0.0'],
+      test_suite='tests',
+      extras_require={'Tensorflow with GPU': ['tensorflow-gpu>=1.3.0'],
                       'Export parameters as pandas dataframes': ['pandas>=0.18.1']},
       classifiers=['License :: OSI Approved :: Apache Software License',
                    'Natural Language :: English',

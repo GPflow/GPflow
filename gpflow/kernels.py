@@ -1,4 +1,5 @@
 # Copyright 2016 James Hensman, Valentine Svensson, alexggmatthews
+# Copyright 2017 Artem Artemev @awav
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,13 +21,12 @@ import warnings
 import tensorflow as tf
 import numpy as np
 
-from gpflow import transforms
+from . import transforms
+from . import settings
 
-from gpflow.params import Parameter, Parameterized
-from gpflow.decors import params_as_tensors, autoflow
-from gpflow.quadrature import mvnquad
-
-from gpflow import settings
+from .params import Parameter, Parameterized
+from .decors import params_as_tensors, autoflow
+from .quadrature import mvnquad
 
 
 class Kern(Parameterized):
@@ -90,10 +90,18 @@ class Kern(Parameterized):
     @autoflow((settings.tf_float, [None, None]),
               (settings.tf_float, [None, None]),
               (settings.tf_float, [None, None, None, None]))
+    def compute_exKxz_pairwise(self, Z, Xmu, Xcov):
+        return self.exKxz_pairwise(Z, Xmu, Xcov)
+
+    @autoflow((settings.tf_float, [None, None]),
+              (settings.tf_float, [None, None]),
+              (settings.tf_float, [None, None, None]))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]), (settings.tf_float, [None, None]), (settings.tf_float,))
+    @autoflow((settings.tf_float, [None, None]),
+              (settings.tf_float, [None, None]),
+              (settings.tf_float,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 
@@ -126,7 +134,7 @@ class Kern(Parameterized):
         return mvnquad(lambda x: self.K(x, Z, presliced=True), Xmu, Xcov, self.num_gauss_hermite_points,
                        self.input_dim, Dout=(M,))  # (H**DxNxD, H**D)
 
-    def exKxz(self, Z, Xmu, Xcov):
+    def exKxz_pairwise(self, Z, Xmu, Xcov):
         """
         Computes <x_{t-1} K_{x_t z}>_q(x) for each pair of consecutive X's in
         Xmu & Xcov.
@@ -162,6 +170,37 @@ class Kern(Parameterized):
                                  tf.expand_dims(x[:, D:], 1),
                        fXmu, fXcov, self.num_gauss_hermite_points,
                        2 * D, Dout=(M, D))
+
+    def exKxz(self, Z, Xmu, Xcov):
+        """
+        Computes <x_t K_{x_t z}>_q(x) for the same x_t.
+        :param Z: Fixed inputs (MxD).
+        :param Xmu: X means (TxD).
+        :param Xcov: TxDxD. Contains covariances for each x_t.
+        :return: (TxMxD).
+        """
+        self._check_quadrature()
+        # Slicing is NOT needed here. The desired behaviour is to *still* return an NxMxD matrix.
+        # As even when the kernel does not depend on certain inputs, the output matrix will still
+        # contain the outer product between the mean of x_t and K_{x_t Z}. The code here will
+        # do this correctly automatically, since the quadrature will still be done over the
+        # distribution x_t, only now the kernel will not depend on certain inputs.
+        # However, this does mean that at the time of running this function we need to know the
+        # input *size* of Xmu, not just `input_dim`.
+        M = tf.shape(Z)[0]
+        # Number of actual input dimensions
+        D = self.input_size if hasattr(self, 'input_size') else self.input_dim
+
+        msg = "Numerical quadrature needs to know correct shape of Xmu."
+        assert_shape = tf.assert_equal(tf.shape(Xmu)[1], D, message=msg)
+        with tf.control_dependencies([assert_shape]):
+            Xmu = tf.identity(Xmu)
+
+        def integrand(x):
+            return tf.expand_dims(self.K(x, Z), 2) * tf.expand_dims(x, 1)
+
+        num_points = self.num_gauss_hermite_points
+        return mvnquad(integrand, Xmu, Xcov, num_points, D, Dout=(M, D))
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         """
@@ -207,9 +246,9 @@ class Kern(Parameterized):
             X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
             if X2 is not None:
                 X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
-        with tf.control_dependencies([
-                            tf.assert_equal(tf.shape(X)[1],
-                                            tf.constant(self.input_dim, dtype=settings.tf_int))]):
+        input_dim_shape = tf.shape(X)[1]
+        input_dim = tf.convert_to_tensor(self.input_dim, dtype=settings.tf_int)
+        with tf.control_dependencies([tf.assert_equal(input_dim_shape, input_dim)]):
             X = tf.identity(X)
 
         return X, X2
@@ -368,7 +407,7 @@ class RBF(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        return self.variance * tf.exp(-0.5 * self.square_dist(X, X2))
+        return self.variance * tf.exp(-self.square_dist(X, X2) / 2)
 
 
 class Linear(Kern):

@@ -16,15 +16,12 @@
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
+from . import settings
+from .core.errors import GPflowError
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
-
-
-class GPflowError(Exception):
-    pass
 
 
 def tensor_name(*subnames):
@@ -44,8 +41,10 @@ def get_tensor_by_name(name, index=None, graph=None):
 def is_ndarray(value):
     return isinstance(value, np.ndarray)
 
+
 def is_list(value):
     return isinstance(value, list)
+
 
 def is_tensor(value):
     return isinstance(value, (tf.Tensor, tf.Variable))
@@ -65,6 +64,30 @@ def is_valid_param_value(value):
             and is_number(value)
             or is_ndarray(value)
             or is_tensor(value))
+
+
+def initialize_variables(variables=None, session=None, force=False, **run_kwargs):
+    session = tf.get_default_session() if session is None else session
+    if variables is None:
+        initializer = tf.global_variables_initializer()
+    else:
+        if force:
+            initializer = tf.variables_initializer(variables)
+        else:
+            uninitialized = tf.report_uninitialized_variables(var_list=variables)
+            def uninitialized_names():
+                for uv in session.run(uninitialized):
+                    if isinstance(uv, bytes):
+                        yield uv.decode('utf-8')
+                    elif isinstance(uv, str):
+                        yield uv
+                    else:
+                        msg = 'Unknown output type "{}"from `tf.report_uninitialized_variables`'
+                        raise ValueError(msg.format(type(uv)))
+            names = set(uninitialized_names())
+            vars_for_init = [v for v in variables if v.name.split(':')[0] in names]
+            initializer = tf.variables_initializer(vars_for_init)
+    session.run(initializer, **run_kwargs)
 
 
 def is_tensor_trainable(tensor):

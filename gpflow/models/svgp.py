@@ -53,6 +53,7 @@ class SVGP(GPModel):
                  whiten=True,
                  minibatch_size=None,
                  Z=None,
+                 num_data=None,
                  **kwargs):
         """
         - X is a data matrix, size N x D
@@ -65,6 +66,9 @@ class SVGP(GPModel):
           diagonal matrix.
         - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
+        - minibatch_size, if not None, turns on mini-batching with that size.
+        - num_data is the total number of observations, default to X.shape[0]
+          (relevant when feeding in external minibatches)
         """
         # sort out the X, Y into MiniBatch objects if required.
         if minibatch_size is None:
@@ -72,40 +76,33 @@ class SVGP(GPModel):
             Y = DataHolder(Y)
         else:
             X = Minibatch(X, batch_size=minibatch_size, seed=0)
-            Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
+            Y = Minibatch(Y, batch_size=minibatch_size, seed=1)
 
         # init the super class, accept args
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
-        self.num_data = X.shape[0]
+        self.num_data = num_data or X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
         self.feat = features.inducingpoint_wrapper(feat, Z)
         self.num_latent = num_latent or Y.shape[1]
-        self.num_inducing = len(self.feat)
 
         # init variational parameters
-        self.q_mu = Parameter(np.zeros((self.num_inducing, self.num_latent), dtype=settings.np_float))
+        num_inducing = len(self.feat)
+        self.q_mu = Parameter(np.zeros((num_inducing, self.num_latent), dtype=settings.np_float))
         if self.q_diag:
-            self.q_sqrt = Parameter(np.ones((self.num_inducing, self.num_latent), dtype=settings.np_float),
+            self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.np_float),
                                 transforms.positive)
         else:
-            q_sqrt = np.array([np.eye(self.num_inducing, dtype=settings.np_float)
+            q_sqrt = np.array([np.eye(num_inducing, dtype=settings.np_float)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-            self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
+            self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))
 
     @params_as_tensors
     def build_prior_KL(self):
         if self.whiten:
-            if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_white_diag(self.q_mu, self.q_sqrt)
-            else:
-                KL = kullback_leiblers.gauss_kl_white(self.q_mu, self.q_sqrt)
+            K = None
         else:
             K = self.feat.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-            if self.q_diag:
-                KL = kullback_leiblers.gauss_kl_diag(self.q_mu, self.q_sqrt, K)
-            else:
-                KL = kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
-        return KL
+        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     @params_as_tensors
     def _build_likelihood(self):
