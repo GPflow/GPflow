@@ -250,13 +250,12 @@ class Parameter(Node):
 
         value = self._valid_input(value, dtype)
         if self.fixed_shape:
-            self._value[...] = value.copy()
+            self._value[...] = value
         else:
             self._value = value.copy()
 
         if self.is_built_coherence() is Build.YES:
             session = self.enquire_session(session)
-            self.is_built_coherence(graph=session.graph)
             self.initialize(session=session, force=force)
 
     def read_value(self, session=None):
