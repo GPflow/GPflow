@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 
 import tensorflow as tf
+import pandas as pd
 
 from ..core.errors import GPflowError
 from ..core.compilable import Build
@@ -201,6 +202,11 @@ class Parameterized(Node):
                 data_holder.fix_shape()
 
     def assign(self, values, session=None, force=True):
+        if not isinstance(values, (dict, pd.Series)):
+            raise ValueError('Input values must be either dictionary or panda '
+                             'Series data structure.')
+        if isinstance(values, pd.Series):
+            values = values.to_dict()
         params = {param.full_name: param for param in self.parameters}
         val_keys = set(values.keys())
         if not val_keys.issubset(params.keys()):
@@ -232,8 +238,6 @@ class Parameterized(Node):
     def read_values(self, session=None):
         return {param.full_name: param.read_value(session)
                 for param in self.parameters}
-
-
 
     def is_built(self, graph):
         if graph is None:
