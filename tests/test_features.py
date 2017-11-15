@@ -20,6 +20,16 @@ from gpflow.test_util import GPflowTestCase
 
 
 class TestInducingPoints(GPflowTestCase):
+    def test_feature_len(self):
+        N, D = 17, 3
+        Z = np.random.randn(N, D)
+        f = gpflow.features.InducingPoints(Z)
+
+        self.assertTrue(len(f), N)
+        with gpflow.decors.params_as_tensors_for(f):
+            self.assertTrue(len(f), N)
+        # GPflow does not support re-assignment with different shapes at the moment
+
     def test_inducing_points_equivalence(self):
         # Inducing features must be the same as the kernel evaluations
         with self.test_context() as session:
