@@ -35,14 +35,14 @@ class InducingFeature(Parameterized, metaclass=ABCMeta):
         Returns the number of features, relevant for example to determine the
         size of the variational distribution.
         """
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def Kuu(self, kern, jitter=0.0):
         """
         Calculates the covariance matrix between features for kernel `kern`.
         """
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def Kuf(self, kern, Xnew):
@@ -50,7 +50,7 @@ class InducingFeature(Parameterized, metaclass=ABCMeta):
         Calculates the covariance matrix with function values at new points
         `Xnew` for kernel `kern`.
         """
-        pass
+        raise NotImplementedError()
 
 
 class InducingPoints(InducingFeature):
@@ -168,13 +168,13 @@ def inducingpoint_wrapper(feat, Z):
     Backwards-compatibility wrapper for real-space inducing points.
     """
     if feat is not None and Z is not None:
-        raise ValueError("Cannot pass both an InducingFeature instance and Z values")
+        raise ValueError("Cannot pass both an InducingFeature instance and Z values")  # pragma: no cover
     elif feat is None and Z is None:
-        raise ValueError("You must pass either an InducingFeature instance or Z values")
+        raise ValueError("You must pass either an InducingFeature instance or Z values")  # pragma: no cover
     elif Z is not None:
         feat = InducingPoints(Z)
     elif isinstance(feat, np.ndarray):
         feat = InducingPoints(feat)
     else:
-        assert isinstance(feat, InducingFeature)
+        assert isinstance(feat, InducingFeature)  # pragma: no cover
     return feat

@@ -1,3 +1,6 @@
+# Release 1.1
+ - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feat.Z`.
+
 # Release 0.5
  - bugfix for log_jacobian in transforms
 
