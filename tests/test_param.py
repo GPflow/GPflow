@@ -16,6 +16,7 @@
 
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 import gpflow
 from gpflow import settings
@@ -285,7 +286,8 @@ class TestParameterized(GPflowTestCase):
         p.a = gpflow.Param(10.)
         p.b = gpflow.Param(10.)
         p.c = gpflow.Parameterized()
-        p.c.d = gpflow.Param(10.)
+        p.c.d = gpflow.Param(10., fix_shape=False)
+        p.c.e = gpflow.DataHolder(10.)
         return p
 
     def test_read_values(self):
@@ -348,6 +350,30 @@ class TestParameterized(GPflowTestCase):
             assert_allclose(p.c.d.read_value(), 1e4)
             values = list(map(float, p.read_values().values()))
             self.assertTrue(set(values) == set([1e3, 100, 1e4]))
+
+    def test_parameterized_assign_panda(self):
+        with self.test_context():
+            p = self.create_layout()
+            vals1 = [1e2, 1e3, 1e4]
+            vals2 = [2e2, 2e3, 2e4]
+            self.assertEqual(len(vals1), len(vals2))
+
+            df1 = pd.DataFrame({'p/a': vals1, 'p/c/d': vals1})
+            df2 = pd.DataFrame({'p/a': vals2, 'p/c/d': vals2})
+
+            for i in range(len(vals1)):
+                df_slice1 = df1.iloc[i]
+                p.assign(df_slice1, force=False)
+                values = p.read_values()
+                for name in df_slice1.index:
+                    assert_allclose(df_slice1[name], values[name])
+
+                df_slice2 = df2.iloc[i]
+                p.assign(df_slice2, force=True)
+                values = p.read_values()
+                for name in df_slice2.index:
+                    assert_allclose(df_slice2[name], values[name])
+
 
 
 class TestParameterizedNoParameters(GPflowTestCase):
