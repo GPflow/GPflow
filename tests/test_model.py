@@ -137,32 +137,6 @@ def setup_sgpr():
     Z = np.random.randn(100, 3)
     return gpflow.models.SGPR(X, Y, Z=Z, kern=gpflow.kernels.RBF(3))
 
-# # TODO(@awav): KeyboardInterrupt is never caught.
-# class TestKeyboardCatching(GPflowTestCase):
-#     def test_optimize_np(self):
-#         with self.test_context():
-#             m = setup_sgpr()
-#             x_before = m.read_trainables()
-#             opt = gpflow.train.ScipyOptimizer()
-#             step = 15
-#             raiser = KeyboardRaiser(step)
-#             opt.minimize(m, step_callback=raiser, maxiter=1000)
-#             self.assertEqual(raiser.count, step)
-#             x_after = m.read_trainables()
-#             before = np.hstack([np.hstack(np.hstack([x])) for x in x_before])
-#             after = np.hstack([np.hstack(np.hstack([x])) for x in x_after])
-#             self.assertFalse(np.allclose(before, after))
-
-    # TODO(@awav)
-    #def test_optimize_tf(self):
-    #    with self.test_context():
-    #        x0 = self.m.get_free_state()
-    #        callback = KeyboardRaiser(5, lambda x: None)
-    #        o = tf.train.AdamOptimizer()
-    #        self.m.optimize(o, maxiter=10, callback=callback)
-    #        x1 = self.m.get_free_state()
-    #        self.assertFalse(np.allclose(x0, x1))
-
 
 class TestLikelihoodAutoflow(GPflowTestCase):
     def test_lik_and_prior(self):
