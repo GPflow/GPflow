@@ -338,3 +338,12 @@ class Parameterized(Node):
 
     def __str__(self):
         return '\n\n'.join([p.__str__() for p in self.parameters])
+
+    @property
+    def fixed(self):
+        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
+
+    @fixed.setter
+    def fixed(self, _):
+        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
+
