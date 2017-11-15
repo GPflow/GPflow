@@ -483,3 +483,11 @@ class Parameter(Node):
             shape=self.shape,
             transform=self.transform,
             prior=self.prior)
+
+    @property
+    def fixed(self):
+        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
+
+    @fixed.setter
+    def fixed(self, _):
+        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
