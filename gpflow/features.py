@@ -101,6 +101,10 @@ class Multiscale(InducingPoints):
         assert self.Z.shape == scales.shape
 
     def _cust_square_dist(self, A, B, sc):
+        """
+        Custom version of _square_dist that allows sc to provide per-datapoint length
+        scales. sc: N x M x D.
+        """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
 
     @decors.params_as_tensors
@@ -163,7 +167,9 @@ def default_feature_conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None
 
 def inducingpoint_wrapper(feat, Z):
     """
-    Backwards-compatibility wrapper for real-space inducing points.
+    Models which used to take only Z can now pass `feat` and `Z` to this method. This method will
+    check for consistency and return the correct feature. This allows backwards compatibility in
+    for the methods.
     """
     if feat is not None and Z is not None:
         raise ValueError("Cannot pass both an InducingFeature instance and Z values")  # pragma: no cover
