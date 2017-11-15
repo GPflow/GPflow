@@ -324,3 +324,11 @@ class GPRFITC(GPModel, SGPRUpperMixin):
             var = tf.tile(tf.expand_dims(var, 1), tf.stack([1, tf.shape(self.Y)[1]]))
 
         return mean, var
+
+    @property
+    def Z(self):
+        raise NotImplementedError("Inducing points are now in `model.feat.Z`.")
+
+    @Z.setter
+    def Z(self, _):
+        raise NotImplementedError("Inducing points are now in `model.feat.Z`.")

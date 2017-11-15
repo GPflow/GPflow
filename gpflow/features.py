@@ -18,10 +18,8 @@ from functools import singledispatch
 import numpy as np
 import tensorflow as tf
 
-import gpflow
-from gpflow import conditionals, transforms, kernels, decors
-from gpflow import settings
-from gpflow.params import Parameter, Parameterized
+from . import conditionals, transforms, kernels, decors, settings
+from .params import Parameter, Parameterized
 
 
 class InducingFeature(Parameterized, metaclass=ABCMeta):
@@ -108,7 +106,7 @@ class Multiscale(InducingPoints):
     @decors.params_as_tensors
     def Kuf(self, kern, Xnew):
         if isinstance(kern, kernels.RBF):
-            with gpflow.decors.params_as_tensors_for(kern):
+            with decors.params_as_tensors_for(kern):
                 Xnew, _ = kern._slice(Xnew, None)
                 Zmu, Zlen = kern._slice(self.Z, self.scales)
                 idlengthscales = kern.lengthscales + Zlen
@@ -124,7 +122,7 @@ class Multiscale(InducingPoints):
     @decors.params_as_tensors
     def Kuu(self, kern, jitter=0.0):
         if isinstance(kern, kernels.RBF):
-            with gpflow.decors.params_as_tensors_for(kern):
+            with decors.params_as_tensors_for(kern):
                 Zmu, Zlen = kern._slice(self.Z, self.scales)
                 idlengthscales2 = tf.square(kern.lengthscales + Zlen)
                 sc = tf.sqrt(
