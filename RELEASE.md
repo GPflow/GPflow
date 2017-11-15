@@ -1,6 +1,20 @@
 # Release 1.1
  - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feat.Z`.
 
+# Release 1.0
+* Clear and aligned with tree-like structure of GPflow models design.
+* GPflow trainable parameters are no longer packed into one TensorFlow variable.
+* Integration of bare TensorFlow and Keras models with GPflow became very simple.
+* GPflow parameter wraps multiple tensors: unconstained variable, constrained tensor and prior tensor.
+* Instantaneous parameter's building into the TensorFlow graph. Once you created an instance of parameter, it creates necessary tensors at default graph immediately.
+* New implementation for AutoFlow. `autoflow` decorator is a replacement.
+* GPflow optimizers match TensorFlow optimizer names. For e.g. `gpflow.train.GradientDescentOptimizer` mimics `tf.train.GradientDescentOptimizer`. They even has the same instantialization signature.
+* GPflow has native support for Scipy optimizers - `gpflow.train.ScipyOptimizer`.
+* GPflow has advanced HMC implementation - `gpflow.train.HMC`. It works only within TensorFlow memory scope.
+* Tensor conversion decorator and context manager designed for cases when user needs to implicitly convert parameters to TensorFlow tensors: `gpflow.params_as_tensors` and `gpflow.params_as_tensors_for`.
+* GPflow parameters and parameterized objects provide convenient methods and properties for building, intializing their tensors. Check `initializables`, `initializable_feeds`, `feeds` and other properties and methods.
+* Floating shapes of parameters and dataholders without re-building TensorFlow graph.
+
 # Release 0.5
  - bugfix for log_jacobian in transforms
 
