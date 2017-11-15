@@ -15,10 +15,12 @@
 
 import tensorflow as tf
 import numpy as np
-from .param import Param, ParamList, Parameterized
-from ._settings import settings
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+
+from . import settings
+from .params import Parameter
+from .params import Parameterized
+from .params import ParamList
+from .decors import params_as_tensors
 
 
 class MeanFunction(Parameterized):
@@ -33,8 +35,7 @@ class MeanFunction(Parameterized):
     example.
     """
     def __call__(self, X):
-        raise NotImplementedError("Implement the __call__\
-                                  method for this mean function")
+        raise NotImplementedError("Implement the __call__ method for this mean function")
 
     def __add__(self, other):
         return Additive(self, other)
@@ -45,7 +46,7 @@ class MeanFunction(Parameterized):
 
 class Zero(MeanFunction):
     def __call__(self, X):
-        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=float_type)
+        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=settings.tf_float)
 
 
 class Linear(MeanFunction):
@@ -63,9 +64,10 @@ class Linear(MeanFunction):
         A = np.ones((1, 1)) if A is None else A
         b = np.zeros(1) if b is None else b
         MeanFunction.__init__(self)
-        self.A = Param(np.atleast_2d(A))
-        self.b = Param(b)
+        self.A = Parameter(np.atleast_2d(A))
+        self.b = Parameter(b)
 
+    @params_as_tensors
     def __call__(self, X):
         return tf.matmul(X, self.A) + self.b
 
@@ -77,8 +79,9 @@ class Constant(MeanFunction):
     def __init__(self, c=None):
         MeanFunction.__init__(self)
         c = np.zeros(1) if c is None else c
-        self.c = Param(c)
+        self.c = Parameter(c)
 
+    @params_as_tensors
     def __call__(self, X):
         shape = tf.stack([tf.shape(X)[0], 1])
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
@@ -97,6 +100,7 @@ class SwitchedMeanFunction(MeanFunction):
         self.meanfunction_list = ParamList(meanfunction_list)
         self.num_meanfunctions = len(self.meanfunction_list)
 
+    @params_as_tensors
     def __call__(self, X):
         ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
@@ -105,7 +109,7 @@ class SwitchedMeanFunction(MeanFunction):
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, self.num_meanfunctions)
         # apply the likelihood-function to each section of the data
-        results = [m(x) for (x, m) in zip(x_list, self.meanfunction_list)]
+        results = [m(x) for x, m in zip(x_list, self.meanfunction_list)]
         # stitch the results back together
         partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
         return tf.dynamic_stitch(partitions, results)

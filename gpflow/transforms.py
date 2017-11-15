@@ -17,64 +17,20 @@ from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 
-from . import tf_wraps as tfw
-from ._settings import settings
-
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+from . import settings
+from .misc import vec_to_tri
+from .core.base import ITransform
 
 
-class Transform(object):
-    def forward(self, x):
-        """
-        Map from the free-space to the variable space, using numpy
-        """
-        raise NotImplementedError
-
-    def backward(self, y):
-        """
-        Map from the variable-space to the free space, using numpy
-        """
-        raise NotImplementedError
-
-    def tf_forward(self, x):
-        """
-        Map from the free-space to the variable space, using tensorflow
-        """
-        raise NotImplementedError
-
-    def tf_log_jacobian(self, x):
-        """
-        Return the log Jacobian of the tf_forward mapping.
-
-        Note that we *could* do this using a tf manipulation of
-        self.tf_forward, but tensorflow may have difficulty: it doesn't have a
-        Jacaobian at time of writing.  We do this in the tests to make sure the
-        implementation is correct.
-        """
-        raise NotImplementedError
-
-    def free_state_size(self, variable_shape):
-        return np.prod(variable_shape)
-
-    def __str__(self):
-        """
-        A short string describing the nature of the constraint
-        """
-        raise NotImplementedError
-
-    def __getstate__(self):
-        return self.__dict__.copy()
-
-    def __setstate__(self, d):
-        self.__dict__ = d
+class Transform(ITransform): # pylint: disable=W0223
+    pass
 
 
 class Identity(Transform):
     """
     The identity transform: y = x
     """
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         return tf.identity(x)
 
     def forward(self, x):
@@ -83,8 +39,8 @@ class Identity(Transform):
     def backward(self, y):
         return y
 
-    def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type)
+    def log_jacobian_tensor(self, x):
+        return tf.zeros((1,), settings.tf_float)
 
     def __str__(self):
         return '(none)'
@@ -102,7 +58,7 @@ class Exp(Transform):
     def __init__(self, lower=1e-6):
         self._lower = lower
 
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         return tf.exp(x) + self._lower
 
     def forward(self, x):
@@ -111,7 +67,7 @@ class Exp(Transform):
     def backward(self, y):
         return np.log(y - self._lower)
 
-    def tf_log_jacobian(self, x):
+    def log_jacobian_tensor(self, x):
         return tf.reduce_sum(x)
 
     def __str__(self):
@@ -146,11 +102,11 @@ class Log1pe(Transform):
         """
         return np.logaddexp(0, x) + self._lower
 
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         return tf.nn.softplus(x) + self._lower
 
-    def tf_log_jacobian(self, x):
-        return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
+    def log_jacobian_tensor(self, x):
+        return tf.negative(tf.reduce_sum(tf.nn.softplus(tf.negative(x))))
 
     def backward(self, y):
         """
@@ -178,7 +134,7 @@ class Log1pe(Transform):
 
 
         """
-        ys = np.maximum(y - self._lower, np.finfo(np_float_type).eps)
+        ys = np.maximum(y - self._lower, np.finfo(settings.np_float).eps)
         return ys + np.log(-np.expm1(-ys))
 
     def __str__(self):
@@ -198,7 +154,7 @@ class Logistic(Transform):
         assert b > a
         self.a, self.b = float(a), float(b)
 
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         ex = tf.exp(-x)
         return self.a + (self.b - self.a) / (1. + ex)
 
@@ -209,7 +165,7 @@ class Logistic(Transform):
     def backward(self, y):
         return -np.log((self.b - self.a) / (y - self.a) - 1.)
 
-    def tf_log_jacobian(self, x):
+    def log_jacobian_tensor(self, x):
         return tf.reduce_sum(x - 2. * tf.log(tf.exp(x) + 1.) + np.log(self.b - self.a))
 
     def __str__(self):
@@ -233,8 +189,8 @@ class Rescale(Transform):
         self.factor = factor
         self.chain_transform = chain_transform
 
-    def tf_forward(self, x):
-        return self.chain_transform.tf_forward(x * self.factor)
+    def forward_tensor(self, x):
+        return self.chain_transform.forward_tensor(x * self.factor)
 
     def forward(self, x):
         return self.chain_transform.forward(x * self.factor)
@@ -242,10 +198,12 @@ class Rescale(Transform):
     def backward(self, y):
         return self.chain_transform.backward(y) / self.factor
 
-    def tf_log_jacobian(self, x):
-        N = tf.reduce_prod(tf.shape(x))
-        return tf.cast(N, float_type) * tf.log(self.factor) + \
-                self.chain_transform.tf_log_jacobian(x * self.factor)
+    def log_jacobian_tensor(self, x):
+        N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.tf_float)
+        factor = tf.cast(self.factor, dtype=settings.tf_float)
+        log_factor = tf.log(factor)
+        log_jacobian = self.chain_transform.log_jacobian_tensor(x * self.factor)
+        return N * log_factor + log_jacobian
 
     def __str__(self):
         return "R" + self.chain_transform.__str__()
@@ -279,17 +237,14 @@ class DiagMatrix(Transform):
         # Return diagonals of matrices
         return self._positive_transform.backward(y.reshape(-1, self.dim, self.dim).diagonal(0, 1, 2).flatten())
 
-    def tf_forward(self, x):
-        return tf.matrix_diag(tf.reshape(self._positive_transform.tf_forward(x), (-1, self.dim)))
+    def forward_tensor(self, x):
+        return tf.matrix_diag(tf.reshape(self._positive_transform.forward_tensor(x), (-1, self.dim)))
 
-    def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type) + self._positive_transform.tf_log_jacobian(x)
+    def log_jacobian_tensor(self, x):
+        return tf.zeros((1,), settings.tf_float) + self._positive_transform.log_jacobian_tensor(x)
 
     def __str__(self):
         return 'DiagMatrix'
-
-    def free_state_size(self, variable_shape):
-        return variable_shape[0] * variable_shape[1]
 
 
 class LowerTriangular(Transform):
@@ -342,7 +297,7 @@ class LowerTriangular(Transform):
         L = self._validate_vector_length(len(x))
         matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
         xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((matsize, matsize, self.num_matrices), np_float_type)
+        var = np.zeros((matsize, matsize, self.num_matrices), settings.np_float)
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
             var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
@@ -357,26 +312,19 @@ class LowerTriangular(Transform):
         Returns:
             Free state.
         """
-        N = int((y.size / self.num_matrices) ** 0.5)
-        y = np.reshape(y, (N, N, self.num_matrices))
-        return y[np.tril_indices(len(y), 0)].T.flatten()
+        N = int(np.sqrt(y.size / self.num_matrices))
+        reshaped = np.reshape(y, (N, N, self.num_matrices))
+        size = len(reshaped)
+        triangular = reshaped[np.tril_indices(size, 0)].T
+        return triangular
 
-    def tf_forward(self, x):
-        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1)),self.N), [1, 2, 0])
+    def forward_tensor(self, x):
+        reshaped = tf.reshape(x, (self.num_matrices, -1))
+        fwd = tf.transpose(vec_to_tri(reshaped, self.N), [1, 2, 0])
         return tf.squeeze(fwd) if self.squeeze else fwd
 
-    def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type)
-
-    def free_state_size(self, variable_shape):
-        matrix_batch = len(variable_shape) > 2
-        if ((not matrix_batch and self.num_matrices != 1) or
-                (matrix_batch and variable_shape[2] != self.num_matrices)):
-            raise ValueError("Number of matrices must be consistent with what was passed to the constructor.")
-        if variable_shape[0] != variable_shape[1]:
-            raise ValueError("Matrices passed must be square.")
-        N = variable_shape[0]
-        return int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1)
+    def log_jacobian_tensor(self, x):
+        return tf.zeros((1,), settings.tf_float)
 
     def __str__(self):
         return "LoTri->vec"

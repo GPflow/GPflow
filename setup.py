@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
+#  pylint: skip-file
+
 from setuptools import setup
+from setuptools import find_packages
 
 import re
 import os
@@ -20,12 +22,12 @@ else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 # Dependencies of GPflow
-dependencies = ['numpy>=1.9', 'scipy>=0.16']
-min_tf_version = '1.0.0'
+dependencies = ['numpy>=1.10.0', 'scipy>=0.18.0', 'pandas>=0.18.1']
+min_tf_version = '1.3.0'
 
-# Only detect TF if not installed or outdated. If not, do not do not list as 
+# Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu
-# To avoid this, rely on importing rather than the package name (like pip). 
+# To avoid this, rely on importing rather than the package name (like pip).
 try:
     # If tf not installed, import raises ImportError
     import tensorflow as tf
@@ -36,6 +38,9 @@ except (ImportError, DeprecationWarning) as e:
     # Add TensorFlow to dependencies to trigger installation/update
     dependencies.append('tensorflow>={0}'.format(min_tf_version))
 
+packages = find_packages('.')
+package_data={'gpflow': ['gpflow/gpflowrc']}
+
 setup(name='gpflow',
       version=verstr,
       author="James Hensman, Alex Matthews",
@@ -43,16 +48,14 @@ setup(name='gpflow',
       description=("Gaussian process methods in tensorflow"),
       license="Apache License 2.0",
       keywords="machine-learning gaussian-processes kernels tensorflow",
-      url="http://github.com/gpflow/gpflow",
-      package_data={'gpflow': ['gpflow/gpflowrc']},
-      include_package_data=True,
-      ext_modules=[],
-      packages=["gpflow"],
-      package_dir={'gpflow': 'gpflow'},
-      py_modules=['gpflow.__init__'],
-      test_suite='testing',
+      url="http://github.com/GPflow/GPflow",
+      packages=packages,
       install_requires=dependencies,
-      extras_require={'tensorflow with gpu': ['tensorflow-gpu>=1.0.0'],
+      tests_require=['pytest'],
+      package_data=package_data,
+      include_package_data=True,
+      test_suite='tests',
+      extras_require={'Tensorflow with GPU': ['tensorflow-gpu>=1.3.0'],
                       'Export parameters as pandas dataframes': ['pandas>=0.18.1']},
       classifiers=['License :: OSI Approved :: Apache Software License',
                    'Natural Language :: English',
