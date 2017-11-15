@@ -17,11 +17,11 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from gpflow import densities
+from . import densities
+from . import settings
 
-from gpflow import settings
-from gpflow.params import Parameterized
-from gpflow.core.base import IPrior
+from .params import Parameterized
+from .core.base import IPrior
 
 
 class Prior(Parameterized, IPrior):  # pylint: disable=W0223

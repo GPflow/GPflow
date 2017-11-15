@@ -156,7 +156,7 @@ def _read_config_file(path=None):
                 break
     else:
         if not cfg.read(path):
-            raise RuntimeError("Config at '{0}'cannot be read".format(path))
+            raise RuntimeError("Config at '{0}' cannot be read".format(path))
     return cfg
 
 

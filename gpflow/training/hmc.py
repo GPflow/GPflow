@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import division, print_function
-
 import itertools
 import tensorflow as tf
 import numpy as np
@@ -23,7 +21,10 @@ from .optimizer import Optimizer
 from ..decors import name_scope
 
 class HMC(Optimizer):
-    def sample(self, model, num_samples, epsilon, lmin=1, lmax=1, thin=1, burn=0, session=None):
+    def sample(self, model, num_samples, epsilon,
+               lmin=1, lmax=1, thin=1, burn=0,
+               session=None, initialize=True, anchor=True,
+               logprobs=True):
         """
         A straight-forward HMC implementation. The mass matrix is assumed to be the
         identity.
@@ -53,10 +54,18 @@ class HMC(Optimizer):
             used for drawing number of leapfrog iterations.
         :param thin: an integer which specifies the thinning interval.
         :param burn: an integer which specifies how many initial samples to discard.
+        :param session: TensorFlow session. The default session or cached GPflow session
+            will be used if it is none.
+        :param initialize: indication either TensorFlow initialization is required or not.
+        :param anchor: dump live trainable values computed within specified TensorFlow
+            session to actual parameters (in python scope).
+        :param logprobs: indicates either logprob values shall be included in output or not.
 
         :return: data frame with `num_samples` traces, where columns are full names of
             trainable parameters except last column, which is `logprobs`.
             Trainable parameters are represented as constrained values in output.
+
+        :raises: ValueError exception in case when wrong parameter ranges were passed.
         """
 
         if lmax <= 0 or lmin <= 0:
@@ -69,42 +78,49 @@ class HMC(Optimizer):
         lmax += 1
         session = model.enquire_session(session)
 
-        params = list(model.trainable_parameters)
-        xs = list(model.trainable_tensors)
+        model.initialize(session=session, force=initialize)
 
-        def logprob_grads():
-            logprob = tf.negative(model.build_objective())
-            grads = tf.gradients(logprob, xs)
-            return logprob, grads
+        with tf.name_scope('hmc'):
+            params = list(model.trainable_parameters)
+            xs = list(model.trainable_tensors)
 
-        thin_args = [logprob_grads, xs, thin, epsilon, lmin, lmax]
+            def logprob_grads():
+                logprob = tf.negative(model.build_objective())
+                grads = tf.gradients(logprob, xs)
+                return logprob, grads
 
-        if burn > 0:
-            burn_op = _burning(burn, *thin_args)
-            session.run(burn_op, feed_dict=model.feeds)
+            thin_args = [logprob_grads, xs, thin, epsilon, lmin, lmax]
 
-        xs_dtypes = _map(lambda x: x.dtype, xs)
-        logprob_dtype = model.objective.dtype
-        dtypes = _flat(xs_dtypes, [logprob_dtype])
-        indices = np.arange(num_samples)
+            if burn > 0:
+                burn_op = _burning(burn, *thin_args)
+                session.run(burn_op, feed_dict=model.feeds)
 
-        def map_body(_):
-            xs_sample, logprob_sample = _thinning(*thin_args)
-            return _flat(xs_sample, [logprob_sample])
+            xs_dtypes = _map(lambda x: x.dtype, xs)
+            logprob_dtype = model.objective.dtype
+            dtypes = _flat(xs_dtypes, [logprob_dtype])
+            indices = np.arange(num_samples)
 
-        hmc_output = tf.map_fn(map_body, indices, dtype=dtypes,
-                               back_prop=False, parallel_iterations=1)
-        with tf.control_dependencies(hmc_output):
-            unconstrained_trace, logprob_trace = hmc_output[:-1], hmc_output[-1]
-            constrained_trace = _map(lambda x, param: param.transform.forward_tensor(x),
-                                     unconstrained_trace, params)
-            hmc_output = constrained_trace + [logprob_trace]
+            def map_body(_):
+                xs_sample, logprob_sample = _thinning(*thin_args)
+                return _flat(xs_sample, [logprob_sample])
+
+            hmc_output = tf.map_fn(map_body, indices, dtype=dtypes,
+                                   back_prop=False, parallel_iterations=1)
+            with tf.control_dependencies(hmc_output):
+                unconstrained_trace, logprob_trace = hmc_output[:-1], hmc_output[-1]
+                constrained_trace = _map(lambda x, param: param.transform.forward_tensor(x),
+                                         unconstrained_trace, params)
+                hmc_output = constrained_trace + [logprob_trace]
 
         names = [param.full_name for param in params]
         raw_traces = session.run(hmc_output, feed_dict=model.feeds)
-        print(names)
+
+        if anchor:
+            model.anchor(session)
+
         traces = dict(zip(names, map(list, raw_traces[:-1])))
-        traces.update({'logprobs': raw_traces[-1]})
+        if logprobs:
+            traces.update({'logprobs': raw_traces[-1]})
         return pd.DataFrame(traces)
 
 

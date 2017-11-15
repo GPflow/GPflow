@@ -16,15 +16,15 @@
 from __future__ import absolute_import
 import tensorflow as tf
 
-from gpflow import likelihoods
+from .. import likelihoods
+from .. import settings
 
-from gpflow import settings
-from gpflow.models.model import GPModel
-from gpflow.densities import multivariate_normal
-from gpflow.params import DataHolder
-from gpflow.decors import params_as_tensors
-from gpflow.decors import name_scope
+from ..params import DataHolder
+from ..decors import params_as_tensors
+from ..decors import name_scope
+from ..densities import multivariate_normal
 
+from .model import GPModel
 
 class GPR(GPModel):
     """

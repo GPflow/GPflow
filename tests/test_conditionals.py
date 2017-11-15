@@ -1,5 +1,16 @@
-from __future__ import print_function
-import unittest
+# Copyright 2017 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
 
 import tensorflow as tf
 
@@ -18,7 +29,7 @@ class DiagsTest(GPflowTestCase):
 
     Here we make sure the behaviours overlap.
     """
-    def setup(self):
+    def prepare(self):
         num_latent = 2
         num_data = 3
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
@@ -44,7 +55,7 @@ class DiagsTest(GPflowTestCase):
 
     def test_whiten(self):
         with self.test_context() as sess:
-            Xs, X, k, mu, sqrt, chol, feed_dict = self.setup()
+            Xs, X, k, mu, sqrt, chol, feed_dict = self.prepare()
 
             Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(
                 Xs, X, k, mu, q_sqrt=sqrt)
@@ -60,7 +71,7 @@ class DiagsTest(GPflowTestCase):
 
     def test_nonwhiten(self):
         with self.test_context() as sess:
-            Xs, X, k, mu, sqrt, chol, feed_dict = self.setup()
+            Xs, X, k, mu, sqrt, chol, feed_dict = self.prepare()
 
             Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(
                 Xs, X, k, mu, q_sqrt=sqrt)
@@ -75,10 +86,9 @@ class DiagsTest(GPflowTestCase):
 
 
 class WhitenTest(GPflowTestCase):
-    def setup(self):
+    def prepare(self):
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
         k.white.variance = 0.01
-        k.compile()
 
         num_data = 10
         num_test_data = 100
@@ -102,7 +112,9 @@ class WhitenTest(GPflowTestCase):
         """
 
         with self.test_context() as sess:
-            Xs, X, F, k, num_data, feed_dict = self.setup()
+            Xs, X, F, k, num_data, feed_dict = self.prepare()
+            k.compile(session=sess)
+
             K = k.K(X) + tf.eye(num_data, dtype=settings.np_float) * 1e-6
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, F, lower=True)
@@ -125,7 +137,8 @@ class WhitenTestGaussian(WhitenTest):
         """
         with self.test_context() as sess:
             rng = np.random.RandomState(0)
-            Xs, X, F, k, num_data, feed_dict = self.setup()
+            Xs, X, F, k, num_data, feed_dict = self.prepare()
+            k.compile(session=sess)
 
             F_sqrt = tf.placeholder(settings.np_float, [num_data, 1])
             F_sqrt_data = rng.rand(num_data, 1)
@@ -149,5 +162,5 @@ class WhitenTestGaussian(WhitenTest):
             assert_allclose(var_difference, 0, atol=4)
 
 
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == '__main__':
+    tf.test.main()

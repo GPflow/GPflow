@@ -21,8 +21,8 @@ from __future__ import absolute_import
 
 import tensorflow as tf
 
-from ..core.base import GPflowError
-from ..core.base import Build
+from ..core.errors import GPflowError
+from ..core.compilable import Build
 from ..core.node import Node
 
 from ..core.autoflow import AutoFlow
@@ -35,6 +35,51 @@ from .parameter import Parameter
 from .dataholders import DataHolder
 
 class Parameterized(Node):
+    """
+    Parameterized object represents a set of computations over children nodes and
+    one of the main purposes is to store these children node like objects.
+    They can be parameters, data holders or even another parameterized objects.
+    Parameterized object links to childrens via python object attributes, changing
+    their parentable names.
+
+    ```
+    p = gpflow.Parameterized()
+    p.full_name
+    # 'Parameterized'
+
+    p.a = gpflow.Param(0)
+    p.a.full_name
+    # 'Parameter'
+    # ^^^ This is explained by the fact that the parameter is
+    #     constructed before assignement.
+    ```
+
+    All parameters, data holders and other parameterized objects which are created
+    inside parameterized __init__ method will be built in compliant build order of
+    the parameterized object which was initiating construction.
+
+    ```
+    class Demo(gpflow.Parameterized):
+        def __init__(self):
+            self.a = gpflow.Param(0)
+
+    demo = Demo()
+    demo.full_name
+    # 'Demo'
+
+    demo.a.full_name
+    # 'Demo/a'
+    ```
+
+    Caveats:
+
+    * Empty parameterized object, in other words without any node like attributes,
+      always has status `Build.YES`.
+    * If assignee object has been built, right before assign operation, its tensor
+      name will not change its name according to new tree structure.
+
+    :param name: Parentable name of the object. Class name is used, when name is None.
+    """
 
     def __init__(self, name=None):
         super(Parameterized, self).__init__(name=name)
@@ -85,8 +130,7 @@ class Parameterized(Node):
 
     @property
     def trainable_tensors(self):
-        for parameter in self.trainable_parameters:
-            yield parameter.parameter_tensor
+        return [param.parameter_tensor for param in self.trainable_parameters]
 
     @property
     def prior_tensor(self):
@@ -148,11 +192,16 @@ class Parameterized(Node):
         for param in self.params:
             param.trainable = value
 
-    def __str__(self):
-        return '\n\n'.join([p.__str__() for p in self.parameters])
+    def fix_shape(self, parameters=True, data_holders=True):
+        if parameters:
+            for parameter in self.parameters:
+                parameter.fix_shape()
+        if data_holders:
+            for data_holder in self.data_holders:
+                data_holder.fix_shape()
 
-    def assign(self, values, session=None):
-        session = self.enquire_session(session=session, allow_none=True)
+    def assign(self, values, session=None, force=True):
+        session = self.enquire_session(session=session)
         params = {param.full_name: param for param in self.parameters}
         val_keys = set(values.keys())
         if not val_keys.issubset(params.keys()):
@@ -162,19 +211,22 @@ class Parameterized(Node):
         prev_values = {}
         for key in val_keys:
             try:
-                prev_values[key] = params[key].read_value()
-                params[key].assign(values[key], session=session)
+                prev_values[key] = params[key].read_value(session=session)
+                params[key].assign(values[key], session=session, force=force)
             except (GPflowError, ValueError) as error:
                 for rkey, rvalue in prev_values.items():
-                    params[rkey].assign(rvalue, session=session)
+                    params[rkey].assign(rvalue, session=session, force=True)
                 raise error
 
-    def anchor(self):
+    def anchor(self, session):
+        if session is None:
+            ValueError('Session is required when anchoring.')
         for parameter in self.trainable_parameters:
-            parameter.assign(parameter.read_value())
+            value = parameter.read_value(session)
+            parameter.assign(value, session=session)
 
     def read_trainables(self, session=None):
-        session = self.enquire_session(session, allow_none=True)
+        session = self.enquire_session(session)
         return [param.read_value(session) for param in self.trainable_parameters]
 
     def is_built(self, graph):
@@ -192,13 +244,6 @@ class Parameterized(Node):
     def set_trainable(self, value, graph=None):
         for param in self.params:
             param.set_trainable(value, graph=graph)
-
-    def initialize(self, session=None):
-        session = self.enquire_session(session)
-        initializables = self.initializables
-        if initializables:
-            init = tf.variables_initializer(initializables)
-            session.run(init, feed_dict=self.initializable_feeds)
 
     @staticmethod
     def _is_param_like(value):
@@ -220,7 +265,7 @@ class Parameterized(Node):
 
     def _build(self):
         for param in self.params:
-            param._build_with_name_scope() # pylint: disable=W0212
+            param.build()
         priors = []
         for param in self.params:
             if not isinstance(param, DataHolder):
@@ -257,7 +302,7 @@ class Parameterized(Node):
             param.set_parent()
             param.set_name()
         elif isinstance(param, Parameter) and misc.is_valid_param_value(value):
-            param.assign(value, session=self.session)
+            param.assign(value)
         else:
             msg = '"{0}" type cannot be assigned to "{1}".'
             raise ValueError(msg.format(type(value), name))
@@ -277,7 +322,8 @@ class Parameterized(Node):
             raise ValueError('Cannot be assigned as parameter to itself.')
 
         if key in self.__dict__.keys():
-            if Parameterized._is_param_like(getattr(self, key)):
+            assignee_param = getattr(self, key)
+            if Parameterized._is_param_like(assignee_param):
                 self._update_param_attribute(key, value)
                 return
 
@@ -288,3 +334,7 @@ class Parameterized(Node):
             value.set_name(key)
 
         object.__setattr__(self, key, value)
+
+
+    def __str__(self):
+        return '\n\n'.join([p.__str__() for p in self.parameters])

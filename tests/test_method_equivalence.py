@@ -1,4 +1,4 @@
-# Copyright 2016 the GPflow authors.
+# Copyright 2017 the GPflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import unittest
 import tensorflow as tf
 
-from nose.plugins.attrib import attr
+
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -24,7 +23,6 @@ import gpflow
 from gpflow.test_util import GPflowTestCase
 
 
-@attr(speed='slow')
 class TestEquivalence(GPflowTestCase):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
@@ -44,7 +42,7 @@ class TestEquivalence(GPflowTestCase):
        variables are 'collapsed' out, as in Titsias 2009)
     """
 
-    def setUp(self):
+    def prepare(self):
         rng = np.random.RandomState(0)
         X = rng.rand(20, 1) * 10
         Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
@@ -80,20 +78,20 @@ class TestEquivalence(GPflowTestCase):
             X, Y, gpflow.kernels.RBF(1), Z=X.copy(),
             mean_function=gpflow.mean_functions.Constant())
         m6.Z.trainable = False
-        self.models = [m1, m2, m3, m4, m5, m6]
+        return [m1, m2, m3, m4, m5, m6]
 
     def test_all(self):
-        with self.test_context():
+        with self.test_context() as session:
+            models = self.prepare()
             likelihoods = []
-            for m in self.models:
-                m.compile()
+            for m in models:
                 opt = gpflow.train.ScipyOptimizer()
                 opt.minimize(m, maxiter=300)
                 neg_obj = tf.negative(m.objective)
-                likelihoods.append(m.session.run(neg_obj).squeeze())
+                likelihoods.append(session.run(neg_obj).squeeze())
             assert_allclose(likelihoods, likelihoods[0], rtol=1e-6)
             variances, lengthscales = [], []
-            for m in self.models:
+            for m in models:
                 if hasattr(m.kern, 'rbf'):
                     variances.append(m.kern.rbf.variance.read_value())
                     lengthscales.append(m.kern.rbf.lengthscales.read_value())
@@ -103,8 +101,8 @@ class TestEquivalence(GPflowTestCase):
             variances, lengthscales = np.array(variances), np.array(lengthscales)
             assert_allclose(variances, variances[0], 1e-5)
             assert_allclose(lengthscales, lengthscales.mean(), 1e-4)
-            mu0, var0 = self.models[0].predict_y(self.Xtest)
-            for m in self.models[1:]:
+            mu0, var0 = models[0].predict_y(self.Xtest)
+            for m in models[1:]:
                 mu, var = m.predict_y(self.Xtest)
                 assert_allclose(mu, mu0, 1e-3)
                 assert_allclose(var, var0, 1e-4)
@@ -240,9 +238,8 @@ class TestUpperBound(GPflowTestCase):
         self.Y = np.sin(1.5 * 2 * np.pi * self.X) + np.random.randn(*self.X.shape) * 0.1
 
     def test_few_inducing_points(self):
-        with self.test_context():
+        with self.test_context() as session:
             vfe = gpflow.models.SGPR(self.X, self.Y, gpflow.kernels.RBF(1), self.X[:10, :].copy())
-            vfe.compile()
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(vfe)
 
@@ -250,14 +247,13 @@ class TestUpperBound(GPflowTestCase):
             full.kern.lengthscales = vfe.kern.lengthscales.read_value()
             full.kern.variance = vfe.kern.variance.read_value()
             full.likelihood.variance = vfe.likelihood.variance.read_value()
-            full.compile()
 
             lml_upper = vfe.compute_upper_bound()
-            lml_vfe = - vfe.session.run(vfe.objective)
-            lml_full = - full.session.run(full.objective)
+            lml_vfe = - session.run(vfe.objective)
+            lml_full = - session.run(full.objective)
 
             self.assertTrue(lml_upper > lml_full > lml_vfe)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    tf.test.main()

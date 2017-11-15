@@ -14,8 +14,8 @@
 
 
 from .. import misc
-from ..core.base import GPflowError
-from ..core.parentable import Parentable
+from .errors import GPflowError
+from .parentable import Parentable
 
 class TensorConverter:  # pylint: disable=R0903
     __tensor_mode__ = '_tensor_mode'

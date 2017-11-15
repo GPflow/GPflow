@@ -1,7 +1,18 @@
-from __future__ import print_function
+# Copyright 2017 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
 
 import traceback
-import unittest
 import sys
 import time
 import os
@@ -10,16 +21,16 @@ import nbformat
 
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
-from nose.plugins.attrib import attr
+
 from gpflow.test_util import GPflowTestCase
 
-@attr(speed='slow')
+
 class TestNotebooks(GPflowTestCase):
     """
     Run notebook tests.
 
     Blacklist:
-    - svi_test.ipynb
+    - svi.ipynb
     - GPLVM.ipynb
     - regression.ipynb
     """
@@ -53,44 +64,41 @@ class TestNotebooks(GPflowTestCase):
             self._exec_notebook(notebook_filename)
             print(notebook_filename, 'took {0} seconds.'.format(time.time() - ts))
 
-    def classification_test(self):
-        self._exec_notebook_ts("classification.ipynb")
+    # def test_classification(self):
+    #     self._exec_notebook_ts("classification.ipynb")
 
-    def coreg_demo_test(self):
-        self._exec_notebook_ts("coreg_demo.ipynb")
+    # def test_coreg_demo(self):
+    #     self._exec_notebook_ts("coreg_demo.ipynb")
 
-    def FITCvsVFE_test(self):
-        self._exec_notebook_ts("FITCvsVFE.ipynb")
+    # def test_kernels(self):
+    #     self._exec_notebook_ts("kernels.ipynb")
 
-    def kernels_test(self):
-        self._exec_notebook_ts("kernels.ipynb")
+    # def test_mcmc(self):
+    #     self._exec_notebook_ts("mcmc.ipynb")
 
-    def mcmc_test(self):
-        self._exec_notebook_ts("mcmc.ipynb")
+    # def test_ordinal(self):
+    #     self._exec_notebook_ts("ordinal.ipynb")
 
-    def models_test(self):
-        self._exec_notebook_ts("models.ipynb")
+    # def test_sanity_check(self):
+    #     self._exec_notebook_ts("Sanity_check.ipynb")
 
-    def multiclass_test(self):
-        self._exec_notebook_ts("multiclass.ipynb")
+    # def test_settings(self):
+    #     self._exec_notebook_ts("settings.ipynb")
 
-    def ordinal_test(self):
-        self._exec_notebook_ts("ordinal.ipynb")
+    # def test_SGPR_notes(self):
+    #     self._exec_notebook_ts("SGPR_notes.ipynb")
 
-    def regression_with_updated_data_test(self):
-        self._exec_notebook_ts("regression_with_updated_data.ipynb")
+    # def test_vgp_notes(self):
+    #     self._exec_notebook_ts("vgp_notes.ipynb")
 
-    def sanity_check_test(self):
-        self._exec_notebook_ts("Sanity_check.ipynb")
+    # TODO(@awav): CHECK IT
+    # def FITCvsVFE(self):
+    #    self._exec_notebook_ts("FITCvsVFE.ipynb")
 
-    def settings_test(self):
-        self._exec_notebook_ts("settings.ipynb")
+    # TODO(@awav): CHECK IT
+    # def models(self):
+    #     self._exec_notebook_ts("models.ipynb")
 
-    def SGPR_notes_test(self):
-        self._exec_notebook_ts("SGPR_notes.ipynb")
-
-    def vgp_notes_test(self):
-        self._exec_notebook_ts("vgp_notes.ipynb")
-
-if __name__ == '__main__':
-    unittest.main()
+    # TODO(@awav): CHECK IT
+    # def multiclass(self):
+    #     self._exec_notebook_ts("multiclass.ipynb")

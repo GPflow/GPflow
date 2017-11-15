@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import sys
 import tensorflow as tf
 
-from ..models.model import Model
 from . import optimizer
+from .. import misc
+from ..models.model import Model
 
 
 _REGISTERED_TENSORFLOW_OPTIMIZERS = {}
@@ -37,39 +34,64 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         self._optimizer = tf_optimizer(*args, **kwargs)
         self._minimize_operation = None
 
-    def minimize(self, model, **kwargs):
+    def minimize(self, model, session=None, var_list=None, feed_dict=None,
+                 maxiter=1000, initialize=True, anchor=True, **kwargs):
+        """
+        Minimizes objective function of the model.
+
+        :param model: GPflow model with objective tensor.
+        :param session: Session where optimization will be run.
+        :param var_list: List of extra variables which should be trained during optimization.
+        :param feed_dict: Feed dictionary of tensors passed to session run method.
+        :param maxiter: Number of run interation.
+        :param initialize: If `True` model parameters will be re-initialized even if they were
+            initialized before for gotten session.
+        :param anchor: If `True` trained variable values computed during optimization at
+            particular session will be synchronized with internal parameter values.
+        :param kwargs: This is a dictionary of extra parameters for session run method.
+        """
+
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
 
-        session = self._pop_session(model, kwargs)
-        feed_dict = self._pop_feed_dict(kwargs)
-        maxiter = self._pop_maxiter(kwargs)
-        var_list = self._pop_var_list(model, kwargs)
+        session = model.enquire_session(session)
 
         self._model = model
-        self._create_minimize_operation(model, var_list, session, **kwargs)
-        for _i in range(maxiter):
-            if model.feeds:
-                feed_dict.update(model.feeds)
-            session.run(self.minimize_operation, feed_dict=feed_dict)
-
-    def _create_minimize_operation(self, model, var_list, session, **kwargs):
         objective = model.objective
-        with session.graph.as_default():
-            self._minimize_operation = self.optimizer.minimize(
-                objective, var_list=var_list, **kwargs)
-            self._initialize_optimizer(var_list, session)
 
-    def _initialize_optimizer(self, variables, session):
-        # TODO(@awav): AdamOptimizer creates beta1 and beta2 variables which are
-        #             not included in slots.
-        extra_vars = [v for v in self.optimizer.__dict__.values()
-                      if isinstance(v, tf.Variable)]
-        optimizer_vars = [self.optimizer.get_slot(var, name)
-                          for name in self.optimizer.get_slot_names()
-                          for var in variables]
-        var_list = list(set(optimizer_vars + extra_vars))
-        session.run(tf.variables_initializer(var_list))
+        with session.graph.as_default():
+            full_var_list = self._gen_var_list(model, var_list)
+
+            # Create optimizer variables before initialization.
+            self._minimize_operation = self.optimizer.minimize(
+                objective, var_list=full_var_list, **kwargs)
+
+            model.initialize(session=session, force=initialize)
+            self._initialize_optimizer(session, full_var_list)
+
+            for _i in range(maxiter):
+                if model.feeds:
+                    feed_dict.update(model.feeds)
+                session.run(self.minimize_operation, feed_dict=feed_dict)
+
+        if anchor:
+            model.anchor(session)
+
+    def _initialize_optimizer(self, session, var_list):
+        """
+        TODO(@awav): AdamOptimizer creates beta1 and beta2 variables which are
+        not included in slots.
+        """
+        def get_optimizer_slots():
+            for name in self.optimizer.get_slot_names():
+                for var in var_list:
+                    slot = self.optimizer.get_slot(var, name)
+                    if slot is not None:
+                        yield slot
+        extra_vars = [v for v in self.optimizer.__dict__.values() if isinstance(v, tf.Variable)]
+        optimizer_vars = list(get_optimizer_slots())
+        full_var_list = list(set(optimizer_vars + extra_vars))
+        misc.initialize_variables(full_var_list, session=session, force=True)
 
     @property
     def minimize_operation(self):

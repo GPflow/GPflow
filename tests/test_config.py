@@ -1,18 +1,56 @@
+# Copyright 2017 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
+
 
 # pylint: disable=W0212
 
-import unittest
 import os
 import tensorflow as tf
 import gpflow
 
 from gpflow.test_util import GPflowTestCase
 
+CONFIG_TXT = """
+[first_section]
+a_bool = false
+a_float = 1e-3
+a_string = hello
+a_type = float64
+
+[second_section]
+a_bool = true
+another_bool = True
+yet_another_bool = False
+"""
+
 class TestConfigParsing(GPflowTestCase):
+    config_filename = None
+
+    @classmethod
+    def setUpClass(cls):
+        directory = tf.test.get_temp_dir()
+        cls.config_filename = os.path.join(directory, 'gpflowrc_test.txt')
+        with open(cls.config_filename, 'w') as fd:
+            fd.write(CONFIG_TXT)
+
+    @classmethod
+    def tearDownClass(cls):
+        os.remove(cls.config_filename)
+        super().tearDownClass()
+
     def setUp(self):
-        directory = os.path.dirname(os.path.realpath(__file__))
-        f = os.path.join(directory, 'gpflowrc_test.txt')
-        self.conf = gpflow._settings._read_config_file(f)
+        self.conf = gpflow._settings._read_config_file(self.config_filename)
         self.settings = gpflow._settings._namedtuplify(self.conf._sections)
 
     def test(self):
@@ -78,5 +116,5 @@ class TestSettingsManager(GPflowTestCase):
         gpflow.settings.verbosity.hmc_verb = orig
 
 
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == '__main__':
+    tf.test.main()

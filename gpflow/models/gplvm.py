@@ -1,16 +1,17 @@
 import tensorflow as tf
 import numpy as np
 
-from gpflow import settings
-from gpflow import likelihoods
-from gpflow import transforms
-from gpflow import kernels
+from .. import settings
+from .. import likelihoods
+from .. import transforms
+from .. import kernels
 
-from gpflow.models.model import GPModel
-from gpflow.models.gpr import GPR
-from gpflow.params import Parameter
-from gpflow.decors import params_as_tensors
-from gpflow.mean_functions import Zero
+from ..params import Parameter
+from ..decors import params_as_tensors
+from ..mean_functions import Zero
+
+from .model import GPModel
+from .gpr import GPR
 
 
 class GPLVM(GPR):
@@ -18,15 +19,18 @@ class GPLVM(GPR):
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
 
-    def __init__(self, Y, latent_dim, X_mean=None, kern=None, mean_function=Zero(), **kwargs):
+    def __init__(self, Y, latent_dim, X_mean=None, kern=None, mean_function=None, **kwargs):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
+
         :param Y: data matrix, size N (number of points) x D (dimensions)
         :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions)
         :param X_mean: latent positions (N x Q), for the initialisation of the latent space.
         :param kern: kernel specification, by default RBF
         :param mean_function: mean function, by default None.
         """
+        if mean_function is None:
+            mean_function = Zero()
         if kern is None:
             kern = kernels.RBF(latent_dim, ARD=True)
         if X_mean is None:
@@ -56,7 +60,9 @@ class BayesianGPLVM(GPModel):
         :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as X_mean.
         :param X_prior_var: pripor variance used in KL term of bound. By default 1.
         """
-        GPModel.__init__(self, X_mean, Y, kern, likelihood=likelihoods.Gaussian(), mean_function=Zero())
+        GPModel.__init__(self, X_mean, Y, kern,
+                         likelihood=likelihoods.Gaussian(),
+                         mean_function=Zero())
         del self.X  # in GPLVM this is a Param
         self.X_mean = Parameter(X_mean)
         # diag_transform = transforms.DiagMatrix(X_var.shape[1])

@@ -13,57 +13,9 @@
 # limitations under the License.
 
 import abc
-import enum
 
 
-class GPflowError(Exception):
-    pass
-
-
-class Build(enum.Enum):
-    YES = 1
-    NO = 0  # pylint: disable=C0103
-    NOT_COMPATIBLE_GRAPH = None
-
-
-class ICompilable:
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractproperty
-    def graph(self):
-        raise NotImplementedError()
-
-    @abc.abstractproperty
-    def session(self):
-        raise NotImplementedError()
-
-    @abc.abstractproperty
-    def feeds(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def compile(self, session=None, keep_session=True):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def initialize(self, session=None):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def is_built(self, graph):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def clear(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _build(self):
-        raise NotImplementedError()
-
-
-class IPrior:
-    __metaclass__ = abc.ABCMeta
+class IPrior(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def logp(self, x):
@@ -90,8 +42,7 @@ class IPrior:
         raise NotImplementedError()
 
 
-class ITransform:
-    __metaclass__ = abc.ABCMeta
+class ITransform(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def forward(self, x):
