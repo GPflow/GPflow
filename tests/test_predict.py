@@ -60,7 +60,7 @@ class TestGaussian(GPflowTestCase):
 
             #change a fix and see if these things still compile
             m.likelihood.variance = 0.2
-            m.likelihood.variance.fixed = True
+            m.likelihood.variance.trainable = False
 
             #this will fail unless a recompile has been triggered
             mu_f, var_f = m.predict_f(self.Xtest)
