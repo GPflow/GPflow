@@ -17,7 +17,6 @@ import tensorflow as tf
 import numpy as np
 
 from . import settings
-from .core.errors import GPflowError
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
@@ -117,7 +116,7 @@ def remove_from_trainables(variable, graph=None):
     trainables = graph.get_collection_ref(__TRAINABLES)
     if variable not in trainables:
         msg = 'TensorFlow variable {variable} not found in the graph {graph}'
-        raise GPflowError(msg.format(variable=variable, graph=graph))
+        raise ValueError(msg.format(variable=variable, graph=graph))
     trainables.remove(variable)
 
 
