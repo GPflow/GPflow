@@ -201,6 +201,10 @@ class Parameter(Node):
     def fixed_shape(self):
         return self._fixed_shape
 
+    @property
+    def value(self):
+        return self.read_value()
+
     def fix_shape(self):
         if self._fixed_shape:
             return
