@@ -130,7 +130,7 @@ class cb():
         self.counter = 0
 
     def __call__(self, info):
-        if (self.counter%self.holdout_inverval)==0 or (self.counter<=10):
+        if (self.counter%self.holdout_inverval) == 0 or (self.counter <= 10):
             predictive_mean, predictive_variance = self.model.predict_y(self.xtest)
             self.n_iters.append(self.counter)
             self.log_likelihoods.append(self.model.compute_log_likelihood())
