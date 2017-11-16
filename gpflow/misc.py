@@ -27,9 +27,9 @@ def tensor_name(*subnames):
     return '/'.join(subnames)
 
 
-def get_variable_by_name(name, index=None, graph=None):
+def get_variable_by_name(name, graph=None):
     graph = _get_graph(graph)
-    return _get_variable(name, index=index, graph=graph)
+    return _get_variable(name, graph=graph)
 
 
 def get_tensor_by_name(name, index=None, graph=None):
@@ -138,9 +138,9 @@ def normalize_num_type(num_type):
     return num_type
 
 
-def types_array(tensor, shape=None):
-    shape = shape if shape is not None else tensor.shape.as_list()
-    return np.full(shape, tensor.dtype).tolist()
+# def types_array(tensor, shape=None):
+#     shape = shape if shape is not None else tensor.shape.as_list()
+#     return np.full(shape, tensor.dtype).tolist()
 
 
 def get_attribute(obj, name, allow_fail=False, default=None):
@@ -194,19 +194,12 @@ def _get_tensor(name, index=None, graph=None):
     return tensor
 
 
-def _get_variable(name, index=None, graph=None):
-    variables = []
+def _get_variable(name, graph=None):
     for var in graph.get_collection(__GLOBAL_VARIABLES):
-        var_name, var_index = var.name.split(':')
+        var_name, _var_index = var.name.split(':')
         if var_name == name:
-            if index is not None and var_index == index:
-                return var
-            variables.append(var)
-    if index is not None or not variables:
-        return None
-    if len(variables) > 1:
-        raise ValueError('Ambiguous variable for "{0}" with multiple indices found.')
-    return variables[0]
+            return var
+    return None
 
 
 def _get_tensor_safe(name, index, graph):
