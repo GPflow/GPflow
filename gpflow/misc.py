@@ -58,8 +58,16 @@ def is_valid_param_value(value):
     if isinstance(value, list):
         if not value:
             return False
-        zero_type = type(value[0])
-        return all(isinstance(val, zero_type) for val in value[1:])
+        zero_val = value[0]
+        arrays = (list, np.ndarray)
+        scalars = (float, int)
+        if isinstance(zero_val, scalars):
+            types = scalars
+        elif isinstance(zero_val, arrays):
+            types = arrays
+        else:
+            return False
+        return all(isinstance(val, types) for val in value[1:])
     return ((value is not None)
             and is_number(value)
             or is_ndarray(value)
