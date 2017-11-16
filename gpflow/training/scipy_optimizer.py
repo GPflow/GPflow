@@ -27,7 +27,7 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._model = None
 
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=True, anchor=True, **kwargs):
+                 maxiter=1000, initialize=False, anchor=True, **kwargs):
         """
         Minimizes objective function of the model.
 
@@ -66,7 +66,7 @@ class ScipyOptimizer(optimizer.Optimizer):
 
         model.initialize(session=session, force=initialize)
 
-        # feed_dict = self._gen_feed_dict(model, feed_dict)
+        feed_dict = self._gen_feed_dict(model, feed_dict)
         self._optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
         if anchor:
             model.anchor(session)

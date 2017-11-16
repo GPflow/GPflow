@@ -201,6 +201,14 @@ class Parameter(Node):
     def fixed_shape(self):
         return self._fixed_shape
 
+    @property
+    def value(self):
+        """
+        The `value` property is simple alias for `read_value()` method called with
+        default arguments.
+        """
+        return self.read_value()
+
     def fix_shape(self):
         if self._fixed_shape:
             return
@@ -250,12 +258,12 @@ class Parameter(Node):
 
         value = self._valid_input(value, dtype)
         if self.fixed_shape:
-            self._value[...] = value.copy()
+            self._value[...] = value
         else:
             self._value = value.copy()
+
         if self.is_built_coherence() is Build.YES:
             session = self.enquire_session(session)
-            self.is_built_coherence(graph=session.graph)
             self.initialize(session=session, force=force)
 
     def read_value(self, session=None):

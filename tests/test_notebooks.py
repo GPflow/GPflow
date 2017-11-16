@@ -66,7 +66,7 @@ class TestNotebooks(GPflowTestCase):
 
     # def test_classification(self):
     #     self._exec_notebook_ts("classification.ipynb")
-
+    
     # def test_coreg_demo(self):
     #     self._exec_notebook_ts("coreg_demo.ipynb")
 
@@ -93,12 +93,12 @@ class TestNotebooks(GPflowTestCase):
 
     # TODO(@awav): CHECK IT
     # def FITCvsVFE(self):
-    #    self._exec_notebook_ts("FITCvsVFE.ipynb")
+    #   self._exec_notebook_ts("FITCvsVFE.ipynb")
 
     # TODO(@awav): CHECK IT
     # def models(self):
-    #     self._exec_notebook_ts("models.ipynb")
+    #    self._exec_notebook_ts("models.ipynb")
 
     # TODO(@awav): CHECK IT
     # def multiclass(self):
-    #     self._exec_notebook_ts("multiclass.ipynb")
+    #    self._exec_notebook_ts("multiclass.ipynb")
