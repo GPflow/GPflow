@@ -57,7 +57,7 @@ class TestPublicMethods(GPflowTestCase):
             self.assertTrue(gpflow.misc.is_initializable_tensor(variable))
 
             def equal(found):
-                self.assertFalse(gpflow.misc.is_initializable_tensor(found))
+                self.assertTrue(gpflow.misc.is_initializable_tensor(found))
                 self.assertEqual(found, variable)
 
             def not_equal(found):
