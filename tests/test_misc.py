@@ -39,8 +39,10 @@ class TestPublicMethods(GPflowTestCase):
         with self.test_context():
             name = 'tensor'
             variable = tf.get_variable(name, shape=())
+            self.assertTrue(gpflow.misc.is_initializable_tensor(variable))
 
             def equal(found):
+                self.assertFalse(gpflow.misc.is_initializable_tensor(found))
                 self.assertTrue(found.name == variable.name)
 
             def not_equal(found):
@@ -52,8 +54,10 @@ class TestPublicMethods(GPflowTestCase):
         with self.test_context():
             name = 'variable'
             variable = tf.get_variable(name, shape=())
+            self.assertTrue(gpflow.misc.is_initializable_tensor(variable))
 
             def equal(found):
+                self.assertFalse(gpflow.misc.is_initializable_tensor(found))
                 self.assertEqual(found, variable)
 
             def not_equal(found):
@@ -79,6 +83,10 @@ class TestPublicMethods(GPflowTestCase):
             self.assertTrue(gpflow.misc.is_valid_param_value([np.array(1.0), [1.0]]))
 
             self.assertFalse(gpflow.misc.is_valid_param_value([]))
+            self.assertFalse(gpflow.misc.is_valid_param_value(["", 1.0]))
+            self.assertFalse(gpflow.misc.is_valid_param_value([1.0, ""]))
+            self.assertFalse(gpflow.misc.is_valid_param_value(["a", 1.0]))
+            self.assertFalse(gpflow.misc.is_valid_param_value([1.0, "a"]))
             self.assertFalse(gpflow.misc.is_valid_param_value([1.0, [1.0]]))
             self.assertFalse(gpflow.misc.is_valid_param_value([[1.0], 1.0]))
             self.assertFalse(gpflow.misc.is_valid_param_value(""))
