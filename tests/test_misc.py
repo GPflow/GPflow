@@ -64,7 +64,7 @@ class TestPublicMethods(GPflowTestCase):
                 self.assertEqual(found, None)
 
             def fun(*args, **kwargs):
-                _ = kwargs.pop('index')
+                _ = kwargs.pop('index', None)
                 return gpflow.misc.get_variable_by_name(*args, **kwargs)
 
             self.run_case(name, equal, not_equal, fun)
