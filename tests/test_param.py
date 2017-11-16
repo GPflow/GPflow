@@ -171,12 +171,15 @@ class TestParameter(GPflowTestCase):
         with self.test_context() as session:
             self.p.assign(2.0)
             self.assertEqual(self.p.read_value(), 2.0)
+            self.assertEqual(self.p.value, 2.0)
 
             self.m.p = 2.0
             self.assertEqual(self.m.p.read_value(), 2.0)
+            self.assertEqual(self.m.p.value, 2.0)
 
             self.p.assign(100.0, session=session)
             self.assertEqual(self.p.read_value(session), 100.0)
+            self.assertEqual(self.p.value, 100.0)
 
     def test_assign_tensor(self):
         with self.test_context():

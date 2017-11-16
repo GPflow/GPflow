@@ -201,6 +201,10 @@ class Parameter(Node):
     def fixed_shape(self):
         return self._fixed_shape
 
+    @property
+    def value(self):
+        return self.read_value()
+
     def fix_shape(self):
         if self._fixed_shape:
             return
@@ -479,3 +483,11 @@ class Parameter(Node):
             shape=self.shape,
             transform=self.transform,
             prior=self.prior)
+
+    @property
+    def fixed(self):
+        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
+
+    @fixed.setter
+    def fixed(self, _):
+        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
