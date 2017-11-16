@@ -203,6 +203,10 @@ class Parameter(Node):
 
     @property
     def value(self):
+        """
+        The `value` property is simple alias for `read_value()` method called with
+        default arguments.
+        """
         return self.read_value()
 
     def fix_shape(self):
