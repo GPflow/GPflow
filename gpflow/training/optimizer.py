@@ -34,4 +34,6 @@ class Optimizer:
         feed_dict = feed_dict or {}
         model_feeds = {} if model.feeds is None else model.feeds
         feed_dict.update(model_feeds)
+        if feed_dict == {}:
+            return None
         return feed_dict

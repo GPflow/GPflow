@@ -16,11 +16,13 @@
 
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 import gpflow
 from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
+from numpy.testing import assert_allclose
 
 class Foo(gpflow.models.Model):
     def _build_likelihood(self):
@@ -112,7 +114,7 @@ class TestType(GPflowTestCase):
             fail_assigns(param)
 
 
-class TestParam(GPflowTestCase):
+class TestParameter(GPflowTestCase):
     def setUp(self):
         with self.test_context():
             self.p = gpflow.Param(1.0)
@@ -120,6 +122,40 @@ class TestParam(GPflowTestCase):
             self.m = gpflow.params.Parameterized()
             self.m.p = gpflow.Param(1.0)
             self.m.b = gpflow.Param(1.0)
+
+    def test_parameter_different_options(self):
+        with self.test_context() as session:
+            val = 10.
+            a = gpflow.Param(val)
+            assert_allclose(a.read_value(), val)
+
+            val = [10.] * 2
+            b = gpflow.Param([10.] * 2, fix_shape=False)
+            assert_allclose(b.read_value(), val)
+            self.assertEqual(b.dtype, np.float64)
+
+            val = [10] * 3
+            c = gpflow.Param(val, dtype=np.float16)
+            assert_allclose(c.read_value(), val)
+            self.assertEqual(c.dtype, np.float16)
+
+            val = [10.] * 4
+            d = gpflow.Param(val, trainable=False)
+            assert_allclose(d.read_value(), val)
+            self.assertEqual(d.trainable, False)
+
+            val = [10.] * 5
+            transform = gpflow.transforms.Log1pe()
+            e = gpflow.Param(val, transform=transform)
+            assert_allclose(e.read_value(), val)
+            unconstrained = transform.backward(np.array(val))
+            assert_allclose(session.run(e.unconstrained_tensor), unconstrained)
+
+            val = [10.] * 6
+            f = gpflow.Param(val, prior=gpflow.priors.Gaussian(1, 2))
+            assert_allclose(f.read_value(), val)
+            assert_allclose(f.read_value(session), val)
+            self.assertTrue(isinstance(f.prior, gpflow.priors.Gaussian))
 
     def test_generators(self):
         with self.test_context():
@@ -144,6 +180,43 @@ class TestParam(GPflowTestCase):
             self.p.assign(100.0, session=session)
             self.assertEqual(self.p.read_value(session), 100.0)
             self.assertEqual(self.p.value, 100.0)
+
+    def test_assign_tensor(self):
+        with self.test_context():
+            tensor = tf.get_variable('a', shape=())
+            param = gpflow.Param(tensor)
+            with self.assertRaises(gpflow.GPflowError):
+                param.assign(10)
+
+    def test_floating_assign(self):
+        with self.test_context():
+            val = 10.
+            p = gpflow.Param(val, fix_shape=False)
+            assert_allclose(p.read_value(), val)
+
+            val = [10, 10]
+            p.assign(val)
+            assert_allclose(p.read_value(), val)
+
+            val = [10, 10, 10]
+            p.assign(val)
+            assert_allclose(p.read_value(), val)
+
+            val = [[10, 10, 10], [10, 10, 10]]
+            p.assign(val)
+            assert_allclose(p.read_value(), val)
+
+        with self.test_context():
+            val = 10.
+            p = gpflow.Param(val)
+
+            val = [10., 10.]
+            with self.assertRaises(ValueError):
+                p.assign(val)
+
+            val = [[10.]]
+            with self.assertRaises(ValueError):
+                p.assign(val)
 
     def test_create_and_replace(self):
         with self.test_context():
@@ -207,6 +280,103 @@ class TestParam(GPflowTestCase):
             self.assertTrue(self.m.trainable)
             self.assertFalse(self.m.p.trainable)
             _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
+
+class TestParameterized(GPflowTestCase):
+
+    @staticmethod
+    def create_layout():
+        p = gpflow.Parameterized(name='p')
+        p.a = gpflow.Param(10.)
+        p.b = gpflow.Param(10.)
+        p.c = gpflow.Parameterized()
+        p.c.d = gpflow.Param(10., fix_shape=False)
+        p.c.e = gpflow.DataHolder(10.)
+        return p
+
+    def test_read_values(self):
+        def check_values(values, names, expected_values):
+            self.assertTrue(set(values.keys()) == names)
+            vals = list(zip(*values.items()))[1]
+            assert_allclose(vals, expected_values)
+
+        names = set(['p/a', 'p/b', 'p/c/d'])
+        expected_values = [10., 10., 10]
+
+        with self.test_context() as session:
+            session_new = tf.Session(graph=session.graph)
+            self.assertNotEqual(session_new, session)
+            with session_new.as_default():
+                with gpflow.defer_build():
+                    p = self.create_layout()
+                    values = p.read_values()
+                    check_values(values, names, expected_values)
+                    p.compile()
+                    values = p.read_values()
+                    check_values(values, names, expected_values)
+                    with self.assertRaises(tf.errors.FailedPreconditionError):
+                        p.read_values(session=session)
+
+        with self.test_context() as session_fail:
+            self.assertFalse(session == session_fail)
+            with self.assertRaises(tf.errors.FailedPreconditionError):
+                p.read_values(session=session_fail)
+
+        with self.test_context() as session_intialize:
+            p.initialize(session=session_intialize)
+            values = p.read_values(session=session_intialize)
+            check_values(values, names, expected_values)
+
+        values = p.read_values(session=session_new)
+        check_values(values, names, expected_values)
+        session_new.close()
+
+    def test_parameterized_assign(self):
+        with self.test_context():
+            ## Create parameterized object inside context
+            p = self.create_layout()
+
+            values = p.read_values()
+            values['p/b'] = 100.
+            values['p/c/d'] = 100.
+            p.assign(values)
+            assert_allclose(p.a.read_value(), 10)
+            assert_allclose(p.b.read_value(), 100)
+            assert_allclose(p.c.d.read_value(), 100)
+            values = list(map(float, p.read_values().values()))
+            self.assertTrue(set(values) == set([10, 100, 100]))
+
+        with self.test_context() as session:
+            assign_values = {'p/a': 1e3, 'p/c/d': 1e4}
+            p.assign(assign_values, session=session)
+            assert_allclose(p.a.read_value(), 1e3)
+            assert_allclose(p.b.read_value(), 100)
+            assert_allclose(p.c.d.read_value(), 1e4)
+            values = list(map(float, p.read_values().values()))
+            self.assertTrue(set(values) == set([1e3, 100, 1e4]))
+
+    def test_parameterized_assign_panda(self):
+        with self.test_context():
+            p = self.create_layout()
+            vals1 = [1e2, 1e3, 1e4]
+            vals2 = [2e2, 2e3, 2e4]
+            self.assertEqual(len(vals1), len(vals2))
+
+            df1 = pd.DataFrame({'p/a': vals1, 'p/c/d': vals1})
+            df2 = pd.DataFrame({'p/a': vals2, 'p/c/d': vals2})
+
+            for i in range(len(vals1)):
+                df_slice1 = df1.iloc[i]
+                p.assign(df_slice1, force=False)
+                values = p.read_values()
+                for name in df_slice1.index:
+                    assert_allclose(df_slice1[name], values[name])
+
+                df_slice2 = df2.iloc[i]
+                p.assign(df_slice2, force=True)
+                values = p.read_values()
+                for name in df_slice2.index:
+                    assert_allclose(df_slice2[name], values[name])
+
 
 
 class TestParameterizedNoParameters(GPflowTestCase):
@@ -677,7 +847,6 @@ class TestScopes(GPflowTestCase):
                 return m.kern.K(m.X)
             K = run_kernel(self.m)
             self.assertTrue(K.name.startswith('test_kernel/'))
-
 
 def _check_trainable_flag(m, assert_true, assert_false):
     for param in m.parameters:

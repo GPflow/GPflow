@@ -17,7 +17,6 @@ import tensorflow as tf
 import numpy as np
 
 from . import settings
-from .core.errors import GPflowError
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
@@ -28,9 +27,9 @@ def tensor_name(*subnames):
     return '/'.join(subnames)
 
 
-def get_variable_by_name(name, index=None, graph=None):
+def get_variable_by_name(name, graph=None):
     graph = _get_graph(graph)
-    return _get_variable(name, index=index, graph=graph)
+    return _get_variable(name, graph=graph)
 
 
 def get_tensor_by_name(name, index=None, graph=None):
@@ -58,8 +57,16 @@ def is_valid_param_value(value):
     if isinstance(value, list):
         if not value:
             return False
-        zero_type = type(value[0])
-        return all(isinstance(val, zero_type) for val in value[1:])
+        zero_val = value[0]
+        arrays = (list, np.ndarray)
+        scalars = (float, int)
+        if isinstance(zero_val, scalars):
+            types = scalars
+        elif isinstance(zero_val, arrays):
+            types = arrays
+        else:
+            return False
+        return all(isinstance(val, types) for val in value[1:])
     return ((value is not None)
             and is_number(value)
             or is_ndarray(value)
@@ -82,7 +89,7 @@ def initialize_variables(variables=None, session=None, force=False, **run_kwargs
                     elif isinstance(uv, str):
                         yield uv
                     else:
-                        msg = 'Unknown output type "{}"from `tf.report_uninitialized_variables`'
+                        msg = 'Unknown output type "{}" from `tf.report_uninitialized_variables`'
                         raise ValueError(msg.format(type(uv)))
             names = set(uninitialized_names())
             vars_for_init = [v for v in variables if v.name.split(':')[0] in names]
@@ -109,7 +116,7 @@ def remove_from_trainables(variable, graph=None):
     trainables = graph.get_collection_ref(__TRAINABLES)
     if variable not in trainables:
         msg = 'TensorFlow variable {variable} not found in the graph {graph}'
-        raise GPflowError(msg.format(variable=variable, graph=graph))
+        raise ValueError(msg.format(variable=variable, graph=graph))
     trainables.remove(variable)
 
 
@@ -131,9 +138,9 @@ def normalize_num_type(num_type):
     return num_type
 
 
-def types_array(tensor, shape=None):
-    shape = shape if shape is not None else tensor.shape.as_list()
-    return np.full(shape, tensor.dtype).tolist()
+# def types_array(tensor, shape=None):
+#     shape = shape if shape is not None else tensor.shape.as_list()
+#     return np.full(shape, tensor.dtype).tolist()
 
 
 def get_attribute(obj, name, allow_fail=False, default=None):
@@ -187,19 +194,12 @@ def _get_tensor(name, index=None, graph=None):
     return tensor
 
 
-def _get_variable(name, index=None, graph=None):
-    variables = []
+def _get_variable(name, graph=None):
     for var in graph.get_collection(__GLOBAL_VARIABLES):
-        var_name, var_index = var.name.split(':')
+        var_name, _var_index = var.name.split(':')
         if var_name == name:
-            if index is not None and var_index == index:
-                return var
-            variables.append(var)
-    if index is not None or not variables:
-        return None
-    if len(variables) > 1:
-        raise ValueError('Ambiguous variable for "{0}" with multiple indices found.')
-    return variables[0]
+            return var
+    return None
 
 
 def _get_tensor_safe(name, index, graph):
