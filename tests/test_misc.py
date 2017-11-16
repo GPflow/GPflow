@@ -48,7 +48,22 @@ class TestPublicMethods(GPflowTestCase):
             def not_equal(found):
                 self.assertEqual(found, None)
 
-            self.run_case(name, equal, not_equal, gpflow.misc.get_tensor_by_name)
+            fn = gpflow.misc.get_tensor_by_name
+
+            graph = tf.Graph()
+            session = tf.get_default_session()
+            fake_name = "foo"
+
+            equal(fn(name))
+            equal(fn(name, index='0'))
+            equal(fn(name, graph=session.graph))
+
+            not_equal(fn(name, index='1'))
+            not_equal(fn(name, graph=graph))
+            not_equal(fn(name, graph=graph, index='0'))
+            not_equal(fn(name, graph=graph, index='1'))
+            not_equal(fn(fake_name))
+            not_equal(fn(fake_name, graph=graph))
 
     def test_variable_by_name(self):
         with self.test_context():
@@ -63,11 +78,17 @@ class TestPublicMethods(GPflowTestCase):
             def not_equal(found):
                 self.assertEqual(found, None)
 
-            def fun(*args, **kwargs):
-                _ = kwargs.pop('index', None)
-                return gpflow.misc.get_variable_by_name(*args, **kwargs)
+            fn = gpflow.misc.get_variable_by_name
 
-            self.run_case(name, equal, not_equal, fun)
+            graph = tf.Graph()
+            session = tf.get_default_session()
+            fake_name = "foo"
+
+            equal(fn(name))
+            equal(fn(name, graph=session.graph))
+            not_equal(fn(name, graph=graph))
+            not_equal(fn(fake_name))
+            not_equal(fn(fake_name, graph=graph))
 
     def test_valid_param(self):
         with self.test_context():
