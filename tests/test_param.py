@@ -315,10 +315,10 @@ class TestParameterized(GPflowTestCase):
     def create_layout():
         p = gpflow.Parameterized(name='p')
         p.a = gpflow.Param(10.)
-        p.b = gpflow.Param(10.)
+        p.b = gpflow.Param(11.)
         p.c = gpflow.Parameterized()
-        p.c.d = gpflow.Param(10., fix_shape=False)
-        p.c.e = gpflow.DataHolder(10.)
+        p.c.d = gpflow.Param(12., fix_shape=False)
+        p.c.e = gpflow.DataHolder(13.)
         return p
 
     def test_read_values(self):
@@ -328,7 +328,7 @@ class TestParameterized(GPflowTestCase):
             assert_allclose(vals, expected_values)
 
         names = set(['p/a', 'p/b', 'p/c/d'])
-        expected_values = [10., 10., 10]
+        expected_values = [10, 11., 12]
 
         with self.test_context() as session:
             session_new = tf.Session(graph=session.graph)
@@ -404,6 +404,29 @@ class TestParameterized(GPflowTestCase):
                 values = p.read_values()
                 for name in df_slice2.index:
                     assert_allclose(df_slice2[name], values[name])
+
+    def test_fail_assign(self):
+        with self.test_context():
+            p = self.create_layout()
+            values = [1.0, {'a': 1.0}, None, "", "artem", object()]
+            for v in values:
+                with self.assertRaises(ValueError):
+                    p.assign(v)
+
+            different_shape = {
+                    'p/a': np.zeros((10, 1)),
+                    'p/b': -1,
+                    'p/c/d': -1
+                }
+
+            a = p.a.read_value()
+            b = p.b.read_value()
+            c_d = p.c.d.read_value()
+            with self.assertRaises(ValueError):
+                p.assign(different_shape)
+            assert_allclose(p.a.read_value(), a)
+            assert_allclose(p.b.read_value(), b)
+            assert_allclose(p.c.d.read_value(), c_d)
 
     def test_fix_shapes(self):
         with self.test_context():
