@@ -513,6 +513,13 @@ class TestParameterizedNoParameters(GPflowTestCase):
             self.m.p = gpflow.params.Parameterized()
             self.m.b = gpflow.params.Parameterized()
 
+    def test_feeds_empty(self):
+        with self.test_context():
+            p = gpflow.Parameterized()
+            self.assertEqual(p.initializables, [])
+            self.assertEqual(p.initializable_feeds, {})
+            self.assertEqual(p.feeds, {})
+
     def test_is_built(self):
         with self.test_context():
             self.assertEqual(self.m.is_built_coherence(), gpflow.Build.YES)

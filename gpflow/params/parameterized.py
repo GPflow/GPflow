@@ -144,8 +144,6 @@ class Parameterized(Node):
             holder_feeds = data_holder.feeds
             if holder_feeds is not None:
                 total_feeds.update(holder_feeds)
-        if not total_feeds:
-            return None
         return total_feeds
 
     @property
@@ -170,8 +168,6 @@ class Parameterized(Node):
         feeds = {}
         get_initializable_feeds(self.parameters, feeds)
         get_initializable_feeds(self.data_holders, feeds)
-        if not feeds:
-            return None
         return feeds
 
     @property

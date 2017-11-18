@@ -34,6 +34,7 @@ from .. import misc
 
 from ..transforms import Identity
 
+EMPTY_FEEDS = {}
 
 class Parameter(Node):
     """
@@ -178,7 +179,7 @@ class Parameter(Node):
 
     @property
     def feeds(self):
-        return None
+        return EMPTY_FEEDS
 
     @property
     def initializables(self):
@@ -189,7 +190,7 @@ class Parameter(Node):
     @property
     def initializable_feeds(self):
         if self._externally_defined:
-            return None
+            return EMPTY_FEEDS
         return {self._initial_value_tensor: self._apply_transform(self._value)}
 
     @property
