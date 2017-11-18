@@ -136,19 +136,28 @@ class TestDataholder(GPflowTestCase):
                 p.assign(np.zeros((3, 3)), force=True)
             assert_allclose(p.read_value(), value)
 
+
 class TestMinibatch(GPflowTestCase):
     def test_clean(self):
         with self.test_context() as session:
             length = 10
+            seed = 10
             arr = np.random.randn(length, 2)
             m = gpflow.Minibatch(arr, shuffle=False)
             self.assertEqual(m.is_built_coherence(), gpflow.Build.YES)
             self.assertEqual(m.seed, None)
             with self.assertRaises(gpflow.GPflowError):
-                m.seed = 10
+                m.seed = seed
             self.assertEqual(m.seed, None)
             for i in range(length):
                 assert_allclose(m.read_value(session=session), [arr[i]])
+
+            m.clear()
+            self.assertEqual(m.seed, None)
+            m.seed = seed
+            self.assertEqual(m.seed, seed)
+            self.assertEqual(m.is_built_coherence(), gpflow.Build.NO)
+            self.assertEqual(m.parameter_tensor, None)
 
     def test_seed(self):
         with self.test_context() as session:
