@@ -44,6 +44,15 @@ class Demo(gpflow.models.Model):
         return tf.reduce_sum(self.a) + sum(map(tf.reduce_prod, self.trainable_vars))
 
 
+class NonOptimizer(gpflow.training.tensorflow_optimizer._TensorFlowOptimizer):
+    pass
+
+
+class TestSimpleOptimizerInterface(GPflowTestCase):
+    def test_non_existing_optimizer(self):
+        with self.assertRaises(TypeError):
+            _ = NonOptimizer()
+
 
 class OptimizerCase:
     optimizer = None
@@ -108,6 +117,26 @@ class OptimizerCase:
             with self.assertRaises(tf.errors.FailedPreconditionError):
                 opt.minimize(demo, session=session, var_list=[var3], maxiter=5,
                              initialize=False, anchor=False)
+
+        def test_optimizer_tensors(self):
+            with self.test_context():
+                if not isinstance(self.optimizer, gpflow.train.ScipyOptimizer):
+                    demo = Demo()
+                    opt = self.optimizer()
+                    opt.minimize(demo, maxiter=0)
+                    self.assertEqual(opt.model, demo)
+
+                    opt.model = Demo()
+                    self.assertNotEqual(opt.model, demo)
+                    self.assertEqual(opt.minimize_operation, None)
+                    self.assertEqual(opt.optmizer, None)
+
+        def test_non_gpflow_model(self):
+            with self.test_context():
+                opt = self.optimizer()
+                with self.assertRaises(ValueError):
+                    opt.minimize(None)
+
 
     def test_external_variables_in_model(self):
         with self.test_context():

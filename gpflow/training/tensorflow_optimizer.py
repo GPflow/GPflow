@@ -27,10 +27,8 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
     def __init__(self, *args, **kwargs):
         name = self.__class__.__name__
         tf_optimizer = _get_registered_optimizer(name)
-        if tf_optimizer is None:
-            raise ValueError('Optimizer not found.')
         self._model = None
-        super(_TensorFlowOptimizer, self).__init__()
+        super().__init__()
         self._optimizer = tf_optimizer(*args, **kwargs)
         self._minimize_operation = None
 
@@ -112,7 +110,10 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
 
 
 def _get_registered_optimizer(name):
-    return _REGISTERED_TENSORFLOW_OPTIMIZERS.get(name)
+    tf_optimizer = _REGISTERED_TENSORFLOW_OPTIMIZERS.get(name, None)
+    if tf_optimizer is None:
+        raise TypeError('Optimizer not found.')
+    return tf_optimizer
 
 
 def _register_optimizer(name, optimizer_type):
