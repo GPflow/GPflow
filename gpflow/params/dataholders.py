@@ -183,22 +183,23 @@ class Minibatch(DataHolder):
         self._seed = None
 
     def _build(self):
-        self._cache_tensor = self._build_placeholder_cache()
-        self._dataholder_tensor = self._build_dataholder()
+        initial_tensor = self._build_placeholder_cache()
+        self._cache_tensor = initial_tensor
+        self._dataholder_tensor = self._build_dataholder(initial_tensor)
 
     def _build_placeholder_cache(self):
         value = self._value
         return tf.placeholder(dtype=value.dtype, shape=value.shape, name='minibatch_init')
 
-    def _build_dataholder(self):
-        if self._cache_tensor is None:
+    def _build_dataholder(self, initial_tensor):
+        if initial_tensor is None:
             raise GPflowError("Minibatch state corrupted.")
         if parse_version(tf.VERSION) < parse_version('1.4.0rc0'):
             from tensorflow.contrib.data import Dataset
         else:
             from tensorflow import data
             Dataset = data.Dataset
-        data = Dataset.from_tensor_slices(self._cache_tensor)
+        data = Dataset.from_tensor_slices(initial_tensor)
         data = data.repeat()
         if self._shuffle:
             shape = self._value.shape

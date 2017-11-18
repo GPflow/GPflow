@@ -130,7 +130,6 @@ class Parameter(Node):
                 return IPrior
             elif self.value == self.TRANSFORM.value:
                 return ITransform
-            return None
 
     def __init__(self, value, transform=None, prior=None,
                  trainable=True, dtype=None, fix_shape=True,
