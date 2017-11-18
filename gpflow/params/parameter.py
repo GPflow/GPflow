@@ -392,6 +392,7 @@ class Parameter(Node):
             if is_trainable != self.trainable:
                 status = 'trainable' if is_trainable else 'not trainable'
                 raise ValueError('Externally defined tensor is {0}.'.format(status))
+            self._fixed_shape = True
             self._externally_defined = True
             self._set_parameter_tensor(value)
         else:

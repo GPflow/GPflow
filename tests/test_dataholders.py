@@ -73,7 +73,7 @@ class TestDataholder(GPflowTestCase):
             self.assertTrue(d.fixed_shape)
             self.assertFalse(d.trainable)
 
-            tensor = tensor + 1
+            tensor = var + 1
             d = gpflow.DataHolder(tensor)
             self.assertAllEqual(d.shape, ())
             self.assertEqual(d.dtype, np.float32)
