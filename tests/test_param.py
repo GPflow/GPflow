@@ -405,6 +405,43 @@ class TestParameterized(GPflowTestCase):
                 for name in df_slice2.index:
                     assert_allclose(df_slice2[name], values[name])
 
+    def test_fix_shapes(self):
+        with self.test_context():
+            def children(p):
+                yield from p.parameters
+                yield from p.data_holders
+
+            p = self.create_layout()
+            self.assertFalse(all([c.fixed_shape for c in children(p)]))
+            p.fix_shape()
+            self.assertTrue(all([c.fixed_shape for c in children(p)]))
+
+            p = self.create_layout()
+            p.fix_shape(parameters=False, data_holders=True)
+            self.assertTrue(all([c.fixed_shape for c in p.data_holders]))
+            p.fix_shape(parameters=True)
+            self.assertTrue(all([c.fixed_shape for c in p.parameters]))
+            self.assertTrue(all([c.fixed_shape for c in children(p)]))
+
+    def test_trainables(self):
+        with self.test_context():
+            p = self.create_layout()
+            self.assertTrue(all([c.trainable for c in p.parameters]))
+            self.assertTrue(p.trainable)
+
+            p.set_trainable(False)
+            self.assertFalse(all([c.trainable for c in p.parameters]))
+            self.assertFalse(p.trainable)
+
+            p.set_trainable(True)
+            self.assertTrue(all([c.trainable for c in p.parameters]))
+            self.assertTrue(p.trainable)
+
+            values = [None, "test", "", 1]
+
+            for v in values:
+                with self.assertRaises(ValueError, msg='Caught exception for "{}"'.format(v)):
+                    p.set_trainable(v)
 
 
 class TestParameterizedNoParameters(GPflowTestCase):

@@ -251,9 +251,12 @@ class Parameterized(Node):
             return Build.NO
         return Build.YES
 
-    def set_trainable(self, value, graph=None):
+    def set_trainable(self, value):
+        if not isinstance(value, bool):
+            raise ValueError('Boolean value expected.')
         for param in self.params:
-            param.set_trainable(value, graph=graph)
+            if not isinstance(param, DataHolder):
+                param.set_trainable(value)
 
     @staticmethod
     def _is_param_like(value):
@@ -356,4 +359,3 @@ class Parameterized(Node):
     @fixed.setter
     def fixed(self, _):
         raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
-

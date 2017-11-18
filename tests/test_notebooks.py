@@ -66,7 +66,7 @@ class TestNotebooks(GPflowTestCase):
 
     # def test_classification(self):
     #     self._exec_notebook_ts("classification.ipynb")
-    
+
     # def test_coreg_demo(self):
     #     self._exec_notebook_ts("coreg_demo.ipynb")
 

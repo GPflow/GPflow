@@ -233,20 +233,19 @@ class Parameter(Node):
             return Build.NO
         return Build.YES
 
-    def set_trainable(self, value, graph=None):
+    def set_trainable(self, value):
         if not isinstance(value, bool):
             raise TypeError('Fixed property value must be boolean.')
 
         if self._externally_defined:
             raise GPflowError('Externally defined parameter tensor is not modifiable.')
 
-        graph = self.enquire_graph(graph)
-        is_built = self.is_built_coherence(graph)
-
-        if is_built is Build.YES:
+        graph = self.graph
+        if graph is not None:
             if self.trainable == value:
                 return
-            elif value:
+
+            if value:
                 misc.add_to_trainables(self.parameter_tensor, graph)
             else:
                 misc.remove_from_trainables(self.parameter_tensor, graph)
@@ -419,7 +418,7 @@ class Parameter(Node):
 
     def _set_parameter_attribute(self, attr, value):
         if attr is self.ParameterAttribute.TRAINABLE:
-            self.set_trainable(value, graph=self.graph)
+            self.set_trainable(value)
             return
 
         is_built = self.is_built_coherence(self.graph)
