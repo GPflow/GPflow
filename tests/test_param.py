@@ -325,10 +325,14 @@ class TestParameterized(GPflowTestCase):
         with self.test_context():
             p = gpflow.Parameterized()
             self.assertTrue(p.is_built_coherence())
+
             # TODO(@awav): Should it be NO?
             self.assertEqual(p.is_built_coherence(tf.Graph()), gpflow.Build.YES)
-            with self.assertRaises(ValueError):
-                p.is_built(None)
+
+            values = [None, "", 1.0, object()]
+            for v in values:
+                with self.assertRaises(ValueError, msg='Passed value {}'.format(v)):
+                    p.is_built(v)
 
             p.a = gpflow.Param(1.0)
             self.assertEqual(p.is_built_coherence(), gpflow.Build.NO)
@@ -337,10 +341,12 @@ class TestParameterized(GPflowTestCase):
             not_compatible = gpflow.Build.NOT_COMPATIBLE_GRAPH
             self.assertTrue(p.is_built_coherence())
             self.assertEqual(p.is_built(tf.Graph()), not_compatible)
+
             with self.assertRaises(gpflow.GPflowError):
                 p.is_built_coherence(tf.Graph())
-            with self.assertRaises(ValueError):
-                p.is_built(None)
+            for v in values:
+                with self.assertRaises(ValueError, msg='Passed value "{}"'.format(v)):
+                    p.is_built(v)
 
     def test_anchor(self):
         with self.test_context() as session:

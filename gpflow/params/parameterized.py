@@ -240,8 +240,8 @@ class Parameterized(Node):
                 for param in self.parameters}
 
     def is_built(self, graph):
-        if graph is None:
-            raise ValueError('Graph is not specified.')
+        if not isinstance(graph, tf.Graph):
+            raise ValueError('TensorFlow graph expected for checking build status.')
         statuses = set([param.is_built(graph) for param in self.non_empty_params])
         if Build.NOT_COMPATIBLE_GRAPH in statuses:
             return Build.NOT_COMPATIBLE_GRAPH
