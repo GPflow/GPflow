@@ -224,8 +224,7 @@ class Parameterized(Node):
         if not isinstance(session, tf.Session):
             raise ValueError('TensorFlow session expected when anchoring.')
         for parameter in self.trainable_parameters:
-            value = parameter.read_value(session)
-            parameter.assign(value, session=session, force=False)
+            parameter.anchor(session)
 
     def read_trainables(self, session=None):
         return {param.full_name: param.read_value(session)

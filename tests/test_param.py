@@ -128,33 +128,44 @@ class TestParameter(GPflowTestCase):
             val = 10.
             a = gpflow.Param(val)
             assert_allclose(a.read_value(), val)
+            self.assertEqual(a.size, 1)
 
-            val = [10.] * 2
-            b = gpflow.Param([10.] * 2, fix_shape=False)
+            size = 2
+            val = [10.] * size
+            b = gpflow.Param([10.] * size, fix_shape=False)
             assert_allclose(b.read_value(), val)
             self.assertEqual(b.dtype, np.float64)
+            self.assertEqual(b.size, size)
 
-            val = [10] * 3
+            size = 3
+            val = [10] * size
             c = gpflow.Param(val, dtype=np.float16)
             assert_allclose(c.read_value(), val)
             self.assertEqual(c.dtype, np.float16)
+            self.assertEqual(c.size, size)
 
-            val = [10.] * 4
+            size = 4
+            val = [10.] * size
             d = gpflow.Param(val, trainable=False)
             assert_allclose(d.read_value(), val)
             self.assertEqual(d.trainable, False)
+            self.assertEqual(d.size, size)
 
-            val = [10.] * 5
+            size = 5
+            val = [10.] * size
             transform = gpflow.transforms.Log1pe()
             e = gpflow.Param(val, transform=transform)
             assert_allclose(e.read_value(), val)
+            self.assertEqual(e.size, size)
             unconstrained = transform.backward(np.array(val))
             assert_allclose(session.run(e.unconstrained_tensor), unconstrained)
 
-            val = [10.] * 6
+            size = 6
+            val = [10.] * size
             f = gpflow.Param(val, prior=gpflow.priors.Gaussian(1, 2))
             assert_allclose(f.read_value(), val)
             assert_allclose(f.read_value(session), val)
+            self.assertEqual(f.size, size)
             self.assertTrue(isinstance(f.prior, gpflow.priors.Gaussian))
 
     def test_generators(self):
@@ -292,14 +303,17 @@ class TestParameter(GPflowTestCase):
             p = gpflow.Param(1., fix_shape=False)
             self.assertFalse(p.fixed_shape)
             self.assertAllEqual(p.shape, ())
+            self.assertEqual(p.size, 1)
 
             p.assign([10., 10.])
             self.assertFalse(p.fixed_shape)
             self.assertAllEqual(p.shape, (2,))
+            self.assertEqual(p.size, 2)
 
             p.fix_shape()
             self.assertTrue(p.fixed_shape)
             self.assertAllEqual(p.shape, (2,))
+            self.assertEqual(p.size, 2)
             p.assign(np.zeros(p.shape))
 
             with self.assertRaises(ValueError):
