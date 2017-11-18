@@ -60,13 +60,7 @@ class DataHolder(Parameter):
     def parameter_tensor(self):
         return self._dataholder_tensor
 
-    @property
-    def shape(self):
-        # if self.parameter_tensor is not None:
-        #     return tuple(self.parameter_tensor.shape.as_list())
-        return self._value.shape
-
-    def set_trainable(self, _value, graph=None):
+    def set_trainable(self, value, graph=None):
         raise NotImplementedError('Data holder cannot be fixed.')
 
     def is_built(self, graph):

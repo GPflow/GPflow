@@ -146,14 +146,14 @@ class Parameter(Node):
     @property
     def shape(self):
         if self._externally_defined:
-            return self.parameter_tensor.shape.as_numpy_dtype
+            return tuple(self.parameter_tensor.shape.as_list())
         return self._value.shape
 
     @property
     def dtype(self):
-        if self.parameter_tensor is None:
-            return self._value.dtype
-        return np.dtype(self.parameter_tensor.dtype.as_numpy_dtype)
+        if self._externally_defined:
+            return self.parameter_tensor.dtype.as_numpy_dtype
+        return self._value.dtype
 
     @property
     def size(self):
