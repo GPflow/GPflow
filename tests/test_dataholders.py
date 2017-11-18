@@ -66,12 +66,34 @@ class TestDataholder(GPflowTestCase):
             self.assertTrue(d.fixed_shape)
             self.assertFalse(d.trainable)
 
-            tensor = tf.get_variable('dataholder', shape=(1,))
+            var = tf.get_variable('dataholder', shape=(1,), trainable=False)
+            d = gpflow.DataHolder(var)
+            self.assertAllEqual(d.shape, ())
+            self.assertEqual(d.dtype, np.float64)
+            self.assertTrue(d.fixed_shape)
+            self.assertFalse(d.trainable)
+
+            tensor = tensor + 1
             d = gpflow.DataHolder(tensor)
             self.assertAllEqual(d.shape, ())
             self.assertEqual(d.dtype, np.float64)
             self.assertTrue(d.fixed_shape)
             self.assertFalse(d.trainable)
+
+
+    def test_failed_creation(self):
+        with self.test_context():
+            tensor = tf.get_variable('dataholder', shape=(1,)),
+            values = [
+                tensor,
+                [1, [1, [1]]],
+                None,
+                "test",
+                object(),
+            ]
+            for value in values:
+                with self.assertRaises(ValueError, msg='Value {}'.format(value)):
+                    gpflow.DataHolder(tensor)
 
     def test_fixed_shape(self):
         with self.test_context():
