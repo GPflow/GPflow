@@ -745,6 +745,23 @@ class TestParamList(GPflowTestCase):
                 # param objects not valid in constructor (must be in list)
                 gpflow.ParamList(gpflow.Param(1))
 
+            with gpflow.defer_build():
+                p = gpflow.ParamList([0.0])
+                p[0] = gpflow.Param(1.0)
+                with self.assertRaises(ValueError):
+                    p[0] = 1.0
+                with self.assertRaises(ValueError):
+                    p[0] = "test"
+
+            p = gpflow.ParamList([])
+            p.append(gpflow.Param(1.0))
+            p.append(gpflow.Param(2.0))
+            with self.assertRaises(ValueError):
+                p.append(2.0)
+            with self.assertRaises(ValueError):
+                p.append("test")
+            self.assertEqual(len(p), 2)
+
     def test_naming(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
