@@ -118,24 +118,24 @@ class OptimizerCase:
                 opt.minimize(demo, session=session, var_list=[var3], maxiter=5,
                              initialize=False, anchor=False)
 
-        def test_optimizer_tensors(self):
-            with self.test_context():
-                if not isinstance(self.optimizer, gpflow.train.ScipyOptimizer):
-                    demo = Demo()
-                    opt = self.optimizer()
-                    opt.minimize(demo, maxiter=0)
-                    self.assertEqual(opt.model, demo)
+    def test_optimizer_tensors(self):
+        with self.test_context():
+            opt = self.optimizer()
+            if not isinstance(opt, gpflow.train.ScipyOptimizer):
+                demo = Demo()
+                opt.minimize(demo, maxiter=0)
+                self.assertEqual(opt.model, demo)
 
-                    opt.model = Demo()
-                    self.assertNotEqual(opt.model, demo)
-                    self.assertEqual(opt.minimize_operation, None)
-                    self.assertEqual(opt.optmizer, None)
+                opt.model = Demo()
+                self.assertNotEqual(opt.model, demo)
+                self.assertEqual(opt.minimize_operation, None)
+                self.assertEqual(opt.optimizer, None)
 
-        def test_non_gpflow_model(self):
-            with self.test_context():
-                opt = self.optimizer()
-                with self.assertRaises(ValueError):
-                    opt.minimize(None)
+    def test_non_gpflow_model(self):
+        with self.test_context():
+            opt = self.optimizer()
+            with self.assertRaises(ValueError):
+                opt.minimize(None)
 
 
     def test_external_variables_in_model(self):
