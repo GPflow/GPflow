@@ -225,8 +225,8 @@ class Parameterized(Node):
                 raise error
 
     def anchor(self, session):
-        if session is None:
-            ValueError('Session is required when anchoring.')
+        if not isinstance(session, tf.Session):
+            raise ValueError('TensorFlow session expected when anchoring.')
         for parameter in self.trainable_parameters:
             value = parameter.read_value(session)
             parameter.assign(value, session=session, force=False)

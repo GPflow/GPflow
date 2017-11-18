@@ -321,6 +321,39 @@ class TestParameterized(GPflowTestCase):
         p.c.e = gpflow.DataHolder(13.)
         return p
 
+    def test_is_built(self):
+        with self.test_context():
+            p = gpflow.Parameterized()
+            self.assertTrue(p.is_built_coherence())
+            # TODO(@awav): Should it be NO?
+            self.assertEqual(p.is_built_coherence(tf.Graph()), gpflow.Build.YES)
+            with self.assertRaises(ValueError):
+                p.is_built(None)
+
+            p.a = gpflow.Param(1.0)
+            self.assertEqual(p.is_built_coherence(), gpflow.Build.NO)
+
+            p.compile()
+            not_compatible = gpflow.Build.NOT_COMPATIBLE_GRAPH
+            self.assertTrue(p.is_built_coherence())
+            self.assertEqual(p.is_built(tf.Graph()), not_compatible)
+            with self.assertRaises(gpflow.GPflowError):
+                p.is_built_coherence(tf.Graph())
+            with self.assertRaises(ValueError):
+                p.is_built(None)
+
+    def test_anchor(self):
+        with self.test_context() as session:
+            p = gpflow.Parameterized()
+            p.a = gpflow.Param(1.0)
+            p.compile()
+            with self.assertRaises(ValueError):
+                p.anchor(None)
+            new_value = 2.0
+            p.a.parameter_tensor.load(new_value)
+            p.anchor(session)
+            assert_allclose(p.a.read_value(), new_value)
+
     def test_read_values(self):
         def check_values(values, names, expected_values):
             self.assertTrue(set(values.keys()) == names)
