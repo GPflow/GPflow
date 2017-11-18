@@ -140,6 +140,14 @@ class Minibatch(DataHolder):
         self._seed = seed
 
     @property
+    def batch_size(self):
+        return self._batch_size
+
+    @batch_size.setter
+    def batch_size(self, value):
+        return self.set_batch_size(value)
+
+    @property
     def initializables(self):
         return [self._iterator_tensor]
 
@@ -164,7 +172,7 @@ class Minibatch(DataHolder):
         self._batch_size = size
         session = self.enquire_session(session)
         if session is not None:
-            self.initialize(session=session)
+            self.initialize(session=session, force=True)
 
     def _clear(self):
         self._reset_name()

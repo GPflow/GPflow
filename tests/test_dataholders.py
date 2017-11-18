@@ -80,6 +80,14 @@ class TestDataholder(GPflowTestCase):
             self.assertTrue(d.fixed_shape)
             self.assertFalse(d.trainable)
 
+    def test_is_built(self):
+        with self.test_context():
+            d = gpflow.DataHolder(1.0)
+            with self.assertRaises(ValueError):
+                d.is_built(None)
+
+            with self.assertRaises(gpflow.GPflowError):
+                d.is_built_coherence(tf.Graph())
 
     def test_failed_creation(self):
         with self.test_context():
@@ -127,3 +135,70 @@ class TestDataholder(GPflowTestCase):
             with self.assertRaises(ValueError):
                 p.assign(np.zeros((3, 3)), force=True)
             assert_allclose(p.read_value(), value)
+
+class TestMinibatch(GPflowTestCase):
+    def test_clean(self):
+        with self.test_context() as session:
+            length = 10
+            arr = np.random.randn(length, 2)
+            m = gpflow.Minibatch(arr, shuffle=False)
+            self.assertEqual(m.is_built_coherence(), gpflow.Build.YES)
+            self.assertEqual(m.seed, None)
+            with self.assertRaises(gpflow.GPflowError):
+                m.seed = 10
+            self.assertEqual(m.seed, None)
+            for i in range(length):
+                assert_allclose(m.read_value(session=session), [arr[i]])
+
+    def test_seed(self):
+        with self.test_context() as session:
+            length = 10
+            arr = np.random.randn(length, 2)
+            batch_size = 2
+            m1 = gpflow.Minibatch(arr, seed=1, batch_size=batch_size)
+            m2 = gpflow.Minibatch(arr, seed=1, batch_size=batch_size)
+
+            self.assertEqual(m1.is_built_coherence(), gpflow.Build.YES)
+            self.assertEqual(m1.seed, 1)
+            with self.assertRaises(gpflow.GPflowError):
+                m1.seed = 10
+
+            self.assertEqual(m2.is_built_coherence(), gpflow.Build.YES)
+            self.assertEqual(m2.seed, 1)
+            with self.assertRaises(gpflow.GPflowError):
+                m2.seed = 10
+
+            self.assertEqual(m1.seed, 1)
+            self.assertEqual(m2.seed, 1)
+            for i in range(length):
+                m1_value = m1.read_value(session=session)
+                m2_value = m2.read_value(session=session)
+                self.assertEqual(m1_value.shape[0], batch_size, msg='Index range "{}"'.format(i))
+                self.assertEqual(m2_value.shape[0], batch_size, msg='Index range "{}"'.format(i))
+                assert_allclose(m1_value, m2_value)
+
+    def test_change_batch_size(self):
+        with self.test_context() as session:
+            length = 10
+            arr = np.random.randn(length, 2)
+            m = gpflow.Minibatch(arr, shuffle=False)
+            for i in range(length):
+                assert_allclose(m.read_value(session=session), [arr[i]])
+
+            def check_batch_size(m, length, batch_size):
+                self.assertEqual(m.batch_size, batch_size)
+                for i in range(length//batch_size):
+                    value = m.read_value(session=session)
+                    self.assertEqual(value.shape[0], batch_size, msg='Index range "{}"'.format(i))
+
+            batch_size = 2
+            m.set_batch_size(batch_size)
+            check_batch_size(m, length, batch_size)
+
+            batch_size = 5
+            m.batch_size = batch_size
+            check_batch_size(m, length, batch_size)
+
+            batch_size = 10
+            m.set_batch_size(batch_size)
+            check_batch_size(m, length, batch_size)
