@@ -257,6 +257,12 @@ class TestParameter(GPflowTestCase):
     def test_root(self):
         self.assertTrue(self.m.p.root is self.m)
 
+    def test_existing_tensor(self):
+        with self.test_context():
+            _ = tf.get_variable('param/unconstrained', shape=())
+            with self.assertRaises(gpflow.GPflowError):
+                p = gpflow.Param(1.0, name='param')
+
     def test_trainable(self):
         self.assertTrue(self.p.trainable)
         self.p.trainable = False
@@ -280,6 +286,28 @@ class TestParameter(GPflowTestCase):
             self.assertTrue(self.m.trainable)
             self.assertFalse(self.m.p.trainable)
             _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
+
+    def test_fixed_shape(self):
+        with self.test_context():
+            p = gpflow.Param(1., fix_shape=False)
+            self.assertFalse(p.fixed_shape)
+            self.assertAllEqual(p.shape, ())
+
+            p.assign([10., 10.])
+            self.assertFalse(p.fixed_shape)
+            self.assertAllEqual(p.shape, (2,))
+
+            p.fix_shape()
+            self.assertTrue(p.fixed_shape)
+            self.assertAllEqual(p.shape, (2,))
+            p.assign(np.zeros(p.shape))
+
+            with self.assertRaises(ValueError):
+                p.assign([1.], force=True)
+            with self.assertRaises(ValueError):
+                p.assign(1., force=True)
+            with self.assertRaises(ValueError):
+                p.assign(np.zeros((3,3)), force=True)
 
 class TestParameterized(GPflowTestCase):
 

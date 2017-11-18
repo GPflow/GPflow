@@ -156,6 +156,16 @@ class Minibatch(DataHolder):
         return {self._cache_tensor: self._value,
                 self._batch_size_tensor: self._batch_size}
 
+    @property
+    def seed(self):
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        if self.graph is not None and self.is_built_coherence():
+            raise GPflowError('Minibatch seed cannot be changed when it is built.')
+        self._seed = seed
+
     def set_batch_size(self, size, session=None):
         self._batch_size = size
         session = self.enquire_session(session)

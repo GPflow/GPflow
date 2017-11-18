@@ -146,6 +146,8 @@ class Parameter(Node):
 
     @property
     def shape(self):
+        if self._externally_defined:
+            return self.parameter_tensor.shape.as_numpy_dtype
         return self._value.shape
 
     @property
