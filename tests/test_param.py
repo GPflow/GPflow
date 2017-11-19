@@ -168,6 +168,45 @@ class TestParameter(GPflowTestCase):
             self.assertEqual(f.size, size)
             self.assertTrue(isinstance(f.prior, gpflow.priors.Gaussian))
 
+    def test_fail_scenarios(self):
+        with self.test_context() as session:
+            p = gpflow.Param(1.0)
+            values = ['', 'test', 1., object(), None]
+            for v in values:
+                with self.assertRaises(ValueError, msg='Raised at "{}"'.format(v)):
+                    p.set_trainable(v)
+                with self.assertRaises(ValueError, msg='Raised at "{}"'.format(v)):
+                    p.trainable = v
+
+            tensor = tf.get_variable('test', shape=())
+            p = gpflow.Param(tensor)
+
+            with self.assertRaises(gpflow.GPflowError):
+                p.set_trainable(False)
+            with self.assertRaises(gpflow.GPflowError):
+                p.trainable = False
+
+            with self.assertRaises(gpflow.GPflowError):
+                p.set_trainable(True)
+            with self.assertRaises(gpflow.GPflowError):
+                p.trainable = True
+
+            values = ['', 'test', 1., object()]
+            for v in values:
+                with self.assertRaises(ValueError, msg='Raised at "{}"'.format(v)):
+                    p.anchor(v)
+
+            with self.assertRaises(tf.errors.FailedPreconditionError):
+                p.anchor(session)
+
+            with self.assertRaises(ValueError):
+                tensor = tf.get_variable('test1', shape=(), trainable=False)
+                gpflow.Param(tensor)
+
+            with self.assertRaises(ValueError):
+                tensor = tf.get_variable('test2', shape=())
+                gpflow.Param(tensor, trainable=False)
+
     def test_generators(self):
         with self.test_context():
             self.assertEqual(len(list(self.m.parameters)), 2)

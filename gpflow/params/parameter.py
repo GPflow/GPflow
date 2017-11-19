@@ -217,8 +217,8 @@ class Parameter(Node):
         self._fixed_shape = True
 
     def anchor(self, session):
-        if session is None:
-            ValueError('Session is required when anchoring.')
+        if not isinstance(session, tf.Session):
+            ValueError('TensorFlow Session expected when anchoring.')
         if self.trainable:
             value = self.read_value(session=session)
             self.assign(value, session=session)
@@ -234,7 +234,7 @@ class Parameter(Node):
 
     def set_trainable(self, value):
         if not isinstance(value, bool):
-            raise TypeError('Fixed property value must be boolean.')
+            raise ValueError('Fixed property value must be boolean.')
 
         if self._externally_defined:
             raise GPflowError('Externally defined parameter tensor is not modifiable.')
@@ -266,7 +266,9 @@ class Parameter(Node):
             self.initialize(session=session, force=force)
 
     def read_value(self, session=None):
-        if session:
+        if session is not None:
+            if not isinstance(session, tf.Session):
+                raise ValueError('TensorFlow session expected as session argument.')
             is_built = self.is_built_coherence(session.graph)
             if is_built is Build.YES:
                 return self._read_parameter_tensor(session)
@@ -474,10 +476,10 @@ class Parameter(Node):
 
     def __setattr__(self, name, value):
         try:
-            attr = self.ParameterAttribute(name)
+            attr = self.ParameterAttribute[name.upper()]
             self._set_parameter_attribute(attr, value)
             return
-        except ValueError:
+        except KeyError:
             pass
         object.__setattr__(self, name, value)
 
