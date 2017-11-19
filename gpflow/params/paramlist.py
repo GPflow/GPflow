@@ -17,8 +17,6 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-
 from ..core.tensor_converter import TensorConverter
 from ..core.errors import GPflowError
 from ..core.compilable import Build

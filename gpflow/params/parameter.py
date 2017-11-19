@@ -17,8 +17,6 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-
 import enum
 import numpy as np
 import tensorflow as tf

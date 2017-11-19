@@ -138,7 +138,14 @@ class TestDataholder(GPflowTestCase):
 
 
 class TestMinibatch(GPflowTestCase):
-    def test_clean(self):
+    def test_create(self):
+        with self.test_context():
+            values = [tf.get_variable('test', shape=()), "test", None]
+            for v in values:
+                with self.assertRaises(ValueError):
+                    gpflow.Minibatch(v)
+
+    def test_clear(self):
         with self.test_context() as session:
             length = 10
             seed = 10

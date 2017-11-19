@@ -17,9 +17,6 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-from pkg_resources import parse_version
-
 import tensorflow as tf
 
 from .. import misc
@@ -196,12 +193,7 @@ class Minibatch(DataHolder):
     def _build_dataholder(self, initial_tensor):
         if initial_tensor is None:
             raise GPflowError("Minibatch state corrupted.")
-        if parse_version(tf.VERSION) < parse_version('1.4.0rc0'):
-            from tensorflow.contrib.data import Dataset
-        else:
-            from tensorflow import data
-            Dataset = data.Dataset
-        data = Dataset.from_tensor_slices(initial_tensor)
+        data = tf.data.Dataset.from_tensor_slices(initial_tensor)
         data = data.repeat()
         if self._shuffle:
             shape = self._value.shape
