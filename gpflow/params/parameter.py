@@ -224,8 +224,8 @@ class Parameter(Node):
             self.assign(value, session=session)
 
     def is_built(self, graph):
-        if graph is None:
-            raise ValueError('Graph is not specified.')
+        if not isinstance(graph, tf.Graph):
+            raise ValueError('TensorFlow graph expected for build status testing.')
         if self.graph and self.graph is not graph:
             return Build.NOT_COMPATIBLE_GRAPH
         elif self.prior_tensor is None:

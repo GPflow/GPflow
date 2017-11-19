@@ -173,10 +173,14 @@ class TestParameter(GPflowTestCase):
             p = gpflow.Param(1.0)
             values = ['', 'test', 1., object(), None]
             for v in values:
-                with self.assertRaises(ValueError, msg='Raised at "{}"'.format(v)):
+                def value_error(value):
+                    return self.assertRaises(ValueError, msg='Raised at "{}"'.format(value))
+                with value_error(v):
                     p.set_trainable(v)
-                with self.assertRaises(ValueError, msg='Raised at "{}"'.format(v)):
+                with value_error(v):
                     p.trainable = v
+                with value_error(v):
+                    p.is_built(v)
 
             tensor = tf.get_variable('test', shape=())
             p = gpflow.Param(tensor)
