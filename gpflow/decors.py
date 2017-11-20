@@ -27,7 +27,6 @@ from .core.tensor_converter import TensorConverter
 from .params import Parameterized
 
 
-
 def name_scope(name=None):
     """
     Name scope decorator does little trick with scope naming. The wrapped
@@ -188,7 +187,7 @@ def _session_run(session, obj, store, *args, **kwargs):
     feed_dict.update(dict(zip(store['arguments'], args)))
     if obj.feeds:
         feed_dict.update(obj.feeds)
-    initialize = kwargs.pop('initialize', True)
+    initialize = kwargs.pop('initialize', False)
     obj.initialize(session=session, force=initialize)
     return session.run(store['result'], **kwargs)
 

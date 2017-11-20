@@ -54,12 +54,31 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
 
     :return: two element tuple with conditional mean and variance.
     """
-
-    # compute kernel stuff
     num_data = tf.shape(X)[0]  # M
-    num_func = tf.shape(f)[1]  # K
-    Kmn = kern.K(X, Xnew)
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.tf_float) * settings.numerics.jitter_level
+    Kmn = kern.K(X, Xnew)
+    if full_cov:
+        Knn = kern.K(Xnew)
+    else:
+        Knn = kern.Kdiag(Xnew)
+    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, whiten=whiten)
+
+
+@name_scope()
+def feature_conditional(Xnew, feat, kern, f, full_cov=False, q_sqrt=None, whiten=False):
+    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)
+    Kmn = feat.Kuf(kern, Xnew)
+    if full_cov:
+        Knn = kern.K(Xnew)
+    else:
+        Knn = kern.Kdiag(Xnew)
+    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, whiten=whiten)
+
+
+@name_scope()
+def base_conditional(Kmn, Kmm, Knn, f, full_cov=False, q_sqrt=None, whiten=False):
+    # compute kernel stuff
+    num_func = tf.shape(f)[1]  # K
     Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
@@ -67,10 +86,10 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
 
     # compute the covariance due to the conditioning
     if full_cov:
-        fvar = kern.K(Xnew) - tf.matmul(A, A, transpose_a=True)
+        fvar = Knn - tf.matmul(A, A, transpose_a=True)
         shape = tf.stack([num_func, 1, 1])
     else:
-        fvar = kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
+        fvar = Knn - tf.reduce_sum(tf.square(A), 0)
         shape = tf.stack([num_func, 1])
     fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # K x N x N or K x N
 

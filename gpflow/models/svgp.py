@@ -20,7 +20,7 @@ import numpy as np
 from .. import settings
 from .. import transforms
 from .. import conditionals
-from .. import kullback_leiblers
+from .. import kullback_leiblers, features
 
 from ..params import Parameter
 from ..params import Minibatch
@@ -46,12 +46,13 @@ class SVGP(GPModel):
       }
 
     """
-    def __init__(self, X, Y, kern, likelihood, Z,
+    def __init__(self, X, Y, kern, likelihood, feat=None,
                  mean_function=None,
                  num_latent=None,
                  q_diag=False,
                  whiten=True,
                  minibatch_size=None,
+                 Z=None,
                  num_data=None,
                  **kwargs):
         """
@@ -81,26 +82,26 @@ class SVGP(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_data = num_data or X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
-        self.Z = Parameter(Z)
+        self.feature = features.inducingpoint_wrapper(feat, Z)
         self.num_latent = num_latent or Y.shape[1]
-        self.num_inducing = Z.shape[0]
 
         # init variational parameters
-        self.q_mu = Parameter(np.zeros((self.num_inducing, self.num_latent), dtype=settings.np_float))
+        num_inducing = len(self.feature)
+        self.q_mu = Parameter(np.zeros((num_inducing, self.num_latent), dtype=settings.np_float))
         if self.q_diag:
-            self.q_sqrt = Parameter(np.ones((self.num_inducing, self.num_latent), dtype=settings.np_float),
+            self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.np_float),
                                 transforms.positive)
         else:
-            q_sqrt = np.array([np.eye(self.num_inducing, dtype=settings.np_float)
+            q_sqrt = np.array([np.eye(num_inducing, dtype=settings.np_float)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
-            self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(self.num_inducing, self.num_latent))
+            self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))
 
     @params_as_tensors
     def build_prior_KL(self):
         if self.whiten:
             K = None
         else:
-            K = self.kern.K(self.Z) + tf.eye(self.num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
+            K = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     @params_as_tensors
@@ -125,6 +126,6 @@ class SVGP(GPModel):
 
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
-        mu, var = conditionals.conditional(Xnew, self.Z, self.kern, self.q_mu,
-                                           q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
+        mu, var = features.conditional(self.feature, self.kern, Xnew, self.q_mu,
+                                       q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var

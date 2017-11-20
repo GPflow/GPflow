@@ -3,7 +3,7 @@
 The six core models of GPflow
 ========================
 
-The following table summarizes the six core model options in GPflow. 
+The following table summarizes the six core model options in GPflow.
 
 +----------------------+--------------------------+----------------------------+-----------------------------+
 |                      | Gaussian                 | Non-Gaussian (variational) | Non-Gaussian                |

@@ -17,8 +17,6 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-
 import enum
 import numpy as np
 import tensorflow as tf
@@ -34,10 +32,11 @@ from .. import misc
 
 from ..transforms import Identity
 
+EMPTY_FEEDS = {}
 
 class Parameter(Node):
     """
-    Paramater class is a cornerstone of the GPflow package. It wraps TensorFlow
+    Parameter class is a cornerstone of the GPflow package. It wraps TensorFlow
     variable and its prior and transformation building operations. In GPflow
     computation graph the parameter is a leaf in the tree.
 
@@ -130,7 +129,6 @@ class Parameter(Node):
                 return IPrior
             elif self.value == self.TRANSFORM.value:
                 return ITransform
-            return None
 
     def __init__(self, value, transform=None, prior=None,
                  trainable=True, dtype=None, fix_shape=True,
@@ -146,13 +144,15 @@ class Parameter(Node):
 
     @property
     def shape(self):
+        if self._externally_defined:
+            return tuple(self.parameter_tensor.shape.as_list())
         return self._value.shape
 
     @property
     def dtype(self):
-        if self.parameter_tensor is None:
-            return self._value.dtype
-        return np.dtype(self.parameter_tensor.dtype.as_numpy_dtype)
+        if self._externally_defined:
+            return self.parameter_tensor.dtype.as_numpy_dtype
+        return self._value.dtype
 
     @property
     def size(self):
@@ -177,7 +177,7 @@ class Parameter(Node):
 
     @property
     def feeds(self):
-        return None
+        return EMPTY_FEEDS
 
     @property
     def initializables(self):
@@ -188,7 +188,7 @@ class Parameter(Node):
     @property
     def initializable_feeds(self):
         if self._externally_defined:
-            return None
+            return EMPTY_FEEDS
         return {self._initial_value_tensor: self._apply_transform(self._value)}
 
     @property
@@ -201,6 +201,14 @@ class Parameter(Node):
     def fixed_shape(self):
         return self._fixed_shape
 
+    @property
+    def value(self):
+        """
+        The `value` property is simple alias for `read_value()` method called with
+        default arguments.
+        """
+        return self.read_value()
+
     def fix_shape(self):
         if self._fixed_shape:
             return
@@ -209,35 +217,34 @@ class Parameter(Node):
         self._fixed_shape = True
 
     def anchor(self, session):
-        if session is None:
-            ValueError('Session is required when anchoring.')
+        if not isinstance(session, tf.Session):
+            ValueError('TensorFlow Session expected when anchoring.')
         if self.trainable:
             value = self.read_value(session=session)
             self.assign(value, session=session)
 
     def is_built(self, graph):
-        if graph is None:
-            raise ValueError('Graph is not specified.')
+        if not isinstance(graph, tf.Graph):
+            raise ValueError('TensorFlow graph expected for build status testing.')
         if self.graph and self.graph is not graph:
             return Build.NOT_COMPATIBLE_GRAPH
         elif self.prior_tensor is None:
             return Build.NO
         return Build.YES
 
-    def set_trainable(self, value, graph=None):
+    def set_trainable(self, value):
         if not isinstance(value, bool):
-            raise TypeError('Fixed property value must be boolean.')
+            raise ValueError('Fixed property value must be boolean.')
 
         if self._externally_defined:
             raise GPflowError('Externally defined parameter tensor is not modifiable.')
 
-        graph = self.enquire_graph(graph)
-        is_built = self.is_built_coherence(graph)
-
-        if is_built is Build.YES:
+        graph = self.graph
+        if graph is not None:
             if self.trainable == value:
                 return
-            elif value:
+
+            if value:
                 misc.add_to_trainables(self.parameter_tensor, graph)
             else:
                 misc.remove_from_trainables(self.parameter_tensor, graph)
@@ -250,16 +257,18 @@ class Parameter(Node):
 
         value = self._valid_input(value, dtype)
         if self.fixed_shape:
-            self._value[...] = value.copy()
+            self._value[...] = value
         else:
             self._value = value.copy()
+
         if self.is_built_coherence() is Build.YES:
             session = self.enquire_session(session)
-            self.is_built_coherence(graph=session.graph)
             self.initialize(session=session, force=force)
 
     def read_value(self, session=None):
-        if session:
+        if session is not None:
+            if not isinstance(session, tf.Session):
+                raise ValueError('TensorFlow session expected as session argument.')
             is_built = self.is_built_coherence(session.graph)
             if is_built is Build.YES:
                 return self._read_parameter_tensor(session)
@@ -383,6 +392,7 @@ class Parameter(Node):
             if is_trainable != self.trainable:
                 status = 'trainable' if is_trainable else 'not trainable'
                 raise ValueError('Externally defined tensor is {0}.'.format(status))
+            self._fixed_shape = True
             self._externally_defined = True
             self._set_parameter_tensor(value)
         else:
@@ -409,7 +419,7 @@ class Parameter(Node):
 
     def _set_parameter_attribute(self, attr, value):
         if attr is self.ParameterAttribute.TRAINABLE:
-            self.set_trainable(value, graph=self.graph)
+            self.set_trainable(value)
             return
 
         is_built = self.is_built_coherence(self.graph)
@@ -466,10 +476,10 @@ class Parameter(Node):
 
     def __setattr__(self, name, value):
         try:
-            attr = self.ParameterAttribute(name)
+            attr = self.ParameterAttribute[name.upper()]
             self._set_parameter_attribute(attr, value)
             return
-        except ValueError:
+        except KeyError:
             pass
         object.__setattr__(self, name, value)
 
@@ -479,3 +489,11 @@ class Parameter(Node):
             shape=self.shape,
             transform=self.transform,
             prior=self.prior)
+
+    @property
+    def fixed(self):
+        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
+
+    @fixed.setter
+    def fixed(self, _):
+        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
