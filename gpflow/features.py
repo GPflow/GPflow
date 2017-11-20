@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from functools import singledispatch
 
 import numpy as np
 import tensorflow as tf
 
-import gpflow
-from gpflow import conditionals, transforms, kernels, decors
-from gpflow import settings
-from gpflow.params import Parameter, Parameterized
+from . import conditionals, transforms, kernels, decors, settings
+from .params import Parameter, Parameterized
+from .core.errors import GPflowError
 
 
-class InducingFeature(Parameterized, metaclass=ABCMeta):
+class InducingFeature(Parameterized):
     """
     Abstract base class for inducing features.
     """
@@ -35,14 +34,14 @@ class InducingFeature(Parameterized, metaclass=ABCMeta):
         Returns the number of features, relevant for example to determine the
         size of the variational distribution.
         """
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def Kuu(self, kern, jitter=0.0):
         """
         Calculates the covariance matrix between features for kernel `kern`.
         """
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def Kuf(self, kern, Xnew):
@@ -50,7 +49,7 @@ class InducingFeature(Parameterized, metaclass=ABCMeta):
         Calculates the covariance matrix with function values at new points
         `Xnew` for kernel `kern`.
         """
-        pass
+        raise NotImplementedError()
 
 
 class InducingPoints(InducingFeature):
@@ -115,15 +114,20 @@ class Multiscale(InducingPoints):
         super().__init__(Z)
         self.scales = Parameter(scales,
                                 transform=transforms.positive)  # Multi-scale feature widths (std. dev. of Gaussian)
-        assert self.Z.shape == scales.shape
+        if self.Z.shape != scales.shape:
+            raise GPflowError("Input locations `Z` and `scales` must have the same shape.")
 
     def _cust_square_dist(self, A, B, sc):
+        """
+        Custom version of _square_dist that allows sc to provide per-datapoint length
+        scales. sc: N x M x D.
+        """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
 
     @gpflow.decors.params_as_tensors
     def Kuf(self, kern, Xnew):
         if isinstance(kern, kernels.RBF):
-            with gpflow.decors.params_as_tensors_for(kern):
+            with decors.params_as_tensors_for(kern):
                 Xnew, _ = kern._slice(Xnew, None)
                 Zmu, Zlen = kern._slice(self.Z, self.scales)
                 idlengthscales = kern.lengthscales + Zlen
@@ -139,7 +143,7 @@ class Multiscale(InducingPoints):
     @gpflow.decors.params_as_tensors
     def Kuu(self, kern, jitter=0.0):
         if isinstance(kern, kernels.RBF):
-            with gpflow.decors.params_as_tensors_for(kern):
+            with decors.params_as_tensors_for(kern):
                 Zmu, Zlen = kern._slice(self.Z, self.scales)
                 idlengthscales2 = tf.square(kern.lengthscales + Zlen)
                 sc = tf.sqrt(
@@ -180,16 +184,18 @@ def default_feature_conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None
 
 def inducingpoint_wrapper(feat, Z):
     """
-    Backwards-compatibility wrapper for real-space inducing points.
+    Models which used to take only Z can now pass `feat` and `Z` to this method. This method will
+    check for consistency and return the correct feature. This allows backwards compatibility in
+    for the methods.
     """
     if feat is not None and Z is not None:
-        raise ValueError("Cannot pass both an InducingFeature instance and Z values")
+        raise ValueError("Cannot pass both an InducingFeature instance and Z values")  # pragma: no cover
     elif feat is None and Z is None:
-        raise ValueError("You must pass either an InducingFeature instance or Z values")
+        raise ValueError("You must pass either an InducingFeature instance or Z values")  # pragma: no cover
     elif Z is not None:
         feat = InducingPoints(Z)
     elif isinstance(feat, np.ndarray):
         feat = InducingPoints(feat)
     else:
-        assert isinstance(feat, InducingFeature)
+        assert isinstance(feat, InducingFeature)  # pragma: no cover
     return feat

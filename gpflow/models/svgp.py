@@ -82,11 +82,11 @@ class SVGP(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_data = num_data or X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
-        self.feat = features.inducingpoint_wrapper(feat, Z)
+        self.feature = features.inducingpoint_wrapper(feat, Z)
         self.num_latent = num_latent or Y.shape[1]
 
         # init variational parameters
-        num_inducing = len(self.feat)
+        num_inducing = len(self.feature)
         self.q_mu = Parameter(np.zeros((num_inducing, self.num_latent), dtype=settings.np_float))
         if self.q_diag:
             self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.np_float),
@@ -101,7 +101,7 @@ class SVGP(GPModel):
         if self.whiten:
             K = None
         else:
-            K = self.feat.Kuu(self.kern, jitter=settings.numerics.jitter_level)
+            K = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     @params_as_tensors
@@ -126,6 +126,6 @@ class SVGP(GPModel):
 
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
-        mu, var = features.conditional(self.feat, self.kern, Xnew, self.q_mu,
-                                           q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
+        mu, var = features.conditional(self.feature, self.kern, Xnew, self.q_mu,
+                                       q_sqrt=self.q_sqrt, full_cov=full_cov, whiten=self.whiten)
         return mu + self.mean_function(Xnew), var

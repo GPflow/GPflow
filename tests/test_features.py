@@ -20,6 +20,16 @@ from gpflow.test_util import GPflowTestCase
 
 
 class TestInducingPoints(GPflowTestCase):
+    def test_feature_len(self):
+        N, D = 17, 3
+        Z = np.random.randn(N, D)
+        f = gpflow.features.InducingPoints(Z)
+
+        self.assertTrue(len(f), N)
+        with gpflow.decors.params_as_tensors_for(f):
+            self.assertTrue(len(f), N)
+            # GPflow does not support re-assignment with different shapes at the moment
+
     def test_inducing_points_equivalence(self):
         # Inducing features must be the same as the kernel evaluations
         with self.test_context() as session:
@@ -37,16 +47,14 @@ class TestMultiScaleInducing(GPflowTestCase):
     def prepare(self):
         rbf = gpflow.kernels.RBF(2, 1.3441, lengthscales=np.array([0.3414, 1.234]))
         Z = np.random.randn(23, 3)
-        scales = 1.0 + np.random.rand(*Z.shape) * 0.3
-        feature = gpflow.features.Multiscale(Z, scales)
         feature_0lengthscale = gpflow.features.Multiscale(Z, np.zeros(Z.shape))
         feature_inducingpoint = gpflow.features.InducingPoints(Z)
-        return [rbf, feature, feature_0lengthscale, feature_inducingpoint]
+        return rbf, feature_0lengthscale, feature_inducingpoint
 
     def test_equivalence_inducing_points(self):
         # Multiscale must be equivalent to inducing points when variance is zero
         with self.test_context() as session:
-            rbf, feature, feature_0lengthscale, feature_inducingpoint = self.prepare()
+            rbf, feature_0lengthscale, feature_inducingpoint = self.prepare()
             Xnew = np.random.randn(13, 3)
 
             ms, point = session.run([feature_0lengthscale.Kuf(rbf, Xnew), feature_inducingpoint.Kuf(rbf, Xnew)])
@@ -57,15 +65,30 @@ class TestMultiScaleInducing(GPflowTestCase):
             pd = np.max(np.abs(ms - point) / point * 100)
             self.assertTrue(pd < 0.1)
 
+
+class TestFeaturesPsdSchur(GPflowTestCase):
     def test_matrix_psd(self):
         # Conditional variance must be PSD.
-        Xnew = np.random.randn(13, 3)
-        with self.test_context() as session:
-            rbf, feature, feature_0lengthscale, feature_inducingpoint = self.prepare()
-            Kuf, Kuu = session.run([feature.Kuf(rbf, Xnew), feature.Kuu(rbf, jitter=gpflow.settings.jitter)])
-            Kff = rbf.compute_K_symm(Xnew)
-        Qff = Kuf.T @ np.linalg.solve(Kuu, Kuf)
-        self.assertTrue(np.all(np.linalg.eig(Kff - Qff)[0] > 0.0))
+        X = np.random.randn(13, 2)
+
+        def init_feat(feature):
+            if feature is gpflow.features.InducingPoints:
+                return feature(np.random.randn(71, 2))
+            elif feature is gpflow.features.Multiscale:
+                return feature(np.random.randn(71, 2), np.random.rand(71, 2))
+
+        featkerns = [(gpflow.features.InducingPoints, gpflow.kernels.RBF),
+                     (gpflow.features.InducingPoints, gpflow.kernels.Matern12),
+                     (gpflow.features.Multiscale, gpflow.kernels.RBF)]
+        for feat_class, kern_class in featkerns:
+            with self.test_context() as session:
+                # rbf, feature, feature_0lengthscale, feature_inducingpoint = self.prepare()
+                kern = kern_class(2, 1.84, lengthscales=[0.143, 1.53])
+                feature = init_feat(feat_class)
+                Kuf, Kuu = session.run([feature.Kuf(kern, X), feature.Kuu(kern, jitter=gpflow.settings.jitter)])
+                Kff = kern.compute_K_symm(X)
+            Qff = Kuf.T @ np.linalg.solve(Kuu, Kuf)
+            self.assertTrue(np.all(np.linalg.eig(Kff - Qff)[0] > 0.0))
 
 
 if __name__ == "__main__":
