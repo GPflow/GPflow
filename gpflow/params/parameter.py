@@ -36,7 +36,7 @@ EMPTY_FEEDS = {}
 
 class Parameter(Node):
     """
-    Paramater class is a cornerstone of the GPflow package. It wraps TensorFlow
+    Parameter class is a cornerstone of the GPflow package. It wraps TensorFlow
     variable and its prior and transformation building operations. In GPflow
     computation graph the parameter is a leaf in the tree.
 

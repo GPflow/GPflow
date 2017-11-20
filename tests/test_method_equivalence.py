@@ -1,4 +1,4 @@
-# Copyright 2017 the GPflow authors.
+# Copyright 2016 the GPflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -61,23 +61,23 @@ class TestEquivalence(GPflowTestCase):
             Z=X.copy(),
             q_diag=False,
             mean_function=gpflow.mean_functions.Constant())
-        m3.Z.trainable = False
+        m3.feature.trainable = False
         m4 = gpflow.models.SVGP(
             X, Y, gpflow.kernels.RBF(1),
             likelihood=gpflow.likelihoods.Gaussian(),
             Z=X.copy(), q_diag=False, whiten=True,
             mean_function=gpflow.mean_functions.Constant())
-        m4.Z.trainable = False
+        m4.feature.trainable = False
         m5 = gpflow.models.SGPR(
             X, Y, gpflow.kernels.RBF(1),
             Z=X.copy(),
             mean_function=gpflow.mean_functions.Constant())
 
-        m5.Z.trainable = False
+        m5.feature.trainable = False
         m6 = gpflow.models.GPRFITC(
             X, Y, gpflow.kernels.RBF(1), Z=X.copy(),
             mean_function=gpflow.mean_functions.Constant())
-        m6.Z.trainable = False
+        m6.feature.trainable = False
         return [m1, m2, m3, m4, m5, m6]
 
     def test_all(self):

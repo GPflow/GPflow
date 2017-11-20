@@ -17,8 +17,8 @@ m2 = gpflow.models.VGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussi
 m3 = gpflow.models.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
 m4 = gpflow.models.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
 
-m3.Z.trainable = False
-m4.Z.trainable = False
+m3.feature.trainable = False
+m4.feature.trainable = False
 
 model_list = [m2,m3,m4]
 
