@@ -17,9 +17,6 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-from pkg_resources import parse_version
-
 import tensorflow as tf
 
 from .. import misc
@@ -60,13 +57,7 @@ class DataHolder(Parameter):
     def parameter_tensor(self):
         return self._dataholder_tensor
 
-    @property
-    def shape(self):
-        # if self.parameter_tensor is not None:
-        #     return tuple(self.parameter_tensor.shape.as_list())
-        return self._value.shape
-
-    def set_trainable(self, _value, graph=None):
+    def set_trainable(self, value, graph=None):
         raise NotImplementedError('Data holder cannot be fixed.')
 
     def is_built(self, graph):
@@ -146,6 +137,14 @@ class Minibatch(DataHolder):
         self._seed = seed
 
     @property
+    def batch_size(self):
+        return self._batch_size
+
+    @batch_size.setter
+    def batch_size(self, value):
+        return self.set_batch_size(value)
+
+    @property
     def initializables(self):
         return [self._iterator_tensor]
 
@@ -156,11 +155,21 @@ class Minibatch(DataHolder):
         return {self._cache_tensor: self._value,
                 self._batch_size_tensor: self._batch_size}
 
+    @property
+    def seed(self):
+        return self._seed
+
+    @seed.setter
+    def seed(self, seed):
+        if self.graph is not None and self.is_built_coherence():
+            raise GPflowError('Minibatch seed cannot be changed when it is built.')
+        self._seed = seed
+
     def set_batch_size(self, size, session=None):
         self._batch_size = size
         session = self.enquire_session(session)
         if session is not None:
-            self.initialize(session=session)
+            self.initialize(session=session, force=True)
 
     def _clear(self):
         self._reset_name()
@@ -173,22 +182,18 @@ class Minibatch(DataHolder):
         self._seed = None
 
     def _build(self):
-        self._cache_tensor = self._build_placeholder_cache()
-        self._dataholder_tensor = self._build_dataholder()
+        initial_tensor = self._build_placeholder_cache()
+        self._cache_tensor = initial_tensor
+        self._dataholder_tensor = self._build_dataholder(initial_tensor)
 
     def _build_placeholder_cache(self):
         value = self._value
         return tf.placeholder(dtype=value.dtype, shape=value.shape, name='minibatch_init')
 
-    def _build_dataholder(self):
-        if self._cache_tensor is None:
+    def _build_dataholder(self, initial_tensor):
+        if initial_tensor is None:
             raise GPflowError("Minibatch state corrupted.")
-        if parse_version(tf.VERSION) < parse_version('1.4.0rc0'):
-            from tensorflow.contrib.data import Dataset
-        else:
-            from tensorflow import data
-            Dataset = data.Dataset
-        data = Dataset.from_tensor_slices(self._cache_tensor)
+        data = tf.data.Dataset.from_tensor_slices(initial_tensor)
         data = data.repeat()
         if self._shuffle:
             shape = self._value.shape
