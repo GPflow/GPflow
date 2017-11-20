@@ -15,9 +15,9 @@
 
 import tensorflow as tf
 
-from gpflow.features import InducingPoints
 from . import settings
 from .decors import name_scope
+from .features import InducingPoints
 
 
 @name_scope()

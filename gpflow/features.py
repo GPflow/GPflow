@@ -67,30 +67,30 @@ class InducingPoints(InducingFeature):
     def __len__(self):
         return self.Z.shape[0]
 
-    @gpflow.decors.params_as_tensors
+    @decors.params_as_tensors
     def Kuu(self, kern, jitter=0.0):
         Kzz = kern.K(self.Z)
         Kzz += jitter * tf.eye(len(self), dtype=settings.dtypes.float_type)
         return Kzz
 
-    @gpflow.decors.params_as_tensors
+    @decors.params_as_tensors
     def Kuf(self, kern, Xnew):
         Kzx = kern.K(self.Z, Xnew)
         return Kzx
 
-    @gpflow.decors.params_as_tensors
+    @decors.params_as_tensors
     def eKdiag(self, kern, X, Xcov=None):
         return kern.eKdiag(X, Xcov)
 
-    @gpflow.decors.params_as_tensors
+    @decors.params_as_tensors
     def eKfu(self, kern, Xmu, Xcov):
         return kern.eKxz(self.Z, Xmu, Xcov)
 
-    @gpflow.decors.params_as_tensors
+    @decors.params_as_tensors
     def efKfu(self, kern, Xmu, Xcov):
         return kern.exKxz(self.Z, Xmu, Xcov)
 
-    @gpflow.decors.params_as_tensors
+    @decors.params_as_tensors
     def eKufKfu(self, kern, Xmu, Xcov):
         return kern.eKzxKxz(self.Z, Xmu, Xcov)
 
@@ -124,7 +124,7 @@ class Multiscale(InducingPoints):
         """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
 
-    @gpflow.decors.params_as_tensors
+    @decors.params_as_tensors
     def Kuf(self, kern, Xnew):
         if isinstance(kern, kernels.RBF):
             with decors.params_as_tensors_for(kern):
@@ -140,7 +140,7 @@ class Multiscale(InducingPoints):
             raise NotImplementedError(
                 "Multiscale features not implemented for `%s`." % str(type(kern)))
 
-    @gpflow.decors.params_as_tensors
+    @decors.params_as_tensors
     def Kuu(self, kern, jitter=0.0):
         if isinstance(kern, kernels.RBF):
             with decors.params_as_tensors_for(kern):
