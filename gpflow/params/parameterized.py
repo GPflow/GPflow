@@ -17,8 +17,6 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-
 import tensorflow as tf
 import pandas as pd
 
@@ -144,8 +142,6 @@ class Parameterized(Node):
             holder_feeds = data_holder.feeds
             if holder_feeds is not None:
                 total_feeds.update(holder_feeds)
-        if not total_feeds:
-            return None
         return total_feeds
 
     @property
@@ -170,8 +166,6 @@ class Parameterized(Node):
         feeds = {}
         get_initializable_feeds(self.parameters, feeds)
         get_initializable_feeds(self.data_holders, feeds)
-        if not feeds:
-            return None
         return feeds
 
     @property
@@ -225,11 +219,10 @@ class Parameterized(Node):
                 raise error
 
     def anchor(self, session):
-        if session is None:
-            ValueError('Session is required when anchoring.')
+        if not isinstance(session, tf.Session):
+            raise ValueError('TensorFlow session expected when anchoring.')
         for parameter in self.trainable_parameters:
-            value = parameter.read_value(session)
-            parameter.assign(value, session=session, force=False)
+            parameter.anchor(session)
 
     def read_trainables(self, session=None):
         return {param.full_name: param.read_value(session)
@@ -240,8 +233,8 @@ class Parameterized(Node):
                 for param in self.parameters}
 
     def is_built(self, graph):
-        if graph is None:
-            raise ValueError('Graph is not specified.')
+        if not isinstance(graph, tf.Graph):
+            raise ValueError('TensorFlow graph expected for checking build status.')
         statuses = set([param.is_built(graph) for param in self.non_empty_params])
         if Build.NOT_COMPATIBLE_GRAPH in statuses:
             return Build.NOT_COMPATIBLE_GRAPH
@@ -251,9 +244,12 @@ class Parameterized(Node):
             return Build.NO
         return Build.YES
 
-    def set_trainable(self, value, graph=None):
+    def set_trainable(self, value):
+        if not isinstance(value, bool):
+            raise ValueError('Boolean value expected.')
         for param in self.params:
-            param.set_trainable(value, graph=graph)
+            if not isinstance(param, DataHolder):
+                param.set_trainable(value)
 
     @staticmethod
     def _is_param_like(value):
@@ -356,4 +352,3 @@ class Parameterized(Node):
     @fixed.setter
     def fixed(self, _):
         raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
-
