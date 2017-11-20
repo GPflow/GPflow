@@ -72,8 +72,8 @@ class SGPMC(GPModel):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
-        self.feat = inducingpoint_wrapper(feat, Z)
-        self.V = Parameter(np.zeros((len(self.feat), self.num_latent)))
+        self.feature = inducingpoint_wrapper(feat, Z)
+        self.V = Parameter(np.zeros((len(self.feature), self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
     @params_as_tensors
@@ -97,6 +97,6 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z,
 
         """
-        mu, var = conditional(self.feat, self.kern, Xnew, self.V, full_cov=full_cov, q_sqrt=None,
+        mu, var = conditional(self.feature, self.kern, Xnew, self.V, full_cov=full_cov, q_sqrt=None,
                               whiten=True)
         return mu + self.mean_function(Xnew), var

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from functools import singledispatch
 
 import numpy as np
@@ -20,9 +20,10 @@ import tensorflow as tf
 
 from . import conditionals, transforms, kernels, decors, settings
 from .params import Parameter, Parameterized
+from .core.errors import GPflowError
 
 
-class InducingFeature(Parameterized, metaclass=ABCMeta):
+class InducingFeature(Parameterized):
     """
     Abstract base class for inducing features.
     """
@@ -98,7 +99,8 @@ class Multiscale(InducingPoints):
         super().__init__(Z)
         self.scales = Parameter(scales,
                                 transform=transforms.positive)  # Multi-scale feature widths (std. dev. of Gaussian)
-        assert self.Z.shape == scales.shape
+        if self.Z.shape != scales.shape:
+            raise GPflowError("Input locations `Z` and `scales` must have the same shape.")
 
     def _cust_square_dist(self, A, B, sc):
         """
