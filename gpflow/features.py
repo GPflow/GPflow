@@ -20,7 +20,6 @@ import tensorflow as tf
 
 from . import conditionals, transforms, kernels, decors, settings
 from .params import Parameter, Parameterized
-from .core.errors import GPflowError
 
 
 class InducingFeature(Parameterized):
@@ -100,7 +99,7 @@ class Multiscale(InducingPoints):
         self.scales = Parameter(scales,
                                 transform=transforms.positive)  # Multi-scale feature widths (std. dev. of Gaussian)
         if self.Z.shape != scales.shape:
-            raise GPflowError("Input locations `Z` and `scales` must have the same shape.")
+            raise ValueError("Input locations `Z` and `scales` must have the same shape.")
 
     def _cust_square_dist(self, A, B, sc):
         """
