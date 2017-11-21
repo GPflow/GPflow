@@ -143,7 +143,7 @@ class Multiscale(InducingPoints):
 
 
 @singledispatch
-def conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
+def conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, whiten=False):
     """
     Note the changed function signature compared to conditionals.conditional()
     to allow for single dispatch on the first argument.
@@ -153,7 +153,7 @@ def conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
 
 @conditional.register(InducingPoints)
 @conditional.register(Multiscale)
-def default_feature_conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
+def default_feature_conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, whiten=False):
     """
     Uses the same code path as conditionals.conditional(), except Kuu/Kuf
     matrices are constructed using the feature.

@@ -20,7 +20,7 @@ from .decors import name_scope
 
 
 @name_scope()
-def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
+def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, whiten=False):
     """
     Given F, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -65,7 +65,7 @@ def conditional(Xnew, X, kern, f, full_cov=False, q_sqrt=None, whiten=False):
 
 
 @name_scope()
-def feature_conditional(Xnew, feat, kern, f, full_cov=False, q_sqrt=None, whiten=False):
+def feature_conditional(Xnew, feat, kern, f, *, full_cov=False, q_sqrt=None, whiten=False):
     Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)
     Kmn = feat.Kuf(kern, Xnew)
     if full_cov:
@@ -76,7 +76,7 @@ def feature_conditional(Xnew, feat, kern, f, full_cov=False, q_sqrt=None, whiten
 
 
 @name_scope()
-def base_conditional(Kmn, Kmm, Knn, f, full_cov=False, q_sqrt=None, whiten=False):
+def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, whiten=False):
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # K
     Lm = tf.cholesky(Kmm)
