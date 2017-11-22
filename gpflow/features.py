@@ -20,7 +20,6 @@ import tensorflow as tf
 
 from . import conditionals, transforms, kernels, decors, settings
 from .params import Parameter, Parameterized
-from .core.errors import GPflowError
 
 
 class InducingFeature(Parameterized):
@@ -94,6 +93,7 @@ class InducingPoints(InducingFeature):
     def eKufKfu(self, kern, Xmu, Xcov):
         return kern.eKzxKxz(self.Z, Xmu, Xcov)
 
+
 class Multiscale(InducingPoints):
     """
     Multi-scale inducing features
@@ -115,7 +115,7 @@ class Multiscale(InducingPoints):
         self.scales = Parameter(scales,
                                 transform=transforms.positive)  # Multi-scale feature widths (std. dev. of Gaussian)
         if self.Z.shape != scales.shape:
-            raise GPflowError("Input locations `Z` and `scales` must have the same shape.")
+            raise ValueError("Input locations `Z` and `scales` must have the same shape.")
 
     def _cust_square_dist(self, A, B, sc):
         """
@@ -159,7 +159,7 @@ class Multiscale(InducingPoints):
 
 
 @singledispatch
-def conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
+def conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, whiten=False):
     """
     Note the changed function signature compared to conditionals.conditional()
     to allow for single dispatch on the first argument.
@@ -169,7 +169,7 @@ def conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
 
 @conditional.register(InducingPoints)
 @conditional.register(Multiscale)
-def default_feature_conditional(feat, kern, Xnew, f, full_cov=False, q_sqrt=None, whiten=False):
+def default_feature_conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, whiten=False):
     """
     Uses the same code path as conditionals.conditional(), except Kuu/Kuf
     matrices are constructed using the feature.
