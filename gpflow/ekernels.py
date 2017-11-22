@@ -218,16 +218,16 @@ class Linear(kernels.Linear):
         return self.variance ** 2.0 * tf.matmul(tf.matmul(eZ, mom2), eZ, transpose_b=True)
 
 
-class Add(kernels.Add):
+class Sum(kernels.Sum):
     """
-    Add
-    This version of Add will call the corresponding kernel expectations for each of the summed kernels. This will be
+    Sum
+    This version of Sum will call the corresponding kernel expectations for each of the summed kernels. This will be
     much better for kernels with analytically calculated kernel expectations. If quadrature is to be used, it's probably
-    better to do quadrature on the summed kernel function using `gpflow.kernels.Add` instead.
+    better to do quadrature on the summed kernel function using `gpflow.kernels.Sum` instead.
     """
 
     def __init__(self, kern_list, name=None):
-        kernels.Add.__init__(self, kern_list, name=name)
+        super().__init__(self, kern_list, name=name)
         self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
 
     def eKdiag(self, X, Xcov):
@@ -314,7 +314,7 @@ class Add(kernels.Add):
     def quad_eKzx1Kxz2(self, Ka, Kb, Z, Xmu, Xcov):
         # Quadrature for Cov[(Kzx1 - eKzx1)(kxz2 - eKxz2)]
         self._check_quadrature()
-        warnings.warn("gpflow.ekernels.Add: Using numerical quadrature for kernel expectation cross terms.")
+        warnings.warn("gpflow.ekernels.Sum: Using numerical quadrature for kernel expectation cross terms.")
         Xmu, Z = self._slice(Xmu, Z)
         Xcov = self._slice_cov(Xcov)
         N, M, HpowD = tf.shape(Xmu)[0], tf.shape(Z)[0], self.num_gauss_hermite_points ** self.input_dim
@@ -339,30 +339,30 @@ class Add(kernels.Add):
         return cc + tf.transpose(cc, [0, 2, 1]) + cm + tf.transpose(cm, [0, 2, 1])
 
 
-class Prod(kernels.Prod):
+class Product(kernels.Product):
     def eKdiag(self, Xmu, Xcov):
         if not self.on_separate_dimensions:
-            raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+            raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
         with tf.control_dependencies([
             tf.assert_equal(tf.rank(Xcov), 2,
-                            message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+                            message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
             return reduce(tf.multiply, [k.eKdiag(Xmu, Xcov) for k in self.kern_list])
 
     def eKxz(self, Z, Xmu, Xcov):
         if not self.on_separate_dimensions:
-            raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+            raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
         with tf.control_dependencies([
             tf.assert_equal(tf.rank(Xcov), 2,
-                            message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+                            message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
             return reduce(tf.multiply, [k.eKxz(Z, Xmu, Xcov) for k in self.kern_list])
 
     def eKzxKxz(self, Z, Xmu, Xcov):
         if not self.on_separate_dimensions:
-            raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+            raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
         with tf.control_dependencies([
             tf.assert_equal(tf.rank(Xcov), 2,
-                            message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+                            message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
             return reduce(tf.multiply, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
