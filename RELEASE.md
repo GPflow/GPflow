@@ -1,3 +1,6 @@
+# Release 1.1
+ - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feat.Z`.
+
 # Release 1.0
 * Clear and aligned with tree-like structure of GPflow models design.
 * GPflow trainable parameters are no longer packed into one TensorFlow variable.
