@@ -423,7 +423,7 @@ class Linear(Kernel):
         - active_dims is a list of length input_dim which controls
           which columns of X are used.
         """
-        super().__init__(self, input_dim, active_dims, name=name)
+        super().__init__(input_dim, active_dims, name=name)
         self.ARD = ARD
         if ARD:
             # accept float or array:

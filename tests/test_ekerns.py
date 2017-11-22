@@ -357,7 +357,7 @@ class TestKernExpQuadrature(GPflowTestCase):
         rbfard = [self.rng.rand() + 0.5]
         linvariance = 0.3 + self.rng.rand()
         self.kernels.append(
-            kernels.Add([
+            kernels.Sum([
                 kernels.RBF(1, rbfvariance, rbfard, [1], False),
                 kernels.Linear(1, linvariance, [0])
             ])
@@ -366,7 +366,7 @@ class TestKernExpQuadrature(GPflowTestCase):
         for k in self.kernels[-1].kern_list:
             k.input_size = self.kernels[-1].input_size
         self.ekernels.append(
-            ekernels.Add([
+            ekernels.Sum([
                 ekernels.RBF(1, rbfvariance, rbfard, [1], False),
                 ekernels.Linear(1, linvariance, [0])
             ])
@@ -380,13 +380,13 @@ class TestKernExpQuadrature(GPflowTestCase):
         rbfard = [self.rng.rand() + 0.5]
         linvariance = 0.3 + self.rng.rand()
         self.kernels.append(
-            kernels.Add([
+            kernels.Sum([
                 kernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
                 kernels.Linear(self.D, linvariance, active_dims=[0, 1])
             ])
         )
         self.ekernels.append(
-            ekernels.Add([
+            ekernels.Sum([
                 ekernels.RBF(self.D, rbfvariance, rbfard, active_dims=[0, 1]),
                 ekernels.Linear(self.D, linvariance, active_dims=[0, 1])
             ])
@@ -435,7 +435,7 @@ class TestKernExpQuadrature(GPflowTestCase):
     def test_exKxz_pairwise(self):
         for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
             with self.test_context():
-                if isinstance(k, kernels.Add) and hasattr(k, 'input_size'):
+                if isinstance(k, kernels.Sum) and hasattr(k, 'input_size'):
                     # xKxz does not work with slicing yet
                     continue
                 k.num_gauss_hermite_points = self.num_gauss_hermite_points
@@ -448,7 +448,7 @@ class TestKernExpQuadrature(GPflowTestCase):
     def test_exKxz(self):
         for i, (k, ek) in enumerate(zip(self.kernels, self.ekernels)):
             with self.test_context():
-                if isinstance(k, kernels.Add) and hasattr(k, 'input_size'):
+                if isinstance(k, kernels.Sum) and hasattr(k, 'input_size'):
                     # xKxz does not work with slicing yet
                     continue
                 k.num_gauss_hermite_points = self.num_gauss_hermite_points
@@ -470,7 +470,7 @@ class TestKernExpQuadrature(GPflowTestCase):
 class TestKernProd(GPflowTestCase):
     """
     TestKernProd
-    Need a separate test for this as Prod currently only supports diagonal Xcov matrices with non-overlapping kernels.
+    Need a separate test for this as Product currently only supports diagonal Xcov matrices with non-overlapping kernels.
     """
 
     @gpflow.defer_build()
@@ -487,12 +487,12 @@ class TestKernProd(GPflowTestCase):
             rbfard = [self.rng.rand() + 0.5]
             linvariance = 0.3 + self.rng.rand()
 
-            self.kernel = kernels.Prod([
+            self.kernel = kernels.Product([
                 kernels.RBF(1, rbfvariance, rbfard, [1], False),
                 kernels.Linear(1, linvariance, [0])
             ])
 
-            self.ekernel = ekernels.Prod([
+            self.ekernel = ekernels.Product([
                 ekernels.RBF(1, rbfvariance, rbfard, [1], False),
                 ekernels.Linear(1, linvariance, [0])
             ])
@@ -556,7 +556,7 @@ class TestKernExpDiagXcov(GPflowTestCase):
             rbfard = [self.rng.rand() + 0.5]
             linvariance = 0.3 + self.rng.rand()
             self.kernels.append(
-                kernels.Add([
+                kernels.Sum([
                     kernels.RBF(1, variance=rbfvariance,
                                 lengthscales=rbfard,
                                 active_dims=[1],
@@ -568,7 +568,7 @@ class TestKernExpDiagXcov(GPflowTestCase):
             for k in self.kernels[-1].kern_list:
                 k.input_size = self.kernels[-1].input_size
             self.ekernels.append(
-                ekernels.Add([
+                ekernels.Sum([
                     ekernels.RBF(1, rbfvariance, rbfard, [1], False),
                     ekernels.Linear(1, linvariance, [0])
                 ])
@@ -582,13 +582,13 @@ class TestKernExpDiagXcov(GPflowTestCase):
             rbfard = [self.rng.rand() + 0.5]
             linvariance = 0.3 + self.rng.rand()
             self.kernels.append(
-                kernels.Add([
+                kernels.Sum([
                     kernels.RBF(self.D, rbfvariance, rbfard),
                     kernels.Linear(self.D, linvariance)
                 ])
             )
             self.ekernels.append(
-                ekernels.Add([
+                ekernels.Sum([
                     ekernels.RBF(self.D, rbfvariance, rbfard),
                     ekernels.Linear(self.D, linvariance)
                 ])
@@ -637,7 +637,7 @@ class TestAddCrossCalcs(GPflowTestCase):
         self.rbf.variance = 0.3 + self.rng.rand()
         self.lin = ekernels.Linear(self.D)
         self.lin.variance = 0.3 + self.rng.rand()
-        self.add = ekernels.Add([self.rbf, self.lin])
+        self.add = ekernels.Sum([self.rbf, self.lin])
 
         self.Xmu = self.rng.rand(self.N, self.D)
         self.Z = self.rng.rand(2, self.D)

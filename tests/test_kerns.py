@@ -146,7 +146,7 @@ class TestPeriodic(GPflowTestCase):
 
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
         with self.test_context() as session:
-            kernel = gpflow.kernels.PeriodicKernel(
+            kernel = gpflow.kernels.Periodic(
                 D, period=period, variance=variance, lengthscales=lengthscale)
 
             X = tf.placeholder(gpflow.settings.np_float)
@@ -272,7 +272,7 @@ class TestKernDiags(GPflowTestCase):
             self.kernels.append(gpflow.kernels.RBF(inputdim) +
                                 gpflow.kernels.Linear(
                                     inputdim, ARD=True, variance=rng.rand(inputdim)))
-            self.kernels.append(gpflow.kernels.PeriodicKernel(inputdim))
+            self.kernels.append(gpflow.kernels.Periodic(inputdim))
             self.kernels.extend(gpflow.kernels.ArcCosine(inputdim, order=order)
                                 for order in gpflow.kernels.ArcCosine.implemented_orders)
 

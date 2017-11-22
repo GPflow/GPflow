@@ -227,7 +227,7 @@ class Sum(kernels.Sum):
     """
 
     def __init__(self, kern_list, name=None):
-        super().__init__(self, kern_list, name=name)
+        super().__init__(kern_list, name=name)
         self.crossexp_funcs = {frozenset([Linear, RBF]): self.Linear_RBF_eKxzKzx}
 
     def eKdiag(self, X, Xcov):

@@ -37,7 +37,7 @@ class TestInducingPoints(GPflowTestCase):
             f = gpflow.features.InducingPoints(Z)
 
             kernels = [gpflow.kernels.RBF(3, 0.46, lengthscales=np.array([0.143, 1.84, 2.0]), ARD=True),
-                       gpflow.kernels.PeriodicKernel(3, 0.4, 1.8)]
+                       gpflow.kernels.Periodic(3, 0.4, 1.8)]
 
             for k in kernels:
                 self.assertTrue(np.allclose(session.run(f.Kuu(k)), k.compute_K_symm(Z)))
