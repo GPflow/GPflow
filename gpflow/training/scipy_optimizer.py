@@ -64,7 +64,8 @@ class ScipyOptimizer(optimizer.Optimizer):
             self._optimizer = external_optimizer.ScipyOptimizerInterface(
                 objective, var_list=var_list, **optimizer_kwargs)
 
-        model.initialize(session=session, force=initialize)
+        if initialize:
+            model.initialize(session=session, force=True)
 
         feed_dict = self._gen_feed_dict(model, feed_dict)
         self._optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)

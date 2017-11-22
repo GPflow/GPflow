@@ -33,7 +33,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         self._minimize_operation = None
 
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=True, anchor=True, **kwargs):
+                 maxiter=1000, initialize=False, anchor=True, **kwargs):
         """
         Minimizes objective function of the model.
 
@@ -64,7 +64,8 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             self._minimize_operation = self.optimizer.minimize(
                 objective, var_list=full_var_list, **kwargs)
 
-            model.initialize(session=session, force=initialize)
+            if initialize:
+                model.initialize(session=session, force=True)
             self._initialize_optimizer(session, full_var_list)
 
             feed_dict = self._gen_feed_dict(model, feed_dict)
