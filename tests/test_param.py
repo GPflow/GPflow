@@ -418,13 +418,17 @@ class TestParameterized(GPflowTestCase):
             assert_allclose(p.a.read_value(), new_value)
 
     def test_read_values(self):
-        def check_values(values, names, expected_values):
-            self.assertTrue(set(values.keys()) == names)
-            vals = list(zip(*values.items()))[1]
-            assert_allclose(vals, expected_values)
+        def check_values(values, expected_dict, unexpected_dicts):
+            self.assertTrue(values == expected_dict)
+            for unexpected_dict in unexpected_dicts:
+                self.assertFalse(values == unexpected_dict)
 
-        names = set(['p/a', 'p/b', 'p/c/d'])
-        expected_values = [10, 11., 12]
+        expected_dict = {'p/a': 10., 'p/b': 11., 'p/c/d': 12.}
+        unexpected_dicts = [
+            {'p': 10., 'p/b': 11., 'p/c/d': 12.},
+            {'p/a': 11., 'p/b': 11., 'p/c/d': 12.},
+            {'p/a': 11.}
+        ]
 
         with self.test_context() as session:
             session_new = tf.Session(graph=session.graph)
@@ -433,10 +437,10 @@ class TestParameterized(GPflowTestCase):
                 with gpflow.defer_build():
                     p = self.create_layout()
                     values = p.read_values()
-                    check_values(values, names, expected_values)
+                    check_values(values, expected_dict, unexpected_dicts)
                     p.compile()
                     values = p.read_values()
-                    check_values(values, names, expected_values)
+                    check_values(values, expected_dict, unexpected_dicts)
                     with self.assertRaises(tf.errors.FailedPreconditionError):
                         p.read_values(session=session)
 
@@ -448,10 +452,10 @@ class TestParameterized(GPflowTestCase):
         with self.test_context() as session_intialize:
             p.initialize(session=session_intialize)
             values = p.read_values(session=session_intialize)
-            check_values(values, names, expected_values)
+            check_values(values, expected_dict, unexpected_dicts)
 
         values = p.read_values(session=session_new)
-        check_values(values, names, expected_values)
+        check_values(values, expected_dict, unexpected_dicts)
         session_new.close()
 
     def test_parameterized_assign(self):
