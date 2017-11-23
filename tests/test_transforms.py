@@ -16,10 +16,11 @@ import warnings
 import tensorflow as tf
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 
 import gpflow
+from gpflow.transforms import Chain, Identity
 from gpflow.test_util import GPflowTestCase
 from gpflow import settings
 
@@ -29,13 +30,20 @@ class TransformTests(GPflowTestCase):
         x = tf.placeholder(settings.np_float, 10)
         x_np = np.random.randn(10).astype(settings.np_float)
         transforms = []
-        for transform in gpflow.transforms.Transform.__subclasses__():
-            if transform != gpflow.transforms.LowerTriangular:
-                transforms.append(transform())
+        for transform_class in gpflow.transforms.Transform.__subclasses__():
+            if transform_class == Chain:
+                continue  # Chain transform cannot be tested on its own
+            if transform_class == gpflow.transforms.LowerTriangular:
+                transforms.append(transform_class(4))
             else:
-                transforms.append(transform(4))
+                transform = transform_class()
+                transforms.append(transform)
+                transforms.append(Chain(Identity(), transform))
+                transforms.append(Chain(transform, Identity()))
         #self.transforms = [C() for C in gpflow.transforms.Transform.__subclasses__()]
         transforms.append(gpflow.transforms.Logistic(7.3, 19.4))
+        transforms.append(gpflow.transforms.positive(gpflow.transforms.Rescale(9.5)))  # test __call__() and chaining
+        transforms.append(gpflow.transforms.Rescale(9.5)(gpflow.transforms.positive))  # test __call__() and chaining
         return x, x_np, transforms
 
     def test_tf_np_forward(self):
@@ -83,6 +91,50 @@ class TransformTests(GPflowTestCase):
                 j1_res = sess.run(j1, feed_dict={x: x_np})
                 j2_res = sess.run(j2, feed_dict={x: x_np})
                 assert_allclose(j1_res, j2_res)
+
+
+class TestChainIdentity(GPflowTestCase):
+    def prepare(self):
+        x = tf.placeholder(settings.np_float, 10)
+        x_np = np.random.randn(10).astype(settings.np_float)
+        transforms = []
+        for transform in gpflow.transforms.Transform.__subclasses__():
+            if transform != Chain and transform != gpflow.transforms.LowerTriangular:
+                transforms.append(transform())
+        #self.transforms = [C() for C in gpflow.transforms.Transform.__subclasses__()]
+        transforms.append(gpflow.transforms.Logistic(7.3, 19.4))
+        return x, x_np, transforms
+
+    def assertEqualElements(self, lst):
+        elem0 = lst[0]
+        for elemi in lst[1:]:
+            assert_equal(elem0, elemi)
+
+    def test_equivalence(self):
+        """
+        Make sure chaining with identity doesn't lead to different values.
+        """
+        with self.test_context() as sess:
+            x, x_np, transforms = self.prepare()
+            for transform in transforms:
+                equiv_transforms = [transform,
+                                    Chain(transform, Identity()),
+                                    Chain(Identity(), transform)]
+
+                ys_np = [t.forward(x_np) for t in equiv_transforms]
+                self.assertEqualElements(ys_np)
+
+                y_np = ys_np[0]
+                xs_np = [t.backward(y_np) for t in equiv_transforms]
+                self.assertEqualElements(xs_np)
+
+                ys = [t.forward_tensor(x) for t in equiv_transforms]
+                ys_tf = [sess.run(y, feed_dict={x: x_np}) for y in ys]
+                self.assertEqualElements(ys_tf)
+
+                logjs = [t.log_jacobian_tensor(x) for t in equiv_transforms]
+                logjs_tf = [sess.run(logj, feed_dict={x: x_np}) for logj in logjs]
+                self.assertEqualElements(logjs_tf)
 
 
 class TestOverflow(GPflowTestCase):
