@@ -17,9 +17,8 @@ import numpy as np
 import tensorflow as tf
 
 from ..models.model import GPModel
-
+from ..features import inducingpoint_wrapper, conditional
 from ..params import Parameter, DataHolder
-from ..conditionals import conditional
 from ..priors import Gaussian
 from ..decors import params_as_tensors
 
@@ -56,9 +55,10 @@ class SGPMC(GPModel):
 
 
     """
-    def __init__(self, X, Y, kern, likelihood, Z,
+    def __init__(self, X, Y, kern, likelihood, feat=None,
                  mean_function=None,
                  num_latent=None,
+                 Z=None,
                  **kwargs):
         """
         X is a data matrix, size N x D
@@ -71,10 +71,9 @@ class SGPMC(GPModel):
         Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_data = X.shape[0]
-        self.num_inducing = Z.shape[0]
         self.num_latent = num_latent or Y.shape[1]
-        self.Z = DataHolder(Z)
-        self.V = Parameter(np.zeros((self.num_inducing, self.num_latent)))
+        self.feature = inducingpoint_wrapper(feat, Z)
+        self.V = Parameter(np.zeros((len(self.feature), self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
     @params_as_tensors
@@ -98,6 +97,6 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z,
 
         """
-        mu, var = conditional(Xnew, self.Z, self.kern, self.V,
-                              full_cov=full_cov, q_sqrt=None, whiten=True)
+        mu, var = conditional(self.feature, self.kern, Xnew, self.V, full_cov=full_cov, q_sqrt=None,
+                              whiten=True)
         return mu + self.mean_function(Xnew), var

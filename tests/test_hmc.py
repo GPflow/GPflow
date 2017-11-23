@@ -92,14 +92,18 @@ class SampleGaussianTest(GPflowTestCase):
         with self.test_context():
             self.m.compile()
             num_samples = 10
-            x0 = self.m.read_trainables()[0]
+            x0 = list(self.m.read_trainables().values())[0].copy()
             samples = self.hmc.sample(self.m, num_samples=num_samples,
                                       lmin=10, lmax=21, epsilon=0.05,
-                                      burn=10)
+                                      burn=10, logprobs=False)
 
-            x = samples.drop('logprobs', axis=1).iloc[-1][0]
-            self.assertEqual(samples.shape, (10, 2))
+            x = samples.iloc[-1][0]
+            self.assertEqual(samples.shape, (10, 1))
             self.assertEqual(x.shape, (3,))
+            print(x)
+            print(x0)
+            print(samples.iloc[0])
+            print(samples)
             self.assertFalse(np.all(x == x0))
 
     def test_columns_names(self):

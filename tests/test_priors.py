@@ -42,8 +42,7 @@ class TestPriorMode(GPflowTestCase):
             m.compile()
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m)
-            xmax = m.read_trainables()
-            assert_allclose(xmax, 3)
+            _ = [assert_allclose(v, 3) for v in m.read_trainables().values()]
 
     def testGaussianModeMatrix(self):
         with self.test_context():
@@ -53,8 +52,7 @@ class TestPriorMode(GPflowTestCase):
             m.compile()
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m)
-            xmax = m.read_trainables()
-            assert_allclose(xmax, -1.)
+            _ = [assert_allclose(v, -1.) for v in m.read_trainables().values()]
 
     def testGammaMode(self):
         with self.test_context():
@@ -77,8 +75,7 @@ class TestPriorMode(GPflowTestCase):
             m.compile()
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m)
-            xmax = m.read_trainables()
-            assert_allclose(xmax, 3)
+            _ = [assert_allclose(v, 3) for v in m.read_trainables().values()]
 
     def testLogNormalMode(self):
         with self.test_context():
@@ -89,7 +86,7 @@ class TestPriorMode(GPflowTestCase):
             m.compile()
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m)
-            xmax = [transform.backward(x) for x in m.read_trainables()]
+            xmax = [transform.backward(x) for x in m.read_trainables().values()]
             assert_allclose(xmax, 3, rtol=1e4)
 
     def testBetaMode(self):
@@ -101,7 +98,7 @@ class TestPriorMode(GPflowTestCase):
             m.compile()
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m)
-            xmax = [transform.backward(x) for x in m.read_trainables()]
+            xmax = [transform.backward(x) for x in m.read_trainables().values()]
             assert_allclose(0.0, xmax, atol=1.e-5)
 
     def testUniform(self):

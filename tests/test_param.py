@@ -16,11 +16,13 @@
 
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 import gpflow
 from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
+from numpy.testing import assert_allclose
 
 class Foo(gpflow.models.Model):
     def _build_likelihood(self):
@@ -112,7 +114,7 @@ class TestType(GPflowTestCase):
             fail_assigns(param)
 
 
-class TestParam(GPflowTestCase):
+class TestParameter(GPflowTestCase):
     def setUp(self):
         with self.test_context():
             self.p = gpflow.Param(1.0)
@@ -120,6 +122,94 @@ class TestParam(GPflowTestCase):
             self.m = gpflow.params.Parameterized()
             self.m.p = gpflow.Param(1.0)
             self.m.b = gpflow.Param(1.0)
+
+    def test_parameter_different_options(self):
+        with self.test_context() as session:
+            val = 10.
+            a = gpflow.Param(val)
+            assert_allclose(a.read_value(), val)
+            self.assertEqual(a.size, 1)
+
+            size = 2
+            val = [10.] * size
+            b = gpflow.Param([10.] * size, fix_shape=False)
+            assert_allclose(b.read_value(), val)
+            self.assertEqual(b.dtype, np.float64)
+            self.assertEqual(b.size, size)
+
+            size = 3
+            val = [10] * size
+            c = gpflow.Param(val, dtype=np.float16)
+            assert_allclose(c.read_value(), val)
+            self.assertEqual(c.dtype, np.float16)
+            self.assertEqual(c.size, size)
+
+            size = 4
+            val = [10.] * size
+            d = gpflow.Param(val, trainable=False)
+            assert_allclose(d.read_value(), val)
+            self.assertEqual(d.trainable, False)
+            self.assertEqual(d.size, size)
+
+            size = 5
+            val = [10.] * size
+            transform = gpflow.transforms.Log1pe()
+            e = gpflow.Param(val, transform=transform)
+            assert_allclose(e.read_value(), val)
+            self.assertEqual(e.size, size)
+            unconstrained = transform.backward(np.array(val))
+            assert_allclose(session.run(e.unconstrained_tensor), unconstrained)
+
+            size = 6
+            val = [10.] * size
+            f = gpflow.Param(val, prior=gpflow.priors.Gaussian(1, 2))
+            assert_allclose(f.read_value(), val)
+            assert_allclose(f.read_value(session), val)
+            self.assertEqual(f.size, size)
+            self.assertTrue(isinstance(f.prior, gpflow.priors.Gaussian))
+
+    def test_fail_scenarios(self):
+        with self.test_context() as session:
+            p = gpflow.Param(1.0)
+            values = ['', 'test', 1., object(), None]
+            for v in values:
+                def value_error(value):
+                    return self.assertRaises(ValueError, msg='Raised at "{}"'.format(value))
+                with value_error(v):
+                    p.set_trainable(v)
+                with value_error(v):
+                    p.trainable = v
+                with value_error(v):
+                    p.is_built(v)
+
+            tensor = tf.get_variable('test', shape=())
+            p = gpflow.Param(tensor)
+
+            with self.assertRaises(gpflow.GPflowError):
+                p.set_trainable(False)
+            with self.assertRaises(gpflow.GPflowError):
+                p.trainable = False
+
+            with self.assertRaises(gpflow.GPflowError):
+                p.set_trainable(True)
+            with self.assertRaises(gpflow.GPflowError):
+                p.trainable = True
+
+            values = ['', 'test', 1., object()]
+            for v in values:
+                with self.assertRaises(ValueError, msg='Raised at "{}"'.format(v)):
+                    p.anchor(v)
+
+            with self.assertRaises(tf.errors.FailedPreconditionError):
+                p.anchor(session)
+
+            with self.assertRaises(ValueError):
+                tensor = tf.get_variable('test1', shape=(), trainable=False)
+                gpflow.Param(tensor)
+
+            with self.assertRaises(ValueError):
+                tensor = tf.get_variable('test2', shape=())
+                gpflow.Param(tensor, trainable=False)
 
     def test_generators(self):
         with self.test_context():
@@ -135,12 +225,52 @@ class TestParam(GPflowTestCase):
         with self.test_context() as session:
             self.p.assign(2.0)
             self.assertEqual(self.p.read_value(), 2.0)
+            self.assertEqual(self.p.value, 2.0)
 
             self.m.p = 2.0
             self.assertEqual(self.m.p.read_value(), 2.0)
+            self.assertEqual(self.m.p.value, 2.0)
 
             self.p.assign(100.0, session=session)
             self.assertEqual(self.p.read_value(session), 100.0)
+            self.assertEqual(self.p.value, 100.0)
+
+    def test_assign_tensor(self):
+        with self.test_context():
+            tensor = tf.get_variable('a', shape=())
+            param = gpflow.Param(tensor)
+            with self.assertRaises(gpflow.GPflowError):
+                param.assign(10)
+
+    def test_floating_assign(self):
+        with self.test_context():
+            val = 10.
+            p = gpflow.Param(val, fix_shape=False)
+            assert_allclose(p.read_value(), val)
+
+            val = [10, 10]
+            p.assign(val)
+            assert_allclose(p.read_value(), val)
+
+            val = [10, 10, 10]
+            p.assign(val)
+            assert_allclose(p.read_value(), val)
+
+            val = [[10, 10, 10], [10, 10, 10]]
+            p.assign(val)
+            assert_allclose(p.read_value(), val)
+
+        with self.test_context():
+            val = 10.
+            p = gpflow.Param(val)
+
+            val = [10., 10.]
+            with self.assertRaises(ValueError):
+                p.assign(val)
+
+            val = [[10.]]
+            with self.assertRaises(ValueError):
+                p.assign(val)
 
     def test_create_and_replace(self):
         with self.test_context():
@@ -181,6 +311,12 @@ class TestParam(GPflowTestCase):
     def test_root(self):
         self.assertTrue(self.m.p.root is self.m)
 
+    def test_existing_tensor(self):
+        with self.test_context():
+            _ = tf.get_variable('param/unconstrained', shape=())
+            with self.assertRaises(gpflow.GPflowError):
+                p = gpflow.Param(1.0, name='param')
+
     def test_trainable(self):
         self.assertTrue(self.p.trainable)
         self.p.trainable = False
@@ -205,6 +341,231 @@ class TestParam(GPflowTestCase):
             self.assertFalse(self.m.p.trainable)
             _check_trainable_flag(self.m, self.assertTrue, self.assertFalse)
 
+    def test_fixed_shape(self):
+        with self.test_context():
+            p = gpflow.Param(1., fix_shape=False)
+            self.assertFalse(p.fixed_shape)
+            self.assertAllEqual(p.shape, ())
+            self.assertEqual(p.size, 1)
+
+            p.assign([10., 10.])
+            self.assertFalse(p.fixed_shape)
+            self.assertAllEqual(p.shape, (2,))
+            self.assertEqual(p.size, 2)
+
+            p.fix_shape()
+            self.assertTrue(p.fixed_shape)
+            self.assertAllEqual(p.shape, (2,))
+            self.assertEqual(p.size, 2)
+            p.assign(np.zeros(p.shape))
+
+            with self.assertRaises(ValueError):
+                p.assign([1.], force=True)
+            with self.assertRaises(ValueError):
+                p.assign(1., force=True)
+            with self.assertRaises(ValueError):
+                p.assign(np.zeros((3,3)), force=True)
+
+class TestParameterized(GPflowTestCase):
+
+    @staticmethod
+    def create_layout():
+        p = gpflow.Parameterized(name='p')
+        p.a = gpflow.Param(10.)
+        p.b = gpflow.Param(11.)
+        p.c = gpflow.Parameterized()
+        p.c.d = gpflow.Param(12., fix_shape=False)
+        p.c.e = gpflow.DataHolder(13.)
+        return p
+
+    def test_is_built(self):
+        with self.test_context():
+            p = gpflow.Parameterized()
+            self.assertTrue(p.is_built_coherence())
+
+            # TODO(@awav): Should it be NO?
+            self.assertEqual(p.is_built_coherence(tf.Graph()), gpflow.Build.YES)
+
+            values = [None, "", 1.0, object()]
+            for v in values:
+                with self.assertRaises(ValueError, msg='Passed value {}'.format(v)):
+                    p.is_built(v)
+
+            p.a = gpflow.Param(1.0)
+            self.assertEqual(p.is_built_coherence(), gpflow.Build.NO)
+
+            p.compile()
+            not_compatible = gpflow.Build.NOT_COMPATIBLE_GRAPH
+            self.assertTrue(p.is_built_coherence())
+            self.assertEqual(p.is_built(tf.Graph()), not_compatible)
+
+            with self.assertRaises(gpflow.GPflowError):
+                p.is_built_coherence(tf.Graph())
+            for v in values:
+                with self.assertRaises(ValueError, msg='Passed value "{}"'.format(v)):
+                    p.is_built(v)
+
+    def test_anchor(self):
+        with self.test_context() as session:
+            p = gpflow.Parameterized()
+            p.a = gpflow.Param(1.0)
+            p.compile()
+            with self.assertRaises(ValueError):
+                p.anchor(None)
+            new_value = 2.0
+            p.a.parameter_tensor.load(new_value)
+            p.anchor(session)
+            assert_allclose(p.a.read_value(), new_value)
+
+    def test_read_values(self):
+        def check_values(values, expected_dict, unexpected_dicts):
+            self.assertTrue(values == expected_dict)
+            for unexpected_dict in unexpected_dicts:
+                self.assertFalse(values == unexpected_dict)
+
+        expected_dict = {'p/a': 10., 'p/b': 11., 'p/c/d': 12.}
+        unexpected_dicts = [
+            {'p': 10., 'p/b': 11., 'p/c/d': 12.},
+            {'p/a': 11., 'p/b': 11., 'p/c/d': 12.},
+            {'p/a': 11.}
+        ]
+
+        with self.test_context() as session:
+            session_new = tf.Session(graph=session.graph)
+            self.assertNotEqual(session_new, session)
+            with session_new.as_default():
+                with gpflow.defer_build():
+                    p = self.create_layout()
+                    values = p.read_values()
+                    check_values(values, expected_dict, unexpected_dicts)
+                    p.compile()
+                    values = p.read_values()
+                    check_values(values, expected_dict, unexpected_dicts)
+                    with self.assertRaises(tf.errors.FailedPreconditionError):
+                        p.read_values(session=session)
+
+        with self.test_context() as session_fail:
+            self.assertFalse(session == session_fail)
+            with self.assertRaises(tf.errors.FailedPreconditionError):
+                p.read_values(session=session_fail)
+
+        with self.test_context() as session_intialize:
+            p.initialize(session=session_intialize)
+            values = p.read_values(session=session_intialize)
+            check_values(values, expected_dict, unexpected_dicts)
+
+        values = p.read_values(session=session_new)
+        check_values(values, expected_dict, unexpected_dicts)
+        session_new.close()
+
+    def test_parameterized_assign(self):
+        with self.test_context():
+            ## Create parameterized object inside context
+            p = self.create_layout()
+
+            values = p.read_values()
+            values['p/b'] = 100.
+            values['p/c/d'] = 100.
+            p.assign(values)
+            assert_allclose(p.a.read_value(), 10)
+            assert_allclose(p.b.read_value(), 100)
+            assert_allclose(p.c.d.read_value(), 100)
+            values = list(map(float, p.read_values().values()))
+            self.assertTrue(set(values) == set([10, 100, 100]))
+
+        with self.test_context() as session:
+            assign_values = {'p/a': 1e3, 'p/c/d': 1e4}
+            p.assign(assign_values, session=session)
+            assert_allclose(p.a.read_value(), 1e3)
+            assert_allclose(p.b.read_value(), 100)
+            assert_allclose(p.c.d.read_value(), 1e4)
+            values = list(map(float, p.read_values().values()))
+            self.assertTrue(set(values) == set([1e3, 100, 1e4]))
+
+    def test_parameterized_assign_panda(self):
+        with self.test_context():
+            p = self.create_layout()
+            vals1 = [1e2, 1e3, 1e4]
+            vals2 = [2e2, 2e3, 2e4]
+            self.assertEqual(len(vals1), len(vals2))
+
+            df1 = pd.DataFrame({'p/a': vals1, 'p/c/d': vals1})
+            df2 = pd.DataFrame({'p/a': vals2, 'p/c/d': vals2})
+
+            for i in range(len(vals1)):
+                df_slice1 = df1.iloc[i]
+                p.assign(df_slice1, force=False)
+                values = p.read_values()
+                for name in df_slice1.index:
+                    assert_allclose(df_slice1[name], values[name])
+
+                df_slice2 = df2.iloc[i]
+                p.assign(df_slice2, force=True)
+                values = p.read_values()
+                for name in df_slice2.index:
+                    assert_allclose(df_slice2[name], values[name])
+
+    def test_fail_assign(self):
+        with self.test_context():
+            p = self.create_layout()
+            values = [1.0, {'a': 1.0}, None, "", "artem", object()]
+            for v in values:
+                with self.assertRaises(ValueError):
+                    p.assign(v)
+
+            different_shape = {
+                    'p/a': np.zeros((10, 1)),
+                    'p/b': -1,
+                    'p/c/d': -1
+                }
+
+            a = p.a.read_value()
+            b = p.b.read_value()
+            c_d = p.c.d.read_value()
+            with self.assertRaises(ValueError):
+                p.assign(different_shape)
+            assert_allclose(p.a.read_value(), a)
+            assert_allclose(p.b.read_value(), b)
+            assert_allclose(p.c.d.read_value(), c_d)
+
+    def test_fix_shapes(self):
+        with self.test_context():
+            def children(p):
+                yield from p.parameters
+                yield from p.data_holders
+
+            p = self.create_layout()
+            self.assertFalse(all([c.fixed_shape for c in children(p)]))
+            p.fix_shape()
+            self.assertTrue(all([c.fixed_shape for c in children(p)]))
+
+            p = self.create_layout()
+            p.fix_shape(parameters=False, data_holders=True)
+            self.assertTrue(all([c.fixed_shape for c in p.data_holders]))
+            p.fix_shape(parameters=True)
+            self.assertTrue(all([c.fixed_shape for c in p.parameters]))
+            self.assertTrue(all([c.fixed_shape for c in children(p)]))
+
+    def test_trainables(self):
+        with self.test_context():
+            p = self.create_layout()
+            self.assertTrue(all([c.trainable for c in p.parameters]))
+            self.assertTrue(p.trainable)
+
+            p.set_trainable(False)
+            self.assertFalse(all([c.trainable for c in p.parameters]))
+            self.assertFalse(p.trainable)
+
+            p.set_trainable(True)
+            self.assertTrue(all([c.trainable for c in p.parameters]))
+            self.assertTrue(p.trainable)
+
+            values = [None, "test", "", 1]
+
+            for v in values:
+                with self.assertRaises(ValueError, msg='Caught exception for "{}"'.format(v)):
+                    p.set_trainable(v)
+
 
 class TestParameterizedNoParameters(GPflowTestCase):
     def setUp(self):
@@ -212,6 +573,13 @@ class TestParameterizedNoParameters(GPflowTestCase):
             self.m = gpflow.params.Parameterized(name='m')
             self.m.p = gpflow.params.Parameterized()
             self.m.b = gpflow.params.Parameterized()
+
+    def test_feeds_empty(self):
+        with self.test_context():
+            p = gpflow.Parameterized()
+            self.assertEqual(p.initializables, [])
+            self.assertEqual(p.initializable_feeds, {})
+            self.assertEqual(p.feeds, {})
 
     def test_is_built(self):
         with self.test_context():
@@ -423,6 +791,23 @@ class TestParamList(GPflowTestCase):
             with self.assertRaises(ValueError):
                 # param objects not valid in constructor (must be in list)
                 gpflow.ParamList(gpflow.Param(1))
+
+            with gpflow.defer_build():
+                p = gpflow.ParamList([0.0])
+                p[0] = gpflow.Param(1.0)
+                with self.assertRaises(ValueError):
+                    p[0] = 1.0
+                with self.assertRaises(ValueError):
+                    p[0] = "test"
+
+            p = gpflow.ParamList([])
+            p.append(gpflow.Param(1.0))
+            p.append(gpflow.Param(2.0))
+            with self.assertRaises(ValueError):
+                p.append(2.0)
+            with self.assertRaises(ValueError):
+                p.append("test")
+            self.assertEqual(len(p), 2)
 
     def test_naming(self):
         with self.test_context():
@@ -674,7 +1059,6 @@ class TestScopes(GPflowTestCase):
                 return m.kern.K(m.X)
             K = run_kernel(self.m)
             self.assertTrue(K.name.startswith('test_kernel/'))
-
 
 def _check_trainable_flag(m, assert_true, assert_false):
     for param in m.parameters:

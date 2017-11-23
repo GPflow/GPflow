@@ -2,8 +2,8 @@
 Introduction
 ------------
 
-GPflow is a package for building Gaussian process models in python, using `TensorFlow <http://www.tensorflow.org>`_. It was originally created and is now managed by `James Hensman <http://www.lancaster.ac.uk/staff/hensmanj/>`_ and `Alexander G. de G. Matthews <http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews>`_. 
-The full list of `contributors <http://github.com/GPflow/GPflow/graphs/contributors>`_ (in alphabetical order) is Rasmus Bonnevie, Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
+GPflow is a package for building Gaussian process models in python, using `TensorFlow <http://www.tensorflow.org>`_. It was originally created and is now managed by `James Hensman <http://www.lancaster.ac.uk/staff/hensmanj/>`_ and `Alexander G. de G. Matthews <http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews>`_.
+The full list of `contributors <http://github.com/GPflow/GPflow/graphs/contributors>`_ (in alphabetical order) is Artem Artemev, Rasmus Bonnevie, Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
 
 Install
 -------
@@ -43,13 +43,13 @@ It's also possible to do Sparse GP regression using the :class:`gpflow.models.SG
 
 MCMC
 ~~~~
-For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: :class:`gpflow.models.GPMC`. There's also a sparse equivalent in :class:`gpflow.models.SGPMC`, based on a `recent paper <https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes>`_ [1]. 
+For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: :class:`gpflow.models.GPMC`. There's also a sparse equivalent in :class:`gpflow.models.SGPMC`, based on a `recent paper <https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes>`_ [1].
 
 Variational inference
 ~~~~~~~~~~~~~~~~~~~~~
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`gpflow.models.VGP`. In addition, there is a sparse version based on [3] in :class:`gpflow.models.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`gpflow.models.SGPR` . All of the sparse methods in GPflow are solidified in [5]. 
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`gpflow.models.VGP`. In addition, there is a sparse version based on [3] in :class:`gpflow.models.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`gpflow.models.SGPR` . All of the sparse methods in GPflow are solidified in [5].
 
-The following table summarizes the model options in GPflow. 
+The following table summarizes the model options in GPflow.
 
 +----------------------+--------------------------+----------------------------+-----------------------------+
 |                      | Gaussian                 | Non-Gaussian (variational) | Non-Gaussian                |
@@ -103,7 +103,7 @@ Neural computation 21 (3), 786-792, 2009.
 J Hensman, A G de G Matthews, Z Ghahramani
 Proceedings of AISTATS 18, 2015.
 
-[4] Variational Learning of Inducing Variables in Sparse Gaussian Processes. 
+[4] Variational Learning of Inducing Variables in Sparse Gaussian Processes.
 M Titsias
 Proceedings of AISTATS 12, 2009.
 
@@ -112,7 +112,7 @@ A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
 Proceedings of AISTATS 19, 2016.
 
 [6] Gaussian process latent variable models for visualisation of high dimensional data.
-Lawrence, Neil D. 
+Lawrence, Neil D.
 Advances in Neural Information Processing Systems, 329-336, 2004.
 
 [7] Bayesian Gaussian Process Latent Variable Model.

@@ -93,12 +93,12 @@ class TestNotebooks(GPflowTestCase):
 
     # TODO(@awav): CHECK IT
     # def FITCvsVFE(self):
-    #    self._exec_notebook_ts("FITCvsVFE.ipynb")
+    #   self._exec_notebook_ts("FITCvsVFE.ipynb")
 
     # TODO(@awav): CHECK IT
     # def models(self):
-    #     self._exec_notebook_ts("models.ipynb")
+    #    self._exec_notebook_ts("models.ipynb")
 
     # TODO(@awav): CHECK IT
     # def multiclass(self):
-    #     self._exec_notebook_ts("multiclass.ipynb")
+    #    self._exec_notebook_ts("multiclass.ipynb")
