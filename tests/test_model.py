@@ -167,6 +167,26 @@ class TestName(GPflowTestCase):
             self.assertEqual(m2.name, 'foo')
 
 
+class EvalDataSVGP(gpflow.models.SVGP):
+    @gpflow.decors.autoflow()
+    @gpflow.decors.params_as_tensors
+    def XY(self):
+        return self.X, self.Y
+
+
+class TestMinibatchSVGP(GPflowTestCase):
+    def test_minibatch_sync(self):
+        with self.test_context():
+            X = np.random.randn(1000, 1)
+            Y = X.copy()
+            Z = X[:100, :].copy()
+            m = EvalDataSVGP(X, Y, gpflow.kernels.RBF(1), gpflow.likelihoods.Gaussian(), minibatch_size=10, Z=Z)
+
+            for _ in range(10):
+                eX, eY = m.XY(initialize=True)
+                self.assertTrue(np.all(eX == eY))
+
+
 # class TestNoRecompileThroughNewModelInstance(GPflowTestCase):
 #     """ Regression tests for Bug #454 """
 
