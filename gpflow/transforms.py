@@ -24,6 +24,12 @@ from .core.base import ITransform
 
 class Transform(ITransform): # pylint: disable=W0223
     def __call__(self, other_transform):
+        """
+        Calling a Transform with another Transform results in a Chain of both.
+        The following are equivalent:
+        >>> Chain(t1, t2)
+        >>> t1(t2)
+        """
         return Chain(self, other_transform)
 
 
@@ -214,6 +220,9 @@ class Rescale(Transform):
        y = t(factor * x)
 
     This is useful for avoiding overly large or small scales in optimization/MCMC.
+
+    If you want a transform for a positive quantity of a given scale, you want
+    >>> Rescale(scale)(positive)
     """
     def __init__(self, factor=1.0):
         self.factor = float(factor)
