@@ -42,8 +42,9 @@ class TransformTests(GPflowTestCase):
                 transforms.append(Chain(transform, Identity()))
         #self.transforms = [C() for C in gpflow.transforms.Transform.__subclasses__()]
         transforms.append(gpflow.transforms.Logistic(7.3, 19.4))
-        transforms.append(gpflow.transforms.positive(gpflow.transforms.Rescale(9.5)))  # test __call__() and chaining
+        transforms.append(gpflow.transforms.positive(gpflow.transforms.Rescale(7.5)))  # test __call__() and chaining
         transforms.append(gpflow.transforms.Rescale(9.5)(gpflow.transforms.positive))  # test __call__() and chaining
+        transforms.append(gpflow.transforms.positiveRescale(9.5))  # test helper
         return x, x_np, transforms
 
     def test_tf_np_forward(self):
