@@ -54,7 +54,7 @@ def params_as_tensors(method):
     def tensor_mode_wrapper(obj, *args, **kwargs):
         if not isinstance(obj, Parameterized):
             raise GPflowError(
-                'Tensor mode works only for parmeterized object.')
+                'Tensor mode works only for Parameterized object.')
         prev_value = _params_as_tensors_enter(obj, True)
         try:
             result = method(obj, *args, **kwargs)

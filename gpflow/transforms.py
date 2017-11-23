@@ -23,7 +23,14 @@ from .core.base import ITransform
 
 
 class Transform(ITransform): # pylint: disable=W0223
-    pass
+    def __call__(self, other_transform):
+        """
+        Calling a Transform with another Transform results in a Chain of both.
+        The following are equivalent:
+        >>> Chain(t1, t2)
+        >>> t1(t2)
+        """
+        return Chain(self, other_transform)
 
 
 class Identity(Transform):
@@ -44,6 +51,34 @@ class Identity(Transform):
 
     def __str__(self):
         return '(none)'
+
+
+class Chain(Transform):
+    """
+    Chain two transformations together:
+    .. math::
+       y = t_1(t_2(x))
+    where y is the natural parameter and x is the free state
+    """
+
+    def __init__(self, t1, t2):
+        self.t1 = t1
+        self.t2 = t2
+
+    def forward_tensor(self, x):
+        return self.t1.forward_tensor(self.t2.forward_tensor(x))
+
+    def forward(self, x):
+        return self.t1.forward(self.t2.forward(x))
+
+    def backward(self, y):
+        return self.t2.backward(self.t1.backward(y))
+
+    def log_jacobian_tensor(self, x):
+        return self.t1.log_jacobian_tensor(self.t2.forward_tensor(x)) + self.t2.log_jacobian_tensor(x)
+
+    def __str__(self):
+        return "{} {}".format(self.t1.__str__(), self.t2.__str__())
 
 
 class Exp(Transform):
@@ -71,7 +106,7 @@ class Exp(Transform):
         return tf.reduce_sum(x)
 
     def __str__(self):
-        return '+ve'
+        return 'Exp'
 
 
 class Log1pe(Transform):
@@ -79,7 +114,7 @@ class Log1pe(Transform):
     A transform of the form
     .. math::
 
-       y = \log ( 1 + \exp(x))
+       y = \log(1 + \exp(x))
 
     x is a free variable, y is always positive.
 
@@ -143,15 +178,15 @@ class Log1pe(Transform):
 
 class Logistic(Transform):
     """
-    The logictic transform, useful for keeping variables constrained between the limits a and b:
+    The logistic transform, useful for keeping variables constrained between the limits a and b:
     .. math::
 
        y = a + (b-a) s(x)
        s(x) = 1 / (1 + \exp(-x))
-   """
+    """
     def __init__(self, a=0., b=1.):
-        Transform.__init__(self)
-        assert b > a
+        if a >= b:
+            raise ValueError("a must be smaller than b")
         self.a, self.b = float(a), float(b)
 
     def forward_tensor(self, x):
@@ -169,44 +204,46 @@ class Logistic(Transform):
         return tf.reduce_sum(x - 2. * tf.log(tf.exp(x) + 1.) + np.log(self.b - self.a))
 
     def __str__(self):
-        return '[' + str(self.a) + ', ' + str(self.b) + ']'
+        return "[{}, {}]".format(self.a, self.b)
 
 
 class Rescale(Transform):
     """
-    A transform that can linearly rescale parameters, in conjucntion with
-    another transform. By default, the identity transform is wrapped so
+    A transform that can linearly rescale parameters:
     .. math::
        y = factor * x
 
-    If another transform t() is passed to the constructor, then this transform becomes
-    .. math::
+    Use `Chain` to combine this with another transform such as Log1pe:
+    `Chain(Rescale(), otherTransform())` results in
        y = factor * t(x)
+    `Chain(otherTransform(), Rescale())` results in
+       y = t(factor * x)
 
-    This is useful for avoiding optimization or MCMC over large or small scales.
+    This is useful for avoiding overly large or small scales in optimization/MCMC.
+
+    If you want a transform for a positive quantity of a given scale, you want
+    >>> Rescale(scale)(positive)
     """
-    def __init__(self, factor=1.0, chain_transform=Identity()):
-        self.factor = factor
-        self.chain_transform = chain_transform
+    def __init__(self, factor=1.0):
+        self.factor = float(factor)
 
     def forward_tensor(self, x):
-        return self.chain_transform.forward_tensor(x * self.factor)
+        return x * self.factor
 
     def forward(self, x):
-        return self.chain_transform.forward(x * self.factor)
+        return x * self.factor
 
     def backward(self, y):
-        return self.chain_transform.backward(y) / self.factor
+        return y / self.factor
 
     def log_jacobian_tensor(self, x):
         N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.tf_float)
         factor = tf.cast(self.factor, dtype=settings.tf_float)
         log_factor = tf.log(factor)
-        log_jacobian = self.chain_transform.log_jacobian_tensor(x * self.factor)
-        return N * log_factor + log_jacobian
+        return N * log_factor
 
     def __str__(self):
-        return "R" + self.chain_transform.__str__()
+        return "{}*".format(self.factor)
 
 
 class DiagMatrix(Transform):
@@ -214,7 +251,7 @@ class DiagMatrix(Transform):
     A transform to represent diagonal matrices.
 
     The output of this transform is a N x dim x dim array of diagonal matrices.
-    The contructor argumnet dim specifies the size of the matrixes.
+    The constructor argument `dim` specifies the size of the matrices.
 
     Additionally, to ensure that the matrices are positive definite, the
     diagonal elements are pushed through a 'positive' transform, defaulting to
