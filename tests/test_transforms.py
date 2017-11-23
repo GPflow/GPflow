@@ -92,6 +92,14 @@ class TransformTests(GPflowTestCase):
                 j2_res = sess.run(j2, feed_dict={x: x_np})
                 assert_allclose(j1_res, j2_res)
 
+    def test_logistic_error_wrong_order(self):
+        with self.assertRaises(ValueError):
+            gpflow.transforms.Logistic(8.0, 4.7)
+
+    def test_logistic_error_bounds_equal(self):
+        with self.assertRaises(ValueError):
+            gpflow.transforms.Logistic(4.7, 4.7)
+
 
 class TestChainIdentity(GPflowTestCase):
     def prepare(self):
