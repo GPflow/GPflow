@@ -368,3 +368,9 @@ class LowerTriangular(Transform):
 
 
 positive = Log1pe()
+
+def positiveRescale(scale):
+    """
+    A transform for positive parameters of a given `scale`
+    """
+    return Rescale(scale)(positive)
