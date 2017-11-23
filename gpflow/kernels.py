@@ -779,7 +779,7 @@ def make_kernel_names(kern_list):
 
 class Combination(Kernel):
     """
-    Combine  a list of kernels, e.g. by adding or multiplying (see inheriting
+    Combine a list of kernels, e.g. by adding or multiplying (see inheriting
     classes).
 
     The names of the kernels to be combined are generated from their class
@@ -843,3 +843,25 @@ class Product(Combination):
 
     def Kdiag(self, X, presliced=False):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kern_list])
+
+
+def make_deprecated_class(oldname, NewClass):
+    """
+    Returns a class that raises NotImplementedError on instantiation.
+    e.g.:
+    >>> Kern = make_deprecated_class("Kern", Kernel)
+    """
+    msg = ("{module}.{} has been renamed to {module}.{}"
+           .format(oldname, NewClass.__name__, module=NewClass.__module__))
+
+    class OldClass(NewClass):
+        def __new__(cls, *args, **kwargs):
+            raise NotImplementedError(msg)
+    OldClass.__doc__ = msg
+    OldClass.__qualname__ = OldClass.__name__ = oldname
+    return OldClass
+
+Kern = make_deprecated_class("Kern", Kernel)
+Add = make_deprecated_class("Add", Sum)
+Prod = make_deprecated_class("Prod", Product)
+PeriodicKernel = make_deprecated_class("PeriodicKernel", Periodic)

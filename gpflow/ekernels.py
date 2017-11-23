@@ -366,3 +366,7 @@ class Product(kernels.Product):
                             message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
         ]):
             return reduce(tf.multiply, [k.eKzxKxz(Z, Xmu, Xcov) for k in self.kern_list])
+
+
+Add = kernels.make_deprecated_class("Add", Sum)
+Prod = kernels.make_deprecated_class("Prod", Product)
