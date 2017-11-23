@@ -23,22 +23,22 @@ from .features import InducingPoints
 @name_scope()
 def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, whiten=False):
     """
-    Given F, representing the GP at the points X, produce the mean and
+    Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
 
-    Additionally, there may be Gaussian uncertainty about F as represented by
+    Additionally, there may be Gaussian uncertainty about f as represented by
     q_sqrt. In this case `f` represents the mean of the distribution and
     q_sqrt the square-root of the covariance.
 
     Additionally, the GP may have been centered (whitened) so that
-        p(v) = N( 0, I)
+        p(v) = N(0, I)
         f = L v
     thus
         p(f) = N(0, LL^T) = N(0, K).
-    In this case 'f' represents the values taken by v.
+    In this case `f` represents the values taken by v.
 
     The method can either return the diagonals of the covariance matrix for
-    each output or the full covariance matrix (full_cov).
+    each output (default) or the full covariance matrix (full_cov=True).
 
     We assume K independent GPs, represented by the columns of f (and the
     last dimension of q_sqrt).
@@ -121,7 +121,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, whiten=Fa
 
 
 @name_scope()
-def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt,
+def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
                           full_cov_output=False, full_cov=False, whiten=False):
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
