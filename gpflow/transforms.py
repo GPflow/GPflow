@@ -23,7 +23,8 @@ from .core.base import ITransform
 
 
 class Transform(ITransform): # pylint: disable=W0223
-    pass
+    def __call__(self, other_transform):
+        return Chain(self, other_transform)
 
 
 class Identity(Transform):
