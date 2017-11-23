@@ -230,8 +230,7 @@ class Rescale(Transform):
         N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.tf_float)
         factor = tf.cast(self.factor, dtype=settings.tf_float)
         log_factor = tf.log(factor)
-        log_jacobian = self.chain_transform.log_jacobian_tensor(x * self.factor)
-        return N * log_factor + log_jacobian
+        return N * log_factor
 
     def __str__(self):
         return "{}*".format(self.factor)
