@@ -22,7 +22,7 @@ from .misc import vec_to_tri
 from .core.base import ITransform
 
 
-class Transform(ITransform): # pylint: disable=W0223
+class Transform(ITransform):  # pylint: disable=W0223
     def __call__(self, other_transform):
         """
         Calling a Transform with another Transform results in a Chain of both.
@@ -30,6 +30,9 @@ class Transform(ITransform): # pylint: disable=W0223
         >>> Chain(t1, t2)
         >>> t1(t2)
         """
+        if not isinstance(other_transform, Transform):
+            raise ValueError("transforms can only be chained with other transforms:"
+                             "perhaps you want t.forward(x)")
         return Chain(self, other_transform)
 
 
@@ -75,7 +78,8 @@ class Chain(Transform):
         return self.t2.backward(self.t1.backward(y))
 
     def log_jacobian_tensor(self, x):
-        return self.t1.log_jacobian_tensor(self.t2.forward_tensor(x)) + self.t2.log_jacobian_tensor(x)
+        return self.t1.log_jacobian_tensor(self.t2.forward_tensor(x)) +\
+               self.t2.log_jacobian_tensor(x)
 
     def __str__(self):
         return "{} {}".format(self.t1.__str__(), self.t2.__str__())
@@ -272,10 +276,12 @@ class DiagMatrix(Transform):
 
     def backward(self, y):
         # Return diagonals of matrices
-        return self._positive_transform.backward(y.reshape(-1, self.dim, self.dim).diagonal(0, 1, 2).flatten())
+        x = y.reshape(-1, self.dim, self.dim).diagonal(0, 1, 2).flatten()
+        return self._positive_transform.backward(x)
 
     def forward_tensor(self, x):
-        return tf.matrix_diag(tf.reshape(self._positive_transform.forward_tensor(x), (-1, self.dim)))
+        y = self._positive_transform.forward_tensor(x)
+        return tf.matrix_diag(tf.reshape(y, (-1, self.dim)))
 
     def log_jacobian_tensor(self, x):
         return tf.zeros((1,), settings.tf_float) + self._positive_transform.log_jacobian_tensor(x)
@@ -369,8 +375,13 @@ class LowerTriangular(Transform):
 
 positive = Log1pe()
 
+
 def positiveRescale(scale):
     """
     The appropriate joint transform for positive parameters of a given `scale`
+
+    This is a convenient shorthand for 
+
+    y = scale * log(1 + exp(x))
     """
     return Rescale(scale)(positive)
