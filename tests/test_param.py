@@ -209,7 +209,16 @@ class TestParameter(GPflowTestCase):
                     p.is_built(v)
 
             tensor = tf.get_variable('test', shape=())
+            tensor_non_trainable = tf.get_variable(
+                'test_non_trainable', shape=(), trainable=False)
             p = gpflow.Param(tensor)
+            p_non_trainable = gpflow.Param(1.0, trainable=False)
+
+            with self.assertRaises(GPflowError):
+                p_non_trainable._check_tensor_trainable(tensor)
+
+            with self.assertRaises(GPflowError):
+                p._check_tensor_trainable(tensor_non_trainable)
 
             with self.assertRaises(GPflowError):
                 p.read_value(session=None)
@@ -243,6 +252,14 @@ class TestParameter(GPflowTestCase):
             with self.assertRaises(ValueError):
                 tensor = tf.get_variable('test2', shape=())
                 gpflow.Param(tensor, trainable=False)
+
+    def test_str(self):
+        with self.test_context():
+            p = gpflow.Param(1.)
+            str_dst = ('<Parameter name:\x1b[1mParameter\x1b[0m '\
+                       '[trainable] shape:() transform:(none) '\
+                       'prior:None>\nvalue: 1.0')
+            self.assertEqual(str_dst, str(p))
 
     def test_generators(self):
         with self.test_context():
