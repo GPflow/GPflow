@@ -31,8 +31,8 @@ class Transform(ITransform):  # pylint: disable=W0223
         >>> t1(t2)
         """
         if not isinstance(other_transform, Transform):
-            raise ValueError("transforms can only be chained with other transforms:"
-                             "perhaps you want t.forward(x)")
+            raise TypeError("transforms can only be chained with other transforms: "
+                            "perhaps you want t.forward(x)")
         return Chain(self, other_transform)
 
 
