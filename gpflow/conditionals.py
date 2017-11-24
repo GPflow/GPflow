@@ -21,7 +21,7 @@ from .features import InducingPoints
 
 
 @name_scope()
-def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, whiten=False):
+def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -50,7 +50,7 @@ def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, whiten=False):
         for K functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size M x K or M x M x K.
-    :param whiten: boolean of whether to whiten the representation as
+    :param white: boolean of whether to use the whitened representation as
         described above.
 
     :return: two element tuple with conditional mean and variance.
@@ -62,22 +62,22 @@ def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, whiten=False):
         Knn = kern.K(Xnew)
     else:
         Knn = kern.Kdiag(Xnew)
-    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, whiten=whiten)
+    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
 
 @name_scope()
-def feature_conditional(Xnew, feat, kern, f, *, full_cov=False, q_sqrt=None, whiten=False):
+def feature_conditional(Xnew, feat, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)
     Kmn = feat.Kuf(kern, Xnew)
     if full_cov:
         Knn = kern.K(Xnew)
     else:
         Knn = kern.Kdiag(Xnew)
-    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, whiten=whiten)
+    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
 
 @name_scope()
-def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, whiten=False):
+def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=False):
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # K
     Lm = tf.cholesky(Kmm)
@@ -95,7 +95,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, whiten=Fa
     fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # K x N x N or K x N
 
     # another backsubstitution in the unwhitened case
-    if not whiten:
+    if not white:
         A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
 
     # construct the conditional mean
@@ -122,7 +122,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, whiten=Fa
 
 @name_scope()
 def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
-                          full_cov_output=False, full_cov=False, whiten=False):
+                          full_cov_output=False, full_cov=False, white=False):
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
@@ -135,7 +135,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     :param q_sqrt: cholesky of the covariance matrix of the inducing points, size M x M x Dout
     :param full_cov_output: boolean wheter to compute covariance between output dimension.
                             Influences the shape of return value ``fvar``. Default is False
-    :param whiten: boolean whether to whiten the representation. Default is False.
+    :param white: boolean whether to use whitened representation. Default is False.
 
     :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is N x Dout,
             size ``fvar`` depends on ``full_cov_output``: if True ``f_var`` is N x Dout x Dout,
@@ -166,7 +166,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
     Luu = tf.cholesky(Kuu)  # M x M
 
-    if not whiten:
+    if not white:
         q_mu = tf.matrix_triangular_solve(Luu, q_mu, lower=True)
         Luu_tiled = tf.tile(Luu[None, :, :], [num_func, 1, 1])  # remove line once issue 216 is fixed
         q_sqrt_r = tf.matrix_triangular_solve(Luu_tiled, q_sqrt_r, lower=True)

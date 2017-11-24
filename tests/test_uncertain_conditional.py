@@ -16,7 +16,7 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
     @gpflow.decors.autoflow((float_type, [None, None]), (float_type, [None, None, None]))
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
         return uncertain_conditional(Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
-                                     whiten=self.whiten, full_cov_output=self.full_cov_output)
+                                     white=self.whiten, full_cov_output=self.full_cov_output)
 
     def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=1000000):
         rng = np.random.RandomState(0)
@@ -198,7 +198,7 @@ class QuadratureTest(GPflowTestCase):
             var_quad = mvnquad(self.var_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
             mean_2_quad = mvnquad(self.mean_2_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
             mean_analytic, var_analytic = uncertain_conditional(self.Xmu_tf, self.Xvar_tf, self.feat, self.kern,
-                                                self.q_mu_tf, self.q_sqrt_tf, full_cov_output=False, whiten=self.whiten)
+                                                self.q_mu_tf, self.q_sqrt_tf, full_cov_output=False, white=self.whiten)
 
             mean_quad, var_quad, mean_2_quad = sess.run([mean_quad, var_quad, mean_2_quad], feed_dict=self.feed_dict)
             var_quad = var_quad + (mean_2_quad - mean_quad**2)
@@ -217,7 +217,7 @@ class QuadratureTest(GPflowTestCase):
             var_quad = mvnquad(self.var_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
             mean_2_quad = mvnquad(self.mean_2_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
             mean_analytic, var_analytic = uncertain_conditional(self.Xmu_tf, self.Xvar_tf, self.feat, self.kern,
-                                                self.q_mu_tf, self.q_sqrt_tf, full_cov_output=False, whiten=self.whiten)
+                                                self.q_mu_tf, self.q_sqrt_tf, full_cov_output=False, white=self.whiten)
 
             mean_quad, var_quad, mean_2_quad = sess.run([mean_quad, var_quad, mean_2_quad], feed_dict=self.feed_dict)
             var_quad = var_quad + (mean_2_quad - mean_quad**2)
@@ -228,15 +228,15 @@ class QuadratureTest(GPflowTestCase):
 
 
     def mean_func(self, X):
-        mean, _  = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, whiten=self.whiten)
+        mean, _  = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, white=self.whiten)
         return mean
 
     def var_func(self, X):
-        _, var = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, whiten=self.whiten)
+        _, var = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, white=self.whiten)
         return var
 
     def mean_2_func(self, X):
-        mean, _  = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, whiten=self.whiten)
+        mean, _  = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, white=self.whiten)
         return mean**2
 
 if __name__ == "__main__":
