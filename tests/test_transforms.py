@@ -35,6 +35,8 @@ class TransformTests(GPflowTestCase):
                 continue  # Chain transform cannot be tested on its own
             if transform_class == gpflow.transforms.LowerTriangular:
                 transforms.append(transform_class(4))
+            elif transform_class == gpflow.transforms.DiagMatrix:
+                transforms.append(transform_class(5))
             else:
                 transform = transform_class()
                 transforms.append(transform)
@@ -88,10 +90,12 @@ class TransformTests(GPflowTestCase):
 
             tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.forward_tensor)))
                        for t in transforms
-                       if not isinstance(t, gpflow.transforms.LowerTriangular)]
+                       if not isinstance(t, (gpflow.transforms.LowerTriangular,
+                                             gpflow.transforms.DiagMatrix))]
             hand_jacs = [t.log_jacobian_tensor(x)
                          for t in transforms
-                         if not isinstance(t, gpflow.transforms.LowerTriangular)]
+                         if not isinstance(t, (gpflow.transforms.LowerTriangular,
+                                               gpflow.transforms.DiagMatrix))]
 
             for j1, j2 in zip(tf_jacs, hand_jacs):
                 j1_res = sess.run(j1, feed_dict={x: x_np})
@@ -201,10 +205,10 @@ class TestDiagMatrixTransform(GPflowTestCase):
     def test_forward_backward(self):
         free_1d = np.random.randn(8)
         fwd1d = self.t1.forward(free_1d)
-        assert_allclose(fwd1d.shape, np.array([len(free_1d), self.t1.dim, self.t1.dim]))
+        assert_allclose(fwd1d.shape, np.array([8, 1, 1]))
         assert_allclose(free_1d, self.t1.backward(fwd1d))
 
-        size2d = 1
+        size2d = 5
         free_2d = np.random.randn(size2d, self.t2.dim).flatten()
         fwd2d = self.t2.forward(free_2d)
         assert_allclose(fwd2d.shape, np.array([size2d, self.t2.dim, self.t2.dim]))
@@ -215,12 +219,12 @@ class TestDiagMatrixTransform(GPflowTestCase):
         Make sure the np forward transforms are the same as the tensorflow ones
         """
         with self.test_context() as sess:
-            free = np.random.randn(8, self.t2.dim).flatten()
+            free = np.random.randn(8, self.t2.dim)
             x = tf.placeholder(settings.np_float)
             ys = sess.run(self.t2.forward_tensor(x), feed_dict={x: free})
             assert_allclose(ys, self.t2.forward(free))
 
-            free = np.random.randn(1, self.t1.dim).flatten()
+            free = np.random.randn(7, self.t1.dim)
             x = tf.placeholder(settings.np_float)
             ys = sess.run(self.t1.forward_tensor(x), feed_dict={x: free})
             assert_allclose(ys, self.t1.forward(free))

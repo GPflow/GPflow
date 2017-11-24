@@ -257,34 +257,34 @@ class DiagMatrix(Transform):
     The output of this transform is a N x dim x dim array of diagonal matrices.
     The constructor argument `dim` specifies the size of the matrices.
 
-    Additionally, to ensure that the matrices are positive definite, the
-    diagonal elements are pushed through a 'positive' transform, defaulting to
-    log1pe.
+    To make a constraint over positive-definite diagonal matrices, chain this
+    transform with a positive transform. For example, to get posdef matrices of size 2x2:
+        t = DiagMatrix(2)(positive)
+
     """
 
-    def __init__(self, dim=1, positive_transform=Log1pe()):
+    def __init__(self, dim=1):
         self.dim = dim
-        self._lower = 1e-6
-        self._positive_transform = positive_transform
 
     def forward(self, x):
-        # Create diagonal matrix
-        x = self._positive_transform.forward(x).reshape((-1, self.dim))
-        m = np.zeros((x.shape[0], x.shape[1], x.shape[1]))
+        # create diagonal matrices
+        m = np.zeros((x.size * self.dim)).reshape(-1, self.dim, self.dim)
+        x = x.reshape(-1, self.dim)
         m[(np.s_[:],) + np.diag_indices(x.shape[1])] = x
         return m
 
     def backward(self, y):
         # Return diagonals of matrices
-        x = y.reshape(-1, self.dim, self.dim).diagonal(0, 1, 2).flatten()
-        return self._positive_transform.backward(x)
+        if not (y.shape[1] == y.shape[2] == self.dim) and (len(y.shape) == 3):
+            raise ValueError("shape of input does not match this transform")
+        return y.diagonal(offset=0, axis1=1, axis2=2).flatten()
 
     def forward_tensor(self, x):
-        y = self._positive_transform.forward_tensor(x)
-        return tf.matrix_diag(tf.reshape(y, (-1, self.dim)))
+        # create diagonal; matrices
+        return tf.matrix_diag(tf.reshape(x, (-1, self.dim)))
 
     def log_jacobian_tensor(self, x):
-        return tf.zeros((1,), settings.tf_float) + self._positive_transform.log_jacobian_tensor(x)
+        return tf.zeros((1,), settings.tf_float)
 
     def __str__(self):
         return 'DiagMatrix'
@@ -380,8 +380,8 @@ def positiveRescale(scale):
     """
     The appropriate joint transform for positive parameters of a given `scale`
 
-    This is a convenient shorthand for 
+    This is a convenient shorthand for
 
-    y = scale * log(1 + exp(x))
+        constrained = scale * log(1 + exp(unconstrained))
     """
     return Rescale(scale)(positive)
