@@ -108,8 +108,8 @@ class TransformTests(GPflowTestCase):
 
     def test_bad_chain_argument(self):
         t = gpflow.transforms.Logistic(1.0, 2.0)
-        with self.assertRaises(ValueError):
-            t(1.5)  # this syntax chains transforms, is tnot equivalent to t.forward(x)
+        with self.assertRaises(TypeError):
+            t(1.5)  # this syntax chains transforms, is not equivalent to t.forward(x)
 
 
 class TestChainIdentity(GPflowTestCase):
