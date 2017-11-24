@@ -1,9 +1,11 @@
 from __future__ import print_function, absolute_import
+
 import itertools
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
+from .core.errors import GPflowError
 from . import settings
 
 
@@ -31,7 +33,7 @@ def mvhermgauss(H, D):
     return x, w
 
 
-def mvnquad(func, means, covs, H, Din, Dout=()):
+def mvnquad(func, means, covs, H, Din=None, Dout=None):
     """
     Computes N Gaussian expectation integrals of a single function 'f'
     using Gauss-Hermite quadrature.
@@ -44,6 +46,11 @@ def mvnquad(func, means, covs, H, Din, Dout=()):
     to leave out the item index, i.e. f actually maps (?xD)->(?x*Dout).
     :return: quadratures (N,*Dout)
     """
+    # Figure out input shape information
+    Din = means.shape[1].value if Din is None else Din
+    if Din is None:
+        raise GPflowError("If `Din` is passed as `None`, `means` must have a known shape.")
+
     xn, wn = mvhermgauss(H, Din)
     N = tf.shape(means)[0]
 
@@ -54,7 +61,12 @@ def mvnquad(func, means, covs, H, Din, Dout=()):
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
 
     # perform quadrature
-    fX = tf.reshape(func(Xr), (H ** Din, N,) + Dout)
+    fevals = func(Xr)
+    Dout = tuple(d.value for d in fevals.shape[1:]) if Dout is None else Dout
+    if any([d is None for d in Dout]):
+        raise GPflowError("If `Dout` is passed as `None`, the output of `func` must have known "
+                          "shape.")
+    fX = tf.reshape(fevals, (H ** Din, N,) + Dout)
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
                     (-1,) + (1,) * (1 + len(Dout)))
     return tf.reduce_sum(fX * wr, 0)
