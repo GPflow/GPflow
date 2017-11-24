@@ -43,6 +43,15 @@ class IPrior(metaclass=abc.ABCMeta):
 
 
 class ITransform(metaclass=abc.ABCMeta):
+    """
+    The terminology around Transforms can be a bit confusing.
+
+    x is the unconstrained, free-space parameter, which can take any value.
+    y is the constrained, "real units" parameter corresponding to the data.
+
+    y = forward(x)
+    x = backward(y)
+    """
 
     @abc.abstractmethod
     def forward(self, x):
