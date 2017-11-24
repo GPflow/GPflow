@@ -76,13 +76,17 @@ class DataHolder(Parameter):
         self._reset_name()
         self._initial_value_tensor = None
         self._dataholder_tensor = None
+        self._is_initialized_tensor = None
 
     def _build(self):
-        self._dataholder_tensor = self._build_parameter()  # pylint: disable=W0201
+        tensor = self._build_parameter()
+        self._dataholder_tensor = tensor
+        self._is_initialized_tensor = tf.is_variable_initialized(tensor)
 
     def _init_parameter_defaults(self):
         self._initial_value_tensor = None
         self._dataholder_tensor = None
+        self._is_initialized_tensor = None
 
     def _init_parameter_attributes(self, _prior, _transform, _trainable):
         pass

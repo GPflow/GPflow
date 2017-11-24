@@ -189,8 +189,7 @@ def _session_run(session, obj, store, *args, **kwargs):
     if obj.feeds:
         feed_dict.update(obj.feeds)
     initialize = kwargs.pop('initialize', False)
-    if initialize:
-        obj.initialize(session=session, force=True)
+    obj.initialize(session=session, force=initialize)
     return session.run(store['result'], **kwargs)
 
 

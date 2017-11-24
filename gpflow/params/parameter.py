@@ -183,7 +183,7 @@ class Parameter(Node):
     def initializables(self):
         if self._externally_defined:
             return None
-        return [self.parameter_tensor]
+        return [(self.parameter_tensor, self.is_initialized_tensor)]
 
     @property
     def initializable_feeds(self):
@@ -323,19 +323,22 @@ class Parameter(Node):
 
     def _clear(self):
         self._reset_name()
-        self._externally_defined = False   # pylint: disable=W0201
-        self._initial_value_tensor = None  # pylint: disable=W0201
-        self._unconstrained_tensor = None  # pylint: disable=W0201
-        self._constrained_tensor = None    # pylint: disable=W0201
-        self._prior_tensor = None          # pylint: disable=W0201
+        self._externally_defined = False
+        self._is_initialized_tensor = None
+        self._initial_value_tensor = None
+        self._unconstrained_tensor = None
+        self._constrained_tensor = None
+        self._prior_tensor = None
 
     def _build(self):
         unconstrained = self._build_parameter()
         constrained = self._build_constrained(unconstrained)
         prior = self._build_prior(unconstrained, constrained)
-        self._unconstrained_tensor = unconstrained  # pylint: disable=W0201
-        self._constrained_tensor = constrained      # pylint: disable=W0201
-        self._prior_tensor = prior                  # pylint: disable=W0201
+
+        self._is_initialized_tensor = tf.is_variable_initialized(unconstrained)
+        self._unconstrained_tensor = unconstrained
+        self._constrained_tensor = constrained
+        self._prior_tensor = prior
 
     def _build_parameter(self):
         if self._externally_defined:
@@ -357,7 +360,6 @@ class Parameter(Node):
         else:
             args = dict(validate_shape=False, trainable=self.trainable)
         variable = tf.get_variable(name, initializer=init, **args)
-        self._is_initialized_tensor = tf.is_variable_initialized(variable)
         return variable
 
 

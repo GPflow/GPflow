@@ -64,8 +64,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             self._minimize_operation = self.optimizer.minimize(
                 objective, var_list=full_var_list, **kwargs)
 
-            if initialize:
-                model.initialize(session=session, force=True)
+            model.initialize(session=session, force=initialize)
             self._initialize_optimizer(session, full_var_list)
 
             feed_dict = self._gen_feed_dict(model, feed_dict)
