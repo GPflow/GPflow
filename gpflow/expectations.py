@@ -1,6 +1,11 @@
+import types
+
+import numpy as np
+import tensorflow as tf
 from multipledispatch import dispatch
 
-from . import features, kernels, mean_functions, GPflowError
+from . import kernels, mean_functions, GPflowError, settings
+from .features import InducingFeature
 from .quadrature import mvnquad
 
 
@@ -26,25 +31,26 @@ class Uniform(ProbabilityDistribution):
         self.b = b
 
 
-def get_eval_func(obj):
-    if type(obj) is tuple:
-        # Feature + kernel combination
-        if not isinstance(obj[0], features.InducingFeature) or not isinstance(obj[1], kernels.Kern):
-            raise GPflowError("Tuples should contain an InducingFeature and Kern, in that order.")
-
-        return lambda x, *args, **kwargs: obj[0].Kuf(obj[1], x, *args, **kwargs)
+def get_eval_func(obj, feature, slice=None):
+    if feature is not None:
+        # kernel + feature combination
+        if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kern):
+            raise GPflowError("If `feature` is supplied, `obj` must be a kernel.")
+        return lambda x: tf.transpose(feature.Kuf(obj, x))[slice]
     elif isinstance(obj, mean_functions.MeanFunction):
-        return lambda x, *args, **kwargs: obj(x, *args, **kwargs)
+        return lambda x: obj(x)[slice]
     elif isinstance(obj, kernels.Kern):
-        return lambda x, *args, **kwargs: obj.K(x, *args, **kwargs)
+        return lambda x: obj.Kdiag(x)
     elif obj is None:
-        return lambda _, *args, *kwargs: 1.0
+        return lambda _: tf.ones(1, settings.tf_float)
+    elif isinstance(obj, types.FunctionType):
+        return obj
     else:
         raise NotImplementedError()
 
 
-@dispatch(object, object, Gaussian)
-def expectation(obj1, obj2, p):
-    eval_func = lambda x: get_eval_func(obj1)(x) * get_eval_func(obj2)(x)
-
-    mvnquad(eval_func, p.mu, p.covs, 20, p.mu.shape[1].value)
+@dispatch(object, (InducingFeature, type(None)), object, (InducingFeature, type(None)), Gaussian)
+def expectation(obj1, feature1, obj2, feature2, p):
+    eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
+                           get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
+    return mvnquad(eval_func, p.mu, p.cov, 20)
