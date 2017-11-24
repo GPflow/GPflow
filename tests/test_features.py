@@ -19,8 +19,6 @@ import gpflow
 from gpflow.test_util import GPflowTestCase
 
 
-
-
 class TestInducingPoints(GPflowTestCase):
     def test_feature_len(self):
         with self.test_context():

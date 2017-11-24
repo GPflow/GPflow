@@ -396,7 +396,6 @@ class TestLikelihoodChecks(GPflowTestCase):
 
         for l, v in to_pass:
             with self.test_context():
-                print(l, v)
                 self.run_models(l, v)
 
         for l, v, in to_fail:

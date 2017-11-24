@@ -20,6 +20,7 @@ import pandas as pd
 
 import gpflow
 from gpflow import settings
+from gpflow import GPflowError
 from gpflow.test_util import GPflowTestCase
 
 from numpy.testing import assert_allclose
@@ -168,6 +169,31 @@ class TestParameter(GPflowTestCase):
             self.assertEqual(f.size, size)
             self.assertTrue(isinstance(f.prior, gpflow.priors.Gaussian))
 
+    def test_initialized(self):
+        with self.test_context() as session1:
+            p = gpflow.Param(1.0)
+            self.assertTrue(p.is_initialized(session1))
+            with self.test_context() as session2:
+                self.assertFalse(p.is_initialized(session2))
+                with self.test_context() as session3:
+                    p = gpflow.Param(1.0, autobuild=False)
+                    self.assertFalse(p.is_initialized(session1))
+                    self.assertFalse(p.is_initialized(session2))
+                    self.assertFalse(p.is_initialized(session3))
+                    p.compile()
+                    self.assertFalse(p.is_initialized(session1))
+                    self.assertFalse(p.is_initialized(session2))
+                    self.assertTrue(p.is_initialized(session3))
+
+        def assert_exception(args, fun, exception):
+            for arg in args:
+                with self.assertRaises(exception, msg="Raise at '{}'".format(arg)):
+                    fun(arg)
+
+        with self.test_context():
+            assert_exception(['', 'non-tempty', 1.0, None, object()],
+                             p.is_initialized, ValueError)
+
     def test_fail_scenarios(self):
         with self.test_context() as session:
             p = gpflow.Param(1.0)
@@ -185,14 +211,21 @@ class TestParameter(GPflowTestCase):
             tensor = tf.get_variable('test', shape=())
             p = gpflow.Param(tensor)
 
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
+                p.read_value(session=None)
+
+            for v in ['', 'non-empty', 1.0, object()]:
+                with self.assertRaises(ValueError):
+                    p.read_value(session=v)
+
+            with self.assertRaises(GPflowError):
                 p.set_trainable(False)
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 p.trainable = False
 
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 p.set_trainable(True)
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 p.trainable = True
 
             values = ['', 'test', 1., object()]
@@ -219,7 +252,7 @@ class TestParameter(GPflowTestCase):
 
     def test_assign(self):
         with self.test_context(tf.Graph()) as session:
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 self.p.read_value(session)
 
         with self.test_context() as session:
@@ -239,7 +272,7 @@ class TestParameter(GPflowTestCase):
         with self.test_context():
             tensor = tf.get_variable('a', shape=())
             param = gpflow.Param(tensor)
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 param.assign(10)
 
     def test_floating_assign(self):
@@ -314,7 +347,7 @@ class TestParameter(GPflowTestCase):
     def test_existing_tensor(self):
         with self.test_context():
             _ = tf.get_variable('param/unconstrained', shape=())
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 p = gpflow.Param(1.0, name='param')
 
     def test_trainable(self):
@@ -399,7 +432,7 @@ class TestParameterized(GPflowTestCase):
             self.assertTrue(p.is_built_coherence())
             self.assertEqual(p.is_built(tf.Graph()), not_compatible)
 
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 p.is_built_coherence(tf.Graph())
             for v in values:
                 with self.assertRaises(ValueError, msg='Passed value "{}"'.format(v)):
@@ -603,7 +636,7 @@ class TestParameterizedNoParameters(GPflowTestCase):
             self.assertEqual(self.m.is_built_coherence(), gpflow.Build.NO)
             self.m.compile()
             self.assertEqual(self.m.is_built_coherence(), gpflow.Build.YES)
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 self.m.b = gpflow.Param(20)
 
 
@@ -644,7 +677,7 @@ class TestParameterizedCompile(GPflowTestCase):
     def test_fails_after_compile(self):
         with self.test_context(self.graph):
             self.m.compile()
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 self.m.d = gpflow.Param(1.0)
             with self.assertRaises(AttributeError):
                 _param = self.m.d
@@ -773,7 +806,7 @@ class TestParamLikeInvariant(GPflowTestCase):
     #     m1 = gpflow.params.Parameterized()
     #     m1.foo = gpflow.params.Parameterized()
     #     m2 = gpflow.params.Parameterized()
-    #     with self.assertRaises(gpflow.GPflowError):
+    #     with self.assertRaises(GPflowError):
     #         m2.foo = m1.foo
 
 
@@ -837,7 +870,7 @@ class TestParamList(GPflowTestCase):
             self.assertTrue(np.all(param_list[1].read_value() == arr))
 
             param_list.compile()
-            with self.assertRaises(gpflow.GPflowError):
+            with self.assertRaises(GPflowError):
                 param_list[0] = gpflow.Param(12)
 
     def test_append(self):
