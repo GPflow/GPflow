@@ -186,15 +186,24 @@ class TestOverflow(GPflowTestCase):
         self.assertFalse(np.any(np.isnan(y)))
 
 
-class TestLowerTriTransform(GPflowTestCase):
+class TestMatrixTransforms(GPflowTestCase):
     """
-    Some extra tests for the LowerTriangle transformation.
+    Some extra tests for the matrix transformations.
     """
-    def testErrors(self):
+    def test_LowerTriangular(self):
         t = gpflow.transforms.LowerTriangular(1, 3)
         t.forward(np.ones(3 * 6))
         with self.assertRaises(ValueError):
             t.forward(np.ones(3 * 7))
+
+    def test_DiagMatrix(self):
+        t = gpflow.transforms.DiagMatrix(3)
+        t.backward(np.eye(3))
+        t.backward(np.eye(3)[None, :, :])
+        t.backward(np.eye(3)[None, :, :] * np.array([1, 2])[:, None, None])
+        with self.assertRaises(ValueError):
+            t.backward(np.eye(4))
+            t.backward(np.eye(2)[None, :, :] * np.array([1, 2, 3])[:, None, None])
 
 
 class TestDiagMatrixTransform(GPflowTestCase):

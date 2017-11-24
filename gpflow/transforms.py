@@ -275,12 +275,12 @@ class DiagMatrix(Transform):
 
     def backward(self, y):
         # Return diagonals of matrices
-        if not (y.shape[1] == y.shape[2] == self.dim) and (len(y.shape) == 3):
+        if len(y.shape) not in (2, 3) or not (y.shape[-1] == y.shape[-2] == self.dim):
             raise ValueError("shape of input does not match this transform")
-        return y.diagonal(offset=0, axis1=1, axis2=2).flatten()
+        return y.reshape((-1, self.dim, self.dim)).diagonal(offset=0, axis1=1, axis2=2).flatten()
 
     def forward_tensor(self, x):
-        # create diagonal; matrices
+        # create diagonal matrices
         return tf.matrix_diag(tf.reshape(x, (-1, self.dim)))
 
     def log_jacobian_tensor(self, x):
