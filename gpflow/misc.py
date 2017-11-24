@@ -185,6 +185,9 @@ def _find_initializable_tensors(intializables, session):
         if isinstance(v, (tuple, list)):
             status_tensors.append(v[0])
             boolean_tensors.append(v[1])
+        # TODO(@awav): Tensorflow Iterator must have init status.
+        elif isinstance(v, tf.data.Iterator):
+            yield v
         else:
             for_reports.append(v)
 
