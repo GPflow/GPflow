@@ -183,7 +183,7 @@ class Parameter(Node):
     def initializables(self):
         if self._externally_defined:
             return None
-        return [self.parameter_tensor]
+        return [(self.parameter_tensor, self.is_initialized_tensor)]
 
     @property
     def initializable_feeds(self):
@@ -208,6 +208,20 @@ class Parameter(Node):
         default arguments.
         """
         return self.read_value()
+
+    @property
+    def is_initialized_tensor(self):
+        """
+        :returns: Initialization status boolean tensor for parameter's variable.
+        """
+        return self._is_initialized_tensor
+
+    def is_initialized(self, session):
+        if not isinstance(session, tf.Session):
+            raise ValueError('TensorFlow session expected for initializing test.')
+        if self.parameter_tensor is None:
+            return False
+        return session.run(self.is_initialized_tensor)
 
     def fix_shape(self):
         if self._fixed_shape:
@@ -266,14 +280,14 @@ class Parameter(Node):
             self.initialize(session=session, force=force)
 
     def read_value(self, session=None):
-        if session is not None:
-            if not isinstance(session, tf.Session):
-                raise ValueError('TensorFlow session expected as session argument.')
+        if session is not None and not isinstance(session, tf.Session):
+            raise ValueError('TensorFlow session expected as an argument.')
+        if session is None and self._externally_defined:
+            raise GPflowError('Externally defined parameter requires session.')
+        elif session:
             is_built = self.is_built_coherence(session.graph)
             if is_built is Build.YES:
                 return self._read_parameter_tensor(session)
-        elif self._externally_defined:
-            raise GPflowError('Externally defined parameter requires session.')
         return self._value
 
     def _valid_input(self, value, dtype=None):
@@ -311,19 +325,22 @@ class Parameter(Node):
 
     def _clear(self):
         self._reset_name()
-        self._externally_defined = False   # pylint: disable=W0201
-        self._initial_value_tensor = None  # pylint: disable=W0201
-        self._unconstrained_tensor = None  # pylint: disable=W0201
-        self._constrained_tensor = None    # pylint: disable=W0201
-        self._prior_tensor = None          # pylint: disable=W0201
+        self._externally_defined = False
+        self._is_initialized_tensor = None
+        self._initial_value_tensor = None
+        self._unconstrained_tensor = None
+        self._constrained_tensor = None
+        self._prior_tensor = None
 
     def _build(self):
         unconstrained = self._build_parameter()
         constrained = self._build_constrained(unconstrained)
         prior = self._build_prior(unconstrained, constrained)
-        self._unconstrained_tensor = unconstrained  # pylint: disable=W0201
-        self._constrained_tensor = constrained      # pylint: disable=W0201
-        self._prior_tensor = prior                  # pylint: disable=W0201
+
+        self._is_initialized_tensor = tf.is_variable_initialized(unconstrained)
+        self._unconstrained_tensor = unconstrained
+        self._constrained_tensor = constrained
+        self._prior_tensor = prior
 
     def _build_parameter(self):
         if self._externally_defined:
@@ -341,10 +358,11 @@ class Parameter(Node):
         init = tf.placeholder(self.dtype, shape=shape, name='initial_unconstrained_value')
         self._initial_value_tensor = init
         if self.fixed_shape:
-            return tf.get_variable(name, initializer=init, trainable=self.trainable)
-        return tf.get_variable(name, initializer=init,
-                               validate_shape=False,
-                               trainable=self.trainable)
+            args = dict(trainable=self.trainable)
+        else:
+            args = dict(validate_shape=False, trainable=self.trainable)
+        variable = tf.get_variable(name, initializer=init, **args)
+        return variable
 
 
     def _build_constrained(self, parameter_tensor):
@@ -381,6 +399,7 @@ class Parameter(Node):
             raise GPflowError(msg.format(tensor_status, param_status))
 
     def _init_parameter_defaults(self):
+        self._is_initialized_tensor = None
         self._initial_value_tensor = None
         self._unconstrained_tensor = None
         self._prior_tensor = None
