@@ -207,13 +207,10 @@ class TestStochasticGradients(GPflowTestCase):
         m1_params = {p.full_name: p for p in list(m1.trainable_parameters)}
         m2_params = {p.full_name: p for p in list(m2.trainable_parameters)}
         if set(m1_params.keys()) != set(m2_params.keys()):
-            print("parameter names = {0}, {1}".format(m1_params.keys(), m2_params.keys()))
             return False
         for key in m1_params:
             p1 = m1_params[key]
             p2 = m2_params[key]
-            print("p1({0}) = {1}".format(key, p1.read_value()))
-            print("p2({0}) = {1}".format(key, p2.read_value()))
             if not np.allclose(p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance):
                 return False
         return True
