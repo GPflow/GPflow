@@ -496,7 +496,6 @@ create_exp_quadrature_kernels = [
 
 
 @pytest.mark.parametrize('create_kernel', create_exp_quadrature_kernels)
-@session_context()
 def test_exp_quadrature_diag(create_kernel):
     Xmu = DataExpQuadrature.Xmu
     Xcov = DataExpQuadrature.Xcov[0, :, :, :]
