@@ -119,6 +119,21 @@ class Minibatch(DataHolder):
     Minibatch is shape agnostic at zero axe. Once you created a minibatch you can
     vary size of the dataset, but feature shapes must be fixed.
 
+    CAVEAT: Minibatch is not auto-initializable. It means that whenever you switch
+    to another session, autoflow methods and optimizers will not be able to
+    intialize TensorFlow dataset iterator. You have to call `intialize` method
+    for Minibatch explicitly. Simple cases are not affected though.
+
+    ```
+    with tf.Session() as session1:
+        mini = gpflow.Minibatch(data)
+
+    with tf.Session() as session2:
+        # mini.read_value(session=session2) # <<< fails.
+        mini.initialize(session=session2)
+        mini.read_value(session=session2) # <<< works fine.
+    ```
+
     :param value: Numpy array.
     :param batch_size: Size of the batches.
     :param shuffle: If `True` then input data will be shuffled before batching.
