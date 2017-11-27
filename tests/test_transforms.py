@@ -214,7 +214,7 @@ class TestDiagMatrixTransform(GPflowTestCase):
     def test_forward_backward(self):
         free_1d = np.random.randn(8)
         fwd1d = self.t1.forward(free_1d)
-        assert_allclose(fwd1d.shape, np.array([8, 1, 1]))
+        assert_allclose(fwd1d.shape, np.array([len(free_1d), self.t1.dim, self.t1.dim]))
         assert_allclose(free_1d, self.t1.backward(fwd1d))
 
         size2d = 5
