@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#  pylint: skip-file
+# pylint: skip-file
 
 from setuptools import setup
 from setuptools import find_packages

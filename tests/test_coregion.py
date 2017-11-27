@@ -72,27 +72,22 @@ class TestEquivalence(GPflowTestCase):
             num_latent=2)
         return vgp0, vgp1, cvgp, Xtest
 
-    def setUp(self):
-        if hasattr(self, '_optimized'):
-            return
-
-        self.test_graph = tf.Graph()
-        with self.test_context():
-            vgp0, vgp1, cvgp, Xtest = self.prepare()
-            opt1 = gpflow.train.ScipyOptimizer()
-            opt2 = gpflow.train.ScipyOptimizer()
-            opt3 = gpflow.train.ScipyOptimizer()
-            opt1.minimize(vgp0, maxiter=300)
-            opt2.minimize(vgp1, maxiter=300)
-            opt3.minimize(cvgp, maxiter=300)
-            self.Xtest = Xtest
-            self.vgp0 = vgp0
-            self.vgp1 = vgp1
-            self.cvgp = cvgp
-            self._optimized = True
+    def setup(self):
+        vgp0, vgp1, cvgp, Xtest = self.prepare()
+        opt1 = gpflow.train.ScipyOptimizer()
+        opt2 = gpflow.train.ScipyOptimizer()
+        opt3 = gpflow.train.ScipyOptimizer()
+        opt1.minimize(vgp0, maxiter=50)
+        opt2.minimize(vgp1, maxiter=50)
+        opt3.minimize(cvgp, maxiter=50)
+        self.Xtest = Xtest
+        self.vgp0 = vgp0
+        self.vgp1 = vgp1
+        self.cvgp = cvgp
 
     def test_likelihood_variance(self):
         with self.test_context():
+            self.setup()
             assert_allclose(self.vgp0.likelihood.variance.read_value(),
                             self.cvgp.likelihood.likelihood_list[0].variance.read_value(),
                             atol=1e-2)
@@ -102,6 +97,7 @@ class TestEquivalence(GPflowTestCase):
 
     def test_kernel_variance(self):
         with self.test_context():
+            self.setup()
             assert_allclose(self.vgp0.kern.variance.read_value(),
                             self.cvgp.kern.coregion.kappa.read_value()[0],
                             atol=1.0e-2)
@@ -111,6 +107,7 @@ class TestEquivalence(GPflowTestCase):
 
     def test_mean_values(self):
         with self.test_context():
+            self.setup()
             assert_allclose(self.vgp0.mean_function.c.read_value(),
                             self.cvgp.mean_function.meanfunction_list[0].c.read_value(),
                             atol=1.0e-2)
@@ -120,6 +117,7 @@ class TestEquivalence(GPflowTestCase):
 
     def test_predicts(self):
         with self.test_context():
+            self.setup()
             X_augumented0 = np.hstack([self.Xtest, np.zeros((self.Xtest.shape[0], 1))])
             X_augumented1 = np.hstack([self.Xtest, np.ones((self.Xtest.shape[0], 1))])
             Ytest = [np.sin(x) + 0.9 * np.cos(x*1.6) for x in self.Xtest]
@@ -129,10 +127,10 @@ class TestEquivalence(GPflowTestCase):
             # check predict_f
             pred_f0 = self.vgp0.predict_f(self.Xtest)
             pred_fc0 = self.cvgp.predict_f(X_augumented0)
-            self.assertTrue(np.allclose(pred_f0, pred_fc0, atol=1.0e-2))
+            assert_allclose(pred_f0, pred_fc0, atol=1.0e-2)
             pred_f1 = self.vgp1.predict_f(self.Xtest)
             pred_fc1 = self.cvgp.predict_f(X_augumented1)
-            self.assertTrue(np.allclose(pred_f1, pred_fc1, atol=1.0e-2))
+            assert_allclose(pred_f1, pred_fc1, atol=1.0e-2)
 
             # check predict y
             pred_y0 = self.vgp0.predict_y(self.Xtest)

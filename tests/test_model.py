@@ -180,12 +180,18 @@ class TestMinibatchSVGP(GPflowTestCase):
             X = np.random.randn(1000, 1)
             Y = X.copy()
             Z = X[:100, :].copy()
-            m = EvalDataSVGP(X, Y, gpflow.kernels.RBF(1), gpflow.likelihoods.Gaussian(), minibatch_size=10, Z=Z)
+            size = 10
+            m = EvalDataSVGP(X, Y, gpflow.kernels.RBF(1),
+                             gpflow.likelihoods.Gaussian(),
+                             minibatch_size=size, Z=Z)
 
+            eX_prev, eY_prev = np.random.randn(size, 1), np.random.randn(size, 1)
             for _ in range(10):
-                eX, eY = m.XY(initialize=True)
-                self.assertTrue(np.all(eX == eY))
-
+                eX, eY = m.XY()
+                assert not np.allclose(eX, eX_prev)
+                assert not np.allclose(eY, eY_prev)
+                assert np.allclose(eX, eY)
+                eX_prev, eY_prev = eX, eY
 
 # class TestNoRecompileThroughNewModelInstance(GPflowTestCase):
 #     """ Regression tests for Bug #454 """
