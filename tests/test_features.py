@@ -21,13 +21,13 @@ from gpflow.test_util import GPflowTestCase
 
 class TestInducingPoints(GPflowTestCase):
     def test_feature_len(self):
-        with self.test_context() as session:
+        with self.test_context():
             N, D = 17, 3
             Z = np.random.randn(N, D)
             f = gpflow.features.InducingPoints(Z)
 
             self.assertTrue(len(f), N)
-            with gpflow.decors.params_as_tensors_for(f):
+            with gpflow.params_as_tensors_for(f):
                 self.assertTrue(len(f), N)
                 # GPflow does not support re-assignment with different shapes at the moment
 
@@ -37,8 +37,10 @@ class TestInducingPoints(GPflowTestCase):
             Z = np.random.randn(101, 3)
             f = gpflow.features.InducingPoints(Z)
 
-            kernels = [gpflow.kernels.RBF(3, 0.46, lengthscales=np.array([0.143, 1.84, 2.0]), ARD=True),
-                       gpflow.kernels.PeriodicKernel(3, 0.4, 1.8)]
+            kernels = [
+                gpflow.kernels.RBF(3, 0.46, lengthscales=np.array([0.143, 1.84, 2.0]), ARD=True),
+                gpflow.kernels.PeriodicKernel(3, 0.4, 1.8)
+            ]
 
             for k in kernels:
                 self.assertTrue(np.allclose(session.run(f.Kuu(k)), k.compute_K_symm(Z)))

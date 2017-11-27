@@ -65,7 +65,6 @@ class TestProfiling(GPflowTestCase):
         directory = s.profiling.output_directory
         filename = s.profiling.output_file_name + '.json'
         expected_file = os.path.join(directory, filename)
-        print(expected_file)
         self.assertTrue(os.path.exists(expected_file))
         os.remove(expected_file)
 

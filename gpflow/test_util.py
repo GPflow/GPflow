@@ -17,6 +17,28 @@ import contextlib
 import tensorflow as tf
 
 
+class session_context(contextlib.ContextDecorator):
+    def __init__(self, graph=None, close_on_exit=True, **kwargs):
+        self.graph = graph
+        self.close_on_exit = close_on_exit
+        self.session = None
+        self.session_args = kwargs
+
+    def __enter__(self):
+        graph = tf.Graph() if self.graph is None else self.graph
+        session = tf.Session(graph=graph, **self.session_args)
+        self.session = session
+        session.__enter__()
+        return session
+
+    def __exit__(self, *exc):
+        session = self.session
+        session.__exit__(*exc)
+        if self.close_on_exit:
+            session.close()
+        return False
+
+
 class GPflowTestCase(tf.test.TestCase):
     """
     Wrapper for TensorFlow TestCase to avoid massive duplication of resetting

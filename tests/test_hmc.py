@@ -100,10 +100,6 @@ class SampleGaussianTest(GPflowTestCase):
             x = samples.iloc[-1][0]
             self.assertEqual(samples.shape, (10, 1))
             self.assertEqual(x.shape, (3,))
-            print(x)
-            print(x0)
-            print(samples.iloc[0])
-            print(samples)
             self.assertFalse(np.all(x == x0))
 
     def test_columns_names(self):

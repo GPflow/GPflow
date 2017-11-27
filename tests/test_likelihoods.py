@@ -22,6 +22,8 @@ import gpflow
 from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
+import pytest
+
 
 class LikelihoodSetup(object):
     def __init__(self, likelihood, Y, tolerance):
@@ -337,72 +339,73 @@ class TestSwitchedLikelihood(GPflowTestCase):
             self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
 
 
-class TestLikelihoodChecks(GPflowTestCase):
-    def setUp(self):
-        self.test_graph = tf.Graph()
+def _run_models(create_likelihood, Y):
+    likelihood = create_likelihood()
+    X = np.random.randn(Y.shape[0], 1)
+    Xnew = np.random.randn(Y.shape[0], 1)
+    _m0 = gpflow.models.GPR(X, Y, gpflow.kernels.RBF(1))
+    _m1 = gpflow.models.VGP(X, Y, gpflow.kernels.RBF(1), likelihood)
+    _m2 = gpflow.models.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
 
-    def run_models(self, likelihood, Y):
-        X = np.random.randn(Y.shape[0], 1)
-        Xnew = np.random.randn(Y.shape[0], 1)
-        m0 = gpflow.models.GPR(X, Y, gpflow.kernels.RBF(1))
-        m1 = gpflow.models.VGP(X, Y, gpflow.kernels.RBF(1), likelihood)
-        m2 = gpflow.models.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
 
-    def test_likelihood_checks(self):
-        with self.test_context():
-            to_pass = [
-                [gpflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1)],
-                [gpflow.likelihoods.Poisson(), np.array((1., 1., 3.)).reshape(3, 1)],
-                [gpflow.likelihoods.Exponential(), np.array((1e-12, 1)).reshape(2, 1)],
-                [gpflow.likelihoods.StudentT(), np.array((-1e-12, 1)).reshape(2, 1)],
-                [gpflow.likelihoods.Bernoulli(), np.array((0., 1.)).reshape(2, 1)],
-                [gpflow.likelihoods.Bernoulli(), np.array((-1., 1.)).reshape(2, 1)],
-                [gpflow.likelihoods.Gamma(), np.array((1e-12, 1)).reshape(2, 1)],
-                [gpflow.likelihoods.Beta(), np.array((1e-12, 1.)).reshape(2, 1)],
-                [gpflow.likelihoods.MultiClass(3), np.array((0., 2.)).reshape(2, 1)],
-                [gpflow.likelihoods.Ordinal(np.array((1., 2.))), np.array((0., 2.)).reshape(2, 1)],
+likelihood_data_to_pass = [
+    (gpflow.likelihoods.Gaussian, np.array((1.)).reshape(1, 1)),
+    (gpflow.likelihoods.Poisson, np.array((1., 1., 3.)).reshape(3, 1)),
+    (gpflow.likelihoods.Exponential, np.array((1e-12, 1)).reshape(2, 1)),
+    (gpflow.likelihoods.StudentT, np.array((-1e-12, 1)).reshape(2, 1)),
+    (gpflow.likelihoods.Bernoulli, np.array((0., 1.)).reshape(2, 1)),
+    (gpflow.likelihoods.Bernoulli, np.array((-1., 1.)).reshape(2, 1)),
+    (gpflow.likelihoods.Gamma, np.array((1e-12, 1)).reshape(2, 1)),
+    (gpflow.likelihoods.Beta, np.array((1e-12, 1.)).reshape(2, 1)),
+    (lambda: gpflow.likelihoods.MultiClass(3), np.array((0., 2.)).reshape(2, 1)),
+    (lambda: gpflow.likelihoods.Ordinal(np.array((1., 2.))), np.array((0., 2.)).reshape(2, 1)),
 
-                # Failed before GPflow-1.0
-                [gpflow.likelihoods.Exponential(), np.array((-1e-12, 1)).reshape(2, 1)],
-                [gpflow.likelihoods.Poisson(), np.array((1.1)).reshape(1, 1)],
-                [gpflow.likelihoods.Poisson(), np.array((-1.)).reshape(1, 1)],
-                [gpflow.likelihoods.Gamma(), np.array((-1e-12, 1)).reshape(2, 1)],
-                [gpflow.likelihoods.Beta(), np.array((-1e-12, 1.)).reshape(2, 1)],
-                [gpflow.likelihoods.Beta(), np.array((1e-12, 1.1)).reshape(2, 1)],
-                [gpflow.likelihoods.MultiClass(3), np.array((0.1, 2.)).reshape(2, 1)],
-                [gpflow.likelihoods.MultiClass(3), np.array((1., 3.)).reshape(2, 1)],
+    # Failed before GPflow-1.0
+    (gpflow.likelihoods.Exponential, np.array((-1e-12, 1)).reshape(2, 1)),
+    (gpflow.likelihoods.Poisson, np.array((1.1)).reshape(1, 1)),
+    (gpflow.likelihoods.Poisson, np.array((-1.)).reshape(1, 1)),
+    (gpflow.likelihoods.Gamma, np.array((-1e-12, 1)).reshape(2, 1)),
+    (gpflow.likelihoods.Beta, np.array((-1e-12, 1.)).reshape(2, 1)),
+    (gpflow.likelihoods.Beta, np.array((1e-12, 1.1)).reshape(2, 1)),
+    (lambda: gpflow.likelihoods.MultiClass(3), np.array((0.1, 2.)).reshape(2, 1)),
+    (lambda: gpflow.likelihoods.MultiClass(3), np.array((1., 3.)).reshape(2, 1)),
 
-                # Special case of switched likelihood
-                [gpflow.likelihoods.SwitchedLikelihood(
-                    [gpflow.likelihoods.Gamma(), gpflow.likelihoods.Gaussian()]),
-                    np.array(((0, 1), (0, 1), (2, 0.))).reshape(3, 2)],
-                # Failed before GPflow-1.0
-                [gpflow.likelihoods.SwitchedLikelihood(
-                    [gpflow.likelihoods.Gamma(), gpflow.likelihoods.Gaussian()]),
-                    np.array(((0, 1), (0, 1), (2, 3.))).reshape(3, 2)],
+    # Special case of switched likelihood
+    (lambda: gpflow.likelihoods.SwitchedLikelihood([
+        gpflow.likelihoods.Gamma(), gpflow.likelihoods.Gaussian()]),
+     np.array(((0, 1), (0, 1), (2, 0.))).reshape(3, 2)),
 
-                # Raised warning before GPflow-1.0
-                [gpflow.likelihoods.Bernoulli(), np.array((2., 1., 0.)).reshape(3, 1)],
-                [gpflow.likelihoods.Bernoulli(), np.array((2., 1.1)).reshape(2, 1)],
+    # Failed before GPflow-1.0
+    (lambda: gpflow.likelihoods.SwitchedLikelihood([
+        gpflow.likelihoods.Gamma(), gpflow.likelihoods.Gaussian()]),
+     np.array(((0, 1), (0, 1), (2, 3.))).reshape(3, 2)),
 
-                # Raised error before GPflow-1.0
-                [gpflow.likelihoods.Gaussian(), np.array((1.)).reshape(1, 1, 1)],
-            ]
+    # Raised warning before GPflow-1.0
+    (gpflow.likelihoods.Bernoulli, np.array((2., 1., 0.)).reshape(3, 1)),
+    (gpflow.likelihoods.Bernoulli, np.array((2., 1.1)).reshape(2, 1)),
 
-            to_fail = [
-                [gpflow.likelihoods.Gaussian(), np.array((1)).reshape(1, 1)],
-                [gpflow.likelihoods.MultiClass(3), np.array((1., 2.)).reshape(1, 2)],
-            ]
+    # Raised error before GPflow-1.0
+    (gpflow.likelihoods.Gaussian, np.array((1.)).reshape(1, 1, 1)),
+]
 
-        for l, v in to_pass:
-            with self.test_context():
-                print(l, v)
-                self.run_models(l, v)
 
-        for l, v, in to_fail:
-            with self.test_context():
-                with self.assertRaises(Exception):
-                    self.run_models(l, v)
+likelihood_data_to_fail = [
+    (gpflow.likelihoods.Gaussian, np.array((1)).reshape(1, 1)),
+    (lambda: gpflow.likelihoods.MultiClass(3), np.array((1., 2.)).reshape(1, 2)),
+]
+
+
+@pytest.mark.parametrize('likelihood,ys', likelihood_data_to_pass)
+def test_likelihood_checks_pass(likelihood, ys):
+    with tf.Session(graph=tf.Graph()):
+        _run_models(likelihood, ys)
+
+
+@pytest.mark.parametrize('likelihood,ys', likelihood_data_to_fail)
+def test_likelihood_checks_fail(likelihood, ys):
+    with tf.Session(graph=tf.Graph()):
+        with pytest.raises(Exception):
+            _run_models(likelihood, ys)
 
 
 if __name__ == "__main__":

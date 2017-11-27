@@ -60,13 +60,14 @@ class OptimizerCase:
     # pylint: disable=E1101,E1102
 
     def test_different_sessions(self):
-        with self.test_context():
+        with self.test_context() as session:
             demo = Demo()
 
         # Force initialization.
         with self.test_context() as session1:
             gpflow.reset_default_session()
             opt = self.optimizer()
+            demo.initialize(session1, force=True)
             opt.minimize(demo, maxiter=1)
 
         # Mild initialization requirement: default changed session case.
@@ -74,12 +75,12 @@ class OptimizerCase:
             self.assertFalse(session1 == session2)
             gpflow.reset_default_session()
             opt = self.optimizer()
-            opt.minimize(demo, maxiter=1, initialize=False)
+            opt.minimize(demo, maxiter=1, initialize=True)
 
         # Mild initialization requirement: pass session case.
         with self.test_context() as session3:
             opt = self.optimizer()
-            opt.minimize(demo, maxiter=1, session=session3, initialize=False)
+            opt.minimize(demo, maxiter=1, session=session3, initialize=True)
 
     def test_optimizer_with_var_list(self):
         with self.test_context():
@@ -91,6 +92,7 @@ class OptimizerCase:
 
         with self.test_context() as session:
             opt = self.optimizer()
+            demo.initialize(session)
 
             # No var list variables and empty feed_dict
             opt.minimize(demo, maxiter=1, initialize=False, anchor=False)
