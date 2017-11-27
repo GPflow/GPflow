@@ -18,7 +18,8 @@ exec(open("gpflow/_version.py").read())
 requirements = [
     'numpy>=1.10.0',
     'scipy>=0.18.0',
-    'pandas>=0.18.1'
+    'pandas>=0.18.1',
+    'parameterized',
 ]
 
 min_tf_version = '1.4.0'
@@ -52,7 +53,7 @@ setup(name='gpflow',
       url="http://github.com/GPflow/GPflow",
       packages=packages,
       install_requires=requirements,
-      tests_require=['pytest'],
+      tests_require=['pytest', 'parameterized'],
       package_data=package_data,
       include_package_data=True,
       test_suite='tests',
