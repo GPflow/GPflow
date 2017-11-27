@@ -71,6 +71,18 @@ class Linear(MeanFunction):
     def __call__(self, X):
         return tf.matmul(X, self.A) + self.b
 
+class Identity(Linear):
+    """
+    y_i = x_i
+    """
+    def __init__(self, input_dim=1, output_dim=1):
+        A = np.ones((input_dim, output_dim))
+        b = np.zeros(output_dim)
+        super(Identity, self).__init__(A, b)
+        # TODO: should we set A and b as consts?
+        self.A.set_trainable(False)
+        self.b.set_trainable(False)
+
 
 class Constant(MeanFunction):
     """
