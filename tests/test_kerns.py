@@ -17,6 +17,7 @@ import tensorflow as tf
 import numpy as np
 from numpy.testing import assert_allclose
 
+import copy
 import gpflow
 from gpflow.test_util import GPflowTestCase
 
@@ -352,43 +353,46 @@ class TestSlice(GPflowTestCase):
     with correctly sliced data...
     """
 
-    def setUp(self):
-        self.test_graph = tf.Graph()
-        with self.test_context():
-            kernels = [gpflow.kernels.Constant,
-                       gpflow.kernels.Linear,
-                       gpflow.kernels.Polynomial]
-            kernels += gpflow.kernels.Stationary.__subclasses__()
-            self.kernels = []
-            kernname = lambda cls, index: '_'.join([cls.__name__, str(index)])
-            for kernclass in kernels:
-                k1 = kernclass(1, active_dims=[0], name=kernname(kernclass, 1))
-                k2 = kernclass(1, active_dims=[1], name=kernname(kernclass, 2))
-                k3 = kernclass(1, active_dims=slice(0, 1), name=kernname(kernclass, 3))
-                self.kernels.append([k1, k2, k3])
+    def kernels(self):
+        ks = [gpflow.kernels.Constant,
+              gpflow.kernels.Linear,
+              gpflow.kernels.Polynomial]
+        ks += gpflow.kernels.Stationary.__subclasses__()
+        kernels = []
+        kernname = lambda cls, index: '_'.join([cls.__name__, str(index)])
+        for kernclass in ks:
+            kern = copy.deepcopy(kernclass)
+            k1 = lambda: kern(1, active_dims=[0], name=kernname(kern, 1))
+            k2 = lambda: kern(1, active_dims=[1], name=kernname(kern, 2))
+            k3 = lambda: kern(1, active_dims=slice(0, 1), name=kernname(kern, 3))
+            kernels.append([k1, k2, k3])
+        return kernels
 
     def test_symm(self):
-        for k1, k2, k3 in self.kernels:
-            with self.test_context() as session:
+        for k1, k2, k3 in self.kernels():
+            with self.test_context(graph=tf.Graph()):
+                print(k1, k2, k3)
                 rng = np.random.RandomState(0)
                 X = rng.randn(20, 2)
-                K1 = k1.compute_K_symm(X)
-                K2 = k2.compute_K_symm(X)
-                K3 = k3.compute_K_symm(X[:, :1])
-                K4 = k3.compute_K_symm(X[:, 1:])
+                k1i, k2i, k3i = k1(), k2(), k3()
+                K1 = k1i.compute_K_symm(X)
+                K2 = k2i.compute_K_symm(X)
+                K3 = k3i.compute_K_symm(X[:, :1])
+                K4 = k3i.compute_K_symm(X[:, 1:])
                 self.assertTrue(np.allclose(K1, K3))
                 self.assertTrue(np.allclose(K2, K4))
 
     def test_asymm(self):
-        for k1, k2, k3 in self.kernels:
-            with self.test_context():
+        for k1, k2, k3 in self.kernels():
+            with self.test_context(graph=tf.Graph()):
                 rng = np.random.RandomState(0)
                 X = rng.randn(20, 2)
                 Z = rng.randn(10, 2)
-                K1 = k1.compute_K(X, Z)
-                K2 = k2.compute_K(X, Z)
-                K3 = k3.compute_K(X[:, :1], Z[:, :1])
-                K4 = k3.compute_K(X[:, 1:], Z[:, 1:])
+                k1i, k2i, k3i = k1(), k2(), k3()
+                K1 = k1i.compute_K(X, Z)
+                K2 = k2i.compute_K(X, Z)
+                K3 = k3i.compute_K(X[:, :1], Z[:, :1])
+                K4 = k3i.compute_K(X[:, 1:], Z[:, 1:])
                 self.assertTrue(np.allclose(K1, K3))
                 self.assertTrue(np.allclose(K2, K4))
 

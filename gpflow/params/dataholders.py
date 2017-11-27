@@ -76,13 +76,17 @@ class DataHolder(Parameter):
         self._reset_name()
         self._initial_value_tensor = None
         self._dataholder_tensor = None
+        self._is_initialized_tensor = None
 
     def _build(self):
-        self._dataholder_tensor = self._build_parameter()  # pylint: disable=W0201
+        tensor = self._build_parameter()
+        self._dataholder_tensor = tensor
+        self._is_initialized_tensor = tf.is_variable_initialized(tensor)
 
     def _init_parameter_defaults(self):
         self._initial_value_tensor = None
         self._dataholder_tensor = None
+        self._is_initialized_tensor = None
 
     def _init_parameter_attributes(self, _prior, _transform, _trainable):
         pass
@@ -114,6 +118,21 @@ class Minibatch(DataHolder):
 
     Minibatch is shape agnostic at zero axe. Once you created a minibatch you can
     vary size of the dataset, but feature shapes must be fixed.
+
+    CAVEAT: Minibatch is not auto-initializable. It means that whenever you switch
+    to another session, autoflow methods and optimizers will not be able to
+    intialize TensorFlow dataset iterator. You have to call `intialize` method
+    for Minibatch explicitly. Simple cases are not affected though.
+
+    ```
+    with tf.Session() as session1:
+        mini = gpflow.Minibatch(data)
+
+    with tf.Session() as session2:
+        # mini.read_value(session=session2) # <<< fails.
+        mini.initialize(session=session2)
+        mini.read_value(session=session2) # <<< works fine.
+    ```
 
     :param value: Numpy array.
     :param batch_size: Size of the batches.

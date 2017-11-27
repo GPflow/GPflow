@@ -73,31 +73,6 @@ def is_valid_param_value(value):
             or is_tensor(value))
 
 
-def initialize_variables(variables=None, session=None, force=False, **run_kwargs):
-    session = tf.get_default_session() if session is None else session
-    if variables is None:
-        initializer = tf.global_variables_initializer()
-    else:
-        if force:
-            initializer = tf.variables_initializer(variables)
-        else:
-            uninitialized = tf.report_uninitialized_variables(var_list=variables)
-            def uninitialized_names():
-                for uv in session.run(uninitialized):
-                    yield uv.decode('utf-8')
-                    # if isinstance(uv, bytes):
-                    #     yield uv.decode('utf-8')
-                    # elif isinstance(uv, str):
-                    #     yield uv
-                    # else:
-                    #     msg = 'Unknown output type "{}" from `tf.report_uninitialized_variables`'
-                    #     raise ValueError(msg.format(type(uv)))
-            names = set(uninitialized_names())
-            vars_for_init = [v for v in variables if v.name.split(':')[0] in names]
-            initializer = tf.variables_initializer(vars_for_init)
-    session.run(initializer, **run_kwargs)
-
-
 def is_tensor_trainable(tensor):
     return tensor in tensor.graph.get_collection(__TRAINABLES)
 
@@ -176,6 +151,64 @@ def vec_to_tri(vectors, N):
         return tf.scatter_nd(indices=indices, shape=[N, N], updates=vector)
 
     return tf.map_fn(vec_to_tri_vector, vectors)
+
+
+def initialize_variables(variables=None, session=None, force=False, **run_kwargs):
+    session = tf.get_default_session() if session is None else session
+    if variables is None:
+        initializer = tf.global_variables_initializer()
+    else:
+        if force:
+            vars_for_init = list(_initializable_tensors(variables))
+        else:
+            vars_for_init = list(_find_initializable_tensors(variables, session))
+        if not vars_for_init:
+            return
+        initializer = tf.variables_initializer(vars_for_init)
+    session.run(initializer, **run_kwargs)
+
+
+def _initializable_tensors(initializables):
+    for v in initializables:
+        if isinstance(v, (tuple, list)):
+            yield v[0]
+        else:
+            yield v
+
+
+def _find_initializable_tensors(intializables, session):
+    for_reports = []
+    status_tensors = []
+    boolean_tensors = []
+
+    for v in intializables:
+        if isinstance(v, (tuple, list)):
+            status_tensors.append(v[0])
+            boolean_tensors.append(v[1])
+        # TODO(@awav): Tensorflow Iterator must have to be skipped at
+        # auto-intialization unless TensorFlow issue #14633 is resolved.
+        elif isinstance(v, tf.data.Iterator):
+            continue
+        else:
+            for_reports.append(v)
+
+    if for_reports:
+        uninitialized = tf.report_uninitialized_variables(var_list=for_reports)
+        def uninitialized_names():
+            for uv in session.run(uninitialized):
+                yield uv.decode('utf-8')
+
+        names = set(uninitialized_names())
+        for v in for_reports:
+            if v.name.split(':')[0] in names:
+                yield v
+
+    if boolean_tensors:
+        stats = session.run(boolean_tensors)
+        length = len(stats)
+        for i in range(length):
+            if not stats[i]:
+                yield status_tensors[i]
 
 
 def _get_graph(graph=None):
