@@ -37,6 +37,7 @@ from . import models
 from . import test_util
 from . import training as train
 from . import features
+from . import expectations
 
 from .decors import autoflow
 from .decors import defer_build

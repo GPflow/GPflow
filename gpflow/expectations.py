@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from multipledispatch import dispatch
 
-from . import kernels, mean_functions, GPflowError, settings
+from . import kernels, mean_functions, settings
 from .features import InducingFeature, InducingPoints
 from .quadrature import mvnquad
 from .decors import params_as_tensors_for
@@ -40,8 +40,8 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
         raise NotImplementedError()
 
 
-@dispatch(object, (InducingFeature, type(None)), object, (InducingFeature, type(None)), Gaussian)
-def expectation(obj1, feature1, obj2, feature2, p):
+@dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+def expectation(p, obj1, feature1, obj2, feature2):
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -54,8 +54,28 @@ def expectation(obj1, feature1, obj2, feature2, p):
         return mvnquad(eval_func, p.mu, p.cov, 20)
 
 
-@dispatch(kernels.RBF, type(None), type(None), type(None), Gaussian)
-def expectation(kern, none1, none2, none3, p):
+@dispatch(ProbabilityDistribution, type(None), type(None), type(None), type(None))
+def expectation(p, none1, none2, none3, none4):
+    """
+    It computes the expectation:
+    <1>_p(x)
+
+    :return: N
+    """
+    return tf.ones((p.mu.shape[0],), settings.tf_float)
+
+@dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kern, InducingFeature)
+def expectation(p, mean, none, kern, feat):
+    """
+    It computes the expectation:
+    <m(x) K_{x, Z}>_p(x), where
+
+    :return: NxQxM
+    """
+    return tf.matrix_transpose(expectation(p, kern, feat, mean, None))
+
+@dispatch(Gaussian, kernels.RBF, type(None), type(None), type(None))
+def expectation(p, kern, none1, none2, none3):
     """
     It computes the expectation:
     <K_{x, x}>_p(x), where
@@ -67,8 +87,8 @@ def expectation(kern, none1, none2, none3, p):
     with params_as_tensors_for(p):
         return kern.Kdiag(p.mu)
 
-@dispatch(kernels.RBF, InducingPoints, type(None), type(None), Gaussian)
-def expectation(kern, feat, none1, none2, p):
+@dispatch(Gaussian, kernels.RBF, InducingPoints, type(None), type(None))
+def expectation(p, kern, feat, none1, none2):
     """
     It computes the expectation:
     <K_{x, Z}>_p(x), where
@@ -101,25 +121,12 @@ def expectation(kern, feat, none1, none2, p):
 
         return kern.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
 
-# Identity mean - RBF kernel
-@dispatch(mean_functions.Identity, type(None), kernels.RBF, InducingPoints, Gaussian)
-def expectation(identity_mean, none, rbf_kern, feat, p):
-    """
-    It computes the expectation:
-    <m(x) K_{x, Z}>_p(x), where
-        - m(x) = x :: identity mean function
-        - K(.,.)   :: RBF kernel
-
-    :return: NxQxM
-    """
-    return tf.matrix_transpose(expectation(rbf_kern, feat, identity_mean, None, p))
-
 # RBF kernel - Identity mean
-@dispatch(kernels.RBF, InducingPoints, mean_functions.Identity, type(None), Gaussian)
-def expectation(rbf_kern, feat, identity_mean, none, p):
+@dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
+def expectation(p, rbf_kern, feat, identity_mean, none):
     """
     It computes the expectation:
-    <m(x) K_{x, Z}>_p(x), where
+    <K_{x, Z} m(x)>_p(x), where
         - m(x) = x :: identity mean function
         - K(.,.)   :: RBF kernel
 
@@ -161,25 +168,13 @@ def expectation(rbf_kern, feat, identity_mean, none, p):
         return (rbf_kern.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1))
                 * tf.expand_dims(tf.exp(-0.5 * q), 2))
 
-# Linear mean - RBF kernel
-@dispatch(mean_functions.Linear, type(None), kernels.RBF, InducingPoints, Gaussian)
-def expectation(linear_mean, none, rbf_kern, feat, p):
-    """
-    It computes the expectation:
-    <m(x) K_{x, Z}>_p(x), where
-        - m(x_i) = A x_i + b :: Linear mean function
-        - K(.,.)             :: RBF kernel
-
-    :return: NxQxM
-    """
-    return tf.matrix_transpose(expectation(rbf_kern, feat, linear_mean, None, p))
 
 # RBF kernel - Linear mean
-@dispatch(kernels.RBF, InducingPoints, mean_functions.Linear, type(None), Gaussian)
-def expectation(rbf_kern, feat, linear_mean, none, p):
+@dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Linear, type(None))
+def expectation(p, rbf_kern, feat, linear_mean, none):
     """
     It computes the expectation:
-    <m(x) K_{x, Z}>_p(x), where
+    <K_{x, Z} m(x)>_p(x), where
         - m(x_i) = A x_i + b :: Linear mean function
         - K(.,.)             :: RBF kernel
 
@@ -187,8 +182,8 @@ def expectation(rbf_kern, feat, linear_mean, none, p):
     """
     with params_as_tensors_for(linear_mean):
 
-        exKxz = expectation(rbf_kern, feat, mean_functions.Identity(), None, p)
-        eKxz = expectation(rbf_kern, feat, None, None, p)
+        exKxz = expectation(p, rbf_kern, feat, mean_functions.Identity(), None)
+        eKxz = expectation(p, rbf_kern, feat, None, None)
 
         eAxKxz = tf.reduce_sum(exKxz[:, :, None, :]
                                * tf.transpose(linear_mean.A)[None, None, :, :], axis=3)
@@ -198,8 +193,8 @@ def expectation(rbf_kern, feat, linear_mean, none, p):
 
 # RBF - RBF
 # TODO implement for two different RBF kernels
-@dispatch(kernels.RBF, InducingPoints, kernels.RBF, InducingPoints, Gaussian)
-def expectation(kern1, feat1, kern2, feat2, p):
+@dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
+def expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
     <Ka_{Z, x} Kb_{x, Z}>_p(x), where
