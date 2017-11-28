@@ -1,243 +1,223 @@
-import gpflow
+from collections import namedtuple
+
 import tensorflow as tf
+
 import numpy as np
-import unittest
+from numpy.testing import assert_almost_equal
 
-from gpflow.test_util import GPflowTestCase
+import pytest
+
+import gpflow
 from gpflow import settings
-from gpflow.conditionals import conditional, uncertain_conditional, feature_conditional
+from gpflow.conditionals import uncertain_conditional
+from gpflow.conditionals import feature_conditional
 from gpflow.quadrature import mvnquad
+from gpflow.test_util import session_context
 
-float_type = settings.dtypes.float_type
 
 class MomentMatchingSVGP(gpflow.models.SVGP):
-
-    @gpflow.decors.params_as_tensors
-    @gpflow.decors.autoflow((float_type, [None, None]), (float_type, [None, None, None]))
+    @gpflow.params_as_tensors
+    @gpflow.autoflow((settings.np_float, [None, None]),
+                     (settings.np_float, [None, None, None]))
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
-        return uncertain_conditional(Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
-                                     whiten=self.whiten, full_cov_output=self.full_cov_output)
+        return uncertain_conditional(
+            Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
+            whiten=self.whiten, full_cov_output=self.full_cov_output)
 
-    def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=1000000):
+    def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=int(1e6)):
         rng = np.random.RandomState(0)
         D_in = Xchol.shape[0]
-        X_samples = Xmu + np.reshape(Xchol[None, :, :] @ rng.randn(mc_iter, D_in)[:, :, None], [mc_iter, D_in])
+        X_samples = Xmu + np.reshape(
+            Xchol[None, :, :] @ rng.randn(mc_iter, D_in)[:, :, None], [mc_iter, D_in])
         F_mu, F_var = self.predict_f(X_samples)
         F_samples = F_mu + rng.randn(*F_var.shape) * (F_var ** 0.5)
         mean = np.mean(F_samples, axis=0)
         covar = np.cov(F_samples.T)
         return mean, covar
 
-class NoUncertaintyTest(GPflowTestCase):
-    N, N_new, D_out = 7, 2, 3
 
-    def setUp(self):
-        self.rng = np.random.RandomState(0)
-        self.X = np.linspace(-5, 5, self.N)[:, None] + self.rng.randn(self.N, 1)
-        self.Y = np.hstack([np.sin(self.X), np.cos(self.X), self.X**2])
-        self.Xnew_mu = self.rng.randn(self.N_new, 1)
-        self.Xnew_covar = np.zeros((self.N_new, 1, 1))
-
-    def test_whiten(self):
-        with self.test_context() as session:
-            k = gpflow.ekernels.RBF(1, variance=self.rng.rand())
-            model = MomentMatchingSVGP(self.X, self.Y, k, gpflow.likelihoods.Gaussian(), Z=self.X.copy(), whiten=True)
-            model.full_cov_output = False
-            gpflow.train.AdamOptimizer().minimize(model)
-
-            mean1, var1 = model.predict_f(self.Xnew_mu)
-            mean2, var2 = model.uncertain_predict_f_moment_matching(self.Xnew_mu, self.Xnew_covar)
-
-            np.testing.assert_allclose(mean1, mean2)
-            for n in range(self.N_new):
-                np.testing.assert_allclose(var1[n,:], var2[n,...])
-
-    def test_non_whiten(self):
-        with self.test_context() as session:
-            k = gpflow.ekernels.RBF(1, variance=self.rng.rand())
-            model = MomentMatchingSVGP(self.X, self.Y, k, gpflow.likelihoods.Gaussian(), Z=self.X.copy(), whiten=False)
-            model.full_cov_output = False
-            gpflow.train.AdamOptimizer().minimize(model)
-
-            mean1, var1 = model.predict_f(self.Xnew_mu)
-            mean2, var2 = model.uncertain_predict_f_moment_matching(self.Xnew_mu, self.Xnew_covar)
-
-            np.testing.assert_allclose(mean1, mean2)
-            for n in range(self.N_new):
-                np.testing.assert_allclose(var1[n,:], var2[n,...])
+def gen_L(rng, n, *shape):
+    return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
 
 
-
-class MonteCarloTest_1_Din(GPflowTestCase):
-    N, N_new, D_out = 7, 2, 3
-
-    def setUp(self):
-        self.rng = np.random.RandomState(0)
-        self.X = np.linspace(-5, 5, self.N)[:, None] + self.rng.randn(self.N, 1)
-        self.Y = np.hstack([np.sin(self.X), np.cos(self.X) * 2, self.X**2])
-        self.Xnew_mu = self.rng.randn(self.N_new, 1)
-        self.Xnew_covar = self.rng.rand(self.N_new, 1, 1)
-
-    def test_whiten(self):
-        with self.test_context() as session:
-            k = gpflow.ekernels.RBF(1, variance=self.rng.rand())
-            model = MomentMatchingSVGP(self.X, self.Y, k, gpflow.likelihoods.Gaussian(), Z=self.X.copy(), whiten=True)
-            model.full_cov_output = True
-            gpflow.train.AdamOptimizer().minimize(model)
-
-            mean1, var1 = model.uncertain_predict_f_moment_matching(self.Xnew_mu, self.Xnew_covar)
-            for n in range(self.N_new):
-                mean2, var2 = model.uncertain_predict_f_monte_carlo(self.Xnew_mu[n,...], self.Xnew_covar[n,...] ** 0.5)
-                np.testing.assert_almost_equal(mean1[n,...], mean2, decimal=3)
-                np.testing.assert_almost_equal(var1[n,...], var2, decimal=2)
-
-    def test_non_whiten(self):
-        with self.test_context() as session:
-            k = gpflow.ekernels.RBF(1, variance=self.rng.rand())
-            model = MomentMatchingSVGP(self.X, self.Y, k, gpflow.likelihoods.Gaussian(), Z=self.X.copy(), whiten=False)
-            model.full_cov_output = True
-            gpflow.train.AdamOptimizer().minimize(model)
-
-            mean1, var1 = model.uncertain_predict_f_moment_matching(self.Xnew_mu, self.Xnew_covar)
-
-            for n in range(self.N_new):
-                mean2, var2 = model.uncertain_predict_f_monte_carlo(self.Xnew_mu[n,...], self.Xnew_covar[n,...] ** 0.5)
-                np.testing.assert_almost_equal(mean1[n,...], mean2, decimal=3)
-                np.testing.assert_almost_equal(var1[n,...], var2, decimal=2)
+def gen_q_sqrt(rng, D_out, *shape):
+    q_sqrt = np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)])
+    return np.transpose(q_sqrt, [1, 2, 0])
 
 
-class MonteCarloTest_2_Din(GPflowTestCase):
-    N, N_new, D_in, D_out = 7, 5, 3, 4
-
-    def setUp(self):
-        self.rng = np.random.RandomState(0)
-        self.X = self.rng.randn(self.N, self.D_in)
-        self.Y = self.rng.randn(self.N, self.D_out)
-        self.Xnew_mu = self.rng.randn(self.N_new, self.D_in)
-        self.Xnew_covar, self.L = [], []
-        for _ in range(self.N_new):
-            L = np.tril(self.rng.randn(self.D_in, self.D_in))
-            self.L.append(L)
-            self.Xnew_covar.append(L @ L.T)
-        self.L = np.array(self.L)
-        self.Xnew_covar = np.array(self.Xnew_covar)
-
-    def test_whiten(self):
-        with self.test_context() as session:
-            k = gpflow.ekernels.RBF(self.D_in, variance=self.rng.rand())
-            model = MomentMatchingSVGP(self.X, self.Y, k, gpflow.likelihoods.Gaussian(), Z=self.X.copy(), whiten=True)
-            model.full_cov_output = True
-            gpflow.train.AdamOptimizer().minimize(model)
-
-            mean1, var1 = model.uncertain_predict_f_moment_matching(self.Xnew_mu, self.Xnew_covar)
-
-            for n in range(self.N_new):
-                mean2, var2 = model.uncertain_predict_f_monte_carlo(self.Xnew_mu[n,...], self.L[n,...])
-                np.testing.assert_almost_equal(mean1[n,...], mean2, decimal=3)
-                np.testing.assert_almost_equal(var1[n,...], var2, decimal=2)
-
-    def test_non_whiten(self):
-        with self.test_context() as session:
-            k = gpflow.ekernels.RBF(self.D_in, variance=self.rng.rand())
-            model = MomentMatchingSVGP(self.X, self.Y, k, gpflow.likelihoods.Gaussian(), Z=self.X.copy(), whiten=False)
-            model.full_cov_output = True
-            gpflow.train.AdamOptimizer().minimize(model)
-
-            mean1, var1 = model.uncertain_predict_f_moment_matching(self.Xnew_mu, self.Xnew_covar)
-
-            for n in range(self.N_new):
-                mean2, var2 = model.uncertain_predict_f_monte_carlo(self.Xnew_mu[n,...], self.L[n,...])
-                np.testing.assert_almost_equal(mean1[n,...], mean2, decimal=3)
-                np.testing.assert_almost_equal(var1[n,...], var2, decimal=2)
+class Data:
+    N = 7
+    N_new = 2
+    D_out = 3
+    rng = np.random.RandomState(0)
+    X = np.linspace(-5, 5, N)[:, None] + rng.randn(N, 1)
+    Y = np.hstack([np.sin(X), np.cos(X), X**2])
+    Xnew_mu = rng.randn(N_new, 1)
+    Xnew_covar = np.zeros((N_new, 1, 1))
 
 
-class QuadratureTest(GPflowTestCase):
+class DataMC1(Data):
+    Y = np.hstack([np.sin(Data.X), np.cos(Data.X) * 2, Data.X ** 2])
+
+
+class DataMC2(Data):
+    N = 7
+    N_new = 5
+    D_out = 4
+    D_in = 3
+
+    X = Data.rng.randn(N, D_in)
+    Y = Data.rng.randn(N, D_out)
+    Xnew_mu = Data.rng.randn(N_new, D_in)
+    L = gen_L(Data.rng, N_new, D_in, D_in)
+    Xnew_covar = np.array([l @ l.T for l in L])
+
+
+class DataQuadrature:
     num_data = 10
     num_ind = 10
-    D_in, D_out, H = 2, 3, 150
+    D_in = 2
+    D_out = 3
+    H = 150
+
     rng = np.random.RandomState(1)
 
-    def setup(self):
+    Xmu = rng.randn(num_data, D_in)
+    L = gen_L(rng, num_data, D_in, D_in)
+    Xvar = np.array([l @ l.T for l in L])
+    Z = rng.randn(num_ind, D_in)
+    q_mu = rng.randn(num_ind, D_out)
+    q_sqrt = gen_q_sqrt(rng, D_out, num_ind, num_ind)
 
-        # Numpy objects with random data
-        self.Xmu = self.rng.randn(self.num_data, self.D_in)
-        self.Xvar = []
-        for _ in range(self.num_data):
-            L = np.tril(self.rng.randn(self.D_in, self.D_in))
-            self.Xvar.append(L @ L.T)
-        self.Xvar = np.array(self.Xvar)
-        self.Z = self.rng.randn(self.num_ind, self.D_in)
-        self.q_mu = self.rng.randn(self.num_ind, self.D_out)
-        self.q_sqrt = np.array([np.tril(self.rng.randn(self.num_ind, self.num_ind)) for _ in range(self.D_out)])
-        self.q_sqrt = np.transpose(self.q_sqrt, [1, 2, 0])
+    @classmethod
+    def tensors(cls, white):
+        np_float = settings.np_float
+        Xmu = tf.placeholder(np_float, [cls.num_data, cls.D_in])
+        Xvar = tf.placeholder(np_float, [cls.num_data, cls.D_in, cls.D_in])
+        q_mu = tf.placeholder(np_float, [cls.num_ind, cls.D_out])
+        q_sqrt = tf.placeholder(np_float, [cls.num_ind, cls.num_ind, cls.D_out])
 
-        # Tensorflow placeholders
-        self.Xmu_tf = tf.placeholder(float_type, [self.num_data, self.D_in], name="Xmu")
-        self.Xvar_tf = tf.placeholder(float_type, [self.num_data, self.D_in, self.D_in], name="Xvar")
-        self.q_mu_tf = tf.placeholder(float_type, [self.num_ind, self.D_out], name="q_mu")
-        self.q_sqrt_tf = tf.placeholder(float_type, [self.num_ind, self.num_ind, self.D_out])
+        kern = gpflow.ekernels.RBF(cls.D_in)
+        feat = gpflow.features.InducingPoints(cls.Z)
 
-        self.kern = gpflow.ekernels.RBF(self.D_in)
-        self.feat = gpflow.features.InducingPoints(self.Z)
+        feed_dict = {
+            Xmu: cls.Xmu,
+            Xvar: cls.Xvar,
+            q_mu: cls.q_mu,
+            q_sqrt: cls.q_sqrt
+        }
 
-        self.feed_dict = \
-            {
-                self.Xmu_tf:self.Xmu,
-                self.Xvar_tf:self.Xvar,
-                self.q_mu_tf:self.q_mu,
-                self.q_sqrt_tf:self.q_sqrt
-            }
+        def mean_fn(X):
+            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            return mean
 
+        def var_fn(X):
+            _, var = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            return var
 
-    def test_whiten(self):
-        with self.test_context() as sess:
-            self.setup()
-            self.whiten = True
+        def mean_sq_fn(X):
+            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            return mean ** 2
 
-            mean_quad = mvnquad(self.mean_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
-            var_quad = mvnquad(self.var_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
-            mean_2_quad = mvnquad(self.mean_2_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
-            mean_analytic, var_analytic = uncertain_conditional(self.Xmu_tf, self.Xvar_tf, self.feat, self.kern,
-                                                self.q_mu_tf, self.q_sqrt_tf, full_cov_output=False, whiten=self.whiten)
+        Collection = namedtuple('QuadratureCollection',
+                                'Xmu,Xvar,q_mu,q_sqrt,'
+                                'kern,feat,feed_dict,mean_fn,'
+                                'var_fn,mean_sq_fn')
 
-            mean_quad, var_quad, mean_2_quad = sess.run([mean_quad, var_quad, mean_2_quad], feed_dict=self.feed_dict)
-            var_quad = var_quad + (mean_2_quad - mean_quad**2)
-            mean_analytic, var_analytic = sess.run([mean_analytic, var_analytic], feed_dict=self.feed_dict)
-
-            np.testing.assert_almost_equal(mean_quad, mean_analytic, decimal=6)
-            np.testing.assert_almost_equal(var_quad, var_analytic, decimal=6)
-
-
-    def test_non_whiten(self):
-        with self.test_context() as sess:
-            self.setup()
-            self.whiten = False
-
-            mean_quad = mvnquad(self.mean_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
-            var_quad = mvnquad(self.var_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
-            mean_2_quad = mvnquad(self.mean_2_func, self.Xmu_tf, self.Xvar_tf, self.H, self.D_in, (self.D_out,))
-            mean_analytic, var_analytic = uncertain_conditional(self.Xmu_tf, self.Xvar_tf, self.feat, self.kern,
-                                                self.q_mu_tf, self.q_sqrt_tf, full_cov_output=False, whiten=self.whiten)
-
-            mean_quad, var_quad, mean_2_quad = sess.run([mean_quad, var_quad, mean_2_quad], feed_dict=self.feed_dict)
-            var_quad = var_quad + (mean_2_quad - mean_quad**2)
-            mean_analytic, var_analytic = sess.run([mean_analytic, var_analytic], feed_dict=self.feed_dict)
-
-            np.testing.assert_almost_equal(mean_quad, mean_analytic, decimal=6)
-            np.testing.assert_almost_equal(var_quad, var_analytic, decimal=6)
+        return Collection(Xmu=Xmu,
+                          Xvar=Xvar,
+                          q_mu=q_mu,
+                          q_sqrt=q_sqrt,
+                          kern=kern,
+                          feat=feat,
+                          feed_dict=feed_dict,
+                          mean_fn=mean_fn,
+                          var_fn=var_fn,
+                          mean_sq_fn=mean_sq_fn)
 
 
-    def mean_func(self, X):
-        mean, _  = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, whiten=self.whiten)
-        return mean
+@pytest.mark.parametrize('white', [True, False])
+@session_context()
+def test_no_uncertainty(white):
+    k = gpflow.ekernels.RBF(1, variance=Data.rng.rand())
+    model = MomentMatchingSVGP(
+        Data.X, Data.Y, k, gpflow.likelihoods.Gaussian(),
+        Z=Data.X.copy(), whiten=white)
+    model.full_cov_output = False
+    gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
 
-    def var_func(self, X):
-        _, var = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, whiten=self.whiten)
-        return var
+    mean1, var1 = model.predict_f(Data.Xnew_mu)
+    mean2, var2 = model.uncertain_predict_f_moment_matching(Data.Xnew_mu, Data.Xnew_covar)
 
-    def mean_2_func(self, X):
-        mean, _  = feature_conditional(X, self.feat, self.kern, self.q_mu_tf, q_sqrt=self.q_sqrt_tf, whiten=self.whiten)
-        return mean**2
+    assert_almost_equal(mean1, mean2)
+    for n in range(Data.N_new):
+        assert_almost_equal(var1[n, :], var2[n, ...])
+
+
+@pytest.mark.parametrize('white', [True, False])
+@session_context()
+def test_monte_carlo_1_din(white):
+    k = gpflow.ekernels.RBF(1, variance=DataMC1.rng.rand())
+    model = MomentMatchingSVGP(
+        DataMC1.X, DataMC1.Y, k, gpflow.likelihoods.Gaussian(),
+        Z=DataMC1.X.copy(), whiten=white)
+    model.full_cov_output = True
+    gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
+
+    mean1, var1 = model.uncertain_predict_f_moment_matching(DataMC1.Xnew_mu, DataMC1.Xnew_covar)
+    for n in range(DataMC1.N_new):
+        mean2, var2 = model.uncertain_predict_f_monte_carlo(
+            DataMC1.Xnew_mu[n, ...],
+            DataMC1.Xnew_covar[n, ...] ** 0.5)
+        assert_almost_equal(mean1[n, ...], mean2, decimal=3)
+        assert_almost_equal(var1[n, ...], var2, decimal=2)
+
+
+@pytest.mark.parametrize('white', [True, False])
+@session_context()
+def test_monte_carlo_2_din(white):
+    k = gpflow.ekernels.RBF(DataMC2.D_in, variance=DataMC2.rng.rand())
+    model = MomentMatchingSVGP(
+        DataMC2.X, DataMC2.Y, k, gpflow.likelihoods.Gaussian(),
+        Z=DataMC2.X.copy(), whiten=white)
+    model.full_cov_output = True
+    gpflow.train.AdamOptimizer().minimize(model)
+
+    mean1, var1 = model.uncertain_predict_f_moment_matching(
+        DataMC2.Xnew_mu, DataMC2.Xnew_covar)
+
+    for n in range(DataMC2.N_new):
+        mean2, var2 = model.uncertain_predict_f_monte_carlo(
+            DataMC2.Xnew_mu[n, ...],
+            DataMC2.L[n, ...])
+        assert_almost_equal(mean1[n, ...], mean2, decimal=3)
+        assert_almost_equal(var1[n, ...], var2, decimal=2)
+
+
+@pytest.mark.parametrize('white', [True, False])
+def test_quadrature_whiten(white):
+    with session_context() as session:
+        c = DataQuadrature
+        d = c.tensors(white)
+        quad_args = d.Xmu, d.Xvar, c.H, c.D_in, (c.D_out,)
+        mean_quad = mvnquad(d.mean_fn, *quad_args)
+        var_quad = mvnquad(d.var_fn, *quad_args)
+        mean_sq_quad = mvnquad(d.mean_sq_fn, *quad_args)
+        mean_analytic, var_analytic = uncertain_conditional(
+            d.Xmu, d.Xvar, d.feat, d.kern,
+            d.q_mu, d.q_sqrt,
+            full_cov_output=False,
+            whiten=white)
+
+        mean_quad, var_quad, mean_sq_quad = session.run(
+            [mean_quad, var_quad, mean_sq_quad], feed_dict=d.feed_dict)
+        var_quad = var_quad + (mean_sq_quad - mean_quad**2)
+        mean_analytic, var_analytic = session.run(
+            [mean_analytic, var_analytic], feed_dict=d.feed_dict)
+
+        assert_almost_equal(mean_quad, mean_analytic, decimal=6)
+        assert_almost_equal(var_quad, var_analytic, decimal=6)
+
 
 if __name__ == "__main__":
-    unittest.main()
+    tf.test.main()
