@@ -11,7 +11,7 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 
 GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online user manual](http://gpflow.readthedocs.io/en/latest/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), for more discussion of the comparison see [this page](http://gpflow.readthedocs.io/en/latest/intro.html#what-s-the-difference-between-gpy-and-gpflow).
 
-GPflow uses [TensorFlow](http://www.tensorflow.org) for runnin computations, which allows fast execution on GPUs, and is implemented in Python 3.
+GPflow uses [TensorFlow](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and is implemented in Python 3.
 
 # Install
 
