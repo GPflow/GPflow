@@ -39,21 +39,9 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
     else:
         raise NotImplementedError()
 
-def quad_expectation(obj1, feature1, obj2, feature2, p):
-    if obj2 is None:
-        eval_func = lambda x: get_eval_func(obj1, feature1)(x)
-    elif obj1 is None:
-        eval_func = lambda x: get_eval_func(obj2, feature1)(x)
-    else:
-        eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
-                               get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
-
-    with params_as_tensors_for(p):
-        return mvnquad(eval_func, p.mu, p.cov, 150)
 
 @dispatch(object, (InducingFeature, type(None)), object, (InducingFeature, type(None)), Gaussian)
 def expectation(obj1, feature1, obj2, feature2, p):
-    print("MD Quad")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -66,29 +54,29 @@ def expectation(obj1, feature1, obj2, feature2, p):
         return mvnquad(eval_func, p.mu, p.cov, 20)
 
 
-# RBF Psi0
 @dispatch(kernels.RBF, type(None), type(None), type(None), Gaussian)
 def expectation(kern, none1, none2, none3, p):
     """
-    Also known as phi_0: <kern{x, x}>_{p(x)}.
+    It computes the expectation:
+    <K_{x, x}>_p(x), where
+        - K(.,.)   :: RBF kernel
+    This is expression is also known is Psi0
+
     :return: N
     """
-    print("MD RBF Psi0")
     with params_as_tensors_for(p):
         return kern.Kdiag(p.mu)
 
-# RBF Psi1
 @dispatch(kernels.RBF, InducingPoints, type(None), type(None), Gaussian)
 def expectation(kern, feat, none1, none2, p):
     """
-    Also known as phi_1: <kern{x, feat.Z}>_{p(x)}.
-    :paran kern: RBF
-    :param feat: InducingPoints
-    :param p: Gaussian
-    :return: NxM, with N = shape(p.mu)[0] and M = shape(feat.Z)[0]
-    """
-    print("MD RBF Psi1")
+    It computes the expectation:
+    <K_{x, Z}>_p(x), where
+        - K(.,.)   :: RBF kernel
+    This is expression is also known is Psi1
 
+    :return: NxM
+    """
     with params_as_tensors_for(feat), \
          params_as_tensors_for(kern), \
          params_as_tensors_for(p):
@@ -108,13 +96,22 @@ def expectation(kern, feat, none1, none2, p):
         q = tf.reduce_sum(Lvec ** 2, [1])
 
         chol_diags = tf.matrix_diag_part(chols)  # N x D
-        half_log_dets = tf.reduce_sum(tf.log(chol_diags), 1) - tf.reduce_sum(tf.log(lengthscales))  # N,
+        half_log_dets = (tf.reduce_sum(tf.log(chol_diags), 1)
+                         - tf.reduce_sum(tf.log(lengthscales)))  # N,
 
         return kern.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
 
 # Identity mean - RBF kernel
 @dispatch(mean_functions.Identity, type(None), kernels.RBF, InducingPoints, Gaussian)
 def expectation(identity_mean, none, rbf_kern, feat, p):
+    """
+    It computes the expectation:
+    <m(x) K_{x, Z}>_p(x), where
+        - m(x) = x :: identity mean function
+        - K(.,.)   :: RBF kernel
+
+    :return: NxQxM
+    """
     return tf.matrix_transpose(expectation(rbf_kern, feat, identity_mean, None, p))
 
 # RBF kernel - Identity mean
@@ -122,7 +119,10 @@ def expectation(identity_mean, none, rbf_kern, feat, p):
 def expectation(rbf_kern, feat, identity_mean, none, p):
     """
     It computes the expectation:
-    <x K_{x, Z}>_p_{x},
+    <m(x) K_{x, Z}>_p(x), where
+        - m(x) = x :: identity mean function
+        - K(.,.)   :: RBF kernel
+
     :return: NxMxQ
     """
     with params_as_tensors_for(feat), \
@@ -134,15 +134,18 @@ def expectation(rbf_kern, feat, identity_mean, none, p):
         Xcov = p.cov
 
         msg_input_shape = "Currently cannot handle slicing in exKxz."
-        assert_input_shape = tf.assert_equal(tf.shape(Xmu)[1], rbf_kern.input_dim, message=msg_input_shape)
-        assert_cov_shape = tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
+        assert_input_shape = tf.assert_equal(tf.shape(Xmu)[1],
+                                             rbf_kern.input_dim, message=msg_input_shape)
+        assert_cov_shape = tf.assert_equal(tf.shape(Xmu),
+                                           tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
         with tf.control_dependencies([assert_input_shape, assert_cov_shape]):
             Xmu = tf.identity(Xmu)
 
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
 
-        lengthscales = rbf_kern.lengthscales if rbf_kern.ARD else tf.zeros((D,), dtype=settings.np_float) + rbf_kern.lengthscales
+        lengthscales = rbf_kern.lengthscales if rbf_kern.ARD \
+                        else tf.zeros((D,), dtype=settings.np_float) + rbf_kern.lengthscales
         scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xcov  # NxDxD
 
         det = tf.matrix_determinant(
@@ -155,11 +158,20 @@ def expectation(rbf_kern, feat, identity_mean, none, p):
 
         addvec = tf.matmul(smIvec, Xcov, transpose_a=True) + tf.expand_dims(Xmu, 1)  # NxMxD
 
-        return rbf_kern.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
+        return (rbf_kern.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1))
+                * tf.expand_dims(tf.exp(-0.5 * q), 2))
 
 # Linear mean - RBF kernel
 @dispatch(mean_functions.Linear, type(None), kernels.RBF, InducingPoints, Gaussian)
 def expectation(linear_mean, none, rbf_kern, feat, p):
+    """
+    It computes the expectation:
+    <m(x) K_{x, Z}>_p(x), where
+        - m(x_i) = A x_i + b :: Linear mean function
+        - K(.,.)             :: RBF kernel
+
+    :return: NxQxM
+    """
     return tf.matrix_transpose(expectation(rbf_kern, feat, linear_mean, None, p))
 
 # RBF kernel - Linear mean
@@ -167,19 +179,19 @@ def expectation(linear_mean, none, rbf_kern, feat, p):
 def expectation(rbf_kern, feat, linear_mean, none, p):
     """
     It computes the expectation:
-    <m(x) K_{x, Z}>_p_{x}
-    m(x) = A x + b
+    <m(x) K_{x, Z}>_p(x), where
+        - m(x_i) = A x_i + b :: Linear mean function
+        - K(.,.)             :: RBF kernel
+
     :return: NxMxQ
     """
     with params_as_tensors_for(linear_mean):
 
-        D = linear_mean.A.shape[0].value
-        Q = linear_mean.A.shape[1].value
-
-        exKxz = expectation(rbf_kern, feat, mean_functions.Identity(D, Q), None, p)
+        exKxz = expectation(rbf_kern, feat, mean_functions.Identity(), None, p)
         eKxz = expectation(rbf_kern, feat, None, None, p)
 
-        eAxKxz = tf.reduce_sum(exKxz[:, :, None, :] * tf.transpose(linear_mean.A)[None, None, :, :], axis=3)
+        eAxKxz = tf.reduce_sum(exKxz[:, :, None, :]
+                               * tf.transpose(linear_mean.A)[None, None, :, :], axis=3)
         ebKxz = eKxz[..., None] * linear_mean.b[None, None, :]
         return eAxKxz + ebKxz
 
@@ -189,14 +201,15 @@ def expectation(rbf_kern, feat, linear_mean, none, p):
 @dispatch(kernels.RBF, InducingPoints, kernels.RBF, InducingPoints, Gaussian)
 def expectation(kern1, feat1, kern2, feat2, p):
     """
-    Also known as Phi_2.
-    :param Z: MxD
-    :param Xmu: X mean (NxD)
-    :param Xcov: X covariance matrices (NxDxD)
-    :return: NxMxM
-    """
-    print("MD RBF Psi2")
+    It computes the expectation:
+    <Ka_{Z, x} Kb_{x, Z}>_p(x), where
+        - Ka(.,.)  :: RBF kernel
+        - Kb(.,.)  :: RBF kernel
+    Ka and Kb can have different hyperparameters.
+    If Ka equals Kb this expression is also known as Psi2.
 
+    :return: N x Ma x Mb
+    """
     with params_as_tensors_for(kern1), \
          params_as_tensors_for(feat1), \
          params_as_tensors_for(kern2), \
@@ -209,10 +222,12 @@ def expectation(kern1, feat1, kern2, feat2, p):
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
-        lengthscales = kern1.lengthscales if kern1.ARD else tf.zeros((D,), dtype=settings.tf_float) + kern1.lengthscales
+        lengthscales = kern1.lengthscales if kern1.ARD \
+                        else tf.zeros((D,), dtype=settings.tf_float) + kern1.lengthscales
 
         Kmms = tf.sqrt(kern1.K(Z, presliced=True)) / kern1.variance ** 0.5
-        scalemat = tf.expand_dims(tf.eye(D, dtype=settings.tf_float), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
+        scalemat = (tf.expand_dims(tf.eye(D, dtype=settings.tf_float), 0)
+                    + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1]))  # NxDxD
         det = tf.matrix_determinant(scalemat)
 
         mat = Xcov + 0.5 * tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0)  # NxDxD
@@ -224,4 +239,5 @@ def expectation(kern1, feat1, kern2, feat2, p):
         smI_z = tf.reshape(ssmI_z, (N, D, M, M))  # NxDxMxM
         fs = tf.reduce_sum(tf.square(smI_z), [1])  # NxMxM
 
-        return kern1.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
+        return (kern1.variance**2 * tf.expand_dims(Kmms, 0)
+                * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1]))
