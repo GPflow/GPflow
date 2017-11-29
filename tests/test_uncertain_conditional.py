@@ -22,7 +22,7 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
         return uncertain_conditional(
             Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
-            white=self.white, full_cov_output=self.full_cov_output)
+            white=self.whiten, full_cov_output=self.full_cov_output)
 
     def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=int(1e6)):
         rng = np.random.RandomState(0)
@@ -142,7 +142,7 @@ def test_no_uncertainty(white):
     k = gpflow.ekernels.RBF(1, variance=Data.rng.rand())
     model = MomentMatchingSVGP(
         Data.X, Data.Y, k, gpflow.likelihoods.Gaussian(),
-        Z=Data.X.copy(), white=white)
+        Z=Data.X.copy(), whiten=white)
     model.full_cov_output = False
     gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
 
@@ -160,7 +160,7 @@ def test_monte_carlo_1_din(white):
     k = gpflow.ekernels.RBF(1, variance=DataMC1.rng.rand())
     model = MomentMatchingSVGP(
         DataMC1.X, DataMC1.Y, k, gpflow.likelihoods.Gaussian(),
-        Z=DataMC1.X.copy(), white=white)
+        Z=DataMC1.X.copy(), whiten=white)
     model.full_cov_output = True
     gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
 
@@ -179,7 +179,7 @@ def test_monte_carlo_2_din(white):
     k = gpflow.ekernels.RBF(DataMC2.D_in, variance=DataMC2.rng.rand())
     model = MomentMatchingSVGP(
         DataMC2.X, DataMC2.Y, k, gpflow.likelihoods.Gaussian(),
-        Z=DataMC2.X.copy(), white=white)
+        Z=DataMC2.X.copy(), whiten=white)
     model.full_cov_output = True
     gpflow.train.AdamOptimizer().minimize(model)
 
