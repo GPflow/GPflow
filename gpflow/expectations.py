@@ -11,16 +11,14 @@ from .decors import params_as_tensors_for
 from .params import Parameterized, Parameter
 
 
-class ProbabilityDistribution(Parameterized):
-    def __init__(self, name=None):
-        super(ProbabilityDistribution, self).__init__(name=name)
-
+class ProbabilityDistribution():
+    pass
 
 class Gaussian(ProbabilityDistribution):
-    def __init__(self, mu, cov, name=None):
-        super(Gaussian, self).__init__(name=name)
-        self.mu = Parameter(mu)  # N x D
-        self.cov = Parameter(cov)  # N x D x D
+    def __init__(self, mu, cov):
+        super(Gaussian, self).__init__()
+        self.mu = mu  # N x D
+        self.cov = cov  # N x D x D
 
 ## Generic case, quadrature method
 
@@ -42,7 +40,6 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def expectation(p, obj1, feature1, obj2, feature2, H=20):
-    print("QUAD")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -51,19 +48,8 @@ def expectation(p, obj1, feature1, obj2, feature2, H=20):
         eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
                                get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
 
-    with params_as_tensors_for(p):
-        return mvnquad(eval_func, p.mu, p.cov, H)
+    return mvnquad(eval_func, p.mu, p.cov, H)
 
-
-# @dispatch(ProbabilityDistribution, type(None), type(None), type(None), type(None))
-# def expectation(p, none1, none2, none3, none4):
-#     """
-#     It computes the expectation:
-#     <1>_p(x)
-
-#     :return: N
-#     """
-#     return tf.ones((p.mu.shape[0],), settings.tf_float)
 
 @dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kern, InducingFeature)
 def expectation(p, mean, none, kern, feat):
@@ -85,8 +71,7 @@ def expectation(p, kern, none1, none2, none3):
 
     :return: N
     """
-    with params_as_tensors_for(p):
-        return kern.Kdiag(p.mu)
+    return kern.Kdiag(p.mu)
 
 @dispatch(Gaussian, kernels.RBF, InducingPoints, type(None), type(None))
 def expectation(p, kern, feat, none1, none2):
@@ -99,8 +84,7 @@ def expectation(p, kern, feat, none1, none2):
     :return: NxM
     """
     with params_as_tensors_for(feat), \
-         params_as_tensors_for(kern), \
-         params_as_tensors_for(p):
+         params_as_tensors_for(kern):
 
         # use only active dimensions
         Xcov = kern._slice_cov(p.cov)
@@ -135,8 +119,7 @@ def expectation(p, rbf_kern, feat, identity_mean, none):
     """
     with params_as_tensors_for(feat), \
          params_as_tensors_for(rbf_kern), \
-         params_as_tensors_for(identity_mean), \
-         params_as_tensors_for(p):
+         params_as_tensors_for(identity_mean):
 
         Xmu = p.mu
         Xcov = p.cov
@@ -209,8 +192,7 @@ def expectation(p, kern1, feat1, kern2, feat2):
     with params_as_tensors_for(kern1), \
          params_as_tensors_for(feat1), \
          params_as_tensors_for(kern2), \
-         params_as_tensors_for(feat2), \
-         params_as_tensors_for(p):
+         params_as_tensors_for(feat2):
 
         # use only active dimensions
         Xcov = kern1._slice_cov(p.cov)
@@ -237,3 +219,59 @@ def expectation(p, kern1, feat1, kern2, feat2):
 
         return (kern1.variance**2 * tf.expand_dims(Kmms, 0)
                 * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1]))
+
+
+LINEAR_MEAN_FUNCTIONS = (mean_functions.Linear,
+                         mean_functions.Zero,
+                         mean_functions.Identity,
+                         mean_functions.Constant)
+
+
+@dispatch(Gaussian, LINEAR_MEAN_FUNCTIONS, type(None), type(None), type(None))
+def expectation(p, mean, none1, none2, none3):
+    return mean(p.mu)
+
+
+def _expectation_linear_linear(p, A1, b1, A2, b2):
+        e_xt_x = p.cov + (p.mu[:, :, None] * p.mu[:, None, :]) # N x D x D
+        e_A1t_xt_x_A2 = tf.einsum("iq,nij,jz->nqz", A1, e_xt_x, A2) # N x Q1 x Q2
+        e_A1t_xt_b2  = tf.einsum("iq,ni,z->nqz", A1, p.mu, b2) # N x Q1 x Q2
+        e_b1t_x_A2  = tf.einsum("q,ni,iz->nqz", b1, p.mu, A2) # N x Q1 x Q2
+        e_b1t_b2 = b1[:, None] * b2[None, :] # Q1 x Q2
+
+        return e_A1t_xt_x_A2 + e_A1t_xt_b2 + e_b1t_x_A2 + e_b1t_b2
+
+# TODO: the next 4 combinations could be avoided if `Identity` inherited from `Linear`,
+#       with A = eye and b = zeros. I did't found an elegant way to construct this
+#       during initalization :(.
+
+@dispatch(Gaussian, mean_functions.Identity, type(None), mean_functions.Identity, type(None))
+def expectation(p, mean1, none1, mean2, none2):
+    return p.cov + (p.mu[:, :, None] * p.mu[:, None, :])
+
+
+@dispatch(Gaussian, mean_functions.Linear, type(None), mean_functions.Identity, type(None))
+def expectation(p, lin_mean, none1, iden_mean, none2):
+    return tf.matrix_transpose(expectation(p, iden_mean, None, lin_mean, None))
+
+
+@dispatch(Gaussian, mean_functions.Identity, type(None), mean_functions.Linear, type(None))
+def expectation(p, iden_mean, none1, lin_mean, none2):
+    with params_as_tensors_for(lin_mean):
+        A1 = tf.eye(p.mu.shape[1].value, dtype=settings.tf_float)
+        b1 = tf.zeros(p.mu.shape[1].value, dtype=settings.tf_float)
+        return _expectation_linear_linear(p, A1, b1, lin_mean.A, lin_mean.b)
+
+
+@dispatch(Gaussian, mean_functions.Linear, type(None), mean_functions.Linear, type(None))
+def expectation(p, mean1, none1, mean2, none2):
+    with params_as_tensors_for(mean1), params_as_tensors_for(mean2):
+        return _expectation_linear_linear(p, mean1.A, mean1.b, mean2.A, mean2.b)
+
+
+@dispatch(Gaussian,
+          (mean_functions.Constant, mean_functions.Zero), type(None),
+          mean_functions.MeanFunction, type(None))
+def expectation(p, mean1, none1, mean2, none2):
+    e_mean2 = expectation(p, mean2, None, None, None)
+    return mean1(p.mu)[:, :, None] * e_mean2[:, None, :]
