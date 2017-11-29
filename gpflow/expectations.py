@@ -41,7 +41,8 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def expectation(p, obj1, feature1, obj2, feature2):
+def expectation(p, obj1, feature1, obj2, feature2, H=20):
+    print("QUAD")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -51,18 +52,18 @@ def expectation(p, obj1, feature1, obj2, feature2):
                                get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
 
     with params_as_tensors_for(p):
-        return mvnquad(eval_func, p.mu, p.cov, 20)
+        return mvnquad(eval_func, p.mu, p.cov, H)
 
 
-@dispatch(ProbabilityDistribution, type(None), type(None), type(None), type(None))
-def expectation(p, none1, none2, none3, none4):
-    """
-    It computes the expectation:
-    <1>_p(x)
+# @dispatch(ProbabilityDistribution, type(None), type(None), type(None), type(None))
+# def expectation(p, none1, none2, none3, none4):
+#     """
+#     It computes the expectation:
+#     <1>_p(x)
 
-    :return: N
-    """
-    return tf.ones((p.mu.shape[0],), settings.tf_float)
+#     :return: N
+#     """
+#     return tf.ones((p.mu.shape[0],), settings.tf_float)
 
 @dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kern, InducingFeature)
 def expectation(p, mean, none, kern, feat):

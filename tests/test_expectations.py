@@ -6,23 +6,10 @@ from itertools import product
 
 import gpflow
 from gpflow import settings, test_util
-from gpflow.quadrature import mvnquad
 from gpflow.expectations import expectation, Gaussian, get_eval_func
 from gpflow.kernels import RBF
 from gpflow.features import InducingPoints
 from gpflow.mean_functions import Linear, Identity
-
-def quad_expectation(p, obj1, feature1, obj2, feature2, H=150):
-    if obj2 is None:
-        eval_func = lambda x: get_eval_func(obj1, feature1)(x)
-    elif obj1 is None:
-        eval_func = lambda x: get_eval_func(obj2, feature1)(x)
-    else:
-        eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
-                               get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
-
-    with gpflow.decors.params_as_tensors_for(p):
-        return mvnquad(eval_func, p.mu, p.cov, H)
 
 def gen_L(rng, n, *shape):
     return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
@@ -54,7 +41,7 @@ class Data:
         mean_functions = [lin, iden]
 
 
-combinations = [
+filters = [
     lambda p, k1, k2, f1, f2, m1, m2: (p, k1, None, None, None),
     lambda p, k1, k2, f1, f2, m1, m2: (p, k1, f1, None, None),
     lambda p, k1, k2, f1, f2, m1, m2: (p, k1, f1, k2, f2),
@@ -63,6 +50,8 @@ combinations = [
     ]
 
 
+quad_implementation = expectation.dispatch(Gaussian, object, type(None), object, type(None))
+
 @pytest.mark.parametrize("p", Data.distributions)
 @pytest.mark.parametrize("kern1", Data.kernels)
 @pytest.mark.parametrize("feat1", Data.features)
@@ -70,15 +59,22 @@ combinations = [
 @pytest.mark.parametrize("feat2", Data.features)
 @pytest.mark.parametrize("mean1", Data.mean_functions)
 @pytest.mark.parametrize("mean2", Data.mean_functions)
-@pytest.mark.parametrize("comb", combinations)
-def test_kern(p, kern1, kern2, feat1, feat2, mean1, mean2, comb):
-    with test_util.session_context() as sess:
-        params = comb(p, kern1, kern2, feat1, feat2, mean1, mean2)
-        _ = [obj.compile() for obj in params if obj is not None]
+@pytest.mark.parametrize("filter", filters)
+def test_kern(p, kern1, kern2, feat1, feat2, mean1, mean2, filter):
+    params = filter(p, kern1, kern2, feat1, feat2, mean1, mean2)
 
-        analytic= expectation(*params)
-        quad = quad_expectation(*params)
+    implementation = expectation.dispatch(*map(type, params))
+    if implementation == quad_implementation:
+        # Don't evaluate if both implementations are doing quadrature
+        return
+
+    with test_util.session_context() as sess:
+        _ = [obj.compile() for obj in params if obj is not None]
+        analytic = implementation(*params)
+        quad = quad_implementation(*params, H=100)
         analytic, quad = sess.run([analytic, quad])
         np.testing.assert_almost_equal(quad, analytic)
 
         _ = [obj.clear() for obj in params if obj is not None]
+
+
