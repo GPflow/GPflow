@@ -32,20 +32,18 @@ class Data:
     with test_util.session_context(graph) as sess:
         gauss = Gaussian(tf.constant(Xmu), tf.constant(Xvar))
 
-    distributions = [gauss]
-
     with gpflow.decors.defer_build():
         ip = InducingPoints(Z)
         rbf = RBF(D_in, variance=rng.rand(), lengthscales=rng.rand())
-        rbf2 = RBF(D_in, variance=rng.rand(), lengthscales=rng.rand())
         lin = Linear(rng.rand(D_in, D_out), rng.rand(D_out))
         iden = Identity()
         zero = Zero(output_dim=D_out)
         const = Constant(rng.rand(D_out))
 
-        features = [ip]
-        kernels = [rbf]
-        mean_functions = [lin, iden, zero, const]
+    distributions = [gauss]
+    features = [ip]
+    kernels = [rbf]
+    mean_functions = [lin, iden, zero, const]
 
 filters = [
     lambda p, k1, k2, f1, f2, m1, m2: (p, k1, None, None, None),
@@ -61,19 +59,19 @@ quad_implementation = expectation.dispatch(Gaussian,
                                            object, type(None))
 
 @pytest.mark.parametrize("p", Data.distributions)
-@pytest.mark.parametrize("kern1", Data.kernels)
-@pytest.mark.parametrize("feat1", Data.features)
-@pytest.mark.parametrize("kern2", Data.kernels)
-@pytest.mark.parametrize("feat2", Data.features)
+@pytest.mark.parametrize("kern", Data.kernels)
+@pytest.mark.parametrize("feat", Data.features)
 @pytest.mark.parametrize("mean1", Data.mean_functions)
 @pytest.mark.parametrize("mean2", Data.mean_functions)
-@pytest.mark.parametrize("filter", filters)
-def test_kern(p, kern1, kern2, feat1, feat2, mean1, mean2, filter):
-    params = filter(p, kern1, kern1, feat1, feat1, mean1, mean2)
+@pytest.mark.parametrize("arg_filter", filters)
+def test_kern(p, kern, feat, mean1, mean2, arg_filter):
+    params = arg_filter(p, kern, kern, feat, feat, mean1, mean2)
 
     implementation = expectation.dispatch(*map(type, params))
     if implementation == quad_implementation:
-        # Don't evaluate if both implementations are doing quadrature
+        # Don't evaluate if both implementations are doing quadrature.
+        # This means that there is no analytic implementation available
+        # for the particular combination of parameters.
         return
 
     with test_util.session_context(Data.graph) as sess:

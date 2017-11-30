@@ -17,12 +17,13 @@ from gpflow.test_util import session_context
 
 class MomentMatchingSVGP(gpflow.models.SVGP):
     @gpflow.params_as_tensors
-    @gpflow.autoflow((settings.np_float, [None, None]),
-                     (settings.np_float, [None, None, None]))
+    # @gpflow.autoflow((settings.np_float, [None, None]),
+    #                  (settings.np_float, [None, None, None]))
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
         return uncertain_conditional(
-            Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
-            whiten=self.whiten, full_cov_output=self.full_cov_output)
+                Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
+                mean_function=self.mean_function, whiten=self.whiten,
+                full_cov_output=self.full_cov_output)
 
     def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=int(1e6)):
         rng = np.random.RandomState(0)
@@ -45,10 +46,23 @@ def gen_q_sqrt(rng, D_out, *shape):
     return np.transpose(q_sqrt, [1, 2, 0])
 
 
+def mean_function_factory(rng, mean_function_name, D_in, D_out):
+    if mean_function_name == "Zero":
+        return gpflow.mean_functions.Zero(output_dim=D_out)
+    if mean_function_name == "Constant":
+        return gpflow.mean_functions.Constant(c=rng.rand(D_out))
+    elif mean_function_name == "Linear":
+        return gpflow.mean_functions.Linear(
+                A=rng.rand(D_in, D_out), b=rng.rand(D_out))
+    else:
+        assert False
+
+
 class Data:
     N = 7
     N_new = 2
     D_out = 3
+    D_in = 1
     rng = np.random.RandomState(0)
     X = np.linspace(-5, 5, N)[:, None] + rng.randn(N, 1)
     Y = np.hstack([np.sin(X), np.cos(X), X**2])
@@ -136,66 +150,81 @@ class DataQuadrature:
                           mean_sq_fn=mean_sq_fn)
 
 
-@pytest.mark.parametrize('white', [True, False])
-@session_context()
-def test_no_uncertainty(white):
-    k = gpflow.ekernels.RBF(1, variance=Data.rng.rand())
-    model = MomentMatchingSVGP(
-        Data.X, Data.Y, k, gpflow.likelihoods.Gaussian(),
-        Z=Data.X.copy(), whiten=white)
-    model.full_cov_output = False
-    gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
-
-    mean1, var1 = model.predict_f(Data.Xnew_mu)
-    mean2, var2 = model.uncertain_predict_f_moment_matching(Data.Xnew_mu, Data.Xnew_covar)
-
-    assert_almost_equal(mean1, mean2)
-    for n in range(Data.N_new):
-        assert_almost_equal(var1[n, :], var2[n, ...])
+MEANS = ["Zero", "Constant", "Linear"]
 
 
 @pytest.mark.parametrize('white', [True, False])
-@session_context()
-def test_monte_carlo_1_din(white):
-    k = gpflow.ekernels.RBF(1, variance=DataMC1.rng.rand())
-    model = MomentMatchingSVGP(
-        DataMC1.X, DataMC1.Y, k, gpflow.likelihoods.Gaussian(),
-        Z=DataMC1.X.copy(), whiten=white)
-    model.full_cov_output = True
-    gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
+@pytest.mark.parametrize('mean', MEANS)
+def test_no_uncertainty(white, mean):
+    with session_context() as sess:
+        m = mean_function_factory(Data.rng, mean, Data.D_in, Data.D_out)
+        k = gpflow.ekernels.RBF(1, variance=Data.rng.rand())
+        model = MomentMatchingSVGP(
+            Data.X, Data.Y, k, gpflow.likelihoods.Gaussian(),
+            mean_function=m, Z=Data.X.copy(), whiten=white)
+        model.full_cov_output = False
+        gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
 
-    mean1, var1 = model.uncertain_predict_f_moment_matching(DataMC1.Xnew_mu, DataMC1.Xnew_covar)
-    for n in range(DataMC1.N_new):
-        mean2, var2 = model.uncertain_predict_f_monte_carlo(
-            DataMC1.Xnew_mu[n, ...],
-            DataMC1.Xnew_covar[n, ...] ** 0.5)
-        assert_almost_equal(mean1[n, ...], mean2, decimal=3)
-        assert_almost_equal(var1[n, ...], var2, decimal=2)
+        mean1, var1 = model.predict_f(Data.Xnew_mu)
+        pred_mm = model.uncertain_predict_f_moment_matching(
+                            tf.constant(Data.Xnew_mu), tf.constant(Data.Xnew_covar))
+        mean2, var2 = sess.run(pred_mm)
 
-
-@pytest.mark.parametrize('white', [True, False])
-@session_context()
-def test_monte_carlo_2_din(white):
-    k = gpflow.ekernels.RBF(DataMC2.D_in, variance=DataMC2.rng.rand())
-    model = MomentMatchingSVGP(
-        DataMC2.X, DataMC2.Y, k, gpflow.likelihoods.Gaussian(),
-        Z=DataMC2.X.copy(), whiten=white)
-    model.full_cov_output = True
-    gpflow.train.AdamOptimizer().minimize(model)
-
-    mean1, var1 = model.uncertain_predict_f_moment_matching(
-        DataMC2.Xnew_mu, DataMC2.Xnew_covar)
-
-    for n in range(DataMC2.N_new):
-        mean2, var2 = model.uncertain_predict_f_monte_carlo(
-            DataMC2.Xnew_mu[n, ...],
-            DataMC2.L[n, ...])
-        assert_almost_equal(mean1[n, ...], mean2, decimal=3)
-        assert_almost_equal(var1[n, ...], var2, decimal=2)
+        assert_almost_equal(mean1, mean2)
+        for n in range(Data.N_new):
+            assert_almost_equal(var1[n, :], var2[n, ...])
 
 
 @pytest.mark.parametrize('white', [True, False])
-def test_quadrature_whiten(white):
+@pytest.mark.parametrize('mean', MEANS)
+def test_monte_carlo_1_din(white, mean):
+    with session_context() as sess:
+        k = gpflow.ekernels.RBF(1, variance=DataMC1.rng.rand())
+        m = mean_function_factory(DataMC1.rng, mean, DataMC1.D_in, DataMC1.D_out)
+        model = MomentMatchingSVGP(
+            DataMC1.X, DataMC1.Y, k, gpflow.likelihoods.Gaussian(),
+            mean_function=m, Z=DataMC1.X.copy(), whiten=white)
+        model.full_cov_output = False
+        gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
+
+        pred_mm = model.uncertain_predict_f_moment_matching(
+                            tf.constant(DataMC1.Xnew_mu), tf.constant(DataMC1.Xnew_covar))
+        mean1, var1 = sess.run(pred_mm)
+
+        for n in range(DataMC1.N_new):
+            mean2, var2 = model.uncertain_predict_f_monte_carlo(
+                DataMC1.Xnew_mu[n, ...],
+                DataMC1.Xnew_covar[n, ...] ** 0.5)
+            assert_almost_equal(mean1[n, ...], mean2, decimal=3)
+            assert_almost_equal(var1[n, ...], np.diag(var2), decimal=2)
+
+
+@pytest.mark.parametrize('white', [True, False])
+@pytest.mark.parametrize('mean', MEANS)
+def test_monte_carlo_2_din(white, mean):
+    with session_context() as sess:
+        k = gpflow.ekernels.RBF(DataMC2.D_in, variance=DataMC2.rng.rand())
+        m = mean_function_factory(DataMC2.rng, mean, DataMC2.D_in, DataMC2.D_out)
+        model = MomentMatchingSVGP(
+            DataMC2.X, DataMC2.Y, k, gpflow.likelihoods.Gaussian(),
+            mean_function=m, Z=DataMC2.X.copy(), whiten=white)
+        model.full_cov_output = False
+        gpflow.train.AdamOptimizer().minimize(model)
+
+        pred_mm = model.uncertain_predict_f_moment_matching(
+                            tf.constant(DataMC2.Xnew_mu), tf.constant(DataMC2.Xnew_covar))
+        mean1, var1 = sess.run(pred_mm)
+
+        for n in range(DataMC2.N_new):
+            mean2, var2 = model.uncertain_predict_f_monte_carlo(
+                DataMC2.Xnew_mu[n, ...],
+                DataMC2.L[n, ...])
+            assert_almost_equal(mean1[n, ...], mean2, decimal=2)
+            assert_almost_equal(var1[n, ...], np.diag(var2), decimal=2)
+
+
+@pytest.mark.parametrize('white', [True, False])
+def test_quadrature(white):
     with session_context() as session:
         c = DataQuadrature
         d = c.tensors(white)

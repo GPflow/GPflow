@@ -50,7 +50,9 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
     Din = ((means.shape[1] if type(means.shape) is tuple else means.shape[1].value) if Din is None
            else Din)
     if Din is None:
-        raise GPflowError("If `Din` is passed as `None`, `means` must have a known shape.")
+        raise GPflowError("If `Din` is passed as `None`, `means` must have a known shape. "
+                          "Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
+                          "is problematic. Consider using your own session.")
 
     xn, wn = mvhermgauss(H, Din)
     N = tf.shape(means)[0]
@@ -67,7 +69,8 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
             else Dout)
     if any([d is None for d in Dout]):
         raise GPflowError("If `Dout` is passed as `None`, the output of `func` must have known "
-                          "shape.")
+                          "shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
+                          "is problematic. Consider using your own session.")
     fX = tf.reshape(fevals, (H ** Din, N,) + Dout)
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
                     (-1,) + (1,) * (1 + len(Dout)))

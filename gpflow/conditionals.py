@@ -162,6 +162,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     pXnew = Gaussian(Xnew_mu, Xnew_var)
 
     num_data = tf.shape(Xnew_mu)[0]  # number of new inputs (N)
+    num_ind = tf.shape(q_mu)[0]  # number of inducing points (M)
     num_func = tf.shape(q_mu)[1]  # output dimension (D)
 
     q_sqrt_r = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
@@ -176,13 +177,19 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
         q_sqrt_r = tf.matrix_triangular_solve(Luu_tiled, q_sqrt_r, lower=True)
 
     Li_eKuf = tf.matrix_triangular_solve(Luu, eKuf, lower=True)  # M x N
-    fmean = tf.matmul(Li_eKuf, q_mu, transpose_a=True)
+    fmean = tf.matmul(Li_eKuf, q_mu, transpose_a=True) + expectation(pXnew, mean_function, None, None, None)
 
     eKff = expectation(pXnew, kern, None, None, None) # N (psi0)
     eKuffu = expectation(pXnew, kern, feat, kern, feat) # N x M x M (psi2)
     Luu_tiled = tf.tile(Luu[None, :, :], [num_data, 1, 1])  # remove this line, once issue 216 is fixed
     Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(eKuffu), lower=True)
     Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(Li_eKuffu_Lit), lower=True)  # N x M x M
+
+    Li_q_mu = tf.matrix_triangular_solve(tf.matrix_transpose(Luu), q_mu, lower=False) # M x D
+    e_mean_mean = expectation(pXnew, mean_function, None, mean_function, None) # N x D x D
+    e_mean_Kuf = expectation(pXnew, mean_function, None, kern, feat) # N x D x M
+    e_mean_Kuf = tf.reshape(e_mean_Kuf, [num_data, num_func, num_ind])
+    e_mean_fmean = 2 * tf.einsum("nqm,mz->nqz", e_mean_Kuf, Li_q_mu) # N x D x D
 
     cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True)  # D x M x M
 
@@ -193,14 +200,16 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
             # tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit, cov))) +
             tf.einsum("ig,nij,jh->ngh", q_mu, Li_eKuffu_Lit, q_mu) -
             # tf.matmul(q_mu, tf.matmul(Li_eKuffu_Lit, q_mu), transpose_a=True) -
-            tf.matmul(fmean[:, :, None], fmean[:, :, None], transpose_b=True)
+            fmean[:, :, None] * fmean[:, None, :] +
+            e_mean_fmean + e_mean_mean
         )
     else:
         fvar = (
             (eKff - tf.trace(Li_eKuffu_Lit))[:, None] +
             tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov) +
             tf.einsum("ig,nij,jg->ng", q_mu, Li_eKuffu_Lit, q_mu) -
-            fmean ** 2
+            fmean ** 2 +
+            tf.matrix_diag_part(e_mean_fmean + e_mean_mean)
         )
 
     return fmean, fvar

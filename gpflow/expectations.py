@@ -11,14 +11,22 @@ from .decors import params_as_tensors_for
 from .params import Parameterized, Parameter
 
 
+LINEAR_MEAN_FUNCTIONS = (mean_functions.Linear,
+                         mean_functions.Zero,
+                         mean_functions.Identity,
+                         mean_functions.Constant)
+
+
 class ProbabilityDistribution():
     pass
+
 
 class Gaussian(ProbabilityDistribution):
     def __init__(self, mu, cov):
         super(Gaussian, self).__init__()
         self.mu = mu  # N x D
         self.cov = cov  # N x D x D
+
 
 ## Generic case, quadrature method
 
@@ -40,6 +48,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def expectation(p, obj1, feature1, obj2, feature2, H=20):
+    print("Quad")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -59,7 +68,9 @@ def expectation(p, mean, none, kern, feat):
 
     :return: NxQxM
     """
+    print("Expectation: Mean - Kern")
     return tf.matrix_transpose(expectation(p, kern, feat, mean, None))
+
 
 @dispatch(Gaussian, kernels.RBF, type(None), type(None), type(None))
 def expectation(p, kern, none1, none2, none3):
@@ -72,6 +83,7 @@ def expectation(p, kern, none1, none2, none3):
     :return: N
     """
     return kern.Kdiag(p.mu)
+
 
 @dispatch(Gaussian, kernels.RBF, InducingPoints, type(None), type(None))
 def expectation(p, kern, feat, none1, none2):
@@ -105,6 +117,7 @@ def expectation(p, kern, feat, none1, none2):
                          - tf.reduce_sum(tf.log(lengthscales)))  # N,
 
         return kern.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
+
 
 # RBF kernel - Identity mean
 @dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
@@ -175,6 +188,25 @@ def expectation(p, rbf_kern, feat, linear_mean, none):
         return eAxKxz + ebKxz
 
 
+# RBF kernel - Constant or Zero mean
+@dispatch(Gaussian, kernels.RBF, InducingPoints,
+          (mean_functions.Zero, mean_functions.Constant), type(None))
+def expectation(p, rbf_kern, feat, constant_mean, none):
+    """
+    It computes the expectation:
+    <K_{x, Z} m(x)>_p(x), where
+        - m(x_i) = A x_i + b :: Constant or Zero function
+        - K(.,.)             :: RBF kernel
+
+    :return: NxMxQ
+    """
+    with params_as_tensors_for(constant_mean):
+        c = constant_mean(p.mu) # N x Q
+        eKxz = expectation(p, rbf_kern, feat, None, None) # N x M
+
+        return eKxz[:, :, None] * c[:, None, :]
+
+
 # RBF - RBF
 # TODO implement for two different RBF kernels
 @dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
@@ -221,12 +253,6 @@ def expectation(p, kern1, feat1, kern2, feat2):
                 * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1]))
 
 
-LINEAR_MEAN_FUNCTIONS = (mean_functions.Linear,
-                         mean_functions.Zero,
-                         mean_functions.Identity,
-                         mean_functions.Constant)
-
-
 @dispatch(Gaussian, LINEAR_MEAN_FUNCTIONS, type(None), type(None), type(None))
 def expectation(p, mean, none1, none2, none3):
     return mean(p.mu)
@@ -242,8 +268,7 @@ def _expectation_linear_linear(p, A1, b1, A2, b2):
         return e_A1t_xt_x_A2 + e_A1t_xt_b2 + e_b1t_x_A2 + e_b1t_b2
 
 # TODO: the next 4 combinations could be avoided if `Identity` inherited from `Linear`,
-#       with A = eye and b = zeros. I did't found an elegant way to construct this
-#       during initalization :(.
+#       with A = eye and b = zeros. I did't found an elegant way to code this up though :(
 
 @dispatch(Gaussian, mean_functions.Identity, type(None), mean_functions.Identity, type(None))
 def expectation(p, mean1, none1, mean2, none2):
