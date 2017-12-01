@@ -49,13 +49,13 @@ def gen_q_sqrt(rng, D_out, *shape):
 def mean_function_factory(rng, mean_function_name, D_in, D_out):
     if mean_function_name == "Zero":
         return gpflow.mean_functions.Zero(output_dim=D_out)
-    if mean_function_name == "Constant":
+    elif mean_function_name == "Constant":
         return gpflow.mean_functions.Constant(c=rng.rand(D_out))
     elif mean_function_name == "Linear":
         return gpflow.mean_functions.Linear(
                 A=rng.rand(D_in, D_out), b=rng.rand(D_out))
     else:
-        assert False
+        return None
 
 
 class Data:
@@ -63,7 +63,7 @@ class Data:
     N_new = 2
     D_out = 3
     D_in = 1
-    rng = np.random.RandomState(0)
+    rng = np.random.RandomState(1)
     X = np.linspace(-5, 5, N)[:, None] + rng.randn(N, 1)
     Y = np.hstack([np.sin(X), np.cos(X), X**2])
     Xnew_mu = rng.randn(N_new, 1)
@@ -71,17 +71,17 @@ class Data:
 
 
 class DataMC1(Data):
-    Y = np.hstack([np.sin(Data.X), np.cos(Data.X) * 2, Data.X ** 2])
+    Y = np.hstack([np.sin(Data.X), np.sin(Data.X) * 2, Data.X ** 2])
 
 
 class DataMC2(Data):
     N = 7
     N_new = 5
     D_out = 4
-    D_in = 3
+    D_in = 2
 
     X = Data.rng.randn(N, D_in)
-    Y = Data.rng.randn(N, D_out)
+    Y = np.hstack([np.sin(X), np.sin(X)])
     Xnew_mu = Data.rng.randn(N_new, D_in)
     L = gen_L(Data.rng, N_new, D_in, D_in)
     Xnew_covar = np.array([l @ l.T for l in L])
@@ -104,7 +104,7 @@ class DataQuadrature:
     q_sqrt = gen_q_sqrt(rng, D_out, num_ind, num_ind)
 
     @classmethod
-    def tensors(cls, white):
+    def tensors(cls, white, mean_name):
         np_float = settings.np_float
         Xmu = tf.placeholder(np_float, [cls.num_data, cls.D_in])
         Xvar = tf.placeholder(np_float, [cls.num_data, cls.D_in, cls.D_in])
@@ -113,6 +113,8 @@ class DataQuadrature:
 
         kern = gpflow.ekernels.RBF(cls.D_in)
         feat = gpflow.features.InducingPoints(cls.Z)
+        mean_function = mean_function_factory(cls.rng, mean_name, cls.D_in, cls.D_out)
+        effective_mean = mean_function or (lambda X: 0.0)
 
         feed_dict = {
             Xmu: cls.Xmu,
@@ -123,7 +125,7 @@ class DataQuadrature:
 
         def mean_fn(X):
             mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
-            return mean
+            return mean + effective_mean(X)
 
         def var_fn(X):
             _, var = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
@@ -131,11 +133,12 @@ class DataQuadrature:
 
         def mean_sq_fn(X):
             mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
-            return mean ** 2
+            return (mean + effective_mean(X)) ** 2
 
         Collection = namedtuple('QuadratureCollection',
                                 'Xmu,Xvar,q_mu,q_sqrt,'
-                                'kern,feat,feed_dict,mean_fn,'
+                                'kern,feat,mean_function,'
+                                'feed_dict,mean_fn,'
                                 'var_fn,mean_sq_fn')
 
         return Collection(Xmu=Xmu,
@@ -144,14 +147,14 @@ class DataQuadrature:
                           q_sqrt=q_sqrt,
                           kern=kern,
                           feat=feat,
+                          mean_function=mean_function,
                           feed_dict=feed_dict,
                           mean_fn=mean_fn,
                           var_fn=var_fn,
                           mean_sq_fn=mean_sq_fn)
 
 
-MEANS = ["Zero", "Constant", "Linear"]
-
+MEANS = ["Constant", "Linear", "Zero", None]
 
 @pytest.mark.parametrize('white', [True, False])
 @pytest.mark.parametrize('mean', MEANS)
@@ -183,8 +186,8 @@ def test_monte_carlo_1_din(white, mean):
         m = mean_function_factory(DataMC1.rng, mean, DataMC1.D_in, DataMC1.D_out)
         model = MomentMatchingSVGP(
             DataMC1.X, DataMC1.Y, k, gpflow.likelihoods.Gaussian(),
-            mean_function=m, Z=DataMC1.X.copy(), whiten=white)
-        model.full_cov_output = False
+            Z=DataMC1.X.copy(), whiten=white)
+        model.full_cov_output = True
         gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
 
         pred_mm = model.uncertain_predict_f_moment_matching(
@@ -196,7 +199,7 @@ def test_monte_carlo_1_din(white, mean):
                 DataMC1.Xnew_mu[n, ...],
                 DataMC1.Xnew_covar[n, ...] ** 0.5)
             assert_almost_equal(mean1[n, ...], mean2, decimal=3)
-            assert_almost_equal(var1[n, ...], np.diag(var2), decimal=2)
+            assert_almost_equal(var1[n, ...], var2, decimal=2)
 
 
 @pytest.mark.parametrize('white', [True, False])
@@ -208,7 +211,7 @@ def test_monte_carlo_2_din(white, mean):
         model = MomentMatchingSVGP(
             DataMC2.X, DataMC2.Y, k, gpflow.likelihoods.Gaussian(),
             mean_function=m, Z=DataMC2.X.copy(), whiten=white)
-        model.full_cov_output = False
+        model.full_cov_output = True
         gpflow.train.AdamOptimizer().minimize(model)
 
         pred_mm = model.uncertain_predict_f_moment_matching(
@@ -220,14 +223,15 @@ def test_monte_carlo_2_din(white, mean):
                 DataMC2.Xnew_mu[n, ...],
                 DataMC2.L[n, ...])
             assert_almost_equal(mean1[n, ...], mean2, decimal=2)
-            assert_almost_equal(var1[n, ...], np.diag(var2), decimal=2)
+            assert_almost_equal(var1[n, ...], var2, decimal=2)
 
 
+@pytest.mark.parametrize('mean', MEANS)
 @pytest.mark.parametrize('white', [True, False])
-def test_quadrature(white):
+def test_quadrature(white, mean):
     with session_context() as session:
         c = DataQuadrature
-        d = c.tensors(white)
+        d = c.tensors(white, mean)
         quad_args = d.Xmu, d.Xvar, c.H, c.D_in, (c.D_out,)
         mean_quad = mvnquad(d.mean_fn, *quad_args)
         var_quad = mvnquad(d.var_fn, *quad_args)
@@ -235,6 +239,7 @@ def test_quadrature(white):
         mean_analytic, var_analytic = uncertain_conditional(
             d.Xmu, d.Xvar, d.feat, d.kern,
             d.q_mu, d.q_sqrt,
+            mean_function=d.mean_function,
             full_cov_output=False,
             whiten=white)
 

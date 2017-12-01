@@ -18,8 +18,8 @@ class Data:
     rng = np.random.RandomState(1)
     num_data = 5
     num_ind = 4
-    D_in = 1
-    D_out = 3
+    D_in = 2
+    D_out = 2
 
     Xmu = rng.randn(num_data, D_in)
     L = gen_L(rng, num_data, D_in, D_in)
@@ -36,7 +36,7 @@ class Data:
         ip = InducingPoints(Z)
         rbf = RBF(D_in, variance=rng.rand(), lengthscales=rng.rand())
         lin = Linear(rng.rand(D_in, D_out), rng.rand(D_out))
-        iden = Identity()
+        iden = Identity(D_in) # Note: Identity can only be used if Din == Dout
         zero = Zero(output_dim=D_out)
         const = Constant(rng.rand(D_out))
 

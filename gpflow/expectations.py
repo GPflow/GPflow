@@ -12,8 +12,6 @@ from .params import Parameterized, Parameter
 
 
 LINEAR_MEAN_FUNCTIONS = (mean_functions.Linear,
-                         mean_functions.Zero,
-                         mean_functions.Identity,
                          mean_functions.Constant)
 
 
@@ -178,8 +176,9 @@ def expectation(p, rbf_kern, feat, linear_mean, none):
     :return: NxMxQ
     """
     with params_as_tensors_for(linear_mean):
+        D_in = p.mu.shape[1].value
 
-        exKxz = expectation(p, rbf_kern, feat, mean_functions.Identity(), None)
+        exKxz = expectation(p, rbf_kern, feat, mean_functions.Identity(D_in), None)
         eKxz = expectation(p, rbf_kern, feat, None, None)
 
         eAxKxz = tf.reduce_sum(exKxz[:, :, None, :]
@@ -258,45 +257,37 @@ def expectation(p, mean, none1, none2, none3):
     return mean(p.mu)
 
 
-def _expectation_linear_linear(p, A1, b1, A2, b2):
-        e_xt_x = p.cov + (p.mu[:, :, None] * p.mu[:, None, :]) # N x D x D
-        e_A1t_xt_x_A2 = tf.einsum("iq,nij,jz->nqz", A1, e_xt_x, A2) # N x Q1 x Q2
-        e_A1t_xt_b2  = tf.einsum("iq,ni,z->nqz", A1, p.mu, b2) # N x Q1 x Q2
-        e_b1t_x_A2  = tf.einsum("q,ni,iz->nqz", b1, p.mu, A2) # N x Q1 x Q2
-        e_b1t_b2 = b1[:, None] * b2[None, :] # Q1 x Q2
-
-        return e_A1t_xt_x_A2 + e_A1t_xt_b2 + e_b1t_x_A2 + e_b1t_b2
-
-# TODO: the next 4 combinations could be avoided if `Identity` inherited from `Linear`,
-#       with A = eye and b = zeros. I did't found an elegant way to code this up though :(
-
-@dispatch(Gaussian, mean_functions.Identity, type(None), mean_functions.Identity, type(None))
-def expectation(p, mean1, none1, mean2, none2):
-    return p.cov + (p.mu[:, :, None] * p.mu[:, None, :])
-
-
-@dispatch(Gaussian, mean_functions.Linear, type(None), mean_functions.Identity, type(None))
-def expectation(p, lin_mean, none1, iden_mean, none2):
-    return tf.matrix_transpose(expectation(p, iden_mean, None, lin_mean, None))
-
-
-@dispatch(Gaussian, mean_functions.Identity, type(None), mean_functions.Linear, type(None))
-def expectation(p, iden_mean, none1, lin_mean, none2):
-    with params_as_tensors_for(lin_mean):
-        A1 = tf.eye(p.mu.shape[1].value, dtype=settings.tf_float)
-        b1 = tf.zeros(p.mu.shape[1].value, dtype=settings.tf_float)
-        return _expectation_linear_linear(p, A1, b1, lin_mean.A, lin_mean.b)
-
-
 @dispatch(Gaussian, mean_functions.Linear, type(None), mean_functions.Linear, type(None))
 def expectation(p, mean1, none1, mean2, none2):
     with params_as_tensors_for(mean1), params_as_tensors_for(mean2):
-        return _expectation_linear_linear(p, mean1.A, mean1.b, mean2.A, mean2.b)
+        e_xt_x = p.cov + (p.mu[:, :, None] * p.mu[:, None, :]) # N x D x D
+        e_A1t_xt_x_A2 = tf.einsum("iq,nij,jz->nqz", mean1.A, e_xt_x, mean2.A) # N x Q1 x Q2
+        e_A1t_xt_b2  = tf.einsum("iq,ni,z->nqz", mean1.A, p.mu, mean2.b) # N x Q1 x Q2
+        e_b1t_x_A2  = tf.einsum("q,ni,iz->nqz", mean1.b, p.mu, mean2.A) # N x Q1 x Q2
+        e_b1t_b2 = mean1.b[:, None] * mean2.b[None, :] # Q1 x Q2
+
+        return e_A1t_xt_x_A2 + e_A1t_xt_b2 + e_b1t_x_A2 + e_b1t_b2
 
 
 @dispatch(Gaussian,
-          (mean_functions.Constant, mean_functions.Zero), type(None),
+          mean_functions.Constant, type(None),
+          mean_functions.Constant, type(None))
+def expectation(p, mean1, none1, mean2, none2):
+    return mean1(p.mu)[:, :, None] * mean2(p.mu)[:, None, :]
+
+
+@dispatch(Gaussian,
+          mean_functions.MeanFunction, type(None),
+          mean_functions.Constant, type(None))
+def expectation(p, mean1, none1, mean2, none2):
+    return tf.matrix_transpose(expectation(p, mean2, None, mean1, None))
+
+
+@dispatch(Gaussian,
+          mean_functions.Constant, type(None),
           mean_functions.MeanFunction, type(None))
 def expectation(p, mean1, none1, mean2, none2):
     e_mean2 = expectation(p, mean2, None, None, None)
     return mean1(p.mu)[:, :, None] * e_mean2[:, None, :]
+
+
