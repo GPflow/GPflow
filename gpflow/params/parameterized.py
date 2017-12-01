@@ -210,11 +210,11 @@ class Parameterized(Node):
         prev_values = {}
         for key in val_keys:
             try:
-                p = params[key]
-                prev_value = params[key].read_value().copy()
-                params[key].assign(values[key], session=session, force=force)
+                param = params[key]
+                prev_value = param.read_value().copy()
+                param.assign(values[key], session=session, force=force)
                 prev_values[key] = prev_value
-            except (GPflowError, ValueError) as error:
+            except (GPflowError, ValueError):
                 for rkey, rvalue in prev_values.items():
                     params[rkey].assign(rvalue, session=session, force=True)
                 raise
