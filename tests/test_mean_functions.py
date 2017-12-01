@@ -69,7 +69,7 @@ class TestMeanFuncs(GPflowTestCase):
 
     def test_basic_output_shape(self):
         with self.test_context() as sess:
-            X = tf.placeholder(settings.tf_float, shape=[self.N, self.input_dim])
+            X = tf.placeholder(settings.np_float, shape=[self.N, self.input_dim])
             X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
             for mf in self.mfs1():
                 mf.compile()
@@ -78,7 +78,7 @@ class TestMeanFuncs(GPflowTestCase):
 
     def test_add_output_shape(self):
         with self.test_context() as sess:
-            X = tf.placeholder(settings.tf_float, [self.N, self.input_dim])
+            X = tf.placeholder(settings.np_float, [self.N, self.input_dim])
             X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
             for comp_mf in self.composition_mfs_add():
                 comp_mf.compile()
@@ -87,7 +87,7 @@ class TestMeanFuncs(GPflowTestCase):
 
     def test_mult_output_shape(self):
         with self.test_context() as sess:
-            X = tf.placeholder(settings.tf_float, [self.N, self.input_dim])
+            X = tf.placeholder(settings.np_float, [self.N, self.input_dim])
             X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
             for comp_mf in self.composition_mfs_mult():
                 comp_mf.compile()
@@ -96,7 +96,7 @@ class TestMeanFuncs(GPflowTestCase):
 
     def test_composition_output_shape(self):
         with self.test_context() as sess:
-            X = tf.placeholder(settings.tf_float, [self.N, self.input_dim])
+            X = tf.placeholder(settings.np_float, [self.N, self.input_dim])
             X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
             comp_mf = self.composition_mfs()[1]
             comp_mf.compile()

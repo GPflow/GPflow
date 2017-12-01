@@ -60,13 +60,13 @@ class TestNaming(GPflowTestCase):
 
 class TestType(GPflowTestCase):
     def setUp(self):
-        int_type = tf.int16
-        float_type = tf.float16
+        int_type = np.int16
+        float_type = np.float16
 
-        test_data = [(1, int_type.as_numpy_dtype),
-                     (1.0, float_type.as_numpy_dtype),
-                     ([1], float_type.as_numpy_dtype),
-                     ([1.0], float_type.as_numpy_dtype),
+        test_data = [(1, int_type),
+                     (1.0, float_type),
+                     ([1], float_type),
+                     ([1.0], float_type),
                      (np.array([1, 1], dtype=np.float32), np.float32),
                      (np.array([1, 1], dtype=np.int32), np.int32)]
 

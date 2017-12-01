@@ -50,7 +50,7 @@ class Identity(Transform):
         return y
 
     def log_jacobian_tensor(self, x):
-        return tf.zeros((1,), settings.tf_float)
+        return tf.zeros((1,), settings.np_float)
 
     def __str__(self):
         return '(none)'
@@ -241,8 +241,8 @@ class Rescale(Transform):
         return y / self.factor
 
     def log_jacobian_tensor(self, x):
-        N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.tf_float)
-        factor = tf.cast(self.factor, dtype=settings.tf_float)
+        N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.np_float)
+        factor = tf.cast(self.factor, dtype=settings.np_float)
         log_factor = tf.log(factor)
         return N * log_factor
 
@@ -284,7 +284,7 @@ class DiagMatrix(Transform):
         return tf.matrix_diag(tf.reshape(x, (-1, self.dim)))
 
     def log_jacobian_tensor(self, x):
-        return tf.zeros((1,), settings.tf_float)
+        return tf.zeros((1,), settings.np_float)
 
     def __str__(self):
         return 'DiagMatrix'
@@ -367,7 +367,7 @@ class LowerTriangular(Transform):
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def log_jacobian_tensor(self, x):
-        return tf.zeros((1,), settings.tf_float)
+        return tf.zeros((1,), settings.np_float)
 
     def __str__(self):
         return "LoTri->vec"

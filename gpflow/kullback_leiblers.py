@@ -70,7 +70,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - N x M
-    constant = - tf.cast(NM, settings.tf_float)
+    constant = - tf.cast(NM, settings.np_float)
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.log(tf.square(Lq_diag)))
@@ -82,7 +82,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         if diag:
             M = tf.shape(Lp)[0]
             Lp_inv = tf.matrix_triangular_solve(
-                Lp, tf.eye(M, dtype=settings.tf_float), lower=True)
+                Lp, tf.eye(M, dtype=settings.np_float), lower=True)
             K_inv = tf.matrix_triangular_solve(
                 tf.transpose(Lp), Lp_inv, lower=False)
             trace = tf.reduce_sum(
@@ -98,7 +98,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     if not white:
         log_sqdiag_Lp = tf.log(tf.square(tf.matrix_diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
-        prior_logdet = tf.cast(num_latent, settings.tf_float) * sum_log_sqdiag_Lp
+        prior_logdet = tf.cast(num_latent, settings.np_float) * sum_log_sqdiag_Lp
         twoKL += prior_logdet
 
     return 0.5 * twoKL

@@ -1,6 +1,7 @@
 import os
 import copy
 import collections
+import warnings
 
 from collections import OrderedDict
 from six.moves import configparser
@@ -53,19 +54,21 @@ class _SettingsManager(object):
 
     @property
     def tf_float(self):
-        return self.dtypes.float_type
+        warnings.warn('The tf_float is depricated and will be removed at GPflow 1.2.0 version.')
+        return self.np_float
 
     @property
     def tf_int(self):
-        return self.dtypes.int_type
+        warnings.warn('The tf_int is depricated and will be removed at GPflow 1.2.0 version.')
+        return self.np_int
 
     @property
     def np_float(self):
-        return self.tf_float.as_numpy_dtype
+        return self.dtypes.float_type
 
     @property
     def np_int(self):
-        return self.tf_int.as_numpy_dtype
+        return self.dtypes.int_type
 
 
 class _MutableNamedTuple(OrderedDict):
@@ -105,7 +108,7 @@ def _parse(string):
         return False
     elif string in ['float64', 'float32', 'float16',
                     'int64', 'int32', 'int16']:
-        return getattr(tf, string)
+        return getattr(np, string)
     else:
         try:
             return int(string)

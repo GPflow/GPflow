@@ -63,45 +63,45 @@ class Kern(Parameterized):
 
         self.num_gauss_hermite_points = 20
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None]))
+    @autoflow((settings.np_float, [None, None]),
+              (settings.np_float, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @autoflow((settings.tf_float, [None, None]))
+    @autoflow((settings.np_float, [None, None]))
     def compute_K_symm(self, X):
         return self.K(X)
 
-    @autoflow((settings.tf_float, [None, None]))
+    @autoflow((settings.np_float, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float,))
+    @autoflow((settings.np_float, [None, None]),
+              (settings.np_float,))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None]),
-              (settings.tf_float,))
+    @autoflow((settings.np_float, [None, None]),
+              (settings.np_float, [None, None]),
+              (settings.np_float,))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None, None, None]))
+    @autoflow((settings.np_float, [None, None]),
+              (settings.np_float, [None, None]),
+              (settings.np_float, [None, None, None, None]))
     def compute_exKxz_pairwise(self, Z, Xmu, Xcov):
         return self.exKxz_pairwise(Z, Xmu, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None, None]))
+    @autoflow((settings.np_float, [None, None]),
+              (settings.np_float, [None, None]),
+              (settings.np_float, [None, None, None]))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @autoflow((settings.tf_float, [None, None]),
-              (settings.tf_float, [None, None]),
-              (settings.tf_float,))
+    @autoflow((settings.np_float, [None, None]),
+              (settings.np_float, [None, None]),
+              (settings.np_float,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 
@@ -309,7 +309,7 @@ class White(Static):
             return tf.matrix_diag(d)
         else:
             shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
-            return tf.zeros(shape, settings.tf_float)
+            return tf.zeros(shape, settings.np_float)
 
 
 class Constant(Static):
@@ -654,7 +654,7 @@ class ArcCosine(Kern):
             X, _ = self._slice(X, None)
 
         X_product = self._weighted_product(X)
-        theta = tf.constant(0., settings.tf_float)
+        theta = tf.constant(0., settings.np_float)
         return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 

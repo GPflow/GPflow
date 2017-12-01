@@ -142,7 +142,7 @@ class Multiscale(InducingPoints):
                         kern.lengthscales))
                 d = self._cust_square_dist(Zmu, Zmu, sc)
                 Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
-                Kzz += jitter * tf.eye(len(self), dtype=settings.tf_float)
+                Kzz += jitter * tf.eye(len(self), dtype=settings.np_float)
             return Kzz
         else:
             raise NotImplementedError(

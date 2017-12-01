@@ -371,7 +371,6 @@ class TestSlice(GPflowTestCase):
     def test_symm(self):
         for k1, k2, k3 in self.kernels():
             with self.test_context(graph=tf.Graph()):
-                print(k1, k2, k3)
                 rng = np.random.RandomState(0)
                 X = rng.randn(20, 2)
                 k1i, k2i, k3i = k1(), k2(), k3()

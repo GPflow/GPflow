@@ -115,7 +115,7 @@ class Uniform(Prior):
         self.lower, self.upper = lower, upper
 
     def logp(self, x):
-        return self.log_height * tf.cast(tf.size(x), settings.tf_float)
+        return self.log_height * tf.cast(tf.size(x), settings.np_float)
 
     def sample(self, shape=(1,)):
         return (self.lower +
