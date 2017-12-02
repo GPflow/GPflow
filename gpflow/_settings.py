@@ -54,12 +54,12 @@ class _SettingsManager(object):
 
     @property
     def tf_float(self):
-        warnings.warn('The tf_float is depricated and will be removed at GPflow 1.2.0 version.')
+        warnings.warn('The tf_float is deprecated and will be removed at GPflow 1.2.0 version.')
         return self.np_float
 
     @property
     def tf_int(self):
-        warnings.warn('The tf_int is depricated and will be removed at GPflow 1.2.0 version.')
+        warnings.warn('The tf_int is deprecated and will be removed at GPflow 1.2.0 version.')
         return self.np_int
 
     @property
