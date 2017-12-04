@@ -1,5 +1,5 @@
 # Release 1.1
- - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feat.Z`.
+ - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feature.Z`.
 
 # Release 1.0
 * Clear and aligned with tree-like structure of GPflow models design.
