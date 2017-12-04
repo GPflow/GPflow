@@ -230,6 +230,15 @@ class Kern(Parameterized):
         if settings.numerics.ekern_quadrature == "error" or self.num_gauss_hermite_points == 0:
             raise RuntimeError("Settings indicate that quadrature may not be used.")
 
+    def on_seperate_dims(self, other_kernel):
+        if isinstance(self.active_dims, slice) or isinstance(other_kernel.active_dims, slice):
+            return False
+
+        if np.any(self.active_dims.reshape(-1, 1) == other_kernel.active_dims.reshape(1, -1)):
+            return False
+
+        return True
+
     def _slice(self, X, X2):
         """
         Slice the correct dimensions for use in the kernel, as indicated by

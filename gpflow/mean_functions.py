@@ -13,6 +13,7 @@
 # limitations under the License.
 
 
+import warnings
 import tensorflow as tf
 import numpy as np
 
@@ -78,7 +79,7 @@ class Identity(Linear):
         self.A = Parameter(np.eye(input_dim), trainable=False)
         self.b = Parameter(np.zeros(input_dim), trainable=False)
         if input_dim is None:
-            raise Warning("An input_dim needs to be specified when using the "
+            warnings.warn("An input_dim needs to be specified when using the "
                           "`Identity` mean function in combination with expectations.")
 
     def __call__(self, X):

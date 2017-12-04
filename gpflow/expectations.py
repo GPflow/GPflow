@@ -1,6 +1,8 @@
 import types
 
 import numpy as np
+import functools
+import itertools as it
 import tensorflow as tf
 from multipledispatch import dispatch
 
@@ -8,11 +10,22 @@ from . import kernels, mean_functions, settings
 from .features import InducingFeature, InducingPoints
 from .quadrature import mvnquad
 from .decors import params_as_tensors_for
-from .params import Parameterized, Parameter
 
 
 LINEAR_MEAN_FUNCTIONS = (mean_functions.Linear,
                          mean_functions.Constant)
+
+
+def quadrature_fallback(function):
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except (KeyError, NotImplementedError) as e:
+            print(str(e))
+            return EXPECTATION_QUAD_IMPL(*args)
+
+    return wrapper
 
 
 class ProbabilityDistribution():
@@ -47,6 +60,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def expectation(p, obj1, feature1, obj2, feature2, H=20):
     print("Quad")
+    # warnings.warn("Quadrature is being used to calculate expectation")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -58,6 +72,11 @@ def expectation(p, obj1, feature1, obj2, feature2, H=20):
     return mvnquad(eval_func, p.mu, p.cov, H)
 
 
+EXPECTATION_QUAD_IMPL = expectation.dispatch(Gaussian,
+                                             object, type(None),
+                                             object, type(None))
+
+
 @dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kern, InducingFeature)
 def expectation(p, mean, none, kern, feat):
     """
@@ -66,7 +85,6 @@ def expectation(p, mean, none, kern, feat):
 
     :return: NxQxM
     """
-    print("Expectation: Mean - Kern")
     return tf.matrix_transpose(expectation(p, kern, feat, mean, None))
 
 
@@ -188,8 +206,7 @@ def expectation(p, rbf_kern, feat, linear_mean, none):
 
 
 # RBF kernel - Constant or Zero mean
-@dispatch(Gaussian, kernels.RBF, InducingPoints,
-          (mean_functions.Zero, mean_functions.Constant), type(None))
+@dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Constant, type(None))
 def expectation(p, rbf_kern, feat, constant_mean, none):
     """
     It computes the expectation:
@@ -206,20 +223,94 @@ def expectation(p, rbf_kern, feat, constant_mean, none):
         return eKxz[:, :, None] * c[:, None, :]
 
 
+# RBF - Linear kernel
+@dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.RBF, InducingPoints)
+def expectation(p, lin_kern, feat1, rbf_kern, feat2):
+    return tf.matrix_transpose(expectation(p, rbf_kern, feat2, lin_kern, feat1))
+
+
+# RBF - Linear kernel
+@dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.Linear, InducingPoints)
+@quadrature_fallback
+def expectation(p, rbf_kern, feat1, lin_kern, feat2):
+    """
+    It computes the expectation:
+    <Ka_{x, Z1} Kb_{x, Z1}>_p(x), where
+        - Ka_{.,.} :: RBF kernel
+        - Ka_{.,.} :: Linear kernel
+
+    Note that the Linear kernel and Linear mean function are different.
+
+    :return: NxM1xM1
+    """
+    if feat1 != feat2 or lin_kern.ARD or \
+        type(lin_kern.active_dims) is not slice or \
+        type(rbf_kern.active_dims) is not slice:
+
+            raise NotImplementedError("Active dims and/or Linear ARD not implemented. ")
+
+    with params_as_tensors_for(feat1), \
+         params_as_tensors_for(feat2), \
+         params_as_tensors_for(rbf_kern), \
+         params_as_tensors_for(lin_kern):
+
+        Xmu = p.mu
+        Xcov = p.cov
+
+        Xcov = rbf_kern._slice_cov(Xcov)
+        Z, Xmu = rbf_kern._slice(feat1.Z, Xmu)
+        lin, rbf = lin_kern, rbf_kern
+
+        D = tf.shape(Xmu)[1]
+        M = tf.shape(Z)[0]
+        N = tf.shape(Xmu)[0]
+
+        if rbf.ARD:
+            lengthscales = rbf.lengthscales
+        else:
+            lengthscales = tf.zeros((D, ), dtype=settings.tf_float) + rbf.lengthscales
+
+        lengthscales2 = lengthscales ** 2.0
+        const = rbf.variance * lin.variance * tf.reduce_prod(lengthscales)
+        gaussmat = Xcov + tf.matrix_diag(lengthscales2)[None, :, :]  # NxDxD
+        det = tf.matrix_determinant(gaussmat) ** -0.5  # N
+
+        cgm = tf.cholesky(gaussmat)  # NxDxD
+        tcgm = tf.tile(cgm[:, None, :, :], [1, M, 1, 1])
+        vecmin = Z[None, :, :] - Xmu[:, None, :]  # NxMxD
+        d = tf.matrix_triangular_solve(tcgm, vecmin[:, :, :, None])  # NxMxDx1
+        exp = tf.exp(-0.5 * tf.reduce_sum(d ** 2.0, [2, 3]))  # NxM
+        # exp = tf.Print(exp, [tf.shape(exp)])
+
+        vecplus = (Z[None, :, :, None] / lengthscales2[None, None, :, None] +
+                   tf.matrix_solve(Xcov, Xmu[:, :, None])[:, None, :, :])  # NxMxDx1
+        mean = tf.cholesky_solve(
+            tcgm, tf.matmul(tf.tile(Xcov[:, None, :, :], [1, M, 1, 1]), vecplus))
+        mean = mean[:, :, :, 0] * lengthscales2[None, None, :]  # NxMxD
+        a = tf.matmul(tf.tile(Z[None, :, :], [N, 1, 1]),
+                      mean * exp[:, :, None] * det[:, None, None] * const, transpose_b=True)
+        return a
+
+
 # RBF - RBF
-# TODO implement for two different RBF kernels
 @dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
+@quadrature_fallback
 def expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
     <Ka_{Z, x} Kb_{x, Z}>_p(x), where
         - Ka(.,.)  :: RBF kernel
         - Kb(.,.)  :: RBF kernel
-    Ka and Kb can have different hyperparameters.
+    Ka and Kb can have different hyperparameters (Not implemented).
     If Ka equals Kb this expression is also known as Psi2.
 
     :return: N x Ma x Mb
     """
+    if feat1 != feat2 or kern1 != kern2:
+        raise NotImplementedError("")
+
+    print("RBF - RBF")
+
     with params_as_tensors_for(kern1), \
          params_as_tensors_for(feat1), \
          params_as_tensors_for(kern2), \
@@ -290,4 +381,91 @@ def expectation(p, mean1, none1, mean2, none2):
     e_mean2 = expectation(p, mean2, None, None, None)
     return mean1(p.mu)[:, :, None] * e_mean2[:, None, :]
 
+
+# Additive
+@dispatch(Gaussian, kernels.Add, type(None), type(None), type(None))
+def expectation(p, kern, none1, none2, none3):
+    expectation_fn = lambda k: expectation(p, k, None, None, None)
+    return functools.reduce(tf.add, [expectation_fn(k) for k in kern.kern_list])
+
+
+@dispatch(Gaussian, kernels.Add, InducingPoints, type(None), type(None))
+def expectation(p, kern, feat, none2, none3):
+    expectation_fn = lambda k: expectation(p, k, feat, None, None)
+    return functools.reduce(tf.add, [expectation_fn(k) for k in kern.kern_list])
+
+
+@dispatch(Gaussian, kernels.Add, InducingPoints, LINEAR_MEAN_FUNCTIONS, type(None))
+def expectation(p, kern, feat, mean, none3):
+    expectation_fn = lambda k: expectation(p, k, feat, mean, None)
+    return functools.reduce(tf.add, [expectation_fn(k) for k in kern.kern_list])
+
+
+@dispatch(Gaussian, kernels.Add, InducingPoints, kernels.Add, InducingPoints)
+@quadrature_fallback
+def expectation(p, kern1, feat1, kern2, feat2):
+    if feat1 != feat2:
+        raise NotImplementedError("Different features are not supported")
+
+    feat = feat1
+    crossexps = []
+
+    for k1, k2 in it.product(kern1.kern_list, kern2.kern_list):
+        if k1.on_seperate_dims(k2):
+            eKxz1 = expectation(p, k1, feat, None, None)
+            eKxz2 = expectation(p, k2, feat, None, None)
+            result = eKxz1[:, :, None] * eKxz2[:, None, :]
+        else:
+            result = expectation(p, k1, feat, k2, feat)
+
+        crossexps.append(result)
+
+    return functools.reduce(tf.add, crossexps)
+
+
+# Product kernels
+@dispatch(Gaussian, kernels.Prod, type(None), type(None), type(None))
+def expectation(p, kern, none1, none2, none3):
+    if not kern.on_separate_dimensions:
+        raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+    with tf.control_dependencies([
+        tf.assert_equal(tf.rank(p.cov), 2,
+                        message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+    ]):
+        expectation_fn = lambda k: expectation(p, k, None, None, None)
+        return functools.reduce(tf.multiply, [expectation_fn(k) for k in kern.kern_list])
+
+
+@dispatch(Gaussian, kernels.Prod, InducingPoints, type(None), type(None))
+def expectation(p, kern, feat, none2, none3):
+    if not kern.on_separate_dimensions:
+        raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+    with tf.control_dependencies([
+        tf.assert_equal(tf.rank(p.cov), 2,
+                        message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+    ]):
+        expectation_fn = lambda k: expectation(p, k, feat, None, None)
+        return functools.reduce(tf.multiply, [expectation_fn(k) for k in kern.kern_list])
+
+
+@dispatch(Gaussian, kernels.Prod, InducingPoints, kernels.Prod, InducingPoints)
+@quadrature_fallback
+def expectation(p, kern1, feat1, kern2, feat2):
+    if feat1 != feat2:
+        raise NotImplementedError("Different features are not supported")
+
+    if kern1 != kern2:
+        raise NotImplementedError("Calculating Psi 2 for different product kernels is not supported")
+
+    kern = kern1
+    feat = feat1
+
+    if not kern.on_separate_dimensions:
+        raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+    with tf.control_dependencies([
+        tf.assert_equal(tf.rank(p.cov), 2,
+                        message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+    ]):
+        expectation_fn = lambda k: expectation(p, k, feat, k, feat)
+        return functools.reduce(tf.multiply, [expectation_fn(k) for k in kern.kern_list])
 
