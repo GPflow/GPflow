@@ -22,7 +22,7 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
         return uncertain_conditional(
             Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
-            whiten=self.whiten, full_cov_output=self.full_cov_output)
+            white=self.whiten, full_cov_output=self.full_cov_output)
 
     def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=int(1e6)):
         rng = np.random.RandomState(0)
@@ -108,15 +108,15 @@ class DataQuadrature:
         }
 
         def mean_fn(X):
-            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return mean
 
         def var_fn(X):
-            _, var = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            _, var = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return var
 
         def mean_sq_fn(X):
-            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return mean ** 2
 
         Collection = namedtuple('QuadratureCollection',
@@ -195,7 +195,7 @@ def test_monte_carlo_2_din(white):
 
 
 @pytest.mark.parametrize('white', [True, False])
-def test_quadrature_whiten(white):
+def test_quadrature_white(white):
     with session_context() as session:
         c = DataQuadrature
         d = c.tensors(white)
@@ -207,7 +207,7 @@ def test_quadrature_whiten(white):
             d.Xmu, d.Xvar, d.feat, d.kern,
             d.q_mu, d.q_sqrt,
             full_cov_output=False,
-            whiten=white)
+            white=white)
 
         mean_quad, var_quad, mean_sq_quad = session.run(
             [mean_quad, var_quad, mean_sq_quad], feed_dict=d.feed_dict)
