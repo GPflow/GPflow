@@ -19,11 +19,15 @@ import pytest
 
 import gpflow
 from gpflow import test_util
-from gpflow.expectations import expectation, Gaussian, EXPECTATION_QUAD_IMPL
+from gpflow.expectations import expectation
+from gpflow.expectations_quadrature import EXPECTATION_QUAD_IMPL
+from gpflow.probability_distributions import Gaussian
 from gpflow import kernels, mean_functions, features
+
 
 def gen_L(rng, n, *shape):
     return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
+
 
 class Data:
     rng = np.random.RandomState(1)

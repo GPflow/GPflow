@@ -12,83 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import types
-
-import numpy as np
 import functools
 import itertools as it
 import tensorflow as tf
 from multipledispatch import dispatch
 
 from . import kernels, mean_functions, settings
+from .probability_distributions import Gaussian
+from .expectations_quadrature import quadrature_fallback
 from .features import InducingFeature, InducingPoints
-from .quadrature import mvnquad
 from .decors import params_as_tensors_for
 
 
 LINEAR_MEAN_FUNCTIONS = (mean_functions.Linear,
                          mean_functions.Constant)
-
-
-def quadrature_fallback(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except (KeyError, NotImplementedError) as e:
-            print(str(e))
-            return EXPECTATION_QUAD_IMPL(*args)
-
-    return wrapper
-
-
-class ProbabilityDistribution:
-    pass
-
-
-class Gaussian(ProbabilityDistribution):
-    def __init__(self, mu, cov):
-        super(Gaussian, self).__init__()
-        self.mu = mu  # N x D
-        self.cov = cov  # N x D x D
-
-
-## Generic case, quadrature method
-
-def get_eval_func(obj, feature, slice=np.s_[...]):
-    if feature is not None:
-        # kernel + feature combination
-        if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kernel):
-            raise TypeError("If `feature` is supplied, `obj` must be a kernel.")
-        return lambda x: tf.transpose(feature.Kuf(obj, x))[slice]
-    elif isinstance(obj, mean_functions.MeanFunction):
-        return lambda x: obj(x)[slice]
-    elif isinstance(obj, kernels.Kernel):
-        return lambda x: obj.Kdiag(x)
-    elif isinstance(obj, types.FunctionType):
-        return obj
-    else:
-        raise NotImplementedError()
-
-
-@dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def expectation(p, obj1, feature1, obj2, feature2, H=20):
-    print("Quad")
-    # warnings.warn("Quadrature is being used to calculate expectation")
-    if obj2 is None:
-        eval_func = lambda x: get_eval_func(obj1, feature1)(x)
-    elif obj1 is None:
-        eval_func = lambda x: get_eval_func(obj2, feature2)(x)
-    else:
-        eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
-                               get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
-
-    return mvnquad(eval_func, p.mu, p.cov, H)
-
-
-EXPECTATION_QUAD_IMPL = expectation.dispatch(Gaussian,
-                                             object, type(None),
-                                             object, type(None))
 
 
 @dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kernel, InducingFeature)
@@ -405,6 +342,7 @@ def expectation(p, kern1, feat1, kern2, feat2):
         return kern.variance ** 2.0 * tf.matmul(tf.matmul(eZ, mom2), eZ, transpose_b=True)
 
 
+# TODO: needs conversion to new expectations framework
 # @params_as_tensors
 # def exKxz_pairwise(self, Z, Xmu, Xcov):
 #     with tf.control_dependencies([
@@ -518,7 +456,6 @@ def expectation(p, kern1, feat1, kern2, feat2):
 # Product
 @dispatch(Gaussian, kernels.Product, type(None), type(None), type(None))
 def expectation(p, kern, none1, none2, none3):
-    print("Prod 1")
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
@@ -531,7 +468,6 @@ def expectation(p, kern, none1, none2, none3):
 
 @dispatch(Gaussian, kernels.Product, InducingPoints, type(None), type(None))
 def expectation(p, kern, feat, none2, none3):
-    print("Prod 2")
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
@@ -545,7 +481,6 @@ def expectation(p, kern, feat, none2, none3):
 @dispatch(Gaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 @quadrature_fallback
 def expectation(p, kern1, feat1, kern2, feat2):
-    print("Prod 3")
     if feat1 != feat2:
         raise NotImplementedError("Different features are not supported")
 
