@@ -1,3 +1,17 @@
+# Copyright 2017 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.from __future__ import print_function
+
 import types
 
 import numpy as np
@@ -426,6 +440,7 @@ def expectation(p, kern1, feat1, kern2, feat2):
 # Product
 @dispatch(Gaussian, kernels.Product, type(None), type(None), type(None))
 def expectation(p, kern, none1, none2, none3):
+    print("Prod 1")
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
@@ -438,6 +453,7 @@ def expectation(p, kern, none1, none2, none3):
 
 @dispatch(Gaussian, kernels.Product, InducingPoints, type(None), type(None))
 def expectation(p, kern, feat, none2, none3):
+    print("Prod 2")
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
@@ -451,11 +467,12 @@ def expectation(p, kern, feat, none2, none3):
 @dispatch(Gaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 @quadrature_fallback
 def expectation(p, kern1, feat1, kern2, feat2):
+    print("Prod 3")
     if feat1 != feat2:
         raise NotImplementedError("Different features are not supported")
 
     if kern1 != kern2:
-        raise NotImplementedError("Calculating Psi 2 for different product kernels is not supported")
+        raise NotImplementedError("Calculating the expectation over two different Product kernels is not supported")
 
     kern = kern1
     feat = feat1
