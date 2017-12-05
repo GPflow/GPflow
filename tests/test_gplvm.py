@@ -44,7 +44,7 @@ class TestGPLVM(GPflowTestCase):
 
     def test_otherkernel(self):
         with self.test_context():
-            k = kernels.PeriodicKernel(self.Q)
+            k = kernels.Periodic(self.Q)
             XInit = self.rng.rand(self.N, self.Q)
             m = gpflow.models.GPLVM(self.Y, self.Q, XInit, k)
             linit = m.compute_log_likelihood()
@@ -114,20 +114,20 @@ class TestBayesianGPLVM(GPflowTestCase):
             X_mean = gpflow.models.PCA_reduce(self.Y, Q)
             kernsQuadratu = [
                 kernels.RBF(1, active_dims=[0]) + kernels.Linear(1, active_dims=[1]),
-                kernels.RBF(1, active_dims=[0]) + kernels.PeriodicKernel(1, active_dims=[1]),
+                kernels.RBF(1, active_dims=[0]) + kernels.Periodic(1, active_dims=[1]),
                 kernels.RBF(1, active_dims=[0]) * kernels.Linear(1, active_dims=[1]),
                 kernels.RBF(Q)+kernels.Linear(Q)]  # non-overlapping
             kernsAnalytic = [
-                ekernels.Add([
+                ekernels.Sum([
                     ekernels.RBF(1, active_dims=[0]),
                     ekernels.Linear(1, active_dims=[1])]),
-                ekernels.Add([
+                ekernels.Sum([
                     ekernels.RBF(1, active_dims=[0]),
-                    kernels.PeriodicKernel(1, active_dims=[1])]),
-                ekernels.Prod([
+                    kernels.Periodic(1, active_dims=[1])]),
+                ekernels.Product([
                     ekernels.RBF(1, active_dims=[0]),
                     ekernels.Linear(1, active_dims=[1])]),
-                ekernels.Add([
+                ekernels.Sum([
                     ekernels.RBF(Q),
                     ekernels.Linear(Q)])
             ]

@@ -22,7 +22,7 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
         return uncertain_conditional(
                 Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
-                mean_function=self.mean_function, whiten=self.whiten,
+                mean_function=self.mean_function, white=self.whiten,
                 full_cov_output=self.full_cov_output)
 
     def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=int(1e6)):
@@ -124,15 +124,15 @@ class DataQuadrature:
         }
 
         def mean_fn(X):
-            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return mean + effective_mean(X)
 
         def var_fn(X):
-            _, var = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            _, var = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return var
 
         def mean_sq_fn(X):
-            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, whiten=white)
+            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return (mean + effective_mean(X)) ** 2
 
         Collection = namedtuple('QuadratureCollection',
@@ -206,7 +206,7 @@ def test_monte_carlo_1_din(white, mean):
 @pytest.mark.parametrize('mean', MEANS)
 def test_monte_carlo_2_din(white, mean):
     with session_context() as sess:
-        k = gpflow.ekernels.RBF(DataMC2.D_in, variance=DataMC2.rng.rand())
+        k = gpflow.kernels.RBF(DataMC2.D_in, variance=DataMC2.rng.rand())
         m = mean_function_factory(DataMC2.rng, mean, DataMC2.D_in, DataMC2.D_out)
         model = MomentMatchingSVGP(
             DataMC2.X, DataMC2.Y, k, gpflow.likelihoods.Gaussian(),
@@ -241,7 +241,7 @@ def test_quadrature(white, mean):
             d.q_mu, d.q_sqrt,
             mean_function=d.mean_function,
             full_cov_output=False,
-            whiten=white)
+            white=white)
 
         mean_quad, var_quad, mean_sq_quad = session.run(
             [mean_quad, var_quad, mean_sq_quad], feed_dict=d.feed_dict)

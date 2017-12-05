@@ -29,7 +29,7 @@ from .decors import params_as_tensors, autoflow
 from .quadrature import mvnquad
 
 
-class Kern(Parameterized):
+class Kernel(Parameterized):
     """
     The basic kernel class. Handles input_dim and active dims, and provides a
     generic '_slice' function to implement them.
@@ -49,7 +49,7 @@ class Kern(Parameterized):
         If active dims is None, it effectively defaults to range(input_dim),
         but we store it as a slice for efficiency.
         """
-        super(Kern, self).__init__(name=name)
+        super().__init__(name=name)
         self.input_dim = int(input_dim)
         if active_dims is None:
             self.active_dims = slice(input_dim)
@@ -285,20 +285,20 @@ class Kern(Parameterized):
         return cov
 
     def __add__(self, other):
-        return Add([self, other])
+        return Sum([self, other])
 
     def __mul__(self, other):
-        return Prod([self, other])
+        return Product([self, other])
 
 
-class Static(Kern):
+class Static(Kernel):
     """
     Kernels who don't depend on the value of the inputs are 'Static'.  The only
     parameter is a variance.
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, name=None):
-        super(Static, self).__init__(input_dim, active_dims, name=name)
+        super().__init__(input_dim, active_dims, name=name)
         self.variance = Parameter(variance, transform=transforms.positive)
 
     @params_as_tensors
@@ -342,7 +342,7 @@ class Bias(Constant):
     pass
 
 
-class Stationary(Kern):
+class Stationary(Kernel):
     """
     Base class for kernels that are stationary, that is, they only depend on
 
@@ -365,7 +365,7 @@ class Stationary(Kern):
         - ARD specifies whether the kernel has one lengthscale per dimension
           (ARD=True) or a single lengthscale (ARD=False).
         """
-        super(Stationary, self).__init__(input_dim, active_dims, name=name)
+        super().__init__(input_dim, active_dims, name=name)
         self.variance = Parameter(variance, transform=transforms.positive)
         if ARD:
             if lengthscales is None:
@@ -419,7 +419,7 @@ class RBF(Stationary):
         return self.variance * tf.exp(-self.square_dist(X, X2) / 2)
 
 
-class Linear(Kern):
+class Linear(Kernel):
     """
     The linear kernel
     """
@@ -432,7 +432,7 @@ class Linear(Kern):
         - active_dims is a list of length input_dim which controls
           which columns of X are used.
         """
-        Kern.__init__(self, input_dim, active_dims, name=name)
+        super().__init__(input_dim, active_dims, name=name)
         self.ARD = ARD
         if ARD:
             # accept float or array:
@@ -478,7 +478,7 @@ class Polynomial(Linear):
           which columns of X are used.
         :param ARD: use variance as described
         """
-        super(Polynomial, self).__init__(input_dim, variance, active_dims, ARD, name=name)
+        super().__init__(input_dim, variance, active_dims, ARD, name=name)
         self.degree = degree
         self.offset = Parameter(offset, transform=transforms.positive)
 
@@ -558,7 +558,7 @@ class Cosine(Stationary):
         return self.variance * tf.cos(r)
 
 
-class ArcCosine(Kern):
+class ArcCosine(Kernel):
     """
     The Arc-cosine family of kernels which mimics the computation in neural
     networks. The order parameter specifies the assumed activation function.
@@ -595,7 +595,7 @@ class ArcCosine(Kern):
         - ARD specifies whether the kernel has one weight_variance per dimension
           (ARD=True) or a single weight_variance (ARD=False).
         """
-        super(ArcCosine, self).__init__(input_dim, active_dims, name=name)
+        super().__init__(input_dim, active_dims, name=name)
 
         if order not in self.implemented_orders:
             raise ValueError('Requested kernel order is not implemented.')
@@ -667,7 +667,7 @@ class ArcCosine(Kern):
         return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 
-class PeriodicKernel(Kern):
+class Periodic(Kernel):
     """
     The periodic kernel. Defined in  Equation (47) of
 
@@ -680,7 +680,7 @@ class PeriodicKernel(Kern):
     def __init__(self, input_dim, period=1.0, variance=1.0,
                  lengthscales=1.0, active_dims=None, name=None):
         # No ARD support for lengthscale or period yet
-        super(PeriodicKernel, self).__init__(input_dim, active_dims, name=name)
+        super().__init__(input_dim, active_dims, name=name)
         self.variance = Parameter(variance, transform=transforms.positive)
         self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
         self.ARD = False
@@ -707,7 +707,7 @@ class PeriodicKernel(Kern):
         return self.variance * tf.exp(-0.5 * r)
 
 
-class Coregion(Kern):
+class Coregion(Kernel):
     def __init__(self, input_dim, output_dim, rank, active_dims=None, name=None):
         """
         A Coregionalization kernel. The inputs to this kernel are _integers_
@@ -733,7 +733,7 @@ class Coregion(Kern):
         optimization (or MCMC chain) using a random W.
         """
         assert input_dim == 1, "Coregion kernel in 1D only"
-        super(Coregion, self).__init__(input_dim, active_dims, name=name)
+        super().__init__(input_dim, active_dims, name=name)
 
         self.output_dim = output_dim
         self.rank = rank
@@ -786,9 +786,9 @@ def make_kernel_names(kern_list):
     return names
 
 
-class Combination(Kern):
+class Combination(Kernel):
     """
-    Combine  a list of kernels, e.g. by adding or multiplying (see inheriting
+    Combine a list of kernels, e.g. by adding or multiplying (see inheriting
     classes).
 
     The names of the kernels to be combined are generated from their class
@@ -796,14 +796,14 @@ class Combination(Kern):
     """
 
     def __init__(self, kern_list, name=None):
-        for k in kern_list:
-            assert isinstance(k, Kern), "can only add Kern instances"
+        if not all(isinstance(k, Kernel) for k in kern_list):
+            raise TypeError("can only combine Kernel instances")
 
         input_dim = np.max([k.input_dim
                             if type(k.active_dims) is slice else
                             np.max(k.active_dims) + 1
                             for k in kern_list])
-        super(Combination, self).__init__(input_dim=input_dim, name=name)
+        super().__init__(input_dim=input_dim, name=name)
 
         # add kernels to a list, flattening out instances of this class therein
         self.kern_list = []
@@ -838,7 +838,7 @@ class Combination(Kern):
             return not overlapping
 
 
-class Add(Combination):
+class Sum(Combination):
     def K(self, X, X2=None, presliced=False):
         return reduce(tf.add, [k.K(X, X2) for k in self.kern_list])
 
@@ -846,9 +846,31 @@ class Add(Combination):
         return reduce(tf.add, [k.Kdiag(X) for k in self.kern_list])
 
 
-class Prod(Combination):
+class Product(Combination):
     def K(self, X, X2=None, presliced=False):
         return reduce(tf.multiply, [k.K(X, X2) for k in self.kern_list])
 
     def Kdiag(self, X, presliced=False):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kern_list])
+
+
+def make_deprecated_class(oldname, NewClass):
+    """
+    Returns a class that raises NotImplementedError on instantiation.
+    e.g.:
+    >>> Kern = make_deprecated_class("Kern", Kernel)
+    """
+    msg = ("{module}.{} has been renamed to {module}.{}"
+           .format(oldname, NewClass.__name__, module=NewClass.__module__))
+
+    class OldClass(NewClass):
+        def __new__(cls, *args, **kwargs):
+            raise NotImplementedError(msg)
+    OldClass.__doc__ = msg
+    OldClass.__qualname__ = OldClass.__name__ = oldname
+    return OldClass
+
+Kern = make_deprecated_class("Kern", Kernel)
+Add = make_deprecated_class("Add", Sum)
+Prod = make_deprecated_class("Prod", Product)
+PeriodicKernel = make_deprecated_class("PeriodicKernel", Periodic)

@@ -332,10 +332,10 @@ class TestExpxKxzActiveDims(GPflowTestCase):
                     pk.compute_exKxz(self.Z, self.Xmu, self.Xcov)
 
 
-class TestKernProd(GPflowTestCase):
+class TestKernProduct(GPflowTestCase):
     """
-    TestKernProd
-    Need a separate test for this as Prod currently only supports diagonal Xcov matrices with non-overlapping kernels.
+    TestKernProduct
+    Need a separate test for this as Product currently only supports diagonal Xcov matrices with non-overlapping kernels.
     """
 
     @gpflow.defer_build()
@@ -352,12 +352,12 @@ class TestKernProd(GPflowTestCase):
             rbfard = [self.rng.rand() + 0.5]
             linvariance = 0.3 + self.rng.rand()
 
-            self.kernel = kernels.Prod([
+            self.kernel = kernels.Product([
                 kernels.RBF(1, rbfvariance, rbfard, [1], False),
                 kernels.Linear(1, linvariance, [0])
             ])
 
-            self.ekernel = ekernels.Prod([
+            self.ekernel = ekernels.Product([
                 ekernels.RBF(1, rbfvariance, rbfard, [1], False),
                 ekernels.Linear(1, linvariance, [0])
             ])
@@ -421,7 +421,7 @@ class DataExp:
     @classmethod
     def create_add_kernel1(cls, module):
         variance, ard, linvariance = cls.add_args
-        kern = module.Add([
+        kern = module.Sum([
             module.RBF(1, variance, ard, [1], False),
             module.Linear(1, linvariance, [0])
         ])
@@ -435,7 +435,7 @@ class DataExp:
     @classmethod
     def create_add_kernel2(cls, module):
         variance, ard, linvariance = cls.add_args
-        return module.Add([
+        return module.Sum([
             module.RBF(cls.D, variance, ard),
             module.Linear(cls.D, linvariance)
         ])
@@ -598,7 +598,7 @@ class TestAddCrossCalcs(GPflowTestCase):
         self.rbf.variance = 0.3 + self.rng.rand()
         self.lin = ekernels.Linear(self.D)
         self.lin.variance = 0.3 + self.rng.rand()
-        self.add = ekernels.Add([self.rbf, self.lin])
+        self.add = ekernels.Sum([self.rbf, self.lin])
 
         self.Xmu = self.rng.rand(self.N, self.D)
         self.Z = self.rng.rand(2, self.D)

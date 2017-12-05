@@ -44,12 +44,12 @@ class Gaussian(ProbabilityDistribution):
 def get_eval_func(obj, feature, slice=np.s_[...]):
     if feature is not None:
         # kernel + feature combination
-        if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kern):
-            raise GPflowError("If `feature` is supplied, `obj` must be a kernel.")
+        if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kernel):
+            raise TypeError("If `feature` is supplied, `obj` must be a kernel.")
         return lambda x: tf.transpose(feature.Kuf(obj, x))[slice]
     elif isinstance(obj, mean_functions.MeanFunction):
         return lambda x: obj(x)[slice]
-    elif isinstance(obj, kernels.Kern):
+    elif isinstance(obj, kernels.Kernel):
         return lambda x: obj.Kdiag(x)
     elif isinstance(obj, types.FunctionType):
         return obj
@@ -77,7 +77,7 @@ EXPECTATION_QUAD_IMPL = expectation.dispatch(Gaussian,
                                              object, type(None))
 
 
-@dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kern, InducingFeature)
+@dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kernel, InducingFeature)
 def expectation(p, mean, none, kern, feat):
     """
     It computes the expectation:
@@ -382,26 +382,26 @@ def expectation(p, mean1, none1, mean2, none2):
     return mean1(p.mu)[:, :, None] * e_mean2[:, None, :]
 
 
-# Additive
-@dispatch(Gaussian, kernels.Add, type(None), type(None), type(None))
+# Sum
+@dispatch(Gaussian, kernels.Sum, type(None), type(None), type(None))
 def expectation(p, kern, none1, none2, none3):
     expectation_fn = lambda k: expectation(p, k, None, None, None)
     return functools.reduce(tf.add, [expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch(Gaussian, kernels.Add, InducingPoints, type(None), type(None))
+@dispatch(Gaussian, kernels.Sum, InducingPoints, type(None), type(None))
 def expectation(p, kern, feat, none2, none3):
     expectation_fn = lambda k: expectation(p, k, feat, None, None)
     return functools.reduce(tf.add, [expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch(Gaussian, kernels.Add, InducingPoints, LINEAR_MEAN_FUNCTIONS, type(None))
+@dispatch(Gaussian, kernels.Sum, InducingPoints, LINEAR_MEAN_FUNCTIONS, type(None))
 def expectation(p, kern, feat, mean, none3):
     expectation_fn = lambda k: expectation(p, k, feat, mean, None)
     return functools.reduce(tf.add, [expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch(Gaussian, kernels.Add, InducingPoints, kernels.Add, InducingPoints)
+@dispatch(Gaussian, kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
 @quadrature_fallback
 def expectation(p, kern1, feat1, kern2, feat2):
     if feat1 != feat2:
@@ -423,32 +423,32 @@ def expectation(p, kern1, feat1, kern2, feat2):
     return functools.reduce(tf.add, crossexps)
 
 
-# Product kernels
-@dispatch(Gaussian, kernels.Prod, type(None), type(None), type(None))
+# Product
+@dispatch(Gaussian, kernels.Product, type(None), type(None), type(None))
 def expectation(p, kern, none1, none2, none3):
     if not kern.on_separate_dimensions:
-        raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
         tf.assert_equal(tf.rank(p.cov), 2,
-                        message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+                        message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         expectation_fn = lambda k: expectation(p, k, None, None, None)
         return functools.reduce(tf.multiply, [expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch(Gaussian, kernels.Prod, InducingPoints, type(None), type(None))
+@dispatch(Gaussian, kernels.Product, InducingPoints, type(None), type(None))
 def expectation(p, kern, feat, none2, none3):
     if not kern.on_separate_dimensions:
-        raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
         tf.assert_equal(tf.rank(p.cov), 2,
-                        message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+                        message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         expectation_fn = lambda k: expectation(p, k, feat, None, None)
         return functools.reduce(tf.multiply, [expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch(Gaussian, kernels.Prod, InducingPoints, kernels.Prod, InducingPoints)
+@dispatch(Gaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 @quadrature_fallback
 def expectation(p, kern1, feat1, kern2, feat2):
     if feat1 != feat2:
@@ -461,11 +461,10 @@ def expectation(p, kern1, feat1, kern2, feat2):
     feat = feat1
 
     if not kern.on_separate_dimensions:
-        raise NotImplementedError("Prod currently needs to be defined on separate dimensions.")  # pragma: no cover
+        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
         tf.assert_equal(tf.rank(p.cov), 2,
-                        message="Prod currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
+                        message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         expectation_fn = lambda k: expectation(p, k, feat, k, feat)
         return functools.reduce(tf.multiply, [expectation_fn(k) for k in kern.kern_list])
-
