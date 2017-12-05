@@ -30,11 +30,11 @@ LINEAR_MEAN_FUNCTIONS = (mean_functions.Linear,
                          mean_functions.Constant)
 
 
-def quadrature_fallback(function):
-    @functools.wraps(function)
+def quadrature_fallback(func):
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            return function(*args, **kwargs)
+            return func(*args, **kwargs)
         except (KeyError, NotImplementedError) as e:
             print(str(e))
             return EXPECTATION_QUAD_IMPL(*args)
@@ -42,7 +42,7 @@ def quadrature_fallback(function):
     return wrapper
 
 
-class ProbabilityDistribution():
+class ProbabilityDistribution:
     pass
 
 
@@ -78,7 +78,7 @@ def expectation(p, obj1, feature1, obj2, feature2, H=20):
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
-        eval_func = lambda x: get_eval_func(obj2, feature1)(x)
+        eval_func = lambda x: get_eval_func(obj2, feature2)(x)
     else:
         eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
                                get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
@@ -321,25 +321,24 @@ def expectation(p, kern1, feat1, kern2, feat2):
     :return: N x Ma x Mb
     """
     if feat1 != feat2 or kern1 != kern2:
-        raise NotImplementedError("")
+        raise NotImplementedError
 
-    print("RBF - RBF")
+    kern = kern1
+    feat = feat1
 
-    with params_as_tensors_for(kern1), \
-         params_as_tensors_for(feat1), \
-         params_as_tensors_for(kern2), \
-         params_as_tensors_for(feat2):
+    with params_as_tensors_for(kern), \
+         params_as_tensors_for(feat):
 
         # use only active dimensions
-        Xcov = kern1._slice_cov(p.cov)
-        Z, Xmu = kern1._slice(feat1.Z, p.mu)
+        Xcov = kern._slice_cov(p.cov)
+        Z, Xmu = kern._slice(feat.Z, p.mu)
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
-        lengthscales = kern1.lengthscales if kern1.ARD \
-                        else tf.zeros((D,), dtype=settings.tf_float) + kern1.lengthscales
+        lengthscales = kern.lengthscales if kern.ARD \
+                        else tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales
 
-        Kmms = tf.sqrt(kern1.K(Z, presliced=True)) / kern1.variance ** 0.5
+        Kmms = tf.sqrt(kern.K(Z, presliced=True)) / kern.variance ** 0.5
         scalemat = (tf.expand_dims(tf.eye(D, dtype=settings.tf_float), 0)
                     + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1]))  # NxDxD
         det = tf.matrix_determinant(scalemat)
@@ -353,8 +352,86 @@ def expectation(p, kern1, feat1, kern2, feat2):
         smI_z = tf.reshape(ssmI_z, (N, D, M, M))  # NxDxMxM
         fs = tf.reduce_sum(tf.square(smI_z), [1])  # NxMxM
 
-        return (kern1.variance**2 * tf.expand_dims(Kmms, 0)
+        return (kern.variance**2 * tf.expand_dims(Kmms, 0)
                 * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1]))
+
+
+@dispatch(Gaussian, kernels.Linear, type(None), type(None), type(None))
+@quadrature_fallback
+def expectation(p, kern, none1, none2, none3):
+        if kern.ARD:
+            raise NotImplementedError
+        # use only active dimensions
+        X, _ = kern._slice(p.mu, None)
+        Xcov = kern._slice_cov(p.cov)
+        with params_as_tensors_for(kern):
+            return kern.variance * \
+                    (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.matrix_diag_part(Xcov), 1))
+
+
+@dispatch(Gaussian, kernels.Linear, InducingPoints, type(None), type(None))
+@quadrature_fallback
+def expectation(p, kern, feat, none1, none2):
+    if kern.ARD:
+        raise NotImplementedError
+
+    with params_as_tensors_for(kern), \
+            params_as_tensors_for(feat):
+
+        # use only active dimensions
+        Z, Xmu = kern._slice(feat.Z, p.mu)
+
+        return kern.variance * tf.matmul(Xmu, Z, transpose_b=True)
+
+
+@dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
+@quadrature_fallback
+def expectation(p, kern1, feat1, kern2, feat2):
+    if kern1 != kern2 or feat1 != feat2 or kern1.ARD or kern2.ARD:
+        raise NotImplementedError
+
+    kern = kern1
+    feat = feat1
+
+    with params_as_tensors_for(kern), \
+         params_as_tensors_for(feat):
+
+        # use only active dimensions
+        Xcov = kern._slice_cov(p.cov)
+        Z, Xmu = kern._slice(feat.Z, p.mu)
+        N = tf.shape(Xmu)[0]
+        mom2 = tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2) + Xcov  # NxDxD
+        eZ = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
+        return kern.variance ** 2.0 * tf.matmul(tf.matmul(eZ, mom2), eZ, transpose_b=True)
+
+
+# @params_as_tensors
+# def exKxz_pairwise(self, Z, Xmu, Xcov):
+#     with tf.control_dependencies([
+#         tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.tf_int),
+#                         message="Currently cannot handle slicing in exKxz."),
+#         tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
+#     ]):
+#         Xmu = tf.identity(Xmu)
+#
+#     N = tf.shape(Xmu)[0] - 1
+#     Xmum = Xmu[:-1, :]
+#     Xmup = Xmu[1:, :]
+#     op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
+#     return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
+#
+# @params_as_tensors
+# def exKxz(self, Z, Xmu, Xcov):
+#     with tf.control_dependencies([
+#         tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.np_int),
+#                         message="Currently cannot handle slicing in exKxz."),
+#         tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
+#     ]):
+#         Xmu = tf.identity(Xmu)
+#
+#     N = tf.shape(Xmu)[0]
+#     op = tf.expand_dims(Xmu, 2) * tf.expand_dims(Xmu, 1) + Xcov  # NxDxD
+#     return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 
 
 @dispatch(Gaussian, LINEAR_MEAN_FUNCTIONS, type(None), type(None), type(None))
@@ -399,6 +476,7 @@ def expectation(p, mean1, none1, mean2, none2):
 # Sum
 @dispatch(Gaussian, kernels.Sum, type(None), type(None), type(None))
 def expectation(p, kern, none1, none2, none3):
+    print("Sum eKdiag")
     expectation_fn = lambda k: expectation(p, k, None, None, None)
     return functools.reduce(tf.add, [expectation_fn(k) for k in kern.kern_list])
 

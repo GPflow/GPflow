@@ -103,7 +103,7 @@ class TestKernExpDelta(GPflowTestCase):
 
     def test_eKzxKxz(self):
         for k in self.kernels:
-            with self.test_context():
+            with self.test_context() as sess:
                 k.compile()
                 psi2 = k.compute_eKzxKxz(self.Z, self.Xmu, self.Xcov)
                 kernmat = k.compute_K(self.Z, self.Xmu)  # MxN
