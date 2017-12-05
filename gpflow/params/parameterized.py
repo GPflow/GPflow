@@ -287,7 +287,7 @@ class Parameterized(Node):
         """
         # TODO(@awav): What prior must represent empty list of parameters?
         if not prior_tensors:
-            return tf.constant(0, dtype=settings.np_float)
+            return tf.constant(0, dtype=settings.float_type)
         return tf.add_n(prior_tensors, name='prior')
 
     def _set_param(self, name, value):

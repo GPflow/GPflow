@@ -34,8 +34,8 @@ class TestRbf(GPflowTestCase):
             kernel = gpflow.kernels.RBF(1, lengthscales=lengthscale, variance=variance)
             rng = np.random.RandomState(1)
 
-            X = tf.placeholder(gpflow.settings.np_float)
-            X_data = rng.randn(3, 1).astype(gpflow.settings.np_float)
+            X = tf.placeholder(gpflow.settings.float_type)
+            X_data = rng.randn(3, 1).astype(gpflow.settings.float_type)
 
             kernel.compile()
             gram_matrix = session.run(kernel.K(X), feed_dict={X: X_data})
@@ -61,7 +61,7 @@ class TestArcCosine(GPflowTestCase):
             if weight_variances is None:
                 weight_variances = 1.
             kernel.compile()
-            X = tf.placeholder(gpflow.settings.np_float)
+            X = tf.placeholder(gpflow.settings.float_type)
             gram_matrix = session.run(kernel.K(X), feed_dict={X: X_data})
             reference_gram_matrix = referenceArcCosineKernel(
                 X_data, order,
@@ -150,7 +150,7 @@ class TestPeriodic(GPflowTestCase):
             kernel = gpflow.kernels.PeriodicKernel(
                 D, period=period, variance=variance, lengthscales=lengthscale)
 
-            X = tf.placeholder(gpflow.settings.np_float)
+            X = tf.placeholder(gpflow.settings.float_type)
             reference_gram_matrix = referencePeriodicKernel(
                 X_data, lengthscale, variance, period)
             kernel.compile()

@@ -56,7 +56,7 @@ class SGPRUpperMixin(object):
     @autoflow()
     @params_as_tensors
     def compute_upper_bound(self):
-        num_data = tf.cast(tf.shape(self.Y)[0], settings.np_float)
+        num_data = tf.cast(tf.shape(self.Y)[0], settings.float_type)
 
         Kdiag = self.kern.Kdiag(self.X)
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
@@ -131,8 +131,8 @@ class SGPR(GPModel, SGPRUpperMixin):
         """
 
         num_inducing = len(self.feature)
-        num_data = tf.cast(tf.shape(self.Y)[0], settings.np_float)
-        output_dim = tf.cast(tf.shape(self.Y)[1], settings.np_float)
+        num_data = tf.cast(tf.shape(self.Y)[0], settings.float_type)
+        output_dim = tf.cast(tf.shape(self.Y)[1], settings.float_type)
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
@@ -144,7 +144,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         # Compute intermediate matrices
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
         AAT = tf.matmul(A, A, transpose_b=True)
-        B = AAT + tf.eye(num_inducing, dtype=settings.np_float)
+        B = AAT + tf.eye(num_inducing, dtype=settings.float_type)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
@@ -175,7 +175,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
-        B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=settings.np_float)
+        B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=settings.float_type)
         LB = tf.cholesky(B)
         Aerr = tf.matmul(A, err)
         c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
@@ -246,7 +246,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
 
-        B = tf.eye(num_inducing, dtype=settings.np_float) + tf.matmul(V / nu, V, transpose_b=True)
+        B = tf.eye(num_inducing, dtype=settings.float_type) + tf.matmul(V / nu, V, transpose_b=True)
         L = tf.cholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size N x R
         alpha = tf.matmul(V, beta)  # size N x R
@@ -293,7 +293,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
-        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.np_float))
+        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, settings.float_type))
         logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 

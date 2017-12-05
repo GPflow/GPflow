@@ -50,7 +50,7 @@ class TestOptimize(GPflowTestCase):
 
 class Empty(gpflow.models.Model):
     def _build_likelihood(self):
-        return tf.convert_to_tensor(1., dtype=gpflow.settings.np_float)
+        return tf.convert_to_tensor(1., dtype=gpflow.settings.float_type)
 
 
 class EmptyTest(GPflowTestCase):

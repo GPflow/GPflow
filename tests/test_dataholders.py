@@ -34,9 +34,9 @@ class TestDataholder(GPflowTestCase):
             self.assertFalse(d.trainable)
 
             shape = (10,)
-            d = gpflow.DataHolder(np.ones(shape), dtype=gpflow.settings.np_float)
+            d = gpflow.DataHolder(np.ones(shape), dtype=gpflow.settings.float_type)
             self.assertAllEqual(d.shape, shape)
-            self.assertEqual(d.dtype, gpflow.settings.np_float)
+            self.assertEqual(d.dtype, gpflow.settings.float_type)
             self.assertFalse(d.fixed_shape)
             self.assertFalse(d.trainable)
 

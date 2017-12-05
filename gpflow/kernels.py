@@ -63,45 +63,45 @@ class Kern(Parameterized):
 
         self.num_gauss_hermite_points = 20
 
-    @autoflow((settings.np_float, [None, None]),
-              (settings.np_float, [None, None]))
+    @autoflow((settings.float_type, [None, None]),
+              (settings.float_type, [None, None]))
     def compute_K(self, X, Z):
         return self.K(X, Z)
 
-    @autoflow((settings.np_float, [None, None]))
+    @autoflow((settings.float_type, [None, None]))
     def compute_K_symm(self, X):
         return self.K(X)
 
-    @autoflow((settings.np_float, [None, None]))
+    @autoflow((settings.float_type, [None, None]))
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @autoflow((settings.np_float, [None, None]),
-              (settings.np_float,))
+    @autoflow((settings.float_type, [None, None]),
+              (settings.float_type,))
     def compute_eKdiag(self, X, Xcov=None):
         return self.eKdiag(X, Xcov)
 
-    @autoflow((settings.np_float, [None, None]),
-              (settings.np_float, [None, None]),
-              (settings.np_float,))
+    @autoflow((settings.float_type, [None, None]),
+              (settings.float_type, [None, None]),
+              (settings.float_type,))
     def compute_eKxz(self, Z, Xmu, Xcov):
         return self.eKxz(Z, Xmu, Xcov)
 
-    @autoflow((settings.np_float, [None, None]),
-              (settings.np_float, [None, None]),
-              (settings.np_float, [None, None, None, None]))
+    @autoflow((settings.float_type, [None, None]),
+              (settings.float_type, [None, None]),
+              (settings.float_type, [None, None, None, None]))
     def compute_exKxz_pairwise(self, Z, Xmu, Xcov):
         return self.exKxz_pairwise(Z, Xmu, Xcov)
 
-    @autoflow((settings.np_float, [None, None]),
-              (settings.np_float, [None, None]),
-              (settings.np_float, [None, None, None]))
+    @autoflow((settings.float_type, [None, None]),
+              (settings.float_type, [None, None]),
+              (settings.float_type, [None, None, None]))
     def compute_exKxz(self, Z, Xmu, Xcov):
         return self.exKxz(Z, Xmu, Xcov)
 
-    @autoflow((settings.np_float, [None, None]),
-              (settings.np_float, [None, None]),
-              (settings.np_float,))
+    @autoflow((settings.float_type, [None, None]),
+              (settings.float_type, [None, None]),
+              (settings.float_type,))
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 
@@ -309,7 +309,7 @@ class White(Static):
             return tf.matrix_diag(d)
         else:
             shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
-            return tf.zeros(shape, settings.np_float)
+            return tf.zeros(shape, settings.float_type)
 
 
 class Constant(Static):
@@ -360,10 +360,10 @@ class Stationary(Kern):
         self.variance = Parameter(variance, transform=transforms.positive)
         if ARD:
             if lengthscales is None:
-                lengthscales = np.ones(input_dim, dtype=settings.np_float)
+                lengthscales = np.ones(input_dim, dtype=settings.float_type)
             else:
                 # accepts float or array:
-                lengthscales = lengthscales * np.ones(input_dim, dtype=settings.np_float)
+                lengthscales = lengthscales * np.ones(input_dim, dtype=settings.float_type)
             self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
             self.ARD = True
         else:
@@ -427,7 +427,7 @@ class Linear(Kern):
         self.ARD = ARD
         if ARD:
             # accept float or array:
-            variance = np.ones(self.input_dim, dtype=settings.np_float) * variance
+            variance = np.ones(self.input_dim, dtype=settings.float_type) * variance
             self.variance = Parameter(variance, transform=transforms.positive)
         else:
             self.variance = Parameter(variance, transform=transforms.positive)
@@ -596,10 +596,10 @@ class ArcCosine(Kern):
         self.bias_variance = Parameter(bias_variance, transform=transforms.positive)
         if ARD:
             if weight_variances is None:
-                weight_variances = np.ones(input_dim, settings.np_float)
+                weight_variances = np.ones(input_dim, settings.float_type)
             else:
                 # accepts float or array:
-                weight_variances = weight_variances * np.ones(input_dim, settings.np_float)
+                weight_variances = weight_variances * np.ones(input_dim, settings.float_type)
             self.weight_variances = Parameter(weight_variances, transform=transforms.positive)
             self.ARD = True
         else:
@@ -654,7 +654,7 @@ class ArcCosine(Kern):
             X, _ = self._slice(X, None)
 
         X_product = self._weighted_product(X)
-        theta = tf.constant(0., settings.np_float)
+        theta = tf.constant(0., settings.float_type)
         return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 
@@ -728,8 +728,8 @@ class Coregion(Kern):
 
         self.output_dim = output_dim
         self.rank = rank
-        self.W = Parameter(np.zeros((self.output_dim, self.rank), dtype=settings.np_float))
-        self.kappa = Parameter(np.ones(self.output_dim, dtype=settings.np_float), transform=transforms.positive)
+        self.W = Parameter(np.zeros((self.output_dim, self.rank), dtype=settings.float_type))
+        self.kappa = Parameter(np.ones(self.output_dim, dtype=settings.float_type), transform=transforms.positive)
 
     @params_as_tensors
     def K(self, X, X2=None):

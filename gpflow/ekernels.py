@@ -36,7 +36,7 @@ class RBF(kernels.RBF):
         if self.ARD:
             lengthscales = self.lengthscales
         else:
-            lengthscales = tf.zeros((D,), dtype=settings.np_float) + self.lengthscales
+            lengthscales = tf.zeros((D,), dtype=settings.float_type) + self.lengthscales
 
         vec = tf.expand_dims(Xmu, 2) - tf.expand_dims(tf.transpose(Z), 0)  # NxDxM
         chols = tf.cholesky(tf.expand_dims(tf.matrix_diag(lengthscales ** 2), 0) + Xcov)
@@ -71,11 +71,11 @@ class RBF(kernels.RBF):
         Xsigmc = Xsigmb[1, :, :, :]  # NxDxD
         Xmum = tf.slice(Xmu, [0, 0], tf.stack([N, -1]))
         Xmup = Xmu[1:, :]
-        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.np_float) + self.lengthscales
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.float_type) + self.lengthscales
         scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
 
         det = tf.matrix_determinant(
-            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.np_float), 0) +
+            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.float_type), 0) +
             tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm)  # N
 
         vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmum, 2)  # NxDxM
@@ -106,11 +106,11 @@ class RBF(kernels.RBF):
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
 
-        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.np_float) + self.lengthscales
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.float_type) + self.lengthscales
         scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xcov  # NxDxD
 
         det = tf.matrix_determinant(
-            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.np_float), 0) +
+            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.float_type), 0) +
             tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xcov)  # N
 
         vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmu, 2)  # NxDxM
@@ -136,10 +136,10 @@ class RBF(kernels.RBF):
         M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
-        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.np_float) + self.lengthscales
+        lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.float_type) + self.lengthscales
 
         Kmms = tf.sqrt(self.K(Z, presliced=True)) / self.variance ** 0.5
-        scalemat = tf.expand_dims(tf.eye(D, dtype=settings.np_float), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
+        scalemat = tf.expand_dims(tf.eye(D, dtype=settings.float_type), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
         det = tf.matrix_determinant(scalemat)
 
         mat = Xcov + 0.5 * tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0)  # NxDxD
@@ -190,7 +190,7 @@ class Linear(kernels.Linear):
     @params_as_tensors
     def exKxz(self, Z, Xmu, Xcov):
         with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.np_int),
+            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.int_type),
                             message="Currently cannot handle slicing in exKxz."),
             tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
         ]):
@@ -288,7 +288,7 @@ class Add(kernels.Add):
         if rbf.ARD:
             lengthscales = rbf.lengthscales
         else:
-            lengthscales = tf.zeros((D, ), dtype=settings.np_float) + rbf.lengthscales
+            lengthscales = tf.zeros((D, ), dtype=settings.float_type) + rbf.lengthscales
 
         lengthscales2 = lengthscales ** 2.0
         const = rbf.variance * lin.variance * tf.reduce_prod(lengthscales)

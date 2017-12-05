@@ -27,7 +27,7 @@ from numpy.testing import assert_allclose
 
 class Foo(gpflow.models.Model):
     def _build_likelihood(self):
-        return tf.zeros([1], dtype=gpflow.settings.np_float)
+        return tf.zeros([1], dtype=gpflow.settings.float_type)
 
 
 class TestNaming(GPflowTestCase):
@@ -862,7 +862,7 @@ class TestParamList(GPflowTestCase):
     def test_naming(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
+            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
             gpflow.ParamList([p1, p2])
             self.assertEqual(p1.name, 'item0')
             self.assertEqual(p2.name, 'item1')
@@ -870,7 +870,7 @@ class TestParamList(GPflowTestCase):
     def test_setitem(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
+            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
             param_list = gpflow.ParamList([p1, p2], name='param_list', autobuild=False)
 
             self.assertEqual(p1.read_value(), param_list[0].read_value())
@@ -881,7 +881,7 @@ class TestParamList(GPflowTestCase):
             self.assertEqual(p1.root, p1)
             self.assertEqual(param_list[0].read_value(), 2.0)
 
-            arr = np.array([1.1, 2.2], settings.np_float)
+            arr = np.array([1.1, 2.2], settings.float_type)
             param_list[1] = gpflow.Param(arr)
             self.assertEqual(p2.root, p2)
             self.assertTrue(np.all(param_list[1].read_value() == arr))
@@ -893,7 +893,7 @@ class TestParamList(GPflowTestCase):
     def test_append(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
+            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
             param_list = gpflow.ParamList([p1])
             param_list.append(p2)
             self.assertTrue(p2 in param_list.params)
@@ -903,7 +903,7 @@ class TestParamList(GPflowTestCase):
     def test_len(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p2 = gpflow.Param(np.array([3.4, 5.6], settings.np_float))
+            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
             l = gpflow.ParamList([p1])
             l.append(p2)
             self.assertTrue(len(l) == 2)
@@ -932,7 +932,7 @@ class TestParamList(GPflowTestCase):
             m.compile()
             optimizer = gpflow.train.ScipyOptimizer()
             optimizer.minimize(m, maxiter=10)
-            atol = 1e-6 if settings.np_float is np.float32 else 1e-8
+            atol = 1e-6 if settings.float_type is np.float32 else 1e-8
             params = [param.read_value() for param in m.parameters]
             self.assertTrue(np.allclose(params, 0., atol=atol))
 

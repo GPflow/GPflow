@@ -315,7 +315,7 @@ class Parameter(Node):
             dtype = num_type if dtype is None else dtype
             value = np.array(value, dtype=dtype)
         elif misc.is_list(value):
-            dtype = settings.np_float if dtype is None else dtype
+            dtype = settings.float_type if dtype is None else dtype
             value = np.array(value, dtype=dtype)
         elif cast:
             value = value.astype(dtype)
@@ -385,7 +385,7 @@ class Parameter(Node):
         prior_name = 'prior'
 
         if self.prior is None:
-            return tf.constant(0.0, settings.np_float, name=prior_name)
+            return tf.constant(0.0, settings.float_type, name=prior_name)
 
         log_jacobian = self.transform.log_jacobian_tensor(unconstrained_tensor)
         logp_var = self.prior.logp(constrained_tensor)

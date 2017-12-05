@@ -105,7 +105,7 @@ class VGP(GPModel):
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=settings.np_float) * \
+        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=settings.float_type) * \
             settings.numerics.jitter_level
         L = tf.cholesky(K)
 
@@ -210,7 +210,7 @@ class VGP_opper_archambeau(GPModel):
         f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=settings.np_float), 0),
+        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=settings.float_type), 0),
                     [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K

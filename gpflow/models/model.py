@@ -139,7 +139,7 @@ class GPModel(Model):
             Y = DataHolder(Y)
         self.X, self.Y = X, Y
 
-    @autoflow((settings.np_float, [None, None]))
+    @autoflow((settings.float_type, [None, None]))
     def predict_f(self, Xnew):
         """
         Compute the mean and variance of the latent function(s) at the points
@@ -147,7 +147,7 @@ class GPModel(Model):
         """
         return self._build_predict(Xnew)
 
-    @autoflow((settings.np_float, [None, None]))
+    @autoflow((settings.float_type, [None, None]))
     def predict_f_full_cov(self, Xnew):
         """
         Compute the mean and covariance matrix of the latent function(s) at the
@@ -155,23 +155,23 @@ class GPModel(Model):
         """
         return self._build_predict(Xnew, full_cov=True)
 
-    @autoflow((settings.np_float, [None, None]), (tf.int32, []))
+    @autoflow((settings.float_type, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
         mu, var = self._build_predict(Xnew, full_cov=True)
-        jitter = tf.eye(tf.shape(mu)[0], dtype=settings.np_float) * settings.numerics.jitter_level
+        jitter = tf.eye(tf.shape(mu)[0], dtype=settings.float_type) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[:, :, i] + jitter)
             shape = tf.stack([tf.shape(L)[0], num_samples])
-            V = tf.random_normal(shape, dtype=settings.np_float)
+            V = tf.random_normal(shape, dtype=settings.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
         return tf.transpose(tf.stack(samples))
 
-    @autoflow((settings.np_float, [None, None]))
+    @autoflow((settings.float_type, [None, None]))
     def predict_y(self, Xnew):
         """
         Compute the mean and variance of held-out data at the points Xnew
@@ -179,7 +179,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self._build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-    @autoflow((settings.np_float, [None, None]), (settings.np_float, [None, None]))
+    @autoflow((settings.float_type, [None, None]), (settings.float_type, [None, None]))
     def predict_density(self, Xnew, Ynew):
         """
         Compute the (log) density of the data Ynew at the points Xnew

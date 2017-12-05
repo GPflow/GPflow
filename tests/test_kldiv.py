@@ -40,9 +40,9 @@ class DiagsTest(GPflowTestCase):
         with self.test_session():
             N = 4
             M = 5
-            self.mu = tf.placeholder(settings.np_float, [M, N])
-            self.sqrt = tf.placeholder(settings.np_float, [M, N])
-            self.K = tf.placeholder(settings.np_float, [M, M])
+            self.mu = tf.placeholder(settings.float_type, [M, N])
+            self.sqrt = tf.placeholder(settings.float_type, [M, N])
+            self.K = tf.placeholder(settings.float_type, [M, M])
 
             self.rng = np.random.RandomState(0)
             self.mu_data = self.rng.randn(M, N)
@@ -90,10 +90,10 @@ class WhitenedTest(GPflowTestCase):
         with self.test_session():
             N = 4
             M = 5
-            self.mu = tf.placeholder(settings.np_float, [M, N])
-            self.sqrt = tf.placeholder(settings.np_float, [M, N])
-            self.chol = tf.placeholder(settings.np_float, [M, M, N])
-            self.I = tf.placeholder(settings.np_float, [M, M])
+            self.mu = tf.placeholder(settings.float_type, [M, N])
+            self.sqrt = tf.placeholder(settings.float_type, [M, N])
+            self.chol = tf.placeholder(settings.float_type, [M, M, N])
+            self.I = tf.placeholder(settings.float_type, [M, M])
 
             self.rng = np.random.RandomState(0)
             self.mu_data = self.rng.randn(M, N)
@@ -139,11 +139,11 @@ class EqualityTest(GPflowTestCase):
         with self.test_session():
             N = 4
             M = 5
-            self.mu = tf.placeholder(settings.np_float, [M, N])
-            self.sqrt = tf.placeholder(settings.np_float, [M, N])
-            self.chol = tf.placeholder(settings.np_float, [M, M, N])
-            self.K = tf.placeholder(settings.np_float, [M, M])
-            self.Kdiag = tf.placeholder(settings.np_float, [M, M])
+            self.mu = tf.placeholder(settings.float_type, [M, N])
+            self.sqrt = tf.placeholder(settings.float_type, [M, N])
+            self.chol = tf.placeholder(settings.float_type, [M, M, N])
+            self.K = tf.placeholder(settings.float_type, [M, M])
+            self.Kdiag = tf.placeholder(settings.float_type, [M, M])
 
             self.rng = np.random.RandomState(0)
             self.mu_data = self.rng.randn(M, N)
@@ -192,11 +192,11 @@ class OneDTest(GPflowTestCase):
         with self.test_session():
             N = 2
             M = 1
-            self.mu = tf.placeholder(settings.np_float, [M, N])
-            self.sqrt = tf.placeholder(settings.np_float, [M, N])
-            self.chol = tf.placeholder(settings.np_float, [M, M, N])
-            self.K = tf.placeholder(settings.np_float, [M, M])
-            self.Kdiag = tf.placeholder(settings.np_float, [M, M])
+            self.mu = tf.placeholder(settings.float_type, [M, N])
+            self.sqrt = tf.placeholder(settings.float_type, [M, N])
+            self.chol = tf.placeholder(settings.float_type, [M, M, N])
+            self.K = tf.placeholder(settings.float_type, [M, M])
+            self.Kdiag = tf.placeholder(settings.float_type, [M, M])
 
             self.mu_data = np.array([[1.3], [1.7]]).T
             self.sqrt_data = np.array([[0.8], [1.5]]).T
