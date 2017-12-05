@@ -54,12 +54,22 @@ class _SettingsManager(object):
 
     @property
     def tf_float(self):
-        warnings.warn('The tf_float is depricated and will be removed at GPflow 1.2.0 version.')
+        warnings.warn('The tf_float is depricated and will be removed at GPflow 1.2.0 version. Use float_type.')
         return self.float_type
 
     @property
     def tf_int(self):
-        warnings.warn('The tf_int is depricated and will be removed at GPflow 1.2.0 version.')
+        warnings.warn('The tf_int is depricated and will be removed at GPflow 1.2.0 version. Use int_type.')
+        return self.int_type
+
+    @property
+    def np_float(self):
+        warnings.warn('The np_float is depricated and will be removed at GPflow 1.2.0 version. Use float_type.')
+        return self.float_type
+
+    @property
+    def np_int(self):
+        warnings.warn('The np_int is depricated and will be removed at GPflow 1.2.0 version. Use int_type.')
         return self.int_type
 
     @property

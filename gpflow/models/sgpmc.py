@@ -98,5 +98,5 @@ class SGPMC(GPModel):
 
         """
         mu, var = conditional(self.feature, self.kern, Xnew, self.V, full_cov=full_cov, q_sqrt=None,
-                              whiten=True)
+                              white=True)
         return mu + self.mean_function(Xnew), var

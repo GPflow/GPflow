@@ -60,7 +60,7 @@ class DiagsTest(GPflowTestCase):
             Fstar_mean_1, Fstar_var_1 = gpflow.conditionals.conditional(
                 Xs, X, k, mu, q_sqrt=sqrt)
             Fstar_mean_2, Fstar_var_2 = gpflow.conditionals.conditional(
-                Xs, X, k, mu, q_sqrt=chol, whiten=True)
+                Xs, X, k, mu, q_sqrt=chol, white=True)
 
             mean_diff = sess.run(Fstar_mean_1 - Fstar_mean_2, feed_dict=feed_dict)
             var_diff = sess.run(Fstar_var_1 - Fstar_var_2, feed_dict=feed_dict)
@@ -119,7 +119,7 @@ class WhitenTest(GPflowTestCase):
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, F, lower=True)
             Fstar_mean, Fstar_var = gpflow.conditionals.conditional(Xs, X, k, F)
-            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.conditional(Xs, X, k, V, whiten=True)
+            Fstar_w_mean, Fstar_w_var = gpflow.conditionals.conditional(Xs, X, k, V, white=True)
 
             mean1, var1 = sess.run([Fstar_w_mean, Fstar_w_var], feed_dict=feed_dict)
             mean2, var2 = sess.run([Fstar_mean, Fstar_var], feed_dict=feed_dict)
@@ -153,7 +153,7 @@ class WhitenTestGaussian(WhitenTest):
             Fstar_mean, Fstar_var = gpflow.conditionals.conditional(
                 Xs, X, k, F, q_sqrt=F_sqrt)
             Fstar_w_mean, Fstar_w_var = gpflow.conditionals.conditional(
-                Xs, X, k, V, q_sqrt=V_sqrt, whiten=True)
+                Xs, X, k, V, q_sqrt=V_sqrt, white=True)
 
             mean_difference = sess.run(Fstar_w_mean - Fstar_mean, feed_dict=feed_dict)
             var_difference = sess.run(Fstar_w_var - Fstar_var, feed_dict=feed_dict)
