@@ -290,6 +290,14 @@ class Parameter(Node):
                 return self._read_parameter_tensor(session)
         return self._value
 
+    def as_pandas_table(self):
+        column_names = ['class', 'prior', 'transform', 'trainable', 'shape', 'fixed_shape', 'value']
+        column_values = [self.__class__.__name__, str(self.prior), str(self.transform),
+                         self.trainable, self.shape, self.fixed_shape, self.value]
+        column_values = [[value] for value in column_values]
+        df = misc.pretty_pandas_table([self.full_name], column_names, column_values)
+        return df
+
     def _valid_input(self, value, dtype=None):
         if not misc.is_valid_param_value(value):
             msg = 'The value must be either a tensorflow variable, an array or a scalar.'
@@ -451,48 +459,6 @@ class Parameter(Node):
             raise GPflowError(msg.format(name, attr.interface))
         object.__setattr__(self, name, value)
 
-    def _html_table_rows(self, name_prefix=''):
-        html = "<tr>"
-        html += "<td>{0}</td>".format(name_prefix + self.full_name)
-        html += "<td>{0}</td>".format(str(self.read_value()).replace('\n', '</br>'))
-        html += "<td>{0}</td>".format(str(self.prior))
-        html += "<td>{0}</td>".format('[trainable]' if self.trainable else str(self.transform))
-        html += "</tr>"
-        return html
-
-    def _format_parameter(self, **kwargs):
-        begin = '<{otype} name:\033[1m{name}\033[0m'.format(
-            otype=self.__class__.__name__, name=self.full_name)
-        if self._externally_defined:
-            begin += ' [external tensor]'
-        if self._externally_defined:
-            end = ' value: unknown'
-        else:
-            # hijack numpy print options for a moment
-            opt = np.get_printoptions()
-            np.set_printoptions(threshold=6)
-            value_repr = self.read_value().__repr__()
-            np.set_printoptions(**opt)
-
-            #reformat numpy repr to our own:
-            value_repr = value_repr.replace('\n', '\n ')\
-                    .replace('array', '')\
-                    .replace('(', '').replace(')', '')
-            end = '>\nvalue: {value}'.format(value=value_repr)
-        args = {}
-        body = ''
-        for key, value in kwargs.items():
-            if isinstance(value, bool):
-                if not value:
-                    continue
-                arg_value = '[{}]'.format(key)
-                body = ' {{{key}}}'.format(key=key) + body
-            else:
-                arg_value = '{key}:{value}'.format(key=key, value=value)
-                body += ' {{{key}}}'.format(key=key)
-            args[key] = arg_value
-        return (begin + body + end).format(**args)
-
     def __setattr__(self, name, value):
         try:
             attr = self.ParameterAttribute[name.upper()]
@@ -502,12 +468,8 @@ class Parameter(Node):
             pass
         object.__setattr__(self, name, value)
 
-    def __str__(self):
-        return self._format_parameter(
-            trainable=self.trainable,
-            shape=self.shape,
-            transform=self.transform,
-            prior=self.prior)
+    def __repr__(self):
+        return self.as_pandas_table()
 
     @property
     def fixed(self):

@@ -251,6 +251,15 @@ class Parameterized(Node):
             if not isinstance(param, DataHolder):
                 param.set_trainable(value)
 
+    def as_pandas_table(self):
+        df = None
+        for parameter in self.parameters:
+            if isinstance(parameter, DataHolder):
+                continue
+            param_table = parameter.as_pandas_table()
+            df = df.append(param_table) if df is not None else param_table
+        return df
+
     @staticmethod
     def _is_param_like(value):
         return isinstance(value, (Parameter, Parameterized))
@@ -341,9 +350,8 @@ class Parameterized(Node):
 
         object.__setattr__(self, key, value)
 
-
-    def __str__(self):
-        return '\n\n'.join([p.__str__() for p in self.parameters])
+    def __repr__(self):
+        return str(self.as_pandas_table())
 
     @property
     def fixed(self):

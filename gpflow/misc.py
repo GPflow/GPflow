@@ -15,12 +15,20 @@
 
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 
 from . import settings
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
+
+
+def pretty_pandas_table(names, keys, values):
+    df = pd.DataFrame(dict(zip(keys, values)))
+    df.index = names
+    df = df.reindex_axis(keys, axis=1)
+    return df
 
 
 def tensor_name(*subnames):

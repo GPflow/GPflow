@@ -69,6 +69,13 @@ class DataHolder(Parameter):
             return Build.YES
         return Build.NO
 
+    def as_pandas_table(self):
+        column_names = ['class', 'shape', 'fixed_shape', 'value']
+        column_values = [self.__class__.__name__, self.shape, self.fixed_shape, self.value]
+        column_values = [[value] for value in column_values]
+        df = misc.pretty_pandas_table([self.full_name], column_names, column_values)
+        return df
+
     def _parameter_name(self):
         return misc.tensor_name(self.hidden_full_name, 'dataholder')
 
@@ -106,8 +113,8 @@ class DataHolder(Parameter):
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
 
-    def __str__(self):
-        return self._format_parameter(shape=self.shape)
+    def __repr__(self):
+        return str(self.as_pandas_table())
 
 
 class Minibatch(DataHolder):
