@@ -469,7 +469,7 @@ class Parameter(Node):
         object.__setattr__(self, name, value)
 
     def __repr__(self):
-        return self.as_pandas_table()
+        return str(self.as_pandas_table())
 
     @property
     def fixed(self):

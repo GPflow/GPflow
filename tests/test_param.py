@@ -259,6 +259,7 @@ class TestParameter(GPflowTestCase):
             str_dst = ('<Parameter name:\x1b[1mParameter\x1b[0m '\
                        '[trainable] shape:() transform:(none) '\
                        'prior:None>\nvalue: 1.0')
+            str_dst = '               class prior transform  trainable shape  fixed_shape value\nParameter  Parameter  None    (none)       True    ()         True   1.0'
             self.assertEqual(str_dst, str(p))
 
     def test_generators(self):
