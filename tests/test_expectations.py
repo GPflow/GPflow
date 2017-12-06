@@ -20,9 +20,11 @@ import pytest
 import gpflow
 from gpflow import test_util
 from gpflow.expectations import expectation
-from gpflow.expectations_quadrature import EXPECTATION_QUAD_IMPL
-from gpflow.probability_distributions import Gaussian
+from gpflow.expectations_quadrature import expectation_quad as quad_impl
+from gpflow.probability_distributions import Gaussian, DiagonalGaussian
 from gpflow import kernels, mean_functions, features
+
+from functools import partial
 
 
 def gen_L(rng, n, *shape):
@@ -47,6 +49,8 @@ class Data:
     with test_util.session_context(graph) as sess:
         gauss = Gaussian(tf.constant(Xmu), tf.constant(Xvar))
         dirac = Gaussian(tf.constant(Xmu), tf.constant(np.zeros((num_data, D_in, D_in))))
+        gauss_diag = DiagonalGaussian(tf.constant(Xmu), tf.constant(rng.rand(num_data, D_in)))
+        dirac_diag = DiagonalGaussian(tf.constant(Xmu), tf.constant(np.zeros((num_data, D_in))))
 
     with gpflow.decors.defer_build():
         # features
@@ -82,20 +86,23 @@ def _execute_func_on_params(params, func_name):
 
 
 def _quadrature_expectation(params):
+    if isinstance(params[0], DiagonalGaussian):
+        params[0].cov = tf.matrix_diag(params[0].var)
+
     if len(params) == 2:
         if isinstance(params[1], tuple):
-            return EXPECTATION_QUAD_IMPL(params[0], *params[1], None, None)
+            return quad_impl(params[0], *params[1], None, None)
         elif not isinstance(params[1], tuple):
-            return EXPECTATION_QUAD_IMPL(params[0], params[1], None, None, None)
+            return quad_impl(params[0], params[1], None, None, None)
     elif len(params) == 3:
         if isinstance(params[1], tuple) and isinstance(params[2], tuple):
-            return EXPECTATION_QUAD_IMPL(params[0], *params[1], *params[2])
+            return quad_impl(params[0], *params[1], *params[2])
         elif isinstance(params[1], tuple) and not isinstance(params[2], tuple):
-            return EXPECTATION_QUAD_IMPL(params[0], *params[1], params[2], None)
+            return quad_impl(params[0], *params[1], params[2], None)
         elif not isinstance(params[1], tuple) and isinstance(params[2], tuple):
-            return EXPECTATION_QUAD_IMPL(params[0], params[1], None, *params[2])
+            return quad_impl(params[0], params[1], None, *params[2])
         elif not isinstance(params[1], tuple) and not isinstance(params[2], tuple):
-            return EXPECTATION_QUAD_IMPL(params[0], params[1], None, params[2], None)
+            return quad_impl(params[0], params[1], None, params[2], None)
 
     assert False
 
@@ -111,8 +118,8 @@ def _test(params):
         _execute_func_on_params(params[1:], 'clear')
 
 
-@pytest.mark.parametrize("distribution", [Data.gauss])
-@pytest.mark.parametrize("kern", [Data.lin_kern])
+@pytest.mark.parametrize("distribution", [Data.gauss, Data.gauss_diag])
+@pytest.mark.parametrize("kern", [Data.lin_kern, Data.rbf, Data.rbf_lin_sum, Data.rbf_prod_seperate_dims])
 @pytest.mark.parametrize("feat", [Data.ip])
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, k, f: (p, k),

@@ -125,7 +125,7 @@ class DataQuadrature:
         q_mu = tf.placeholder(np_float, [cls.num_ind, cls.D_out])
         q_sqrt = tf.placeholder(np_float, [cls.num_ind, cls.num_ind, cls.D_out])
 
-        kern = gpflow.ekernels.RBF(cls.D_in)
+        kern = gpflow.kernels.RBF(cls.D_in)
         feat = gpflow.features.InducingPoints(cls.Z)
         mean_function = mean_function_factory(cls.rng, mean_name, cls.D_in, cls.D_out)
         effective_mean = mean_function or (lambda X: 0.0)
@@ -175,7 +175,7 @@ MEANS = ["Constant", "Linear", "Zero", None]
 def test_no_uncertainty(white, mean):
     with session_context() as sess:
         m = mean_function_factory(Data.rng, mean, Data.D_in, Data.D_out)
-        k = gpflow.ekernels.RBF(1, variance=Data.rng.rand())
+        k = gpflow.kernels.RBF(1, variance=Data.rng.rand())
         model = MomentMatchingSVGP(
             Data.X, Data.Y, k, gpflow.likelihoods.Gaussian(),
             mean_function=m, Z=Data.X.copy(), whiten=white)
@@ -196,7 +196,7 @@ def test_no_uncertainty(white, mean):
 @pytest.mark.parametrize('mean', MEANS)
 def test_monte_carlo_1_din(white, mean):
     with session_context() as sess:
-        k = gpflow.ekernels.RBF(1, variance=DataMC1.rng.rand())
+        k = gpflow.kernels.RBF(1, variance=DataMC1.rng.rand())
         m = mean_function_factory(DataMC1.rng, mean, DataMC1.D_in, DataMC1.D_out)
         model = MomentMatchingSVGP(
             DataMC1.X, DataMC1.Y, k, gpflow.likelihoods.Gaussian(),

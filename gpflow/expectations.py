@@ -18,7 +18,7 @@ import tensorflow as tf
 from multipledispatch import dispatch
 
 from . import kernels, mean_functions, settings
-from .probability_distributions import Gaussian
+from .probability_distributions import Gaussian, DiagonalGaussian
 from .expectations_quadrature import quadrature_fallback
 from .features import InducingFeature, InducingPoints
 from .decors import params_as_tensors_for
@@ -466,31 +466,31 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 
 
 # Product
-@dispatch(Gaussian, kernels.Product, type(None), type(None), type(None))
+@dispatch(DiagonalGaussian, kernels.Product, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3):
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.cov), 2,
+        tf.assert_equal(tf.rank(p.var), 2,
                         message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         _expectation_fn = lambda k: _expectation(p, k, None, None, None)
         return functools.reduce(tf.multiply, [_expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch(Gaussian, kernels.Product, InducingPoints, type(None), type(None))
+@dispatch(DiagonalGaussian, kernels.Product, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3):
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.cov), 2,
+        tf.assert_equal(tf.rank(p.var), 2,
                         message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         _expectation_fn = lambda k: _expectation(p, k, feat, None, None)
         return functools.reduce(tf.multiply, [_expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch(Gaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
+@dispatch(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 @quadrature_fallback
 def _expectation(p, kern1, feat1, kern2, feat2):
     if feat1 != feat2:
@@ -505,8 +505,15 @@ def _expectation(p, kern1, feat1, kern2, feat2):
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.cov), 2,
+        tf.assert_equal(tf.rank(p.var), 2,
                         message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         _expectation_fn = lambda k: _expectation(p, k, feat, k, feat)
         return functools.reduce(tf.multiply, [_expectation_fn(k) for k in kern.kern_list])
+
+
+@dispatch(DiagonalGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+def _expectation(p, obj1, obj2, obj3, obj4):
+    gauss = Gaussian(p.mu, tf.matrix_diag(p.var))
+    return _expectation(gauss, obj1, obj2, obj3, obj4)
+

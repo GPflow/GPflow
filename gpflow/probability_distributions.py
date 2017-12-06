@@ -22,3 +22,10 @@ class Gaussian(ProbabilityDistribution):
         super(Gaussian, self).__init__()
         self.mu = mu  # N x D
         self.cov = cov  # N x D x D
+
+
+class DiagonalGaussian(ProbabilityDistribution):
+    def __init__(self, mu, var):
+        super(DiagonalGaussian, self).__init__()
+        self.mu = mu  # N x D
+        self.var = var  # N x D

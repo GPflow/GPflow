@@ -20,7 +20,7 @@ import tensorflow as tf
 from multipledispatch import dispatch
 
 from . import kernels, mean_functions
-from .probability_distributions import Gaussian
+from .probability_distributions import Gaussian, DiagonalGaussian
 from .features import InducingFeature
 from .quadrature import mvnquad
 
@@ -32,7 +32,7 @@ def quadrature_fallback(func):
             return func(*args, **kwargs)
         except NotImplementedError as e:
             print(str(e))
-            return EXPECTATION_QUAD_IMPL(*args)
+            return expectation_quad(*args)
 
     return wrapper
 
@@ -56,8 +56,9 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _expectation(p, obj1, feature1, obj2, feature2, H=20):
+def _expectation(p, obj1, feature1, obj2, feature2, H=40):
     print("Quad")
+    print("H", H)
     # warnings.warn("Quadrature is being used to calculate expectation")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
@@ -70,5 +71,4 @@ def _expectation(p, obj1, feature1, obj2, feature2, H=20):
     return mvnquad(eval_func, p.mu, p.cov, H)
 
 
-EXPECTATION_QUAD_IMPL = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
-
+expectation_quad = _expectation.dispatch(Gaussian, object, type(None), object, type(None))

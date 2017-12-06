@@ -5,10 +5,13 @@ from .. import settings
 from .. import likelihoods
 from .. import transforms
 from .. import kernels
+from .. import features
 
 from ..params import Parameter
 from ..decors import params_as_tensors
 from ..mean_functions import Zero
+from ..expectations import expectation
+from ..probability_distributions import DiagonalGaussian
 
 from .model import GPModel
 from .gpr import GPR
@@ -47,7 +50,7 @@ class GPLVM(GPR):
 
 
 class BayesianGPLVM(GPModel):
-    def __init__(self, X_mean, X_var, Y, kern, M, Z=None, X_prior_mean=None, X_prior_var=None):
+    def __init__(self, X_mean, X_var, Y, kern, M, feat=None, Z=None, X_prior_mean=None, X_prior_var=None):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
         :param X_mean: initial latent positions, size N (number of points) x Q (latent dimensions).
@@ -78,13 +81,13 @@ class BayesianGPLVM(GPModel):
         assert X_var.shape[0] == Y.shape[0], 'X var and Y must be same size.'
 
         # inducing points
-        if Z is None:
+        if Z is None and feat is None:
             # By default we initialize by subset of initial latent points
             Z = np.random.permutation(X_mean.copy())[:M]
-        else:
-            assert Z.shape[0] == M
-        self.Z = Parameter(Z)
-        self.num_latent = Z.shape[1]
+
+        self.feature = features.inducingpoint_wrapper(feat, Z)
+        assert self.feature.Z.shape[0] == M
+        self.num_latent = self.feature.Z.shape[1]
         assert X_mean.shape[1] == self.num_latent
 
         # deal with parameters for the prior mean variance of X
@@ -107,11 +110,13 @@ class BayesianGPLVM(GPModel):
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
         """
-        num_inducing = tf.shape(self.Z)[0]
-        psi0 = tf.reduce_sum(self.kern.eKdiag(self.X_mean, self.X_var), 0)
-        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
-        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
+        pX = DiagonalGaussian(self.X_mean, self.X_var)
+
+        num_inducing = tf.shape(self.feature.Z)[0]
+        psi0 = tf.reduce_sum(expectation(pX, self.kern), 0)
+        psi1 = expectation(pX, (self.kern, self.feature))
+        psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), 0)
+        Kuu = self.kern.K(self.feature.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -153,11 +158,13 @@ class BayesianGPLVM(GPModel):
         there are notes in the SGPR notebook.
         :param Xnew: Point to predict at.
         """
-        num_inducing = tf.shape(self.Z)[0]
-        psi1 = self.kern.eKxz(self.Z, self.X_mean, self.X_var)
-        psi2 = tf.reduce_sum(self.kern.eKzxKxz(self.Z, self.X_mean, self.X_var), 0)
-        Kuu = self.kern.K(self.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
-        Kus = self.kern.K(self.Z, Xnew)
+        pX = DiagonalGaussian(self.X_mean, self.X_var)
+
+        num_inducing = tf.shape(self.feature.Z)[0]
+        psi1 = expectation(pX, (self.kern, self.feature))
+        psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), 0)
+        Kuu = self.kern.K(self.feature.Z) + tf.eye(num_inducing, dtype=settings.tf_float) * settings.numerics.jitter_level
+        Kus = self.kern.K(self.feature.Z, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
         L = tf.cholesky(Kuu)
