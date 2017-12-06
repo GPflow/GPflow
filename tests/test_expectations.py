@@ -80,6 +80,7 @@ def _test(params):
         # Don't evaluate if both implementations are doing quadrature.
         # This means that there is no analytic implementation available
         # for the particular combination of parameters.
+        assert False
         return
 
     with test_util.session_context(Data.graph) as sess:
@@ -117,6 +118,8 @@ def test_mean_function_expectations(distribution, mean1, mean2, arg_filter):
 
 @pytest.mark.parametrize("distribution", [Data.gauss])
 @pytest.mark.parametrize("mean", [Data.lin, Data.iden, Data.const, Data.zero])
+# @pytest.mark.parametrize("mean", [Data.iden])
+# @pytest.mark.parametrize("kern", [Data.lin_kern])
 @pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
 @pytest.mark.parametrize("feat", [Data.ip])
 @pytest.mark.parametrize("arg_filter", [

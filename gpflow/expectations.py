@@ -28,6 +28,23 @@ LINEAR_MEAN_FUNCTIONS = (mean_functions.Linear,
                          mean_functions.Constant)
 
 
+# def expectation1(p, obj): pass
+# def expectation2(p, obj1, obj2): pass
+
+# def expectation(p, obj1, obj2=None):
+#     if isinstance(obj1, tuple):
+#         feat1, obj1 = obj1
+#     if isinstance(obj2, tuple):
+#         feat2, obj2 = obj2
+#     if obj2 is None:
+#         return expectation1(p, obj1, feat1)
+#     else:
+#         return expectation2(p, obj1, feat1, obj2, feat2)
+
+# expectation(p, (feat, kern), mean_function)
+# expectation(p, kern)
+# expectation(p, kern, mean_function)
+
 @dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kernel, InducingFeature)
 def expectation(p, mean, none, kern, feat):
     """
@@ -133,14 +150,13 @@ def expectation(p, rbf_kern, feat, identity_mean, none):
                 * tf.expand_dims(tf.exp(-0.5 * q), 2))
 
 
-# RBF kernel - Linear mean
-@dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Linear, type(None))
+@dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Linear, type(None))
 def expectation(p, rbf_kern, feat, linear_mean, none):
     """
     It computes the expectation:
     <K_{x, Z} m(x)>_p(x), where
         - m(x_i) = A x_i + b :: Linear mean function
-        - K(.,.)             :: RBF kernel
+        - K(.,.)             :: RBF or Linear kernel
 
     :return: NxMxQ
     """
@@ -156,14 +172,13 @@ def expectation(p, rbf_kern, feat, linear_mean, none):
         return eAxKxz + ebKxz
 
 
-# RBF kernel - Constant or Zero mean
-@dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Constant, type(None))
+@dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Constant, type(None))
 def expectation(p, rbf_kern, feat, constant_mean, none):
     """
     It computes the expectation:
     <K_{x, Z} m(x)>_p(x), where
-        - m(x_i) = A x_i + b :: Constant or Zero function
-        - K(.,.)             :: RBF kernel
+        - m(x_i) = c :: Constant or Zero function
+        - K(.,.)     :: RBF or Linear kernel
 
     :return: NxMxQ
     """
@@ -231,7 +246,6 @@ def expectation(p, rbf_kern, feat1, lin_kern, feat2):
         vecmin = Z[None, :, :] - Xmu[:, None, :]  # NxMxD
         d = tf.matrix_triangular_solve(tcgm, vecmin[:, :, :, None])  # NxMxDx1
         exp = tf.exp(-0.5 * tf.reduce_sum(d ** 2.0, [2, 3]))  # NxM
-        # exp = tf.Print(exp, [tf.shape(exp)])
 
         vecplus = (Z[None, :, :, None] / lengthscales2[None, None, :, None] +
                    tf.matrix_solve(Xcov, Xmu[:, :, None])[:, None, :, :])  # NxMxDx1
@@ -358,18 +372,36 @@ def expectation(p, kern1, feat1, kern2, feat2):
 #     op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
 #     return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 #
-# @params_as_tensors
-# def exKxz(self, Z, Xmu, Xcov):
-#     with tf.control_dependencies([
-#         tf.assert_equal(tf.shape(Xmu)[1], tf.constant(self.input_dim, settings.np_int),
-#                         message="Currently cannot handle slicing in exKxz."),
-#         tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
-#     ]):
-#         Xmu = tf.identity(Xmu)
-#
-#     N = tf.shape(Xmu)[0]
-#     op = tf.expand_dims(Xmu, 2) * tf.expand_dims(Xmu, 1) + Xcov  # NxDxD
-#     return self.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
+
+# Linear kernel - Identity mean
+@dispatch(Gaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
+def expectation(p, lin_kern, feat, identity_mean, none):
+    """
+    It computes the expectation:
+    <K_{x, Z} m(x)>_p(x), where
+        - m(x) = x :: identity mean function
+        - K(.,.)   :: Linear kernel
+
+    :return: NxMxQ
+    """
+    Xmu, Xcov = p.mu, p.cov
+
+    with tf.control_dependencies([
+        tf.assert_equal(tf.shape(Xmu)[1], tf.constant(lin_kern.input_dim, settings.np_int),
+                        message="Currently cannot handle slicing in exKxz."),
+        tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
+    ]):
+        Xmu = tf.identity(Xmu)
+
+    print("Linear kernel - Identity mean")
+
+    with params_as_tensors_for(lin_kern), \
+         params_as_tensors_for(identity_mean), \
+         params_as_tensors_for(feat):
+
+        N = tf.shape(Xmu)[0]
+        op = tf.expand_dims(Xmu, 2) * tf.expand_dims(Xmu, 1) + Xcov  # NxDxD
+        return lin_kern.variance * tf.matmul(tf.tile(tf.expand_dims(feat.Z, 0), (N, 1, 1)), op)
 
 
 @dispatch(Gaussian, LINEAR_MEAN_FUNCTIONS, type(None), type(None), type(None))
@@ -387,6 +419,8 @@ def expectation(p, mean1, none1, mean2, none2):
         e_b1t_b2 = mean1.b[:, None] * mean2.b[None, :] # Q1 x Q2
 
         return e_A1t_xt_x_A2 + e_A1t_xt_b2 + e_b1t_x_A2 + e_b1t_b2
+
+
 
 
 @dispatch(Gaussian,
