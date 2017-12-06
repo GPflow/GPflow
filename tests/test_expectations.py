@@ -74,32 +74,50 @@ class Data:
         const = mean_functions.Constant(rng.rand(D_out))
 
 
+def _execute_func_on_params(params, func_name):
+    # This construction just flattens a list of objects and tuple of objects.
+    # The member function `func_name` is executed for each element of the list.
+    _ = [getattr(param, func_name)() for param_tuple in params
+            for param in (param_tuple if isinstance(param_tuple, tuple) else (param_tuple,))]
+
+
+def _quadrature_expectation(params):
+    if len(params) == 2:
+        if isinstance(params[1], tuple):
+            return EXPECTATION_QUAD_IMPL(params[0], *params[1], None, None)
+        elif not isinstance(params[1], tuple):
+            return EXPECTATION_QUAD_IMPL(params[0], params[1], None, None, None)
+    elif len(params) == 3:
+        if isinstance(params[1], tuple) and isinstance(params[2], tuple):
+            return EXPECTATION_QUAD_IMPL(params[0], *params[1], *params[2])
+        elif isinstance(params[1], tuple) and not isinstance(params[2], tuple):
+            return EXPECTATION_QUAD_IMPL(params[0], *params[1], params[2], None)
+        elif not isinstance(params[1], tuple) and isinstance(params[2], tuple):
+            return EXPECTATION_QUAD_IMPL(params[0], params[1], None, *params[2])
+        elif not isinstance(params[1], tuple) and not isinstance(params[2], tuple):
+            return EXPECTATION_QUAD_IMPL(params[0], params[1], None, params[2], None)
+
+    assert False
+
 def _test(params):
-    implementation = expectation.dispatch(*map(type, params))
-    if implementation == EXPECTATION_QUAD_IMPL:
-        # Don't evaluate if both implementations are doing quadrature.
-        # This means that there is no analytic implementation available
-        # for the particular combination of parameters.
-        assert False
-        return
-
     with test_util.session_context(Data.graph) as sess:
-        _ = [obj.compile() for obj in params[1:] if obj is not None]
+        _execute_func_on_params(params[1:], 'compile')
 
-        analytic = implementation(*params)
-        quad = EXPECTATION_QUAD_IMPL(*params, H=30)
+        analytic = expectation(*params)
+        quad = _quadrature_expectation(params)
         analytic, quad = sess.run([analytic, quad])
         np.testing.assert_almost_equal(quad, analytic, decimal=2)
-        _ = [obj.clear() for obj in params[1:] if obj is not None]
+
+        _execute_func_on_params(params[1:], 'clear')
 
 
 @pytest.mark.parametrize("distribution", [Data.gauss])
 @pytest.mark.parametrize("kern", [Data.lin_kern])
 @pytest.mark.parametrize("feat", [Data.ip])
 @pytest.mark.parametrize("arg_filter", [
-                            lambda p, k, f: (p, k, None, None, None),
-                            lambda p, k, f: (p, k, f, None, None),
-                            lambda p, k, f: (p, k, f, k, f)])
+                            lambda p, k, f: (p, k),
+                            lambda p, k, f: (p, (k, f)),
+                            lambda p, k, f: (p, (k, f), (k, f))])
 def test_psi_stats(distribution, kern, feat, arg_filter):
     params = arg_filter(distribution, kern, feat)
     _test(params)
@@ -109,8 +127,8 @@ def test_psi_stats(distribution, kern, feat, arg_filter):
 @pytest.mark.parametrize("mean1", [Data.lin, Data.iden, Data.const, Data.zero])
 @pytest.mark.parametrize("mean2", [Data.lin, Data.iden, Data.const, Data.zero])
 @pytest.mark.parametrize("arg_filter", [
-                            lambda p, m1, m2: (p, m1, None, None, None),
-                            lambda p, m1, m2: (p, m1, None, m2, None)])
+                            lambda p, m1, m2: (p, m1),
+                            lambda p, m1, m2: (p, m1, m2)])
 def test_mean_function_expectations(distribution, mean1, mean2, arg_filter):
     params = arg_filter(distribution, mean1, mean2)
     _test(params)
@@ -118,13 +136,11 @@ def test_mean_function_expectations(distribution, mean1, mean2, arg_filter):
 
 @pytest.mark.parametrize("distribution", [Data.gauss])
 @pytest.mark.parametrize("mean", [Data.lin, Data.iden, Data.const, Data.zero])
-# @pytest.mark.parametrize("mean", [Data.iden])
-# @pytest.mark.parametrize("kern", [Data.lin_kern])
 @pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
 @pytest.mark.parametrize("feat", [Data.ip])
 @pytest.mark.parametrize("arg_filter", [
-                            lambda p, k, f, m: (p, k, f, m, None),
-                            lambda p, k, f, m: (p, m, None, k, f)])
+                            lambda p, k, f, m: (p, (k, f), m),
+                            lambda p, k, f, m: (p, m, (k, f))])
 def test_kernel_mean_function_expectation(distribution, mean, kern, feat, arg_filter):
     params = arg_filter(distribution, kern, feat, mean)
     _test(params)
@@ -143,7 +159,7 @@ def compile_params(request):
 
 def test_eKdiag_no_uncertainty(compile_params):
     sess, kern, _ = compile_params
-    eKdiag = expectation(Data.dirac, kern, None, None, None)
+    eKdiag = expectation(Data.dirac, kern)
     Kdiag = kern.Kdiag(Data.Xmu)
     eKdiag, Kdiag = sess.run([eKdiag, Kdiag])
     np.testing.assert_almost_equal(eKdiag, Kdiag)
@@ -151,7 +167,7 @@ def test_eKdiag_no_uncertainty(compile_params):
 
 def test_eKxz_no_uncertainty(compile_params):
     sess, kern, feat = compile_params
-    eKxz = expectation(Data.dirac, kern, feat, None, None)
+    eKxz = expectation(Data.dirac, (kern, feat))
     Kxz = kern.K(Data.Xmu, Data.Z)
     eKxz, Kxz = sess.run([eKxz, Kxz])
     np.testing.assert_almost_equal(eKxz, Kxz)
@@ -159,7 +175,7 @@ def test_eKxz_no_uncertainty(compile_params):
 
 def test_eKxzzx_no_uncertainty(compile_params):
     sess, kern, feat = compile_params
-    eKxzzx = expectation(Data.dirac, kern, feat, kern, feat)
+    eKxzzx = expectation(Data.dirac, (kern, feat), (kern, feat))
     Kxz = kern.K(Data.Xmu, Data.Z)
     eKxzzx, Kxz = sess.run([eKxzzx, Kxz])
     Kxzzx = Kxz[:, :, None] * Kxz[:, None, :]

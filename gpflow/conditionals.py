@@ -18,7 +18,8 @@ import tensorflow as tf
 from . import settings, mean_functions
 from .decors import name_scope
 from .features import InducingPoints
-from .expectations import expectation, Gaussian
+from .expectations import expectation
+from .probability_distributions import Gaussian
 
 
 @name_scope()
@@ -143,7 +144,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
             if False then ``f_var`` is N x Dout
     """
 
-    # TODO: Tensorflow 1.3 doesn't support broadcasting in``tf.matmul`` and
+    # TODO: Tensorflow 1.4 doesn't support broadcasting in``tf.matmul`` and
     # ``tf.matrix_triangular_solve``. This is reported in issue 216.
     # As a temporary workaround, we are using ``tf.einsum`` for the matrix
     # multiplications and tiling in the triangular solves.
@@ -168,7 +169,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 
     q_sqrt_r = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
 
-    eKuf = tf.transpose(expectation(pXnew, kern, feat, None, None)) # M x N (psi1)
+    eKuf = tf.transpose(expectation(pXnew, (kern, feat))) # M x N (psi1)
     Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
     Luu = tf.cholesky(Kuu)  # M x M
 
@@ -180,8 +181,8 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     Li_eKuf = tf.matrix_triangular_solve(Luu, eKuf, lower=True)  # M x N
     fmean = tf.matmul(Li_eKuf, q_mu, transpose_a=True)
 
-    eKff = expectation(pXnew, kern, None, None, None) # N (psi0)
-    eKuffu = expectation(pXnew, kern, feat, kern, feat) # N x M x M (psi2)
+    eKff = expectation(pXnew, kern) # N (psi0)
+    eKuffu = expectation(pXnew, (kern, feat), (kern, feat)) # N x M x M (psi2)
     Luu_tiled = tf.tile(Luu[None, :, :], [num_data, 1, 1])  # remove this line, once issue 216 is fixed
     Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(eKuffu), lower=True)
     Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(Li_eKuffu_Lit), lower=True)  # N x M x M
@@ -191,13 +192,13 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
         e_related_to_mean = tf.zeros((num_data, num_func, num_func), dtype=settings.tf_float)
     else:
         # Update mean: \mu(x) + m(x)
-        fmean = fmean + expectation(pXnew, mean_function, None, None, None)
+        fmean = fmean + expectation(pXnew, mean_function)
 
         # Calculate: m(x) m(x)^T + m(x) \mu(x)^T + \mu(x) m(x)^T,
         # where m(x) is the mean_function and \mu(x) is fmean
-        e_mean_mean = expectation(pXnew, mean_function, None, mean_function, None) # N x D x D
+        e_mean_mean = expectation(pXnew, mean_function, mean_function) # N x D x D
         Lit_q_mu = tf.matrix_triangular_solve(Luu, q_mu, adjoint=True)
-        e_mean_Kuf = expectation(pXnew, mean_function, None, kern, feat) # N x D x M
+        e_mean_Kuf = expectation(pXnew, mean_function, (kern, feat)) # N x D x M
         e_mean_Kuf = tf.reshape(e_mean_Kuf, [num_data, num_func, num_ind])
         e_fmean_mean = tf.einsum("nqm,mz->nqz", e_mean_Kuf, Lit_q_mu) # N x D x D
         e_related_to_mean = e_fmean_mean + tf.matrix_transpose(e_fmean_mean) + e_mean_mean
