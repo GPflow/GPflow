@@ -256,10 +256,14 @@ class TestParameter(GPflowTestCase):
     def test_str(self):
         with self.test_context():
             p = gpflow.Param(1.)
-            str_dst = ('<Parameter name:\x1b[1mParameter\x1b[0m '\
-                       '[trainable] shape:() transform:(none) '\
-                       'prior:None>\nvalue: 1.0')
-            self.assertEqual(str_dst, str(p))
+            p_properties, p_value = str(p).splitlines()
+            p_properties = p_properties[1:-1].split(' ')
+            p_properties_dst = ('Parameter name:\x1b[1mParameter\x1b[0m '
+                                '[trainable] prior:None transform:(none) '
+                                'shape:()').split(' ')
+
+            self.assertEqual(p_value,'value: 1.0')
+            self.assertEqual(sorted(p_properties), sorted(p_properties_dst))
 
     def test_generators(self):
         with self.test_context():
