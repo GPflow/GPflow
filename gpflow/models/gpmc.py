@@ -101,5 +101,5 @@ class GPMC(GPModel):
         """
         mu, var = conditional(Xnew, self.X, self.kern, self.V,
                               full_cov=full_cov,
-                              q_sqrt=None, whiten=True)
+                              q_sqrt=None, white=True)
         return mu + self.mean_function(Xnew), var

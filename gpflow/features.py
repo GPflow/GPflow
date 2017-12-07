@@ -150,7 +150,7 @@ class Multiscale(InducingPoints):
 
 
 @singledispatch
-def conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, whiten=False):
+def conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, white=False):
     """
     Note the changed function signature compared to conditionals.conditional()
     to allow for single dispatch on the first argument.
@@ -160,7 +160,7 @@ def conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, whiten=Fals
 
 @conditional.register(InducingPoints)
 @conditional.register(Multiscale)
-def default_feature_conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, whiten=False):
+def default_feature_conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, white=False):
     """
     Uses the same code path as conditionals.conditional(), except Kuu/Kuf
     matrices are constructed using the feature.
@@ -170,7 +170,7 @@ def default_feature_conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=N
     ...             gpflow.features.default_feature_conditional)
     """
     return conditionals.feature_conditional(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                            whiten=whiten)
+                                            white=white)
 
 
 def inducingpoint_wrapper(feat, Z):
