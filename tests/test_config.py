@@ -97,6 +97,21 @@ class TestSettingsManager(GPflowTestCase):
         with self.assertRaises(AttributeError):
             gpflow.settings.undefined_setting_to_raise_error
 
+    def testDeprecated(self):
+        s = gpflow.settings
+        self.assertEqual(s.tf_float, s.float_type)
+        self.assertEqual(s.np_float, s.float_type)
+        self.assertEqual(s.tf_int, s.int_type)
+        self.assertEqual(s.np_int, s.int_type)
+        with self.assertWarns(DeprecationWarning):
+            _ = s.tf_float
+        with self.assertWarns(DeprecationWarning):
+            _ = s.tf_int
+        with self.assertWarns(DeprecationWarning):
+            _ = s.np_float
+        with self.assertWarns(DeprecationWarning):
+            _ = s.np_int
+
     def testMutability(self):
         orig = gpflow.settings.verbosity.hmc_verb
         gpflow.settings.verbosity.hmc_verb = False
