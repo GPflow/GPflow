@@ -138,7 +138,12 @@ class RBF(kernels.RBF):
         D = tf.shape(Xmu)[1]
         lengthscales = self.lengthscales if self.ARD else tf.zeros((D,), dtype=settings.float_type) + self.lengthscales
 
-        Kmms = tf.sqrt(self.K(Z, presliced=True)) / self.variance ** 0.5
+        # If an element of Kmms is 0, then its gradient is +inf and that gets
+        # backpropagated, but the overall gradient should instead be 0 (because
+        # the overall function is exp(-1/2 x). We fix this with `tf.where`.
+        Kmms_sq = self.K(Z, presliced=True)
+        Kmms = tf.sqrt(tf.where(tf.equal(Kmms_sq, tf.zeros((), dtype=settings.float_type)),
+                                tf.zeros_like(Kmms_sq), Kmms_sq))
         scalemat = tf.expand_dims(tf.eye(D, dtype=settings.float_type), 0) + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1])  # NxDxD
         det = tf.matrix_determinant(scalemat)
 
@@ -151,7 +156,7 @@ class RBF(kernels.RBF):
         smI_z = tf.reshape(ssmI_z, (N, D, M, M))  # NxDxMxM
         fs = tf.reduce_sum(tf.square(smI_z), [1])  # NxMxM
 
-        return self.variance ** 2.0 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
+        return self.variance ** 1.5 * tf.expand_dims(Kmms, 0) * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1])
 
 
 class Linear(kernels.Linear):
