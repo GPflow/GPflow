@@ -255,9 +255,24 @@ class TestParameter(GPflowTestCase):
 
     def test_str(self):
         with self.test_context():
+            p_str = ('               class prior transform  trainable shape  '
+                     'fixed_shape value\nParameter  Parameter  None    (none)'
+                     '       True    ()         True   1.0')
             p = gpflow.Param(1.)
-            str_dst = '               class prior transform  trainable shape  fixed_shape value\nParameter  Parameter  None    (none)       True    ()         True   1.0'
-            self.assertEqual(str_dst, str(p))
+            self.assertEqual(p_str.format('Parameter'), str(p))
+
+            d_str = ('                 class shape  fixed_shape value'
+                     '\nDataHolder  DataHolder    ()        False   1.0')
+            d = gpflow.DataHolder(1.)
+            self.assertEqual(d_str, str(d))
+
+            params_str = ('                     class prior transform  trainable shape'
+                          '  fixed_shape value\nParameterized/p  Parameter  None'
+                          '    (none)       True    ()         True   1.0')
+            params = gpflow.Parameterized()
+            params.p = p
+            params.d = d
+            self.assertEqual(params_str, str(params))
 
     def test_generators(self):
         with self.test_context():
