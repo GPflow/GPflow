@@ -294,7 +294,7 @@ class Parameter(Node):
         if not misc.is_valid_param_value(value):
             msg = 'The value must be either a tensorflow variable, an array or a scalar.'
             raise ValueError(msg)
-        cast = False if dtype is None else True
+        cast = not (dtype is None)
         is_built = False
         shape = None
         if hasattr(self, '_value'): # The parameter has not initialized yet.
@@ -308,13 +308,14 @@ class Parameter(Node):
                 msg = 'The value has different data type "{0}". Parameter type is "{1}".'
                 raise ValueError(msg.format(value.dtype, inner_dtype))
             cast = False
-            dtype = self._value.dtype
+            dtype = inner_dtype
         if misc.is_number(value):
-            num_type = misc.normalize_num_type(np.result_type(value).type)
+            value_type = np.result_type(value).type
+            num_type = misc.normalize_num_type(value_type)
             dtype = num_type if dtype is None else dtype
             value = np.array(value, dtype=dtype)
         elif misc.is_list(value):
-            dtype = settings.np_float if dtype is None else dtype
+            dtype = settings.float_type if dtype is None else dtype
             value = np.array(value, dtype=dtype)
         elif cast:
             value = value.astype(dtype)
@@ -384,7 +385,7 @@ class Parameter(Node):
         prior_name = 'prior'
 
         if self.prior is None:
-            return tf.constant(0.0, settings.tf_float, name=prior_name)
+            return tf.constant(0.0, settings.float_type, name=prior_name)
 
         log_jacobian = self.transform.log_jacobian_tensor(unconstrained_tensor)
         logp_var = self.prior.logp(constrained_tensor)

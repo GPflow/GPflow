@@ -21,13 +21,13 @@ from gpflow.test_util import GPflowTestCase
 class Empty(gpflow.models.Model):
     @gpflow.params_as_tensors
     def _build_likelihood(self):
-        return tf.constant(0.0, dtype=gpflow.settings.tf_float)
+        return tf.constant(0.0, dtype=gpflow.settings.float_type)
 
 class Demo(gpflow.models.Model):
     def __init__(self, add_to_inits=[], add_to_trainables=[], name=None):
         super().__init__(name=name)
         data = np.random.randn(10, 10)
-        self.a = gpflow.Param(data, dtype=gpflow.settings.np_float)
+        self.a = gpflow.Param(data, dtype=gpflow.settings.float_type)
         self.init_vars = add_to_inits
         self.trainable_vars = add_to_trainables
 
@@ -85,7 +85,7 @@ class OptimizerCase:
     def test_optimizer_with_var_list(self):
         with self.test_context():
             demo = Demo()
-            dfloat = gpflow.settings.np_float
+            dfloat = gpflow.settings.float_type
             var1 = tf.get_variable('var_a1', shape=(), dtype=dfloat)
             var2 = tf.get_variable('var_b2', shape=(), trainable=False, dtype=dfloat)
             var3 = tf.get_variable('var_c3', shape=(), dtype=dfloat)
@@ -103,7 +103,7 @@ class OptimizerCase:
 
             # Var list variable
             session.run(var1.initializer)
-            placeholder = tf.placeholder(gpflow.settings.np_float)
+            placeholder = tf.placeholder(gpflow.settings.float_type)
             opt.minimize(demo,
                          var_list=[var1],
                          feed_dict={placeholder: [1., 2]},
@@ -142,7 +142,7 @@ class OptimizerCase:
 
     def test_external_variables_in_model(self):
         with self.test_context():
-            dfloat = gpflow.settings.np_float
+            dfloat = gpflow.settings.float_type
 
             var1_init = np.array(1.0, dtype=dfloat)
             var2_init = np.array(2.0, dtype=dfloat)

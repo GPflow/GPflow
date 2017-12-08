@@ -60,7 +60,7 @@ class GPR(GPModel):
             \log p(Y | theta).
 
         """
-        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.tf_float) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.float_type) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
 
@@ -80,7 +80,7 @@ class GPR(GPModel):
 
         """
         Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.tf_float) * self.likelihood.variance
+        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.float_type) * self.likelihood.variance
         L = tf.cholesky(K)
         A = tf.matrix_triangular_solve(L, Kx, lower=True)
         V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))

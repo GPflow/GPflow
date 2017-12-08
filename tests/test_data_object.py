@@ -24,7 +24,7 @@ from gpflow.test_util import GPflowTestCase
 
 class Foo(gpflow.models.Model):
     def _build_likelihood(self):
-        return tf.constant(0, dtype=gpflow.settings.np_float)
+        return tf.constant(0, dtype=gpflow.settings.float_type)
 
 class TestDataHolderSimple(GPflowTestCase):
     def prepare(self, autobuild=True):
@@ -41,19 +41,19 @@ class TestDataHolderSimple(GPflowTestCase):
     def test_types(self):
         with self.test_context():
             m, _ = self.prepare(False)
-            self.assertEqual(m.X.dtype, settings.np_float)
-            self.assertEqual(m.Y.dtype, settings.np_float)
-            self.assertEqual(m.Z.dtype, settings.np_float)
-            self.assertEqual(m.X.read_value().dtype, settings.np_float)
-            self.assertEqual(m.Y.read_value().dtype, settings.np_float)
-            self.assertEqual(m.Z.read_value().dtype, settings.np_float)
+            self.assertEqual(m.X.dtype, settings.float_type)
+            self.assertEqual(m.Y.dtype, settings.float_type)
+            self.assertEqual(m.Z.dtype, settings.float_type)
+            self.assertEqual(m.X.read_value().dtype, settings.float_type)
+            self.assertEqual(m.Y.read_value().dtype, settings.float_type)
+            self.assertEqual(m.Z.read_value().dtype, settings.float_type)
             m.compile()
-            self.assertEqual(m.X.dtype, settings.np_float)
-            self.assertEqual(m.Y.dtype, settings.np_float)
-            self.assertEqual(m.Z.dtype, settings.np_float)
-            self.assertEqual(m.X.read_value().dtype, settings.np_float)
-            self.assertEqual(m.Y.read_value().dtype, settings.np_float)
-            self.assertEqual(m.Z.read_value().dtype, settings.np_float)
+            self.assertEqual(m.X.dtype, settings.float_type)
+            self.assertEqual(m.Y.dtype, settings.float_type)
+            self.assertEqual(m.Z.dtype, settings.float_type)
+            self.assertEqual(m.X.read_value().dtype, settings.float_type)
+            self.assertEqual(m.Y.read_value().dtype, settings.float_type)
+            self.assertEqual(m.Z.read_value().dtype, settings.float_type)
 
     def test_same_shape(self):
         with self.test_context():
@@ -84,20 +84,20 @@ class TestDataHolderIntegers(GPflowTestCase):
     def prepare(self):
         m = Foo(autobuild=False)
         rng = np.random.RandomState()
-        m.X = gpflow.DataHolder(rng.randint(0, 10, (2, 2)), dtype=gpflow.settings.np_int)
+        m.X = gpflow.DataHolder(rng.randint(0, 10, (2, 2)), dtype=gpflow.settings.int_type)
         m.compile()
         return m, rng
 
     def test_types(self):
         with self.test_context():
             m, _ = self.prepare()
-            self.assertEqual(m.X.read_value().dtype, gpflow.settings.np_int)
-            self.assertEqual(m.X.dtype, gpflow.settings.np_int)
+            self.assertEqual(m.X.read_value().dtype, gpflow.settings.int_type)
+            self.assertEqual(m.X.dtype, gpflow.settings.int_type)
 
     def test_same_shape(self):
         with self.test_context():
             m, rng = self.prepare()
-            new_X = rng.randint(0, 10, (2, 2), dtype=gpflow.settings.np_int)
+            new_X = rng.randint(0, 10, (2, 2), dtype=gpflow.settings.int_type)
             m.X = new_X
             assert_array_equal(m.X.shape, new_X.shape)
             assert_array_equal(m.X.read_value(), new_X)
