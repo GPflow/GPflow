@@ -50,7 +50,7 @@ class Identity(Transform):
         return y
 
     def log_jacobian_tensor(self, x):
-        return tf.zeros((1,), settings.tf_float)
+        return tf.zeros((1,), settings.float_type)
 
     def __str__(self):
         return '(none)'
@@ -173,7 +173,7 @@ class Log1pe(Transform):
 
 
         """
-        ys = np.maximum(y - self._lower, np.finfo(settings.np_float).eps)
+        ys = np.maximum(y - self._lower, np.finfo(settings.float_type).eps)
         return ys + np.log(-np.expm1(-ys))
 
     def __str__(self):
@@ -241,8 +241,8 @@ class Rescale(Transform):
         return y / self.factor
 
     def log_jacobian_tensor(self, x):
-        N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.tf_float)
-        factor = tf.cast(self.factor, dtype=settings.tf_float)
+        N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.float_type)
+        factor = tf.cast(self.factor, dtype=settings.float_type)
         log_factor = tf.log(factor)
         return N * log_factor
 
@@ -284,7 +284,7 @@ class DiagMatrix(Transform):
         return tf.matrix_diag(tf.reshape(x, (-1, self.dim)))
 
     def log_jacobian_tensor(self, x):
-        return tf.zeros((1,), settings.tf_float)
+        return tf.zeros((1,), settings.float_type)
 
     def __str__(self):
         return 'DiagMatrix'
@@ -340,7 +340,7 @@ class LowerTriangular(Transform):
         L = self._validate_vector_length(len(x))
         matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
         xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((matsize, matsize, self.num_matrices), settings.np_float)
+        var = np.zeros((matsize, matsize, self.num_matrices), settings.float_type)
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
             var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
@@ -367,7 +367,7 @@ class LowerTriangular(Transform):
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def log_jacobian_tensor(self, x):
-        return tf.zeros((1,), settings.tf_float)
+        return tf.zeros((1,), settings.float_type)
 
     def __str__(self):
         return "LoTri->vec"

@@ -38,19 +38,19 @@ class TestMeanFuncs(GPflowTestCase):
         rng = np.random.RandomState(0)
         return [gpflow.mean_functions.Zero(),
                 gpflow.mean_functions.Linear(
-                    rng.randn(self.input_dim, self.output_dim).astype(settings.np_float),
-                    rng.randn(self.output_dim).astype(settings.np_float)),
+                    rng.randn(self.input_dim, self.output_dim).astype(settings.float_type),
+                    rng.randn(self.output_dim).astype(settings.float_type)),
                 gpflow.mean_functions.Constant(
-                    rng.randn(self.output_dim).astype(settings.np_float))]
+                    rng.randn(self.output_dim).astype(settings.float_type))]
 
     def mfs2(self):
         rng = np.random.RandomState(0)
         return [gpflow.mean_functions.Zero(),
                 gpflow.mean_functions.Linear(
-                    rng.randn(self.input_dim, self.output_dim).astype(settings.np_float),
-                    rng.randn(self.output_dim).astype(settings.np_float)),
+                    rng.randn(self.input_dim, self.output_dim).astype(settings.float_type),
+                    rng.randn(self.output_dim).astype(settings.float_type)),
                 gpflow.mean_functions.Constant(
-                    rng.randn(self.output_dim).astype(settings.np_float))]
+                    rng.randn(self.output_dim).astype(settings.float_type))]
 
     def composition_mfs_add(self):
         composition_mfs_add = []
@@ -69,8 +69,8 @@ class TestMeanFuncs(GPflowTestCase):
 
     def test_basic_output_shape(self):
         with self.test_context() as sess:
-            X = tf.placeholder(settings.tf_float, shape=[self.N, self.input_dim])
-            X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
+            X = tf.placeholder(settings.float_type, shape=[self.N, self.input_dim])
+            X_data = np.random.randn(self.N, self.input_dim).astype(settings.float_type)
             for mf in self.mfs1():
                 mf.compile()
                 Y = sess.run(mf(X), feed_dict={X: X_data})
@@ -78,8 +78,8 @@ class TestMeanFuncs(GPflowTestCase):
 
     def test_add_output_shape(self):
         with self.test_context() as sess:
-            X = tf.placeholder(settings.tf_float, [self.N, self.input_dim])
-            X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
+            X = tf.placeholder(settings.float_type, [self.N, self.input_dim])
+            X_data = np.random.randn(self.N, self.input_dim).astype(settings.float_type)
             for comp_mf in self.composition_mfs_add():
                 comp_mf.compile()
                 Y = sess.run(comp_mf(X), feed_dict={X: X_data})
@@ -87,8 +87,8 @@ class TestMeanFuncs(GPflowTestCase):
 
     def test_mult_output_shape(self):
         with self.test_context() as sess:
-            X = tf.placeholder(settings.tf_float, [self.N, self.input_dim])
-            X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
+            X = tf.placeholder(settings.float_type, [self.N, self.input_dim])
+            X_data = np.random.randn(self.N, self.input_dim).astype(settings.float_type)
             for comp_mf in self.composition_mfs_mult():
                 comp_mf.compile()
                 Y = sess.run(comp_mf(X), feed_dict={X: X_data})
@@ -96,8 +96,8 @@ class TestMeanFuncs(GPflowTestCase):
 
     def test_composition_output_shape(self):
         with self.test_context() as sess:
-            X = tf.placeholder(settings.tf_float, [self.N, self.input_dim])
-            X_data = np.random.randn(self.N, self.input_dim).astype(settings.np_float)
+            X = tf.placeholder(settings.float_type, [self.N, self.input_dim])
+            X_data = np.random.randn(self.N, self.input_dim).astype(settings.float_type)
             comp_mf = self.composition_mfs()[1]
             comp_mf.compile()
             # for comp_mf in self.composition_mfs:
@@ -124,26 +124,26 @@ class TestModelCompositionOperations(GPflowTestCase):
     N = 20
     rng = np.random.RandomState(0)
 
-    Xtest = rng.randn(30, 3).astype(settings.np_float)
+    Xtest = rng.randn(30, 3).astype(settings.float_type)
 
     def initials(self):
         # Need two copies of the linear1_1 (l1, l2) since we can't add the
         # same parameter twice to a single tree.
         self.rng.seed(seed=0)
         linear1_1 = gpflow.mean_functions.Linear(
-            self.rng.randn(self.input_dim, self.output_dim).astype(settings.np_float),
-            self.rng.randn(self.output_dim).astype(settings.np_float))
+            self.rng.randn(self.input_dim, self.output_dim).astype(settings.float_type),
+            self.rng.randn(self.output_dim).astype(settings.float_type))
         self.rng.seed(seed=0)
         linear1_2 = gpflow.mean_functions.Linear(
-            self.rng.randn(self.input_dim, self.output_dim).astype(settings.np_float),
-            self.rng.randn(self.output_dim).astype(settings.np_float))
+            self.rng.randn(self.input_dim, self.output_dim).astype(settings.float_type),
+            self.rng.randn(self.output_dim).astype(settings.float_type))
         self.rng.seed(seed=1)
         linear2 = gpflow.mean_functions.Linear(
-            self.rng.randn(self.input_dim, self.output_dim).astype(settings.np_float),
-            self.rng.randn(self.output_dim).astype(settings.np_float))
+            self.rng.randn(self.input_dim, self.output_dim).astype(settings.float_type),
+            self.rng.randn(self.output_dim).astype(settings.float_type))
         linear3 = gpflow.mean_functions.Linear(
-            self.rng.randn(self.input_dim, self.output_dim).astype(settings.np_float),
-            self.rng.randn(self.output_dim).astype(settings.np_float))
+            self.rng.randn(self.input_dim, self.output_dim).astype(settings.float_type),
+            self.rng.randn(self.output_dim).astype(settings.float_type))
 
         linears = (linear1_1, linear1_2, linear2, linear3)
 
@@ -151,15 +151,15 @@ class TestModelCompositionOperations(GPflowTestCase):
         # twice to a single tree
         self.rng.seed(seed=2)
         const1_1 = gpflow.mean_functions.Constant(
-            self.rng.randn(self.output_dim).astype(settings.np_float))
+            self.rng.randn(self.output_dim).astype(settings.float_type))
         self.rng.seed(seed=2)
         const1_2 = gpflow.mean_functions.Constant(
-            self.rng.randn(self.output_dim).astype(settings.np_float))
+            self.rng.randn(self.output_dim).astype(settings.float_type))
         self.rng.seed(seed=3)
         const2 = gpflow.mean_functions.Constant(
-            self.rng.randn(self.output_dim).astype(settings.np_float))
+            self.rng.randn(self.output_dim).astype(settings.float_type))
         const3 = gpflow.mean_functions.Constant(
-            self.rng.randn(self.output_dim).astype(settings.np_float))
+            self.rng.randn(self.output_dim).astype(settings.float_type))
 
         consts = (const1_1, const1_2, const2, const3)
 
@@ -252,8 +252,8 @@ class TestModelCompositionOperations(GPflowTestCase):
             comp_minus_constituent2 = self.comp_minus_constituent2()
             _linear1_1, _linear1_2, linear2, _linear3 = self.initials()[0]
 
-            X = self.rng.randn(self.N, self.input_dim).astype(settings.np_float)
-            Y = self.rng.randn(self.N, self.output_dim).astype(settings.np_float)
+            X = self.rng.randn(self.N, self.input_dim).astype(settings.float_type)
+            Y = self.rng.randn(self.N, self.output_dim).astype(settings.float_type)
 
             self.m_linear_set1 = gpflow.models.GPR(X, Y, mean_function=linear_set1, kern=k)
             self.m_linear_set2 = gpflow.models.GPR(X, Y, mean_function=linear_set2, kern=k)
@@ -328,10 +328,10 @@ class TestModelsWithMeanFuncs(GPflowTestCase):
         self.M = 5
         rng = np.random.RandomState(0)
         X, Y, Z, self.Xtest = (
-            rng.randn(self.N, self.input_dim).astype(settings.np_float),
-            rng.randn(self.N, self.output_dim).astype(settings.np_float),
-            rng.randn(self.M, self.input_dim).astype(settings.np_float),
-            rng.randn(self.Ntest, self.input_dim).astype(settings.np_float))
+            rng.randn(self.N, self.input_dim).astype(settings.float_type),
+            rng.randn(self.N, self.output_dim).astype(settings.float_type),
+            rng.randn(self.M, self.input_dim).astype(settings.float_type),
+            rng.randn(self.Ntest, self.input_dim).astype(settings.float_type))
 
         with self.test_context():
             k = lambda: gpflow.kernels.Matern32(self.input_dim)

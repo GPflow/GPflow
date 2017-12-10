@@ -56,7 +56,7 @@ def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     :return: two element tuple with conditional mean and variance.
     """
     num_data = tf.shape(X)[0]  # M
-    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.tf_float) * settings.numerics.jitter_level
+    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
     Kmn = kern.K(X, Xnew)
     if full_cov:
         Knn = kern.K(Xnew)

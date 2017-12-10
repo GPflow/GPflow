@@ -113,9 +113,9 @@ def normalize_num_type(num_type):
         num_type = num_type.as_numpy_dtype.type
 
     if num_type in [np.float32, np.float64]:  # pylint: disable=E1101
-        num_type = settings.np_float
+        num_type = settings.float_type
     elif num_type in [np.int16, np.int32, np.int64]:
-        num_type = settings.np_int
+        num_type = settings.int_type
     else:
         raise ValueError('Unknown dtype "{0}" passed to normalizer.'.format(num_type))
 
