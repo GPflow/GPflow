@@ -139,20 +139,6 @@ class Likelihood(Parameterized):
         logp = self.logp(X, Y)
         return tf.reshape(tf.matmul(logp, gh_w), shape)
 
-    def _check_targets(self, Y_np):  # pylint: disable=R0201
-        """
-        Check that the Y values are valid for the likelihood.
-        Y_np is a numpy array.
-
-        The base class check is that the array has two dimensions
-        and consists only of floats. The float requirement is so that AutoFlow
-        can work with Model.predict_density.
-        """
-        if not len(Y_np.shape) == 2:
-            raise ValueError('targets must be shape N x D')
-        if np.array(list(Y_np)).dtype != settings.float_type:
-            raise ValueError('use {}, even for discrete variables'.format(settings.float_type))
-
 
 class Gaussian(Likelihood):
     def __init__(self, var=1.0):
@@ -206,13 +192,6 @@ class Poisson(Likelihood):
         self.invlink = invlink
         self.binsize = np.double(binsize)
 
-    def _check_targets(self, Y_np):
-        super(Poisson, self)._check_targets(Y_np)
-        if np.any(Y_np < 0):
-            raise ValueError('poisson variables must be positive')
-        if not np.all(np.equal(np.mod(Y_np, 1), 0)):
-            raise ValueError('poisson variables must be integer valued')
-
     def logp(self, F, Y):
         return densities.poisson(self.invlink(F) * self.binsize, Y)
 
@@ -232,11 +211,6 @@ class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp):
         super().__init__()
         self.invlink = invlink
-
-    def _check_targets(self, Y_np):
-        super()._check_targets(Y_np)
-        if np.any(Y_np < 0):
-            raise ValueError('exponential variables must be positive')
 
     def logp(self, F, Y):
         return densities.exponential(self.invlink(F), Y)
@@ -281,12 +255,6 @@ class Bernoulli(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
 
-    def _check_targets(self, Y_np):
-        super(Bernoulli, self)._check_targets(Y_np)
-        Y_set = set(Y_np.flatten())
-        if len(Y_set) > 2 or len(Y_set - set([1.])) > 1:
-            raise Warning('all bernoulli variables should be in {1., k}, for some k')
-
     def logp(self, F, Y):
         return densities.bernoulli(self.invlink(F), Y)
 
@@ -319,11 +287,6 @@ class Gamma(Likelihood):
         Likelihood.__init__(self)
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=transforms.positive)
-
-    def _check_targets(self, Y_np):
-        super(Gamma, self)._check_targets(Y_np)
-        if np.any(Y_np < 0):
-            raise ValueError('gamma variables must be non-negative')
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -368,11 +331,6 @@ class Beta(Likelihood):
         Likelihood.__init__(self)
         self.scale = Parameter(scale, transform=transforms.positive)
         self.invlink = invlink
-
-    def _check_targets(self, Y_np):
-        super(Beta, self)._check_targets(Y_np)
-        if np.any(Y_np < 0.) or np.any(Y_np > 1.):
-            raise ValueError('beta variables must be in [0, 1]')
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -456,13 +414,6 @@ class MultiClass(Likelihood):
             raise NotImplementedError
         self.invlink = invlink
 
-    def _check_targets(self, Y_np):
-        super(MultiClass, self)._check_targets(Y_np)
-        if not set(Y_np.flatten()).issubset(set(np.arange(self.num_classes))):
-            raise ValueError('multiclass likelihood expects inputs to be in {0., 1., 2.,...,k-1}')
-        if Y_np.shape[1] != 1:
-            raise ValueError('only one dimension currently supported for multiclass likelihood')
-
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
             hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
@@ -522,11 +473,6 @@ class SwitchedLikelihood(Likelihood):
             assert isinstance(l, Likelihood)
         self.likelihood_list = ParamList(likelihood_list)
         self.num_likelihoods = len(self.likelihood_list)
-
-    def _check_targets(self, Y_np):
-        Likelihood._check_targets(self, Y_np)
-        if not set(Y_np[:, -1]).issubset(set(np.arange(self.num_likelihoods))):
-            raise ValueError('switched likelihood expects final column values in {0,1,...,k-1}')
 
     def _partition_and_stitch(self, args, func_name):
         """
