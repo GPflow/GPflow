@@ -47,8 +47,9 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
     :return: quadratures (N,*Dout)
     """
     # Figure out input shape information
-    Din = ((means.shape[1] if type(means.shape) is tuple else means.shape[1].value) if Din is None
-           else Din)
+    if Din is None:
+        Din = means.shape[1] if type(means.shape) is tuple else means.shape[1].value
+
     if Din is None:
         raise GPflowError("If `Din` is passed as `None`, `means` must have a known shape. "
                           "Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
@@ -65,8 +66,9 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
 
     # perform quadrature
     fevals = func(Xr)
-    Dout = (tuple((d if type(d) is int else d.value) for d in fevals.shape[1:]) if Dout is None
-            else Dout)
+    if Dout is None:
+        Dout = tuple((d if type(d) is int else d.value) for d in fevals.shape[1:])
+
     if any([d is None for d in Dout]):
         raise GPflowError("If `Dout` is passed as `None`, the output of `func` must have known "
                           "shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "

@@ -49,8 +49,6 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
         return lambda x: obj(x)[slice]
     elif isinstance(obj, kernels.Kernel):
         return lambda x: obj.Kdiag(x)
-    elif isinstance(obj, types.FunctionType):
-        return obj
     else:
         raise NotImplementedError()
 

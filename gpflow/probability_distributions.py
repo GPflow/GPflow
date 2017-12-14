@@ -14,18 +14,20 @@
 
 
 class ProbabilityDistribution:
+    """
+    This is the base class for a probability distributions,
+    over which we take the expectations in the expectations framework.
+    """
     pass
 
 
 class Gaussian(ProbabilityDistribution):
     def __init__(self, mu, cov):
-        super(Gaussian, self).__init__()
         self.mu = mu  # N x D
         self.cov = cov  # N x D x D
 
 
 class DiagonalGaussian(ProbabilityDistribution):
     def __init__(self, mu, var):
-        super(DiagonalGaussian, self).__init__()
         self.mu = mu  # N x D
         self.var = var  # N x D

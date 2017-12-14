@@ -74,16 +74,29 @@ class Identity(Linear):
     """
     def __init__(self, input_dim=None):
         Linear.__init__(self)
-        del self.A
-        del self.b
-        self.A = Parameter(np.eye(input_dim), trainable=False)
-        self.b = Parameter(np.zeros(input_dim), trainable=False)
-        if input_dim is None:
-            warnings.warn("An input_dim needs to be specified when using the "
-                          "`Identity` mean function in combination with expectations.")
+        self.input_dim = input_dim
 
     def __call__(self, X):
         return X
+
+    @property
+    def A(self):
+        if self.input_dim is None:
+            warnings.warn("An input_dim needs to be specified when using the "
+                          "`Identity` mean function in combination with expectations.")
+            return tf.eye(1)
+        return tf.eye(self.input_dim)
+
+
+    @property
+    def b(self):
+        if self.input_dim is None:
+            warnings.warn("An input_dim needs to be specified when using the "
+                          "`Identity` mean function in combination with expectations.")
+
+            return tf.zeros(1)
+
+        return tf.zeros(self.input_dim)
 
 
 class Constant(MeanFunction):
@@ -108,7 +121,7 @@ class Zero(Constant):
         del self.c
 
     def __call__(self, X):
-        return tf.zeros(tf.stack([tf.shape(X)[0], self.output_dim]), dtype=settings.tf_float)
+        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=settings.tf_float)
 
 
 class SwitchedMeanFunction(MeanFunction):
