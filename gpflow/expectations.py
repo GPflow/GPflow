@@ -15,11 +15,10 @@
 import functools
 import itertools as it
 import tensorflow as tf
-from multipledispatch import dispatch
 
 from . import kernels, mean_functions, settings
 from .probability_distributions import Gaussian, DiagonalGaussian
-from .expectations_quadrature import quadrature_fallback
+from .expectations_quadrature import dispatch, quadrature_fallback
 from .features import InducingFeature, InducingPoints
 from .decors import params_as_tensors_for
 
@@ -453,7 +452,7 @@ def _expectation(p, kern1, feat1, kern2, feat2):
     crossexps = []
 
     for k1, k2 in it.product(kern1.kern_list, kern2.kern_list):
-        if k1.on_seperate_dims(k2):
+        if k1.on_separate_dims(k2):
             eKxz1 = _expectation(p, k1, feat, None, None)
             eKxz2 = _expectation(p, k2, feat, None, None)
             result = eKxz1[:, :, None] * eKxz2[:, None, :]

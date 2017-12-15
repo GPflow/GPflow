@@ -79,7 +79,7 @@ class Data:
 
 
 def _execute_func_on_params(params, func_name):
-    # This construction just flattens a list of objects and tuple of objects.
+    # This construction just flattens a list consisting of objects and tuple of objects.
     # The member function `func_name` is executed for each element of the list.
     _ = [getattr(param, func_name)() for param_tuple in params
             for param in (param_tuple if isinstance(param_tuple, tuple) else (param_tuple,))]
@@ -106,17 +106,16 @@ def _quadrature_expectation(params):
 
     assert False
 
+
 def _test(params):
-    with test_util.session_context(Data.graph) as sess:
-        _execute_func_on_params(params[1:], 'compile')
+    _execute_func_on_params(params[1:], 'compile')
 
-        analytic = expectation(*params)
-        quad = _quadrature_expectation(params)
-        analytic, quad = sess.run([analytic, quad])
-        np.testing.assert_almost_equal(quad, analytic, decimal=2)
+    analytic = expectation(*params)
+    quad = _quadrature_expectation(params)
+    analytic, quad = tf.get_default_session().run([analytic, quad])
+    np.testing.assert_almost_equal(quad, analytic, decimal=2)
 
-        _execute_func_on_params(params[1:], 'clear')
-
+    _execute_func_on_params(params[1:], 'clear')
 
 @pytest.mark.parametrize("distribution", [Data.gauss, Data.gauss_diag])
 @pytest.mark.parametrize("kern", [Data.lin_kern, Data.rbf, Data.rbf_lin_sum, Data.rbf_prod_seperate_dims])
@@ -125,6 +124,7 @@ def _test(params):
                             lambda p, k, f: (p, k),
                             lambda p, k, f: (p, (k, f)),
                             lambda p, k, f: (p, (k, f), (k, f))])
+@test_util.session_context(Data.graph)
 def test_psi_stats(distribution, kern, feat, arg_filter):
     params = arg_filter(distribution, kern, feat)
     _test(params)
@@ -136,6 +136,7 @@ def test_psi_stats(distribution, kern, feat, arg_filter):
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, m1, m2: (p, m1),
                             lambda p, m1, m2: (p, m1, m2)])
+@test_util.session_context(Data.graph)
 def test_mean_function_expectations(distribution, mean1, mean2, arg_filter):
     params = arg_filter(distribution, mean1, mean2)
     _test(params)
@@ -148,42 +149,52 @@ def test_mean_function_expectations(distribution, mean1, mean2, arg_filter):
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, k, f, m: (p, (k, f), m),
                             lambda p, k, f, m: (p, m, (k, f))])
+@test_util.session_context(Data.graph)
 def test_kernel_mean_function_expectation(distribution, mean, kern, feat, arg_filter):
     params = arg_filter(distribution, kern, feat, mean)
     _test(params)
 
 
-@pytest.fixture(params=[Data.rbf, Data.lin_kern])
-def compile_params(request):
-    with test_util.session_context(Data.graph) as sess:
-        kern, feat = request.param, Data.ip
-        kern.compile()
-        feat.compile()
-        yield sess, kern, feat
-        kern.clear()
-        feat.clear()
+def _compile_params(kern, feat):
+    kern.compile()
+    feat.compile()
+    return kern, feat
 
 
-def test_eKdiag_no_uncertainty(compile_params):
-    sess, kern, _ = compile_params
+def _clear_params(kern, feat):
+    kern.clear()
+    feat.clear()
+
+
+@pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
+@test_util.session_context(graph=Data.graph)
+def test_eKdiag_no_uncertainty(kern):
+    kern, _ = _compile_params(kern, Data.ip)
     eKdiag = expectation(Data.dirac, kern)
     Kdiag = kern.Kdiag(Data.Xmu)
-    eKdiag, Kdiag = sess.run([eKdiag, Kdiag])
+    eKdiag, Kdiag = tf.get_default_session().run([eKdiag, Kdiag])
     np.testing.assert_almost_equal(eKdiag, Kdiag)
+    _clear_params(kern, _)
 
 
-def test_eKxz_no_uncertainty(compile_params):
-    sess, kern, feat = compile_params
+@pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
+@test_util.session_context(graph=Data.graph)
+def test_eKxz_no_uncertainty(kern):
+    kern, feat = _compile_params(kern, Data.ip)
     eKxz = expectation(Data.dirac, (kern, feat))
     Kxz = kern.K(Data.Xmu, Data.Z)
-    eKxz, Kxz = sess.run([eKxz, Kxz])
+    eKxz, Kxz = tf.get_default_session().run([eKxz, Kxz])
     np.testing.assert_almost_equal(eKxz, Kxz)
+    _clear_params(kern, feat)
 
 
-def test_eKxzzx_no_uncertainty(compile_params):
-    sess, kern, feat = compile_params
+@pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
+@test_util.session_context(graph=Data.graph)
+def test_eKxzzx_no_uncertainty(kern):
+    kern, feat = _compile_params(kern, Data.ip)
     eKxzzx = expectation(Data.dirac, (kern, feat), (kern, feat))
     Kxz = kern.K(Data.Xmu, Data.Z)
-    eKxzzx, Kxz = sess.run([eKxzzx, Kxz])
+    eKxzzx, Kxz = tf.get_default_session().run([eKxzzx, Kxz])
     Kxzzx = Kxz[:, :, None] * Kxz[:, None, :]
     np.testing.assert_almost_equal(eKxzzx, Kxzzx)
+    _clear_params(kern, feat)

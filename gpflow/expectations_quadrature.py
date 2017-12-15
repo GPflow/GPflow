@@ -13,17 +13,23 @@
 # limitations under the License.from __future__ import print_function
 
 import types
+import warnings
 
 import numpy as np
 import functools
 import tensorflow as tf
 from multipledispatch import dispatch
+from functools import partial
 
 from . import kernels, mean_functions
 from .probability_distributions import Gaussian, DiagonalGaussian
 from .features import InducingFeature
 from .quadrature import mvnquad
 
+# By default multipledispatch uses a global namespace in multipledispatch.core.global_namespace.
+# We define our own GPflow namespace to avoid any conflict which may arise.
+gpflow_md_namespace = dict()
+dispatch = partial(dispatch, namespace=gpflow_md_namespace)
 
 def quadrature_fallback(func):
     @functools.wraps(func)
@@ -55,6 +61,8 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _expectation(p, obj1, feature1, obj2, feature2, H=40):
+    warnings.warn("Quadrature is used to calculate the expectation. This mean that "
+                  "an analytical implementations is not available for the given combination.")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:

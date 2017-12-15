@@ -31,8 +31,6 @@ from gpflow.test_util import session_context
 
 class MomentMatchingSVGP(gpflow.models.SVGP):
     @gpflow.params_as_tensors
-    @gpflow.autoflow((settings.float_type, [None, None]),
-                     (settings.float_type, [None, None, None]))
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
         return uncertain_conditional(
                 Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,

@@ -104,8 +104,13 @@ class Kernel(Parameterized):
     def compute_eKzxKxz(self, Z, Xmu, Xcov):
         return self.eKzxKxz(Z, Xmu, Xcov)
 
-    def on_seperate_dims(self, other_kernel):
+    def on_separate_dims(self, other_kernel):
+        """
+        Checks if the dimensions, over which the kernels are specified, overlap.
+        Returns True if they are defined on different/separate dimensions and False otherwise.
+        """
         if isinstance(self.active_dims, slice) or isinstance(other_kernel.active_dims, slice):
+            # Be very conservative for kernels defined over slices of dimensions
             return False
 
         if np.any(self.active_dims.reshape(-1, 1) == other_kernel.active_dims.reshape(1, -1)):

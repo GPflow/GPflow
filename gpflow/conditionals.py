@@ -165,8 +165,6 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     num_ind = tf.shape(q_mu)[0]  # number of inducing points (M)
     num_func = tf.shape(q_mu)[1]  # output dimension (D)
 
-    # mean_function = mean_function or mean_functions.Zero(output_dim=num_func)
-
     q_sqrt_r = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
 
     eKuf = tf.transpose(expectation(pXnew, (kern, feat))) # M x N (psi1)
