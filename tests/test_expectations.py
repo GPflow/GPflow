@@ -51,7 +51,6 @@ class Data:
         dirac = Gaussian(tf.constant(Xmu), tf.constant(np.zeros((num_data, D_in, D_in))))
         gauss_diag = DiagonalGaussian(tf.constant(Xmu), tf.constant(rng.rand(num_data, D_in)))
         dirac_diag = DiagonalGaussian(tf.constant(Xmu), tf.constant(np.zeros((num_data, D_in))))
-
         dirac_ts_gauss = TimeSeriesGaussian(tf.constant(Xmu), tf.constant(np.zeros((2, num_data, D_in, D_in))))
 
     with gpflow.decors.defer_build():
@@ -119,42 +118,43 @@ def _test(params):
 
     _execute_func_on_params(params[1:], 'clear')
 
-# @pytest.mark.parametrize("distribution", [Data.gauss, Data.gauss_diag])
-# @pytest.mark.parametrize("kern", [Data.lin_kern, Data.rbf, Data.rbf_lin_sum, Data.rbf_prod_seperate_dims])
-# @pytest.mark.parametrize("feat", [Data.ip])
-# @pytest.mark.parametrize("arg_filter", [
-#                             lambda p, k, f: (p, k),
-#                             lambda p, k, f: (p, (k, f)),
-#                             lambda p, k, f: (p, (k, f), (k, f))])
-# @test_util.session_context(Data.graph)
-# def test_psi_stats(distribution, kern, feat, arg_filter):
-#     params = arg_filter(distribution, kern, feat)
-#     _test(params)
-#
-#
-# @pytest.mark.parametrize("distribution", [Data.gauss])
-# @pytest.mark.parametrize("mean1", [Data.lin, Data.iden, Data.const, Data.zero])
-# @pytest.mark.parametrize("mean2", [Data.lin, Data.iden, Data.const, Data.zero])
-# @pytest.mark.parametrize("arg_filter", [
-#                             lambda p, m1, m2: (p, m1),
-#                             lambda p, m1, m2: (p, m1, m2)])
-# @test_util.session_context(Data.graph)
-# def test_mean_function_expectations(distribution, mean1, mean2, arg_filter):
-#     params = arg_filter(distribution, mean1, mean2)
-#     _test(params)
-#
-#
-# @pytest.mark.parametrize("distribution", [Data.gauss])
-# @pytest.mark.parametrize("mean", [Data.lin, Data.iden, Data.const, Data.zero])
-# @pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
-# @pytest.mark.parametrize("feat", [Data.ip])
-# @pytest.mark.parametrize("arg_filter", [
-#                             lambda p, k, f, m: (p, (k, f), m),
-#                             lambda p, k, f, m: (p, m, (k, f))])
-# @test_util.session_context(Data.graph)
-# def test_kernel_mean_function_expectation(distribution, mean, kern, feat, arg_filter):
-#     params = arg_filter(distribution, kern, feat, mean)
-#     _test(params)
+
+@pytest.mark.parametrize("distribution", [Data.gauss, Data.gauss_diag])
+@pytest.mark.parametrize("kern", [Data.lin_kern, Data.rbf, Data.rbf_lin_sum, Data.rbf_prod_seperate_dims])
+@pytest.mark.parametrize("feat", [Data.ip])
+@pytest.mark.parametrize("arg_filter", [
+                            lambda p, k, f: (p, k),
+                            lambda p, k, f: (p, (k, f)),
+                            lambda p, k, f: (p, (k, f), (k, f))])
+@test_util.session_context(Data.graph)
+def test_psi_stats(distribution, kern, feat, arg_filter):
+    params = arg_filter(distribution, kern, feat)
+    _test(params)
+
+
+@pytest.mark.parametrize("distribution", [Data.gauss])
+@pytest.mark.parametrize("mean1", [Data.lin, Data.iden, Data.const, Data.zero])
+@pytest.mark.parametrize("mean2", [Data.lin, Data.iden, Data.const, Data.zero])
+@pytest.mark.parametrize("arg_filter", [
+                            lambda p, m1, m2: (p, m1),
+                            lambda p, m1, m2: (p, m1, m2)])
+@test_util.session_context(Data.graph)
+def test_mean_function_expectations(distribution, mean1, mean2, arg_filter):
+    params = arg_filter(distribution, mean1, mean2)
+    _test(params)
+
+
+@pytest.mark.parametrize("distribution", [Data.gauss])
+@pytest.mark.parametrize("mean", [Data.lin, Data.iden, Data.const, Data.zero])
+@pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
+@pytest.mark.parametrize("feat", [Data.ip])
+@pytest.mark.parametrize("arg_filter", [
+                            lambda p, k, f, m: (p, (k, f), m),
+                            lambda p, k, f, m: (p, m, (k, f))])
+@test_util.session_context(Data.graph)
+def test_kernel_mean_function_expectation(distribution, mean, kern, feat, arg_filter):
+    params = arg_filter(distribution, kern, feat, mean)
+    _test(params)
 
 
 def _compile_params(kern, feat):
