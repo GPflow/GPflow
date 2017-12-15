@@ -31,3 +31,9 @@ class DiagonalGaussian(ProbabilityDistribution):
     def __init__(self, mu, var):
         self.mu = mu  # N x D
         self.var = var  # N x D
+
+
+class TimeSeriesGaussian(ProbabilityDistribution):
+    def __init__(self, mu, cov):
+        self.mu = mu  # N+1 x D
+        self.cov = cov  # 2 x (N+1) x D x D

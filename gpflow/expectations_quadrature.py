@@ -31,6 +31,7 @@ from .quadrature import mvnquad
 gpflow_md_namespace = dict()
 dispatch = partial(dispatch, namespace=gpflow_md_namespace)
 
+
 def quadrature_fallback(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
