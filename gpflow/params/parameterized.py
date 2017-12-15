@@ -210,13 +210,14 @@ class Parameterized(Node):
         prev_values = {}
         for key in val_keys:
             try:
-                prev_value = params[key].read_value().copy()
-                params[key].assign(values[key], session=session, force=force)
+                param = params[key]
+                prev_value = param.read_value().copy()
+                param.assign(values[key], session=session, force=force)
                 prev_values[key] = prev_value
-            except (GPflowError, ValueError) as error:
+            except (GPflowError, ValueError):
                 for rkey, rvalue in prev_values.items():
                     params[rkey].assign(rvalue, session=session, force=True)
-                raise error
+                raise
 
     def anchor(self, session):
         if not isinstance(session, tf.Session):
@@ -250,6 +251,15 @@ class Parameterized(Node):
         for param in self.params:
             if not isinstance(param, DataHolder):
                 param.set_trainable(value)
+
+    def as_pandas_table(self):
+        df = None
+        for parameter in self.parameters:
+            if isinstance(parameter, DataHolder):
+                continue
+            param_table = parameter.as_pandas_table()
+            df = df.append(param_table) if df is not None else param_table
+        return df
 
     @staticmethod
     def _is_param_like(value):
@@ -286,7 +296,7 @@ class Parameterized(Node):
         """
         # TODO(@awav): What prior must represent empty list of parameters?
         if not prior_tensors:
-            return tf.constant(0, dtype=settings.tf_float)
+            return tf.constant(0, dtype=settings.float_type)
         return tf.add_n(prior_tensors, name='prior')
 
     def _set_param(self, name, value):
@@ -341,9 +351,8 @@ class Parameterized(Node):
 
         object.__setattr__(self, key, value)
 
-
-    def __str__(self):
-        return '\n\n'.join([p.__str__() for p in self.parameters])
+    def __repr__(self):
+        return str(self.as_pandas_table())
 
     @property
     def fixed(self):

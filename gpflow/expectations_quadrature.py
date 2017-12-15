@@ -55,9 +55,6 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _expectation(p, obj1, feature1, obj2, feature2, H=40):
-    print("Quad")
-    print("H", H)
-    # warnings.warn("Quadrature is being used to calculate expectation")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:

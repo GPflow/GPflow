@@ -54,20 +54,20 @@ def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
             # most likelihoods follow this standard:
             test_setups.append(
                 LikelihoodSetup(likelihoodClass(),
-                          rng.rand(10, 2).astype(settings.np_float), 1e-6))
+                          rng.rand(10, 2).astype(settings.float_type), 1e-6))
 
     if addNonStandardLinks:
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Poisson(invlink=tf.square),
-                                     rng.rand(10, 2).astype(settings.np_float), 1e-6))
+                                     rng.rand(10, 2).astype(settings.float_type), 1e-6))
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Exponential(invlink=tf.square),
-                                     rng.rand(10, 2).astype(settings.np_float), 1e-6))
+                                     rng.rand(10, 2).astype(settings.float_type), 1e-6))
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Gamma(invlink=tf.square),
-                                     rng.rand(10, 2).astype(settings.np_float), 1e-6))
+                                     rng.rand(10, 2).astype(settings.float_type), 1e-6))
 
         def sigmoid(x):
             return 1./(1 + tf.exp(-x))
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Bernoulli(invlink=sigmoid),
-                                     rng.rand(10, 2).astype(settings.np_float), 1e-6))
+                                     rng.rand(10, 2).astype(settings.float_type), 1e-6))
     return test_setups
 
 
@@ -83,8 +83,8 @@ class TestPredictConditional(GPflowTestCase):
     def prepare(self):
         test_setups = getLikelihoodSetups(addNonStandardLinks=True)
         rng = np.random.RandomState(0)
-        F = tf.placeholder(settings.tf_float)
-        F_data = rng.randn(10, 2).astype(settings.np_float)
+        F = tf.placeholder(settings.float_type)
+        F_data = rng.randn(10, 2).astype(settings.float_type)
         feed = {F: F_data}
         return test_setups, F, feed
 
@@ -136,7 +136,7 @@ class TestQuadrature(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
         self.rng = np.random.RandomState()
-        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(settings.np_float)
+        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(settings.float_type)
         self.Fvar = 0.01 * (self.Fvar ** 2)
         with self.test_context():
             self.test_setups = getLikelihoodSetups(includeMultiClass=False)
@@ -194,7 +194,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             nPoints = 10
             tolerance = 1e-4
             epsilon = 1e-3
-            F = tf.placeholder(settings.tf_float)
+            F = tf.placeholder(settings.float_type)
             F_data = np.ones((nPoints, nClasses))
             feed = {F: F_data}
             rng = np.random.RandomState(1)
@@ -238,8 +238,8 @@ class TestRobustMaxMulticlass(GPflowTestCase):
                 num_classes, invlink=MockRobustMax(num_classes, epsilon))
             l.compile()
 
-            F = tf.placeholder(settings.tf_float)
-            y = tf.placeholder(settings.tf_float)
+            F = tf.placeholder(settings.float_type)
+            y = tf.placeholder(settings.float_type)
             F_data = np.ones((num_points, num_classes))
             rng = np.random.RandomState(1)
             Y_data = rng.randint(num_classes, size=(num_points, 1))
@@ -259,8 +259,8 @@ class TestMulticlassIndexFix(GPflowTestCase):
     """
     def testA(self):
         with self.test_context():
-            mu = tf.placeholder(settings.tf_float)
-            var = tf.placeholder(settings.tf_float)
+            mu = tf.placeholder(settings.float_type)
+            var = tf.placeholder(settings.float_type)
             Y = tf.placeholder(tf.int32)
             lik = gpflow.likelihoods.MultiClass(3)
             ve = lik.variational_expectations(mu, var, Y)
@@ -337,75 +337,6 @@ class TestSwitchedLikelihood(GPflowTestCase):
                                        self.Fvar_list):
                 rslts.append(session.run(lik.variational_expectations(f, fvar, y)))
             self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
-
-
-def _run_models(create_likelihood, Y):
-    likelihood = create_likelihood()
-    X = np.random.randn(Y.shape[0], 1)
-    Xnew = np.random.randn(Y.shape[0], 1)
-    _m0 = gpflow.models.GPR(X, Y, gpflow.kernels.RBF(1))
-    _m1 = gpflow.models.VGP(X, Y, gpflow.kernels.RBF(1), likelihood)
-    _m2 = gpflow.models.SVGP(X, Y, gpflow.kernels.RBF(1), likelihood, X, minibatch_size=1)
-
-
-likelihood_data_to_pass = [
-    (gpflow.likelihoods.Gaussian, np.array((1.)).reshape(1, 1)),
-    (gpflow.likelihoods.Poisson, np.array((1., 1., 3.)).reshape(3, 1)),
-    (gpflow.likelihoods.Exponential, np.array((1e-12, 1)).reshape(2, 1)),
-    (gpflow.likelihoods.StudentT, np.array((-1e-12, 1)).reshape(2, 1)),
-    (gpflow.likelihoods.Bernoulli, np.array((0., 1.)).reshape(2, 1)),
-    (gpflow.likelihoods.Bernoulli, np.array((-1., 1.)).reshape(2, 1)),
-    (gpflow.likelihoods.Gamma, np.array((1e-12, 1)).reshape(2, 1)),
-    (gpflow.likelihoods.Beta, np.array((1e-12, 1.)).reshape(2, 1)),
-    (lambda: gpflow.likelihoods.MultiClass(3), np.array((0., 2.)).reshape(2, 1)),
-    (lambda: gpflow.likelihoods.Ordinal(np.array((1., 2.))), np.array((0., 2.)).reshape(2, 1)),
-
-    # Failed before GPflow-1.0
-    (gpflow.likelihoods.Exponential, np.array((-1e-12, 1)).reshape(2, 1)),
-    (gpflow.likelihoods.Poisson, np.array((1.1)).reshape(1, 1)),
-    (gpflow.likelihoods.Poisson, np.array((-1.)).reshape(1, 1)),
-    (gpflow.likelihoods.Gamma, np.array((-1e-12, 1)).reshape(2, 1)),
-    (gpflow.likelihoods.Beta, np.array((-1e-12, 1.)).reshape(2, 1)),
-    (gpflow.likelihoods.Beta, np.array((1e-12, 1.1)).reshape(2, 1)),
-    (lambda: gpflow.likelihoods.MultiClass(3), np.array((0.1, 2.)).reshape(2, 1)),
-    (lambda: gpflow.likelihoods.MultiClass(3), np.array((1., 3.)).reshape(2, 1)),
-
-    # Special case of switched likelihood
-    (lambda: gpflow.likelihoods.SwitchedLikelihood([
-        gpflow.likelihoods.Gamma(), gpflow.likelihoods.Gaussian()]),
-     np.array(((0, 1), (0, 1), (2, 0.))).reshape(3, 2)),
-
-    # Failed before GPflow-1.0
-    (lambda: gpflow.likelihoods.SwitchedLikelihood([
-        gpflow.likelihoods.Gamma(), gpflow.likelihoods.Gaussian()]),
-     np.array(((0, 1), (0, 1), (2, 3.))).reshape(3, 2)),
-
-    # Raised warning before GPflow-1.0
-    (gpflow.likelihoods.Bernoulli, np.array((2., 1., 0.)).reshape(3, 1)),
-    (gpflow.likelihoods.Bernoulli, np.array((2., 1.1)).reshape(2, 1)),
-
-    # Raised error before GPflow-1.0
-    (gpflow.likelihoods.Gaussian, np.array((1.)).reshape(1, 1, 1)),
-]
-
-
-likelihood_data_to_fail = [
-    (gpflow.likelihoods.Gaussian, np.array((1)).reshape(1, 1)),
-    (lambda: gpflow.likelihoods.MultiClass(3), np.array((1., 2.)).reshape(1, 2)),
-]
-
-
-@pytest.mark.parametrize('likelihood,ys', likelihood_data_to_pass)
-def test_likelihood_checks_pass(likelihood, ys):
-    with tf.Session(graph=tf.Graph()):
-        _run_models(likelihood, ys)
-
-
-@pytest.mark.parametrize('likelihood,ys', likelihood_data_to_fail)
-def test_likelihood_checks_fail(likelihood, ys):
-    with tf.Session(graph=tf.Graph()):
-        with pytest.raises(Exception):
-            _run_models(likelihood, ys)
 
 
 if __name__ == "__main__":

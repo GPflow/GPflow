@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-import warnings
 import tensorflow as tf
 import numpy as np
 
@@ -82,22 +81,26 @@ class Identity(Linear):
     @property
     def A(self):
         if self.input_dim is None:
-            warnings.warn("An input_dim needs to be specified when using the "
-                          "`Identity` mean function in combination with expectations.")
-            return tf.eye(1)
-        return tf.eye(self.input_dim)
+            raise ValueError("An input_dim needs to be specified when using the "
+                             "`Identity` mean function in combination with expectations.")
 
+        return tf.eye(self.input_dim, dtype=settings.float_type)
 
     @property
     def b(self):
         if self.input_dim is None:
-            warnings.warn("An input_dim needs to be specified when using the "
-                          "`Identity` mean function in combination with expectations.")
+            raise ValueError("An input_dim needs to be specified when using the "
+                             "`Identity` mean function in combination with expectations.")
 
-            return tf.zeros(1)
+        return tf.zeros(self.input_dim, dtype=settings.float_type)
 
-        return tf.zeros(self.input_dim)
+    @A.setter
+    def A(self, A):
+        pass
 
+    @b.setter
+    def b(self, b):
+        pass
 
 class Constant(MeanFunction):
     """

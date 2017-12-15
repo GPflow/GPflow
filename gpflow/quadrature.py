@@ -11,7 +11,7 @@ from .core.errors import GPflowError
 
 def hermgauss(n):
     x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(settings.np_float), w.astype(settings.np_float)
+    x, w = x.astype(settings.float_type), w.astype(settings.float_type)
     return x, w
 
 

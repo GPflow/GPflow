@@ -27,8 +27,8 @@ from gpflow import settings
 
 class TransformTests(GPflowTestCase):
     def prepare(self):
-        x = tf.placeholder(settings.np_float, 10)
-        x_np = np.random.randn(10).astype(settings.np_float)
+        x = tf.placeholder(settings.float_type, 10)
+        x_np = np.random.randn(10).astype(settings.float_type)
         transforms = []
         for transform_class in gpflow.transforms.Transform.__subclasses__():
             if transform_class == Chain:
@@ -118,8 +118,8 @@ class TransformTests(GPflowTestCase):
 
 class TestChainIdentity(GPflowTestCase):
     def prepare(self):
-        x = tf.placeholder(settings.np_float, 10)
-        x_np = np.random.randn(10).astype(settings.np_float)
+        x = tf.placeholder(settings.float_type, 10)
+        x_np = np.random.randn(10).astype(settings.float_type)
         transforms = []
         for transform in gpflow.transforms.Transform.__subclasses__():
             if transform != Chain and transform != gpflow.transforms.LowerTriangular:
@@ -229,12 +229,12 @@ class TestDiagMatrixTransform(GPflowTestCase):
         """
         with self.test_context() as sess:
             free = np.random.randn(8, self.t2.dim)
-            x = tf.placeholder(settings.np_float)
+            x = tf.placeholder(settings.float_type)
             ys = sess.run(self.t2.forward_tensor(x), feed_dict={x: free})
             assert_allclose(ys, self.t2.forward(free))
 
             free = np.random.randn(7, self.t1.dim)
-            x = tf.placeholder(settings.np_float)
+            x = tf.placeholder(settings.float_type)
             ys = sess.run(self.t1.forward_tensor(x), feed_dict={x: free})
             assert_allclose(ys, self.t1.forward(free))
 

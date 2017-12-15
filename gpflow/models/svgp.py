@@ -87,12 +87,12 @@ class SVGP(GPModel):
 
         # init variational parameters
         num_inducing = len(self.feature)
-        self.q_mu = Parameter(np.zeros((num_inducing, self.num_latent), dtype=settings.np_float))
+        self.q_mu = Parameter(np.zeros((num_inducing, self.num_latent), dtype=settings.float_type))
         if self.q_diag:
-            self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.np_float),
+            self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.float_type),
                                 transforms.positive)
         else:
-            q_sqrt = np.array([np.eye(num_inducing, dtype=settings.np_float)
+            q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)
             self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))
 
@@ -120,7 +120,7 @@ class SVGP(GPModel):
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         # re-scale for minibatch size
-        scale = tf.cast(self.num_data, settings.tf_float) / tf.cast(tf.shape(self.X)[0], settings.tf_float)
+        scale = tf.cast(self.num_data, settings.float_type) / tf.cast(tf.shape(self.X)[0], settings.float_type)
 
         return tf.reduce_sum(var_exp) * scale - KL
 

@@ -16,9 +16,10 @@
 # pylint: disable=W0212
 
 import os
+import numpy as np
 import tensorflow as tf
-import gpflow
 
+import gpflow
 from gpflow.test_util import GPflowTestCase
 
 CONFIG_TXT = """
@@ -54,14 +55,14 @@ class TestConfigParsing(GPflowTestCase):
         self.settings = gpflow._settings._namedtuplify(self.conf._sections)
 
     def test(self):
-        self.assertTrue(all([
-            self.settings.first_section.a_bool is False,
-            self.settings.first_section.a_float == 1e-3,
-            self.settings.first_section.a_string == 'hello',
-            self.settings.first_section.a_type is tf.float64,
-            self.settings.second_section.a_bool is True,
-            self.settings.second_section.another_bool is True,
-            self.settings.second_section.yet_another_bool is False]))
+        self.assertEqual(self.settings.first_section.a_bool, False)
+        self.assertEqual(self.settings.first_section.a_float, 1e-3)
+        self.assertEqual(self.settings.first_section.a_bool, False)
+        self.assertEqual(self.settings.first_section.a_string, 'hello')
+        self.assertEqual(self.settings.first_section.a_type, np.float64)
+        self.assertEqual(self.settings.second_section.a_bool, True)
+        self.assertEqual(self.settings.second_section.another_bool, True)
+        self.assertEqual(self.settings.second_section.yet_another_bool, False)
 
     def test_config_not_found(self):
         filename = "./config_not_found.txt"
@@ -95,6 +96,21 @@ class TestSettingsManager(GPflowTestCase):
     def testRaises(self):
         with self.assertRaises(AttributeError):
             gpflow.settings.undefined_setting_to_raise_error
+
+    def testDeprecated(self):
+        s = gpflow.settings
+        self.assertEqual(s.tf_float, s.float_type)
+        self.assertEqual(s.np_float, s.float_type)
+        self.assertEqual(s.tf_int, s.int_type)
+        self.assertEqual(s.np_int, s.int_type)
+        with self.assertWarns(DeprecationWarning):
+            _ = s.tf_float
+        with self.assertWarns(DeprecationWarning):
+            _ = s.tf_int
+        with self.assertWarns(DeprecationWarning):
+            _ = s.np_float
+        with self.assertWarns(DeprecationWarning):
+            _ = s.np_int
 
     def testMutability(self):
         orig = gpflow.settings.verbosity.hmc_verb

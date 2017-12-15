@@ -31,8 +31,8 @@ from gpflow.test_util import session_context
 
 class MomentMatchingSVGP(gpflow.models.SVGP):
     @gpflow.params_as_tensors
-    # @gpflow.autoflow((settings.np_float, [None, None]),
-    #                  (settings.np_float, [None, None, None]))
+    @gpflow.autoflow((settings.float_type, [None, None]),
+                     (settings.float_type, [None, None, None]))
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
         return uncertain_conditional(
                 Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
@@ -119,11 +119,11 @@ class DataQuadrature:
 
     @classmethod
     def tensors(cls, white, mean_name):
-        np_float = settings.np_float
-        Xmu = tf.placeholder(np_float, [cls.num_data, cls.D_in])
-        Xvar = tf.placeholder(np_float, [cls.num_data, cls.D_in, cls.D_in])
-        q_mu = tf.placeholder(np_float, [cls.num_ind, cls.D_out])
-        q_sqrt = tf.placeholder(np_float, [cls.num_ind, cls.num_ind, cls.D_out])
+        float_type = settings.float_type
+        Xmu = tf.placeholder(float_type, [cls.num_data, cls.D_in])
+        Xvar = tf.placeholder(float_type, [cls.num_data, cls.D_in, cls.D_in])
+        q_mu = tf.placeholder(float_type, [cls.num_ind, cls.D_out])
+        q_sqrt = tf.placeholder(float_type, [cls.num_ind, cls.num_ind, cls.D_out])
 
         kern = gpflow.kernels.RBF(cls.D_in)
         feat = gpflow.features.InducingPoints(cls.Z)
