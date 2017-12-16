@@ -197,6 +197,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
         e_mean_mean = expectation(pXnew, mean_function, mean_function) # N x D x D
         Lit_q_mu = tf.matrix_triangular_solve(Luu, q_mu, adjoint=True)
         e_mean_Kuf = expectation(pXnew, mean_function, (kern, feat)) # N x D x M
+        # einsum isn't able to infer the rank of e_mean_Kuf, hence we explicitly set the rank of the tensor:
         e_mean_Kuf = tf.reshape(e_mean_Kuf, [num_data, num_func, num_ind])
         e_fmean_mean = tf.einsum("nqm,mz->nqz", e_mean_Kuf, Lit_q_mu) # N x D x D
         e_related_to_mean = e_fmean_mean + tf.matrix_transpose(e_fmean_mean) + e_mean_mean
