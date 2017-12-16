@@ -21,7 +21,7 @@ import gpflow
 from gpflow import test_util
 from gpflow.expectations import expectation
 from gpflow.expectations_quadrature import expectation_quad as quad_impl
-from gpflow.probability_distributions import Gaussian, DiagonalGaussian, TimeSeriesGaussian
+from gpflow.probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from gpflow import kernels, mean_functions, features
 
 from functools import partial
@@ -51,7 +51,7 @@ class Data:
         dirac = Gaussian(tf.constant(Xmu), tf.constant(np.zeros((num_data, D_in, D_in))))
         gauss_diag = DiagonalGaussian(tf.constant(Xmu), tf.constant(rng.rand(num_data, D_in)))
         dirac_diag = DiagonalGaussian(tf.constant(Xmu), tf.constant(np.zeros((num_data, D_in))))
-        dirac_ts_gauss = TimeSeriesGaussian(tf.constant(Xmu), tf.constant(np.zeros((2, num_data, D_in, D_in))))
+        dirac_ts_gauss = MarkovGaussian(tf.constant(Xmu), tf.constant(np.zeros((2, num_data, D_in, D_in))))
 
     with gpflow.decors.defer_build():
         # features

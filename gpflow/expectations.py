@@ -17,7 +17,7 @@ import itertools as it
 import tensorflow as tf
 
 from . import kernels, mean_functions, settings
-from .probability_distributions import Gaussian, DiagonalGaussian, TimeSeriesGaussian
+from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from .expectations_quadrature import dispatch, quadrature_fallback
 from .features import InducingFeature, InducingPoints
 from .decors import params_as_tensors_for
@@ -495,7 +495,7 @@ def _expectation(p, kern, feat, none2, none3):
     return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch((Gaussian, TimeSeriesGaussian),
+@dispatch((Gaussian, MarkovGaussian),
             kernels.Sum, InducingPoints,
             (mean_functions.Linear, mean_functions.Constant), type(None))
 def _expectation(p, kern, feat, mean, none3):
@@ -580,7 +580,7 @@ def _expectation(p, obj1, obj2, obj3, obj4):
 
 
 # Time Series expectations
-@dispatch(TimeSeriesGaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
+@dispatch(MarkovGaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
 def _expectation(p, kern, feat, mean, none):
     """
     <x_t K_{x_{t-1}, Z}>_p(x_{t-1:t})
@@ -625,7 +625,7 @@ def _expectation(p, kern, feat, mean, none):
         return kern.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
 
-@dispatch(TimeSeriesGaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
+@dispatch(MarkovGaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
 def _expectation(p, kern, feat, mean, none):
     """
     <x_t K_{x_{t-1}, Z}>_p(x_{t-1:t})
