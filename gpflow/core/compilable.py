@@ -110,18 +110,30 @@ class Build(enum.Enum):
 class ICompilable(metaclass=AutoBuild):
     @abc.abstractproperty
     def graph(self):
+        """
+        TensorFlow graph property.
+        :return: tf.Graph which was used during building.
+        """
         raise NotImplementedError()
 
     @abc.abstractproperty
     def feeds(self):
+        """
+        TensorFlow feed dictionary for passing to tf.Session.run()
+        :return: TensorFlow feed dictionary or None.
+        """
         raise NotImplementedError()
 
     @abc.abstractproperty
     def initializables(self):
+        """
+        """
         raise NotImplementedError()
 
     @abc.abstractproperty
     def initializable_feeds(self):
+        """
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
