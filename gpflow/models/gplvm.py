@@ -115,8 +115,8 @@ class BayesianGPLVM(GPModel):
 
         num_inducing = len(self.feature)
         psi0 = tf.reduce_sum(expectation(pX, self.kern))
-        psi1 = expectation(pX, (self.kern, self.feature))
-        psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
+        psi1 = expectation(pX, (self.feature, self.kern))
+        psi2 = tf.reduce_sum(expectation(pX, (self.feature, self.kern), (self.feature, self.kern)), axis=0)
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
@@ -162,8 +162,8 @@ class BayesianGPLVM(GPModel):
         pX = DiagonalGaussian(self.X_mean, self.X_var)
 
         num_inducing = len(self.feature)
-        psi1 = expectation(pX, (self.kern, self.feature))
-        psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
+        psi1 = expectation(pX, (self.feature, self.kern))
+        psi2 = tf.reduce_sum(expectation(pX, (self.feature, self.kern), (self.feature, self.kern)), axis=0)
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         Kus = self.feature.Kuf(self.kern, Xnew)
         sigma2 = self.likelihood.variance

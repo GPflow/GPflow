@@ -36,12 +36,12 @@ def expectation(p, obj1, obj2=None):
     A couple of examples:
         .. Psi statistics
         eKdiag = expectation(pX, kern)  # psi0
-        eKxz = expectation(pX, (kern, feat))  # psi1
-        eKxzzx = expectation(pX, (kern, feat), (kern, feat))  # psi2
+        eKxz = expectation(pX, (feat, kern))  # psi1
+        eKxzzx = expectation(pX, (feat, kern), (feat, kern))  # psi2
 
         .. kernels and mean functions
-        eKxzMx = expectation(pX, (kern, feat), mean)
-        eMxKxz = expectation(pX, mean, (kern, feat))
+        eKxzMx = expectation(pX, (feat, kern), mean)
+        eMxKxz = expectation(pX, mean, (feat, kern))
 
         .. only mean functions
         eMx = expectation(pX, mean)
@@ -49,22 +49,19 @@ def expectation(p, obj1, obj2=None):
 
         .. different kernels
         .. this occurs when we are calculating Psi2 for Sum kernels
-        eK1xzK2zx = expectation(pX, (kern1, feat), (kern2, feat)) # different kernel
+        eK1xzK2zx = expectation(pX, (feat, kern1), (feat, kern2)) # different kernel
     """
     if isinstance(obj1, tuple):
-        obj1, feat1 = obj1
+        feat1, obj1 = obj1
     else:
         feat1 = None
 
     if isinstance(obj2, tuple):
-        obj2, feat2 = obj2
+        feat2, obj2 = obj2
     else:
         feat2 = None
 
-    if obj2 is None:
-        return _expectation(p, obj1, feat1, None, None)
-    else:
-        return _expectation(p, obj1, feat1, obj2, feat2)
+    return _expectation(p, obj1, feat1, obj2, feat2)
 
 
 @dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kernel, InducingFeature)
@@ -630,7 +627,7 @@ def _expectation(p, kern, feat, mean, none):
     """
     <x_t K_{x_{t-1}, Z}>_p(x_{t-1:t})
         - K(.,.) :: Linear kernel
-        - p :: TimeSeriesGaussian distribution
+        - p :: MarkovGaussian distribution
 
     :return: NxMxQ
     """

@@ -20,7 +20,7 @@ import pytest
 import gpflow
 from gpflow import test_util
 from gpflow.expectations import expectation
-from gpflow.expectations_quadrature import expectation_quad as quad_impl
+from gpflow.expectations_quadrature import quadrature_expectation
 from gpflow.probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from gpflow import kernels, mean_functions, features
 
@@ -87,33 +87,11 @@ def _execute_func_on_params(params, func_name):
             for param in (param_tuple if isinstance(param_tuple, tuple) else (param_tuple,))]
 
 
-def _quadrature_expectation(params):
-    if isinstance(params[0], DiagonalGaussian):
-        params[0].cov = tf.matrix_diag(params[0].var)
-
-    if len(params) == 2:
-        if isinstance(params[1], tuple):
-            return quad_impl(params[0], *params[1], None, None)
-        elif not isinstance(params[1], tuple):
-            return quad_impl(params[0], params[1], None, None, None)
-    elif len(params) == 3:
-        if isinstance(params[1], tuple) and isinstance(params[2], tuple):
-            return quad_impl(params[0], *params[1], *params[2])
-        elif isinstance(params[1], tuple) and not isinstance(params[2], tuple):
-            return quad_impl(params[0], *params[1], params[2], None)
-        elif not isinstance(params[1], tuple) and isinstance(params[2], tuple):
-            return quad_impl(params[0], params[1], None, *params[2])
-        elif not isinstance(params[1], tuple) and not isinstance(params[2], tuple):
-            return quad_impl(params[0], params[1], None, params[2], None)
-
-    assert False
-
-
 def _test(params):
     _execute_func_on_params(params[1:], 'compile')
 
     analytic = expectation(*params)
-    quad = _quadrature_expectation(params)
+    quad = quadrature_expectation(*params)
     analytic, quad = tf.get_default_session().run([analytic, quad])
     np.testing.assert_almost_equal(quad, analytic, decimal=2)
 
@@ -125,8 +103,8 @@ def _test(params):
 @pytest.mark.parametrize("feat", [Data.ip])
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, k, f: (p, k),
-                            lambda p, k, f: (p, (k, f)),
-                            lambda p, k, f: (p, (k, f), (k, f))])
+                            lambda p, k, f: (p, (f, k)),
+                            lambda p, k, f: (p, (f, k), (f, k))])
 @test_util.session_context(Data.graph)
 def test_psi_stats(distribution, kern, feat, arg_filter):
     params = arg_filter(distribution, kern, feat)
@@ -150,8 +128,8 @@ def test_mean_function_expectations(distribution, mean1, mean2, arg_filter):
 @pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
 @pytest.mark.parametrize("feat", [Data.ip])
 @pytest.mark.parametrize("arg_filter", [
-                            lambda p, k, f, m: (p, (k, f), m),
-                            lambda p, k, f, m: (p, m, (k, f))])
+                            lambda p, k, f, m: (p, (f, k), m),
+                            lambda p, k, f, m: (p, m, (f, k))])
 @test_util.session_context(Data.graph)
 def test_kernel_mean_function_expectation(distribution, mean, kern, feat, arg_filter):
     params = arg_filter(distribution, kern, feat, mean)
@@ -168,6 +146,7 @@ def _clear_params(kern, feat):
     kern.clear()
     feat.clear()
 
+
 @pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern])
 @test_util.session_context(graph=Data.graph)
 def test_eKdiag_no_uncertainty(kern):
@@ -183,7 +162,7 @@ def test_eKdiag_no_uncertainty(kern):
 @test_util.session_context(graph=Data.graph)
 def test_eKxz_no_uncertainty(kern):
     kern, feat = _compile_params(kern, Data.ip)
-    eKxz = expectation(Data.dirac, (kern, feat))
+    eKxz = expectation(Data.dirac, (feat, kern))
     Kxz = kern.K(Data.Xmu, Data.Z)
     eKxz, Kxz = tf.get_default_session().run([eKxz, Kxz])
     np.testing.assert_almost_equal(eKxz, Kxz)
@@ -194,7 +173,7 @@ def test_eKxz_no_uncertainty(kern):
 @test_util.session_context(graph=Data.graph)
 def test_eKxzzx_no_uncertainty(kern):
     kern, feat = _compile_params(kern, Data.ip)
-    eKxzzx = expectation(Data.dirac, (kern, feat), (kern, feat))
+    eKxzzx = expectation(Data.dirac, (feat, kern), (feat, kern))
     Kxz = kern.K(Data.Xmu, Data.Z)
     eKxzzx, Kxz = tf.get_default_session().run([eKxzzx, Kxz])
     Kxzzx = Kxz[:, :, None] * Kxz[:, None, :]
@@ -206,7 +185,7 @@ def test_eKxzzx_no_uncertainty(kern):
 @test_util.session_context(graph=Data.graph)
 def test_exKxz_pairwise_no_uncertainty(kern):
     kern, feat = _compile_params(kern, Data.ip)
-    exKxz_pairwise = expectation(Data.dirac_markov_gauss, (kern, feat), Data.iden)
+    exKxz_pairwise = expectation(Data.dirac_markov_gauss, (feat, kern), Data.iden)
     exKxz_pairwise = tf.get_default_session().run(exKxz_pairwise)
     Kxz = kern.compute_K(Data.Xmu[:-1, :], Data.Z)  # NxM
     xKxz_pairwise = np.einsum('nm,nd->nmd', Kxz, Data.Xmu[1:, :])

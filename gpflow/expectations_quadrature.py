@@ -22,7 +22,7 @@ from multipledispatch import dispatch
 from functools import partial
 
 from . import kernels, mean_functions
-from .probability_distributions import Gaussian, DiagonalGaussian
+from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from .features import InducingFeature
 from .quadrature import mvnquad
 
@@ -39,7 +39,7 @@ def quadrature_fallback(func):
             return func(*args, **kwargs)
         except NotImplementedError as e:
             print(str(e))
-            return expectation_quad(*args)
+            return _quadrature_expectation(*args)
 
     return wrapper
 
@@ -62,7 +62,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _expectation(p, obj1, feature1, obj2, feature2, H=40):
-    warnings.warn("Quadrature is used to calculate the expectation. This mean that "
+    warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
@@ -75,4 +75,39 @@ def _expectation(p, obj1, feature1, obj2, feature2, H=40):
     return mvnquad(eval_func, p.mu, p.cov, H)
 
 
-expectation_quad = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
+def quadrature_expectation(p, obj1, obj2=None):
+    if isinstance(obj1, tuple):
+        feat1, obj1 = obj1
+    else:
+        feat1 = None
+
+    if isinstance(obj2, tuple):
+        feat2, obj2 = obj2
+    else:
+        feat2 = None
+
+    return _quadrature_expectation(p, obj1, feat1, obj2, feat2)
+
+
+@dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
+    gauss_quadrature_impl = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
+    return gauss_quadrature_impl(p, obj1, feat1, obj2, feat2)
+
+
+@dispatch(DiagonalGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
+    p.cov = tf.matrix_diag(p.var)
+    gauss_quadrature_impl = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
+    return gauss_quadrature_impl(p, obj1, feat1, obj2, feat2)
+
+
+# TODO: quadrature implementation for MarkovGaussian distributions
+# @dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+# def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
+#     # The following lines are a copy paste form the previous exKxz_pairwise quadrature code
+#     fXmu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
+#     fXcovt = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
+#     fXcovb = tf.concat((tf.transpose(p.cov[1, :-1, :, :], (0, 2, 1)), p.cov[0, 1:, :, :]), 2)
+#     fXcov = tf.concat((fXcovt, fXcovb), 1)
+
