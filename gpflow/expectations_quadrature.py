@@ -103,11 +103,11 @@ def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
 
 
 # TODO: quadrature implementation for MarkovGaussian distributions
-# @dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-# def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
-#     # The following lines are a copy paste form the previous exKxz_pairwise quadrature code
-#     fXmu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
-#     fXcovt = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
-#     fXcovb = tf.concat((tf.transpose(p.cov[1, :-1, :, :], (0, 2, 1)), p.cov[0, 1:, :, :]), 2)
-#     fXcov = tf.concat((fXcovt, fXcovb), 1)
-
+@dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
+    p.mu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
+    fXcovt = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
+    fXcovb = tf.concat((tf.transpose(p.cov[1, :-1, :, :], (0, 2, 1)), p.cov[0, 1:, :, :]), 2)
+    p.cov = tf.concat((fXcovt, fXcovb), 1)  # Nx2Dx2D
+    gauss_quadrature_impl = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
+    return gauss_quadrature_impl(p, obj1, feat1, obj2, feat2)
