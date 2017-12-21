@@ -61,7 +61,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _expectation(p, obj1, feature1, obj2, feature2, H=5):
+def _expectation(p, obj1, feature1, obj2, feature2, H=40):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
@@ -112,12 +112,11 @@ def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
 
 @dispatch(DiagonalGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
-    p.cov = tf.matrix_diag(p.var)
+    p_gauss = Gaussian(p.mu, tf.matrix_diag(p.var))
     gauss_quadrature_impl = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
-    return gauss_quadrature_impl(p, obj1, feat1, obj2, feat2)
+    return gauss_quadrature_impl(p_gauss, obj1, feat1, obj2, feat2)
 
 
-# TODO: quadrature implementation for MarkovGaussian distributions
 @dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
     mu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D

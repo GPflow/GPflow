@@ -52,7 +52,17 @@ class Data:
         gauss_diag = DiagonalGaussian(tf.constant(Xmu), tf.constant(rng.rand(num_data, D_in)))
         dirac_diag = DiagonalGaussian(tf.constant(Xmu), tf.constant(np.zeros((num_data, D_in))))
         dirac_markov_gauss = MarkovGaussian(tf.constant(Xmu), tf.constant(np.zeros((2, num_data, D_in, D_in))))
-        markov_gauss = MarkovGaussian(tf.constant(Xmu), tf.constant(np.random.randn(2, num_data, D_in, D_in) * 0.1))
+
+        # create the covariance for the pairwise markov-gaussian
+        dummy_gen = lambda rng, n, *shape: np.array([rng.randn(*shape) for _ in range(n)])
+        L_mg = dummy_gen(rng, num_data, D_in, 2*D_in)
+        LL = np.concatenate((L_mg[:-1], L_mg[1:]), 1)
+        Xcov = LL @ np.transpose(LL, (0, 2, 1))
+        Xc = np.concatenate((Xcov[:, :D_in, :D_in], Xcov[-1:, D_in:, D_in:]), 0)
+        Xcross = np.concatenate((Xcov[:, :D_in, D_in:], np.zeros((1, D_in, D_in))), 0)
+        Xcc = np.stack([Xc, Xcross])
+
+        markov_gauss = MarkovGaussian(Xmu, Xcc)
 
     with gpflow.decors.defer_build():
         # features
@@ -192,8 +202,8 @@ def test_exKxz_pairwise_no_uncertainty(kern):
     np.testing.assert_almost_equal(exKxz_pairwise, xKxz_pairwise)
     _clear_params(kern, feat)
 
-# TODO: We need a test for <x Kxz>_q that doens't use a delta MarkovGaussian distribution.
-# @test_util.session_context(graph=Data.graph)
-# def test_exKxz_pairwise():
-#     kern, feat = _compile_params(Data.rbf, Data.ip)
-#     _test((Data.markov_gauss, (kern, feat), Data.iden))
+
+@pytest.mark.parametrize("kern", [Data.rbf, Data.lin_kern, Data.rbf_lin_sum])
+@test_util.session_context(graph=Data.graph)
+def test_exKxz_pairwise(kern):
+    _test((Data.markov_gauss, (Data.ip, kern), Data.iden))

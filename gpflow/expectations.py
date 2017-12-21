@@ -492,9 +492,15 @@ def _expectation(p, kern, feat, none2, none3):
     return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
 
 
-@dispatch((Gaussian, MarkovGaussian),
-            kernels.Sum, InducingPoints,
-            (mean_functions.Linear, mean_functions.Constant), type(None))
+@dispatch(Gaussian,
+          kernels.Sum, InducingPoints,
+          (mean_functions.Linear, mean_functions.Constant), type(None))
+def _expectation(p, kern, feat, mean, none3):
+    _expectation_fn = lambda k: _expectation(p, k, feat, mean, None)
+    return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
+
+
+@dispatch(MarkovGaussian, kernels.Sum, InducingPoints, mean_functions.Identity, type(None))
 def _expectation(p, kern, feat, mean, none3):
     _expectation_fn = lambda k: _expectation(p, k, feat, mean, None)
     return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
