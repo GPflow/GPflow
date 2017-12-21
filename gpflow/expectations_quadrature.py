@@ -61,7 +61,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _expectation(p, obj1, feature1, obj2, feature2, H=40):
+def _expectation(p, obj1, feature1, obj2, feature2, H=5):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
@@ -71,6 +71,22 @@ def _expectation(p, obj1, feature1, obj2, feature2, H=40):
     else:
         eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
                                get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
+
+    return mvnquad(eval_func, p.mu, p.cov, H)
+
+
+@dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+def _expectation(p, obj1, feature1, obj2, feature2, H=40):
+    warnings.warn("Quadrature is used to calculate the expectation. This means that "
+                  "an analytical implementations is not available for the given combination.")
+    D = tf.shape(p.mu)[1] // 2
+    if obj2 is None:
+        eval_func = lambda x: get_eval_func(obj1, feature1)(tf.split(x, 2, 1)[0])
+    elif obj1 is None:
+        eval_func = lambda x: get_eval_func(obj2, feature2)(tf.split(x, 2, 1)[1])
+    else:
+        eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(tf.split(x, 2, 1)[0]) *
+                               get_eval_func(obj2, feature2, np.s_[:, None, :])(tf.split(x, 2, 1)[1]))
 
     return mvnquad(eval_func, p.mu, p.cov, H)
 
@@ -109,6 +125,7 @@ def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
     fXcovt = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
     fXcovb = tf.concat((tf.transpose(p.cov[1, :-1, :, :], (0, 2, 1)), p.cov[0, 1:, :, :]), 2)
     cov = tf.concat((fXcovt, fXcovb), 1)  # Nx2Dx2D
-    p_gauss = Gaussian(mu, cov)
-    gauss_quadrature_impl = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
+    p_gauss = MarkovGaussian(mu, cov)
+    asdads
+    gauss_quadrature_impl = _expectation.dispatch(MarkovGaussian, object, type(None), object, type(None))
     return gauss_quadrature_impl(p_gauss, obj1, feat1, obj2, feat2)
