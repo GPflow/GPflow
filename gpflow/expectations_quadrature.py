@@ -79,7 +79,6 @@ def _expectation(p, obj1, feature1, obj2, feature2, H=5):
 def _expectation(p, obj1, feature1, obj2, feature2, H=40):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
-    D = tf.shape(p.mu)[1] // 2
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(tf.split(x, 2, 1)[0])
     elif obj1 is None:
@@ -126,6 +125,5 @@ def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
     fXcovb = tf.concat((tf.transpose(p.cov[1, :-1, :, :], (0, 2, 1)), p.cov[0, 1:, :, :]), 2)
     cov = tf.concat((fXcovt, fXcovb), 1)  # Nx2Dx2D
     p_gauss = MarkovGaussian(mu, cov)
-    asdads
     gauss_quadrature_impl = _expectation.dispatch(MarkovGaussian, object, type(None), object, type(None))
     return gauss_quadrature_impl(p_gauss, obj1, feat1, obj2, feat2)
