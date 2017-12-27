@@ -35,14 +35,14 @@ NOTEBOOK_FILES = [
     "settings.ipynb",
     "SGPR_notes.ipynb",
     "vgp_notes.ipynb",
-    "FITCvsVFE.ipynb",
     "models.ipynb",
     "multiclass.ipynb",
     "classification.ipynb"
     # Blacklist:
-    #   svi.ipynb
-    #   GPLVM.ipynb
-    #   regression.ipynb
+    #   "FITCvsVFE.ipynb",
+    #   "svi.ipynb",
+    #   "GPLVM.ipynb",
+    #   "regression.ipynb"
 ]
 
 
