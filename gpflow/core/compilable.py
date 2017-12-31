@@ -186,10 +186,3 @@ class ICompilable(metaclass=AutoBuild):
         Clears out tensors from ICompilable object and removes all ties with them.
         """
         raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _build(self):
-        """
-        Internal build function. Designed for creating tensors which ICompilable object holds.
-        """
-        raise NotImplementedError()
