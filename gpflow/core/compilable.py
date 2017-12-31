@@ -112,6 +112,7 @@ class ICompilable(metaclass=AutoBuild):
     def graph(self):
         """
         TensorFlow graph property.
+
         :return: tf.Graph which was used during building.
         """
         raise NotImplementedError()
@@ -120,6 +121,7 @@ class ICompilable(metaclass=AutoBuild):
     def feeds(self):
         """
         TensorFlow feed dictionary for passing to tf.Session.run()
+
         :return: TensorFlow feed dictionary or None.
         """
         raise NotImplementedError()
@@ -129,6 +131,7 @@ class ICompilable(metaclass=AutoBuild):
         """
         List of TensorFlow tensors which must be initialized.
         This list is necessary for successfull _initialize_ call.
+
         :return: List of TensorFlow variables, data iterators or both,
             which are capable to be initialized.
 
@@ -140,6 +143,7 @@ class ICompilable(metaclass=AutoBuild):
         """
         Feed dictionary which will be used along with `initializables` list
         at `initialize` function.
+
         :return: Standard TensorFlow feed dictionary which must be used at
             at initialization.
         """
@@ -166,6 +170,7 @@ class ICompilable(metaclass=AutoBuild):
         """
         Two-phase method. At first it builds tensors and then initializes them at
         for a specific session session.
+
         :param session: TensorFlow session.
         """
         raise NotImplementedError()
@@ -174,9 +179,10 @@ class ICompilable(metaclass=AutoBuild):
     def is_built(self, graph):
         """
         Checks if tensors belonging to this ICompilable object were built for
-        the _graph_ argument.
+        the `graph` argument.
+
         :param graph: TensorFlow graph.
-        :return: _Build_ status.
+        :return: `Build` status.
         """
         raise NotImplementedError()
 

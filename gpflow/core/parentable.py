@@ -17,15 +17,19 @@ from .. import misc
 
 class Parentable:
     """
-    Very simple class for organizing GPflow objects in a tree,
-    where each node contains a reference to the its parent. Links to the childrens
+    Very simple class for organizing GPflow objects in a tree.
+    Each node contains a reference to the its parent. Links to children
     established implicitly via attributes.
 
-    The Parentable class stores static variable which is used for assining unique
+    The Parentable class stores static variable which is used for assigning unique
     prefix name identificator for each newly created object inherited from Parentable.
 
-    :param name: Parentable nodes name. When name is None, unique index identifier
-        will be attached to the hidden name (internal representation name).
+    Name is not required at `Parentable` object creation.
+    But in this case, unique index identifier will be attached to the hidden name
+    (internal representation name). The index is cut off, once node is placed under
+    another parent node.
+
+    :param name: String parentable nodes name.
     """
 
     __index = 0
@@ -36,14 +40,20 @@ class Parentable:
 
     @property
     def root(self):
-        """Returns top object of the tree."""
+        """
+        Top of the parentable tree.
+        :return: Reference to top parentable object.
+        """
         if self._parent is None:
             return self
         return self._parent.root
 
     @property
     def parent(self):
-        """Returns parent object for this node."""
+        """
+        Parent for this node.
+        :return: Reference to parent object.
+        """
         if self._parent is None:
             return self
         return self._parent
@@ -51,7 +61,8 @@ class Parentable:
     @property
     def name(self):
         """
-        Returns assigned name for this particular parenable node.
+        Assigned name for the parenable node.
+        :return: String name.
         """
         name = self._name.split(sep='/', maxsplit=1)
         if len(name) > 1 and name[0].isdigit():
@@ -60,8 +71,11 @@ class Parentable:
 
     @property
     def hidden_name(self):
-        """Returns fully qualified name of the parentable node. Hidden name includes
-        names of parents separated by slash, e.g. 'parent0/parent1/node'."""
+        """
+        Fully qualified name of the parentable node. Hidden name includes
+        names of parents separated by slash, e.g. 'parent0/parent1/node'.
+
+        :return: String hidden name."""
         return self._name
 
     @property
