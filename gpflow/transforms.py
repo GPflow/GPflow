@@ -390,10 +390,13 @@ class LowerTriangular(Transform):
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def backward_tensor(self, y):
+        print(y.shape.as_list())
         N = tf.cast(tf.sqrt(tf.size(y) / self.num_matrices), tf.int32)
-        reshaped = tf.reshape(y, (N, N, self.num_matrices))
-        size = len(reshaped)
-        triangular = reshaped[np.tril_indices(size, 0)].T
+        reshaped = tf.reshape(y, shape=(N, N, self.num_matrices))
+        print(reshaped, reshaped.shape.as_list())
+        N_not_tensor = reshaped.shape.as_list[0]
+        indices = np.dstack(np.tril_indices(N_not_tensor))[0]
+        triangular = tf.reshape(tf.gather_nd(reshaped, indices), shape=[-1])
         return triangular
 
     def log_jacobian_tensor(self, x):
