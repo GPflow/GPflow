@@ -127,14 +127,13 @@ class TransformTests(GPflowTestCase):
 
 class TestChainIdentity(GPflowTestCase):
     def prepare(self):
-        x = tf.placeholder(settings.float_type, 10)
         x_np = np.random.randn(10).astype(settings.float_type)
         transforms = []
         for transform in gpflow.transforms.Transform.__subclasses__():
             if transform != Chain and transform != gpflow.transforms.LowerTriangular:
                 transforms.append(transform())
         transforms.append(gpflow.transforms.Logistic(7.3, 19.4))
-        return x, x_np, transforms
+        return tf.convert_to_tensor(x_np), x_np, transforms
 
     def assertEqualElements(self, lst):
         elem0 = lst[0]

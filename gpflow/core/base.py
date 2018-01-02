@@ -73,6 +73,13 @@ class ITransform(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def backward_tensor(self, x):
+        """
+        Map from the variable-space to the free space, using tensorflow
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def log_jacobian_tensor(self, x):
         """
         Return the log Jacobian of the forward_tensor mapping.
