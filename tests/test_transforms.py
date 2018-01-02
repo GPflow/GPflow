@@ -67,6 +67,8 @@ class TransformTests(GPflowTestCase):
     def test_forward_backward(self):
         with self.test_context() as session:
             x, x_np, transforms = self.prepare()
+            x_expect = x_np.copy()
+            x_expect = x_expect.reshape(1, x_np.size)
             for t in transforms:
                 y_np_res = t.forward(x_np)
                 y_tf = t.forward_tensor(x)
@@ -79,8 +81,9 @@ class TransformTests(GPflowTestCase):
                 x_tf_res = session.run(x_tf)
 
                 assert_allclose(x_np_res, x_tf_res)
-                assert_allclose(x_np, x_np_res)
-                assert_allclose(x_np, x_tf_res)
+                x_expect = x_np.reshape(x_np_res.shape)
+                assert_allclose(x_expect, x_np_res)
+                assert_allclose(x_expect, x_tf_res)
 
     def test_logjac(self):
         """
