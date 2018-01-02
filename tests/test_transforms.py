@@ -244,7 +244,7 @@ class TestDiagMatrixTransform(GPflowTestCase):
 
             free = np.random.randn(7, self.t1.dim)
             x = tf.convert_to_tensor(free)
-            ys = sessionion.run(self.t1.forward_tensor(x))
+            ys = session.run(self.t1.forward_tensor(x))
             assert_allclose(ys, self.t1.forward(free))
 
 
