@@ -30,13 +30,15 @@ from . import conditionals
 from . import densities
 from . import likelihoods
 from . import kernels
-from . import ekernels
 from . import priors
 from . import core
 from . import models
 from . import test_util
 from . import training as train
 from . import features
+from . import expectations
+from . import expectations_quadrature
+from . import probability_distributions
 
 from .decors import autoflow
 from .decors import defer_build
