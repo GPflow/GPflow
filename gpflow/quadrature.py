@@ -53,7 +53,7 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
     if Din is None:
         raise GPflowError("If `Din` is passed as `None`, `means` must have a known shape. "
                           "Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
-                          "is problematic. Consider using your own session.")
+                          "is problematic. Consider using your own session.")  # pragma: no cover
 
     xn, wn = mvhermgauss(H, Din)
     N = tf.shape(means)[0]
@@ -72,7 +72,7 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
     if any([d is None for d in Dout]):
         raise GPflowError("If `Dout` is passed as `None`, the output of `func` must have known "
                           "shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
-                          "is problematic. Consider using your own session.")
+                          "is problematic. Consider using your own session.")  # pragma: no cover
     fX = tf.reshape(fevals, (H ** Din, N,) + Dout)
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
                     (-1,) + (1,) * (1 + len(Dout)))
