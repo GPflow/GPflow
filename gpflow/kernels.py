@@ -75,35 +75,6 @@ class Kernel(Parameterized):
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type,))
-    def compute_eKdiag(self, X, Xcov=None):
-        return self.eKdiag(X, Xcov)
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]),
-              (settings.float_type,))
-    def compute_eKxz(self, Z, Xmu, Xcov):
-        return self.eKxz(Z, Xmu, Xcov)
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]),
-              (settings.float_type, [None, None, None, None]))
-    def compute_exKxz_pairwise(self, Z, Xmu, Xcov):
-        return self.exKxz_pairwise(Z, Xmu, Xcov)
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]),
-              (settings.float_type, [None, None, None]))
-    def compute_exKxz(self, Z, Xmu, Xcov):
-        return self.exKxz(Z, Xmu, Xcov)
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]),
-              (settings.float_type,))
-    def compute_eKzxKxz(self, Z, Xmu, Xcov):
-        return self.eKzxKxz(Z, Xmu, Xcov)
-
     def on_separate_dims(self, other_kernel):
         """
         Checks if the dimensions, over which the kernels are specified, overlap.
