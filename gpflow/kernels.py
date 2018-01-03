@@ -647,7 +647,7 @@ class Combination(Kernel):
 
     def __init__(self, kern_list, name=None):
         if not all(isinstance(k, Kernel) for k in kern_list):
-            raise TypeError("can only combine Kernel instances")
+            raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
         input_dim = np.max([k.input_dim
                             if type(k.active_dims) is slice else
