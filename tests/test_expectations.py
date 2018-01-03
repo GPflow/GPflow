@@ -55,12 +55,12 @@ class Data:
 
         # create the covariance for the pairwise markov-gaussian
         dummy_gen = lambda rng, n, *shape: np.array([rng.randn(*shape) for _ in range(n)])
-        L_mg = dummy_gen(rng, num_data, D_in, 2*D_in)
-        LL = np.concatenate((L_mg[:-1], L_mg[1:]), 1)
+        L_mg = dummy_gen(rng, num_data, D_in, 2*D_in)  # N+1 x D x 2D
+        LL = np.concatenate((L_mg[:-1], L_mg[1:]), 1)  # N x 2D x 2D
         Xcov = LL @ np.transpose(LL, (0, 2, 1))
-        Xc = np.concatenate((Xcov[:, :D_in, :D_in], Xcov[-1:, D_in:, D_in:]), 0)
-        Xcross = np.concatenate((Xcov[:, :D_in, D_in:], np.zeros((1, D_in, D_in))), 0)
-        Xcc = np.stack([Xc, Xcross])
+        Xc = np.concatenate((Xcov[:, :D_in, :D_in], Xcov[-1:, D_in:, D_in:]), 0)  # N+1 x D x D
+        Xcross = np.concatenate((Xcov[:, :D_in, D_in:], np.zeros((1, D_in, D_in))), 0)  # N+1 x D x D
+        Xcc = np.stack([Xc, Xcross])  # 2 x N+1 x D x D
 
         markov_gauss = MarkovGaussian(Xmu, Xcc)
 
