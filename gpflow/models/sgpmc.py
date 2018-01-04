@@ -71,7 +71,6 @@ class SGPMC(GPModel):
         Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_data = X.shape[0]
-        self.num_latent = num_latent or Y.shape[1]
         self.feature = inducingpoint_wrapper(feat, Z)
         self.V = Parameter(np.zeros((len(self.feature), self.num_latent)))
         self.V.prior = Gaussian(0., 1.)

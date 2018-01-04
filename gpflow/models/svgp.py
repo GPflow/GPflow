@@ -83,14 +83,13 @@ class SVGP(GPModel):
         self.num_data = num_data or X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
         self.feature = features.inducingpoint_wrapper(feat, Z)
-        self.num_latent = num_latent or Y.shape[1]
 
         # init variational parameters
         num_inducing = len(self.feature)
         self.q_mu = Parameter(np.zeros((num_inducing, self.num_latent), dtype=settings.float_type))
         if self.q_diag:
             self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.float_type),
-                                transforms.positive)
+                                    transforms.positive)
         else:
             q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type)
                                for _ in range(self.num_latent)]).swapaxes(0, 2)

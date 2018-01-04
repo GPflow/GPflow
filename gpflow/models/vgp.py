@@ -61,9 +61,8 @@ class VGP(GPModel):
 
         X = DataHolder(X)
         Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
         self.num_data = X.shape[0]
-        self.num_latent = num_latent or Y.shape[1]
 
         self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
         q_sqrt = np.array([np.eye(self.num_data)
