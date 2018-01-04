@@ -126,7 +126,7 @@ class GPModel(Model):
 
     def __init__(self, X, Y, kern, likelihood, mean_function, name=None):
         super(GPModel, self).__init__(name=name)
-        self.mean_function = mean_function or Zero()
+        self.mean_function = mean_function or Zero(output_dim=Y.shape[1])
         self.kern = kern
         self.likelihood = likelihood
 

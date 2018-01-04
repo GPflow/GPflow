@@ -26,7 +26,6 @@ from . import settings
 
 from .params import Parameter, Parameterized
 from .decors import params_as_tensors, autoflow
-from .quadrature import mvnquad
 
 
 class Kernel(Parameterized):
@@ -76,159 +75,19 @@ class Kernel(Parameterized):
     def compute_Kdiag(self, X):
         return self.Kdiag(X)
 
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type,))
-    def compute_eKdiag(self, X, Xcov=None):
-        return self.eKdiag(X, Xcov)
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]),
-              (settings.float_type,))
-    def compute_eKxz(self, Z, Xmu, Xcov):
-        return self.eKxz(Z, Xmu, Xcov)
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]),
-              (settings.float_type, [None, None, None, None]))
-    def compute_exKxz_pairwise(self, Z, Xmu, Xcov):
-        return self.exKxz_pairwise(Z, Xmu, Xcov)
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]),
-              (settings.float_type, [None, None, None]))
-    def compute_exKxz(self, Z, Xmu, Xcov):
-        return self.exKxz(Z, Xmu, Xcov)
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]),
-              (settings.float_type,))
-    def compute_eKzxKxz(self, Z, Xmu, Xcov):
-        return self.eKzxKxz(Z, Xmu, Xcov)
-
-    def eKdiag(self, Xmu, Xcov):
+    def on_separate_dims(self, other_kernel):
         """
-        Computes <K_xx>_q(x).
-        :param Xmu: Mean (NxD)
-        :param Xcov: Covariance (NxDxD or NxD)
-        :return: (N)
+        Checks if the dimensions, over which the kernels are specified, overlap.
+        Returns True if they are defined on different/separate dimensions and False otherwise.
         """
-        self._check_quadrature()
-        Xmu, _ = self._slice(Xmu, None)
-        Xcov = self._slice_cov(Xcov)
-        return mvnquad(lambda x: self.Kdiag(x, presliced=True),
-                       Xmu, Xcov,
-                       self.num_gauss_hermite_points, self.input_dim)  # N
+        if isinstance(self.active_dims, slice) or isinstance(other_kernel.active_dims, slice):
+            # Be very conservative for kernels defined over slices of dimensions
+            return False
 
-    def eKxz(self, Z, Xmu, Xcov):
-        """
-        Computes <K_xz>_q(x) using quadrature.
-        :param Z: Fixed inputs (MxD).
-        :param Xmu: X means (NxD).
-        :param Xcov: X covariances (NxDxD or NxD).
-        :return: (NxM)
-        """
-        self._check_quadrature()
-        Xmu, Z = self._slice(Xmu, Z)
-        Xcov = self._slice_cov(Xcov)
-        M = tf.shape(Z)[0]
-        return mvnquad(lambda x: self.K(x, Z, presliced=True), Xmu, Xcov, self.num_gauss_hermite_points,
-                       self.input_dim, Dout=(M,))  # (H**DxNxD, H**D)
+        if np.any(self.active_dims.reshape(-1, 1) == other_kernel.active_dims.reshape(1, -1)):
+            return False
 
-    def exKxz_pairwise(self, Z, Xmu, Xcov):
-        """
-        Computes <x_{t-1} K_{x_t z}>_q(x) for each pair of consecutive X's in
-        Xmu & Xcov.
-        :param Z: Fixed inputs (MxD).
-        :param Xmu: X means (T+1xD).
-        :param Xcov: 2xT+1xDxD. [0, t, :, :] contains covariances for x_t. [1, t, :, :] contains the cross covariances
-        for t and t+1.
-        :return: (TxMxD).
-        """
-        self._check_quadrature()
-        # Slicing is NOT needed here. The desired behaviour is to *still* return an NxMxD matrix. As even when the
-        # kernel does not depend on certain inputs, the output matrix will still contain the outer product between the
-        # mean of x_{t-1} and K_{x_t Z}. The code here will do this correctly automatically, since the quadrature will
-        # still be done over the distribution x_{t-1, t}, only now the kernel will not depend on certain inputs.
-        # However, this does mean that at the time of running this function we need to know the input *size* of Xmu, not
-        # just `input_dim`.
-        M = tf.shape(Z)[0]
-        D = self.input_size if hasattr(self, 'input_size') else self.input_dim  # Number of actual input dimensions
-
-        with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(D, dtype=settings.tf_int),
-                            message="Numerical quadrature needs to know correct shape of Xmu.")
-        ]):
-            Xmu = tf.identity(Xmu)
-
-        # First, transform the compact representation of Xmu and Xcov into a
-        # list of full distributions.
-        fXmu = tf.concat((Xmu[:-1, :], Xmu[1:, :]), 1)  # Nx2D
-        fXcovt = tf.concat((Xcov[0, :-1, :, :], Xcov[1, :-1, :, :]), 2)  # NxDx2D
-        fXcovb = tf.concat((tf.transpose(Xcov[1, :-1, :, :], (0, 2, 1)), Xcov[0, 1:, :, :]), 2)
-        fXcov = tf.concat((fXcovt, fXcovb), 1)
-        return mvnquad(lambda x: tf.expand_dims(self.K(x[:, :D], Z), 2) *
-                                 tf.expand_dims(x[:, D:], 1),
-                       fXmu, fXcov, self.num_gauss_hermite_points,
-                       2 * D, Dout=(M, D))
-
-    def exKxz(self, Z, Xmu, Xcov):
-        """
-        Computes <x_t K_{x_t z}>_q(x) for the same x_t.
-        :param Z: Fixed inputs (MxD).
-        :param Xmu: X means (TxD).
-        :param Xcov: TxDxD. Contains covariances for each x_t.
-        :return: (TxMxD).
-        """
-        self._check_quadrature()
-        # Slicing is NOT needed here. The desired behaviour is to *still* return an NxMxD matrix.
-        # As even when the kernel does not depend on certain inputs, the output matrix will still
-        # contain the outer product between the mean of x_t and K_{x_t Z}. The code here will
-        # do this correctly automatically, since the quadrature will still be done over the
-        # distribution x_t, only now the kernel will not depend on certain inputs.
-        # However, this does mean that at the time of running this function we need to know the
-        # input *size* of Xmu, not just `input_dim`.
-        M = tf.shape(Z)[0]
-        # Number of actual input dimensions
-        D = self.input_size if hasattr(self, 'input_size') else self.input_dim
-
-        msg = "Numerical quadrature needs to know correct shape of Xmu."
-        assert_shape = tf.assert_equal(tf.shape(Xmu)[1], D, message=msg)
-        with tf.control_dependencies([assert_shape]):
-            Xmu = tf.identity(Xmu)
-
-        def integrand(x):
-            return tf.expand_dims(self.K(x, Z), 2) * tf.expand_dims(x, 1)
-
-        num_points = self.num_gauss_hermite_points
-        return mvnquad(integrand, Xmu, Xcov, num_points, D, Dout=(M, D))
-
-    def eKzxKxz(self, Z, Xmu, Xcov):
-        """
-        Computes <K_zx Kxz>_q(x).
-        :param Z: Fixed inputs MxD.
-        :param Xmu: X means (NxD).
-        :param Xcov: X covariances (NxDxD or NxD).
-        :return: NxMxM
-        """
-        self._check_quadrature()
-        Xmu, Z = self._slice(Xmu, Z)
-        Xcov = self._slice_cov(Xcov)
-        M = tf.shape(Z)[0]
-
-        def KzxKxz(x):
-            Kxz = self.K(x, Z, presliced=True)
-            return tf.expand_dims(Kxz, 2) * tf.expand_dims(Kxz, 1)
-
-        return mvnquad(KzxKxz,
-                       Xmu, Xcov, self.num_gauss_hermite_points,
-                       self.input_dim, Dout=(M, M))
-
-    def _check_quadrature(self):
-        if settings.numerics.ekern_quadrature == "warn":
-            warnings.warn("Using numerical quadrature for kernel expectation of %s. Use gpflow.ekernels instead." %
-                          str(type(self)))
-        if settings.numerics.ekern_quadrature == "error" or self.num_gauss_hermite_points == 0:
-            raise RuntimeError("Settings indicate that quadrature may not be used.")
+        return True
 
     def _slice(self, X, X2):
         """
@@ -788,7 +647,7 @@ class Combination(Kernel):
 
     def __init__(self, kern_list, name=None):
         if not all(isinstance(k, Kernel) for k in kern_list):
-            raise TypeError("can only combine Kernel instances")
+            raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
         input_dim = np.max([k.input_dim
                             if type(k.active_dims) is slice else
