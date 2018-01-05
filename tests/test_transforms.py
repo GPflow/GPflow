@@ -67,8 +67,6 @@ class TransformTests(GPflowTestCase):
     def test_forward_backward(self):
         with self.test_context() as session:
             x, x_np, transforms = self.prepare()
-            x_expect = x_np.copy()
-            x_expect = x_expect.reshape(1, x_np.size)
             for t in transforms:
                 y_np_res = t.forward(x_np)
                 y_tf = t.forward_tensor(x)

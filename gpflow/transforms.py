@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import numpy as np
 import tensorflow as tf
+import itertools
 
 from . import settings
 from .misc import vec_to_tri
@@ -320,7 +321,7 @@ class LowerTriangular(Transform):
        tri_mat = vec_to_tri(x)
 
     x is a free variable, y is always a list of lower triangular matrices sized
-    (N x N x D).
+    (D x N x N).
     """
 
     def __init__(self, N, num_matrices=1, squeeze=False):
@@ -363,10 +364,10 @@ class LowerTriangular(Transform):
         L = self._validate_vector_length(len(x))
         matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
         xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((matsize, matsize, self.num_matrices), settings.float_type)
+        var = np.zeros((self.num_matrices, matsize, matsize), settings.float_type)
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
-            var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
+            var[(np.zeros(len(indices[0])).astype(int) + i,) + indices] = xr[i, :]
         return var.squeeze() if self.squeeze else var
 
     def backward(self, y):
@@ -379,14 +380,13 @@ class LowerTriangular(Transform):
             Free state.
         """
         N = int(np.sqrt(y.size / self.num_matrices))
-        reshaped = np.reshape(y, (N, N, self.num_matrices))
-        size = len(reshaped)
-        triangular = reshaped[np.tril_indices(size, 0)].T
-        return triangular
+        reshaped = np.reshape(y, (self.num_matrices, N, N))
+        # return reshaped[np.tril_indices(N, 0)].T
+        return np.vstack([reshaped[i, :, :][np.tril_indices(N, 0)] for i in range(len(reshaped))])
 
     def forward_tensor(self, x):
         reshaped = tf.reshape(x, (self.num_matrices, -1))
-        fwd = tf.transpose(vec_to_tri(reshaped, self.N), [1, 2, 0])
+        fwd = vec_to_tri(reshaped, self.N)
         return tf.squeeze(fwd) if self.squeeze else fwd
 
     def backward_tensor(self, y):
@@ -395,8 +395,9 @@ class LowerTriangular(Transform):
         """
         size = np.prod(y.shape.as_list())
         N = int(np.sqrt(size / self.num_matrices))
-        reshaped = tf.reshape(y, shape=(N, N, self.num_matrices))
-        indices = np.dstack(np.tril_indices(N))[0]
+        reshaped = tf.reshape(y, shape=(self.num_matrices, N, N))
+        indices = np.array([np.hstack(x) for x in
+                            itertools.product(np.arange(self.num_matrices), np.dstack(np.tril_indices(N))[0])])
         triangular = tf.reshape(tf.gather_nd(reshaped, indices), shape=[-1])
         return triangular[None, :]
 

@@ -51,7 +51,7 @@ def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     :param f: data matrix, M x K, representing the function values at X,
         for K functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
-        size M x K or M x M x K.
+        size M x K or K x M x M.
     :param white: boolean of whether to use the whitened representation as
         described above.
 
@@ -107,7 +107,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
         if q_sqrt.get_shape().ndims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # K x M x N
         elif q_sqrt.get_shape().ndims == 3:
-            L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # K x M x M
+            L = tf.matrix_band_part(q_sqrt, -1, 0)  # K x M x M
             A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
             LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N
         else:  # pragma: no cover
@@ -134,7 +134,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     :param feat: gpflow.InducingFeature object, only InducingPoints is supported
     :param kern: gpflow kernel or ekernel object.
     :param q_mu: mean inducing points, size M x Dout
-    :param q_sqrt: cholesky of the covariance matrix of the inducing points, size M x M x Dout
+    :param q_sqrt: cholesky of the covariance matrix of the inducing points, size Dout x M x M
     :param full_cov_output: boolean wheter to compute covariance between output dimension.
                             Influences the shape of return value ``fvar``. Default is False
     :param white: boolean whether to use whitened representation. Default is False.
@@ -165,7 +165,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     num_ind = tf.shape(q_mu)[0]  # number of inducing points (M)
     num_func = tf.shape(q_mu)[1]  # output dimension (D)
 
-    q_sqrt_r = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # D x M x M
+    q_sqrt_r = tf.matrix_band_part(q_sqrt, -1, 0)  # D x M x M
 
     eKuf = tf.transpose(expectation(pXnew, (feat, kern))) # M x N (psi1)
     Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
