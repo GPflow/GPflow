@@ -128,7 +128,7 @@ class VGPTest(GPflowTestCase):
             m_vgp.compile()
 
             q_mu = np.random.randn(N, DY)
-            q_sqrt = np.random.randn(N, N, DY)
+            q_sqrt = np.random.randn(DY, N, N)
 
             m_svgp.q_mu = q_mu
             m_svgp.q_sqrt = q_sqrt
@@ -182,14 +182,14 @@ class VGPTest(GPflowTestCase):
                 whiten=False, q_diag=False)
 
             m_svgp_unwhitened.q_mu = mean
-            m_svgp_unwhitened.q_sqrt = np.transpose(np.linalg.cholesky(var_dnn), [1, 2, 0])
+            m_svgp_unwhitened.q_sqrt = np.linalg.cholesky(var_dnn)
 
             m_svgp_unwhitened.compile()
 
             mean_white_nd = L_inv.dot(mean)
             var_white_dnn = np.einsum('nN,dNM,mM->dnm', L_inv, var_dnn, L_inv)
 
-            q_sqrt_nnd = np.transpose(np.linalg.cholesky(var_white_dnn), [1, 2, 0])
+            q_sqrt_nnd = np.linalg.cholesky(var_white_dnn)
 
             m_vgp.q_mu = mean_white_nd
             m_vgp.q_sqrt = q_sqrt_nnd
