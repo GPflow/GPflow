@@ -55,25 +55,41 @@ class Data:
     # distributions don't need to be compiled (No Parameter objects)
     # but the members should be Tensors created in the same graph
 
+
 @cache_tensor
 def gauss():
-    return Gaussian(Data.Xmu, Data.Xvar)
+    return Gaussian(
+        tf.convert_to_tensor(Data.Xmu),
+        tf.convert_to_tensor(Data.Xvar))
+
 
 @cache_tensor
 def dirac():
-    return Gaussian(Data.Xmu, np.zeros((Data.num_data, Data.D_in, Data.D_in)))
+    return Gaussian(
+        tf.convert_to_tensor(Data.Xmu),
+        tf.convert_to_tensor(np.zeros((Data.num_data, Data.D_in, Data.D_in))))
+
 
 @cache_tensor
 def gauss_diag():
-    return DiagonalGaussian(Data.Xmu, rng.rand(Data.num_data, Data.D_in))
+    return DiagonalGaussian(
+        tf.convert_to_tensor(Data.Xmu),
+        tf.convert_to_tensor(rng.rand(Data.num_data, Data.D_in)))
+
 
 @cache_tensor
 def dirac_diag():
-    return DiagonalGaussian(Data.Xmu, np.zeros((Data.num_data, Data.D_in)))
+    return DiagonalGaussian(
+        tf.convert_to_tensor(Data.Xmu),
+        tf.convert_to_tensor(np.zeros((Data.num_data, Data.D_in))))
+
 
 @cache_tensor
 def dirac_markov_gauss():
-    return MarkovGaussian(Data.Xmu, np.zeros((2, Data.num_data, Data.D_in, Data.D_in)))
+    return MarkovGaussian(
+        tf.convert_to_tensor(Data.Xmu),
+        tf.convert_to_tensor(np.zeros((2, Data.num_data, Data.D_in, Data.D_in))))
+
 
 @cache_tensor
 def markov_gauss():
@@ -86,7 +102,9 @@ def markov_gauss():
     Xc = np.concatenate((Xcov[:, :D_in, :D_in], Xcov[-1:, D_in:, D_in:]), 0)  # N+1 x D x D
     Xcross = np.concatenate((Xcov[:, :D_in, D_in:], np.zeros((1, D_in, D_in))), 0)  # N+1 x D x D
     Xcc = np.stack([Xc, Xcross])  # 2 x N+1 x D x D
-    return MarkovGaussian(Data.Xmu, Xcc)
+    return MarkovGaussian(
+        tf.convert_to_tensor(Data.Xmu),
+        tf.convert_to_tensor(Xcc))
 
 
 @cache_tensor
@@ -96,6 +114,7 @@ def rbf_prod_seperate_dims():
         kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand(), active_dims=[1])
     ])
 
+
 @cache_tensor
 def rbf_lin_sum():
     return kernels.Sum([
@@ -103,6 +122,7 @@ def rbf_lin_sum():
         kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand()),
         kernels.Linear(Data.D_in, variance=rng.rand())
     ])
+
 
 @cache_tensor
 def rbf():
@@ -113,18 +133,22 @@ def rbf():
 def lin_kern():
     return kernels.Linear(Data.D_in, variance=rng.rand())
 
+
 @cache_tensor
 def lin():
     return mean_functions.Linear(rng.rand(Data.D_in, Data.D_out), rng.rand(Data.D_out))
+
 
 @cache_tensor
 def identity():
     # Note: Identity can only be used if Din == Dout
     return mean_functions.Identity(Data.D_in)
 
+
 @cache_tensor
 def zero():
     return mean_functions.Zero(output_dim=Data.D_out)
+
 
 @cache_tensor
 def const():
