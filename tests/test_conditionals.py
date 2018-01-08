@@ -50,7 +50,6 @@ class DiagsTest(GPflowTestCase):
 
         #the chols are diagonal matrices, with the same entries as the diag representation.
         chol = tf.stack([tf.diag(sqrt[:, i]) for i in range(num_latent)])
-        chol = tf.transpose(chol, perm=[1, 2, 0])
         return Xs, X, k, mu, sqrt, chol, feed_dict
 
     def test_whiten(self):
@@ -147,8 +146,7 @@ class WhitenTestGaussian(WhitenTest):
             K = k.K(X)
             L = tf.cholesky(K)
             V = tf.matrix_triangular_solve(L, F, lower=True)
-            V_chol = tf.matrix_triangular_solve(L, tf.diag(F_sqrt[:, 0]), lower=True)
-            V_sqrt = tf.expand_dims(V_chol, 2)
+            V_sqrt = tf.matrix_triangular_solve(L, tf.diag(F_sqrt[:, 0]), lower=True)[None, :, :]
 
             Fstar_mean, Fstar_var = gpflow.conditionals.conditional(
                 Xs, X, k, F, q_sqrt=F_sqrt)
