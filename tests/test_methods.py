@@ -111,8 +111,7 @@ class TestSVGP(GPflowTestCase):
             qsqrt = (qsqrt**2) * 0.01
             m1.q_sqrt = qsqrt
             m1.q_mu = qmean
-            m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]),
-                                  np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
+            m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])])
             m2.q_mu = qmean
 
             obj1 = session.run(m1.objective, feed_dict=m1.feeds)
@@ -141,7 +140,7 @@ class TestSVGP(GPflowTestCase):
             qsqrt = (qsqrt**2)*0.01
             m1.q_sqrt = qsqrt
             m1.q_mu = qmean
-            m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])]).swapaxes(0, 2)
+            m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])])
             m2.q_mu = qmean
             obj1 = session.run(m1.objective, feed_dict=m1.feeds)
             obj2 = session.run(m2.objective, feed_dict=m2.feeds)
