@@ -71,9 +71,9 @@ class VGP(GPModel):
         transform = transforms.LowerTriangular(self.num_data, self.num_latent)
         self.q_sqrt = Parameter(q_sqrt, transform=transform)
 
-    def compile(self, session=None):
+    def _build(self):
         """
-        Before calling the standard compile function, check to see if the size
+        Before calling the standard _build function, check to see if the size
         of the data has changed and add variational parameters appropriately.
 
         This is necessary because the shape of the parameters depends on the
@@ -82,10 +82,11 @@ class VGP(GPModel):
         if not self.num_data == self.X.shape[0]:
             self.num_data = self.X.shape[0]
             self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
-            self.q_sqrt = Parameter(np.eye(self.num_data)[:, :, None] *
-                                    np.ones((1, 1, self.num_latent)))
+            q_sqrt = np.array([np.eye(self.num_data) for _ in range(self.num_latent)])
+            transform = transforms.LowerTriangular(self.num_data, self.num_latent)
+            self.q_sqrt = Parameter(q_sqrt, transform=transform)
 
-        return super(VGP, self).compile(session=session)
+        return super(VGP, self)._build()
 
     @params_as_tensors
     def _build_likelihood(self):
