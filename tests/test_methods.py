@@ -333,6 +333,24 @@ class TestVGP(GPflowTestCase):
             self.assertTupleEqual(p.m.q_mu.shape, (11, 1))
             self.assertTupleEqual(p.m.q_sqrt.shape, (1, 11, 11))
 
+    def test_keep_custom_parameters(self):
+        for t in [gpflow.transforms.Log1pe, gpflow.transforms.Identity,
+                  gpflow.transforms.Exp, gpflow.transforms.Logistic]:
+            with self.test_context():
+                with gpflow.defer_build():
+                    m = self.get_model()
+                    m.q_mu.prior = gpflow.priors.Gamma(3., 1./3.)
+                    m.q_sqrt.transform = t()
+                m.compile()
+                m.X = np.random.rand(11, 1)
+                m.Y = np.random.rand(11, 1)
+                m.clear()
+                m.compile()
+                self.assertIsInstance(m.q_mu.prior, gpflow.priors.Gamma)
+                self.assertIsInstance(m.q_sqrt.transform, t)
+                self.assertTupleEqual(m.q_mu.shape, (11, 1))
+                self.assertTupleEqual(m.q_sqrt.shape, (1, 11, 11))
+
 
 if __name__ == "__main__":
     tf.test.main()
