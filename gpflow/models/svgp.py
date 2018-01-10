@@ -79,7 +79,7 @@ class SVGP(GPModel):
             Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
 
         # init the super class, accept args
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
         self.num_data = num_data or X.shape[0]
         self.q_diag, self.whiten = q_diag, whiten
         self.feature = features.inducingpoint_wrapper(feat, Z)
@@ -92,7 +92,7 @@ class SVGP(GPModel):
                                     transforms.positive)
         else:
             q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type)
-                               for _ in range(self.num_latent)]).swapaxes(0, 2)
+                               for _ in range(self.num_latent)])
             self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))
 
     @params_as_tensors

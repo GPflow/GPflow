@@ -58,7 +58,6 @@ class DiagsTest(GPflowTestCase):
 
             # the chols are diagonal matrices, with the same entries as the diag representation.
             self.chol = tf.stack([tf.diag(self.sqrt[:, i]) for i in range(N)])
-            self.chol = tf.transpose(self.chol, perm=[1, 2, 0])
 
     def test_white(self):
         with self.test_session() as sess:
@@ -141,7 +140,7 @@ class EqualityTest(GPflowTestCase):
             M = 5
             self.mu = tf.placeholder(settings.float_type, [M, N])
             self.sqrt = tf.placeholder(settings.float_type, [M, N])
-            self.chol = tf.placeholder(settings.float_type, [M, M, N])
+            self.chol = tf.placeholder(settings.float_type, [N, M, M])
             self.K = tf.placeholder(settings.float_type, [M, M])
             self.Kdiag = tf.placeholder(settings.float_type, [M, M])
 
@@ -150,7 +149,7 @@ class EqualityTest(GPflowTestCase):
             sqrt_diag = self.rng.randn(M)
             self.sqrt_data = np.array([sqrt_diag for _ in range(N)]).T
             sqrt_chol = np.tril(self.rng.randn(M, M))
-            self.chol_data = np.rollaxis(np.array([sqrt_chol for _ in range(N)]), 0, 3)
+            self.chol_data = np.array([sqrt_chol for _ in range(N)])
 
             self.feed_dict = {
                 self.mu: np.zeros((M, N)),
@@ -194,13 +193,13 @@ class OneDTest(GPflowTestCase):
             M = 1
             self.mu = tf.placeholder(settings.float_type, [M, N])
             self.sqrt = tf.placeholder(settings.float_type, [M, N])
-            self.chol = tf.placeholder(settings.float_type, [M, M, N])
+            self.chol = tf.placeholder(settings.float_type, [N, M, M])
             self.K = tf.placeholder(settings.float_type, [M, M])
             self.Kdiag = tf.placeholder(settings.float_type, [M, M])
 
             self.mu_data = np.array([[1.3], [1.7]]).T
             self.sqrt_data = np.array([[0.8], [1.5]]).T
-            self.chol_data = self.sqrt_data[None, :, :]
+            self.chol_data = self.sqrt_data.T[:, :, None]
             self.K_data = np.array([[2.5]])
 
             self.feed_dict = {

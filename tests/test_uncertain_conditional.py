@@ -54,8 +54,7 @@ def gen_L(rng, n, *shape):
 
 
 def gen_q_sqrt(rng, D_out, *shape):
-    q_sqrt = np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)])
-    return np.transpose(q_sqrt, [1, 2, 0])
+    return np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)])
 
 
 def mean_function_factory(rng, mean_function_name, D_in, D_out):
@@ -121,7 +120,7 @@ class DataQuadrature:
         Xmu = tf.placeholder(float_type, [cls.num_data, cls.D_in])
         Xvar = tf.placeholder(float_type, [cls.num_data, cls.D_in, cls.D_in])
         q_mu = tf.placeholder(float_type, [cls.num_ind, cls.D_out])
-        q_sqrt = tf.placeholder(float_type, [cls.num_ind, cls.num_ind, cls.D_out])
+        q_sqrt = tf.placeholder(float_type, [cls.D_out, cls.num_ind, cls.num_ind])
 
         kern = gpflow.kernels.RBF(cls.D_in)
         feat = gpflow.features.InducingPoints(cls.Z)
