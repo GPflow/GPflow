@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.from __future__ import print_function
 
-import tensorflow as tf
-
-import numpy as np
-from numpy.testing import assert_almost_equal, assert_allclose
-
-
 import gpflow
-from gpflow.test_util import GPflowTestCase
+import numpy as np
+import tensorflow as tf
 from gpflow import settings
+from gpflow.test_util import GPflowTestCase
+from numpy.testing import assert_allclose
 
 
 class DiagsTest(GPflowTestCase):
@@ -29,14 +26,15 @@ class DiagsTest(GPflowTestCase):
 
     Here we make sure the behaviours overlap.
     """
+
     def prepare(self):
         num_latent = 2
         num_data = 3
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
         k.white.variance = 0.01
-        X = tf.placeholder(settings.float_type)
-        mu = tf.placeholder(settings.float_type)
-        Xs = tf.placeholder(settings.float_type)
+        X = tf.placeholder(settings.float_type, shape=[None, None])
+        mu = tf.placeholder(settings.float_type, shape=[None, None])
+        Xs = tf.placeholder(settings.float_type, shape=[None, None])
         sqrt = tf.placeholder(settings.float_type, shape=[num_data, num_latent])
 
         rng = np.random.RandomState(0)
@@ -48,7 +46,7 @@ class DiagsTest(GPflowTestCase):
         feed_dict = {X: X_data, Xs: Xs_data, mu: mu_data, sqrt: sqrt_data}
         k.compile()
 
-        #the chols are diagonal matrices, with the same entries as the diag representation.
+        # the chols are diagonal matrices, with the same entries as the diag representation.
         chol = tf.stack([tf.diag(sqrt[:, i]) for i in range(num_latent)])
         return Xs, X, k, mu, sqrt, chol, feed_dict
 
@@ -123,7 +121,7 @@ class WhitenTest(GPflowTestCase):
             mean1, var1 = sess.run([Fstar_w_mean, Fstar_w_var], feed_dict=feed_dict)
             mean2, var2 = sess.run([Fstar_mean, Fstar_var], feed_dict=feed_dict)
 
-             # TODO: should tolerance be type dependent?
+            # TODO: should tolerance be type dependent?
             assert_allclose(mean1, mean2)
             assert_allclose(var1, var2)
 

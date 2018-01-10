@@ -30,6 +30,7 @@ from . import conditionals
 from . import densities
 from . import likelihoods
 from . import kernels
+from . import multikernels
 from . import priors
 from . import core
 from . import models
