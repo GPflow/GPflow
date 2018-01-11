@@ -207,28 +207,3 @@ def test_exKxz_pairwise_no_uncertainty(kern):
 @test_util.session_context(graph=Data.graph)
 def test_exKxz_pairwise(kern):
     _test((Data.markov_gauss, (Data.ip, kern), Data.iden))
-
-
-@test_util.session_context()
-def test_RBF_eKzxKxz_notNaN():
-    """
-    Ensure that <K_{Z, x} K_{x, Z}>_p(x) is not NaN and correct, when
-    K_{Z, Z} is zero with finite precision. See pull request #595.
-    """
-    kern = gpflow.kernels.RBF(1, lengthscales=0.1)
-    kern.variance = 2.
-
-    p = gpflow.probability_distributions.Gaussian(
-        tf.constant([[10]], dtype=gpflow.settings.tf_float),
-        tf.constant([[[0.1]]], dtype=gpflow.settings.tf_float))
-    z = gpflow.features.InducingPoints([[-10.], [10.]])
-
-    ekz = gpflow.expectations.expectation(
-        p, (z, kern), (z, kern))
-
-    g, = tf.gradients(ekz, kern.lengthscales._unconstrained_tensor)
-
-    sess = tf.get_default_session()
-    z.initialize(sess)
-    kern.initialize(sess)
-    np.testing.assert_almost_equal(sess.run(g), 0.79108496814443863)
