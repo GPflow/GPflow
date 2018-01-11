@@ -37,7 +37,7 @@ def expectation(p, obj1, obj2=None):
         .. Psi statistics
         eKdiag = expectation(pX, kern)  # psi0
         eKxz = expectation(pX, (feat, kern))  # psi1
-        eKxzzx = expectation(pX, (feat, kern), (feat, kern))  # psi2
+        eKxzKzx = expectation(pX, (feat, kern), (feat, kern))  # psi2
 
         .. kernels and mean functions
         eKxzMx = expectation(pX, (feat, kern), mean)
@@ -68,7 +68,7 @@ def expectation(p, obj1, obj2=None):
 def _expectation(p, mean, none, kern, feat):
     """
     It computes the expectation:
-    <m(x) K_{x, Z}>_p(x), where
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
 
     :return: NxQxM
     """
@@ -79,7 +79,7 @@ def _expectation(p, mean, none, kern, feat):
 def _expectation(p, kern, none1, none2, none3):
     """
     It computes the expectation:
-    <K_{x, x}>_p(x), where
+    <diag(K_{X, X})>_p(X), where
         - K(.,.)   :: RBF kernel
     This is expression is also known is Psi0
 
@@ -92,9 +92,9 @@ def _expectation(p, kern, none1, none2, none3):
 def _expectation(p, kern, feat, none1, none2):
     """
     It computes the expectation:
-    <K_{x, Z}>_p(x), where
+    <K_{X, Z}>_p(X), where
         - K(.,.)   :: RBF kernel
-    This is expression is also known is Psi1
+    This expression is also known is Psi1
 
     :return: NxM
     """
@@ -110,23 +110,25 @@ def _expectation(p, kern, feat, none1, none2):
         else:
             lengthscales = tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales
 
-        vec = tf.expand_dims(Xmu, 2) - tf.expand_dims(tf.transpose(Z), 0)  # NxDxM
-        chols = tf.cholesky(tf.expand_dims(tf.matrix_diag(lengthscales ** 2), 0) + Xcov)
-        Lvec = tf.matrix_triangular_solve(chols, vec)
-        q = tf.reduce_sum(Lvec ** 2, [1])
+        chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales ** 2) + Xcov)  # NxDxD
 
-        chol_diags = tf.matrix_diag_part(chols)  # N x D
-        half_log_dets = (tf.reduce_sum(tf.log(chol_diags), 1)
-                         - tf.reduce_sum(tf.log(lengthscales)))  # N,
+        all_diffs = tf.transpose(Z) - tf.expand_dims(Xmu, 2)  # NxDxM
+        exponent_mahalanobis = tf.matrix_triangular_solve(chol_L_plus_Xcov, all_diffs, lower=True)  # NxDxM
+        exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
+        exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-        return kern.variance * tf.exp(-0.5 * q - tf.expand_dims(half_log_dets, 1))
+        sqrt_det_L = tf.reduce_prod(lengthscales)
+        sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(chol_L_plus_Xcov)), axis=1))
+        determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
+
+        return kern.variance * (determinants[:, None] * exponent_mahalanobis)
 
 
 @dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
 def _expectation(p, rbf_kern, feat, identity_mean, none):
     """
     It computes the expectation:
-    <K_{x, Z} m(x)>_p(x), where
+    expectation[n] = <K_{x_n, Z}^T m(x_n)>_p(x_n), where
         - m(x) = x :: identity mean function
         - K(.,.)   :: RBF kernel
 
