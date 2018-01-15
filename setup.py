@@ -18,7 +18,8 @@ exec(open("gpflow/_version.py").read())
 requirements = [
     'numpy>=1.10.0',
     'scipy>=0.18.0',
-    'pandas>=0.18.1'
+    'pandas>=0.18.1',
+    'multipledispatch>=0.4.9'
 ]
 
 min_tf_version = '1.4.0'

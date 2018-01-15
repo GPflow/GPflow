@@ -77,13 +77,6 @@ class InducingPoints(InducingFeature):
         Kzx = kern.K(self.Z, Xnew)
         return Kzx
 
-    @decors.params_as_tensors
-    def eKfu(self, kern, Xmu, Xcov):
-        return kern.eKxz(self.Z, Xmu, Xcov)
-
-    @decors.params_as_tensors
-    def eKufKfu(self, kern, Xmu, Xcov):
-        return kern.eKzxKxz(self.Z, Xmu, Xcov)
 
 class Multiscale(InducingPoints):
     """

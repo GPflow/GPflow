@@ -485,16 +485,15 @@ class SwitchedLikelihood(Likelihood):
         """
         # get the index from Y
         Y = args[-1]
-        ind = tf.gather(tf.transpose(Y), tf.shape(Y)[1]-1)  # ind = Y[:,-1]
+        ind = Y[:, -1]
         ind = tf.cast(ind, tf.int32)
-        Y = tf.transpose(tf.gather(tf.transpose(Y), tf.range(0, tf.shape(Y)[1]-1)))  # Y = Y[:,:-1]
+        Y = Y[:, :-1]
         args[-1] = Y
 
         # split up the arguments into chunks corresponding to the relevant likelihoods
         args = zip(*[tf.dynamic_partition(X, ind, self.num_likelihoods) for X in args])
 
         # apply the likelihood-function to each section of the data
-
         with params_as_tensors_for(self, convert=False):
             funcs = [getattr(lik, func_name) for lik in self.likelihood_list]
         results = [f(*args_i) for f, args_i in zip(funcs, args)]

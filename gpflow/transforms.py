@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import numpy as np
 import tensorflow as tf
+import itertools
 
 from . import settings
 from .misc import vec_to_tri
@@ -42,6 +43,9 @@ class Identity(Transform):
     """
     def forward_tensor(self, x):
         return tf.identity(x)
+
+    def backward_tensor(self, y):
+        return tf.identity(y)
 
     def forward(self, x):
         return x
@@ -71,6 +75,9 @@ class Chain(Transform):
     def forward_tensor(self, x):
         return self.t1.forward_tensor(self.t2.forward_tensor(x))
 
+    def backward_tensor(self, y):
+        return self.t2.backward_tensor(self.t1.backward_tensor(y))
+
     def forward(self, x):
         return self.t1.forward(self.t2.forward(x))
 
@@ -99,6 +106,9 @@ class Exp(Transform):
 
     def forward_tensor(self, x):
         return tf.exp(x) + self._lower
+
+    def backward_tensor(self, y):
+        return tf.log(y - self._lower)
 
     def forward(self, x):
         return np.exp(x) + self._lower
@@ -143,6 +153,10 @@ class Log1pe(Transform):
 
     def forward_tensor(self, x):
         return tf.nn.softplus(x) + self._lower
+
+    def backward_tensor(self, y):
+        ys = tf.maximum(y - self._lower, tf.as_dtype(settings.float_type).min)
+        return ys + tf.log(-tf.expm1(-ys))
 
     def log_jacobian_tensor(self, x):
         return tf.negative(tf.reduce_sum(tf.nn.softplus(tf.negative(x))))
@@ -201,6 +215,9 @@ class Logistic(Transform):
         ex = np.exp(-x)
         return self.a + (self.b - self.a) / (1. + ex)
 
+    def backward_tensor(self, y):
+        return -tf.log((self.b - self.a) / (y - self.a) - 1.)
+
     def backward(self, y):
         return -np.log((self.b - self.a) / (y - self.a) - 1.)
 
@@ -236,6 +253,9 @@ class Rescale(Transform):
 
     def forward(self, x):
         return x * self.factor
+
+    def backward_tensor(self, y):
+        return y / self.factor
 
     def backward(self, y):
         return y / self.factor
@@ -279,6 +299,10 @@ class DiagMatrix(Transform):
             raise ValueError("shape of input does not match this transform")
         return y.reshape((-1, self.dim, self.dim)).diagonal(offset=0, axis1=1, axis2=2).flatten()
 
+    def backward_tensor(self, y):
+        reshaped = tf.reshape(y, shape=(-1, self.dim, self.dim))
+        return tf.reshape(tf.matrix_diag_part(reshaped), shape=[-1])
+
     def forward_tensor(self, x):
         # create diagonal matrices
         return tf.matrix_diag(tf.reshape(x, (-1, self.dim)))
@@ -297,7 +321,7 @@ class LowerTriangular(Transform):
        tri_mat = vec_to_tri(x)
 
     x is a free variable, y is always a list of lower triangular matrices sized
-    (N x N x D).
+    (D x N x N).
     """
 
     def __init__(self, N, num_matrices=1, squeeze=False):
@@ -340,10 +364,10 @@ class LowerTriangular(Transform):
         L = self._validate_vector_length(len(x))
         matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
         xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((matsize, matsize, self.num_matrices), settings.float_type)
+        var = np.zeros((self.num_matrices, matsize, matsize), settings.float_type)
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
-            var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
+            var[(np.zeros(len(indices[0])).astype(int) + i,) + indices] = xr[i, :]
         return var.squeeze() if self.squeeze else var
 
     def backward(self, y):
@@ -356,15 +380,26 @@ class LowerTriangular(Transform):
             Free state.
         """
         N = int(np.sqrt(y.size / self.num_matrices))
-        reshaped = np.reshape(y, (N, N, self.num_matrices))
-        size = len(reshaped)
-        triangular = reshaped[np.tril_indices(size, 0)].T
-        return triangular
+        reshaped = np.reshape(y, (self.num_matrices, N, N))
+        # return reshaped[np.tril_indices(N, 0)].T
+        return np.vstack([reshaped[i, :, :][np.tril_indices(N, 0)] for i in range(len(reshaped))])
 
     def forward_tensor(self, x):
         reshaped = tf.reshape(x, (self.num_matrices, -1))
-        fwd = tf.transpose(vec_to_tri(reshaped, self.N), [1, 2, 0])
+        fwd = vec_to_tri(reshaped, self.N)
         return tf.squeeze(fwd) if self.squeeze else fwd
+
+    def backward_tensor(self, y):
+        """
+        CAVEAT: Requires defined shape and can't work with unknown shape.
+        """
+        size = np.prod(y.shape.as_list())
+        N = int(np.sqrt(size / self.num_matrices))
+        reshaped = tf.reshape(y, shape=(self.num_matrices, N, N))
+        indices = np.array([np.hstack(x) for x in
+                            itertools.product(np.arange(self.num_matrices), np.dstack(np.tril_indices(N))[0])])
+        triangular = tf.reshape(tf.gather_nd(reshaped, indices), shape=[-1])
+        return triangular[None, :]
 
     def log_jacobian_tensor(self, x):
         return tf.zeros((1,), settings.float_type)

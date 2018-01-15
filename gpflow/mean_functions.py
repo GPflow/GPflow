@@ -44,11 +44,6 @@ class MeanFunction(Parameterized):
         return Product(self, other)
 
 
-class Zero(MeanFunction):
-    def __call__(self, X):
-        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=settings.float_type)
-
-
 class Linear(MeanFunction):
     """
     y_i = A x_i + b
@@ -72,6 +67,41 @@ class Linear(MeanFunction):
         return tf.matmul(X, self.A) + self.b
 
 
+class Identity(Linear):
+    """
+    y_i = x_i
+    """
+    def __init__(self, input_dim=None):
+        Linear.__init__(self)
+        self.input_dim = input_dim
+
+    def __call__(self, X):
+        return X
+
+    @property
+    def A(self):
+        if self.input_dim is None:
+            raise ValueError("An input_dim needs to be specified when using the "
+                             "`Identity` mean function in combination with expectations.")
+
+        return tf.eye(self.input_dim, dtype=settings.float_type)
+
+    @property
+    def b(self):
+        if self.input_dim is None:
+            raise ValueError("An input_dim needs to be specified when using the "
+                             "`Identity` mean function in combination with expectations.")
+
+        return tf.zeros(self.input_dim, dtype=settings.float_type)
+
+    @A.setter
+    def A(self, A):
+        pass
+
+    @b.setter
+    def b(self, b):
+        pass
+
 class Constant(MeanFunction):
     """
     y_i = c,,
@@ -85,6 +115,16 @@ class Constant(MeanFunction):
     def __call__(self, X):
         shape = tf.stack([tf.shape(X)[0], 1])
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+
+
+class Zero(Constant):
+    def __init__(self, output_dim=1):
+        Constant.__init__(self)
+        self.output_dim = output_dim
+        del self.c
+
+    def __call__(self, X):
+        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=settings.tf_float)
 
 
 class SwitchedMeanFunction(MeanFunction):

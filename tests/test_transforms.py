@@ -27,7 +27,6 @@ from gpflow import settings
 
 class TransformTests(GPflowTestCase):
     def prepare(self):
-        x = tf.placeholder(settings.float_type, 10)
         x_np = np.random.randn(10).astype(settings.float_type)
         transforms = []
         for transform_class in gpflow.transforms.Transform.__subclasses__():
@@ -52,36 +51,44 @@ class TransformTests(GPflowTestCase):
         # test helper:
         transforms.append(gpflow.transforms.positiveRescale(9.5))
 
-        return x, x_np, transforms
+        return tf.convert_to_tensor(x_np), x_np, transforms
 
-    def test_tf_np_forward(self):
+    def test_tf_np_forward_backward(self):
         """
         Make sure the np forward transforms are the same as the tensorflow ones
         """
-        with self.test_context() as sess:
+        with self.test_context() as session:
             x, x_np, transforms = self.prepare()
-            ys = [t.forward_tensor(x) for t in transforms]
-            ys_tf = [sess.run(y, feed_dict={x: x_np}) for y in ys]
-            ys_np = [t.forward(x_np) for t in transforms]
-            for y1, y2 in zip(ys_tf, ys_np):
-                assert_allclose(y1, y2)
+            for t in transforms:
+                y_tf = t.forward_tensor(x)
+                y_np = t.forward(x_np)
+                assert_allclose(session.run(y_tf), y_np)
 
     def test_forward_backward(self):
-        with self.test_context():
+        with self.test_context() as session:
             x, x_np, transforms = self.prepare()
-            ys_np = [t.forward(x_np) for t in transforms]
-            xs_np = [t.backward(y) for t, y in zip(transforms, ys_np)]
-            for _t, x, _y in zip(transforms, xs_np, ys_np):
-                assert_allclose(x.reshape(x_np.shape), x_np)
-                # TODO(@awav): CHECK IT
-                # self.assertTrue(t.free_state_size(y.shape) == len(x))
+            for t in transforms:
+                y_np_res = t.forward(x_np)
+                y_tf = t.forward_tensor(x)
+                y_tf_res = session.run(y_tf)
+
+                assert_allclose(y_np_res, y_tf_res)
+
+                x_np_res = t.backward(y_np_res)
+                x_tf = t.backward_tensor(y_tf)
+                x_tf_res = session.run(x_tf)
+
+                assert_allclose(x_np_res, x_tf_res)
+                x_expect = x_np.reshape(x_np_res.shape)
+                assert_allclose(x_expect, x_np_res)
+                assert_allclose(x_expect, x_tf_res)
 
     def test_logjac(self):
         """
         We have hand-crafted the log-jacobians for speed. Check they're correct
         wrt a tensorflow derived version
         """
-        with self.test_context() as sess:
+        with self.test_context() as session:
             x, x_np, transforms = self.prepare()
 
             # there is no jacobian: loop manually
@@ -98,8 +105,8 @@ class TransformTests(GPflowTestCase):
                                                gpflow.transforms.DiagMatrix))]
 
             for j1, j2 in zip(tf_jacs, hand_jacs):
-                j1_res = sess.run(j1, feed_dict={x: x_np})
-                j2_res = sess.run(j2, feed_dict={x: x_np})
+                j1_res = session.run(j1)
+                j2_res = session.run(j2)
                 assert_allclose(j1_res, j2_res)
 
     def test_logistic_error_wrong_order(self):
@@ -118,14 +125,13 @@ class TransformTests(GPflowTestCase):
 
 class TestChainIdentity(GPflowTestCase):
     def prepare(self):
-        x = tf.placeholder(settings.float_type, 10)
         x_np = np.random.randn(10).astype(settings.float_type)
         transforms = []
         for transform in gpflow.transforms.Transform.__subclasses__():
             if transform != Chain and transform != gpflow.transforms.LowerTriangular:
                 transforms.append(transform())
         transforms.append(gpflow.transforms.Logistic(7.3, 19.4))
-        return x, x_np, transforms
+        return tf.convert_to_tensor(x_np), x_np, transforms
 
     def assertEqualElements(self, lst):
         elem0 = lst[0]
@@ -136,7 +142,7 @@ class TestChainIdentity(GPflowTestCase):
         """
         Make sure chaining with identity doesn't lead to different values.
         """
-        with self.test_context() as sess:
+        with self.test_context() as session:
             x, x_np, transforms = self.prepare()
             for transform in transforms:
                 equiv_transforms = [transform,
@@ -151,11 +157,11 @@ class TestChainIdentity(GPflowTestCase):
                 self.assertEqualElements(xs_np)
 
                 ys = [t.forward_tensor(x) for t in equiv_transforms]
-                ys_tf = [sess.run(y, feed_dict={x: x_np}) for y in ys]
+                ys_tf = [session.run(y) for y in ys]
                 self.assertEqualElements(ys_tf)
 
                 logjs = [t.log_jacobian_tensor(x) for t in equiv_transforms]
-                logjs_tf = [sess.run(logj, feed_dict={x: x_np}) for logj in logjs]
+                logjs_tf = [session.run(logj) for logj in logjs]
                 self.assertEqualElements(logjs_tf)
 
 
@@ -227,15 +233,15 @@ class TestDiagMatrixTransform(GPflowTestCase):
         """
         Make sure the np forward transforms are the same as the tensorflow ones
         """
-        with self.test_context() as sess:
+        with self.test_context() as session:
             free = np.random.randn(8, self.t2.dim)
-            x = tf.placeholder(settings.float_type)
-            ys = sess.run(self.t2.forward_tensor(x), feed_dict={x: free})
+            x = tf.convert_to_tensor(free)
+            ys = session.run(self.t2.forward_tensor(x))
             assert_allclose(ys, self.t2.forward(free))
 
             free = np.random.randn(7, self.t1.dim)
-            x = tf.placeholder(settings.float_type)
-            ys = sess.run(self.t1.forward_tensor(x), feed_dict={x: free})
+            x = tf.convert_to_tensor(free)
+            ys = session.run(self.t1.forward_tensor(x))
             assert_allclose(ys, self.t1.forward(free))
 
 

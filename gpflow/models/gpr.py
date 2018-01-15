@@ -26,6 +26,7 @@ from ..densities import multivariate_normal
 
 from .model import GPModel
 
+
 class GPR(GPModel):
     """
     Gaussian Process Regression.
@@ -49,7 +50,6 @@ class GPR(GPModel):
         X = DataHolder(X)
         Y = DataHolder(Y)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
-        self.num_latent = Y.shape[1]
 
     @name_scope('likelihood')
     @params_as_tensors
