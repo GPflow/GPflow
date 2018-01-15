@@ -118,8 +118,12 @@ class Parentable:
 
     @classmethod
     def _read_index(cls, obj=None):
-        index = cls.__index
+        """
+        Reads index number and increments it.
+
         # TODO(@awav): index can grow indefinetly,
         # check boundaries or make another solution.
+        """
+        index = cls.__index
         cls.__index += 1
         return index
