@@ -90,7 +90,7 @@ class Model(Parameterized):
 
     @abc.abstractmethod
     def _build_likelihood(self):
-        raise NotImplementedError('') # TODO(@awav): write error message
+        raise NotImplementedError('')  # TODO(@awav): write error message
 
 
 class GPModel(Model):
@@ -124,9 +124,11 @@ class GPModel(Model):
     >>> m.Y = Ynew
     """
 
-    def __init__(self, X, Y, kern, likelihood, mean_function, name=None):
+    def __init__(self, X, Y, kern, likelihood, mean_function,
+                 num_latent=None, name=None):
         super(GPModel, self).__init__(name=name)
-        self.mean_function = mean_function or Zero(output_dim=Y.shape[1])
+        self.num_latent = num_latent or Y.shape[1]
+        self.mean_function = mean_function or Zero(output_dim=self.num_latent)
         self.kern = kern
         self.likelihood = likelihood
 

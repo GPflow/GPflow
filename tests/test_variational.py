@@ -183,7 +183,7 @@ class VariationalMultivariateTest(GPflowTestCase):
         if is_diagonal:
             m.q_sqrt = self.q_sqrt_diag
         else:
-            m.q_sqrt = self.q_sqrt_full[:, :, None]
+            m.q_sqrt = self.q_sqrt_full[None, :, :]
         m.q_mu = self.q_mean
         return m
 

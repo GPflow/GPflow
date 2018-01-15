@@ -269,8 +269,8 @@ class TestMulticlassIndexFix(GPflowTestCase):
 
 class TestSwitchedLikelihood(GPflowTestCase):
     """
-    SwitchedLikelihood is saparately tested here.
-    Here, we make sure the partition-stictch works fine.
+    SwitchedLikelihood is separately tested here.
+    Here, we make sure the partition-stitch works fine.
     """
     def setUp(self):
         self.test_graph = tf.Graph()
@@ -279,7 +279,8 @@ class TestSwitchedLikelihood(GPflowTestCase):
             rng = np.random.RandomState(1)
             self.Y_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
             self.F_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
-            self.Fvar_list = [np.exp(rng.randn(3, 2)),  np.exp(rng.randn(4, 2)),  np.exp(rng.randn(5, 2))]
+            self.Fvar_list = [np.exp(rng.randn(3, 2)),  np.exp(rng.randn(4, 2)),
+                              np.exp(rng.randn(5, 2))]
             self.Y_label = [np.ones((3, 1))*0, np.ones((4, 1))*1, np.ones((5, 1))*2]
             self.Y_perm = list(range(3+4+5))
             rng.shuffle(self.Y_perm)
@@ -337,6 +338,39 @@ class TestSwitchedLikelihood(GPflowTestCase):
                                        self.Fvar_list):
                 rslts.append(session.run(lik.variational_expectations(f, fvar, y)))
             self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+
+
+class TestSwitchedLikelihoodRegression(GPflowTestCase):
+    """
+    A Regression test when using Switched likelihood: the number of latent
+    functions in a GP model must be equal to the number of columns in Y minus
+    one. The final column of Y is used to index the switch. If the number of
+    latent functions does not match, an exception will be raised.
+    """
+    def setUp(self):
+        self.test_graph = tf.Graph()
+
+        with self.test_context():
+            rng = np.random.RandomState(1)
+            self.X = rng.rand(100, 1)
+            self.Y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
+            self.likelihoods = [gpflow.likelihoods.StudentT(),
+                                gpflow.likelihoods.StudentT(),
+                                gpflow.likelihoods.StudentT()]
+            self.switched_likelihood = gpflow.likelihoods.SwitchedLikelihood(self.likelihoods)
+
+    def test_correct_num_latent(self):
+        with self.test_context():
+            m = gpflow.models.VGP(self.X, self.Y, kern=gpflow.kernels.Matern12(1),
+                                  likelihood=self.switched_likelihood, num_latent=1)
+            m.compute_log_likelihood()  # should compute something!
+
+    def test_bad_num_latent(self):
+        with self.test_context():
+            m = gpflow.models.VGP(self.X, self.Y, kern=gpflow.kernels.Matern12(1),
+                                  likelihood=self.switched_likelihood, num_latent=2)
+            with self.assertRaises(tf.errors.InvalidArgumentError):
+                m.compute_log_likelihood()  # should die
 
 
 if __name__ == "__main__":

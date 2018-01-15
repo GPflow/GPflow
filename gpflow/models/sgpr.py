@@ -120,7 +120,6 @@ class SGPR(GPModel, SGPRUpperMixin):
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.feature = features.inducingpoint_wrapper(feat, Z)
         self.num_data = X.shape[0]
-        self.num_latent = Y.shape[1]
 
     @params_as_tensors
     def _build_likelihood(self):
