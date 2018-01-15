@@ -37,10 +37,10 @@ def expectation(p, obj1, obj2=None):
         .. Psi statistics
         eKdiag = expectation(pX, kern)  # psi0
         eKxz = expectation(pX, (feat, kern))  # psi1
-        eKxzKzx = expectation(pX, (feat, kern), (feat, kern))  # psi2
+        eKzxKxz = expectation(pX, (feat, kern), (feat, kern))  # psi2
 
         .. kernels and mean functions
-        eKxzMx = expectation(pX, (feat, kern), mean)
+        eKzxMx = expectation(pX, (feat, kern), mean)
         eMxKxz = expectation(pX, mean, (feat, kern))
 
         .. only mean functions
@@ -49,7 +49,7 @@ def expectation(p, obj1, obj2=None):
 
         .. different kernels
         .. this occurs when we are calculating Psi2 for Sum kernels
-        eK1xzK2zx = expectation(pX, (feat, kern1), (feat, kern2)) # different kernel
+        eK1zxK2xz = expectation(pX, (feat, kern1), (feat, kern2)) # different kernel
     """
     if isinstance(obj1, tuple):
         feat1, obj1 = obj1
@@ -81,7 +81,7 @@ def _expectation(p, kern, none1, none2, none3):
     It computes the expectation:
     <diag(K_{X, X})>_p(X), where
         - K(.,.)   :: RBF kernel
-    This is expression is also known is Psi0
+    This expression is also known as Psi0
 
     :return: N
     """
@@ -94,7 +94,7 @@ def _expectation(p, kern, feat, none1, none2):
     It computes the expectation:
     <K_{X, Z}>_p(X), where
         - K(.,.)   :: RBF kernel
-    This expression is also known is Psi1
+    This expression is also known as Psi1
 
     :return: NxM
     """
@@ -128,7 +128,7 @@ def _expectation(p, kern, feat, none1, none2):
 def _expectation(p, rbf_kern, feat, identity_mean, none):
     """
     It computes the expectation:
-    expectation[n] = <K_{x_n, Z}^T m(x_n)>_p(x_n), where
+    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
         - m(x) = x :: identity mean function
         - K(.,.)   :: RBF kernel
 
@@ -174,7 +174,7 @@ def _expectation(p, rbf_kern, feat, identity_mean, none):
 def _expectation(p, rbf_kern, feat, linear_mean, none):
     """
     It computes the expectation:
-    <K_{x, Z} m(x)>_p(x), where
+    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
         - m(x_i) = A x_i + b :: Linear mean function
         - K(.,.)             :: RBF or Linear kernel
 
@@ -196,7 +196,7 @@ def _expectation(p, rbf_kern, feat, linear_mean, none):
 def _expectation(p, rbf_kern, feat, constant_mean, none):
     """
     It computes the expectation:
-    <K_{x, Z} m(x)>_p(x), where
+    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
         - m(x_i) = c :: Constant function
         - K(.,.)     :: RBF or Linear kernel
 
@@ -219,13 +219,11 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
 def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
     """
     It computes the expectation:
-    <Ka_{x, Z1} Kb_{x, Z1}>_p(x), where
+    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n), where
         - Ka_{.,.} :: RBF kernel
-        - Ka_{.,.} :: Linear kernel
+        - Kb_{.,.} :: Linear kernel
 
-    Note that the Linear kernel and Linear mean function are different.
-
-    :return: NxM1xM1
+    :return: NxMxM
     """
     if feat1 != feat2 or lin_kern.ARD or \
         type(lin_kern.active_dims) is not slice or \
@@ -280,9 +278,8 @@ def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
-    <Ka_{Z, x} Kb_{x, Z}>_p(x), where
-        - Ka(.,.)  :: RBF kernel
-        - Kb(.,.)  :: RBF kernel
+    expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n), where
+        - Ka(.,.) and Kb(.,.)  :: RBF kernels
     Ka and Kb can have different hyperparameters (Not implemented).
     If Ka and Kb are equal this expression is also known as Psi2.
 
@@ -331,9 +328,9 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 def _expectation(p, kern, none1, none2, none3):
     """
     It computes the expectation:
-    <K_{x, x}>_p(x), where
+    <diag(K_{X, X})>_p(X), where
         - K(.,.)   :: Linear kernel
-    This is expression is also known is Psi0
+    This expression is also known as Psi0
 
     :return: N
     """
@@ -352,9 +349,9 @@ def _expectation(p, kern, none1, none2, none3):
 def _expectation(p, kern, feat, none1, none2):
     """
     It computes the expectation:
-    <K_{x, Z}>_p(x), where
+    <K_{X, Z}>_p(X), where
         - K(.,.)   :: Linear kernel
-    This is expression is also known is Psi1
+    This expression is also known as Psi1
 
     :return: NxM
     """
@@ -375,10 +372,9 @@ def _expectation(p, kern, feat, none1, none2):
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
-    <Ka_{x, Z} Kb_{Z,x}>_p(x), where
+    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n), where
         - Ka(.,.) and Kb(.,.)   :: Linear kernels
-
-    This is expression is also known is Psi2
+    This expression is also known as Psi2
 
     :return: NxMxM
     """
@@ -405,7 +401,7 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 def _expectation(p, lin_kern, feat, identity_mean, none):
     """
     It computes the expectation:
-    <K_{x, Z} m(x)>_p(x), where
+    expectation[n] = <K_{Z, x_n} m(x)>_p(x_n), where
         - m(x) = x :: identity mean function
         - K(.,.)   :: Linear kernel
 
@@ -433,7 +429,7 @@ def _expectation(p, lin_kern, feat, identity_mean, none):
 def _expectation(p, mean, none1, none2, none3):
     """
     It computes the expectation:
-    <m(x)>_p(x), where
+    <m(X)>_p(X), where
         - m(x) :: Linear or Constant mean function
 
     :return: NxQ
@@ -445,7 +441,7 @@ def _expectation(p, mean, none1, none2, none3):
 def _expectation(p, mean1, none1, mean2, none2):
     """
     It computes the expectation:
-    <m1(x) m2(x)>_p(x), where
+    expectation[n] = <m1(x_n)^T m2(x_n)>_p(x_n), where
         - m1(.), m2(.) :: Linear mean functions
 
     :return: NxQxQ
@@ -589,7 +585,7 @@ def _expectation(p, obj1, obj2, obj3, obj4):
 @dispatch(MarkovGaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
 def _expectation(p, kern, feat, mean, none):
     """
-    <x_t K_{x_{t-1}, Z}>_p(x_{t-1:t})
+    expectation[n] = <K_{Z, x_{n-1} x_n^T}>_p(x_{n-1:n})
         - K(.,.) :: RBF kernel
         - p :: TimeSeriesGaussian distribution
 
@@ -634,7 +630,7 @@ def _expectation(p, kern, feat, mean, none):
 @dispatch(MarkovGaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
 def _expectation(p, kern, feat, mean, none):
     """
-    <x_t K_{x_{t-1}, Z}>_p(x_{t-1:t})
+    expectation[n] = <K_{Z, x_{n-1}} x_n^T>_p(x_{n-1:n})
         - K(.,.) :: Linear kernel
         - p :: MarkovGaussian distribution
 
