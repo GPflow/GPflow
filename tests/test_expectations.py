@@ -52,9 +52,6 @@ class Data:
     Xvar = np.array([l @ l.T for l in L])
     Z = rng.randn(num_ind, D_in)
 
-    # distributions don't need to be compiled (No Parameter objects)
-    # but the members should be Tensors created in the same graph
-
 
 @cache_tensor
 def gauss():
