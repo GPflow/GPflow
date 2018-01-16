@@ -64,17 +64,6 @@ def expectation(p, obj1, obj2=None):
     return _expectation(p, obj1, feat1, obj2, feat2)
 
 
-@dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kernel, InducingFeature)
-def _expectation(p, mean, none, kern, feat):
-    """
-    It computes the expectation:
-    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
-
-    :return: NxQxM
-    """
-    return tf.matrix_transpose(_expectation(p, kern, feat, mean, None))
-
-
 @dispatch(Gaussian, kernels.RBF, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3):
     """
@@ -170,99 +159,15 @@ def _expectation(p, kern, feat, identity_mean, none):
         return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, :, None] * non_exponent_term
 
 
-@dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Linear, type(None))
-def _expectation(p, kern, feat, linear_mean, none):
+@dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kernel, InducingFeature)
+def _expectation(p, mean, none, kern, feat):
     """
     It computes the expectation:
-    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
-        - m(x_i) = A x_i + b :: Linear mean function
-        - K(.,.)             :: RBF or Linear kernel
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
 
-    :return: NxMxQ
+    :return: NxQxM
     """
-    with params_as_tensors_for(linear_mean):
-        D_in = p.mu.shape[1].value
-
-        exKxz = _expectation(p, kern, feat, mean_functions.Identity(D_in), None)
-        eKxz = _expectation(p, kern, feat, None, None)
-
-        eAxKxz = tf.reduce_sum(exKxz[:, :, None, :]
-                               * tf.transpose(linear_mean.A)[None, None, :, :], axis=3)
-        ebKxz = eKxz[..., None] * linear_mean.b[None, None, :]
-        return eAxKxz + ebKxz
-
-
-@dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Constant, type(None))
-def _expectation(p, kern, feat, constant_mean, none):
-    """
-    It computes the expectation:
-    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
-        - m(x_i) = c :: Constant function
-        - K(.,.)     :: RBF or Linear kernel
-
-    :return: NxMxQ
-    """
-    with params_as_tensors_for(constant_mean):
-        c = constant_mean(p.mu) # N x Q
-        eKxz = _expectation(p, kern, feat, None, None) # N x M
-
-        return eKxz[:, :, None] * c[:, None, :]
-
-
-@dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.RBF, InducingPoints)
-@quadrature_fallback
-def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
-    """
-    It computes the expectation:
-    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n), where
-        - Ka_{.,.} :: Linear kernel
-        - Kb_{.,.} :: RBF kernel
-
-    :return: NxMxM
-    """
-    if feat1 != feat2:
-        raise NotImplementedError("Features have to be the same for both kernels")
-
-    with params_as_tensors_for(feat1), \
-         params_as_tensors_for(feat2), \
-         params_as_tensors_for(lin_kern), \
-         params_as_tensors_for(rbf_kern):
-
-        Xcov = rbf_kern._slice_cov(p.cov)
-        Z, Xmu = rbf_kern._slice(feat1.Z, p.mu)
-
-        N = tf.shape(Xmu)[0]
-        D = tf.shape(Xmu)[1]
-
-        lin_kern_variances = lin_kern.variance if lin_kern.ARD \
-            else tf.zeros((D,), dtype=settings.tf_float) + lin_kern.variance
-
-        rbf_kern_lengthscales = rbf_kern.lengthscales if rbf_kern.ARD \
-            else tf.zeros((D,), dtype=settings.tf_float) + rbf_kern.lengthscales  ## Begin RBF eKxz code:
-
-        chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(rbf_kern_lengthscales ** 2) + Xcov)  # NxDxD
-
-        all_diffs = tf.transpose(Z) - tf.expand_dims(Xmu, 2)  # NxDxM
-        exponent_mahalanobis = tf.matrix_triangular_solve(chol_L_plus_Xcov, all_diffs, lower=True)  # NxDxM
-        exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
-        exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
-
-        sqrt_det_L = tf.reduce_prod(rbf_kern_lengthscales)
-        sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(chol_L_plus_Xcov)), axis=1))
-        determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
-        eKxz_rbf = rbf_kern.variance * (determinants[:, None] * exponent_mahalanobis)  ## NxM <- End RBF eKxz code
-
-        tiled_Z = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
-        cross_eKzxKxz = tf.cholesky_solve(chol_L_plus_Xcov,
-                                          tf.transpose((lin_kern_variances * rbf_kern_lengthscales ** 2.) * tiled_Z, [0, 2, 1]))
-        z_L_inv_Xcov = tf.matmul(tiled_Z, Xcov / rbf_kern_lengthscales[:, None] ** 2.)  # NxMxD
-        cross_eKzxKxz = tf.matmul((z_L_inv_Xcov + Xmu[:, None, :]) * eKxz_rbf[..., None], cross_eKzxKxz)  # NxMxM
-        return cross_eKzxKxz
-
-
-@dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.Linear, InducingPoints)
-def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
-    return tf.matrix_transpose(_expectation(p, lin_kern, feat2, rbf_kern, feat1))
+    return tf.matrix_transpose(_expectation(p, kern, feat, mean, None))
 
 
 @dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
@@ -278,7 +183,7 @@ def _expectation(p, kern1, feat1, kern2, feat2):
     :return: N x Ma x Mb
     """
     if feat1 != feat2 or kern1 != kern2:
-        raise NotImplementedError("The expectation over two kernels has only a "
+        raise NotImplementedError("The expectation over two kernels has only an "
                                   "analytical implementation if both kernels are equal.")
 
     kern = kern1
@@ -329,14 +234,12 @@ def _expectation(p, kern, none1, none2, none3):
 
     :return: N
     """
-    if kern.ARD:
-        raise NotImplementedError
-    # use only active dimensions
-    X, _ = kern._slice(p.mu, None)
-    Xcov = kern._slice_cov(p.cov)
     with params_as_tensors_for(kern):
-        return kern.variance * \
-               (tf.reduce_sum(tf.square(X), 1) + tf.reduce_sum(tf.matrix_diag_part(Xcov), 1))
+        # use only active dimensions
+        Xmu, _ = kern._slice(p.mu, None)
+        Xcov = kern._slice_cov(p.cov)
+
+        return tf.reduce_sum(kern.variance * (tf.matrix_diag_part(Xcov) + tf.square(Xmu)), 1)
 
 
 @dispatch(Gaussian, kernels.Linear, InducingPoints, type(None), type(None))
@@ -350,16 +253,41 @@ def _expectation(p, kern, feat, none1, none2):
 
     :return: NxM
     """
-    if kern.ARD:
-        raise NotImplementedError
-
     with params_as_tensors_for(kern), \
-            params_as_tensors_for(feat):
-
+         params_as_tensors_for(feat):
         # use only active dimensions
         Z, Xmu = kern._slice(feat.Z, p.mu)
 
-        return kern.variance * tf.matmul(Xmu, Z, transpose_b=True)
+        return tf.matmul(Xmu, Z * kern.variance, transpose_b=True)
+
+
+@dispatch(Gaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
+def _expectation(p, kern, feat, mean, none):
+    """
+    It computes the expectation:
+    expectation[n] = <K_{Z, x_n} m(x)>_p(x_n), where
+        - m(x) = x :: identity mean function
+        - K(.,.)   :: Linear kernel
+
+    :return: NxMxQ
+    """
+    Xmu, Xcov = p.mu, p.cov
+
+    with tf.control_dependencies([
+        tf.assert_equal(tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.np_int),
+                        message="Currently cannot handle slicing in exKxz."),
+        tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
+    ]):
+        Xmu = tf.identity(Xmu)
+
+    with params_as_tensors_for(kern), \
+         params_as_tensors_for(mean), \
+         params_as_tensors_for(feat):
+
+        N = tf.shape(Xmu)[0]
+        var_Z = kern.variance * feat.Z
+        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
+        return tf.matmul(tiled_Z, Xcov + Xmu[..., None] * Xmu[:, None, :])
 
 
 @dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
@@ -373,8 +301,8 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 
     :return: NxMxM
     """
-    if kern1 != kern2 or feat1 != feat2 or kern1.ARD or kern2.ARD:
-        raise NotImplementedError("The expectation over two kernels has only a "
+    if kern1 != kern2 or feat1 != feat2:
+        raise NotImplementedError("The expectation over two kernels has only an "
                                   "analytical implementation if both kernels are equal.")
 
     kern = kern1
@@ -382,42 +310,54 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 
     with params_as_tensors_for(kern), \
          params_as_tensors_for(feat):
-
         # use only active dimensions
         Xcov = kern._slice_cov(p.cov)
         Z, Xmu = kern._slice(feat.Z, p.mu)
+
         N = tf.shape(Xmu)[0]
-        mom2 = tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2) + Xcov  # NxDxD
-        eZ = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
-        return kern.variance ** 2.0 * tf.matmul(tf.matmul(eZ, mom2), eZ, transpose_b=True)
+        var_Z = kern.variance * Z
+        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
+        XX = Xcov + tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2)  # NxDxD
+        return tf.matmul(tf.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)
 
 
-@dispatch(Gaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
-def _expectation(p, lin_kern, feat, identity_mean, none):
+@dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Linear, type(None))
+def _expectation(p, kern, feat, linear_mean, none):
     """
     It computes the expectation:
-    expectation[n] = <K_{Z, x_n} m(x)>_p(x_n), where
-        - m(x) = x :: identity mean function
-        - K(.,.)   :: Linear kernel
+    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
+        - m(x_i) = A x_i + b :: Linear mean function
+        - K(.,.)             :: RBF or Linear kernel
 
     :return: NxMxQ
     """
-    Xmu, Xcov = p.mu, p.cov
+    with params_as_tensors_for(linear_mean):
+        D_in = p.mu.shape[1].value
 
-    with tf.control_dependencies([
-        tf.assert_equal(tf.shape(Xmu)[1], tf.constant(lin_kern.input_dim, settings.np_int),
-                        message="Currently cannot handle slicing in exKxz."),
-        tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
-    ]):
-        Xmu = tf.identity(Xmu)
+        exKxz = _expectation(p, kern, feat, mean_functions.Identity(D_in), None)
+        eKxz = _expectation(p, kern, feat, None, None)
 
-    with params_as_tensors_for(lin_kern), \
-         params_as_tensors_for(identity_mean), \
-         params_as_tensors_for(feat):
+        eAxKxz = tf.reduce_sum(exKxz[:, :, None, :]
+                               * tf.transpose(linear_mean.A)[None, None, :, :], axis=3)
+        ebKxz = eKxz[..., None] * linear_mean.b[None, None, :]
+        return eAxKxz + ebKxz
 
-        N = tf.shape(Xmu)[0]
-        op = tf.expand_dims(Xmu, 2) * tf.expand_dims(Xmu, 1) + Xcov  # NxDxD
-        return lin_kern.variance * tf.matmul(tf.tile(tf.expand_dims(feat.Z, 0), (N, 1, 1)), op)
+
+@dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Constant, type(None))
+def _expectation(p, kern, feat, constant_mean, none):
+    """
+    It computes the expectation:
+    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
+        - m(x_i) = c :: Constant function
+        - K(.,.)     :: RBF or Linear kernel
+
+    :return: NxMxQ
+    """
+    with params_as_tensors_for(constant_mean):
+        c = constant_mean(p.mu) # N x Q
+        eKxz = _expectation(p, kern, feat, None, None) # N x M
+
+        return eKxz[:, :, None] * c[:, None, :]
 
 
 @dispatch(Gaussian, (mean_functions.Linear, mean_functions.Constant), type(None), type(None), type(None))
@@ -488,7 +428,7 @@ def _expectation(p, kern, feat, none2, none3):
 
 @dispatch(Gaussian,
           kernels.Sum, InducingPoints,
-          (mean_functions.Linear, mean_functions.Constant), type(None))
+          (mean_functions.Linear, mean_functions.Identity, mean_functions.Constant), type(None))
 def _expectation(p, kern, feat, mean, none3):
     _expectation_fn = lambda k: _expectation(p, k, feat, mean, None)
     return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
@@ -522,6 +462,62 @@ def _expectation(p, kern1, feat1, kern2, feat2):
     return functools.reduce(tf.add, crossexps)
 
 
+@dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.RBF, InducingPoints)
+@quadrature_fallback
+def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
+    """
+    It computes the expectation:
+    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n), where
+        - Ka_{.,.} :: Linear kernel
+        - Kb_{.,.} :: RBF kernel
+
+    :return: NxMxM
+    """
+    if feat1 != feat2:
+        raise NotImplementedError("Features have to be the same for both kernels")
+
+    with params_as_tensors_for(feat1), \
+         params_as_tensors_for(feat2), \
+         params_as_tensors_for(lin_kern), \
+         params_as_tensors_for(rbf_kern):
+
+        Xcov = rbf_kern._slice_cov(p.cov)
+        Z, Xmu = rbf_kern._slice(feat1.Z, p.mu)
+
+        N = tf.shape(Xmu)[0]
+        D = tf.shape(Xmu)[1]
+
+        lin_kern_variances = lin_kern.variance if lin_kern.ARD \
+            else tf.zeros((D,), dtype=settings.tf_float) + lin_kern.variance
+
+        rbf_kern_lengthscales = rbf_kern.lengthscales if rbf_kern.ARD \
+            else tf.zeros((D,), dtype=settings.tf_float) + rbf_kern.lengthscales  ## Begin RBF eKxz code:
+
+        chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(rbf_kern_lengthscales ** 2) + Xcov)  # NxDxD
+
+        all_diffs = tf.transpose(Z) - tf.expand_dims(Xmu, 2)  # NxDxM
+        exponent_mahalanobis = tf.matrix_triangular_solve(chol_L_plus_Xcov, all_diffs, lower=True)  # NxDxM
+        exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
+        exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
+
+        sqrt_det_L = tf.reduce_prod(rbf_kern_lengthscales)
+        sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(chol_L_plus_Xcov)), axis=1))
+        determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
+        eKxz_rbf = rbf_kern.variance * (determinants[:, None] * exponent_mahalanobis)  ## NxM <- End RBF eKxz code
+
+        tiled_Z = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
+        cross_eKzxKxz = tf.cholesky_solve(chol_L_plus_Xcov,
+                                          tf.transpose((lin_kern_variances * rbf_kern_lengthscales ** 2.) * tiled_Z, [0, 2, 1]))
+        z_L_inv_Xcov = tf.matmul(tiled_Z, Xcov / rbf_kern_lengthscales[:, None] ** 2.)  # NxMxD
+        cross_eKzxKxz = tf.matmul((z_L_inv_Xcov + Xmu[:, None, :]) * eKxz_rbf[..., None], cross_eKzxKxz)  # NxMxM
+        return cross_eKzxKxz
+
+
+@dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.Linear, InducingPoints)
+def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
+    return tf.matrix_transpose(_expectation(p, lin_kern, feat2, rbf_kern, feat1))
+
+
 # Product
 # Note: product kernels only support Diagonal Gaussian distributions, p.cov having shape NxD
 @dispatch(DiagonalGaussian, kernels.Product, type(None), type(None), type(None))
@@ -529,7 +525,7 @@ def _expectation(p, kern, none1, none2, none3):
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.var), 2,
+        tf.assert_equal(tf.rank(p.cov), 2,
                         message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         _expectation_fn = lambda k: _expectation(p, k, None, None, None)
@@ -541,7 +537,7 @@ def _expectation(p, kern, feat, none2, none3):
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.var), 2,
+        tf.assert_equal(tf.rank(p.cov), 2,
                         message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         _expectation_fn = lambda k: _expectation(p, k, feat, None, None)
@@ -563,7 +559,7 @@ def _expectation(p, kern1, feat1, kern2, feat2):
     if not kern.on_separate_dimensions:
         raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
     with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.var), 2,
+        tf.assert_equal(tf.rank(p.cov), 2,
                         message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
     ]):
         _expectation_fn = lambda k: _expectation(p, k, feat, k, feat)
@@ -572,7 +568,7 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 
 @dispatch(DiagonalGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _expectation(p, obj1, obj2, obj3, obj4):
-    gauss = Gaussian(p.mu, tf.matrix_diag(p.var))
+    gauss = Gaussian(p.mu, tf.matrix_diag(p.cov))
     return _expectation(gauss, obj1, obj2, obj3, obj4)
 
 

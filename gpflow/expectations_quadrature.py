@@ -112,7 +112,7 @@ def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
 
 @dispatch(DiagonalGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
-    p_gauss = Gaussian(p.mu, tf.matrix_diag(p.var))
+    p_gauss = Gaussian(p.mu, tf.matrix_diag(p.cov))
     gauss_quadrature_impl = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
     return gauss_quadrature_impl(p_gauss, obj1, feat1, obj2, feat2)
 
