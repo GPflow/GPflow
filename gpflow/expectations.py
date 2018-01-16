@@ -210,67 +210,59 @@ def _expectation(p, kern, feat, constant_mean, none):
 
 
 @dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.RBF, InducingPoints)
-def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
-    return tf.matrix_transpose(_expectation(p, rbf_kern, feat2, lin_kern, feat1))
-
-
-@dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.Linear, InducingPoints)
 @quadrature_fallback
-def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
+def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
     """
     It computes the expectation:
-    expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n), where
-        - Ka_{.,.} :: RBF kernel
-        - Kb_{.,.} :: Linear kernel
+    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n), where
+        - Ka_{.,.} :: Linear kernel
+        - Kb_{.,.} :: RBF kernel
 
     :return: NxMxM
     """
-    if feat1 != feat2 or lin_kern.ARD or \
-        type(lin_kern.active_dims) is not slice or \
-        type(rbf_kern.active_dims) is not slice:
-
-            raise NotImplementedError("Active dims and/or Linear ARD not implemented. ")
+    if feat1 != feat2:
+        raise NotImplementedError("Features have to be the same for both kernels")
 
     with params_as_tensors_for(feat1), \
          params_as_tensors_for(feat2), \
-         params_as_tensors_for(rbf_kern), \
-         params_as_tensors_for(lin_kern):
+         params_as_tensors_for(lin_kern), \
+         params_as_tensors_for(rbf_kern):
 
-        Xmu = p.mu
-        Xcov = p.cov
+        Xcov = rbf_kern._slice_cov(p.cov)
+        Z, Xmu = rbf_kern._slice(feat1.Z, p.mu)
 
-        Xcov = rbf_kern._slice_cov(Xcov)
-        Z, Xmu = rbf_kern._slice(feat1.Z, Xmu)
-        lin, rbf = lin_kern, rbf_kern
-
-        D = tf.shape(Xmu)[1]
-        M = tf.shape(Z)[0]
         N = tf.shape(Xmu)[0]
+        D = tf.shape(Xmu)[1]
 
-        if rbf.ARD:
-            lengthscales = rbf.lengthscales
-        else:
-            lengthscales = tf.zeros((D, ), dtype=settings.tf_float) + rbf.lengthscales
+        lin_kern_variances = lin_kern.variance if lin_kern.ARD \
+            else tf.zeros((D,), dtype=settings.tf_float) + lin_kern.variance
 
-        lengthscales2 = lengthscales ** 2.0
-        const = rbf.variance * lin.variance * tf.reduce_prod(lengthscales)
-        gaussmat = Xcov + tf.matrix_diag(lengthscales2)[None, :, :]  # NxDxD
-        det = tf.matrix_determinant(gaussmat) ** -0.5  # N
+        rbf_kern_lengthscales = rbf_kern.lengthscales if rbf_kern.ARD \
+            else tf.zeros((D,), dtype=settings.tf_float) + rbf_kern.lengthscales  ## Begin RBF eKxz code:
 
-        cgm = tf.cholesky(gaussmat)  # NxDxD
-        tcgm = tf.tile(cgm[:, None, :, :], [1, M, 1, 1])
-        vecmin = Z[None, :, :] - Xmu[:, None, :]  # NxMxD
-        d = tf.matrix_triangular_solve(tcgm, vecmin[:, :, :, None])  # NxMxDx1
-        exp = tf.exp(-0.5 * tf.reduce_sum(d ** 2.0, [2, 3]))  # NxM
+        chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(rbf_kern_lengthscales ** 2) + Xcov)  # NxDxD
 
-        vecplus = (Z[None, :, :, None] / lengthscales2[None, None, :, None] +
-                   tf.matrix_solve(Xcov, Xmu[:, :, None])[:, None, :, :])  # NxMxDx1
-        mean = tf.cholesky_solve(
-            tcgm, tf.matmul(tf.tile(Xcov[:, None, :, :], [1, M, 1, 1]), vecplus))
-        mean = mean[:, :, :, 0] * lengthscales2[None, None, :]  # NxMxD
-        a = tf.matmul(tf.tile(Z[None, :, :], [N, 1, 1]),
-                      mean * exp[:, :, None] * det[:, None, None] * const, transpose_b=True)
-        return a
+        all_diffs = tf.transpose(Z) - tf.expand_dims(Xmu, 2)  # NxDxM
+        exponent_mahalanobis = tf.matrix_triangular_solve(chol_L_plus_Xcov, all_diffs, lower=True)  # NxDxM
+        exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
+        exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
+
+        sqrt_det_L = tf.reduce_prod(rbf_kern_lengthscales)
+        sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(chol_L_plus_Xcov)), axis=1))
+        determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
+        eKxz_rbf = rbf_kern.variance * (determinants[:, None] * exponent_mahalanobis)  ## NxM <- End RBF eKxz code
+
+        tiled_Z = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
+        cross_eKzxKxz = tf.cholesky_solve(chol_L_plus_Xcov,
+                                          tf.transpose((lin_kern_variances * rbf_kern_lengthscales ** 2.) * tiled_Z, [0, 2, 1]))
+        z_L_inv_Xcov = tf.matmul(tiled_Z, Xcov / rbf_kern_lengthscales[:, None] ** 2.)  # NxMxD
+        cross_eKzxKxz = tf.matmul((z_L_inv_Xcov + Xmu[:, None, :]) * eKxz_rbf[..., None], cross_eKzxKxz)  # NxMxM
+        return cross_eKzxKxz
+
+
+@dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.Linear, InducingPoints)
+def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
+    return tf.matrix_transpose(_expectation(p, lin_kern, feat2, rbf_kern, feat1))
 
 
 @dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
