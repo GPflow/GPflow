@@ -32,9 +32,9 @@ class Gaussian(ProbabilityDistribution):
 
 
 class DiagonalGaussian(ProbabilityDistribution):
-    def __init__(self, mu, var):
+    def __init__(self, mu, cov):
         self.mu = mu  # N x D
-        self.var = var  # N x D
+        self.cov = cov  # N x D
 
 
 class MarkovGaussian(ProbabilityDistribution):
