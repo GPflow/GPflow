@@ -125,7 +125,7 @@ def _expectation(p, kern, feat, none1, none2):
 
 
 @dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
-def _expectation(p, rbf_kern, feat, identity_mean, none):
+def _expectation(p, kern, feat, identity_mean, none):
     """
     It computes the expectation:
     expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
@@ -135,7 +135,7 @@ def _expectation(p, rbf_kern, feat, identity_mean, none):
     :return: NxMxQ
     """
     with params_as_tensors_for(feat), \
-         params_as_tensors_for(rbf_kern), \
+         params_as_tensors_for(kern), \
          params_as_tensors_for(identity_mean):
 
         Xmu = p.mu
@@ -143,35 +143,35 @@ def _expectation(p, rbf_kern, feat, identity_mean, none):
 
         msg_input_shape = "Currently cannot handle slicing in exKxz."
         assert_input_shape = tf.assert_equal(tf.shape(Xmu)[1],
-                                             rbf_kern.input_dim, message=msg_input_shape)
+                                             kern.input_dim, message=msg_input_shape)
         assert_cov_shape = tf.assert_equal(tf.shape(Xmu),
                                            tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
         with tf.control_dependencies([assert_input_shape, assert_cov_shape]):
             Xmu = tf.identity(Xmu)
 
-        N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
+        lengthscales = kern.lengthscales if kern.ARD \
+            else tf.zeros((D,), dtype=settings.float_type) + kern.lengthscales
 
-        lengthscales = rbf_kern.lengthscales if rbf_kern.ARD \
-                        else tf.zeros((D,), dtype=settings.np_float) + rbf_kern.lengthscales
-        scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xcov  # NxDxD
+        chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales ** 2) + Xcov)  # NxDxD
+        all_diffs = tf.transpose(feat.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
 
-        det = tf.matrix_determinant(
-            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.np_float), 0) +
-            tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xcov)  # N
+        sqrt_det_L = tf.reduce_prod(lengthscales)
+        sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(chol_L_plus_Xcov)), axis=1))
+        determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
-        vec = tf.expand_dims(tf.transpose(feat.Z), 0) - tf.expand_dims(Xmu, 2)  # NxDxM
-        smIvec = tf.matrix_solve(scalemat, vec)  # NxDxM
-        q = tf.reduce_sum(smIvec * vec, [1])  # NxM
+        exponent_mahalanobis = tf.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
+        non_exponent_term = tf.matmul(Xcov, exponent_mahalanobis, transpose_a=True)
+        non_exponent_term = tf.transpose(tf.expand_dims(Xmu, 2) + non_exponent_term, [0, 2, 1])  # NxMxD
 
-        addvec = tf.matmul(smIvec, Xcov, transpose_a=True) + tf.expand_dims(Xmu, 1)  # NxMxD
+        exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
+        exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-        return (rbf_kern.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1))
-                * tf.expand_dims(tf.exp(-0.5 * q), 2))
+        return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, :, None] * non_exponent_term
 
 
 @dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Linear, type(None))
-def _expectation(p, rbf_kern, feat, linear_mean, none):
+def _expectation(p, kern, feat, linear_mean, none):
     """
     It computes the expectation:
     expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
@@ -183,8 +183,8 @@ def _expectation(p, rbf_kern, feat, linear_mean, none):
     with params_as_tensors_for(linear_mean):
         D_in = p.mu.shape[1].value
 
-        exKxz = _expectation(p, rbf_kern, feat, mean_functions.Identity(D_in), None)
-        eKxz = _expectation(p, rbf_kern, feat, None, None)
+        exKxz = _expectation(p, kern, feat, mean_functions.Identity(D_in), None)
+        eKxz = _expectation(p, kern, feat, None, None)
 
         eAxKxz = tf.reduce_sum(exKxz[:, :, None, :]
                                * tf.transpose(linear_mean.A)[None, None, :, :], axis=3)
@@ -193,7 +193,7 @@ def _expectation(p, rbf_kern, feat, linear_mean, none):
 
 
 @dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Constant, type(None))
-def _expectation(p, rbf_kern, feat, constant_mean, none):
+def _expectation(p, kern, feat, constant_mean, none):
     """
     It computes the expectation:
     expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
@@ -204,7 +204,7 @@ def _expectation(p, rbf_kern, feat, constant_mean, none):
     """
     with params_as_tensors_for(constant_mean):
         c = constant_mean(p.mu) # N x Q
-        eKxz = _expectation(p, rbf_kern, feat, None, None) # N x M
+        eKxz = _expectation(p, kern, feat, None, None) # N x M
 
         return eKxz[:, :, None] * c[:, None, :]
 
@@ -219,7 +219,7 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
 def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
     """
     It computes the expectation:
-    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n), where
+    expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n), where
         - Ka_{.,.} :: RBF kernel
         - Kb_{.,.} :: Linear kernel
 
@@ -298,28 +298,32 @@ def _expectation(p, kern1, feat1, kern2, feat2):
         # use only active dimensions
         Xcov = kern._slice_cov(p.cov)
         Z, Xmu = kern._slice(feat.Z, p.mu)
-        M = tf.shape(Z)[0]
+
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
-        lengthscales = kern.lengthscales if kern.ARD \
-                        else tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales
 
-        Kmms = tf.sqrt(kern.K(Z, presliced=True)) / kern.variance ** 0.5
-        scalemat = (tf.expand_dims(tf.eye(D, dtype=settings.tf_float), 0)
-                    + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1]))  # NxDxD
-        det = tf.matrix_determinant(scalemat)
+        squared_lengthscales = kern.lengthscales ** 2. if kern.ARD \
+            else tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales ** 2.
 
-        mat = Xcov + 0.5 * tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0)  # NxDxD
-        cm = tf.cholesky(mat)  # NxDxD
-        vec = 0.5 * (tf.reshape(tf.transpose(Z), [1, D, 1, M]) +
-                     tf.reshape(tf.transpose(Z), [1, D, M, 1])) - tf.reshape(Xmu, [N, D, 1, 1])  # NxDxMxM
-        svec = tf.reshape(vec, (N, D, M * M))
-        ssmI_z = tf.matrix_triangular_solve(cm, svec)  # NxDx(M*M)
-        smI_z = tf.reshape(ssmI_z, (N, D, M, M))  # NxDxMxM
-        fs = tf.reduce_sum(tf.square(smI_z), [1])  # NxMxM
+        sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscales) ** 0.5
+        C = tf.cholesky(0.5 * tf.matrix_diag(squared_lengthscales) + Xcov)  # NxDxD
+        dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(C)), axis=1))  # N
 
-        return (kern.variance**2 * tf.expand_dims(Kmms, 0)
-                * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1]))
+        C_inv_mu = tf.matrix_triangular_solve(C, tf.expand_dims(Xmu, 2), lower=True)  # NxDx1
+        C_inv_z = tf.matrix_triangular_solve(C,
+                                             tf.tile(tf.expand_dims(tf.transpose(Z) / 2., 0), [N, 1, 1]),
+                                             lower=True)  # NxDxM
+        mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
+        z_CC_inv_z = tf.reduce_sum(tf.square(C_inv_z), 1)  # NxM
+        zm_CC_inv_zn = tf.matmul(C_inv_z, C_inv_z, transpose_a=True)  # NxMxM
+        two_z_CC_inv_mu = 2 * tf.matmul(C_inv_z, C_inv_mu, transpose_a=True)  # NxMx1
+
+        exponent_mahalanobis = mu_CC_inv_mu + tf.expand_dims(z_CC_inv_z, 1) + tf.expand_dims(z_CC_inv_z, 2) + \
+                               2 * zm_CC_inv_zn - two_z_CC_inv_mu - tf.transpose(two_z_CC_inv_mu, [0, 2, 1])  # NxMxM
+        exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxMxM
+
+        return kern.variance ** 1.5 * tf.sqrt(kern.K(Z, presliced=True)) * \
+               tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis
 
 
 @dispatch(Gaussian, kernels.Linear, type(None), type(None), type(None))
