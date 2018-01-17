@@ -13,8 +13,58 @@
 # limitations under the License.
 
 
+import functools
 import contextlib
 import tensorflow as tf
+import pytest
+
+
+@pytest.fixture
+def session_tf():
+    """
+    Session creation pytest fixture.
+
+    ```
+    def test_simple(session_tf):
+        tensor = tf.constant(1.0)
+        ... do something
+    ```
+
+    In example above the test_simple is wrapped within graph and session created
+    at `session_tf()` fixture. Session and graph are created per each pytest
+    function where `session_tf` argument is used.
+    """
+    with session_context() as session:
+        yield session
+
+
+def cache_tensor(method):
+    """
+    Caches result for wrapped function wrt default TensorFlow graph.
+    Whenever function is called under another default graph, execution will be
+    performed. It does make sense cache tensors: build once, use multiple times
+    per TensorFlow graph.
+
+    Example:
+    ```
+    @cache_tensor
+    def create_const():
+        return tf.constant(1.0, name='wow')
+
+    > const1 = create_const()
+    > const2 = create_const()
+    > const1 == const2
+    True
+    ```
+    """
+    cache = {}
+    @functools.wraps(method)
+    def wrapper(*args, **kwargs):
+        graph = tf.get_default_graph()
+        if graph not in cache:
+            cache[graph] = method(*args, **kwargs)
+        return cache[graph]
+    return wrapper
 
 
 class session_context(contextlib.ContextDecorator):
