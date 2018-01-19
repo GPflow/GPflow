@@ -360,19 +360,21 @@ def _expectation(p, kern, feat, constant_mean, none):
         return eKxz[:, :, None] * c[:, None, :]
 
 
-@dispatch(Gaussian, (mean_functions.Linear, mean_functions.Constant), type(None), type(None), type(None))
+@dispatch(Gaussian,
+          (mean_functions.Linear, mean_functions.Identity, mean_functions.Constant),
+          type(None), type(None), type(None))
 def _expectation(p, mean, none1, none2, none3):
     """
     It computes the expectation:
     <m(X)>_p(X), where
-        - m(x) :: Linear or Constant mean function
+        - m(x) :: Linear, Identity or Constant mean function
 
     :return: NxQ
     """
     return mean(p.mu)
 
 
-@dispatch(Gaussian, mean_functions.Linear, type(None), mean_functions.Linear, type(None))
+@dispatch(Gaussian, mean_functions.Linear, type(None), mean_functions.Linear, type(None))  #TODO
 def _expectation(p, mean1, none1, mean2, none2):
     """
     It computes the expectation:
