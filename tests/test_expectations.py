@@ -36,6 +36,10 @@ rng = np.random.RandomState(1)
 def feature(session_tf):
     return features.InducingPoints(Data.Z)
 
+@pytest.fixture
+def feature2(session_tf):
+    return features.InducingPoints(Data.Z2)
+
 
 def gen_L(n, *shape):
     return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
@@ -44,6 +48,7 @@ def gen_L(n, *shape):
 class Data:
     num_data = 5
     num_ind = 4
+    num_ind2 = 3
     D_in = 2
     D_out = 2
 
@@ -51,6 +56,7 @@ class Data:
     L = gen_L(num_data, D_in, D_in)
     Xvar = np.array([l @ l.T for l in L])
     Z = rng.randn(num_ind, D_in)
+    Z2 = rng.randn(num_ind2, D_in)
 
 
 @cache_tensor
@@ -125,6 +131,11 @@ def rbf_lin_sum():
 def rbf():
     return kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand())
 
+@cache_tensor
+def rbf2():
+    return kernels.RBF(Data.D_in, variance=rng.rand(),
+                       lengthscales=rng.rand(Data.D_in), ARD=True)
+
 
 @cache_tensor
 def lin_kern():
@@ -169,6 +180,16 @@ def _check(params):
 def test_psi_stats(session_tf, feature, distribution, kernel, arg_filter):
     params = arg_filter(distribution(), kernel(), feature)
     _check(params)
+
+
+@pytest.mark.parametrize("distribution", [gauss, gauss_diag])
+@pytest.mark.parametrize("kernels", [(rbf, rbf2), (rbf2, rbf2)])
+@pytest.mark.parametrize("inputs", [(feature, feature), (feature, feature2),
+                                    (feature2, feature)])
+def test_psi2_different_kernels(session_tf, feature, distribution, kernels, inputs):
+    k1, k2 = kernels
+    z1, z2 = map(lambda z: z(session_tf), inputs)
+    _check((distribution(), (z1, k1()), (z2, k2())))
 
 
 @pytest.mark.parametrize("distribution", [gauss])

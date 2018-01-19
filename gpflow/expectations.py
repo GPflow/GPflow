@@ -15,12 +15,13 @@
 import functools
 import itertools as it
 import tensorflow as tf
+import numpy as np
 
 from . import kernels, mean_functions, settings
 from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from .expectations_quadrature import dispatch, quadrature_fallback
 from .features import InducingFeature, InducingPoints
-from .decors import params_as_tensors_for
+from .decors import nested_with, params_as_tensors_for
 
 
 def expectation(p, obj1, obj2=None):
@@ -278,50 +279,78 @@ def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
-    <Ka_{Z, x} Kb_{x, Z}>_p(x), where
+    <Ka_{Za, x} Kb_{x, Zb}>_p(x), where
         - Ka(.,.)  :: RBF kernel
         - Kb(.,.)  :: RBF kernel
-    Ka and Kb can have different hyperparameters (Not implemented).
-    If Ka and Kb are equal this expression is also known as Psi2.
+    Ka and Kb can have different hyperparameters. The active dimensions of Ka
+    and Kb must match.
+    If Ka and Kb, and Za and Zb are equal this expression is also known as Psi2.
 
+    :param feat1: alias Za, shape (Ma,D)
+    :param feat2: alias Zb, shape (Mb,D)
+    :param kern1: RBF kernel to use
+    :param kern2: other RBF kernel to use
     :return: N x Ma x Mb
     """
-    if feat1 != feat2 or kern1 != kern2:
-        raise NotImplementedError("The expectation over two kernels has only a "
-                                  "analytical implementation if both kernels are equal.")
+    if not np.array_equal(kern1.active_dims, kern2.active_dims):
+        raise NotImplementedError("The expectation over two kernels with "
+                                  "different active dimensions probably has an "
+                                  "analytical expression, but is not "
+                                  "implemented.")
+    tf_float = kern1.lengthscales.dtype
+    Ka, Kb = kern1, kern2
+    unique_feat_kern = set([kern1, kern2, feat1, feat2])
 
-    kern = kern1
-    feat = feat1
-
-    with params_as_tensors_for(kern), \
-         params_as_tensors_for(feat):
-
+    with nested_with(map(params_as_tensors_for, unique_feat_kern)):
         # use only active dimensions
-        Xcov = kern._slice_cov(p.cov)
-        Z, Xmu = kern._slice(feat.Z, p.mu)
-        M = tf.shape(Z)[0]
+        Xcov = Ka._slice_cov(p.cov)
+        Za, Xmu = Ka._slice(feat1.Z, p.mu)
+        Ma = tf.shape(Za)[0]
+        if feat1 != feat2:
+            Zb, _ = Ka._slice(feat2.Z, None)
+            Mb = tf.shape(Zb)[0]
+        else:
+            Zb = Za
+            Mb = Ma
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
-        lengthscales = kern.lengthscales if kern.ARD \
-                        else tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales
 
-        Kmms = tf.exp(-kern.square_dist(Z, None) / 4)
+        if Kb == Ka:
+            La = Lb = tf.square(Ka.lengthscales)
+            cov_scaling = La / 2.
+            if Zb == Za:
+                Kmms = tf.exp(-.25 * Ka.square_dist(Za, None))  # Ma,Mb
+            else:
+                Kmms = tf.exp(-.25 * Ka.square_dist(Za, Zb))  # Ma,Mb
+        else:
+            # This branch of the `if` is wrong
+            La, Lb = map(tf.square, (Ka.lengthscales, Kb.lengthscales))
+            lengthscales = La + Lb
+            cov_scaling = (La * Lb) / (La + Lb)
 
-        scalemat = (tf.expand_dims(tf.eye(D, dtype=settings.tf_float), 0)
-                    + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1]))  # NxDxD
-        det = tf.matrix_determinant(scalemat)
+            # Recall that `lengthscales` is possibly just a scalar
+            #Kmms = tf.exp(-.5 * Ka.square_dist(Za, Zb, lengthscales))  # Ma,Mb
+            Zdiff = tf.expand_dims(Za, 1) - tf.expand_dims(Zb, 0)
+            dist = tf.reduce_sum(tf.square(Zdiff) / lengthscales, axis=-1)
+            Kmms = tf.exp(-.5 * dist)
 
-        mat = Xcov + 0.5 * tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0)  # NxDxD
+        scalemat = tf.eye(D, dtype=tf_float) + Xcov / cov_scaling  # NxDxD
+        det = tf.rsqrt(tf.matrix_determinant(scalemat))
+
+        mat = Xcov + (tf.eye(D, dtype=tf_float)
+                      * tf.reshape(cov_scaling, [-1, 1])) # NxDxD
         cm = tf.cholesky(mat)  # NxDxD
-        vec = 0.5 * (tf.reshape(tf.transpose(Z), [1, D, 1, M]) +
-                     tf.reshape(tf.transpose(Z), [1, D, M, 1])) - tf.reshape(Xmu, [N, D, 1, 1])  # NxDxMxM
-        svec = tf.reshape(vec, (N, D, M * M))
-        ssmI_z = tf.matrix_triangular_solve(cm, svec)  # NxDx(M*M)
-        smI_z = tf.reshape(ssmI_z, (N, D, M, M))  # NxDxMxM
-        fs = tf.reduce_sum(tf.square(smI_z), [1])  # NxMxM
+        vec = (0.5 * (tf.reshape(tf.transpose(Zb), [1, D, 1, Mb])
+                      + tf.reshape(tf.transpose(Za), [1, D, Ma, 1]))
+               - tf.reshape(Xmu, [N, D, 1, 1]))        # N,D,Ma,Mb
+        svec = tf.reshape(vec, (N, D, Ma * Mb))
+        ssmI_z = tf.matrix_triangular_solve(cm, svec)  # N,D,Ma*Mb
+        smI_z = tf.reshape(ssmI_z, (N, D, Ma, Mb))  # N,D,Ma,Mb
+        smI_z = tf.Print(smI_z, (N, D, Ma, Mb), "Here is the shape of the end!!")
+        fs = tf.reduce_sum(tf.square(smI_z), [1])  # N,Ma,Mb
 
-        return (kern.variance**2 * tf.expand_dims(Kmms, 0)
-                * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1]))
+        return (((Ka.variance**2 * tf.reshape(det, [N, 1, 1])) * Kmms)
+                * tf.exp(-0.5 * fs))
 
 
 @dispatch(Gaussian, kernels.Linear, type(None), type(None), type(None))
