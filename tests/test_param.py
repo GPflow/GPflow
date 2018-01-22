@@ -866,6 +866,8 @@ class TestParamList(GPflowTestCase):
             p = gpflow.ParamList([])
             p.append(gpflow.Param(1.0))
             p.append(gpflow.Param(2.0))
+            # This test fails with new fix as 2.0 is automatically converted to
+            # a Parameter
             with self.assertRaises(ValueError):
                 p.append(2.0)
             with self.assertRaises(ValueError):
@@ -929,6 +931,18 @@ class TestParamList(GPflowTestCase):
             param_list = gpflow.ParamList([pzd])
             param_list[0].p = 5.
             self.assertEqual(param_list[0].p.read_value(), 5)
+
+    def test_append_with_parameterized(self):
+        with self.test_context():
+            pzd1 = gpflow.params.Parameterized()
+            p1 = gpflow.Param(1.2)
+            pzd1.p = p1
+            pzd2 = gpflow.params.Parameterized()
+            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
+            pzd2.p = p2
+            param_list = gpflow.ParamList([pzd1])
+            param_list.append(pzd2)
+            self.assertTrue(pzd2 in param_list.params)
 
     def test_in_model(self):
         class Foo(gpflow.models.Model):
