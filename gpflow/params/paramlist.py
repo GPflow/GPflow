@@ -53,7 +53,7 @@ class ParamList(Parameterized):
             yield item
 
     def append(self, item):
-        item = self._valid_list_input(item, self.trainable)
+        item = self._valid_list_input(item, self._trainable)
         length = self.__len__()
         item.set_parent(self)
         item.set_name(self._item_name(length))
