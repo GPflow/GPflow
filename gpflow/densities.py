@@ -77,12 +77,12 @@ def multivariate_normal(x, mu, L):
     assume independence over the *columns*: the number of rows must match the
     size of L.
     """
+    x  = tf.cond(tf.rank(x)  < 2, lambda: x[:, None],  lambda: x)
+    mu = tf.cond(tf.rank(mu) < 2, lambda: mu[:, None], lambda: mu)
     d = x - mu
     alpha = tf.matrix_triangular_solve(L, d, lower=True)
-    num_col = 1 if tf.rank(x) == 1 else tf.shape(x)[1]
-    num_col = tf.cast(num_col, settings.float_type)
-    num_dims = tf.cast(tf.shape(x)[0], settings.float_type)
-    ret = - 0.5 * num_dims * num_col * np.log(2 * np.pi)
-    ret += - num_col * tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
-    ret += - 0.5 * tf.reduce_sum(tf.square(alpha))
+    num_dims = tf.cast(tf.shape(d)[0], L.dtype)
+    ret = - 0.5 * tf.reduce_sum(tf.square(alpha), 0)
+    ret -= 0.5 * num_dims * np.log(2 * np.pi)
+    ret -= tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
     return ret
