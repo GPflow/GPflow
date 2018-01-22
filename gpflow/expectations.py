@@ -305,7 +305,8 @@ def _expectation(p, kern1, feat1, kern2, feat2):
         lengthscales = kern.lengthscales if kern.ARD \
                         else tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales
 
-        Kmms = tf.sqrt(kern.K(Z, presliced=True)) / kern.variance ** 0.5
+        Kmms = tf.exp(-kern.square_dist(Z, None) / 4)
+
         scalemat = (tf.expand_dims(tf.eye(D, dtype=settings.tf_float), 0)
                     + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1]))  # NxDxD
         det = tf.matrix_determinant(scalemat)
