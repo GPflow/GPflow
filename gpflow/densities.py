@@ -71,18 +71,25 @@ def laplace(mu, sigma, y):
 
 def multivariate_normal(x, mu, L):
     """
-    L is the Cholesky decomposition of the covariance.
+    Computes the log-density of a multivariate normal.
+    :param x  : D or DxN sample(s) for which we want the density
+    :param mu : D or DxN mean(s) of the normal distribution
+    :param L  : DxD Cholesky decomposition of the covariance matrix
+    :return p : N vector of log densities for each of the N x's and/or mu's
 
-    x and mu are either vectors (ndim=1) or matrices. In the matrix case, we
-    assume independence over the *columns*: the number of rows must match the
-    size of L.
+    x and mu are either vectors or matrices. If both are vectors ((N,) or (N,1)):
+    p[0] = log pdf(x) where x ~ N(mu, LL^T)
+    If at least one is a matrix, we assume independence over the *columns*:
+    the number of rows must match the size of L. Broadcasting behaviour:
+    p[n] = log pdf of:
+    x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
     x  = tf.cond(tf.rank(x)  < 2, lambda: x[:, None],  lambda: x)
     mu = tf.cond(tf.rank(mu) < 2, lambda: mu[:, None], lambda: mu)
     d = x - mu
     alpha = tf.matrix_triangular_solve(L, d, lower=True)
     num_dims = tf.cast(tf.shape(d)[0], L.dtype)
-    ret = - 0.5 * tf.reduce_sum(tf.square(alpha), 0)
-    ret -= 0.5 * num_dims * np.log(2 * np.pi)
-    ret -= tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
-    return ret
+    p = - 0.5 * tf.reduce_sum(tf.square(alpha), 0)
+    p -= 0.5 * num_dims * np.log(2 * np.pi)
+    p -= tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
+    return p
