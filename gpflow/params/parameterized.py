@@ -325,7 +325,7 @@ class Parameterized(Node):
 
     def __getattribute__(self, name):
         attr = misc.get_attribute(self, name)
-        if TensorConverter.tensor_mode(self) and isinstance(attr, Parameter):
+        if isinstance(attr, Parameter) and TensorConverter.tensor_mode(self):
             return Parameterized._tensor_mode_parameter(attr)
         return attr
 
