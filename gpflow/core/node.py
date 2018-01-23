@@ -26,7 +26,7 @@ class Node(Parentable, ICompilable):
     """
     The Node class merges two simple conceptions: _parentable structure_ with rich naming
     feature and _compilable interface_ which gives enough flexibility to build and
-    run TensorFlow operations and forces user to implement them.
+    run TensorFlow operations only forcing user to override only necessary building blocks.
     """
 
     def __init__(self, name=None):
@@ -34,17 +34,17 @@ class Node(Parentable, ICompilable):
 
     @abc.abstractmethod
     def anchor(self, session):
+        """
+        The `anchor` method is intended to bind TensorFlow session values with
+        pythonic values saved by node's objects.
+        """
         raise NotImplementedError('Public method anchor must be implemented by successor.')
-
-    @abc.abstractmethod
-    def _clear(self):
-        raise NotImplementedError('Private method clear must be implemented by successor.')
 
     def compile(self, session=None):
         """
         Compile is two phase operation: at first it calls `build` method and then
         intializes the node for passed session. The policy around `session` is defined
-        inside an initialize method.
+        inside the `initialize` method.
 
         :param session: TensorFlow session used for initializing. If the node is built the
             session's graph value must be equal to the node tensor's graph.
@@ -95,6 +95,14 @@ class Node(Parentable, ICompilable):
         self._clear()
 
     def enquire_graph(self, graph=None):
+        """
+        Verifies and returns relevant TensorFlow graph. If non-None graph were passed,
+        the same graph is returned. Otherwise, nodes's graph is exposed and it is
+        undefined the default TensorFlow graph is used.
+
+        :param graph: TensorFlow graph or None. Default is None.
+        :return: TensorFlow graph.
+        """
         if graph is None:
             graph = self.root.graph if self.graph is None else self.graph
             if graph is None:
@@ -102,6 +110,17 @@ class Node(Parentable, ICompilable):
         return graph
 
     def enquire_session(self, session=None):
+        """
+        Verifies and returns relevant TensorFlow session. If non-None session
+        were passed, session is checked for graph compliance and returned back.
+        Otherwise, default TensorFlow session is returned. When TensorFlow default
+        session is not set up, GPflow session's manager creates or uses existing
+        one for returning.
+
+        :param session: TensorFlow session or None. Default value is None.
+        :return: TensorFlow session.
+        :raises GPflowError: Session's graph is not compilable with node's graph.
+        """
         if session is None:
             session = tf.get_default_session()
             if session is None:
@@ -110,6 +129,14 @@ class Node(Parentable, ICompilable):
         return session
 
     def set_parent(self, parent=None):
+        """
+        Set parentable parent. `Parentable` interface implementation.
+
+        :param parent: Parentable object.
+        :raises ValueError: Self-reference object passed.
+        :raises ValueError: Non-Parentable object passed.
+        """
+
         if parent is self:
             raise ValueError('Self references are prohibited.')
         if parent is not None and not isinstance(parent, Parentable):
@@ -117,6 +144,13 @@ class Node(Parentable, ICompilable):
         self._parent = parent if parent is not None else None
 
     def is_built_coherence(self, graph=None):
+        """
+        Checks that node was build using input `graph`.
+
+        :return: `Build` status.
+        :raises GPflowError: Valid passed TensorFlow graph is different from
+            used graph in node.
+        """
         graph = self.enquire_graph(graph=graph)
         is_built = self.is_built(graph)
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
@@ -124,7 +158,31 @@ class Node(Parentable, ICompilable):
         return is_built
 
     def build(self):
+        """
+        Implementation for ICompilable interface `build` method. Builds tensors within
+        TensorFlow name scope using parentable node's name. Hidden name is used when 
+        no parent exists for current node.
+
+        :raises GPflowError: Node's parts were built with different graph and differ from
+            default TensorFlow graph.
+        """
         if self.is_built_coherence() is Build.NO:
             name = self.hidden_name if self.parent is self else self.name
             with tf.name_scope(name):
                 self._build()
+
+    @abc.abstractmethod
+    def _clear(self):
+        """
+        Internal clear function. This method must be overridden by descendants with ICompilable
+        compabilities instead of public `clear`.
+        """
+        raise NotImplementedError('Private method clear must be implemented by successor.')
+
+    @abc.abstractmethod
+    def _build(self):
+        """
+        Internal build function. This method must be overridden by descendants with ICompilable
+        compabilities instead of public `build`.
+        """
+        raise NotImplementedError('Private method `build` must be implemented by successor.')
