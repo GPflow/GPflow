@@ -41,7 +41,8 @@ class ParamList(Parameterized):
         super(ParamList, self).__init__(name=None)
         if not isinstance(list_of_params, list):
             raise ValueError('Not acceptable argument type at list_of_params.')
-        self._list = [self._valid_list_input(item, trainable)
+        self._trainable = trainable
+        self._list = [self._valid_list_input(item, self._trainable)
                       for item in list_of_params]
         for index, item in enumerate(self._list):
             self._set_param(index, item)
@@ -52,9 +53,7 @@ class ParamList(Parameterized):
             yield item
 
     def append(self, item):
-        if not isinstance(item, Parameter):
-            raise ValueError(
-                'Non parameter type cannot be appended to the list.')
+        item = self._valid_list_input(item, self._trainable)
         length = self.__len__()
         item.set_parent(self)
         item.set_name(self._item_name(length))
