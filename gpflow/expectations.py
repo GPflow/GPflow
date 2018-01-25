@@ -315,41 +315,62 @@ def _expectation(p, kern1, feat1, kern2, feat2):
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
 
+        # The common expressions that go out of both if branches are:
+        #  * `cov_scaling = inv(inv(La) + inv(Lb))`. Since the inverse of a
+        #    diagonal matrix is just the inverse of its diagonal, we can compute
+        #    cov_scaling as `1/(1/La + 1/Lb) = (La * Lb) / (La + Lb)`
+        #    Furthermore, if `La = Lb`, then:
+        #    `cov_scaling = (La * La) / (2 * La) = La / 2`
+        #  * `Kmms = exp(-1/2 (Za - Zb) @ inv(La + Lb) @ (Za - Zb))`
+        #     When `La = Lb`, `inv(La + La) = 1/2 (1/La)`.
+        #  * `vec = Lb @ inv(La + Lb) @ Za + La @ inv(La + Lb) @ Za - Xmu`. If
+        #    `La = Lb`, that reduces to `Lb inv(La + Lb) = La inv(2*La) = 1/2`.
         if Kb == Ka:
+            combined_var = tf.square(Ka.variance)
             La = Lb = tf.square(Ka.lengthscales)
             cov_scaling = La / 2.
             if Zb == Za:
                 Kmms = tf.exp(-.25 * Ka.square_dist(Za, None))  # Ma,Mb
             else:
                 Kmms = tf.exp(-.25 * Ka.square_dist(Za, Zb))  # Ma,Mb
+            vec = (0.5 * (tf.reshape(tf.transpose(Zb), [1, D, 1, Mb])
+                          + tf.reshape(tf.transpose(Za), [1, D, Ma, 1]))
+                  - tf.reshape(Xmu, [N, D, 1, 1]))        # N,D,Ma,Mb
         else:
-            # This branch of the `if` is wrong
+            combined_var = Ka.variance * Kb.variance
             La, Lb = map(tf.square, (Ka.lengthscales, Kb.lengthscales))
-            lengthscales = La + Lb
-            cov_scaling = (La * Lb) / (La + Lb)
+            L_ab = 1/(La + Lb)
+            La_ab = La * L_ab
+            Lb_ab = Lb * L_ab
+            cov_scaling = Lb * La_ab
 
-            # Recall that `lengthscales` is possibly just a scalar
-            #Kmms = tf.exp(-.5 * Ka.square_dist(Za, Zb, lengthscales))  # Ma,Mb
+            # This is `square_dist` but in a less efficient way. The efficient
+            # way would require taking sqrt(La + Lb) which is a little less
+            # precise.
             Zdiff = tf.expand_dims(Za, 1) - tf.expand_dims(Zb, 0)
-            dist = tf.reduce_sum(tf.square(Zdiff) / lengthscales, axis=-1)
+            dist = tf.reduce_sum(tf.square(Zdiff) * L_ab, axis=-1)
             Kmms = tf.exp(-.5 * dist)
+            vec = (tf.reshape(tf.transpose(La_ab * Zb), [1, D, 1, Mb])
+                   + tf.reshape(tf.transpose(Lb_ab * Za), [1, D, Ma, 1])
+                   - tf.reshape(Xmu, [N, D, 1, 1]))
 
+        # It doesn't matter if we left- or right-multiply Xcov, because we just
+        # take the determinant of this.
         scalemat = tf.eye(D, dtype=tf_float) + Xcov / cov_scaling  # NxDxD
         det = tf.rsqrt(tf.matrix_determinant(scalemat))
 
-        mat = Xcov + (tf.eye(D, dtype=tf_float)
-                      * tf.reshape(cov_scaling, [-1, 1])) # NxDxD
+        # It doesn't matter if we left- or right-multiply eye. We do this
+        # instead of `tf.diag` because `cov_scaling` may be a scalar.
+        mat = Xcov + tf.eye(D, dtype=tf_float) * cov_scaling  # NxDxD
+
         cm = tf.cholesky(mat)  # NxDxD
-        vec = (0.5 * (tf.reshape(tf.transpose(Zb), [1, D, 1, Mb])
-                      + tf.reshape(tf.transpose(Za), [1, D, Ma, 1]))
-               - tf.reshape(Xmu, [N, D, 1, 1]))        # N,D,Ma,Mb
+        # vec comes from before
         svec = tf.reshape(vec, (N, D, Ma * Mb))
         ssmI_z = tf.matrix_triangular_solve(cm, svec)  # N,D,Ma*Mb
         smI_z = tf.reshape(ssmI_z, (N, D, Ma, Mb))  # N,D,Ma,Mb
-        smI_z = tf.Print(smI_z, (N, D, Ma, Mb), "Here is the shape of the end!!")
-        fs = tf.reduce_sum(tf.square(smI_z), [1])  # N,Ma,Mb
+        fs = tf.reduce_sum(tf.square(smI_z), axis=1)  # N,Ma,Mb
 
-        return (((Ka.variance**2 * tf.reshape(det, [N, 1, 1])) * Kmms)
+        return (((combined_var * tf.reshape(det, [N, 1, 1])) * Kmms)
                 * tf.exp(-0.5 * fs))
 
 

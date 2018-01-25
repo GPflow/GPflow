@@ -187,9 +187,9 @@ def test_psi_stats(session_tf, feature, distribution, kernel, arg_filter):
 @pytest.mark.parametrize("inputs", [(feature, feature), (feature, feature2),
                                     (feature2, feature)])
 def test_psi2_different_kernels(session_tf, feature, distribution, kernels, inputs):
-    k1, k2 = kernels
+    k1, k2 = (k() for k in kernels)
     z1, z2 = map(lambda z: z(session_tf), inputs)
-    _check((distribution(), (z1, k1()), (z2, k2())))
+    _check((distribution(), (z1, k1), (z2, k2)))
 
 
 @pytest.mark.parametrize("distribution", [gauss])
