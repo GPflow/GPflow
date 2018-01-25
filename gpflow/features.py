@@ -61,7 +61,7 @@ class InducingPoints(InducingFeature):
         :param Z: the initial positions of the inducing points, size M x D
         """
         super().__init__()
-        self.Z = Parameter(Z)
+        self.Z = Parameter(Z, dtype=settings.float_type)
 
     def __len__(self):
         return self.Z.shape[0]
