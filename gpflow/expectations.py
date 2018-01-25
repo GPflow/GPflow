@@ -347,9 +347,17 @@ def _expectation(p, kern1, feat1, kern2, feat2):
             # This is `square_dist` but in a less efficient way. The efficient
             # way would require taking sqrt(La + Lb) which is a little less
             # precise.
-            Zdiff = tf.expand_dims(Za, 1) - tf.expand_dims(Zb, 0)
-            dist = tf.reduce_sum(tf.square(Zdiff) * L_ab, axis=-1)
+            with tf.name_scope("square_dist"):
+                Za2 = tf.reduce_sum(tf.square(Za) * L_ab, axis=1) # Ma
+                if Za == Zb:
+                    Zb2 = Za2
+                else:
+                    Zb2 = tf.reduce_sum(tf.square(Zb) * L_ab, axis=1) # Mb
+                dist = (-2 * tf.matmul(Za * L_ab, Zb, transpose_b=True) # Ma, Mb
+                        + tf.expand_dims(Za2, 1) + Zb2)
             Kmms = tf.exp(-.5 * dist)
+
+
             vec = (tf.reshape(tf.transpose(La_ab * Zb), [1, D, 1, Mb])
                    + tf.reshape(tf.transpose(Lb_ab * Za), [1, D, Ma, 1])
                    - tf.reshape(Xmu, [N, D, 1, 1]))
