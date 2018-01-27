@@ -27,7 +27,7 @@ __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 def pretty_pandas_table(names, keys, values):
     df = pd.DataFrame(dict(zip(keys, values)))
     df.index = names
-    df = df.reindex_axis(keys, axis=1)
+    df = df.reindex(keys, axis=1)
     return df
 
 
