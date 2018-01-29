@@ -87,7 +87,12 @@ def _expectation(p, obj1, feature1, obj2, feature2, H=100):
         eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(tf.split(x, 2, 1)[0]) *
                                get_eval_func(obj2, feature2, np.s_[:, None, :])(tf.split(x, 2, 1)[1]))
 
-    return mvnquad(eval_func, p.mu, p.cov, H)
+    mu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
+    cov_top = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
+    cov_bottom = tf.concat((tf.matrix_transpose(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
+    cov = tf.concat((cov_top, cov_bottom), 1)  # Nx2Dx2D
+
+    return mvnquad(eval_func, mu, cov, H)
 
 
 def quadrature_expectation(p, obj1, obj2=None):
@@ -104,7 +109,7 @@ def quadrature_expectation(p, obj1, obj2=None):
     return _quadrature_expectation(p, obj1, feat1, obj2, feat2)
 
 
-@dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+@dispatch((Gaussian, MarkovGaussian), object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
     gauss_quadrature_impl = _expectation.dispatch(
         type(p), type(obj1), type(feat1), type(obj2), type(feat2))
@@ -118,19 +123,5 @@ def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
 
     gauss_quadrature_impl = _expectation.dispatch(
         type(p_gauss), type(obj1), type(feat1), type(obj2), type(feat2))
-
-    return gauss_quadrature_impl(p_gauss, obj1, feat1, obj2, feat2)
-
-
-@dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
-    mu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
-    fXcovt = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
-    fXcovb = tf.concat((tf.matrix_transpose(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
-    cov = tf.concat((fXcovt, fXcovb), 1)  # Nx2Dx2D
-    p_gauss = Gaussian(mu, cov)
-
-    gauss_quadrature_impl = _expectation.dispatch(
-        MarkovGaussian, type(obj1), type(feat1), type(obj2), type(feat2))
 
     return gauss_quadrature_impl(p_gauss, obj1, feat1, obj2, feat2)
