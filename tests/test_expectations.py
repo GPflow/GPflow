@@ -164,8 +164,8 @@ def _check(params):
 @pytest.mark.parametrize("kernel", [lin_kern, rbf, rbf_lin_sum, rbf_prod_seperate_dims])
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, k, f: (p, k),
-                            lambda p, k, f: (p, (f, k)),
-                            lambda p, k, f: (p, (f, k), (f, k))])
+                            lambda p, k, f: (p, (k, f)),
+                            lambda p, k, f: (p, (k, f), (k, f))])
 def test_psi_stats(session_tf, feature, distribution, kernel, arg_filter):
     params = arg_filter(distribution(), kernel(), feature)
     _check(params)
@@ -186,8 +186,8 @@ def test_mean_function_expectations(session_tf, distribution, mean1, mean2, arg_
 @pytest.mark.parametrize("mean", [lin, identity, const, zero])
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
 @pytest.mark.parametrize("arg_filter", [
-                            lambda p, k, f, m: (p, (f, k), m),
-                            lambda p, k, f, m: (p, m, (f, k))])
+                            lambda p, k, f, m: (p, (k, f), m),
+                            lambda p, k, f, m: (p, m, (k, f))])
 def test_kernel_mean_function_expectation(
         session_tf, feature, distribution, mean, kernel, arg_filter):
     params = arg_filter(distribution(), kernel(), feature, mean())
@@ -230,4 +230,4 @@ def test_exKxz_pairwise_no_uncertainty(session_tf, kernel, feature):
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])
 def test_exKxz_pairwise(session_tf, kernel, feature):
-    _check((markov_gauss(), (feature, kernel()), identity()))
+    _check((markov_gauss(), (kernel(), feature), identity()))
