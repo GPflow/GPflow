@@ -26,7 +26,7 @@ from gpflow import kernels, mean_functions, features
 from gpflow.test_util import session_tf
 from gpflow.test_util import cache_tensor
 
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_allclose
 
 
 rng = np.random.RandomState(1)
@@ -157,7 +157,7 @@ def _check(params):
     quad = quadrature_expectation(*params)
     session = tf.get_default_session()
     analytic, quad = session.run([analytic, quad])
-    assert_almost_equal(quad, analytic, decimal=2)
+    assert_allclose(analytic, quad, rtol=1e-1)
 
 
 @pytest.mark.parametrize("distribution", [gauss, gauss_diag])
@@ -199,7 +199,7 @@ def test_eKdiag_no_uncertainty(session_tf, kernel):
     eKdiag = expectation(dirac(), kernel())
     Kdiag = kernel().Kdiag(Data.Xmu)
     eKdiag, Kdiag = session_tf.run([eKdiag, Kdiag])
-    assert_almost_equal(eKdiag, Kdiag)
+    assert_allclose(eKdiag, Kdiag, rtol=0.)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
@@ -207,7 +207,7 @@ def test_eKxz_no_uncertainty(session_tf, kernel, feature):
     eKxz = expectation(dirac(), (feature, kernel()))
     Kxz = kernel().K(Data.Xmu, Data.Z)
     eKxz, Kxz = session_tf.run([eKxz, Kxz])
-    assert_almost_equal(eKxz, Kxz)
+    assert_allclose(eKxz, Kxz, rtol=0.)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
@@ -216,7 +216,7 @@ def test_eKxzzx_no_uncertainty(session_tf, kernel, feature):
     Kxz = kernel().K(Data.Xmu, Data.Z)
     eKxzzx, Kxz = session_tf.run([eKxzzx, Kxz])
     Kxzzx = Kxz[:, :, None] * Kxz[:, None, :]
-    assert_almost_equal(eKxzzx, Kxzzx)
+    assert_allclose(eKxzzx, Kxzzx, rtol=0.)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])
@@ -225,7 +225,7 @@ def test_exKxz_pairwise_no_uncertainty(session_tf, kernel, feature):
     exKxz_pairwise = session_tf.run(exKxz_pairwise)
     Kxz = kernel().compute_K(Data.Xmu[:-1, :], Data.Z)  # NxM
     xKxz_pairwise = np.einsum('nm,nd->nmd', Kxz, Data.Xmu[1:, :])
-    assert_almost_equal(exKxz_pairwise, xKxz_pairwise)
+    assert_allclose(exKxz_pairwise, xKxz_pairwise, rtol=0.)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])

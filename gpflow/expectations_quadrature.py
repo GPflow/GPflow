@@ -61,7 +61,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _expectation(p, obj1, feature1, obj2, feature2, H=40):
+def _expectation(p, obj1, feature1, obj2, feature2, H=200):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
@@ -76,7 +76,7 @@ def _expectation(p, obj1, feature1, obj2, feature2, H=40):
 
 
 @dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _expectation(p, obj1, feature1, obj2, feature2, H=40):
+def _expectation(p, obj1, feature1, obj2, feature2, H=100):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
