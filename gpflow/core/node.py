@@ -167,7 +167,7 @@ class Node(Parentable, ICompilable):
             default TensorFlow graph.
         """
         if self.is_built_coherence() is Build.NO:
-            name = self.hidden_name if self.parent is self else self.name
+            name = self.pathname if self.parent is self else self.name
             with tf.name_scope(name):
                 self._build()
 

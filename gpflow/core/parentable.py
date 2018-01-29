@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import uuid
+
 from .. import misc
 
 
@@ -61,65 +63,53 @@ class Parentable:
     @property
     def name(self):
         """
-        Assigned name for the parenable node.
-        :return: String name.
+        The name assigned to node at creation time. It can be referred also
+        as original name.
+
+        :return: Given name.
         """
-        name = self._name.split(sep='/', maxsplit=1)
-        if len(name) > 1 and name[0].isdigit():
-            return name[1]
         return self._name
 
     @property
-    def hidden_name(self):
+    def pathname(self):
         """
-        Fully qualified name of the parentable node. Hidden name includes
-        names of parents separated by slash, e.g. 'parent0/parent1/node'.
+        Path name is a recursive representation parent path name plus the name
+        which was assigned to this object by its parent. In other words, it is
+        stack of parent name where top is always parent's original name:
+        `parent.pathname + parent.child_name` and stop condition is root's
+        name.
 
-        :return: String hidden name."""
-        return self._name
-
-    @property
-    def full_name(self):
-        """
-        Returns full name which respresents the path from top parent to this node.
-        For example, the full name with the two parents along the way back to
-        the top may look like `parent0/parent1/node`.
+        For example, the pathname of an instance with the two parents may look
+        like `parent0/parent1/child_name_at_parent1`.
+        Top parent's name equals its original name `parent0.name == parent0.pathname`.
         """
         if self._parent is None:
             return self.name
         return misc.tensor_name(self._parent.full_name, self.name)
 
-    @property
-    def hidden_full_name(self):
-        """
-        Returns `full_name` with unique identification prefix, `1/parent0/parent1/node`,
-        if such was used.
-        """
-        if self._parent is None:
-            return self._name
-        return misc.tensor_name(self._parent.hidden_full_name, self.name)
-
     def set_name(self, name=None):
-        self._name = self._define_name(name)
+        self._name = self._define_name(name) if name is None else name
 
     def set_parent(self, parent=None):
         self._parent = parent
 
     def _reset_name(self):
-        if self.hidden_name != self.name:
-            self._name = self._define_name(None)
+        self._name = self._define_name()
 
-    def _define_name(self, name):
-        if name:
+    def _define_name(self, name=None):
+        if name is not None:
+            if not isinstance(name, str):
+                raise ValueError('Name must be a string.')
             return name
         cls_name = self.__class__.__name__
-        index = Parentable._read_index(self)
-        return '{index}/{name}'.format(index=index, name=cls_name)
+        index = Parentable._read_index()
+        rnd_index = str(uuid.uuid4())[:8] + str(index)
+        return '{name}-{rnd_index}{index}'.format(name=cls_name, rnd_index=rnd_index, index=index)
 
     @classmethod
-    def _read_index(cls, obj=None):
+    def _read_index(cls):
         """
-        Reads index number and increments it.
+        Reads index number and increments it. No thread-safety guarantees.
 
         # TODO(@awav): index can grow indefinetly,
         # check boundaries or make another solution.
