@@ -45,14 +45,10 @@ class NatGradOptimizer(optimizer.Optimizer):
             full_var_list = self._gen_var_list(model, var_list)
 
             # Create optimizer variables before initialization.
-            self._minimize_operation = self.optimizer.minimize(
-                objective, var_list=full_var_list, **kwargs)
-
-            model.initialize(session=session, force=initialize)
-            self._initialize_optimizer(session, full_var_list)
+            self._natgrad_op = self._build_natgrad_step_ops(objective, full_var_list)
             feed_dict = self._gen_feed_dict(model, feed_dict)
             for _i in range(maxiter):
-                session.run(self.minimize_operation, feed_dict=feed_dict)
+                session.run(self._natgrad_op, feed_dict=feed_dict)
 
         if anchor:
             model.anchor(session)
