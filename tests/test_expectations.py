@@ -183,13 +183,13 @@ def test_mean_function_expectations(session_tf, distribution, mean1, mean2, arg_
 
 
 @pytest.mark.parametrize("distribution", [gauss])
-@pytest.mark.parametrize("mean", [lin, identity, const, zero])
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
+@pytest.mark.parametrize("mean", [lin, identity, const, zero])
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, k, f, m: (p, (k, f), m),
                             lambda p, k, f, m: (p, m, (k, f))])
 def test_kernel_mean_function_expectation(
-        session_tf, feature, distribution, mean, kernel, arg_filter):
+        session_tf, distribution, kernel, feature, mean, arg_filter):
     params = arg_filter(distribution(), kernel(), feature, mean())
     _check(params)
 

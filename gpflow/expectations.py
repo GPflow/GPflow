@@ -52,12 +52,12 @@ def expectation(p, obj1, obj2=None):
         eK1zxK2xz = expectation(pX, (feat, kern1), (feat, kern2)) # different kernel
     """
     if isinstance(obj1, tuple):
-        feat1, obj1 = obj1
+        obj1, feat1 = obj1
     else:
         feat1 = None
 
     if isinstance(obj2, tuple):
-        feat2, obj2 = obj2
+        obj2, feat2 = obj2
     else:
         feat2 = None
 
