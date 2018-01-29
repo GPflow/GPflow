@@ -1,4 +1,4 @@
-# Copyright 2017 the GPflow authors.
+# Copyright 2018 the GPflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -113,15 +113,15 @@ def _expectation(p, kern, feat, none1, none2):
         return kern.variance * (determinants[:, None] * exponent_mahalanobis)
 
 
-@dispatch(Gaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
-def _expectation(p, kern, feat, identity_mean, none):
+@dispatch(Gaussian, mean_functions.Identity, type(None), kernels.RBF, InducingPoints)
+def _expectation(p, identity_mean, none, kern, feat):
     """
     It computes the expectation:
-    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
         - m(x) = x :: identity mean function
         - K(.,.)   :: RBF kernel
 
-    :return: NxMxQ
+    :return: NxDxM
     """
     with params_as_tensors_for(feat), \
          params_as_tensors_for(kern), \
@@ -151,23 +151,62 @@ def _expectation(p, kern, feat, identity_mean, none):
 
         exponent_mahalanobis = tf.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
         non_exponent_term = tf.matmul(Xcov, exponent_mahalanobis, transpose_a=True)
-        non_exponent_term = tf.transpose(tf.expand_dims(Xmu, 2) + non_exponent_term, [0, 2, 1])  # NxMxD
+        non_exponent_term = tf.expand_dims(Xmu, 2) + non_exponent_term, [0, 2, 1]  # NxDxM
 
         exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
         exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-        return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, :, None] * non_exponent_term
+        return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
-@dispatch(Gaussian, mean_functions.MeanFunction, type(None), kernels.Kernel, InducingFeature)
-def _expectation(p, mean, none, kern, feat):
+@dispatch(Gaussian, kernels.Kernel, InducingFeature, mean_functions.MeanFunction, type(None))
+def _expectation(p, kern, feat, mean, none):
     """
     It computes the expectation:
-    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
+    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n)
+
+    :return: NxMxQ
+    """
+    return tf.matrix_transpose(_expectation(p, mean, None, kern, feat))
+
+
+@dispatch(Gaussian, mean_functions.Linear, type(None), (kernels.RBF, kernels.Linear), InducingPoints)
+def _expectation(p, linear_mean, none, kern, feat):
+    """
+    It computes the expectation:
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
+        - m(x_i) = A x_i + b :: Linear mean function
+        - K(.,.)             :: RBF or Linear kernel
 
     :return: NxQxM
     """
-    return tf.matrix_transpose(_expectation(p, kern, feat, mean, None))
+    with params_as_tensors_for(linear_mean):
+        N = p.mu.shape[0].value
+        D = p.mu.shape[1].value
+
+        exKxz = _expectation(p, mean_functions.Identity(D), None, kern, feat)
+        eKxz = _expectation(p, kern, feat, None, None)
+        eAxKxz = tf.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)),
+                           exKxz, transpose_a=True)
+        ebKxz = linear_mean.b[None, :, None] * eKxz[:, None, :]
+        return eAxKxz + ebKxz
+
+
+@dispatch(Gaussian, mean_functions.Constant, type(None), (kernels.RBF, kernels.Linear), InducingPoints)
+def _expectation(p, constant_mean, none, kern, feat):
+    """
+    It computes the expectation:
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
+        - m(x_i) = c :: Constant function
+        - K(.,.)     :: RBF or Linear kernel
+
+    :return: NxQxM
+    """
+    with params_as_tensors_for(constant_mean):
+        c = constant_mean(p.mu)  # NxQ
+        eKxz = _expectation(p, kern, feat, None, None)  # NxM
+
+        return c[..., None] * eKxz[:, None, :]
 
 
 @dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
@@ -261,15 +300,15 @@ def _expectation(p, kern, feat, none1, none2):
         return tf.matmul(Xmu, Z * kern.variance, transpose_b=True)
 
 
-@dispatch(Gaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
-def _expectation(p, kern, feat, mean, none):
+@dispatch(Gaussian, mean_functions.Identity, type(None), kernels.Linear, InducingPoints)
+def _expectation(p, mean, none, kern, feat):
     """
     It computes the expectation:
-    expectation[n] = <K_{Z, x_n} m(x)>_p(x_n), where
+    expectation[n] = <m(x)^T K_{x_n, Z}>_p(x_n), where
         - m(x) = x :: identity mean function
         - K(.,.)   :: Linear kernel
 
-    :return: NxMxQ
+    :return: NxDxM
     """
     Xmu, Xcov = p.mu, p.cov
 
@@ -285,9 +324,9 @@ def _expectation(p, kern, feat, mean, none):
          params_as_tensors_for(feat):
 
         N = tf.shape(Xmu)[0]
-        var_Z = kern.variance * feat.Z
-        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
-        return tf.matmul(tiled_Z, Xcov + Xmu[..., None] * Xmu[:, None, :])
+        var_Z = tf.transpose(kern.variance * feat.Z)  # DxM
+        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxDxM
+        return tf.matmul(Xcov + Xmu[..., None] * Xmu[:, None, :], tiled_Z)
 
 
 @dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
@@ -319,45 +358,6 @@ def _expectation(p, kern1, feat1, kern2, feat2):
         tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
         XX = Xcov + tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2)  # NxDxD
         return tf.matmul(tf.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)
-
-
-@dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Linear, type(None))
-def _expectation(p, kern, feat, linear_mean, none):
-    """
-    It computes the expectation:
-    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
-        - m(x_i) = A x_i + b :: Linear mean function
-        - K(.,.)             :: RBF or Linear kernel
-
-    :return: NxMxQ
-    """
-    with params_as_tensors_for(linear_mean):
-        D_in = p.mu.shape[1].value
-
-        exKxz = _expectation(p, kern, feat, mean_functions.Identity(D_in), None)
-        eKxz = _expectation(p, kern, feat, None, None)
-
-        eAxKxz = tf.reduce_sum(exKxz[:, :, None, :]
-                               * tf.transpose(linear_mean.A)[None, None, :, :], axis=3)
-        ebKxz = eKxz[..., None] * linear_mean.b[None, None, :]
-        return eAxKxz + ebKxz
-
-
-@dispatch(Gaussian, (kernels.RBF, kernels.Linear), InducingPoints, mean_functions.Constant, type(None))
-def _expectation(p, kern, feat, constant_mean, none):
-    """
-    It computes the expectation:
-    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n), where
-        - m(x_i) = c :: Constant function
-        - K(.,.)     :: RBF or Linear kernel
-
-    :return: NxMxQ
-    """
-    with params_as_tensors_for(constant_mean):
-        c = constant_mean(p.mu) # N x Q
-        eKxz = _expectation(p, kern, feat, None, None) # N x M
-
-        return eKxz[:, :, None] * c[:, None, :]
 
 
 @dispatch(Gaussian,
