@@ -1,4 +1,4 @@
-# Copyright 2017 the GPflow authors.
+# Copyright 2018 the GPflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -92,12 +92,12 @@ def _expectation(p, obj1, feature1, obj2, feature2, H=100):
 
 def quadrature_expectation(p, obj1, obj2=None):
     if isinstance(obj1, tuple):
-        feat1, obj1 = obj1
+        obj1, feat1 = obj1
     else:
         feat1 = None
 
     if isinstance(obj2, tuple):
-        feat2, obj2 = obj2
+        obj2, feat2 = obj2
     else:
         feat2 = None
 
@@ -106,14 +106,19 @@ def quadrature_expectation(p, obj1, obj2=None):
 
 @dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
-    gauss_quadrature_impl = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
+    gauss_quadrature_impl = _expectation.dispatch(
+        type(p), type(obj1), type(feat1), type(obj2), type(feat2))
+
     return gauss_quadrature_impl(p, obj1, feat1, obj2, feat2)
 
 
 @dispatch(DiagonalGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
     p_gauss = Gaussian(p.mu, tf.matrix_diag(p.cov))
-    gauss_quadrature_impl = _expectation.dispatch(Gaussian, object, type(None), object, type(None))
+
+    gauss_quadrature_impl = _expectation.dispatch(
+        type(p_gauss), type(obj1), type(feat1), type(obj2), type(feat2))
+
     return gauss_quadrature_impl(p_gauss, obj1, feat1, obj2, feat2)
 
 
@@ -121,8 +126,11 @@ def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
 def _quadrature_expectation(p, obj1, feat1, obj2, feat2):
     mu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
     fXcovt = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
-    fXcovb = tf.concat((tf.transpose(p.cov[1, :-1, :, :], (0, 2, 1)), p.cov[0, 1:, :, :]), 2)
+    fXcovb = tf.concat((tf.matrix_transpose(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
     cov = tf.concat((fXcovt, fXcovb), 1)  # Nx2Dx2D
-    p_gauss = MarkovGaussian(mu, cov)
-    gauss_quadrature_impl = _expectation.dispatch(MarkovGaussian, object, type(None), object, type(None))
+    p_gauss = Gaussian(mu, cov)
+
+    gauss_quadrature_impl = _expectation.dispatch(
+        MarkovGaussian, type(obj1), type(feat1), type(obj2), type(feat2))
+
     return gauss_quadrature_impl(p_gauss, obj1, feat1, obj2, feat2)
