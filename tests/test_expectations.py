@@ -94,14 +94,13 @@ def markov_gauss():
     dummy_gen = lambda rng, n, *shape: np.array([rng.randn(*shape) for _ in range(n)])
     D_in = Data.D_in
     L_mg = dummy_gen(rng, Data.num_data, D_in, 2*D_in)  # N+1 x D x 2D
-    LL = np.concatenate((L_mg[:-1], L_mg[1:]), 1)  # N x 2D x 2D
-    Xcov = LL @ np.transpose(LL, (0, 2, 1))
-    Xc = np.concatenate((Xcov[:, :D_in, :D_in], Xcov[-1:, D_in:, D_in:]), 0)  # N+1 x D x D
-    Xcross = np.concatenate((Xcov[:, :D_in, D_in:], np.zeros((1, D_in, D_in))), 0)  # N+1 x D x D
-    Xcc = np.stack([Xc, Xcross])  # 2 x N+1 x D x D
+    Xcov = L_mg @ np.transpose(L_mg, (0, 2, 1))  # N+1 x D x D
+    Xcross = L_mg[:-1] @ np.transpose(L_mg[1:], (0, 2, 1))  # N x D x D
+    Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # N+1 x D x D
+    Xcov = np.stack([Xcov, Xcross])  # 2 x N+1 x D x D
     return MarkovGaussian(
         tf.convert_to_tensor(Data.Xmu),
-        tf.convert_to_tensor(Xcc))
+        tf.convert_to_tensor(Xcov))
 
 
 @cache_tensor
@@ -132,24 +131,24 @@ def lin_kern():
 
 
 @cache_tensor
-def lin():
+def lin_mean():
     return mean_functions.Linear(rng.rand(Data.D_in, Data.D_out), rng.rand(Data.D_out))
 
 
 @cache_tensor
-def identity():
+def identity_mean():
     # Note: Identity can only be used if Din == Dout
     return mean_functions.Identity(Data.D_in)
 
 
 @cache_tensor
-def zero():
-    return mean_functions.Zero(output_dim=Data.D_out)
+def const_mean():
+    return mean_functions.Constant(rng.rand(Data.D_out))
 
 
 @cache_tensor
-def const():
-    return mean_functions.Constant(rng.rand(Data.D_out))
+def zero_mean():
+    return mean_functions.Zero(output_dim=Data.D_out)
 
 
 def _check(params):
@@ -166,14 +165,14 @@ def _check(params):
                             lambda p, k, f: (p, k),
                             lambda p, k, f: (p, (k, f)),
                             lambda p, k, f: (p, (k, f), (k, f))])
-def test_psi_stats(session_tf, feature, distribution, kernel, arg_filter):
+def test_psi_stats(session_tf, distribution, kernel, feature, arg_filter):
     params = arg_filter(distribution(), kernel(), feature)
     _check(params)
 
 
 @pytest.mark.parametrize("distribution", [gauss])
-@pytest.mark.parametrize("mean1", [lin, identity, const, zero])
-@pytest.mark.parametrize("mean2", [lin, identity, const, zero])
+@pytest.mark.parametrize("mean1", [lin_mean, identity_mean, const_mean, zero_mean])
+@pytest.mark.parametrize("mean2", [lin_mean, identity_mean, const_mean, zero_mean])
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, m1, m2: (p, m1),
                             lambda p, m1, m2: (p, m1, m2)])
@@ -184,7 +183,7 @@ def test_mean_function_expectations(session_tf, distribution, mean1, mean2, arg_
 
 @pytest.mark.parametrize("distribution", [gauss])
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
-@pytest.mark.parametrize("mean", [lin, identity, const, zero])
+@pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, k, f, m: (p, (k, f), m),
                             lambda p, k, f, m: (p, m, (k, f))])
@@ -204,24 +203,24 @@ def test_eKdiag_no_uncertainty(session_tf, kernel):
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
 def test_eKxz_no_uncertainty(session_tf, kernel, feature):
-    eKxz = expectation(dirac(), (feature, kernel()))
+    eKxz = expectation(dirac(), (kernel(), feature))
     Kxz = kernel().K(Data.Xmu, Data.Z)
     eKxz, Kxz = session_tf.run([eKxz, Kxz])
     assert_allclose(eKxz, Kxz, rtol=1e-3)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
-def test_eKxzzx_no_uncertainty(session_tf, kernel, feature):
-    eKxzzx = expectation(dirac(), (feature, kernel()), (feature, kernel()))
+def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
+    eKzxKxz = expectation(dirac(), (kernel(), feature), (kernel(), feature))
     Kxz = kernel().K(Data.Xmu, Data.Z)
-    eKxzzx, Kxz = session_tf.run([eKxzzx, Kxz])
-    Kxzzx = Kxz[:, :, None] * Kxz[:, None, :]
-    assert_allclose(eKxzzx, Kxzzx, rtol=1e-3)
+    eKzxKxz, Kxz = session_tf.run([eKzxKxz, Kxz])
+    KzxKxz = Kxz[:, :, None] * Kxz[:, None, :]
+    assert_allclose(eKzxKxz, KzxKxz, rtol=1e-3)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])
 def test_exKxz_pairwise_no_uncertainty(session_tf, kernel, feature):
-    exKxz_pairwise = expectation(dirac_markov_gauss(), (feature, kernel()), identity())
+    exKxz_pairwise = expectation(dirac_markov_gauss(), (kernel(), feature), identity_mean())
     exKxz_pairwise = session_tf.run(exKxz_pairwise)
     Kxz = kernel().compute_K(Data.Xmu[:-1, :], Data.Z)  # NxM
     xKxz_pairwise = np.einsum('nm,nd->nmd', Kxz, Data.Xmu[1:, :])
@@ -230,4 +229,4 @@ def test_exKxz_pairwise_no_uncertainty(session_tf, kernel, feature):
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])
 def test_exKxz_pairwise(session_tf, kernel, feature):
-    _check((markov_gauss(), (kernel(), feature), identity()))
+    _check((markov_gauss(), (kernel(), feature), identity_mean()))

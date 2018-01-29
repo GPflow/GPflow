@@ -151,7 +151,7 @@ def _expectation(p, identity_mean, none, kern, feat):
 
         exponent_mahalanobis = tf.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
         non_exponent_term = tf.matmul(Xcov, exponent_mahalanobis, transpose_a=True)
-        non_exponent_term = tf.expand_dims(Xmu, 2) + non_exponent_term, [0, 2, 1]  # NxDxM
+        non_exponent_term = tf.expand_dims(Xmu, 2) + non_exponent_term  # NxDxM
 
         exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
         exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
