@@ -30,6 +30,7 @@ from numpy.testing import assert_allclose
 
 
 rng = np.random.RandomState(1)
+RTOL = 1e-3
 
 
 @pytest.fixture
@@ -132,7 +133,7 @@ def lin_kern():
 
 @cache_tensor
 def lin_mean():
-    return mean_functions.Linear(rng.rand(Data.D_in, Data.D_out), rng.rand(Data.D_out))
+    return mean_functions.Linear(rng.randn(Data.D_in, Data.D_out), rng.randn(Data.D_out))
 
 
 @cache_tensor
@@ -143,7 +144,7 @@ def identity_mean():
 
 @cache_tensor
 def const_mean():
-    return mean_functions.Constant(rng.rand(Data.D_out))
+    return mean_functions.Constant(rng.randn(Data.D_out))
 
 
 @cache_tensor
@@ -156,7 +157,7 @@ def _check(params):
     quad = quadrature_expectation(*params)
     session = tf.get_default_session()
     analytic, quad = session.run([analytic, quad])
-    assert_allclose(analytic, quad, rtol=1e-3)
+    assert_allclose(analytic, quad, rtol=RTOL)
 
 
 @pytest.mark.parametrize("distribution", [gauss, gauss_diag])
@@ -198,7 +199,7 @@ def test_eKdiag_no_uncertainty(session_tf, kernel):
     eKdiag = expectation(dirac(), kernel())
     Kdiag = kernel().Kdiag(Data.Xmu)
     eKdiag, Kdiag = session_tf.run([eKdiag, Kdiag])
-    assert_allclose(eKdiag, Kdiag, rtol=1e-3)
+    assert_allclose(eKdiag, Kdiag, rtol=RTOL)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
@@ -206,7 +207,7 @@ def test_eKxz_no_uncertainty(session_tf, kernel, feature):
     eKxz = expectation(dirac(), (kernel(), feature))
     Kxz = kernel().K(Data.Xmu, Data.Z)
     eKxz, Kxz = session_tf.run([eKxz, Kxz])
-    assert_allclose(eKxz, Kxz, rtol=1e-3)
+    assert_allclose(eKxz, Kxz, rtol=RTOL)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern])
@@ -215,7 +216,7 @@ def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
     Kxz = kernel().K(Data.Xmu, Data.Z)
     eKzxKxz, Kxz = session_tf.run([eKzxKxz, Kxz])
     KzxKxz = Kxz[:, :, None] * Kxz[:, None, :]
-    assert_allclose(eKzxKxz, KzxKxz, rtol=1e-3)
+    assert_allclose(eKzxKxz, KzxKxz, rtol=RTOL)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])
@@ -224,7 +225,7 @@ def test_exKxz_pairwise_no_uncertainty(session_tf, kernel, feature):
     exKxz_pairwise = session_tf.run(exKxz_pairwise)
     Kxz = kernel().compute_K(Data.Xmu[:-1, :], Data.Z)  # NxM
     xKxz_pairwise = np.einsum('nm,nd->nmd', Kxz, Data.Xmu[1:, :])
-    assert_allclose(exKxz_pairwise, xKxz_pairwise, rtol=1e-3)
+    assert_allclose(exKxz_pairwise, xKxz_pairwise, rtol=RTOL)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])
