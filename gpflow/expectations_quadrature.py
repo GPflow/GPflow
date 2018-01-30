@@ -74,7 +74,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
         raise NotImplementedError()
 
 
-@dispatch(Gaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+@dispatch((Gaussian, DiagonalGaussian), object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=100):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
@@ -86,22 +86,8 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=100):
         eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
                                get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
 
-    return mvnquad(eval_func, p.mu, p.cov, H)
-
-
-@dispatch(DiagonalGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=100):
-    warnings.warn("Quadrature is used to calculate the expectation. This means that "
-                  "an analytical implementations is not available for the given combination.")
-    if obj2 is None:
-        eval_func = lambda x: get_eval_func(obj1, feature1)(x)
-    elif obj1 is None:
-        eval_func = lambda x: get_eval_func(obj2, feature2)(x)
-    else:
-        eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
-                               get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
-
-    return mvnquad(eval_func, p.mu, tf.matrix_diag(p.cov), H)
+    cov = tf.matrix_diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov
+    return mvnquad(eval_func, p.mu, cov, H)
 
 
 @dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
