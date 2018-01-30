@@ -91,7 +91,7 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=100):
 
 
 @dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=100):
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=50):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
