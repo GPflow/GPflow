@@ -32,18 +32,6 @@ gpflow_md_namespace = dict()
 dispatch = partial(dispatch, namespace=gpflow_md_namespace)
 
 
-def quadrature_fallback(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except NotImplementedError as e:
-            print(str(e))
-            return _quadrature_expectation(*args)
-
-    return wrapper
-
-
 def quadrature_expectation(p, obj1, obj2=None):
     if isinstance(obj1, tuple):
         obj1, feat1 = obj1
@@ -75,7 +63,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 
 @dispatch((Gaussian, DiagonalGaussian), object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=100):
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=40):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
@@ -91,7 +79,7 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=100):
 
 
 @dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=50):
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=40):
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:

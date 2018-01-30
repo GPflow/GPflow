@@ -18,7 +18,7 @@ import tensorflow as tf
 
 from . import kernels, mean_functions, settings
 from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
-from .expectations_quadrature import dispatch, quadrature_fallback
+from .expectations_quadrature import dispatch, _quadrature_expectation
 from .features import InducingFeature, InducingPoints
 from .decors import params_as_tensors_for
 
@@ -46,6 +46,7 @@ def expectation(p, obj1, obj2=None):
         .. only mean functions
         eMx = expectation(pX, mean)
         eMx_sq = expectation(pX, mean, mean)
+        Note: mean(x) is 1xQ (row vector)
 
         .. different kernels
         .. this occurs when we are calculating Psi2 for Sum kernels
@@ -61,8 +62,14 @@ def expectation(p, obj1, obj2=None):
     else:
         feat2 = None
 
-    return _expectation(p, obj1, feat1, obj2, feat2)
+    try:
+        return _expectation(p, obj1, feat1, obj2, feat2)
+    except NotImplementedError as e:
+        print(str(e))
+        return _quadrature_expectation(p, obj1, feat1, obj2, feat2)
 
+
+# RBF kernel:
 
 @dispatch(Gaussian, kernels.RBF, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3):
@@ -159,58 +166,7 @@ def _expectation(p, identity_mean, none, kern, feat):
         return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
-@dispatch(Gaussian, kernels.Kernel, InducingFeature, mean_functions.MeanFunction, type(None))
-def _expectation(p, kern, feat, mean, none):
-    """
-    It computes the expectation:
-    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n)
-
-    :return: NxMxQ
-    """
-    return tf.matrix_transpose(_expectation(p, mean, None, kern, feat))
-
-
-@dispatch(Gaussian, mean_functions.Linear, type(None), (kernels.RBF, kernels.Linear), InducingPoints)
-def _expectation(p, linear_mean, none, kern, feat):
-    """
-    It computes the expectation:
-    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
-        - m(x_i) = A x_i + b :: Linear mean function
-        - K(.,.)             :: RBF or Linear kernel
-
-    :return: NxQxM
-    """
-    with params_as_tensors_for(linear_mean):
-        N = p.mu.shape[0].value
-        D = p.mu.shape[1].value
-
-        exKxz = _expectation(p, mean_functions.Identity(D), None, kern, feat)
-        eKxz = _expectation(p, kern, feat, None, None)
-        eAxKxz = tf.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)),
-                           exKxz, transpose_a=True)
-        ebKxz = linear_mean.b[None, :, None] * eKxz[:, None, :]
-        return eAxKxz + ebKxz
-
-
-@dispatch(Gaussian, mean_functions.Constant, type(None), (kernels.RBF, kernels.Linear), InducingPoints)
-def _expectation(p, constant_mean, none, kern, feat):
-    """
-    It computes the expectation:
-    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
-        - m(x_i) = c :: Constant function
-        - K(.,.)     :: RBF or Linear kernel
-
-    :return: NxQxM
-    """
-    with params_as_tensors_for(constant_mean):
-        c = constant_mean(p.mu)  # NxQ
-        eKxz = _expectation(p, kern, feat, None, None)  # NxM
-
-        return c[..., None] * eKxz[:, None, :]
-
-
 @dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
-@quadrature_fallback
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
@@ -262,8 +218,9 @@ def _expectation(p, kern1, feat1, kern2, feat2):
                tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis
 
 
+# Linear Kernel:
+
 @dispatch(Gaussian, kernels.Linear, type(None), type(None), type(None))
-@quadrature_fallback
 def _expectation(p, kern, none1, none2, none3):
     """
     It computes the expectation:
@@ -282,7 +239,6 @@ def _expectation(p, kern, none1, none2, none3):
 
 
 @dispatch(Gaussian, kernels.Linear, InducingPoints, type(None), type(None))
-@quadrature_fallback
 def _expectation(p, kern, feat, none1, none2):
     """
     It computes the expectation:
@@ -330,7 +286,6 @@ def _expectation(p, mean, none, kern, feat):
 
 
 @dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
-@quadrature_fallback
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
@@ -360,6 +315,60 @@ def _expectation(p, kern1, feat1, kern2, feat2):
         return tf.matmul(tf.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)
 
 
+# exKxz transpose and mean function handling:
+
+@dispatch(Gaussian, kernels.Kernel, InducingFeature, mean_functions.MeanFunction, type(None))
+def _expectation(p, kern, feat, mean, none):
+    """
+    It computes the expectation:
+    expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n)
+
+    :return: NxMxQ
+    """
+    return tf.matrix_transpose(_expectation(p, mean, None, kern, feat))
+
+
+@dispatch(Gaussian, mean_functions.Linear, type(None), (kernels.RBF, kernels.Linear), InducingPoints)
+def _expectation(p, linear_mean, none, kern, feat):
+    """
+    It computes the expectation:
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
+        - m(x_i) = A x_i + b :: Linear mean function
+        - K(.,.)             :: RBF or Linear kernel
+
+    :return: NxQxM
+    """
+    with params_as_tensors_for(linear_mean):
+        N = p.mu.shape[0].value
+        D = p.mu.shape[1].value
+
+        exKxz = _expectation(p, mean_functions.Identity(D), None, kern, feat)
+        eKxz = _expectation(p, kern, feat, None, None)
+        eAxKxz = tf.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)),
+                           exKxz, transpose_a=True)
+        ebKxz = linear_mean.b[None, :, None] * eKxz[:, None, :]
+        return eAxKxz + ebKxz
+
+
+@dispatch(Gaussian, mean_functions.Constant, type(None), (kernels.RBF, kernels.Linear), InducingPoints)
+def _expectation(p, constant_mean, none, kern, feat):
+    """
+    It computes the expectation:
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
+        - m(x_i) = c :: Constant function
+        - K(.,.)     :: RBF or Linear kernel
+
+    :return: NxQxM
+    """
+    with params_as_tensors_for(constant_mean):
+        c = constant_mean(p.mu)  # NxQ
+        eKxz = _expectation(p, kern, feat, None, None)  # NxM
+
+        return c[..., None] * eKxz[:, None, :]
+
+
+# Mean functions:
+
 @dispatch(Gaussian,
           (mean_functions.Linear, mean_functions.Identity, mean_functions.Constant),
           type(None), type(None), type(None))
@@ -374,7 +383,7 @@ def _expectation(p, mean, none1, none2, none3):
     return mean(p.mu)
 
 
-@dispatch(Gaussian, mean_functions.Linear, type(None), mean_functions.Linear, type(None))  #TODO
+@dispatch(Gaussian, mean_functions.Linear, type(None), mean_functions.Linear, type(None))
 def _expectation(p, mean1, none1, mean2, none2):
     """
     It computes the expectation:
@@ -386,11 +395,11 @@ def _expectation(p, mean1, none1, mean2, none2):
     with params_as_tensors_for(mean1), params_as_tensors_for(mean2):
         e_xt_x = p.cov + (p.mu[:, :, None] * p.mu[:, None, :]) # N x D x D
         e_A1t_xt_x_A2 = tf.einsum("iq,nij,jz->nqz", mean1.A, e_xt_x, mean2.A) # N x Q1 x Q2
-        e_A1t_xt_b2  = tf.einsum("iq,ni,z->nqz", mean1.A, p.mu, mean2.b) # N x Q1 x Q2
-        e_b1t_x_A2  = tf.einsum("q,ni,iz->nqz", mean1.b, p.mu, mean2.A) # N x Q1 x Q2
-        e_b1t_b2 = mean1.b[:, None] * mean2.b[None, :] # Q1 x Q2
+        e_A1t_xt_b2t  = tf.einsum("iq,ni,z->nqz", mean1.A, p.mu, mean2.b) # N x Q1 x Q2
+        e_b1_x_A2  = tf.einsum("q,ni,iz->nqz", mean1.b, p.mu, mean2.A) # N x Q1 x Q2
+        e_b1_b2t = mean1.b[:, None] * mean2.b[None, :] # Q1 x Q2
 
-        return e_A1t_xt_x_A2 + e_A1t_xt_b2 + e_b1t_x_A2 + e_b1t_b2
+        return e_A1t_xt_x_A2 + e_A1t_xt_b2t + e_b1_x_A2 + e_b1_b2t
 
 
 @dispatch(Gaussian,
@@ -401,13 +410,6 @@ def _expectation(p, mean1, none1, mean2, none2):
 
 
 @dispatch(Gaussian,
-          mean_functions.MeanFunction, type(None),
-          mean_functions.Constant, type(None))
-def _expectation(p, mean1, none1, mean2, none2):
-    return tf.matrix_transpose(_expectation(p, mean2, None, mean1, None))
-
-
-@dispatch(Gaussian,
           mean_functions.Constant, type(None),
           mean_functions.MeanFunction, type(None))
 def _expectation(p, mean1, none1, mean2, none2):
@@ -415,7 +417,15 @@ def _expectation(p, mean1, none1, mean2, none2):
     return mean1(p.mu)[:, :, None] * e_mean2[:, None, :]
 
 
-# Sum
+@dispatch(Gaussian,
+          mean_functions.MeanFunction, type(None),
+          mean_functions.Constant, type(None))
+def _expectation(p, mean1, none1, mean2, none2):
+    return tf.matrix_transpose(_expectation(p, mean2, None, mean1, None))
+
+
+# Sum kernels:
+
 @dispatch(Gaussian, kernels.Sum, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3):
     _expectation_fn = lambda k: _expectation(p, k, None, None, None)
@@ -443,7 +453,6 @@ def _expectation(p, kern, feat, mean, none3):
 
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
-@quadrature_fallback
 def _expectation(p, kern1, feat1, kern2, feat2):
     if feat1 != feat2:
         raise NotImplementedError("Different features are not supported")
@@ -465,7 +474,6 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 
 
 @dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.RBF, InducingPoints)
-@quadrature_fallback
 def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
     """
     It computes the expectation:
@@ -520,8 +528,9 @@ def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
     return tf.matrix_transpose(_expectation(p, lin_kern, feat2, rbf_kern, feat1))
 
 
-# Product
+# Product kernels:
 # Note: product kernels only support Diagonal Gaussian distributions, p.cov having shape NxD
+
 @dispatch(DiagonalGaussian, kernels.Product, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3):
     if not kern.on_separate_dimensions:
@@ -547,7 +556,6 @@ def _expectation(p, kern, feat, none2, none3):
 
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
-@quadrature_fallback
 def _expectation(p, kern1, feat1, kern2, feat2):
     if feat1 != feat2:
         raise NotImplementedError("Different features are not supported")
@@ -574,7 +582,8 @@ def _expectation(p, obj1, obj2, obj3, obj4):
     return _expectation(gauss, obj1, obj2, obj3, obj4)
 
 
-# Time Series expectations
+# exKxz for time series:
+
 @dispatch(MarkovGaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
 def _expectation(p, kern, feat, mean, none):
     """

@@ -33,11 +33,6 @@ rng = np.random.RandomState(1)
 RTOL = 1e-3
 
 
-@pytest.fixture
-def feature(session_tf):
-    return features.InducingPoints(Data.Z)
-
-
 def gen_L(n, *shape):
     return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
 
@@ -52,6 +47,11 @@ class Data:
     L = gen_L(num_data, D_in, D_in)
     Xvar = np.array([l @ l.T for l in L])
     Z = rng.randn(num_ind, D_in)
+
+
+@pytest.fixture
+def feature(session_tf):
+    return features.InducingPoints(Data.Z)
 
 
 @cache_tensor
@@ -105,7 +105,7 @@ def markov_gauss():
 
 
 @cache_tensor
-def rbf_prod_seperate_dims():
+def rbf_prod_separate_dims():
     return kernels.Product([
         kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand(), active_dims=[0]),
         kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand(), active_dims=[1])
@@ -161,7 +161,7 @@ def _check(params):
 
 
 @pytest.mark.parametrize("distribution", [gauss, gauss_diag])
-@pytest.mark.parametrize("kernel", [lin_kern, rbf, rbf_lin_sum, rbf_prod_seperate_dims])
+@pytest.mark.parametrize("kernel", [lin_kern, rbf, rbf_lin_sum, rbf_prod_separate_dims])
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, k, f: (p, k),
                             lambda p, k, f: (p, (k, f)),
