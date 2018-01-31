@@ -19,8 +19,7 @@ import pytest
 
 import gpflow
 from gpflow import test_util
-from gpflow.expectations import expectation
-from gpflow.expectations_quadrature import quadrature_expectation
+from gpflow.expectations import expectation, quadrature_expectation
 from gpflow.probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from gpflow import kernels, mean_functions, features
 from gpflow.test_util import session_tf

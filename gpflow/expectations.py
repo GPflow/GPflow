@@ -67,14 +67,16 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 @dispatch((Gaussian, DiagonalGaussian),
           object, (InducingFeature, type(None)),
           object, (InducingFeature, type(None)),
-          int)
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points=200):
+          (int, type(None)))
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
     """
     General handling of quadrature expectations
     Fallback method for missing analytic expectations
     """
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
+    quad_points = 200 if quad_points is None else quad_points
+
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -90,8 +92,8 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points=200):
 @dispatch(MarkovGaussian,
           object, (InducingFeature, type(None)),
           object, (InducingFeature, type(None)),
-          int)
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points=50):
+          (int, type(None)))
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
     """
     Implements quadrature expectations for Markov Gaussians (useful for time series)
     Fallback method for missing analytic expectations wrt Markov Gaussians
@@ -100,6 +102,8 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points=50):
     """
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
+    quad_points = 50 if quad_points is None else quad_points
+
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(tf.split(x, 2, 1)[0])
     elif obj1 is None:
@@ -126,9 +130,7 @@ def expectation(p, obj1, obj2=None, quad_points=None):
     Using the multiple-dispatch paradigm the function will select an analytical implementation,
     if one is available to calculate the expectation, or fall back to a quadrature.
 
-    The new framework makes the ``ekernels`` classes obsolete.
-
-    A couple of examples:
+    A few examples:
         .. Psi statistics
         eKdiag = expectation(pX, kern)  # psi0
         eKxz = expectation(pX, (feat, kern))  # psi1
