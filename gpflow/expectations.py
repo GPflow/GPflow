@@ -133,12 +133,12 @@ def expectation(p, obj1, obj2=None, quad_points=None):
     A few examples:
         .. Psi statistics
         eKdiag = expectation(pX, kern)  # psi0
-        eKxz = expectation(pX, (feat, kern))  # psi1
-        eKzxKxz = expectation(pX, (feat, kern), (feat, kern))  # psi2
+        eKxz = expectation(pX, (kern, feat))  # psi1
+        eKzxKxz = expectation(pX, (kern, feat), (kern, feat))  # psi2
 
         .. kernels and mean functions
-        eKzxMx = expectation(pX, (feat, kern), mean)
-        eMxKxz = expectation(pX, mean, (feat, kern))
+        eKzxMx = expectation(pX, (kern, feat), mean)
+        eMxKxz = expectation(pX, mean, (kern, feat))
 
         .. only mean functions
         eMx = expectation(pX, mean)
