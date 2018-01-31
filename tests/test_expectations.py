@@ -30,7 +30,7 @@ from numpy.testing import assert_allclose
 
 
 rng = np.random.RandomState(1)
-RTOL = 1e-3
+RTOL = 1e-4
 
 
 def gen_L(n, *shape):
