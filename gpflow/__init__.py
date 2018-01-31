@@ -37,7 +37,6 @@ from . import test_util
 from . import training as train
 from . import features
 from . import expectations
-from . import expectations_quadrature
 from . import probability_distributions
 
 from .decors import autoflow
