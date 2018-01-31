@@ -32,7 +32,7 @@ gpflow_md_namespace = dict()
 dispatch = partial(dispatch, namespace=gpflow_md_namespace)
 
 
-def quadrature_expectation(p, obj1, obj2=None):
+def quadrature_expectation(p, obj1, obj2=None, quad_points=50):
     if isinstance(obj1, tuple):
         obj1, feat1 = obj1
     else:
@@ -43,10 +43,8 @@ def quadrature_expectation(p, obj1, obj2=None):
     else:
         feat2 = None
 
-    return _quadrature_expectation(p, obj1, feat1, obj2, feat2)
+    return _quadrature_expectation(p, obj1, feat1, obj2, feat2, quad_points)
 
-
-# Generic case, quadrature method
 
 def get_eval_func(obj, feature, slice=np.s_[...]):
     if feature is not None:
@@ -63,7 +61,11 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
 
 
 @dispatch((Gaussian, DiagonalGaussian), object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=40):
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points=50):
+    """
+    General handling of quadrature expectations
+    Fallback method for missing analytic expectations
+    """
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
@@ -75,11 +77,17 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=40):
                                get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
 
     cov = tf.matrix_diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov
-    return mvnquad(eval_func, p.mu, cov, H)
+    return mvnquad(eval_func, p.mu, cov, quad_points)
 
 
 @dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=40):
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points=50):
+    """
+    Implements quadrature expectations for Markov Gaussians (useful for time series)
+    Fallback method for missing analytic expectations wrt Markov Gaussians
+    Nota Bene: obj1 is always associated with x_n, whereas obj2 always with x_{n+1}
+               if one requires e.g. <x_{n+1} K_{x_n, Z}}>_p(x_{n:n+1}), a transpose is required
+    """
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
     if obj2 is None:
@@ -95,4 +103,4 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, H=40):
     cov_bottom = tf.concat((tf.matrix_transpose(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
     cov = tf.concat((cov_top, cov_bottom), 1)  # Nx2Dx2D
 
-    return mvnquad(eval_func, mu, cov, H)
+    return mvnquad(eval_func, mu, cov, quad_points)

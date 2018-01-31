@@ -23,7 +23,7 @@ from .features import InducingFeature, InducingPoints
 from .decors import params_as_tensors_for
 
 
-def expectation(p, obj1, obj2=None):
+def expectation(p, obj1, obj2=None, quad_points=50):
     """
     Calculates the expectation <obj1(x) obj2(x)>_p(x)
     obj1 and obj2 can be kernels, mean functions or None.
@@ -66,7 +66,7 @@ def expectation(p, obj1, obj2=None):
         return _expectation(p, obj1, feat1, obj2, feat2)
     except NotImplementedError as e:
         print(str(e))
-        return _quadrature_expectation(p, obj1, feat1, obj2, feat2)
+        return _quadrature_expectation(p, obj1, feat1, obj2, feat2, quad_points)
 
 
 # RBF kernel:
@@ -75,8 +75,8 @@ def expectation(p, obj1, obj2=None):
 def _expectation(p, kern, none1, none2, none3):
     """
     It computes the expectation:
-    <diag(K_{X, X})>_p(X), where
-        - K(.,.)   :: RBF kernel
+    <diag(K_{X, X})>_p(X)
+        - K_{.,.}   :: RBF kernel
     This expression is also known as Psi0
 
     :return: N
@@ -88,8 +88,8 @@ def _expectation(p, kern, none1, none2, none3):
 def _expectation(p, kern, feat, none1, none2):
     """
     It computes the expectation:
-    <K_{X, Z}>_p(X), where
-        - K(.,.)   :: RBF kernel
+    <K_{X, Z}>_p(X)
+        - K_{.,.}   :: RBF kernel
     This expression is also known as Psi1
 
     :return: NxM
@@ -121,18 +121,15 @@ def _expectation(p, kern, feat, none1, none2):
 
 
 @dispatch(Gaussian, mean_functions.Identity, type(None), kernels.RBF, InducingPoints)
-def _expectation(p, identity_mean, none, kern, feat):
+def _expectation(p, mean, none, kern, feat):
     """
     It computes the expectation:
-    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
-        - m(x) = x :: identity mean function
-        - K(.,.)   :: RBF kernel
+    expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
+        - K_{.,.}   :: RBF kernel
 
     :return: NxDxM
     """
-    with params_as_tensors_for(feat), \
-         params_as_tensors_for(kern), \
-         params_as_tensors_for(identity_mean):
+    with params_as_tensors_for(feat), params_as_tensors_for(kern):
 
         Xmu = p.mu
         Xcov = p.cov
@@ -170,7 +167,7 @@ def _expectation(p, identity_mean, none, kern, feat):
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
-    expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n), where
+    expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
         - Ka(.,.) and Kb(.,.)  :: RBF kernels
     Ka and Kb can have different hyperparameters (Not implemented).
     If Ka and Kb are equal this expression is also known as Psi2.
@@ -224,8 +221,8 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 def _expectation(p, kern, none1, none2, none3):
     """
     It computes the expectation:
-    <diag(K_{X, X})>_p(X), where
-        - K(.,.)   :: Linear kernel
+    <diag(K_{X, X})>_p(X)
+        - K_{.,.}   :: Linear kernel
     This expression is also known as Psi0
 
     :return: N
@@ -242,8 +239,8 @@ def _expectation(p, kern, none1, none2, none3):
 def _expectation(p, kern, feat, none1, none2):
     """
     It computes the expectation:
-    <K_{X, Z}>_p(X), where
-        - K(.,.)   :: Linear kernel
+    <K_{X, Z}>_p(X)
+        - K_{.,.}   :: Linear kernel
     This expression is also known as Psi1
 
     :return: NxM
@@ -260,9 +257,8 @@ def _expectation(p, kern, feat, none1, none2):
 def _expectation(p, mean, none, kern, feat):
     """
     It computes the expectation:
-    expectation[n] = <m(x)^T K_{x_n, Z}>_p(x_n), where
-        - m(x) = x :: identity mean function
-        - K(.,.)   :: Linear kernel
+    expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
+        - K_{.,.}   :: Linear kernel
 
     :return: NxDxM
     """
@@ -289,7 +285,7 @@ def _expectation(p, mean, none, kern, feat):
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
-    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n), where
+    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n)
         - Ka(.,.) and Kb(.,.)   :: Linear kernels
     This expression is also known as Psi2
 
@@ -317,7 +313,9 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 
 # exKxz transpose and mean function handling:
 
-@dispatch(Gaussian, kernels.Kernel, InducingFeature, mean_functions.MeanFunction, type(None))
+@dispatch((Gaussian, MarkovGaussian, DiagonalGaussian),
+          kernels.Kernel, InducingFeature,
+          mean_functions.MeanFunction, type(None))
 def _expectation(p, kern, feat, mean, none):
     """
     It computes the expectation:
@@ -332,9 +330,9 @@ def _expectation(p, kern, feat, mean, none):
 def _expectation(p, linear_mean, none, kern, feat):
     """
     It computes the expectation:
-    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
         - m(x_i) = A x_i + b :: Linear mean function
-        - K(.,.)             :: RBF or Linear kernel
+        - K_{.,.}             :: RBF or Linear kernel
 
     :return: NxQxM
     """
@@ -354,9 +352,9 @@ def _expectation(p, linear_mean, none, kern, feat):
 def _expectation(p, constant_mean, none, kern, feat):
     """
     It computes the expectation:
-    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n), where
+    expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
         - m(x_i) = c :: Constant function
-        - K(.,.)     :: RBF or Linear kernel
+        - K_{.,.}     :: RBF or Linear kernel
 
     :return: NxQxM
     """
@@ -375,7 +373,7 @@ def _expectation(p, constant_mean, none, kern, feat):
 def _expectation(p, mean, none1, none2, none3):
     """
     It computes the expectation:
-    <m(X)>_p(X), where
+    <m(X)>_p(X)
         - m(x) :: Linear, Identity or Constant mean function
 
     :return: NxQ
@@ -387,7 +385,7 @@ def _expectation(p, mean, none1, none2, none3):
 def _expectation(p, mean1, none1, mean2, none2):
     """
     It computes the expectation:
-    expectation[n] = <m1(x_n)^T m2(x_n)>_p(x_n), where
+    expectation[n] = <m1(x_n)^T m2(x_n)>_p(x_n)
         - m1(.), m2(.) :: Linear mean functions
 
     :return: NxQxQ
@@ -428,12 +426,24 @@ def _expectation(p, mean1, none1, mean2, none2):
 
 @dispatch(Gaussian, kernels.Sum, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3):
+    """
+    It computes the expectation:
+    <\Sum_i diag(Ki_{X, X})>_p(X)
+
+    :return: N
+    """
     _expectation_fn = lambda k: _expectation(p, k, None, None, None)
     return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
 
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3):
+    """
+    It computes the expectation:
+    <\Sum_i Ki_{X, Z}>_p(X)
+
+    :return: NxM
+    """
     _expectation_fn = lambda k: _expectation(p, k, feat, None, None)
     return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
 
@@ -442,42 +452,77 @@ def _expectation(p, kern, feat, none2, none3):
           kernels.Sum, InducingPoints,
           (mean_functions.Linear, mean_functions.Identity, mean_functions.Constant), type(None))
 def _expectation(p, kern, feat, mean, none3):
+    """
+    It computes the expectation:
+    expectation[n] = <(\Sum_i Ki_{Z, x_n}) m(x_n)>_p(x_n)
+
+    :return: NxMxQ
+    """
     _expectation_fn = lambda k: _expectation(p, k, feat, mean, None)
     return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
 
 
 @dispatch(MarkovGaussian, kernels.Sum, InducingPoints, mean_functions.Identity, type(None))
 def _expectation(p, kern, feat, mean, none3):
+    """
+    It computes the expectation:
+    expectation[n] = <(\Sum_i Ki_{Z, x_n}) x_{n+1}^T>_p(x_{n:n+1})
+
+    :return: NxMxD
+    """
     _expectation_fn = lambda k: _expectation(p, k, feat, mean, None)
     return functools.reduce(tf.add, [_expectation_fn(k) for k in kern.kern_list])
 
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2):
+    """
+    It computes the expectation:
+    expectation[n] = <(\Sum_i K1_i_{Z, x_n}) (\Sum_j K2_j_{x_n, Z})>_p(x_n)
+
+    :return: NxMxM
+    """
     if feat1 != feat2:
         raise NotImplementedError("Different features are not supported")
 
     feat = feat1
     crossexps = []
 
-    for k1, k2 in it.product(kern1.kern_list, kern2.kern_list):
-        if k1.on_separate_dims(k2):
-            eKxz1 = _expectation(p, k1, feat, None, None)
-            eKxz2 = _expectation(p, k2, feat, None, None)
-            result = eKxz1[:, :, None] * eKxz2[:, None, :]
-        else:
-            result = _expectation(p, k1, feat, k2, feat)
+    if kern1 == kern2:  # avoid duplicate computation by using transposes:
+        for i, k1 in enumerate(kern1.kern_list):
+            crossexps.append(_expectation(p, k1, feat, k1, feat))
 
-        crossexps.append(result)
+            for k2 in kern1.kern_list[:i]:
+                eKK = cross_eKK(p, k1, k2, feat)
+                eKK += tf.matrix_transpose(eKK)
+                crossexps.append(eKK)
+
+    else:
+        for k1, k2 in it.product(kern1.kern_list, kern2.kern_list):
+            crossexps.append(cross_eKK(p, k1, k2, feat))
 
     return functools.reduce(tf.add, crossexps)
+
+
+def cross_eKK(p, k1, k2, feat):
+    """
+    Checks if kernels k1, k2 act on disjoint sets of
+    dimensions to potentially simplify computation
+    """
+    if k1.on_separate_dims(k2):
+        eKxz1 = _expectation(p, k1, feat, None, None)
+        eKxz2 = _expectation(p, k2, feat, None, None)
+        result = eKxz1[:, :, None] * eKxz2[:, None, :]
+    else:
+        result = _expectation(p, k1, feat, k2, feat)
+    return result
 
 
 @dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.RBF, InducingPoints)
 def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
     """
     It computes the expectation:
-    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n), where
+    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n)
         - Ka_{.,.} :: Linear kernel
         - Kb_{.,.} :: RBF kernel
 
@@ -529,7 +574,7 @@ def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
 
 
 # Product kernels:
-# Note: product kernels only support Diagonal Gaussian distributions, p.cov having shape NxD
+# Note: product kernels are only supported if each kernel acts on its own set of dimensions
 
 @dispatch(DiagonalGaussian, kernels.Product, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3):
@@ -584,14 +629,15 @@ def _expectation(p, obj1, obj2, obj3, obj4):
 
 # exKxz for time series:
 
-@dispatch(MarkovGaussian, kernels.RBF, InducingPoints, mean_functions.Identity, type(None))
-def _expectation(p, kern, feat, mean, none):
+@dispatch(MarkovGaussian, mean_functions.Identity, type(None), kernels.RBF, InducingPoints)
+def _expectation(p, mean, none, kern, feat):
     """
-    expectation[n] = <K_{Z, x_{n-1} x_n^T}>_p(x_{n-1:n})
-        - K(.,.) :: RBF kernel
-        - p :: TimeSeriesGaussian distribution
+    It computes the expectation:
+    expectation[n] = <x_{n+1} K_{x_n, Z}}>_p(x_{n:n+1})
+        - K_{.,.} :: RBF kernel
+        - p :: MarkovGaussian distribution (p.cov 2x(N+1)xDxD)
 
-    :return: NxMxQ
+    :return: NxDxM
     """
     with params_as_tensors_for(kern), \
          params_as_tensors_for(feat):
@@ -629,14 +675,15 @@ def _expectation(p, kern, feat, mean, none):
         return kern.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
 
-@dispatch(MarkovGaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
-def _expectation(p, kern, feat, mean, none):
+@dispatch(MarkovGaussian, mean_functions.Identity, type(None), kernels.Linear, InducingPoints)
+def _expectation(p, mean, none, kern, feat):
     """
-    expectation[n] = <K_{Z, x_{n-1}} x_n^T>_p(x_{n-1:n})
-        - K(.,.) :: Linear kernel
-        - p :: MarkovGaussian distribution
+    It computes the expectation:
+    expectation[n] = <x_{n+1} K_{x_n, Z}}>_p(x_{n:n+1})
+        - K_{.,.} :: Linear kernel
+        - p :: MarkovGaussian distribution (p.cov 2x(N+1)xDxD)
 
-    :return: NxMxQ
+    :return: NxDxM
     """
     with params_as_tensors_for(kern), \
          params_as_tensors_for(feat):
