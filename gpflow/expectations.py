@@ -285,18 +285,35 @@ def _expectation(p, mean, none, kern, feat):
 
     :return: NxDxM
     """
+    Xmu, Xcov = p.mu, p.cov
+
+    with tf.control_dependencies([tf.assert_equal(
+            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
+            message="Currently cannot handle slicing in exKxz.")]):
+        Xmu = tf.identity(Xmu)
+
     with params_as_tensors_for(kern), \
          params_as_tensors_for(feat):
 
-        Xmu = p.mu
-        Xcov = p.cov
-        Z = feat.Z
+        D = tf.shape(Xmu)[1]
+        lengthscales = kern.lengthscales if kern.ARD else \
+            tf.zeros((D,), dtype=settings.float_type) + kern.lengthscales
 
-        msg_input_shape = "Currently cannot handle slicing in exKxz_pairwise."
-        assert_input_shape = tf.assert_equal(tf.shape(Xmu)[1], kern.input_dim, message=msg_input_shape)
-        assert_cov_shape = tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
-        with tf.control_dependencies([assert_input_shape, assert_cov_shape]):
-            Xmu = tf.identity(Xmu)
+        chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales[:D] ** 2) + Xcov[0])  # NxDxD
+        all_diffs = tf.transpose(feat.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
+
+        sqrt_det_L = tf.reduce_prod(lengthscales[:D])
+        sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(chol_L_plus_Xcov)), axis=1))
+        determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
+
+        exponent_mahalanobis = tf.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
+        non_eponent_term = tf.matmul(Xcov[1], exponent_mahalanobis, transpose_a=True)
+        non_eponent_term = tf.transpose(tf.expand_dims(Xmu[1:], 2) + non_eponent_term, [0, 2, 1])  # NxMxD
+
+        exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
+        exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
+
+        return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_eponent_term
 
         N = tf.shape(Xmu)[0] - 1
         D = tf.shape(Xmu)[1]
@@ -426,11 +443,9 @@ def _expectation(p, mean, none, kern, feat):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    with tf.control_dependencies([
-        tf.assert_equal(tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.np_int),
-                        message="Currently cannot handle slicing in exKxz."),
-        tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
-    ]):
+    with tf.control_dependencies([tf.assert_equal(
+            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
+            message="Currently cannot handle slicing in exKxz")]):
         Xmu = tf.identity(Xmu)
 
     with params_as_tensors_for(kern), \
@@ -453,25 +468,20 @@ def _expectation(p, mean, none, kern, feat):
 
     :return: NxDxM
     """
+    Xmu, Xcov = p.mu, p.cov
+
+    with tf.control_dependencies([tf.assert_equal(
+            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
+            message="Currently cannot handle slicing in exKxz")]):
+        Xmu = tf.identity(Xmu)
+
     with params_as_tensors_for(kern), \
          params_as_tensors_for(feat):
 
-        Xmu = p.mu
-        Xcov = p.cov
-        Z = feat.Z
-
-        with tf.control_dependencies([
-            tf.assert_equal(tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
-                            message="Currently cannot handle slicing in exKxz."),
-            tf.assert_equal(tf.shape(Xmu), tf.shape(Xcov)[1:3], name="assert_Xmu_Xcov_shape")
-        ]):
-            Xmu = tf.identity(Xmu)
-
         N = tf.shape(Xmu)[0] - 1
-        Xmum = Xmu[:-1, :]
-        Xmup = Xmu[1:, :]
-        op = tf.expand_dims(Xmum, 2) * tf.expand_dims(Xmup, 1) + Xcov[1, :-1, :, :]  # NxDxD
-        return kern.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
+        var_Z = tf.transpose(kern.variance * feat.Z)  # DxM
+        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxDxM
+        return tf.matmul(Xcov[1, :-1] + (Xmu[:-1][..., None] * Xmu[1:][:, None, :]), tiled_Z)
 
 
 @dispatch((Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
