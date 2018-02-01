@@ -51,6 +51,10 @@ def quadrature_expectation(p, obj1, obj2=None, quad_points=None):
 
 
 def get_eval_func(obj, feature, slice=np.s_[...]):
+    """
+    Return the function of interest (kernel or mean) for the expectation
+    depending on the type of :obj: and whether any features are given
+    """
     if feature is not None:
         # kernel + feature combination
         if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kernel):
@@ -85,7 +89,18 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
         eval_func = lambda x: (get_eval_func(obj1, feature1, np.s_[:, :, None])(x) *
                                get_eval_func(obj2, feature2, np.s_[:, None, :])(x))
 
-    cov = tf.matrix_diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov
+    if isinstance(p, DiagonalGaussian):
+        if isinstance(obj1, kernels.Kernel) and isinstance(obj2, kernels.Kernel) \
+                and obj1.on_separate_dims(obj2): # no joint expectations required
+
+            eKxz1 = expectation(p, (obj1, feature1))
+            eKxz2 = expectation(p, (obj2, feature2))
+            return eKxz1[:, :, None] * eKxz2[:, None, :]
+
+        else:
+            cov = tf.matrix_diag(p.cov)
+    else:
+        cov = p.cov
     return mvnquad(eval_func, p.mu, cov, quad_points)
 
 
@@ -127,20 +142,20 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
 def expectation(p, obj1, obj2=None, quad_points=None):
     """
     Calculates the expectation <obj1(x) obj2(x)>_p(x)
-    obj1 and obj2 can be kernels, mean functions or None.
+    obj1 and obj2 can be kernels, mean functions or None
 
     Using the multiple-dispatch paradigm the function will select an analytical implementation,
-    if one is available to calculate the expectation, or fall back to a quadrature.
+    if one is available to calculate the expectation, or fall back to a quadrature
 
     A few examples:
         .. Psi statistics
         eKdiag = expectation(pX, kern)  # psi0
-        eKxz = expectation(pX, (kern, feat))  # psi1
+        eKxz = expectation(pX, (kern, feat))
         eKzxKxz = expectation(pX, (kern, feat), (kern, feat))  # psi2
 
         .. kernels and mean functions
         eKzxMx = expectation(pX, (kern, feat), mean)
-        eMxKxz = expectation(pX, mean, (kern, feat))
+        eMxKxz = expectation(pX, mean, (kern, feat))  # Psi1
 
         .. only mean functions
         eMx = expectation(pX, mean)
@@ -175,8 +190,7 @@ def _expectation(p, kern, none1, none2, none3):
     """
     Compute the expectation:
     <diag(K_{X, X})>_p(X)
-        - K_{.,.}   :: RBF kernel
-    This expression is also known as Psi0
+        - K_{.,.} :: RBF kernel
 
     :return: N
     """
@@ -188,8 +202,7 @@ def _expectation(p, kern, feat, none1, none2):
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
-        - K_{.,.}   :: RBF kernel
-    This expression is also known as Psi1
+        - K_{.,.} :: RBF kernel
 
     :return: NxM
     """
@@ -224,7 +237,7 @@ def _expectation(p, mean, none, kern, feat):
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
-        - K_{.,.}   :: RBF kernel
+        - K_{.,.} :: RBF kernel
 
     :return: NxDxM
     """
@@ -268,7 +281,7 @@ def _expectation(p, mean, none, kern, feat):
     Compute the expectation:
     expectation[n] = <x_{n+1} K_{x_n, Z}}>_p(x_{n:n+1})
         - K_{.,.} :: RBF kernel
-        - p :: MarkovGaussian distribution (p.cov 2x(N+1)xDxD)
+        - p       :: MarkovGaussian distribution (p.cov 2x(N+1)xDxD)
 
     :return: NxDxM
     """
@@ -308,17 +321,23 @@ def _expectation(p, mean, none, kern, feat):
         return kern.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
 
 
-@dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
+@dispatch((Gaussian, DiagonalGaussian), kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
-        - Ka(.,.) and Kb(.,.)  :: RBF kernels
-    Ka and Kb can have different hyperparameters (Not implemented).
-    If Ka and Kb are equal this expression is also known as Psi2.
+        - Ka_{.,.}, Kb_{.,.} :: RBF kernels
+    Ka and Kb as well as Z1 and Z2 can differ from each other, but this is supported
+    only if the Gaussian p is Diagonal (p.cov NxD) and Ka, Kb have disjoint active_dims
+    in which case the joint expectations simplify into a product of expectations
 
-    :return: N x Ma x Mb
+    :return: NxMxM
     """
+    if kern1.on_separate_dims(kern2) and isinstance(p, DiagonalGaussian):  # no joint expectations required
+        eKxz1 = expectation(p, (kern1, feat1))
+        eKxz2 = expectation(p, (kern2, feat2))
+        return eKxz1[:, :, None] * eKxz2[:, None, :]
+
     if feat1 != feat2 or kern1 != kern2:
         raise NotImplementedError("The expectation over two kernels has only an "
                                   "analytical implementation if both kernels are equal.")
@@ -367,8 +386,7 @@ def _expectation(p, kern, none1, none2, none3):
     """
     Compute the expectation:
     <diag(K_{X, X})>_p(X)
-        - K_{.,.}   :: Linear kernel
-    This expression is also known as Psi0
+        - K_{.,.} :: Linear kernel
 
     :return: N
     """
@@ -385,8 +403,7 @@ def _expectation(p, kern, feat, none1, none2):
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
-        - K_{.,.}   :: Linear kernel
-    This expression is also known as Psi1
+        - K_{.,.} :: Linear kernel
 
     :return: NxM
     """
@@ -403,7 +420,7 @@ def _expectation(p, mean, none, kern, feat):
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
-        - K_{.,.}   :: Linear kernel
+        - K_{.,.} :: Linear kernel
 
     :return: NxDxM
     """
@@ -432,7 +449,7 @@ def _expectation(p, mean, none, kern, feat):
     Compute the expectation:
     expectation[n] = <x_{n+1} K_{x_n, Z}}>_p(x_{n:n+1})
         - K_{.,.} :: Linear kernel
-        - p :: MarkovGaussian distribution (p.cov 2x(N+1)xDxD)
+        - p       :: MarkovGaussian distribution (p.cov 2x(N+1)xDxD)
 
     :return: NxDxM
     """
@@ -457,16 +474,23 @@ def _expectation(p, mean, none, kern, feat):
         return kern.variance * tf.matmul(tf.tile(tf.expand_dims(Z, 0), (N, 1, 1)), op)
 
 
-@dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
+@dispatch((Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     Compute the expectation:
-    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n)
-        - Ka(.,.) and Kb(.,.)   :: Linear kernels
-    This expression is also known as Psi2
+    expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
+        - Ka_{.,.}, Kb_{.,.} :: Linear kernels
+    Ka and Kb as well as Z1 and Z2 can differ from each other, but this is supported
+    only if the Gaussian p is Diagonal (p.cov NxD) and Ka, Kb have disjoint active_dims
+    in which case the joint expectations simplify into a product of expectations
 
     :return: NxMxM
     """
+    if kern1.on_separate_dims(kern2) and isinstance(p, DiagonalGaussian):  # no joint expectations required
+        eKxz1 = expectation(p, (kern1, feat1))
+        eKxz2 = expectation(p, (kern2, feat2))
+        return eKxz1[:, :, None] * eKxz2[:, None, :]
+
     if kern1 != kern2 or feat1 != feat2:
         raise NotImplementedError("The expectation over two kernels has only an "
                                   "analytical implementation if both kernels are equal.")
@@ -508,7 +532,7 @@ def _expectation(p, linear_mean, none, kern, feat):
     Compute the expectation:
     expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
         - m(x_i) = A x_i + b :: Linear mean function
-        - K_{.,.}             :: RBF or Linear kernel
+        - K_{.,.}            :: Kernel function
 
     :return: NxQxM
     """
@@ -530,7 +554,7 @@ def _expectation(p, constant_mean, none, kern, feat):
     Compute the expectation:
     expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
         - m(x_i) = c :: Constant function
-        - K_{.,.}     :: RBF or Linear kernel
+        - K_{.,.}    :: Kernel function
 
     :return: NxQxM
     """
@@ -579,7 +603,7 @@ def _expectation(p, mean1, none1, mean2, none2):
     Compute the expectation:
     expectation[n] = <m1(x_n)^T m2(x_n)>_p(x_n)
         - m1(.) :: Constant mean function
-        - m2(.) :: general mean function
+        - m2(.) :: General mean function
 
     :return: NxQ1xQ2
     """
@@ -594,8 +618,8 @@ def _expectation(p, mean1, none1, mean2, none2):
     """
     Compute the expectation:
     expectation[n] = <m1(x_n)^T m2(x_n)>_p(x_n)
-        - m1(.) :: general mean function
-        - m2(.) :: constant mean function
+        - m1(.) :: General mean function
+        - m2(.) :: Constant mean function
 
     :return: NxQ1xQ2
     """
@@ -673,6 +697,7 @@ def _expectation(p, kern, none1, none2, none3):
     """
     Compute the expectation:
     <\Sum_i diag(Ki_{X, X})>_p(X)
+        - \Sum_i Ki_{.,.} :: Sum kernel
 
     :return: N
     """
@@ -685,6 +710,7 @@ def _expectation(p, kern, feat, none2, none3):
     """
     Compute the expectation:
     <\Sum_i Ki_{X, Z}>_p(X)
+        - \Sum_i Ki_{.,.} :: Sum kernel
 
     :return: NxM
     """
@@ -699,6 +725,7 @@ def _expectation(p, mean, none, kern, feat):
     """
     Compute the expectation:
     expectation[n] = <m(x_n)^T (\Sum_i Ki_{x_n, Z})>_p(x_n)
+        - \Sum_i Ki_{.,.} :: Sum kernel
 
     :return: NxQxM
     """
@@ -711,6 +738,7 @@ def _expectation(p, mean, none, kern, feat):
     """
     Compute the expectation:
     expectation[n] = <x_{n+1} (\Sum_i Ki_{x_n, Z})>_p(x_{n:n+1})
+        - \Sum_i Ki_{.,.} :: Sum kernel
 
     :return: NxDxM
     """
@@ -718,13 +746,14 @@ def _expectation(p, mean, none, kern, feat):
         expectation(p, mean, (k, feat)) for k in kern.kern_list])
 
 
-@dispatch(Gaussian, kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
+@dispatch((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     Compute the expectation:
-    expectation[n] = <(\Sum_i K1_i_{Z, x_n}) (\Sum_j K2_j_{x_n, Z})>_p(x_n)
+    expectation[n] = <(\Sum_i K1_i_{Z1, x_n}) (\Sum_j K2_j_{x_n, Z2})>_p(x_n)
+        - \Sum_i K1_i_{.,.}, \Sum_j K2_j_{.,.} :: Sum kernels
 
-    :return: NxMxM
+    :return: NxM1xM2
     """
 
     crossexps = []
@@ -745,32 +774,31 @@ def _expectation(p, kern1, feat1, kern2, feat2):
     return functools.reduce(tf.add, crossexps)
 
 
-def cross_eKK(p, k1, feat1, k2, feat2):
-    """
-    Checks if kernels k1, k2 act on disjoint sets of
-    dimensions to potentially simplify computation
-    """
-    if k1.on_separate_dims(k2):  # TODO Need diagonal check?
-        eKxz1 = expectation(p, (k1, feat1))
-        eKxz2 = expectation(p, (k2, feat2))
-        result = eKxz1[:, :, None] * eKxz2[:, None, :]
-    else:
-        result = expectation(p, (k1, feat1), (k2, feat2))
-    return result
+# Cross Kernel expectations (eK1zxK2xz):
 
-
-@dispatch(Gaussian, kernels.Linear, InducingPoints, kernels.RBF, InducingPoints)
+@dispatch((Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.RBF, InducingPoints)
 def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
     """
     Compute the expectation:
-    expectation[n] = <Ka_{Z, x_n} Kb_{x_n, Z}>_p(x_n)
-        - Ka_{.,.} :: Linear kernel
-        - Kb_{.,.} :: RBF kernel
+    expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
+        - K_lin_{.,.} :: Linear kernel
+        - K_rbf_{.,.} :: RBF kernel
+    Different Z1 and Z2 are handled if p is diagonal and K_lin and K_rbf have disjoint
+    active_dims, in which case the joint expectations simplify into a product of expectations
 
-    :return: NxMxM
+    :return: NxM1xM2
     """
+
+    if lin_kern.on_separate_dims(rbf_kern) and isinstance(p, DiagonalGaussian):  # no joint expectations required
+        eKxz1 = expectation(p, (lin_kern, feat1))
+        eKxz2 = expectation(p, (rbf_kern, feat2))
+        return eKxz1[:, :, None] * eKxz2[:, None, :]
+
     if feat1 != feat2:
         raise NotImplementedError("Features have to be the same for both kernels")
+
+    if lin_kern.active_dims != rbf_kern.active_dims:
+        raise NotImplementedError("active_dims have to be the same for both kernels")
 
     with params_as_tensors_for(feat1), \
          params_as_tensors_for(feat2), \
@@ -809,7 +837,7 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
         return cross_eKzxKxz
 
 
-@dispatch(Gaussian, kernels.RBF, InducingPoints, kernels.Linear, InducingPoints)
+@dispatch((Gaussian, DiagonalGaussian), kernels.RBF, InducingPoints, kernels.Linear, InducingPoints)
 def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
     """
     Compute the expectation:
@@ -823,61 +851,80 @@ def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
 
 
 # Product kernels:
-# Note: product kernels are only supported if each kernel acts on its own set of dimensions
+# Note: product kernels are only supported if the kernels in kern.kern_list act on disjoint sets of active_dims
+#       and the Gaussian we are integrating over is Diagonal
 
 @dispatch(DiagonalGaussian, kernels.Product, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3):
     """
     Compute the expectation:
-    <\Prod_i diag(Ki_{X[:, active_dims_i], X[:, active_dims_i]})>_p(X)
+    <\HadamardProd_i diag(Ki_{X[:, active_dims_i], X[:, active_dims_i]})>_p(X)
+        - \HadamardProd_i Ki_{.,.} :: Product kernel
+        - p                        :: DiagonalGaussian distribution (p.cov NxD)
 
     :return: N
     """
     if not kern.on_separate_dimensions:
-        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
-    with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.cov), 2,
-                        message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
-    ]):
-        return functools.reduce(tf.multiply, [
-            expectation(p, k) for k in kern.kern_list])
+        raise NotImplementedError(
+            "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
+
+    return functools.reduce(tf.multiply, [
+        expectation(p, k) for k in kern.kern_list])
 
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3):
+    """
+    Compute the expectation:
+    <\HadamardProd_i Ki_{X[:, active_dims_i], Z[:, active_dims_i]}>_p(X)
+        - \HadamardProd_i Ki_{.,.} :: Product kernel
+        - p                        :: DiagonalGaussian distribution (p.cov NxD)
+
+    :return: NxM
+    """
     if not kern.on_separate_dimensions:
-        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
-    with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.cov), 2,
-                        message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
-    ]):
-        return functools.reduce(tf.multiply, [
-            expectation(p, (k, feat)) for k in kern.kern_list])
+        raise NotImplementedError(
+            "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
+
+    return functools.reduce(tf.multiply, [
+        expectation(p, (k, feat)) for k in kern.kern_list])
+
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2):
+    """
+    Compute the expectation:
+    expectation[n] = < prodK_{Z, x_n} prodK_{x_n, Z} >_p(x_n)
+                   = < (\HadamardProd_i Ki_{Z[:, active_dims_i], x[n, active_dims_i]})  <-- Mx1
+               1xM -->  (\HadamardProd_j Kj_{x[n, active_dims_j], Z[:, active_dims_j]}) >_p(x_n)  (MxM)
+
+        - \HadamardProd_i Ki_{.,.}, \HadamardProd_j Kj_{.,.} :: Product kernels
+        - p                        :: DiagonalGaussian distribution (p.cov NxD)
+
+    :return: NxMxM
+    """
     if feat1 != feat2:
         raise NotImplementedError("Different features are not supported")
-
     if kern1 != kern2:
-        raise NotImplementedError("Calculating the expectation over two different Product kernels is not supported")
+        raise NotImplementedError("Calculating the expectation over two "
+                                  "different Product kernels is not supported")
 
     kern = kern1
     feat = feat1
 
     if not kern.on_separate_dimensions:
-        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
-    with tf.control_dependencies([
-        tf.assert_equal(tf.rank(p.cov), 2,
-                        message="Product currently only supports diagonal Xcov.", name="assert_Xcov_diag"),
-    ]):
-        return functools.reduce(tf.multiply, [
-            expectation(p, (k, feat), (k, feat)) for k in kern.kern_list])
+        raise NotImplementedError(
+            "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
+
+    return functools.reduce(tf.multiply, [
+        expectation(p, (k, feat), (k, feat)) for k in kern.kern_list])
 
 
 # Catching missing DiagonalGaussian implementations by converting to full Gaussian:
 
-@dispatch(DiagonalGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+@dispatch(DiagonalGaussian,
+          object, (InducingFeature, type(None)),
+          object, (InducingFeature, type(None)))
 def _expectation(p, obj1, feat1, obj2, feat2):
     gaussian = Gaussian(p.mu, tf.matrix_diag(p.cov))
     return expectation(gaussian, (obj1, feat1), (obj2, feat2))
@@ -885,16 +932,22 @@ def _expectation(p, obj1, feat1, obj2, feat2):
 
 # Catching missing MarkovGaussian implementations by converting to Gaussian (when appropriate for time-series):
 
-@dispatch(MarkovGaussian, object, (InducingFeature, type(None)), object, (InducingFeature, type(None)))
+@dispatch(MarkovGaussian,
+          object, (InducingFeature, type(None)),
+          object, (InducingFeature, type(None)))
 def _expectation(p, obj1, feat1, obj2, feat2):
 
     if isinstance(obj1, (kernels.Kernel, mean_functions.MeanFunction)) and isinstance(obj2, type(None)):
-        warnings.warn("Converting MarkovGaussian to Gaussian to take expectations")
+        warnings.warn(
+            "Converting MarkovGaussian to Gaussian to take expectations")
+
         gaussian = Gaussian(p.mu, p.cov[0])
         return expectation(gaussian, (obj1, feat1))
 
     elif isinstance(obj1, kernels.Kernel) and isinstance(obj2, kernels.Kernel):
-        warnings.warn("Converting MarkovGaussian to Gaussian to take eKzxKxz expectations")
+        warnings.warn(
+            "Converting MarkovGaussian to Gaussian to take eKzxKxz expectations")
+
         gaussian = Gaussian(p.mu[:-1], p.cov[0, :-1])
         return expectation(gaussian, (obj1, feat1), (obj2, feat2))
 
