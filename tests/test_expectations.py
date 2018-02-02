@@ -29,7 +29,7 @@ from numpy.testing import assert_allclose
 
 
 rng = np.random.RandomState(1)
-RTOL = 1e-15
+RTOL = 1e-6
 
 
 def gen_L(n, *shape):
@@ -107,7 +107,7 @@ def markov_gauss():
 def rbf_prod_separate_dims():
     return kernels.Product([
         kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand(), active_dims=[0]),
-        kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand(), active_dims=[1])
+        kernels.Linear(1, variance=rng.rand(), active_dims=[1])
     ])
 
 
@@ -230,8 +230,3 @@ def test_exKxz_pairwise_no_uncertainty(session_tf, kernel, feature):
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])
 def test_exKxz_pairwise(session_tf, kernel, feature):
     _check((markov_gauss(), (kernel(), feature), identity_mean()))
-
-
-if __name__ == '__main__':
-    with tf.Session() as s:
-        test_exKxz_pairwise_no_uncertainty(s, lin_kern, feature(s))

@@ -92,9 +92,10 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
     Fallback method for missing analytic expectations
     """
+    quad_points = 300 if quad_points is None else quad_points
+
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
-    quad_points = 200 if quad_points is None else quad_points
 
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
@@ -131,9 +132,10 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
                if one requires e.g. <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1}), compute the
                transpose and then transpose the result of the expectation
     """
+    quad_points = 40 if quad_points is None else quad_points
+
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
-    quad_points = 50 if quad_points is None else quad_points
 
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(tf.split(x, 2, 1)[0])
@@ -386,10 +388,11 @@ def _expectation(p, kern1, feat1, kern2, feat2):
         mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
         z_CC_inv_z = tf.reduce_sum(tf.square(C_inv_z), 1)  # NxM
         zm_CC_inv_zn = tf.matmul(C_inv_z, C_inv_z, transpose_a=True)  # NxMxM
-        two_z_CC_inv_mu = 2 * tf.matmul(C_inv_z, C_inv_mu, transpose_a=True)  # NxMx1
+        two_z_CC_inv_mu = 2 * tf.matmul(C_inv_z, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM
 
-        exponent_mahalanobis = mu_CC_inv_mu + tf.expand_dims(z_CC_inv_z, 1) + tf.expand_dims(z_CC_inv_z, 2) + \
-                               2 * zm_CC_inv_zn - two_z_CC_inv_mu - tf.transpose(two_z_CC_inv_mu, [0, 2, 1])  # NxMxM
+        exponent_mahalanobis = mu_CC_inv_mu + tf.expand_dims(z_CC_inv_z, 1) + \
+                               tf.expand_dims(z_CC_inv_z, 2) + 2 * zm_CC_inv_zn - \
+                               tf.expand_dims(two_z_CC_inv_mu, 2) - tf.expand_dims(two_z_CC_inv_mu, 1)  # NxMxM
         exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxMxM
 
         return kern.variance ** 1.5 * tf.sqrt(kern.K(Z, presliced=True)) * \
@@ -525,7 +528,7 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 
 @dispatch((Gaussian, MarkovGaussian),
           mean_functions.Identity, type(None),
-          kernels.Linear, InducingFeature)
+          kernels.Linear, InducingPoints)
 def _expectation(p, mean, none, kern, feat):
     """
     Compute the expectation:
@@ -845,7 +848,8 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
 
         chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(rbf_kern_lengthscales ** 2) + Xcov)  # NxDxD
 
-        all_diffs = tf.transpose(Z) - tf.expand_dims(Xmu, 2)  # NxDxM
+        Z_transpose = tf.transpose(Z)
+        all_diffs = Z_transpose - tf.expand_dims(Xmu, 2)  # NxDxM
         exponent_mahalanobis = tf.matrix_triangular_solve(chol_L_plus_Xcov, all_diffs, lower=True)  # NxDxM
         exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
         exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
@@ -855,10 +859,12 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
         determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
         eKxz_rbf = rbf_kern.variance * (determinants[:, None] * exponent_mahalanobis)  ## NxM <- End RBF eKxz code
 
-        tiled_Z = tf.tile(tf.expand_dims(Z, 0), (N, 1, 1))  # NxMxD
-        cross_eKzxKxz = tf.cholesky_solve(chol_L_plus_Xcov,
-                                          tf.transpose((lin_kern_variances * rbf_kern_lengthscales ** 2.) * tiled_Z, [0, 2, 1]))
-        z_L_inv_Xcov = tf.matmul(tiled_Z, Xcov / rbf_kern_lengthscales[:, None] ** 2.)  # NxMxD
+        tiled_Z = tf.tile(tf.expand_dims(Z_transpose, 0), (N, 1, 1))  # NxDxM
+        z_L_inv_Xcov = tf.matmul(tiled_Z, Xcov / rbf_kern_lengthscales[:, None] ** 2., transpose_a=True)  # NxMxD
+
+        cross_eKzxKxz = tf.cholesky_solve(
+            chol_L_plus_Xcov, (lin_kern_variances * rbf_kern_lengthscales ** 2.)[..., None] * tiled_Z)  # NxDxM
+
         cross_eKzxKxz = tf.matmul((z_L_inv_Xcov + Xmu[:, None, :]) * eKxz_rbf[..., None], cross_eKzxKxz)  # NxMxM
         return cross_eKzxKxz
 
