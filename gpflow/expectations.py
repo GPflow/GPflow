@@ -15,12 +15,13 @@
 import functools
 import itertools as it
 import tensorflow as tf
+import numpy as np
 
 from . import kernels, mean_functions, settings
 from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from .expectations_quadrature import dispatch, quadrature_fallback
 from .features import InducingFeature, InducingPoints
-from .decors import params_as_tensors_for
+from .decors import nested_with, params_as_tensors_for
 
 
 def expectation(p, obj1, obj2=None):
@@ -278,50 +279,107 @@ def _expectation(p, rbf_kern, feat1, lin_kern, feat2):
 def _expectation(p, kern1, feat1, kern2, feat2):
     """
     It computes the expectation:
-    <Ka_{Z, x} Kb_{x, Z}>_p(x), where
+    <Ka_{Za, x} Kb_{x, Zb}>_p(x), where
         - Ka(.,.)  :: RBF kernel
         - Kb(.,.)  :: RBF kernel
-    Ka and Kb can have different hyperparameters (Not implemented).
-    If Ka and Kb are equal this expression is also known as Psi2.
+    Ka and Kb can have different hyperparameters. The active dimensions of Ka
+    and Kb must match.
+    If Ka and Kb, and Za and Zb are equal this expression is also known as Psi2.
 
+    :param feat1: alias Za, shape (Ma,D)
+    :param feat2: alias Zb, shape (Mb,D)
+    :param kern1: RBF kernel to use
+    :param kern2: other RBF kernel to use
     :return: N x Ma x Mb
     """
-    if feat1 != feat2 or kern1 != kern2:
-        raise NotImplementedError("The expectation over two kernels has only a "
-                                  "analytical implementation if both kernels are equal.")
+    if not np.array_equal(kern1.active_dims, kern2.active_dims):
+        raise NotImplementedError("The expectation over two kernels with "
+                                  "different active dimensions probably has an "
+                                  "analytical expression, but is not "
+                                  "implemented.")
+    tf_float = kern1.lengthscales.dtype
+    Ka, Kb = kern1, kern2
+    unique_feat_kern = set([kern1, kern2, feat1, feat2])
 
-    kern = kern1
-    feat = feat1
-
-    with params_as_tensors_for(kern), \
-         params_as_tensors_for(feat):
-
+    with nested_with(map(params_as_tensors_for, unique_feat_kern)):
         # use only active dimensions
-        Xcov = kern._slice_cov(p.cov)
-        Z, Xmu = kern._slice(feat.Z, p.mu)
-        M = tf.shape(Z)[0]
+        Xcov = Ka._slice_cov(p.cov)
+        Za, Xmu = Ka._slice(feat1.Z, p.mu)
+        Ma = tf.shape(Za)[0]
+        if feat1 != feat2:
+            Zb, _ = Ka._slice(feat2.Z, None)
+            Mb = tf.shape(Zb)[0]
+        else:
+            Zb = Za
+            Mb = Ma
         N = tf.shape(Xmu)[0]
         D = tf.shape(Xmu)[1]
-        lengthscales = kern.lengthscales if kern.ARD \
-                        else tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales
 
-        Kmms = tf.exp(-kern.square_dist(Z, None) / 4)
+        # The common expressions that go out of both if branches are:
+        #  * `cov_scaling = inv(inv(La) + inv(Lb))`. Since the inverse of a
+        #    diagonal matrix is just the inverse of its diagonal, we can compute
+        #    cov_scaling as `1/(1/La + 1/Lb) = (La * Lb) / (La + Lb)`
+        #    Furthermore, if `La = Lb`, then:
+        #    `cov_scaling = (La * La) / (2 * La) = La / 2`
+        #  * `Kmms = exp(-1/2 (Za - Zb) @ inv(La + Lb) @ (Za - Zb))`
+        #     When `La = Lb`, `inv(La + La) = 1/2 (1/La)`.
+        #  * `vec = Lb @ inv(La + Lb) @ Za + La @ inv(La + Lb) @ Za - Xmu`. If
+        #    `La = Lb`, that reduces to `Lb inv(La + Lb) = La inv(2*La) = 1/2`.
+        if Kb == Ka:
+            combined_var = tf.square(Ka.variance)
+            La = Lb = tf.square(Ka.lengthscales)
+            cov_scaling = La / 2.
+            if Zb == Za:
+                Kmms = tf.exp(-.25 * Ka.square_dist(Za, None))  # Ma,Mb
+            else:
+                Kmms = tf.exp(-.25 * Ka.square_dist(Za, Zb))  # Ma,Mb
+            vec = (0.5 * (tf.reshape(tf.transpose(Zb), [1, D, 1, Mb])
+                          + tf.reshape(tf.transpose(Za), [1, D, Ma, 1]))
+                  - tf.reshape(Xmu, [N, D, 1, 1]))        # N,D,Ma,Mb
+        else:
+            combined_var = Ka.variance * Kb.variance
+            La, Lb = map(tf.square, (Ka.lengthscales, Kb.lengthscales))
+            L_ab = 1/(La + Lb)
+            La_ab = La * L_ab
+            Lb_ab = Lb * L_ab
+            cov_scaling = Lb * La_ab
 
-        scalemat = (tf.expand_dims(tf.eye(D, dtype=settings.tf_float), 0)
-                    + 2 * Xcov * tf.reshape(lengthscales ** -2.0, [1, 1, -1]))  # NxDxD
-        det = tf.matrix_determinant(scalemat)
+            # This is `square_dist` but in a less efficient way. The efficient
+            # way would require taking sqrt(La + Lb) which is a little less
+            # precise.
+            with tf.name_scope("square_dist"):
+                Za2 = tf.reduce_sum(tf.square(Za) * L_ab, axis=1) # Ma
+                if Za == Zb:
+                    Zb2 = Za2
+                else:
+                    Zb2 = tf.reduce_sum(tf.square(Zb) * L_ab, axis=1) # Mb
+                dist = (-2 * tf.matmul(Za * L_ab, Zb, transpose_b=True) # Ma, Mb
+                        + tf.expand_dims(Za2, 1) + Zb2)
+            Kmms = tf.exp(-.5 * dist)
 
-        mat = Xcov + 0.5 * tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0)  # NxDxD
+
+            vec = (tf.reshape(tf.transpose(La_ab * Zb), [1, D, 1, Mb])
+                   + tf.reshape(tf.transpose(Lb_ab * Za), [1, D, Ma, 1])
+                   - tf.reshape(Xmu, [N, D, 1, 1]))
+
+        # It doesn't matter if we left- or right-multiply Xcov, because we just
+        # take the determinant of this.
+        scalemat = tf.eye(D, dtype=tf_float) + Xcov / cov_scaling  # NxDxD
+        det = tf.rsqrt(tf.matrix_determinant(scalemat))
+
+        # It doesn't matter if we left- or right-multiply eye. We do this
+        # instead of `tf.diag` because `cov_scaling` may be a scalar.
+        mat = Xcov + tf.eye(D, dtype=tf_float) * cov_scaling  # NxDxD
+
         cm = tf.cholesky(mat)  # NxDxD
-        vec = 0.5 * (tf.reshape(tf.transpose(Z), [1, D, 1, M]) +
-                     tf.reshape(tf.transpose(Z), [1, D, M, 1])) - tf.reshape(Xmu, [N, D, 1, 1])  # NxDxMxM
-        svec = tf.reshape(vec, (N, D, M * M))
-        ssmI_z = tf.matrix_triangular_solve(cm, svec)  # NxDx(M*M)
-        smI_z = tf.reshape(ssmI_z, (N, D, M, M))  # NxDxMxM
-        fs = tf.reduce_sum(tf.square(smI_z), [1])  # NxMxM
+        # vec comes from before
+        svec = tf.reshape(vec, (N, D, Ma * Mb))
+        ssmI_z = tf.matrix_triangular_solve(cm, svec)  # N,D,Ma*Mb
+        smI_z = tf.reshape(ssmI_z, (N, D, Ma, Mb))  # N,D,Ma,Mb
+        fs = tf.reduce_sum(tf.square(smI_z), axis=1)  # N,Ma,Mb
 
-        return (kern.variance**2 * tf.expand_dims(Kmms, 0)
-                * tf.exp(-0.5 * fs) * tf.reshape(det ** -0.5, [N, 1, 1]))
+        return (((combined_var * tf.reshape(det, [N, 1, 1])) * Kmms)
+                * tf.exp(-0.5 * fs))
 
 
 @dispatch(Gaussian, kernels.Linear, type(None), type(None), type(None))

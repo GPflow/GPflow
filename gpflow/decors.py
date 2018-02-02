@@ -195,3 +195,17 @@ def _session_run(session, obj, store, *args, **kwargs):
 
 def _build_method(method, obj, store):
     store['result'] = method(obj, *store['arguments'])
+
+@contextlib.contextmanager
+def nested_with(generator):
+    "Implemented according to the Specification in PEP 343"
+    try:
+        mgr = next(generator)
+        mgr.__enter__()
+        try:
+            with nested_with(generator):
+                yield
+        finally:
+            mgr.__exit__(None, None, None)
+    except StopIteration:
+        yield
