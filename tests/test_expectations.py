@@ -29,7 +29,7 @@ from numpy.testing import assert_allclose
 
 
 rng = np.random.RandomState(1)
-RTOL = 1e-4
+RTOL = 1e-15
 
 
 def gen_L(n, *shape):
@@ -222,11 +222,16 @@ def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
 def test_exKxz_pairwise_no_uncertainty(session_tf, kernel, feature):
     exKxz_pairwise = expectation(dirac_markov_gauss(), (kernel(), feature), identity_mean())
     exKxz_pairwise = session_tf.run(exKxz_pairwise)
-    Kxz = kernel().compute_K(Data.Xmu[:-1, :], Data.Z)  # NxM
-    xKxz_pairwise = np.einsum('nm,nd->nmd', Kxz, Data.Xmu[1:, :])
+    Kzx = kernel().compute_K(Data.Xmu[:-1, :], Data.Z)  # NxM
+    xKxz_pairwise = Kzx[..., None] * Data.Xmu[1:, None, :]  # NxMxD
     assert_allclose(exKxz_pairwise, xKxz_pairwise, rtol=RTOL)
 
 
 @pytest.mark.parametrize("kernel", [rbf, lin_kern, rbf_lin_sum])
 def test_exKxz_pairwise(session_tf, kernel, feature):
     _check((markov_gauss(), (kernel(), feature), identity_mean()))
+
+
+if __name__ == '__main__':
+    with tf.Session() as s:
+        test_exKxz_pairwise_no_uncertainty(s, lin_kern, feature(s))

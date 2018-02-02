@@ -37,6 +37,21 @@ dispatch = partial(dispatch, namespace=gpflow_md_namespace)
 # QUADRATURE EXPECTATIONS:
 
 def quadrature_expectation(p, obj1, obj2=None, quad_points=None):
+    """
+    Compute the expectation <obj1(x) obj2(x)>_p(x) using quadrature
+    p can be a (mu, cov) tuple or a probability_distribution
+    obj1 and obj2 can be kernels, mean functions, (kernel, features) tuples, or None
+    """
+    if isinstance(p, tuple):
+        assert(len(p) == 2)
+
+        if   p[1].shape.ndims == 2:
+            p = DiagonalGaussian(*p)
+        elif p[1].shape.ndims == 3:
+            p = Gaussian(*p)
+        elif p[1].shape.ndims == 4:
+            p = MarkovGaussian(*p)
+
     if isinstance(obj1, tuple):
         obj1, feat1 = obj1
     else:
@@ -74,7 +89,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
           (int, type(None)))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
     """
-    General handling of quadrature expectations
+    General handling of quadrature expectations for Gaussians and DiagonalGaussians
     Fallback method for missing analytic expectations
     """
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
@@ -93,8 +108,8 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
         if isinstance(obj1, kernels.Kernel) and isinstance(obj2, kernels.Kernel) \
                 and obj1.on_separate_dims(obj2): # no joint expectations required
 
-            eKxz1 = expectation(p, (obj1, feature1))
-            eKxz2 = expectation(p, (obj2, feature2))
+            eKxz1 = quadrature_expectation(p, (obj1, feature1), quad_points=quad_points)
+            eKxz2 = quadrature_expectation(p, (obj2, feature2), quad_points=quad_points)
             return eKxz1[:, :, None] * eKxz2[:, None, :]
 
         else:
@@ -110,12 +125,11 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
           (int, type(None)))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
     """
-    Implements quadrature expectations for Markov Gaussians (useful for time series)
+    Handling of quadrature expectations for Markov Gaussians (useful for time series)
     Fallback method for missing analytic expectations wrt Markov Gaussians
     Nota Bene: obj1 is always associated with x_n, whereas obj2 always with x_{n+1}
-               if one requires e.g. <x_{n+1} K_{x_n, Z}}>_p(x_{n:n+1}), a transpose is required;
-               if one requires e.g. <K_{Z, x_n} K_{x_n, Z}>_p(x_n) for n = 1,...,(p.cov.shape[1]-1)
-               there is a method converting the MarkovGaussian to a Gaussian
+               if one requires e.g. <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1}), compute the
+               transpose and then transpose the result of the expectation
     """
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
@@ -141,31 +155,43 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
 
 def expectation(p, obj1, obj2=None, quad_points=None):
     """
-    Calculates the expectation <obj1(x) obj2(x)>_p(x)
-    obj1 and obj2 can be kernels, mean functions or None
+    Compute the expectation <obj1(x) obj2(x)>_p(x)
+    p can be a (mu, cov) tuple or a probability_distribution
+    obj1 and obj2 can be kernels, mean functions, (kernel, features) tuples, or None
 
-    Using the multiple-dispatch paradigm the function will select an analytical implementation,
-    if one is available to calculate the expectation, or fall back to a quadrature
+    Using the multiple-dispatch paradigm the function will select an
+    analytical implementation, if one is available, or fall back to quadrature
 
-    A few examples:
+    Allowed combinations:
         .. Psi statistics
-        eKdiag = expectation(pX, kern)  # psi0
-        eKxz = expectation(pX, (kern, feat))
-        eKzxKxz = expectation(pX, (kern, feat), (kern, feat))  # psi2
+        eKdiag = expectation(p, kern)  (N)  # psi0
+        eKxz = expectation(p, (kern, feat))  (NxM)
+        exKxz = expectation(p, identity_mean, (kern, feat))  (NxDxM)  # Psi1
+        eKzxKxz = expectation(p, (kern, feat), (kern, feat))  (NxMxM)  # psi2
 
         .. kernels and mean functions
-        eKzxMx = expectation(pX, (kern, feat), mean)
-        eMxKxz = expectation(pX, mean, (kern, feat))  # Psi1
+        eKzxMx = expectation(p, (kern, feat), mean)  (NxMxQ)
+        eMxKxz = expectation(p, mean, (kern, feat))  (NxQxM)
 
         .. only mean functions
-        eMx = expectation(pX, mean)
-        eMx_sq = expectation(pX, mean, mean)
+        eMx = expectation(p, mean)  (NxQ)
+        eM1x_M2x = expectation(p, mean1, mean2)  (NxQ1xQ2)
         Note: mean(x) is 1xQ (row vector)
 
         .. different kernels
-        .. this occurs when we are calculating Psi2 for Sum kernels
-        eK1zxK2xz = expectation(pX, (feat, kern1), (feat, kern2)) # different kernel
+        this occurs, for instance, when we are calculating Psi2 for Sum kernels
+        eK1zxK2xz = expectation(p, (kern1, feat), (kern2, feat))  (NxMxM)
     """
+    if isinstance(p, tuple):
+        assert(len(p) == 2)
+
+        if   p[1].shape.ndims == 2:
+            p = DiagonalGaussian(*p)
+        elif p[1].shape.ndims == 3:
+            p = Gaussian(*p)
+        elif p[1].shape.ndims == 4:
+            p = MarkovGaussian(*p)
+
     if isinstance(obj1, tuple):
         obj1, feat1 = obj1
     else:
@@ -241,18 +267,15 @@ def _expectation(p, mean, none, kern, feat):
 
     :return: NxDxM
     """
-    with params_as_tensors_for(feat), params_as_tensors_for(kern):
+    Xmu, Xcov = p.mu, p.cov
 
-        Xmu = p.mu
-        Xcov = p.cov
+    with tf.control_dependencies([tf.assert_equal(
+            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
+            message="Currently cannot handle slicing in exKxz.")]):
+        Xmu = tf.identity(Xmu)
 
-        msg_input_shape = "Currently cannot handle slicing in exKxz."
-        assert_input_shape = tf.assert_equal(tf.shape(Xmu)[1],
-                                             kern.input_dim, message=msg_input_shape)
-        assert_cov_shape = tf.assert_equal(tf.shape(Xmu),
-                                           tf.shape(Xcov)[:2], name="assert_Xmu_Xcov_shape")
-        with tf.control_dependencies([assert_input_shape, assert_cov_shape]):
-            Xmu = tf.identity(Xmu)
+    with params_as_tensors_for(feat), \
+         params_as_tensors_for(kern):
 
         D = tf.shape(Xmu)[1]
         lengthscales = kern.lengthscales if kern.ARD \
@@ -279,7 +302,7 @@ def _expectation(p, mean, none, kern, feat):
 def _expectation(p, mean, none, kern, feat):
     """
     Compute the expectation:
-    expectation[n] = <x_{n+1} K_{x_n, Z}}>_p(x_{n:n+1})
+    expectation[n] = <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1})
         - K_{.,.} :: RBF kernel
         - p       :: MarkovGaussian distribution (p.cov 2x(N+1)xDxD)
 
@@ -292,50 +315,28 @@ def _expectation(p, mean, none, kern, feat):
             message="Currently cannot handle slicing in exKxz.")]):
         Xmu = tf.identity(Xmu)
 
-    with params_as_tensors_for(kern), \
-         params_as_tensors_for(feat):
+    with params_as_tensors_for(feat), \
+         params_as_tensors_for(kern):
 
         D = tf.shape(Xmu)[1]
-        lengthscales = kern.lengthscales if kern.ARD else \
-            tf.zeros((D,), dtype=settings.float_type) + kern.lengthscales
+        lengthscales = kern.lengthscales if kern.ARD \
+            else tf.zeros((D,), dtype=settings.float_type) + kern.lengthscales
 
-        chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales[:D] ** 2) + Xcov[0])  # NxDxD
+        chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales ** 2) + Xcov[0, :-1])  # NxDxD
         all_diffs = tf.transpose(feat.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
 
-        sqrt_det_L = tf.reduce_prod(lengthscales[:D])
+        sqrt_det_L = tf.reduce_prod(lengthscales)
         sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(chol_L_plus_Xcov)), axis=1))
         determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
         exponent_mahalanobis = tf.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
-        non_eponent_term = tf.matmul(Xcov[1], exponent_mahalanobis, transpose_a=True)
-        non_eponent_term = tf.transpose(tf.expand_dims(Xmu[1:], 2) + non_eponent_term, [0, 2, 1])  # NxMxD
+        non_exponent_term = tf.matmul(Xcov[1, :-1], exponent_mahalanobis, transpose_a=True)
+        non_exponent_term = tf.expand_dims(Xmu[1:], 2) + non_exponent_term  # NxDxM
 
         exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
         exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-        return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_eponent_term
-
-        N = tf.shape(Xmu)[0] - 1
-        D = tf.shape(Xmu)[1]
-        Xsigmb = tf.slice(Xcov, [0, 0, 0, 0], tf.stack([-1, N, -1, -1]))
-        Xsigm = Xsigmb[0, :, :, :]  # NxDxD
-        Xsigmc = Xsigmb[1, :, :, :]  # NxDxD
-        Xmum = tf.slice(Xmu, [0, 0], tf.stack([N, -1]))
-        Xmup = Xmu[1:, :]
-        lengthscales = kern.lengthscales if kern.ARD else tf.zeros((D,), dtype=settings.float_type) + kern.lengthscales
-        scalemat = tf.expand_dims(tf.matrix_diag(lengthscales ** 2.0), 0) + Xsigm  # NxDxD
-
-        det = tf.matrix_determinant(
-            tf.expand_dims(tf.eye(tf.shape(Xmu)[1], dtype=settings.float_type), 0) +
-            tf.reshape(lengthscales ** -2.0, (1, 1, -1)) * Xsigm)  # N
-
-        vec = tf.expand_dims(tf.transpose(Z), 0) - tf.expand_dims(Xmum, 2)  # NxDxM
-        smIvec = tf.matrix_solve(scalemat, vec)  # NxDxM
-        q = tf.reduce_sum(smIvec * vec, [1])  # NxM
-
-        addvec = tf.matmul(smIvec, Xsigmc, transpose_a=True) + tf.expand_dims(Xmup, 1)  # NxMxD
-
-        return kern.variance * addvec * tf.reshape(det ** -0.5, (N, 1, 1)) * tf.expand_dims(tf.exp(-0.5 * q), 2)
+        return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
 @dispatch((Gaussian, DiagonalGaussian), kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
@@ -364,7 +365,6 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 
     with params_as_tensors_for(kern), \
          params_as_tensors_for(feat):
-
         # use only active dimensions
         Xcov = kern._slice_cov(p.cov)
         Z, Xmu = kern._slice(feat.Z, p.mu)
@@ -432,56 +432,56 @@ def _expectation(p, kern, feat, none1, none2):
         return tf.matmul(Xmu, Z * kern.variance, transpose_b=True)
 
 
-@dispatch(Gaussian, mean_functions.Identity, type(None), kernels.Linear, InducingPoints)
-def _expectation(p, mean, none, kern, feat):
+@dispatch(Gaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
+def _expectation(p, kern, feat, mean, none):
     """
     Compute the expectation:
-    expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
+    expectation[n] = <K_{Z, x_n} x_n^T>_p(x_n)
         - K_{.,.} :: Linear kernel
 
-    :return: NxDxM
+    :return: NxMxD
     """
     Xmu, Xcov = p.mu, p.cov
 
     with tf.control_dependencies([tf.assert_equal(
             tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
-            message="Currently cannot handle slicing in exKxz")]):
+            message="Currently cannot handle slicing in exKxz.")]):
         Xmu = tf.identity(Xmu)
 
     with params_as_tensors_for(kern), \
-         params_as_tensors_for(mean), \
          params_as_tensors_for(feat):
 
         N = tf.shape(Xmu)[0]
-        var_Z = tf.transpose(kern.variance * feat.Z)  # DxM
-        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxDxM
-        return tf.matmul(Xcov + Xmu[..., None] * Xmu[:, None, :], tiled_Z)
+        var_Z = kern.variance * feat.Z  # MxD
+        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
+        return tf.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
 
 
-@dispatch(MarkovGaussian, mean_functions.Identity, type(None), kernels.Linear, InducingPoints)
-def _expectation(p, mean, none, kern, feat):
+@dispatch(MarkovGaussian, kernels.Linear, InducingPoints, mean_functions.Identity, type(None))
+def _expectation(p, kern, feat, mean, none):
     """
     Compute the expectation:
-    expectation[n] = <x_{n+1} K_{x_n, Z}}>_p(x_{n:n+1})
+    expectation[n] = <K_{Z, x_n} x_{n+1}^T>_p(x_{n:n+1})
         - K_{.,.} :: Linear kernel
         - p       :: MarkovGaussian distribution (p.cov 2x(N+1)xDxD)
 
-    :return: NxDxM
+    :return: NxMxD
     """
     Xmu, Xcov = p.mu, p.cov
 
     with tf.control_dependencies([tf.assert_equal(
             tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
-            message="Currently cannot handle slicing in exKxz")]):
+            message="Currently cannot handle slicing in exKxz.")]):
         Xmu = tf.identity(Xmu)
 
     with params_as_tensors_for(kern), \
          params_as_tensors_for(feat):
 
         N = tf.shape(Xmu)[0] - 1
-        var_Z = tf.transpose(kern.variance * feat.Z)  # DxM
-        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxDxM
-        return tf.matmul(Xcov[1, :-1] + (Xmu[:-1][..., None] * Xmu[1:][:, None, :]), tiled_Z)
+        var_Z = kern.variance * feat.Z  # MxD
+        tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
+        eXX = Xcov[1, :-1] + (Xmu[:-1][..., None] * Xmu[1:][:, None, :])  # NxDxD
+        return tf.matmul(tiled_Z, eXX)
 
 
 @dispatch((Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
@@ -524,12 +524,28 @@ def _expectation(p, kern1, feat1, kern2, feat2):
 # exKxz transpose and mean function handling:
 
 @dispatch((Gaussian, MarkovGaussian),
+          mean_functions.Identity, type(None),
+          kernels.Linear, InducingFeature)
+def _expectation(p, mean, none, kern, feat):
+    """
+    Compute the expectation:
+    expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
+        - K_{.,} :: Linear kernel
+    or the equivalent for MarkovGaussian
+
+    :return: NxDxM
+    """
+    return tf.matrix_transpose(expectation(p, (kern, feat), mean))
+
+
+@dispatch((Gaussian, MarkovGaussian),
           kernels.Kernel, InducingFeature,
           mean_functions.MeanFunction, type(None))
 def _expectation(p, kern, feat, mean, none):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n)
+    or the equivalent for MarkovGaussian
 
     :return: NxMxQ
     """
@@ -805,10 +821,10 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
         return eKxz1[:, :, None] * eKxz2[:, None, :]
 
     if feat1 != feat2:
-        raise NotImplementedError("Features have to be the same for both kernels")
+        raise NotImplementedError("Features have to be the same for both kernels.")
 
     if lin_kern.active_dims != rbf_kern.active_dims:
-        raise NotImplementedError("active_dims have to be the same for both kernels")
+        raise NotImplementedError("active_dims have to be the same for both kernels.")
 
     with params_as_tensors_for(feat1), \
          params_as_tensors_for(feat2), \
@@ -914,10 +930,10 @@ def _expectation(p, kern1, feat1, kern2, feat2):
     :return: NxMxM
     """
     if feat1 != feat2:
-        raise NotImplementedError("Different features are not supported")
+        raise NotImplementedError("Different features are not supported.")
     if kern1 != kern2:
         raise NotImplementedError("Calculating the expectation over two "
-                                  "different Product kernels is not supported")
+                                  "different Product kernels is not supported.")
 
     kern = kern1
     feat = feat1
@@ -940,7 +956,7 @@ def _expectation(p, obj1, feat1, obj2, feat2):
     return expectation(gaussian, (obj1, feat1), (obj2, feat2))
 
 
-# Catching missing MarkovGaussian implementations by converting to Gaussian (when appropriate for time-series):
+# Catching missing MarkovGaussian implementations by converting to Gaussian (when indifferent):
 
 @dispatch(MarkovGaussian,
           object, (InducingFeature, type(None)),
@@ -949,17 +965,8 @@ def _expectation(p, obj1, feat1, obj2, feat2):
 
     if isinstance(obj1, (kernels.Kernel, mean_functions.MeanFunction)) and isinstance(obj2, type(None)):
         warnings.warn(
-            "Converting MarkovGaussian to Gaussian to take expectations")
-
+            "Converting MarkovGaussian to Gaussian to take expectations.")
         gaussian = Gaussian(p.mu, p.cov[0])
         return expectation(gaussian, (obj1, feat1))
-
-    elif isinstance(obj1, kernels.Kernel) and isinstance(obj2, kernels.Kernel):
-        warnings.warn(
-            "Converting MarkovGaussian to Gaussian to take eKzxKxz expectations")
-
-        gaussian = Gaussian(p.mu[:-1], p.cov[0, :-1])
-        return expectation(gaussian, (obj1, feat1), (obj2, feat2))
-
     else:
         expectation(p, (obj1, feat1), (obj2, feat2))
