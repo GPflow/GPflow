@@ -1,4 +1,4 @@
-# Copyright 2017 the GPflow authors.
+# Copyright 2018 the GPflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,10 +32,6 @@ rng = np.random.RandomState(1)
 RTOL = 1e-6
 
 
-def gen_L(n, *shape):
-    return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
-
-
 class Data:
     num_data = 5
     num_ind = 4
@@ -43,8 +39,8 @@ class Data:
     D_out = 2
 
     Xmu = rng.randn(num_data, D_in)
-    L = gen_L(num_data, D_in, D_in)
-    Xvar = np.array([l @ l.T for l in L])
+    Xcov = rng.randn(num_data, D_in, D_in)
+    Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
     Z = rng.randn(num_ind, D_in)
 
 
@@ -57,7 +53,7 @@ def feature(session_tf):
 def gauss():
     return Gaussian(
         tf.convert_to_tensor(Data.Xmu),
-        tf.convert_to_tensor(Data.Xvar))
+        tf.convert_to_tensor(Data.Xcov))
 
 
 @cache_tensor
@@ -91,11 +87,10 @@ def dirac_markov_gauss():
 @cache_tensor
 def markov_gauss():
     # create the covariance for the pairwise markov-gaussian
-    dummy_gen = lambda rng, n, *shape: np.array([rng.randn(*shape) for _ in range(n)])
     D_in = Data.D_in
-    L_mg = dummy_gen(rng, Data.num_data, D_in, 2*D_in)  # N+1 x D x 2D
-    Xcov = L_mg @ np.transpose(L_mg, (0, 2, 1))  # N+1 x D x D
-    Xcross = L_mg[:-1] @ np.transpose(L_mg[1:], (0, 2, 1))  # N x D x D
+    cov_params = rng.randn(Data.num_data, D_in, 2*D_in)  # N+1 x D x 2D
+    Xcov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # N+1 x D x D
+    Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # N x D x D
     Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # N+1 x D x D
     Xcov = np.stack([Xcov, Xcross])  # 2 x N+1 x D x D
     return MarkovGaussian(
@@ -143,7 +138,7 @@ def identity_mean():
 
 @cache_tensor
 def const_mean():
-    return mean_functions.Constant(rng.randn(Data.D_out))
+    return mean_functions.Constant(rng.randn(Data.D_out)*10)
 
 
 @cache_tensor
