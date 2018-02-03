@@ -190,5 +190,6 @@ class Node(Parentable, ICompilable):
     def __repr__(self):
         type_name = self.__class__.__name__
         name = self.name
-        msg = "<{type_name} '{name}'>"
-        return msg.format(type_name=type_name, name=name)
+        pathname = self.full_name
+        msg = "<{type_name} name='{name}' pathname='{pathname}'>"
+        return msg.format(type_name=type_name, name=name, pathname=pathname)
