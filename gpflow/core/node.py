@@ -154,7 +154,7 @@ class Node(Parentable, ICompilable):
         graph = self.enquire_graph(graph=graph)
         is_built = self.is_built(graph)
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
-            raise GPflowError('Tensor "{}" uses different graph.'.format(self.full_name))
+            raise GPflowError('Tensor "{}" uses different graph.'.format(self.pathname))
         return is_built
 
     def build(self):
@@ -167,8 +167,7 @@ class Node(Parentable, ICompilable):
             default TensorFlow graph.
         """
         if self.is_built_coherence() is Build.NO:
-            name = self.pathname if self.parent is self else self.name
-            with tf.name_scope(name):
+            with tf.name_scope(self.pathname):
                 self._build()
 
     @abc.abstractmethod

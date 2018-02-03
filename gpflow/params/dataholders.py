@@ -73,11 +73,11 @@ class DataHolder(Parameter):
         column_names = ['class', 'shape', 'fixed_shape', 'value']
         column_values = [self.__class__.__name__, self.shape, self.fixed_shape, self.value]
         column_values = [[value] for value in column_values]
-        df = misc.pretty_pandas_table([self.full_name], column_names, column_values)
+        df = misc.pretty_pandas_table([self.pathname], column_names, column_values)
         return df
 
     def _parameter_name(self):
-        return misc.tensor_name(self.hidden_full_name, 'dataholder')
+        return misc.tensor_name(self.pathname, 'dataholder')
 
     def _clear(self):
         self._reset_name()
@@ -242,5 +242,5 @@ class Minibatch(DataHolder):
     def _parameter_name(self):
         name = 'minibatch'
         if self.parent is self:
-            return misc.tensor_name(self.hidden_full_name, name)
+            return misc.tensor_name(self.pathname, name)
         return name

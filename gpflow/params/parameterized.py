@@ -347,7 +347,6 @@ class Parameterized(Node):
             if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
                 raise GPflowError('Cannot be added to assembled node.')
             value.set_parent(self)
-            value.set_name(key)
 
         object.__setattr__(self, key, value)
 

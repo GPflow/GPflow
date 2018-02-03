@@ -21,17 +21,15 @@ class Parentable:
     """
     Very simple class for organizing GPflow objects in a tree.
     Each node contains a reference to the its parent. Links to children
-    established implicitly via attributes.
+    established implicitly via python object attributes.
 
     The Parentable class stores static variable which is used for assigning unique
-    prefix name identificator for each newly created object inherited from Parentable.
+    prefix name identification for each newly created object inherited from Parentable.
 
     Name is not required at `Parentable` object creation.
-    But in this case, unique index identifier will be attached to the hidden name
-    (internal representation name). The index is cut off, once node is placed under
-    another parent node.
+    But in this case, unique index identifier will be attached to the class name.
 
-    :param name: String parentable nodes name.
+    :param name: String name.
     """
 
     __index = 0
@@ -85,7 +83,11 @@ class Parentable:
         """
         if self._parent is None:
             return self.name
-        return misc.tensor_name(self._parent.full_name, self.name)
+        parent = self._parent
+        return misc.tensor_name(parent.pathname, parent.child_name(self))
+
+    def child_name(self, child):
+
 
     def set_name(self, name=None):
         self._name = self._define_name(name) if name is None else name
