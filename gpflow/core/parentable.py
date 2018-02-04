@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import uuid
 
 from .. import misc
@@ -74,29 +75,78 @@ class Parentable:
         Path name is a recursive representation parent path name plus the name
         which was assigned to this object by its parent. In other words, it is
         stack of parent name where top is always parent's original name:
-        `parent.pathname + parent.child_name` and stop condition is root's
+        `parent.pathname + parent.childname` and stop condition is root's
         name.
 
         For example, the pathname of an instance with the two parents may look
-        like `parent0/parent1/child_name_at_parent1`.
+        like `parent0/parent1/childname_at_parent1`.
         Top parent's name equals its original name `parent0.name == parent0.pathname`.
         """
-        if self._parent is None:
+        if self.parent is self:
             return self.name
         parent = self._parent
-        return misc.tensor_name(parent.pathname, parent.child_name(self))
+        return misc.tensor_name(parent.pathname, parent.childname(self))
 
-    def child_name(self, child):
+    @abc.abstractproperty
+    def children(self):
+        """
+        :return: Dictionary where keys are names and values are Parentable objects.
+        """
+        pass
 
+    @abc.abstractmethod
+    def store_child(self, name, child):
+        """
 
-    def set_name(self, name=None):
-        self._name = self._define_name(name) if name is None else name
+        """
+        pass
+
+    @property
+    def descendants(self):
+        children = self.children
+        if children is not None:
+            for child in children.values():
+                yield from child.descendants
+                yield child
+    
+    def contains(self, node):
+        return node in list(self.descendants)
+
+    def childname(self, child):
+        if not isinstance(child, Parentable):
+            raise ValueError('Parentable object expected, {child} passed.'.format(child=child))
+        name = [ch[0] for ch in self.children.items() if ch[1] is child]
+        if not name:
+            raise KeyError('Parent {parent} does not have child {child}'.format(parent=self, child=child))
+        return name[0]
+
+    def set_child(self, name, child):
+        """
+        Set child.
+
+        :param child: Parentable object.
+        :param name: String attribute name.
+
+        """
+        if not isinstance(child, Parentable):
+            raise ValueError('Parentable child object expected, not {child}'.format(child=child))
+        child.set_parent(self)
+        self.store_child(name, child)
 
     def set_parent(self, parent=None):
-        self._parent = parent
+        """
+        Set parent.
 
-    def _reset_name(self):
-        self._name = self._define_name()
+        :param parent: Parentable object.
+        :raises ValueError: Self-reference object passed.
+        :raises ValueError: Non-Parentable object passed.
+        """
+        if parent is not None:
+            if not isinstance(parent, Parentable):
+                raise ValueError('Parent object must implement Parentable interface.')
+            if parent is self or parent.contains(self):
+                raise ValueError('Self references are not allowed.')
+        self._parent = parent if parent is not None else None
 
     def _define_name(self, name=None):
         if name is not None:

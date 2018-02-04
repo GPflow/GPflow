@@ -41,10 +41,20 @@ class ParamList(Parameterized):
         super(ParamList, self).__init__(name=None)
         if not isinstance(list_of_params, list):
             raise ValueError('Not acceptable argument type at list_of_params.')
-        self._list = [self._valid_list_input(item, trainable)
-                      for item in list_of_params]
-        for index, item in enumerate(self._list):
-            self._set_param(index, item)
+        self._list = []
+        for value in list_of_params:
+            item = self._valid_list_input(value, trainable)
+            self.append(item)
+
+    @property
+    def children(self):
+        return {str(i): v for i, v in enumerate(self._list)}
+
+    def store_child(self, index, child):
+        if index == len(self):
+            self._list.append(child)
+        else:
+            self._list[index] = child
 
     @property
     def params(self):
@@ -53,23 +63,12 @@ class ParamList(Parameterized):
 
     def append(self, item):
         if not isinstance(item, Parameter):
-            raise ValueError(
-                'Non parameter type cannot be appended to the list.')
-        length = self.__len__()
-        item.set_parent(self)
-        item.set_name(self._item_name(length))
-        self._list.append(item)
+            raise ValueError('Non parameter type cannot be appended to the list.')
+        index = len(self)
+        self._set_parameter(index, item)
 
-    def _get_param(self, name):
+    def _get_item(self, name):
         return self._list[name]
-
-    def _set_param(self, name, value):
-        self._list[name] = value
-        value.set_parent(self)
-        value.set_name(self._item_name(name))
-
-    def _item_name(self, index):
-        return '{name}{index}'.format(name='item', index=index)
 
     def _valid_list_input(self, value, trainable):
         if not Parameterized._is_param_like(value):
@@ -84,11 +83,11 @@ class ParamList(Parameterized):
     def __len__(self):
         return len(self._list)
 
-    def __getitem__(self, key):
-        param = self._get_param(key)
-        if TensorConverter.tensor_mode(self) and isinstance(param, Parameter):
-            return Parameterized._tensor_mode_parameter(param)
-        return param
+    def __getitem__(self, index):
+        e = self._get_item(index)
+        if TensorConverter.tensor_mode(self) and isinstance(e, Parameter):
+            return Parameterized._tensor_mode_parameter(e)
+        return e
 
     def __setitem__(self, index, value):
         if not isinstance(value, Parameter):
@@ -97,4 +96,4 @@ class ParamList(Parameterized):
         if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
             raise GPflowError(
                 'ParamList is compiled and items are not modifiable.')
-        self._update_param_attribute(index, value)
+        self._update_parameter(index, value)

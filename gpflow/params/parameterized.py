@@ -85,6 +85,15 @@ class Parameterized(Node):
         self._prior_tensor = None
 
     @property
+    def children(self):
+        allowed = lambda x: self._is_param_like(x) and x is not self.parent
+        children = {n: v for n, v in self.__dict__.items() if allowed(v)}
+        return children
+
+    def store_child(self, name, child):
+        object.__setattr__(self, name, child)
+
+    @property
     def params(self):
         for key, param in self.__dict__.items():
             if not key.startswith('_') and Parameterized._is_param_like(param):
@@ -299,29 +308,21 @@ class Parameterized(Node):
             return tf.constant(0, dtype=settings.float_type)
         return tf.add_n(prior_tensors, name='prior')
 
-    def _set_param(self, name, value):
-        object.__setattr__(self, name, value)
-        value.set_parent(self)
-        value.set_name(name)
-
-    def _get_param(self, name):
-        return getattr(self, name)
-
-    def _update_param_attribute(self, name, value):
-        param = self._get_param(name)
+    def _update_parameter(self, name, value):
+        param = getattr(self, name)
         if Parameterized._is_param_like(value):
-            if param is value:
-                return
-            if self.is_built_coherence(value.graph) is Build.YES:
-                raise GPflowError('Parameterized object is built.')
-            self._set_param(name, value)
-            param.set_parent()
-            param.set_name()
+            if param is not value:
+                self._set_parameter(name, value)
         elif isinstance(param, Parameter) and misc.is_valid_param_value(value):
             param.assign(value)
         else:
             msg = '"{0}" type cannot be assigned to "{1}".'
             raise ValueError(msg.format(type(value), name))
+    
+    def _set_parameter(self, name, value):
+        if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
+            raise GPflowError('Tensors for this object are already built and cannot be modified.')
+        self.set_child(name, value)
 
     def __getattribute__(self, name):
         attr = misc.get_attribute(self, name)
@@ -329,26 +330,25 @@ class Parameterized(Node):
             return Parameterized._tensor_mode_parameter(attr)
         return attr
 
-    def __setattr__(self, key, value):
-        if key.startswith('_'):
-            object.__setattr__(self, key, value)
+    def __setattr__(self, name, value):
+        if name.startswith('_'):
+            object.__setattr__(self, name, value)
             return
 
         if self.root is value:
             raise ValueError('Cannot be assigned as parameter to itself.')
 
-        if key in self.__dict__.keys():
-            assignee_param = getattr(self, key)
+        if name in self.__dict__.keys():
+            assignee_param = getattr(self, name)
             if Parameterized._is_param_like(assignee_param):
-                self._update_param_attribute(key, value)
+                self._update_parameter(name, value)
                 return
 
         if Parameterized._is_param_like(value):
-            if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
-                raise GPflowError('Cannot be added to assembled node.')
-            value.set_parent(self)
+            self._set_parameter(name, value)
+            return
 
-        object.__setattr__(self, key, value)
+        object.__setattr__(self, name, value)
 
     def __repr__(self):
         return str(self.as_pandas_table())

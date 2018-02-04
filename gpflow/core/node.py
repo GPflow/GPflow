@@ -128,21 +128,6 @@ class Node(Parentable, ICompilable):
         self.is_built_coherence(session.graph)
         return session
 
-    def set_parent(self, parent=None):
-        """
-        Set parentable parent. `Parentable` interface implementation.
-
-        :param parent: Parentable object.
-        :raises ValueError: Self-reference object passed.
-        :raises ValueError: Non-Parentable object passed.
-        """
-
-        if parent is self:
-            raise ValueError('Self references are prohibited.')
-        if parent is not None and not isinstance(parent, Parentable):
-            raise ValueError('Parent object must implement parentable interface.')
-        self._parent = parent if parent is not None else None
-
     def is_built_coherence(self, graph=None):
         """
         Checks that node was build using input `graph`.
@@ -169,7 +154,7 @@ class Node(Parentable, ICompilable):
         if self.is_built_coherence() is Build.NO:
             with tf.name_scope(self.pathname):
                 self._build()
-
+    
     @abc.abstractmethod
     def _clear(self):
         """
