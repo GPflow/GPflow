@@ -90,6 +90,8 @@ class Parentable:
     @abc.abstractproperty
     def children(self):
         """
+        Abstract property for getting pairs of names and children, respectively.
+
         :return: Dictionary where keys are names and values are Parentable objects.
         """
         pass
@@ -97,12 +99,27 @@ class Parentable:
     @abc.abstractmethod
     def store_child(self, name, child):
         """
+        Abstract method for saving association between child and its name in
+        parent's specific storage.
+        """
+        pass
 
+
+    @abc.abstractmethod
+    def remove_child(self, name, child):
+        """
+        Abstract method for removing an association between child and its name in
+        parent's specific storage.
         """
         pass
 
     @property
     def descendants(self):
+        """
+        Scans full list of node descendants.
+
+        :return: Generator of nodes.
+        """
         children = self.children
         if children is not None:
             for child in children.values():
@@ -110,6 +127,11 @@ class Parentable:
                 yield child
     
     def contains(self, node):
+        """
+        Checks either node already exist somewhere among descendants.
+
+        :return: Boolean value.
+        """
         return node in list(self.descendants)
 
     def childname(self, child):
@@ -124,14 +146,27 @@ class Parentable:
         """
         Set child.
 
+        :param name: Child name.
         :param child: Parentable object.
-        :param name: String attribute name.
-
         """
         if not isinstance(child, Parentable):
             raise ValueError('Parentable child object expected, not {child}'.format(child=child))
         child.set_parent(self)
         self.store_child(name, child)
+    
+    def unset_child(self, name, child):
+        """
+        Untie child from parent.
+
+        :param name: Child name.
+        :param child: Parentable object.
+        """
+        if name not in self.children or self.children[name] is not child:
+            msg = 'Child {child} with name "{name}" is not found'
+            raise ValueError(msg.format(child=child, name=name))
+        child.set_parent(None)
+        self.remove_child(name, child)
+
 
     def set_parent(self, parent=None):
         """
@@ -155,8 +190,8 @@ class Parentable:
             return name
         cls_name = self.__class__.__name__
         index = Parentable._read_index()
-        rnd_index = str(uuid.uuid4())[:8] + str(index)
-        return '{name}-{rnd_index}{index}'.format(name=cls_name, rnd_index=rnd_index, index=index)
+        rnd_index = str(uuid.uuid4())[:8]
+        return '{name}-{rnd_index}-{index}'.format(name=cls_name, rnd_index=rnd_index, index=index)
 
     @classmethod
     def _read_index(cls):

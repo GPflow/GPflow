@@ -62,13 +62,16 @@ class ParamList(Parameterized):
             yield item
 
     def append(self, item):
-        if not isinstance(item, Parameter):
-            raise ValueError('Non parameter type cannot be appended to the list.')
+        value = self._valid_list_input(item, self.trainable)
         index = len(self)
-        self._set_parameter(index, item)
+        self._set_node(index, value)
 
-    def _get_item(self, name):
+    def _get_node(self, name):
         return self._list[name]
+
+    def _replace_node(self, index, old, new):
+        old.set_parent()
+        self.set_child(index, new)
 
     def _valid_list_input(self, value, trainable):
         if not Parameterized._is_param_like(value):
@@ -84,7 +87,7 @@ class ParamList(Parameterized):
         return len(self._list)
 
     def __getitem__(self, index):
-        e = self._get_item(index)
+        e = self._get_node(index)
         if TensorConverter.tensor_mode(self) and isinstance(e, Parameter):
             return Parameterized._tensor_mode_parameter(e)
         return e
@@ -96,4 +99,4 @@ class ParamList(Parameterized):
         if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
             raise GPflowError(
                 'ParamList is compiled and items are not modifiable.')
-        self._update_parameter(index, value)
+        self._update_node(index, value)

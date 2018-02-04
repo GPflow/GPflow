@@ -80,7 +80,6 @@ class DataHolder(Parameter):
         return misc.tensor_name(self.pathname, 'dataholder')
 
     def _clear(self):
-        self._reset_name()
         self._initial_value_tensor = None
         self._dataholder_tensor = None
         self._is_initialized_tensor = None
@@ -198,14 +197,10 @@ class Minibatch(DataHolder):
             self.initialize(session=session, force=True)
 
     def _clear(self):
-        self._reset_name()
         self._cache_tensor = None
         self._batch_size_tensor = None
         self._dataholder_tensor = None
         self._iterator_tensor = None
-        self._shuffle = True
-        self._batch_size = 1
-        self._seed = None
 
     def _build(self):
         initial_tensor = self._build_placeholder_cache()

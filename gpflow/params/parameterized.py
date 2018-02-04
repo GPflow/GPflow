@@ -43,11 +43,11 @@ class Parameterized(Node):
 
     ```
     p = gpflow.Parameterized()
-    p.full_name
+    p.pathname
     # 'Parameterized'
 
     p.a = gpflow.Param(0)
-    p.a.full_name
+    p.a.parameter_tensor.name
     # 'Parameter'
     # ^^^ This is explained by the fact that the parameter is
     #     constructed before assignement.
@@ -63,10 +63,10 @@ class Parameterized(Node):
             self.a = gpflow.Param(0)
 
     demo = Demo()
-    demo.full_name
+    demo.pathname
     # 'Demo'
 
-    demo.a.full_name
+    demo.a.pathname
     # 'Demo/a'
     ```
 
@@ -92,6 +92,9 @@ class Parameterized(Node):
 
     def store_child(self, name, child):
         object.__setattr__(self, name, child)
+
+    def remove_child(self, name, child):
+        object.__delattr__(self, name)
 
     @property
     def params(self):
@@ -210,7 +213,7 @@ class Parameterized(Node):
                              'Series data structure.')
         if isinstance(values, pd.Series):
             values = values.to_dict()
-        params = {param.full_name: param for param in self.parameters}
+        params = {param.pathname: param for param in self.parameters}
         val_keys = set(values.keys())
         if not val_keys.issubset(params.keys()):
             keys_not_found = val_keys.difference(params.keys())
@@ -235,11 +238,11 @@ class Parameterized(Node):
             parameter.anchor(session)
 
     def read_trainables(self, session=None):
-        return {param.full_name: param.read_value(session)
+        return {param.pathname: param.read_value(session)
                 for param in self.trainable_parameters}
 
     def read_values(self, session=None):
-        return {param.full_name: param.read_value(session)
+        return {param.pathname: param.read_value(session)
                 for param in self.parameters}
 
     def is_built(self, graph):
@@ -284,7 +287,6 @@ class Parameterized(Node):
     def _clear(self):
         self._prior_tensor = None
         AutoFlow.clear_autoflow(self)
-        self._reset_name()
         for param in self.params:
             param._clear()  # pylint: disable=W0212
 
@@ -308,18 +310,25 @@ class Parameterized(Node):
             return tf.constant(0, dtype=settings.float_type)
         return tf.add_n(prior_tensors, name='prior')
 
-    def _update_parameter(self, name, value):
-        param = getattr(self, name)
+    def _get_node(self, name):
+        return getattr(self, name)
+
+    def _update_node(self, name, value):
+        param = self._get_node(name)
         if Parameterized._is_param_like(value):
             if param is not value:
-                self._set_parameter(name, value)
+                self._replace_node(name, param, value)
         elif isinstance(param, Parameter) and misc.is_valid_param_value(value):
             param.assign(value)
         else:
             msg = '"{0}" type cannot be assigned to "{1}".'
             raise ValueError(msg.format(type(value), name))
     
-    def _set_parameter(self, name, value):
+    def _replace_node(self, name, old, new):
+        self.unset_child(name, old)
+        self._set_node(name, new)
+    
+    def _set_node(self, name, value):
         if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
             raise GPflowError('Tensors for this object are already built and cannot be modified.')
         self.set_child(name, value)
@@ -341,11 +350,11 @@ class Parameterized(Node):
         if name in self.__dict__.keys():
             assignee_param = getattr(self, name)
             if Parameterized._is_param_like(assignee_param):
-                self._update_parameter(name, value)
+                self._update_node(name, value)
                 return
 
         if Parameterized._is_param_like(value):
-            self._set_parameter(name, value)
+            self._set_node(name, value)
             return
 
         object.__setattr__(self, name, value)

@@ -31,32 +31,42 @@ class Foo(gpflow.models.Model):
 
 
 class TestNaming(GPflowTestCase):
+    def test_index(self):
+        index = gpflow.core.parentable.Parentable._read_index() + 1
+        with self.test_context():
+            def increment_assert(i):
+                p = gpflow.Param(1)
+                assert p.name.split("-")[-1] == i
+            for i in range(index, index + 5):
+                increment_assert(str(i))
+
     def test_standard_name(self):
-        p_index = gpflow.core.parentable.Parentable._read_index() + 1
         with self.test_context():
             p = gpflow.Param(1)
-            self.assertEqual(p.name, 'Parameter')
-            self.assertEqual(p.hidden_name, '{}/Parameter'.format(p_index))
+            assert p.name.startswith('Parameter')
+            assert p.name == p.pathname
+
+            m = gpflow.params.Parameterized()
+            assert m.name.startswith('Parameterized')
+            assert m.name == m.pathname
 
     def test_full_fame(self):
         with self.test_context():
-            p1_index = gpflow.core.parentable.Parentable._read_index() + 1
-            p1 = gpflow.Param(1)
-            p2 = gpflow.Param(1, name='test_name')
-            self.assertEqual(p1.hidden_full_name, '{index}/Parameter'.format(index=p1_index))
-            self.assertEqual(p1.full_name, 'Parameter')
-            self.assertEqual(p2.hidden_full_name, 'test_name')
-            self.assertEqual(p2.full_name, 'test_name')
-            model_index = gpflow.core.parentable.Parentable._read_index() + 1
+            a = gpflow.Param(1)
+            b = gpflow.Param(1, name='test_name')
+            a_pathname = a.pathname
+            b_pathname = b.pathname
+            assert a.name != b.name
+            assert a_pathname != b_pathname
+
             m = gpflow.params.Parameterized()
-            m.p = p1
-            self.assertEqual(m.hidden_full_name, '{index}/Parameterized'.format(index=model_index))
-            self.assertEqual(m.full_name, 'Parameterized')
-            self.assertEqual(m.p.hidden_full_name, '{index}/Parameterized/p'.format(index=model_index))
-            self.assertEqual(m.p.full_name, 'Parameterized/p')
-            self.assertEqual(m.full_name, m.name)
-            self.assertEqual(m.p.hidden_full_name, '{}/p'.format(m.hidden_name))
-            self.assertEqual(m.p.full_name, '{}/p'.format(m.name))
+            m.a = a
+            m.b = b
+            assert m.a.name != m.b.name
+            assert m.a.pathname != a_pathname
+            assert m.b.pathname != b_pathname
+            assert m.a.pathname.split("/")[0] == m.name
+            assert m.b.pathname.split("/")[0] == m.name
 
 class TestType(GPflowTestCase):
     def setUp(self):
@@ -119,7 +129,6 @@ class TestParameter(GPflowTestCase):
     def setUp(self):
         with self.test_context():
             self.p = gpflow.Param(1.0)
-            self.m_index = gpflow.core.parentable.Parentable._read_index() + 1
             self.m = gpflow.params.Parameterized()
             self.m.p = gpflow.Param(1.0)
             self.m.b = gpflow.Param(1.0)
@@ -255,24 +264,31 @@ class TestParameter(GPflowTestCase):
 
     def test_str(self):
         with self.test_context():
+            def check_str(obj, expect_str):
+                expect = [e for e in expect_str.format(name=p.name).split(' ') if e != '']
+                got = [e for e in str(obj).split(' ') if e != '']
+                print(expect)
+                print(got)
+                self.assertEqual(expect, got)
+
             p_str = ('               class prior transform  trainable shape  '
-                     'fixed_shape value\nParameter  Parameter  None    (none)'
+                     'fixed_shape value\n{name}  Parameter  None    (none)'
                      '       True    ()         True   1.0')
-            p = gpflow.Param(1.)
-            self.assertEqual(p_str.format('Parameter'), str(p))
+            p = gpflow.Param(1., name="short")
+            check_str(p, p_str)
 
             d_str = ('                 class shape  fixed_shape value'
-                     '\nDataHolder  DataHolder    ()        False   1.0')
-            d = gpflow.DataHolder(1.)
-            self.assertEqual(d_str, str(d))
+                     '\n{name}  DataHolder    ()        False   1.0')
+            d = gpflow.DataHolder(1., name="short")
+            check_str(d, d_str)
 
             params_str = ('                     class prior transform  trainable shape'
-                          '  fixed_shape value\nParameterized/p  Parameter  None'
+                          '  fixed_shape value\n{name}/p  Parameter  None'
                           '    (none)       True    ()         True   1.0')
-            params = gpflow.Parameterized()
+            params = gpflow.Parameterized(name="short")
             params.p = p
             params.d = d
-            self.assertEqual(params_str, str(params))
+            check_str(params, params_str)
 
     def test_generators(self):
         with self.test_context():
@@ -351,16 +367,14 @@ class TestParameter(GPflowTestCase):
 
             p = self.m.p
             self.m.p = param
-            self.assertEqual(self.m.p, param)
-            self.assertEqual(p.name, 'Parameter')
-            self.assertEqual(p.root, p)
+
+            assert self.m.p is param
+            assert p.name.startswith('Parameter')
+            assert p.root is p
 
             self.m.d = new_param
-            self.assertEqual(self.m.d, new_param)
-            self.assertEqual(self.m.d.hidden_full_name,
-                             '{index}/{name}/d'
-                             .format(index=self.m_index, name=self.m.name))
-            self.assertEqual(self.m.d.full_name, '{name}/d'.format(name=self.m.name))
+            assert self.m.d is new_param
+            assert self.m.d.pathname == '{name}/d'.format(name=self.m.name)
 
     def test_assign_with_compile(self):
         with self.test_context():
@@ -775,15 +789,9 @@ class TestParameterizedDeep(GPflowTestCase):
         self.assertTrue(self.m.foo.bar.baz.root is self.m)
 
     def test_deep_name(self):
-        self.assertTrue(self.m.foo.name == 'foo')
-        self.assertTrue(self.m.foo.bar.name == 'bar')
-        self.assertTrue(self.m.foo.bar.baz.name == 'baz')
-        self.assertTrue(self.m.foo.full_name == 'm/foo')
-        self.assertTrue(self.m.foo.bar.full_name == 'm/foo/bar')
-        self.assertTrue(self.m.foo.bar.baz.full_name == 'm/foo/bar/baz')
-        self.assertTrue(self.m.foo.hidden_full_name == 'm/foo')
-        self.assertTrue(self.m.foo.bar.hidden_full_name == 'm/foo/bar')
-        self.assertTrue(self.m.foo.bar.baz.hidden_full_name == 'm/foo/bar/baz')
+        assert self.m.foo.pathname == 'm/foo'
+        assert self.m.foo.bar.pathname == 'm/foo/bar'
+        assert self.m.foo.bar.baz.pathname == 'm/foo/bar/baz'
 
     def test_deep_trainable(self):
         with self.test_context():
@@ -866,19 +874,18 @@ class TestParamList(GPflowTestCase):
             p = gpflow.ParamList([])
             p.append(gpflow.Param(1.0))
             p.append(gpflow.Param(2.0))
-            with self.assertRaises(ValueError):
-                p.append(2.0)
+            p.append(2.0)
+            self.assertEqual(len(p), 3)
             with self.assertRaises(ValueError):
                 p.append("test")
-            self.assertEqual(len(p), 2)
 
     def test_naming(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
             p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
-            gpflow.ParamList([p1, p2])
-            self.assertEqual(p1.name, 'item0')
-            self.assertEqual(p2.name, 'item1')
+            l = gpflow.ParamList([p1, p2])
+            assert p1.pathname == l.name + '/0'
+            assert p2.pathname == l.name + '/1'
 
     def test_setitem(self):
         with self.test_context():
@@ -906,10 +913,20 @@ class TestParamList(GPflowTestCase):
     def test_append(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
-            param_list = gpflow.ParamList([p1])
-            param_list.append(p2)
+            p4 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
+            with gpflow.defer_build():
+                p2 = gpflow.Param(1.2)
+                param_list = gpflow.ParamList([p1])
+                param_list.append(p2)
+            p3 = gpflow.Param(1.2)
+            param_list.append(p3)
+            param_list.compile()
+            with self.assertRaises(gpflow.GPflowError):
+                param_list.append(p4)
+            self.assertTrue(p1 in param_list.params)
             self.assertTrue(p2 in param_list.params)
+            self.assertTrue(p3 in param_list.params)
+            self.assertFalse(p4 in param_list.params)
             with self.assertRaises(ValueError):
                 param_list.append('foo')
 
@@ -917,8 +934,7 @@ class TestParamList(GPflowTestCase):
         with self.test_context():
             p1 = gpflow.Param(1.2)
             p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
-            l = gpflow.ParamList([p1])
-            l.append(p2)
+            l = gpflow.ParamList([p1, p2])
             self.assertTrue(len(l) == 2)
 
     def test_with_parameterized(self):
@@ -1111,7 +1127,7 @@ class TestScopes(GPflowTestCase):
 
     def test_likelihood_name(self):
         likelihood = self.m.likelihood_tensor
-        expected_name = self.m.hidden_name + '/likelihood'
+        expected_name = self.m.pathname + '/likelihood'
         self.assertTrue(likelihood.name.startswith(expected_name))
 
     def test_kern_name(self):
