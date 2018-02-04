@@ -468,7 +468,7 @@ class Parameter(Node):
             pass
         object.__setattr__(self, name, value)
 
-    def __repr__(self):
+    def __str__(self):
         return str(self.as_pandas_table())
 
     @property
