@@ -79,13 +79,12 @@ def dirac_diag():
 
 @cache_tensor
 def markov_gauss():
-    # create the covariance for the markov-gaussian
     D_in = Data.D_in
-    cov_params = rng.randn(Data.num_data, D_in, 2*D_in)  # N+1 x D x 2D
-    Xcov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # N+1 x D x D
-    Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # N x D x D
-    Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # N+1 x D x D
-    Xcov = np.stack([Xcov, Xcross])  # 2 x N+1 x D x D
+    cov_params = rng.randn(Data.num_data, D_in, 2*D_in)  # (N+1)xDx2D
+    Xcov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
+    Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
+    Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # (N+1)xDxD
+    Xcov = np.stack([Xcov, Xcross])  # 2x(N+1)xDxD
     return MarkovGaussian(
         tf.convert_to_tensor(Data.Xmu),
         tf.convert_to_tensor(Xcov))
@@ -100,7 +99,7 @@ def dirac_markov_gauss():
 
 @cache_tensor
 def rbf_kern():
-    return kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand())
+    return kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand()+1.)
 
 
 @cache_tensor
@@ -111,8 +110,8 @@ def lin_kern():
 @cache_tensor
 def rbf_lin_sum_kern():
     return kernels.Sum([
-        kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand()),
-        kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand()),
+        kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand()+1.),
+        kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand()+1.),
         kernels.Linear(Data.D_in, variance=rng.rand())
     ])
 
@@ -120,7 +119,7 @@ def rbf_lin_sum_kern():
 @cache_tensor
 def rbf_lin_prod_kern():
     return kernels.Product([
-        kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand(), active_dims=[0]),
+        kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand()+1., active_dims=[0]),
         kernels.Linear(1, variance=rng.rand(), active_dims=[1])
     ])
 
