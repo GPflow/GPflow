@@ -333,6 +333,7 @@ class Parameter(Node):
         return value
 
     def _clear(self):
+        self.reset_name()
         self._externally_defined = False
         self._is_initialized_tensor = None
         self._initial_value_tensor = None
@@ -439,7 +440,7 @@ class Parameter(Node):
         return self.transform.backward(value)
 
     def _parameter_name(self):
-        return self.pathname + '/unconstrained'
+        return misc.tensor_name(self.build_pathname, 'unconstrained')
 
     def _set_parameter_tensor(self, tensor):
         self._unconstrained_tensor = tensor

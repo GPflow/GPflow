@@ -77,9 +77,10 @@ class DataHolder(Parameter):
         return df
 
     def _parameter_name(self):
-        return misc.tensor_name(self.pathname, 'dataholder')
+        return misc.tensor_name(self.build_pathname, 'dataholder')
 
     def _clear(self):
+        self.reset_name()
         self._initial_value_tensor = None
         self._dataholder_tensor = None
         self._is_initialized_tensor = None
@@ -194,6 +195,7 @@ class Minibatch(DataHolder):
             self.initialize(session=session, force=True)
 
     def _clear(self):
+        self.reset_name()
         self._cache_tensor = None
         self._batch_size_tensor = None
         self._dataholder_tensor = None
@@ -234,5 +236,5 @@ class Minibatch(DataHolder):
     def _parameter_name(self):
         name = 'minibatch'
         if self.parent is self:
-            return misc.tensor_name(self.pathname, name)
+            return misc.tensor_name(self.build_pathname, name)
         return name

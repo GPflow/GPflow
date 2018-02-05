@@ -289,6 +289,7 @@ class Parameterized(Node):
         AutoFlow.clear_autoflow(self)
         for param in self.params:
             param._clear()  # pylint: disable=W0212
+        self.reset_name()
 
     def _build(self):
         for param in self.params:

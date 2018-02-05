@@ -26,7 +26,7 @@ from gpflow import kernels, mean_functions, features
 from gpflow.test_util import session_tf
 from gpflow.test_util import cache_tensor
 
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_allclose
 
 
 rng = np.random.RandomState(1)
@@ -133,7 +133,8 @@ def lin_kern():
 
 @cache_tensor
 def lin():
-    return mean_functions.Linear(rng.rand(Data.D_in, Data.D_out), rng.rand(Data.D_out))
+    r = np.random.RandomState(0)
+    return mean_functions.Linear(r.rand(Data.D_in, Data.D_out), r.rand(Data.D_out))
 
 
 @cache_tensor
@@ -149,7 +150,8 @@ def zero():
 
 @cache_tensor
 def const():
-    return mean_functions.Constant(rng.rand(Data.D_out))
+    r = np.random.RandomState(0)
+    return mean_functions.Constant(r.rand(Data.D_out))
 
 
 def _check(params):
@@ -158,6 +160,7 @@ def _check(params):
     session = tf.get_default_session()
     analytic, quad = session.run([analytic, quad])
     assert_almost_equal(quad, analytic, decimal=2)
+
 
 
 @pytest.mark.parametrize("distribution", [gauss, gauss_diag])

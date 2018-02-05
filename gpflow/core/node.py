@@ -152,9 +152,36 @@ class Node(Parentable, ICompilable):
             default TensorFlow graph.
         """
         if self.is_built_coherence() is Build.NO:
-            with tf.name_scope(self.pathname):
+            with tf.name_scope(self.build_name):
                 self._build()
     
+    @property
+    def build_name(self):
+        """
+        Auxilary method for composing gpflow's tree name scopes. The Parentable pathname
+        can be considered as a set of name scopes. This method grabs `pathname` and
+        returns only name of the node in that path.
+        Leading node name is always replaced with two parts: the name and the index
+        for uniquiness in TensorFlow.
+        """
+        if self.parent is self:
+            leader_name = self.name
+            leader_index = self.index
+            if leader_index is None:
+                return leader_name
+            return "{name}-{index}".format(name=leader_name, index=leader_index)
+        return self.pathname.rsplit('/')[-1]
+
+    @property
+    def build_pathname(self):
+        """
+        """
+        if self.parent is self:
+            return self.build_name
+        tail = self.pathname.split('/', 1)[-1]
+        leader = self.root.build_name
+        return "{leader_name}/{tail_name}".format(leader_name=leader, tail_name=tail)
+
     @abc.abstractmethod
     def _clear(self):
         """

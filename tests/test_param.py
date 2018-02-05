@@ -36,7 +36,7 @@ class TestNaming(GPflowTestCase):
         with self.test_context():
             def increment_assert(i):
                 p = gpflow.Param(1)
-                assert p.name.split("-")[-1] == i
+                assert p.index.split("-")[-1] == i
             for i in range(index, index + 5):
                 increment_assert(str(i))
 
@@ -1127,7 +1127,7 @@ class TestScopes(GPflowTestCase):
 
     def test_likelihood_name(self):
         likelihood = self.m.likelihood_tensor
-        expected_name = self.m.pathname + '/likelihood'
+        expected_name = self.m.build_name + '/likelihood'
         self.assertTrue(likelihood.name.startswith(expected_name))
 
     def test_kern_name(self):

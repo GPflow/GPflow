@@ -33,11 +33,16 @@ class Parentable:
     :param name: String name.
     """
 
-    __index = 0
+    __global_index = 0
 
     def __init__(self, name=None):
         self._parent = None
-        self._name = self._define_name(name)
+        index = None
+        if name is None:
+            name = self._define_name(name)
+            index = self._gen_index()
+        self._name = name
+        self._index = index
 
     @property
     def root(self):
@@ -86,6 +91,10 @@ class Parentable:
             return self.name
         parent = self._parent
         return misc.tensor_name(parent.pathname, parent.childname(self))
+
+    @property
+    def index(self):
+        return self._index
 
     @abc.abstractproperty
     def children(self):
@@ -182,6 +191,10 @@ class Parentable:
             if parent is self or parent.contains(self):
                 raise ValueError('Self references are not allowed.')
         self._parent = parent if parent is not None else None
+    
+    def reset_name(self, name=None):
+        self._name = self._define_name(name=name)
+        self._index = self._gen_index()
 
     def _define_name(self, name=None):
         if name is not None:
@@ -189,9 +202,13 @@ class Parentable:
                 raise ValueError('Name must be a string.')
             return name
         cls_name = self.__class__.__name__
-        index = Parentable._read_index()
-        rnd_index = str(uuid.uuid4())[:8]
-        return '{name}-{rnd_index}-{index}'.format(name=cls_name, rnd_index=rnd_index, index=index)
+        return cls_name
+
+    def _gen_index(self):
+        internal_index = Parentable._read_index()
+        uuid_index = str(uuid.uuid4())[:8]
+        pattern = '{uuid_index}-{internal_index}'
+        return pattern.format(uuid_index=uuid_index, internal_index=internal_index)
 
     @classmethod
     def _read_index(cls):
@@ -201,6 +218,6 @@ class Parentable:
         # TODO(@awav): index can grow indefinetly,
         # check boundaries or make another solution.
         """
-        index = cls.__index
-        cls.__index += 1
+        index = cls.__global_index
+        cls.__global_index += 1
         return index
