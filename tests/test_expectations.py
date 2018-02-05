@@ -14,6 +14,7 @@
 
 import numpy as np
 import tensorflow as tf
+import copy
 
 import pytest
 
@@ -117,6 +118,15 @@ def rbf_lin_sum_kern():
 
 
 @cache_tensor
+def rbf_lin_sum_kern2():
+    return kernels.Sum([
+        kernels.Linear(Data.D_in, variance=rng.rand()),
+        kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand()+1.),
+        kernels.Linear(Data.D_in, variance=rng.rand())
+    ])
+
+
+@cache_tensor
 def rbf_lin_prod_kern():
     return kernels.Product([
         kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand()+1., active_dims=[0]),
@@ -153,16 +163,7 @@ def _check(params):
     assert_allclose(analytic, quad, rtol=RTOL)
 
 
-@pytest.mark.parametrize("distribution", [gauss, gauss_diag])
-@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
-@pytest.mark.parametrize("arg_filter", [
-                            lambda p, k, f: (p, k),
-                            lambda p, k, f: (p, (k, f)),
-                            lambda p, k, f: (p, (k, f), (k, f))])
-def test_kernel_expectations(session_tf, distribution, kernel, feature, arg_filter):
-    params = arg_filter(distribution(), kernel(), feature)
-    _check(params)
-
+# =================================== TESTS ===================================
 
 @pytest.mark.parametrize("distribution", [gauss])
 @pytest.mark.parametrize("mean1", [lin_mean, identity_mean, const_mean, zero_mean])
@@ -175,13 +176,24 @@ def test_mean_function_expectations(session_tf, distribution, mean1, mean2, arg_
     _check(params)
 
 
+@pytest.mark.parametrize("distribution", [gauss, gauss_diag])
+@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
+@pytest.mark.parametrize("arg_filter", [
+                            lambda p, k, f: (p, k),
+                            lambda p, k, f: (p, (k, f)),
+                            lambda p, k, f: (p, (k, f), (k, f))])
+def test_kernel_only_expectations(session_tf, distribution, kernel, feature, arg_filter):
+    params = arg_filter(distribution(), kernel(), feature)
+    _check(params)
+
+
 @pytest.mark.parametrize("distribution", [gauss])
 @pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, rbf_lin_sum_kern])
 @pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
 @pytest.mark.parametrize("arg_filter", [
                             lambda p, k, f, m: (p, (k, f), m),
                             lambda p, k, f, m: (p, m, (k, f))])
-def test_kernel_mean_function_expectation(
+def test_kernel_mean_function_expectations(
         session_tf, distribution, kernel, feature, mean, arg_filter):
     params = arg_filter(distribution(), kernel(), feature, mean())
     _check(params)
@@ -189,7 +201,7 @@ def test_kernel_mean_function_expectation(
 
 @pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
 def test_eKdiag_no_uncertainty(session_tf, kernel):
-    eKdiag = expectation(dirac_gauss(), kernel())
+    eKdiag = expectation(dirac_diag(), kernel())
     Kdiag = kernel().Kdiag(Data.Xmu)
     eKdiag, Kdiag = session_tf.run([eKdiag, Kdiag])
     assert_allclose(eKdiag, Kdiag, rtol=RTOL)
@@ -197,7 +209,7 @@ def test_eKdiag_no_uncertainty(session_tf, kernel):
 
 @pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
 def test_eKxz_no_uncertainty(session_tf, kernel, feature):
-    eKxz = expectation(dirac_gauss(), (kernel(), feature))
+    eKxz = expectation(dirac_diag(), (kernel(), feature))
     Kxz = kernel().K(Data.Xmu, Data.Z)
     eKxz, Kxz = session_tf.run([eKxz, Kxz])
     assert_allclose(eKxz, Kxz, rtol=RTOL)
@@ -205,21 +217,38 @@ def test_eKxz_no_uncertainty(session_tf, kernel, feature):
 
 @pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern])
 @pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
-def test_exKxz_no_uncertainty(session_tf, kernel, feature, mean):
-    exKxz = expectation(dirac_gauss(), (kernel(), feature), mean)
+def test_eMxKxz_no_uncertainty(session_tf, kernel, feature, mean):
+    exKxz = expectation(dirac_diag(), (kernel(), feature), mean)
     Kxz = kernel().K(Data.Xmu, Data.Z)
     exKxz, Kxz = session_tf.run([exKxz, Kxz])
     xKxz = Kxz[:, :, None] * expectation(dirac_gauss(), mean)[:, None, :]
     assert_allclose(exKxz, xKxz, rtol=RTOL)
 
 
-@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
+@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_prod_kern])
 def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
-    eKzxKxz = expectation(dirac_gauss(), (kernel(), feature), (kernel(), feature))
-    Kxz = kernel().K(Data.Xmu, Data.Z)
+    kern = kernel()
+    eKzxKxz = expectation(dirac_diag(), (kern, feature), (kern, feature))
+    Kxz = kern.K(Data.Xmu, Data.Z)
     eKzxKxz, Kxz = session_tf.run([eKzxKxz, Kxz])
     KzxKxz = Kxz[:, :, None] * Kxz[:, None, :]
     assert_allclose(eKzxKxz, KzxKxz, rtol=RTOL)
+
+
+def test_eKzxKxz_different_sum_kernels(session_tf, feature):
+    kern1, kern2 = rbf_lin_sum_kern(), rbf_lin_sum_kern2()
+    _check((gauss(), (kern1, feature), (kern2, feature)))
+
+
+def test_eKzxKxz_same_vs_different_sum_kernels(session_tf, feature):
+    # check the result is the same if we pass different objects with the same value
+    kern1 = rbf_lin_sum_kern()
+    kern2 = copy.copy(rbf_lin_sum_kern())
+    same = expectation(*(gauss(), (kern1, feature), (kern1, feature)))
+    different = expectation(*(gauss(), (kern1, feature), (kern2, feature)))
+    session = tf.get_default_session()
+    same, different = session.run([same, different])
+    assert_allclose(same, different, rtol=RTOL)
 
 
 @pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, rbf_lin_sum_kern])
@@ -235,7 +264,6 @@ def test_exKxz_markov_no_uncertainty(session_tf, kernel, feature):
     xKxz = Kzx[..., None] * Data.Xmu[1:, None, :]  # NxMxD
     assert_allclose(exKxz, xKxz, rtol=RTOL)
 
-
 if __name__ == '__main__':
     with tf.Session() as s:
-        test_kernel_expectations(s, gauss, rbf_kern, feature(s), lambda p, k, f: (p, (k, f)))
+        test_eKzxKxz_same_vs_different_sum_kernels(s, feature(s))
