@@ -92,7 +92,7 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
     Fallback method for missing analytic expectations
     """
-    quad_points = 300 if quad_points is None else quad_points
+    quad_points = 200 if quad_points is None else quad_points
 
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
@@ -167,10 +167,10 @@ def expectation(p, obj1, obj2=None, quad_points=None):
 
     Allowed combinations:
         .. Psi statistics
-        eKdiag = expectation(p, kern)  (N)  # psi0
-        eKxz = expectation(p, (kern, feat))  (NxM)
-        exKxz = expectation(p, identity_mean, (kern, feat))  (NxDxM)  # Psi1
-        eKzxKxz = expectation(p, (kern, feat), (kern, feat))  (NxMxM)  # psi2
+        eKdiag = expectation(p, kern)  (N)  # Psi0
+        eKxz = expectation(p, (kern, feat))  (NxM)  # Psi1
+        exKxz = expectation(p, identity_mean, (kern, feat))  (NxDxM)
+        eKzxKxz = expectation(p, (kern, feat), (kern, feat))  (NxMxM)  # Psi2
 
         .. kernels and mean functions
         eKzxMx = expectation(p, (kern, feat), mean)  (NxMxQ)

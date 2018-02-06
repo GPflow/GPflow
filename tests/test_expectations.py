@@ -266,4 +266,5 @@ def test_exKxz_markov_no_uncertainty(session_tf, kernel, feature):
 
 if __name__ == '__main__':
     with tf.Session() as s:
-        test_eKzxKxz_same_vs_different_sum_kernels(s, feature(s))
+        test_eKzxKxz_different_sum_kernels(s, feature(s))
+        #test_kernel_only_expectations(s, gauss_diag, rbf_lin_prod_kern, feature(s), lambda p,k,f:(p,(k,f),(k,f)))
