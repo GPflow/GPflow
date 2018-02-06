@@ -36,7 +36,7 @@ dispatch = partial(dispatch, namespace=gpflow_md_namespace)
 
 # ========================== QUADRATURE EXPECTATIONS ==========================
 
-def quadrature_expectation(p, obj1, obj2=None, quad_points=None):
+def quadrature_expectation(p, obj1, obj2=None, num_gauss_hermite_points=None):
     """
     Compute the expectation <obj1(x) obj2(x)>_p(x) using quadrature
     p can be a (mu, cov) tuple or a probability_distribution
@@ -62,7 +62,7 @@ def quadrature_expectation(p, obj1, obj2=None, quad_points=None):
     else:
         feat2 = None
 
-    return _quadrature_expectation(p, obj1, feat1, obj2, feat2, quad_points)
+    return _quadrature_expectation(p, obj1, feat1, obj2, feat2, num_gauss_hermite_points)
 
 
 def get_eval_func(obj, feature, slice=np.s_[...]):
@@ -87,12 +87,12 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
           object, (InducingFeature, type(None)),
           object, (InducingFeature, type(None)),
           (int, type(None)))
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite_points):
     """
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
     Fallback method for missing analytic expectations
     """
-    quad_points = 200 if quad_points is None else quad_points
+    num_gauss_hermite_points = 200 if num_gauss_hermite_points is None else num_gauss_hermite_points
 
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
@@ -109,22 +109,24 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
         if isinstance(obj1, kernels.Kernel) and isinstance(obj2, kernels.Kernel) \
                 and obj1.on_separate_dims(obj2): # no joint expectations required
 
-            eKxz1 = quadrature_expectation(p, (obj1, feature1), quad_points=quad_points)
-            eKxz2 = quadrature_expectation(p, (obj2, feature2), quad_points=quad_points)
+            eKxz1 = quadrature_expectation(p, (obj1, feature1),
+                                           num_gauss_hermite_points=num_gauss_hermite_points)
+            eKxz2 = quadrature_expectation(p, (obj2, feature2),
+                                           num_gauss_hermite_points=num_gauss_hermite_points)
             return eKxz1[:, :, None] * eKxz2[:, None, :]
 
         else:
             cov = tf.matrix_diag(p.cov)
     else:
         cov = p.cov
-    return mvnquad(eval_func, p.mu, cov, quad_points)
+    return mvnquad(eval_func, p.mu, cov, num_gauss_hermite_points)
 
 
 @dispatch(MarkovGaussian,
           object, (InducingFeature, type(None)),
           object, (InducingFeature, type(None)),
           (int, type(None)))
-def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
+def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite_points):
     """
     Handling of quadrature expectations for Markov Gaussians (useful for time series)
     Fallback method for missing analytic expectations wrt Markov Gaussians
@@ -132,7 +134,7 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
                if one requires e.g. <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1}), compute the
                transpose and then transpose the result of the expectation
     """
-    quad_points = 40 if quad_points is None else quad_points
+    num_gauss_hermite_points = 40 if num_gauss_hermite_points is None else num_gauss_hermite_points
 
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
@@ -150,13 +152,13 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, quad_points):
     cov_bottom = tf.concat((tf.matrix_transpose(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
     cov = tf.concat((cov_top, cov_bottom), 1)  # Nx2Dx2D
 
-    return mvnquad(eval_func, mu, cov, quad_points)
+    return mvnquad(eval_func, mu, cov, num_gauss_hermite_points)
 
 
 
 # =========================== ANALYTIC EXPECTATIONS ===========================
 
-def expectation(p, obj1, obj2=None, quad_points=None):
+def expectation(p, obj1, obj2=None, num_gauss_hermite_points=None):
     """
     Compute the expectation <obj1(x) obj2(x)>_p(x)
     p can be a (mu, cov) tuple or a probability_distribution
@@ -209,7 +211,7 @@ def expectation(p, obj1, obj2=None, quad_points=None):
         return _expectation(p, obj1, feat1, obj2, feat2)
     except NotImplementedError as e:
         print(str(e))
-        return _quadrature_expectation(p, obj1, feat1, obj2, feat2, quad_points)
+        return _quadrature_expectation(p, obj1, feat1, obj2, feat2, num_gauss_hermite_points)
 
 
 
