@@ -198,8 +198,6 @@ class Parentable:
 
     def _define_name(self, name=None):
         if name is not None:
-            if not isinstance(name, str):
-                raise ValueError('Name must be a string.')
             return name
         cls_name = self.__class__.__name__
         return cls_name

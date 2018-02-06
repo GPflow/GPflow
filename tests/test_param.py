@@ -14,16 +14,15 @@
 
 # pylint: disable=E1123
 
-import tensorflow as tf
+import gpflow
 import numpy as np
 import pandas as pd
-
-import gpflow
-from gpflow import settings
-from gpflow import GPflowError
-from gpflow.test_util import GPflowTestCase
-
+import pytest
+import tensorflow as tf
+from gpflow import GPflowError, settings
+from gpflow.test_util import GPflowTestCase, session_tf
 from numpy.testing import assert_allclose
+
 
 class Foo(gpflow.models.Model):
     def _build_likelihood(self):
@@ -1145,6 +1144,66 @@ def _check_trainable_flag(m, assert_true, assert_false):
         if param.trainable:
             assert_bool = assert_true
         assert_bool(gpflow.misc.is_tensor_trainable(param.parameter_tensor))
+
+
+@pytest.fixture
+def param(session_tf):
+    return gpflow.Param(10.)
+
+
+@pytest.fixture
+def params_tree(session_tf):
+    p = gpflow.Parameterized()
+    p.a = gpflow.Param(1.)
+    return p
+
+def failures():
+    return [None, 1, "unknown", object()]
+
+
+@pytest.mark.parametrize('arg', failures())
+def test_parentable_childname_failures(params_tree, arg):
+    with pytest.raises(ValueError):
+        params_tree.childname(arg)
+
+
+def test_parentable_childname_not_found(param, params_tree):
+    with pytest.raises(KeyError):
+        params_tree.childname(param)
+
+
+@pytest.mark.parametrize('arg', failures())
+def test_parentable_set_child_failure(params_tree, arg):
+    with pytest.raises(ValueError):
+        params_tree.set_child('b', arg)
+    with pytest.raises(ValueError):
+        params_tree.set_child('a', arg)
+
+
+def test_parentable_unset_child_not_found(params_tree, param):
+    with pytest.raises(ValueError):
+        params_tree.unset_child('b', param)
+    with pytest.raises(ValueError):
+        params_tree.unset_child('a', param)
+
+
+def test_parentable_unset_child_not_found(params_tree, param):
+    with pytest.raises(ValueError):
+        params_tree.unset_child('b', param)
+    with pytest.raises(ValueError):
+        params_tree.unset_child('a', param)
+
+
+@pytest.mark.parametrize('arg', failures()[1:])
+def test_parentable_set_parent_failures(param, arg):
+    with pytest.raises(ValueError):
+        param.set_parent(arg)
+
+
+def test_parentable_set_parent_self_reference(params_tree):
+    with pytest.raises(ValueError):
+        params_tree.a.set_parent(params_tree)
+
 
 if __name__ == '__main__':
     tf.test.main()

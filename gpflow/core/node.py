@@ -175,6 +175,10 @@ class Node(Parentable, ICompilable):
     @property
     def build_pathname(self):
         """
+        Method used for defining full path name for particular tensor at build time.
+        For example, `tf.get_variable` creates variable w/o taking into account
+        name scopes and `build_pathname` will consists of all parts of name scope
+        which were used up to that point - `tf.get_variable` call.
         """
         if self.parent is self:
             return self.build_name
