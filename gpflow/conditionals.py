@@ -167,7 +167,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 
     q_sqrt_r = tf.matrix_band_part(q_sqrt, -1, 0)  # D x M x M
 
-    eKuf = tf.transpose(expectation(pXnew, (feat, kern))) # M x N (psi1)
+    eKuf = tf.transpose(expectation(pXnew, (kern, feat))) # M x N (psi1)
     Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
     Luu = tf.cholesky(Kuu)  # M x M
 
@@ -180,7 +180,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     fmean = tf.matmul(Li_eKuf, q_mu, transpose_a=True)
 
     eKff = expectation(pXnew, kern)  # N (psi0)
-    eKuffu = expectation(pXnew, (feat, kern), (feat, kern)) # N x M x M (psi2)
+    eKuffu = expectation(pXnew, (kern, feat), (kern, feat)) # N x M x M (psi2)
     Luu_tiled = tf.tile(Luu[None, :, :], [num_data, 1, 1])  # remove this line, once issue 216 is fixed
     Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(eKuffu), lower=True)
     Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(Li_eKuffu_Lit), lower=True)  # N x M x M
@@ -196,7 +196,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
         # where m(x) is the mean_function and \mu(x) is fmean
         e_mean_mean = expectation(pXnew, mean_function, mean_function) # N x D x D
         Lit_q_mu = tf.matrix_triangular_solve(Luu, q_mu, adjoint=True)
-        e_mean_Kuf = expectation(pXnew, mean_function, (feat, kern)) # N x D x M
+        e_mean_Kuf = expectation(pXnew, mean_function, (kern, feat)) # N x D x M
         # einsum isn't able to infer the rank of e_mean_Kuf, hence we explicitly set the rank of the tensor:
         e_mean_Kuf = tf.reshape(e_mean_Kuf, [num_data, num_func, num_ind])
         e_fmean_mean = tf.einsum("nqm,mz->nqz", e_mean_Kuf, Lit_q_mu) # N x D x D
