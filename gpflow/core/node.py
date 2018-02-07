@@ -201,10 +201,3 @@ class Node(Parentable, ICompilable):
         compabilities instead of public `build`.
         """
         raise NotImplementedError('Private method `build` must be implemented by successor.')
-    
-    def __repr__(self):
-        type_name = self.__class__.__name__
-        name = self.name
-        pathname = self.pathname
-        msg = "<{type_name} name='{name}' pathname='{pathname}'>"
-        return msg.format(type_name=type_name, name=name, pathname=pathname)
