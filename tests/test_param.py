@@ -49,7 +49,7 @@ class TestNaming(GPflowTestCase):
             assert m.name.startswith('Parameterized')
             assert m.name == m.pathname
 
-    def test_full_fame(self):
+    def test_pathname(self):
         with self.test_context():
             a = gpflow.Param(1)
             b = gpflow.Param(1, name='test_name')
@@ -57,6 +57,8 @@ class TestNaming(GPflowTestCase):
             b_pathname = b.pathname
             assert a.name != b.name
             assert a_pathname != b_pathname
+            assert a_pathname == a.full_name
+            assert b_pathname == b.full_name
 
             m = gpflow.params.Parameterized()
             m.a = a
@@ -64,6 +66,8 @@ class TestNaming(GPflowTestCase):
             assert m.a.name != m.b.name
             assert m.a.pathname != a_pathname
             assert m.b.pathname != b_pathname
+            assert m.a.full_name != a_pathname
+            assert m.b.full_name != b_pathname
             assert m.a.pathname.split("/")[0] == m.name
             assert m.b.pathname.split("/")[0] == m.name
 
