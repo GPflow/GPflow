@@ -91,6 +91,14 @@ class Parentable:
             return self.name
         parent = self._parent
         return misc.tensor_name(parent.pathname, parent.childname(self))
+    
+    @property
+    def full_name(self):
+        """
+        Backward compatibility with previous versions.
+        WARNING: WILL BE DEPRICATED SOON.
+        """
+        return self.pathname
 
     @property
     def index(self):

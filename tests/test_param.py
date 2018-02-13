@@ -1126,7 +1126,7 @@ class TestScopes(GPflowTestCase):
 
     def test_likelihood_name(self):
         likelihood = self.m.likelihood_tensor
-        expected_name = self.m.build_name + '/likelihood'
+        expected_name = self.m.tf_name_scope + '/likelihood'
         self.assertTrue(likelihood.name.startswith(expected_name))
 
     def test_kern_name(self):

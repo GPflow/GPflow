@@ -440,7 +440,7 @@ class Parameter(Node):
         return self.transform.backward(value)
 
     def _parameter_name(self):
-        return misc.tensor_name(self.build_pathname, 'unconstrained')
+        return misc.tensor_name(self.tf_pathname, 'unconstrained')
 
     def _set_parameter_tensor(self, tensor):
         self._unconstrained_tensor = tensor

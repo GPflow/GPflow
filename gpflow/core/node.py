@@ -152,11 +152,11 @@ class Node(Parentable, ICompilable):
             default TensorFlow graph.
         """
         if self.is_built_coherence() is Build.NO:
-            with tf.name_scope(self.build_name):
+            with tf.name_scope(self.tf_name_scope):
                 self._build()
     
     @property
-    def build_name(self):
+    def tf_name_scope(self):
         """
         Auxilary method for composing gpflow's tree name scopes. The Parentable pathname
         can be considered as a set of name scopes. This method grabs `pathname` and
@@ -173,17 +173,17 @@ class Node(Parentable, ICompilable):
         return self.pathname.rsplit('/')[-1]
 
     @property
-    def build_pathname(self):
+    def tf_pathname(self):
         """
         Method used for defining full path name for particular tensor at build time.
         For example, `tf.get_variable` creates variable w/o taking into account
-        name scopes and `build_pathname` will consists of all parts of name scope
+        name scopes and `tf_pathname` consists of all parts of scope names
         which were used up to that point - `tf.get_variable` call.
         """
         if self.parent is self:
-            return self.build_name
+            return self.tf_name_scope
         tail = self.pathname.split('/', 1)[-1]
-        leader = self.root.build_name
+        leader = self.root.tf_name_scope
         return "{leader_name}/{tail_name}".format(leader_name=leader, tail_name=tail)
 
     @abc.abstractmethod

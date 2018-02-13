@@ -77,7 +77,7 @@ class DataHolder(Parameter):
         return df
 
     def _parameter_name(self):
-        return misc.tensor_name(self.build_pathname, 'dataholder')
+        return misc.tensor_name(self.tf_pathname, 'dataholder')
 
     def _clear(self):
         self.reset_name()
@@ -236,5 +236,5 @@ class Minibatch(DataHolder):
     def _parameter_name(self):
         name = 'minibatch'
         if self.parent is self:
-            return misc.tensor_name(self.build_pathname, name)
+            return misc.tensor_name(self.tf_pathname, name)
         return name
