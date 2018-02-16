@@ -128,21 +128,6 @@ class Node(Parentable, ICompilable):
         self.is_built_coherence(session.graph)
         return session
 
-    def set_parent(self, parent=None):
-        """
-        Set parentable parent. `Parentable` interface implementation.
-
-        :param parent: Parentable object.
-        :raises ValueError: Self-reference object passed.
-        :raises ValueError: Non-Parentable object passed.
-        """
-
-        if parent is self:
-            raise ValueError('Self references are prohibited.')
-        if parent is not None and not isinstance(parent, Parentable):
-            raise ValueError('Parent object must implement parentable interface.')
-        self._parent = parent if parent is not None else None
-
     def is_built_coherence(self, graph=None):
         """
         Checks that node was build using input `graph`.
@@ -154,7 +139,7 @@ class Node(Parentable, ICompilable):
         graph = self.enquire_graph(graph=graph)
         is_built = self.is_built(graph)
         if is_built is Build.NOT_COMPATIBLE_GRAPH:
-            raise GPflowError('Tensor "{}" uses different graph.'.format(self.full_name))
+            raise GPflowError('Tensor "{}" uses different graph.'.format(self.pathname))
         return is_built
 
     def build(self):
@@ -167,9 +152,39 @@ class Node(Parentable, ICompilable):
             default TensorFlow graph.
         """
         if self.is_built_coherence() is Build.NO:
-            name = self.hidden_name if self.parent is self else self.name
-            with tf.name_scope(name):
+            with tf.name_scope(self.tf_name_scope):
                 self._build()
+    
+    @property
+    def tf_name_scope(self):
+        """
+        Auxilary method for composing gpflow's tree name scopes. The Parentable pathname
+        can be considered as a set of name scopes. This method grabs `pathname` and
+        returns only name of the node in that path.
+        Leading node name is always replaced with two parts: the name and the index
+        for uniquiness in TensorFlow.
+        """
+        if self.parent is self:
+            leader_name = self.name
+            leader_index = self.index
+            if leader_index is None:
+                return leader_name
+            return "{name}-{index}".format(name=leader_name, index=leader_index)
+        return self.pathname.rsplit('/')[-1]
+
+    @property
+    def tf_pathname(self):
+        """
+        Method used for defining full path name for particular tensor at build time.
+        For example, `tf.get_variable` creates variable w/o taking into account
+        name scopes and `tf_pathname` consists of all parts of scope names
+        which were used up to that point - `tf.get_variable` call.
+        """
+        if self.parent is self:
+            return self.tf_name_scope
+        tail = self.pathname.split('/', 1)[-1]
+        leader = self.root.tf_name_scope
+        return "{leader_name}/{tail_name}".format(leader_name=leader, tail_name=tail)
 
     @abc.abstractmethod
     def _clear(self):

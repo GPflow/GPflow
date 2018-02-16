@@ -49,6 +49,10 @@ class TestOptimize(GPflowTestCase):
 
 
 class Empty(gpflow.models.Model):
+    def __init__(self, *args, **kwargs):
+        if 'name' not in kwargs:
+            kwargs['name'] = 'Empty'
+        super().__init__(*args, **kwargs)
     def _build_likelihood(self):
         return tf.convert_to_tensor(1., dtype=gpflow.settings.float_type)
 
@@ -140,14 +144,14 @@ def setup_sgpr():
 
 class TestLikelihoodAutoflow(GPflowTestCase):
     def test_lik_and_prior(self):
-        with self.test_context():
+        with self.test_context(graph=tf.Graph()):
             m = setup_sgpr()
             l0 = m.compute_log_likelihood()
             p0 = m.compute_log_prior()
 
         m.clear()
 
-        with self.test_context():
+        with self.test_context(graph=tf.Graph()):
             m.kern.variance.prior = gpflow.priors.Gamma(1.4, 1.6)
             m.compile()
             l1 = m.compute_log_likelihood()

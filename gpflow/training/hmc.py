@@ -112,7 +112,7 @@ class HMC(Optimizer):
                                          unconstrained_trace, params)
                 hmc_output = constrained_trace + [logprob_trace]
 
-        names = [param.full_name for param in params]
+        names = [param.pathname for param in params]
         raw_traces = session.run(hmc_output, feed_dict=model.feeds)
 
         if anchor:
