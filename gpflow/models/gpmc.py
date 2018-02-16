@@ -54,7 +54,6 @@ class GPMC(GPModel):
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    # TODO(@awav): CHECK IT.
     def compile(self, session=None):
         """
         Before calling the standard compile function, check to see if the size
