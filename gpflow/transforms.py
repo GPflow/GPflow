@@ -368,7 +368,7 @@ class LowerTriangular(Transform):
         for i in range(self.num_matrices):
             indices = np.tril_indices(matsize, 0)
             var[(np.zeros(len(indices[0])).astype(int) + i,) + indices] = xr[i, :]
-        return var.squeeze() if self.squeeze else var
+        return var.squeeze(axis=0) if self.squeeze else var
 
     def backward(self, y):
         """
@@ -387,7 +387,7 @@ class LowerTriangular(Transform):
     def forward_tensor(self, x):
         reshaped = tf.reshape(x, (self.num_matrices, -1))
         fwd = vec_to_tri(reshaped, self.N)
-        return tf.squeeze(fwd) if self.squeeze else fwd
+        return tf.squeeze(fwd, axis=0) if self.squeeze else fwd
 
     def backward_tensor(self, y):
         """

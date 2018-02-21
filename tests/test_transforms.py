@@ -202,6 +202,11 @@ class TestMatrixTransforms(GPflowTestCase):
         with self.assertRaises(ValueError):
             t.forward(np.ones(3 * 7))
 
+    def test_LowerTriangular_squeezes_only_first_axis(self):
+        t = gpflow.transforms.LowerTriangular(1, 1, squeeze=True)
+        ret = t.forward(np.ones((1, 1)))
+        self.assertEqual(ret.shape, (1, 1))
+
     def test_DiagMatrix(self):
         t = gpflow.transforms.DiagMatrix(3)
         t.backward(np.eye(3))
