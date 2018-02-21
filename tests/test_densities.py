@@ -26,16 +26,18 @@ from numpy.testing import assert_allclose
 rng = np.random.RandomState(1)
 
 
-@pytest.mark.parametrize("x", [randn(4,10), randn(4,1), randn(4)])
-@pytest.mark.parametrize("mu", [randn(4,10), randn(4,1), randn(4)])
-@pytest.mark.parametrize("cov", [randn(4,4), np.eye(4)])
-def test_multivariate_normal(session_tf, x, mu, cov):
-    cov = np.dot(cov, cov.T)
+@pytest.mark.parametrize("x", [randn(4,10), randn(4,1)])
+@pytest.mark.parametrize("mu", [randn(4,10), randn(4,1)])
+@pytest.mark.parametrize("cov_sqrt", [randn(4,4), np.eye(4)])
+def test_multivariate_normal(session_tf, x, mu, cov_sqrt):
+    cov = np.dot(cov_sqrt, cov_sqrt.T)
     L = np.linalg.cholesky(cov)
-    gp_result = densities.multivariate_normal(x, mu, L)
+    gp_result = densities.multivariate_normal(tf.convert_to_tensor(x),
+                                              tf.convert_to_tensor(mu),
+                                              tf.convert_to_tensor(L))
     gp_result = session_tf.run(gp_result)
-    if len(mu.shape) > 1 and mu.shape[1] > 1:
-        if len(x.shape) > 1 and x.shape[1] > 1:
+    if mu.shape[1] > 1:
+        if x.shape[1] > 1:
             sp_result = [mvn.logpdf(x[:,i], mu[:,i], cov) for i in range(mu.shape[1])]
         else:
             sp_result = [mvn.logpdf(x.ravel(), mu[:, i], cov) for i in range(mu.shape[1])]
