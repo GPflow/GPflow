@@ -297,6 +297,20 @@ class Parameter(Node):
         column_values = [[value] for value in column_values]
         df = misc.pretty_pandas_table([self.pathname], column_names, column_values)
         return df
+    
+    def tf_compilation_index(self):
+        """
+        Takes out index from initial source of compilation for the parameter tensor.
+        E.g. a parameter is compiled under parameterized object, then that parameterized
+        object is assigned to another one. Because tensorflow names are immutable,
+        there is no way to change names according new structure. We modify only gpflow
+        names, but tensorflow. Using tensorflow names, we can history of compilation
+        points or sources.
+        """
+        if self.parameter_tensor is None:
+            return None
+        name = self.parameter_tensor.name
+        return name.split('-', 1)[-1].split('/')[0]
 
     def _valid_input(self, value, dtype=None):
         if not misc.is_valid_param_value(value):

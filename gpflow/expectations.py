@@ -740,7 +740,7 @@ def _expectation(p, kern, none1, none2, none3):
     :return: N
     """
     return functools.reduce(tf.add, [
-        expectation(p, k) for k in kern.kern_list])
+        expectation(p, k) for k in kern.kernels])
 
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, type(None), type(None))
@@ -753,7 +753,7 @@ def _expectation(p, kern, feat, none2, none3):
     :return: NxM
     """
     return functools.reduce(tf.add, [
-        expectation(p, (k, feat)) for k in kern.kern_list])
+        expectation(p, (k, feat)) for k in kern.kernels])
 
 
 @dispatch(Gaussian,
@@ -768,7 +768,7 @@ def _expectation(p, mean, none, kern, feat):
     :return: NxQxM
     """
     return functools.reduce(tf.add, [
-        expectation(p, mean, (k, feat)) for k in kern.kern_list])
+        expectation(p, mean, (k, feat)) for k in kern.kernels])
 
 
 @dispatch(MarkovGaussian, mean_functions.Identity, type(None), kernels.Sum, InducingPoints)
@@ -781,7 +781,7 @@ def _expectation(p, mean, none, kern, feat):
     :return: NxDxM
     """
     return functools.reduce(tf.add, [
-        expectation(p, mean, (k, feat)) for k in kern.kern_list])
+        expectation(p, mean, (k, feat)) for k in kern.kernels])
 
 
 @dispatch((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
@@ -796,15 +796,15 @@ def _expectation(p, kern1, feat1, kern2, feat2):
     crossexps = []
 
     if kern1 == kern2 and feat1 == feat2:  # avoid duplicate computation by using transposes
-        for i, k1 in enumerate(kern1.kern_list):
+        for i, k1 in enumerate(kern1.kernels):
             crossexps.append(expectation(p, (k1, feat1), (k1, feat1)))
 
-            for k2 in kern1.kern_list[:i]:
+            for k2 in kern1.kernels[:i]:
                 eKK = expectation(p, (k1, feat1), (k2, feat2))
                 eKK += tf.matrix_transpose(eKK)
                 crossexps.append(eKK)
     else:
-        for k1, k2 in it.product(kern1.kern_list, kern2.kern_list):
+        for k1, k2 in it.product(kern1.kernels, kern2.kernels):
             crossexps.append(expectation(p, (k1, feat1), (k2, feat2)))
 
     return functools.reduce(tf.add, crossexps)
@@ -889,7 +889,7 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2):
 
 
 # ============================== Product kernels ==============================
-# Note: product kernels are only supported if the kernels in kern.kern_list act
+# Note: product kernels are only supported if the kernels in kern.kernels act
 #       on disjoint sets of active_dims and the Gaussian we are integrating over
 #       is Diagonal
 
@@ -908,7 +908,7 @@ def _expectation(p, kern, none1, none2, none3):
             "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
     return functools.reduce(tf.multiply, [
-        expectation(p, k) for k in kern.kern_list])
+        expectation(p, k) for k in kern.kernels])
 
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, type(None), type(None))
@@ -926,7 +926,7 @@ def _expectation(p, kern, feat, none2, none3):
             "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
     return functools.reduce(tf.multiply, [
-        expectation(p, (k, feat)) for k in kern.kern_list])
+        expectation(p, (k, feat)) for k in kern.kernels])
 
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
@@ -956,7 +956,7 @@ def _expectation(p, kern1, feat1, kern2, feat2):
             "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
     return functools.reduce(tf.multiply, [
-        expectation(p, (k, feat), (k, feat)) for k in kern.kern_list])
+        expectation(p, (k, feat), (k, feat)) for k in kern.kernels])
 
 
 # ============== Conversion to Gaussian from Diagonal or Markov ===============

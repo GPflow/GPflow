@@ -24,7 +24,7 @@ import numpy as np
 from . import transforms
 from . import settings
 
-from .params import Parameter, Parameterized
+from .params import Parameter, Parameterized, ParamList
 from .decors import params_as_tensors, autoflow
 
 
@@ -609,33 +609,6 @@ class Coregion(Kernel):
         return tf.gather(Bdiag, X)
 
 
-def make_kernel_names(kern_list):
-    """
-    Take a list of kernels and return a list of strings, giving each kernel a
-    unique name.
-
-    Each name is made from the lower-case version of the kernel's class name.
-
-    Duplicate kernels are given trailing numbers.
-    """
-    names = []
-    counting_dict = {}
-    for k in kern_list:
-        inner_name = k.__class__.__name__.lower()
-
-        # check for duplicates: start numbering if needed
-        if inner_name in counting_dict:
-            if counting_dict[inner_name] == 1:
-                names[names.index(inner_name)] = inner_name + '_1'
-            counting_dict[inner_name] += 1
-            name = inner_name + '_' + str(counting_dict[inner_name])
-        else:
-            counting_dict[inner_name] = 1
-            name = inner_name
-        names.append(name)
-    return names
-
-
 class Combination(Kernel):
     """
     Combine a list of kernels, e.g. by adding or multiplying (see inheriting
@@ -645,27 +618,24 @@ class Combination(Kernel):
     names.
     """
 
-    def __init__(self, kern_list, name=None):
-        if not all(isinstance(k, Kernel) for k in kern_list):
+    def __init__(self, kernels, name=None):
+        if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
         input_dim = np.max([k.input_dim
                             if type(k.active_dims) is slice else
                             np.max(k.active_dims) + 1
-                            for k in kern_list])
+                            for k in kernels])
         super().__init__(input_dim=input_dim, name=name)
 
         # add kernels to a list, flattening out instances of this class therein
-        self.kern_list = []
-        for k in kern_list:
+        kernels_list = []
+        for k in kernels:
             if isinstance(k, self.__class__):
-                self.kern_list.extend(k.kern_list)
+                kernels_list.extend(k.kernels)
             else:
-                self.kern_list.append(k)
-
-        # generate a set of suitable names and add the kernels as attributes
-        names = make_kernel_names(self.kern_list)
-        [setattr(self, name, k) for name, k in zip(names, self.kern_list)]
+                kernels_list.append(k)
+        self.kernels = ParamList(kernels_list)
 
     @property
     def on_separate_dimensions(self):
@@ -675,11 +645,11 @@ class Combination(Kernel):
         will overlap, so this will always return False.
         :return: Boolean indicator.
         """
-        if np.any([isinstance(k.active_dims, slice) for k in self.kern_list]):
+        if np.any([isinstance(k.active_dims, slice) for k in self.kernels]):
             # Be conservative in the case of a slice object
             return False
         else:
-            dimlist = [k.active_dims for k in self.kern_list]
+            dimlist = [k.active_dims for k in self.kernels]
             overlapping = False
             for i, dims_i in enumerate(dimlist):
                 for dims_j in dimlist[i + 1:]:
@@ -690,18 +660,18 @@ class Combination(Kernel):
 
 class Sum(Combination):
     def K(self, X, X2=None, presliced=False):
-        return reduce(tf.add, [k.K(X, X2) for k in self.kern_list])
+        return reduce(tf.add, [k.K(X, X2) for k in self.kernels])
 
     def Kdiag(self, X, presliced=False):
-        return reduce(tf.add, [k.Kdiag(X) for k in self.kern_list])
+        return reduce(tf.add, [k.Kdiag(X) for k in self.kernels])
 
 
 class Product(Combination):
     def K(self, X, X2=None, presliced=False):
-        return reduce(tf.multiply, [k.K(X, X2) for k in self.kern_list])
+        return reduce(tf.multiply, [k.K(X, X2) for k in self.kernels])
 
     def Kdiag(self, X, presliced=False):
-        return reduce(tf.multiply, [k.Kdiag(X) for k in self.kern_list])
+        return reduce(tf.multiply, [k.Kdiag(X) for k in self.kernels])
 
 
 def make_deprecated_class(oldname, NewClass):
