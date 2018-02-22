@@ -207,6 +207,18 @@ class TestMatrixTransforms(GPflowTestCase):
         ret = t.forward(np.ones((1, 1)))
         self.assertEqual(ret.shape, (1, 1))
 
+    def test_LowerTriangularConsistency(self):
+        t = gpflow.transforms.LowerTriangular(2, 4)
+        M = np.random.randn(4, 2, 2) * np.tri(2, 2)[None, :, :]
+
+        M_free = t.backward(M)
+        assert_allclose(M, t.forward(M_free))
+
+        with self.test_context() as session:
+            M_free_tf = session.run(t.backward_tensor(tf.identity(M)))
+            assert_allclose(M_free, M_free_tf)
+            assert_allclose(M, session.run(t.forward_tensor(tf.identity(M_free_tf))))
+
     def test_DiagMatrix(self):
         t = gpflow.transforms.DiagMatrix(3)
         t.backward(np.eye(3))

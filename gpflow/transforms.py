@@ -382,7 +382,7 @@ class LowerTriangular(Transform):
         N = int(np.sqrt(y.size / self.num_matrices))
         reshaped = np.reshape(y, (self.num_matrices, N, N))
         # return reshaped[np.tril_indices(N, 0)].T
-        return np.vstack([reshaped[i, :, :][np.tril_indices(N, 0)] for i in range(len(reshaped))])
+        return np.vstack([reshaped[i, :, :][np.tril_indices(N, 0)] for i in range(len(reshaped))]).flatten()
 
     def forward_tensor(self, x):
         reshaped = tf.reshape(x, (self.num_matrices, -1))
@@ -399,7 +399,7 @@ class LowerTriangular(Transform):
         indices = np.array([np.hstack(x) for x in
                             itertools.product(np.arange(self.num_matrices), np.dstack(np.tril_indices(N))[0])])
         triangular = tf.reshape(tf.gather_nd(reshaped, indices), shape=[-1])
-        return triangular[None, :]
+        return triangular
 
     def log_jacobian_tensor(self, x):
         return tf.zeros((1,), settings.float_type)
