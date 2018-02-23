@@ -13,15 +13,19 @@
 # limitations under the License.
 
 import abc
+import functools
 
 import tensorflow as tf
 
 from . import optimizer
 from .. import settings
+from ..models import Model
 
 
 class NatGradOptimizer(optimizer.Optimizer):
-    def __init__(self, gamma):
+    def __init__(self, gamma, **kwargs):
+        super().__init__(**kwargs)
+        self.name = self.__class__.__name__
         self._gamma = gamma
     
     @property
@@ -51,10 +55,8 @@ class NatGradOptimizer(optimizer.Optimizer):
         self._model = model
 
         with session.graph.as_default(), tf.name_scope(self.name):
-            full_var_list = self._gen_var_list(model, var_list)
-
             # Create optimizer variables before initialization.
-            self._natgrad_op = self._build_natgrad_step_ops(*full_var_list)
+            self._natgrad_op = self._build_natgrad_step_ops(*var_list)
             feed_dict = self._gen_feed_dict(model, feed_dict)
             for _i in range(maxiter):
                 session.run(self._natgrad_op, feed_dict=feed_dict)
@@ -112,8 +114,8 @@ class NatGradOptimizer(optimizer.Optimizer):
 
         q_mu_u = q_mu_param.unconstrained_tensor
         q_sqrt_u = q_sqrt_param.unconstrained_tensor
-        q_mu_assign = tf.assign(q_mu_u, q_mu_param.transform.backward_tensor(mean_new)))
-        q_sqrt_assign = tf.assign(q_sqrt_u, q_sqrt_param.transform.backward_tensor(varsqrt_new)))
+        q_mu_assign = tf.assign(q_mu_u, q_mu_param.transform.backward_tensor(mean_new))
+        q_sqrt_assign = tf.assign(q_sqrt_u, q_sqrt_param.transform.backward_tensor(varsqrt_new))
         return q_mu_assign, q_sqrt_assign
 
 #
@@ -190,15 +192,42 @@ class XiSqrtMeanVar(XiTransform):
 # The following functions expect their first and second inputs to have shape
 # DN1 and DNN, respectively. Return values are also of shapes DN1 and DNN.
 
+
+def swap_dimensions(method):
+    """
+    Converts between GPflow indexing and tensorflow indexing
+    `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix ops):
+        `method` inputs DN1, DNN
+        `method` outputs DN1, DNN
+    :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
+        inputs: ND, NND
+        outputs: ND, NND
+    """
+    @functools.wraps(method)
+    def wrapper(a_nd, b_dnn, swap=True):
+        if a_nd.get_shape().ndims != 2:
+            raise ValueError("The `a_nd` input must have 2 dimentions.")
+        if b_dnn.get_shape().ndims == 3:
+            raise ValueError("The `b_nd` input must have 3 dimentions.")
+        if swap:
+            a_dn1 = tf.transpose(a_nd)[:, :, None]
+            A_dn1, B_dnn = method(a_dn1, b_dnn)
+            A_nd = tf.transpose(A_dn1[:, :, 0])
+            return A_nd, B_dnn
+        else:
+            return method(a_dn1, b_dnn)
+    return wrapper
+
+
 @swap_dimensions
 def natural_to_meanvarsqrt(nat_1, nat_2):
     var_sqrt_inv = tf.cholesky(-2 * nat_2)
     var_sqrt = _inverse_lower_triangular(var_sqrt_inv)
-    S = tf.matmul(var_sqrt, var_sqrt, transpose_a=True)
+    s = tf.matmul(var_sqrt, var_sqrt, transpose_a=True)
     mu = tf.matmul(s, nat_1)
     # We need the decomposition of S as L L^T, not as L^T L,
     # hence we need another cholesky.
-    return mu, _cholesky_with_jitter(S)
+    return mu, _cholesky_with_jitter(s)
 
 
 @swap_dimensions
@@ -228,31 +257,6 @@ def expectation_to_meanvarsqrt(eta_1, eta_2):
 def meanvarsqrt_to_expectation(m, v_sqrt):
     v = tf.matmul(v_sqrt, v_sqrt, transpose_b=True)
     return m, v + tf.matmul(m, m, transpose_b=True)
-
-
-def swap_dimensions(method):
-    """
-    Converts between GPflow indexing and tensorflow indexing
-    `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix ops):
-        `method` inputs DN1, DNN
-        `method` outputs DN1, DNN
-    :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
-        inputs: ND, NND
-        outputs: ND, NND
-    """
-    def wrapper(a_nd, b_dnn, swap=True):
-        if a_nd.get_shape().ndims != 2:
-            raise ValueError("The `a_nd` input must have 2 dimentions.")
-        if b_dnn.get_shape().ndims == 3
-            raise ValueError("The `b_nd` input must have 3 dimentions.")
-        if swap:
-            a_dn1 = tf.transpose(a_nd)[:, :, None]
-            A_dn1, B_dnn = method(a_dn1, b_dnn)
-            A_nd = tf.transpose(A_dn1[:, :, 0])
-            return A_nd, B_dnn
-        else:
-            return method(a_dn1, b_dnn)
-    return wrapper
 
 
 def _cholesky_with_jitter(M):
