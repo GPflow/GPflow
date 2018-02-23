@@ -16,19 +16,27 @@ import abc
 
 import tensorflow as tf
 
+from gpflow.models import Model
+
 from . import optimizer
 from .. import settings
 
 
 class NatGradOptimizer(optimizer.Optimizer):
-    def __init__(self, gamma):
+    def __init__(self, gamma, name=None):
         self._gamma = gamma
-    
+        self.name = name
+        self._natgrad_op = None
+
     @property
     def gamma(self):
-        return self.gamma
+        return self._gamma
 
-    def minimize(self, model, session=None, var_list=None, feed_dict=None,
+    @property
+    def minimize_operation(self):
+        return self._natgrad_op
+
+    def minimize(self, model, var_list=None, session=None, feed_dict=None,
                  maxiter=1000, anchor=True, **kwargs):
         """
         Minimizes objective function of the model.
@@ -51,13 +59,13 @@ class NatGradOptimizer(optimizer.Optimizer):
         self._model = model
 
         with session.graph.as_default(), tf.name_scope(self.name):
-            full_var_list = self._gen_var_list(model, var_list)
+            # full_var_list = self._gen_var_list(model, var_list)
 
             # Create optimizer variables before initialization.
-            self._natgrad_op = self._build_natgrad_step_ops(*full_var_list)
+            self._natgrad_op = self._build_natgrad_step_ops(*var_list)
             feed_dict = self._gen_feed_dict(model, feed_dict)
             for _i in range(maxiter):
-                session.run(self._natgrad_op, feed_dict=feed_dict)
+                session.run(self.minimize_operation, feed_dict=feed_dict)
 
         if anchor:
             model.anchor(session)
@@ -81,9 +89,9 @@ class NatGradOptimizer(optimizer.Optimizer):
     def _build_natgrad_step_ops(self, *args):
         ops = []
         for arg in args:
-           q_mu, q_sqrt = arg[:2]
-           xi_transform = arg[2] if len(arg) > 2 else XiNat()
-           ops.append(self._build_natgrad_step_op(q_mu, q_sqrt, xi_transform))
+            q_mu, q_sqrt = arg[:2]
+            xi_transform = arg[2] if len(arg) > 2 else XiNat()
+            ops.append(self._build_natgrad_step_op(q_mu, q_sqrt, xi_transform))
         ops = list(sum(ops, ()))
         return tf.group(ops)
 
@@ -112,8 +120,8 @@ class NatGradOptimizer(optimizer.Optimizer):
 
         q_mu_u = q_mu_param.unconstrained_tensor
         q_sqrt_u = q_sqrt_param.unconstrained_tensor
-        q_mu_assign = tf.assign(q_mu_u, q_mu_param.transform.backward_tensor(mean_new)))
-        q_sqrt_assign = tf.assign(q_sqrt_u, q_sqrt_param.transform.backward_tensor(varsqrt_new)))
+        q_mu_assign = tf.assign(q_mu_u, q_mu_param.transform.backward_tensor(mean_new))
+        q_sqrt_assign = tf.assign(q_sqrt_u, q_sqrt_param.transform.backward_tensor(varsqrt_new))
         return q_mu_assign, q_sqrt_assign
 
 #
@@ -190,12 +198,36 @@ class XiSqrtMeanVar(XiTransform):
 # The following functions expect their first and second inputs to have shape
 # DN1 and DNN, respectively. Return values are also of shapes DN1 and DNN.
 
+def swap_dimensions(method):
+    """
+    Converts between GPflow indexing and tensorflow indexing
+    `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix ops):
+        `method` inputs DN1, DNN
+        `method` outputs DN1, DNN
+    :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
+        inputs: ND, DNN
+        outputs: ND, DNN
+    """
+    def wrapper(a_nd, b_dnn, swap=True):
+        if a_nd.get_shape().ndims != 2:
+            raise ValueError("The `a_nd` input must have 2 dimentions.")
+        if b_dnn.get_shape().ndims != 3:
+            raise ValueError("The `b_dnn` input must have 3 dimentions.")
+        if swap:
+            a_dn1 = tf.transpose(a_nd)[:, :, None]
+            A_dn1, B_dnn = method(a_dn1, b_dnn)
+            A_nd = tf.transpose(A_dn1[:, :, 0])
+            return A_nd, B_dnn
+        else:
+            return method(a_nd, b_dnn)
+    return wrapper
+
 @swap_dimensions
 def natural_to_meanvarsqrt(nat_1, nat_2):
     var_sqrt_inv = tf.cholesky(-2 * nat_2)
     var_sqrt = _inverse_lower_triangular(var_sqrt_inv)
     S = tf.matmul(var_sqrt, var_sqrt, transpose_a=True)
-    mu = tf.matmul(s, nat_1)
+    mu = tf.matmul(S, nat_1)
     # We need the decomposition of S as L L^T, not as L^T L,
     # hence we need another cholesky.
     return mu, _cholesky_with_jitter(S)
@@ -230,29 +262,6 @@ def meanvarsqrt_to_expectation(m, v_sqrt):
     return m, v + tf.matmul(m, m, transpose_b=True)
 
 
-def swap_dimensions(method):
-    """
-    Converts between GPflow indexing and tensorflow indexing
-    `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix ops):
-        `method` inputs DN1, DNN
-        `method` outputs DN1, DNN
-    :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
-        inputs: ND, NND
-        outputs: ND, NND
-    """
-    def wrapper(a_nd, b_dnn, swap=True):
-        if a_nd.get_shape().ndims != 2:
-            raise ValueError("The `a_nd` input must have 2 dimentions.")
-        if b_dnn.get_shape().ndims == 3
-            raise ValueError("The `b_nd` input must have 3 dimentions.")
-        if swap:
-            a_dn1 = tf.transpose(a_nd)[:, :, None]
-            A_dn1, B_dnn = method(a_dn1, b_dnn)
-            A_nd = tf.transpose(A_dn1[:, :, 0])
-            return A_nd, B_dnn
-        else:
-            return method(a_dn1, b_dnn)
-    return wrapper
 
 
 def _cholesky_with_jitter(M):
@@ -263,7 +272,7 @@ def _cholesky_with_jitter(M):
     :return: The Cholesky decomposition of the input `M`. It's a `tf.Tensor` of shape ...xNxN
     """
     N = tf.shape(M)[-1]
-    return tf.cholesky(M + settings.jitter * tf.eye(N, dtype=N.dtype))
+    return tf.cholesky(M + settings.jitter * tf.eye(N, dtype=M.dtype))
 
 def _inverse_lower_triangular(M):
     """
@@ -275,6 +284,6 @@ def _inverse_lower_triangular(M):
     """
     if M.get_shape().ndims != 3:
         raise ValueError("Number of dimensions for input is required to be 3.")
-    D, N, _ = tf.shape(M)
-    I_DNN = tf.eye(N, dtype=N.dtype)[None, :, :] * tf.ones((D, 1, 1), dtype=M.dtype)
+    D, N = tf.shape(M)[0], tf.shape(M)[1]
+    I_DNN = tf.eye(N, dtype=M.dtype)[None, :, :] * tf.ones((D, 1, 1), dtype=M.dtype)
     return tf.matrix_triangular_solve(M, I_DNN)
