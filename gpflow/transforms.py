@@ -320,8 +320,8 @@ class LowerTriangular(Transform):
 
        tri_mat = vec_to_tri(x)
 
-    x is a free variable, y is always a list of lower triangular matrices sized
-    (D x N x N).
+    x is of shape num_matrices x (N**2 + N)/2
+    y is of shape num_matrices x N x N.
     """
 
     def __init__(self, N, num_matrices=1, squeeze=False):
@@ -332,43 +332,28 @@ class LowerTriangular(Transform):
             num_matrices: Number of matrices to be stored.
             squeeze: If num_matrices == 1, drop the redundant axis.
         """
+        self.N = N
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
         self.squeeze = squeeze
-        self.N = N
 
-    def _validate_vector_length(self, length):
-        """
-        Check whether the vector length is consistent with being a triangular
-         matrix and with `self.num_matrices`.
-        Args:
-            length: Length of the free state vector.
-
-        Returns: Length of the vector with the lower triangular elements.
-
-        """
-        L = length / self.num_matrices
-        if int(((L * 8) + 1) ** 0.5) ** 2.0 != (L * 8 + 1):
-            raise ValueError("The free state must be a triangle number.")
-        return L
+        if self.squeeze and (num_matrices != 1):
+            raise ValueError("cannot squeeze matrices unless the first dim is 1.")
 
     def forward(self, x):
         """
         Transforms from the free state to the variable.
         Args:
-            x: Free state vector. Must have length of `self.num_matrices` *
-                triangular_number.
+            x: Free state vector. Must have length of `self.num_matrices x triangular_number
 
         Returns:
-            Reconstructed variable.
+            Reconstructed variable of shape self.num_matrices x N x N
         """
-        L = self._validate_vector_length(len(x))
-        matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
-        xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((self.num_matrices, matsize, matsize), settings.float_type)
+        fwd = np.zeros((self.num_matrices, self.N, self.N), settings.float_type)
+        indices = np.tril_indices(self.N, 0)
+        z = np.zeros(len(indices[0])).astype(int)
         for i in range(self.num_matrices):
-            indices = np.tril_indices(matsize, 0)
-            var[(np.zeros(len(indices[0])).astype(int) + i,) + indices] = xr[i, :]
-        return var.squeeze(axis=0) if self.squeeze else var
+            fwd[(z + i,) + indices] = x[i, :]
+        return fwd.squeeze(axis=0) if self.squeeze else fwd
 
     def backward(self, y):
         """
@@ -379,27 +364,39 @@ class LowerTriangular(Transform):
         Returns:
             Free state.
         """
-        N = int(np.sqrt(y.size / self.num_matrices))
-        reshaped = np.reshape(y, (self.num_matrices, N, N))
-        # return reshaped[np.tril_indices(N, 0)].T
-        return np.vstack([reshaped[i, :, :][np.tril_indices(N, 0)] for i in range(len(reshaped))]).flatten()
+        if self.squeeze:
+            y = y[None, :, :]
+        ind = np.tril_indices(self.N)
+        return np.vstack([y_i[ind] for y_i in y])
 
     def forward_tensor(self, x):
-        reshaped = tf.reshape(x, (self.num_matrices, -1))
-        fwd = vec_to_tri(reshaped, self.N)
+        """
+        Args:
+            x: Free state tensor. Should be of shape `self.num_matrices x triangular_number`
+
+        Returns:
+            fwd: tensor with shape self.num_matrices x self.N x self.N
+
+        Note:
+        if self.squeeze, the return shape is self.N x self.N
+        """
+        fwd = vec_to_tri(x, self.N)
         return tf.squeeze(fwd, axis=0) if self.squeeze else fwd
 
     def backward_tensor(self, y):
         """
-        CAVEAT: Requires defined shape and can't work with unknown shape.
+        Args:
+            y tensor with shape self.num_matrices, self.N, self.N
+        Returns:
+            x tensor with shape self.num_matrices, (self.N**2 + self.N) / 2
         """
-        size = np.prod(y.shape.as_list())
-        N = int(np.sqrt(size / self.num_matrices))
-        reshaped = tf.reshape(y, shape=(self.num_matrices, N, N))
-        indices = np.array([np.hstack(x) for x in
-                            itertools.product(np.arange(self.num_matrices), np.dstack(np.tril_indices(N))[0])])
-        triangular = tf.reshape(tf.gather_nd(reshaped, indices), shape=[-1])
-        return triangular
+        if self.squeeze:
+            y = tf.expand_dims(y, axis=0)
+        indices = np.vstack(np.tril_indices(self.N)).T
+        indices = itertools.product(np.arange(self.num_matrices), indices)
+        indices = np.array([np.hstack(x) for x in indices])
+        triangular = tf.gather_nd(y, indices)
+        return tf.reshape(triangular, [self.num_matrices, (self.N**2 + self.N) // 2])
 
     def log_jacobian_tensor(self, x):
         return tf.zeros((1,), settings.float_type)

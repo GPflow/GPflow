@@ -33,7 +33,7 @@ class TransformTests(GPflowTestCase):
             if transform_class == Chain:
                 continue  # Chain transform cannot be tested on its own
             if transform_class == gpflow.transforms.LowerTriangular:
-                transforms.append(transform_class(4))
+                pass  # Test triangular transforms separately.
             elif transform_class == gpflow.transforms.DiagMatrix:
                 transforms.append(transform_class(5))
             else:
@@ -197,10 +197,10 @@ class TestMatrixTransforms(GPflowTestCase):
     Some extra tests for the matrix transformations.
     """
     def test_LowerTriangular(self):
-        t = gpflow.transforms.LowerTriangular(1, 3)
-        t.forward(np.ones(3 * 6))
+        t = gpflow.transforms.LowerTriangular(N=3, num_matrices=2)
+        t.forward(np.ones((2, 6)))
         with self.assertRaises(ValueError):
-            t.forward(np.ones(3 * 7))
+            t.forward(np.ones((2, 7)))
 
     def test_LowerTriangular_squeezes_only_first_axis(self):
         t = gpflow.transforms.LowerTriangular(1, 1, squeeze=True)
