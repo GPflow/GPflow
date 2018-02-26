@@ -17,12 +17,13 @@ import abc
 from datetime import datetime
 
 import h5py
+import numpy as np
 
 from .. import misc
 from .context import Contexture
-from .frames import (DictFrame, FrameFactory, ListFrame, Struct,
-                     ParameterFrame, ParamListFrame, PrimitiveTypeFrame,
-                     PriorFrame, TensorFlowFrame, TransformFrame)
+from .frames import (DictFrame, FrameFactory, ListFrame, ParameterFrame,
+                     ParamListFrame, PrimitiveTypeFrame, PriorFrame,
+                     SliceFrame, Struct, TensorFlowFrame, TransformFrame)
 
 
 class BaseSerializer(Contexture, metaclass=abc.ABCMeta):
@@ -36,10 +37,10 @@ class BaseSerializer(Contexture, metaclass=abc.ABCMeta):
 
 
 class HDF5Serializer(BaseSerializer):
-    _class_field = '<<class>>'
-    _module_field = '<<module>>'
-    _variables_field = '<<variables>>'
-    _extra_field = '<<extra>>'
+    _class_field = '__instance_type__'
+    _module_field = '__module__'
+    _variables_field = '__attributes__'
+    _extra_field = '__extra_field__'
     _list_type = 'list'
     _dict_type = 'dict'
 
@@ -59,17 +60,17 @@ class HDF5Serializer(BaseSerializer):
             return self._deserialize(h5file['data'])
     
     def _serialize(self, group, name, data):
-        if isinstance(data, PrimitiveTypeFrame.supported_types()):
+        if PrimitiveTypeFrame.support(data) or SliceFrame.support(data):
             kwargs = {}
             if data is None:
-                kwargs['dtype'] = h5py.Empty('i')
+                kwargs.update(dict(dtype=h5py.Empty('i')))
             group.create_dataset(name=name, data=data, **kwargs)
-        elif isinstance(data, ListFrame.supported_types()):
+        elif ListFrame.support(data):
             list_struct = group.create_group(name)
             list_struct.create_dataset(name=self._class_field, data=self._list_type)
             for i in range(len(data)):
                 self._serialize(list_struct, str(i), data[i])
-        elif isinstance(data, DictFrame.supported_types()):
+        elif DictFrame.support(data):
             dict_struct = group.create_group(name)
             dict_struct.create_dataset(name=self._class_field, data=self._dict_type)
             for key, value in data.items():

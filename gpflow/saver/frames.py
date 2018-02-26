@@ -17,11 +17,12 @@ import sys
 import abc
 from collections import namedtuple
 from copy import copy
+from enum import Enum
 
 import numpy as np
 import tensorflow as tf
 
-from ..core import Node
+from ..core import Node, AutoFlow
 from ..params import Parameter, Parameterized, ParamList
 from ..priors import Prior
 from ..transforms import Transform
@@ -33,11 +34,15 @@ Struct = namedtuple('Struct', ['module_name',
                                'variables',
                                'extra'])
 
+class FrameCoding(Enum):
+    ENCODE = 0
+    DECODE = 1
+
 
 class BaseFrame(Contexture, metaclass=abc.ABCMeta):
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def supported_types():
+    def support(cls, item, coding=FrameCoding.ENCODE):
         pass
 
     @abc.abstractmethod
@@ -48,26 +53,16 @@ class BaseFrame(Contexture, metaclass=abc.ABCMeta):
     def decode(self, item):
         pass
 
-    def _check_encode_type(self, item):
-        self._check_type(item, 'encoding')
-    
-    def _check_decode_type(self, item):
-        self._check_type(item, 'decoding')
-    
-    def _check_type(self, item, message):
-        if not isinstance(item, self.supported_types()):
-            msg = '{class_name} does not support type {item_type} for {message}.'
-            msg = msg.format(
-                class_name=self.__class__.__name__,
-                item_type=type(item),
-                message=message)
-            raise ValueError(msg)
-
 
 class PrimitiveTypeFrame(BaseFrame):
-    @staticmethod
-    def supported_types():
-        return (str, int, float, bool, np.ndarray, type(None), np.generic)
+    @classmethod
+    def support(cls, item, coding=FrameCoding.ENCODE):
+        types = (str, int, float, bool, np.ndarray, np.generic, type(None))
+        if coding == FrameCoding.ENCODE:
+            return isinstance(item, types)
+        if isinstance(item, np.void) and item.dtype not in np.ScalarType:
+            return False
+        return isinstance(item, types)
 
     def encode(self, item):
         return item
@@ -77,9 +72,9 @@ class PrimitiveTypeFrame(BaseFrame):
 
 
 class ListFrame(BaseFrame):
-    @staticmethod
-    def supported_types():
-        return list
+    @classmethod
+    def support(cls, item, coding=FrameCoding.ENCODE):
+        return isinstance(item, list)
 
     def encode(self, item):
         factory = FrameFactory(self.context)
@@ -91,9 +86,9 @@ class ListFrame(BaseFrame):
 
 
 class DictFrame(BaseFrame):
-    @staticmethod
-    def supported_types():
-        return (dict)
+    @classmethod
+    def support(cls, item, coding=FrameCoding.ENCODE):
+        return isinstance(item, dict)
 
     def encode(self, item):
         factory = FrameFactory(self.context)
@@ -106,9 +101,10 @@ class DictFrame(BaseFrame):
 
 
 class TensorFlowFrame(BaseFrame):
-    @staticmethod
-    def supported_types():
-        return (tf.Variable, tf.Tensor, tf.Operation, tf.data.Iterator)
+    @classmethod
+    def support(cls, item, coding=FrameCoding.ENCODE):
+        supported_types = (tf.Variable, tf.Tensor, tf.Operation, tf.data.Iterator)
+        return isinstance(item, supported_types)
     
     def encode(self, item):
         return None
@@ -117,22 +113,67 @@ class TensorFlowFrame(BaseFrame):
         return None
 
 
+class SliceFrame(BaseFrame):
+    _slice_numpy_dtype = np.dtype([('start', float), ('stop', float), ('step', float)])
+
+    @classmethod
+    def support(cls, item, coding=FrameCoding.ENCODE):
+        if coding == FrameCoding.ENCODE:
+            return isinstance(item, slice)
+        if not isinstance(item, np.void):
+            return False
+        return np.issubdtype(item.dtype, cls._slice_numpy_dtype)
+    
+    def encode(self, item):
+        slice_tuple = (item.start, item.stop, item.step)
+        return np.array(slice_tuple, dtype=self._slice_numpy_dtype)
+
+    def decode(self, item):
+        def element_of_slice(e):
+            if np.isnan(e):
+                return None
+            return int(e)
+        return slice(*map(element_of_slice, item.item()))
+
+
 def _real_object_struct_type(c):
     try:
         __import__(c.module_name)
     except ModuleNotFoundError:
-        raise RuntimeError('TODO')
+        msg = 'Saver can not find module {}.'
+        raise ImportError(msg.format(c.module_name))
     module = sys.modules[c.module_name]
     try:
         return module.__dict__[c.class_name]
     except KeyError:
-        raise RuntimeError('TODO')
+        msg = 'Saver can not find type {} at module {}.'
+        raise KeyError(msg.format(c.class_name, c.module_name))
 
 
 class ObjectFrame(BaseFrame):
-    @staticmethod
-    def supported_types():
+    @classmethod
+    def support(cls, item, coding=FrameCoding.ENCODE):
+        if coding == FrameCoding.ENCODE:
+            return cls._support_encoding(item)
+        return cls._support_decoding(item)
+    
+    @classmethod
+    def _encoding_type(cls):
         return object
+
+    @classmethod
+    def _support_encoding(cls, item):
+        return isinstance(item, cls._encoding_type())
+    
+    @classmethod
+    def _support_decoding(cls, item):
+        if not isinstance(item, Struct):
+            return False
+        encoding_type = cls._encoding_type()
+        if encoding_type is not object:
+            item_type = _real_object_struct_type(item)
+            return issubclass(item_type, encoding_type)
+        return True
     
     def encode(self, item):
         module_name = self._take_module_name(item)
@@ -174,25 +215,25 @@ class ObjectFrame(BaseFrame):
 
 
 class TransformFrame(ObjectFrame):
-    @staticmethod
-    def supported_types():
+    @classmethod
+    def _encoding_type(cls):
         return Transform
 
 
 class PriorFrame(ObjectFrame):
-    @staticmethod
-    def supported_types():
+    @classmethod
+    def _encoding_type(cls):
         return Prior
 
 
 class ParamListFrame(ObjectFrame):
-    @staticmethod
-    def supported_types():
+    @classmethod
+    def _encoding_type(cls):
         return ParamList
 
 class NodeFrame(ObjectFrame):
-    @staticmethod
-    def supported_types():
+    @classmethod
+    def _encoding_type(cls):
         return Node
     
     def _take_values(self, item):
@@ -202,8 +243,8 @@ class NodeFrame(ObjectFrame):
 
 
 class ParameterFrame(NodeFrame):
-    @staticmethod
-    def supported_types():
+    @classmethod
+    def _encoding_type(cls):
         return Parameter
     
     def _take_values(self, item):
@@ -223,21 +264,26 @@ class ParameterFrame(NodeFrame):
     
     def _create_object(self, item, attributes):
         instance = super()._create_object(item, attributes)
-        if item.extra:
+        if item.extra and self.context.autocompile:
             instance.compile(session=self.context.session)
         return instance
 
 class ParameterizedFrame(NodeFrame):
-    @staticmethod
-    def supported_types():
+    @classmethod
+    def _encoding_type(cls):
         return Parameterized
+    
+    def _take_values(self, item):
+        values = super()._take_values(item)
+        values = {k : v for k, v in values.items() if not k.startswith(AutoFlow.__autoflow_prefix__)}
+        return values
 
     def _create_object(self, item, attributes):
         instance = super()._create_object(item, attributes)
         for attr in attributes.values():
             if isinstance(attr, Node):
                 setattr(attr, '_parent', instance)
-        if item.extra:
+        if item.extra and self.context.autocompile:
             instance.compile(session=self.context.session)
         return instance
 
@@ -247,13 +293,14 @@ class ParameterizedFrame(NodeFrame):
         return None
 
 class FrameFactory(BaseFrame):
-    @staticmethod
-    def supported_types():
-        return ()
+    @classmethod
+    def support(cls, item, coding=FrameCoding.ENCODE):
+        pass
 
-    @staticmethod
-    def frames():
+    @property
+    def frames(self):
         return (PrimitiveTypeFrame,
+                SliceFrame,
                 TensorFlowFrame,
                 ListFrame,
                 DictFrame,
@@ -263,28 +310,26 @@ class FrameFactory(BaseFrame):
                 TransformFrame,
                 PriorFrame)
     
-    def find_supported_frame(self, item):
-        if isinstance(item, Struct):
-            item_type = _real_object_struct_type(item)
-        else:
-            item_type = type(item)
-        frames = self.context.frames + self.frames()
-        for e in frames:
-            if issubclass(item_type, e.supported_types()):
-                return e
-        msg = 'Item "{}" has type {} which does not match any frame at saver.'
-        raise TypeError(msg.format(item, item_type))
+    def find_supported_frame(self, item, coding):
+        frames = self.context.frames + self.frames
+        for frame in frames:
+            if frame.support(item, coding=coding):
+                return frame
+        msg = 'Item "{}" has type {} which does not match any frame at saver for {}.'
+        raise TypeError(msg.format(item, type(item), coding))
 
     def encode(self, item):
-        return self.__execute_operation(item, 'encode')
+        return self.__execute_operation(item, FrameCoding.ENCODE)
     
     def decode(self, item):
-        return self.__execute_operation(item, 'decode')
+        return self.__execute_operation(item, FrameCoding.DECODE)
 
-    def __execute_operation(self, item, method):
+    def __execute_operation(self, item, coding):
         def run_method(e):
-            return getattr(e, method)(item)
-        frame = self.find_supported_frame(item)
+            if coding == FrameCoding.ENCODE:
+                return e.encode(item)
+            return e.decode(item)
+        frame = self.find_supported_frame(item, coding)
         return run_method(frame(self.context))
 
 

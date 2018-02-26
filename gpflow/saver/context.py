@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+import tensorflow as tf
+
 from .. import get_default_session
 
 
@@ -26,8 +28,9 @@ class Contexture:
 
 
 class BaseContext:
-    def __init__(self, frames=None, serializer=None):
-        self.session = get_default_session()
+    def __init__(self, frames=None, serializer=None, autocompile=True):
+        self.autocompile = autocompile
+        self.session = tf.get_default_session() or get_default_session()
         self._custom_frames = () if frames is None else tuple(frames)
         self._shared_data = {}
     
