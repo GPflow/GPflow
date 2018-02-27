@@ -22,6 +22,7 @@ from enum import Enum
 import numpy as np
 import tensorflow as tf
 
+from inspect import isfunction
 from ..core import Node, AutoFlow
 from ..params import Parameter, Parameterized, ParamList
 from ..priors import Prior
@@ -33,6 +34,9 @@ Struct = namedtuple('Struct', ['module_name',
                                'class_name',
                                'variables',
                                'extra'])
+
+Function = namedtuple('Function', ['module_name', 'function_name'])
+
 
 class FrameCoding(Enum):
     ENCODE = 0
@@ -136,18 +140,32 @@ class SliceFrame(BaseFrame):
         return slice(*map(element_of_slice, item.item()))
 
 
-def _real_object_struct_type(c):
+def _real_object_type(module_name, object_name):
     try:
-        __import__(c.module_name)
+        __import__(module_name)
     except ModuleNotFoundError:
         msg = 'Saver can not find module {}.'
-        raise ImportError(msg.format(c.module_name))
-    module = sys.modules[c.module_name]
+        raise ImportError(msg.format(module_name))
+    module = sys.modules[module_name]
     try:
-        return module.__dict__[c.class_name]
+        return module.__dict__[object_name]
     except KeyError:
         msg = 'Saver can not find type {} at module {}.'
-        raise KeyError(msg.format(c.class_name, c.module_name))
+        raise KeyError(msg.format(object_name, module_name))
+
+
+class FunctionFrame(BaseFrame):
+    @classmethod
+    def support(cls, item, coding=FrameCoding.ENCODE):
+        if coding == FrameCoding.ENCODE:
+            return isfunction(item)
+        return isinstance(item, Function)
+    
+    def encode(self, item):
+        return Function(module_name=item.__module__, function_name=item.__name__)
+    
+    def decode(self, item):
+        return _real_object_type(item.module_name, item.function_name)
 
 
 class ObjectFrame(BaseFrame):
@@ -171,7 +189,7 @@ class ObjectFrame(BaseFrame):
             return False
         encoding_type = cls._encoding_type()
         if encoding_type is not object:
-            item_type = _real_object_struct_type(item)
+            item_type = _real_object_type(item.module_name, item.class_name)
             return issubclass(item_type, encoding_type)
         return True
     
@@ -208,7 +226,7 @@ class ObjectFrame(BaseFrame):
         return {factory.decode(key) : factory.decode(value) for key, value in item.variables.items()}
     
     def _create_object(self, item, attributes):
-        item_type = _real_object_struct_type(item)
+        item_type = _real_object_type(item.module_name, item.class_name)
         instance = object.__new__(item_type)
         instance.__dict__ = attributes
         return instance
@@ -302,6 +320,7 @@ class FrameFactory(BaseFrame):
         return (PrimitiveTypeFrame,
                 SliceFrame,
                 TensorFlowFrame,
+                FunctionFrame,
                 ListFrame,
                 DictFrame,
                 ParameterFrame,

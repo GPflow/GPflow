@@ -21,9 +21,10 @@ import numpy as np
 
 from .. import misc
 from .context import Contexture
-from .frames import (DictFrame, FrameFactory, ListFrame, ParameterFrame,
-                     ParamListFrame, PrimitiveTypeFrame, PriorFrame,
-                     SliceFrame, Struct, TensorFlowFrame, TransformFrame)
+from .frames import (DictFrame, FrameFactory, Function, ListFrame,
+                     ParameterFrame, ParamListFrame, PrimitiveTypeFrame,
+                     PriorFrame, SliceFrame, Struct, TensorFlowFrame,
+                     TransformFrame)
 
 
 class BaseSerializer(Contexture, metaclass=abc.ABCMeta):
@@ -39,6 +40,7 @@ class BaseSerializer(Contexture, metaclass=abc.ABCMeta):
 class HDF5Serializer(BaseSerializer):
     _class_field = '__instance_type__'
     _module_field = '__module__'
+    _function_field = '__function__'
     _variables_field = '__attributes__'
     _extra_field = '__extra_field__'
     _list_type = 'list'
@@ -81,6 +83,10 @@ class HDF5Serializer(BaseSerializer):
             object_struct.create_dataset(name=self._module_field, data=data.module_name)
             self._serialize(object_struct, self._extra_field, data=data.extra)
             self._serialize(object_struct, self._variables_field, data.variables)
+        elif isinstance(data, Function):
+            object_struct = group.create_group(name)
+            object_struct.create_dataset(name=self._function_field, data=data.function_name)
+            object_struct.create_dataset(name=self._module_field, data=data.module_name)
         else:
             msg = 'Unknown data type {} passed for serialization at "{}".'
             raise TypeError(msg.format(type(data), name))
@@ -91,6 +97,12 @@ class HDF5Serializer(BaseSerializer):
             if isinstance(value, h5py.Empty):
                 return None
             return value
+
+        if self._function_field in item:
+            module_name = self._deserialize(item[self._module_field])
+            function_name = self._deserialize(item[self._function_field])
+            return Function(module_name=module_name, function_name=function_name)
+
         class_name = self._h5_value(item, key=self._class_field)
         keys = list(item.keys())
         keys.remove(self._class_field)
