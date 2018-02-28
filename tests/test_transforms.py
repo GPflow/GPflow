@@ -223,14 +223,17 @@ class TestMatrixTransforms(GPflowTestCase):
         t1 = gpflow.transforms.LowerTriangular(N=3, num_matrices=1)
         t2 = gpflow.transforms.LowerTriangular(N=3, num_matrices=1, squeeze=True)
         X = np.random.randn(1, 6)
+        Y = np.random.randn(1, 3, 3)
 
         self.assertTrue(np.all(t1.forward(X).squeeze() == t2.forward(X)))
+        self.assertTrue(np.all(t1.forward(X).squeeze().shape == t2.forward(X).shape))
+        self.assertTrue(np.all(t1.backward(Y) == t2.backward(Y.squeeze())))
+        self.assertTrue(np.all(t1.backward(Y).shape == t2.backward(Y.squeeze()).shape))
 
         with self.test_context() as session:
             self.assertTrue(np.all(session.run(tf.squeeze(t1.forward_tensor(X))) == 
                                    session.run(t2.forward_tensor(X))))
 
-            Y = np.random.randn(1, 3, 3)
             self.assertTrue(np.all(session.run(t1.backward_tensor(Y)) == 
                                    session.run(t2.backward_tensor(Y.squeeze()))))
 
@@ -238,8 +241,6 @@ class TestMatrixTransforms(GPflowTestCase):
         with self.assertRaises(ValueError):
             gpflow.transforms.LowerTriangular(N=3, num_matrices=2, squeeze=True)
 
-
-            
 
     def test_DiagMatrix(self):
         t = gpflow.transforms.DiagMatrix(3)
