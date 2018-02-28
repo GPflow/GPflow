@@ -182,8 +182,8 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     eKff = expectation(pXnew, kern)  # N (psi0)
     eKuffu = expectation(pXnew, (kern, feat), (kern, feat)) # N x M x M (psi2)
     Luu_tiled = tf.tile(Luu[None, :, :], [num_data, 1, 1])  # remove this line, once issue 216 is fixed
-    Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(eKuffu), lower=True)
-    Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(Li_eKuffu_Lit), lower=True)  # N x M x M
+    Li_eKuffu = tf.matrix_triangular_solve(Luu_tiled, eKuffu, lower=True)
+    Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(Li_eKuffu), lower=True)  # N x M x M
     cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True)  # D x M x M
 
     if mean_function is None or isinstance(mean_function, mean_functions.Zero):
