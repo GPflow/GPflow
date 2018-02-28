@@ -25,14 +25,7 @@ from .decors import params_as_tensors_for
 from .quadrature import mvnquad
 from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 
-from multipledispatch import dispatch
-from functools import partial
-
-# By default multipledispatch uses a global namespace in multipledispatch.core.global_namespace
-# We define our own GPflow namespace to avoid any conflict which may arise
-gpflow_md_namespace = dict()
-dispatch = partial(dispatch, namespace=gpflow_md_namespace)
-
+from .dispatch import dispatch
 
 # Sections:
 # - Quadrature Expectations
