@@ -232,7 +232,11 @@ class Stationary(Kernel):
             self.ARD = False
 
     @params_as_tensors
-    def square_dist(self, X, X2):
+    def scaled_square_dist(self, X, X2):
+        """
+        Returns ((X - X2ᵀ)/lengthscales)².
+        Due to the implementation, the result may actually be negative.
+        """
         X = X / self.lengthscales
         Xs = tf.reduce_sum(tf.square(X), axis=1)
 
@@ -248,8 +252,11 @@ class Stationary(Kernel):
         return dist
 
 
-    def euclid_dist(self, X, X2):
-        r2 = self.square_dist(X, X2)
+    def scaled_euclid_dist(self, X, X2):
+        """
+        Returns |(X - X2ᵀ)/lengthscales| (L2-norm).
+        """
+        r2 = self.scaled_square_dist(X, X2)
         return tf.sqrt(r2 + 1e-12)
 
     @params_as_tensors
@@ -266,7 +273,7 @@ class RBF(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        return self.variance * tf.exp(-self.square_dist(X, X2) / 2)
+        return self.variance * tf.exp(-self.scaled_square_dist(X, X2) / 2)
 
 
 class Linear(Kernel):
@@ -350,7 +357,7 @@ class Exponential(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        r = self.euclid_dist(X, X2)
+        r = self.scaled_euclid_dist(X, X2)
         return self.variance * tf.exp(-0.5 * r)
 
 
@@ -363,7 +370,7 @@ class Matern12(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        r = self.euclid_dist(X, X2)
+        r = self.scaled_euclid_dist(X, X2)
         return self.variance * tf.exp(-r)
 
 
@@ -376,7 +383,7 @@ class Matern32(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        r = self.euclid_dist(X, X2)
+        r = self.scaled_euclid_dist(X, X2)
         return self.variance * (1. + np.sqrt(3.) * r) * \
                tf.exp(-np.sqrt(3.) * r)
 
@@ -390,7 +397,7 @@ class Matern52(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        r = self.euclid_dist(X, X2)
+        r = self.scaled_euclid_dist(X, X2)
         return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) \
                * tf.exp(-np.sqrt(5.) * r)
 
@@ -404,7 +411,7 @@ class Cosine(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        r = self.euclid_dist(X, X2)
+        r = self.scaled_euclid_dist(X, X2)
         return self.variance * tf.cos(r)
 
 
