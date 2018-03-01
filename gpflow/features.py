@@ -13,12 +13,11 @@
 # limitations under the License.from __future__ import print_function
 
 from abc import abstractmethod
-from functools import singledispatch
 
 import numpy as np
 import tensorflow as tf
 
-from . import conditionals, transforms, kernels, decors, settings
+from . import transforms, kernels, decors, settings
 from .params import Parameter, Parameterized
 
 
@@ -140,30 +139,6 @@ class Multiscale(InducingPoints):
         else:
             raise NotImplementedError(
                 "Multiscale features not implemented for `%s`." % str(type(kern)))
-
-
-@singledispatch
-def conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, white=False):
-    """
-    Note the changed function signature compared to conditionals.conditional()
-    to allow for single dispatch on the first argument.
-    """
-    raise NotImplementedError("No implementation for {} found".format(type(feat).__name__))
-
-
-@conditional.register(InducingPoints)
-@conditional.register(Multiscale)
-def default_feature_conditional(feat, kern, Xnew, f, *, full_cov=False, q_sqrt=None, white=False):
-    """
-    Uses the same code path as conditionals.conditional(), except Kuu/Kuf
-    matrices are constructed using the feature.
-    To use this with features defined in external modules, register your
-    feature class using
-    >>> gpflow.features.conditional.register(YourFeatureClass,
-    ...             gpflow.features.default_feature_conditional)
-    """
-    return conditionals.feature_conditional(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                            white=white)
 
 
 def inducingpoint_wrapper(feat, Z):

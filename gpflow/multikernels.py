@@ -1,16 +1,17 @@
 import tensorflow as tf
 
+from . import settings
 from .decors import params_as_tensors
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .params import Parameter
 
 
-class IndependentMultiKernel(Kernel):
+class MultiKernel(Kernel):
     pass
 
 
-class MultiKernel(Kernel):
+class IndependentMultiKernel(MultiKernel):
     pass
 
 
@@ -18,8 +19,22 @@ class IndependentFeature(InducingFeature):
     pass
 
 
+class MultiInducingPoints(InducingPoints):
+    @params_as_tensors
+    def Kuu(self, kern, jitter=0.0):
+        Kzz = kern.K(self.Z)
+        num_inducing_variables = tf.shape(Kzz)[0] * tf.shape(Kzz)[1]
+        Kzz += jitter * tf.reshape(tf.eye(num_inducing_variables, dtype=settings.dtypes.float_type), tf.shape(Kzz))
+        return Kzz
+
+    @params_as_tensors
+    def Kuf(self, kern, Xnew):
+        Kzx = kern.K(self.Z, Xnew)
+        return Kzx
+
+
 class Independent(Combination, IndependentMultiKernel):
-    def K(self, X, X2=None, presliced=False, full_cov_output=False):
+    def K(self, X, X2=None, presliced=False, full_cov_output=True):
         if presliced:
             # Haven't thought about what to do here
             raise NotImplementedError()
@@ -35,12 +50,21 @@ class Independent(Combination, IndependentMultiKernel):
         return tf.matrix_diag(stacked) if full_cov_output else stacked  # N x P x P  or  N x P
 
 
-class IndependentFeature(InducingPoints):
+class IndependentSharedInducingPoints(InducingPoints, IndependentFeature):
+    @params_as_tensors
     def Kuf(self, kern, Xnew):
-        pass  # N x P x M
+        if type(kern) is Independent:
+            return tf.stack([kern.K(self.Z, Xnew) for kern in kern.kern_list], axis=0)  # P x N x M
+        else:
+            raise NotImplementedError()
 
+    @params_as_tensors
     def Kuu(self, kern, jitter=0.0):
-        pass  # P x M x M
+        if type(kern) is Independent:
+            jittermat = tf.eye(len(self), dtype=settings.float_type)[None, :, :] * jitter
+            return tf.stack([kern.K(self.Z) for kern in kern.kern_list], axis=0) + jittermat  # P x M x M
+        else:
+            raise NotImplementedError
 
 
 class MixedMulti(MultiKernel):

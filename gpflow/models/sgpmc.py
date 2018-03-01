@@ -17,7 +17,8 @@ import numpy as np
 import tensorflow as tf
 
 from ..models.model import GPModel
-from ..features import inducingpoint_wrapper, conditional
+from ..conditionals import feature_conditional as conditional
+from ..features import inducingpoint_wrapper
 from ..params import Parameter, DataHolder
 from ..priors import Gaussian
 from ..decors import params_as_tensors

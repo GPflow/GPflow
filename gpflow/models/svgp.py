@@ -14,21 +14,19 @@
 
 
 from __future__ import absolute_import
-import tensorflow as tf
-import numpy as np
 
-from .. import settings
-from .. import transforms
+import numpy as np
+import tensorflow as tf
+
 from .. import conditionals
 from .. import kullback_leiblers, features
-
-from ..params import Parameter
-from ..params import Minibatch
-from ..params import DataHolder
-
+from .. import settings
+from .. import transforms
 from ..decors import params_as_tensors
-
 from ..models.model import GPModel
+from ..params import DataHolder
+from ..params import Minibatch
+from ..params import Parameter
 
 
 class SVGP(GPModel):
@@ -46,6 +44,7 @@ class SVGP(GPModel):
       }
 
     """
+
     def __init__(self, X, Y, kern, likelihood, feat=None,
                  mean_function=None,
                  num_latent=None,
@@ -101,7 +100,14 @@ class SVGP(GPModel):
             K = None
         else:
             K = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
+        M = tf.shape(self.q_mu)[0]
+
+        # M x L x R -> M x RL
+        # TODO: Extra transpose gives axes same order for q_mu as q_sqrt. Not necessary for valid KL. Keep?
+        # q_mu = tf.reshape(self.q_mu, (M, -1))
+        q_mu = tf.reshape(tf.transpose(self.q_mu, (0, 2, 1)), (M, -1)) if self.q_mu.shape.ndims == 3 else self.q_mu
+        q_sqrt = tf.reshape(self.q_sqrt, (-1, M, M))  # R x L x M x M -> RL x M x M
+        return kullback_leiblers.gauss_kl(q_mu, q_sqrt, K)
 
     @params_as_tensors
     def _build_likelihood(self):
@@ -125,6 +131,6 @@ class SVGP(GPModel):
 
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
-        mu, var = features.conditional(self.feature, self.kern, Xnew, self.q_mu,
-                                       q_sqrt=self.q_sqrt, full_cov=full_cov, white=self.whiten)
+        mu, var = conditionals.feature_conditional(self.feature, self.kern, Xnew, self.q_mu,
+                                                   q_sqrt=self.q_sqrt, full_cov=full_cov, white=self.whiten)
         return mu + self.mean_function(Xnew), var
