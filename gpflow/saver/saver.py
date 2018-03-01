@@ -25,27 +25,25 @@ import tensorflow as tf
 
 from .context import BaseContext
 from .serializers import HDF5Serializer
-from .frames import FrameFactory
+from .coders import CoderFactory
 
 
 class SaverContext(BaseContext):
-    def __init__(self, session=None, version=None, serializer=None, **kwargs):
+    def __init__(self, version=None, serializer=None, **kwargs):
         super().__init__(**kwargs)
-        if session is not None:
-            self.session = session
         self.serializer = HDF5Serializer if serializer is None else serializer
 
 
 class Saver:
     def save(self, pathname, target, context=None):
         context = Saver.__get_context(context)
-        encoded_target = FrameFactory(context).encode(target)
+        encoded_target = CoderFactory(context).encode(target)
         context.serializer(context).dump(pathname, encoded_target)
 
     def load(self, pathname, context=None):
         context = Saver.__get_context(context)
         encoded_target = context.serializer(context).load(pathname)
-        return FrameFactory(context).decode(encoded_target)
+        return CoderFactory(context).decode(encoded_target)
 
     @staticmethod
     def __get_context(context):

@@ -15,5 +15,5 @@
 
 from .saver import Saver
 from .saver import SaverContext
-from .frames import FrameFactory
+from .coders import CoderFactory
 from .serializers import HDF5Serializer

@@ -18,6 +18,30 @@ import tensorflow as tf
 from .. import get_default_session
 
 
+class BaseContext:
+    def __init__(self, coders=None, serializer=None, session=None, autocompile=True):
+        self.autocompile = autocompile
+        self._session = session
+        self._custom_coders = () if coders is None else tuple(coders)
+        self._shared_data = {}
+    
+    @property
+    def coders(self):
+        return self._custom_coders
+
+    @property
+    def shared_data(self):
+        return self._shared_data
+
+    @property
+    def session(self):
+        return self._session or tf.get_default_session() or get_default_session()
+    
+    @session.setter
+    def session(self, session):
+        self._session = session
+
+
 class Contexture:
     def __init__(self, context):
         self._context = context
@@ -26,18 +50,3 @@ class Contexture:
     def context(self):
         return self._context
 
-
-class BaseContext:
-    def __init__(self, frames=None, serializer=None, autocompile=True):
-        self.autocompile = autocompile
-        self.session = tf.get_default_session() or get_default_session()
-        self._custom_frames = () if frames is None else tuple(frames)
-        self._shared_data = {}
-    
-    @property
-    def frames(self):
-        return self._custom_frames
-
-    @property
-    def shared_data(self):
-        return self._shared_data
