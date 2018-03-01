@@ -276,6 +276,32 @@ class RBF(Stationary):
         return self.variance * tf.exp(-self.scaled_square_dist(X, X2) / 2)
 
 
+class RationalQuadratic(Stationary):
+    """
+    Rational Quadratic kernel,
+
+    k(r) = σ² (1 + r² / 2αℓ²)^(-α)
+
+    σ² : variance
+    ℓ  : lengthscales
+    α  : alpha, determines relative weighting of small-scale and large-scale fluctuations
+
+    For α→ ∞, the RQ kernel becomes equivalent to the squared exponential.
+    """
+
+    def __init__(self, input_dim, variance=1.0, lengthscales=None, alpha=1.0,
+                 active_dims=None, ARD=False, name=None):
+        super().__init__(input_dim, variance, lengthscales, active_dims, ARD, name)
+        self.alpha = Parameter(alpha, transform=transforms.positive)
+
+    @params_as_tensors
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+        return self.variance * (1 + self.scaled_square_dist(X, X2) /
+                                (2 * self.alpha)) ** (- self.alpha)
+
+
 class Linear(Kernel):
     """
     The linear kernel
