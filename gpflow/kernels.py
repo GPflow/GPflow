@@ -264,7 +264,7 @@ class Stationary(Kernel):
         return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
-class SquaredExponential(Stationary):
+class RBF(Stationary):
     """
     The radial basis function (RBF) or squared exponential kernel
     """
@@ -275,7 +275,7 @@ class SquaredExponential(Stationary):
             X, X2 = self._slice(X, X2)
         return self.variance * tf.exp(-self.scaled_square_dist(X, X2) / 2)
 
-RBF = SquaredExponential
+SquaredExponential = RBF
 
 
 class RationalQuadratic(Stationary):
