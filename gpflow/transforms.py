@@ -327,17 +327,20 @@ class LowerTriangular(Transform):
     def __init__(self, N, num_matrices=1, squeeze=False):
         """
         Create an instance of LowerTriangular transform.
+
         Args:
             N the size of the final lower triangular matrices.
             num_matrices: Number of matrices to be stored.
             squeeze: If num_matrices == 1, drop the redundant axis.
+
+        :raises ValueError: squeezing is impossible when num_matrices > 1.
         """
         self.N = N
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
         self.squeeze = squeeze
 
         if self.squeeze and (num_matrices != 1):
-            raise ValueError("cannot squeeze matrices unless the first dim is 1.")
+            raise ValueError("cannot squeeze matrices unless num_matrices is 1.")
 
     def forward(self, x):
         """
