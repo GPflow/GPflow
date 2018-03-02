@@ -22,11 +22,14 @@ from .dispatch import dispatch
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel
-from .multikernels import MultiKernel, IndependentMultiKernel, IndependentFeature
+from .multikernels import MultiKernel, IndependentMultiKernel, IndependentFeature, MultiInducingPoints
 from .probability_distributions import Gaussian
 
 
 # TODO: Make all outputs of conditionals equal
+# TODO: Add tensorflow assertions of shapes
+# TODO: Remove `conditional()`?
+# TODO: Ensure that R is handled correctly in all cases
 # Shapes to keep constant:
 #  - f      : M x P x R  or M x P  or  M x R
 #  - q_sqrt :
@@ -69,8 +72,6 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     Knns = tf.stack([kern.K(Xnew) if full_cov else kern.Kdiag(Xnew) for kern in kern.kern_list], axis=0)
     fs = tf.transpose(f, [1, 0, 2])  # P x M x R
     q_sqrts = tf.transpose(q_sqrt, [1, 0, 2, 3])
-    print(fs.shape)
-    print(q_sqrts.shape)
 
     def single_gp_conditional(t):
         Kmm, Kmn, Knn, f, q_sqrt = t
@@ -85,7 +86,35 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     return rmu, rvar
 
 
-@dispatch(InducingFeature, MultiKernel, object, object)
+@dispatch(IndependentFeature, MultiKernel, object, object)
+@name_scope()
+def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    """
+    Multi-output GP with independent GP priors
+    :param Xnew:
+    :param feat:
+    :param kern:
+    :param f: M x L x R  or  M x L x 1
+    :param full_cov:
+    :param full_cov_output:
+    :param q_sqrt: R x L x M  or R x L x M x M
+    :param white:
+    :return:
+    """
+    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # L x M x M
+    Kmn = feat.Kuf(kern, Xnew)  # M x L x N x K
+    Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
+        else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x K(x N)x K  or  N x K(x K)
+
+    Kmm = tf.transpose(Kmm, [1, 2, 0])
+
+    print(Knn.shape)
+
+    return dependent_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output, q_sqrt=q_sqrt,
+                                 white=white)
+
+
+@dispatch(MultiInducingPoints, MultiKernel, object, object)
 @name_scope()
 def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
@@ -405,7 +434,9 @@ def dependent_conditional(Kmn, Kmm, Knn, f, full_cov=False, full_cov_output=Fals
                 fvar = fvar + tf.matmul(LTAr, LTAr, transpose_b=True)  # R x N x K x K
                 fvar = tf.transpose(fvar, [1, 0, 2, 3])
             else:
-                fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (0, 1)), (N, K))  # N x K
+                fvar = tf.Print(fvar, [tf.shape(fvar)])
+                fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (1, 2)), (N, K))  # R x N x K
+    fmean = tf.Print(fmean, [tf.shape(fmean)], message="fmean ")
     return fmean, fvar
 
 

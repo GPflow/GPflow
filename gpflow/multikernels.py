@@ -54,31 +54,34 @@ class IndependentSharedInducingPoints(InducingPoints, IndependentFeature):
     @params_as_tensors
     def Kuf(self, kern, Xnew):
         if type(kern) is Independent:
-            return tf.stack([kern.K(self.Z, Xnew) for kern in kern.kern_list], axis=0)  # P x N x M
+            return tf.stack([kern.K(self.Z, Xnew) for kern in kern.kern_list], axis=0)  # P x M x N
+        elif type(kern) is MixedMulti:
+            Kstack = tf.stack([k.K(self.Z, Xnew) for k in kern.kern_list], axis=1)  # M x L x N
+            return Kstack[:, :, :, None] * tf.transpose(kern.P)[None, :, None, :]
         else:
             raise NotImplementedError()
 
     @params_as_tensors
     def Kuu(self, kern, jitter=0.0):
-        if type(kern) is Independent:
+        if type(kern) in (Independent, MixedMulti):
             jittermat = tf.eye(len(self), dtype=settings.float_type)[None, :, :] * jitter
             return tf.stack([kern.K(self.Z) for kern in kern.kern_list], axis=0) + jittermat  # P x M x M
         else:
             raise NotImplementedError
 
 
-class MixedMulti(MultiKernel):
+class MixedMulti(Combination, MultiKernel):
     def __init__(self, kern_list, P, name=None):
         super().__init__(kern_list, name)
         self.P = Parameter(P)  # P x L
 
     @params_as_tensors
-    def K(self, X, X2=None, presliced=False, full_cov_output=False):
+    def K(self, X, X2=None, presliced=False, full_cov_output=True):
         if presliced:
             # Haven't thought about what to do here
             raise NotImplementedError()
-        Kxx = tf.stack([k.K(X, X2) for k in self.kern_list], axis=0)  # P x N x N2
-        KxxP = Kxx[None, :, :, :] * self.P[:, :, None, None]  # K x L x N x N2
+        Kxx = tf.stack([k.K(X, X2) for k in self.kern_list], axis=0)  # L x N x N2
+        KxxP = Kxx[None, :, :, :] * self.P[:, :, None, None]  # P x L x N x N2
         if full_cov_output:
             # return tf.einsum('lnm,kl,ql->nkmq', Kxx, self.P, self.P)
             PKxxP = tf.tensordot(self.P, KxxP, [[1], [1]])  # K x K x N x N2
@@ -88,16 +91,19 @@ class MixedMulti(MultiKernel):
             return tf.reduce_sum(self.P[:, :, None, None] * KxxP, [1])  # K x N x N2
 
     @params_as_tensors
-    def Kdiag(self, X, presliced=False, full_cov_output=False):
+    def Kdiag(self, X, presliced=False, full_cov_output=True):
         if presliced:
             # Haven't thought about what to do here
             raise NotImplementedError()
-        K = tf.stack([k.Kdiag(X) for k in self.kern_list], axis=1)  # N x P
+        K = tf.stack([k.Kdiag(X) for k in self.kern_list], axis=1)  # N x L
         if full_cov_output:
-            return tf.einsum('nl,lk,lq->nkq', K, self.P, self.P)  # N x K x K
+            # Can currently not use einsum due to unknown shape from `tf.stack()`
+            # return tf.einsum('nl,lk,lq->nkq', K, self.P, self.P)  # N x P x P
+            Pt = tf.transpose(self.P)  # L x P
+            return tf.reduce_sum(K[:, :, None, None] * Pt[None, :, :, None] * Pt[None, :, None, :], axis=1)  # N x P x P
         else:
-            # return tf.einsum('nl,lk,lk->nkq', K, self.P, self.P)  # N x K
-            return tf.matmul(K, self.P ** 2.0)
+            # return tf.einsum('nl,lk,lk->nkq', K, self.P, self.P)  # N x P
+            return tf.matmul(K, self.P ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P
 
 
 class MixedMultiIndependentFeature(InducingPoints):
