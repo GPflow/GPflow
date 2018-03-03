@@ -177,7 +177,7 @@ class ListCoder(StructCoder):
         
     def decode(self, item):
         data = item[StructField.data]
-        if np.isnan(data):
+        if _is_nan(data):
             return []
         factory = CoderFactory(self.context)
         return [factory.decode(e) for e in data]
@@ -527,8 +527,10 @@ def _is_str(value):
 
 def _is_nan(value):
     if isinstance(value, np.ndarray):
-        if not value.shape and np.issubdtype(value.dtype.type, np.floating):
-            return True
+        if value.shape:
+            return False
+        if np.issubdtype(value.dtype.type, np.floating):
+            return np.isnan(value)
     if not isinstance(value, (np.number, float)):
         return False
     return np.isnan(value)
@@ -545,6 +547,7 @@ def _is_numpy_object(value):
     if not isinstance(value, (np.ndarray, np.void)):
         return False
     return value.dtype.type is np.void
+
 
 def _convert_to_string(value):
     if isinstance(value, str):
