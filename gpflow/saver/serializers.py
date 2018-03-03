@@ -45,4 +45,4 @@ class HDF5Serializer(BaseSerializer):
     
     def load(self, pathname):
         with h5py.File(pathname) as h5file:
-            return h5file['data']
+            return h5file['data'].value
