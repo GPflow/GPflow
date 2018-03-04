@@ -141,7 +141,9 @@ class StructCoder(BaseCoder):
     
     @classmethod
     def support_decoding(cls, item):
-        fields = item.dtype.fields 
+        if not _is_numpy_object(item):
+            return False
+        fields = item.dtype.fields
         type_field = StructField.type_field
         if not fields or type_field not in fields:
             return False
@@ -179,6 +181,8 @@ class ListCoder(StructCoder):
         data = item[StructField.data]
         if _is_nan(data):
             return []
+        if not data.shape:
+            data = [data[e] for e in data.dtype.fields.keys()]
         factory = CoderFactory(self.context)
         return [factory.decode(e) for e in data]
 
