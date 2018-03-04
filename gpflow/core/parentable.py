@@ -12,38 +12,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
+import uuid
+
 from .. import misc
 
 
 class Parentable:
     """
-    Very simple class for organizing GPflow objects in a tree,
-    where each node contains a reference to the its parent. Links to the childrens
-    established implicitly via attributes.
+    Very simple class for organizing GPflow objects in a tree.
+    Each node contains a reference to the its parent. Links to children
+    established implicitly via python object attributes.
 
-    The Parentable class stores static variable which is used for assining unique
-    prefix name identificator for each newly created object inherited from Parentable.
+    The Parentable class stores static variable which is used for assigning unique
+    prefix name identification for each newly created object inherited from Parentable.
 
-    :param name: Parentable nodes name. When name is None, unique index identifier
-        will be attached to the hidden name (internal representation name).
+    Name is not required at `Parentable` object creation.
+    But in this case, unique index identifier will be attached to the class name.
+
+    :param name: String name.
     """
 
-    __index = 0
+    __global_index = 0
 
     def __init__(self, name=None):
         self._parent = None
-        self._name = self._define_name(name)
+        index = None
+        if name is None:
+            name = self._define_name(name)
+            index = self._gen_index()
+        self._name = name
+        self._index = index
 
     @property
     def root(self):
-        """Returns top object of the tree."""
+        """
+        Top of the parentable tree.
+        :return: Reference to top parentable object.
+        """
         if self._parent is None:
             return self
         return self._parent.root
 
     @property
     def parent(self):
-        """Returns parent object for this node."""
+        """
+        Parent for this node.
+        :return: Reference to parent object.
+        """
         if self._parent is None:
             return self
         return self._parent
@@ -51,61 +67,163 @@ class Parentable:
     @property
     def name(self):
         """
-        Returns assigned name for this particular parenable node.
+        The name assigned to node at creation time. It can be referred also
+        as original name.
+
+        :return: Given name.
         """
-        name = self._name.split(sep='/', maxsplit=1)
-        if len(name) > 1 and name[0].isdigit():
-            return name[1]
         return self._name
 
     @property
-    def hidden_name(self):
-        """Returns fully qualified name of the parentable node. Hidden name includes
-        names of parents separated by slash, e.g. 'parent0/parent1/node'."""
-        return self._name
+    def pathname(self):
+        """
+        Path name is a recursive representation parent path name plus the name
+        which was assigned to this object by its parent. In other words, it is
+        stack of parent name where top is always parent's original name:
+        `parent.pathname + parent.childname` and stop condition is root's
+        name.
 
+        For example, the pathname of an instance with the two parents may look
+        like `parent0/parent1/childname_at_parent1`.
+        Top parent's name equals its original name `parent0.name == parent0.pathname`.
+        """
+        if self.parent is self:
+            return self.name
+        parent = self._parent
+        return misc.tensor_name(parent.pathname, parent.childname(self))
+    
     @property
     def full_name(self):
         """
-        Returns full name which respresents the path from top parent to this node.
-        For example, the full name with the two parents along the way back to
-        the top may look like `parent0/parent1/node`.
+        Backward compatibility with previous versions.
+        WARNING: WILL BE DEPRICATED SOON.
         """
-        if self._parent is None:
-            return self.name
-        return misc.tensor_name(self._parent.full_name, self.name)
+        return self.pathname
 
     @property
-    def hidden_full_name(self):
-        """
-        Returns `full_name` with unique identification prefix, `1/parent0/parent1/node`,
-        if such was used.
-        """
-        if self._parent is None:
-            return self._name
-        return misc.tensor_name(self._parent.hidden_full_name, self.name)
+    def index(self):
+        return self._index
 
-    def set_name(self, name=None):
-        self._name = self._define_name(name)
+    @abc.abstractproperty
+    def children(self):
+        """
+        Abstract property for getting pairs of names and children, respectively.
+
+        :return: Dictionary where keys are names and values are Parentable objects.
+        """
+        pass
+
+    @abc.abstractmethod
+    def store_child(self, name, child):
+        """
+        Abstract method for saving association between child and its name in
+        parent's specific storage.
+        """
+        pass
+
+
+    @abc.abstractmethod
+    def remove_child(self, name, child):
+        """
+        Abstract method for removing an association between child and its name in
+        parent's specific storage.
+        """
+        pass
+
+    @property
+    def descendants(self):
+        """
+        Scans full list of node descendants.
+
+        :return: Generator of nodes.
+        """
+        children = self.children
+        if children is not None:
+            for child in children.values():
+                yield from child.descendants
+                yield child
+    
+    def contains(self, node):
+        """
+        Checks either node already exist somewhere among descendants.
+
+        :return: Boolean value.
+        """
+        return node in list(self.descendants)
+
+    def childname(self, child):
+        if not isinstance(child, Parentable):
+            raise ValueError('Parentable object expected, {child} passed.'.format(child=child))
+        name = [ch[0] for ch in self.children.items() if ch[1] is child]
+        if not name:
+            raise KeyError('Parent {parent} does not have child {child}'.format(parent=self, child=child))
+        return name[0]
+
+    def set_child(self, name, child):
+        """
+        Set child.
+
+        :param name: Child name.
+        :param child: Parentable object.
+        """
+        if not isinstance(child, Parentable):
+            raise ValueError('Parentable child object expected, not {child}'.format(child=child))
+        child.set_parent(self)
+        self.store_child(name, child)
+    
+    def unset_child(self, name, child):
+        """
+        Untie child from parent.
+
+        :param name: Child name.
+        :param child: Parentable object.
+        """
+        if name not in self.children or self.children[name] is not child:
+            msg = 'Child {child} with name "{name}" is not found'
+            raise ValueError(msg.format(child=child, name=name))
+        child.set_parent(None)
+        self.remove_child(name, child)
+
 
     def set_parent(self, parent=None):
-        self._parent = parent
+        """
+        Set parent.
 
-    def _reset_name(self):
-        if self.hidden_name != self.name:
-            self._name = self._define_name(None)
+        :param parent: Parentable object.
+        :raises ValueError: Self-reference object passed.
+        :raises ValueError: Non-Parentable object passed.
+        """
+        if parent is not None:
+            if not isinstance(parent, Parentable):
+                raise ValueError('Parent object must implement Parentable interface.')
+            if parent is self or parent.contains(self):
+                raise ValueError('Self references are not allowed.')
+        self._parent = parent if parent is not None else None
+    
+    def reset_name(self, name=None):
+        self._name = self._define_name(name=name)
+        self._index = self._gen_index()
 
-    def _define_name(self, name):
-        if name:
+    def _define_name(self, name=None):
+        if name is not None:
             return name
         cls_name = self.__class__.__name__
-        index = Parentable._read_index(self)
-        return '{index}/{name}'.format(index=index, name=cls_name)
+        return cls_name
+
+    def _gen_index(self):
+        internal_index = Parentable._read_index()
+        uuid_index = str(uuid.uuid4())[:8]
+        pattern = '{uuid_index}-{internal_index}'
+        return pattern.format(uuid_index=uuid_index, internal_index=internal_index)
 
     @classmethod
-    def _read_index(cls, obj=None):
-        index = cls.__index
+    def _read_index(cls):
+        """
+        Reads index number and increments it. No thread-safety guarantees.
+
         # TODO(@awav): index can grow indefinetly,
         # check boundaries or make another solution.
-        cls.__index += 1
+        """
+        index = cls.__global_index
+        cls.__global_index += 1
         return index

@@ -203,9 +203,9 @@ class TestStochasticGradients(GPflowTestCase):
         return indexedModel
 
     def check_models_close(self, m1, m2, tolerance=1e-2):
-        m1_params = {p.full_name: p for p in list(m1.trainable_parameters)}
-        m2_params = {p.full_name: p for p in list(m2.trainable_parameters)}
-        if set(m1_params.keys()) != set(m2_params.keys()):
+        m1_params = {p.pathname: p for p in list(m1.trainable_parameters)}
+        m2_params = {p.pathname: p for p in list(m2.trainable_parameters)}
+        if set(m2_params.keys()) != set(m2_params.keys()):
             return False
         for key in m1_params:
             p1 = m1_params[key]
