@@ -36,7 +36,7 @@ def name_scope(name=None):
     >>> def foo(...):
     >>>     # now runs inside scope "foo"
     >>> @name_scope('bar')
-    >>> def @baz(...):
+    >>> def baz(...):
     >>>     # now runs inside scope "bar", not "baz"
     """
     def name_scope_wrapper_decorator(method):
