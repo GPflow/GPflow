@@ -231,6 +231,21 @@ class Stationary(Kernel):
             self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
             self.ARD = False
 
+
+    def square_dist(self, X, X2):
+        warnings.warn('square_dist is deprecated and will be removed at '
+                      'GPflow version 1.2.0. Use scaled_square_dist.',
+                      DeprecationWarning)
+        return self.scaled_square_dist(X, X2)
+
+
+    def euclid_dist(self, X, X2):
+        warnings.warn('euclid_dist is deprecated and will be removed at '
+                      'GPflow version 1.2.0. Use scaled_euclid_dist.',
+                      DeprecationWarning)
+        return self.scaled_euclid_dist(X, X2)
+
+
     @params_as_tensors
     def scaled_square_dist(self, X, X2):
         """
