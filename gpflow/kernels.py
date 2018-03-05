@@ -250,7 +250,9 @@ class Stationary(Kernel):
     def scaled_square_dist(self, X, X2):
         """
         Returns ((X - X2ᵀ)/lengthscales)².
-        Due to the implementation, the result may actually be negative.
+        Due to the implementation and floating-point imprecision, the
+        result may actually be very slightly negative for entries very
+        close to each other.
         """
         X = X / self.lengthscales
         Xs = tf.reduce_sum(tf.square(X), axis=1)
@@ -303,7 +305,7 @@ class RationalQuadratic(Stationary):
     ℓ  : lengthscales
     α  : alpha, determines relative weighting of small-scale and large-scale fluctuations
 
-    For α→ ∞, the RQ kernel becomes equivalent to the squared exponential.
+    For α →  ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
     def __init__(self, input_dim, variance=1.0, lengthscales=None, alpha=1.0,
