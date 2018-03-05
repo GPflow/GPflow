@@ -232,14 +232,14 @@ class Stationary(Kernel):
             self.ARD = False
 
 
-    def square_dist(self, X, X2):
+    def square_dist(self, X, X2):  # pragma: no cover
         warnings.warn('square_dist is deprecated and will be removed at '
                       'GPflow version 1.2.0. Use scaled_square_dist.',
                       DeprecationWarning)
         return self.scaled_square_dist(X, X2)
 
 
-    def euclid_dist(self, X, X2):
+    def euclid_dist(self, X, X2):  # pragma: no cover
         warnings.warn('euclid_dist is deprecated and will be removed at '
                       'GPflow version 1.2.0. Use scaled_euclid_dist.',
                       DeprecationWarning)
