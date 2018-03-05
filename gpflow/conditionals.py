@@ -30,8 +30,9 @@ from .probability_distributions import Gaussian
 # TODO: Add tensorflow assertions of shapes
 # TODO: Remove `conditional()`?
 # TODO: Ensure that R is handled correctly in all cases
+# TODO: Should there be consistentcy between fmean out, and f in?
 # Shapes to keep constant:
-#  - f      : M x P x R  or M x P  or  M x R
+#  - f      : M x L x R  or M x L  or  M x R
 #  - q_sqrt :
 
 
@@ -229,22 +230,74 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
             fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
     fvar = tf.transpose(fvar)  # N x K or N x N x K
 
-    print("abc")
-    print(fmean.shape)
-
     return fmean, fvar
 
 
-def meanfield_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None,
+                                    white=False):
     """
-    :param Kmn: M x N x K
-    :param Kmm: M x M
-    :param Knn: N x K  or  N x N  or  K x N x N  or  N x K x N x K
-    :param f: data matrix, M x R
-    :param q_sqrt: R x M x M  or  R x M
-    :return: N x R x K  ,  N x R x K x K
+    :param Kmn: L x M x N x P
+    :param Kmm: L x M x M
+    :param Knn: N x P  or  N x N  or  P x N x N  or  N x P x N x P
+    :param f: data matrix, M x L x R
+    :param q_sqrt: R x L x M x M  or  M x L x R
+    :return: N x R x P  ,  N x R x P x P
     """
-    pass
+    # TODO: Allow broadcasting over L if priors are shared?
+    R = tf.shape(f)[2]
+    L, M, N, P = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
+
+    Lm = tf.cholesky(Kmm)  # L x M x M
+
+    # Compute the projection matrix A
+    Kmn = tf.reshape(Kmn, (L, M, N * P))
+    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # L x M x M  *  L x M x NP  ->  L x M x NP
+    Ar = tf.reshape(A, (L, M, N, P))
+
+    # compute the covariance due to the conditioning
+    if full_cov and full_cov_output:
+        fvar = Knn - tf.tensordot(Ar, Ar, [[0, 1], [0, 1]])  # N x P x N x P
+    elif full_cov and not full_cov_output:
+        At = tf.reshape(tf.transpose(Ar), (P, N, M * L))  # P x N x ML
+        fvar = Knn - tf.matmul(At, At, transpose_b=True)  # P x N x N
+    elif not full_cov and full_cov_output:
+        At = tf.reshape(tf.transpose(Ar, [2, 3, 1, 0]), (N, P, M * L))  # N x P x ML
+        fvar = Knn - tf.matmul(At, At, transpose_b=True)  # N x P x P
+    elif not full_cov and not full_cov_output:
+        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, P))  # Knn: N x P
+
+    # another backsubstitution in the unwhitened case
+    if not white:
+        A = tf.matrix_triangular_solve(Lm, Ar)  # L x M x M  *  L x M x NP  ->  L x M x NP
+        Ar = tf.reshape(A, (L, M, N, P))
+
+    # mean: N x R x P
+    fmean = tf.tensordot(f, Ar, [[0, 1], [1, 0]])  # R x NP
+    fmean = tf.transpose(tf.reshape(fmean, (R, N, P)), [1, 0, 2])  # N x R x P
+
+    if q_sqrt is not None:
+        Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x L x M x M
+        if q_sqrt.shape.ndims == 4:
+            # Broadcast over L?
+            A_tiled = tf.tile(A[None, :, :, :], tf.stack([R, 1, 1, 1]))  # R x L x M x NP
+            LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x L x M x M  *  R x L x M x NP  ->  R x L x M x NP
+        else:
+            raise NotImplementedError()
+
+        if full_cov and full_cov_output:
+            LTAr = tf.reshape(LTA, (R, L * M, N * P))
+            fvar = fvar[None, :, :, :, :] + tf.reshape(tf.matmul(LTAr, LTAr, transpose_a=True), (R, N, P, N, P))
+        elif full_cov and not full_cov_output:
+            LTAr = tf.transpose(tf.reshape(LTA, (R, L * M, N, P)), [0, 3, 1, 2])  # R x P x LM x N
+            fvar = fvar[None, :, :, :] + tf.matmul(LTAr, LTAr, transpose_a=True)  # R x P x N x N
+        elif not full_cov and full_cov_output:
+            LTAr = tf.transpose(tf.reshape(LTA, (R, L * M, N, P)), [2, 0, 1, 3])  # N x R x LM x P
+            fvar = fvar[:, None, :, :] + tf.matmul(LTAr, LTAr, transpose_a=True)  # N x R x P x P
+        elif not full_cov and not full_cov_output:
+            # N x R x P
+            fvar = fvar[None, :, :] + tf.reshape(tf.reduce_sum(tf.square(LTA), (1, 2)), (R, N, P))
+            fvar = tf.transpose(fvar, (N, R, P))
+    return fmean, fvar
 
 
 def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
@@ -286,15 +339,15 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_o
 
     # another backsubstitution in the unwhitened case
     if not white:
-        # if A.shape[0] == K, then Lm.shape[0] == K as well
         A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # M x NK
+        raise NotImplementedError("Need to verify this.")
 
     # f: M x R
     fmean = tf.matmul(f, A, transpose_a=True)  # R x M  *  M x NK  ->  R x NK
     fmean = tf.reshape(fmean, (R, N, K))
 
-    Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
     if q_sqrt is not None:
+        Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
         if q_sqrt.get_shape().ndims == 3:
             A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # R x M x NK
             LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x M x NK
