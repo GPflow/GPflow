@@ -107,8 +107,9 @@ class MixedMulti(Combination, MultiKernel):
 
 
 class MixedMultiIndependentFeature(InducingPoints):
-    def Kuf(self, kern, Xnew):
-        pass  # N x P x M x L
+    pass
+    # def Kuf(self, kern, Xnew):
+    #     pass  # N x P x M x L
 
-    def Kuu(self, kern, jitter=0.0):
-        pass  # L x M x M
+    # def Kuu(self, kern, jitter=0.0):
+    #     pass  # L x M x M
