@@ -102,4 +102,3 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         twoKL += prior_logdet
 
     return 0.5 * twoKL
-
