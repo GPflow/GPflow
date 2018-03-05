@@ -23,6 +23,7 @@ from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel
 from .multikernels import MultiKernel, IndependentMultiKernel, IndependentFeature, MultiInducingPoints
+from .multikernels import MixedMulti, MixedMultiIndependentFeature
 from .probability_distributions import Gaussian
 
 
@@ -46,6 +47,60 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     else:
         Knn = kern.Kdiag(Xnew)
     return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  N x R
+
+
+@dispatch(MixedMultiIndependentFeature, MixedMulti, object, object)
+@name_scope()
+def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # L x M x M
+    Kmn = tf.stack([kern.K(Xnew, feat.Z) for kern in kern.kern_list], axis=0)  # L x N x M (TODO)
+
+    Knn = tf.stack([kern.K(Xnew) if full_cov else kern.Kdiag(Xnew) for kern in kern.kern_list], axis=0)
+    f = tf.transpose(f, [1, 0, 2])  # L x M x R
+    q_sqrt = tf.transpose(q_sqrt, [1, 0, 2, 3])  # L x R x M x M
+
+    def single_gp_conditional(t):
+        Kmm, Kmn, Knn, f, q_sqrt = t
+        return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+
+    gmu, gvar = tf.map_fn(single_gp_conditional,
+                          (Kmm, Kmn, Knn, f, q_sqrt),
+                          (settings.float_type, settings.float_type))  # L x N x R  ,  L x N(x N)x R
+
+    Pmu = tf.matmul(self.P, gmu)  #  N x P
+
+    # f_mu:     P x N x R
+    # f_var:    P (x P) x N (x N) x R
+
+    if full_cov_output:
+        N = tf.shape(gmu)[0]
+        if full_cov:
+            nP = tf.tile(self.P[None, None, :, :], [N, N, 1, 1])  # N,N,D_in,D_out
+        else:
+            nP = tf.tile(self.P[None, :, :], [N, 1, 1])  # N,D_in,D_out
+
+        # varP = tf.expand_dims(var, -1) * self.P[None, :, :]
+        varP = tf.expand_dims(gvar, -1) * nP
+
+        # var is ND or NND
+        # nP is N,D_in,D_out or N,N,D_in,D_out
+        # PvarP is N,D_out,D_out or N,N,D_out,D_out
+        PvarP = tf.matmul(nP, varP, transpose_a=True)
+
+    else:
+        # PvarP = tf.reduce_sum(self.P[None, :, :] * varP, 1)  # N,D_out
+        # PvarP = tf.reduce_sum(nP * varP, -2)  # N,D_out
+        if full_cov is True:
+            raise NotImplementedError
+#                     P2 = tf.expand_dims(self.P**2, [0, 1])
+#                     PvarP = tf.reduce_sum(P2 * tf.expand_dims(var, -1), -2)
+#                     PvarP = tf.matmul(tf.reshape(var, [N**2, D]))
+
+        else:
+            # var is N,D_in or N,N,D_in
+            # P2 is 1,D_in,D_out or 1,1,D_in,D_out
+            PvarP = tf.matmul(var, self.P**2)
+    return Pmu, PvarP   
 
 
 @dispatch(IndependentFeature, IndependentMultiKernel, object, object)
@@ -74,7 +129,7 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     fs = tf.transpose(f, [1, 0, 2])  # P x M x R
     q_sqrts = tf.transpose(q_sqrt, [1, 0, 2, 3])
 
-    def single_gp_conditional(t):
+    def sinVgle_gp_conditional(t):
         Kmm, Kmn, Knn, f, q_sqrt = t
         return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
