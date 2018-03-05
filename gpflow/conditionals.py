@@ -67,25 +67,30 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
                           (Kmm, Kmn, Knn, f, q_sqrt),
                           (settings.float_type, settings.float_type))  # L x N x R  ,  L x N(x N)x R
 
-    Pmu = tf.matmul(self.P, gmu)  #  N x P
+    # Pmu = tf.matmul(self.P, gmu)  #  N x P
+    Pmu = tf.tensordot(self.P, gmu, [[1], [0]])  # P x N x R
+
+    PvarP = tf.tensordot(self.P, gvar, [[1], [0]])
 
     # f_mu:     P x N x R
-    # f_var:    P (x P) x N (x N) x R
+    # f_var:    P (x P) x N (x N) x R  // P x N x P x N x R
 
+    if full_cov:
+        gvarP = gvar[None, ...] * self.P[..., None, None, None]  # P x L x N x N2 x R
+    else:
+        gvarP = gvar[None, ...] * self.P[..., None, None]  # P x L x N x N2
     if full_cov_output:
-        N = tf.shape(gmu)[0]
-        if full_cov:
-            nP = tf.tile(self.P[None, None, :, :], [N, N, 1, 1])  # N,N,D_in,D_out
-        else:
-            nP = tf.tile(self.P[None, :, :], [N, 1, 1])  # N,D_in,D_out
+        # N = tf.shape(gmu)[0]
+            # nP = tf.tile(self.P[None, :, :], [N, 1, 1])  # N,D_in,D_out
 
         # varP = tf.expand_dims(var, -1) * self.P[None, :, :]
-        varP = tf.expand_dims(gvar, -1) * nP
+        # varP = tf.expand_dims(gvar, -1) * nP
 
         # var is ND or NND
         # nP is N,D_in,D_out or N,N,D_in,D_out
         # PvarP is N,D_out,D_out or N,N,D_out,D_out
-        PvarP = tf.matmul(nP, varP, transpose_a=True)
+        # PvarP = tf.matmul(nP, varP, transpose_a=True)
+        PvarP = tf.tensordot(self.P, gvarP, [[1], [1]])  # P x P x N x N x R
 
     else:
         # PvarP = tf.reduce_sum(self.P[None, :, :] * varP, 1)  # N,D_out
@@ -129,7 +134,7 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     fs = tf.transpose(f, [1, 0, 2])  # P x M x R
     q_sqrts = tf.transpose(q_sqrt, [1, 0, 2, 3])
 
-    def sinVgle_gp_conditional(t):
+    def single_gp_conditional(t):
         Kmm, Kmn, Knn, f, q_sqrt = t
         return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
