@@ -305,7 +305,7 @@ class RationalQuadratic(Stationary):
     ℓ  : lengthscales
     α  : alpha, determines relative weighting of small-scale and large-scale fluctuations
 
-    For α →  ∞, the RQ kernel becomes equivalent to the squared exponential.
+    For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
     def __init__(self, input_dim, variance=1.0, lengthscales=None, alpha=1.0,
