@@ -15,7 +15,6 @@
 
 import tensorflow as tf
 
-from .core import GPflowError
 from . import settings, mean_functions
 from .decors import name_scope
 from .dispatch import dispatch
@@ -33,6 +32,7 @@ from .probability_distributions import Gaussian
 #  - f      : M x L x R  or M x L  or  M x R
 #  - q_sqrt :
 
+# TODO move implementations of conditional() for multi-output kernels to multioutput module?
 
 """
 conditionals.py
@@ -66,12 +66,13 @@ q_sqrt : M x L  or  M x M  or L x M x M
 
 
 def expand_independent_outputs(fvar, full_cov, full_cov_output):
+    # TODO point of this function?
     if not full_cov_output:
         # Output shape should be N x R or R x N x N, which it already is.
         return fvar
     elif full_cov:
         # Output shape should be ???
-        pass
+        raise NotImplementedError
 
 
 @dispatch(object, InducingFeature, Kernel, object)
@@ -360,8 +361,6 @@ def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_co
         fvar = Knn - tf.matmul(At, At, transpose_b=True)  # N x P x P
     elif not full_cov and not full_cov_output:
         fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, P))  # Knn: N x P
-    else:
-        raise GPflowError("Incorrect values for full_cov*.")
 
     # another backsubstitution in the unwhitened case
     if not white:

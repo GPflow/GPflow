@@ -6,12 +6,10 @@ from .features import InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .params import Parameter
 
+# TODO MultiOutputKernels have a different method signature for K and Kdiag (they take full_cov_output)
+# this needs better documentation - especially as the default there is *True* not False as for full_cov
 
 class MultiOutputKernel(Kernel):
-    pass
-
-
-class IndependentMultiOutputKernel(MultiOutputKernel):
     pass
 
 
@@ -20,6 +18,10 @@ class IndependentFeature(InducingFeature):
 
 
 class MultiInducingPoints(InducingPoints):
+    """
+    TODO
+    """
+
     @params_as_tensors
     def Kuu(self, kern, jitter=0.0):
         Kzz = kern.K(self.Z)
@@ -33,10 +35,17 @@ class MultiInducingPoints(InducingPoints):
         return Kzx
 
 
-class Independent(Combination, IndependentMultiOutputKernel):
+class IndependentMultiOutputKernel(Combination, MultiOutputKernel):
+    """
+    TODO
+    """
+
     def K(self, X, X2=None, presliced=False, full_cov_output=True):
         if presliced:
             # Haven't thought about what to do here
+            # TODO presliced seems to only be relevant for evaluating the
+            # individual kernels in a sum / product, so maybe we can just
+            # ignore it here, just as Sum / Product kernels?
             raise NotImplementedError()
         if full_cov_output:
             stacked = tf.stack([k.K(X, X2) for k in self.kern_list], axis=2)  # N x N2 x P
@@ -46,11 +55,17 @@ class Independent(Combination, IndependentMultiOutputKernel):
             return tf.stack([k.K(X, X2) for k in self.kern_list], axis=0)  # P x N x N2
 
     def Kdiag(self, X, presliced=False, full_cov_output=False):
+        if presliced:
+            raise NotImplementedError
         stacked = tf.stack([k.Kdiag(X) for k in self.kern_list], axis=1)  # N x P
         return tf.matrix_diag(stacked) if full_cov_output else stacked  # N x P x P  or  N x P
 
 
 class IndependentSharedInducingPoints(InducingPoints, IndependentFeature):
+    """
+    TODO
+    """
+
     @params_as_tensors
     def Kuf(self, kern, Xnew):
         if type(kern) is Independent:
@@ -70,9 +85,14 @@ class IndependentSharedInducingPoints(InducingPoints, IndependentFeature):
             raise NotImplementedError
 
 
-class MixedMultiKernel(Combination, MultiOutputKernel):
+class MixedMultiOutputKernel(Combination, MultiOutputKernel):
+    """
+    TODO
+    """
+
     def __init__(self, kern_list, P, name=None):
         super().__init__(kern_list, name)
+        # TODO need to check shape of P
         self.P = Parameter(P)  # P x L
 
     @params_as_tensors
@@ -106,7 +126,11 @@ class MixedMultiKernel(Combination, MultiOutputKernel):
             return tf.matmul(K, self.P ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P
 
 
-class MixedMultiIndependentFeature(InducingPoints):
+class MixedMultiIndependentFeature(InducingPoints):  # TODO better name?
+    """
+    TODO
+    """
+
     def Kuf(self, kern, Xnew):
         return tf.stack([kern.K(self.Z, Xnew) for kern in kern.kern_list], axis=0)  # L x M x N
 
