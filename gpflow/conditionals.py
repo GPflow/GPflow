@@ -52,13 +52,23 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
 @dispatch(MixedMultiIndependentFeature, MixedMulti, object, object)
 @name_scope()
 def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    """
+    f: M x L
+    q_sqrt: L x M x M
+
+    :return:
+    mean: N x P
+    var:
+    1) full_cov, full_cov_output: True, True
+        N x P x N x P
+
+    """
     # TODO: remove R from this method
     Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # L x M x M
-    Kmn = feat.Kuf(kern)  # L x M x N
+    Kmn = feat.Kuf(kern, Xnew)  # L x M x N
 
     Knn = tf.stack([kern.K(Xnew) if full_cov else kern.Kdiag(Xnew) for kern in kern.kern_list], axis=0)
-    f = tf.transpose(f, [1, 0, 2])  # L x M x R (TODO)
-    q_sqrt = tf.transpose(q_sqrt, [1, 0, 2, 3])  # L x R x M x M (TODO)
+    f = tf.matrix_transpose(f)[..., None]  # L x M
 
     def single_gp_conditional(t):
         Kmm, Kmn, Knn, f, q_sqrt = t
@@ -66,26 +76,24 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
 
     gmu, gvar = tf.map_fn(single_gp_conditional,
                           (Kmm, Kmn, Knn, f, q_sqrt),
-                          (settings.float_type, settings.float_type))  # L x N x R, L x N(x N) x R
+                          (settings.float_type, settings.float_type))  # L x N, L x N (x N)
 
-    Pgmu = tf.tensordot(kern.P, gmu, [[1], [0]])  # P x N x R
+    Pgmu = tf.tensordot(gmu, kern.P, [[0], [1]])  # N x P
 
-    if full_cov:
-        P_expanded = kern.P[..., None, None, None]  # P x L x 1 x 1 x 1
-    else:
-        P_expanded = kern.P[..., None, None]  # P x L x 1 x 1
-
-    gvarP = gvar[None, ...] * P_expanded  # P x L x N x (N2 x) R
+    # if not full_cov_output and full_cov:
+    #     P_2 = tf.matrix_transpose(kern.P)[..., None]  # L x P x 1
+    #     gvarP_2 = tf.expand_dims(gvar, axis=1) * P_2
     
     if full_cov_output:
-        PgvarP = tf.tensordot(kern.P, gvarP, [[1], [1]])  # P x P x N x N x R
+        P = tf.matrix_transpose(kern.P)[:, None]  # L x 1 x P
+        P_expanded = tf.expand_dims(P, axis=-1) if full_cov else P  # L x 1 x P x 1 (or L x 1 x P)
+        gvarP = tf.expand_dims(gvar, axis=2) * P_expanded  # L x N x P (x N)
+        PgvarP = tf.tensordot(gvarP, kern.P, [[0], [1]])  # N x P (x N) x P
     else:
-        PgvarP = tf.reduce_sum(P_expanded * gvarP, axis=1)  # P x N x (N x) x R
-        Pgmu = tf.transpose(Pgmu[:, :, 0])  # N x P
-        PgvarP = tf.transpose(PgvarP[:, :, 0])  # N x P
-        
-
-    
+        if not full_cov:
+            PgvarP = tf.tensordot(gvar, kern.P**2, [[0], [1]])  # N x P
+        else:
+            PgvarP = tf.tensordot(kern.P**2, gvar, [[1], [0]])  # P x N (x N)
 
     return Pgmu, PgvarP   
 
