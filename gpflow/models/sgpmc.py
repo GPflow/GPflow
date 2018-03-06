@@ -17,7 +17,8 @@ import numpy as np
 import tensorflow as tf
 
 from ..models.model import GPModel
-from ..features import inducingpoint_wrapper, conditional
+from ..conditionals import conditional
+from ..features import inducingpoint_wrapper
 from ..params import Parameter, DataHolder
 from ..priors import Gaussian
 from ..decors import params_as_tensors
@@ -96,6 +97,6 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z,
 
         """
-        mu, var = conditional(self.feature, self.kern, Xnew, self.V, full_cov=full_cov, q_sqrt=None,
+        mu, var = conditional(Xnew, self.feature, self.kern, self.V, full_cov=full_cov, q_sqrt=None,
                               white=True)
         return mu + self.mean_function(Xnew), var
