@@ -318,22 +318,21 @@ class LowerTriangular(Transform):
     """
     A transform of the form
 
-       tri_mat = vec_to_tri(x)
+       y = vec_to_tri(x)
 
-    x is of shape num_matrices x (N**2 + N)/2
-    y is of shape num_matrices x N x N.
+    x is the 'packed' version of shape num_matrices x (N**2 + N)/2
+    y is the 'unpacked' version of shape num_matrices x N x N.
+    
+    :param N: the size of the final lower triangular matrices.
+    :param num_matrices: Number of matrices to be stored.
+    :param squeeze: If num_matrices == 1, drop the redundant axis.
+    
+    :raises ValueError: squeezing is impossible when num_matrices > 1.
     """
 
     def __init__(self, N, num_matrices=1, squeeze=False):
         """
         Create an instance of LowerTriangular transform.
-
-        Args:
-            N the size of the final lower triangular matrices.
-            num_matrices: Number of matrices to be stored.
-            squeeze: If num_matrices == 1, drop the redundant axis.
-
-        :raises ValueError: squeezing is impossible when num_matrices > 1.
         """
         self.N = N
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
@@ -344,12 +343,10 @@ class LowerTriangular(Transform):
 
     def forward(self, x):
         """
-        Transforms from the free state to the variable.
-        Args:
-            x: Free state vector. Must have length of `self.num_matrices x triangular_number
-
-        Returns:
-            Reconstructed variable of shape self.num_matrices x N x N
+        Transforms from the packed to unpacked representations (numpy)
+        
+        :param x: packed numpy array. Must have shape `self.num_matrices x triangular_number
+        :return: Reconstructed numpy array y of shape self.num_matrices x N x N
         """
         fwd = np.zeros((self.num_matrices, self.N, self.N), settings.float_type)
         indices = np.tril_indices(self.N, 0)
@@ -360,12 +357,10 @@ class LowerTriangular(Transform):
 
     def backward(self, y):
         """
-        Transforms from the variable to the free state.
-        Args:
-            y: Variable representation.
-
-        Returns:
-            Free state.
+        Transforms a series of triangular matrices y to the packed representation x (numpy)
+        
+        :param y: unpacked numpy array y, shape self.num_matrices x N x N
+        :return: packed numpy array, x, shape self.num_matrices x triangular number
         """
         if self.squeeze:
             y = y[None, :, :]
@@ -374,24 +369,20 @@ class LowerTriangular(Transform):
 
     def forward_tensor(self, x):
         """
-        Args:
-            x: Free state tensor. Should be of shape `self.num_matrices x triangular_number`
-
-        Returns:
-            fwd: tensor with shape self.num_matrices x self.N x self.N
-
-        Note:
-        if self.squeeze, the return shape is self.N x self.N
+        Transforms from the packed to unpacked representations (tf.tensors)
+        
+        :param x: packed tensor. Must have shape `self.num_matrices x triangular_number
+        :return: Reconstructed tensor y of shape self.num_matrices x N x N
         """
         fwd = vec_to_tri(x, self.N)
         return tf.squeeze(fwd, axis=0) if self.squeeze else fwd
 
     def backward_tensor(self, y):
         """
-        Args:
-            y tensor with shape self.num_matrices, self.N, self.N
-        Returns:
-            x tensor with shape self.num_matrices, (self.N**2 + self.N) / 2
+        Transforms a series of triangular matrices y to the packed representation x (tf.tensors)
+        
+        :param y: unpacked tensor with shape self.num_matrices, self.N, self.N
+        :return: packed tensor with shape self.num_matrices, (self.N**2 + self.N) / 2
         """
         if self.squeeze:
             y = tf.expand_dims(y, axis=0)
@@ -402,6 +393,9 @@ class LowerTriangular(Transform):
         return tf.reshape(triangular, [self.num_matrices, (self.N**2 + self.N) // 2])
 
     def log_jacobian_tensor(self, x):
+        """
+        This function has a jacobian of one, since it is simply an identity mapping (with some packing/unpacking)
+        """
         return tf.zeros((1,), settings.float_type)
 
     def __str__(self):
