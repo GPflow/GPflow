@@ -18,10 +18,10 @@ from __future__ import absolute_import
 import numpy as np
 import tensorflow as tf
 
-from .. import conditionals
 from .. import kullback_leiblers, features
 from .. import settings
 from .. import transforms
+from ..conditionals import conditional
 from ..decors import params_as_tensors
 from ..models.model import GPModel
 from ..params import DataHolder
@@ -127,6 +127,6 @@ class SVGP(GPModel):
 
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
-        mu, var = conditionals.feature_conditional(self.feature, self.kern, Xnew, self.q_mu,
-                                                   q_sqrt=self.q_sqrt, full_cov=full_cov, white=self.whiten)
+        mu, var = conditional(Xnew, self.feature, self.kern, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov,
+                              white=self.whiten)
         return mu + self.mean_function(Xnew), var

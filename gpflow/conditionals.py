@@ -22,14 +22,12 @@ from .dispatch import dispatch
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel
-from .multikernels import MultiKernel, IndependentMultiKernel, IndependentFeature, MultiInducingPoints
+from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, IndependentFeature, MultiInducingPoints
 from .probability_distributions import Gaussian
 
 # TODO: Make all outputs of conditionals equal
 # TODO: Add tensorflow assertions of shapes
 # TODO: Remove `conditional()`?
-# TODO: Ensure that R is handled correctly in all cases
-# TODO: Should there be consistentcy between fmean out, and f in?
 # Shapes to keep constant:
 #  - f      : M x L x R  or M x L  or  M x R
 #  - q_sqrt :
@@ -69,9 +67,9 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
         pass
 
 
-@dispatch(InducingFeature, Kernel, object, object)
+@dispatch(object, InducingFeature, Kernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Single-output GP allowing repetitions
     :param f: M x R
@@ -88,9 +86,9 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(IndependentFeature, IndependentMultiKernel, object, object)
+@dispatch(object, IndependentFeature, IndependentMultiOutputKernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P). Expected kernels:
@@ -122,9 +120,9 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     return tf.transpose(rmu[:, :, 0]), tf.transpose(rvar[:, :, 0])
 
 
-@dispatch(IndependentFeature, MultiKernel, object, object)
+@dispatch(object, IndependentFeature, MultiOutputKernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors
     :param Xnew:
@@ -146,9 +144,9 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
                                            q_sqrt=q_sqrt, white=white)
 
 
-@dispatch(MultiInducingPoints, MultiKernel, object, object)
+@dispatch(object, MultiInducingPoints, MultiOutputKernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
@@ -183,6 +181,7 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     return fmean, fvar
 
 
+@dispatch(object, object, Kernel, object)  # TODO: Make types more specific to TensorFlow types?
 @name_scope()
 def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
