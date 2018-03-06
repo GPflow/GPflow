@@ -100,14 +100,10 @@ class SVGP(GPModel):
             K = None
         else:
             K = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-        M = tf.shape(self.q_mu)[0]
+            raise NotImplementedError
 
-        # M x L x R -> M x RL
-        # TODO: Extra transpose gives axes same order for q_mu as q_sqrt. Not necessary for valid KL. Keep?
-        # q_mu = tf.reshape(self.q_mu, (M, -1))
-        q_mu = tf.reshape(tf.transpose(self.q_mu, (0, 2, 1)), (M, -1)) if self.q_mu.shape.ndims == 3 else self.q_mu
-        q_sqrt = tf.reshape(self.q_sqrt, (-1, M, M))  # R x L x M x M -> RL x M x M
-        return kullback_leiblers.gauss_kl(q_mu, q_sqrt, K)
+        # TODO: gauss_kl needs to handle non whitened cases correctly.
+        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     @params_as_tensors
     def _build_likelihood(self):
