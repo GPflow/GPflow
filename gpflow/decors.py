@@ -95,12 +95,12 @@ class defer_build(contextlib.ContextDecorator):
     """
 
     def __init__(self, defer=True):
-        self.disable_build = not defer
+        self.defer = defer
         self.prev_autobuild_status = None
 
     def __enter__(self):
         self.prev_autobuild_status = AutoBuildStatus.__autobuild_enabled_global__
-        AutoBuildStatus.__autobuild_enabled_global__ = self.disable_build
+        AutoBuildStatus.__autobuild_enabled_global__ = not self.defer
 
     def __exit__(self, *exc):
         AutoBuildStatus.__autobuild_enabled_global__ = self.prev_autobuild_status
@@ -108,7 +108,7 @@ class defer_build(contextlib.ContextDecorator):
 
 
 @contextlib.contextmanager
-def params_as_tensors_for(obj, convert=True):
+def params_as_tensors_for(*objs, convert=True):
     """
     Context manager which changes respresentation of parameters and data holders
     for specific parameterized object.
@@ -123,14 +123,16 @@ def params_as_tensors_for(obj, convert=True):
         return s + b
     ```
 
+    :param objs: Node (subclass) instances
     :param convert: Flag which is used for turning tensor convertion
         feature on, `True`, or turning it off, `False`.
     """
-    prev_value = _params_as_tensors_enter(obj, convert)
+    prev_values = [_params_as_tensors_enter(o, convert) for o in obj]
     try:
         yield
     finally:
-        _params_as_tensors_exit(obj, prev_value)
+        for o, pv in zip(obj, prev_values):
+            _params_as_tensors_exit(o, pv)
 
 
 def autoflow(*af_args, **af_kwargs):
