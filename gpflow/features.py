@@ -50,7 +50,7 @@ class InducingFeature(Parameterized):
         raise NotImplementedError()
 
 
-class InducingPoints(InducingFeature):
+class IInducingPoints(InducingFeature):
     """
     Real-space inducing points
     """
@@ -70,6 +70,8 @@ class InducingPoints(InducingFeature):
         Kzz = kern.K(self.Z)
         Kzz += jitter * tf.eye(len(self), dtype=settings.dtypes.float_type)
         return Kzz
+class InducingPoints(IInducingPoints):
+    pass
 
     @decors.params_as_tensors
     def Kuf(self, kern, Xnew):
@@ -77,7 +79,7 @@ class InducingPoints(InducingFeature):
         return Kzx
 
 
-class Multiscale(InducingPoints):
+class Multiscale(IInducingPoints):
     """
     Multi-scale inducing features
     Originally proposed in

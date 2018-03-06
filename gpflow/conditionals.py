@@ -21,7 +21,7 @@ from .dispatch import dispatch
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel
-from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, IndependentFeature, MultiInducingPoints
+from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, IndependentFeature, MultiOutputInducingPoints
 from .multikernels import MixedMultiKernel, MixedMultiIndependentFeature
 from .probability_distributions import Gaussian
 
@@ -202,7 +202,8 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
                                            q_sqrt=q_sqrt, white=white)
 
 
-@dispatch(object, MultiInducingPoints, MultiOutputKernel, object)
+@dispatch(object, MultiOutputInducingPoints, MultiOutputKernel, object)
+#TODO does this not work for other inducing features ?...
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """

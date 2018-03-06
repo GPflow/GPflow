@@ -17,7 +17,7 @@ class IndependentFeature(InducingFeature):
     pass
 
 
-class MultiInducingPoints(InducingPoints):
+class MultiOutputInducingPoints(IInducingPoints):
     """
     TODO
     """
