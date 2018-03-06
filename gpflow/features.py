@@ -17,8 +17,10 @@ from abc import abstractmethod
 import numpy as np
 import tensorflow as tf
 
-from . import transforms, kernels, decors, settings
+from . import transforms, kernels, settings
+from .decors import params_as_tensors, params_as_tensors_for
 from .params import Parameter, Parameterized
+from .dispatch import dispatch
 
 
 class InducingFeature(Parameterized):
@@ -65,18 +67,21 @@ class IInducingPoints(InducingFeature):
     def __len__(self):
         return self.Z.shape[0]
 
-    @decors.params_as_tensors
-    def Kuu(self, kern, jitter=0.0):
-        Kzz = kern.K(self.Z)
-        Kzz += jitter * tf.eye(len(self), dtype=settings.dtypes.float_type)
-        return Kzz
 class InducingPoints(IInducingPoints):
     pass
 
-    @decors.params_as_tensors
-    def Kuf(self, kern, Xnew):
-        Kzx = kern.K(self.Z, Xnew)
-        return Kzx
+@dispatch(InducingPoints, kernels.Kernel, object)
+def Kuu(self, kern, jitter=0.0):
+    with params_as_tensors_for(feat):
+        Kzz = kern.K(feat.Z)
+        Kzz += jitter * tf.eye(len(feat), dtype=settings.dtypes.float_type)
+    return Kzz
+
+@dispatch(InducingPoints, kernels.Kernel)
+def Kuf(feat, kern, Xnew):
+    with params_as_tensors_for(feat):
+        Kzx = kern.K(feat.Z, Xnew)
+    return Kzx
 
 
 class Multiscale(IInducingPoints):
@@ -102,45 +107,38 @@ class Multiscale(IInducingPoints):
         if self.Z.shape != scales.shape:
             raise ValueError("Input locations `Z` and `scales` must have the same shape.")  # pragma: no cover
 
-    def _cust_square_dist(self, A, B, sc):
+    @staticmethod
+    def _cust_square_dist(A, B, sc):
         """
         Custom version of _square_dist that allows sc to provide per-datapoint length
         scales. sc: N x M x D.
         """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
 
-    @decors.params_as_tensors
-    def Kuf(self, kern, Xnew):
-        if isinstance(kern, kernels.RBF):
-            with decors.params_as_tensors_for(kern):
-                Xnew, _ = kern._slice(Xnew, None)
-                Zmu, Zlen = kern._slice(self.Z, self.scales)
-                idlengthscales = kern.lengthscales + Zlen
-                d = self._cust_square_dist(Xnew, Zmu, idlengthscales)
-                Kuf = tf.transpose(kern.variance * tf.exp(-d / 2) *
-                                   tf.reshape(tf.reduce_prod(kern.lengthscales / idlengthscales, 1),
-                                              (1, -1)))
-            return Kuf
-        else:
-            raise NotImplementedError(
-                "Multiscale features not implemented for `%s`." % str(type(kern)))
+@dispatch(Multiscale, kernels.RBF, object)
+def Kuf(feat, kern, Xnew):
+    with params_as_tensors_for(feat, kern):
+        Xnew, _ = kern._slice(Xnew, None)
+        Zmu, Zlen = kern._slice(feat.Z, feat.scales)
+        idlengthscales = kern.lengthscales + Zlen
+        d = feat._cust_square_dist(Xnew, Zmu, idlengthscales)
+        Kuf = tf.transpose(kern.variance * tf.exp(-d / 2) *
+                           tf.reshape(tf.reduce_prod(kern.lengthscales / idlengthscales, 1),
+                                      (1, -1)))
+    return Kuf
 
-    @decors.params_as_tensors
-    def Kuu(self, kern, jitter=0.0):
-        if isinstance(kern, kernels.RBF):
-            with decors.params_as_tensors_for(kern):
-                Zmu, Zlen = kern._slice(self.Z, self.scales)
-                idlengthscales2 = tf.square(kern.lengthscales + Zlen)
-                sc = tf.sqrt(
-                    tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(
-                        kern.lengthscales))
-                d = self._cust_square_dist(Zmu, Zmu, sc)
-                Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
-                Kzz += jitter * tf.eye(len(self), dtype=settings.float_type)
-            return Kzz
-        else:
-            raise NotImplementedError(
-                "Multiscale features not implemented for `%s`." % str(type(kern)))
+@dispatch(Multiscale, kernels.RBF)
+def Kuu(feat, kern, jitter=0.0):
+    with params_as_tensors_for(feat, kern):
+        Zmu, Zlen = kern._slice(feat.Z, feat.scales)
+        idlengthscales2 = tf.square(kern.lengthscales + Zlen)
+        sc = tf.sqrt(
+            tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(
+                kern.lengthscales))
+        d = feat._cust_square_dist(Zmu, Zmu, sc)
+        Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
+        Kzz += jitter * tf.eye(len(feat), dtype=settings.float_type)
+    return Kzz
 
 
 def inducingpoint_wrapper(feat, Z):

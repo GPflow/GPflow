@@ -22,17 +22,19 @@ class MultiOutputInducingPoints(IInducingPoints):
     TODO
     """
 
-    @params_as_tensors
-    def Kuu(self, kern, jitter=0.0):
-        Kzz = kern.K(self.Z)
+@dispatch(MultiOutputInducingPoints, kernels.Kernel)
+def Kuu(feat, kern, jitter=0.0):
+    with params_as_tensors_for(feat, kern):
+        Kzz = kern.K(feat.Z, full_cov_output=True)
         num_inducing_variables = tf.shape(Kzz)[0] * tf.shape(Kzz)[1]
         Kzz += jitter * tf.reshape(tf.eye(num_inducing_variables, dtype=settings.dtypes.float_type), tf.shape(Kzz))
-        return Kzz
+    return Kzz
 
-    @params_as_tensors
-    def Kuf(self, kern, Xnew):
-        Kzx = kern.K(self.Z, Xnew)
-        return Kzx
+@dispatch(MultiOutputInducingPoints, kernels.Kernel, object)
+def Kuf(feat, kern, Xnew):
+    with params_as_tensors_for(feat, kern):
+        Kzx = kern.K(feat.Z, Xnew, full_cov_output=True)
+    return Kzx
 
 
 class IndependentMultiOutputKernel(Combination, MultiOutputKernel):
