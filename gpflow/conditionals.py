@@ -171,11 +171,10 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
         else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x K(x N)x K  or  N x K(x K)
 
-    Kmm = tf.transpose(Kmm, [1, 2, 0])
-
+    print("Knn.shape", end=" ")
     print(Knn.shape)
 
-    return dependent_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output, q_sqrt=q_sqrt,
+    return independent_latents_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output, q_sqrt=q_sqrt,
                                  white=white)
 
 
@@ -300,7 +299,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
 def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None,
                                     white=False):
     """
-    :param Kmn: L x M x N x P
+    :param Kmn: M x L x N x P
     :param Kmm: L x M x M
     :param Knn: N x P  or  N x N  or  P x N x N  or  N x P x N x P
     :param f: data matrix, M x L x R
@@ -308,13 +307,14 @@ def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_co
     :return: N x R x P  ,  N x R x P x P
     """
     # TODO: Allow broadcasting over L if priors are shared?
+    # TODO: Change Kmn to be L x M x N x P? Saves a transpose...
     R = tf.shape(f)[2]
-    L, M, N, P = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
+    M, L, N, P = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
 
     Lm = tf.cholesky(Kmm)  # L x M x M
 
     # Compute the projection matrix A
-    Kmn = tf.reshape(Kmn, (L, M, N * P))
+    Kmn = tf.reshape(tf.transpose(Kmn, (1, 0, 2, 3)), (L, M, N * P))
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # L x M x M  *  L x M x NP  ->  L x M x NP
     Ar = tf.reshape(A, (L, M, N, P))
 
@@ -360,8 +360,8 @@ def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_co
         elif not full_cov and not full_cov_output:
             # N x R x P
             fvar = fvar[None, :, :] + tf.reshape(tf.reduce_sum(tf.square(LTA), (1, 2)), (R, N, P))
-            fvar = tf.transpose(fvar, (N, R, P))
-    return fmean, fvar
+            fvar = tf.transpose(fvar, (1, 0, 2))
+    return fmean[:, 0, :], fvar[:, 0, :]
 
 
 def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
@@ -435,126 +435,126 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_o
     return fmean, fvar
 
 
-def dependent_conditional(Kmn, Kmm, Knn, f, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
-    """
-    This function handles conditioning of single and multiple output GPs in
-    various situations.
-    :param Kmn: M x L x N x K
-    :param Kmm: M x M  or  K x M x M
-    :param Knn: N x K  or  N x N  or  K x N x N  or  N x K x N x K
-    :param f: data matrix, M x L x R
-    :param full_cov:
-    :param full_cov_output:
-    :param q_sqrt: R x L x M x M or R x L x M
-    :param white:
-    :return: N x R x K, N x R x K x K
-    """
-
-    # f: M x L x R
-    if f.shape.ndims == 2:
-        f = f[:, None, :]
-
-    # Output dim Kmn: L1 x M x N x K
-    if Kmn.shape.ndims == 2:  # Input: M x N
-        N = tf.shape(Kmn)[1]
-        Kmn = Kmn[None, :, :, None]
-    elif Kmn.shape.ndims == 3:  # Input: M x N x K
-        N = tf.shape(Kmn)[1]
-        Kmn = Kmn[None, :, :, :]
-    elif Kmn.shape.ndims == 4:  # Input: M x L1 x N x K
-        N = tf.shape(Kmn)[2]
-        if Kmm.shape.ndims != 4:
-            # Case for Kmm.shape.ndims == 4 is handled later
-            Kmn = tf.transpose(Kmn, [1, 0, 2, 3])
-    else:  # pragma: no cover
-        raise GPflowError("`Kmn` incompatible rank.")
-
-    K = tf.shape(Kmn)[3]
-
-    # Output dim Kmm: L1 x M x M
-    if Kmm.shape.ndims == 2:  # M x M
-        Kmm = Kmm[None, :, :]
-    elif Kmm.shape.ndims == 3:  # M x M x L
-        Kmm = tf.transpose(Kmm, [2, 0, 1])
-    elif Kmm.shape.ndims == 4:  # M x L x M x L
-        M, L = tf.shape(Kmm)[0], tf.shape(Kmm)[1]
-        Kmm = tf.reshape(Kmm, (1, M * L, M * L))
-        Kmn = tf.reshape(Kmn, (1, M * tf.shape(Kmn)[1], N, K))
-    else:  # pragma: no cover
-        raise GPflowError("`Kmm` incompatible rank (%i)." % Kmm.shape.ndims)
-    Lm = tf.cholesky(Kmm)
-
-    M = tf.shape(Kmn)[1]
-    L = tf.shape(f)[1]
-    R = tf.shape(f)[2]
-
-    # Compute the projection matrix A
-    # Lm: L x M x M    Kmn: L x M x NK
-    # TODO: Need to sort out broadcasting.
-    # We can have Lm needing broadcasting OR Kmn needing broadcasting. However, if both have L=1, then the GP can be
-    # conditioned on the sum of the RVs WLOG.
-    Kmn = tf.reshape(Kmn, (L, M, N * K))  # L x M x NK
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # L x M x NK
-
-    # compute the covariance due to the conditioning
-    if full_cov:
-        if full_cov_output:
-            Ar = tf.reshape(A, (M * L, N, K))
-            # fvar = Knn - tf.matmul(Ar, Ar, transpose_a=True)  # NK x NK
-            fvar = Knn - tf.tensordot(Ar, Ar, [[0], [0]])  # N x K x N x K
-        else:
-            Ar = tf.transpose(tf.reshape(A, (M * L, N, K)))  # K x N x ML
-            fvar = Knn - tf.matmul(Ar, Ar, transpose_b=True)  # K x N x N
-    else:
-        if full_cov_output:
-            # Knn: N x K x K
-            Ar = tf.transpose(tf.reshape(A, (M * L, N, K)), [1, 0, 2])  # N x ML x K
-            # fvar = Knn - tf.einsum('mnk,mnl->nkl', Ar, Ar)
-            fvar = Knn - tf.matmul(Ar, Ar, transpose_a=True)  # N x K x K
-        else:
-            # Knn: NK
-            fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, K))  # Can also do this with a matmul
-
-    # another backsubstitution in the unwhitened case
-    if not white:
-        # if A.shape[0] == K, then Lm.shape[0] == K as well
-        A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # L x M x NK
-
-    Almnk = tf.reshape(A, (L, M, N, K))
-    # f: M x L x R
-    # fmean = tf.tensordot(Ar, f, [[0, 1], [2, 1]])  # N x K x R
-    fmean = tf.tensordot(f, Almnk, [[0, 1], [1, 0]])  # R x N x K
-    fmean = tf.transpose(fmean, (1, 0, 2))  # N x R x K
-
-    if q_sqrt is not None:
-        if q_sqrt.get_shape().ndims == 3:
-            # TODO: Check
-            raise NotImplementedError()
-            LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # L x M x NK
-        elif q_sqrt.get_shape().ndims == 4:
-            Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x L x M x M
-            A_tiled = tf.tile(A[None, :, :, :], tf.stack([R, L // tf.shape(A)[0], 1, 1]))
-            LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x L x M x M  *  R x L1 x M x NK  ->  R x L x M x NK
-        else:  # pragma: no cover
-            raise ValueError("Bad dimension for q_sqrt: %s" %
-                             str(q_sqrt.get_shape().ndims))
-        if full_cov:
-            if full_cov_output:
-                LTAr = tf.reshape(LTA, (L * M, N, K))  # ML x N x K
-                fvar = fvar + tf.tensordot(LTAr, LTAr, [[0], [0]])  # N x K x N x K
-            else:
-                LTAr = tf.transpose(tf.reshape(LTA, (L * M, N, K)))  # K x N x LM
-                fvar = fvar + tf.matmul(LTAr, LTAr, transpose_b=True)  # K x N x N
-        else:
-            if full_cov_output:
-                LTAr = tf.transpose(tf.reshape(LTA, (R, L * M, N, K)), [0, 2, 3, 1])  # R x N x K x LM
-                fvar = fvar + tf.matmul(LTAr, LTAr, transpose_b=True)  # R x N x K x K
-                fvar = tf.transpose(fvar, [1, 0, 2, 3])
-            else:
-                fvar = tf.Print(fvar, [tf.shape(fvar)])
-                fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (1, 2)), (N, K))  # R x N x K
-    fmean = tf.Print(fmean, [tf.shape(fmean)], message="fmean ")
-    return fmean, fvar
+# def dependent_conditional(Kmn, Kmm, Knn, f, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+#     """
+#     This function handles conditioning of single and multiple output GPs in
+#     various situations.
+#     :param Kmn: M x L x N x K
+#     :param Kmm: M x M  or  K x M x M
+#     :param Knn: N x K  or  N x N  or  K x N x N  or  N x K x N x K
+#     :param f: data matrix, M x L x R
+#     :param full_cov:
+#     :param full_cov_output:
+#     :param q_sqrt: R x L x M x M or R x L x M
+#     :param white:
+#     :return: N x R x K, N x R x K x K
+#     """
+#
+#     # f: M x L x R
+#     if f.shape.ndims == 2:
+#         f = f[:, None, :]
+#
+#     # Output dim Kmn: L1 x M x N x K
+#     if Kmn.shape.ndims == 2:  # Input: M x N
+#         N = tf.shape(Kmn)[1]
+#         Kmn = Kmn[None, :, :, None]
+#     elif Kmn.shape.ndims == 3:  # Input: M x N x K
+#         N = tf.shape(Kmn)[1]
+#         Kmn = Kmn[None, :, :, :]
+#     elif Kmn.shape.ndims == 4:  # Input: M x L1 x N x K
+#         N = tf.shape(Kmn)[2]
+#         if Kmm.shape.ndims != 4:
+#             # Case for Kmm.shape.ndims == 4 is handled later
+#             Kmn = tf.transpose(Kmn, [1, 0, 2, 3])
+#     else:  # pragma: no cover
+#         raise GPflowError("`Kmn` incompatible rank.")
+#
+#     K = tf.shape(Kmn)[3]
+#
+#     # Output dim Kmm: L1 x M x M
+#     if Kmm.shape.ndims == 2:  # M x M
+#         Kmm = Kmm[None, :, :]
+#     elif Kmm.shape.ndims == 3:  # M x M x L
+#         Kmm = tf.transpose(Kmm, [2, 0, 1])
+#     elif Kmm.shape.ndims == 4:  # M x L x M x L
+#         M, L = tf.shape(Kmm)[0], tf.shape(Kmm)[1]
+#         Kmm = tf.reshape(Kmm, (1, M * L, M * L))
+#         Kmn = tf.reshape(Kmn, (1, M * tf.shape(Kmn)[1], N, K))
+#     else:  # pragma: no cover
+#         raise GPflowError("`Kmm` incompatible rank (%i)." % Kmm.shape.ndims)
+#     Lm = tf.cholesky(Kmm)
+#
+#     M = tf.shape(Kmn)[1]
+#     L = tf.shape(f)[1]
+#     R = tf.shape(f)[2]
+#
+#     # Compute the projection matrix A
+#     # Lm: L x M x M    Kmn: L x M x NK
+#     # TODO: Need to sort out broadcasting.
+#     # We can have Lm needing broadcasting OR Kmn needing broadcasting. However, if both have L=1, then the GP can be
+#     # conditioned on the sum of the RVs WLOG.
+#     Kmn = tf.reshape(Kmn, (L, M, N * K))  # L x M x NK
+#     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # L x M x NK
+#
+#     # compute the covariance due to the conditioning
+#     if full_cov:
+#         if full_cov_output:
+#             Ar = tf.reshape(A, (M * L, N, K))
+#             # fvar = Knn - tf.matmul(Ar, Ar, transpose_a=True)  # NK x NK
+#             fvar = Knn - tf.tensordot(Ar, Ar, [[0], [0]])  # N x K x N x K
+#         else:
+#             Ar = tf.transpose(tf.reshape(A, (M * L, N, K)))  # K x N x ML
+#             fvar = Knn - tf.matmul(Ar, Ar, transpose_b=True)  # K x N x N
+#     else:
+#         if full_cov_output:
+#             # Knn: N x K x K
+#             Ar = tf.transpose(tf.reshape(A, (M * L, N, K)), [1, 0, 2])  # N x ML x K
+#             # fvar = Knn - tf.einsum('mnk,mnl->nkl', Ar, Ar)
+#             fvar = Knn - tf.matmul(Ar, Ar, transpose_a=True)  # N x K x K
+#         else:
+#             # Knn: NK
+#             fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, K))  # Can also do this with a matmul
+#
+#     # another backsubstitution in the unwhitened case
+#     if not white:
+#         # if A.shape[0] == K, then Lm.shape[0] == K as well
+#         A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # L x M x NK
+#
+#     Almnk = tf.reshape(A, (L, M, N, K))
+#     # f: M x L x R
+#     # fmean = tf.tensordot(Ar, f, [[0, 1], [2, 1]])  # N x K x R
+#     fmean = tf.tensordot(f, Almnk, [[0, 1], [1, 0]])  # R x N x K
+#     fmean = tf.transpose(fmean, (1, 0, 2))  # N x R x K
+#
+#     if q_sqrt is not None:
+#         if q_sqrt.get_shape().ndims == 3:
+#             # TODO: Check
+#             raise NotImplementedError()
+#             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # L x M x NK
+#         elif q_sqrt.get_shape().ndims == 4:
+#             Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x L x M x M
+#             A_tiled = tf.tile(A[None, :, :, :], tf.stack([R, L // tf.shape(A)[0], 1, 1]))
+#             LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x L x M x M  *  R x L1 x M x NK  ->  R x L x M x NK
+#         else:  # pragma: no cover
+#             raise ValueError("Bad dimension for q_sqrt: %s" %
+#                              str(q_sqrt.get_shape().ndims))
+#         if full_cov:
+#             if full_cov_output:
+#                 LTAr = tf.reshape(LTA, (L * M, N, K))  # ML x N x K
+#                 fvar = fvar + tf.tensordot(LTAr, LTAr, [[0], [0]])  # N x K x N x K
+#             else:
+#                 LTAr = tf.transpose(tf.reshape(LTA, (L * M, N, K)))  # K x N x LM
+#                 fvar = fvar + tf.matmul(LTAr, LTAr, transpose_b=True)  # K x N x N
+#         else:
+#             if full_cov_output:
+#                 LTAr = tf.transpose(tf.reshape(LTA, (R, L * M, N, K)), [0, 2, 3, 1])  # R x N x K x LM
+#                 fvar = fvar + tf.matmul(LTAr, LTAr, transpose_b=True)  # R x N x K x K
+#                 fvar = tf.transpose(fvar, [1, 0, 2, 3])
+#             else:
+#                 fvar = tf.Print(fvar, [tf.shape(fvar)])
+#                 fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (1, 2)), (N, K))  # R x N x K
+#     fmean = tf.Print(fmean, [tf.shape(fmean)], message="fmean ")
+#     return fmean, fvar
 
 
 @name_scope()
