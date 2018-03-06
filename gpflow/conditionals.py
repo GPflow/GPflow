@@ -15,43 +15,87 @@
 
 import tensorflow as tf
 
+from .core import GPflowError
 from . import settings, mean_functions
-from .core.errors import GPflowError
 from .decors import name_scope
 from .dispatch import dispatch
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel
-from .multikernels import MultiKernel, IndependentMultiKernel, IndependentFeature, MultiInducingPoints
-from .multikernels import MixedMulti, MixedMultiIndependentFeature
+from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, IndependentFeature, MultiInducingPoints
+from .multikernels import MixedMultiKernel, MixedMultiIndependentFeature
 from .probability_distributions import Gaussian
-
 
 # TODO: Make all outputs of conditionals equal
 # TODO: Add tensorflow assertions of shapes
 # TODO: Remove `conditional()`?
-# TODO: Ensure that R is handled correctly in all cases
-# TODO: Should there be consistentcy between fmean out, and f in?
 # Shapes to keep constant:
 #  - f      : M x L x R  or M x L  or  M x R
 #  - q_sqrt :
 
 
-@dispatch(InducingFeature, Kernel, object, object)
+"""
+conditionals.py
+The only thing that is completely specified for an implementation of `conditional()`, is the return
+shapes.
+
+Option 1:
+--------
+fmean : N x P
+fvar  : N x P  or  N x P x P  or  P x N x N  or  N x P x N x P
+This is occurs when the multi-output nature is described purely by repeating the same prior P
+times. Full covariances over outputs will always be diagonal.
+
+Option 2:
+--------
+fmean : N x P
+fvar  : N x P  or  N x P x P  or  P x N x N  or  N x P x N x P
+For when we have a truly multi-output kernel, with P the output dimension
+
+Option 3:
+--------
+fmean : N x P
+fvar  : N x P  or  N x P x P  or  P x N x N  or  N x P x N x P
+Multi-output kernel, with ? repetitions of the prior.
+
+In general, we should aim to keep the shapes of f, q_sqrt, Kuu, and Kuf consistent as well. For
+optimisation reasons, however, this can be departed from. The standard is:
+f      : M x L
+q_sqrt : M x L  or  M x M  or L x M x M
+"""
+
+
+def expand_independent_outputs(fvar, full_cov, full_cov_output):
+    if not full_cov_output:
+        # Output shape should be N x R or R x N x N, which it already is.
+        return fvar
+    elif full_cov:
+        # Output shape should be ???
+        pass
+
+
+@dispatch(object, InducingFeature, Kernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
-    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)
-    Kmn = feat.Kuf(kern, Xnew)
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    """
+    Single-output GP allowing repetitions
+    :param f: M x R
+    :param q_sqrt: M x R  or  R x M x M
+    :return: N x R  or R x N x N  or  N x R x R  or  N x R x N x R
+    """
+    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
+    Kmn = feat.Kuf(kern, Xnew)  # M x N
     if full_cov:
-        Knn = kern.K(Xnew)
+        Knn = kern.K(Xnew)  # N x N
     else:
-        Knn = kern.Kdiag(Xnew)
-    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  N x R
+        Knn = kern.Kdiag(Xnew)  # N
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  N x R
+    return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(MixedMultiIndependentFeature, MixedMulti, object, object)
+@dispatch(object, MixedMultiIndependentFeature, MixedMultiKernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     f: M x L
     q_sqrt: L x M x M
@@ -63,66 +107,51 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
         N x P x N x P
 
     """
-    # TODO: remove R from this method
-    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # L x M x M
-    Kmn = feat.Kuf(kern, Xnew)  # L x M x N
+    independent_cond = conditional.dispatch(object, IndependentFeature, IndependentMultiOutputKernel, object)
+    gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt, 
+                                 full_cov_output=False, white=white)  # N x L, L x N x N or N x L
 
-    Knn = tf.stack([kern.K(Xnew) if full_cov else kern.Kdiag(Xnew) for kern in kern.kern_list], axis=0)
-    f = tf.matrix_transpose(f)[..., None]  # L x M
-
-    def single_gp_conditional(t):
-        Kmm, Kmn, Knn, f, q_sqrt = t
-        return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-    gmu, gvar = tf.map_fn(single_gp_conditional,
-                          (Kmm, Kmn, Knn, f, q_sqrt),
-                          (settings.float_type, settings.float_type))  # L x N, L x N (x N)
+    gmu = tf.matrix_transpose(gmu)  # L x N
+    if not full_cov:
+        gvar = tf.matrix_transpose(gvar)  # L x N (x N)
 
     Pgmu = tf.tensordot(gmu, kern.P, [[0], [1]])  # N x P
 
-    # if not full_cov_output and full_cov:
-    #     P_2 = tf.matrix_transpose(kern.P)[..., None]  # L x P x 1
-    #     gvarP_2 = tf.expand_dims(gvar, axis=1) * P_2
-    
     if full_cov_output:
-        P = tf.matrix_transpose(kern.P)[:, None]  # L x 1 x P
-        P_expanded = tf.expand_dims(P, axis=-1) if full_cov else P  # L x 1 x P x 1 (or L x 1 x P)
-        gvarP = tf.expand_dims(gvar, axis=2) * P_expanded  # L x N x P (x N)
+        Pt_expanded = tf.matrix_transpose(kern.P)[:, None]  # L x 1 x P
+        if full_cov:
+            Pt_expanded = tf.expand_dims(Pt_expanded, axis=-1)  # L x 1 x P x 1
+
+        gvarP = tf.expand_dims(gvar, axis=2) * Pt_expanded  # L x N x P (x N)
         PgvarP = tf.tensordot(gvarP, kern.P, [[0], [1]])  # N x P (x N) x P
     else:
         if not full_cov:
             PgvarP = tf.tensordot(gvar, kern.P**2, [[0], [1]])  # N x P
         else:
             PgvarP = tf.tensordot(kern.P**2, gvar, [[1], [0]])  # P x N (x N)
-
+        
     return Pgmu, PgvarP   
 
 
-@dispatch(IndependentFeature, IndependentMultiKernel, object, object)
+@dispatch(object, IndependentFeature, IndependentMultiOutputKernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
-    Multi-output GP with independent GP priors
-    :param Xnew:
-    :param feat:
-    :param kern:
-    :param f: M x L x R  or  M x L x 1
-    :param full_cov:
-    :param full_cov_output:
-    :param q_sqrt: R x P x M  or R x P x M x M
-    :param white:
-    :return:
+    Multi-output GP with independent GP priors.
+    Number of latent processes equals the number of outputs (L = P). Expected kernels:
+     Kmm
+    :param f: M x P
+    :param q_sqrt: M x P  or  P x M x M
+    :return: N x P ,
     """
-    if f.shape.ndims != 3 or q_sqrt.shape.ndims != 4:
-        raise GPflowError("IndependentFeature & IndependentMultiKernel combination requires separated GP posterior "
-                          "representations, i.e. f: R x M x P.")
-
     # Following are: P x M x M  -  P x M x N  -  P x N(x N)
     Kmms = feat.Kuu(kern, jitter=settings.jitter)
     Kmns = feat.Kuf(kern, Xnew)
+    # TODO: Do all independent kernels have a kern_list?
     Knns = tf.stack([kern.K(Xnew) if full_cov else kern.Kdiag(Xnew) for kern in kern.kern_list], axis=0)
-    fs = tf.transpose(f, [1, 0, 2])  # P x M x R
-    q_sqrts = tf.transpose(q_sqrt, [1, 0, 2, 3])
+    fs = tf.transpose(f)[:, :, None]  # P x M x 1
+    # P x 1 x M x M  or  P x M x 1
+    q_sqrts = tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
 
     def single_gp_conditional(t):
         Kmm, Kmn, Knn, f, q_sqrt = t
@@ -130,25 +159,36 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
 
     rmu, rvar = tf.map_fn(single_gp_conditional,
                           (Kmms, Kmns, Knns, fs, q_sqrts),
-                          (settings.float_type, settings.float_type))  # P x N x R  ,  P x N(x N)x R
+                          (settings.float_type, settings.float_type))  # P x N x 1  ,  P x N(x N) x 1
+    
+    fmu = tf.matrix_transpose(rmu[..., 0])
+    fvar = rvar[..., 0]
 
-    rmu = tf.transpose(rmu[:, :, 0])
-    rvar = tf.transpose(rvar[:, :, 0])
-    return rmu, rvar
+    if full_cov_output and full_cov:
+        fvar = tf.diag(tf.transpose(fvar, [1, 2, 0]))
+        fvar = tf.transpose(fvar, [0, 2, 1, 3])
+    elif not full_cov_output and full_cov:
+        pass
+    elif full_cov_output and not full_cov:
+        fvar = tf.diag(tf.matrix_transpose(fvar))
+    elif not full_cov_output and not full_cov:
+        fvar = tf.matrix_transpose(fvar)
+
+    return fmu, fvar
 
 
-@dispatch(IndependentFeature, MultiKernel, object, object)
+@dispatch(object, IndependentFeature, MultiOutputKernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors
     :param Xnew:
     :param feat:
     :param kern:
-    :param f: M x L x R  or  M x L x 1
+    :param f: M x L
     :param full_cov:
     :param full_cov_output:
-    :param q_sqrt: R x L x M  or R x L x M x M
+    :param q_sqrt: L x M  or L x M x M
     :param white:
     :return:
     """
@@ -157,25 +197,28 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
         else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x K(x N)x K  or  N x K(x K)
 
-    print("Knn.shape", end=" ")
-    print(Knn.shape)
-
-    return independent_latents_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output, q_sqrt=q_sqrt,
-                                 white=white)
+    return independent_latents_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output,
+                                           q_sqrt=q_sqrt, white=white)
 
 
-@dispatch(MultiInducingPoints, MultiKernel, object, object)
+@dispatch(object, MultiInducingPoints, MultiOutputKernel, object)
 @name_scope()
-def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
-    Multi-output GP with independent GP priors
-    :param f: M x R
-    :param q_sqrt: R x M  or R x M x M
+    Multi-output GP with fully correlated inducing variables.
+    The inducing variables are shaped in the same way as evaluations of K, to allow a default
+    inducing point scheme for multi-output kernels.
+
+     Kmm : M x L x M x P
+     Kmn : M x L x N x P
+
+    :param f: ML x 1
+    :param q_sqrt: ML x 1  or  1 x ML x ML
     """
-    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x L x M x K
-    Kmn = feat.Kuf(kern, Xnew)  # M x L x N x K
+    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x L x M x P
+    Kmn = feat.Kuf(kern, Xnew)  # M x L x N x P
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
-        else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x K(x N)x K  or  N x K(x K)
+        else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x P(x N)x P  or  N x P(x P)
 
     M, L, N, K = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
     Kmm = tf.reshape(Kmm, (M * L, M * L))
@@ -190,9 +233,12 @@ def feature_conditional(feat, kern, Xnew, f, *, full_cov=False, full_cov_output=
         Kmn = tf.reshape(Kmn, (M * L, N, K))
         fmean, fvar = fully_correlated_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output,
                                                    q_sqrt=q_sqrt, white=white)
+        # TODO: Fix this output shape
+    fmean = tf.Print(fmean, [tf.shape(fmean), tf.shape(fvar)], summarize=100)
     return fmean, fvar
 
 
+@dispatch(object, object, Kernel, object)  # TODO: Make types more specific to TensorFlow types?
 @name_scope()
 def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
@@ -288,13 +334,12 @@ def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_co
     :param Kmn: M x L x N x P
     :param Kmm: L x M x M
     :param Knn: N x P  or  N x N  or  P x N x N  or  N x P x N x P
-    :param f: data matrix, M x L x R
-    :param q_sqrt: R x L x M x M  or  M x L x R
-    :return: N x R x P  ,  N x R x P x P
+    :param f: data matrix, M x L
+    :param q_sqrt: L x M x M  or  M x L
+    :return: N x P  ,  N x R x P x P
     """
     # TODO: Allow broadcasting over L if priors are shared?
     # TODO: Change Kmn to be L x M x N x P? Saves a transpose...
-    R = tf.shape(f)[2]
     M, L, N, P = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
 
     Lm = tf.cholesky(Kmm)  # L x M x M
@@ -315,39 +360,35 @@ def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_co
         fvar = Knn - tf.matmul(At, At, transpose_b=True)  # N x P x P
     elif not full_cov and not full_cov_output:
         fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, P))  # Knn: N x P
+    else:
+        raise GPflowError("Incorrect values for full_cov*.")
 
     # another backsubstitution in the unwhitened case
     if not white:
         A = tf.matrix_triangular_solve(Lm, Ar)  # L x M x M  *  L x M x NP  ->  L x M x NP
         Ar = tf.reshape(A, (L, M, N, P))
 
-    # mean: N x R x P
-    fmean = tf.tensordot(f, Ar, [[0, 1], [1, 0]])  # R x NP
-    fmean = tf.transpose(tf.reshape(fmean, (R, N, P)), [1, 0, 2])  # N x R x P
+    fmean = tf.tensordot(Ar, f, [[0, 1], [0, 1]])  # N x P
 
     if q_sqrt is not None:
-        Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x L x M x M
-        if q_sqrt.shape.ndims == 4:
-            # Broadcast over L?
-            A_tiled = tf.tile(A[None, :, :, :], tf.stack([R, 1, 1, 1]))  # R x L x M x NP
-            LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x L x M x M  *  R x L x M x NP  ->  R x L x M x NP
+        Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # L x M x M
+        if q_sqrt.shape.ndims == 3:
+            LTA = tf.matmul(Lf, A, transpose_a=True)  # L x M x M  *  L x M x NP  ->  L x M x NP
         else:
             raise NotImplementedError()
 
         if full_cov and full_cov_output:
-            LTAr = tf.reshape(LTA, (R, L * M, N * P))
-            fvar = fvar[None, :, :, :, :] + tf.reshape(tf.matmul(LTAr, LTAr, transpose_a=True), (R, N, P, N, P))
+            LTAr = tf.reshape(LTA, (L * M, N * P))
+            fvar = fvar + tf.reshape(tf.matmul(LTAr, LTAr, transpose_a=True), (N, P, N, P))
         elif full_cov and not full_cov_output:
-            LTAr = tf.transpose(tf.reshape(LTA, (R, L * M, N, P)), [0, 3, 1, 2])  # R x P x LM x N
-            fvar = fvar[None, :, :, :] + tf.matmul(LTAr, LTAr, transpose_a=True)  # R x P x N x N
+            LTAr = tf.transpose(tf.reshape(LTA, (L * M, N, P)), [0, 3, 1, 2])  # P x LM x N
+            fvar = fvar + tf.matmul(LTAr, LTAr, transpose_a=True)  # P x N x N
         elif not full_cov and full_cov_output:
-            LTAr = tf.transpose(tf.reshape(LTA, (R, L * M, N, P)), [2, 0, 1, 3])  # N x R x LM x P
-            fvar = fvar[:, None, :, :] + tf.matmul(LTAr, LTAr, transpose_a=True)  # N x R x P x P
+            LTAr = tf.transpose(tf.reshape(LTA, (L * M, N, P)), [1, 0, 2])  # N x LM x P
+            fvar = fvar + tf.matmul(LTAr, LTAr, transpose_a=True)  # N x P x P
         elif not full_cov and not full_cov_output:
-            # N x R x P
-            fvar = fvar[None, :, :] + tf.reshape(tf.reduce_sum(tf.square(LTA), (1, 2)), (R, N, P))
-            fvar = tf.transpose(fvar, (1, 0, 2))
-    return fmean[:, 0, :], fvar[:, 0, :]
+            fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (0, 1)), (N, P))
+    return fmean, fvar
 
 
 def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
@@ -419,128 +460,6 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_o
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), 1), (R, N, K))
             fvar = fvar[:, None, :] + tf.transpose(addvar, (1, 0, 2))  # N x R x K
     return fmean, fvar
-
-
-# def dependent_conditional(Kmn, Kmm, Knn, f, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
-#     """
-#     This function handles conditioning of single and multiple output GPs in
-#     various situations.
-#     :param Kmn: M x L x N x K
-#     :param Kmm: M x M  or  K x M x M
-#     :param Knn: N x K  or  N x N  or  K x N x N  or  N x K x N x K
-#     :param f: data matrix, M x L x R
-#     :param full_cov:
-#     :param full_cov_output:
-#     :param q_sqrt: R x L x M x M or R x L x M
-#     :param white:
-#     :return: N x R x K, N x R x K x K
-#     """
-#
-#     # f: M x L x R
-#     if f.shape.ndims == 2:
-#         f = f[:, None, :]
-#
-#     # Output dim Kmn: L1 x M x N x K
-#     if Kmn.shape.ndims == 2:  # Input: M x N
-#         N = tf.shape(Kmn)[1]
-#         Kmn = Kmn[None, :, :, None]
-#     elif Kmn.shape.ndims == 3:  # Input: M x N x K
-#         N = tf.shape(Kmn)[1]
-#         Kmn = Kmn[None, :, :, :]
-#     elif Kmn.shape.ndims == 4:  # Input: M x L1 x N x K
-#         N = tf.shape(Kmn)[2]
-#         if Kmm.shape.ndims != 4:
-#             # Case for Kmm.shape.ndims == 4 is handled later
-#             Kmn = tf.transpose(Kmn, [1, 0, 2, 3])
-#     else:  # pragma: no cover
-#         raise GPflowError("`Kmn` incompatible rank.")
-#
-#     K = tf.shape(Kmn)[3]
-#
-#     # Output dim Kmm: L1 x M x M
-#     if Kmm.shape.ndims == 2:  # M x M
-#         Kmm = Kmm[None, :, :]
-#     elif Kmm.shape.ndims == 3:  # M x M x L
-#         Kmm = tf.transpose(Kmm, [2, 0, 1])
-#     elif Kmm.shape.ndims == 4:  # M x L x M x L
-#         M, L = tf.shape(Kmm)[0], tf.shape(Kmm)[1]
-#         Kmm = tf.reshape(Kmm, (1, M * L, M * L))
-#         Kmn = tf.reshape(Kmn, (1, M * tf.shape(Kmn)[1], N, K))
-#     else:  # pragma: no cover
-#         raise GPflowError("`Kmm` incompatible rank (%i)." % Kmm.shape.ndims)
-#     Lm = tf.cholesky(Kmm)
-#
-#     M = tf.shape(Kmn)[1]
-#     L = tf.shape(f)[1]
-#     R = tf.shape(f)[2]
-#
-#     # Compute the projection matrix A
-#     # Lm: L x M x M    Kmn: L x M x NK
-#     # TODO: Need to sort out broadcasting.
-#     # We can have Lm needing broadcasting OR Kmn needing broadcasting. However, if both have L=1, then the GP can be
-#     # conditioned on the sum of the RVs WLOG.
-#     Kmn = tf.reshape(Kmn, (L, M, N * K))  # L x M x NK
-#     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # L x M x NK
-#
-#     # compute the covariance due to the conditioning
-#     if full_cov:
-#         if full_cov_output:
-#             Ar = tf.reshape(A, (M * L, N, K))
-#             # fvar = Knn - tf.matmul(Ar, Ar, transpose_a=True)  # NK x NK
-#             fvar = Knn - tf.tensordot(Ar, Ar, [[0], [0]])  # N x K x N x K
-#         else:
-#             Ar = tf.transpose(tf.reshape(A, (M * L, N, K)))  # K x N x ML
-#             fvar = Knn - tf.matmul(Ar, Ar, transpose_b=True)  # K x N x N
-#     else:
-#         if full_cov_output:
-#             # Knn: N x K x K
-#             Ar = tf.transpose(tf.reshape(A, (M * L, N, K)), [1, 0, 2])  # N x ML x K
-#             # fvar = Knn - tf.einsum('mnk,mnl->nkl', Ar, Ar)
-#             fvar = Knn - tf.matmul(Ar, Ar, transpose_a=True)  # N x K x K
-#         else:
-#             # Knn: NK
-#             fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, K))  # Can also do this with a matmul
-#
-#     # another backsubstitution in the unwhitened case
-#     if not white:
-#         # if A.shape[0] == K, then Lm.shape[0] == K as well
-#         A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # L x M x NK
-#
-#     Almnk = tf.reshape(A, (L, M, N, K))
-#     # f: M x L x R
-#     # fmean = tf.tensordot(Ar, f, [[0, 1], [2, 1]])  # N x K x R
-#     fmean = tf.tensordot(f, Almnk, [[0, 1], [1, 0]])  # R x N x K
-#     fmean = tf.transpose(fmean, (1, 0, 2))  # N x R x K
-#
-#     if q_sqrt is not None:
-#         if q_sqrt.get_shape().ndims == 3:
-#             # TODO: Check
-#             raise NotImplementedError()
-#             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # L x M x NK
-#         elif q_sqrt.get_shape().ndims == 4:
-#             Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x L x M x M
-#             A_tiled = tf.tile(A[None, :, :, :], tf.stack([R, L // tf.shape(A)[0], 1, 1]))
-#             LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x L x M x M  *  R x L1 x M x NK  ->  R x L x M x NK
-#         else:  # pragma: no cover
-#             raise ValueError("Bad dimension for q_sqrt: %s" %
-#                              str(q_sqrt.get_shape().ndims))
-#         if full_cov:
-#             if full_cov_output:
-#                 LTAr = tf.reshape(LTA, (L * M, N, K))  # ML x N x K
-#                 fvar = fvar + tf.tensordot(LTAr, LTAr, [[0], [0]])  # N x K x N x K
-#             else:
-#                 LTAr = tf.transpose(tf.reshape(LTA, (L * M, N, K)))  # K x N x LM
-#                 fvar = fvar + tf.matmul(LTAr, LTAr, transpose_b=True)  # K x N x N
-#         else:
-#             if full_cov_output:
-#                 LTAr = tf.transpose(tf.reshape(LTA, (R, L * M, N, K)), [0, 2, 3, 1])  # R x N x K x LM
-#                 fvar = fvar + tf.matmul(LTAr, LTAr, transpose_b=True)  # R x N x K x K
-#                 fvar = tf.transpose(fvar, [1, 0, 2, 3])
-#             else:
-#                 fvar = tf.Print(fvar, [tf.shape(fvar)])
-#                 fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (1, 2)), (N, K))  # R x N x K
-#     fmean = tf.Print(fmean, [tf.shape(fmean)], message="fmean ")
-#     return fmean, fvar
 
 
 @name_scope()

@@ -7,11 +7,11 @@ from .kernels import Kernel, Combination
 from .params import Parameter
 
 
-class MultiKernel(Kernel):
+class MultiOutputKernel(Kernel):
     pass
 
 
-class IndependentMultiKernel(MultiKernel):
+class IndependentMultiOutputKernel(MultiOutputKernel):
     pass
 
 
@@ -33,7 +33,7 @@ class MultiInducingPoints(InducingPoints):
         return Kzx
 
 
-class Independent(Combination, IndependentMultiKernel):
+class Independent(Combination, IndependentMultiOutputKernel):
     def K(self, X, X2=None, presliced=False, full_cov_output=True):
         if presliced:
             # Haven't thought about what to do here
@@ -70,7 +70,7 @@ class IndependentSharedInducingPoints(InducingPoints, IndependentFeature):
             raise NotImplementedError
 
 
-class MixedMulti(Combination, MultiKernel):
+class MixedMultiKernel(Combination, MultiOutputKernel):
     def __init__(self, kern_list, P, name=None):
         super().__init__(kern_list, name)
         self.P = Parameter(P)  # P x L
