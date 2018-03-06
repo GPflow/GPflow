@@ -14,21 +14,19 @@
 
 
 from __future__ import absolute_import
-import tensorflow as tf
-import numpy as np
 
+import numpy as np
+import tensorflow as tf
+
+from .. import kullback_leiblers, features
 from .. import settings
 from .. import transforms
-from .. import conditionals
-from .. import kullback_leiblers, features
-
-from ..params import Parameter
-from ..params import Minibatch
-from ..params import DataHolder
-
+from ..conditionals import conditional
 from ..decors import params_as_tensors
-
 from ..models.model import GPModel
+from ..params import DataHolder
+from ..params import Minibatch
+from ..params import Parameter
 
 
 class SVGP(GPModel):
@@ -46,6 +44,7 @@ class SVGP(GPModel):
       }
 
     """
+
     def __init__(self, X, Y, kern, likelihood, feat=None,
                  mean_function=None,
                  num_latent=None,
@@ -101,6 +100,9 @@ class SVGP(GPModel):
             K = None
         else:
             K = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
+            raise NotImplementedError
+
+        # TODO: gauss_kl needs to handle non whitened cases correctly.
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     @params_as_tensors
@@ -125,6 +127,6 @@ class SVGP(GPModel):
 
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
-        mu, var = features.conditional(self.feature, self.kern, Xnew, self.q_mu,
-                                       q_sqrt=self.q_sqrt, full_cov=full_cov, white=self.whiten)
+        mu, var = conditional(Xnew, self.feature, self.kern, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov,
+                              white=self.whiten)
         return mu + self.mean_function(Xnew), var

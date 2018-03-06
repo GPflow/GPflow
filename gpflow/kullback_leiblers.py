@@ -35,7 +35,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 
     q_mu is a matrix (M x N), each column contains a mean.
 
-    q_sqrt can be a 3D tensor (N xM x M), each matrix within is a lower
+    q_sqrt can be a 3D tensor (N x M x M), each matrix within is a lower
         triangular square-root matrix of the covariance of q.
     q_sqrt can be a matrix (M x N), each column represents the diagonal of a
         square-root matrix of the covariance of q.
@@ -102,4 +102,3 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         twoKL += prior_logdet
 
     return 0.5 * twoKL
-
