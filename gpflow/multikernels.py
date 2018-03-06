@@ -107,9 +107,11 @@ class MixedMulti(Combination, MultiKernel):
 
 
 class MixedMultiIndependentFeature(InducingPoints):
-    pass
-    # def Kuf(self, kern, Xnew):
-    #     pass  # N x P x M x L
+    def Kuf(self, kern, Xnew):
+        return tf.stack([kern.K(self.Z, Xnew) for kern in kern.kern_list], axis=0)  # L x M x N
 
-    # def Kuu(self, kern, jitter=0.0):
-    #     pass  # L x M x M
+    def Kuu(self, kern, jitter=0.0):
+        Kmm = tf.stack([kern.K(self.Z) for kern in kern.kern_list], axis=0)  # L x M x M
+        jittermat = tf.eye(len(self), dtype=settings.float_type)[None, :, :] * jitter
+        return Kmm + jittermat
+
