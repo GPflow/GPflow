@@ -34,6 +34,14 @@ from .probability_distributions import Gaussian
 
 # TODO move implementations of conditional() for multi-output kernels to multioutput module?
 
+# There's a lot of duplicate code in the various types of conditionals ... e.g.
+# they all do L = cholesky(Kmm), A = L^-1 Lmn ... I think it'd be much cleaner
+# & easier to understand if we break things up from the bottom up, e.g.
+# something like get_A_and_fvar with multiple dispatch for the different
+# combinations of feature & kernel to return the appropriately shaped objects,
+# and then a single "general" conditional that calls these helper functions
+# instead of doing all the nitty-gritty reshaping by itself.
+
 """
 conditionals.py
 The only thing that is completely specified for an implementation of `conditional()`, is the return
