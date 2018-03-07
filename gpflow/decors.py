@@ -32,12 +32,14 @@ def name_scope(name=None):
     This decorator wraps a function so that it runs inside a TensorFlow
     name scope. The name is given by the `name` option; if this is None,
     then the name of the function will be used.
+    ```
     >>> @name_scope()
     >>> def foo(...):
     >>>     # now runs inside scope "foo"
     >>> @name_scope('bar')
     >>> def baz(...):
     >>>     # now runs inside scope "bar", not "baz"
+    ```
     """
     def name_scope_wrapper_decorator(method):
         @functools.wraps(method)
