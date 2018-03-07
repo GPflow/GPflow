@@ -40,19 +40,28 @@ class InducingFeature(Parameterized):
     def Kuu(self, kern, jitter=0.0):
         """
         Calculates the covariance matrix between features for kernel `kern`.
+
+        Return shape M x M
+        M = len(feat)
         """
         raise NotImplementedError()
+        Kuu(self, kern, jitter)
 
     @abstractmethod
     def Kuf(self, kern, Xnew):
         """
         Calculates the covariance matrix with function values at new points
         `Xnew` for kernel `kern`.
+
+        Return shape M x N
+        M = len(feat)
+        N = len(Xnew)
         """
         raise NotImplementedError()
+        Kuf(self, kern, Xnew)
 
 
-class IInducingPoints(InducingFeature):
+class InducingPointsBase(InducingFeature):
     """
     Real-space inducing points
     """
@@ -67,24 +76,24 @@ class IInducingPoints(InducingFeature):
     def __len__(self):
         return self.Z.shape[0]
 
-class InducingPoints(IInducingPoints):
+class InducingPoints(InducingPointsBase):
     pass
 
-@dispatch(InducingPoints, kernels.Kernel, object)
-def Kuu(self, kern, jitter=0.0):
+@dispatch
+def Kuu(feat: InducingPoints, kern: kernels.Kernel, jitter=0.0):
     with params_as_tensors_for(feat):
         Kzz = kern.K(feat.Z)
         Kzz += jitter * tf.eye(len(feat), dtype=settings.dtypes.float_type)
     return Kzz
 
-@dispatch(InducingPoints, kernels.Kernel)
-def Kuf(feat, kern, Xnew):
+@dispatch
+def Kuf(feat: InducingPoints, kern: kernels.Kernel, Xnew: object):
     with params_as_tensors_for(feat):
         Kzx = kern.K(feat.Z, Xnew)
     return Kzx
 
 
-class Multiscale(IInducingPoints):
+class Multiscale(InducingPointsBase):
     """
     Multi-scale inducing features
     Originally proposed in
