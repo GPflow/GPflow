@@ -91,7 +91,7 @@ def multivariate_normal(x, mu, L):
         raise ValueError('Shape of x must be 2D.')
     if mu.shape.ndims is None:
         warnings.warn('Shape of mu may be unknown or not 2D.')
-    elif x.shape.ndims != 2:
+    elif mu.shape.ndims != 2:
         raise ValueError('Shape of mu must be 2D.')
         
     d = x - mu
