@@ -26,21 +26,32 @@ from numpy.testing import assert_allclose
 rng = np.random.RandomState(1)
 
 
-@pytest.mark.parametrize("x", [randn(4,10), randn(4,1)])
-@pytest.mark.parametrize("mu", [randn(4,10), randn(4,1)])
+@pytest.mark.parametrize("x", [randn(4,10), randn(4,1), randn(4,4,4), randn(4)])
+@pytest.mark.parametrize("mu", [randn(4,10), randn(4,1), randn(4,4,4), randn(4)])
 @pytest.mark.parametrize("cov_sqrt", [randn(4,4), np.eye(4)])
 def test_multivariate_normal(session_tf, x, mu, cov_sqrt):
     cov = np.dot(cov_sqrt, cov_sqrt.T)
     L = np.linalg.cholesky(cov)
-    gp_result = densities.multivariate_normal(tf.convert_to_tensor(x),
-                                              tf.convert_to_tensor(mu),
-                                              tf.convert_to_tensor(L))
-    gp_result = session_tf.run(gp_result)
-    if mu.shape[1] > 1:
-        if x.shape[1] > 1:
-            sp_result = [mvn.logpdf(x[:,i], mu[:,i], cov) for i in range(mu.shape[1])]
-        else:
-            sp_result = [mvn.logpdf(x.ravel(), mu[:, i], cov) for i in range(mu.shape[1])]
+
+    if len(x.shape) != 2 or len(mu.shape) != 2:
+        with pytest.raises(Exception) as e_info:
+            gp_result = densities.multivariate_normal(
+                tf.convert_to_tensor(x),
+                tf.convert_to_tensor(mu),
+                tf.convert_to_tensor(L))
     else:
-        sp_result = mvn.logpdf(x.T, mu.ravel(), cov)
-    assert_allclose(gp_result, sp_result)
+        gp_result = densities.multivariate_normal(
+            tf.convert_to_tensor(x),
+            tf.convert_to_tensor(mu),
+            tf.convert_to_tensor(L))
+
+        gp_result = session_tf.run(gp_result)
+
+        if mu.shape[1] > 1:
+            if x.shape[1] > 1:
+                sp_result = [mvn.logpdf(x[:,i], mu[:,i], cov) for i in range(mu.shape[1])]
+            else:
+                sp_result = [mvn.logpdf(x.ravel(), mu[:, i], cov) for i in range(mu.shape[1])]
+        else:
+            sp_result = mvn.logpdf(x.T, mu.ravel(), cov)
+        assert_allclose(gp_result, sp_result)
