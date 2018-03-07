@@ -68,24 +68,37 @@ class IndependentSharedInducingPoints(InducingPoints, IndependentFeature):
     TODO
     """
 
-    @params_as_tensors
-    def Kuf(self, kern, Xnew):
-        if type(kern) is Independent:
-            return tf.stack([kern.K(self.Z, Xnew) for kern in kern.kern_list], axis=0)  # P x M x N
-        elif type(kern) is MixedMulti:
-            Kstack = tf.stack([k.K(self.Z, Xnew) for k in kern.kern_list], axis=1)  # M x L x N
-            return Kstack[:, :, :, None] * tf.transpose(kern.P)[None, :, None, :]
-        else:
-            raise NotImplementedError()
+@dispatch
+def Kuf(feat: IndependentSharedInducingPoints, kern: IndependentMultiOutputKernel, Xnew: object):
+    # TODO should this not just call Kuf() for the base cases?
+    return tf.stack([Kuf(feat, k, Xnew) for k in kern.kern_list], axis=0)  # P x M x N
 
-    @params_as_tensors
-    def Kuu(self, kern, jitter=0.0):
-        if type(kern) in (Independent, MixedMulti):
-            jittermat = tf.eye(len(self), dtype=settings.float_type)[None, :, :] * jitter
-            return tf.stack([kern.K(self.Z) for kern in kern.kern_list], axis=0) + jittermat  # P x M x M
-        else:
-            raise NotImplementedError
+@dispatch
+def Kuf(feat: IndependentSharedInducingPoints, kern: MixedMultiOutputKernel, Xnew: object):
+    Kstack = tf.stack([Kuf(feat, k, Xnew) for k in kern.kern_list], axis=1)  # M x L x N
+    return Kstack[:, :, :, None] * tf.transpose(kern.P)[None, :, None, :]
 
+@dispatch
+def Kuu(feat: IndependentSharedInducingPoints, kern: MultiOutputKernel, jitter=0.0):
+    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
+    return tf.stack([Kuu(feat, k) for k in kern.kern_list], axis=0) + jittermat  # P x M x M
+
+
+class MixedMultiIndependentFeature(InducingPoints):  # TODO better name?
+    """
+    TODO
+    """
+
+@dispatch
+def Kuf(feat, kern, Xnew):
+    # TODO how is this different from the case above?
+    return tf.stack([Kuf(feat, kern, Xnew) for kern in kern.kern_list], axis=0)  # L x M x N
+
+def Kuu(self, kern, jitter=0.0):
+    # TODO how is this different from the case above?
+    Kmm = tf.stack([Kuu(feat, k) for k in kern.kern_list], axis=0)  # L x M x M
+    jittermat = tf.eye(len(self), dtype=settings.float_type)[None, :, :] * jitter
+    return Kmm + jittermat
 
 class MixedMultiOutputKernel(Combination, MultiOutputKernel):
     """
@@ -127,17 +140,4 @@ class MixedMultiOutputKernel(Combination, MultiOutputKernel):
             # return tf.einsum('nl,lk,lk->nkq', K, self.P, self.P)  # N x P
             return tf.matmul(K, self.P ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P
 
-
-class MixedMultiIndependentFeature(InducingPoints):  # TODO better name?
-    """
-    TODO
-    """
-
-    def Kuf(self, kern, Xnew):
-        return tf.stack([kern.K(self.Z, Xnew) for kern in kern.kern_list], axis=0)  # L x M x N
-
-    def Kuu(self, kern, jitter=0.0):
-        Kmm = tf.stack([kern.K(self.Z) for kern in kern.kern_list], axis=0)  # L x M x M
-        jittermat = tf.eye(len(self), dtype=settings.float_type)[None, :, :] * jitter
-        return Kmm + jittermat
 
