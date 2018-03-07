@@ -4,7 +4,10 @@ from . import settings
 from .decors import params_as_tensors
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
+from . import kernels
 from .params import Parameter
+
+
 
 # TODO MultiOutputKernels have a different method signature for K and Kdiag (they take full_cov_output)
 # this needs better documentation - especially as the default there is *True* not False as for full_cov
@@ -17,7 +20,7 @@ class IndependentFeature(InducingFeature):
     pass
 
 
-class MultiOutputInducingPoints(IInducingPoints):
+class MultiOutputInducingPoints(InducingPoints):
     """
     TODO
     """
@@ -140,4 +143,3 @@ class MixedMultiIndependentFeature(InducingPoints):  # TODO better name?
         Kmm = tf.stack([kern.K(self.Z) for kern in kern.kern_list], axis=0)  # L x M x M
         jittermat = tf.eye(len(self), dtype=settings.float_type)[None, :, :] * jitter
         return Kmm + jittermat
-

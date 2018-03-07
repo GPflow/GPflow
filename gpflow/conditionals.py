@@ -261,16 +261,16 @@ def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     The method can either return the diagonals of the covariance matrix for
     each output (default) or the full covariance matrix (full_cov=True).
 
-    We assume K independent GPs, represented by the columns of f (and the
+    We assume R independent GPs, represented by the columns of f (and the
     last dimension of q_sqrt).
 
     :param Xnew: data matrix, size N x D.
     :param X: data points, size M x D.
     :param kern: GPflow kernel.
-    :param f: data matrix, M x K, representing the function values at X,
+    :param f: data matrix, M x R, representing the function values at X,
         for K functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
-        size M x K or K x M x M.
+        size M x R or R x M x M.
     :param white: boolean of whether to use the whitened representation as
         described above.
 
@@ -288,6 +288,24 @@ def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 
 @name_scope()
 def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=False):
+    """
+    Given a g1 and g2, and distribution p and q such that
+      p(g2) = N(g2;0,Kmm)
+      p(g1) = N(g1;0,Knn)
+      p(g1|g2) = N(g1;0,Knm)
+    And
+      q(g2) = N(g2;f,q_sqrt*q_sqrt^T)
+    This method computes the mean and (co)variance of
+      q(g1) = \int q(g2) p(g1|g2)
+    :param Kmn: M x N
+    :param Kmm: M x M
+    :param Knn: N x N  or  N
+    :param f: M x R
+    :param full_cov: bool
+    :param q_sqrt: None or R x M x M (lower triangular)
+    :param white: bool
+    :return: N x R  or N x N x R
+    """
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # R
     Lm = tf.cholesky(Kmm)
@@ -302,7 +320,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     else:
         fvar = Knn - tf.reduce_sum(tf.square(A), 0)
         shape = tf.stack([num_func, 1])
-    fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # K x N x N or K x N
+    fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # R x N x N or R x N
 
     # another backsubstitution in the unwhitened case
     if not white:
@@ -313,19 +331,19 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
 
     if q_sqrt is not None:
         if q_sqrt.get_shape().ndims == 2:
-            LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # K x M x N
+            LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # R x M x N
         elif q_sqrt.get_shape().ndims == 3:
-            L = tf.matrix_band_part(q_sqrt, -1, 0)  # K x M x M
+            L = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
             A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
-            LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N
+            LTA = tf.matmul(L, A_tiled, transpose_a=True)  # R x M x N
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
                              str(q_sqrt.get_shape().ndims))
         if full_cov:
-            fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
+            fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # R x N x N
         else:
-            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
-    fvar = tf.transpose(fvar)  # N x K or N x N x K
+            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # R x N
+    fvar = tf.transpose(fvar)  # N x R or N x N x R
 
     return fmean, fvar
 
@@ -333,6 +351,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
 def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None,
                                     white=False):
     """
+
     :param Kmn: M x L x N x P
     :param Kmm: L x M x M
     :param Knn: N x P  or  N x N  or  P x N x N  or  N x P x N x P
