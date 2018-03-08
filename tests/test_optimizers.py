@@ -22,6 +22,7 @@ from gpflow.test_util import GPflowTestCase
 from gpflow.training.natgrad_optimizer import NatGradOptimizer
 from gpflow.training import GradientDescentOptimizer
 from gpflow.training.optimizer import Optimizer
+from gpflow.training.tensorflow_optimizer import _TensorFlowOptimizer
 
 from numpy.testing import assert_allclose
 
@@ -297,7 +298,7 @@ class CombinationOptimizer(Optimizer):
         if anchor:
             model.anchor(session)
 
-# TODO(@hugh) this needs to be fixed
+# # TODO(@hugh) this needs to be fixed
 def test_hypers_SVGP_vs_SGPR(session_tf):
     N, M, D = 4, 3, 2
     X = np.random.randn(N, D)
@@ -328,10 +329,58 @@ def test_hypers_SVGP_vs_SGPR(session_tf):
     nag_grads_with_gd_optimizer.minimize(m_svgp,  maxiter=1)
 
     # this should be the same as
-    GradientDescentOptimizer(0.01).minimize(m_svgp, maxiter=1)
+    GradientDescentOptimizer(0.01).minimize(m_sgpr, maxiter=1)
 
     # but isn't...
     with pytest.raises(AssertionError):
         assert_allclose(m_sgpr.compute_log_likelihood(),
                         m_svgp.compute_log_likelihood(), atol=1e-5)
     # the trouble seems to be that the [q_mu, q_sqrt] haven't updated as far as o1 is concerned
+
+
+class ExcludedGradientDescentOptimizer(_TensorFlowOptimizer):
+    def __init__(self, *args, excluded_params=[], **kwargs):
+        Optimizer.__init__(self)
+        self._model = None
+        self._optimizer = tf.train.GradientDescentOptimizer(*args, **kwargs)
+        self._minimize_operation = None
+        self.excluded_params = excluded_params
+
+    def _gen_var_list(self, model, var_list):
+        var_list = var_list or []
+        p = set(model.trainable_tensors)
+        p -= set([t.unconstrained_tensor for t in self.excluded_params])
+        return list(p.union(var_list))
+
+def test_hypers_SVGP_vs_SGPR_with_excluded_vars(session_tf):
+    N, M, D = 4, 3, 2
+    X = np.random.randn(N, D)
+    Z = np.random.randn(M, D)
+    Y = np.random.randn(N, 1)
+
+    lik_var = 0.1
+    lik = gpflow.likelihoods.Gaussian()
+    lik.variance = lik_var
+
+    m_svgp = gpflow.models.SVGP(X, Y, gpflow.kernels.RBF(D), lik, Z=Z)
+
+    m_sgpr = gpflow.models.SGPR(X, Y, gpflow.kernels.RBF(D), Z=Z)
+    m_sgpr.likelihood.variance = lik_var
+
+    lr = 0.1
+
+    # combination (doing GD first as we've already done the nat grad step
+    p = [[m_svgp.q_mu, m_svgp.q_sqrt]]
+    o1 = [NatGradOptimizer(1.), {'var_list':p}]
+    o2 = [ExcludedGradientDescentOptimizer(lr, excluded_params=p[0]), {}]
+    o3 = [NatGradOptimizer(1.), {'var_list':p}]
+
+    nag_grads_with_gd_optimizer = CombinationOptimizer([o1, o2, o3])
+    nag_grads_with_gd_optimizer.minimize(m_svgp, maxiter=1)
+
+    # this should be the same as
+    GradientDescentOptimizer(lr).minimize(m_sgpr, maxiter=1)
+
+    assert_allclose(m_sgpr.compute_log_likelihood(),
+                    m_svgp.compute_log_likelihood(), atol=1e-5)
+    # now it works...
