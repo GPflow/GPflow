@@ -23,8 +23,8 @@ import pytest
 
 import gpflow
 from gpflow import settings
+from gpflow.conditionals import conditional
 from gpflow.conditionals import uncertain_conditional
-from gpflow.conditionals import feature_conditional
 from gpflow.quadrature import mvnquad
 from gpflow.test_util import session_context
 
@@ -135,15 +135,15 @@ class DataQuadrature:
         }
 
         def mean_fn(X):
-            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
+            mean, _ = conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return mean + effective_mean(X)
 
         def var_fn(X):
-            _, var = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
+            _, var = conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return var
 
         def mean_sq_fn(X):
-            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
+            mean, _ = conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return (mean + effective_mean(X)) ** 2
 
         Collection = namedtuple('QuadratureCollection',

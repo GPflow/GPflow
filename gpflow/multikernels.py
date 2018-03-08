@@ -5,6 +5,7 @@ from .decors import params_as_tensors
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .params import Parameter
+from .dispatch import dispatch
 
 # TODO MultiOutputKernels have a different method signature for K and Kdiag (they take full_cov_output)
 # this needs better documentation - especially as the default there is *True* not False as for full_cov
@@ -21,6 +22,12 @@ class SeparateInducingFeatures(InducingFeature):
     def __init__(self, feat_list):
         self.feat_list = feat_list
 
+class MultiOutputInducingPoints:
+    pass # TODO remove
+
+class MixedMultiIndependentFeature:
+    pass # TODO remove
+
 @dispatch(MultiOutputInducingPoints, MultiOutputKernel)
 def Kuu(feat, kern, jitter=0.0):
     """
@@ -32,7 +39,7 @@ def Kuu(feat, kern, jitter=0.0):
         Kzz += jitter * tf.reshape(tf.eye(num_inducing_variables, dtype=settings.dtypes.float_type), tf.shape(Kzz))
     return Kzz
 
-@dispatch(MultiOutputInducingPoints, kernels.Kernel, object)
+@dispatch(MultiOutputInducingPoints, Kernel, object)
 def Kuf(feat, kern, Xnew):
     """
     TODO: return shape (M*L) x N ?
@@ -93,30 +100,6 @@ class IndependentMultiOutputKernel(MultiOutputKernel, Combination):
         stacked = tf.stack([k.Kdiag(X) for k in self.kern_list], axis=1)  # N x P
         return tf.matrix_diag(stacked) if full_cov_output else stacked  # N x P x P  or  N x P
 
-
-@dispatch
-def Kuf(feat: InducingFeature, kern: MultiOutputKernel, Xnew: object):
-    return tf.stack([Kuf(feat, k, Xnew) for kern in k.kern_list], axis=0)  # (P or L) x M x N
-
-@dispatch
-def Kuf(feat: InducingFeature, kern: MixedMultiOutputKernel, Xnew: object):
-    Kstack = tf.stack([Kuf(feat, k, Xnew) for k in kern.kern_list], axis=1)  # M x L x N
-    return Kstack[:, :, :, None] * tf.transpose(kern.P)[None, :, None, :]
-
-@dispatch
-def Kuu(feat: InducingFeature, kern: (MultiOutputKernel, MixedMultiOutputKernel), jitter=0.0):
-    Kmm = tf.stack([Kuu(feat, k) for k in kern.kern_list], axis=0)  # (P or L) x M x M
-    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
-    return Kmm + jittermat
-
-@dispatch
-def Kuu(feat: SeparateInducingFeatures, kern: MultiOutputKernel, jitter=0.0):
-    raise NotImplementedError
-
-@dispatch
-def Kuu(feat: SeparateInducingFeatures, kern: MixedMultiOutputKernel, jitter=0.0):
-    raise NotImplementedError
-
 class MixedMultiOutputKernel(MultiOutputKernel, Combination):
     #TODO name too general? there may be non-linear mixing from {g_i} -> f_j?
     """
@@ -162,4 +145,28 @@ class MixedMultiOutputKernel(MultiOutputKernel, Combination):
             # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # N x P
             return tf.matmul(K, self.W ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P
 
+
+
+@dispatch
+def Kuf(feat: InducingFeature, kern: MultiOutputKernel, Xnew: object):
+    return tf.stack([Kuf(feat, k, Xnew) for kern in k.kern_list], axis=0)  # (P or L) x M x N
+
+@dispatch
+def Kuf(feat: InducingFeature, kern: MixedMultiOutputKernel, Xnew: object):
+    Kstack = tf.stack([Kuf(feat, k, Xnew) for k in kern.kern_list], axis=1)  # M x L x N
+    return Kstack[:, :, :, None] * tf.transpose(kern.P)[None, :, None, :]
+
+@dispatch
+def Kuu(feat: InducingFeature, kern: (MultiOutputKernel, MixedMultiOutputKernel), jitter=0.0):
+    Kmm = tf.stack([Kuu(feat, k) for k in kern.kern_list], axis=0)  # (P or L) x M x M
+    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
+    return Kmm + jittermat
+
+@dispatch
+def Kuu(feat: SeparateInducingFeatures, kern: MultiOutputKernel, jitter=0.0):
+    raise NotImplementedError
+
+@dispatch
+def Kuu(feat: SeparateInducingFeatures, kern: MixedMultiOutputKernel, jitter=0.0):
+    raise NotImplementedError
 
