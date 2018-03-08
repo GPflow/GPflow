@@ -296,6 +296,22 @@ class CombinationOptimizer(Optimizer):
         if anchor:
             model.anchor(session)
 
+# def excludedVarOptimizer(Opt, ps):
+#     class ExcludedVarsOptimizer(Opt):
+#         @staticmethod
+#         def _gen_var_list(model, var_list):
+#             vars = Opt._gen_var_list(model, var_list)
+#
+#             new_vars = []
+#             for v in vars:
+#                 if not v in ps:
+#                     new_vars.append(v)
+#
+#             return new_vars
+#
+#     return ExcludedVarsOptimizer
+
+
 def test_hypers_SVGP_vs_SGPR(session_tf):
     N, M, D = 4, 3, 2
     X = np.random.randn(N, D)
@@ -310,29 +326,30 @@ def test_hypers_SVGP_vs_SGPR(session_tf):
     m_sgpr = gpflow.models.SGPR(X, Y, kern, Z=Z)
     m_sgpr.likelihood.variance = lik_var
 
-    # m_svgp.q_mu.set_trainable(False)
-    # m_svgp.q_sqrt.set_trainable(False)
+    m_svgp.q_mu.set_trainable(False)
+    m_svgp.q_sqrt.set_trainable(False)
 
     print(m_sgpr.compute_log_likelihood())
     print(m_svgp.compute_log_likelihood())
 
-    # GradientDescentOptimizer(0.01).minimize(m_sgpr, maxiter=1)
-    NatGradOptimizer(1.).minimize(m_svgp,
-                                  var_list=[[m_svgp.q_mu, m_svgp.q_sqrt]],
-                                  maxiter=1)
+    GradientDescentOptimizer(0.01).minimize(m_svgp, maxiter=1,
+                                            var_list=[m_svgp.q_mu.unconstrained_tensor,
+                                                      m_svgp.q_sqrt.unconstrained_tensor])
+    # NatGradOptimizer(1.).minimize(m_svgp,
+    #                               var_list=[[m_svgp.q_mu, m_svgp.q_sqrt]],
+    #                               maxiter=1)
 
-    assert_allclose(m_sgpr.compute_log_likelihood(),
-                    m_svgp.compute_log_likelihood(), atol=1e-5)
+    # assert_allclose(m_sgpr.compute_log_likelihood(),
+    #                 m_svgp.compute_log_likelihood(), atol=1e-5)
 
     print(m_sgpr.compute_log_likelihood())
     print(m_svgp.compute_log_likelihood())
     print(m_svgp.q_mu)
 
-
-
-    # o1 = [NatGradOptimizer(1.), {'var_list':[[m_svgp.q_mu, m_svgp.q_sqrt]]}]
-    # o2 = [GradientDescentOptimizer(0.01), {}]
-    # o3 = [NatGradOptimizer(1.), {'var_list':[[m_svgp.q_mu, m_svgp.q_sqrt]]}]
+    # p = [[m_svgp.q_mu, m_svgp.q_sqrt]]
+    # o1 = [NatGradOptimizer(1.), {'var_list':p}]
+    # o2 = [excludedVarOptimizer(GradientDescentOptimizer, p)(0.01), {}]
+    # o3 = [NatGradOptimizer(1.), {'var_list':p}]
     # nag_grads_with_gd_optimizer = CombinationOptimizer([o1, o2, o3])
     #
     # nag_grads_with_gd_optimizer.minimize(m_svgp,  maxiter=1)
