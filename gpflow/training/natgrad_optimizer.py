@@ -1,4 +1,4 @@
-# Copyright 2018 Hugh Salim, Artem Artemev @awav
+# Copyright 2018 Hugh Salimbeni, Artem Artemev @awav
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import abc
+import functools
 
 import tensorflow as tf
 
@@ -20,12 +21,14 @@ from gpflow.models import Model
 
 from . import optimizer
 from .. import settings
+from ..models import Model
 
 
 class NatGradOptimizer(optimizer.Optimizer):
-    def __init__(self, gamma, name=None):
+    def __init__(self, gamma, **kwargs):
+        super().__init__(**kwargs)
+        self.name = self.__class__.__name__
         self._gamma = gamma
-        self.name = name
         self._natgrad_op = None
 
     @property
@@ -59,8 +62,6 @@ class NatGradOptimizer(optimizer.Optimizer):
         self._model = model
 
         with session.graph.as_default(), tf.name_scope(self.name):
-            # full_var_list = self._gen_var_list(model, var_list)
-
             # Create optimizer variables before initialization.
             self._natgrad_op = self._build_natgrad_step_ops(*var_list)
             feed_dict = self._gen_feed_dict(model, feed_dict)
@@ -76,6 +77,8 @@ class NatGradOptimizer(optimizer.Optimizer):
         Forward-mode pushforward analogous to the pullback defined by tf.gradients.
         With tf.gradients, grad_ys is the vector being pulled back, and here d_xs is
         the vector being pushed forward, i.e. this computes (d ys / d xs)^T d_xs.
+
+        This is adapted from https://github.com/HIPS/autograd/pull/175#issuecomment-306984338
 
         :param ys: list of variables being differentiated (tensor)
         :param xs: list of variables to differentiate wrt (tensor)
@@ -97,29 +100,59 @@ class NatGradOptimizer(optimizer.Optimizer):
 
     def _build_natgrad_step_op(self, q_mu_param, q_sqrt_param, xi_transform):
         """
+        Implements equation 10 from
+
+        @inproceedings{salimbeni18,
+            title={Natural Gradients in Practice: Non-Conjugate  Variational Inference in Gaussian Process Models},
+            author={Salimbeni, Hugh and Eleftheriadis, Stefanos and Hensman, James},
+            booktitle={AISTATS},
+            year={2018}
+
+        In addition, for convenience with the rest of gpflow, this code computes d L / d eta using
+        the chain rule:
+
+        d L / d eta = (d [q_mu, q_sqrt] / d eta)(d L / d [q_mu, q_sqrt])
+
+        In total there are three derivative calculations:
+        natgrad L wrt xi =  (d xi / d nat ) [(d [q_mu, q_sqrt] / d eta)(d L / d [q_mu, q_sqrt])]^T
+
+        Note that if xi = nat or [q_mu, q_sqrt] some of these calculations are the identity
+
         """
         objective = self._model.objective
         q_mu, q_sqrt = q_mu_param.constrained_tensor, q_sqrt_param.constrained_tensor
 
+        # the three parameterizations as functions of [q_mu, q_sqrt]
         etas = meanvarsqrt_to_expectation(q_mu, q_sqrt)
         nats = meanvarsqrt_to_natural(q_mu, q_sqrt)
-
-        dL_d_mean, dL_d_varsqrt = tf.gradients(objective, [q_mu, q_sqrt])
-        _nats = expectation_to_meanvarsqrt(*etas)
-        dL_detas = tf.gradients(_nats, etas, grad_ys=[dL_d_mean, dL_d_varsqrt])
-
-        _xis = xi_transform.naturals_to_xi(*nats)
-        nat_dL_xis = self._forward_gradients(_xis, nats, dL_detas)
-
         xis = xi_transform.meanvarsqrt_to_xi(q_mu, q_sqrt)
 
+        # we need these to calculate the relevant gradients
+        _meanvarsqrt = expectation_to_meanvarsqrt(*etas)
+        _xis = xi_transform.naturals_to_xi(*nats)
+
+        ## three derivatives
+        # 1) the oridinary gpflow gradient
+        dL_d_mean, dL_d_varsqrt = tf.gradients(objective, [q_mu, q_sqrt])
+        # 2) the chain rule to get d L / d eta, where eta are the expectation parameters
+        dL_detas = tf.gradients(_meanvarsqrt, etas, grad_ys=[dL_d_mean, dL_d_varsqrt])
+        # 3) the forward mode gradient to calculate (d xi / d nat)(d L / d eta)^T,
+        nat_dL_xis = self._forward_gradients(_xis, nats, dL_detas)
+
+        # perform natural gradient descent on the xi parameters
         xis_new = [xi - self.gamma * nat_dL_xi for xi, nat_dL_xi in zip(xis, nat_dL_xis)]
+
+        # transform back to the model parameters [q_mu, q_sqrt]
         mean_new, varsqrt_new = xi_transform.xi_to_meanvarsqrt(*xis_new)
+
+        # these are the tensorflow variables to assign
+        q_mu_u = q_mu_param.unconstrained_tensor
+        q_sqrt_u = q_sqrt_param.unconstrained_tensor
+
+        # so the transform to work for LowerTriangular
         mean_new.set_shape(q_mu_param.shape)
         varsqrt_new.set_shape(q_sqrt_param.shape)
 
-        q_mu_u = q_mu_param.unconstrained_tensor
-        q_sqrt_u = q_sqrt_param.unconstrained_tensor
         q_mu_assign = tf.assign(q_mu_u, q_mu_param.transform.backward_tensor(mean_new))
         q_sqrt_assign = tf.assign(q_sqrt_u, q_sqrt_param.transform.backward_tensor(varsqrt_new))
         return q_mu_assign, q_sqrt_assign
@@ -198,6 +231,7 @@ class XiSqrtMeanVar(XiTransform):
 # The following functions expect their first and second inputs to have shape
 # DN1 and DNN, respectively. Return values are also of shapes DN1 and DNN.
 
+
 def swap_dimensions(method):
     """
     Converts between GPflow indexing and tensorflow indexing
@@ -205,14 +239,15 @@ def swap_dimensions(method):
         `method` inputs DN1, DNN
         `method` outputs DN1, DNN
     :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
-        inputs: ND, DNN
-        outputs: ND, DNN
+        inputs: ND, NND
+        outputs: ND, NND
     """
+    @functools.wraps(method)
     def wrapper(a_nd, b_dnn, swap=True):
         if a_nd.get_shape().ndims != 2:
-            raise ValueError("The `a_nd` input must have 2 dimentions.")
+            raise ValueError("The `a_nd` input must have 2 dimensions.")
         if b_dnn.get_shape().ndims != 3:
-            raise ValueError("The `b_dnn` input must have 3 dimentions.")
+            raise ValueError("The `b_nd` input must have 3 dimensions.")
         if swap:
             a_dn1 = tf.transpose(a_nd)[:, :, None]
             A_dn1, B_dnn = method(a_dn1, b_dnn)
@@ -260,8 +295,6 @@ def expectation_to_meanvarsqrt(eta_1, eta_2):
 def meanvarsqrt_to_expectation(m, v_sqrt):
     v = tf.matmul(v_sqrt, v_sqrt, transpose_b=True)
     return m, v + tf.matmul(m, m, transpose_b=True)
-
-
 
 
 def _cholesky_with_jitter(M):
