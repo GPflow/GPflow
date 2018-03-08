@@ -111,12 +111,12 @@ class NatGradOptimizer(optimizer.Optimizer):
         In addition, for convenience with the rest of gpflow, this code computes d L / d eta using
         the chain rule:
 
-        d L / d eta = (d [q_mu, q_sqrt] / d eta)(d L / d [q_mu, q_sqrt])
+        ∂L/∂η = (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt])
 
         In total there are three derivative calculations:
-        natgrad L wrt xi =  (d xi / d nat ) [(d [q_mu, q_sqrt] / d eta)(d L / d [q_mu, q_sqrt])]^T
+        natgrad L wrt ξ  =  (∂ξ / ∂nat ) [ (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt]) ]^T
 
-        Note that if xi = nat or [q_mu, q_sqrt] some of these calculations are the identity
+        Note that if ξ = nat or [q_μ, q_sqrt] some of these calculations are the identity.
 
         """
         objective = self._model.objective
