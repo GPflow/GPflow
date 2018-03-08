@@ -209,9 +209,6 @@ class TestRMSPropOptimizer(GPflowTestCase, OptimizerCase):
     optimizer = lambda _self: gpflow.train.RMSPropOptimizer(0.1)
 
 
-
-
-
 class TestFtrlOptimizer(GPflowTestCase, OptimizerCase):
     optimizer = lambda _self: gpflow.train.FtrlOptimizer(0.1)
 
@@ -268,7 +265,6 @@ def test_SVGP_vs_SGPR(session_tf):
 
     assert_allclose(m_sgpr.compute_log_likelihood(),
                     m_svgp.compute_log_likelihood(), atol=1e-5)
-
 
 
 class CombinationOptimizer(Optimizer):
@@ -339,15 +335,3 @@ def test_hypers_SVGP_vs_SGPR(session_tf):
         assert_allclose(m_sgpr.compute_log_likelihood(),
                         m_svgp.compute_log_likelihood(), atol=1e-5)
     # the trouble seems to be that the [q_mu, q_sqrt] haven't updated as far as o1 is concerned
-
-
-
-
-
-
-
-
-
-
-
-
