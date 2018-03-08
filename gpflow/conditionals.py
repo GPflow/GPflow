@@ -22,7 +22,7 @@ from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel
 from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, MultiOutputInducingPoints
-from .multikernels import MixedMultiOutputKernel, MixedMultiIndependentFeature
+from .multikernels import MixedMultiOutputKernel
 from .probability_distributions import Gaussian
 
 IndependentFeature = InducingFeature # TODO sort out
@@ -104,7 +104,7 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(object, MixedMultiIndependentFeature, MixedMultiOutputKernel, object)
+@dispatch(object, IndependentFeature, MixedMultiOutputKernel, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
