@@ -48,7 +48,7 @@ class SampleGaussianTest(GPflowTestCase):
             samples = self.hmc.sample(self.m, num_samples=num_samples,
                                       lmin=10, lmax=21, epsilon=0.05)
             self.assertEqual(samples.shape, (num_samples, 2))
-            xs = np.array(samples[self.m.x.full_name].tolist(), dtype=np.float32)
+            xs = np.array(samples[self.m.x.pathname].tolist(), dtype=np.float32)
             mean = xs.mean(0)
             cov = np.cov(xs.T)
             cov_standard = np.eye(cov.shape[0])
@@ -71,7 +71,7 @@ class SampleGaussianTest(GPflowTestCase):
             hmc = gpflow.train.HMC()
             samples = hmc.sample(m, num_samples=num_samples, epsilon=0.05,
                                  lmin=10, lmax=21, thin=10)
-            return np.array(samples[m.x.full_name].values.tolist(), dtype=np.float32)
+            return np.array(samples[m.x.pathname].values.tolist(), dtype=np.float32)
 
         with self.test_context():
             tf.set_random_seed(1)
@@ -108,7 +108,7 @@ class SampleGaussianTest(GPflowTestCase):
             num_samples = 10
             samples = self.hmc.sample(self.m, num_samples=num_samples,
                                       lmin=10, lmax=21, epsilon=0.05)
-            names = [p.full_name for p in self.m.parameters]
+            names = [p.pathname for p in self.m.parameters]
             names.append('logprobs')
             names = set(names)
             col_names = set(samples.columns)
@@ -140,7 +140,7 @@ class SampleModelTest(GPflowTestCase):
             num_samples = 400
             samples = hmc.sample(m, num_samples=num_samples,
                                  epsilon=0.05, lmin=10, lmax=20, thin=10)
-            xs = np.array(samples[m.x.full_name].tolist(), dtype=np.float32)
+            xs = np.array(samples[m.x.pathname].tolist(), dtype=np.float32)
             self.assertEqual(samples.shape, (400, 2))
             self.assertEqual(xs.shape, (400, 2))
             assert_almost_equal(xs.mean(0), np.zeros(2), decimal=1)
@@ -167,7 +167,7 @@ class CheckTrainingVariableState(GPflowTestCase):
             m.kern.lengthscales.trainable = False
             hmc = gpflow.train.HMC()
             samples = hmc.sample(m, num_samples=10, lmax=10, epsilon=0.05)
-            missing_param = m.kern.lengthscales.full_name
+            missing_param = m.kern.lengthscales.pathname
             self.assertTrue(missing_param not in samples)
             self.check_last_variables_state(m, samples)
 
@@ -181,7 +181,7 @@ class CheckTrainingVariableState(GPflowTestCase):
 
     def check_last_variables_state(self, m, samples):
         xs = samples.drop('logprobs', axis=1)
-        params = {p.full_name: p for p in m.trainable_parameters}
+        params = {p.pathname: p for p in m.trainable_parameters}
         self.assertEqual(set(params.keys()), set(xs.columns))
         last = xs.iloc[-1]
         for col in last.index:
