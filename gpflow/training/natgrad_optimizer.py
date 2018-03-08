@@ -95,7 +95,7 @@ class NatGradOptimizer(optimizer.Optimizer):
             q_mu, q_sqrt = arg[:2]
             xi_transform = arg[2] if len(arg) > 2 else XiNat()
             ops.append(self._build_natgrad_step_op(q_mu, q_sqrt, xi_transform))
-        ops = list(sum(ops, []))
+        ops = list(sum(ops, ()))
         return tf.group(ops)
 
     def _build_natgrad_step_op(self, q_mu_param, q_sqrt_param, xi_transform):
