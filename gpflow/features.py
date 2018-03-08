@@ -36,7 +36,6 @@ class InducingFeature(Parameterized):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     def Kuu(self, kern, jitter=0.0):
         """
         Calculates the covariance matrix between features for kernel `kern`.
@@ -47,7 +46,6 @@ class InducingFeature(Parameterized):
         raise NotImplementedError()
         Kuu(self, kern, jitter)
 
-    @abstractmethod
     def Kuf(self, kern, Xnew):
         """
         Calculates the covariance matrix with function values at new points
