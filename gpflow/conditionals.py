@@ -21,9 +21,11 @@ from .dispatch import dispatch
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel
-from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, IndependentFeature, MultiOutputInducingPoints
-from .multikernels import MixedMultiKernel, MixedMultiIndependentFeature
+from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, MultiOutputInducingPoints
+from .multikernels import MixedMultiOutputKernel
 from .probability_distributions import Gaussian
+
+IndependentFeature = InducingFeature # TODO sort out
 
 # TODO: Make all outputs of conditionals equal
 # TODO: Add tensorflow assertions of shapes
@@ -33,6 +35,14 @@ from .probability_distributions import Gaussian
 #  - q_sqrt :
 
 # TODO move implementations of conditional() for multi-output kernels to multioutput module?
+
+# There's a lot of duplicate code in the various types of conditionals ... e.g.
+# they all do L = cholesky(Kmm), A = L^-1 Lmn ... I think it'd be much cleaner
+# & easier to understand if we break things up from the bottom up, e.g.
+# something like get_A_and_fvar with multiple dispatch for the different
+# combinations of feature & kernel to return the appropriately shaped objects,
+# and then a single "general" conditional that calls these helper functions
+# instead of doing all the nitty-gritty reshaping by itself.
 
 """
 conditionals.py
@@ -94,7 +104,7 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(object, MixedMultiIndependentFeature, MixedMultiKernel, object)
+@dispatch(object, IndependentFeature, MixedMultiOutputKernel, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """

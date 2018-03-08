@@ -29,19 +29,26 @@ from .params import Parameterized
 
 def name_scope(name=None):
     """
-    Name scope decorator does little trick with scope naming. The wrapped
-    function will be run inside TensorFlow name scope with name specified
-    by either `name` option or `name` option is None then name of the
-    function will be used.
+    This decorator wraps a function so that it runs inside a TensorFlow
+    name scope. The name is given by the `name` option; if this is None,
+    then the name of the function will be used.
+    ```
+    >>> @name_scope()
+    >>> def foo(...):
+    >>>     # now runs inside scope "foo"
+    >>> @name_scope('bar')
+    >>> def baz(...):
+    >>>     # now runs inside scope "bar", not "baz"
+    ```
     """
-    def name_scope_wrapper(method):
+    def name_scope_wrapper_decorator(method):
         @functools.wraps(method)
-        def runnable(*args, **kwargs):
+        def name_scope_wrapper(*args, **kwargs):
             scope_name = name if name is not None else method.__name__
             with tf.name_scope(scope_name):
                 return method(*args, **kwargs)
-        return runnable
-    return name_scope_wrapper
+        return name_scope_wrapper
+    return name_scope_wrapper_decorator
 
 
 def params_as_tensors(method):
@@ -127,18 +134,18 @@ def params_as_tensors_for(*objs, convert=True):
     :param convert: Flag which is used for turning tensor convertion
         feature on, `True`, or turning it off, `False`.
     """
-    prev_values = [_params_as_tensors_enter(o, convert) for o in obj]
+    prev_values = [_params_as_tensors_enter(o, convert) for o in objs]
     try:
         yield
     finally:
-        for o, pv in zip(obj, prev_values):
+        for o, pv in zip(objs, prev_values):
             _params_as_tensors_exit(o, pv)
 
 
 def autoflow(*af_args, **af_kwargs):
-    def autoflow_wrapper(method):
+    def autoflow_wrapper_decorator(method):
         @functools.wraps(method)
-        def runnable(obj, *args, **kwargs):
+        def autoflow_wrapper(obj, *args, **kwargs):
             if not isinstance(obj, Node):
                 raise GPflowError(
                     'AutoFlow works only with node-like objects.')
@@ -155,8 +162,8 @@ def autoflow(*af_args, **af_kwargs):
                     _setup_storage(store, *af_args, **af_kwargs)
                     _build_method(method, obj, store)
                 return _session_run(session, obj, store, *args, **kwargs)
-        return runnable
-    return autoflow_wrapper
+        return autoflow_wrapper
+    return autoflow_wrapper_decorator
 
 
 def _params_as_tensors_enter(obj, convert=True):
