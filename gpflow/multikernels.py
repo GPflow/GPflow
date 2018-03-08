@@ -29,7 +29,7 @@ class MixedMultiIndependentFeature:
     pass # TODO remove
 
 @dispatch(MultiOutputInducingPoints, MultiOutputKernel)
-def Kuu(feat, kern, jitter=0.0):
+def Kuu(feat, kern, *, jitter=0.0):
     """
     TODO: Return shape (M*L) x (M*L) ?
     """
@@ -147,26 +147,26 @@ class MixedMultiOutputKernel(MultiOutputKernel, Combination):
 
 
 
-@dispatch
+@dispatch()
 def Kuf(feat: InducingFeature, kern: MultiOutputKernel, Xnew: object):
     return tf.stack([Kuf(feat, k, Xnew) for kern in k.kern_list], axis=0)  # (P or L) x M x N
 
-@dispatch
+@dispatch()
 def Kuf(feat: InducingFeature, kern: MixedMultiOutputKernel, Xnew: object):
     Kstack = tf.stack([Kuf(feat, k, Xnew) for k in kern.kern_list], axis=1)  # M x L x N
     return Kstack[:, :, :, None] * tf.transpose(kern.P)[None, :, None, :]
 
-@dispatch
-def Kuu(feat: InducingFeature, kern: (MultiOutputKernel, MixedMultiOutputKernel), jitter=0.0):
+@dispatch()
+def Kuu(feat: InducingFeature, kern: (MultiOutputKernel, MixedMultiOutputKernel), *, jitter=0.0):
     Kmm = tf.stack([Kuu(feat, k) for k in kern.kern_list], axis=0)  # (P or L) x M x M
     jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
     return Kmm + jittermat
 
-@dispatch
-def Kuu(feat: SeparateInducingFeatures, kern: MultiOutputKernel, jitter=0.0):
+@dispatch()
+def Kuu(feat: SeparateInducingFeatures, kern: MultiOutputKernel, *, jitter=0.0):
     raise NotImplementedError
 
-@dispatch
-def Kuu(feat: SeparateInducingFeatures, kern: MixedMultiOutputKernel, jitter=0.0):
+@dispatch()
+def Kuu(feat: SeparateInducingFeatures, kern: MixedMultiOutputKernel, *, jitter=0.0):
     raise NotImplementedError
 

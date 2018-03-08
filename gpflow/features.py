@@ -13,6 +13,7 @@
 # limitations under the License.from __future__ import print_function
 
 from abc import abstractmethod
+import warnings
 
 import numpy as np
 import tensorflow as tf
@@ -43,8 +44,9 @@ class InducingFeature(Parameterized):
         Return shape M x M
         M = len(feat)
         """
-        raise NotImplementedError()
-        Kuu(self, kern, jitter)
+        warnings.warn('Please replace feature.Kuu(kernel) with Kuu(feature, kernel)',
+                      DeprecationWarning)
+        return Kuu(self, kern, jitter=jitter)
 
     def Kuf(self, kern, Xnew):
         """
@@ -55,8 +57,9 @@ class InducingFeature(Parameterized):
         M = len(feat)
         N = len(Xnew)
         """
-        raise NotImplementedError()
-        Kuf(self, kern, Xnew)
+        warnings.warn('Please replace feature.Kuf(kernel, Xnew) with Kuf(feature, kernel, Xnew)',
+                      DeprecationWarning)
+        return Kuf(self, kern, Xnew)
 
 
 class InducingPointsBase(InducingFeature):
@@ -77,14 +80,14 @@ class InducingPointsBase(InducingFeature):
 class InducingPoints(InducingPointsBase):
     pass
 
-@dispatch
-def Kuu(feat: InducingPoints, kern: kernels.Kernel, jitter=0.0):
+@dispatch()
+def Kuu(feat: InducingPoints, kern: kernels.Kernel, *, jitter=0.0):
     with params_as_tensors_for(feat):
         Kzz = kern.K(feat.Z)
         Kzz += jitter * tf.eye(len(feat), dtype=settings.dtypes.float_type)
     return Kzz
 
-@dispatch
+@dispatch()
 def Kuf(feat: InducingPoints, kern: kernels.Kernel, Xnew: object):
     with params_as_tensors_for(feat):
         Kzx = kern.K(feat.Z, Xnew)
@@ -135,7 +138,7 @@ def Kuf(feat, kern, Xnew):
     return Kuf
 
 @dispatch(Multiscale, kernels.RBF)
-def Kuu(feat, kern, jitter=0.0):
+def Kuu(feat, kern, *, jitter=0.0):
     with params_as_tensors_for(feat, kern):
         Zmu, Zlen = kern._slice(feat.Z, feat.scales)
         idlengthscales2 = tf.square(kern.lengthscales + Zlen)
