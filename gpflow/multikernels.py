@@ -4,8 +4,11 @@ from . import settings
 from .decors import params_as_tensors
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
+from . import kernels
 from .params import Parameter
 from .dispatch import dispatch
+
+
 
 # TODO MultiOutputKernels have a different method signature for K and Kdiag (they take full_cov_output)
 # this needs better documentation - especially as the default there is *True* not False as for full_cov
@@ -22,6 +25,7 @@ class Mok(Kernel):
     K(X1, X2): N1 x P x N2 x P
     """
     pass
+
 
 
 class SharedIndependentMok(Mok):
@@ -114,6 +118,7 @@ def Kuf(feat, kern, Xnew):
     with params_as_tensors_for(feat, kern):
         Kzx = kern.K(feat.Z, Xnew, full_cov_output=True)
     return Kzx
+
 
 @dispatch()
 def Kuf(feat: InducingFeature, kern: MultiOutputKernel, Xnew: object):
