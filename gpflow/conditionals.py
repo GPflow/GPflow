@@ -15,16 +15,17 @@
 
 import tensorflow as tf
 
-from .core import GPflowError
 from . import settings, mean_functions
 from .decors import name_scope
 from .dispatch import dispatch
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel
-from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, IndependentFeature, MultiInducingPoints
-from .multikernels import MixedMultiKernel, MixedMultiIndependentFeature
+from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, MultiOutputInducingPoints
+from .multikernels import MixedMultiOutputKernel
 from .probability_distributions import Gaussian
+
+IndependentFeature = InducingFeature # TODO sort out
 
 # TODO: Make all outputs of conditionals equal
 # TODO: Add tensorflow assertions of shapes
@@ -33,6 +34,15 @@ from .probability_distributions import Gaussian
 #  - f      : M x L x R  or M x L  or  M x R
 #  - q_sqrt :
 
+# TODO move implementations of conditional() for multi-output kernels to multioutput module?
+
+# There's a lot of duplicate code in the various types of conditionals ... e.g.
+# they all do L = cholesky(Kmm), A = L^-1 Lmn ... I think it'd be much cleaner
+# & easier to understand if we break things up from the bottom up, e.g.
+# something like get_A_and_fvar with multiple dispatch for the different
+# combinations of feature & kernel to return the appropriately shaped objects,
+# and then a single "general" conditional that calls these helper functions
+# instead of doing all the nitty-gritty reshaping by itself.
 
 """
 conditionals.py
@@ -66,12 +76,13 @@ q_sqrt : M x L  or  M x M  or L x M x M
 
 
 def expand_independent_outputs(fvar, full_cov, full_cov_output):
+    # TODO point of this function?
     if not full_cov_output:
         # Output shape should be N x R or R x N x N, which it already is.
         return fvar
     elif full_cov:
         # Output shape should be ???
-        pass
+        raise NotImplementedError
 
 
 @dispatch(object, InducingFeature, Kernel, object)
@@ -93,7 +104,7 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(object, MixedMultiIndependentFeature, MixedMultiKernel, object)
+@dispatch(object, IndependentFeature, MixedMultiOutputKernel, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
@@ -201,7 +212,8 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
                                            q_sqrt=q_sqrt, white=white)
 
 
-@dispatch(object, MultiInducingPoints, MultiOutputKernel, object)
+@dispatch(object, MultiOutputInducingPoints, MultiOutputKernel, object)
+#TODO does this not work for other inducing features ?...
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
@@ -259,16 +271,16 @@ def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     The method can either return the diagonals of the covariance matrix for
     each output (default) or the full covariance matrix (full_cov=True).
 
-    We assume K independent GPs, represented by the columns of f (and the
+    We assume R independent GPs, represented by the columns of f (and the
     last dimension of q_sqrt).
 
     :param Xnew: data matrix, size N x D.
     :param X: data points, size M x D.
     :param kern: GPflow kernel.
-    :param f: data matrix, M x K, representing the function values at X,
+    :param f: data matrix, M x R, representing the function values at X,
         for K functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
-        size M x K or K x M x M.
+        size M x R or R x M x M.
     :param white: boolean of whether to use the whitened representation as
         described above.
 
@@ -286,6 +298,24 @@ def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 
 @name_scope()
 def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=False):
+    """
+    Given a g1 and g2, and distribution p and q such that
+      p(g2) = N(g2;0,Kmm)
+      p(g1) = N(g1;0,Knn)
+      p(g1|g2) = N(g1;0,Knm)
+    And
+      q(g2) = N(g2;f,q_sqrt*q_sqrt^T)
+    This method computes the mean and (co)variance of
+      q(g1) = \int q(g2) p(g1|g2)
+    :param Kmn: M x N
+    :param Kmm: M x M
+    :param Knn: N x N  or  N
+    :param f: M x R
+    :param full_cov: bool
+    :param q_sqrt: None or R x M x M (lower triangular)
+    :param white: bool
+    :return: N x R  or N x N x R
+    """
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # R
     Lm = tf.cholesky(Kmm)
@@ -300,7 +330,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     else:
         fvar = Knn - tf.reduce_sum(tf.square(A), 0)
         shape = tf.stack([num_func, 1])
-    fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # K x N x N or K x N
+    fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # R x N x N or R x N
 
     # another backsubstitution in the unwhitened case
     if not white:
@@ -311,19 +341,19 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
 
     if q_sqrt is not None:
         if q_sqrt.get_shape().ndims == 2:
-            LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # K x M x N
+            LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # R x M x N
         elif q_sqrt.get_shape().ndims == 3:
-            L = tf.matrix_band_part(q_sqrt, -1, 0)  # K x M x M
+            L = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
             A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
-            LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N
+            LTA = tf.matmul(L, A_tiled, transpose_a=True)  # R x M x N
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
                              str(q_sqrt.get_shape().ndims))
         if full_cov:
-            fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
+            fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # R x N x N
         else:
-            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
-    fvar = tf.transpose(fvar)  # N x K or N x N x K
+            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # R x N
+    fvar = tf.transpose(fvar)  # N x R or N x N x R
 
     return fmean, fvar
 
@@ -331,6 +361,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
 def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None,
                                     white=False):
     """
+
     :param Kmn: M x L x N x P
     :param Kmm: L x M x M
     :param Knn: N x P  or  N x N  or  P x N x N  or  N x P x N x P
@@ -360,8 +391,6 @@ def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_co
         fvar = Knn - tf.matmul(At, At, transpose_b=True)  # N x P x P
     elif not full_cov and not full_cov_output:
         fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, P))  # Knn: N x P
-    else:
-        raise GPflowError("Incorrect values for full_cov*.")
 
     # another backsubstitution in the unwhitened case
     if not white:
