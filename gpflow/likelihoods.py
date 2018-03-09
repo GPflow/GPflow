@@ -492,7 +492,6 @@ class SwitchedLikelihood(Likelihood):
 
         # split up the arguments into chunks corresponding to the relevant likelihoods
         args = zip(*[tf.dynamic_partition(X, ind, self.num_likelihoods) for X in args])
-        args = [a for a in args]
 
         # apply the likelihood-function to each section of the data
         with params_as_tensors_for(self, convert=False):
