@@ -76,7 +76,7 @@ class NatGradOptimizer(optimizer.Optimizer):
         """
         Forward-mode pushforward analogous to the pullback defined by tf.gradients.
         With tf.gradients, grad_ys is the vector being pulled back, and here d_xs is
-        the vector being pushed forward, i.e. this computes (d ys / d xs)^T d_xs.
+        the vector being pushed forward, i.e. this computes (∂ys / ∂xs)^T ∂xs.
 
         This is adapted from https://github.com/HIPS/autograd/pull/175#issuecomment-306984338
 
@@ -96,7 +96,7 @@ class NatGradOptimizer(optimizer.Optimizer):
             xi_transform = arg[2] if len(arg) > 2 else XiNat()
             ops.append(self._build_natgrad_step_op(q_mu, q_sqrt, xi_transform))
         ops = list(sum(ops, ()))
-        return tf.group(ops)
+        return tf.group(*ops)
 
     def _build_natgrad_step_op(self, q_mu_param, q_sqrt_param, xi_transform):
         """
@@ -108,13 +108,13 @@ class NatGradOptimizer(optimizer.Optimizer):
             booktitle={AISTATS},
             year={2018}
 
-        In addition, for convenience with the rest of gpflow, this code computes d L / d eta using
+        In addition, for convenience with the rest of GPflow, this code computes ∂L/∂η using
         the chain rule:
 
         ∂L/∂η = (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt])
 
         In total there are three derivative calculations:
-        natgrad L wrt ξ  =  (∂ξ / ∂nat ) [ (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt]) ]^T
+        natgrad L w.r.t ξ  = (∂ξ / ∂nat ) [ (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt]) ]^T
 
         Note that if ξ = nat or [q_μ, q_sqrt] some of these calculations are the identity.
 
@@ -134,15 +134,15 @@ class NatGradOptimizer(optimizer.Optimizer):
         ## three derivatives
         # 1) the oridinary gpflow gradient
         dL_d_mean, dL_d_varsqrt = tf.gradients(objective, [q_mu, q_sqrt])
-        # 2) the chain rule to get d L / d eta, where eta are the expectation parameters
+        # 2) the chain rule to get ∂L/∂η, where eta are the expectation parameters
         dL_detas = tf.gradients(_meanvarsqrt, etas, grad_ys=[dL_d_mean, dL_d_varsqrt])
-        # 3) the forward mode gradient to calculate (d xi / d nat)(d L / d eta)^T,
+        # 3) the forward mode gradient to calculate (∂ξ / ∂nat)(∂L / ∂η)^T,
         nat_dL_xis = self._forward_gradients(_xis, nats, dL_detas)
 
-        # perform natural gradient descent on the xi parameters
+        # perform natural gradient descent on the ξ parameters
         xis_new = [xi - self.gamma * nat_dL_xi for xi, nat_dL_xi in zip(xis, nat_dL_xis)]
 
-        # transform back to the model parameters [q_mu, q_sqrt]
+        # transform back to the model parameters [q_μ, q_sqrt]
         mean_new, varsqrt_new = xi_transform.xi_to_meanvarsqrt(*xis_new)
 
         # these are the tensorflow variables to assign
