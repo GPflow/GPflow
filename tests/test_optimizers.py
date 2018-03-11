@@ -18,10 +18,12 @@ import tensorflow as tf
 import gpflow
 from gpflow.test_util import GPflowTestCase
 
+
 class Empty(gpflow.models.Model):
     @gpflow.params_as_tensors
     def _build_likelihood(self):
         return tf.constant(0.0, dtype=gpflow.settings.float_type)
+
 
 class Demo(gpflow.models.Model):
     def __init__(self, add_to_inits=[], add_to_trainables=[], name=None):
