@@ -75,8 +75,8 @@ class NatGradOptimizer(optimizer.Optimizer):
 
         self._model = model
         session = model.enquire_session(session)
-        opt = self.make_optimization(model, var_list=var_list, **kwargs)
-        with session.as_default(), tf.name_scope(self.name):
+        opt = self.make_optimization(model, session=session, var_list=var_list, **kwargs)
+        with session.as_default():
             for _i in range(maxiter):
                 opt()
         if anchor:
@@ -96,8 +96,7 @@ class NatGradOptimizer(optimizer.Optimizer):
         """
         with session.as_default(), tf.name_scope(self.name):
             # Create optimizer variables before initialization.
-            self._natgrad_op = self._build_natgrad_step_ops(model, *var_list)
-        return 
+            return self._build_natgrad_step_ops(model, *var_list)
 
     def make_optimization(self, model, session=None, var_list=None, **kwargs):
         """
