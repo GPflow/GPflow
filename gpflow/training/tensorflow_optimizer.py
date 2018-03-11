@@ -55,9 +55,9 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             self._initialize_optimizer(session, full_var_list)
             return minimize
     
-    def make_optimization(self, model, session=None, var_list=None, feed_dict=None, **kwargs):
+    def make_optimization(self, model, session=None, var_list=None, **kwargs):
         """
-        Build Optimization action task.
+        Build Optimization action task with Tensorflow optimizer.
 
             :param model: GPflow model.
             :param session: Tensorflow session.
@@ -69,13 +69,15 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
         session = model.enquire_session(session)
+        feed_dict = kwargs.pop('feed_dict', None)
         optimizer_tensor = self.make_optimizer_tensor(model, session, var_list=var_list, **kwargs)
         feed_dict_update = self._gen_feed_dict(model, feed_dict)
+        run_kwargs = {} if feed_dict_update is None else {'feed_dict': feed_dict_update}
         opt = Optimization()
         opt.with_optimizer(self)
         opt.with_model(model)
         opt.with_optimizer_tensor(optimizer_tensor)
-        opt.with_feed_dict(feed_dict_update)
+        opt.with_run_kwargs(**run_kwargs)
         return opt
     
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
@@ -105,7 +107,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         
         session = model.enquire_session(session)
         for _ in range(maxiter):
-            session.run(opt.optimizer_tensor, feed_dict=opt.feed_dict)
+            session.run(opt.optimizer_tensor, **opt.run_kwargs)
 
         if anchor:
             opt.model.anchor(session)
