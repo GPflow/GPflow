@@ -70,9 +70,9 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             raise ValueError('Unknown type passed for optimization.')
         session = model.enquire_session(session)
         feed_dict = kwargs.pop('feed_dict', None)
-        optimizer_tensor = self.make_optimizer_tensor(model, session, var_list=var_list, **kwargs)
         feed_dict_update = self._gen_feed_dict(model, feed_dict)
         run_kwargs = {} if feed_dict_update is None else {'feed_dict': feed_dict_update}
+        optimizer_tensor = self.make_optimizer_tensor(model, session, var_list=var_list, **kwargs)
         opt = Optimization()
         opt.with_optimizer(self)
         opt.with_model(model)
@@ -97,6 +97,9 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         :param kwargs: This is a dictionary of extra parameters for session run method.
         """
 
+        if model is None or not isinstance(model, Model):
+            raise ValueError('The `model` argument must be a GPflow model.')
+
         opt = self.make_optimization(model,
             session=session,
             var_list=var_list,
@@ -106,8 +109,9 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         self._minimize_operation = opt.optimizer_tensor
         
         session = model.enquire_session(session)
-        for _ in range(maxiter):
-            session.run(opt.optimizer_tensor, **opt.run_kwargs)
+        with session.as_default():
+            for _ in range(maxiter):
+                opt()
 
         if anchor:
             opt.model.anchor(session)

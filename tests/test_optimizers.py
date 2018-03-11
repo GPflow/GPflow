@@ -242,7 +242,7 @@ def test_VGP_vs_GPR(session_tf):
     m_vgp.set_trainable(False)
     m_vgp.q_mu.set_trainable(True)
     m_vgp.q_sqrt.set_trainable(True)
-    NatGradOptimizer(1.).minimize(m_vgp, [[m_vgp.q_mu, m_vgp.q_sqrt]], maxiter=1)
+    NatGradOptimizer(1.).minimize(m_vgp, [(m_vgp.q_mu, m_vgp.q_sqrt)], maxiter=1)
 
     assert_allclose(m_gpr.compute_log_likelihood(),
                     m_vgp.compute_log_likelihood(), atol=1e-5)

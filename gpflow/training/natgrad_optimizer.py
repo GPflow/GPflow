@@ -67,22 +67,18 @@ class NatGradOptimizer(optimizer.Optimizer):
             :param maxiter: Number of run interation. Default value: 1000.
             :param anchor: Synchronize updated parameters for a session with internal
                 parameter's values.
-            :param kwargs: Extra parameters for session run method.
+            :param kwargs: Extra parameters passed to session run's method.
         """
 
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
 
-        session = model.enquire_session(session)
         self._model = model
-
-        with session.graph.as_default(), tf.name_scope(self.name):
-            # Create optimizer variables before initialization.
-            self._natgrad_op = self._build_natgrad_step_ops(*var_list)
-            feed_dict = self._gen_feed_dict(model, feed_dict)
+        session = model.enquire_session(session)
+        opt = self.make_optimization(model, var_list=var_list, **kwargs)
+        with session.as_default(), tf.name_scope(self.name):
             for _i in range(maxiter):
-                session.run(self.minimize_operation, feed_dict=feed_dict)
-
+                opt()
         if anchor:
             model.anchor(session)
     
@@ -131,12 +127,15 @@ class NatGradOptimizer(optimizer.Optimizer):
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
         session = model.enquire_session(session)
+        feed_dict = kwargs.pop('feed_dict', None)
+        feed_dict_update = self._gen_feed_dict(model, feed_dict)
+        run_kwargs = {} if feed_dict_update is None else {'feed_dict': feed_dict_update}
         optimizer_tensor = self.make_optimizer_tensor(model, session, var_list=var_list)
         opt = Optimization()
         opt.with_optimizer(self)
         opt.with_model(model)
         opt.with_optimizer_tensor(optimizer_tensor)
-        opt.with_run_kwargs(**kwargs)
+        opt.with_run_kwargs(**run_kwargs)
         return opt
 
     @staticmethod
