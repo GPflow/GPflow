@@ -372,7 +372,7 @@ def test_hypers_SVGP_vs_SGPR_with_excluded_vars(session_tf):
     lr = 0.1
 
     # combination (doing GD first as we've already done the nat grad step
-    p = [[m_svgp.q_mu, m_svgp.q_sqrt]]
+    p = [(m_svgp.q_mu, m_svgp.q_sqrt)]
     o1 = [NatGradOptimizer(1.), {'var_list':p}]
     o2 = [ExcludedGradientDescentOptimizer(lr, excluded_params=p[0]), {}]
     o3 = [NatGradOptimizer(1.), {'var_list':p}]
