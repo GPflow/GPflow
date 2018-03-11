@@ -24,7 +24,7 @@ GPflow is 99% covered by the testing suite. We expect changes to code to pass th
 To save time during development, slow tests are marked with a 'speed' attribute. To run the tests without the slow ones, use `nosetests -A "speed!='slow'" testing`. By default, all tests are run, including on travis/codeship.
 
 ## Python 3
-GPflow supports python >= 3.6 only.
+GPflow supports python >= 3.5
 
 ## Documentation
 GPflow's documentation is not comprehensive, but covers enough to get users started. We expect that new features have documentation that can help others get up to speed. The docs are mostly IPython notebooks that compile into html via sphinx, using nbsphinx.
