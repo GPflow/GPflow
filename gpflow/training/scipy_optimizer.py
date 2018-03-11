@@ -25,6 +25,32 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._optimizer_kwargs = kwargs
         self._optimizer = None
         self._model = None
+    
+
+    def make_optimizer_tensor(self, model, session, var_list=None, **kwargs):
+        """
+        Make SciPy optimization tensor.
+        The `make_optimizer_tensor` method builds optimization tensor and initializes
+        all necessary variables created by optimizer.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of variables for training.
+            :param kwargs: Scipy optional optimization parameters,
+                - `maxiter`, maximal number of iterations to perform.
+                - `disp`, if True, prints convergence messages.
+            :return: Tensorflow operation.
+        """
+        with session.as_default():
+            var_list = self._gen_var_list(model, var_list)
+            options = dict(options=kwargs)
+            optimizer_kwargs = self._optimizer_kwargs.copy()
+            optimizer_kwargs.update(options)
+            objective = model.objective
+            optimizer = external_optimizer.ScipyOptimizerInterface(
+                objective, var_list=var_list, **optimizer_kwargs)
+            model.initialize(session=session)
+            return optimizer
 
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
                  maxiter=1000, initialize=False, anchor=True, **kwargs):
@@ -50,24 +76,14 @@ class ScipyOptimizer(optimizer.Optimizer):
         if model.is_built_coherence() is Build.NO:
             raise GPflowError('Model is not built.')
 
-        var_list = self._gen_var_list(model, var_list)
         session = model.enquire_session(session)
         self._model = model
-
-        with session.graph.as_default():
-            disp = kwargs.pop('disp', False)
-            options = dict(options={'maxiter': maxiter, 'disp': disp})
-            optimizer_kwargs = self._optimizer_kwargs.copy()
-            optimizer_kwargs.update(options)
-
-            objective = model.objective
-            self._optimizer = external_optimizer.ScipyOptimizerInterface(
-                objective, var_list=var_list, **optimizer_kwargs)
-
-        model.initialize(session=session, force=initialize)
-
+        disp = kwargs.pop('disp', False)
+        optimizer = self.make_optimizer_tensor(model, session,
+            var_list=var_list, maxiter=maxiter, disp=disp)
+        self._optimizer = optimizer
         feed_dict = self._gen_feed_dict(model, feed_dict)
-        self._optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
+        optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
         if anchor:
             model.anchor(session)
 

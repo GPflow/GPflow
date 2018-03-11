@@ -20,6 +20,22 @@ import abc
 
 class Optimizer:
     @abc.abstractmethod
+    def make_optimizer_tensor(self, model, session, var_list=None, **kwargs):
+        """
+        Make optimization tensor.
+        The `make_optimizer_tensor` method builds optimization tensor and initializes
+        all necessary variables created by optimizer.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of variables for training.
+            :param kwargs: Dictionary of extra parameters necessary for building
+                optimizer tensor.
+            :return: Tensorflow optimization tensor or operation.
+        """
+        pass
+
+    @abc.abstractmethod
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
                  maxiter=1000, initialize=True, anchor=True, **kwargs):
         raise NotImplementedError()

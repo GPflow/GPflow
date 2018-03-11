@@ -34,15 +34,38 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         self._minimize_operation = None
     
     def make_optimizer_tensor(self, model, session, var_list=None, **kwargs):
+        """
+        Make Tensorflow optimization tensor.
+        This method builds optimization tensor and initializes all necessary variables
+        created by optimizer.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of variables for training.
+            :param kwargs: Dictionary of extra parameters passed to Tensorflow
+                optimizer's minimize method.
+            :return: Tensorflow optimization tensor or operation.
+        """
         objective = model.objective
         full_var_list = self._gen_var_list(model, var_list)
         # Create optimizer variables before initialization.
-        minimize = self.optimizer.minimize(objective, var_list=full_var_list, **kwargs)
-        model.initialize(session=session)
-        self._initialize_optimizer(session, full_var_list)
-        return minimize
+        with session.as_default():
+            minimize = self.optimizer.minimize(objective, var_list=full_var_list, **kwargs)
+            model.initialize(session=session)
+            self._initialize_optimizer(session, full_var_list)
+            return minimize
     
     def make_optimization(self, model, session=None, var_list=None, feed_dict=None, **kwargs):
+        """
+        Build Optimization action task.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of Tensorflow variables to train.
+            :param feed_dict: Tensorflow feed_dict dictionary.
+            :param kwargs: Extra parameters passed to `make_optimizer_tensor`.
+            :return: Optimization action.
+        """
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
         session = model.enquire_session(session)
@@ -76,6 +99,9 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             session=session,
             var_list=var_list,
             feed_dict=feed_dict, **kwargs)
+        
+        self._model = opt.model
+        self._minimize_operation = opt.optimizer_tensor
         
         session = model.enquire_session(session)
         for _ in range(maxiter):
