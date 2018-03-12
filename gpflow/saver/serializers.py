@@ -37,7 +37,7 @@ class HDF5Serializer(BaseSerializer):
     def dump(self, pathname, data):
         with h5py.File(pathname) as h5file:
             meta = h5file.create_group('meta')
-            date = datetime.now().isoformat(timespec='seconds')
+            date = datetime.now().isoformat() #TODO(@awav): py3.6 timespec='seconds'.
             version = misc.version()
             meta.create_dataset(name='date', data=date)
             meta.create_dataset(name='version', data=version)

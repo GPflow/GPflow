@@ -126,8 +126,6 @@ def test_encode_decode_list_types(value):
         if isinstance(eq, np.ndarray) and eq.shape:
             return all(eq)
         return eq
-    print('>>>', value)
-    print('+++', d)
     assert all(list(map(equal, zip(value, d))))
 
 
