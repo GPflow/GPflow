@@ -80,15 +80,15 @@ class InducingPointsBase(InducingFeature):
 class InducingPoints(InducingPointsBase):
     pass
 
-@dispatch()
-def Kuu(feat: InducingPoints, kern: kernels.Kernel, *, jitter=0.0):
+@dispatch(InducingPoints, kernels.Kernel)
+def Kuu(feat, kern, *, jitter=0.0):
     with params_as_tensors_for(feat):
         Kzz = kern.K(feat.Z)
         Kzz += jitter * tf.eye(len(feat), dtype=settings.dtypes.float_type)
     return Kzz
 
-@dispatch()
-def Kuf(feat: InducingPoints, kern: kernels.Kernel, Xnew: object):
+@dispatch(InducingPoints, kernels.Kernel, object)
+def Kuf(feat, kern, Xnew):
     with params_as_tensors_for(feat):
         Kzx = kern.K(feat.Z, Xnew)
     return Kzx

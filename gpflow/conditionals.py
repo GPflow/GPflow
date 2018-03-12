@@ -20,12 +20,11 @@ from .decors import name_scope
 from .dispatch import dispatch
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
-from .kernels import Kernel
-from .multikernels import MultiOutputKernel, IndependentMultiOutputKernel, MultiOutputInducingPoints
-from .multikernels import MixedMultiOutputKernel
+from .kernels import Kernel, Combination
+from .multikernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
+from .multikernels import Kuf, Kuu
+from .multifeatures import Mof, SeparateIndependentMof, SharedIndependentMof, SeparateMixedMof
 from .probability_distributions import Gaussian
-
-IndependentFeature = InducingFeature # TODO sort out
 
 # TODO: Make all outputs of conditionals equal
 # TODO: Add tensorflow assertions of shapes
@@ -86,6 +85,7 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
 
 
 @dispatch(object, InducingFeature, Kernel, object)
+@dispatch(object, SharedIndependentMof, SharedIndependentMok, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
@@ -94,57 +94,20 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     :param q_sqrt: M x R  or  R x M x M
     :return: N x R  or R x N x N  or  N x R x R  or  N x R x N x R
     """
-    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
-    Kmn = feat.Kuf(kern, Xnew)  # M x N
+    Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
+    Kmn = Kuf(feat, kern, Xnew)  # M x N
     if full_cov:
         Knn = kern.K(Xnew)  # N x N
     else:
         Knn = kern.Kdiag(Xnew)  # N
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  N x R
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  N x (x N) x R
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(object, IndependentFeature, MixedMultiOutputKernel, object)
-@name_scope()
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
-    """
-    f: M x L
-    q_sqrt: L x M x M
-
-    :return:
-    mean: N x P
-    var:
-    1) full_cov, full_cov_output: True, True
-        N x P x N x P
-
-    """
-    independent_cond = conditional.dispatch(object, IndependentFeature, IndependentMultiOutputKernel, object)
-    gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt, 
-                                 full_cov_output=False, white=white)  # N x L, L x N x N or N x L
-
-    gmu = tf.matrix_transpose(gmu)  # L x N
-    if not full_cov:
-        gvar = tf.matrix_transpose(gvar)  # L x N (x N)
-
-    Pgmu = tf.tensordot(gmu, kern.P, [[0], [1]])  # N x P
-
-    if full_cov_output:
-        Pt_expanded = tf.matrix_transpose(kern.P)[:, None]  # L x 1 x P
-        if full_cov:
-            Pt_expanded = tf.expand_dims(Pt_expanded, axis=-1)  # L x 1 x P x 1
-
-        gvarP = tf.expand_dims(gvar, axis=2) * Pt_expanded  # L x N x P (x N)
-        PgvarP = tf.tensordot(gvarP, kern.P, [[0], [1]])  # N x P (x N) x P
-    else:
-        if not full_cov:
-            PgvarP = tf.tensordot(gvar, kern.P**2, [[0], [1]])  # N x P
-        else:
-            PgvarP = tf.tensordot(kern.P**2, gvar, [[1], [0]])  # P x N (x N)
-        
-    return Pgmu, PgvarP   
-
-
-@dispatch(object, IndependentFeature, IndependentMultiOutputKernel, object)
+@dispatch(object, SharedIndependentMof, SeparateIndependentMok, object)
+# TODO: these should be added as well
+# @dispatch(object, SeparateIndependentMof, SharedIndependentMok, object)
+# @dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
@@ -156,10 +119,10 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     :return: N x P ,
     """
     # Following are: P x M x M  -  P x M x N  -  P x N(x N)
-    Kmms = feat.Kuu(kern, jitter=settings.jitter)
-    Kmns = feat.Kuf(kern, Xnew)
-    # TODO: Do all independent kernels have a kern_list?
-    Knns = tf.stack([kern.K(Xnew) if full_cov else kern.Kdiag(Xnew) for kern in kern.kern_list], axis=0)
+    Kmms = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # P x M x M
+    Kmns = Kuf(feat, kern, Xnew)  # P x M x N
+    kern_list = kern.kern_list if isinstance(kern, Combination) else [kern.kern] * len(feat.feat_list)
+    Knns = tf.stack([k.K(Xnew) if full_cov else k.Kdiag(Xnew) for k in kern_list], axis=0)
     fs = tf.transpose(f)[:, :, None]  # P x M x 1
     # P x 1 x M x M  or  P x M x 1
     q_sqrts = tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
@@ -188,7 +151,7 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmu, fvar
 
 
-@dispatch(object, IndependentFeature, MultiOutputKernel, object)
+@dispatch(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
@@ -203,8 +166,8 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     :param white:
     :return:
     """
-    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # L x M x M
-    Kmn = feat.Kuf(kern, Xnew)  # M x L x N x K
+    Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # L x M x M
+    Kmn = Kuf(feat, kern, Xnew)  # M x L x N x K
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
         else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x K(x N)x K  or  N x K(x K)
 
@@ -212,8 +175,7 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
                                            q_sqrt=q_sqrt, white=white)
 
 
-@dispatch(object, MultiOutputInducingPoints, MultiOutputKernel, object)
-#TODO does this not work for other inducing features ?...
+@dispatch(object, Mof, Mok, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
@@ -227,8 +189,8 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     :param f: ML x 1
     :param q_sqrt: ML x 1  or  1 x ML x ML
     """
-    Kmm = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x L x M x P
-    Kmn = feat.Kuf(kern, Xnew)  # M x L x N x P
+    Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x L x M x P
+    Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
         else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x P(x N)x P  or  N x P(x P)
 

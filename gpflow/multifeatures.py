@@ -1,17 +1,26 @@
 from .features import InducingPoints, InducingFeature
 
-class SeparateInducingFeatures(InducingFeature):
+
+class Mof(InducingFeature):
+    pass
+
+
+class SharedIndependentMof(Mof):
+    def __init__(self, feat):
+        Mof.__init__(self)
+        self.feat = feat
+    
+    def __len__(self):
+        return len(self.feat)
+
+
+class SeparateIndependentMof(Mof):
     def __init__(self, feat_list):
-        """
-        We assume that each feature in feat_list has the same M,
-        i.e. len(feat) is equal for all feat in feat_list
-        """
+        Mof.__init__(self)
         self.feat_list = feat_list
 
 
-class MultiOutputInducingPoints(InducingPoints):
-    """
-    Z is the same, but u lives in a different space
-    -> we need different Kuu, Kuf
-    """
-    pass
+class SeparateMixedMof(Mof):
+    def __init__(self, feat_list):
+        Mof.__init__(self)
+        self.feat_list = feat_list
