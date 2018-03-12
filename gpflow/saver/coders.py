@@ -172,7 +172,7 @@ class ListCoder(StructCoder):
             data = np.array(data, dtype=data_dtype)
             shape = (len(data),)
         else:
-            data_dtype = {'{}'.format(i): d for i, d in enumerate(data)}
+            data_dtype = [('{}'.format(i), d) for i, d in enumerate(data)]
             data_dtype = _list_of_dtypes(data_dtype)
             data = np.array(tuple(data), dtype=data_dtype)
         return self.struct(self.decoding_type(), data, shape=shape)
@@ -182,9 +182,10 @@ class ListCoder(StructCoder):
         if _is_nan(data):
             return []
         if not data.shape:
-            data = [data[e] for e in data.dtype.fields.keys()]
+            keys = sorted(data.dtype.fields.keys())
+            data = [data[k] for k in keys]
         factory = CoderFactory(self.context)
-        return [factory.decode(e) for e in data]
+        return [factory.decode(d) for d in data]
 
 
 class DictCoder(StructCoder):
@@ -512,7 +513,9 @@ def _build_type(module_name, object_name):
 
 def _list_of_dtypes(values):
     dtypes = []
-    for k, v in values.items():
+    if isinstance(values, dict):
+        values = values.items()
+    for k, v in values:
         if isinstance(v, np.ndarray) and not _is_shapeless(v):
             dtypes.append((k, v.dtype, v.shape))
         else:
