@@ -17,7 +17,7 @@ import tensorflow as tf
 
 from . import settings, mean_functions
 from .decors import name_scope
-from .dispatch import dispatch
+from .dispatch import dispatch 
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
@@ -84,6 +84,7 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
         raise NotImplementedError
 
 
+
 @dispatch(object, InducingFeature, Kernel, object)
 @dispatch(object, SharedIndependentMof, SharedIndependentMok, object)
 @name_scope()
@@ -104,10 +105,22 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(object, SharedIndependentMof, SeparateIndependentMok, object)
-# TODO: these should be added as well
-# @dispatch(object, SeparateIndependentMof, SharedIndependentMok, object)
-# @dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+@dispatch(object, SharedIndependentMof, SharedIndependentMok, object)
+@name_scope()
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    """
+    """
+    Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
+    Kmn = Kuf(feat, kern, Xnew)  # M x N
+    if full_cov:
+        Knn = kern.K(Xnew, full_cov_output=False)[..., 0]  # N x N
+    else:
+        Knn = kern.Kdiag(Xnew, full_cov_output=False)[..., 0]  # N
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  N x (x N) x P
+    return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
+
+
+@dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
@@ -118,6 +131,10 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     :param q_sqrt: M x P  or  P x M x M
     :return: N x P ,
     """
+    print("Conditional")
+    print("object, SharedIndependentMof, SeparateIndependentMok, object")
+    print("object, SeparateIndependentMof, SharedIndependentMok, object")
+    print("object, SeparateIndependentMof, SeparateIndependentMok, object")
     # Following are: P x M x M  -  P x M x N  -  P x N(x N)
     Kmms = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # P x M x M
     Kmns = Kuf(feat, kern, Xnew)  # P x M x N
@@ -151,6 +168,18 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmu, fvar
 
 
+@dispatch(object, SharedIndependentMof, SeparateIndependentMok, object)
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    cond_impl = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+    return cond_impl(Xnew, feat, kern, f, full_cov_output=full_cov_output, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+
+
+@dispatch(object, SeparateIndependentMof, SharedIndependentMok, object)
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    cond_impl = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+    return cond_impl(Xnew, feat, kern, f, full_cov_output=full_cov_output, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+
+
 @dispatch(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
@@ -175,7 +204,7 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
                                            q_sqrt=q_sqrt, white=white)
 
 
-@dispatch(object, Mof, Mok, object)
+@dispatch(object, InducingPoints, Mok, object)
 @name_scope()
 def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
