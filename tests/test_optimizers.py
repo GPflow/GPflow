@@ -19,7 +19,11 @@ import pytest
 import gpflow
 from gpflow.test_util import session_tf
 from gpflow.test_util import GPflowTestCase
-from gpflow.training.natgrad_optimizer import NatGradOptimizer
+from gpflow.training.natgrad_optimizer import NatGradOptimizer, XiSqrtMeanVar
+from gpflow.training.natgrad_optimizer import meanvarsqrt_to_expectation
+from gpflow.training.natgrad_optimizer import expectation_to_meanvarsqrt
+from gpflow.training.natgrad_optimizer import natural_to_expectation
+
 from gpflow.training import GradientDescentOptimizer
 from gpflow.training.optimizer import Optimizer
 from gpflow.training.tensorflow_optimizer import _TensorFlowOptimizer
@@ -225,6 +229,10 @@ class TestFtrlOptimizer(GPflowTestCase, OptimizerCase):
 # ../../anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py:546: TypeError
 
 def test_VGP_vs_GPR(session_tf):
+    """
+    With a Gaussian likelihood the Gaussian variational (VGP) model should be equivalent to the exact 
+     regression model (GPR) after a single nat grad step of size 1
+    """
     N, D = 3, 2
     X = np.random.randn(N, D)
     Y = np.random.randn(N, 1)
@@ -245,7 +253,52 @@ def test_VGP_vs_GPR(session_tf):
     assert_allclose(m_gpr.compute_log_likelihood(),
                     m_vgp.compute_log_likelihood(), atol=1e-5)
 
+
+def test_other_XiTransform_VGP_vs_GPR(session_tf, xi_transform=XiSqrtMeanVar()):
+    """
+    With other transforms the solution is not given in a single step, but it should still give the same answer
+    after a number of smaller steps. 
+    """
+    N, D = 3, 2
+    X = np.random.randn(N, D)
+    Y = np.random.randn(N, 1)
+    kern = gpflow.kernels.RBF(D)
+    lik_var = 0.1
+    lik = gpflow.likelihoods.Gaussian()
+    lik.variance = lik_var
+
+    m_vgp = gpflow.models.VGP(X, Y, kern, lik)
+    m_gpr = gpflow.models.GPR(X, Y, kern)
+    m_gpr.likelihood.variance = lik_var
+
+    m_vgp.set_trainable(False)
+    m_vgp.q_mu.set_trainable(True)
+    m_vgp.q_sqrt.set_trainable(True)
+    NatGradOptimizer(0.01).minimize(m_vgp, [[m_vgp.q_mu, m_vgp.q_sqrt, xi_transform]], maxiter=500)
+
+    assert_allclose(m_gpr.compute_log_likelihood(),
+                    m_vgp.compute_log_likelihood(), atol=1e-4)
+
+
+def test_XiEtas_VGP_vs_GPR(session_tf):
+    class XiEta:
+        def meanvarsqrt_to_xi(self, mean, varsqrt):
+            return meanvarsqrt_to_expectation(mean, varsqrt)
+
+        def xi_to_meanvarsqrt(self, xi_1, xi_2):
+            return expectation_to_meanvarsqrt(xi_1, xi_2)
+
+        def naturals_to_xi(self, nat_1, nat_2):
+            return natural_to_expectation(nat_1, nat_2)
+
+    test_other_XiTransform_VGP_vs_GPR(session_tf, xi_transform=XiEta())
+
+
 def test_SVGP_vs_SGPR(session_tf):
+    """
+    With a Gaussian likelihood the sparse Gaussian variational (SVGP) model should be equivalent to the analytically 
+     optimial sparse regression model (SGPR) after a single nat grad step of size 1
+    """
     N, M, D = 4, 3, 2
     X = np.random.randn(N, D)
     Z = np.random.randn(M, D)
