@@ -6,7 +6,7 @@ class Mof(InducingFeature):
 
 
 class SharedIndependentMof(Mof):
-    """ Only for testing (TODO(VD) remove)"""
+    """ Only for testing (TODO(VD) remove) """
     def __init__(self, feat):
         Mof.__init__(self)
         self.feat = feat
@@ -24,11 +24,6 @@ class SeparateIndependentMof(Mof):
         return len(self.feat_list[0])
 
 
-class SeparateMixedMof(Mof):
-    def __init__(self, feat_list):
-        Mof.__init__(self)
-        self.feat_list = feat_list
+class MixedKernelSharedMof(SharedIndependentMof):
+    pass
 
-    def __len__(self):
-        pass
-        # TODO 

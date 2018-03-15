@@ -53,6 +53,8 @@ class SVGP(GPModel):
                  minibatch_size=None,
                  Z=None,
                  num_data=None,
+                 q_mu=None,
+                 q_sqrt=None,
                  **kwargs):
         """
         - X is a data matrix, size N x D
@@ -85,14 +87,32 @@ class SVGP(GPModel):
 
         # init variational parameters
         num_inducing = len(self.feature)
-        self.q_mu = Parameter(np.zeros((num_inducing, self.num_latent), dtype=settings.float_type))
-        if self.q_diag:
-            self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.float_type),
-                                    transforms.positive)
+        self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
+    
+    def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
+        """
+        TODO(VD): explain
+        """
+        q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
+        self.q_mu = Parameter(q_mu, dtype=settings.float_type)  # M x P
+
+        if q_sqrt is None:
+            if self.q_diag:
+                self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.float_type), 
+                                        transforms.positive)  # M x P
+            else:
+                q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type) for _ in range(self.num_latent)])
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # P x M x M
         else:
-            q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type)
-                               for _ in range(self.num_latent)])
-            self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))
+            if q_diag:
+                assert q_sqrt.ndim == 2
+                self.num_latent = q_sqrt.shape[1]
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.positive)  # M x L
+            else:
+                assert q_sqrt.ndim == 3
+                self.num_latent = q_sqrt.shape[0]
+                num_inducing = q_sqrt.shape[1]
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # L x M x M
 
     @params_as_tensors
     def build_prior_KL(self):

@@ -23,7 +23,7 @@ from .features import InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .multikernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .multikernels import Kuf, Kuu
-from .multifeatures import Mof, SeparateIndependentMof, SharedIndependentMof, SeparateMixedMof
+from .multifeatures import Mof, SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
 from .probability_distributions import Gaussian
 
 # TODO: Make all outputs of conditionals equal
@@ -85,6 +85,7 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
 
 
 
+# TODO(VD) fix multiple dispatch problem, maybe use dispatcher
 @dispatch(object, InducingFeature, Kernel, object)
 @dispatch(object, SharedIndependentMof, SharedIndependentMok, object)
 @name_scope()
@@ -138,6 +139,7 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     # Following are: P x M x M  -  P x M x N  -  P x N(x N)
     Kmms = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # P x M x M
     Kmns = Kuf(feat, kern, Xnew)  # P x M x N
+    # TODO(VD) is this still necessary
     kern_list = kern.kern_list if isinstance(kern, Combination) else [kern.kern] * len(feat.feat_list)
     Knns = tf.stack([k.K(Xnew) if full_cov else k.Kdiag(Xnew) for k in kern_list], axis=0)
     fs = tf.transpose(f)[:, :, None]  # P x M x 1
@@ -196,9 +198,9 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     :return:
     """
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # L x M x M
-    Kmn = Kuf(feat, kern, Xnew)  # M x L x N x K
+    Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
-        else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x K(x N)x K  or  N x K(x K)
+        else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x P(x N)x P  or  N x P(x P)
 
     return independent_latents_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output,
                                            q_sqrt=q_sqrt, white=white)
@@ -239,6 +241,40 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
         # TODO: Fix this output shape
     fmean = tf.Print(fmean, [tf.shape(fmean), tf.shape(fvar)], summarize=100)
     return fmean, fvar
+
+
+@dispatch(object, MixedKernelSharedMof, SeparateMixedMok, object)
+@name_scope()
+def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    """
+    """
+    print("conditional: MixedKernelSharedMof, SeparateMixedMok")
+    independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+    gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt, 
+                                 full_cov_output=False, white=white)  # N x L, L x N x N or N x L
+
+    gmu = tf.matrix_transpose(gmu)  # L x N
+    if not full_cov:
+        gvar = tf.matrix_transpose(gvar)  # L x N (x N)
+
+    Wgmu = tf.tensordot(gmu, kern.W, [[0], [1]])  # N x P
+
+    if full_cov_output:
+        Wt_expanded = tf.matrix_transpose(kern.W)[:, None, :]  # L x 1 x P
+        if full_cov:
+            Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # L x 1 x P x 1
+
+        gvarW = tf.expand_dims(gvar, axis=2) * Wt_expanded  # L x N x P (x N)
+        WgvarW = tf.tensordot(gvarW, kern.W, [[0], [1]])  # N x P (x N) x P
+    else:
+        if not full_cov:
+            WgvarW = tf.tensordot(gvar, kern.W**2, [[0], [1]])  # N x P
+        else:
+            WgvarW = tf.tensordot(kern.W**2, gvar, [[1], [0]])  # P x N (x N)
+        
+    return Wgmu, WgvarW  
+
+
 
 
 @dispatch(object, object, Kernel, object)  # TODO: Make types more specific to TensorFlow types?
@@ -307,6 +343,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     :param white: bool
     :return: N x R  or N x N x R
     """
+    print("base conditional")
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # R
     Lm = tf.cholesky(Kmm)
@@ -360,6 +397,7 @@ def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_co
     :param q_sqrt: L x M x M  or  M x L
     :return: N x P  ,  N x R x P x P
     """
+    print("independent_latents_conditional")
     # TODO: Allow broadcasting over L if priors are shared?
     # TODO: Change Kmn to be L x M x N x P? Saves a transpose...
     M, L, N, P = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
@@ -422,6 +460,7 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_o
     :param q_sqrt: R x M x M  or  R x M
     :return: N x R x K  ,  N x R x K x K
     """
+    print("fully correlated conditional")
     R = tf.shape(f)[1]
     M, N, K = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
     Lm = tf.cholesky(Kmm)
