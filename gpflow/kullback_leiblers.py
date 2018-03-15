@@ -19,7 +19,7 @@ import tensorflow as tf
 
 from . import settings
 from .decors import name_scope
-
+import tensorflow.contrib.distributions as tf_dists
 
 @name_scope()
 def gauss_kl(q_mu, q_sqrt, K=None):
@@ -44,13 +44,20 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     If K is None, compute the KL divergence to p(x) = N(0, I) instead.
     """
 
+    M,L = q_mu.get_shape().as_list()
+
     if K is None:
         white = True
         alpha = q_mu
     else:
         white = False
         Lp = tf.cholesky(K)
-        alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True)
+        if K.shape.ndims ==3:
+            q_mu_ = tf.tile(q_mu[None,:,:],[L,1,1])
+            alpha = tf.matrix_triangular_solve(Lp, q_mu_, lower=True)\
+                    /tf.sqrt(tf.cast(L, settings.float_type))
+        else:
+            alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True)
 
     if q_sqrt.get_shape().ndims == 2:
         diag = True
@@ -80,15 +87,36 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         trace = tf.reduce_sum(tf.square(Lq))
     else:
         if diag:
-            M = tf.shape(Lp)[0]
-            Lp_inv = tf.matrix_triangular_solve(
-                Lp, tf.eye(M, dtype=settings.float_type), lower=True)
+
+            if K.get_shape().ndims == 3:
+                eye = tf.matrix_diag(tf.ones((L,M), dtype=settings.float_type))
+                LpT = tf.transpose(Lp,(0,2,1))
+
+            else:
+                eye = tf.eye(M, dtype=settings.float_type)
+                LpT = tf.transpose(Lp)
+
+            print(Lp.shape,eye.shape)
+            Lp_inv = tf.matrix_triangular_solve(  Lp, eye, lower=True)
+
+
             K_inv = tf.matrix_triangular_solve(
-                tf.transpose(Lp), Lp_inv, lower=False)
+                LpT, Lp_inv, lower=False)
+
+            if K.get_shape().ndims == 3:
+                rho = tf.transpose(tf.matrix_diag_part(K_inv))
+            else:
+                rho = tf.expand_dims(tf.matrix_diag_part(K_inv), 1)
+
             trace = tf.reduce_sum(
-                tf.expand_dims(tf.matrix_diag_part(K_inv), 1) * tf.square(q_sqrt))
+                rho * tf.square(q_sqrt))
+
         else:
-            Lp_tiled = tf.tile(tf.expand_dims(Lp, 0), [num_latent, 1, 1])
+            if K.get_shape().ndims == 3:
+                Lp_tiled = Lp
+            else:
+                Lp_tiled = tf.tile(tf.expand_dims(Lp, 0), [num_latent, 1, 1])
+
             LpiLq = tf.matrix_triangular_solve(Lp_tiled, Lq, lower=True)
             trace = tf.reduce_sum(tf.square(LpiLq))
 
@@ -99,7 +127,44 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         log_sqdiag_Lp = tf.log(tf.square(tf.matrix_diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
         prior_logdet = tf.cast(num_latent, settings.float_type) * sum_log_sqdiag_Lp
-        twoKL += prior_logdet
+        #twoKL += prior_logdet
 
     return 0.5 * twoKL
 
+
+def gauss_kl_tf_distributions(q_mu, q_sqrt, K=None):
+    """
+    Kullbach-Leiber divergence KL[q(U) || p(U)],
+    with q(U) ~ N(q_mu, q_sqrt^2) the variational Gaussian posterior
+    and p(U) ~ N(0, K) the prior. If K is None we assume a whitened
+    prior, p(U) ~ N(0, I).
+
+    We assume L independent distributions, then
+
+    :param q_mu: L variational means, M x L
+    :param q_sqrt: L variational covariances,
+                - cholesky: L x M x M or
+                - diag elements: M x L
+    :param K (Kuu): M x M or L x M x M
+    """
+
+    q_mu = tf.matrix_transpose(q_mu)  # L x M
+    L,M = tf.shape(q_mu)
+
+    if K is None: #  white = True
+        prior = tf_dists.MultivariateNormalDiag(loc=tf.zeros_like(q_mu),
+                                                scale_diag=tf.ones_like(q_mu))
+    else:
+        if K.shape.ndims == 2:
+            K = tf.tile(K[None, ...], [L, 1, 1])  # L x M x M
+        prior = tf_dists.MultivariateNormalFullCovariance(loc=tf.zeros_like(q_mu),
+                                                          covariance_matrix=K)
+
+    if q_sqrt.shape.ndims == 2:  # M x L
+        q_sqrt_T = tf.matrix_transpose(q_sqrt)
+        posterior = tf_dists.MultivariateNormalDiag(loc=q_mu, scale_diag=q_sqrt)
+
+    elif q_sqrt.shape.ndims == 3:  # L x M x M
+        posterior = tf_dists.MultivariateNormalTriL(loc=q_mu, scale_tril=q_sqrt)
+
+    return tf.reduce_sum(posterior.kl_divergence(prior))
