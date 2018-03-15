@@ -17,7 +17,7 @@ import tensorflow as tf
 
 from . import settings, mean_functions
 from .decors import name_scope
-from .dispatch import dispatch 
+from .dispatch import conditional
 from .expectations import expectation
 from .features import InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
@@ -86,10 +86,10 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
 
 
 # TODO(VD) fix multiple dispatch problem, maybe use dispatcher
-@dispatch(object, InducingFeature, Kernel, object)
-@dispatch(object, SharedIndependentMof, SharedIndependentMok, object)
+@conditional.register(object, InducingFeature, Kernel, object)
+@conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
 @name_scope()
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Single-output GP allowing repetitions
     :param f: M x R
@@ -106,9 +106,9 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(object, SharedIndependentMof, SharedIndependentMok, object)
+@conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
 @name_scope()
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     """
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
@@ -121,9 +121,11 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+@conditional.register(object, SeparateIndependentMof, SeparateIndependentMok, object)
+@conditional.register(object, SharedIndependentMof, SeparateIndependentMok, object)
+@conditional.register(object, SeparateIndependentMof, SharedIndependentMok, object)
 @name_scope()
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P). Expected kernels:
@@ -169,22 +171,9 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
 
     return fmu, fvar
 
-
-@dispatch(object, SharedIndependentMof, SeparateIndependentMok, object)
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
-    cond_impl = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
-    return cond_impl(Xnew, feat, kern, f, full_cov_output=full_cov_output, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-
-@dispatch(object, SeparateIndependentMof, SharedIndependentMok, object)
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
-    cond_impl = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
-    return cond_impl(Xnew, feat, kern, f, full_cov_output=full_cov_output, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-
-@dispatch(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
+@conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
 @name_scope()
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors
     :param Xnew:
@@ -206,9 +195,9 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
                                            q_sqrt=q_sqrt, white=white)
 
 
-@dispatch(object, InducingPoints, Mok, object)
+@conditional.register(object, InducingPoints, Mok, object)
 @name_scope()
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
@@ -243,9 +232,9 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
     return fmean, fvar
 
 
-@dispatch(object, MixedKernelSharedMof, SeparateMixedMok, object)
+@conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
 @name_scope()
-def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     """
     print("conditional: MixedKernelSharedMof, SeparateMixedMok")
@@ -277,9 +266,9 @@ def conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q
 
 
 
-@dispatch(object, object, Kernel, object)  # TODO: Make types more specific to TensorFlow types?
+@conditional.register(object, object, Kernel, object)  # TODO: Make types more specific to TensorFlow types?
 @name_scope()
-def conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -354,11 +343,10 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     # compute the covariance due to the conditioning
     if full_cov:
         fvar = Knn - tf.matmul(A, A, transpose_a=True)
-        shape = tf.stack([num_func, 1, 1])
+        fvar = tf.tile(fvar[None, :, :], [num_func, 1, 1])  # R x N x N
     else:
         fvar = Knn - tf.reduce_sum(tf.square(A), 0)
-        shape = tf.stack([num_func, 1])
-    fvar = tf.tile(tf.expand_dims(fvar, 0), shape)  # R x N x N or R x N
+        fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
 
     # another backsubstitution in the unwhitened case
     if not white:

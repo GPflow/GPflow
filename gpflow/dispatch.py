@@ -1,4 +1,4 @@
-from multipledispatch import dispatch
+from multipledispatch import dispatch, Dispatcher
 from functools import partial
 
 # By default multipledispatch uses a global namespace in multipledispatch.core.global_namespace
@@ -6,3 +6,4 @@ from functools import partial
 gpflow_md_namespace = dict()
 dispatch = partial(dispatch, namespace=gpflow_md_namespace)
 
+conditional = Dispatcher('conditional')
