@@ -24,6 +24,14 @@ class Mok(Kernel):
     """
     Multi Output Kernel class.
 
+    Kernels parameterize priors over scalar valued functions
+    Multi Output Kernel parameterize priors over vector valued functions (dim=P).
+
+    A Kernel parameterizes covariance Cov[f(x),f(x')]
+    A MOK parameterizes covariances Cov[f_i(x),f_j(x')] for all pairs of i,k in [1..P]^2,
+    that is covariance both across inputs and across output dimensions
+
+
     Subclasses of Mok should implement K which returns:
      - N x P x N x P if full_cov_output = True
      - N x N x P if full_cov_output = False
@@ -39,8 +47,8 @@ class SharedIndependentMok(Mok):
     Note: this class is created only for testing purposes.
     Use `gpflow.kernels` instead for more efficient code.
 
-    > Shared: we use the same kernel for each latent GP
-    > Independent: Latents are uncorrelated a priori.
+    > Shared: we use the same kernel for each GP
+    > Independent: GPs are uncorrelated a priori.
     """
     def __init__(self, kern: Kernel, output_dimensionality, name=None):
         Mok.__init__(self, kern.input_dim, name)
@@ -63,8 +71,8 @@ class SharedIndependentMok(Mok):
 
 class SeparateIndependentMok(Mok, Combination):
     """
-    > Separate: we use different kernel for each output latent
-    > Independent: Latents are uncorrelated a priori.
+    > Separate: we use different kernel for each GP
+    > Independent: GPs are uncorrelated a priori.
     """
     def __init__(self, kern_list, name=None):
         Combination.__init__(self, kern_list, name)
@@ -83,7 +91,7 @@ class SeparateIndependentMok(Mok, Combination):
 
 class SeparateMixedMok(Mok, Combination):
     """
-    Linear mixing of the latent GPs to form the output
+    Linear mixing of the latent GPs (g, dim=L) to form correlated output (f, dim=P)
     """
 
     def __init__(self, kern_list, W, name=None):

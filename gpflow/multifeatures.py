@@ -2,11 +2,19 @@ from .features import InducingPoints, InducingFeature
 
 
 class Mof(InducingFeature):
+    """
+    Multi Output Feature Class
+    Inducing feature for Multi Output GPs
+    """
     pass
 
 
 class SharedIndependentMof(Mof):
-    """ Only for testing (TODO(VD) remove) """
+    """
+    Only for testing (TODO(VD) remove)
+    - Inducing features supports independent GPs
+    - Independent GPs share the same inducing features
+    """
     def __init__(self, feat):
         Mof.__init__(self)
         self.feat = feat
@@ -16,6 +24,11 @@ class SharedIndependentMof(Mof):
 
 
 class SeparateIndependentMof(Mof):
+    """
+    Only for testing (TODO(VD) remove)
+    - Inducing features supports independent GPs
+    - Each independent GP has its own inducing features
+    """
     def __init__(self, feat_list):
         Mof.__init__(self)
         self.feat_list = feat_list
@@ -25,5 +38,10 @@ class SeparateIndependentMof(Mof):
 
 
 class MixedKernelSharedMof(SharedIndependentMof):
+    """
+    Only for testing (TODO(VD) remove)
+    - Inducing features supports mixed GPs
+    - Mixed GPs share the same inducing points
+    """
     pass
 
