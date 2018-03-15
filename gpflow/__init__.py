@@ -53,3 +53,6 @@ from .params import ParamList
 from .params import DataHolder
 from .params import Minibatch
 from .params import Parameterized
+
+from . import multioutput
+from .multioutput import conditionals
