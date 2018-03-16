@@ -29,49 +29,11 @@ from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, Separate
 # TODO: Make all outputs of conditionals equal
 # TODO: Add tensorflow assertions of shapes
 # TODO: Remove `conditional()`?
-# Shapes to keep constant:
-#  - f      : M x L x R  or M x L  or  M x R
-#  - q_sqrt :
+# TODO: extract duplicate code (if possible)
+# TODO: tests
+# TODO: check if this works with different models, GPR and VGP
+# TODO: fix KL divergence
 
-# TODO move implementations of conditional() for multi-output kernels to multioutput module?
-
-# There's a lot of duplicate code in the various types of conditionals ... e.g.
-# they all do L = cholesky(Kmm), A = L^-1 Lmn ... I think it'd be much cleaner
-# & easier to understand if we break things up from the bottom up, e.g.
-# something like get_A_and_fvar with multiple dispatch for the different
-# combinations of feature & kernel to return the appropriately shaped objects,
-# and then a single "general" conditional that calls these helper functions
-# instead of doing all the nitty-gritty reshaping by itself.
-
-"""
-conditionals.py
-The only thing that is completely specified for an implementation of `conditional()`, is the return
-shapes.
-
-Option 1:
---------
-fmean : N x P
-fvar  : N x P  or  N x P x P  or  P x N x N  or  N x P x N x P
-This is occurs when the multi-output nature is described purely by repeating the same prior P
-times. Full covariances over outputs will always be diagonal.
-
-Option 2:
---------
-fmean : N x P
-fvar  : N x P  or  N x P x P  or  P x N x N  or  N x P x N x P
-For when we have a truly multi-output kernel, with P the output dimension
-
-Option 3:
---------
-fmean : N x P
-fvar  : N x P  or  N x P x P  or  P x N x N  or  N x P x N x P
-Multi-output kernel, with ? repetitions of the prior.
-
-In general, we should aim to keep the shapes of f, q_sqrt, Kuu, and Kuf consistent as well. For
-optimisation reasons, however, this can be departed from. The standard is:
-f      : M x L
-q_sqrt : M x L  or  M x M  or L x M x M
-"""
 
 def expand_independent_outputs(fvar, full_cov, full_cov_output):
     # TODO point of this function?
@@ -150,7 +112,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     rmu, rvar = tf.map_fn(single_gp_conditional,
                           (Kmms, Kmns, Knns, fs, q_sqrts),
                           (settings.float_type, settings.float_type))  # P x N x 1  ,  P x N(x N) x 1
-    
+
     fmu = tf.matrix_transpose(rmu[..., 0])
     fvar = rvar[..., 0]
 
@@ -234,7 +196,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     """
     print("conditional: MixedKernelSharedMof, SeparateMixedMok")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
-    gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt, 
+    gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                  full_cov_output=False, white=white)  # N x L, L x N x N or N x L
 
     gmu = tf.matrix_transpose(gmu)  # L x N
@@ -255,8 +217,12 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
             WgvarW = tf.tensordot(gvar, kern.W**2, [[0], [1]])  # N x P
         else:
             WgvarW = tf.tensordot(kern.W**2, gvar, [[1], [0]])  # P x N (x N)
-        
-    return Wgmu, WgvarW  
+
+    return Wgmu, WgvarW
+
+
+# ========================= Conditional Implementations ========================
+# =========================.............................========================
 
 
 def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None,

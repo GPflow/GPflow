@@ -77,6 +77,7 @@ class InducingPointsBase(InducingFeature):
     def __len__(self):
         return self.Z.shape[0]
 
+
 class InducingPoints(InducingPointsBase):
     pass
 
@@ -124,6 +125,7 @@ class Multiscale(InducingPointsBase):
         scales. sc: N x M x D.
         """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
+
 
 @dispatch(Multiscale, kernels.RBF, object)
 def Kuf(feat, kern, Xnew):
