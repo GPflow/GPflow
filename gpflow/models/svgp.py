@@ -58,7 +58,7 @@ class SVGP(GPModel):
                  **kwargs):
         """
         - X is a data matrix, size N x D
-        - Y is a data matrix, size N x R
+        - Y is a data matrix, size N x P
         - kern, likelihood, mean_function are appropriate GPflow objects
         - Z is a matrix of pseudo inputs, size M x D
         - num_latent is the number of latent process to use, default to
@@ -107,12 +107,12 @@ class SVGP(GPModel):
             if q_diag:
                 assert q_sqrt.ndim == 2
                 self.num_latent = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.positive)  # M x L
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.positive)  # M x L/P
             else:
                 assert q_sqrt.ndim == 3
                 self.num_latent = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # L x M x M
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # L/P x M x M
 
     @params_as_tensors
     def build_prior_KL(self):
