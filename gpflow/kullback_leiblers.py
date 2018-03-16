@@ -33,11 +33,11 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     We assume N multiple independent distributions, given by the columns of
     q_mu and the last dimension of q_sqrt. Returns the sum of the divergences.
 
-    q_mu is a matrix (M x N), each column contains a mean.
+    q_mu is a matrix (M x L), each column contains a mean.
 
-    q_sqrt can be a 3D tensor (N xM x M), each matrix within is a lower
+    q_sqrt can be a 3D tensor (L xM x M), each matrix within is a lower
         triangular square-root matrix of the covariance of q.
-    q_sqrt can be a matrix (M x N), each column represents the diagonal of a
+    q_sqrt can be a matrix (M x L), each column represents the diagonal of a
         square-root matrix of the covariance of q.
 
     K is a positive definite matrix (M x M): the covariance of p.
@@ -48,27 +48,40 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 
     if K is None:
         white = True
-        alpha = q_mu
+        alpha = q_mu # M x L
     else:
         white = False
-        Lp = tf.cholesky(K)
+        Lp = tf.cholesky(K) # L x M x M or M x M
+
         if K.shape.ndims ==3:
-            q_mu_ = tf.tile(q_mu[None,:,:],[L,1,1])
-            alpha = tf.matrix_triangular_solve(Lp, q_mu_, lower=True)\
-                    /tf.sqrt(tf.cast(L, settings.float_type))
+            # TODO remove tiling when tf manages broadcasting
+            #q_mu = tf.tile(q_mu[None,:,:],[L,1,1])  # L x M x L
+
+            # An alternative to tile that has the right zero entries
+            q_mu = tf.matrix_diag(q_mu) # M x L -> M x L x L
+            q_mu = tf.transpose(q_mu,(2,0,1))  # M x L x L -> L x M x L
+
+            # This triangular solve does too much work
+            alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True)  #  L x M x L
+            #alpha = tf.transpose(alpha,(1,0,2)) #  M x L x L
+            #alpha = tf.matrix_diag_part(alpha) #  M x L
+
         else:
-            alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True)
+            q_mu = q_mu * tf.sqrt(tf.cast(L, settings.float_type)) # M x L
+            alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True) # M x L
+
+
 
     if q_sqrt.get_shape().ndims == 2:
         diag = True
         num_latent = tf.shape(q_sqrt)[1]
-        NM = tf.size(q_sqrt)
-        Lq = Lq_diag = q_sqrt
+        ML = tf.size(q_sqrt)
+        Lq = Lq_diag = q_sqrt # M x L
     elif q_sqrt.get_shape().ndims == 3:
         diag = False
         num_latent = tf.shape(q_sqrt)[0]
-        NM = tf.reduce_prod(tf.shape(q_sqrt)[:2])
-        Lq = tf.matrix_band_part(q_sqrt, -1, 0)  # force lower triangle
+        ML = tf.reduce_prod(tf.shape(q_sqrt)[:2])
+        Lq = tf.matrix_band_part(q_sqrt, -1, 0)  # force lower triangle M x L
         Lq_diag = tf.matrix_diag_part(Lq)
     else:  # pragma: no cover
         raise ValueError("Bad dimension for q_sqrt: {}".format(q_sqrt.get_shape().ndims))
@@ -77,7 +90,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - N x M
-    constant = - tf.cast(NM, settings.float_type)
+    constant = - tf.cast(ML, settings.float_type)
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.log(tf.square(Lq_diag)))
@@ -89,36 +102,34 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         if diag:
 
             if K.get_shape().ndims == 3:
-                eye = tf.matrix_diag(tf.ones((L,M), dtype=settings.float_type))
-                LpT = tf.transpose(Lp,(0,2,1))
-
+                LpT = tf.transpose(Lp,(0,2,1)) # L x M x M
+                Lp_inv = tf.matrix_triangular_solve(Lp,
+                        tf.matrix_diag(tf.ones((L, M), dtype=settings.float_type)), # L x M x M
+                        lower=True) # L x M x M
+                K_inv = tf.matrix_triangular_solve(LpT, Lp_inv, lower=False) # L x M x M
+                rho = tf.transpose(tf.matrix_diag_part(K_inv)) # M x L
             else:
-                eye = tf.eye(M, dtype=settings.float_type)
-                LpT = tf.transpose(Lp)
+                LpT = tf.transpose(Lp) # M x M
+                Lp_inv = tf.matrix_triangular_solve(Lp,
+                        tf.eye(M, dtype=settings.float_type), #  M x M
+                        lower=True) # M x M
+                K_inv = tf.matrix_triangular_solve(LpT, Lp_inv, lower=False) # M x M
+                rho = tf.matrix_diag_part(K_inv)[:,None] # M x 1 (L implicit extension to broadcast)
 
-            print(Lp.shape,eye.shape)
-            Lp_inv = tf.matrix_triangular_solve(  Lp, eye, lower=True)
+            trace = tf.reduce_sum(rho * tf.square(q_sqrt))
 
-
-            K_inv = tf.matrix_triangular_solve(
-                LpT, Lp_inv, lower=False)
-
-            if K.get_shape().ndims == 3:
-                rho = tf.transpose(tf.matrix_diag_part(K_inv))
-            else:
-                rho = tf.expand_dims(tf.matrix_diag_part(K_inv), 1)
-
-            trace = tf.reduce_sum(
-                rho * tf.square(q_sqrt))
 
         else:
+
+            # If K is L x M x M, no need to tile the cholesky anymore
             if K.get_shape().ndims == 3:
-                Lp_tiled = Lp
+                LpiLq = tf.matrix_triangular_solve(Lp, Lq, lower=True)
             else:
                 Lp_tiled = tf.tile(tf.expand_dims(Lp, 0), [num_latent, 1, 1])
+                LpiLq = tf.matrix_triangular_solve(Lp_tiled, Lq, lower=True)
 
-            LpiLq = tf.matrix_triangular_solve(Lp_tiled, Lq, lower=True)
             trace = tf.reduce_sum(tf.square(LpiLq))
+
 
     twoKL = mahalanobis + constant - logdet_qcov + trace
 
@@ -126,7 +137,14 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     if not white:
         log_sqdiag_Lp = tf.log(tf.square(tf.matrix_diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
-        prior_logdet = tf.cast(num_latent, settings.float_type) * sum_log_sqdiag_Lp
+
+
+        # If K is L x M x M, num_latent is no longer implicit, no need to multiply the single kernel logdet
+        if K.get_shape().ndims == 2:
+            prior_logdet = tf.cast(num_latent, settings.float_type) * sum_log_sqdiag_Lp
+        else:
+            prior_logdet = sum_log_sqdiag_Lp
+
         #twoKL += prior_logdet
 
     return 0.5 * twoKL
