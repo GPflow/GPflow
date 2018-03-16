@@ -59,7 +59,8 @@ for q_shape in [[M, L], [L, M, M]]:
     elif len(q_shape) == 3:
         q_sqrt = tf.constant(np.array([np.eye(M) for _ in range(L)]), dtype=float_type)
 
-    for K_shape in [None,[M,M],[L,M,M]]:
+#    for K_shape in [None,[M,M],[L,M,M]]:
+    for K_shape in [ [M, M], [L, M, M]]:
         # None means white.
 
         if K_shape == None:

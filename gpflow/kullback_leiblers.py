@@ -56,10 +56,11 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         if K.shape.ndims ==3:
             # TODO remove tiling when tf manages broadcasting
             #q_mu = tf.tile(q_mu[None,:,:],[L,1,1])  # L x M x L
+            q_mu = tf.transpose(q_mu)[:,:,None] # L x M x L
 
             # An alternative to tile that has the right zero entries
-            q_mu = tf.matrix_diag(q_mu) # M x L -> M x L x L
-            q_mu = tf.transpose(q_mu,(2,0,1))  # M x L x L -> L x M x L
+            #q_mu = tf.matrix_diag(q_mu) # M x L -> M x L x L
+            #q_mu = tf.transpose(q_mu,(2,0,1))  # M x L x L -> L x M x L
 
             # This triangular solve does too much work
             alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True)  #  L x M x L
@@ -67,9 +68,9 @@ def gauss_kl(q_mu, q_sqrt, K=None):
             #alpha = tf.matrix_diag_part(alpha) #  M x L
 
         else:
-            q_mu = q_mu * tf.sqrt(tf.cast(L, settings.float_type)) # M x L
+            q_mu = q_mu #* tf.sqrt(tf.cast(L, settings.float_type)) # M x L
             alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True) # M x L
-
+        print(K.shape.ndims,'alpha',alpha.shape)
 
 
     if q_sqrt.get_shape().ndims == 2:
@@ -87,6 +88,8 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         raise ValueError("Bad dimension for q_sqrt: {}".format(q_sqrt.get_shape().ndims))
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
+    with tf.Session() as sess:
+        print(alpha.eval())
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - N x M
@@ -131,7 +134,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
             trace = tf.reduce_sum(tf.square(LpiLq))
 
 
-    twoKL = mahalanobis + constant - logdet_qcov + trace
+    twoKL = mahalanobis# + constant - logdet_qcov + trace
 
     # Log-determinant of the covariance of p(x):
     if not white:
