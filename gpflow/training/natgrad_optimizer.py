@@ -133,19 +133,22 @@ class NatGradOptimizer(optimizer.Optimizer):
 
         # we need these to calculate the relevant gradients
         _meanvarsqrt = expectation_to_meanvarsqrt(*etas)
-        _xis = xi_transform.naturals_to_xi(*nats)
 
         ## three derivatives
         # 1) the oridinary gpflow gradient
         dL_d_mean, dL_d_varsqrt = tf.gradients(objective, [q_mu, q_sqrt])
+
         # 2) the chain rule to get ∂L/∂η, where eta are the expectation parameters
         dL_detas = tf.gradients(_meanvarsqrt, etas, grad_ys=[dL_d_mean, dL_d_varsqrt])
+
         # 3) the forward mode gradient to calculate (∂ξ / ∂nat)(∂L / ∂η)^T,
-
-        # this line should be removed if the placeholder_with_default problem is rectified
-        _xis = [tf.reshape(_xis[0], q_mu_param.shape), tf.reshape(_xis[1], q_sqrt_param.shape)]
-
-        nat_dL_xis = self._forward_gradients(_xis, nats, dL_detas)
+        if isinstance(xi_transform, XiNat):
+            nat_dL_xis = dL_detas
+        else:
+            _xis = xi_transform.naturals_to_xi(*nats)
+            # this line should be removed if the placeholder_with_default problem is rectified
+            _xis = [tf.reshape(_xis[0], q_mu_param.shape), tf.reshape(_xis[1], q_sqrt_param.shape)]
+            nat_dL_xis = self._forward_gradients(_xis, nats, dL_detas)
 
         # perform natural gradient descent on the ξ parameters
         xis_new = [xi - self.gamma * nat_dL_xi for xi, nat_dL_xi in zip(xis, nat_dL_xis)]
@@ -175,7 +178,7 @@ class XiTransform(metaclass=abc.ABCMeta):
     XiTransform is the base class that implements three transformations necessary
     for the natural gradient calculation wrt any parameterization.
     This class does not handle any shape information, but it is assumed that
-    the parameters pairs are always of shape (N, D) and (N, N, D).
+    the parameters pairs are always of shape (N, D) and (D, N, N).
     """
     @abc.abstractmethod
     def meanvarsqrt_to_xi(self, mean, varsqrt):
@@ -212,6 +215,11 @@ class XiTransform(metaclass=abc.ABCMeta):
 
 
 class XiNat(XiTransform):
+    """
+    This is the default transform. Using the natural directly saves the forward mode
+     gradient, and also gives the analytic optimal solution for gamma=1 in the case
+     of Gaussian likelihood.
+    """
     def meanvarsqrt_to_xi(self, mean, varsqrt):
         return meanvarsqrt_to_natural(mean, varsqrt)
 
@@ -223,6 +231,10 @@ class XiNat(XiTransform):
 
 
 class XiSqrtMeanVar(XiTransform):
+    """
+    This transformation will perform natural gradient descent on the model parameters,
+    so saves the conversion to and from Xi.
+    """
     def meanvarsqrt_to_xi(self, mean, varsqrt):
         return mean, varsqrt
 
@@ -247,21 +259,19 @@ def swap_dimensions(method):
         `method` inputs DN1, DNN
         `method` outputs DN1, DNN
     :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
-        inputs: ND, NND
-        outputs: ND, NND
+        inputs: ND, DNN
+        outputs: ND, DNN
     """
     @functools.wraps(method)
     def wrapper(a_nd, b_dnn, swap=True):
         if swap:
             if a_nd.get_shape().ndims != 2:  # pragma: no cover
                 raise ValueError("The `a_nd` input must have 2 dimensions.")
-            if b_dnn.get_shape().ndims != 3:  # pragma: no cover
-                raise ValueError("The `b_nd` input must have 3 dimensions.")
             a_dn1 = tf.transpose(a_nd)[:, :, None]
             A_dn1, B_dnn = method(a_dn1, b_dnn)
             A_nd = tf.transpose(A_dn1[:, :, 0])
             return A_nd, B_dnn
-        else:  # pragma: no cover
+        else:
             return method(a_nd, b_dnn)
     return wrapper
 

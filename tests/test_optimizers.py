@@ -323,7 +323,7 @@ def test_SVGP_vs_SGPR(session_tf):
 
 class CombinationOptimizer(Optimizer):
     """
-    A class that applies one step of each of multiple optimizers in a loop
+    A class that applies one step of each of multiple optimizers in a loop.
     """
     def __init__(self, optimizers_with_kwargs):
         self.name = None
@@ -380,6 +380,21 @@ def sgpr(session_tf):
 def test_hypers_SVGP_vs_SGPR(session_tf, svgp, sgpr):
     """
     Test SVGP vs SGPR. Combined optimization.
+
+    The logic is as follows:
+
+    SVGP is given on nat grad step with gamma=1. Now it is identical to SGPR (which has
+    analytic optimal variational distribution)
+
+    We then take an ordinary gradient step on the hyperparameters (and inducing locations Z)
+
+    Finally we update the variational parameters to their optimal values with another nat grad
+    step with gamma=1.
+
+    These three steps are equivalent to an ordinary gradient step on the parameters of SGPR
+
+    In this test we simply make the variational parameters trainable=False, so they are not
+    updated by the ordinary gradient step
     """
     anchor = False
     variationals = [(svgp.q_mu, svgp.q_sqrt)]
@@ -410,6 +425,7 @@ def test_hypers_SVGP_vs_SGPR(session_tf, svgp, sgpr):
 def test_hypers_SVGP_vs_SGPR_tensors(session_tf, svgp, sgpr):
     """
     Test SVGP vs SGPR. Running optimization as tensors w/o GPflow wrapper.
+
     """
     anchor = False
     variationals = [(svgp.q_mu, svgp.q_sqrt)]
@@ -463,6 +479,10 @@ class ExcludedGradientDescentOptimizer(_TensorFlowOptimizer):
 def test_hypers_SVGP_vs_SGPR_with_excluded_vars(session_tf, svgp, sgpr):
     """
     Test SVGP vs SGPR. Excluded variables.
+
+    This test is as test_hypers_SVGP_vs_SGPR, but we use a different approach to partitioning
+    the variables. In this test the variational parameters are trainable, but the ordinary
+    gradient optimizer has these variables removed from its var_list, so does not update them
     """
     anchor = False
 
