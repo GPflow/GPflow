@@ -218,6 +218,12 @@ class EqualitySumKLBatchKL(GPflowTestCase):
                 res_sum += sess.run(kl, feed_dict=self.feed_dicts[l])
         self.assertTrue(np.allclose(res_sum, res_batch))
 
+    def test_diag(self):
+        '''
+        Equivalent of test_dense for q_diag input 
+        '''
+        #TODO implement
+        assert(True)
 
 
 def np_kl_1d(q_mu, q_sigma, p_var=1.0):
