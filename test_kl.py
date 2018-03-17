@@ -57,7 +57,7 @@ for q_shape in [[M, L], [L, M, M]]:
     if len(q_shape) == 2:
         q_sqrt = tf.constant(np.ones(q_shape), dtype=float_type)
     elif len(q_shape) == 3:
-        q_sqrt = tf.constant(np.array([np.eye(M) for _ in range(L)]), dtype=float_type)
+        q_sqrt = tf.constant(np.array([np.eye(M)+B for _ in range(L)]), dtype=float_type)
 
 #    for K_shape in [None,[M,M],[L,M,M]]:
     for K_shape in [ [M, M], [L, M, M]]:
@@ -99,7 +99,7 @@ for q_shape in [[M, L], [L, M, M]]:
     if len(q_shape) == 2:
         q_sqrt = tf.constant(np.ones(q_shape), dtype=float_type)
     elif len(q_shape) == 3:
-        q_sqrt = tf.constant(np.array([np.eye(M) for _ in range(L)]), dtype=float_type)
+        q_sqrt = tf.constant(np.array([np.eye(M)+B for _ in range(L)]), dtype=float_type)
 
     KL_white  = gauss_kl(q_mu, q_sqrt, None)
 
