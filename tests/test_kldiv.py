@@ -175,6 +175,10 @@ class EqualityTest(GPflowTestCase):
 class EqualitySumKLBatchKL(GPflowTestCase):
     """
     For q(X)=prod q(x_i), check that sum KL(q(x_i)||p(x_i)) = KL(q(X)||p(X))
+    Here, q(X) has covariance L x M x M
+    p(X) has covariance L x M x M
+    Here, q(x_i) has covariance 1 x M x M
+    p(x_i) has covariance M x M
     """
 
     def setUp(self):
@@ -189,9 +193,9 @@ class EqualitySumKLBatchKL(GPflowTestCase):
         self.K = tf.placeholder(settings.float_type, [M, M])
 
         self.rng = np.random.RandomState(0)
-        self.mu_data = np.random.randn(M, L)
+        self.mu_data = self.rng.randn(M, L)
         beye = np.array([np.eye(M) for l in range(L)])
-        sqrt = np.random.randn(L, M, M)
+        sqrt =  self.rng.randn(L, M, M)
         self.sqrt_data = .1 * (sqrt + np.transpose(sqrt, (0, 2, 1))) + beye
         K = np.random.randn(L, M, M)
         self.K_data = .1 * (K + np.transpose(K, (0, 2, 1))) + beye
@@ -211,19 +215,12 @@ class EqualitySumKLBatchKL(GPflowTestCase):
         with self.test_session() as sess:
             kl_batch = gpflow.kullback_leiblers.gauss_kl(self.mu_batch,self.sqrt_batch,self.K_batch)
             res_batch = sess.run(kl_batch, feed_dict=self.feed_dict)
-
             kl = gpflow.kullback_leiblers.gauss_kl(self.mu, self.sqrt, self.K)
             res_sum = 0.
             for l in range(self.L):
                 res_sum += sess.run(kl, feed_dict=self.feed_dicts[l])
         self.assertTrue(np.allclose(res_sum, res_batch))
 
-    def test_diag(self):
-        '''
-        Equivalent of test_dense for q_diag input 
-        '''
-        #TODO implement
-        assert(True)
 
 
 def np_kl_1d(q_mu, q_sigma, p_var=1.0):
