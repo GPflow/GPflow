@@ -82,7 +82,7 @@ for q_shape in [[M, L], [L, M, M]]:
             'white' if white else 'not white %s '%str(K.shape), q_sqrt.shape, q_mu.shape, KL_np
         ])
 
-print(t)
+#print(t)
 
 
 
@@ -126,5 +126,63 @@ for q_shape in [[M, L], [L, M, M]]:
             [K.shape, q_sqrt.shape, q_mu.shape, diff_np]
         )
 
-print(t)
+#print(t)
+
+#============================================================
+# check that when K is L x M x M, the sum of KLs with M x M gives the same results
+#=============================================================
+
+
+# batch setting
+# K : L x M x M
+# q_sqrt : L x M x M
+
+# sum setting
+# K : M x M
+# q_sqrt : M x M
+
+#------------- data
+q_mu = np.random.randn(M,L)
+
+beye = np.array( [ np.eye(M) for l in range(L) ] )
+q_sqrt = np.random.randn(L,M,M)
+q_sqrt = .1*(q_sqrt+np.transpose(q_sqrt,(0,2,1))) + beye
+
+Kmm = np.random.randn(L,M,M)
+Kmm = .1*(Kmm+np.transpose(Kmm,(0,2,1))) + beye
+
+#------------- placeholders
+mu_batch = tf.placeholder(float_type, [M, L])
+sqrt_batch = tf.placeholder(float_type, [L, M, M])
+K_batch = tf.placeholder(float_type, [L, M, M])
+
+mu = tf.placeholder(float_type, [M, 1])
+sqrt = tf.placeholder(float_type, [1,M, M])
+K = tf.placeholder(float_type, [M, M])
+
+#------------- KLs
+
+#KL_batch = gauss_kl(mu_batch,sqrt_batch,K_batch)
+#KL = gauss_kl(mu,sqrt,K)
+
+KL_batch = gauss_kl(mu_batch,sqrt_batch,None)
+KL = gauss_kl(mu,sqrt,None)
+
+#------------- Evaluation
+
+feed_dict = {mu_batch:q_mu, sqrt_batch:q_sqrt, K_batch:Kmm}
+with tf.Session() as sess:
+    print( KL_batch.eval(feed_dict=feed_dict) )
+
+with tf.Session() as sess:
+    KL_sum = 0
+    for l in range(L):
+        #print(q_mu[:, l][:, None].shape)
+        feed_dict = {mu: q_mu[:, l][:, None], sqrt: q_sqrt[l, :, :][None,:,:], K: Kmm[l, :, :]}
+        KL_l = KL.eval(feed_dict=feed_dict)
+        KL_sum += KL_l
+        print('l',KL_l)
+    print(KL_sum)
+
+
 
