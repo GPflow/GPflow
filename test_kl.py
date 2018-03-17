@@ -82,7 +82,7 @@ for q_shape in [[M, L], [L, M, M]]:
             'white' if white else 'not white %s '%str(K.shape), q_sqrt.shape, q_mu.shape, KL_np
         ])
 
-#print(t)
+print(t)
 
 
 
@@ -126,7 +126,7 @@ for q_shape in [[M, L], [L, M, M]]:
             [K.shape, q_sqrt.shape, q_mu.shape, diff_np]
         )
 
-#print(t)
+print(t)
 
 #============================================================
 # check that when K is L x M x M, the sum of KLs with M x M gives the same results
