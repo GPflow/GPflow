@@ -49,9 +49,9 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     
     """
 
-    assert( K.get_shape().ndims >= q_sqrt.get_shape().ndims )
-    
+    # TODO: why do I need num_latents if I already have L (object type problem)
     M,L = q_mu.get_shape().as_list()
+
 
     if K is None:
         white = True
@@ -65,22 +65,23 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     if q_sqrt.get_shape().ndims == 2:
         diag = True
         num_latent = tf.shape(q_sqrt)[1]
-        ML = tf.size(q_sqrt)
         Lq = Lq_diag = q_sqrt # M x L
     elif q_sqrt.get_shape().ndims == 3:
         diag = False
         num_latent = tf.shape(q_sqrt)[0]
-        ML = tf.reduce_prod(tf.shape(q_sqrt)[:2])
         Lq = tf.matrix_band_part(q_sqrt, -1, 0)  # force lower triangle M x L
         Lq_diag = tf.matrix_diag_part(Lq)
     else:  # pragma: no cover
         raise ValueError("Bad dimension for q_sqrt: {}".format(q_sqrt.get_shape().ndims))
 
+    with tf.Session() as sess:
+        print(L, num_latent)
+
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - N x M
-    constant = - tf.cast(ML, settings.float_type)
+    constant = - tf.size(q_mu,out_type=settings.float_type)  # ML
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.log(tf.square(Lq_diag)))
@@ -131,7 +132,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         log_sqdiag_Lp = tf.log(tf.square(tf.matrix_diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
         # If K is L x M x M, num_latent is no longer implicit, no need to multiply the single kernel logdet
-        scale = tf.cast(num_latent, settings.float_type) if K.get_shape().ndims == 2 else 1.
+        scale = tf.cast(L, settings.float_type) if K.get_shape().ndims == 2 else 1.
         prior_logdet = scale * sum_log_sqdiag_Lp
         twoKL += prior_logdet
 
