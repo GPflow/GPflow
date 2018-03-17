@@ -49,6 +49,8 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     
     """
 
+    assert( K.get_shape().ndims >= q_sqrt.get_shape().ndims )
+    
     M,L = q_mu.get_shape().as_list()
 
     if K is None:
