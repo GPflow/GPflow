@@ -174,7 +174,7 @@ class EqualityTest(GPflowTestCase):
 
 class EqualitySumKLBatchKL(GPflowTestCase):
     """
-    For q(X)=prod q(x_i), check that sum KL(q(x_i)||p(x_i)) = KL(q(X)||p(X))
+    For q(X)=prod q(x_l), check that sum KL(q(x_l)||p(x_l)) = KL(q(X)||p(X))
     Here, q(X) has covariance L x M x M
     p(X) has covariance L x M x M
     Here, q(x_i) has covariance 1 x M x M
@@ -182,12 +182,13 @@ class EqualitySumKLBatchKL(GPflowTestCase):
     """
 
     def setUp(self):
-        M, L = 4,3
+        M, L = 4, 3
         self.M, self.L = M, L
 
         self.mu_batch = tf.placeholder(settings.float_type, [M, L])
         self.sqrt_batch = tf.placeholder(settings.float_type, [L, M, M])
         self.K_batch = tf.placeholder(settings.float_type, [L, M, M])
+
         self.mu = tf.placeholder(settings.float_type, [M, 1])
         self.sqrt = tf.placeholder(settings.float_type, [1, M, M])
         self.K = tf.placeholder(settings.float_type, [M, M])
@@ -220,6 +221,59 @@ class EqualitySumKLBatchKL(GPflowTestCase):
             for l in range(self.L):
                 res_sum += sess.run(kl, feed_dict=self.feed_dicts[l])
         self.assertTrue(np.allclose(res_sum, res_batch))
+
+
+class EqualitySumKLBatchKLqdiag(GPflowTestCase):
+    """
+    Same as EqualitySumKLBatchKL with diagonal covariances for q(X)
+    For q(X)=prod q(x_l), check that sum KL(q(x_l)||p(x_l)) = KL(q(X)||p(X))
+    Here, q(X) has covariance M x L 
+    p(X) has covariance L x M x M
+    Here, q(x_i) has covariance M x 1
+    p(x_i) has covariance M x M
+    """
+
+    def setUp(self):
+        M, L = 4, 3
+        self.M, self.L = M, L
+
+        self.mu_batch = tf.placeholder(settings.float_type, [M, L])
+        self.sqrt_batch = tf.placeholder(settings.float_type, [M, L])
+        self.K_batch = tf.placeholder(settings.float_type, [L, M, M])
+
+        self.mu = tf.placeholder(settings.float_type, [M, 1])
+        self.sqrt = tf.placeholder(settings.float_type, [M, 1])
+        self.K = tf.placeholder(settings.float_type, [M, M])
+
+        self.rng = np.random.RandomState(0)
+        self.mu_data = self.rng.randn(M, L)
+        self.sqrt_data = self.rng.rand(M, L)+1
+        K = np.random.randn(L, M, M)
+        beye = np.array([np.eye(M) for l in range(L)])
+        self.K_data = .1 * (K + np.transpose(K, (0, 2, 1))) + beye
+
+        self.feed_dict = {self.mu_batch:self.mu_data,
+                          self.sqrt_batch:self.sqrt_data,
+                          self.K_batch:self.K_data}
+
+        self.feed_dicts = []
+        for l in range(L):
+            self.feed_dicts.append({self.mu: self.mu_data[:, l][:, None],
+                                    self.sqrt: self.sqrt_data[:, l][:, None],
+                                    self.K: self.K_data[l, :, :]})
+
+
+    def test_diag(self):
+        with self.test_session() as sess:
+            kl_batch = gpflow.kullback_leiblers.gauss_kl(self.mu_batch,self.sqrt_batch,self.K_batch)
+            res_batch = sess.run(kl_batch, feed_dict=self.feed_dict)
+            kl = gpflow.kullback_leiblers.gauss_kl(self.mu, self.sqrt, self.K)
+            res_sum = 0.
+            for l in range(self.L):
+                res_sum += sess.run(kl, feed_dict=self.feed_dicts[l])
+        self.assertTrue(np.allclose(res_sum, res_batch))
+
+
 
 
 
