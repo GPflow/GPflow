@@ -51,7 +51,7 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
 
 
 @conditional.register(object, InducingFeature, Kernel, object)
-@name_scope()
+@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Single-output GP allowing repetitions
@@ -70,7 +70,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 
 
 @conditional.register(object, object, Kernel, object)  # TODO: Make types more specific to TensorFlow types?
-@name_scope()
+@name_scope("conditional")
 def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
     Given f, representing the GP at the points X, produce the mean and
