@@ -24,6 +24,32 @@ from .kernels import Kernel, Combination
 from .probability_distributions import Gaussian
 
 
+def expand_independent_outputs(fvar, full_cov, full_cov_output):
+    """
+    :param fvar: has shape N x P (full_cov = False) or N x N x P (full_cov = True).
+    :return:
+        1) full_cov: True and full_cov_output: True
+            fvar N x P x N x P
+        2) full_cov: True and full_cov_output: False
+            fvar P x N x N
+        3) full_cov: False and full_cov_output: True
+            fvar N x P x P
+        4) full_cov: False and full_cov_output: False
+            fvar N x P
+    """
+    if full_cov and full_cov_output:
+        fvar = tf.diag(fvar)   # N x N x P x P
+        fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
+    if full_cov and not full_cov_output:
+        fvar = tf.transpose(fvar, [2, 0, 1])  # P x N x N
+    if not full_cov and full_cov_output:
+        fvar = tf.diag(fvar)   # N x P x P
+    if not full_cov and not full_cov_output:
+        pass  # N x P
+    
+    return fvar
+
+
 @conditional.register(object, InducingFeature, Kernel, object)
 @name_scope()
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):

@@ -20,7 +20,7 @@ from ..dispatch import conditional
 from ..features import InducingPoints, InducingFeature
 from ..kernels import Kernel, Combination
 from ..probability_distributions import Gaussian
-from ..conditionals import base_conditional
+from ..conditionals import base_conditional, expand_independent_outputs
 
 from .kernels import Kuf, Kuu
 from .features import Mof, SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
@@ -35,23 +35,13 @@ from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, Separate
 # TODO: fix KL divergence
 
 
-def expand_independent_outputs(fvar, full_cov, full_cov_output):
-    # TODO point of this function?
-    if not full_cov_output:
-        # Output shape should be N x R or R x N x N, which it already is.
-        return fvar
-    elif full_cov:
-        # Output shape should be ???
-        raise NotImplementedError
-
-
 @conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
 @name_scope()
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
-    :param f: M
-    :param q_sqrt: M x R  or  R x M x M
-    :return: N x R  or R x N x N  or  N x R x R  or  N x R x N x R
+    :param f: M x P
+    :param q_sqrt: M x P  or  P x M x M
+    :return: N x P  or P x N x N  or  N x P x P  or  N x P x N x P
     """
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
@@ -59,7 +49,19 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         Knn = kern.K(Xnew)  # N x N
     else:
         Knn = kern.Kdiag(Xnew)  # N
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  N x (x N) x R
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  N x (x N) x P
+
+    if full_cov and full_cov_output:
+        fvar = tf.diag(fvar)   # N x N x P x P
+        fvar = tf.transpose(fvar, [0, 2, 1, 3])
+    if full_cov and not full_cov_output:
+        fvar = tf.transpose(fvar, [2, 0, 1])  # P x N x N
+    if not full_cov and full_cov_output:
+        fvar = tf.diag(fvar)   # N x P x P
+    if not full_cov and not full_cov_output:
+        pass  # N x P
+
+
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
