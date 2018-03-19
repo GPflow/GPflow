@@ -20,6 +20,8 @@ import tensorflow as tf
 import gpflow
 from gpflow import settings
 from gpflow.test_util import GPflowTestCase
+from numpy.testing import assert_almost_equal
+import pytest
 
 
 def squareT(A):
@@ -273,6 +275,105 @@ class EqualitySumKLBatchKLqdiag(GPflowTestCase):
                 res_sum += sess.run(kl, feed_dict=self.feed_dicts[l])
         self.assertTrue(np.allclose(res_sum, res_batch))
 
+
+
+@pytest
+def EqualitySumKLBatchKL_pytest():
+    """
+    For q(X)=prod q(x_l), check that sum KL(q(x_l)||p(x_l)) = KL(q(X)||p(X))
+    Here, q(X) has covariance L x M x M
+    p(X) has covariance L x M x M
+    Here, q(x_i) has covariance 1 x M x M
+    p(x_i) has covariance M x M
+    """
+
+    # Set up
+    M, L = 4, 3
+
+    mu_batch = tf.placeholder(settings.float_type, [M, L])
+    sqrt_batch = tf.placeholder(settings.float_type, [L, M, M])
+    K_batch = tf.placeholder(settings.float_type, [L, M, M])
+
+    mu = tf.placeholder(settings.float_type, [M, 1])
+    sqrt = tf.placeholder(settings.float_type, [1, M, M])
+    K = tf.placeholder(settings.float_type, [M, M])
+
+    rng = np.random.RandomState(0)
+    mu_data = rng.randn(M, L)
+    beye = np.array([np.eye(M) for l in range(L)])
+    sqrt_np =  rng.randn(L, M, M)
+    sqrt_data = .1 * (sqrt_np + np.transpose(sqrt_np, (0, 2, 1))) + beye
+    K_np = np.random.randn(L, M, M)
+    K_data = .1 * (K_np + np.transpose(K_np, (0, 2, 1))) + beye
+
+    feed_dict = {mu_batch:mu_data,
+                      sqrt_batch:sqrt_data,
+                      K_batch:K_data}
+
+    feed_dicts = []
+    for l in range(L):
+        feed_dicts.append({mu: mu_data[:, l][:, None],
+                               sqrt: sqrt_data[l, :, :][None, :, :],
+                               K: K_data[l, :, :]})
+
+    # Run
+    with tf.Session() as sess:
+        kl_batch = gpflow.kullback_leiblers.gauss_kl(mu_batch,sqrt_batch,K_batch)
+        res_batch = sess.run(kl_batch, feed_dict=feed_dict)
+        kl = gpflow.kullback_leiblers.gauss_kl(mu, sqrt, K)
+        res_sum = 0.
+        for l in range(L):
+            res_sum += sess.run(kl, feed_dict=feed_dicts[l])
+    assert_almost_equal(res_sum, res_batch)
+
+@pytest
+def EqualitySumKLBatchKLdiag_pytest():
+    """
+    Same as EqualitySumKLBatchKL with diagonal covariances for q(X)
+    For q(X)=prod q(x_l), check that sum KL(q(x_l)||p(x_l)) = KL(q(X)||p(X))
+    Here, q(X) has covariance L x M x M
+    p(X) has covariance L x M x M
+    Here, q(x_i) has covariance 1 x M x M
+    p(x_i) has covariance M x M
+    """
+
+    # Set up
+    M, L = 4, 3
+
+    mu_batch = tf.placeholder(settings.float_type, [M, L])
+    sqrt_batch = tf.placeholder(settings.float_type, [M, L])
+    K_batch = tf.placeholder(settings.float_type, [L, M, M])
+
+    mu = tf.placeholder(settings.float_type, [M, 1])
+    sqrt = tf.placeholder(settings.float_type, [1, M, M])
+    K = tf.placeholder(settings.float_type, [M, M])
+
+    rng = np.random.RandomState(0)
+    mu_data = rng.randn(M, L)
+    beye = np.array([np.eye(M) for l in range(L)])
+    sqrt_data = 1 + rng.randn(M, L)
+    K_np = np.random.randn(L, M, M)
+    K_data = .1 * (K_np + np.transpose(K_np, (0, 2, 1))) + beye
+
+    feed_dict = {mu_batch: mu_data,
+                 sqrt_batch: sqrt_data,
+                 K_batch: K_data}
+
+    feed_dicts = []
+    for l in range(L):
+        feed_dicts.append({mu: mu_data[:, l][:, None],
+                           sqrt: sqrt_data[l, :, :][None, :, :],
+                           K: K_data[l, :, :]})
+
+    # Run
+    with tf.Session() as sess:
+        kl_batch = gpflow.kullback_leiblers.gauss_kl(mu_batch, sqrt_batch, K_batch)
+        res_batch = sess.run(kl_batch, feed_dict=feed_dict)
+        kl = gpflow.kullback_leiblers.gauss_kl(mu, sqrt, K)
+        res_sum = 0.
+        for l in range(L):
+            res_sum += sess.run(kl, feed_dict=feed_dicts[l])
+    assert_almost_equal(res_sum, res_batch)
 
 
 
