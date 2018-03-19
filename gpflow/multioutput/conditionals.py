@@ -26,43 +26,9 @@ from .kernels import Kuf, Kuu
 from .features import Mof, SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 
-# TODO: Make all outputs of conditionals equal
+# TODO: Make all output shapes of conditionals equal: dependent on full_cov and full_cov_output
 # TODO: Add tensorflow assertions of shapes
-# TODO: Remove `conditional()`?
 # TODO: extract duplicate code (if possible)
-# TODO: tests
-# TODO: check if this works with different models, GPR and VGP
-# TODO: fix KL divergence
-
-
-@conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
-@name_scope()
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
-    """
-    :param f: M x P
-    :param q_sqrt: M x P  or  P x M x M
-    :return: N x P  or P x N x N  or  N x P x P  or  N x P x N x P
-    """
-    Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
-    Kmn = Kuf(feat, kern, Xnew)  # M x N
-    if full_cov:
-        Knn = kern.K(Xnew)  # N x N
-    else:
-        Knn = kern.Kdiag(Xnew)  # N
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  N x (x N) x P
-
-    if full_cov and full_cov_output:
-        fvar = tf.diag(fvar)   # N x N x P x P
-        fvar = tf.transpose(fvar, [0, 2, 1, 3])
-    if full_cov and not full_cov_output:
-        fvar = tf.transpose(fvar, [2, 0, 1])  # P x N x N
-    if not full_cov and full_cov_output:
-        fvar = tf.diag(fvar)   # N x P x P
-    if not full_cov and not full_cov_output:
-        pass  # N x P
-
-
-    return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
 @conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
@@ -120,13 +86,13 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 
     if full_cov_output and full_cov:
         fvar = tf.diag(tf.transpose(fvar, [1, 2, 0]))
-        fvar = tf.transpose(fvar, [0, 2, 1, 3])
+        fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
     elif not full_cov_output and full_cov:
-        pass
+        pass  # P x N x N
     elif full_cov_output and not full_cov:
-        fvar = tf.diag(tf.matrix_transpose(fvar))
+        fvar = tf.diag(tf.matrix_transpose(fvar))  # N x P x P
     elif not full_cov_output and not full_cov:
-        fvar = tf.matrix_transpose(fvar)
+        fvar = tf.matrix_transpose(fvar)  # N x P
 
     return fmu, fvar
 
@@ -150,7 +116,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
         else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x P(x N)x P  or  N x P(x P)
 
-    return independent_latents_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output,
+    return independent_interdomain_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output,
                                            q_sqrt=q_sqrt, white=white)
 
 
@@ -227,9 +193,11 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 # =========================.............................========================
 
 
-def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None,
-                                    white=False):
+def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, 
+                                        q_sqrt=None, white=False):
     """
+    The inducing outputs u live in the g-space (R^L), 
+    therefore Kuf (Kmn) is an interdomain covariance matrix.
 
     :param Kmn: M x L x N x P
     :param Kmm: L x M x M
@@ -238,7 +206,7 @@ def independent_latents_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_co
     :param q_sqrt: L x M x M  or  M x L
     :return: N x P  ,  N x R x P x P
     """
-    print("independent_latents_conditional")
+    print("independent_interdomain_conditional")
     # TODO: Allow broadcasting over L if priors are shared?
     # TODO: Change Kmn to be L x M x N x P? Saves a transpose...
     M, L, N, P = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
