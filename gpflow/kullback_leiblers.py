@@ -46,7 +46,6 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     """
 
     # TODO: why do I need num_latents if I already have L (object type problem)
-    M, L = q_mu.get_shape().as_list()
     white = True if K is None else False
     diag = True if q_sqrt.get_shape().ndims == 2 else False
 
@@ -94,7 +93,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         log_sqdiag_Lp = tf.log(tf.square(tf.matrix_diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
         # If K is L x M x M, num_latent is no longer implicit, no need to multiply the single kernel logdet
-        scale = tf.cast(L, settings.float_type) if K.get_shape().ndims == 2 else 1.
+        scale = tf.cast(num_latent, settings.float_type) if K.get_shape().ndims == 2 else 1.0
         prior_logdet = scale * sum_log_sqdiag_Lp
         twoKL += prior_logdet
 
