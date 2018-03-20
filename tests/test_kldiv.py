@@ -74,11 +74,15 @@ def I(session_tf):
 
 @pytest.mark.parametrize('white', [True, False])
 def test_diags(session_tf, white, mu, sqrt_diag, K):
+    """
+    The covariance of q(x) can be Cholesky matrices or diagonal matrices.
+    Here we make sure the behaviours overlap.
+    """
     # the chols are diagonal matrices, with the same entries as the diag representation.
     chol_from_diag = tf.stack([tf.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # N x M x M
     # run
-    kl_diag = gpflow.kullback_leiblers.gauss_kl(mu, sqrt_diag, K if white else None)
-    kl_dense = gpflow.kullback_leiblers.gauss_kl(mu, chol_from_diag, K if white else None)
+    kl_diag = gauss_kl(mu, sqrt_diag, K if white else None)
+    kl_dense = gauss_kl(mu, chol_from_diag, K if white else None)
 
     np.testing.assert_allclose(kl_diag.eval(),
                                kl_dense.eval())
@@ -91,30 +95,31 @@ def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     chol_from_diag = tf.stack([tf.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # N x M x M
     s = sqrt_diag if diag else chol_from_diag
 
-    kl_white = gpflow.kullback_leiblers.gauss_kl(mu, s)
-    kl_nonwhite = gpflow.kullback_leiblers.gauss_kl(mu, s, I)
+    kl_white = gauss_kl(mu, s)
+    kl_nonwhite = gauss_kl(mu, s, I)
 
     np.testing.assert_allclose(kl_white.eval(),
                                kl_nonwhite.eval())
 
+@pytest.mark.parametrize('shared_k', [True, False])
 @pytest.mark.parametrize('diag', [True, False])
-def test_equality_sumkl_batchkl(session_tf, diag, mu, sqrt,sqrt_diag, K_batch):
+def test_equality_sumkl_batchkl(session_tf, shared_k, diag, mu, sqrt,sqrt_diag, K_batch, K):
     """
-    For q(X)=prod q(x_l), check that sum KL(q(x_l)||p(x_l)) = KL(q(X)||p(X))
+    gauss_kl implicitely performs a sum of KL divergences
+    This test checks that doing the sum outside of the function is equivalent
+    For q(X)=prod q(x_l) and p(X)=prod p(x_l), check that sum KL(q(x_l)||p(x_l)) = KL(q(X)||p(X))
     Here, q(X) has covariance L x M x M
-    p(X) has covariance L x M x M
+    p(X) has covariance L x M x M ( or M x M )
     Here, q(x_i) has covariance 1 x M x M
     p(x_i) has covariance M x M
     """
     s = sqrt_diag if diag else sqrt
-    kl_batch = gpflow.kullback_leiblers.gauss_kl(mu,s,K_batch)
-
+    kl_batch = gauss_kl(mu,s,K if shared_k else K_batch)
     kl_sum = []
     for n in range(Datum.N):
-        s = sqrt_diag[:,n][:,None] if diag else sqrt[n, :, :][None,:,:]
         kl_sum.append(gauss_kl(mu[:, n][:,None], # M x 1
-                           s, # 1 x M x M or M x 1
-                           K_batch[n, :, :][None,:,:])) # 1 x M x M
+                    sqrt_diag[:, n][:, None] if diag else sqrt[n, :, :][None, :, :], # 1 x M x M or M x 1
+                    K if shared_k else K_batch[n, :, :][None,:,:])) # 1 x M x M or M x M
     kl_sum =tf.reduce_sum(kl_sum)
     assert_almost_equal(kl_sum.eval(), kl_batch.eval())
 
