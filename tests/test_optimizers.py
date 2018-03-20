@@ -14,9 +14,21 @@
 
 import numpy as np
 import tensorflow as tf
+import pytest
 
 import gpflow
+from gpflow.test_util import session_tf
 from gpflow.test_util import GPflowTestCase
+from gpflow.training.natgrad_optimizer import NatGradOptimizer, XiSqrtMeanVar
+from gpflow.training.natgrad_optimizer import meanvarsqrt_to_expectation
+from gpflow.training.natgrad_optimizer import expectation_to_meanvarsqrt
+from gpflow.training.natgrad_optimizer import natural_to_expectation
+
+from gpflow.training import GradientDescentOptimizer
+from gpflow.training.optimizer import Optimizer
+from gpflow.training.tensorflow_optimizer import _TensorFlowOptimizer
+
+from numpy.testing import assert_allclose
 
 class Empty(gpflow.models.Model):
     @gpflow.params_as_tensors
@@ -215,3 +227,276 @@ class TestFtrlOptimizer(GPflowTestCase, OptimizerCase):
 # E               TypeError: Input 'lr' of 'ApplyProximalAdagrad' Op has type float32 that does not match type float64 of argument 'var'.
 #
 # ../../anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py:546: TypeError
+
+def test_VGP_vs_GPR(session_tf):
+    """
+    With a Gaussian likelihood the Gaussian variational (VGP) model should be equivalent to the exact 
+     regression model (GPR) after a single nat grad step of size 1
+    """
+    N, D = 3, 2
+    X = np.random.randn(N, D)
+    Y = np.random.randn(N, 1)
+    kern = gpflow.kernels.RBF(D)
+    lik_var = 0.1
+    lik = gpflow.likelihoods.Gaussian()
+    lik.variance = lik_var
+
+    m_vgp = gpflow.models.VGP(X, Y, kern, lik)
+    m_gpr = gpflow.models.GPR(X, Y, kern)
+    m_gpr.likelihood.variance = lik_var
+
+    m_vgp.set_trainable(False)
+    m_vgp.q_mu.set_trainable(True)
+    m_vgp.q_sqrt.set_trainable(True)
+    NatGradOptimizer(1.).minimize(m_vgp, [[m_vgp.q_mu, m_vgp.q_sqrt]], maxiter=1)
+
+    assert_allclose(m_gpr.compute_log_likelihood(),
+                    m_vgp.compute_log_likelihood(), atol=1e-5)
+
+
+def test_other_XiTransform_VGP_vs_GPR(session_tf, xi_transform=XiSqrtMeanVar()):
+    """
+    With other transforms the solution is not given in a single step, but it should still give the same answer
+    after a number of smaller steps. 
+    """
+    N, D = 3, 2
+    X = np.random.randn(N, D)
+    Y = np.random.randn(N, 1)
+    kern = gpflow.kernels.RBF(D)
+    lik_var = 0.1
+    lik = gpflow.likelihoods.Gaussian()
+    lik.variance = lik_var
+
+    m_vgp = gpflow.models.VGP(X, Y, kern, lik)
+    m_gpr = gpflow.models.GPR(X, Y, kern)
+    m_gpr.likelihood.variance = lik_var
+
+    m_vgp.set_trainable(False)
+    m_vgp.q_mu.set_trainable(True)
+    m_vgp.q_sqrt.set_trainable(True)
+    NatGradOptimizer(0.01).minimize(m_vgp, [[m_vgp.q_mu, m_vgp.q_sqrt, xi_transform]], maxiter=500)
+
+    assert_allclose(m_gpr.compute_log_likelihood(),
+                    m_vgp.compute_log_likelihood(), atol=1e-4)
+
+
+def test_XiEtas_VGP_vs_GPR(session_tf):
+    class XiEta:
+        def meanvarsqrt_to_xi(self, mean, varsqrt):
+            return meanvarsqrt_to_expectation(mean, varsqrt)
+
+        def xi_to_meanvarsqrt(self, xi_1, xi_2):
+            return expectation_to_meanvarsqrt(xi_1, xi_2)
+
+        def naturals_to_xi(self, nat_1, nat_2):
+            return natural_to_expectation(nat_1, nat_2)
+
+    test_other_XiTransform_VGP_vs_GPR(session_tf, xi_transform=XiEta())
+
+
+def test_SVGP_vs_SGPR(session_tf):
+    """
+    With a Gaussian likelihood the sparse Gaussian variational (SVGP) model should be equivalent to the analytically 
+     optimial sparse regression model (SGPR) after a single nat grad step of size 1
+    """
+    N, M, D = 4, 3, 2
+    X = np.random.randn(N, D)
+    Z = np.random.randn(M, D)
+    Y = np.random.randn(N, 1)
+    kern = gpflow.kernels.RBF(D)
+    lik_var = 0.1
+    lik = gpflow.likelihoods.Gaussian()
+    lik.variance = lik_var
+
+    m_svgp = gpflow.models.SVGP(X, Y, kern, lik, Z=Z)
+    m_sgpr = gpflow.models.SGPR(X, Y, kern, Z=Z)
+    m_sgpr.likelihood.variance = lik_var
+
+    m_svgp.set_trainable(False)
+    m_svgp.q_mu.set_trainable(True)
+    m_svgp.q_sqrt.set_trainable(True)
+    NatGradOptimizer(1.).minimize(m_svgp, [[m_svgp.q_mu, m_svgp.q_sqrt]], maxiter=1)
+
+    assert_allclose(m_sgpr.compute_log_likelihood(),
+                    m_svgp.compute_log_likelihood(), atol=1e-5)
+
+
+class CombinationOptimizer(Optimizer):
+    """
+    A class that applies one step of each of multiple optimizers in a loop.
+    """
+    def __init__(self, optimizers_with_kwargs):
+        self.name = None
+        super().__init__()
+        self.optimizers_with_kwargs = optimizers_with_kwargs
+
+    def minimize(self, model, session=None, maxiter=1000, feed_dict=None, anchor=True):
+        session = model.enquire_session(session)
+
+        minimize_ops = []
+        for optimizer, kwargs in self.optimizers_with_kwargs:
+            # hack to init the optimizer operation
+            optimizer.minimize(model, maxiter=0, anchor=anchor, **kwargs)
+
+            # this is what we will call in the loop
+            minimize_ops.append(optimizer.minimize_operation)
+
+        with session.graph.as_default(), tf.name_scope(self.name):
+            feed_dict = self._gen_feed_dict(model, feed_dict)
+
+            for _i in range(maxiter):
+                for op in minimize_ops:
+                    session.run(op, feed_dict=feed_dict)
+
+        if anchor:
+            model.anchor(session)
+
+class Datum:
+    N, M, D = 4, 3, 2
+    X = np.random.randn(N, D)
+    Z = np.random.randn(M, D)
+    Y = np.random.randn(N, 1)
+    learning_rate = 0.01
+    lik_var = 0.1
+    gamma = 1.0
+
+
+@pytest.fixture
+def svgp(session_tf):
+    rbf = gpflow.kernels.RBF(Datum.D)
+    lik = gpflow.likelihoods.Gaussian()
+    lik.variance = Datum.lik_var
+    return gpflow.models.SVGP(Datum.X, Datum.Y, rbf, lik, Z=Datum.Z)
+
+
+@pytest.fixture
+def sgpr(session_tf):
+    rbf = gpflow.kernels.RBF(Datum.D)
+    m = gpflow.models.SGPR(Datum.X, Datum.Y, rbf, Z=Datum.Z)
+    m.likelihood.variance = Datum.lik_var
+    return m
+
+
+def test_hypers_SVGP_vs_SGPR(session_tf, svgp, sgpr):
+    """
+    Test SVGP vs SGPR. Combined optimization.
+
+    The logic is as follows:
+
+    SVGP is given on nat grad step with gamma=1. Now it is identical to SGPR (which has
+    analytic optimal variational distribution)
+
+    We then take an ordinary gradient step on the hyperparameters (and inducing locations Z)
+
+    Finally we update the variational parameters to their optimal values with another nat grad
+    step with gamma=1.
+
+    These three steps are equivalent to an ordinary gradient step on the parameters of SGPR
+
+    In this test we simply make the variational parameters trainable=False, so they are not
+    updated by the ordinary gradient step
+    """
+    anchor = False
+    variationals = [(svgp.q_mu, svgp.q_sqrt)]
+
+    svgp.q_mu.trainable = False
+    svgp.q_sqrt.trainable = False
+
+    opt = NatGradOptimizer(Datum.gamma)
+    opt.minimize(svgp, var_list=variationals, maxiter=1, anchor=anchor)
+
+    sgpr_likelihood = sgpr.compute_log_likelihood()
+    svgp_likelihood = svgp.compute_log_likelihood()
+    assert_allclose(sgpr_likelihood, svgp_likelihood, atol=1e-5)
+
+    # combination (doing GD first as we've already done the nat grad step
+    o1 = [GradientDescentOptimizer(Datum.learning_rate), {}]
+    o2 = [NatGradOptimizer(Datum.gamma), {'var_list': variationals}]
+    nag_grads_with_gd_optimizer = CombinationOptimizer([o1, o2])
+    nag_grads_with_gd_optimizer.minimize(svgp,  maxiter=1, anchor=anchor)
+
+    GradientDescentOptimizer(Datum.learning_rate).minimize(sgpr, maxiter=1, anchor=anchor)
+
+    sgpr_likelihood = sgpr.compute_log_likelihood()
+    svgp_likelihood = svgp.compute_log_likelihood()
+    assert_allclose(sgpr_likelihood, svgp_likelihood, atol=1e-5)
+
+
+def test_hypers_SVGP_vs_SGPR_tensors(session_tf, svgp, sgpr):
+    """
+    Test SVGP vs SGPR. Running optimization as tensors w/o GPflow wrapper.
+
+    """
+    anchor = False
+    variationals = [(svgp.q_mu, svgp.q_sqrt)]
+
+    svgp.q_mu.trainable = False
+    svgp.q_sqrt.trainable = False
+
+    o1 = NatGradOptimizer(Datum.gamma)
+    o1.minimize(svgp, var_list=variationals, maxiter=0, anchor=anchor)
+    o1_tensor = o1.minimize_operation
+
+    o2 = GradientDescentOptimizer(Datum.learning_rate)
+    o2.minimize(svgp, maxiter=0, anchor=anchor)
+    o2_tensor = o2.minimize_operation
+
+    o3 = NatGradOptimizer(Datum.gamma)
+    o3.minimize(svgp, var_list=variationals, maxiter=0, anchor=anchor)
+    o3_tensor = o3.minimize_operation
+
+    session_tf.run(o1_tensor)
+
+    sgpr_likelihood = sgpr.compute_log_likelihood()
+    svgp_likelihood = svgp.compute_log_likelihood()
+    assert_allclose(sgpr_likelihood, svgp_likelihood, atol=1e-5)
+
+    session_tf.run(o2_tensor)
+    session_tf.run(o3_tensor)
+
+    GradientDescentOptimizer(Datum.learning_rate).minimize(sgpr, maxiter=1, anchor=anchor)
+
+    sgpr_likelihood = sgpr.compute_log_likelihood()
+    svgp_likelihood = svgp.compute_log_likelihood()
+    assert_allclose(sgpr_likelihood, svgp_likelihood, atol=1e-5)
+
+
+class ExcludedGradientDescentOptimizer(_TensorFlowOptimizer):
+    def __init__(self, *args, excluded_params=[], **kwargs):
+        Optimizer.__init__(self)
+        self._model = None
+        self._optimizer = tf.train.GradientDescentOptimizer(*args, **kwargs)
+        self._minimize_operation = None
+        self.excluded_params = excluded_params
+
+    def _gen_var_list(self, model, var_list):
+        var_list = var_list or []
+        p = set(model.trainable_tensors)
+        p -= set([t.unconstrained_tensor for t in self.excluded_params])
+        return list(p.union(var_list))
+
+
+def test_hypers_SVGP_vs_SGPR_with_excluded_vars(session_tf, svgp, sgpr):
+    """
+    Test SVGP vs SGPR. Excluded variables.
+
+    This test is as test_hypers_SVGP_vs_SGPR, but we use a different approach to partitioning
+    the variables. In this test the variational parameters are trainable, but the ordinary
+    gradient optimizer has these variables removed from its var_list, so does not update them
+    """
+    anchor = False
+
+    # combination (doing GD first as we've already done the nat grad step
+    p = [(svgp.q_mu, svgp.q_sqrt)]
+    o1 = [NatGradOptimizer(Datum.gamma), {'var_list': p}]
+    o2 = [ExcludedGradientDescentOptimizer(Datum.learning_rate, excluded_params=p[0]), {}]
+    o3 = [NatGradOptimizer(Datum.gamma), {'var_list': p}]
+
+    nag_grads_with_gd_optimizer = CombinationOptimizer([o1, o2, o3])
+    nag_grads_with_gd_optimizer.minimize(svgp, maxiter=1, anchor=anchor)
+
+    GradientDescentOptimizer(Datum.learning_rate).minimize(sgpr, maxiter=1, anchor=anchor)
+
+    sgpr_likelihood = sgpr.compute_log_likelihood()
+    svgp_likelihood = svgp.compute_log_likelihood()
+    assert_allclose(sgpr_likelihood, svgp_likelihood, atol=1e-5)
