@@ -17,15 +17,20 @@ import tensorflow as tf
 
 from . import settings, mean_functions
 from .decors import name_scope
-from .dispatch import conditional
+from .dispatch import conditional, sample_conditional
 from .expectations import expectation
 from .features import Kuu, Kuf, InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .probability_distributions import Gaussian
 
+float_type = settings.float_type
+jitter_level = settings.numerics.jitter_level
+
 
 def expand_independent_outputs(fvar, full_cov, full_cov_output):
     """
+    Reshapes fvar to the correct shape, specified by `full_cov` and `full_cov_output`.
+
     :param fvar: has shape N x P (full_cov = False) or N x N x P (full_cov = True).
     :return:
         1) full_cov: True and full_cov_output: True
@@ -49,6 +54,10 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
     
     return fvar
 
+
+# ----------------------------------------------------------------------------
+############################### CONDITIONAL ##################################
+# ----------------------------------------------------------------------------
 
 @conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("conditional")
@@ -115,6 +124,46 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
 
+# ----------------------------------------------------------------------------
+############################ SAMPLE CONDITIONAL ##############################
+# ----------------------------------------------------------------------------
+
+def sample_mvn(mean, cov, cov_structure):
+    eps = tf.random_normal(tf.shape(mean), dtype=float_type)  # N x P
+    if cov_structure == "diag":
+        sample = mean + tf.sqrt(cov) * eps  # N x P
+    elif cov_structure == "full":
+        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=float_type) * jitter_level)[None, ...]  # N x P x P
+        chol = tf.cholesky(cov)  # N x P x P
+        return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
+    else:
+        raise NotImplementedError
+    
+    return sample  # N x P
+
+
+@sample_conditional.register(object, InducingFeature, Kernel, object)
+@name_scope("sample_conditional")
+def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=None, white=False):
+    print("sample conditional: InducingFeature Kernel")
+    mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_cov_output=full_cov_output,
+                            q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
+    cov_structure = "full" if full_cov_output else "diag"
+    return sample_mvn(mean, var, cov_structure)
+
+
+@sample_conditional.register(object, object, Kernel, object)
+@name_scope("sample_conditional")
+def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False):
+    print("sample conditional: Kernel")
+    mean, var = conditional(Xnew, X, kern, f, q_sqrt=q_sqrt, white=white, full_cov=False)  # N x P, N x P
+    return sample_mvn(mean, var, "diag")  # N x P
+
+
+# ----------------------------------------------------------------------------
+############################# CONDITIONAL MATHS ##############################
+# ----------------------------------------------------------------------------
+
 @name_scope()
 def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=False):
     """
@@ -176,6 +225,10 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
 
     return fmean, fvar
 
+
+# ----------------------------------------------------------------------------
+############################ UNCERTAIN CONDITIONAL ###########################
+# ----------------------------------------------------------------------------
 
 @name_scope()
 def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,

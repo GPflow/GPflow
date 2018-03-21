@@ -16,11 +16,11 @@ import tensorflow as tf
 
 from .. import settings
 from ..decors import name_scope
-from ..dispatch import conditional
+from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints, InducingFeature
 from ..kernels import Kernel, Combination
 from ..probability_distributions import Gaussian
-from ..conditionals import base_conditional, expand_independent_outputs
+from ..conditionals import base_conditional, expand_independent_outputs, sample_mvn
 
 from .kernels import Kuf, Kuu
 from .features import Mof, SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
@@ -30,9 +30,12 @@ from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, Separate
 # TODO: Add tensorflow assertions of shapes
 # TODO: extract duplicate code (if possible)
 
+# ----------------------------------------------------------------------------
+############################### CONDITIONAL ##################################
+# ----------------------------------------------------------------------------
 
 @conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
-@name_scope()
+@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     """
@@ -49,7 +52,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 @conditional.register(object, SeparateIndependentMof, SeparateIndependentMok, object)
 @conditional.register(object, SharedIndependentMof, SeparateIndependentMok, object)
 @conditional.register(object, SeparateIndependentMof, SharedIndependentMok, object)
-@name_scope()
+@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors.
@@ -97,7 +100,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     return fmu, fvar
 
 @conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
-@name_scope()
+@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors
@@ -121,7 +124,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 
 
 @conditional.register(object, InducingPoints, Mok, object)
-@name_scope()
+@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     Multi-output GP with fully correlated inducing variables.
@@ -158,7 +161,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 
 
 @conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
-@name_scope()
+@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     """
@@ -189,9 +192,25 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     return Wgmu, WgvarW
 
 
-# ========================= Conditional Implementations ========================
-# =========================.............................========================
+# ----------------------------------------------------------------------------
+############################ SAMPLE CONDITIONAL ##############################
+# ----------------------------------------------------------------------------
 
+@sample_conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
+@name_scope("sample_conditional")
+def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=None, white=False):
+    print("sample conditional: MixedKernelSharedMof, SeparateMixedMok")
+    independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+    g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
+                                 full_cov_output=False, full_cov=False)  # N x L, N x L
+    g_sample = sample_mvn(g_mu, g_var, "diag")  # N x L
+    f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
+    return f_sample
+
+
+# ----------------------------------------------------------------------------
+############################# CONDITIONAL MATHS ##############################
+# ----------------------------------------------------------------------------
 
 def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, 
                                         q_sqrt=None, white=False):

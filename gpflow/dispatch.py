@@ -7,3 +7,4 @@ gpflow_md_namespace = dict()
 dispatch = partial(dispatch, namespace=gpflow_md_namespace)
 
 conditional = Dispatcher('conditional')
+sample_conditional = Dispatcher('sample_conditional')
