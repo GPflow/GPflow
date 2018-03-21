@@ -84,8 +84,7 @@ def test_diags(session_tf, white, mu, sqrt_diag, K):
     kl_diag = gauss_kl(mu, sqrt_diag, K if white else None)
     kl_dense = gauss_kl(mu, chol_from_diag, K if white else None)
 
-    np.testing.assert_allclose(kl_diag.eval(),
-                               kl_dense.eval())
+    np.testing.assert_allclose(kl_diag.eval(), kl_dense.eval())
 
 @pytest.mark.parametrize('diag', [True, False])
 def test_whitened(session_tf, diag, mu, sqrt_diag, I):
@@ -98,12 +97,12 @@ def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     kl_white = gauss_kl(mu, s)
     kl_nonwhite = gauss_kl(mu, s, I)
 
-    np.testing.assert_allclose(kl_white.eval(),
-                               kl_nonwhite.eval())
+    np.testing.assert_allclose(kl_white.eval(), kl_nonwhite.eval())
 
 @pytest.mark.parametrize('shared_k', [True, False])
 @pytest.mark.parametrize('diag', [True, False])
-def test_equality_sumkl_batchkl(session_tf, shared_k, diag, mu, sqrt,sqrt_diag, K_batch, K):
+def test_sumkl_equals_batchkl(session_tf, shared_k, diag, mu,
+                              sqrt, sqrt_diag, K_batch, K):
     """
     gauss_kl implicitely performs a sum of KL divergences
     This test checks that doing the sum outside of the function is equivalent
@@ -118,8 +117,8 @@ def test_equality_sumkl_batchkl(session_tf, shared_k, diag, mu, sqrt,sqrt_diag, 
     kl_sum = []
     for n in range(Datum.N):
         kl_sum.append(gauss_kl(mu[:, n][:,None], # M x 1
-                    sqrt_diag[:, n][:, None] if diag else sqrt[n, :, :][None, :, :], # 1 x M x M or M x 1
-                    K if shared_k else K_batch[n, :, :][None,:,:])) # 1 x M x M or M x M
+            sqrt_diag[:, n][:, None] if diag else sqrt[n, :, :][None, :, :], # 1 x M x M or M x 1
+            K if shared_k else K_batch[n, :, :][None,:,:])) # 1 x M x M or M x M
     kl_sum =tf.reduce_sum(kl_sum)
     assert_almost_equal(kl_sum.eval(), kl_batch.eval())
 
