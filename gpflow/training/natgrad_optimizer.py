@@ -17,8 +17,6 @@ import functools
 
 import tensorflow as tf
 
-from gpflow.models import Model
-
 from . import optimizer
 from .. import settings
 from ..models import Model
