@@ -43,6 +43,28 @@ class TestRbf(GPflowTestCase):
             self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
 
 
+class TestRQ(GPflowTestCase):
+    def setUp(self):
+        self.test_graph = tf.Graph()
+
+    def test_1d(self):
+        with self.test_context() as session:
+            lengthscale = 1.4
+            variance = 2.3
+            kSE = gpflow.kernels.RBF(1, lengthscales=lengthscale, variance=variance)
+            kRQ = gpflow.kernels.RationalQuadratic(1, lengthscales=lengthscale, variance=variance, alpha=1e8)
+            rng = np.random.RandomState(1)
+
+            X = tf.placeholder(gpflow.settings.float_type)
+            X_data = rng.randn(6, 1).astype(gpflow.settings.float_type)
+
+            kSE.compile()
+            kRQ.compile()
+            gram_matrix_SE = session.run(kSE.K(X), feed_dict={X: X_data})
+            gram_matrix_RQ = session.run(kRQ.K(X), feed_dict={X: X_data})
+            np.testing.assert_allclose(gram_matrix_SE, gram_matrix_RQ)
+
+
 class TestArcCosine(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()

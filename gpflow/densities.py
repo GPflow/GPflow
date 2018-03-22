@@ -15,6 +15,7 @@
 
 import tensorflow as tf
 import numpy as np
+import warnings
 
 
 from . import settings
@@ -72,20 +73,27 @@ def laplace(mu, sigma, y):
 def multivariate_normal(x, mu, L):
     """
     Computes the log-density of a multivariate normal.
-    :param x  : D or DxN sample(s) for which we want the density
-    :param mu : D or DxN mean(s) of the normal distribution
+    :param x  : Dx1 or DxN sample(s) for which we want the density
+    :param mu : Dx1 or DxN mean(s) of the normal distribution
     :param L  : DxD Cholesky decomposition of the covariance matrix
-    :return p : N vector of log densities for each of the N x's and/or mu's
+    :return p : (1,) or (N,) vector of log densities for each of the N x's and/or mu's
 
-    x and mu are either vectors or matrices. If both are vectors ((N,) or (N,1)):
+    x and mu are either vectors or matrices. If both are vectors (N,1):
     p[0] = log pdf(x) where x ~ N(mu, LL^T)
     If at least one is a matrix, we assume independence over the *columns*:
     the number of rows must match the size of L. Broadcasting behaviour:
     p[n] = log pdf of:
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
-    x  = tf.cond(tf.rank(x)  < 2, lambda: x[:, None],  lambda: x)
-    mu = tf.cond(tf.rank(mu) < 2, lambda: mu[:, None], lambda: mu)
+    if x.shape.ndims is None:
+        warnings.warn('Shape of x must be 2D at computation.')
+    elif x.shape.ndims != 2:
+        raise ValueError('Shape of x must be 2D.')
+    if mu.shape.ndims is None:
+        warnings.warn('Shape of mu may be unknown or not 2D.')
+    elif mu.shape.ndims != 2:
+        raise ValueError('Shape of mu must be 2D.')
+        
     d = x - mu
     alpha = tf.matrix_triangular_solve(L, d, lower=True)
     num_dims = tf.cast(tf.shape(d)[0], L.dtype)
