@@ -20,10 +20,10 @@ import abc
 
 class Optimizer:
     @abc.abstractmethod
-    def make_optimizer_tensor(self, model, session, var_list=None, **kwargs):
+    def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
         """
         Make optimization tensor.
-        The `make_optimizer_tensor` method builds optimization tensor and initializes
+        The `make_optimize_tensor` method builds optimization tensor and initializes
         all necessary variables created by optimizer.
 
             :param model: GPflow model.

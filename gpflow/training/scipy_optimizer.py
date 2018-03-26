@@ -27,10 +27,10 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._model = None
     
 
-    def make_optimizer_tensor(self, model, session, var_list=None, **kwargs):
+    def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
         """
         Make SciPy optimization tensor.
-        The `make_optimizer_tensor` method builds optimization tensor and initializes
+        The `make_optimize_tensor` method builds optimization tensor and initializes
         all necessary variables created by optimizer.
 
             :param model: GPflow model.
@@ -41,6 +41,7 @@ class ScipyOptimizer(optimizer.Optimizer):
                 - `disp`, if True, prints convergence messages.
             :return: Tensorflow operation.
         """
+        session = model.enquire_session(session)
         with session.as_default():
             var_list = self._gen_var_list(model, var_list)
             options = dict(options=kwargs)
@@ -79,7 +80,7 @@ class ScipyOptimizer(optimizer.Optimizer):
         session = model.enquire_session(session)
         self._model = model
         disp = kwargs.pop('disp', False)
-        optimizer = self.make_optimizer_tensor(model, session,
+        optimizer = self.make_optimize_tensor(model, session,
             var_list=var_list, maxiter=maxiter, disp=disp)
         self._optimizer = optimizer
         feed_dict = self._gen_feed_dict(model, feed_dict)

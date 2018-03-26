@@ -17,8 +17,6 @@ import functools
 
 import tensorflow as tf
 
-from gpflow.models import Model
-
 from . import optimizer
 from .. import settings
 from ..actions import Optimization
@@ -75,7 +73,7 @@ class NatGradOptimizer(optimizer.Optimizer):
 
         self._model = model
         session = model.enquire_session(session)
-        opt = self.make_optimization(model, session=session, var_list=var_list, **kwargs)
+        opt = self.make_optimize_action(model, session=session, var_list=var_list, **kwargs)
         with session.as_default():
             for _i in range(maxiter):
                 opt()
@@ -83,7 +81,7 @@ class NatGradOptimizer(optimizer.Optimizer):
             model.anchor(session)
     
 
-    def make_optimizer_tensor(self, model, session, var_list=None):
+    def make_optimize_tensor(self, model, session=None, var_list=None):
         """
         Make Tensorflow optimization tensor.
         This method builds natural gradients optimization tensor and initializes all
@@ -94,13 +92,14 @@ class NatGradOptimizer(optimizer.Optimizer):
             :param var_list: List of tuples of variational parameters.
             :return: Tensorflow natural gradient operation.
         """
+        session = model.enquire_session(session)
         with session.as_default(), tf.name_scope(self.name):
             # Create optimizer variables before initialization.
             return self._build_natgrad_step_ops(model, *var_list)
 
-    def make_optimization(self, model, session=None, var_list=None, **kwargs):
+    def make_optimize_action(self, model, session=None, var_list=None, **kwargs):
         """
-        Builds Optimizatin action.
+        Builds optimization action.
         Natural Gradient optimizer works with variational parameters only.
         There are two supported ways of transformation for parameters:
             - XiNat
@@ -125,11 +124,10 @@ class NatGradOptimizer(optimizer.Optimizer):
         """
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
-        session = model.enquire_session(session)
         feed_dict = kwargs.pop('feed_dict', None)
         feed_dict_update = self._gen_feed_dict(model, feed_dict)
         run_kwargs = {} if feed_dict_update is None else {'feed_dict': feed_dict_update}
-        optimizer_tensor = self.make_optimizer_tensor(model, session, var_list=var_list)
+        optimizer_tensor = self.make_optimize_tensor(model, session=session, var_list=var_list)
         opt = Optimization()
         opt.with_optimizer(self)
         opt.with_model(model)
@@ -151,7 +149,11 @@ class NatGradOptimizer(optimizer.Optimizer):
         :param d_xs: list of gradients to push forward (same shapes as ys)
         :return: the specified moment of the variational distribution
         """
-        v = [tf.placeholder(y.dtype) for y in ys]
+        # this should be v = [tf.placeholder(y.dtype) for y in ys], but tensorflow
+        # wants a value for the placeholder, even though it never gets used
+        v = [tf.placeholder_with_default(tf.zeros(y.get_shape(), dtype=y.dtype),
+                                         shape=y.get_shape()) for y in ys]
+
         g = tf.gradients(ys, xs, grad_ys=v)
         return tf.gradients(g, v, grad_ys=d_xs)
 
@@ -195,15 +197,22 @@ class NatGradOptimizer(optimizer.Optimizer):
 
         # we need these to calculate the relevant gradients
         _meanvarsqrt = expectation_to_meanvarsqrt(*etas)
-        _xis = xi_transform.naturals_to_xi(*nats)
 
         ## three derivatives
         # 1) the oridinary gpflow gradient
         dL_d_mean, dL_d_varsqrt = tf.gradients(objective, [q_mu, q_sqrt])
+
         # 2) the chain rule to get ∂L/∂η, where eta are the expectation parameters
         dL_detas = tf.gradients(_meanvarsqrt, etas, grad_ys=[dL_d_mean, dL_d_varsqrt])
+
         # 3) the forward mode gradient to calculate (∂ξ / ∂nat)(∂L / ∂η)^T,
-        nat_dL_xis = self._forward_gradients(_xis, nats, dL_detas)
+        if isinstance(xi_transform, XiNat):
+            nat_dL_xis = dL_detas
+        else:
+            _xis = xi_transform.naturals_to_xi(*nats)
+            # this line should be removed if the placeholder_with_default problem is rectified
+            _xis = [tf.reshape(_xis[0], q_mu_param.shape), tf.reshape(_xis[1], q_sqrt_param.shape)]
+            nat_dL_xis = self._forward_gradients(_xis, nats, dL_detas)
 
         # perform natural gradient descent on the ξ parameters
         xis_new = [xi - self.gamma * nat_dL_xi for xi, nat_dL_xi in zip(xis, nat_dL_xis)]
@@ -233,7 +242,7 @@ class XiTransform(metaclass=abc.ABCMeta):
     XiTransform is the base class that implements three transformations necessary
     for the natural gradient calculation wrt any parameterization.
     This class does not handle any shape information, but it is assumed that
-    the parameters pairs are always of shape (N, D) and (N, N, D).
+    the parameters pairs are always of shape (N, D) and (D, N, N).
     """
     @abc.abstractmethod
     def meanvarsqrt_to_xi(self, mean, varsqrt):
@@ -244,7 +253,7 @@ class XiTransform(metaclass=abc.ABCMeta):
         :param varsqrt: the varsqrt parameter (N, N, D)
         :return: tuple (xi_1, xi_2), the xi parameters (N, D), (N, N, D)
         """
-        pass
+        pass  # pragma: no cover
 
     @abc.abstractmethod
     def xi_to_meanvarsqrt(self, xi_1, xi_2):
@@ -255,7 +264,7 @@ class XiTransform(metaclass=abc.ABCMeta):
         :param xi_2: the xi_2 parameter
         :return: tuple (mean, varsqrt), the meanvarsqrt parameters
         """
-        pass
+        pass  # pragma: no cover
 
     @abc.abstractmethod
     def naturals_to_xi(self, nat_1, nat_2):
@@ -266,10 +275,15 @@ class XiTransform(metaclass=abc.ABCMeta):
         :param nat_2: the nat_1 parameter
         :return: tuple `xi_1`, `xi_2`
         """
-        pass
+        pass  # pragma: no cover
 
 
 class XiNat(XiTransform):
+    """
+    This is the default transform. Using the natural directly saves the forward mode
+     gradient, and also gives the analytic optimal solution for gamma=1 in the case
+     of Gaussian likelihood.
+    """
     def meanvarsqrt_to_xi(self, mean, varsqrt):
         return meanvarsqrt_to_natural(mean, varsqrt)
 
@@ -281,6 +295,10 @@ class XiNat(XiTransform):
 
 
 class XiSqrtMeanVar(XiTransform):
+    """
+    This transformation will perform natural gradient descent on the model parameters,
+    so saves the conversion to and from Xi.
+    """
     def meanvarsqrt_to_xi(self, mean, varsqrt):
         return mean, varsqrt
 
@@ -305,16 +323,14 @@ def swap_dimensions(method):
         `method` inputs DN1, DNN
         `method` outputs DN1, DNN
     :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
-        inputs: ND, NND
-        outputs: ND, NND
+        inputs: ND, DNN
+        outputs: ND, DNN
     """
     @functools.wraps(method)
     def wrapper(a_nd, b_dnn, swap=True):
-        if a_nd.get_shape().ndims != 2:
-            raise ValueError("The `a_nd` input must have 2 dimensions.")
-        if b_dnn.get_shape().ndims != 3:
-            raise ValueError("The `b_nd` input must have 3 dimensions.")
         if swap:
+            if a_nd.get_shape().ndims != 2:  # pragma: no cover
+                raise ValueError("The `a_nd` input must have 2 dimensions.")
             a_dn1 = tf.transpose(a_nd)[:, :, None]
             A_dn1, B_dnn = method(a_dn1, b_dnn)
             A_nd = tf.transpose(A_dn1[:, :, 0])
@@ -381,7 +397,7 @@ def _inverse_lower_triangular(M):
     :param M: Tensor with lower triangular structure of shape DxNxN
     :return: The inverse of the Cholesky decomposition. Same shape as input.
     """
-    if M.get_shape().ndims != 3:
+    if M.get_shape().ndims != 3:  # pragma: no cover
         raise ValueError("Number of dimensions for input is required to be 3.")
     D, N = tf.shape(M)[0], tf.shape(M)[1]
     I_DNN = tf.eye(N, dtype=M.dtype)[None, :, :] * tf.ones((D, 1, 1), dtype=M.dtype)

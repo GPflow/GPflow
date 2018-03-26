@@ -33,7 +33,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         self._optimizer = tf_optimizer(*args, **kwargs)
         self._minimize_operation = None
     
-    def make_optimizer_tensor(self, model, session, var_list=None, **kwargs):
+    def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
         """
         Make Tensorflow optimization tensor.
         This method builds optimization tensor and initializes all necessary variables
@@ -46,6 +46,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
                 optimizer's minimize method.
             :return: Tensorflow optimization tensor or operation.
         """
+        session = model.enquire_session(session)
         objective = model.objective
         full_var_list = self._gen_var_list(model, var_list)
         # Create optimizer variables before initialization.
@@ -55,7 +56,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             self._initialize_optimizer(session, full_var_list)
             return minimize
     
-    def make_optimization(self, model, session=None, var_list=None, **kwargs):
+    def make_optimize_action(self, model, session=None, var_list=None, **kwargs):
         """
         Build Optimization action task with Tensorflow optimizer.
 
@@ -63,7 +64,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             :param session: Tensorflow session.
             :param var_list: List of Tensorflow variables to train.
             :param feed_dict: Tensorflow feed_dict dictionary.
-            :param kwargs: Extra parameters passed to `make_optimizer_tensor`.
+            :param kwargs: Extra parameters passed to `make_optimize_tensor`.
             :return: Optimization action.
         """
         if model is None or not isinstance(model, Model):
@@ -72,7 +73,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         feed_dict = kwargs.pop('feed_dict', None)
         feed_dict_update = self._gen_feed_dict(model, feed_dict)
         run_kwargs = {} if feed_dict_update is None else {'feed_dict': feed_dict_update}
-        optimizer_tensor = self.make_optimizer_tensor(model, session, var_list=var_list, **kwargs)
+        optimizer_tensor = self.make_optimize_tensor(model, session, var_list=var_list, **kwargs)
         opt = Optimization()
         opt.with_optimizer(self)
         opt.with_model(model)
@@ -100,7 +101,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         if model is None or not isinstance(model, Model):
             raise ValueError('The `model` argument must be a GPflow model.')
 
-        opt = self.make_optimization(model,
+        opt = self.make_optimize_action(model,
             session=session,
             var_list=var_list,
             feed_dict=feed_dict, **kwargs)
