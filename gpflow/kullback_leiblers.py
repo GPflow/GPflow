@@ -16,7 +16,7 @@
 
 
 import tensorflow as tf
-
+import tensorflow.contrib.distributions as tf_dists
 from . import settings
 from .decors import name_scope
 
@@ -102,3 +102,41 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         twoKL += scale * sum_log_sqdiag_Lp
 
     return 0.5 * twoKL
+
+
+def gauss_kl_tf_distributions(q_mu, q_sqrt, K=None):
+    """
+    Kullbach-Leiber divergence KL[q(U) || p(U)],
+    with q(U) ~ N(q_mu, q_sqrt^2) the variational Gaussian posterior
+    and p(U) ~ N(0, K) the prior. If K is None we assume a whitened
+    prior, p(U) ~ N(0, I).
+
+    We assume L independent distributions, then
+
+    :param q_mu: L variational means, M x L
+    :param q_sqrt: L variational covariances,
+                - cholesky: L x M x M or
+                - diag elements: M x L
+    :param K (Kuu): M x M or L x M x M
+    """
+    q_mu = tf.matrix_transpose(q_mu)  # L x M
+    L, M = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
+
+    if K is None:
+        prior = tf_dists.MultivariateNormalDiag(loc=tf.zeros_like(q_mu),
+                                                scale_diag=tf.ones_like(q_mu))
+    else:
+        if K.shape.ndims == 2:
+            K = tf.tile(K[None, ...], [L, 1, 1])  # L x M x M
+        prior = tf_dists.MultivariateNormalFullCovariance(
+            loc=tf.zeros_like(q_mu),
+            covariance_matrix=K)
+
+    if q_sqrt.shape.ndims == 2:  # M x L
+        q_sqrt_T = tf.matrix_transpose(q_sqrt)
+        posterior = tf_dists.MultivariateNormalDiag(loc=q_mu, scale_diag=q_sqrt_T)
+
+    elif q_sqrt.shape.ndims == 3:  # L x M x M
+        posterior = tf_dists.MultivariateNormalTriL(loc=q_mu, scale_tril=q_sqrt)
+
+    return tf.reduce_sum(posterior.kl_divergence(prior))
