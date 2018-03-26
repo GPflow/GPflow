@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.kullback_leiblers import gauss_kl
+from gpflow.kullback_leiblers import gauss_kl, gauss_kl_tf_distributions
 from numpy.testing import assert_almost_equal
 import pytest
 from gpflow import settings
@@ -143,6 +143,24 @@ def test_oned(session_tf, white, mu, sqrt, K_batch):
                    tf.reshape(s1d,(-1,)), # N
                    None if white else tf.reshape(K1d,(-1,))) # N
     np.testing.assert_allclose(kl.eval(), kl_tf.eval())
+
+
+@pytest.mark.parametrize('white', [True, False])
+@pytest.mark.parametrize('batch', [False, True])
+@pytest.mark.parametrize('diag', [False])
+def test_gpflow_vs_tf_dists(session_tf, white, batch, diag, mu, sqrt, sqrt_diag, K, K_batch):
+    """
+    Check that the KL divergences implementations match.
+    """
+    if white:
+        k = None
+    else:
+        k = K_batch if batch else K
+    s = sqrt_diag if diag else sqrt
+
+    kl_gpf = gauss_kl(mu, s, k)
+    kl_tfd = gauss_kl_tf_distributions(mu, s, k)
+    np.testing.assert_allclose(kl_gpf.eval(), kl_tfd.eval())
 
 
 if __name__ == "__main__":
