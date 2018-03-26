@@ -63,19 +63,23 @@ def gauss_kl_tf_distributions(q_mu, q_sqrt, K=None):
 
     return tf.reduce_sum(posterior.kl_divergence(prior))
 
+
 def squareT(A):
     """
     Returns (A Aᵀ)
     """
     return A.dot(A.T)
 
+
 def make_sqrt_data(rng, N, M):
     return np.array([np.tril(rng.randn(M, M)) for _ in range(N)]) # N x M x M
+
 
 def make_K_batch_data(rng, N, M):
     K_np = rng.randn(N, M, M)
     beye = np.array([np.eye(M) for _ in range(N)])
     return .1 * (K_np + np.transpose(K_np, (0, 2, 1))) + beye
+
 
 class Datum:
     M, N = 5, 4
@@ -87,29 +91,36 @@ class Datum:
     sqrt_diag_data = rng.randn(M, N) # M x N
     K_batch_data = make_K_batch_data(rng, N, M)
 
+
 @pytest.fixture
 def mu(session_tf):
     return tf.convert_to_tensor(Datum.mu_data)
+
 
 @pytest.fixture
 def sqrt_diag(session_tf):
     return tf.convert_to_tensor(Datum.sqrt_diag_data)
 
+
 @pytest.fixture
 def K(session_tf):
     return tf.convert_to_tensor(Datum.K_data)
+
 
 @pytest.fixture
 def K_batch(session_tf):
     return tf.convert_to_tensor(Datum.K_batch_data)
 
+
 @pytest.fixture
 def sqrt(session_tf):
     return tf.convert_to_tensor(Datum.sqrt_data)
 
+
 @pytest.fixture()
 def I(session_tf):
     return tf.convert_to_tensor(Datum.I)
+
 
 @pytest.mark.parametrize('white', [True, False])
 def test_diags(session_tf, white, mu, sqrt_diag, K):
@@ -125,6 +136,7 @@ def test_diags(session_tf, white, mu, sqrt_diag, K):
 
     np.testing.assert_allclose(kl_diag.eval(), kl_dense.eval())
 
+
 @pytest.mark.parametrize('diag', [True, False])
 def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     """
@@ -137,6 +149,7 @@ def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     kl_nonwhite = gauss_kl(mu, s, I)
 
     np.testing.assert_allclose(kl_white.eval(), kl_nonwhite.eval())
+
 
 @pytest.mark.parametrize('shared_k', [True, False])
 @pytest.mark.parametrize('diag', [True, False])
@@ -161,11 +174,13 @@ def test_sumkl_equals_batchkl(session_tf, shared_k, diag, mu,
     kl_sum =tf.reduce_sum(kl_sum)
     assert_almost_equal(kl_sum.eval(), kl_batch.eval())
 
+
 def tf_kl_1d(q_mu, q_sigma, p_var=1.0):
     p_var = tf.ones_like(q_sigma) if p_var is None else p_var
     q_var = tf.square(q_sigma)
     kl = 0.5 * (q_var / p_var + tf.square(q_mu) / p_var - 1 + tf.log(p_var / q_var))
     return tf.reduce_sum(kl)
+
 
 @pytest.mark.parametrize('white', [True, False])
 def test_oned(session_tf, white, mu, sqrt, K_batch):
@@ -173,20 +188,20 @@ def test_oned(session_tf, white, mu, sqrt, K_batch):
     Check that the KL divergence matches a 1D by-hand calculation.
     """
     m = 0
-    mu1d = mu[m,:][None,:] # 1 x N
-    s1d = sqrt[:,m,m][:,None,None] # N x 1 x 1
-    K1d = K_batch[:,m,m][:,None,None] # N x 1 x 1
+    mu1d = mu[m, :][None,:]  # 1 x N
+    s1d = sqrt[:, m, m][:,None,None]  # N x 1 x 1
+    K1d = K_batch[:, m, m][:,None,None]  # N x 1 x 1
 
-    kl = gauss_kl(mu1d,s1d,K1d if not white else None)
-    kl_tf = tf_kl_1d(tf.reshape(mu1d,(-1,)), # N
-                   tf.reshape(s1d,(-1,)), # N
-                   None if white else tf.reshape(K1d,(-1,))) # N
+    kl = gauss_kl(mu1d, s1d, K1d if not white else None)
+    kl_tf = tf_kl_1d(tf.reshape(mu1d, (-1,)),  # N
+                    tf.reshape(s1d, (-1,)),  # N
+                    None if white else tf.reshape(K1d, (-1,)))  # N
     np.testing.assert_allclose(kl.eval(), kl_tf.eval())
 
 
 @pytest.mark.parametrize('white', [True, False])
-@pytest.mark.parametrize('batch', [False, True])
-@pytest.mark.parametrize('diag', [False])
+@pytest.mark.parametrize('batch', [True, False])
+@pytest.mark.parametrize('diag',  [True, False])
 def test_gpflow_vs_tf_dists(session_tf, white, batch, diag, mu, sqrt, sqrt_diag, K, K_batch):
     """
     Check that the KL divergences implementations match.
