@@ -105,7 +105,7 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
     Fallback method for missing analytic expectations
     """
-    num_gauss_hermite_points = 1 if num_gauss_hermite_points is None else num_gauss_hermite_points
+    num_gauss_hermite_points = 100 if num_gauss_hermite_points is None else num_gauss_hermite_points
 
     warnings.warn("Quadrature is used to calculate the expectation. This means that "
                   "an analytical implementations is not available for the given combination.")
