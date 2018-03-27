@@ -223,11 +223,16 @@ class Stationary(Kernel):
             else:
                 # accepts float or array:
                 lengthscales = lengthscales * np.ones(input_dim, dtype=settings.float_type)
+                if np.asarray(lengthscales).squeeze().shape != (input_dim,):
+                    raise ValueError("shape of lengthscales does not match input_dim")
             self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
             self.ARD = True
         else:
             if lengthscales is None:
                 lengthscales = 1.0
+            else:
+                if np.asarray(lengthscales).squeeze().shape != ():
+                    raise ValueError("ARD is False but lengthscales has several dimensions")
             self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
             self.ARD = False
 

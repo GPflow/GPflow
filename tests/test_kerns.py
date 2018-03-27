@@ -589,10 +589,17 @@ class TestARDInit(GPflowTestCase):
     def test_scalar(self):
         with self.test_context():
             k1 = gpflow.kernels.RBF(3, lengthscales=2.3)
-            k2 = gpflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3)
+            k2 = gpflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3, ARD=True)
             k1_lengthscales = k1.lengthscales.read_value()
             k2_lengthscales = k2.lengthscales.read_value()
             self.assertTrue(np.all(k1_lengthscales == k2_lengthscales))
+
+    def test_init(self):
+        for ARD in (False, True):
+            with self.assertRaises(ValueError):
+                k1 = gpflow.kernels.RBF(1, lengthscales=[1., 1.], ARD=ARD)
+            with self.assertRaises(ValueError):
+                k2 = gpflow.kernels.RBF(2, lengthscales=[1., 1., 1.], ARD=ARD)
 
     def test_MLP(self):
         with self.test_context():
