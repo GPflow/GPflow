@@ -14,17 +14,16 @@
 
 import tensorflow as tf
 
+from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
+from .kernels import Kuf, Kuu
+from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .. import settings
+from ..conditionals import base_conditional, expand_independent_outputs, sample_mvn
 from ..decors import name_scope
 from ..dispatch import conditional, sample_conditional
-from ..features import InducingPoints, InducingFeature
-from ..kernels import Kernel, Combination
-from ..probability_distributions import Gaussian
-from ..conditionals import base_conditional, expand_independent_outputs, sample_mvn
+from ..features import InducingPoints
+from ..kernels import Combination
 
-from .kernels import Kuf, Kuu
-from .features import Mof, SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
-from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 
 # TODO: Make all output shapes of conditionals equal: dependent on full_cov and full_cov_output
 # TODO: Add tensorflow assertions of shapes
@@ -46,7 +45,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         Knn = kern.K(Xnew, full_cov_output=False)[..., 0]  # N x N
     else:
         Knn = kern.Kdiag(Xnew, full_cov_output=False)[..., 0]  # N
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  N x (x N) x P
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt,
+                                   white=white)  # N x P,  N x (x N) x P
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
@@ -100,6 +100,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 
     return fmu, fvar
 
+
 @conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
@@ -122,7 +123,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x P(x N)x P  or  N x P(x P)
 
     return independent_interdomain_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output,
-                                           q_sqrt=q_sqrt, white=white)
+                                               q_sqrt=q_sqrt, white=white)
 
 
 @conditional.register(object, InducingPoints, Mok, object)
@@ -156,7 +157,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
     else:
         Kmn = tf.reshape(Kmn, (M * L, N, K))
-        fmean, fvar = fully_correlated_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, 
+        fmean, fvar = fully_correlated_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov,
                                                    full_cov_output=full_cov_output, q_sqrt=q_sqrt, white=white)
     return fmean, fvar
 
@@ -186,9 +187,9 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         WgvarW = tf.tensordot(gvarW, kern.W, [[0], [1]])  # N x P (x N) x P
     else:
         if not full_cov:
-            WgvarW = tf.tensordot(gvar, kern.W**2, [[0], [1]])  # N x P
+            WgvarW = tf.tensordot(gvar, kern.W ** 2, [[0], [1]])  # N x P
         else:
-            WgvarW = tf.tensordot(kern.W**2, gvar, [[1], [0]])  # P x N (x N)
+            WgvarW = tf.tensordot(kern.W ** 2, gvar, [[1], [0]])  # P x N (x N)
 
     return Wgmu, WgvarW
 
@@ -203,7 +204,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=No
     print("sample conditional: MixedKernelSharedMof, SeparateMixedMok")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
-                                 full_cov_output=False, full_cov=False)  # N x L, N x L
+                                   full_cov_output=False, full_cov=False)  # N x L, N x L
     g_sample = sample_mvn(g_mu, g_var, "diag")  # N x L
     f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
     return f_sample
@@ -213,7 +214,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=No
 ############################# CONDITIONAL MATHS ##############################
 # ----------------------------------------------------------------------------
 
-def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, 
+def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False,
                                         q_sqrt=None, white=False):
     """
     The inducing outputs u live in the g-space (R^L), 
@@ -278,14 +279,14 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     return fmean, fvar
 
 
-
-
 def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
-    m, v = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, full_cov=full_cov, 
+    m, v = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, full_cov=full_cov,
                                                full_cov_output=full_cov_output, q_sqrt=q_sqrt, white=white)
     return m[0, ...], v[0, ...]
 
-def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+
+def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None,
+                                        white=False):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
@@ -294,7 +295,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     :param Knn: N x K  or  N x N  or  K x N x N  or  N x K x N x K
     :param f: data matrix, M x 1
     :param q_sqrt: R x M x M  or  R x M
-    :return: R x N x K  ,  N x R x K x K
+    :return: R x N x K  ,  R x N x K x K
     """
     print("fully correlated conditional")
     R = tf.shape(f)[1]
@@ -357,4 +358,3 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # R x N x K
             fvar = fvar[None, ...] + addvar  # R x N x K
     return fmean, fvar
-
