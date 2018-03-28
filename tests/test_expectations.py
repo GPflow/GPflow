@@ -18,8 +18,6 @@ import copy
 
 import pytest
 
-import gpflow
-from gpflow import test_util
 from gpflow.expectations import expectation, quadrature_expectation
 from gpflow.probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from gpflow import kernels, mean_functions, features
@@ -106,6 +104,11 @@ def rbf_kern():
 @cache_tensor
 def lin_kern():
     return kernels.Linear(Data.D_in, variance=rng.rand())
+
+
+@cache_tensor
+def matern_kern():
+    return kernels.Matern32(Data.D_in, variance=rng.rand())
 
 
 @cache_tensor
@@ -208,7 +211,7 @@ def test_kernel_only_expectations(session_tf, distribution, kernel, feature, arg
 
 
 @pytest.mark.parametrize("distribution", [gauss])
-@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, rbf_lin_sum_kern])
+@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, matern_kern, rbf_lin_sum_kern])
 @pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
 @pytest.mark.parametrize("arg_filter",
                          [lambda p, k, f, m: (p, (k, f), m),
