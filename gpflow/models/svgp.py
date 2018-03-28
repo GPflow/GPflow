@@ -21,7 +21,7 @@ import tensorflow as tf
 from .. import kullback_leiblers, features
 from .. import settings
 from .. import transforms
-from ..conditionals import conditional
+from ..conditionals import conditional, Kuu
 from ..decors import params_as_tensors
 from ..models.model import GPModel
 from ..params import DataHolder
@@ -119,10 +119,8 @@ class SVGP(GPModel):
         if self.whiten:
             K = None
         else:
-            K = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-            raise NotImplementedError
+            K = Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)  # (P x) x M x M
 
-        # TODO: gauss_kl needs to handle non whitened cases correctly.
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     @params_as_tensors

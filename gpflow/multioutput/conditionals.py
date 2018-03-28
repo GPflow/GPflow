@@ -46,7 +46,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         Knn = kern.K(Xnew, full_cov_output=False)[..., 0]  # N x N
     else:
         Knn = kern.Kdiag(Xnew, full_cov_output=False)[..., 0]  # N
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  N x (x N) x P
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  P x N x N or N x P
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
@@ -83,22 +83,25 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 
     rmu, rvar = tf.map_fn(single_gp_conditional,
                           (Kmms, Kmns, Knns, fs, q_sqrts),
-                          (settings.float_type, settings.float_type))  # P x N x 1  ,  P x N(x N) x 1
+                          (settings.float_type, settings.float_type))  # P x N x 1  ,  P x 1 x N x N or P x N x 1
 
-    fmu = tf.matrix_transpose(rmu[..., 0])
-    fvar = rvar[..., 0]
+    fmu = tf.matrix_transpose(rmu[:, :, 0])  # N x P
+    if full_cov:
+        fvar = tf.transpose(fvar[..., 0])  # N x P
+    else:
+        fvar = rvar[:, 0, :, :]  # P x N x N
 
-    if full_cov_output and full_cov:
-        fvar = tf.diag(tf.transpose(fvar, [1, 2, 0]))
-        fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
-    elif not full_cov_output and full_cov:
-        pass  # P x N x N
-    elif full_cov_output and not full_cov:
-        fvar = tf.diag(tf.matrix_transpose(fvar))  # N x P x P
-    elif not full_cov_output and not full_cov:
-        fvar = tf.matrix_transpose(fvar)  # N x P
+    # if full_cov_output and full_cov:
+    #     fvar = tf.diag(tf.transpose(fvar, [1, 2, 0]))
+    #     fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
+    # elif not full_cov_output and full_cov:
+    #     pass  # P x N x N
+    # elif full_cov_output and not full_cov:
+    #     fvar = tf.diag(tf.matrix_transpose(fvar))  # N x P x P
+    # elif not full_cov_output and not full_cov:
+    #     fvar = tf.matrix_transpose(fvar)  # N x P
 
-    return fmu, fvar
+    return fmu, expand_independent_outputs(fvar)
 
 @conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
 @name_scope("conditional")
@@ -151,7 +154,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     if full_cov == full_cov_output:
         Kmn = tf.reshape(Kmn, (M * L, N * K))
         Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
-        fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # NK, NK(x NK)
+        fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # NK x 1, 1 x NK(x NK)
         fmean = tf.reshape(fmean, (N, K))
         fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
     else:

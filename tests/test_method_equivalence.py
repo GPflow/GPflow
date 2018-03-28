@@ -102,8 +102,11 @@ class TestEquivalence(GPflowTestCase):
             assert_allclose(variances, variances[0], 1e-5)
             assert_allclose(lengthscales, lengthscales.mean(), 1e-4)
             mu0, var0 = models[0].predict_y(self.Xtest)
-            for m in models[1:]:
+            for i, m in enumerate(models[1:]):
                 mu, var = m.predict_y(self.Xtest)
+                print(i, type(m))
+                print(mu.shape)
+                print(var.shape)
                 assert_allclose(mu, mu0, 1e-3)
                 assert_allclose(var, var0, 1e-4)
 

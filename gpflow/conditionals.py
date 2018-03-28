@@ -31,7 +31,7 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
     """
     Reshapes fvar to the correct shape, specified by `full_cov` and `full_cov_output`.
 
-    :param fvar: has shape N x P (full_cov = False) or N x N x P (full_cov = True).
+    :param fvar: has shape N x P (full_cov = False) or P x N x N (full_cov = True).
     :return:
         1) full_cov: True and full_cov_output: True
             fvar N x P x N x P
@@ -43,12 +43,12 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
             fvar N x P
     """
     if full_cov and full_cov_output:
-        fvar = tf.matrix_diag(fvar)   # N x N x P x P
+        fvar = tf.matrix_diag(tf.transpose(fvar))   # N x N x P x P
         fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
-    if full_cov and not full_cov_output:
-        fvar = tf.transpose(fvar, [2, 0, 1])  # P x N x N
     if not full_cov and full_cov_output:
         fvar = tf.matrix_diag(fvar)   # N x P x P
+    if full_cov and not full_cov_output:
+        pass  # P x N x N
     if not full_cov and not full_cov_output:
         pass  # N x P
     
@@ -75,8 +75,9 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         Knn = kern.K(Xnew)  # N x N
     else:
         Knn = kern.Kdiag(Xnew)  # N
-    # Knn = tf.Print(Knn, ["Knn", Knn, "Kmm", Kmm, "Kmn", Kmn])
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  N x (x N) x R
+
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  R x N x N or N x R
+    # return fmean, fvar
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
@@ -124,7 +125,9 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         Knn = kern.K(Xnew)
     else:
         Knn = kern.Kdiag(Xnew)
-    return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+    mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+
+    return mean, var  # N x P, N x P or P x N x N (note: P can be 1)
 
 
 # ----------------------------------------------------------------------------
@@ -224,9 +227,11 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
             fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # R x N x N
         else:
             fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # R x N
-    fvar = tf.transpose(fvar)  # N x R or N x N x R
 
-    return fmean, fvar
+    if not full_cov:
+        fvar = tf.transpose(fvar)  # N x R
+
+    return fmean, fvar  # N x R, R x N x N or N x R
 
 
 # ----------------------------------------------------------------------------
