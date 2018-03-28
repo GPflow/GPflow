@@ -180,7 +180,8 @@ class Static(Kernel):
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, name=None):
         super().__init__(input_dim, active_dims, name=name)
-        self.variance = Parameter(variance, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
 
     @params_as_tensors
     def Kdiag(self, X):
@@ -403,7 +404,8 @@ class Polynomial(Linear):
         """
         super().__init__(input_dim, variance, active_dims, ARD, name=name)
         self.degree = degree
-        self.offset = Parameter(offset, transform=transforms.positive)
+        self.offset = Parameter(offset, transform=transforms.positive,
+                                dtype=settings.float_type)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -593,10 +595,13 @@ class Periodic(Kernel):
                  lengthscales=1.0, active_dims=None, name=None):
         # No ARD support for lengthscale or period yet
         super().__init__(input_dim, active_dims, name=name)
-        self.variance = Parameter(variance, transform=transforms.positive)
-        self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
+        self.lengthscales = Parameter(lengthscales, transform=transforms.positive,
+                                      dtype=settings.float_type)
         self.ARD = False
-        self.period = Parameter(period, transform=transforms.positive)
+        self.period = Parameter(period, transform=transforms.positive,
+                                dtype=settings.float_type)
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
