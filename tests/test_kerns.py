@@ -595,7 +595,7 @@ class TestARDInit(GPflowTestCase):
             self.assertTrue(np.all(k1_lengthscales == k2_lengthscales))
 
     def test_init(self):
-        for ARD in (False, True):
+        for ARD in (False, True, None):
             with self.assertRaises(ValueError):
                 k1 = gpflow.kernels.RBF(1, lengthscales=[1., 1.], ARD=ARD)
             with self.assertRaises(ValueError):
