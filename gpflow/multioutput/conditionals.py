@@ -39,6 +39,7 @@ from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, Separate
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     """
+    print("Conditional: SharedIndependentMof - SharedIndepedentMok")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
     if full_cov:
@@ -114,6 +115,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     :param white:
     :return:
     """
+    print("Conditional: (SharedIndependentMof, SeparateIndepedentMof) - SeparateMixedMok")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # L x M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
@@ -137,6 +139,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     :param f: ML x 1
     :param q_sqrt: ML x 1  or  1 x ML x ML
     """
+    print("Conditional: InducingPoints -- Mok")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x L x M x P
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
     Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
@@ -153,10 +156,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
     else:
         Kmn = tf.reshape(Kmn, (M * L, N, K))
-        fmean, fvar = fully_correlated_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output,
-                                                   q_sqrt=q_sqrt, white=white)
-        # TODO: Fix this output shape
-    fmean = tf.Print(fmean, [tf.shape(fmean), tf.shape(fvar)], summarize=100)
+        fmean, fvar = fully_correlated_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, 
+                                                   full_cov_output=full_cov_output, q_sqrt=q_sqrt, white=white)
     return fmean, fvar
 
 
@@ -277,16 +278,23 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     return fmean, fvar
 
 
+
+
 def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+    m, v = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, full_cov=full_cov, 
+                                               full_cov_output=full_cov_output, q_sqrt=q_sqrt, white=white)
+    return m[0, ...], v[0, ...]
+
+def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
     :param Kmn: M x N x K
     :param Kmm: M x M
     :param Knn: N x K  or  N x N  or  K x N x N  or  N x K x N x K
-    :param f: data matrix, M x R
+    :param f: data matrix, M x 1
     :param q_sqrt: R x M x M  or  R x M
-    :return: N x R x K  ,  N x R x K x K
+    :return: R x N x K  ,  N x R x K x K
     """
     print("fully correlated conditional")
     R = tf.shape(f)[1]
@@ -322,7 +330,7 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_o
 
     # f: M x R
     fmean = tf.matmul(f, A, transpose_a=True)  # R x M  *  M x NK  ->  R x NK
-    fmean = tf.reshape(fmean, (R, N, K))
+    fmean = tf.reshape(fmean, (R, N, K))  # R x N x K
 
     if q_sqrt is not None:
         Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
@@ -339,12 +347,14 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_o
             addvar = tf.matmul(LTA, LTA, transpose_a=True)  # R x NK x NK
             fvar = fvar[None, :, :, :, :] + tf.reshape(addvar, (R, N, K, N, K))
         elif full_cov and not full_cov_output:
-            raise NotImplementedError()
+            LTAr = tf.transpose(tf.reshape(LTA, [R, M, N, K]), [0, 3, 1, 2])  # R x K x M x N
+            addvar = tf.matmul(LTAr, LTAr, transpose_a=True)  # R x K x N x N
+            fvar = fvar[None, ...] + addvar  # R x K x N x N
         elif not full_cov and full_cov_output:
-            LTAr = tf.transpose(tf.reshape(LTA, (R, M, N, K)), [2, 0, 3, 1])  # N x R x K x M
-            fvar = fvar[:, None, :, :] + tf.matmul(LTAr, LTAr, transpose_b=True)  # N x R x K x K
+            LTAr = tf.transpose(tf.reshape(LTA, (R, M, N, K)), [0, 2, 3, 1])  # R x N x K x M
+            fvar = fvar[None, ...] + tf.matmul(LTAr, LTAr, transpose_b=True)  # R x N x K x K
         elif not full_cov and not full_cov_output:
-            addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), 1), (R, N, K))
-            fvar = fvar[:, None, :] + tf.transpose(addvar, (1, 0, 2))  # N x R x K
+            addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # R x N x K
+            fvar = fvar[None, ...] + addvar  # R x N x K
     return fmean, fvar
 

@@ -43,12 +43,12 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
             fvar N x P
     """
     if full_cov and full_cov_output:
-        fvar = tf.diag(fvar)   # N x N x P x P
+        fvar = tf.matrix_diag(fvar)   # N x N x P x P
         fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
     if full_cov and not full_cov_output:
         fvar = tf.transpose(fvar, [2, 0, 1])  # P x N x N
     if not full_cov and full_cov_output:
-        fvar = tf.diag(fvar)   # N x P x P
+        fvar = tf.matrix_diag(fvar)   # N x P x P
     if not full_cov and not full_cov_output:
         pass  # N x P
     
@@ -68,12 +68,14 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     :param q_sqrt: M x R  or  R x M x M
     :return: N x R  or R x N x N  or  N x R x R  or  N x R x N x R
     """
+    print("Conditional: Inducing Feature - Kernel")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
     if full_cov:
         Knn = kern.K(Xnew)  # N x N
     else:
         Knn = kern.Kdiag(Xnew)  # N
+    # Knn = tf.Print(Knn, ["Knn", Knn, "Kmm", Kmm, "Kmn", Kmn])
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  N x (x N) x R
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
@@ -114,6 +116,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 
     :return: two element tuple with conditional mean and variance.
     """
+    print("Conditional: Kernel")
     num_data = tf.shape(X)[0]  # M
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
     Kmn = kern.K(X, Xnew)
