@@ -134,7 +134,7 @@ class TestArcCosine(GPflowTestCase):
         with self.test_context():
             D = 1
             N = 3
-            weight_variances = None
+            weight_variances = 1.
             bias_variance = 1.
             variance = 1.
             ARDs = {False, True}
