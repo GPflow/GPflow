@@ -60,8 +60,6 @@ class Kernel(Parameterized):
             self.active_dims = np.array(active_dims, dtype=np.int32)
             assert len(active_dims) == input_dim
 
-        self.num_gauss_hermite_points = 20
-
     def _validate_ard_shape(self, name, value, ARD=None):
         """
         Validates the shape of a potentially ARD hyperparameter
