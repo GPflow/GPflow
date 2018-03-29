@@ -83,7 +83,7 @@ class ActionContext:
     def iteration(self) -> int:
         """
         Current iteration number.
-        In fact, this is proxy method for Loop's owner interation.
+        In fact, this is proxy method for Loop's owner interaction.
 
             :return: Iteration number or None, in case when owner doesn't
                 have any references to iteration.
