@@ -38,7 +38,7 @@ NOTEBOOK_FILES = [
     "models.ipynb",
     "multiclass.ipynb",
     "classification.ipynb",
-    "multioutput_gps_explanation.ipynb"
+    "multioutput.ipynb"
     # Blacklist:
     #   "FITCvsVFE.ipynb",
     #   "svi.ipynb",

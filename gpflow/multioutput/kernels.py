@@ -207,6 +207,13 @@ def Kuu(feat, kern, *, jitter=0.0):
     return Kmm + jittermat
 
 
+@dispatch(SeparateIndependentMof, SharedIndependentMok)
+def Kuu(feat, kern, *, jitter):
+    Kmm = tf.stack([Kuu(f, kern.kern) for f in feat.feat_list], axis=0)  # L x M x M
+    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
+    return Kmm + jittermat
+
+
 @dispatch(SeparateIndependentMof, (SeparateIndependentMok, SeparateMixedMok))
 def Kuu(feat, kern, *, jitter=0.0):
     Kmm = tf.stack([Kuu(f, k) for f, k in zip(feat.feat_list, kern.kern_list)], axis=0)  # L x M x M
