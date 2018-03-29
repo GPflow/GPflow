@@ -63,25 +63,27 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
-    Single-output GP allowing repetitions
+    Single-output GP allowing repetitions.
+    See ``_conditional`` below for further reference
+    :param Xnew: N x D
     :param f: M x R
     :param q_sqrt: M x R  or  R x M x M
-    :return: N x R  or R x N x N  or  N x R x R  or  N x R x N x R
+    :return: 
+        - mean:     N x R
+        - variance: N x R, R x N x N  or  N x R x R  or  N x R x N x R
     """
     print("Conditional: Inducing Feature - Kernel")
+    print(full_cov, full_cov_output)
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
-    if full_cov:
-        Knn = kern.K(Xnew)  # N x N
-    else:
-        Knn = kern.Kdiag(Xnew)  # N
+    Knn = kern.K(Xnew) if full_cov else kern.Kdiag(Xnew)
 
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x R,  R x N x N or N x R
-    # return fmean, fvar
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, 
+                                   q_sqrt=q_sqrt, white=white)  # N x R,  R x N x N or N x R
     return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
 
 
-@conditional.register(object, object, Kernel, object)  # TODO: Make types more specific to TensorFlow types?
+@conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
 def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
@@ -114,10 +116,12 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         size M x R or R x M x M.
     :param white: boolean of whether to use the whitened representation as
         described above.
-
-    :return: two element tuple with conditional mean and variance.
+    :return: 
+        - mean:     N x P
+        - variance: N x P (full_cov = False), P x N x N (full_cov = True)
     """
     print("Conditional: Kernel")
+    print(full_cov)
     num_data = tf.shape(X)[0]  # M
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
     Kmn = kern.K(X, Xnew)
@@ -127,7 +131,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         Knn = kern.Kdiag(Xnew)
     mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
-    return mean, var  # N x P, N x P or P x N x N (note: P can be 1)
+    return mean, var  # N x P, N x P or P x N x N
 
 
 # ----------------------------------------------------------------------------
@@ -151,6 +155,11 @@ def sample_mvn(mean, cov, cov_structure):
 @sample_conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=None, white=False):
+    """
+    Returns a single sample from the conditional posterior.
+    :return:
+        sample N x P
+    """
     print("sample conditional: InducingFeature Kernel")
     mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_cov_output=full_cov_output,
                             q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
@@ -188,7 +197,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     :param full_cov: bool
     :param q_sqrt: None or R x M x M (lower triangular)
     :param white: bool
-    :return: N x R  or N x N x R
+    :return: N x R  or R x N x N
     """
     print("base conditional")
     # compute kernel stuff

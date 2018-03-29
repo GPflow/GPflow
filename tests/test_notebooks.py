@@ -37,7 +37,8 @@ NOTEBOOK_FILES = [
     "vgp_notes.ipynb",
     "models.ipynb",
     "multiclass.ipynb",
-    "classification.ipynb"
+    "classification.ipynb",
+    "multioutput_gps_explanation.ipynb"
     # Blacklist:
     #   "FITCvsVFE.ipynb",
     #   "svi.ipynb",
