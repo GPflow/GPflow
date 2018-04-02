@@ -64,18 +64,13 @@ class Kernel(Parameterized):
         """
         Validates the shape of a potentially ARD hyperparameter
 
-        Input:
-            value - scalar or array
-            ARD - None, False, or True. If None, infers ARD from shape of value
-        Output:
-            value - scalar if input_dim==1 or not ARD, array otherwise
-            ARD - False if input_dim==1 or not ARD, True otherwise
+        :param value: A scalar or an array.
+        :param ARD: None, False, or True. If None, infers ARD from shape of value.
+        :return: Tuple (value, ARG), where _value_ is a scalar if input_dim==1 or not ARD, array otherwise.
+            The _ARD_ is False if input_dim==1 or not ARD, True otherwise.
         """
         if ARD is None:
-            if np.asarray(value).squeeze().shape == ():
-                ARD = False
-            else:
-                ARD = True
+            ARD = np.asarray(value).squeeze().shape != ()
 
         if ARD:
             # accept float or array:
