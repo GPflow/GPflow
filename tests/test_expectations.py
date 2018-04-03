@@ -255,6 +255,30 @@ def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
     assert_allclose(eKzxKxz, KzxKxz, rtol=RTOL)
 
 
+@test_util.session_context()
+def test_RBF_eKzxKxz_notNaN():
+    """
+    Ensure that <K_{Z, x} K_{x, Z}>_p(x) is not NaN and correct, when
+    K_{Z, Z} is zero with finite precision. See pull request #595.
+    """
+    kern = gpflow.kernels.RBF(1, lengthscales=0.1)
+    kern.variance = 2.
+
+    p = gpflow.probability_distributions.Gaussian(
+        tf.constant([[10]], dtype=gpflow.settings.tf_float),
+        tf.constant([[[0.1]]], dtype=gpflow.settings.tf_float))
+    z = gpflow.features.InducingPoints([[-10.], [10.]])
+
+    ekz = expectation(p, (kern, z), (kern, z))
+
+    g, = tf.gradients(ekz, kern.lengthscales._unconstrained_tensor)
+
+    sess = tf.get_default_session()
+    z.initialize(sess)
+    kern.initialize(sess)
+    np.testing.assert_almost_equal(sess.run(g), 0.79108496814443863)
+
+
 @pytest.mark.parametrize("kernel1", [rbf_kern_act_dim_0, lin_kern_act_dim_0])
 @pytest.mark.parametrize("kernel2", [rbf_kern_act_dim_1, lin_kern_act_dim_1])
 def test_eKzxKxz_separate_dims_simplification(
