@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 
 from ...actions import Action, ActionContext, Watcher
+from ...models import Model
 
 
 # TODO: Make TriggeredAction, which allows a sequence to be passed of iterations or times for the action to be run.
@@ -120,6 +121,42 @@ class StoreSession(TriggeredAction):
     def run(self, ctx):
         self.saver.save(self.session, self.hist_path, global_step=self.global_step)
 
+class ModelTensorBoard(TriggeredAction):
+    def __init__(self, sequence, trigger: Trigger, model: Model,
+                 file_writer: tf.summary.FileWriter, parameters=None, additional_summaries=None,
+                 global_step=None):
+        """
+        Creates a Task that creates a sensible TensorBoard for a model.
+        :param sequence:
+        :param trigger:
+        :param model:
+        :param file_writer:
+        :param parameters: List of `gpflow.Parameter` objects to send to TensorBoard if they are
+        scalar. If None, all scalars will be sent to TensorBoard.
+        :param additional_summaries: List of Summary objects to send to TensorBoard.
+        """
+        super().__init__(sequence, trigger)
+        self.model = model
+        all_summaries = [] if additional_summaries is None else additional_summaries
+        if parameters is None:
+            all_summaries += [tf.summary.scalar(p.full_name, p.constrained_tensor)
+                              for p in model.parameters if len(p.shape) == 0]
+            all_summaries += [tf.summary.histogram(p.full_name, p.constrained_tensor)
+                              for p in model.parameters if len(p.shape) > 0]
+            all_summaries.append(tf.summary.scalar("likelihood", model._likelihood_tensor))
+        else:
+            all_summaries += [tf.summary.scalar(p.full_name, p.constrained_tensor)
+                              for p in parameters if p.size == 1]
+            all_summaries += [tf.summary.histogram(p.full_name, p.constrained_tensor)
+                              for p in parameters if p.size > 1]
+
+        self.summary = tf.summary.merge(all_summaries)
+        self.file_writer = file_writer
+        self.global_step = global_step
+
+    def run(self, ctx):
+        summary, step = ctx.session.run([self.summary, self.global_step])
+        self.file_writer.add_summary(summary, step)
 
 class PrintTimings(TriggeredAction):
     def __init__(self, sequence, trigger, global_step=None, single_line=True):
