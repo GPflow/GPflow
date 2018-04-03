@@ -66,7 +66,7 @@ class Kernel(Parameterized):
 
         :param value: A scalar or an array.
         :param ARD: None, False, or True. If None, infers ARD from shape of value.
-        :return: Tuple (value, ARG), where _value_ is a scalar if input_dim==1 or not ARD, array otherwise.
+        :return: Tuple (value, ARD), where _value_ is a scalar if input_dim==1 or not ARD, array otherwise.
             The _ARD_ is False if input_dim==1 or not ARD, True otherwise.
         """
         if ARD is None:
