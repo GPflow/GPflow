@@ -60,7 +60,7 @@ class TriggeredAction(Action):
                 self.watcher.stop()
 
             # Move to the next trigger time, and make sure it's after this current iteration
-            while self._next <= self._current_trigger_value(context):
+            while self._next < self._current_trigger_value(context):
                 self._next = next(self._seq)
 
 
