@@ -190,25 +190,25 @@ def expectation(p, obj1, obj2=None, nghp=None):
                      of Gauss-Hermite points used: `num_gauss_hermite_points`
     :return: a 1-D, 2-D, or 3-D tensor containing the expectation
 
-    Allowed combinations:
-        - Psi statistics:
-        eKdiag = expectation(p, kern)  (N)  # Psi0
-        eKxz = expectation(p, (kern, feat))  (NxM)  # Psi1
-        exKxz = expectation(p, identity_mean, (kern, feat))  (NxDxM)
-        eKzxKxz = expectation(p, (kern, feat), (kern, feat))  (NxMxM)  # Psi2
+    Allowed combinations
+    
+    - Psi statistics:
+        >>> eKdiag = expectation(p, kern)  (N)  # Psi0
+        >>> eKxz = expectation(p, (kern, feat))  (NxM)  # Psi1
+        >>> exKxz = expectation(p, identity_mean, (kern, feat))  (NxDxM)
+        >>> eKzxKxz = expectation(p, (kern, feat), (kern, feat))  (NxMxM)  # Psi2
 
-        - kernels and mean functions:
-        eKzxMx = expectation(p, (kern, feat), mean)  (NxMxQ)
-        eMxKxz = expectation(p, mean, (kern, feat))  (NxQxM)
+    - kernels and mean functions:
+        >>> eKzxMx = expectation(p, (kern, feat), mean)  (NxMxQ)
+        >>> eMxKxz = expectation(p, mean, (kern, feat))  (NxQxM)
 
-        - only mean functions:
-        eMx = expectation(p, mean)  (NxQ)
-        eM1x_M2x = expectation(p, mean1, mean2)  (NxQ1xQ2)
-        Note: mean(x) is 1xQ (row vector)
+    - only mean functions:
+        >>> eMx = expectation(p, mean)  (NxQ)
+        >>> eM1x_M2x = expectation(p, mean1, mean2)  (NxQ1xQ2)
+        .. note:: mean(x) is 1xQ (row vector)
 
-        - different kernels:
-        this occurs, for instance, when we are calculating Psi2 for Sum kernels
-        eK1zxK2xz = expectation(p, (kern1, feat), (kern2, feat))  (NxMxM)
+    - different kernels. This occurs, for instance, when we are calculating Psi2 for Sum kernels:
+        >>> eK1zxK2xz = expectation(p, (kern1, feat), (kern2, feat))  (NxMxM)
     """
     if isinstance(p, tuple):
         assert len(p) == 2
