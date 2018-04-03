@@ -7,7 +7,7 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
-from ...actions import Action, ActionContext
+from ...actions import Action, ActionContext, Watcher
 
 
 # TODO: Make TriggeredAction, which allows a sequence to be passed of iterations or times for the action to be run.
@@ -110,3 +110,30 @@ class StoreSession(TriggeredAction):
 
     def run(self, ctx):
         self.saver.save(self.session, self.hist_path, global_step=self.global_step)
+
+
+class PrintTimings(TriggeredAction):
+    def __init__(self, sequence, trigger, global_step=None, single_line=True):
+        super().__init__(sequence, trigger)
+        self.global_step = global_step
+        self.single_line = single_line
+
+    def run(self, context):
+        current_iter = context.iteration
+        if current_iter == 0:
+            opt_iter = 0.0
+            total_iter = 0.0
+            last_iter = 0.0
+        else:
+            opt_iter = np.nan
+            total_iter = current_iter / context.time_spent
+            last_iter = (0.0 if not hasattr(self, '_last_iter')
+                         else (current_iter - self._last_iter) / self._last_iter_timer.elapsed)
+
+        step = context.iteration if self.global_step is None else context.session.run(self.global_step)
+        print("\r%i, %i:\t%.2f optimisation iter/s\t%.2f total iter/s\t%.2f last iter/s" %
+              (current_iter, step, opt_iter, total_iter, last_iter), end='' if self.single_line else '\n')
+
+        self._last_iter = current_iter
+        self._last_iter_timer = Watcher()
+        self._last_iter_timer.start()
