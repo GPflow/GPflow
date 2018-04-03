@@ -77,6 +77,15 @@ class PrintAction(TriggeredAction):
               end="\r" if self.single_line else "\n")
 
 
+class CallbackAction(TriggeredAction):
+    def __init__(self, sequence, trigger, callback):
+        super().__init__(sequence, trigger)
+        self._callback = callback
+
+    def run(self, ctx: ActionContext):
+        self._callback()
+
+
 class SleepAction(TriggeredAction):
     def __init__(self, sequence, trigger, sleep_seconds):
         super().__init__(sequence, trigger)
