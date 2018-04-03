@@ -64,6 +64,7 @@ class Kernel(Parameterized):
         """
         Validates the shape of a potentially ARD hyperparameter
 
+        :param name: The name of the parameter (used for error messages)
         :param value: A scalar or an array.
         :param ARD: None, False, or True. If None, infers ARD from shape of value.
         :return: Tuple (value, ARD), where _value_ is a scalar if input_dim==1 or not ARD, array otherwise.
