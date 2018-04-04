@@ -108,6 +108,11 @@ def lin_kern():
 
 
 @cache_tensor
+def matern_kern():
+    return kernels.Matern32(Data.D_in, variance=rng.rand())
+
+
+@cache_tensor
 def rbf_lin_sum_kern():
     return kernels.Sum([
         kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand() + 1.),
@@ -207,7 +212,7 @@ def test_kernel_only_expectations(session_tf, distribution, kernel, feature, arg
 
 
 @pytest.mark.parametrize("distribution", [gauss])
-@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, rbf_lin_sum_kern])
+@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, matern_kern, rbf_lin_sum_kern])
 @pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
 @pytest.mark.parametrize("arg_filter",
                          [lambda p, k, f, m: (p, (k, f), m),
