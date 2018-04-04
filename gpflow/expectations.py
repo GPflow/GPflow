@@ -414,7 +414,10 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
                                tf.expand_dims(two_z_CC_inv_mu, 2) - tf.expand_dims(two_z_CC_inv_mu, 1)  # NxMxM
         exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxMxM
 
-        return kern.variance ** 1.5 * tf.sqrt(kern.K(Z, presliced=True)) * \
+        # Compute sqrt(self.K(Z)) explicitly to prevent automatic gradient from
+        # being NaN sometimes, see pull request #615
+        kernel_sqrt = tf.exp(-0.25 * kern.square_dist(Z, None))
+        return kern.variance ** 2 * kernel_sqrt * \
                tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis
 
 
