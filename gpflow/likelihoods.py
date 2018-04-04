@@ -141,8 +141,8 @@ class Likelihood(Parameterized):
 
 
 class Gaussian(Likelihood):
-    def __init__(self, var=1.0):
-        super().__init__()
+    def __init__(self, var=1.0, name=None):
+        super().__init__(name=name)
         self.variance = Parameter(
             var, transform=transforms.positive, dtype=settings.float_type)
 
