@@ -13,12 +13,13 @@
 # limitations under the License.
 
 import sys
+
 import tensorflow as tf
 
 from . import optimizer
 from .. import misc
+from ..actions import Optimization
 from ..models.model import Model
-
 
 _REGISTERED_TENSORFLOW_OPTIMIZERS = {}
 
@@ -31,7 +32,55 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         super().__init__()
         self._optimizer = tf_optimizer(*args, **kwargs)
         self._minimize_operation = None
+    
+    def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
+        """
+        Make Tensorflow optimization tensor.
+        This method builds optimization tensor and initializes all necessary variables
+        created by optimizer.
 
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of variables for training.
+            :param kwargs: Dictionary of extra parameters passed to Tensorflow
+                optimizer's minimize method.
+            :return: Tensorflow optimization tensor or operation.
+        """
+        session = model.enquire_session(session)
+        objective = model.objective
+        full_var_list = self._gen_var_list(model, var_list)
+        # Create optimizer variables before initialization.
+        with session.as_default():
+            minimize = self.optimizer.minimize(objective, var_list=full_var_list, **kwargs)
+            model.initialize(session=session)
+            self._initialize_optimizer(session, full_var_list)
+            return minimize
+    
+    def make_optimize_action(self, model, session=None, var_list=None, **kwargs):
+        """
+        Build Optimization action task with Tensorflow optimizer.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of Tensorflow variables to train.
+            :param feed_dict: Tensorflow feed_dict dictionary.
+            :param kwargs: Extra parameters passed to `make_optimize_tensor`.
+            :return: Optimization action.
+        """
+        if model is None or not isinstance(model, Model):
+            raise ValueError('Unknown type passed for optimization.')
+        session = model.enquire_session(session)
+        feed_dict = kwargs.pop('feed_dict', None)
+        feed_dict_update = self._gen_feed_dict(model, feed_dict)
+        run_kwargs = {} if feed_dict_update is None else {'feed_dict': feed_dict_update}
+        optimizer_tensor = self.make_optimize_tensor(model, session, var_list=var_list, **kwargs)
+        opt = Optimization()
+        opt.with_optimizer(self)
+        opt.with_model(model)
+        opt.with_optimizer_tensor(optimizer_tensor)
+        opt.with_run_kwargs(**run_kwargs)
+        return opt
+    
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
                  maxiter=1000, initialize=False, anchor=True, **kwargs):
         """
@@ -50,29 +99,23 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         """
 
         if model is None or not isinstance(model, Model):
-            raise ValueError('Unknown type passed for optimization.')
+            raise ValueError('The `model` argument must be a GPflow model.')
 
+        opt = self.make_optimize_action(model,
+            session=session,
+            var_list=var_list,
+            feed_dict=feed_dict, **kwargs)
+        
+        self._model = opt.model
+        self._minimize_operation = opt.optimizer_tensor
+        
         session = model.enquire_session(session)
-
-        self._model = model
-        objective = model.objective
-
-        with session.graph.as_default():
-            full_var_list = self._gen_var_list(model, var_list)
-
-            # Create optimizer variables before initialization.
-            self._minimize_operation = self.optimizer.minimize(
-                objective, var_list=full_var_list, **kwargs)
-
-            model.initialize(session=session, force=initialize)
-            self._initialize_optimizer(session, full_var_list)
-
-            feed_dict = self._gen_feed_dict(model, feed_dict)
-            for _i in range(maxiter):
-                session.run(self.minimize_operation, feed_dict=feed_dict)
+        with session.as_default():
+            for _ in range(maxiter):
+                opt()
 
         if anchor:
-            model.anchor(session)
+            opt.model.anchor(session)
 
     def _initialize_optimizer(self, session, var_list):
         """

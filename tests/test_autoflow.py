@@ -194,21 +194,5 @@ class TestFixAndPredict(GPflowTestCase):
             _, _ = m.predict_f(m.X.read_value())
 
 
-class TestSVGP(GPflowTestCase):
-    """
-    This replicates Alex's code from bug #99
-    """
-    def test(self):
-        rng = np.random.RandomState(1)
-        X = rng.randn(10, 1)
-        Y = rng.randn(10, 1)
-        Z = rng.randn(3, 1)
-        model = gpflow.models.SVGP(
-            X=X, Y=Y, kern=gpflow.kernels.RBF(1),
-            likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
-        model.compile()
-        model.compute_log_likelihood()
-
-
 if __name__ == '__main__':
     tf.test.main()
