@@ -274,37 +274,6 @@ def test_seperate_independent_mof():
 # @pytest.mark.parametrize('shared_kern', [True, False])
 def test_mixed_mok_with_Id_vs_independent_mok():
     with session_context() as sess:
-        # Model 1
-        q_mu_1 = np.random.randn(Data.M * Data.P, 1)  # MP x 1
-        q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
-        kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
-        feature_1 = InducingPoints(Data.X[:Data.M, ...].copy())
-        m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
-        m1.set_trainable(False)
-        m1.q_sqrt.set_trainable(True)
-        gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
-
-        # Model 2
-        q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
-        q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-        kernel_2 = RBF(Data.D, variance=0.5, lengthscales=1.2)
-        feature_2 = InducingPoints(Data.X[:Data.M, ...].copy())
-        m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
-        m2.set_trainable(False)
-        m2.q_sqrt.set_trainable(True)
-        gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
-
-        # Model 3
-        q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
-        q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-        kernel_3 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
-        feature_3 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
-        m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
-        m3.set_trainable(False)
-        m3.q_sqrt.set_trainable(True)
-        gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
-
-        check_equality_predictions(sess, [m1, m2, m3])
 
         np.random.seed(0)
 
