@@ -13,7 +13,6 @@ from gpflow.test_util import session_context
 
 np.random.seed(1)
 
-
 def predict(sess, model, Xnew, full_cov, full_cov_output):
     m, v = model._build_predict(Xnew, full_cov=full_cov, full_cov_output=full_cov_output)
     return sess.run([m, v])
@@ -30,7 +29,7 @@ def predict_all(sess, models, Xnew, full_cov, full_cov_output):
 
 def assert_all_array_elements_almost_equal(arr, decimal):
     for i in range(len(arr) - 1):
-        np.testing.assert_almost_equal(arr[i], arr[i + 1], decimal=decimal)
+        np.testing.assert_almost_equal(arr[i], arr[i+1], decimal=decimal)
 
 
 def check_equality_predictions(sess, models, dec=3):
@@ -163,11 +162,12 @@ def test_shared_independent_mok():
     """
 
     with session_context() as sess:
+
         # Model 1
         q_mu_1 = np.random.randn(Data.M * Data.P, 1)  # MP x 1
         q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
         kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
-        feature_1 = InducingPoints(Data.X[:Data.M, ...].copy())
+        feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
         m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
         m1.set_trainable(False)
         m1.q_sqrt.set_trainable(True)
@@ -177,7 +177,7 @@ def test_shared_independent_mok():
         q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
         q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
         kernel_2 = RBF(Data.D, variance=0.5, lengthscales=1.2)
-        feature_2 = InducingPoints(Data.X[:Data.M, ...].copy())
+        feature_2 = InducingPoints(Data.X[:Data.M,...].copy())
         m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
         m2.set_trainable(False)
         m2.q_sqrt.set_trainable(True)
@@ -207,12 +207,13 @@ def test_separate_independent_mok():
     """
 
     with session_context() as sess:
+
         # Model 1 (INefficient)
         q_mu_1 = np.random.randn(Data.M * Data.P, 1)
         q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
         kern_list_1 = [RBF(Data.D, variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
         kernel_1 = mk.SeparateIndependentMok(kern_list_1)
-        feature_1 = InducingPoints(Data.X[:Data.M, ...].copy())
+        feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
         m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
         m1.set_trainable(False)
         m1.q_sqrt.set_trainable(True)
@@ -224,7 +225,7 @@ def test_separate_independent_mok():
         q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
         kern_list_2 = [RBF(Data.D, variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
         kernel_2 = mk.SeparateIndependentMok(kern_list_2)
-        feature_2 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
+        feature_2 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M,...].copy()))
         m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
         m2.set_trainable(False)
         m2.q_sqrt.set_trainable(True)
@@ -232,7 +233,7 @@ def test_separate_independent_mok():
         gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
         check_equality_predictions(sess, [m1, m2])
-
+        
 
 def test_separate_independent_mof():
     """
