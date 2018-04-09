@@ -89,6 +89,7 @@ class AutoBuild(abc.ABCMeta):
             if autobuild_on and global_autobuild_on:
                 self.build()
                 self.initialize(force=True)
+        __init__.__doc__ = origin_init.__doc__
         setattr(new_cls, '__init__', __init__)
         return new_cls
 
