@@ -12,12 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Coders module exploits Numpy custom [dtypes](https://docs.scipy.org/doc/numpy-1.13.0/reference/arrays.dtypes.html)
+to construct shippable python structures.
+Briefly, custom numpy dtypes are structures with any description. Type description includes
+a field name, type of the value and optionally value shape. Encoded values as numpy objects
+can be serialized saving them as byte arrays or any other suitable approach.
+
+Standard coders can encode/decode:
+
+* Primitive types: int, str, float, bool, NoneType.
+* GPflow objects: Parameter, Parameterized, ParamList, Prior, Transform.
+* List.
+* Dictionary with string keys.
+* Numpy array and scalar.
+* Function, except lambda and class methods.
+
+"""
 
 import abc
 import sys
 from collections import namedtuple
 from copy import copy
 from enum import Enum
+from typing import Any, AnyStr, Optional, Dict, List, Union
 from types import FunctionType
 
 import numpy as np
@@ -30,26 +48,38 @@ from ..transforms import Transform
 from .context import BaseContext, Contexture
 
 
-class StructField:
-    type_field = '__type__'
-    data = '__data__'
-    module = '__module__'
-    class_field = '__class__'
-    function_field = '__function__'
-    extra = '__extra__'
+
+class StructField(Enum):
+    """Custom np.dtype field names."""
+    TYPE = '__type__'
+    DATA = '__data__'
+    MODULE = '__module__'
+    CLASS = '__class__'
+    FUNCTION = '__function__'
+    EXTRA = '__extra__'
+
+
 
 class StructType(Enum):
-    OBJECT = 0
-    DICT = 1
-    LIST = 2
-    FUNCTION = 3
-    SLICE = 4
+    """Custom np.dtype values for '__type__' field."""
+    OBJECT, DICT, LIST, FUNCTION, SLICE = range(0, 5)
+
+
+NoneType = type(None)
+
+BasicType = Union[
+    int, float, bool, np.ndarray,
+    Parameter, Parameterized, ParamList,
+    Transform, Prior, NoneType]
+
+DictBasicType = Dict[str, BasicType]
+ListBasicType = List[BasicType]
 
 
 class BaseCoder(Contexture, metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
-    def support_encoding(cls, item):
+    def support_encoding(cls, item: Any):
         pass
 
     @classmethod
@@ -58,7 +88,7 @@ class BaseCoder(Contexture, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def encode(self, item):
+    def encode(self, item: ):
         pass
 
     @abc.abstractmethod
@@ -72,7 +102,7 @@ class PrimitiveTypeCoder(BaseCoder):
         return (str, int, float, bool,
                 np.string_, np.bytes_,
                 np.ndarray, np.bool_,
-                np.number, type(None))
+                np.number, NoneType)
 
     @classmethod
     def support_encoding(cls, item):
@@ -132,7 +162,7 @@ class StructCoder(BaseCoder):
         data_dtype = [data_dtype]
         if shape:
             data_dtype = [data_dtype[0], shape]
-        dtype = np.dtype([type_pattern(), (StructField.data, *data_dtype)])
+        dtype = np.dtype([type_pattern(), (StructField.DATA.value, *data_dtype)])
         return np.array((type_name, data), dtype=dtype)
 
     @classmethod
@@ -144,7 +174,7 @@ class StructCoder(BaseCoder):
         if not _is_numpy_object(item):
             return False
         fields = item.dtype.fields
-        type_field = StructField.type_field
+        type_field = StructField.TYPE.value
         if not fields or type_field not in fields:
             return False
         return item[type_field] == cls.decoding_type()
@@ -178,7 +208,7 @@ class ListCoder(StructCoder):
         return self.struct(self.decoding_type(), data, shape=shape)
         
     def decode(self, item):
-        data = item[StructField.data]
+        data = item[StructField.DATA.value]
         if _is_nan(data):
             return []
         if not data.shape:
@@ -209,7 +239,7 @@ class DictCoder(StructCoder):
         return self.struct(self.decoding_type(), data)
     
     def decode(self, item):
-        data = item[StructField.data]
+        data = item[StructField.DATA.value]
         if _is_nan(data):
             return {}
         factory = CoderFactory(self.context)
@@ -235,7 +265,7 @@ class SliceCoder(StructCoder):
         return self.struct(self.decoding_type(), data)
 
     def decode(self, item):
-        data = item[StructField.data]
+        data = item[StructField.DATA.value]
         def try_decode(e):
             return None if _is_nan(e) else int(e)
         return slice(*map(try_decode, data))
@@ -255,14 +285,14 @@ class FunctionCoder(StructCoder):
         name = factory.encode(item.__name__)
         module = factory.encode(item.__module__)
         dtype = np.dtype([type_pattern(),
-                          (StructField.module, module.dtype),
-                          (StructField.function_field, name.dtype)])
+                          (StructField.MODULE.value, module.dtype),
+                          (StructField.FUNCTION.value, name.dtype)])
         return np.array((self.decoding_type(), module, name), dtype=dtype)
     
     def decode(self, item):
         factory = CoderFactory(self.context)
-        module = factory.decode(item[StructField.module])
-        name = factory.decode(item[StructField.function_field])
+        module = factory.decode(item[StructField.MODULE.value])
+        name = factory.decode(item[StructField.FUNCTION.value])
         return _build_type(module, name)
 
 
@@ -280,8 +310,8 @@ class ObjectCoder(StructCoder):
         if not super().support_decoding(item):
             return False
         factory = CoderFactory(BaseContext())
-        module = factory.decode(item[StructField.module])
-        name = factory.decode(item[StructField.class_field])
+        module = factory.decode(item[StructField.MODULE.value])
+        name = factory.decode(item[StructField.CLASS.value])
         item_type = _build_type(module, name)
         return issubclass(item_type, cls.encoding_type())
     
@@ -299,10 +329,10 @@ class ObjectCoder(StructCoder):
         name = factory.encode(item.__class__.__name__)
         module = factory.encode(item.__module__)
         dtype = np.dtype([type_pattern(),
-                          (StructField.module, module.dtype),
-                          (StructField.class_field, name.dtype),
-                          (StructField.data, data.dtype),
-                          (StructField.extra, extra_data.dtype)])
+                          (StructField.MODULE.value, module.dtype),
+                          (StructField.CLASS.value, name.dtype),
+                          (StructField.DATA.value, data.dtype),
+                          (StructField.EXTRA.value, extra_data.dtype)])
         return np.array((StructType.OBJECT.value, module, name, data, extra_data), dtype=dtype)
     
     def decode(self, item):
@@ -328,13 +358,13 @@ class ObjectCoder(StructCoder):
         return CoderFactory(self.context).encode(extra)
     
     def _decode_attributes(self, item):
-        data = item[StructField.data]
+        data = item[StructField.DATA.value]
         return CoderFactory(self.context).decode(data)
     
     def _decode_object(self, item, attributes):
         factory = CoderFactory(self.context)
-        module = factory.decode(item[StructField.module])
-        name = factory.decode(item[StructField.class_field])
+        module = factory.decode(item[StructField.MODULE.value])
+        name = factory.decode(item[StructField.CLASS.value])
         item_type = _build_type(module, name)
         instance = object.__new__(item_type)
         instance.__dict__ = attributes
@@ -386,7 +416,7 @@ class ParameterCoder(NodeCoder):
     
     def _decode_object(self, item, attributes):
         instance = super()._decode_object(item, attributes)
-        extra = item[StructField.extra]
+        extra = item[StructField.EXTRA.value]
         extra = CoderFactory(self.context).decode(extra)
         if extra and self.context.autocompile:
             instance.compile(session=self.context.session)
@@ -408,7 +438,7 @@ class ParameterizedCoder(NodeCoder):
         for attr in attributes.values():
             if isinstance(attr, Node):
                 setattr(attr, '_parent', instance)
-        extra = item[StructField.extra]
+        extra = item[StructField.EXTRA.value]
         extra = CoderFactory(self.context).decode(extra)
         if extra and self.context.autocompile:
             instance.compile(session=self.context.session)
@@ -472,7 +502,7 @@ class CoderFactory(BaseCoder):
 
 
 def type_pattern():
-    return (StructField.type_field, np.uint8)
+    return (StructField.TYPE.value, np.uint8)
 
 
 def empty_array():
