@@ -757,7 +757,7 @@ class Combination(Kern):
                     d = k.active_dims.stop
                 else:
                     step = k.active_dims.step or 1
-                    d = k.active_dims.start + step * (k.input_dims - 1)
+                    d = k.active_dims.start + step * k.input_dim
             else:
                 d = np.max(k.active_dims) + 1
             return d
