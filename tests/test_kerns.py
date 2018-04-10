@@ -355,19 +355,21 @@ class TestCombinedSliced(GPflowTestCase):
     """ Ensure dimensions of combined kernels are correct."""
     def test_slice_dims(self):
         """ Separate kernels for feature indexes [0] and [1, 2]"""
-        rbf = gpflow.kernels.RBF(1, active_dims=[0])
-        lin = gpflow.kernels.Linear(2, active_dims=slice(1, 3))
-        kern = rbf + lin
-        self.assertTrue(kern.input_dim == 3)
-        self.assertTrue(kern.active_dims == slice(3))
+        with self.test_context() as session:
+            rbf = gpflow.kernels.RBF(1, active_dims=[0])
+            lin = gpflow.kernels.Linear(2, active_dims=slice(1, 3))
+            kern = rbf + lin
+            self.assertTrue(kern.input_dim == 3)
+            self.assertTrue(kern.active_dims == slice(3))
 
     def test_open_slice_dims(self):
         """ Separate kernels for feature indexes [0] and [1, 2]"""
-        rbf = gpflow.kernels.RBF(1, active_dims=[0])
-        lin = gpflow.kernels.Linear(2, active_dims=slice(1, None))
-        kern = rbf + lin
-        self.assertTrue(kern.input_dim == 3)
-        self.assertTrue(kern.active_dims == slice(3))
+        with self.test_context() as session:
+            rbf = gpflow.kernels.RBF(1, active_dims=[0])
+            lin = gpflow.kernels.Linear(2, active_dims=slice(1, None))
+            kern = rbf + lin
+            self.assertTrue(kern.input_dim == 3)
+            self.assertTrue(kern.active_dims == slice(3))
 
 
 class TestWhite(GPflowTestCase):
