@@ -16,41 +16,23 @@
 from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
-from .param import Parameterized
+
 from . import densities
-from ._settings import settings
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+from . import settings
+
+from .params import Parameterized
+from .core.base import IPrior
 
 
-class Prior(Parameterized):
-    def logp(self, x):
-        """
-        The log density of the prior as x
-
-        All priors (for the moment) are univariate, so if x is a vector or an
-        array, this is the sum of the log densities.
-        """
-        raise NotImplementedError
-
-    def sample(self, shape=(1,)):
-        """
-        a sample utility function for the prior.
-        """
-        raise NotImplementedError
-
-    def __str__(self):
-        """
-        A short string to describe the prior at print time
-        """
-        raise NotImplementedError
+class Prior(Parameterized, IPrior):  # pylint: disable=W0223
+    pass
 
 
 class Gaussian(Prior):
     def __init__(self, mu, var):
         Prior.__init__(self)
-        self.mu = np.atleast_1d(np.array(mu, np_float_type))
-        self.var = np.atleast_1d(np.array(var, np_float_type))
+        self.mu = np.atleast_1d(np.array(mu, settings.float_type))
+        self.var = np.atleast_1d(np.array(var, settings.float_type))
 
     def logp(self, x):
         return tf.reduce_sum(densities.gaussian(x, self.mu, self.var))
@@ -65,15 +47,14 @@ class Gaussian(Prior):
 class LogNormal(Prior):
     def __init__(self, mu, var):
         Prior.__init__(self)
-        self.mu = np.atleast_1d(np.array(mu, np_float_type))
-        self.var = np.atleast_1d(np.array(var, np_float_type))
+        self.mu = np.atleast_1d(np.array(mu, settings.float_type))
+        self.var = np.atleast_1d(np.array(var, settings.float_type))
 
     def logp(self, x):
         return tf.reduce_sum(densities.lognormal(x, self.mu, self.var))
 
     def sample(self, shape=(1,)):
-        return np.exp(self.mu +
-                      np.sqrt(self.var)*np.random.randn(*shape))
+        return np.exp(self.mu + np.sqrt(self.var) * np.random.randn(*shape))
 
     def __str__(self):
         return "logN("+str(self.mu) + "," + str(self.var) + ")"
@@ -82,8 +63,8 @@ class LogNormal(Prior):
 class Gamma(Prior):
     def __init__(self, shape, scale):
         Prior.__init__(self)
-        self.shape = np.atleast_1d(np.array(shape, np_float_type))
-        self.scale = np.atleast_1d(np.array(scale, np_float_type))
+        self.shape = np.atleast_1d(np.array(shape, settings.float_type))
+        self.scale = np.atleast_1d(np.array(scale, settings.float_type))
 
     def logp(self, x):
         return tf.reduce_sum(densities.gamma(self.shape, self.scale, x))
@@ -98,8 +79,8 @@ class Gamma(Prior):
 class Laplace(Prior):
     def __init__(self, mu, sigma):
         Prior.__init__(self)
-        self.mu = np.atleast_1d(np.array(mu, np_float_type))
-        self.sigma = np.atleast_1d(np.array(sigma, np_float_type))
+        self.mu = np.atleast_1d(np.array(mu, settings.float_type))
+        self.sigma = np.atleast_1d(np.array(sigma, settings.float_type))
 
     def logp(self, x):
         return tf.reduce_sum(densities.laplace(self.mu, self.sigma, x))
@@ -110,11 +91,12 @@ class Laplace(Prior):
     def __str__(self):
         return "Lap.("+str(self.mu) + "," + str(self.sigma) + ")"
 
+
 class Beta(Prior):
     def __init__(self, a, b):
         Prior.__init__(self)
-        self.a = np.atleast_1d(np.array(a, np_float_type))
-        self.b = np.atleast_1d(np.array(b, np_float_type))
+        self.a = np.atleast_1d(np.array(a, settings.float_type))
+        self.b = np.atleast_1d(np.array(b, settings.float_type))
 
     def logp(self, x):
         return tf.reduce_sum(densities.beta(self.a, self.b, x))
@@ -127,13 +109,13 @@ class Beta(Prior):
 
 
 class Uniform(Prior):
-    def __init__(self, lower=0, upper=1):
+    def __init__(self, lower=0., upper=1.):
         Prior.__init__(self)
         self.log_height = - np.log(upper - lower)
         self.lower, self.upper = lower, upper
 
     def logp(self, x):
-        return self.log_height * tf.cast(tf.size(x), float_type)
+        return self.log_height * tf.cast(tf.size(x), settings.float_type)
 
     def sample(self, shape=(1,)):
         return (self.lower +

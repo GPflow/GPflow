@@ -15,10 +15,12 @@
 
 import tensorflow as tf
 import numpy as np
-from .param import Param, ParamList, Parameterized
-from ._settings import settings
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+
+from . import settings
+from .params import Parameter
+from .params import Parameterized
+from .params import ParamList
+from .decors import params_as_tensors
 
 
 class MeanFunction(Parameterized):
@@ -33,19 +35,13 @@ class MeanFunction(Parameterized):
     example.
     """
     def __call__(self, X):
-        raise NotImplementedError("Implement the __call__\
-                                  method for this mean function")
+        raise NotImplementedError("Implement the __call__ method for this mean function")
 
     def __add__(self, other):
         return Additive(self, other)
 
     def __mul__(self, other):
         return Product(self, other)
-
-
-class Zero(MeanFunction):
-    def __call__(self, X):
-        return tf.zeros(tf.stack([tf.shape(X)[0], 1]), dtype=float_type)
 
 
 class Linear(MeanFunction):
@@ -63,12 +59,48 @@ class Linear(MeanFunction):
         A = np.ones((1, 1)) if A is None else A
         b = np.zeros(1) if b is None else b
         MeanFunction.__init__(self)
-        self.A = Param(np.atleast_2d(A))
-        self.b = Param(b)
+        self.A = Parameter(np.atleast_2d(A), dtype=settings.float_type)
+        self.b = Parameter(b, dtype=settings.float_type)
 
+    @params_as_tensors
     def __call__(self, X):
         return tf.matmul(X, self.A) + self.b
 
+
+class Identity(Linear):
+    """
+    y_i = x_i
+    """
+    def __init__(self, input_dim=None):
+        Linear.__init__(self)
+        self.input_dim = input_dim
+
+    def __call__(self, X):
+        return X
+
+    @property
+    def A(self):
+        if self.input_dim is None:
+            raise ValueError("An input_dim needs to be specified when using the "
+                             "`Identity` mean function in combination with expectations.")
+
+        return tf.eye(self.input_dim, dtype=settings.float_type)
+
+    @property
+    def b(self):
+        if self.input_dim is None:
+            raise ValueError("An input_dim needs to be specified when using the "
+                             "`Identity` mean function in combination with expectations.")
+
+        return tf.zeros(self.input_dim, dtype=settings.float_type)
+
+    @A.setter
+    def A(self, A):
+        pass
+
+    @b.setter
+    def b(self, b):
+        pass
 
 class Constant(MeanFunction):
     """
@@ -77,11 +109,22 @@ class Constant(MeanFunction):
     def __init__(self, c=None):
         MeanFunction.__init__(self)
         c = np.zeros(1) if c is None else c
-        self.c = Param(c)
+        self.c = Parameter(c)
 
+    @params_as_tensors
     def __call__(self, X):
         shape = tf.stack([tf.shape(X)[0], 1])
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+
+
+class Zero(Constant):
+    def __init__(self, output_dim=1):
+        Constant.__init__(self)
+        self.output_dim = output_dim
+        del self.c
+
+    def __call__(self, X):
+        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=settings.tf_float)
 
 
 class SwitchedMeanFunction(MeanFunction):
@@ -97,6 +140,7 @@ class SwitchedMeanFunction(MeanFunction):
         self.meanfunction_list = ParamList(meanfunction_list)
         self.num_meanfunctions = len(self.meanfunction_list)
 
+    @params_as_tensors
     def __call__(self, X):
         ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
@@ -105,7 +149,7 @@ class SwitchedMeanFunction(MeanFunction):
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, self.num_meanfunctions)
         # apply the likelihood-function to each section of the data
-        results = [m(x) for (x, m) in zip(x_list, self.meanfunction_list)]
+        results = [m(x) for x, m in zip(x_list, self.meanfunction_list)]
         # stitch the results back together
         partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
         return tf.dynamic_stitch(partitions, results)

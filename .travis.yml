@@ -2,22 +2,23 @@ sudo: required
 dist: trusty
 language: python
 python:
-  - 3.5
-install:
-  - sudo apt-get update
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
+  - 3.6
 
-  # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=3.5 numpy scipy pandas nose nbformat nbconvert jupyter_client jupyter matplotlib
-  - source activate test-environment
-  - pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.2.1-cp35-cp35m-linux_x86_64.whl
+before_install:
+  - sudo apt-get update -qq
+
+install:
+  - pip install numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov codecov multipledispatch
+  - pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.4.0-cp36-cp36m-linux_x86_64.whl
   - python setup.py install
+
 script:
-  - nosetests -v --nologcapture testing
+  - pytest -W ignore::UserWarning --durations=5 --cov=./ -d --tx 3*popen//python=python3.6 --pyargs tests
+  - codecov --token=2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
+
+cache:
+  apt: true
+  pip: true
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/download

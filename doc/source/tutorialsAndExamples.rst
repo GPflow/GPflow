@@ -3,7 +3,7 @@ Tutorials and examples
 
 .. toctree::
    :maxdepth: 1
-   
+
    notebooks/models
    notebooks/regression
    notebooks/classification
@@ -11,6 +11,7 @@ Tutorials and examples
    notebooks/multiclass
    notebooks/mcmc
    notebooks/ordinal
-   notebooks/svi_test
+   notebooks/coreg_demo
+   notebooks/upper_bound.ipynb
    notebooks/GPLVM
    notebooks/Sanity_check
