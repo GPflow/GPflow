@@ -53,9 +53,9 @@ All constructive input is gratefully received. For more information, see the [no
 
 ## Compatibility
 
-GPflow heavily depends on TensorFlow and as far as TensorFlow supports forward compatibility the GPflow should as well. The version of GPflow can give you a hint about backward compatibility. If major version is changed then you need to check release notes to find out how API has been changed.
+GPflow heavily depends on TensorFlow and as far as TensorFlow supports forward compatibility, GPflow should as well. The version of GPflow can give you a hint about backward compatibility. If the major version has changed then you need to check the release notes to find out how the API has been changed.
 
-Unfortunately, there is no such thing as GPflow models back-compatibility, which means that model implementation can change without changing interfaces. In other words, TensorFlow graph can be different for same models from different version of GPflow.
+Unfortunately, there is no such thing as backward compatibility for GPflow _models_, which means that a model implementation can change without changing interfaces. In other words, the TensorFlow graph can be different for the same models from different versions of GPflow.
 
 ## Projects using GPflow
 
