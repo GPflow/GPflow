@@ -54,6 +54,17 @@ class TestPriorMode(GPflowTestCase):
             opt.minimize(m)
             _ = [assert_allclose(v, -1.) for v in m.read_trainables().values()]
 
+    def testExponential(self):
+        with self.test_context():
+            m = self.prepare()
+            m.x = gpflow.param.Param(1.0)
+
+            m.x.prior = GPflow.priors.Exponential(1.0)
+            self.assertTrue(np.allclose(m.compute_log_prior(), -1.0))
+
+            m.x.prior = GPflow.priors.Exponential(2.0)
+            self.assertTrue(np.allclose(m.compute_log_prior(), np.log(2) - 2))
+
     def testGammaMode(self):
         with self.test_context():
             m = self.prepare()
