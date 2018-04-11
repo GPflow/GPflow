@@ -6,11 +6,15 @@ This template exists to help us to grasp your work without asking very common an
 
 ## PR content:
 
+* [Title](#title)
 * [Introduction](#introduction)
 * [Minimal working example](#minimal-working-example)
 
+### Title
 
-### Introduction
+Squeeze it. Be creative. There is no necessity in any marks like [BUG], {feature} and cetera. We have github labels for that.
+
+### Description
 
 Describe your contribution via writing down context and reasons. Make it clear either it is a **bug fix**, **feature** or **enhancement**. Do not make your it very wordy, keep it short and simple.
 
@@ -28,7 +32,7 @@ No matter how good description is, the best thing you can do for making reviewer
 
 ## Code quality requirements
 
-For details, look at [contributing.md](../contributing.md) code quality requirements section. *Main* points listed here:
+For details, look at [contributing.md](../contributing.md) code quality requirements section. Nevertheless, *Main* points listed here:
 
 * _New feature's_ code must be accompanied with [detailed](../contributing.md) docstrings.
 * _New features_ must be covered with tests.
