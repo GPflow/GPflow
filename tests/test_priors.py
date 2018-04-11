@@ -57,12 +57,14 @@ class TestPriorMode(GPflowTestCase):
     def testExponential(self):
         with self.test_context():
             m = self.prepare()
-            m.x = gpflow.Param(1.0)
-
-            m.x.prior = gpflow.priors.Exponential(1.0)
+            m.x = gpflow.Param(1.0, prior=gpflow.priors.Exponential(1.0))
+            m.compile()
             self.assertTrue(np.allclose(m.compute_log_prior(), -1.0))
 
-            m.x.prior = gpflow.priors.Exponential(2.0)
+        with self.test_context():
+            m = self.prepare()
+            m.x = gpflow.Param(1.0, prior=gpflow.priors.Exponential(2.0))
+            m.compile()
             self.assertTrue(np.allclose(m.compute_log_prior(), np.log(2) - 2))
 
     def testGammaMode(self):
@@ -126,7 +128,7 @@ class TestPriorMode(GPflowTestCase):
             m.x = np.random.randn(1)[0]
             p2 = m.compute_log_prior()
 
-            # prior should no be the same because a transformation has been applied.
+            # prior should not be the same because a transformation has been applied.
             self.assertTrue(p1 != p2)
 
 

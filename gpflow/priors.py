@@ -40,7 +40,7 @@ class Exponential(Prior):
     """
     def __init__(self, rate):
         Prior.__init__(self)
-        self.rate = np.atleast_1d(np.array(rate, np_float_type))
+        self.rate = np.atleast_1d(np.array(rate, settings.float_type))
         if rate <= 0:
             raise ValueError("The rate parameter has to be positive.")
 
