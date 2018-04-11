@@ -57,7 +57,7 @@ class TestPriorMode(GPflowTestCase):
     def testExponential(self):
         with self.test_context():
             m = self.prepare()
-            m.x = gpflow.param.Param(1.0)
+            m.x = gpflow.Param(1.0)
 
             m.x.prior = GPflow.priors.Exponential(1.0)
             self.assertTrue(np.allclose(m.compute_log_prior(), -1.0))
