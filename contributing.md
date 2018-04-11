@@ -7,7 +7,7 @@ This file contains notes for potential contributors to GPflow, as well as some n
 * [Project scope](#projectscope)
 * [Code quality requirements](#code-quality-requirements)
 * [Pull requests and the master branch](#pr-and-master)
-* [Tests and continues integration](#tests-and-ci)
+* [Tests and continuous integration](#tests-and-ci)
 * [Documentation](#documentation)
 * [Version numbering](#versioning)
     * [Keeping up with TensorFlow](#versioning-tensorflow)
@@ -21,10 +21,10 @@ Due to limited scope we may not be able to review and merge every feature, howev
 
 ## Code quality requirements
 
-- Code must be covered with tests. We strongly encourage you to use [pytest](https://docs.pytest.org/) framework. Even when you see your tests as a part of old fashioned GPflow [test cases](https://docs.python.org/3/library/unittest.html) it is still recommended to write a test or modify old one with `pytest`.
-- The code must be documented. We use *reST* in docstrings. The *reST* is a [standard way of documenting](http://docs.python-guide.org/en/latest/writing/documentation/) in python.\
-The code which you are working on does not have any documentation? We would be very grateful, if you amend the deficiency. Missing documentation entails to ambiguity and leads to difficulties in understanding of future contributions and use cases.
-- Use type [annotations](https://docs.python.org/3/library/typing.html). Type hints make code cleaner and _safer_ to some extent.
+- Code must be covered by tests. We strongly encourage you to use the [pytest](https://docs.pytest.org/) framework. Even when you see your tests as a part of the old-fashioned GPflow [test cases](https://docs.python.org/3/library/unittest.html) it is still recommended to write a new test or modify the old one to use `pytest`.
+- The code must be documented. We use *reST* in docstrings. *reST* is a [standard way of documenting](http://docs.python-guide.org/en/latest/writing/documentation/) in python.\
+If the code which you are working on does not yet have any documentation, we would be very grateful if you could amend the deficiency. Missing documentation leads to ambiguities and difficulties in understanding future contributions and use cases.
+- Use [type annotations](https://docs.python.org/3/library/typing.html). Type hints make code cleaner and _safer_ to some extent.
 - Python code should follow the *PEP8* style. Use `pylint` and `mypy` for formatting and _type checking_. GPflow project has `.pylintrc` with some relaxed naming conventions.
 - Practise writing good code as far as is reasonable. Simpler is usually better. Reading the existing GPflow code should give a good idea of the expected style.
 
@@ -32,14 +32,14 @@ Example:
 
 ```
 class Foo:
-    """It is an example class with single simple static method.
-    It mimics singleton class, which can run TensorFlow tensors."""
+    """This is an example class with a single simple static method.
+    It mimics a singleton class which can run TensorFlow tensors."""
 
     @classmethod
     def add_one(cls, tensor: tf.Tensor, op_name: Optional[str] = None) -> Union[int, float, np.ndarray]:
         """Increment input tensor and run it in default GPflow session.
         It is assumed that you have already instantiated variables in 
-        default GPflow session before calling this method.
+        the default GPflow session before calling this method.
 
         :param tf.Tensor tensor: Input tensor.
         :param str op_name: Name scope for TensorFlow operation.
@@ -80,7 +80,7 @@ GPflow's documentation is not comprehensive, but covers enough to get users star
 
 The main purpose of versioning GPflow is user convenience.\
 
-We use [semantic versioning scheme](https://semver.org/). The semver implies `MAJOR.MINOR.PATCH` version scheme, where `MAJOR` changes when there are incompatibilities in API, `MINOR` means adding functionality without breaking existing API and `PATCH` presumes the code update has backward compatible bug fixes.
+We use the [semantic versioning scheme](https://semver.org/). The semver implies `MAJOR.MINOR.PATCH` version scheme, where `MAJOR` changes when there are incompatibilities in API, `MINOR` means adding functionality without breaking existing API and `PATCH` presumes the code update has backward compatible bug fixes.
 
 When incrementing the version number, the following tasks are required:
 
