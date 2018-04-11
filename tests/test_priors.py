@@ -59,10 +59,10 @@ class TestPriorMode(GPflowTestCase):
             m = self.prepare()
             m.x = gpflow.Param(1.0)
 
-            m.x.prior = GPflow.priors.Exponential(1.0)
+            m.x.prior = gpflow.priors.Exponential(1.0)
             self.assertTrue(np.allclose(m.compute_log_prior(), -1.0))
 
-            m.x.prior = GPflow.priors.Exponential(2.0)
+            m.x.prior = gpflow.priors.Exponential(2.0)
             self.assertTrue(np.allclose(m.compute_log_prior(), np.log(2) - 2))
 
     def testGammaMode(self):
