@@ -7,7 +7,7 @@ This template exists to help us to grasp your work without asking very common an
 ## PR content:
 
 * [Title](#title)
-* [Introduction](#introduction)
+* [Description](#description)
 * [Minimal working example](#minimal-working-example)
 
 ### Title
