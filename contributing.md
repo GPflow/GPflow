@@ -4,13 +4,13 @@ This file contains notes for potential contributors to GPflow, as well as some n
 
 #### Table Of Contents
 
-* [Project scope](#projectscope)
+* [Project scope](#project-scope)
 * [Code quality requirements](#code-quality-requirements)
-* [Pull requests and the master branch](#pr-and-master)
-* [Tests and continuous integration](#tests-and-ci)
+* [Pull requests and the master branch](#pull-requests-and-the-master-branch)
+* [Tests and continuous integration](#tests-and-continuous-integration)
 * [Documentation](#documentation)
-* [Version numbering](#versioning)
-    * [Keeping up with TensorFlow](#versioning-tensorflow)
+* [Version numbering](#version-numbering)
+    * [Keeping up with TensorFlow](#keeping-up-with-tensorflow)
 
 
 ## Project scope
