@@ -30,7 +30,7 @@ If the code which you are working on does not yet have any documentation, we wou
 
 Example:
 
-```
+```python
 class Foo:
     """This is an example class with a single simple static method.
     It mimics a singleton class which can run TensorFlow tensors."""
