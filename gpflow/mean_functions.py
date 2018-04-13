@@ -59,8 +59,8 @@ class Linear(MeanFunction):
         A = np.ones((1, 1)) if A is None else A
         b = np.zeros(1) if b is None else b
         MeanFunction.__init__(self)
-        self.A = Parameter(np.atleast_2d(A))
-        self.b = Parameter(b)
+        self.A = Parameter(np.atleast_2d(A), dtype=settings.float_type)
+        self.b = Parameter(b, dtype=settings.float_type)
 
     @params_as_tensors
     def __call__(self, X):

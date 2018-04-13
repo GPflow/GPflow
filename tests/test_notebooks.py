@@ -58,7 +58,7 @@ def _nbpath():
 
 def _preproc():
     pythonkernel = 'python' + str(sys.version_info[0])
-    return ExecutePreprocessor(timeout=120, kernel_name=pythonkernel,
+    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel,
                                interrupt_on_timeout=True)
 
 
