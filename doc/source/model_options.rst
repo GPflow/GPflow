@@ -3,55 +3,55 @@
 The six core models of GPflow
 ========================
 
-The following table summarizes the six core model options in GPflow. 
+The following table summarizes the six core model options in GPflow.
 
 +----------------------+--------------------------+----------------------------+-----------------------------+
 |                      | Gaussian                 | Non-Gaussian (variational) | Non-Gaussian                |
 |                      | Likelihood               |                            | (MCMC)                      |
 +======================+==========================+============================+=============================+
-| Full-covariance      | :class:`GPflow.gpr.GPR`  | :class:`GPflow.vgp.VGP`    | :class:`GPflow.gpmc.GPMC`   |
+| Full covariance      | :class:`gpflow.models.GPR`  | :class:`gpflow.models.VGP`    | :class:`gpflow.models.GPMC`   |
 +----------------------+--------------------------+----------------------------+-----------------------------+
-| Sparse approximation | :class:`GPflow.sgpr.SGPR`| :class:`GPflow.svgp.SVGP`  | :class:`GPflow.sgpmc.SGPMC` |
+| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`  | :class:`gpflow.models.SGPMC` |
 +----------------------+--------------------------+----------------------------+-----------------------------+
 
-The GPLVM, which add latent variables is also included (`notebook <notebooks/GPLVM.html>`_).
+The GPLVM which adds latent variables is also included (`notebook <notebooks/GPLVM.html>`_).
 
 GP Regression
 -------------
 
-.. automodule:: GPflow.gpr
-.. autoclass:: GPflow.gpr.GPR
+.. automodule:: gpflow.models
+.. autoclass:: gpflow.models.GPR
 
 Sparse GP Regression
 --------------------
 
 See also the documentation of the `derivation  <notebooks/SGPR_notes.html>`_.
 
-.. automodule:: GPflow.sgpr
-.. autoclass:: GPflow.sgpr.SGPR
+.. automodule:: gpflow.models
+.. autoclass:: gpflow.models.SGPR
 
 Variational Gaussian Approximation
 ----------------------------------
 
 See also the documentation of the `derivation  <notebooks/VGP_notes.html>`_.
 
-.. automodule:: GPflow.vgp
-.. autoclass:: GPflow.vgp.VGP
+.. automodule:: gpflow.models
+.. autoclass:: gpflow.models.VGP
 
 Sparse Variational Gaussian Approximation
 -----------------------------------------
 
-.. automodule:: GPflow.svgp
-.. autoclass:: GPflow.svgp.SVGP
+.. automodule:: gpflow.models
+.. autoclass:: gpflow.models.SVGP
 
 Markov Chain Monte Carlo
 ------------------------
 
-.. automodule:: GPflow.gpmc
-.. autoclass:: GPflow.gpmc.GPMC
+.. automodule:: gpflow.models
+.. autoclass:: gpflow.models.GPMC
 
 Sparse Markov Chain Monte Carlo
 -------------------------------
 
-.. automodule:: GPflow.sgpmc
-.. autoclass:: GPflow.sgpmc.SGPMC
+.. automodule:: gpflow.models
+.. autoclass:: gpflow.models.SGPMC

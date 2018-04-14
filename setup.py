@@ -1,47 +1,70 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
+
+# pylint: skip-file
+
 from setuptools import setup
+from setuptools import find_packages
+
 import re
 import os
 import sys
-import tensorflow as tf
+from pkg_resources import parse_version
 
 # load version form _version.py
-VERSIONFILE = "GPflow/_version.py"
-verstrline = open(VERSIONFILE, "rt").read()
-VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
-mo = re.search(VSRE, verstrline, re.M)
-if mo:
-    verstr = mo.group(1)
-else:
-    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
+exec(open("gpflow/_version.py").read())
 
-setup(name='GPflow',
-      version=verstr,
+# Dependencies of GPflow
+requirements = [
+    'numpy>=1.10.0',
+    'scipy>=0.18.0',
+    'pandas>=0.18.1',
+    'multipledispatch>=0.4.9'
+]
+
+min_tf_version = '1.5.0'
+tf_cpu = 'tensorflow>={}'.format(min_tf_version)
+tf_gpu = 'tensorflow-gpu>={}'.format(min_tf_version)
+
+# Only detect TF if not installed or outdated. If not, do not do not list as
+# requirement to avoid installing over e.g. tensorflow-gpu
+# To avoid this, rely on importing rather than the package name (like pip).
+
+try:
+    # If tf not installed, import raises ImportError
+    import tensorflow as tf
+    if parse_version(tf.VERSION) < parse_version(min_tf_version):
+        # TF pre-installed, but below the minimum required version
+        raise DeprecationWarning("TensorFlow version below minimum requirement")
+except (ImportError, DeprecationWarning) as e:
+    # Add TensorFlow to dependencies to trigger installation/update
+    requirements.append(tf_cpu)
+
+packages = find_packages('.')
+package_data={'gpflow': ['gpflow/gpflowrc']}
+
+setup(name='gpflow',
+      version=__version__,
       author="James Hensman, Alex Matthews",
       author_email="james.hensman@gmail.com",
       description=("Gaussian process methods in tensorflow"),
       license="Apache License 2.0",
       keywords="machine-learning gaussian-processes kernels tensorflow",
-      url="http://github.com/gpflow/gpflow",
-      package_data={'GPflow': ['GPflow/gpflowrc']},
+      url="http://github.com/GPflow/GPflow",
+      packages=packages,
+      install_requires=requirements,
+      tests_require=['pytest'],
+      package_data=package_data,
       include_package_data=True,
-      ext_modules=[],
-      packages=["GPflow"],
-      package_dir={'GPflow': 'GPflow'},
-      py_modules=['GPflow.__init__'],
-      test_suite='testing',
-      install_requires=['numpy>=1.9', 'scipy>=0.16', 'pandas>=0.18.1'],
-      tests_require=['matplotlib'],
-      extras_require={'tensorflow': ['tensorflow>=1.0.0'],
-                      'tensorflow with gpu': ['tensorflow-gpu>=1.0.0']},
-      classifiers=['License :: OSI Approved :: Apache Software License',
-                   'Natural Language :: English',
-                   'Operating System :: MacOS :: MacOS X',
-                   'Operating System :: Microsoft :: Windows',
-                   'Operating System :: POSIX :: Linux',
-                   'Programming Language :: Python :: 2.7',
-                   'Programming Language :: Python :: 3.5',
-                   'Topic :: Scientific/Engineering :: Artificial Intelligence']
-      )
+      test_suite='tests',
+      extras_require={'Tensorflow with GPU': [tf_gpu]},
+      classifiers=[
+          'License :: OSI Approved :: Apache Software License',
+          'Natural Language :: English',
+          'Operating System :: MacOS :: MacOS X',
+          'Operating System :: Microsoft :: Windows',
+          'Operating System :: POSIX :: Linux',
+          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
+          'Topic :: Scientific/Engineering :: Artificial Intelligence'
+      ])
