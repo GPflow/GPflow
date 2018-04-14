@@ -268,6 +268,6 @@ def columnwise_gradients(Y, X):
         return tf.less(col, num_cols)
 
     shape_invariants = [tf.TensorShape([None, None, None]), tf.TensorShape([])]
-    grads, _ = tf.while_loop(cond, body, [tf.zeros([tf.shape(X)[0], tf.shape(X)[1], 0], float_type), tf.constant(0)], shape_invariants=shape_invariants)
+    grads, _ = tf.while_loop(cond, body, [tf.zeros([tf.shape(X)[0], tf.shape(X)[1], 0], settings.float_type), tf.constant(0)], shape_invariants=shape_invariants)
 
     return grads

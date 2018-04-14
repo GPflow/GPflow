@@ -78,15 +78,17 @@ class TestMethods(GPflowTestCase):
 
     def test_predict_f_gradients(self):
         with self.test_context():
-            for m in self.ms:
-                mf, vf = m.predict_f_gradients(self.Xs)
+            ms, Xs, rng = self.prepare()
+            for m in ms:
+                mf, vf = m.predict_f_gradients(Xs)
                 self.assertTrue(mf.shape == vf.shape)
                 self.assertTrue(mf.shape == (10, 2, 1))
 
     def test_predict_y_gradients(self):
         with self.test_context():
-            for m in self.ms:
-                mf, vf = m.predict_y_gradients(self.Xs)
+            ms, Xs, rng = self.prepare()
+            for m in ms:
+                mf, vf = m.predict_y_gradients(Xs)
                 self.assertTrue(mf.shape == vf.shape)
                 self.assertTrue(mf.shape == (10, 2, 1))
 
