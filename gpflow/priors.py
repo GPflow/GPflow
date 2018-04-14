@@ -41,7 +41,7 @@ class Exponential(Prior):
     def __init__(self, rate):
         Prior.__init__(self)
         self.rate = np.atleast_1d(np.array(rate, settings.float_type))
-        if rate <= 0:
+        if rate <= 0:  # pragma: no cover
             raise ValueError("The rate parameter has to be positive.")
 
     def logp(self, x):
