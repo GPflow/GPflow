@@ -182,7 +182,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self._build_predict(Xnew)
         return self.likelihood.predict_mean_and_var(pred_f_mean, pred_f_var)
 
-    @autoflow((float_type, [None, None]))
+    @autoflow((settings.float_type, [None, None]))
     def predict_f_gradients(self, Xnew):
         """
         Compute the gradients of the mean and variance of the latent
@@ -198,7 +198,7 @@ class GPModel(Model):
         pred_f_mean, pred_f_var = self._build_predict(Xnew)
         return columnwise_gradients(pred_f_mean, Xnew), columnwise_gradients(pred_f_var, Xnew)
 
-    @autoflow((float_type, [None, None]))
+    @autoflow((settings.float_type, [None, None]))
     def predict_y_gradients(self, Xnew):
         """
         Compute the gradients of the mean and variance of held-out data w.r.t.
