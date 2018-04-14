@@ -13,5 +13,3 @@ GPflow Documentation
    tutorialsAndExamples
    apiAndArchitecture
    derivations
-
-    

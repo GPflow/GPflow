@@ -16,66 +16,36 @@ from __future__ import absolute_import
 
 import numpy as np
 import tensorflow as tf
+import itertools
 
-from . import tf_wraps as tfw
-from ._settings import settings
-
-float_type = settings.dtypes.float_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+from . import settings
+from .misc import vec_to_tri
+from .core.base import ITransform
 
 
-class Transform(object):
-    def forward(self, x):
+class Transform(ITransform):  # pylint: disable=W0223
+    def __call__(self, other_transform):
         """
-        Map from the free-space to the variable space, using numpy
+        Calling a Transform with another Transform results in a Chain of both.
+        The following are equivalent:
+        >>> Chain(t1, t2)
+        >>> t1(t2)
         """
-        raise NotImplementedError
-
-    def backward(self, y):
-        """
-        Map from the variable-space to the free space, using numpy
-        """
-        raise NotImplementedError
-
-    def tf_forward(self, x):
-        """
-        Map from the free-space to the variable space, using tensorflow
-        """
-        raise NotImplementedError
-
-    def tf_log_jacobian(self, x):
-        """
-        Return the log Jacobian of the tf_forward mapping.
-
-        Note that we *could* do this using a tf manipulation of
-        self.tf_forward, but tensorflow may have difficulty: it doesn't have a
-        Jacaobian at time of writing.  We do this in the tests to make sure the
-        implementation is correct.
-        """
-        raise NotImplementedError
-
-    def free_state_size(self, variable_shape):
-        return np.prod(variable_shape)
-
-    def __str__(self):
-        """
-        A short string describing the nature of the constraint
-        """
-        raise NotImplementedError
-
-    def __getstate__(self):
-        return self.__dict__.copy()
-
-    def __setstate__(self, d):
-        self.__dict__ = d
+        if not isinstance(other_transform, Transform):
+            raise TypeError("transforms can only be chained with other transforms: "
+                            "perhaps you want t.forward(x)")
+        return Chain(self, other_transform)
 
 
 class Identity(Transform):
     """
     The identity transform: y = x
     """
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         return tf.identity(x)
+
+    def backward_tensor(self, y):
+        return tf.identity(y)
 
     def forward(self, x):
         return x
@@ -83,11 +53,43 @@ class Identity(Transform):
     def backward(self, y):
         return y
 
-    def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type)
+    def log_jacobian_tensor(self, x):
+        return tf.zeros((1,), settings.float_type)
 
     def __str__(self):
         return '(none)'
+
+
+class Chain(Transform):
+    """
+    Chain two transformations together:
+    .. math::
+       y = t_1(t_2(x))
+    where y is the natural parameter and x is the free state
+    """
+
+    def __init__(self, t1, t2):
+        self.t1 = t1
+        self.t2 = t2
+
+    def forward_tensor(self, x):
+        return self.t1.forward_tensor(self.t2.forward_tensor(x))
+
+    def backward_tensor(self, y):
+        return self.t2.backward_tensor(self.t1.backward_tensor(y))
+
+    def forward(self, x):
+        return self.t1.forward(self.t2.forward(x))
+
+    def backward(self, y):
+        return self.t2.backward(self.t1.backward(y))
+
+    def log_jacobian_tensor(self, x):
+        return self.t1.log_jacobian_tensor(self.t2.forward_tensor(x)) +\
+               self.t2.log_jacobian_tensor(x)
+
+    def __str__(self):
+        return "{} {}".format(self.t1.__str__(), self.t2.__str__())
 
 
 class Exp(Transform):
@@ -102,8 +104,11 @@ class Exp(Transform):
     def __init__(self, lower=1e-6):
         self._lower = lower
 
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         return tf.exp(x) + self._lower
+
+    def backward_tensor(self, y):
+        return tf.log(y - self._lower)
 
     def forward(self, x):
         return np.exp(x) + self._lower
@@ -111,11 +116,11 @@ class Exp(Transform):
     def backward(self, y):
         return np.log(y - self._lower)
 
-    def tf_log_jacobian(self, x):
+    def log_jacobian_tensor(self, x):
         return tf.reduce_sum(x)
 
     def __str__(self):
-        return '+ve'
+        return 'Exp'
 
 
 class Log1pe(Transform):
@@ -123,7 +128,7 @@ class Log1pe(Transform):
     A transform of the form
     .. math::
 
-       y = \log ( 1 + \exp(x))
+       y = \log(1 + \exp(x))
 
     x is a free variable, y is always positive.
 
@@ -146,11 +151,15 @@ class Log1pe(Transform):
         """
         return np.logaddexp(0, x) + self._lower
 
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         return tf.nn.softplus(x) + self._lower
 
-    def tf_log_jacobian(self, x):
-        return -tf.reduce_sum(tf.log(1. + tf.exp(-x)))
+    def backward_tensor(self, y):
+        ys = tf.maximum(y - self._lower, tf.as_dtype(settings.float_type).min)
+        return ys + tf.log(-tf.expm1(-ys))
+
+    def log_jacobian_tensor(self, x):
+        return tf.negative(tf.reduce_sum(tf.nn.softplus(tf.negative(x))))
 
     def backward(self, y):
         """
@@ -178,7 +187,7 @@ class Log1pe(Transform):
 
 
         """
-        ys = np.maximum(y - self._lower, np.finfo(np_float_type).eps)
+        ys = np.maximum(y - self._lower, np.finfo(settings.float_type).eps)
         return ys + np.log(-np.expm1(-ys))
 
     def __str__(self):
@@ -187,18 +196,18 @@ class Log1pe(Transform):
 
 class Logistic(Transform):
     """
-    The logictic transform, useful for keeping variables constrained between the limits a and b:
+    The logistic transform, useful for keeping variables constrained between the limits a and b:
     .. math::
 
        y = a + (b-a) s(x)
        s(x) = 1 / (1 + \exp(-x))
-   """
+    """
     def __init__(self, a=0., b=1.):
-        Transform.__init__(self)
-        assert b > a
+        if a >= b:
+            raise ValueError("a must be smaller than b")
         self.a, self.b = float(a), float(b)
 
-    def tf_forward(self, x):
+    def forward_tensor(self, x):
         ex = tf.exp(-x)
         return self.a + (self.b - self.a) / (1. + ex)
 
@@ -206,48 +215,59 @@ class Logistic(Transform):
         ex = np.exp(-x)
         return self.a + (self.b - self.a) / (1. + ex)
 
+    def backward_tensor(self, y):
+        return -tf.log((self.b - self.a) / (y - self.a) - 1.)
+
     def backward(self, y):
         return -np.log((self.b - self.a) / (y - self.a) - 1.)
 
-    def tf_log_jacobian(self, x):
+    def log_jacobian_tensor(self, x):
         return tf.reduce_sum(x - 2. * tf.log(tf.exp(x) + 1.) + np.log(self.b - self.a))
 
     def __str__(self):
-        return '[' + str(self.a) + ', ' + str(self.b) + ']'
+        return "[{}, {}]".format(self.a, self.b)
 
 
 class Rescale(Transform):
     """
-    A transform that can linearly rescale parameters, in conjucntion with
-    another transform. By default, the identity transform is wrapped so
+    A transform that can linearly rescale parameters:
     .. math::
        y = factor * x
 
-    If another transform t() is passed to the constructor, then this transform becomes
-    .. math::
+    Use `Chain` to combine this with another transform such as Log1pe:
+    `Chain(Rescale(), otherTransform())` results in
        y = factor * t(x)
+    `Chain(otherTransform(), Rescale())` results in
+       y = t(factor * x)
 
-    This is useful for avoiding optimization or MCMC over large or small scales.
+    This is useful for avoiding overly large or small scales in optimization/MCMC.
+
+    If you want a transform for a positive quantity of a given scale, you want
+    >>> Rescale(scale)(positive)
     """
-    def __init__(self, factor=1.0, chain_transform=Identity()):
-        self.factor = factor
-        self.chain_transform = chain_transform
+    def __init__(self, factor=1.0):
+        self.factor = float(factor)
 
-    def tf_forward(self, x):
-        return self.chain_transform.tf_forward(x * self.factor)
+    def forward_tensor(self, x):
+        return x * self.factor
 
     def forward(self, x):
-        return self.chain_transform.forward(x * self.factor)
+        return x * self.factor
+
+    def backward_tensor(self, y):
+        return y / self.factor
 
     def backward(self, y):
-        return self.chain_transform.backward(y) / self.factor
+        return y / self.factor
 
-    def tf_log_jacobian(self, x):
-        return tf.cast(tf.reduce_prod(tf.shape(x)), float_type) * \
-                self.factor * self.chain_transform.tf_log_jacobian(x * self.factor)
+    def log_jacobian_tensor(self, x):
+        N = tf.cast(tf.reduce_prod(tf.shape(x)), dtype=settings.float_type)
+        factor = tf.cast(self.factor, dtype=settings.float_type)
+        log_factor = tf.log(factor)
+        return N * log_factor
 
     def __str__(self):
-        return "R" + self.chain_transform.__str__()
+        return "{}*".format(self.factor)
 
 
 class DiagMatrix(Transform):
@@ -255,130 +275,142 @@ class DiagMatrix(Transform):
     A transform to represent diagonal matrices.
 
     The output of this transform is a N x dim x dim array of diagonal matrices.
-    The contructor argumnet dim specifies the size of the matrixes.
+    The constructor argument `dim` specifies the size of the matrices.
 
-    Additionally, to ensure that the matrices are positive definite, the
-    diagonal elements are pushed through a 'positive' transform, defaulting to
-    log1pe.
+    To make a constraint over positive-definite diagonal matrices, chain this
+    transform with a positive transform. For example, to get posdef matrices of size 2x2:
+        t = DiagMatrix(2)(positive)
+
     """
 
-    def __init__(self, dim=1, positive_transform=Log1pe()):
+    def __init__(self, dim=1):
         self.dim = dim
-        self._lower = 1e-6
-        self._positive_transform = positive_transform
 
     def forward(self, x):
-        # Create diagonal matrix
-        x = self._positive_transform.forward(x).reshape((-1, self.dim))
-        m = np.zeros((x.shape[0], x.shape[1], x.shape[1]))
+        # create diagonal matrices
+        m = np.zeros((x.size * self.dim)).reshape(-1, self.dim, self.dim)
+        x = x.reshape(-1, self.dim)
         m[(np.s_[:],) + np.diag_indices(x.shape[1])] = x
         return m
 
     def backward(self, y):
         # Return diagonals of matrices
-        return self._positive_transform.backward(y.reshape(-1, self.dim, self.dim).diagonal(0, 1, 2).flatten())
+        if len(y.shape) not in (2, 3) or not (y.shape[-1] == y.shape[-2] == self.dim):
+            raise ValueError("shape of input does not match this transform")
+        return y.reshape((-1, self.dim, self.dim)).diagonal(offset=0, axis1=1, axis2=2).flatten()
 
-    def tf_forward(self, x):
-        return tf.matrix_diag(tf.reshape(self._positive_transform.tf_forward(x), (-1, self.dim)))
+    def backward_tensor(self, y):
+        reshaped = tf.reshape(y, shape=(-1, self.dim, self.dim))
+        return tf.reshape(tf.matrix_diag_part(reshaped), shape=[-1])
 
-    def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type) + self._positive_transform.tf_log_jacobian(x)
+    def forward_tensor(self, x):
+        # create diagonal matrices
+        return tf.matrix_diag(tf.reshape(x, (-1, self.dim)))
+
+    def log_jacobian_tensor(self, x):
+        return tf.zeros((1,), settings.float_type)
 
     def __str__(self):
         return 'DiagMatrix'
-
-    def free_state_size(self, variable_shape):
-        return variable_shape[0] * variable_shape[1]
 
 
 class LowerTriangular(Transform):
     """
     A transform of the form
 
-       tri_mat = vec_to_tri(x)
+       y = vec_to_tri(x)
 
-    x is a free variable, y is always a list of lower triangular matrices sized
-    (N x N x D).
+    x is the 'packed' version of shape num_matrices x (N**2 + N)/2
+    y is the 'unpacked' version of shape num_matrices x N x N.
+    
+    :param N: the size of the final lower triangular matrices.
+    :param num_matrices: Number of matrices to be stored.
+    :param squeeze: If num_matrices == 1, drop the redundant axis.
+    
+    :raises ValueError: squeezing is impossible when num_matrices > 1.
     """
 
     def __init__(self, N, num_matrices=1, squeeze=False):
         """
         Create an instance of LowerTriangular transform.
-        Args:
-            N the size of the final lower triangular matrices.
-            num_matrices: Number of matrices to be stored.
-            squeeze: If num_matrices == 1, drop the redundant axis.
         """
+        self.N = N
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
         self.squeeze = squeeze
-        self.N = N
 
-    def _validate_vector_length(self, length):
-        """
-        Check whether the vector length is consistent with being a triangular
-         matrix and with `self.num_matrices`.
-        Args:
-            length: Length of the free state vector.
-
-        Returns: Length of the vector with the lower triangular elements.
-
-        """
-        L = length / self.num_matrices
-        if int(((L * 8) + 1) ** 0.5) ** 2.0 != (L * 8 + 1):
-            raise ValueError("The free state must be a triangle number.")
-        return L
+        if self.squeeze and (num_matrices != 1):
+            raise ValueError("cannot squeeze matrices unless num_matrices is 1.")
 
     def forward(self, x):
         """
-        Transforms from the free state to the variable.
-        Args:
-            x: Free state vector. Must have length of `self.num_matrices` *
-                triangular_number.
-
-        Returns:
-            Reconstructed variable.
+        Transforms from the packed to unpacked representations (numpy)
+        
+        :param x: packed numpy array. Must have shape `self.num_matrices x triangular_number
+        :return: Reconstructed numpy array y of shape self.num_matrices x N x N
         """
-        L = self._validate_vector_length(len(x))
-        matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
-        xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((matsize, matsize, self.num_matrices), np_float_type)
+        fwd = np.zeros((self.num_matrices, self.N, self.N), settings.float_type)
+        indices = np.tril_indices(self.N, 0)
+        z = np.zeros(len(indices[0])).astype(int)
         for i in range(self.num_matrices):
-            indices = np.tril_indices(matsize, 0)
-            var[indices + (np.zeros(len(indices[0])).astype(int) + i,)] = xr[i, :]
-        return var.squeeze() if self.squeeze else var
+            fwd[(z + i,) + indices] = x[i, :]
+        return fwd.squeeze(axis=0) if self.squeeze else fwd
 
     def backward(self, y):
         """
-        Transforms from the variable to the free state.
-        Args:
-            y: Variable representation.
-
-        Returns:
-            Free state.
+        Transforms a series of triangular matrices y to the packed representation x (numpy)
+        
+        :param y: unpacked numpy array y, shape self.num_matrices x N x N
+        :return: packed numpy array, x, shape self.num_matrices x triangular number
         """
-        N = int((y.size / self.num_matrices) ** 0.5)
-        y = np.reshape(y, (N, N, self.num_matrices))
-        return y[np.tril_indices(len(y), 0)].T.flatten()
+        if self.squeeze:
+            y = y[None, :, :]
+        ind = np.tril_indices(self.N)
+        return np.vstack([y_i[ind] for y_i in y])
 
-    def tf_forward(self, x):
-        fwd = tf.transpose(tfw.vec_to_tri(tf.reshape(x, (self.num_matrices, -1)),self.N), [1, 2, 0])
-        return tf.squeeze(fwd) if self.squeeze else fwd
+    def forward_tensor(self, x):
+        """
+        Transforms from the packed to unpacked representations (tf.tensors)
+        
+        :param x: packed tensor. Must have shape `self.num_matrices x triangular_number
+        :return: Reconstructed tensor y of shape self.num_matrices x N x N
+        """
+        fwd = vec_to_tri(x, self.N)
+        return tf.squeeze(fwd, axis=0) if self.squeeze else fwd
 
-    def tf_log_jacobian(self, x):
-        return tf.zeros((1,), float_type)
+    def backward_tensor(self, y):
+        """
+        Transforms a series of triangular matrices y to the packed representation x (tf.tensors)
+        
+        :param y: unpacked tensor with shape self.num_matrices, self.N, self.N
+        :return: packed tensor with shape self.num_matrices, (self.N**2 + self.N) / 2
+        """
+        if self.squeeze:
+            y = tf.expand_dims(y, axis=0)
+        indices = np.vstack(np.tril_indices(self.N)).T
+        indices = itertools.product(np.arange(self.num_matrices), indices)
+        indices = np.array([np.hstack(x) for x in indices])
+        triangular = tf.gather_nd(y, indices)
+        return tf.reshape(triangular, [self.num_matrices, (self.N**2 + self.N) // 2])
 
-    def free_state_size(self, variable_shape):
-        matrix_batch = len(variable_shape) > 2
-        if ((not matrix_batch and self.num_matrices != 1) or
-                (matrix_batch and variable_shape[2] != self.num_matrices)):
-            raise ValueError("Number of matrices must be consistent with what was passed to the constructor.")
-        if variable_shape[0] != variable_shape[1]:
-            raise ValueError("Matrices passed must be square.")
-        N = variable_shape[0]
-        return int(0.5 * N * (N + 1)) * (variable_shape[2] if matrix_batch else 1)
+    def log_jacobian_tensor(self, x):
+        """
+        This function has a jacobian of one, since it is simply an identity mapping (with some packing/unpacking)
+        """
+        return tf.zeros((1,), settings.float_type)
 
     def __str__(self):
         return "LoTri->vec"
 
 
 positive = Log1pe()
+
+
+def positiveRescale(scale):
+    """
+    The appropriate joint transform for positive parameters of a given `scale`
+
+    This is a convenient shorthand for
+
+        constrained = scale * log(1 + exp(unconstrained))
+    """
+    return Rescale(scale)(positive)

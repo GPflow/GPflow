@@ -5,18 +5,18 @@ import os
 import numpy as np
 import cProfile
 
-def outputGraph( model, dirName, fileName ):
+def outputGraph(model, dirName, fileName):
     model.compile()
-    if not( os.path.isdir(dirName) ):
+    if not(os.path.isdir(dirName)):
         os.mkdir(dirName)
-    fullFileName = os.path.join( dirName, fileName )
-    if os.path.isfile( fullFileName ):
-        os.remove( fullFileName )
+    fullFileName = os.path.join(dirName, fileName)
+    if os.path.isfile(fullFileName):
+        os.remove(fullFileName)
     tf.train.write_graph(model.session.graph_def, dirName+'/', fileName, as_text=False)
 
 # build a very simple data set:
 def getData():
-    rng = np.random.RandomState( 1 )
+    rng = np.random.RandomState(1)
     N = 30
     X = rng.rand(N,1)
     Y = np.sin(12*X) + 0.66*np.cos(25*X) + rng.randn(N,1)*0.1 + 3
@@ -30,7 +30,7 @@ def getRegressionModel(X,Y):
     #build the GPR object
     k = gpflow.kernels.Matern52(1)
     meanf = gpflow.mean_functions.Linear(1,0)
-    m = gpflow.gpr.GPR(X, Y, k, meanf)
+    m = gpflow.models.GPR(X, Y, k, meanf)
     m.likelihood.variance = 0.01
     print "Here are the parameters before optimization"
     m
@@ -50,7 +50,7 @@ def plotOptimizationResult(X,Y,m):
     plt.plot(xx, mean, 'b', lw=2)
     plt.plot(xx, mean + 2*np.sqrt(var), 'b--', xx, mean - 2*np.sqrt(var), 'b--', lw=1.2)
 
-def setModelPriors( m ):
+def setModelPriors(m):
     #we'll choose rather arbitrary priors. 
     m.kern.lengthscales.prior = gpflow.priors.Gamma(1., 1.)
     m.kern.variance.prior = gpflow.priors.Gamma(1., 1.)
@@ -59,11 +59,11 @@ def setModelPriors( m ):
     m.mean_function.b.prior = gpflow.priors.Gaussian(0., 10.)
     print "model with priors ", m
 
-def getSamples( m ):
+def getSamples(m):
     samples = m.sample(100, epsilon = 0.1)
     return samples
 
-def plotSamples( X, Y, m, samples ):
+def plotSamples(X, Y, m, samples):
     xx = np.linspace(-0.1, 1.1, 100)[:,None]
     plt.figure()
     plt.plot(samples)
@@ -103,18 +103,18 @@ def runExperiments(plotting=True,outputGraphs=False):
     m = getRegressionModel(X,Y)
     if outputGraphs:
         modelDir = 'models'
-        outputGraph( m, modelDir, 'pointHypers' )
+        outputGraph(m, modelDir, 'pointHypers')
     optimizeModel(m)
     if plotting:
         plotOptimizationResult(X,Y,m)
-    setModelPriors( m )
+    setModelPriors(m)
     if outputGraphs:
-        outputGraph( m, modelDir, 'bayesHypers' )
-    samples = getSamples( m )
+        outputGraph(m, modelDir, 'bayesHypers')
+    samples = getSamples(m)
     if plotting:
-        plotSamples( X, Y, m,  samples )
+        plotSamples(X, Y, m,  samples)
         showAllPlots()
 
 if __name__ == '__main__':
     runExperiments()
-    #cProfile.run( 'runExperiments( plotting=False )' )
+    #cProfile.run('runExperiments(plotting=False)')

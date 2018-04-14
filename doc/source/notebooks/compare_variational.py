@@ -5,7 +5,7 @@ from IPython import embed
 
 nPoints = 3
 rng =np.random.RandomState(4)
-X = np.atleast_2d( rng.rand(nPoints)*10 ).T
+X = np.atleast_2d(rng.rand(nPoints)*10).T
 Y = np.sin(X) + 0.9 * np.cos(X*1.6) + np.random.randn(*X.shape)* 0.8
 
 def kernel():
@@ -13,12 +13,12 @@ def kernel():
 
 plt.plot(X, Y, 'kx')
 
-m2 = gpflow.vgp.VGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian())
-m3 = gpflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
-m4 = gpflow.svgp.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
+m2 = gpflow.models.VGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian())
+m3 = gpflow.models.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=True)
+m4 = gpflow.models.SVGP(X, Y, kern=kernel(), likelihood=gpflow.likelihoods.Gaussian(), Z=X.copy(), q_diag=False, whiten=False)
 
-m3.Z.fixed = True
-m4.Z.fixed = True
+m3.feature.trainable = False
+m4.feature.trainable = False
 
 model_list = [m2,m3,m4]
 
@@ -27,9 +27,11 @@ for m in model_list:
     m.kern.variance.fixed = True
     m.likelihood.variance.fixed = True
 
-m2.optimize(maxiter=100000)
-m3.optimize(maxiter=100000)
-m4.optimize(maxiter=100000)
+opt = gpflow.train.ScipyOptimizer()
+opt.minimize(m2, maxiter=100000)
+opt.minimize(m3, maxiter=100000)
+opt.minimize(m4, maxiter=100000)
+
 
 xx = np.linspace(-1, 11, 100)[:,None]
 

@@ -2,8 +2,8 @@
 Introduction
 ------------
 
-GPflow is a package for building Gaussian process models in python, using `TensorFlow <http://www.tensorflow.org>`_. It was originally created and is now managed by `James Hensman <http://www.lancaster.ac.uk/staff/hensmanj/>`_ and `Alexander G. de G. Matthews <http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews>`_. 
-The full list of `contributors <http://github.com/GPflow/GPflow/graphs/contributors>`_ (in alphabetical order) is Rasmus Bonnevie, Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.  
+GPflow is a package for building Gaussian process models in python, using `TensorFlow <http://www.tensorflow.org>`_. It was originally created and is now managed by `James Hensman <http://www.lancaster.ac.uk/staff/hensmanj/>`_ and `Alexander G. de G. Matthews <http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews>`_.
+The full list of `contributors <http://github.com/GPflow/GPflow/graphs/contributors>`_ (in alphabetical order) is Artem Artemev, Rasmus Bonnevie, Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
 
 Install
 -------
@@ -37,27 +37,27 @@ GPflow has a slew of kernels that can be combined in a straightforward way. See 
 
 Regression
 ~~~~~~~~~~
-For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `gpflow.gpr.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters  (`notebook <notebooks/regression.html>`_).
+For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `gpflow.models.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters  (`notebook <notebooks/regression.html>`_).
 
-It's also possible to do Sparse GP regression using the :class:`gpflow.sgpr.SGPR` class. This is based on work by `Michalis Titsias <http://www.jmlr.org/proceedings/papers/v5/titsias09a.html>`_ [4].
+It's also possible to do Sparse GP regression using the :class:`gpflow.models.SGPR` class. This is based on work by `Michalis Titsias <http://www.jmlr.org/proceedings/papers/v5/titsias09a.html>`_ [4].
 
 MCMC
 ~~~~
-For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: :class:`gpflow.gpmc.GPMC`. There's also a sparse equivalent in :class:`gpflow.sgpmc.SGPMC`, based on a `recent paper <https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes>`_ [1]. 
+For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: :class:`gpflow.models.GPMC`. There's also a sparse equivalent in :class:`gpflow.models.SGPMC`, based on a `recent paper <https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes>`_ [1].
 
 Variational inference
 ~~~~~~~~~~~~~~~~~~~~~
-It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`gpflow.vgp.VGP`. In addition, there is a sparse version based on [3] in :class:`gpflow.svgp.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`gpflow.sgpr.SGPR` . All of the sparse methods in GPflow are solidified in [5]. 
+It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`gpflow.models.VGP`. In addition, there is a sparse version based on [3] in :class:`gpflow.models.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`gpflow.models.SGPR` . All of the sparse methods in GPflow are solidified in [5].
 
-The following table summarizes the model options in GPflow. 
+The following table summarizes the model options in GPflow.
 
 +----------------------+--------------------------+----------------------------+-----------------------------+
 |                      | Gaussian                 | Non-Gaussian (variational) | Non-Gaussian                |
 |                      | Likelihood               |                            | (MCMC)                      |
 +======================+==========================+============================+=============================+
-| Full-covariance      | :class:`gpflow.gpr.GPR`  | :class:`gpflow.vgp.VGP`    | :class:`gpflow.gpmc.GPMC`   |
+| Full-covariance      | :class:`gpflow.models.GPR`  | :class:`gpflow.models.VGP`    | :class:`gpflow.models.GPMC`   |
 +----------------------+--------------------------+----------------------------+-----------------------------+
-| Sparse approximation | :class:`gpflow.sgpr.SGPR`| :class:`gpflow.svgp.SVGP`  | :class:`gpflow.sgpmc.SGPMC` |
+| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`  | :class:`gpflow.models.SGPMC` |
 +----------------------+--------------------------+----------------------------+-----------------------------+
 
 A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of `Matthews <http://mlg.eng.cam.ac.uk/matthews/thesis.pdf>`_ [8].
@@ -65,16 +65,16 @@ A unified view of many of the relevant references, along with some extensions, a
 GPLVM
 ~~~~~~~~~~~~~~~~~~~~~
 For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
-in GPflow. (`notebook <notebooks/GPLVM.html>`_).
+in GPflow (`notebook <notebooks/GPLVM.html>`_).
 
 Contributing
 ------------
-All constuctive input is gratefully received. For more information, see the `notes for contributors <https://github.com/GPflow/GPflow/blob/master/contributing.md>`_.
+All constructive input is gratefully received. For more information, see the `notes for contributors <https://github.com/GPflow/GPflow/blob/master/contributing.md>`_.
 
 Citing GPflow
-------------
+-------------
 
-To cite GPflow, please reference the [JMLR paper](http://www.jmlr.org/papers/volume18/16-537/16-537.pdf). Sample Bibtex is given below:
+To cite GPflow, please reference the `JMLR paper <http://www.jmlr.org/papers/volume18/16-537/16-537.pdf>`_. Sample BibTeX is given below:
 
 
 | @ARTICLE{GPflow2017,
@@ -103,7 +103,7 @@ Neural computation 21 (3), 786-792, 2009.
 J Hensman, A G de G Matthews, Z Ghahramani
 Proceedings of AISTATS 18, 2015.
 
-[4] Variational Learning of Inducing Variables in Sparse Gaussian Processes. 
+[4] Variational Learning of Inducing Variables in Sparse Gaussian Processes.
 M Titsias
 Proceedings of AISTATS 12, 2009.
 
@@ -112,7 +112,7 @@ A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
 Proceedings of AISTATS 19, 2016.
 
 [6] Gaussian process latent variable models for visualisation of high dimensional data.
-Lawrence, Neil D. 
+Lawrence, Neil D.
 Advances in Neural Information Processing Systems, 329-336, 2004.
 
 [7] Bayesian Gaussian Process Latent Variable Model.

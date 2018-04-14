@@ -12,125 +12,93 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# -*- coding: utf-8 -*-
+
 
 import tensorflow as tf
-from .scoping import NameScoped
-from ._settings import settings
-float_type = settings.dtypes.float_type
+
+from . import settings
+from .decors import name_scope
 
 
-@NameScoped("KL")
-def gauss_kl_white(q_mu, q_sqrt):
+@name_scope()
+def gauss_kl(q_mu, q_sqrt, K=None):
     """
-    Compute the KL divergence from
+    Compute the KL divergence KL[q || p] between
 
           q(x) = N(q_mu, q_sqrt^2)
-    to
-          p(x) = N(0, I)
-
-    We assume multiple independent distributions, given by the columns of
-    q_mu and the last dimension of q_sqrt.
-
-    q_mu is a matrix, each column contains a mean
-
-    q_sqrt is a 3D tensor, each matrix within is a lower triangular square-root
-        matrix of the covariance.
-    """
-    KL = 0.5 * tf.reduce_sum(tf.square(q_mu))  # Mahalanobis term
-    KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), float_type)  # constant term
-    L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
-    KL -= 0.5 * tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(L))))  # logdet
-    KL += 0.5 * tf.reduce_sum(tf.square(L))  # Trace term.
-    return KL
-
-
-@NameScoped("KL")
-def gauss_kl_white_diag(q_mu, q_sqrt):
-    """
-    Compute the KL divergence from
-
-          q(x) = N(q_mu, q_sqrt^2)
-    to
-          p(x) = N(0, I)
-
-    We assume multiple independent distributions, given by the columns of
-    q_mu and q_sqrt
-
-    q_mu is a matrix, each column contains a mean
-
-    q_sqrt is a matrix, each column represents the diagonal of a square-root
-        matrix of the covariance.
-    """
-
-    KL = 0.5 * tf.reduce_sum(tf.square(q_mu))  # Mahalanobis term
-    KL += -0.5 * tf.cast(tf.size(q_sqrt), float_type)
-    KL += -0.5 * tf.reduce_sum(tf.log(tf.square(q_sqrt)))  # Log-det of q-cov
-    KL += 0.5 * tf.reduce_sum(tf.square(q_sqrt))  # Trace term
-    return KL
-
-
-@NameScoped("KL")
-def gauss_kl_diag(q_mu, q_sqrt, K):
-    """
-    Compute the KL divergence from
-
-          q(x) = N(q_mu, q_sqrt^2)
-    to
+    and
           p(x) = N(0, K)
 
-    We assume multiple independent distributions, given by the columns of
-    q_mu and q_sqrt.
+    We assume N multiple independent distributions, given by the columns of
+    q_mu and the last dimension of q_sqrt. Returns the sum of the divergences.
 
-    q_mu is a matrix, each column contains a mean
+    q_mu is a matrix (M x L), each column contains a mean.
 
-    q_sqrt is a matrix, each column represents the diagonal of a square-root
-        matrix of the covariance of q.
+    q_sqrt can be a 3D tensor (L xM x M), each matrix within is a lower
+        triangular square-root matrix of the covariance of q.
+    q_sqrt can be a matrix (M x L), each column represents the diagonal of a
+        square-root matrix of the covariance of q.
 
-    K is a positive definite matrix: the covariance of p.
+    K is the covariance of p.
+    It is a positive definite matrix (M x M) or a tensor of stacked such matrices (L x M x M)
+    If K is None, compute the KL divergence to p(x) = N(0, I) instead.
     """
-    L = tf.cholesky(K)
-    alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
-    KL = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
-    num_latent = tf.cast(tf.shape(q_sqrt)[1], float_type)
-    KL += num_latent * 0.5 * tf.reduce_sum(
-        tf.log(tf.square(tf.matrix_diag_part(L))))  # Prior log-det term.
-    KL += -0.5 * tf.cast(tf.size(q_sqrt), float_type)  # constant term
-    KL += -0.5 * tf.reduce_sum(tf.log(tf.square(q_sqrt)))  # Log-det of q-cov
-    L_inv = tf.matrix_triangular_solve(L, tf.eye(tf.shape(L)[0], dtype=float_type), lower=True)
-    K_inv = tf.matrix_triangular_solve(tf.transpose(L), L_inv, lower=False)
-    KL += 0.5 * tf.reduce_sum(tf.expand_dims(tf.matrix_diag_part(K_inv), 1) *
-                              tf.square(q_sqrt))  # Trace term.
-    return KL
 
+    white = K is None
+    diag = q_sqrt.get_shape().ndims == 2
 
-@NameScoped("KL")
-def gauss_kl(q_mu, q_sqrt, K):
-    """
-    Compute the KL divergence from
+    M, B = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
-          q(x) = N(q_mu, q_sqrt^2)
-    to
-          p(x) = N(0, K)
+    if white:
+        alpha = q_mu  # M x B
+    else:
+        batch = K.get_shape().ndims == 3
 
-    We assume multiple independent distributions, given by the columns of
-    q_mu and the last dimension of q_sqrt.
+        Lp = tf.cholesky(K)  # B x M x M or M x M
+        q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # B x M x 1 or M x B
+        alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True)  # B x M x 1 or M x B
 
-    q_mu is a matrix, each column contains a mean.
+    if diag:
+        Lq = Lq_diag = q_sqrt
+        Lq_full = tf.matrix_diag(tf.transpose(q_sqrt))  # B x M x M
+    else:
+        Lq = Lq_full = tf.matrix_band_part(q_sqrt, -1, 0)  # force lower triangle # B x M x M
+        Lq_diag = tf.matrix_diag_part(Lq)  # M x B
 
-    q_sqrt is a 3D tensor, each matrix within is a lower triangular square-root
-        matrix of the covariance of q.
+    # Mahalanobis term: μqᵀ Σp⁻¹ μq
+    mahalanobis = tf.reduce_sum(tf.square(alpha))
 
-    K is a positive definite matrix: the covariance of p.
-    """
-    L = tf.cholesky(K)
-    alpha = tf.matrix_triangular_solve(L, q_mu, lower=True)
-    KL = 0.5 * tf.reduce_sum(tf.square(alpha))  # Mahalanobis term.
-    num_latent = tf.cast(tf.shape(q_sqrt)[2], float_type)
-    KL += num_latent * 0.5 * tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(L))))  # Prior log-det term.
-    KL += -0.5 * tf.cast(tf.reduce_prod(tf.shape(q_sqrt)[1:]), float_type)  # constant term
-    Lq = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # force lower triangle
-    KL += -0.5*tf.reduce_sum(tf.log(tf.square(tf.matrix_diag_part(Lq))))  # logdet
-    L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([tf.shape(Lq)[0], 1, 1]))
-    LiLq = tf.matrix_triangular_solve(L_tiled, Lq, lower=True)
-    KL += 0.5 * tf.reduce_sum(tf.square(LiLq))  # Trace term
-    return KL
+    # Constant term: - B * M
+    constant = - tf.size(q_mu, out_type=settings.float_type)
+
+    # Log-determinant of the covariance of q(x):
+    logdet_qcov = tf.reduce_sum(tf.log(tf.square(Lq_diag)))
+
+    # Trace term: tr(Σp⁻¹ Σq)
+    if white:
+        trace = tf.reduce_sum(tf.square(Lq))
+    else:
+        if diag and not batch:
+            # K is M x M and q_sqrt is M x B: fast specialisation
+            LpT = tf.transpose(Lp)  # M x M
+            Lp_inv = tf.matrix_triangular_solve(Lp, tf.eye(M, dtype=settings.float_type),lower=True)  # M x M
+            K_inv = tf.matrix_diag_part(tf.matrix_triangular_solve(LpT, Lp_inv, lower=False))[:, None]  # M x M -> M x 1
+            trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
+        else:
+            # TODO: broadcast instead of tile when tf allows (not implemented in tf <= 1.6.0)
+            Lp_full = Lp if batch else tf.tile(tf.expand_dims(Lp, 0), [B, 1, 1])
+            LpiLq = tf.matrix_triangular_solve(Lp_full, Lq_full, lower=True)
+            trace = tf.reduce_sum(tf.square(LpiLq))
+
+    twoKL = mahalanobis + constant - logdet_qcov + trace
+
+    # Log-determinant of the covariance of p(x):
+    if not white:
+        log_sqdiag_Lp = tf.log(tf.square(tf.matrix_diag_part(Lp)))
+        sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
+        # If K is B x M x M, num_latent is no longer implicit, no need to multiply the single kernel logdet
+        scale = 1.0 if batch else tf.cast(B, settings.float_type)
+        twoKL += scale * sum_log_sqdiag_Lp
+
+    return 0.5 * twoKL

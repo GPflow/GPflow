@@ -1,18 +1,17 @@
 from __future__ import print_function, absolute_import
+
 import itertools
 
-import tensorflow as tf
 import numpy as np
-from ._settings import settings
+import tensorflow as tf
 
-float_type = settings.dtypes.float_type
-int_type = settings.dtypes.int_type
-np_float_type = np.float32 if float_type is tf.float32 else np.float64
+from . import settings
+from .core.errors import GPflowError
 
 
 def hermgauss(n):
     x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(np_float_type), w.astype(np_float_type)
+    x, w = x.astype(settings.float_type), w.astype(settings.float_type)
     return x, w
 
 
@@ -34,7 +33,7 @@ def mvhermgauss(H, D):
     return x, w
 
 
-def mvnquad(f, means, covs, H, Din, Dout=()):
+def mvnquad(func, means, covs, H, Din=None, Dout=None):
     """
     Computes N Gaussian expectation integrals of a single function 'f'
     using Gauss-Hermite quadrature.
@@ -47,6 +46,15 @@ def mvnquad(f, means, covs, H, Din, Dout=()):
     to leave out the item index, i.e. f actually maps (?xD)->(?x*Dout).
     :return: quadratures (N,*Dout)
     """
+    # Figure out input shape information
+    if Din is None:
+        Din = means.shape[1] if type(means.shape) is tuple else means.shape[1].value
+
+    if Din is None:
+        raise GPflowError("If `Din` is passed as `None`, `means` must have a known shape. "
+                          "Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
+                          "is problematic. Consider using your own session.")  # pragma: no cover
+
     xn, wn = mvhermgauss(H, Din)
     N = tf.shape(means)[0]
 
@@ -57,7 +65,15 @@ def mvnquad(f, means, covs, H, Din, Dout=()):
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
 
     # perform quadrature
-    fX = tf.reshape(f(Xr), (H ** Din, N,) + Dout)
+    fevals = func(Xr)
+    if Dout is None:
+        Dout = tuple((d if type(d) is int else d.value) for d in fevals.shape[1:])
+
+    if any([d is None for d in Dout]):
+        raise GPflowError("If `Dout` is passed as `None`, the output of `func` must have known "
+                          "shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
+                          "is problematic. Consider using your own session.")  # pragma: no cover
+    fX = tf.reshape(fevals, (H ** Din, N,) + Dout)
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
                     (-1,) + (1,) * (1 + len(Dout)))
     return tf.reduce_sum(fX * wr, 0)
