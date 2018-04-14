@@ -17,10 +17,9 @@ import functools
 
 import tensorflow as tf
 
-from gpflow.models import Model
-
 from . import optimizer
 from .. import settings
+from ..actions import Optimization
 from ..models import Model
 
 
@@ -43,33 +42,98 @@ class NatGradOptimizer(optimizer.Optimizer):
                  maxiter=1000, anchor=True, **kwargs):
         """
         Minimizes objective function of the model.
+        Natural Gradient optimizer works with variational parameters only.
+        There are two supported ways of transformation for parameters:
+            - XiNat
+            - XiSqrtMeanVar
+        Custom transformations are also possible, they should implement
+        `XiTransform` interface.
 
-        :param model: GPflow model with objective tensor.
-        :param session: Session where optimization will be run.
-        :param var_list: List of extra variables which should be trained during optimization.
-        :param feed_dict: Feed dictionary of tensors passed to session run method.
-        :param maxiter: Number of run interation. Default value: 1000.
-        :param anchor: If `True` trained variable values computed during optimization at
-            particular session will be synchronized with internal parameter values.
-        :param kwargs: This is a dictionary of extra parameters for session run method.
+            :param model: GPflow model.
+            :param session: Tensorflow session where optimization will be run.
+            :param var_list: List of pair tuples of variational parameters or
+                triplet tuple with variational parameters and ξ transformation.
+                By default, all parameters goes through XiNat() transformation.
+                For example your `var_list` can look as,
+                ```
+                var_list = [
+                    (q_mu1, q_sqrt1),
+                    (q_mu2, q_sqrt2, XiSqrtMeanVar())
+                ]
+                ```
+            :param feed_dict: Feed dictionary of tensors passed to session run method.
+            :param maxiter: Number of run interation. Default value: 1000.
+            :param anchor: Synchronize updated parameters for a session with internal
+                parameter's values.
+            :param kwargs: Extra parameters passed to session run's method.
         """
 
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
 
-        session = model.enquire_session(session)
-
         self._model = model
-
-        with session.graph.as_default(), tf.name_scope(self.name):
-            # Create optimizer variables before initialization.
-            self._natgrad_op = self._build_natgrad_step_ops(*var_list)
-            feed_dict = self._gen_feed_dict(model, feed_dict)
+        session = model.enquire_session(session)
+        opt = self.make_optimize_action(model, session=session, var_list=var_list, **kwargs)
+        with session.as_default():
             for _i in range(maxiter):
-                session.run(self.minimize_operation, feed_dict=feed_dict)
-
+                opt()
         if anchor:
             model.anchor(session)
+    
+
+    def make_optimize_tensor(self, model, session=None, var_list=None):
+        """
+        Make Tensorflow optimization tensor.
+        This method builds natural gradients optimization tensor and initializes all
+        necessary variables created by the optimizer.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of tuples of variational parameters.
+            :return: Tensorflow natural gradient operation.
+        """
+        session = model.enquire_session(session)
+        with session.as_default(), tf.name_scope(self.name):
+            # Create optimizer variables before initialization.
+            return self._build_natgrad_step_ops(model, *var_list)
+
+    def make_optimize_action(self, model, session=None, var_list=None, **kwargs):
+        """
+        Builds optimization action.
+        Natural Gradient optimizer works with variational parameters only.
+        There are two supported ways of transformation for parameters:
+            - XiNat
+            - XiSqrtMeanVar
+        Custom transformations are also possible, they should implement
+        `XiTransform` interface.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session where optimization will be run.
+            :param var_list: List of pair tuples of variational parameters or
+                triplet tuple with variational parameters and ξ transformation.
+                By default, all parameters goes through XiNat() transformation.
+                For example your `var_list` can look as,
+                ```
+                var_list = [
+                    (q_mu1, q_sqrt1),
+                    (q_mu2, q_sqrt2, XiSqrtMeanVar())
+                ]
+                ```
+            :param kwargs: Extra parameters passed to session's run method.
+            :return: Optimization action.
+        """
+        if model is None or not isinstance(model, Model):
+            raise ValueError('Unknown type passed for optimization.')
+        feed_dict = kwargs.pop('feed_dict', None)
+        feed_dict_update = self._gen_feed_dict(model, feed_dict)
+        run_kwargs = {} if feed_dict_update is None else {'feed_dict': feed_dict_update}
+        optimizer_tensor = self.make_optimize_tensor(model, session=session, var_list=var_list)
+        opt = Optimization()
+        opt.with_optimizer(self)
+        opt.with_model(model)
+        opt.with_optimizer_tensor(optimizer_tensor)
+        opt.with_run_kwargs(**run_kwargs)
+        return opt
 
     @staticmethod
     def _forward_gradients(ys, xs, d_xs):
@@ -93,16 +157,16 @@ class NatGradOptimizer(optimizer.Optimizer):
         g = tf.gradients(ys, xs, grad_ys=v)
         return tf.gradients(g, v, grad_ys=d_xs)
 
-    def _build_natgrad_step_ops(self, *args):
+    def _build_natgrad_step_ops(self, model, *args):
         ops = []
         for arg in args:
             q_mu, q_sqrt = arg[:2]
             xi_transform = arg[2] if len(arg) > 2 else XiNat()
-            ops.append(self._build_natgrad_step_op(q_mu, q_sqrt, xi_transform))
+            ops.append(self._build_natgrad_step_op(model, q_mu, q_sqrt, xi_transform))
         ops = list(sum(ops, ()))
         return tf.group(*ops)
 
-    def _build_natgrad_step_op(self, q_mu_param, q_sqrt_param, xi_transform):
+    def _build_natgrad_step_op(self, model, q_mu_param, q_sqrt_param, xi_transform):
         """
         Implements equation 10 from
 
@@ -123,7 +187,7 @@ class NatGradOptimizer(optimizer.Optimizer):
         Note that if ξ = nat or [q_μ, q_sqrt] some of these calculations are the identity.
 
         """
-        objective = self._model.objective
+        objective = model.objective
         q_mu, q_sqrt = q_mu_param.constrained_tensor, q_sqrt_param.constrained_tensor
 
         # the three parameterizations as functions of [q_mu, q_sqrt]

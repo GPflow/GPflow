@@ -123,9 +123,11 @@ class HMC(Optimizer):
             traces.update({'logprobs': raw_traces[-1]})
         return pd.DataFrame(traces)
 
+    def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
+        raise NotImplementedError('HMC does not provide make_optimize_tensor method')
 
     def minimize(self, model, **kwargs):
-        raise NotImplementedError("HMC doesn't provide minimize method, use `sample` instead.")
+        raise NotImplementedError('HMC does not provide minimize method, use `sample` instead.')
 
 
 @name_scope("burning")
