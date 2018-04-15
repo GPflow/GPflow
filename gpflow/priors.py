@@ -67,7 +67,7 @@ class Gamma(Prior):
         self.scale = np.atleast_1d(np.array(scale, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(logdensities.gamma(self.shape, self.scale, x))
+        return tf.reduce_sum(logdensities.gamma(x, self.shape, self.scale))
 
     def sample(self, shape=(1,)):
         return np.random.gamma(self.shape, self.scale, size=shape)
@@ -83,7 +83,7 @@ class Laplace(Prior):
         self.sigma = np.atleast_1d(np.array(sigma, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(logdensities.laplace(self.mu, self.sigma, x))
+        return tf.reduce_sum(logdensities.laplace(x, self.mu, self.sigma))
 
     def sample(self, shape=(1,)):
         return np.random.laplace(self.mu, self.sigma, size=shape)
@@ -99,7 +99,7 @@ class Beta(Prior):
         self.b = np.atleast_1d(np.array(b, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(logdensities.beta(self.a, self.b, x))
+        return tf.reduce_sum(logdensities.beta(x, self.a, self.b))
 
     def sample(self, shape=(1,)):
         return np.random.beta(self.a, self.b, size=shape)

@@ -30,19 +30,19 @@ def lognormal(x, mu, var):
     return gaussian(lnx, mu, var) - lnx
 
 
-def bernoulli(p, y):
+def bernoulli(y, p):
     return tf.log(tf.where(tf.equal(y, 1), p, 1-p))
 
 
-def poisson(lamb, y):
+def poisson(y, lamb):
     return y * tf.log(lamb) - lamb - tf.lgamma(y + 1.)
 
 
-def exponential(lamb, y):
+def exponential(y, lamb):
     return - y/lamb - tf.log(lamb)
 
 
-def gamma(shape, scale, x):
+def gamma(x, shape, scale):
     return -shape * tf.log(scale) - tf.lgamma(shape)\
         + (shape - 1.) * tf.log(x) - x / scale
 
@@ -57,7 +57,7 @@ def student_t(x, mean, scale, deg_free):
         tf.log(1. + (1. / deg_free) * (tf.square((x - mean) / scale)))
 
 
-def beta(alpha, beta, y):
+def beta(y, alpha, beta):
     # need to clip y, since log of 0 is nan...
     y = tf.clip_by_value(y, 1e-6, 1-1e-6)
     return (alpha - 1.) * tf.log(y) + (beta - 1.) * tf.log(1. - y) \
@@ -66,7 +66,7 @@ def beta(alpha, beta, y):
         - tf.lgamma(beta)
 
 
-def laplace(mu, sigma, y):
+def laplace(y, mu, sigma):
     return - tf.abs(mu - y) / sigma - tf.log(2. * sigma)
 
 
