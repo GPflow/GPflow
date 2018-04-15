@@ -27,7 +27,7 @@ from .session_manager import reset_default_session
 from . import misc
 from . import transforms
 from . import conditionals
-from . import densities
+from . import logdensities
 from . import likelihoods
 from . import kernels
 from . import priors

@@ -17,7 +17,7 @@ from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from . import densities
+from . import logdensities
 from . import settings
 
 from .params import Parameterized
@@ -35,7 +35,7 @@ class Gaussian(Prior):
         self.var = np.atleast_1d(np.array(var, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.gaussian(x, self.mu, self.var))
+        return tf.reduce_sum(logdensities.gaussian(x, self.mu, self.var))
 
     def sample(self, shape=(1,)):
         return self.mu + np.sqrt(self.var)*np.random.randn(*shape)
@@ -51,7 +51,7 @@ class LogNormal(Prior):
         self.var = np.atleast_1d(np.array(var, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.lognormal(x, self.mu, self.var))
+        return tf.reduce_sum(logdensities.lognormal(x, self.mu, self.var))
 
     def sample(self, shape=(1,)):
         return np.exp(self.mu + np.sqrt(self.var) * np.random.randn(*shape))
@@ -67,7 +67,7 @@ class Gamma(Prior):
         self.scale = np.atleast_1d(np.array(scale, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.gamma(self.shape, self.scale, x))
+        return tf.reduce_sum(logdensities.gamma(self.shape, self.scale, x))
 
     def sample(self, shape=(1,)):
         return np.random.gamma(self.shape, self.scale, size=shape)
@@ -83,7 +83,7 @@ class Laplace(Prior):
         self.sigma = np.atleast_1d(np.array(sigma, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.laplace(self.mu, self.sigma, x))
+        return tf.reduce_sum(logdensities.laplace(self.mu, self.sigma, x))
 
     def sample(self, shape=(1,)):
         return np.random.laplace(self.mu, self.sigma, size=shape)
@@ -99,7 +99,7 @@ class Beta(Prior):
         self.b = np.atleast_1d(np.array(b, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.beta(self.a, self.b, x))
+        return tf.reduce_sum(logdensities.beta(self.a, self.b, x))
 
     def sample(self, shape=(1,)):
         return np.random.beta(self.a, self.b, size=shape)
