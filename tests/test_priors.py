@@ -16,6 +16,7 @@ import tensorflow as tf
 
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 import gpflow
 from gpflow import settings
@@ -132,7 +133,7 @@ class TestPriorMode(GPflowTestCase):
             self.assertTrue(p1 != p2)
 
 
-def mc_moments(prior, size=(100, 150)):
+def mc_moments(prior, size=(10000, 1000)):
     np.random.seed(1)
     x = prior.sample(size)
     assert x.shape == size
@@ -148,7 +149,7 @@ def exponential_moments(prior):
 
 def lognormal_moments(prior):
     mu, var = prior.mu, prior.var
-    return np.exp(mu + var / 2), np.exp(var - 1) * np.exp(2 * mu + var)
+    return np.exp(mu + var / 2), (np.exp(var) - 1) * np.exp(2 * mu + var)
 
 def gamma_moments(prior):
     return prior.shape * prior.scale, prior.shape * prior.scale ** 2
@@ -165,19 +166,22 @@ def uniform_moments(prior):
     return (a + b) / 2, (b - a)**2 / 12
 
 @pytest.mark.parametrize("args", [
-    (gpflow.priors.Exponential, [1.3]),
-    (gpflow.priors.Gaussian, [-2.5, 3.4]),
-    (gpflow.priors.LogNormal, [-2.5, 3.4]),
-    (gpflow.priors.Gamma, [1.5, 0.7]),
-    (gpflow.priors.Laplace, [-2.5, 3.4]),
-    (gpflow.priors.Beta, [3.6, 0.4]),
-    (gpflow.priors.Uniform, [5.4, 8.9]),
+    ("Exponential", [1.3]),
+    ("Gaussian", [-2.5, 3.4]),
+    ("LogNormal", [-2.5, 1.4]),
+    ("Gamma", [1.5, 0.7]),
+    ("Laplace", [-2.5, 3.4]),
+    ("Beta", [3.6, 0.4]),
+    ("Uniform", [5.4, 8.9]),
     ])
 def test_moments(args):
-    cls, params = args
+    classname, params = args
+    cls = eval("gpflow.priors.{}".format(classname))
     prior = cls(*params)
     moments_func = eval("{}_moments".format(cls.__name__.lower()))
-    assert_allclose(moments_func(prior), mc_moments(prior))
+    rtol = 5e-3 if classname == "LogNormal" else 1e-3
+    assert_allclose(np.array(moments_func(prior)).flatten(), mc_moments(prior), rtol=rtol,
+                    err_msg="for {} prior".format(classname))
 
 if __name__ == "__main__":
     tf.test.main()

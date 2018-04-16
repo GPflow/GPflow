@@ -64,7 +64,7 @@ class Gaussian(Prior):
         return tf.reduce_sum(densities.gaussian(x, self.mu, self.var))
 
     def sample(self, shape=(1,)):
-        return self.mu + np.sqrt(self.var)*np.random.randn(*shape)
+        return self.mu + np.sqrt(self.var) * np.random.randn(*shape)
 
     def __str__(self):
         return "N("+str(self.mu) + "," + str(self.var) + ")"
