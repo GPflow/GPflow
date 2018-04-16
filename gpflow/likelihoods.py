@@ -366,7 +366,7 @@ class RobustMax(Parameterized):
     """
 
     def __init__(self, num_classes, epsilon=1e-3, name=None):
-        super(RobustMax, self).__init__(name)
+        super().__init__(name)
         self.epsilon = Parameter(epsilon, transforms.Logistic(), trainable=False, dtype=settings.float_type,
                                  prior=priors.Beta(0.2, 5.))
         self.num_classes = num_classes
