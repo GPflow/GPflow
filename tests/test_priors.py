@@ -132,5 +132,52 @@ class TestPriorMode(GPflowTestCase):
             self.assertTrue(p1 != p2)
 
 
+def mc_moments(prior, size=(100, 150)):
+    np.random.seed(1)
+    x = prior.sample(size)
+    assert x.shape == size
+    mean = x.mean()
+    var = x.var()
+    return mean, var
+
+def gaussian_moments(prior):
+    return prior.mu, prior.var
+
+def exponential_moments(prior):
+    return 1 / prior.rate, prior.rate ** (-2)
+
+def lognormal_moments(prior):
+    mu, var = prior.mu, prior.var
+    return np.exp(mu + var / 2), np.exp(var - 1) * np.exp(2 * mu + var)
+
+def gamma_moments(prior):
+    return prior.shape * prior.scale, prior.shape * prior.scale ** 2
+
+def laplace_moments(prior):
+    return prior.mu, 2 * prior.sigma ** 2
+
+def beta_moments(prior):
+    a, b = prior.a, prior.b
+    return a / (a + b), (a * b) / ((a + b)**2 * (a + b + 1))
+
+def uniform_moments(prior):
+    a, b = prior.lower, prior.upper
+    return (a + b) / 2, (b - a)**2 / 12
+
+@pytest.mark.parametrize("args", [
+    (gpflow.priors.Exponential, [1.3]),
+    (gpflow.priors.Gaussian, [-2.5, 3.4]),
+    (gpflow.priors.LogNormal, [-2.5, 3.4]),
+    (gpflow.priors.Gamma, [1.5, 0.7]),
+    (gpflow.priors.Laplace, [-2.5, 3.4]),
+    (gpflow.priors.Beta, [3.6, 0.4]),
+    (gpflow.priors.Uniform, [5.4, 8.9]),
+    ])
+def test_moments(args):
+    cls, params = args
+    prior = cls(*params)
+    moments_func = eval("{}_moments".format(cls.__name__.lower()))
+    assert_allclose(moments_func(prior), mc_moments(prior))
+
 if __name__ == "__main__":
     tf.test.main()

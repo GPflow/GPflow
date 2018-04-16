@@ -45,8 +45,7 @@ class Exponential(Prior):
             raise ValueError("The rate parameter has to be positive.")
 
     def logp(self, x):
-        scale = 1 / self.rate
-        return tf.reduce_sum(densities.exponential(scale, x))
+        return tf.reduce_sum(densities.exponential(x, self.rate))
 
     def sample(self, shape=(1,)):
         return np.random.exponential(scale=1 / self.rate, size=shape)
