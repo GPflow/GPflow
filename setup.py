@@ -22,7 +22,7 @@ requirements = [
     'multipledispatch>=0.4.9'
 ]
 
-min_tf_version = '1.4.0'
+min_tf_version = '1.5.0'
 tf_cpu = 'tensorflow>={}'.format(min_tf_version)
 tf_gpu = 'tensorflow-gpu>={}'.format(min_tf_version)
 
