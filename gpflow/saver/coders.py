@@ -67,70 +67,83 @@ class StructType(Enum):
 
 NoneType = type(None)
 
-BasicType = Union[
-    int, float, bool, np.ndarray,
-    Parameter, Parameterized, ParamList,
-    Transform, Prior, NoneType]
+PrimitiveType = Union[str, int, float, bool,
+                      np.string_, np.bytes_,
+                      np.ndarray, np.bool_,
+                      np.number, NoneType]
 
+BasicType = Union[
+    PrimitiveType,
+    Parameter, Parameterized,
+    ParamList, Transform, Prior]
+
+TensorType = Union[tf.Variable, tf.Tensor, tf.Operation, tf.data.Iterator]
 DictBasicType = Dict[str, BasicType]
 ListBasicType = List[BasicType]
 
 
 class BaseCoder(Contexture, metaclass=abc.ABCMeta):
+    """Abstract class for coders."""
     @classmethod
     @abc.abstractmethod
-    def support_encoding(cls, item: Any):
+    def support_encoding(cls, item):
+        """Decide either encoding is supported for an item or not."""
         pass
 
     @classmethod
     @abc.abstractmethod
     def support_decoding(cls, item):
+        """Decide either decoding is supported for an item or not."""
         pass
 
     @abc.abstractmethod
-    def encode(self, item: ):
+    def encode(self, item: Any):
+        """Encode input item to structured or plain np.ndarray."""
         pass
 
     @abc.abstractmethod
-    def decode(self, item):
+    def decode(self, item: np.ndarray):
+        """Decode input np.ndarray item back to python type."""
         pass
 
 
 class PrimitiveTypeCoder(BaseCoder):
-    @classmethod
-    def types(cls):
-        return (str, int, float, bool,
-                np.string_, np.bytes_,
-                np.ndarray, np.bool_,
-                np.number, NoneType)
+    """Coder for primitive python types including numpy array."""
 
     @classmethod
-    def support_encoding(cls, item):
-        return isinstance(item, cls.types())
+    def support_encoding(cls, item: PrimitiveType):
+        return isinstance(item, cls._types())
 
     @classmethod
-    def support_decoding(cls, item):
+    def support_decoding(cls, item: np.ndarray):
         if _is_numpy_object(item):
             return False
         if _is_nan(item) or _is_str(item):
             return True
-        return isinstance(item, cls.types())
+        return isinstance(item, cls._types())
 
-    def encode(self, item):
+    def encode(self, item: PrimitiveType):
         if isinstance(item, str):
             return np.string_(item)
         return numpy_none() if item is None else np.array(item)
     
-    def decode(self, item):
+    def decode(self, item: np.ndarray):
         if _is_str(item):
             return _convert_to_string(item)
         return None if _is_nan(item) else item
 
+    @classmethod
+    def _types(cls):
+        return PrimitiveType.__args__ 
+
 
 class TensorFlowCoder(BaseCoder):
+    """Coder for TensorFlow tensors and dataset iterators. TensorFlow objects are not
+    serialized at all, they stored as None."""
+
     @classmethod
     def support_encoding(cls, item):
-        supported_types = (tf.Variable, tf.Tensor, tf.Operation, tf.data.Iterator)
+        supported_types = TensorType.__args__
         return isinstance(item, supported_types)
 
     @classmethod
@@ -145,6 +158,11 @@ class TensorFlowCoder(BaseCoder):
 
 
 class StructCoder(BaseCoder):
+    """
+    Coder for composite types like List, Dict, Slice, Objects and cetera.
+    It defines two abstract methods
+    """
+
     @classmethod
     @abc.abstractmethod
     def encoding_type(cls):
