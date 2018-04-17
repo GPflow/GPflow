@@ -16,9 +16,6 @@
 # flake8: noqa
 
 from __future__ import absolute_import
-from . import (likelihoods, kernels, ekernels, param,
-               model, gpmc, sgpmc, priors, gpr, svgp,
-               vgp, sgpr, gplvm, tf_wraps, tf_hacks, derivative_kernel)
 
 from ._version import __version__
 from ._settings import SETTINGS as settings
@@ -41,6 +38,7 @@ from . import training as train
 from . import features
 from . import expectations
 from . import probability_distributions
+from . import derivative_kernel
 
 from .decors import autoflow
 from .decors import defer_build
