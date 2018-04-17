@@ -165,6 +165,10 @@ def beta_moments(prior):
 
 def uniform_moments(prior):
     a, b = prior.lower, prior.upper
+    # this is the only prior that does not wrap parameters in np.atleast_1d()
+    # so do it here to make sure all the shapes are consistent:
+    a = np.atleast_1d(a)
+    b = np.atleast_1d(b)
     return (a + b) / 2, (b - a)**2 / 12
 
 @pytest.mark.parametrize("args", [
