@@ -33,14 +33,14 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
 
     :param fvar: has shape N x P (full_cov = False) or P x N x N (full_cov = True).
     :return:
-        1) full_cov: True and full_cov_output: True
-            fvar N x P x N x P
-        2) full_cov: True and full_cov_output: False
-            fvar P x N x N
-        3) full_cov: False and full_cov_output: True
-            fvar N x P x P
-        4) full_cov: False and full_cov_output: False
-            fvar N x P
+    1. full_cov: True and full_cov_output: True
+       fvar N x P x N x P
+    2. full_cov: True and full_cov_output: False
+       fvar P x N x N
+    3. full_cov: False and full_cov_output: True
+       fvar N x P x P
+    4. full_cov: False and full_cov_output: False
+       fvar N x P
     """
     if full_cov and full_cov_output:
         fvar = tf.matrix_diag(tf.transpose(fvar))   # N x N x P x P
@@ -63,14 +63,34 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
     """
-    Single-output GP allowing repetitions.
-    See ``_conditional`` below for further reference
-    :param Xnew: N x D
-    :param f: M x R
-    :param q_sqrt: M x R  or  R x M x M
+    Single-output GP allowing repetitions R.
+
+    The covariance matrices used to calculate the conditional have the following shape:
+    - Kuu: M x M 
+    - Kuf: M x N
+    - Kff: N or N x N
+    
+    Further reference
+    -----------------
+    - See `gpflow.conditionals._conditional` (below) for a detailed explanation of 
+      conditional in the single-output case.
+    - See the multiouput notebook for more information about the multiouput framework.
+
+    Parameters
+    ----------
+    :param Xnew: data matrix, size N x D.
+    :param f: data matrix, M x R
+    :param full_cov: return the covariance between the datapoints
+    :param full_cov_output: return the covariance between the outputs.
+     Note: as we are using a single-output kernel with repetitions these covariances will be zero.
+    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
+        size M x R or R x M x M.
+    :param white: boolean of whether to use the whitened representation
     :return: 
         - mean:     N x R
-        - variance: N x R, R x N x N  or  N x R x R  or  N x R x N x R
+        - variance: N x R, R x N x N, N x R x R or N x R x N x R
+        Please see `gpflow.conditional.expand_independent_outputs` for more information
+        about the shape of the variance, depending on `full_cov` and `full_cov_output`.
     """
     print("Conditional: Inducing Feature - Kernel")
     print(full_cov, full_cov_output)
@@ -117,8 +137,8 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     :param white: boolean of whether to use the whitened representation as
         described above.
     :return: 
-        - mean:     N x P
-        - variance: N x P (full_cov = False), P x N x N (full_cov = True)
+        - mean:     N x R
+        - variance: N x R (full_cov = False), R x N x N (full_cov = True)
     """
     print("Conditional: Kernel")
     print(full_cov)
@@ -131,7 +151,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         Knn = kern.Kdiag(Xnew)
     mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
-    return mean, var  # N x P, N x P or P x N x N
+    return mean, var  # N x R, N x R or R x N x N
 
 
 # ----------------------------------------------------------------------------
@@ -139,6 +159,15 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 # ----------------------------------------------------------------------------
 
 def sample_mvn(mean, cov, cov_structure):
+    """
+    Returns a sample from a D-dimensional Multivariate Normal distribution
+    :param mean: N x D
+    :param cov: N x D or N x D x D
+    :param cov_structure: "diag" or "full"
+    - "diag": cov holds the diagonal elements of the covariance matrix
+    - "full": cov holds the full covariance matrix (without jitter)
+    :return: sample from the MVN of shape N x D
+    """
     eps = tf.random_normal(tf.shape(mean), dtype=float_type)  # N x P
     if cov_structure == "diag":
         sample = mean + tf.sqrt(cov) * eps  # N x P
@@ -156,9 +185,13 @@ def sample_mvn(mean, cov, cov_structure):
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=None, white=False):
     """
-    Returns a single sample from the conditional posterior.
-    :return:
-        sample N x P
+    `sample_conditional` will return a sample from the conditinoal distribution.
+    In most cases this means calculating the conditional mean m and variance v and then
+    returning m + sqrt(v) * eps, with eps ~ N(0, 1).
+    However, for some combinations of Mok and Mof more efficient sampling routines exists.
+    The dispatcher will make sure that we use the most efficent one.
+
+    :return: N x P (full_cov_output = False) or N x P x P (full_cov_output = True)
     """
     print("sample conditional: InducingFeature Kernel")
     mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_cov_output=full_cov_output,

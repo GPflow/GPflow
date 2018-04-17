@@ -41,7 +41,7 @@ class Mok(Kernel):
 
     Subclasses of Mok should implement K which returns:
      - N x P x N x P if full_cov_output = True
-     - N x N x P if full_cov_output = False
+     - P x N x N if full_cov_output = False
 
     This is the general multi output correlated kernel.
     K(X1, X2): N1 x P x N2 x P
@@ -143,13 +143,11 @@ class SeparateMixedMok(Mok, Combination):
 
 @dispatch(InducingPoints, Mok, object)
 def Kuf(feat, kern, Xnew):
-    print("Kuf: InducingPoints - Mok")
     return kern.K(feat.Z, Xnew, full_cov_output=True)  #  M x P x N x P
 
 
 @dispatch(SharedIndependentMof, SharedIndependentMok, object)
 def Kuf(feat, kern, Xnew):
-    print("Kuf: SharedIndependentMof - SharedIndependentMok")
     return Kuf(feat.feat, kern.kern, Xnew)  # M x N
 
 
@@ -177,7 +175,6 @@ def Kuf(feat, kern, Xnew):
 
 @dispatch(MixedKernelSharedMof, SeparateMixedMok, object)
 def Kuf(feat, kern, Xnew):
-    print("Kuf: MixedKernelSharedMof, SeparateMixedMok")
     return tf.stack([Kuf(feat.feat, k, Xnew) for k in kern.kern_list], axis=0)  # L x M x N
 
 
@@ -185,7 +182,6 @@ def Kuf(feat, kern, Xnew):
 
 @dispatch(InducingPoints, Mok)
 def Kuu(feat, kern, *, jitter=0.0):
-    print("Kuu: InducingPoints - Mok")
     Kmm = kern.K(feat.Z, full_cov_output=True)  # M x P x M x P
     M = tf.shape(Kmm)[0] * tf.shape(Kmm)[1]
     jittermat = jitter * tf.reshape(tf.eye(M, dtype=float_type), tf.shape(Kmm))
@@ -194,7 +190,6 @@ def Kuu(feat, kern, *, jitter=0.0):
 
 @dispatch(SharedIndependentMof, SharedIndependentMok)
 def Kuu(feat, kern, *, jitter=0.0):
-    print("Kuu: SharedIndependentMof - SharedIndependentMok")
     Kmm = Kuu(feat.feat, kern.kern)  # M x M
     jittermat = tf.eye(len(feat), dtype=float_type) * jitter
     return Kmm + jittermat
@@ -223,7 +218,6 @@ def Kuu(feat, kern, *, jitter=0.0):
 
 @dispatch(MixedKernelSharedMof, SeparateMixedMok)
 def Kuu(feat, kern, *, jitter=0.0):
-    print("Kuu: MixedKernelSharedMof, SeparateMixedMok")
     Kmm = tf.stack([Kuu(feat.feat, k) for k in kern.kern_list], axis=0)  # L x M x M
     jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
     return Kmm + jittermat
