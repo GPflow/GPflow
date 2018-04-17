@@ -160,7 +160,7 @@ class TensorFlowCoder(BaseCoder):
 class StructCoder(BaseCoder):
     """
     Coder for composite types like List, Dict, Slice, Objects and cetera.
-    It defines two abstract methods
+    It defines two abstract methods *encoding_type* and *decoding_type*.
     """
 
     @classmethod
