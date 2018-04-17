@@ -330,7 +330,8 @@ class RationalQuadratic(Stationary):
     def __init__(self, input_dim, variance=1.0, lengthscales=1.0, alpha=1.0,
                  active_dims=None, ARD=None, name=None):
         super().__init__(input_dim, variance, lengthscales, active_dims, ARD, name)
-        self.alpha = Parameter(alpha, transform=transforms.positive)
+        self.alpha = Parameter(alpha, transform=transforms.positive,
+                               dtype=settings.float_type)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -520,10 +521,13 @@ class ArcCosine(Kernel):
             raise ValueError('Requested kernel order is not implemented.')
         self.order = order
 
-        self.variance = Parameter(variance, transform=transforms.positive)
-        self.bias_variance = Parameter(bias_variance, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
+        self.bias_variance = Parameter(bias_variance, transform=transforms.positive,
+                                       dtype=settings.float_type)
         weight_variances, self.ARD = self._validate_ard_shape("weight_variances", weight_variances, ARD)
-        self.weight_variances = Parameter(weight_variances, transform=transforms.positive)
+        self.weight_variances = Parameter(weight_variances, transform=transforms.positive,
+                                          dtype=settings.float_type)
 
     @params_as_tensors
     def _weighted_product(self, X, X2=None):
