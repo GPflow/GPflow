@@ -361,8 +361,6 @@ class RobustMax(Parameterized):
 
     y_i = (1-eps)  i == argmax(f)
           eps/(k-1)  otherwise.
-
-
     """
 
     def __init__(self, num_classes, epsilon=1e-3, name=None):
