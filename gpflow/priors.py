@@ -33,12 +33,12 @@ class Exponential(Prior):
     Exponential distribution.
 
     Support: [0, inf)
-
-    Parameter:
-    rate -- float
-        Rate parameter (inverse scale) (rate > 0)
     """
+
     def __init__(self, rate):
+        """
+        :param float rate: Rate parameter (inverse scale) (rate > 0)
+        """
         Prior.__init__(self)
         self.rate = np.atleast_1d(np.array(rate, settings.float_type))
         if rate <= 0:  # pragma: no cover

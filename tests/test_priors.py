@@ -136,10 +136,12 @@ class TestPriorMode(GPflowTestCase):
 def mc_moments(prior, size=(10000, 1000)):
     np.random.seed(1)
     x = prior.sample(size)
-    assert x.shape == size
+    assert x.shape == size, "inline test that .sample() returns correct shape"
     mean = x.mean()
     var = x.var()
-    return mean, var
+    # analytic moments are all np.atleast_1d() due to the parameters in gpflow.priors
+    # hence we need to do the same for the MC moments so that the shapes match
+    return np.atleast_1d(mean), np.atleast_1d(var)
 
 def gaussian_moments(prior):
     return prior.mu, prior.var
@@ -180,7 +182,7 @@ def test_moments(args):
     prior = cls(*params)
     moments_func = eval("{}_moments".format(cls.__name__.lower()))
     rtol = 5e-3 if classname == "LogNormal" else 1e-3
-    assert_allclose(np.array(moments_func(prior)).flatten(), mc_moments(prior), rtol=rtol,
+    assert_allclose(moments_func(prior), mc_moments(prior), rtol=rtol,
                     err_msg="for {} prior".format(classname))
 
 if __name__ == "__main__":
