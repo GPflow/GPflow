@@ -15,7 +15,7 @@
 import tensorflow as tf
 
 from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
-from .kernels import Kuf, Kuu
+from .features import Kuu, Kuf
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .. import settings
 from ..conditionals import base_conditional, expand_independent_outputs, sample_mvn

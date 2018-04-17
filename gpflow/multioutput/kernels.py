@@ -18,44 +18,58 @@ import tensorflow as tf
 from .. import kernels
 from .. import settings
 from ..decors import params_as_tensors, autoflow
-from ..dispatch import dispatch
-from ..features import InducingPoints, InducingFeature
-from ..features import Kuu, Kuf
 from ..kernels import Kernel, Combination
 from ..params import Parameter
 
-from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
-
 float_type = settings.float_type
-
-# TODO MultiOutputKernels have a different method signature for K and Kdiag (they take full_cov_output)
-# this needs better documentation - especially as the default there is *True* not False as for full_cov
-
-# TODO what are the dimensions of MultiOutputKernel.K, Kuu(), Kuf()?
-# do we need MultiOutputInducingPoints as a special case ?
-# or can we write it in terms of the regular InducingPoints?
 
 class Mok(Kernel):
     """
     Multi Output Kernel class.
+    This kernel can represent correlation between outputs of different datapoints.
+    Therefore, subclasses of Mok should implement `K` which returns:
+    - N x P x N x P if full_cov_output = True
+    - P x N x N if full_cov_output = False
+    and `Kdiag` returns:
+    - N x P x P if full_cov_output = True
+    - N x P if full_cov_output = False
 
-    Subclasses of Mok should implement K which returns:
-     - N x P x N x P if full_cov_output = True
-     - P x N x N if full_cov_output = False
-
-    This is the general multi output correlated kernel.
-    K(X1, X2): N1 x P x N2 x P
+    The `full_cov_output` argument holds whether the kernel should calculate
+    the covariance between the outputs. In case there is no correlation but 
+    `full_cov_output` is set to True the covariance matrix will be filled with zeros
+    until the appropriate size is reached.
     """
-    pass
 
+    def K(self, X, X2=None, full_cov_output=True):
+    """
+    Returns the correlation of f(X1) and f(X2), where f(.) can be multi-dimensional.
+    :param X: data matrix, N1 x D
+    :param X2: data matrix, N2 x D
+    :param full_cov_output: calculate correlation between outputs.
+    :return: cov[f(X1), f(X2)] with shape  
+    - N1 x P x N2 x P if `full_cov_output` = True
+    - P x N1 x N2 if `full_cov_output` = False
+    """
+    raise NotImplemented
+
+    def Kdiag(self, X, full_cov_output=True):
+    """
+    Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
+    :param X: data matrix, N x D
+    :param full_cov_output: calculate correlation between outputs.
+    :return: var[f(X)] with shape  
+    - N x P x N x P if `full_cov_output` = True
+    - N x P if `full_cov_output` = False
+    """
+    raise NotImplemented
 
 class SharedIndependentMok(Mok):
     """
-    Note: this class is created only for testing purposes.
-    Use `gpflow.kernels` instead for more efficient code.
+    - Shared: we use the same kernel for each latent GP
+    - Independent: Latents are uncorrelated a priori.
 
-    > Shared: we use the same kernel for each latent GP
-    > Independent: Latents are uncorrelated a priori.
+    Note: this class is created only for testing and comparison purposes.
+    Use `gpflow.kernels` instead for more efficient code.
     """
     def __init__(self, kern: Kernel, output_dimensionality, name=None):
         Mok.__init__(self, kern.input_dim, name)
@@ -78,8 +92,8 @@ class SharedIndependentMok(Mok):
 
 class SeparateIndependentMok(Mok, Combination):
     """
-    > Separate: we use different kernel for each output latent
-    > Independent: Latents are uncorrelated a priori.
+    - Separate: we use different kernel for each output latent
+    - Independent: Latents are uncorrelated a priori.
     """
     def __init__(self, kern_list, name=None):
         Combination.__init__(self, kern_list, name)
@@ -137,87 +151,3 @@ class SeparateMixedMok(Mok, Combination):
         else:
             # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # N x P
             return tf.matmul(K, self.W ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P
-
-
-# ============================= Kuf =============================
-
-@dispatch(InducingPoints, Mok, object)
-def Kuf(feat, kern, Xnew):
-    return kern.K(feat.Z, Xnew, full_cov_output=True)  #  M x P x N x P
-
-
-@dispatch(SharedIndependentMof, SharedIndependentMok, object)
-def Kuf(feat, kern, Xnew):
-    return Kuf(feat.feat, kern.kern, Xnew)  # M x N
-
-
-@dispatch(SeparateIndependentMof, SharedIndependentMok, object)
-def Kuf(feat, kern, Xnew):
-    return tf.stack([Kuf(f, kern.kern, Xnew) for f in feat.feat_list], axis=0)  # L x M x N
-
-
-@dispatch(SharedIndependentMof, SeparateIndependentMok, object)
-def Kuf(feat, kern, Xnew):
-    return tf.stack([Kuf(feat.feat, k, Xnew) for k in kern.kern_list], axis=0)  # L x M x N
-
-
-@dispatch(SeparateIndependentMof, SeparateIndependentMok, object)
-def Kuf(feat, kern, Xnew):
-    return tf.stack([Kuf(f, k, Xnew) for f, k in zip(feat.feat_list, kern.kern_list)], axis=0)  # L x M x N
-
-
-@dispatch((SeparateIndependentMof, SharedIndependentMof), SeparateMixedMok, object) 
-def Kuf(feat, kern, Xnew):
-    kuf_impl = Kuf.dispatch(type(feat), SeparateIndependentMok, object)
-    K = tf.transpose(kuf_impl(feat, kern, Xnew), [1, 0, 2])  # M x L x N
-    return K[:, :, :, None] * tf.transpose(kern.W)[None, :, None, :]  # M x L x N x P
-
-
-@dispatch(MixedKernelSharedMof, SeparateMixedMok, object)
-def Kuf(feat, kern, Xnew):
-    return tf.stack([Kuf(feat.feat, k, Xnew) for k in kern.kern_list], axis=0)  # L x M x N
-
-
-# ============================= Kuu =============================
-
-@dispatch(InducingPoints, Mok)
-def Kuu(feat, kern, *, jitter=0.0):
-    Kmm = kern.K(feat.Z, full_cov_output=True)  # M x P x M x P
-    M = tf.shape(Kmm)[0] * tf.shape(Kmm)[1]
-    jittermat = jitter * tf.reshape(tf.eye(M, dtype=float_type), tf.shape(Kmm))
-    return Kmm + jittermat
-
-
-@dispatch(SharedIndependentMof, SharedIndependentMok)
-def Kuu(feat, kern, *, jitter=0.0):
-    Kmm = Kuu(feat.feat, kern.kern)  # M x M
-    jittermat = tf.eye(len(feat), dtype=float_type) * jitter
-    return Kmm + jittermat
-
-
-@dispatch(SharedIndependentMof, (SeparateIndependentMok, SeparateMixedMok))
-def Kuu(feat, kern, *, jitter=0.0):
-    Kmm = tf.stack([Kuu(feat.feat, k) for k in kern.kern_list], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
-    return Kmm + jittermat
-
-
-@dispatch(SeparateIndependentMof, SharedIndependentMok)
-def Kuu(feat, kern, *, jitter):
-    Kmm = tf.stack([Kuu(f, kern.kern) for f in feat.feat_list], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
-    return Kmm + jittermat
-
-
-@dispatch(SeparateIndependentMof, (SeparateIndependentMok, SeparateMixedMok))
-def Kuu(feat, kern, *, jitter=0.0):
-    Kmm = tf.stack([Kuu(f, k) for f, k in zip(feat.feat_list, kern.kern_list)], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
-    return Kmm + jittermat
-
-
-@dispatch(MixedKernelSharedMof, SeparateMixedMok)
-def Kuu(feat, kern, *, jitter=0.0):
-    Kmm = tf.stack([Kuu(feat.feat, k) for k in kern.kern_list], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
-    return Kmm + jittermat

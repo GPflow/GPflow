@@ -23,3 +23,5 @@ from .features import Mof
 from .features import SharedIndependentMof
 from .features import SeparateIndependentMof
 from .features import MixedKernelSharedMof
+
+from . import conditionals
