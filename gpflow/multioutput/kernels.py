@@ -41,27 +41,27 @@ class Mok(Kernel):
     """
 
     def K(self, X, X2=None, full_cov_output=True):
-    """
-    Returns the correlation of f(X1) and f(X2), where f(.) can be multi-dimensional.
-    :param X: data matrix, N1 x D
-    :param X2: data matrix, N2 x D
-    :param full_cov_output: calculate correlation between outputs.
-    :return: cov[f(X1), f(X2)] with shape  
-    - N1 x P x N2 x P if `full_cov_output` = True
-    - P x N1 x N2 if `full_cov_output` = False
-    """
-    raise NotImplemented
+        """
+        Returns the correlation of f(X1) and f(X2), where f(.) can be multi-dimensional.
+        :param X: data matrix, N1 x D
+        :param X2: data matrix, N2 x D
+        :param full_cov_output: calculate correlation between outputs.
+        :return: cov[f(X1), f(X2)] with shape  
+        - N1 x P x N2 x P if `full_cov_output` = True
+        - P x N1 x N2 if `full_cov_output` = False
+        """
+        raise NotImplemented
 
     def Kdiag(self, X, full_cov_output=True):
-    """
-    Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
-    :param X: data matrix, N x D
-    :param full_cov_output: calculate correlation between outputs.
-    :return: var[f(X)] with shape  
-    - N x P x N x P if `full_cov_output` = True
-    - N x P if `full_cov_output` = False
-    """
-    raise NotImplemented
+        """
+        Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
+        :param X: data matrix, N x D
+        :param full_cov_output: calculate correlation between outputs.
+        :return: var[f(X)] with shape  
+        - N x P x N x P if `full_cov_output` = True
+        - N x P if `full_cov_output` = False
+        """
+        raise NotImplemented
 
 class SharedIndependentMok(Mok):
     """

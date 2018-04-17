@@ -17,7 +17,9 @@ import tensorflow as tf
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from ..features import InducingPoints, InducingFeature, Kuu, Kuf
 from ..dispatch import dispatch
+from .. import settings
 
+float_type = settings.float_type
 
 class Mof(InducingFeature):
     """
@@ -55,7 +57,7 @@ class SeparateIndependentMof(Mof):
 class MixedKernelSharedMof(SharedIndependentMof):
     """
     This Mof is used in combination with the `SeparateMixedMok`.
-    Using this feature with the `SeparateMixedMok` leads to using the most efficient code.
+    Using this feature with the `SeparateMixedMok` leads to the most efficient code.
     """
     pass
 
