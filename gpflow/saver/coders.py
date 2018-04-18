@@ -35,7 +35,7 @@ import sys
 from collections import namedtuple
 from copy import copy
 from enum import Enum
-from typing import Any, AnyStr, Optional, Dict, List, Union
+from typing import Any, AnyStr, Optional, Dict, List, Union, Type, Tuple
 from types import FunctionType
 
 import numpy as np
@@ -126,7 +126,7 @@ class PrimitiveTypeCoder(BaseCoder):
         if isinstance(item, str):
             return np.string_(item)
         return numpy_none() if item is None else np.array(item)
-    
+
     def decode(self, item: np.ndarray):
         if _is_str(item):
             return _convert_to_string(item)
@@ -134,7 +134,7 @@ class PrimitiveTypeCoder(BaseCoder):
 
     @classmethod
     def _types(cls):
-        return PrimitiveType.__args__ 
+        return PrimitiveType.__args__
 
 
 class TensorFlowCoder(BaseCoder):
@@ -161,20 +161,40 @@ class StructCoder(BaseCoder):
     """
     Coder for composite types like List, Dict, Slice, Objects and cetera.
     It defines two abstract methods *encoding_type* and *decoding_type*.
+    All structure-like pythonic types are encoded as structured numpy arrays
+    with required field '__type__' and other optional fields, which are defined
+    by particular implementation.
     """
 
     @classmethod
     @abc.abstractmethod
     def encoding_type(cls):
+        """Non-plain python type for encoding: list, dict or any other structure-like type."""
         pass
 
     @classmethod
     @abc.abstractmethod
     def decoding_type(cls):
+        """Return StructType integer representation of the type which encoded in numpy array."""
         pass
-    
+
     @classmethod
-    def struct(cls, type_name, data, data_dtype=None, shape=None):
+    def struct(cls, type_name: int, data: np.ndarray, data_dtype: np.dtype = None, shape: Tuple = None):
+        """Build structured numpy array.
+
+        :param int type_name: StructType enum converted to integer.
+        :param data: encoded data as a numpy array or a structured numpy array.
+        :param data_dtype: numpy dtype.
+        :param shape: in case when a list of numpy arrays is passed the length (shape) of
+            that array is required.
+
+        :return: structured numpy array.
+            {
+                '__type__': <struct_field_number>,
+                '__data__': <numpy_array>
+            }
+        """
+
         data_dtype = data.dtype if data_dtype is None else data_dtype
         shape = data.shape if shape is None and data.shape else shape
         data_dtype = [data_dtype]
@@ -186,7 +206,7 @@ class StructCoder(BaseCoder):
     @classmethod
     def support_encoding(cls, item):
         return isinstance(item, cls.encoding_type())
-    
+
     @classmethod
     def support_decoding(cls, item):
         if not _is_numpy_object(item):
@@ -199,6 +219,15 @@ class StructCoder(BaseCoder):
 
 
 class ListCoder(StructCoder):
+    """List coder encodes a python list of acceptable types.
+    List is encoded into structured numpy array, using dictionary it would
+    look like:
+    {
+        '__type__': StructField.LIST.value,
+        '__data__': [<element0>, <element1>, ..., <elementN>]
+    }
+    Caveat: __data__ is actually a numpy structured array."""
+
     @classmethod
     def decoding_type(cls):
         return StructType.LIST.value
@@ -207,7 +236,7 @@ class ListCoder(StructCoder):
     def encoding_type(cls):
         return list
 
-    def encode(self, item):
+    def encode(self, item: ListBasicType):
         factory = CoderFactory(self.context)
         data = [factory.encode(e) for e in item]
         dtypes_set = set([d.dtype for d in data])
@@ -224,8 +253,8 @@ class ListCoder(StructCoder):
             data_dtype = _list_of_dtypes(data_dtype)
             data = np.array(tuple(data), dtype=data_dtype)
         return self.struct(self.decoding_type(), data, shape=shape)
-        
-    def decode(self, item):
+
+    def decode(self, item: np.ndarray):
         data = item[StructField.DATA.value]
         if _is_nan(data):
             return []
@@ -237,6 +266,15 @@ class ListCoder(StructCoder):
 
 
 class DictCoder(StructCoder):
+    """Dict coder encodes a python dictionary with strings as
+    keys and values can be any acceptable pythonic type.
+    Encoded dictionary is a numpy structured array and can be
+    expressed as dictionary:
+    {
+        '__type__': StructField.DICT.value,
+        '__data__': [(<key0>, <element0>), ..., (<keyN>, <elementN>)]
+    },
+    Caveat: __data__ is actually a numpy structured array."""
     @classmethod
     def decoding_type(cls):
         return StructType.DICT.value
@@ -245,7 +283,7 @@ class DictCoder(StructCoder):
     def encoding_type(cls):
         return dict
 
-    def encode(self, item):
+    def encode(self, item: DictBasicType):
         factory = CoderFactory(self.context)
         pre_data = {k : factory.encode(v) for k, v in item.items()}
         if not pre_data:
@@ -255,8 +293,8 @@ class DictCoder(StructCoder):
             data_dtype = _list_of_dtypes(pre_data)
             data = np.array(tuple(data_values), dtype=data_dtype)
         return self.struct(self.decoding_type(), data)
-    
-    def decode(self, item):
+
+    def decode(self, item: np.ndarray):
         data = item[StructField.DATA.value]
         if _is_nan(data):
             return {}
@@ -265,6 +303,13 @@ class DictCoder(StructCoder):
 
 
 class SliceCoder(StructCoder):
+    """Slice coder encodes a python slice structure. Slice itself is a simple
+    tuple of three integers.
+    {
+        '__type__': StructField.SLICE.value,
+        '__data__': np.array([<start>, <stop>, <step>])
+    }."""
+
     @classmethod
     def decoding_type(cls):
         return StructType.SLICE.value
@@ -290,6 +335,13 @@ class SliceCoder(StructCoder):
 
 
 class FunctionCoder(StructCoder):
+    """Function coder is able to encode only importable functions.
+    Lambdas, class methods and static methods as well can not be encoded.
+    {
+        '__type__': StructField.DICT.value,
+        '__module__': <module_name>,
+        '__function__': <function_name>
+    }."""
     @classmethod
     def decoding_type(cls):
         return StructType.FUNCTION.value
@@ -297,7 +349,7 @@ class FunctionCoder(StructCoder):
     @classmethod
     def encoding_type(cls):
         return FunctionType
-    
+
     def encode(self, item):
         factory = CoderFactory(self.context)
         name = factory.encode(item.__name__)
@@ -306,7 +358,7 @@ class FunctionCoder(StructCoder):
                           (StructField.MODULE.value, module.dtype),
                           (StructField.FUNCTION.value, name.dtype)])
         return np.array((self.decoding_type(), module, name), dtype=dtype)
-    
+
     def decode(self, item):
         factory = CoderFactory(self.context)
         module = factory.decode(item[StructField.MODULE.value])
@@ -315,6 +367,16 @@ class FunctionCoder(StructCoder):
 
 
 class ObjectCoder(StructCoder):
+    """General object coder encodes python importable object into numpy array with
+    following dictionary scheme:
+    {
+        '__type__': StructField.DICT.value,
+        '__module__': <module_name>,
+        '__class__': <class_name>,
+        '__data__': np.ndarray,
+        '__extra__': <any_data>
+    }."""
+
     @classmethod
     def decoding_type(cls):
         return StructType.OBJECT.value
@@ -322,9 +384,9 @@ class ObjectCoder(StructCoder):
     @classmethod
     def encoding_type(cls):
         return object
-    
+
     @classmethod
-    def support_decoding(cls, item):
+    def support_decoding(cls, item: np.ndarray) -> bool:
         if not super().support_decoding(item):
             return False
         factory = CoderFactory(BaseContext())
@@ -332,8 +394,8 @@ class ObjectCoder(StructCoder):
         name = factory.decode(item[StructField.CLASS.value])
         item_type = _build_type(module, name)
         return issubclass(item_type, cls.encoding_type())
-    
-    def encode(self, item):
+
+    def encode(self, item: object) -> np.ndarray:
         name = self._take_class_name(item)
         module = self._take_module_name(item)
         values = self._take_values(item)
@@ -352,34 +414,34 @@ class ObjectCoder(StructCoder):
                           (StructField.DATA.value, data.dtype),
                           (StructField.EXTRA.value, extra_data.dtype)])
         return np.array((StructType.OBJECT.value, module, name, data, extra_data), dtype=dtype)
-    
-    def decode(self, item):
+
+    def decode(self, item: np.ndarray) -> object:
         variables = self._decode_attributes(item)
         return self._decode_object(item, variables)
-    
-    def _take_module_name(self, item):
+
+    def _take_module_name(self, item: object) -> str:
         return item.__class__.__module__
 
-    def _take_class_name(self, item):
+    def _take_class_name(self, item: object) -> str:
         return item.__class__.__name__
-    
-    def _take_values(self, item):
+
+    def _take_values(self, item: object) -> DictBasicType:
         return copy(vars(item))
 
-    def _take_extras(self, item):
+    def _take_extras(self, item: object):
         pass
-    
-    def _transform_values(self, _item, values):
+
+    def _transform_values(self, _item, values: DictBasicType) -> np.ndarray:
         return CoderFactory(self.context).encode(values)
-    
-    def _transform_extra(self, item, extra):
+
+    def _transform_extra(self, _item, extra: bool) -> np.ndarray:
         return CoderFactory(self.context).encode(extra)
-    
-    def _decode_attributes(self, item):
+
+    def _decode_attributes(self, item: np.ndarray) -> DictBasicType:
         data = item[StructField.DATA.value]
         return CoderFactory(self.context).decode(data)
-    
-    def _decode_object(self, item, attributes):
+
+    def _decode_object(self, item: np.ndarray, attributes: DictBasicType) -> object:
         factory = CoderFactory(self.context)
         module = factory.decode(item[StructField.MODULE.value])
         name = factory.decode(item[StructField.CLASS.value])
@@ -390,49 +452,77 @@ class ObjectCoder(StructCoder):
 
 
 class TransformCoder(ObjectCoder):
+    """Coder for GPflow Transoform objects."""
+
     @classmethod
     def encoding_type(cls):
         return Transform
 
 
 class PriorCoder(ObjectCoder):
+    """Coder for GPflow Prior objects."""
+
     @classmethod
     def encoding_type(cls):
         return Prior
 
 
 class NodeCoder(ObjectCoder):
+    """Coder for GPflow Node objects.
+    It overrides private `_take_values` method, because nodes have link to the parent node.
+    To prevent infinite recursion we setup `_parent` property to None."""
+
     @classmethod
     def encoding_type(cls):
         return Node
-    
-    def _take_values(self, item):
+
+    def _take_values(self, item: Node) -> DictBasicType:
+        """Takes snapshot of the object and replaces _parent property value on None to avoid
+        infitinite recursion in GPflow tree traversing.
+
+        :param item: GPflow node object.
+        :return: dictionary snapshot of the node object."""
+
         values = super()._take_values(item)
         values['_parent'] = None
         return values
 
 
 class ParameterCoder(NodeCoder):
+    """Coder for GPflow Parameter objects."""
+
     @classmethod
     def encoding_type(cls):
         return Parameter
-    
-    def _take_values(self, item):
+
+    def _take_values(self, item: Parameter) -> DictBasicType:
+        """Uses super()._take_values() method, but replaces content of
+        the cached value to the value assossiated with context's session.
+
+        :param item: GPflow parameter.
+        :return: dictionary snapshot of the parameter object."""
+
         session = self.context.session
-        cached_value = np.array(item.read_value(session=session))
         values = super()._take_values(item)
+        cached_value = np.array(item.read_value(session=session))
         values['_value'] = cached_value
         return values
-    
-    def _take_extras(self, item):
+
+    def _take_extras(self, item: Parameter) -> Optional[bool]:
+        """Return either this GPflow objects requires compilation at decoding time.
+
+        :param item: GPflow parameter.
+        :return: None or True value.
+        """
+
         index = item.tf_compilation_index()
         if index is not None:
             if item.index == index:
                 return True
             _add_index_to_compilations(self.context, index)
         return None
-    
-    def _decode_object(self, item, attributes):
+
+    def _decode_object(self, item: np.ndarray, attributes: DictBasicType) -> Parameter:
         instance = super()._decode_object(item, attributes)
         extra = item[StructField.EXTRA.value]
         extra = CoderFactory(self.context).decode(extra)
@@ -442,16 +532,23 @@ class ParameterCoder(NodeCoder):
 
 
 class ParameterizedCoder(NodeCoder):
+    """Coder for GPflow Parameterized objects."""
+
     @classmethod
     def _encoding_type(cls):
         return Parameterized
-    
-    def _take_values(self, item):
+
+    def _take_values(self, item: Parameterized) -> DictBasicType:
+        """Uses super()._take_values() method and removes autoflow cache in-place.
+
+        :param item: GPflow parameterized object.
+        :return: dictionary snapshot of the parameter object."""
+
         values = super()._take_values(item)
         values = {k: v for k, v in values.items() if not k.startswith(AutoFlow.__autoflow_prefix__)}
         return values
 
-    def _decode_object(self, item, attributes):
+    def _decode_object(self, item: np.ndarray, attributes: DictBasicType) -> Parameterized:
         instance = super()._decode_object(item, attributes)
         for attr in attributes.values():
             if isinstance(attr, Node):
@@ -462,19 +559,23 @@ class ParameterizedCoder(NodeCoder):
             instance.compile(session=self.context.session)
         return instance
 
-    def _take_extras(self, item):
+    def _take_extras(self, item: Parameterized) -> Optional[bool]:
         if _check_index_in_compilations(self.context, item.index):
             return True
         return None
 
 
 class ParamListCoder(ParameterizedCoder):
+    """Coder for GPflow ParamList objects."""
     @classmethod
     def encoding_type(cls):
         return ParamList
 
 
 class CoderFactory(BaseCoder):
+    """Factory of coders, plays a role of a distributor. Factory uses `support_[encode|decode]` method
+    to decide which coder is [encode|decode]ing input value."""
+
     @classmethod
     def support_decoding(cls, item):
         pass
@@ -485,6 +586,7 @@ class CoderFactory(BaseCoder):
 
     @property
     def coders(self):
+        """List of default supported coders. First coder in the list has higher priority."""
         return (PrimitiveTypeCoder,
                 TensorFlowCoder,
                 FunctionCoder,
@@ -496,7 +598,7 @@ class CoderFactory(BaseCoder):
                 ParameterizedCoder,
                 TransformCoder,
                 PriorCoder)
-    
+
     def _execute_coder(self, item, coding):
         coders = self.context.coders + self.coders
         for coder in coders:
@@ -509,7 +611,7 @@ class CoderFactory(BaseCoder):
 
     def encode(self, item):
         return self._execute_coder(item, 'encode')
-    
+
     def decode(self, item):
         return self._execute_coder(item, 'decode')
 
@@ -536,16 +638,17 @@ def _add_index_to_compilations(context, index):
     if compilations not in context.shared_data:
         context.shared_data[compilations] = set([])
     context.shared_data[compilations].add(index)
-    
 
-def _check_index_in_compilations(context, index):
+
+def _check_index_in_compilations(context: BaseContext, index: str):
+    """Store compilation flag at specified index in context's shared data."""
     compilations = 'compilations'
     if compilations not in context.shared_data:
         return False
     return index in context.shared_data[compilations]
 
 
-def _build_type(module_name, object_name):
+def _build_type(module_name: str, object_name: str):
     try:
         __import__(module_name)
     except ModuleNotFoundError:
@@ -559,7 +662,7 @@ def _build_type(module_name, object_name):
         raise KeyError(msg.format(object_name, module_name))
 
 
-def _list_of_dtypes(values):
+def _list_of_dtypes(values: Union[DictBasicType, List[Tuple[str, BasicType]]]) -> List[np.dtype]:
     dtypes = []
     if isinstance(values, dict):
         values = values.items()
@@ -591,7 +694,7 @@ def _is_nan(value):
     return np.isnan(value)
 
 
-def _is_shapeless(value):
+def _is_shapeless(value: np.ndarray):
     shape = value.shape
     if not shape or (len(shape) == 1 and shape[0] == 0):
         return True
@@ -604,10 +707,9 @@ def _is_numpy_object(value):
     return value.dtype.type is np.void
 
 
-def _convert_to_string(value):
+def _convert_to_string(value: Union[AnyStr, np.ndarray]):
     if isinstance(value, str):
         return value
     if isinstance(value, np.ndarray):
         value = np.string_(value)
     return value.decode('utf-8')
-

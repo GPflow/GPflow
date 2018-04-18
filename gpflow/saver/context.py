@@ -19,12 +19,14 @@ from .. import get_default_session
 
 
 class BaseContext:
+    """Base saver's context consists of TensorFlow session, the list of custom encoders
+    and shared data dictionary."""
     def __init__(self, coders=None, serializer=None, session=None, autocompile=True):
         self.autocompile = autocompile
         self._session = session
         self._custom_coders = () if coders is None else tuple(coders)
         self._shared_data = {}
-    
+
     @property
     def coders(self):
         return self._custom_coders
@@ -36,16 +38,17 @@ class BaseContext:
     @property
     def session(self):
         return self._session or tf.get_default_session() or get_default_session()
-    
+
     @session.setter
     def session(self, session):
         self._session = session
 
 
 class Contexture:
+    """Base class-property for keeping context."""
     def __init__(self, context):
         self._context = context
-    
+
     @property
     def context(self):
         return self._context

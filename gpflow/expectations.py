@@ -191,7 +191,7 @@ def expectation(p, obj1, obj2=None, nghp=None):
     :return: a 1-D, 2-D, or 3-D tensor containing the expectation
 
     Allowed combinations
-    
+
     - Psi statistics:
         >>> eKdiag = expectation(p, kern)  (N)  # Psi0
         >>> eKxz = expectation(p, (kern, feat))  (NxM)  # Psi1
@@ -765,7 +765,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
     :return: N
     """
     return functools.reduce(tf.add, [
-        expectation(p, k, nghp=nghp) for k in kern.kern_list])
+        expectation(p, k, nghp=nghp) for k in kern.kernels])
 
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, type(None), type(None))
@@ -829,7 +829,7 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
                 eKK += tf.matrix_transpose(eKK)
                 crossexps.append(eKK)
     else:
-        for k1, k2 in it.product(kern1.kernels, kern2.kern_list):
+        for k1, k2 in it.product(kern1.kernels, kern2.kernels):
             crossexps.append(expectation(p, (k1, feat1), (k2, feat2), nghp=nghp))
 
     return functools.reduce(tf.add, crossexps)

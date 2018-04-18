@@ -27,7 +27,7 @@ class BaseSerializer(Contexture, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def dump(self, pathname, data):
         pass
-    
+
     @abc.abstractmethod
     def load(self, pathname):
         pass
@@ -42,7 +42,7 @@ class HDF5Serializer(BaseSerializer):
             meta.create_dataset(name='date', data=date)
             meta.create_dataset(name='version', data=version)
             h5file.create_dataset(name='data', data=data)
-    
+
     def load(self, pathname):
         with h5py.File(pathname) as h5file:
             return h5file['data'].value
