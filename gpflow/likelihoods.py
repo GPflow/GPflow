@@ -595,3 +595,118 @@ class Ordinal(Likelihood):
         E_y = tf.matmul(phi, Ys)
         E_y2 = tf.matmul(phi, tf.square(Ys))
         return tf.reshape(E_y2 - tf.square(E_y), tf.shape(F))
+
+
+class MonteCarloLikelihood(Likelihood):
+    def __init__(self, name=None):
+        super().__init__(name)
+        self.num_monte_carlo_points = 100
+        del self.num_gauss_hermite_points
+
+    def predict_mean_and_var(self, Fmu, Fvar):
+        r"""
+        Given a Normal distribution for the latent function,
+        return the mean of Y
+
+        if
+            q(f) = N(Fmu, Fvar)
+
+        and this object represents
+
+            p(y|f)
+
+        then this method computes the predictive mean
+
+           \int\int y p(y|f)q(f) df dy
+
+        and the predictive variance
+
+           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
+
+        Here, we implement a default Monte Carlo routine.
+        """
+        N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
+        mc_x = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type) \
+               * (Fvar[None, :, :] ** 0.5) + Fmu[None, :, :]
+        mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
+        mc_cm = tf.reshape(self.conditional_mean(mc_Xr), (self.num_monte_carlo_points, N, D))
+
+        # TODO return actual variance, not just zeros!?
+        return tf.reduce_mean(mc_cm, 0), tf.zeros((N, D), settings.float_type)  # N x D
+
+    def predict_density(self, Fmu, Fvar, Y):
+        r"""
+        Given a Normal distribution for the latent function, and a datum Y,
+        compute the (log) predictive density of Y.
+
+        i.e. if
+            q(f) = N(Fmu, Fvar)
+
+        and this object represents
+
+            p(y|f)
+
+        then this method computes the predictive density
+
+           \int p(y=Y|f)q(f) df
+
+        Here, we implement a default Gauss-Hermite quadrature routine, but some
+        likelihoods (Gaussian, Poisson) will implement specific cases.
+        """
+        # gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+        #
+        # gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
+        # shape = tf.shape(Fmu)
+        # Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
+        # X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
+        #
+        # Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
+        #
+        # logp = self.logp(X, Y)
+        # return tf.reshape(tf.log(tf.matmul(tf.exp(logp), gh_w)), shape)
+        raise NotImplementedError()
+
+    def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
+        r"""
+        Compute the expected log density of the data, given a Gaussian
+        distribution for the function values.
+
+        if
+            q(f) = N(Fmu, Fvar)  - Fmu: N x D  Fvar: N x D
+
+        and this object represents
+
+            p(y|f)  - Y: N x 1
+
+        then this method computes
+
+           \int (\log p(y|f)) q(f) df.
+
+
+        Here, we implement a default Monte Carlo quadrature routine.
+        """
+        N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
+        if epsilon is None:
+            epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
+        mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
+        mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
+        mc_Yr = tf.tile(Y, [self.num_monte_carlo_points, 1])  # broadcast Y to match X
+        mc_logp = tf.reshape(self.logp(mc_Xr, mc_Yr),
+                             (self.num_monte_carlo_points, N, 1))  # S x N x 1
+        return tf.reduce_mean(mc_logp, 0)  # N x 1
+
+
+class SoftMax(MonteCarloLikelihood):
+    """
+    The soft-max multi-class likelihood.
+    """
+
+    def __init__(self, num_classes, name=None):
+        super().__init__(name)
+        self.num_classes = num_classes
+
+    def logp(self, F, Y):
+        return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]
+
+    def conditional_mean(self, F):
+        return tf.nn.softmax(F)
