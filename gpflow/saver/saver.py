@@ -13,19 +13,15 @@
 # limitations under the License.
 
 
-import abc
-import sys
-from collections import namedtuple
-from copy import copy
 from datetime import datetime
 
 import h5py
 import numpy as np
 import tensorflow as tf
 
+from .coders import CoderDispatcher
 from .context import BaseContext
 from .serializers import HDF5Serializer
-from .coders import CoderFactory
 
 
 class SaverContext(BaseContext):
@@ -37,13 +33,13 @@ class SaverContext(BaseContext):
 class Saver:
     def save(self, pathname, target, context=None):
         context = Saver.__get_context(context)
-        encoded_target = CoderFactory(context).encode(target)
+        encoded_target = CoderDispatcher(context).encode(target)
         context.serializer(context).dump(pathname, encoded_target)
 
     def load(self, pathname, context=None):
         context = Saver.__get_context(context)
         encoded_target = context.serializer(context).load(pathname)
-        return CoderFactory(context).decode(encoded_target)
+        return CoderDispatcher(context).decode(encoded_target)
 
     @staticmethod
     def __get_context(context):

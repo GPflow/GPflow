@@ -192,8 +192,8 @@ def test_loading_into_specific_session(session_tf, filename, model):
 
 def encode_decode(value):
     ctx = gp.SaverContext()
-    e = gp.saver.CoderFactory(ctx).encode(value)
-    return gp.saver.CoderFactory(ctx).decode(e)
+    e = gp.saver.CoderDispatcher(ctx).encode(value)
+    return gp.saver.CoderDispatcher(ctx).decode(e)
 
 
 def equal_params(a, b, session_a=None, session_b=None):

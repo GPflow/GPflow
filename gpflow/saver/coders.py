@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Coders module exploits Numpy custom [dtypes](https://docs.scipy.org/doc/numpy-1.13.0/reference/arrays.dtypes.html)
+Coders module exploits Numpy custom [dtypes](https://docs.scipy.org/doc/numpy-1.14.0/user/basics.rec.html#module-numpy.doc.structured_arrays)
 to construct shippable python structures.
 Briefly, custom numpy dtypes are structures with any description. Type description includes
 a field name, type of the value and optionally value shape. Encoded values as numpy objects
@@ -237,7 +237,7 @@ class ListCoder(StructCoder):
         return list
 
     def encode(self, item: ListBasicType):
-        factory = CoderFactory(self.context)
+        factory = CoderDispatcher(self.context)
         data = [factory.encode(e) for e in item]
         dtypes_set = set([d.dtype for d in data])
         dtypes_len = len(dtypes_set)
@@ -261,7 +261,7 @@ class ListCoder(StructCoder):
         if not data.shape:
             keys = sorted(data.dtype.fields.keys())
             data = [data[k] for k in keys]
-        factory = CoderFactory(self.context)
+        factory = CoderDispatcher(self.context)
         return [factory.decode(d) for d in data]
 
 
@@ -284,7 +284,7 @@ class DictCoder(StructCoder):
         return dict
 
     def encode(self, item: DictBasicType):
-        factory = CoderFactory(self.context)
+        factory = CoderDispatcher(self.context)
         pre_data = {k : factory.encode(v) for k, v in item.items()}
         if not pre_data:
             data = numpy_none()
@@ -298,7 +298,7 @@ class DictCoder(StructCoder):
         data = item[StructField.DATA.value]
         if _is_nan(data):
             return {}
-        factory = CoderFactory(self.context)
+        factory = CoderDispatcher(self.context)
         return {k : factory.decode(data[k]) for k in data.dtype.fields.keys()}
 
 
@@ -351,7 +351,7 @@ class FunctionCoder(StructCoder):
         return FunctionType
 
     def encode(self, item):
-        factory = CoderFactory(self.context)
+        factory = CoderDispatcher(self.context)
         name = factory.encode(item.__name__)
         module = factory.encode(item.__module__)
         dtype = np.dtype([type_pattern(),
@@ -360,7 +360,7 @@ class FunctionCoder(StructCoder):
         return np.array((self.decoding_type(), module, name), dtype=dtype)
 
     def decode(self, item):
-        factory = CoderFactory(self.context)
+        factory = CoderDispatcher(self.context)
         module = factory.decode(item[StructField.MODULE.value])
         name = factory.decode(item[StructField.FUNCTION.value])
         return _build_type(module, name)
@@ -389,7 +389,7 @@ class ObjectCoder(StructCoder):
     def support_decoding(cls, item: np.ndarray) -> bool:
         if not super().support_decoding(item):
             return False
-        factory = CoderFactory(BaseContext())
+        factory = CoderDispatcher(BaseContext())
         module = factory.decode(item[StructField.MODULE.value])
         name = factory.decode(item[StructField.CLASS.value])
         item_type = _build_type(module, name)
@@ -400,7 +400,7 @@ class ObjectCoder(StructCoder):
         module = self._take_module_name(item)
         values = self._take_values(item)
 
-        factory = CoderFactory(self.context)
+        factory = CoderDispatcher(self.context)
         data = factory.encode(values)
 
         extra = self._take_extras(item)
@@ -432,17 +432,17 @@ class ObjectCoder(StructCoder):
         pass
 
     def _transform_values(self, _item, values: DictBasicType) -> np.ndarray:
-        return CoderFactory(self.context).encode(values)
+        return CoderDispatcher(self.context).encode(values)
 
     def _transform_extra(self, _item, extra: bool) -> np.ndarray:
-        return CoderFactory(self.context).encode(extra)
+        return CoderDispatcher(self.context).encode(extra)
 
     def _decode_attributes(self, item: np.ndarray) -> DictBasicType:
         data = item[StructField.DATA.value]
-        return CoderFactory(self.context).decode(data)
+        return CoderDispatcher(self.context).decode(data)
 
     def _decode_object(self, item: np.ndarray, attributes: DictBasicType) -> object:
-        factory = CoderFactory(self.context)
+        factory = CoderDispatcher(self.context)
         module = factory.decode(item[StructField.MODULE.value])
         name = factory.decode(item[StructField.CLASS.value])
         item_type = _build_type(module, name)
@@ -525,7 +525,7 @@ class ParameterCoder(NodeCoder):
     def _decode_object(self, item: np.ndarray, attributes: DictBasicType) -> Parameter:
         instance = super()._decode_object(item, attributes)
         extra = item[StructField.EXTRA.value]
-        extra = CoderFactory(self.context).decode(extra)
+        extra = CoderDispatcher(self.context).decode(extra)
         if extra and self.context.autocompile:
             instance.compile(session=self.context.session)
         return instance
@@ -554,7 +554,7 @@ class ParameterizedCoder(NodeCoder):
             if isinstance(attr, Node):
                 setattr(attr, '_parent', instance)
         extra = item[StructField.EXTRA.value]
-        extra = CoderFactory(self.context).decode(extra)
+        extra = CoderDispatcher(self.context).decode(extra)
         if extra and self.context.autocompile:
             instance.compile(session=self.context.session)
         return instance
@@ -572,8 +572,8 @@ class ParamListCoder(ParameterizedCoder):
         return ParamList
 
 
-class CoderFactory(BaseCoder):
-    """Factory of coders, plays a role of a distributor. Factory uses `support_[encode|decode]` method
+class CoderDispatcher(BaseCoder):
+    """Dispatcher of coders. Dispatcher uses `support_[encode|decode]` method
     to decide which coder is [encode|decode]ing input value."""
 
     @classmethod
@@ -599,7 +599,7 @@ class CoderFactory(BaseCoder):
                 TransformCoder,
                 PriorCoder)
 
-    def _execute_coder(self, item, coding):
+    def _execute_coder(self, item: Any, coding: str):
         coders = self.context.coders + self.coders
         for coder in coders:
             if coding == 'encode' and coder.support_encoding(item):
@@ -609,10 +609,10 @@ class CoderFactory(BaseCoder):
         msg = 'Item "{}" has type {} which does not match any coder at saver for {}.'
         raise TypeError(msg.format(item, type(item), coding))
 
-    def encode(self, item):
+    def encode(self, item: Union[BasicType, ListBasicType, DictBasicType]) -> np.ndarray:
         return self._execute_coder(item, 'encode')
 
-    def decode(self, item):
+    def decode(self, item: np.ndarray) -> Union[BasicType, ListBasicType, DictBasicType]:
         return self._execute_coder(item, 'decode')
 
 

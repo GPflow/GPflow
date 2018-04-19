@@ -15,5 +15,5 @@
 
 from .saver import Saver
 from .saver import SaverContext
-from .coders import CoderFactory
+from .coders import CoderDispatcher
 from .serializers import HDF5Serializer
