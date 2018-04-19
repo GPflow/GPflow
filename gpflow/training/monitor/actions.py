@@ -79,9 +79,9 @@ class PrintAction(TriggeredAction):
 
 
 class CallbackAction(TriggeredAction):
-    def __init__(self, sequence, trigger, callback):
+    def __init__(self, sequence, trigger, callback, model, **kwargs):
         super().__init__(sequence, trigger)
-        self._callback = callback
+        self._callback = lambda : callback(model, **kwargs)
 
     def run(self, ctx: ActionContext):
         self._callback()
@@ -135,7 +135,6 @@ class ModelTensorBoard(TriggeredAction):
         scalar. If None, all scalars will be sent to TensorBoard.
         :param additional_summaries: List of Summary objects to send to TensorBoard.
         """
-        super().__init__(sequence, trigger)
         self.model = model
         all_summaries = [] if additional_summaries is None else additional_summaries
         if parameters is None:
@@ -150,6 +149,7 @@ class ModelTensorBoard(TriggeredAction):
             all_summaries += [tf.summary.histogram(p.full_name, p.constrained_tensor)
                               for p in parameters if p.size > 1]
 
+        super().__init__(sequence, trigger)
         self.summary = tf.summary.merge(all_summaries)
         self.file_writer = file_writer
         self.global_step = global_step
