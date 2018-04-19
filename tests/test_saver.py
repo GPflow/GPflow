@@ -50,7 +50,7 @@ class Data:
 
         p.compile()
         return p
-    
+
     @staticmethod
     def model():
         x = Data.x_new()
@@ -58,7 +58,7 @@ class Data:
         kernel = gp.kernels.RBF(2)
         m = gp.models.GPR(x, y, kernel)
         return m
-    
+
     @staticmethod
     def x_new():
         return np.random.rand(10, 2)
@@ -122,7 +122,7 @@ def test_encode_decode_list_types(value):
     d = encode_decode(value)
     def equal(x):
         a, b = x
-        eq = a == b 
+        eq = a == b
         if isinstance(eq, np.ndarray) and eq.shape:
             return all(eq)
         return eq

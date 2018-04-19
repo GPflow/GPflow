@@ -237,8 +237,8 @@ class ListCoder(StructCoder):
         return list
 
     def encode(self, item: ListBasicType):
-        factory = CoderDispatcher(self.context)
-        data = [factory.encode(e) for e in item]
+        dispatcher = CoderDispatcher(self.context)
+        data = [dispatcher.encode(e) for e in item]
         dtypes_set = set([d.dtype for d in data])
         dtypes_len = len(dtypes_set)
         shape = None
@@ -261,8 +261,8 @@ class ListCoder(StructCoder):
         if not data.shape:
             keys = sorted(data.dtype.fields.keys())
             data = [data[k] for k in keys]
-        factory = CoderDispatcher(self.context)
-        return [factory.decode(d) for d in data]
+        dispatcher = CoderDispatcher(self.context)
+        return [dispatcher.decode(d) for d in data]
 
 
 class DictCoder(StructCoder):
@@ -284,8 +284,8 @@ class DictCoder(StructCoder):
         return dict
 
     def encode(self, item: DictBasicType):
-        factory = CoderDispatcher(self.context)
-        pre_data = {k : factory.encode(v) for k, v in item.items()}
+        dispatcher = CoderDispatcher(self.context)
+        pre_data = {k : dispatcher.encode(v) for k, v in item.items()}
         if not pre_data:
             data = numpy_none()
         else:
@@ -298,8 +298,8 @@ class DictCoder(StructCoder):
         data = item[StructField.DATA.value]
         if _is_nan(data):
             return {}
-        factory = CoderDispatcher(self.context)
-        return {k : factory.decode(data[k]) for k in data.dtype.fields.keys()}
+        dispatcher = CoderDispatcher(self.context)
+        return {k : dispatcher.decode(data[k]) for k in data.dtype.fields.keys()}
 
 
 class SliceCoder(StructCoder):
@@ -351,18 +351,18 @@ class FunctionCoder(StructCoder):
         return FunctionType
 
     def encode(self, item):
-        factory = CoderDispatcher(self.context)
-        name = factory.encode(item.__name__)
-        module = factory.encode(item.__module__)
+        dispatcher = CoderDispatcher(self.context)
+        name = dispatcher.encode(item.__name__)
+        module = dispatcher.encode(item.__module__)
         dtype = np.dtype([type_pattern(),
                           (StructField.MODULE.value, module.dtype),
                           (StructField.FUNCTION.value, name.dtype)])
         return np.array((self.decoding_type(), module, name), dtype=dtype)
 
     def decode(self, item):
-        factory = CoderDispatcher(self.context)
-        module = factory.decode(item[StructField.MODULE.value])
-        name = factory.decode(item[StructField.FUNCTION.value])
+        dispatcher = CoderDispatcher(self.context)
+        module = dispatcher.decode(item[StructField.MODULE.value])
+        name = dispatcher.decode(item[StructField.FUNCTION.value])
         return _build_type(module, name)
 
 
@@ -389,9 +389,9 @@ class ObjectCoder(StructCoder):
     def support_decoding(cls, item: np.ndarray) -> bool:
         if not super().support_decoding(item):
             return False
-        factory = CoderDispatcher(BaseContext())
-        module = factory.decode(item[StructField.MODULE.value])
-        name = factory.decode(item[StructField.CLASS.value])
+        dispatcher = CoderDispatcher(BaseContext())
+        module = dispatcher.decode(item[StructField.MODULE.value])
+        name = dispatcher.decode(item[StructField.CLASS.value])
         item_type = _build_type(module, name)
         return issubclass(item_type, cls.encoding_type())
 
@@ -400,14 +400,14 @@ class ObjectCoder(StructCoder):
         module = self._take_module_name(item)
         values = self._take_values(item)
 
-        factory = CoderDispatcher(self.context)
-        data = factory.encode(values)
+        dispatcher = CoderDispatcher(self.context)
+        data = dispatcher.encode(values)
 
         extra = self._take_extras(item)
-        extra_data = factory.encode(extra)
+        extra_data = dispatcher.encode(extra)
 
-        name = factory.encode(item.__class__.__name__)
-        module = factory.encode(item.__module__)
+        name = dispatcher.encode(item.__class__.__name__)
+        module = dispatcher.encode(item.__module__)
         dtype = np.dtype([type_pattern(),
                           (StructField.MODULE.value, module.dtype),
                           (StructField.CLASS.value, name.dtype),
@@ -442,9 +442,9 @@ class ObjectCoder(StructCoder):
         return CoderDispatcher(self.context).decode(data)
 
     def _decode_object(self, item: np.ndarray, attributes: DictBasicType) -> object:
-        factory = CoderDispatcher(self.context)
-        module = factory.decode(item[StructField.MODULE.value])
-        name = factory.decode(item[StructField.CLASS.value])
+        dispatcher = CoderDispatcher(self.context)
+        module = dispatcher.decode(item[StructField.MODULE.value])
+        name = dispatcher.decode(item[StructField.CLASS.value])
         item_type = _build_type(module, name)
         instance = object.__new__(item_type)
         instance.__dict__ = attributes
