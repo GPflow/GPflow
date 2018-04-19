@@ -19,7 +19,9 @@ requirements = [
     'numpy>=1.10.0',
     'scipy>=0.18.0',
     'pandas>=0.18.1',
+    'multipledispatch>=0.4.9',
     'pytest>=3.5.0',
+    'h5py>=2.7.0'
     'multipledispatch>=0.4.9'
 ]
 

@@ -33,7 +33,7 @@ class DiagsTest(GPflowTestCase):
         num_latent = 2
         num_data = 3
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
-        k.white.variance = 0.01
+        k.kernels[1].variance = 0.01
         X = tf.placeholder(settings.float_type)
         mu = tf.placeholder(settings.float_type)
         Xs = tf.placeholder(settings.float_type)
@@ -87,7 +87,7 @@ class DiagsTest(GPflowTestCase):
 class WhitenTest(GPflowTestCase):
     def prepare(self):
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
-        k.white.variance = 0.01
+        k.kernels[1].variance = 0.01
 
         num_data = 10
         num_test_data = 100
