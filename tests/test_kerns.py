@@ -43,6 +43,60 @@ class TestRbf(GPflowTestCase):
             self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
 
 
+class Matern32Old(gpflow.kernels.Stationary):
+    """
+    Old implemenetation of the Matern 3/2 kernel
+    """
+
+    @gpflow.decors.params_as_tensors
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+        r = self.scaled_euclid_dist(X, X2)
+        return self.variance * (1. + np.sqrt(3.) * r) * \
+               tf.exp(-np.sqrt(3.) * r)
+
+
+class TestMatern32(GPflowTestCase):
+    '''
+    Tests the new implementation of Matern32.
+    Most of the code is the same as TestRbf above.
+    '''
+    def setUp(self):
+        self.test_graph = tf.Graph()
+
+    def test_3d(self):
+        with self.test_context() as session:
+            lengthscale = 1.4
+            variance = 2.3
+            kernel = gpflow.kernels.Matern32(3, lengthscales=lengthscale, variance=variance)
+            kernelOld = Matern32Old(3, lengthscales=lengthscale, variance=variance)
+            rng = np.random.RandomState(1)
+
+            X = tf.placeholder(gpflow.settings.float_type)
+            X_data = rng.randn(6, 3).astype(gpflow.settings.float_type)
+
+            X2 = tf.placeholder(gpflow.settings.float_type)
+            X2_data = rng.randn(10, 3).astype(gpflow.settings.float_type)
+
+            kernel.compile()
+            kernelOld.compile()
+
+            # Test output
+            gram_matrix = session.run(kernel.K(X, X2), feed_dict={X: X_data, X2: X2_data})
+            reference_gram_matrix = session.run(kernelOld.K(X, X2), feed_dict={X: X_data, X2: X2_data})
+            self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
+
+            # Test gradients
+            dgram_matrix = session.run(
+                tf.gradients(kernel.K(X), X)[0],
+                feed_dict={X: X_data})
+            reference_dgram_matrix = session.run(
+                tf.gradients(kernelOld.K(X), X)[0],
+                feed_dict={X: X_data})
+            self.assertTrue(np.allclose(dgram_matrix, reference_dgram_matrix))
+
+
 class TestRQ(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
