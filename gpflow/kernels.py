@@ -421,13 +421,28 @@ class Matern32(Stationary):
     The Matern 3/2 kernel
     """
 
+    # Used to bypass gradients of tf.sqrt that can lead to infs.
+    tf.RegisterGradient("Matern32Grad")(
+        lambda op, grad: grad * .5 * tf.exp(op.inputs[0])
+    )
+
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        r = self.scaled_euclid_dist(X, X2)
-        return self.variance * (1. + np.sqrt(3.) * r) * \
-               tf.exp(-np.sqrt(3.) * r)
+        d = self.square_dist(X, X2)
+
+        with self.graph.gradient_override_map(
+            {"Exp": "Matern32Grad", "Sqrt": "Identity"}):
+            # We want to avoid calculating the gradient of tf.sqrt(d)
+            # as it can lead to infs.
+            # To do this, we replace the gradient of tf.sqrt with identity
+            # and the ones of tf.exp with a formula that
+            # gives the gradient of the kernel in a numerically stable way.
+            K = tf.exp(-tf.sqrt(3*d)) + \
+                tf.stop_gradient(tf.sqrt(3*d) * tf.exp(-tf.sqrt(3*d)))
+
+        return self.variance * K
 
 
 class Matern52(Stationary):
