@@ -250,22 +250,19 @@ class Stationary(Kernel):
     def scaled_square_dist(self, X, X2):
         """
         Returns ((X - X2ᵀ)/lengthscales)².
-        Due to the implementation and floating-point imprecision, the
-        result may actually be very slightly negative for entries very
-        close to each other.
+
         """
         X = X / self.lengthscales
-        Xs = tf.reduce_sum(tf.square(X), axis=1)
 
         if X2 is None:
-            dist = -2 * tf.matmul(X, X, transpose_b=True)
-            dist += tf.reshape(Xs, (-1, 1))  + tf.reshape(Xs, (1, -1))
-            return dist
+            X2 = X
+        else:
+            X2 = X2 / self.lengthscales
 
-        X2 = X2 / self.lengthscales
-        X2s = tf.reduce_sum(tf.square(X2), axis=1)
-        dist = -2 * tf.matmul(X, X2, transpose_b=True)
-        dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
+        dist = tf.reduce_sum(tf.squared_difference(
+            tf.expand_dims(X, 1),
+            tf.expand_dims(X2, 0)), 2)
+
         return dist
 
 
