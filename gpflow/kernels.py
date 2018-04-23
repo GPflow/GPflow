@@ -250,19 +250,22 @@ class Stationary(Kernel):
     def scaled_square_dist(self, X, X2):
         """
         Returns ((X - X2ᵀ)/lengthscales)².
-
+        Due to the implementation and floating-point imprecision, the
+        result may actually be very slightly negative for entries very
+        close to each other.
         """
         X = X / self.lengthscales
+        Xs = tf.reduce_sum(tf.square(X), axis=1)
 
         if X2 is None:
-            X2 = X
-        else:
-            X2 = X2 / self.lengthscales
+            dist = -2 * tf.matmul(X, X, transpose_b=True)
+            dist += tf.reshape(Xs, (-1, 1))  + tf.reshape(Xs, (1, -1))
+            return dist
 
-        dist = tf.reduce_sum(tf.squared_difference(
-            tf.expand_dims(X, 1),
-            tf.expand_dims(X2, 0)), 2)
-
+        X2 = X2 / self.lengthscales
+        X2s = tf.reduce_sum(tf.square(X2), axis=1)
+        dist = -2 * tf.matmul(X, X2, transpose_b=True)
+        dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
         return dist
 
 
@@ -433,14 +436,14 @@ class Matern32(Stationary):
         d = self.square_dist(X, X2)
 
         with self.graph.gradient_override_map(
-            {"Exp": "Matern32Grad", "Sqrt": "Identity"}):
+            {"Exp": "Matern32Grad", "Sqrt": "Identity", "Abs": "Identity"}):
             # We want to avoid calculating the gradient of tf.sqrt(d)
             # as it can lead to infs.
             # To do this, we replace the gradient of tf.sqrt with identity
             # and the ones of tf.exp with a formula that
             # gives the gradient of the kernel in a numerically stable way.
-            K = tf.exp(-tf.sqrt(3*d)) + \
-                tf.stop_gradient(tf.sqrt(3*d) * tf.exp(-tf.sqrt(3*d)))
+            r_ = tf.sqrt(3*tf.abs(d))
+            K = tf.exp(-r_) + tf.stop_gradient(r_ * tf.exp(-r_))
 
         return self.variance * K
 
