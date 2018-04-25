@@ -274,7 +274,7 @@ class Stationary(Kernel):
         Returns |(X - X2ᵀ)/lengthscales| (L2-norm).
         """
         r2 = self.scaled_square_dist(X, X2)
-        return tf.sqrt(r2 + 1e-12)
+        return tf.sqrt(tf.maximum(r2, 1e-12))
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -433,19 +433,10 @@ class Matern32(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        d = self.square_dist(X, X2)
+        r = self.scaled_euclid_dist(X, X2)
 
-        with self.graph.gradient_override_map(
-            {"Exp": "Matern32Grad", "Sqrt": "Identity", "Abs": "Identity"}):
-            # We want to avoid calculating the gradient of tf.sqrt(d)
-            # as it can lead to infs.
-            # To do this, we replace the gradient of tf.sqrt with identity
-            # and the ones of tf.exp with a formula that
-            # gives the gradient of the kernel in a numerically stable way.
-            r_ = tf.sqrt(3*tf.abs(d))
-            K = tf.exp(-r_) + tf.stop_gradient(r_ * tf.exp(-r_))
-
-        return self.variance * K
+        return self.variance * (1. + np.sqrt(3.) * r) * \
+               tf.exp(-np.sqrt(3.) * r)
 
 
 class Matern52(Stationary):
