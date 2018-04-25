@@ -2,6 +2,7 @@ import enum
 import glob
 import os
 import time
+from typing import Any, Callable, List, Optional, Iterator
 from typing import Optional
 
 import numpy as np
@@ -9,6 +10,7 @@ import tensorflow as tf
 
 from ...actions import Action, ActionContext, Watcher
 from ...models import Model
+from ...params import Parameter
 
 
 # TODO: Make TriggeredAction, which allows a sequence to be passed of iterations or times for the action to be run.
@@ -26,13 +28,13 @@ class Trigger(enum.Enum):
 
 
 class TriggeredAction(Action):
-    def __init__(self, sequence, trigger: Trigger):
+    def __init__(self, sequence: Iterator, trigger: Trigger) -> None:
         super().__init__()
         self._seq = sequence
         self.trigger = trigger
         self._next = next(self._seq) if self._seq is not None else np.inf
 
-    def _current_trigger_value(self, context):
+    def _current_trigger_value(self, context: ActionContext):
         if self.trigger == Trigger.TOTAL_TIME:
             return context.time_spent
         elif self.trigger == Trigger.OPTIMISATION_TIME:
@@ -65,8 +67,9 @@ class TriggeredAction(Action):
                 self._next = next(self._seq)
 
 
-class PrintAction(TriggeredAction):
-    def __init__(self, sequence, trigger, model, text, *, single_line=False):
+class PrintLikelihood(TriggeredAction):
+    def __init__(self, sequence: Iterator, trigger: Trigger, model: Model, text: str, *,
+            single_line: bool = False) -> None:
         super().__init__(sequence, trigger)
         self.model = model
         self.text = text
@@ -78,8 +81,37 @@ class PrintAction(TriggeredAction):
               end="\r" if self.single_line else "\n")
 
 
+class PrintTimings(TriggeredAction):
+    def __init__(self, sequence: Iterator, trigger: Trigger,
+            global_step: Optional[tf.Variable] = None, single_line: bool = True) -> None:
+        super().__init__(sequence, trigger)
+        self.global_step = global_step
+        self.single_line = single_line
+
+    def run(self, context: ActionContext) -> None:
+        current_iter = context.iteration
+        if current_iter == 0:
+            opt_iter = 0.0
+            total_iter = 0.0
+            last_iter = 0.0
+        else:
+            opt_iter = np.nan
+            total_iter = current_iter / context.time_spent
+            last_iter = (0.0 if not hasattr(self, '_last_iter')
+                         else (current_iter - self._last_iter) / self._last_iter_timer.elapsed)
+
+        step = context.iteration if self.global_step is None else context.session.run(self.global_step)
+        print("\r%i, %i:\t%.2f optimisation iter/s\t%.2f total iter/s\t%.2f last iter/s" %
+              (current_iter, step, opt_iter, total_iter, last_iter), end='' if self.single_line else '\n')
+
+        self._last_iter = current_iter
+        self._last_iter_timer = Watcher()
+        self._last_iter_timer.start()
+
+
 class CallbackAction(TriggeredAction):
-    def __init__(self, sequence, trigger, callback, model, **kwargs):
+    def __init__(self, sequence: Iterator, trigger: Trigger,
+                 callback: Callable, model: Model, **kwargs) -> None:
         super().__init__(sequence, trigger)
         self._callback = lambda ctx: callback(ctx, model, **kwargs)
 
@@ -88,7 +120,7 @@ class CallbackAction(TriggeredAction):
 
 
 class SleepAction(TriggeredAction):
-    def __init__(self, sequence, trigger, sleep_seconds):
+    def __init__(self, sequence: Iterator, trigger: Trigger, sleep_seconds: float) -> None:
         super().__init__(sequence, trigger)
         self.sleep_seconds = sleep_seconds
 
@@ -97,8 +129,9 @@ class SleepAction(TriggeredAction):
 
 
 class StoreSession(TriggeredAction):
-    def __init__(self, sequence, trigger: Trigger, session: tf.Session, hist_path, saver=None, restore_path=None,
-                 global_step=None):
+    def __init__(self, sequence: Iterator, trigger: Trigger, session: tf.Session, hist_path: str,
+            saver: Optional[tf.train.Saver] = None, restore_path: Optional[str] = None,
+            global_step: Optional[tf.Variable] = None) -> None:
         super().__init__(sequence, trigger)
         self.hist_path = hist_path
         self.restore_path = restore_path
@@ -118,13 +151,16 @@ class StoreSession(TriggeredAction):
             print("Restoring session from `%s`." % restore_path)
             self.saver.restore(session, restore_path)
 
-    def run(self, ctx):
+    def run(self, ctx: ActionContext):
         self.saver.save(self.session, self.hist_path, global_step=self.global_step)
 
+
 class ModelTensorBoard(TriggeredAction):
-    def __init__(self, sequence, trigger: Trigger, model: Model,
-                 file_writer: tf.summary.FileWriter, parameters=None, additional_summaries=None,
-                 global_step=None):
+    def __init__(self, sequence: Iterator, trigger: Trigger, model: Model, file_writer: tf.summary.FileWriter,
+            only_scalars: bool = True,
+            parameters: Optional[List[Parameter]] = None,
+            additional_summaries: Optional[List[tf.Summary]] = None,
+            global_step: Optional[tf.Variable] = None):
         """
         Creates a Task that creates a sensible TensorBoard for a model.
         :param sequence:
@@ -135,51 +171,25 @@ class ModelTensorBoard(TriggeredAction):
         scalar. If None, all scalars will be sent to TensorBoard.
         :param additional_summaries: List of Summary objects to send to TensorBoard.
         """
+        super().__init__(sequence, trigger)
         self.model = model
         all_summaries = [] if additional_summaries is None else additional_summaries
-        if parameters is None:
-            all_summaries += [tf.summary.scalar(p.full_name, p.constrained_tensor)
-                              for p in model.parameters if len(p.shape) == 0]
-            all_summaries += [tf.summary.histogram(p.full_name, p.constrained_tensor)
-                              for p in model.parameters if len(p.shape) > 0]
-            all_summaries.append(tf.summary.scalar("likelihood", model._likelihood_tensor))
-        else:
-            all_summaries += [tf.summary.scalar(p.full_name, p.constrained_tensor)
-                              for p in parameters if p.size == 1]
+        parameters = model.parameters if parameters is None else parameters
+
+        all_summaries += [tf.summary.scalar(p.full_name, p.constrained_tensor)
+                          for p in parameters if p.size == 1]
+
+        if not only_scalars:
             all_summaries += [tf.summary.histogram(p.full_name, p.constrained_tensor)
                               for p in parameters if p.size > 1]
 
-        super().__init__(sequence, trigger)
+        all_summaries.append(tf.summary.scalar("likelihood", model._likelihood_tensor))
+
         self.summary = tf.summary.merge(all_summaries)
         self.file_writer = file_writer
         self.global_step = global_step
 
-    def run(self, ctx):
-        summary, step = ctx.session.run([self.summary, self.global_step])
+    def run(self, ctx: ActionContext):
+        step = ctx.iteration if self.global_step is None else ctx.session.run(self.global_step)
+        summary = ctx.session.run(self.summary)
         self.file_writer.add_summary(summary, step)
-
-class PrintTimings(TriggeredAction):
-    def __init__(self, sequence, trigger, global_step=None, single_line=True):
-        super().__init__(sequence, trigger)
-        self.global_step = global_step
-        self.single_line = single_line
-
-    def run(self, context):
-        current_iter = context.iteration
-        if current_iter == 0:
-            opt_iter = 0.0
-            total_iter = 0.0
-            last_iter = 0.0
-        else:
-            opt_iter = np.nan
-            total_iter = current_iter / context.time_spent
-            last_iter = (0.0 if not hasattr(self, '_last_iter')
-                         else (current_iter - self._last_iter) / self._last_iter_timer.elapsed)
-
-        step = context.iteration if self.global_step is None else context.session.run(self.global_step)
-        print("\r%i, %i:\t%.2f optimisation iter/s\t%.2f total iter/s\t%.2f last iter/s" %
-              (current_iter, step, opt_iter, total_iter, last_iter), end='' if self.single_line else '\n')
-
-        self._last_iter = current_iter
-        self._last_iter_timer = Watcher()
-        self._last_iter_timer.start()
