@@ -81,10 +81,10 @@ class PrintAction(TriggeredAction):
 class CallbackAction(TriggeredAction):
     def __init__(self, sequence, trigger, callback, model, **kwargs):
         super().__init__(sequence, trigger)
-        self._callback = lambda : callback(model, **kwargs)
+        self._callback = lambda ctx: callback(ctx, model, **kwargs)
 
     def run(self, ctx: ActionContext):
-        self._callback()
+        self._callback(ctx)
 
 
 class SleepAction(TriggeredAction):
