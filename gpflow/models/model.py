@@ -55,7 +55,7 @@ class Model(Parameterized):
         return self.likelihood_tensor
 
     def is_built(self, graph):
-        is_built = super(Model, self).is_built(graph)
+        is_built = super().is_built(graph)
         if is_built is not Build.YES:
             return is_built
         if self._likelihood_tensor is None:

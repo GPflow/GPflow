@@ -19,6 +19,11 @@ import pandas as pd
 from collections import OrderedDict
 
 from . import settings
+from ._version import __version__
+
+
+def version():
+    return __version__
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
