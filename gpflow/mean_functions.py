@@ -138,7 +138,6 @@ class SwitchedMeanFunction(MeanFunction):
         for m in meanfunction_list:
             assert isinstance(m, MeanFunction)
         self.meanfunction_list = ParamList(meanfunction_list)
-        self.num_meanfunctions = len(self.meanfunction_list)
 
     @params_as_tensors
     def __call__(self, X):
@@ -147,11 +146,11 @@ class SwitchedMeanFunction(MeanFunction):
         X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, tf.shape(X)[1]-1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
-        x_list = tf.dynamic_partition(X, ind, self.num_meanfunctions)
+        x_list = tf.dynamic_partition(X, ind, len(self.meanfunction_list))
         # apply the likelihood-function to each section of the data
         results = [m(x) for x, m in zip(x_list, self.meanfunction_list)]
         # stitch the results back together
-        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_meanfunctions)
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, len(self.meanfunction_list))
         return tf.dynamic_stitch(partitions, results)
 
 

@@ -59,7 +59,7 @@ class AutoBuild(abc.ABCMeta):
         def __init__(self):
             pass
 
-    a = A(autobuild=False) # works fine, even when __init__ arguemnt list is empty.
+    a = A(autobuild=False) # works fine, even when __init__ argument list is empty.
     b = B(autobuild=False) # raises TypeError exception.
     ```
     """
