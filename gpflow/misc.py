@@ -19,6 +19,7 @@ import pandas as pd
 from collections import OrderedDict
 
 from . import settings
+from ._version import __version__
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
@@ -249,3 +250,6 @@ def _get_tensor_safe(name, index, graph):
         return graph.get_tensor_by_name(':'.join([name, index]))
     except KeyError:
         return None
+
+def version():
+    return __version__
