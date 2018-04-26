@@ -424,11 +424,6 @@ class Matern32(Stationary):
     The Matern 3/2 kernel
     """
 
-    # Used to bypass gradients of tf.sqrt that can lead to infs.
-    tf.RegisterGradient("Matern32Grad")(
-        lambda op, grad: grad * .5 * tf.exp(op.inputs[0])
-    )
-
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if not presliced:
