@@ -274,7 +274,9 @@ class Stationary(Kernel):
         Returns |(X - X2ᵀ)/lengthscales| (L2-norm).
         """
         r2 = self.scaled_square_dist(X, X2)
-        return tf.sqrt(tf.maximum(r2, 1e-12))
+        #Clipping around the (single) float precision which is ~1e-45.
+        return tf.sqrt(tf.maximum(r2, 1e-40))
+
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
