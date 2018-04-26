@@ -55,7 +55,7 @@ class TriggeredAction(Action):
                 itself as a context owner.
         """
         context = ActionContext(self) if context is None else context
-        if self._current_trigger_value(context) > self._next:
+        if self._current_trigger_value(context) >= self._next:
             try:
                 self.watcher.start()
                 self.run(context)
@@ -63,7 +63,7 @@ class TriggeredAction(Action):
                 self.watcher.stop()
 
             # Move to the next trigger time, and make sure it's after this current iteration
-            while self._next < self._current_trigger_value(context):
+            while self._next <= self._current_trigger_value(context):
                 self._next = next(self._seq)
 
 
@@ -159,8 +159,7 @@ class ModelTensorBoard(TriggeredAction):
     def __init__(self, sequence: Iterator, trigger: Trigger, model: Model, file_writer: tf.summary.FileWriter,
             only_scalars: bool = True,
             parameters: Optional[List[Parameter]] = None,
-            additional_summaries: Optional[List[tf.Summary]] = None,
-            global_step: Optional[tf.Variable] = None):
+            additional_summaries: Optional[List[tf.Summary]] = None) -> None:
         """
         Creates a Task that creates a sensible TensorBoard for a model.
         :param sequence:
@@ -187,9 +186,7 @@ class ModelTensorBoard(TriggeredAction):
 
         self.summary = tf.summary.merge(all_summaries)
         self.file_writer = file_writer
-        self.global_step = global_step
 
     def run(self, ctx: ActionContext):
-        step = ctx.iteration if self.global_step is None else ctx.session.run(self.global_step)
         summary = ctx.session.run(self.summary)
-        self.file_writer.add_summary(summary, step)
+        self.file_writer.add_summary(summary, ctx.iteration)
