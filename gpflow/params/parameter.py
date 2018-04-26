@@ -298,6 +298,16 @@ class Parameter(Node):
         df = misc.pretty_pandas_table([self.pathname], column_names, column_values)
         return df
 
+    def tf_compilation_index(self):
+        """
+        Takes out index from the parameter's tensor name. E.g. parameter tensor name is 
+        GPR-0000/kern/lengthscales, the method for that parameter will return '0000' index.
+        """
+        if self.parameter_tensor is None:
+            return None
+        name = self.parameter_tensor.name
+        return name.split('-', 1)[-1].split('/')[0]
+
     def _valid_input(self, value, dtype=None):
         if not misc.is_valid_param_value(value):
             msg = 'The value must be either a tensorflow variable, an array or a scalar.'

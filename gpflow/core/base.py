@@ -25,21 +25,21 @@ class IPrior(metaclass=abc.ABCMeta):
         All priors (for the moment) are univariate, so if x is a vector or an
         array, this is the sum of the log densities.
         """
-        raise NotImplementedError()
+        pass
 
     @abc.abstractmethod
     def sample(self, shape=(1,)):
         """
         A sample utility function for the prior.
         """
-        raise NotImplementedError()
+        pass
 
     @abc.abstractmethod
     def __str__(self):
         """
         A short string to describe the prior at print time
         """
-        raise NotImplementedError()
+        pass
 
 
 class ITransform(metaclass=abc.ABCMeta):
@@ -56,28 +56,29 @@ class ITransform(metaclass=abc.ABCMeta):
         """
         Map from the free-space to the variable space, using numpy
         """
-        raise NotImplementedError()
+        pass
 
     @abc.abstractmethod
     def backward(self, y):
         """
         Map from the variable-space to the free space, using numpy
         """
-        raise NotImplementedError()
+        pass
+
 
     @abc.abstractmethod
     def forward_tensor(self, x):
         """
         Map from the free-space to the variable space, using tensorflow
         """
-        raise NotImplementedError()
+        pass
 
     @abc.abstractmethod
     def backward_tensor(self, x):
         """
         Map from the variable-space to the free space, using tensorflow
         """
-        raise NotImplementedError()
+        pass
 
     @abc.abstractmethod
     def log_jacobian_tensor(self, x):
@@ -89,11 +90,11 @@ class ITransform(metaclass=abc.ABCMeta):
         Jacobian at time of writing. We do this in the tests to make sure the
         implementation is correct.
         """
-        raise NotImplementedError()
+        pass
 
     @abc.abstractmethod
     def __str__(self):
         """
         A short string describing the nature of the constraint
         """
-        raise NotImplementedError
+        pass

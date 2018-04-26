@@ -7,22 +7,22 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=latest)](http://gpflow.readthedocs.io/en/latest/?badge=latest)
 
-# What does GPflow do?
+## What does GPflow do?
 
 GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online user manual](http://gpflow.readthedocs.io/en/latest/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), for more discussion of the comparison see [this page](http://gpflow.readthedocs.io/en/latest/intro.html#what-s-the-difference-between-gpy-and-gpflow).
 
 GPflow uses [TensorFlow](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python 3.5 or above.
 
-# Install
+## Install
 
-## 1) Quick install
+### 1) Quick install
 GPflow can be installed by cloning the repository and running
 ```
 pip install .
 ```
 in the root folder. This also installs required dependencies including TensorFlow. When GPU support is needed, a manual installation of TensorFlow is recommended (next section), as one cannot rely on pip to get this running.
 
-## 2) Alternative method
+### 2) Alternative method
 A different option to install GPflow requires installation of TensorFlow first. Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r1.3/get_started/get_started). You will need at least version 1.3 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend
 ```
 python setup.py develop
@@ -35,7 +35,7 @@ You can run the tests with `python setup.py test`.
 
 We document the [version history](https://github.com/GPflow/GPflow/blob/master/RELEASE.md).
 
-## Docker image
+### Docker image
 
 We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which can be run using
 
@@ -45,13 +45,19 @@ docker run -it -p 8888:8888 gpflow/gpflow
 
 The image can be generated using our [Dockerfile](Dockerfile).
 
-# Getting help
+## Getting help
 Please use GitHub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.
 
-# Contributing
+## Contributing
 All constructive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
 
-# Projects using GPflow
+## Compatibility
+
+GPflow heavily depends on TensorFlow and as far as TensorFlow supports forward compatibility, GPflow should as well. The version of GPflow can give you a hint about backward compatibility. If the major version has changed then you need to check the release notes to find out how the API has been changed.
+
+Unfortunately, there is no such thing as backward compatibility for GPflow _models_, which means that a model implementation can change without changing interfaces. In other words, the TensorFlow graph can be different for the same models from different versions of GPflow.
+
+## Projects using GPflow
 
 A few projects building on GPflow and demonstrating its usage are listed below.
 
@@ -65,7 +71,7 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 
 Let us know if you would like your project listed here.
 
-# Citing GPflow
+## Citing GPflow
 
 To cite GPflow, please reference the [JMLR paper](http://www.jmlr.org/papers/volume18/16-537/16-537.pdf). Sample Bibtex is given below:
 
