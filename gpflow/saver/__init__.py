@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman
+# Copyright 2018 Artem Artemev @awav
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,4 +13,7 @@
 # limitations under the License.
 
 
-__version__ = "1.1.1"
+from .saver import Saver
+from .saver import SaverContext
+from .coders import CoderDispatcher
+from .serializers import HDF5Serializer
