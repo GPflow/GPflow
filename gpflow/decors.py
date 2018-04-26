@@ -29,19 +29,26 @@ from .params import Parameterized
 
 def name_scope(name=None):
     """
-    Name scope decorator does little trick with scope naming. The wrapped
-    function will be run inside TensorFlow name scope with name specified
-    by either `name` option or `name` option is None then name of the
-    function will be used.
+    This decorator wraps a function so that it runs inside a TensorFlow
+    name scope. The name is given by the `name` option; if this is None,
+    then the name of the function will be used.
+    ```
+    >>> @name_scope()
+    >>> def foo(...):
+    >>>     # now runs inside scope "foo"
+    >>> @name_scope('bar')
+    >>> def baz(...):
+    >>>     # now runs inside scope "bar", not "baz"
+    ```
     """
-    def name_scope_wrapper(method):
+    def name_scope_wrapper_decorator(method):
         @functools.wraps(method)
-        def runnable(*args, **kwargs):
+        def name_scope_wrapper(*args, **kwargs):
             scope_name = name if name is not None else method.__name__
             with tf.name_scope(scope_name):
                 return method(*args, **kwargs)
-        return runnable
-    return name_scope_wrapper
+        return name_scope_wrapper
+    return name_scope_wrapper_decorator
 
 
 def params_as_tensors(method):
@@ -95,12 +102,12 @@ class defer_build(contextlib.ContextDecorator):
     """
 
     def __init__(self, defer=True):
-        self.disable_build = not defer
+        self.defer = defer
         self.prev_autobuild_status = None
 
     def __enter__(self):
         self.prev_autobuild_status = AutoBuildStatus.__autobuild_enabled_global__
-        AutoBuildStatus.__autobuild_enabled_global__ = self.disable_build
+        AutoBuildStatus.__autobuild_enabled_global__ = not self.defer
 
     def __exit__(self, *exc):
         AutoBuildStatus.__autobuild_enabled_global__ = self.prev_autobuild_status
@@ -108,12 +115,13 @@ class defer_build(contextlib.ContextDecorator):
 
 
 @contextlib.contextmanager
-def params_as_tensors_for(obj, convert=True):
+def params_as_tensors_for(*objs, convert=True):
     """
-    Context manager which changes respresentation of parameters and data holders
-    for specific parameterized object.
+    Context manager which changes the representation of parameters and data holders
+    for the specific parameterized object(s).
 
-    User can turn off tensor conversion inside `params_as_tensors` wrapped function.
+    This can also be used to turn off tensor conversion functions wrapped with
+    `params_as_tensors`:
     ```
     @gpflow.params_as_tensors
     def compute_something(self):  # self is parameterized object.
@@ -123,20 +131,22 @@ def params_as_tensors_for(obj, convert=True):
         return s + b
     ```
 
+    :param objs: one or more instances of classes deriving from Parameterized
     :param convert: Flag which is used for turning tensor convertion
         feature on, `True`, or turning it off, `False`.
     """
-    prev_value = _params_as_tensors_enter(obj, convert)
+    prev_values = [_params_as_tensors_enter(o, convert) for o in objs]
     try:
         yield
     finally:
-        _params_as_tensors_exit(obj, prev_value)
+        for o, pv in zip(objs, prev_values):
+            _params_as_tensors_exit(o, pv)
 
 
 def autoflow(*af_args, **af_kwargs):
-    def autoflow_wrapper(method):
+    def autoflow_wrapper_decorator(method):
         @functools.wraps(method)
-        def runnable(obj, *args, **kwargs):
+        def autoflow_wrapper(obj, *args, **kwargs):
             if not isinstance(obj, Node):
                 raise GPflowError(
                     'AutoFlow works only with node-like objects.')
@@ -153,8 +163,8 @@ def autoflow(*af_args, **af_kwargs):
                     _setup_storage(store, *af_args, **af_kwargs)
                     _build_method(method, obj, store)
                 return _session_run(session, obj, store, *args, **kwargs)
-        return runnable
-    return autoflow_wrapper
+        return autoflow_wrapper
+    return autoflow_wrapper_decorator
 
 
 def _params_as_tensors_enter(obj, convert=True):
