@@ -99,10 +99,10 @@ class TestEquivalence(GPflowTestCase):
         with self.test_context():
             self.setup()
             assert_allclose(self.vgp0.kern.variance.read_value(),
-                            self.cvgp.kern.coregion.kappa.read_value()[0],
+                            self.cvgp.kern.kernels[1].kappa.read_value()[0],
                             atol=1.0e-2)
             assert_allclose(self.vgp1.kern.variance.read_value(),
-                            self.cvgp.kern.coregion.kappa.read_value()[1],
+                            self.cvgp.kern.kernels[1].kappa.read_value()[1],
                             atol=1.0e-2)
 
     def test_mean_values(self):
