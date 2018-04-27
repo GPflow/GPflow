@@ -275,7 +275,7 @@ class Stationary(Kernel):
         """
         r2 = self.scaled_square_dist(X, X2)
         #Clipping around the (single) float precision which is ~1e-45.
-        return tf.sqrt(tf.maximum(r2, 1e-40))
+        return tf.sqrt(r2 + 1e-12)
 
 
     @params_as_tensors
