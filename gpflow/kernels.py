@@ -275,7 +275,7 @@ class Stationary(Kernel):
         """
         r2 = self.scaled_square_dist(X, X2)
         # Clipping around the (single) float precision which is ~1e-45.
-        tf.sqrt(tf.maximum(r2, 1e-40))
+        return tf.sqrt(tf.maximum(r2, 1e-40))
 
 
     @params_as_tensors
@@ -431,7 +431,6 @@ class Matern32(Stationary):
         if not presliced:
             X, X2 = self._slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-
         return self.variance * (1. + np.sqrt(3.) * r) * \
                tf.exp(-np.sqrt(3.) * r)
 
