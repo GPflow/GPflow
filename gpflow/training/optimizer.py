@@ -43,7 +43,8 @@ class Optimizer:
     @staticmethod
     def _gen_var_list(model, var_list):
         var_list = var_list or []
-        return list(set(model.trainable_tensors).union(var_list))
+        all_vars = list(set(model.trainable_tensors).union(var_list))
+        return sorted(all_vars, key=lambda x: x.name)
 
     @staticmethod
     def _gen_feed_dict(model, feed_dict):
