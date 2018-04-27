@@ -39,8 +39,10 @@ def test_kernel_euclidean_distance(session_tf, kernel):
     
     k = kernel(Datum.D)
     K = k.compute_K_symm(Datum.X)
-    assert not np.isnan(K).any(), 'There are NaNs in the output of the ' + kernel + ' kernel.'
+    assert not np.isnan(K).any(), 'There are NaNs in the output of the ' + kernel.__name__ + ' kernel.'
+    assert np.isfinite(K).all(), 'There are Infs in the output of the ' + kernel.__name__ + ' kernel.'
 
     X = tf.placeholder(settings.float_type)
     dK = session_tf.run(tf.gradients(k.K(X, X), X)[0], feed_dict={X: Datum.X})
     assert not np.isnan(dK).any(), 'There are NaNs in the gradient of the ' + kernel.__name__ + ' kernel.'
+    assert np.isfinite(K).all(), 'There are Infs in the output of the ' + kernel.__name__ + ' kernel.'
