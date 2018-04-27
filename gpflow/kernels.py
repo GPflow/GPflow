@@ -274,7 +274,7 @@ class Stationary(Kernel):
         Returns |(X - X2ᵀ)/lengthscales| (L2-norm).
         """
         r2 = self.scaled_square_dist(X, X2)
-        #Clipping around the (single) float precision which is ~1e-45.
+        # Clipping around the (single) float precision which is ~1e-45.
         tf.sqrt(tf.maximum(r2, 1e-40))
 
 
