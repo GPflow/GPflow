@@ -34,8 +34,8 @@ def bernoulli(y, p):
     return tf.log(tf.where(tf.equal(y, 1), p, 1-p))
 
 
-def poisson(y, lamb):
-    return y * tf.log(lamb) - lamb - tf.lgamma(y + 1.)
+def poisson(y, lam):
+    return y * tf.log(lam) - lam - tf.lgamma(y + 1.)
 
 
 def exponential(y, scale):
@@ -93,7 +93,7 @@ def multivariate_normal(x, mu, L):
         warnings.warn('Shape of mu may be unknown or not 2D.')
     elif mu.shape.ndims != 2:
         raise ValueError('Shape of mu must be 2D.')
-        
+
     d = x - mu
     alpha = tf.matrix_triangular_solve(L, d, lower=True)
     num_dims = tf.cast(tf.shape(d)[0], L.dtype)
