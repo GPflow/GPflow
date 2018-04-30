@@ -28,6 +28,34 @@ class Prior(Parameterized, IPrior):  # pylint: disable=W0223
     pass
 
 
+class Exponential(Prior):
+    """
+    Exponential distribution.
+
+    Support: [0, inf)
+    """
+
+    def __init__(self, rate):
+        """
+        :param float rate: Rate parameter (inverse scale) (rate > 0)
+        """
+        Prior.__init__(self)
+        self.rate = np.atleast_1d(np.array(rate, settings.float_type))
+        if rate <= 0:  # pragma: no cover
+            raise ValueError("The rate parameter has to be positive.")
+
+    def logp(self, x):
+        scale = 1 / self.rate
+        return tf.reduce_sum(densities.exponential(scale, x))
+        #return tf.reduce_sum(densities.exponential(x, self.rate))
+
+    def sample(self, shape=(1,)):
+        return np.random.exponential(scale=1 / self.rate, size=shape)
+
+    def __str__(self):
+        return "Exp({})".format(self.rate)
+
+
 class Gaussian(Prior):
     def __init__(self, mu, var):
         Prior.__init__(self)
@@ -38,7 +66,7 @@ class Gaussian(Prior):
         return tf.reduce_sum(densities.gaussian(x, self.mu, self.var))
 
     def sample(self, shape=(1,)):
-        return self.mu + np.sqrt(self.var)*np.random.randn(*shape)
+        return self.mu + np.sqrt(self.var) * np.random.randn(*shape)
 
     def __str__(self):
         return "N("+str(self.mu) + "," + str(self.var) + ")"
@@ -123,3 +151,4 @@ class Uniform(Prior):
 
     def __str__(self):
         return "U("+str(self.lower) + "," + str(self.upper) + ")"
+
