@@ -38,8 +38,8 @@ def poisson(lamb, y):
     return y * tf.log(lamb) - lamb - tf.lgamma(y + 1.)
 
 
-def exponential(lamb, y):
-    return - y/lamb - tf.log(lamb)
+def exponential(scale, y):
+    return - y/scale - tf.log(scale)
 
 
 def gamma(shape, scale, x):
