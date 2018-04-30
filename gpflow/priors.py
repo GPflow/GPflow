@@ -132,14 +132,17 @@ class Beta(Prior):
         return np.random.beta(self.a, self.b, size=shape)
 
     def __str__(self):
-        return "Beta(" + str(self.a) + "," + str(self.b) + ")"
+        return "Beta({},{})".format(self.a, self.b)
 
 
 class Uniform(Prior):
     def __init__(self, lower=0., upper=1.):
         Prior.__init__(self)
-        self.log_height = - np.log(upper - lower)
         self.lower, self.upper = lower, upper
+
+    @property
+    def log_height(self):
+        return - np.log(self.upper - self.lower)
 
     def logp(self, x):
         return self.log_height * tf.cast(tf.size(x), settings.float_type)
