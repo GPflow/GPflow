@@ -22,6 +22,7 @@ import numpy as np
 from . import settings
 from . import densities
 from . import transforms
+from . import priors
 
 from .decors import params_as_tensors
 from .decors import params_as_tensors_for
@@ -349,7 +350,7 @@ class Beta(Likelihood):
         return (mean - tf.square(mean)) / (self.scale + 1.)
 
 
-class RobustMax(object):
+class RobustMax(Parameterized):
     """
     This class represent a multi-class inverse-link function. Given a vector
     f=[f_1, f_2, ... f_k], the result of the mapping is
@@ -360,18 +361,24 @@ class RobustMax(object):
 
     y_i = (1-eps)  i == argmax(f)
           eps/(k-1)  otherwise.
-
-
     """
 
-    def __init__(self, num_classes, epsilon=1e-3):
-        self.epsilon = epsilon
+    def __init__(self, num_classes, epsilon=1e-3, name=None):
+        super().__init__(name)
+        self.epsilon = Parameter(epsilon, transforms.Logistic(), trainable=False, dtype=settings.float_type,
+                                 prior=priors.Beta(0.2, 5.))
         self.num_classes = num_classes
-        self._eps_K1 = self.epsilon / (self.num_classes - 1.)
 
+    @params_as_tensors
     def __call__(self, F):
         i = tf.argmax(F, 1)
-        return tf.one_hot(i, self.num_classes, 1. - self.epsilon, self._eps_K1)
+        return tf.one_hot(i, self.num_classes, tf.squeeze(1. - self.epsilon), tf.squeeze(self._eps_K1))
+
+    @property
+    @params_as_tensors
+    def _eps_K1(self):
+        return self.epsilon / (self.num_classes - 1.)
+
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         Y = tf.cast(Y, tf.int64)
@@ -416,19 +423,22 @@ class MultiClass(Likelihood):
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
-            hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
-            yes = tf.ones(tf.shape(Y), dtype=settings.float_type) - self.invlink.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=settings.float_type) + self.invlink._eps_K1
-            p = tf.where(hits, yes, no)
+            with params_as_tensors_for(self.invlink):
+                hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
+                yes = tf.ones(tf.shape(Y), dtype=settings.float_type) - self.invlink.epsilon
+                no = tf.zeros(tf.shape(Y), dtype=settings.float_type) + self.invlink._eps_K1
+                p = tf.where(hits, yes, no)
             return tf.log(p)
         else:
             raise NotImplementedError
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-            p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * np.log(1 - self.invlink.epsilon) + (1. - p) * np.log(self.invlink._eps_K1)
+            with params_as_tensors_for(self.invlink):
+                gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+                p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+                ve = p * tf.log(1. - self.invlink.epsilon) + (1. - p) * tf.log(self.invlink._eps_K1)
+            return ve
         else:
             raise NotImplementedError
 
@@ -448,9 +458,11 @@ class MultiClass(Likelihood):
 
     def _predict_non_logged_density(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-            p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1 - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
+            with params_as_tensors_for(self.invlink):
+                gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+                p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+                den = p * (1. - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
+            return den
         else:
             raise NotImplementedError
 
