@@ -68,7 +68,7 @@ class Gaussian(Prior):
         return self.mu + np.sqrt(self.var) * np.random.randn(*shape)
 
     def __str__(self):
-        return "N("+str(self.mu) + "," + str(self.var) + ")"
+        return "N({},{})".format(self.mu, self.var)
 
 
 class LogNormal(Prior):
@@ -84,7 +84,7 @@ class LogNormal(Prior):
         return np.exp(self.mu + np.sqrt(self.var) * np.random.randn(*shape))
 
     def __str__(self):
-        return "logN("+str(self.mu) + "," + str(self.var) + ")"
+        return "logN({},{})".format(self.mu, self.var)
 
 
 class Gamma(Prior):
@@ -100,7 +100,7 @@ class Gamma(Prior):
         return np.random.gamma(self.shape, self.scale, size=shape)
 
     def __str__(self):
-        return "Ga("+str(self.shape) + "," + str(self.scale) + ")"
+        return "Ga({},{})".format(self.shape, self.scale)
 
 
 class Laplace(Prior):
@@ -116,7 +116,7 @@ class Laplace(Prior):
         return np.random.laplace(self.mu, self.sigma, size=shape)
 
     def __str__(self):
-        return "Lap.("+str(self.mu) + "," + str(self.sigma) + ")"
+        return "Lap.({},{})".format(self.mu, self.sigma)
 
 
 class Beta(Prior):
@@ -149,5 +149,5 @@ class Uniform(Prior):
                 (self.upper - self.lower)*np.random.rand(*shape))
 
     def __str__(self):
-        return "U("+str(self.lower) + "," + str(self.upper) + ")"
+        return "U({},{})".format(self.lower, self.upper)
 
