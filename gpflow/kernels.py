@@ -60,7 +60,32 @@ class Kernel(Parameterized):
             self.active_dims = np.array(active_dims, dtype=np.int32)
             assert len(active_dims) == input_dim
 
-        self.num_gauss_hermite_points = 20
+    def _validate_ard_shape(self, name, value, ARD=None):
+        """
+        Validates the shape of a potentially ARD hyperparameter
+
+        :param name: The name of the parameter (used for error messages)
+        :param value: A scalar or an array.
+        :param ARD: None, False, or True. If None, infers ARD from shape of value.
+        :return: Tuple (value, ARD), where _value_ is a scalar if input_dim==1 or not ARD, array otherwise.
+            The _ARD_ is False if input_dim==1 or not ARD, True otherwise.
+        """
+        if ARD is None:
+            ARD = np.asarray(value).squeeze().shape != ()
+
+        if ARD:
+            # accept float or array:
+            value = value * np.ones(self.input_dim, dtype=settings.float_type)
+
+        if self.input_dim == 1 or not ARD:
+            correct_shape = ()
+        else:
+            correct_shape = (self.input_dim,)
+
+        if np.asarray(value).squeeze().shape != correct_shape:
+            raise ValueError("shape of {} does not match input_dim".format(name))
+
+        return value, ARD
 
     @autoflow((settings.float_type, [None, None]),
               (settings.float_type, [None, None]))
@@ -149,7 +174,8 @@ class Static(Kernel):
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, name=None):
         super().__init__(input_dim, active_dims, name=name)
-        self.variance = Parameter(variance, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
 
     @params_as_tensors
     def Kdiag(self, X):
@@ -203,8 +229,8 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, input_dim, variance=1.0, lengthscales=None,
-                 active_dims=None, ARD=False, name=None):
+    def __init__(self, input_dim, variance=1.0, lengthscales=1.0,
+                 active_dims=None, ARD=None, name=None):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter
@@ -212,24 +238,17 @@ class Stationary(Kernel):
           defaults to 1.0 (ARD=False) or np.ones(input_dim) (ARD=True).
         - active_dims is a list of length input_dim which controls which
           columns of X are used.
-        - ARD specifies whether the kernel has one lengthscale per dimension
-          (ARD=True) or a single lengthscale (ARD=False).
+        - if ARD is not None, it specifies whether the kernel has one
+          lengthscale per dimension (ARD=True) or a single lengthscale
+          (ARD=False). Otherwise, inferred from shape of lengthscales.
         """
         super().__init__(input_dim, active_dims, name=name)
-        self.variance = Parameter(variance, transform=transforms.positive)
-        if ARD:
-            if lengthscales is None:
-                lengthscales = np.ones(input_dim, dtype=settings.float_type)
-            else:
-                # accepts float or array:
-                lengthscales = lengthscales * np.ones(input_dim, dtype=settings.float_type)
-            self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
-            self.ARD = True
-        else:
-            if lengthscales is None:
-                lengthscales = 1.0
-            self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
-            self.ARD = False
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
+
+        lengthscales, self.ARD = self._validate_ard_shape("lengthscales", lengthscales, ARD)
+        self.lengthscales = Parameter(lengthscales, transform=transforms.positive,
+                                      dtype=settings.float_type)
 
 
     def square_dist(self, X, X2):  # pragma: no cover
@@ -308,10 +327,11 @@ class RationalQuadratic(Stationary):
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
-    def __init__(self, input_dim, variance=1.0, lengthscales=None, alpha=1.0,
-                 active_dims=None, ARD=False, name=None):
+    def __init__(self, input_dim, variance=1.0, lengthscales=1.0, alpha=1.0,
+                 active_dims=None, ARD=None, name=None):
         super().__init__(input_dim, variance, lengthscales, active_dims, ARD, name)
-        self.alpha = Parameter(alpha, transform=transforms.positive)
+        self.alpha = Parameter(alpha, transform=transforms.positive,
+                               dtype=settings.float_type)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -326,7 +346,7 @@ class Linear(Kernel):
     The linear kernel
     """
 
-    def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=False, name=None):
+    def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=None, name=None):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter(s)
@@ -335,13 +355,10 @@ class Linear(Kernel):
           which columns of X are used.
         """
         super().__init__(input_dim, active_dims, name=name)
-        self.ARD = ARD
-        if ARD:
-            # accept float or array:
-            variance = np.ones(self.input_dim, dtype=settings.float_type) * variance
-            self.variance = Parameter(variance, transform=transforms.positive)
-        else:
-            self.variance = Parameter(variance, transform=transforms.positive)
+
+        variance, self.ARD = self._validate_ard_shape("variance", variance, ARD)
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -369,7 +386,7 @@ class Polynomial(Linear):
                  variance=1.0,
                  offset=1.0,
                  active_dims=None,
-                 ARD=False,
+                 ARD=None,
                  name=None):
         """
         :param input_dim: the dimension of the input to the kernel
@@ -382,7 +399,8 @@ class Polynomial(Linear):
         """
         super().__init__(input_dim, variance, active_dims, ARD, name=name)
         self.degree = degree
-        self.offset = Parameter(offset, transform=transforms.positive)
+        self.offset = Parameter(offset, transform=transforms.positive,
+                                dtype=settings.float_type)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -482,7 +500,7 @@ class ArcCosine(Kernel):
     def __init__(self, input_dim,
                  order=0,
                  variance=1.0, weight_variances=1., bias_variance=1.,
-                 active_dims=None, ARD=False, name=None):
+                 active_dims=None, ARD=None, name=None):
         """
         - input_dim is the dimension of the input to the kernel
         - order specifies the activation function of the neural network
@@ -503,21 +521,13 @@ class ArcCosine(Kernel):
             raise ValueError('Requested kernel order is not implemented.')
         self.order = order
 
-        self.variance = Parameter(variance, transform=transforms.positive)
-        self.bias_variance = Parameter(bias_variance, transform=transforms.positive)
-        if ARD:
-            if weight_variances is None:
-                weight_variances = np.ones(input_dim, settings.float_type)
-            else:
-                # accepts float or array:
-                weight_variances = weight_variances * np.ones(input_dim, settings.float_type)
-            self.weight_variances = Parameter(weight_variances, transform=transforms.positive)
-            self.ARD = True
-        else:
-            if weight_variances is None:
-                weight_variances = 1.0
-            self.weight_variances = Parameter(weight_variances, transform=transforms.positive)
-            self.ARD = False
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
+        self.bias_variance = Parameter(bias_variance, transform=transforms.positive,
+                                       dtype=settings.float_type)
+        weight_variances, self.ARD = self._validate_ard_shape("weight_variances", weight_variances, ARD)
+        self.weight_variances = Parameter(weight_variances, transform=transforms.positive,
+                                          dtype=settings.float_type)
 
     @params_as_tensors
     def _weighted_product(self, X, X2=None):
@@ -583,10 +593,13 @@ class Periodic(Kernel):
                  lengthscales=1.0, active_dims=None, name=None):
         # No ARD support for lengthscale or period yet
         super().__init__(input_dim, active_dims, name=name)
-        self.variance = Parameter(variance, transform=transforms.positive)
-        self.lengthscales = Parameter(lengthscales, transform=transforms.positive)
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
+        self.lengthscales = Parameter(lengthscales, transform=transforms.positive,
+                                      dtype=settings.float_type)
         self.ARD = False
-        self.period = Parameter(period, transform=transforms.positive)
+        self.period = Parameter(period, transform=transforms.positive,
+                                dtype=settings.float_type)
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
