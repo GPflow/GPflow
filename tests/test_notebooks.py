@@ -26,21 +26,23 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
 NOTEBOOK_FILES = [
+    "advanced_usage.ipynb",
     "classification.ipynb",
     "coreg_demo.ipynb",
     "kernels.ipynb",
     "mcmc.ipynb",
+    "models.ipynb",
+    "multiclass.ipynb",
+    "natural_gradients.ipynb",
     "ordinal.ipynb",
     "Sanity_check.ipynb",
     "settings.ipynb",
     "SGPR_notes.ipynb",
     "vgp_notes.ipynb",
-    "models.ipynb",
-    "multiclass.ipynb",
-    "classification.ipynb"
+    "upper_bound.ipynb"
     # Blacklist:
     #   "FITCvsVFE.ipynb",
-    #   "svi.ipynb",
+    #   "svi_test.ipynb",
     #   "GPLVM.ipynb",
     #   "regression.ipynb"
 ]
