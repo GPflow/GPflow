@@ -46,7 +46,7 @@ class Exponential(Prior):
 
     def logp(self, x):
         scale = 1 / self.rate
-        return tf.reduce_sum(densities.exponential(x, scale))
+        return tf.reduce_sum(logdensities.exponential(x, scale))
 
     def sample(self, shape=(1,)):
         return np.random.exponential(scale=1 / self.rate, size=shape)
