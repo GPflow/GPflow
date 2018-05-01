@@ -82,30 +82,48 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
 
 def ndiagquad(funcs, H, *meanvars, **Ys):
     """
-    funcs: Callable or Iterable of Callables
-    H: number of Gauss-Hermite quadrature points
-    *meanvars: tuples (Fmu, Fvar); integration args to be passed by position
-    **Ys: ndarrays Y; deterministic arguments to be passed by name
+    Computes N Gaussian expectation integrals of one or more functions
+    using Gauss-Hermite quadrature. The Gaussians must be independent.
 
-    Ys, Fmu, Fvar should all be flat arrays of equal length
+    :param funcs: Callable or Iterable of Callables that operates elementwise
+    :param H: number of Gauss-Hermite quadrature points
+    :param *meanvars: `Din` tuples (Fmu, Fvar)
+    :param **Ys: ndarrays Y; deterministic arguments to be passed by name
+
+    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :return: shape is the same as that of the first Fmu
     """
     Din = len(meanvars)
-    assert Din == 1  # more than one uncertain argument not yet supported
-    (Fmu, Fvar), = meanvars
-    gh_x, gh_w = hermgauss(H)
-    gh_x = gh_x.reshape(1, -1)
-    gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
-    shape = tf.shape(Fmu)
-    Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar)]
-    X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
+    if Din == 0:
+        raise ValueError("ndiagquad requires at least one (Fmu,Fvar) tuple")
+
+    def unify(f_list):
+        """
+        Stack a list of means/vars into a full block
+        """
+        return tf.reshape(
+                tf.concat([tf.reshape(f, (-1, 1)) for f in f_list], axis=1),
+                (-1, 1, Din))
+    Fmu, Fvar = map(unify, zip(*meanvars))    # both N x 1 x Din
+
+    xn, wn = mvhermgauss(H, Din)
+    # xn: H**Din x Din, wn: H**Din
+
+    gh_x = xn.reshape(1, -1, Din)             # 1 x H**Din x Din
+    Xall = gh_x * tf.sqrt(2.0 * Fvar) + Fmu   # N x H**Din x Din
+    Xs = [Xall[:, :, i] for i in range(Din)]  # N x H**Din  each
+
+    gh_w = wn.reshape(-1, 1) / np.sqrt(np.pi)  # H**Din x 1
+    shape = tf.shape(meanvars[0][0])
 
     for name, Y in Ys.items():
         Y = tf.reshape(Y, (-1, 1))
-        Y = tf.tile(Y, [1, H])  # broadcast Y to match X
-        Ys[name] = Y
+        Y = tf.tile(Y, [1, H**Din])  # broadcast Y to match X
+        # without the tiling, some calls such as tf.where() (in bernoulli) fail
+        Ys[name] = Y  # now N x H**Din
 
     def eval_func(f):
-        feval = f(X, **Ys)
+        feval = f(*Xs, **Ys)  # f should be elementwise: return shape N x H**Din
         return tf.reshape(tf.matmul(feval, gh_w), shape)
 
     if isinstance(funcs, Iterable):
