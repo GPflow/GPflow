@@ -65,7 +65,7 @@ class Likelihood(Parameterized):
             + tf.square(self.conditional_mean(X))
         E_y, E_y2 = ndiagquad([self.conditional_mean, integrand2],
                 self.num_gauss_hermite_points,
-                (Fmu, Fvar))
+                Fmu, Fvar)
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y
 
@@ -90,7 +90,7 @@ class Likelihood(Parameterized):
         """
         exp_p = ndiagquad(lambda X, Y: tf.exp(self.logp(X, Y)),
                 self.num_gauss_hermite_points,
-                (Fmu, Fvar), Y=Y)
+                Fmu, Fvar, Y=Y)
         return tf.log(exp_p)
 
     def variational_expectations(self, Fmu, Fvar, Y):
@@ -115,7 +115,7 @@ class Likelihood(Parameterized):
         """
         return ndiagquad(self.logp,
                 self.num_gauss_hermite_points,
-                (Fmu, Fvar), Y=Y)
+                Fmu, Fvar, Y=Y)
 
 
 class Gaussian(Likelihood):

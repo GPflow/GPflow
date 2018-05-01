@@ -80,23 +80,20 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
     return tf.reduce_sum(fX * wr, 0)
 
 
-def ndiagquad(funcs, H, *meanvars, **Ys):
+def ndiagquad(funcs, H, Fmu, Fvar, **Ys):
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Gauss-Hermite quadrature. The Gaussians must be independent.
 
     :param funcs: Callable or Iterable of Callables that operates elementwise
     :param H: number of Gauss-Hermite quadrature points
-    :param *meanvars: `Din` tuples (Fmu, Fvar)
-    :param **Ys: ndarrays Y; deterministic arguments to be passed by name
+    :param Fmu: array/tensor or `Din`-tuple/list thereof
+    :param Fvar: array/tensor or `Din`-tuple/list thereof
+    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
 
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
     :return: shape is the same as that of the first Fmu
     """
-    Din = len(meanvars)
-    if Din == 0:  # pragma: no cover
-        raise ValueError("ndiagquad requires at least one (Fmu,Fvar) tuple")
-
     def unify(f_list):
         """
         Stack a list of means/vars into a full block
@@ -104,7 +101,15 @@ def ndiagquad(funcs, H, *meanvars, **Ys):
         return tf.reshape(
                 tf.concat([tf.reshape(f, (-1, 1)) for f in f_list], axis=1),
                 (-1, 1, Din))
-    Fmu, Fvar = map(unify, zip(*meanvars))    # both N x 1 x Din
+
+    if isinstance(Fmu, (tuple, list)):
+        Din = len(Fmu)
+        shape = tf.shape(Fmu[0])
+        Fmu, Fvar = map(unify, [Fmu, Fvar])    # both N x 1 x Din
+    else:
+        Din = 1
+        shape = tf.shape(Fmu)
+        Fmu, Fvar = [tf.reshape(f, (-1, 1, 1)) for f in [Fmu, Fvar]]
 
     xn, wn = mvhermgauss(H, Din)
     # xn: H**Din x Din, wn: H**Din
@@ -114,7 +119,6 @@ def ndiagquad(funcs, H, *meanvars, **Ys):
     Xs = [Xall[:, :, i] for i in range(Din)]  # N x H**Din  each
 
     gh_w = wn.reshape(-1, 1) / np.sqrt(np.pi)  # H**Din x 1
-    shape = tf.shape(meanvars[0][0])
 
     for name, Y in Ys.items():
         Y = tf.reshape(Y, (-1, 1))
