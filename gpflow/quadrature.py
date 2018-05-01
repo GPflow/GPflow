@@ -1,6 +1,7 @@
 from __future__ import print_function, absolute_import
 
 import itertools
+from collections import Iterable
 
 import numpy as np
 import tensorflow as tf
@@ -77,3 +78,37 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
                     (-1,) + (1,) * (1 + len(Dout)))
     return tf.reduce_sum(fX * wr, 0)
+
+
+def ndiagquad(funcs, H, *meanvars, **Ys):
+    """
+    funcs: Callable or Iterable of Callables
+    H: number of Gauss-Hermite quadrature points
+    *meanvars: tuples (Fmu, Fvar); integration args to be passed by position
+    **Ys: ndarrays Y; deterministic arguments to be passed by name
+
+    Ys, Fmu, Fvar should all be flat arrays of equal length
+    """
+    Din = len(meanvars)
+    assert Din == 1  # more than one uncertain argument not yet supported
+    (Fmu, Fvar), = meanvars
+    gh_x, gh_w = hermgauss(H)
+    gh_x = gh_x.reshape(1, -1)
+    gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
+    shape = tf.shape(Fmu)
+    Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar)]
+    X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
+
+    for name, Y in Ys.items():
+        Y = tf.reshape(Y, (-1, 1))
+        Y = tf.tile(Y, [1, H])  # broadcast Y to match X
+        Ys[name] = Y
+
+    def eval_func(f):
+        feval = f(X, **Ys)
+        return tf.reshape(tf.matmul(feval, gh_w), shape)
+
+    if isinstance(funcs, Iterable):
+        return [eval_func(f) for f in funcs]
+    else:
+        return eval_func(funcs)
