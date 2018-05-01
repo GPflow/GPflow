@@ -22,7 +22,7 @@ from .. import settings
 from ..params import DataHolder
 from ..decors import params_as_tensors
 from ..decors import name_scope
-from ..densities import multivariate_normal
+from ..logdensities import multivariate_normal
 
 from .model import GPModel
 

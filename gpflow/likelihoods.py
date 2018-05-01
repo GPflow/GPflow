@@ -20,7 +20,7 @@ import tensorflow as tf
 import numpy as np
 
 from . import settings
-from . import densities
+from . import logdensities
 from . import transforms
 from . import priors
 
@@ -149,7 +149,7 @@ class Gaussian(Likelihood):
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.gaussian(F, Y, self.variance)
+        return logdensities.gaussian(Y, F, self.variance)
 
     @params_as_tensors
     def conditional_mean(self, F):  # pylint: disable=R0201
@@ -165,7 +165,7 @@ class Gaussian(Likelihood):
 
     @params_as_tensors
     def predict_density(self, Fmu, Fvar, Y):
-        return densities.gaussian(Fmu, Y, Fvar + self.variance)
+        return logdensities.gaussian(Y, Fmu, Fvar + self.variance)
 
     @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
@@ -194,7 +194,7 @@ class Poisson(Likelihood):
         self.binsize = np.double(binsize)
 
     def logp(self, F, Y):
-        return densities.poisson(self.invlink(F) * self.binsize, Y)
+        return logdensities.poisson(Y, self.invlink(F) * self.binsize)
 
     def conditional_variance(self, F):
         return self.invlink(F) * self.binsize
@@ -214,7 +214,7 @@ class Exponential(Likelihood):
         self.invlink = invlink
 
     def logp(self, F, Y):
-        return densities.exponential(self.invlink(F), Y)
+        return logdensities.exponential(Y, self.invlink(F))
 
     def conditional_mean(self, F):
         return self.invlink(F)
@@ -236,7 +236,7 @@ class StudentT(Likelihood):
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.student_t(Y, F, self.scale, self.deg_free)
+        return logdensities.student_t(Y, F, self.scale, self.deg_free)
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -257,7 +257,7 @@ class Bernoulli(Likelihood):
         self.invlink = invlink
 
     def logp(self, F, Y):
-        return densities.bernoulli(self.invlink(F), Y)
+        return logdensities.bernoulli(Y, self.invlink(F))
 
     def predict_mean_and_var(self, Fmu, Fvar):
         if self.invlink is probit:
@@ -269,7 +269,7 @@ class Bernoulli(Likelihood):
 
     def predict_density(self, Fmu, Fvar, Y):
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
-        return densities.bernoulli(p, Y)
+        return logdensities.bernoulli(Y, p)
 
     def conditional_mean(self, F):
         return self.invlink(F)
@@ -291,7 +291,7 @@ class Gamma(Likelihood):
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.gamma(self.shape, self.invlink(F), Y)
+        return logdensities.gamma(Y, self.shape, self.invlink(F))
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -338,7 +338,7 @@ class Beta(Likelihood):
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
-        return densities.beta(alpha, beta, Y)
+        return logdensities.beta(Y, alpha, beta)
 
     @params_as_tensors
     def conditional_mean(self, F):
