@@ -228,6 +228,24 @@ class TestFtrlOptimizer(GPflowTestCase, OptimizerCase):
 #
 # ../../anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py:546: TypeError
 
+
+
+def test_scipy_optimizer_options(session_tf):
+    np.random.seed(12345)
+    X = np.random.randn(10, 1)
+    Y = np.sin(X) + np.random.randn(*X.shape)
+    m = gpflow.models.SGPR(X, Y, gpflow.kernels.RBF(1), Z=X)
+    gtol = 'gtol'
+    gtol_value = 1.303e-6
+    o1 = gpflow.train.ScipyOptimizer(options={gtol: gtol_value})
+    o2 = gpflow.train.ScipyOptimizer()
+    o1.minimize(m, maxiter=0)
+    o2.minimize(m, maxiter=0)
+    assert gtol in o1.optimizer.optimizer_kwargs['options']
+    assert o1.optimizer.optimizer_kwargs['options'][gtol] == gtol_value
+    assert gtol not in o2.optimizer.optimizer_kwargs['options']
+
+
 def test_VGP_vs_GPR(session_tf):
     """
     With a Gaussian likelihood the Gaussian variational (VGP) model should be equivalent to the exact 
