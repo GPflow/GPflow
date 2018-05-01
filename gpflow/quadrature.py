@@ -94,7 +94,7 @@ def ndiagquad(funcs, H, *meanvars, **Ys):
     :return: shape is the same as that of the first Fmu
     """
     Din = len(meanvars)
-    if Din == 0:
+    if Din == 0:  # pragma: no cover
         raise ValueError("ndiagquad requires at least one (Fmu,Fvar) tuple")
 
     def unify(f_list):
