@@ -1,4 +1,4 @@
-# Copyright 2016 The GPflow authors
+# Copyright 2017 The GPflow authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@
 #Assumes you are running from within cloned repo.
 
 #Uses official Tensorflow docker for cpu only.
-FROM tensorflow/tensorflow:1.0.0
+FROM tensorflow/tensorflow:1.4.1-py3
 COPY ./ /usr/local/GPflow/
 RUN cd /usr/local/GPflow && \
+    pip install pytest && \
     python setup.py develop && \
     rm /notebooks/*  && \
     apt-get clean  && \
