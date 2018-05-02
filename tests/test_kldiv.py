@@ -145,5 +145,15 @@ def test_oned(session_tf, white, mu, sqrt, K_batch):
     np.testing.assert_allclose(kl.eval(), kl_tf.eval())
 
 
+def test_unknown_size_inputs(session_tf):
+    mu_ph = tf.placeholder(settings.float_type, [None, None])
+    sqrt_ph = tf.placeholder(settings.float_type, [None, None, None])
+    mu = np.ones([1, 4], dtype=settings.float_type)
+    sqrt = np.ones([4, 1, 1], dtype=settings.float_type)
+    np.testing.assert_allclose(
+        session_tf.run(gauss_kl(*map(tf.constant, [mu, sqrt]))),
+        session_tf.run(gauss_kl(mu_ph, sqrt_ph), {mu_ph: mu, sqrt_ph: sqrt}))
+
+
 if __name__ == "__main__":
     tf.test.main()
