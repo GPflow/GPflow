@@ -15,7 +15,9 @@ This file contains notes for potential contributors to GPflow, as well as some n
 
 ## Project scope
 
-We do welcome contributions to GPflow. However, the project is deliberately of limited scope, to try to ensure a high quality codebase: if you'd like to contribute a feature, please raise discussion via a GitHub issue. Large features also make it onto the [roadmap](roadmap.md).
+With GPflow, we aim to make an extensible library for Gaussian processes which makes building complex models easy. In order to do this, we aim to make GPflow a complete library for doing inference and prediction in sophisticated ways (focussing mainly on variational inference) for *single layer models* only. In order to allow more complicated models to be implemented, we also provide functionality for latent / uncertain inputs. Other models, like deep GPs, can be implemented in their own repository by using GPflow as a dependency. We choose to limit the scope deliberately in order to ensure a high quality codebase.
+
+We welcome contributions to GPflow. If you would like to contribute a feature, please raise discussion via a GitHub issue, to discuss the suitability of the feature within GPflow. If the feature is outside the envisaged scope, we can still link to a separate project in our Readme. Large features also make it onto the [roadmap](roadmap.md).
 
 ### I have this big feature/extension I would like to add...
 
@@ -82,7 +84,7 @@ GPflow's documentation is not comprehensive, but covers enough to get users star
 
 ## Version numbering
 
-The main purpose of versioning GPflow is user convenience.\
+The main purpose of versioning GPflow is user convenience.
 
 We use the [semantic versioning scheme](https://semver.org/). The semver implies `MAJOR.MINOR.PATCH` version scheme, where `MAJOR` changes when there are incompatibilities in API, `MINOR` means adding functionality without breaking existing API and `PATCH` presumes the code update has backward compatible bug fixes.
 
