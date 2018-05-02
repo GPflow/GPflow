@@ -17,7 +17,13 @@ This file contains notes for potential contributors to GPflow, as well as some n
 
 We do welcome contributions to GPflow. However, the project is deliberately of limited scope, to try to ensure a high quality codebase: if you'd like to contribute a feature, please raise discussion via a GitHub issue. Large features also make it onto the [roadmap](roadmap.md).
 
+### I have this big feature/extension I would like to add...
+
 Due to limited scope we may not be able to review and merge every feature, however useful it may be. Particularly large contributions or changes to core code are harder to justify against the scope of the project or future development plans. For such contributions, we suggest you publish them as a separate package that extends GPflow. We can link to your project from an issue discussing the topic or within the repository. Discussing a possible contribution in an issue should give an indication to how broadly it is supported to bring it into the codebase.
+
+### ...but it won't work without changes to GPflow core?
+
+We aim to have the GPflow core infrastructure be sufficiently extensible and modular to enable a wide range of third-party extensions without having to touch the core of GPflow. The `features` module is an example of this, to enable multiscale inducing features, Fourier features, etc. If your feature/extension does not work outside of GPflow-core because something is hard-coded, please open an issue to discuss this with us!
 
 ## Code quality requirements
 
