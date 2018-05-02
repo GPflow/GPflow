@@ -1209,5 +1209,14 @@ def test_parentable_set_parent_self_reference(params_tree):
         params_tree.a.set_parent(params_tree)
 
 
+def test_as_pandas_table_static(params_tree):
+    pt1 = params_tree.as_pandas_table()
+    pt2 = params_tree.as_pandas_table()
+    assert pt1.equals(pt2)
+    params_tree.a = params_tree.a.value + 5.0
+    pt3 = params_tree.as_pandas_table()
+    assert not pt1.equals(pt3)
+
+
 if __name__ == '__main__':
     tf.test.main()
