@@ -61,8 +61,8 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
         """
-        integrand2 = lambda X: self.conditional_variance(X) \
-            + tf.square(self.conditional_mean(X))
+        integrand2 = lambda *X: self.conditional_variance(*X) \
+            + tf.square(self.conditional_mean(*X))
         E_y, E_y2 = ndiagquad([self.conditional_mean, integrand2],
                 self.num_gauss_hermite_points,
                 Fmu, Fvar)
