@@ -146,13 +146,19 @@ def test_oned(session_tf, white, mu, sqrt, K_batch):
 
 
 def test_unknown_size_inputs(session_tf):
+    """
+    Test for #725 and #734. When the shape of the Gaussian's mean had at least
+    one unknown parameter, `gauss_kl` would blow up. This happened because
+    `tf.size` can only output types `tf.int32` or `tf.int64`.
+    """
     mu_ph = tf.placeholder(settings.float_type, [None, None])
     sqrt_ph = tf.placeholder(settings.float_type, [None, None, None])
     mu = np.ones([1, 4], dtype=settings.float_type)
     sqrt = np.ones([4, 1, 1], dtype=settings.float_type)
+    feed_dict = {mu_ph: mu, sqrt_ph: sqrt}
     np.testing.assert_allclose(
         session_tf.run(gauss_kl(*map(tf.constant, [mu, sqrt]))),
-        session_tf.run(gauss_kl(mu_ph, sqrt_ph), {mu_ph: mu, sqrt_ph: sqrt}))
+        session_tf.run(gauss_kl(mu_ph, sqrt_ph), feed_dict=feed_dict))
 
 
 if __name__ == "__main__":
