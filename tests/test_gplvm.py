@@ -20,7 +20,6 @@ from gpflow.test_util import GPflowTestCase
 from gpflow import kernels
 
 
-
 np.random.seed(0)
 
 class TestGPLVM(GPflowTestCase):
