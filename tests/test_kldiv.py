@@ -155,10 +155,15 @@ def test_unknown_size_inputs(session_tf):
     sqrt_ph = tf.placeholder(settings.float_type, [None, None, None])
     mu = np.ones([1, 4], dtype=settings.float_type)
     sqrt = np.ones([4, 1, 1], dtype=settings.float_type)
+    
     feed_dict = {mu_ph: mu, sqrt_ph: sqrt}
-    np.testing.assert_allclose(
-        session_tf.run(gauss_kl(*map(tf.constant, [mu, sqrt]))),
-        session_tf.run(gauss_kl(mu_ph, sqrt_ph), feed_dict=feed_dict))
+    known_shape_tf = gauss_kl(*map(tf.constant, [mu, sqrt]))
+    unknown_shape_tf = gauss_kl(mu_ph, sqrt_ph)
+    
+    known_shape = session_tf.run(known_shape_tf)
+    unknown_shape = session_tf.run(unknown_shape_tf, feed_dict=feed_dict)
+    
+    np.testing.assert_allclose(known_shape, unknown_shape)
 
 
 if __name__ == "__main__":
