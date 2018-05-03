@@ -689,10 +689,18 @@ class Combination(Kernel):
         if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
-        input_dim = np.max([k.input_dim
-                            if type(k.active_dims) is slice else
-                            np.max(k.active_dims) + 1
-                            for k in kernels])
+        def _max_input_dim(k):
+            if type(k.active_dims) is slice:
+                if k.active_dims.stop is not None:
+                    d = k.active_dims.stop
+                else:
+                    step = k.active_dims.step or 1
+                    d = k.active_dims.start + step * k.input_dim
+            else:
+                d = np.max(k.active_dims) + 1
+            return d
+
+        input_dim = np.max([_max_input_dim(k) for k in kernels])
         super().__init__(input_dim=input_dim, name=name)
 
         # add kernels to a list, flattening out instances of this class therein

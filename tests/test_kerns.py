@@ -315,7 +315,7 @@ class TestKernDiags(GPflowTestCase):
 class TestAdd(GPflowTestCase):
     """
     add a rbf and linear kernel, make sure the result is the same as adding
-    the result of the kernels separaetely
+    the result of the kernels separately
     """
 
     def setUp(self):
@@ -349,6 +349,27 @@ class TestAdd(GPflowTestCase):
                 k.compile()
                 res.append(session.run(k.K(X, Z), feed_dict={X: X_data, Z: Z_data}))
             self.assertTrue(np.allclose(res[0] + res[1], res[2]))
+
+
+class TestCombinedSliced(GPflowTestCase):
+    """ Ensure dimensions of combined kernels are correct."""
+    def test_slice_dims(self):
+        """ Separate kernels for feature indexes [0] and [1, 2]"""
+        with self.test_context() as session:
+            rbf = gpflow.kernels.RBF(1, active_dims=[0])
+            lin = gpflow.kernels.Linear(2, active_dims=slice(1, 3))
+            kern = rbf + lin
+            self.assertTrue(kern.input_dim == 3)
+            self.assertTrue(kern.active_dims == slice(3))
+
+    def test_open_slice_dims(self):
+        """ Separate kernels for feature indexes [0] and [1, 2]"""
+        with self.test_context() as session:
+            rbf = gpflow.kernels.RBF(1, active_dims=[0])
+            lin = gpflow.kernels.Linear(2, active_dims=slice(1, None))
+            kern = rbf + lin
+            self.assertTrue(kern.input_dim == 3)
+            self.assertTrue(kern.active_dims == slice(3))
 
 
 class TestWhite(GPflowTestCase):
