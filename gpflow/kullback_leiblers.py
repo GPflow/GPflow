@@ -70,7 +70,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - B * M
-    constant = - tf.size(q_mu, out_type=settings.float_type)
+    constant = tf.cast(-tf.size(q_mu, out_type=tf.int64), dtype=settings.float_type)
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.log(tf.square(Lq_diag)))
