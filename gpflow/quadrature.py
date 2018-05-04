@@ -118,7 +118,7 @@ def ndiagquad(funcs, H, Fmu, Fvar, **Ys):
     Xall = gh_x * tf.sqrt(2.0 * Fvar) + Fmu   # N x H**Din x Din
     Xs = [Xall[:, :, i] for i in range(Din)]  # N x H**Din  each
 
-    gh_w = wn.reshape(-1, 1) / np.sqrt(np.pi)  # H**Din x 1
+    gh_w = wn.reshape(-1, 1) * np.pi ** (-0.5 * Din)  # H**Din x 1
 
     for name, Y in Ys.items():
         Y = tf.reshape(Y, (-1, 1))
