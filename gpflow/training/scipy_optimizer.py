@@ -44,9 +44,10 @@ class ScipyOptimizer(optimizer.Optimizer):
         session = model.enquire_session(session)
         with session.as_default():
             var_list = self._gen_var_list(model, var_list)
-            options = dict(options=kwargs)
             optimizer_kwargs = self._optimizer_kwargs.copy()
-            optimizer_kwargs.update(options)
+            options = optimizer_kwargs.get('options', {})
+            options.update(kwargs)
+            optimizer_kwargs.update(dict(options=options))
             objective = model.objective
             optimizer = external_optimizer.ScipyOptimizerInterface(
                 objective, var_list=var_list, **optimizer_kwargs)
@@ -54,7 +55,7 @@ class ScipyOptimizer(optimizer.Optimizer):
             return optimizer
 
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=False, anchor=True, **kwargs):
+                 maxiter=1000, disp=False, initialize=False, anchor=True, **kwargs):
         """
         Minimizes objective function of the model.
 
@@ -64,12 +65,12 @@ class ScipyOptimizer(optimizer.Optimizer):
         :param feed_dict: Feed dictionary of tensors passed to session run method.
         :param maxiter: Number of run interation. Note: scipy optimizer can do early stopping
             if model converged.
+        :param disp: ScipyOptimizer option. Set to True to print convergence messages.
         :param initialize: If `True` model parameters will be re-initialized even if they were
             initialized before for gotten session.
         :param anchor: If `True` trained parameters computed during optimization at
             particular session will be synchronized with internal parameter values.
-        :param kwargs: This is a dictionary of extra parameters for session run method and
-            one `disp` option which will be passed to scipy optimizer.
+        :param kwargs: This is a dictionary of extra parameters for session run method.
         """
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
@@ -79,7 +80,6 @@ class ScipyOptimizer(optimizer.Optimizer):
 
         session = model.enquire_session(session)
         self._model = model
-        disp = kwargs.pop('disp', False)
         optimizer = self.make_optimize_tensor(model, session,
             var_list=var_list, maxiter=maxiter, disp=disp)
         self._optimizer = optimizer
