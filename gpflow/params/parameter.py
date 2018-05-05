@@ -293,7 +293,7 @@ class Parameter(Node):
     def as_pandas_table(self):
         column_names = ['class', 'prior', 'transform', 'trainable', 'shape', 'fixed_shape', 'value']
         column_values = [self.__class__.__name__, str(self.prior), str(self.transform),
-                         self.trainable, self.shape, self.fixed_shape, self.value]
+                         self.trainable, self.shape, self.fixed_shape, self.value.copy()]
         column_values = [[value] for value in column_values]
         df = misc.pretty_pandas_table([self.pathname], column_names, column_values)
         return df

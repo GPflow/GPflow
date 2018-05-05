@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import
-
 import itertools
 from collections import Iterable
 
@@ -10,13 +8,13 @@ from . import settings
 from .core.errors import GPflowError
 
 
-def hermgauss(n):
+def hermgauss(n: int):
     x, w = np.polynomial.hermite.hermgauss(n)
     x, w = x.astype(settings.float_type), w.astype(settings.float_type)
     return x, w
 
 
-def mvhermgauss(H, D):
+def mvhermgauss(H: int, D: int):
     """
     Return the evaluation locations 'xn', and weights 'wn' for a multivariate
     Gauss-Hermite quadrature.
@@ -34,7 +32,7 @@ def mvhermgauss(H, D):
     return x, w
 
 
-def mvnquad(func, means, covs, H, Din=None, Dout=None):
+def mvnquad(func, means, covs, H: int, Din: int=None, Dout=None):
     """
     Computes N Gaussian expectation integrals of a single function 'f'
     using Gauss-Hermite quadrature.
@@ -80,7 +78,7 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
     return tf.reduce_sum(fX * wr, 0)
 
 
-def ndiagquad(funcs, H, Fmu, Fvar, **Ys):
+def ndiagquad(funcs, H: int, Fmu, Fvar, **Ys):
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Gauss-Hermite quadrature. The Gaussians must be independent.
@@ -118,7 +116,7 @@ def ndiagquad(funcs, H, Fmu, Fvar, **Ys):
     Xall = gh_x * tf.sqrt(2.0 * Fvar) + Fmu   # N x H**Din x Din
     Xs = [Xall[:, :, i] for i in range(Din)]  # N x H**Din  each
 
-    gh_w = wn.reshape(-1, 1) / np.sqrt(np.pi)  # H**Din x 1
+    gh_w = wn.reshape(-1, 1) * np.pi ** (-0.5 * Din)  # H**Din x 1
 
     for name, Y in Ys.items():
         Y = tf.reshape(Y, (-1, 1))
