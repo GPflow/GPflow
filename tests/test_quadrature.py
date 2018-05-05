@@ -24,22 +24,37 @@ def cast(x):
 def test_diagquad_1d(mu1, var1):
     with session_context() as session:
         quad = gpflow.quadrature.ndiagquad(
-                lambda *X: tf.exp(X[0]), 25,
+                [lambda *X: tf.exp(X[0])], 25,
                 [cast(mu1)], [cast(var1)])
-        res = session.run(quad)
+        res, = session.run(quad)
         expected = np.exp(mu1 + var1/2)
-        assert_allclose(res, expected, atol=1e-10)
+        assert_allclose(res, expected)
 
 
 def test_diagquad_2d(mu1, var1, mu2, var2):
     with session_context() as session:
         alpha = 2.5
         quad = gpflow.quadrature.ndiagquad(
-                lambda *X: tf.exp(X[0] + alpha * X[1]), 35,
+                lambda *X: tf.exp(X[0] + alpha * X[1]),
+                35,  # using logspace=True we can reduce this, see test_diagquad_logspace
                 [cast(mu1), cast(mu2)], [cast(var1), cast(var2)])
         res = session.run(quad)
         expected = np.exp(mu1 + var1/2 + alpha * mu2 + alpha**2 * var2/2)
-        assert_allclose(res, expected, atol=1e-10)
+        assert_allclose(res, expected)
+
+
+def test_diagquad_logspace(mu1, var1, mu2, var2):
+    with session_context() as session:
+        alpha = 2.5
+        quad = gpflow.quadrature.ndiagquad(
+                lambda *X: (X[0] + alpha * X[1]),
+                25,
+                [cast(mu1), cast(mu2)], [cast(var1), cast(var2)],
+                logspace=True)
+        res = session.run(quad)
+        expected = mu1 + var1/2 + alpha * mu2 + alpha**2 * var2/2
+        assert_allclose(res, expected)
+
 
 
 def test_diagquad_with_kwarg(mu2, var2):
@@ -50,6 +65,4 @@ def test_diagquad_with_kwarg(mu2, var2):
                 cast(mu2), cast(var2), Y=alpha)
         res = session.run(quad)
         expected = np.exp(alpha * mu2 + alpha**2 * var2/2)
-        assert_allclose(res, expected, atol=1e-10)
-
-
+        assert_allclose(res, expected)
