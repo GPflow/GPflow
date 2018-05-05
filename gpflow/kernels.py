@@ -588,7 +588,13 @@ class Periodic(Kernel):
     D.J.C.MacKay. Introduction to Gaussian processes. In C.M.Bishop, editor,
     Neural Networks and Machine Learning, pages 133--165. Springer, 1998.
 
-    Derived using the mapping u=(cos(x), sin(x)) on the inputs.
+    Derived using an RBF kernel once mapped the original inputs through
+    the mapping u=(cos(x), sin(x)).
+
+    The resulting kernel can be expressed as:
+    k_per(x, x') = variance * exp( -0.5 Sum_i sin^2((x_i-x'_i) * pi /period)/ell^2)
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into ell
+    hyperparameter).
     """
 
     def __init__(self, input_dim, period=1.0, variance=1.0,
