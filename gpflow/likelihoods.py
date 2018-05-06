@@ -14,8 +14,6 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-
 import tensorflow as tf
 import numpy as np
 
@@ -29,6 +27,7 @@ from .decors import params_as_tensors_for
 from .params import Parameter
 from .params import Parameterized
 from .params import ParamList
+from .quadrature import ndiagquad
 from .quadrature import hermgauss
 
 
@@ -60,21 +59,12 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
         """
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-        gh_w /= np.sqrt(np.pi)
-        gh_w = gh_w.reshape(-1, 1)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar)]
-        X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
-
-        # here's the quadrature for the mean
-        E_y = tf.reshape(tf.matmul(self.conditional_mean(X), gh_w), shape)
-
-        # here's the quadrature for the variance
-        integrand = self.conditional_variance(X) \
-            + tf.square(self.conditional_mean(X))
-        V_y = tf.reshape(tf.matmul(integrand, gh_w), shape) - tf.square(E_y)
-
+        integrand2 = lambda *X: self.conditional_variance(*X) \
+            + tf.square(self.conditional_mean(*X))
+        E_y, E_y2 = ndiagquad([self.conditional_mean, integrand2],
+                self.num_gauss_hermite_points,
+                Fmu, Fvar)
+        V_y = E_y2 - tf.square(E_y)
         return E_y, V_y
 
     def predict_density(self, Fmu, Fvar, Y):
@@ -96,17 +86,10 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-
-        gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
-        X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
-
-        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-
-        logp = self.logp(X, Y)
-        return tf.reshape(tf.log(tf.matmul(tf.exp(logp), gh_w)), shape)
+        exp_p = ndiagquad(lambda X, Y: tf.exp(self.logp(X, Y)),
+                self.num_gauss_hermite_points,
+                Fmu, Fvar, Y=Y)
+        return tf.log(exp_p)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         """
@@ -128,17 +111,9 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-        gh_x = gh_x.reshape(1, -1)
-        gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
-        X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
-        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-
-        logp = self.logp(X, Y)
-        return tf.reshape(tf.matmul(logp, gh_w), shape)
+        return ndiagquad(self.logp,
+                self.num_gauss_hermite_points,
+                Fmu, Fvar, Y=Y)
 
 
 class Gaussian(Likelihood):
