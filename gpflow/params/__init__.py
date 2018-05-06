@@ -14,8 +14,6 @@
 
 # flake8: noqa
 
-from __future__ import absolute_import
-
 from .parameter import Parameter
 from .dataholders import DataHolder
 from .dataholders import Minibatch
