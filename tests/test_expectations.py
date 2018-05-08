@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import numpy as np
 import tensorflow as tf
@@ -19,7 +19,6 @@ import copy
 import pytest
 
 import gpflow
-from gpflow import test_util
 from gpflow.expectations import expectation, quadrature_expectation
 from gpflow.probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
 from gpflow import kernels, mean_functions, features
@@ -106,6 +105,11 @@ def rbf_kern():
 @cache_tensor
 def lin_kern():
     return kernels.Linear(Data.D_in, variance=rng.rand())
+
+
+@cache_tensor
+def matern_kern():
+    return kernels.Matern32(Data.D_in, variance=rng.rand())
 
 
 @cache_tensor
@@ -208,7 +212,7 @@ def test_kernel_only_expectations(session_tf, distribution, kernel, feature, arg
 
 
 @pytest.mark.parametrize("distribution", [gauss])
-@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, rbf_lin_sum_kern])
+@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, matern_kern, rbf_lin_sum_kern])
 @pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
 @pytest.mark.parametrize("arg_filter",
                          [lambda p, k, f, m: (p, (k, f), m),
@@ -253,6 +257,26 @@ def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
     eKzxKxz, Kxz = session_tf.run([eKzxKxz, Kxz])
     KzxKxz = Kxz[:, :, None] * Kxz[:, None, :]
     assert_allclose(eKzxKxz, KzxKxz, rtol=RTOL)
+
+
+def test_RBF_eKzxKxz_gradient_notNaN(session_tf):
+    """
+    Ensure that <K_{Z, x} K_{x, Z}>_p(x) is not NaN and correct, when
+    K_{Z, Z} is zero with finite precision. See pull request #595.
+    """
+    kern = gpflow.kernels.RBF(1, lengthscales=0.1)
+    kern.variance = 2.
+
+    p = gpflow.probability_distributions.Gaussian(
+        tf.constant([[10]], dtype=gpflow.settings.tf_float),
+        tf.constant([[[0.1]]], dtype=gpflow.settings.tf_float))
+    z = gpflow.features.InducingPoints([[-10.], [10.]])
+
+    ekz = expectation(p, (kern, z), (kern, z))
+
+    g, = tf.gradients(ekz, kern.lengthscales._unconstrained_tensor)
+    grad = session_tf.run(g)
+    assert grad is not None and not np.isnan(grad)
 
 
 @pytest.mark.parametrize("kernel1", [rbf_kern_act_dim_0, lin_kern_act_dim_0])

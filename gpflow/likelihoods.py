@@ -14,20 +14,20 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-
 import tensorflow as tf
 import numpy as np
 
 from . import settings
-from . import densities
+from . import logdensities
 from . import transforms
+from . import priors
 
 from .decors import params_as_tensors
 from .decors import params_as_tensors_for
 from .params import Parameter
 from .params import Parameterized
 from .params import ParamList
+from .quadrature import ndiagquad
 from .quadrature import hermgauss
 
 
@@ -59,21 +59,12 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
         """
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-        gh_w /= np.sqrt(np.pi)
-        gh_w = gh_w.reshape(-1, 1)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar)]
-        X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
-
-        # here's the quadrature for the mean
-        E_y = tf.reshape(tf.matmul(self.conditional_mean(X), gh_w), shape)
-
-        # here's the quadrature for the variance
-        integrand = self.conditional_variance(X) \
-            + tf.square(self.conditional_mean(X))
-        V_y = tf.reshape(tf.matmul(integrand, gh_w), shape) - tf.square(E_y)
-
+        integrand2 = lambda *X: self.conditional_variance(*X) \
+            + tf.square(self.conditional_mean(*X))
+        E_y, E_y2 = ndiagquad([self.conditional_mean, integrand2],
+                self.num_gauss_hermite_points,
+                Fmu, Fvar)
+        V_y = E_y2 - tf.square(E_y)
         return E_y, V_y
 
     def predict_density(self, Fmu, Fvar, Y):
@@ -95,17 +86,10 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-
-        gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
-        X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
-
-        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-
-        logp = self.logp(X, Y)
-        return tf.reshape(tf.log(tf.matmul(tf.exp(logp), gh_w)), shape)
+        exp_p = ndiagquad(lambda X, Y: tf.exp(self.logp(X, Y)),
+                self.num_gauss_hermite_points,
+                Fmu, Fvar, Y=Y)
+        return tf.log(exp_p)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         """
@@ -127,28 +111,20 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-        gh_x = gh_x.reshape(1, -1)
-        gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
-        X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
-        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-
-        logp = self.logp(X, Y)
-        return tf.reshape(tf.matmul(logp, gh_w), shape)
+        return ndiagquad(self.logp,
+                self.num_gauss_hermite_points,
+                Fmu, Fvar, Y=Y)
 
 
 class Gaussian(Likelihood):
-    def __init__(self, var=1.0):
-        super().__init__()
+    def __init__(self, var=1.0, name=None):
+        super().__init__(name=name)
         self.variance = Parameter(
             var, transform=transforms.positive, dtype=settings.float_type)
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.gaussian(F, Y, self.variance)
+        return logdensities.gaussian(Y, F, self.variance)
 
     @params_as_tensors
     def conditional_mean(self, F):  # pylint: disable=R0201
@@ -164,7 +140,7 @@ class Gaussian(Likelihood):
 
     @params_as_tensors
     def predict_density(self, Fmu, Fvar, Y):
-        return densities.gaussian(Fmu, Y, Fvar + self.variance)
+        return logdensities.gaussian(Y, Fmu, Fvar + self.variance)
 
     @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
@@ -193,7 +169,7 @@ class Poisson(Likelihood):
         self.binsize = np.double(binsize)
 
     def logp(self, F, Y):
-        return densities.poisson(self.invlink(F) * self.binsize, Y)
+        return logdensities.poisson(Y, self.invlink(F) * self.binsize)
 
     def conditional_variance(self, F):
         return self.invlink(F) * self.binsize
@@ -213,7 +189,7 @@ class Exponential(Likelihood):
         self.invlink = invlink
 
     def logp(self, F, Y):
-        return densities.exponential(self.invlink(F), Y)
+        return logdensities.exponential(Y, self.invlink(F))
 
     def conditional_mean(self, F):
         return self.invlink(F)
@@ -235,7 +211,7 @@ class StudentT(Likelihood):
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.student_t(Y, F, self.scale, self.deg_free)
+        return logdensities.student_t(Y, F, self.scale, self.deg_free)
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -256,7 +232,7 @@ class Bernoulli(Likelihood):
         self.invlink = invlink
 
     def logp(self, F, Y):
-        return densities.bernoulli(self.invlink(F), Y)
+        return logdensities.bernoulli(Y, self.invlink(F))
 
     def predict_mean_and_var(self, Fmu, Fvar):
         if self.invlink is probit:
@@ -268,7 +244,7 @@ class Bernoulli(Likelihood):
 
     def predict_density(self, Fmu, Fvar, Y):
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
-        return densities.bernoulli(p, Y)
+        return logdensities.bernoulli(Y, p)
 
     def conditional_mean(self, F):
         return self.invlink(F)
@@ -290,7 +266,7 @@ class Gamma(Likelihood):
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.gamma(self.shape, self.invlink(F), Y)
+        return logdensities.gamma(Y, self.shape, self.invlink(F))
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -337,7 +313,7 @@ class Beta(Likelihood):
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
-        return densities.beta(alpha, beta, Y)
+        return logdensities.beta(Y, alpha, beta)
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -349,7 +325,7 @@ class Beta(Likelihood):
         return (mean - tf.square(mean)) / (self.scale + 1.)
 
 
-class RobustMax(object):
+class RobustMax(Parameterized):
     """
     This class represent a multi-class inverse-link function. Given a vector
     f=[f_1, f_2, ... f_k], the result of the mapping is
@@ -360,18 +336,24 @@ class RobustMax(object):
 
     y_i = (1-eps)  i == argmax(f)
           eps/(k-1)  otherwise.
-
-
     """
 
-    def __init__(self, num_classes, epsilon=1e-3):
-        self.epsilon = epsilon
+    def __init__(self, num_classes, epsilon=1e-3, name=None):
+        super().__init__(name)
+        self.epsilon = Parameter(epsilon, transforms.Logistic(), trainable=False, dtype=settings.float_type,
+                                 prior=priors.Beta(0.2, 5.))
         self.num_classes = num_classes
-        self._eps_K1 = self.epsilon / (self.num_classes - 1.)
 
+    @params_as_tensors
     def __call__(self, F):
         i = tf.argmax(F, 1)
-        return tf.one_hot(i, self.num_classes, 1. - self.epsilon, self._eps_K1)
+        return tf.one_hot(i, self.num_classes, tf.squeeze(1. - self.epsilon), tf.squeeze(self._eps_K1))
+
+    @property
+    @params_as_tensors
+    def _eps_K1(self):
+        return self.epsilon / (self.num_classes - 1.)
+
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         Y = tf.cast(Y, tf.int64)
@@ -416,19 +398,22 @@ class MultiClass(Likelihood):
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
-            hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
-            yes = tf.ones(tf.shape(Y), dtype=settings.float_type) - self.invlink.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=settings.float_type) + self.invlink._eps_K1
-            p = tf.where(hits, yes, no)
+            with params_as_tensors_for(self.invlink):
+                hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
+                yes = tf.ones(tf.shape(Y), dtype=settings.float_type) - self.invlink.epsilon
+                no = tf.zeros(tf.shape(Y), dtype=settings.float_type) + self.invlink._eps_K1
+                p = tf.where(hits, yes, no)
             return tf.log(p)
         else:
             raise NotImplementedError
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-            p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * np.log(1 - self.invlink.epsilon) + (1. - p) * np.log(self.invlink._eps_K1)
+            with params_as_tensors_for(self.invlink):
+                gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+                p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+                ve = p * tf.log(1. - self.invlink.epsilon) + (1. - p) * tf.log(self.invlink._eps_K1)
+            return ve
         else:
             raise NotImplementedError
 
@@ -448,9 +433,11 @@ class MultiClass(Likelihood):
 
     def _predict_non_logged_density(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-            p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1 - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
+            with params_as_tensors_for(self.invlink):
+                gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+                p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+                den = p * (1. - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
+            return den
         else:
             raise NotImplementedError
 

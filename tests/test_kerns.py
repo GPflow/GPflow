@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 
@@ -134,7 +134,7 @@ class TestArcCosine(GPflowTestCase):
         with self.test_context():
             D = 1
             N = 3
-            weight_variances = None
+            weight_variances = 1.
             bias_variance = 1.
             variance = 1.
             ARDs = {False, True}
@@ -473,110 +473,6 @@ class TestARDActiveProd(GPflowTestCase):
             self.assertTrue(np.allclose(K1, K2))
 
 
-class TestKernNaming(GPflowTestCase):
-    def setUp(self):
-        self.test_graph = tf.Graph()
-
-    def test_no_nesting_1(self):
-        with self.test_context():
-            k1 = gpflow.kernels.RBF(1)
-            k2 = gpflow.kernels.Linear(2)
-            k3 = k1 + k2
-            k4 = gpflow.kernels.Matern32(1)
-            k5 = k3 + k4
-            self.assertTrue(k5.rbf is k1)
-            self.assertTrue(k5.linear is k2)
-            self.assertTrue(k5.matern32 is k4)
-
-    def test_no_nesting_2(self):
-        with self.test_context():
-            k1 = gpflow.kernels.RBF(1) + gpflow.kernels.Linear(2)
-            k2 = gpflow.kernels.Matern32(1) + gpflow.kernels.Matern52(2)
-            k = k1 + k2
-            self.assertTrue(hasattr(k, 'rbf'))
-            self.assertTrue(hasattr(k, 'linear'))
-            self.assertTrue(hasattr(k, 'matern32'))
-            self.assertTrue(hasattr(k, 'matern52'))
-
-    def test_simple(self):
-        with self.test_context():
-            k1 = gpflow.kernels.RBF(1)
-            k2 = gpflow.kernels.Linear(2)
-            k = k1 + k2
-            self.assertTrue(k.rbf is k1)
-            self.assertTrue(k.linear is k2)
-
-    def test_duplicates_1(self):
-        with self.test_context():
-            k1 = gpflow.kernels.Matern32(1)
-            k2 = gpflow.kernels.Matern32(43)
-            k = k1 + k2
-            self.assertTrue(k.matern32_1 is k1)
-            self.assertTrue(k.matern32_2 is k2)
-
-    def test_duplicates_2(self):
-        with self.test_context():
-            k1 = gpflow.kernels.Matern32(1)
-            k2 = gpflow.kernels.Matern32(2)
-            k3 = gpflow.kernels.Matern32(3)
-            k = k1 + k2 + k3
-            self.assertTrue(k.matern32_1 is k1)
-            self.assertTrue(k.matern32_2 is k2)
-            self.assertTrue(k.matern32_3 is k3)
-
-
-class TestKernNamingProduct(GPflowTestCase):
-    def setUp(self):
-        self.test_graph = tf.Graph()
-
-    def test_no_nesting_1(self):
-        with self.test_context():
-            k1 = gpflow.kernels.RBF(1)
-            k2 = gpflow.kernels.Linear(2)
-            k3 = k1 * k2
-            k4 = gpflow.kernels.Matern32(1)
-            k5 = k3 * k4
-            self.assertTrue(k5.rbf is k1)
-            self.assertTrue(k5.linear is k2)
-            self.assertTrue(k5.matern32 is k4)
-
-    def test_no_nesting_2(self):
-        with self.test_context():
-            k1 = gpflow.kernels.RBF(1) * gpflow.kernels.Linear(2)
-            k2 = gpflow.kernels.Matern32(1) * gpflow.kernels.Matern52(2)
-            k = k1 * k2
-            self.assertTrue(hasattr(k, 'rbf'))
-            self.assertTrue(hasattr(k, 'linear'))
-            self.assertTrue(hasattr(k, 'matern32'))
-            self.assertTrue(hasattr(k, 'matern52'))
-
-    def test_simple(self):
-        with self.test_context():
-            k1 = gpflow.kernels.RBF(1)
-            k2 = gpflow.kernels.Linear(2)
-            k = k1 * k2
-            self.assertTrue(k.rbf is k1)
-            self.assertTrue(k.linear is k2)
-
-    def test_duplicates_1(self):
-        with self.test_context():
-            k1 = gpflow.kernels.Matern32(1)
-            k2 = gpflow.kernels.Matern32(43)
-            k = k1 * k2
-            self.assertTrue(k.matern32_1 is k1)
-            self.assertTrue(k.matern32_2 is k2)
-
-    def test_duplicates_2(self):
-        with self.test_context():
-            k1 = gpflow.kernels.Matern32(1)
-            k2 = gpflow.kernels.Matern32(2)
-            k3 = gpflow.kernels.Matern32(3)
-            k = k1 * k2 * k3
-            self.assertTrue(k.matern32_1 is k1)
-            self.assertTrue(k.matern32_2 is k2)
-            self.assertTrue(k.matern32_3 is k3)
-
-
 class TestARDInit(GPflowTestCase):
     """
     For ARD kernels, make sure that kernels can be instantiated with a single
@@ -589,10 +485,17 @@ class TestARDInit(GPflowTestCase):
     def test_scalar(self):
         with self.test_context():
             k1 = gpflow.kernels.RBF(3, lengthscales=2.3)
-            k2 = gpflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3)
+            k2 = gpflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3, ARD=True)
             k1_lengthscales = k1.lengthscales.read_value()
             k2_lengthscales = k2.lengthscales.read_value()
             self.assertTrue(np.all(k1_lengthscales == k2_lengthscales))
+
+    def test_init(self):
+        for ARD in (False, True, None):
+            with self.assertRaises(ValueError):
+                k1 = gpflow.kernels.RBF(1, lengthscales=[1., 1.], ARD=ARD)
+            with self.assertRaises(ValueError):
+                k2 = gpflow.kernels.RBF(2, lengthscales=[1., 1., 1.], ARD=ARD)
 
     def test_MLP(self):
         with self.test_context():

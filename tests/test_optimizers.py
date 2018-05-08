@@ -13,27 +13,27 @@
 # limitations under the License.
 
 import numpy as np
-import tensorflow as tf
 import pytest
+import tensorflow as tf
+from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.test_util import session_tf
-from gpflow.test_util import GPflowTestCase
-from gpflow.training.natgrad_optimizer import NatGradOptimizer, XiSqrtMeanVar
-from gpflow.training.natgrad_optimizer import meanvarsqrt_to_expectation
-from gpflow.training.natgrad_optimizer import expectation_to_meanvarsqrt
-from gpflow.training.natgrad_optimizer import natural_to_expectation
-
+from gpflow.actions import Loop
+from gpflow.test_util import GPflowTestCase, session_tf
 from gpflow.training import GradientDescentOptimizer
+from gpflow.training.natgrad_optimizer import (NatGradOptimizer, XiSqrtMeanVar,
+                                               expectation_to_meanvarsqrt,
+                                               meanvarsqrt_to_expectation,
+                                               natural_to_expectation)
 from gpflow.training.optimizer import Optimizer
 from gpflow.training.tensorflow_optimizer import _TensorFlowOptimizer
 
-from numpy.testing import assert_allclose
 
 class Empty(gpflow.models.Model):
     @gpflow.params_as_tensors
     def _build_likelihood(self):
         return tf.constant(0.0, dtype=gpflow.settings.float_type)
+
 
 class Demo(gpflow.models.Model):
     def __init__(self, add_to_inits=[], add_to_trainables=[], name=None):
@@ -228,6 +228,24 @@ class TestFtrlOptimizer(GPflowTestCase, OptimizerCase):
 #
 # ../../anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py:546: TypeError
 
+
+
+def test_scipy_optimizer_options(session_tf):
+    np.random.seed(12345)
+    X = np.random.randn(10, 1)
+    Y = np.sin(X) + np.random.randn(*X.shape)
+    m = gpflow.models.SGPR(X, Y, gpflow.kernels.RBF(1), Z=X)
+    gtol = 'gtol'
+    gtol_value = 1.303e-6
+    o1 = gpflow.train.ScipyOptimizer(options={gtol: gtol_value})
+    o2 = gpflow.train.ScipyOptimizer()
+    o1.minimize(m, maxiter=0)
+    o2.minimize(m, maxiter=0)
+    assert gtol in o1.optimizer.optimizer_kwargs['options']
+    assert o1.optimizer.optimizer_kwargs['options'][gtol] == gtol_value
+    assert gtol not in o2.optimizer.optimizer_kwargs['options']
+
+
 def test_VGP_vs_GPR(session_tf):
     """
     With a Gaussian likelihood the Gaussian variational (VGP) model should be equivalent to the exact 
@@ -248,7 +266,7 @@ def test_VGP_vs_GPR(session_tf):
     m_vgp.set_trainable(False)
     m_vgp.q_mu.set_trainable(True)
     m_vgp.q_sqrt.set_trainable(True)
-    NatGradOptimizer(1.).minimize(m_vgp, [[m_vgp.q_mu, m_vgp.q_sqrt]], maxiter=1)
+    NatGradOptimizer(1.).minimize(m_vgp, [(m_vgp.q_mu, m_vgp.q_sqrt)], maxiter=1)
 
     assert_allclose(m_gpr.compute_log_likelihood(),
                     m_vgp.compute_log_likelihood(), atol=1e-5)
@@ -351,6 +369,7 @@ class CombinationOptimizer(Optimizer):
         if anchor:
             model.anchor(session)
 
+
 class Datum:
     N, M, D = 4, 3, 2
     X = np.random.randn(N, D)
@@ -410,10 +429,9 @@ def test_hypers_SVGP_vs_SGPR(session_tf, svgp, sgpr):
     assert_allclose(sgpr_likelihood, svgp_likelihood, atol=1e-5)
 
     # combination (doing GD first as we've already done the nat grad step
-    o1 = [GradientDescentOptimizer(Datum.learning_rate), {}]
-    o2 = [NatGradOptimizer(Datum.gamma), {'var_list': variationals}]
-    nag_grads_with_gd_optimizer = CombinationOptimizer([o1, o2])
-    nag_grads_with_gd_optimizer.minimize(svgp,  maxiter=1, anchor=anchor)
+    a1 = GradientDescentOptimizer(Datum.learning_rate).make_optimize_action(svgp)
+    a2 = NatGradOptimizer(Datum.gamma).make_optimize_action(svgp, var_list=variationals)
+    Loop([a1, a2]).with_settings(stop=1)()
 
     GradientDescentOptimizer(Datum.learning_rate).minimize(sgpr, maxiter=1, anchor=anchor)
 
@@ -434,16 +452,13 @@ def test_hypers_SVGP_vs_SGPR_tensors(session_tf, svgp, sgpr):
     svgp.q_sqrt.trainable = False
 
     o1 = NatGradOptimizer(Datum.gamma)
-    o1.minimize(svgp, var_list=variationals, maxiter=0, anchor=anchor)
-    o1_tensor = o1.minimize_operation
+    o1_tensor = o1.make_optimize_tensor(svgp, var_list=variationals)
 
     o2 = GradientDescentOptimizer(Datum.learning_rate)
-    o2.minimize(svgp, maxiter=0, anchor=anchor)
-    o2_tensor = o2.minimize_operation
+    o2_tensor = o2.make_optimize_tensor(svgp)
 
     o3 = NatGradOptimizer(Datum.gamma)
-    o3.minimize(svgp, var_list=variationals, maxiter=0, anchor=anchor)
-    o3_tensor = o3.minimize_operation
+    o3_tensor = o3.make_optimize_tensor(svgp, var_list=variationals)
 
     session_tf.run(o1_tensor)
 
@@ -453,47 +468,6 @@ def test_hypers_SVGP_vs_SGPR_tensors(session_tf, svgp, sgpr):
 
     session_tf.run(o2_tensor)
     session_tf.run(o3_tensor)
-
-    GradientDescentOptimizer(Datum.learning_rate).minimize(sgpr, maxiter=1, anchor=anchor)
-
-    sgpr_likelihood = sgpr.compute_log_likelihood()
-    svgp_likelihood = svgp.compute_log_likelihood()
-    assert_allclose(sgpr_likelihood, svgp_likelihood, atol=1e-5)
-
-
-class ExcludedGradientDescentOptimizer(_TensorFlowOptimizer):
-    def __init__(self, *args, excluded_params=[], **kwargs):
-        Optimizer.__init__(self)
-        self._model = None
-        self._optimizer = tf.train.GradientDescentOptimizer(*args, **kwargs)
-        self._minimize_operation = None
-        self.excluded_params = excluded_params
-
-    def _gen_var_list(self, model, var_list):
-        var_list = var_list or []
-        p = set(model.trainable_tensors)
-        p -= set([t.unconstrained_tensor for t in self.excluded_params])
-        return list(p.union(var_list))
-
-
-def test_hypers_SVGP_vs_SGPR_with_excluded_vars(session_tf, svgp, sgpr):
-    """
-    Test SVGP vs SGPR. Excluded variables.
-
-    This test is as test_hypers_SVGP_vs_SGPR, but we use a different approach to partitioning
-    the variables. In this test the variational parameters are trainable, but the ordinary
-    gradient optimizer has these variables removed from its var_list, so does not update them
-    """
-    anchor = False
-
-    # combination (doing GD first as we've already done the nat grad step
-    p = [(svgp.q_mu, svgp.q_sqrt)]
-    o1 = [NatGradOptimizer(Datum.gamma), {'var_list': p}]
-    o2 = [ExcludedGradientDescentOptimizer(Datum.learning_rate, excluded_params=p[0]), {}]
-    o3 = [NatGradOptimizer(Datum.gamma), {'var_list': p}]
-
-    nag_grads_with_gd_optimizer = CombinationOptimizer([o1, o2, o3])
-    nag_grads_with_gd_optimizer.minimize(svgp, maxiter=1, anchor=anchor)
 
     GradientDescentOptimizer(Datum.learning_rate).minimize(sgpr, maxiter=1, anchor=anchor)
 

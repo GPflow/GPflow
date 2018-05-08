@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 
@@ -192,22 +192,6 @@ class TestFixAndPredict(GPflowTestCase):
             m.compile()
             m.kern.variance.trainable = False
             _, _ = m.predict_f(m.X.read_value())
-
-
-class TestSVGP(GPflowTestCase):
-    """
-    This replicates Alex's code from bug #99
-    """
-    def test(self):
-        rng = np.random.RandomState(1)
-        X = rng.randn(10, 1)
-        Y = rng.randn(10, 1)
-        Z = rng.randn(3, 1)
-        model = gpflow.models.SVGP(
-            X=X, Y=Y, kern=gpflow.kernels.RBF(1),
-            likelihood=gpflow.likelihoods.Gaussian(), Z=Z)
-        model.compile()
-        model.compute_log_likelihood()
 
 
 if __name__ == '__main__':

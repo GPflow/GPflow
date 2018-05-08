@@ -25,9 +25,37 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._optimizer_kwargs = kwargs
         self._optimizer = None
         self._model = None
+    
+
+    def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
+        """
+        Make SciPy optimization tensor.
+        The `make_optimize_tensor` method builds optimization tensor and initializes
+        all necessary variables created by optimizer.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of variables for training.
+            :param kwargs: Scipy optional optimization parameters,
+                - `maxiter`, maximal number of iterations to perform.
+                - `disp`, if True, prints convergence messages.
+            :return: Tensorflow operation.
+        """
+        session = model.enquire_session(session)
+        with session.as_default():
+            var_list = self._gen_var_list(model, var_list)
+            optimizer_kwargs = self._optimizer_kwargs.copy()
+            options = optimizer_kwargs.get('options', {})
+            options.update(kwargs)
+            optimizer_kwargs.update(dict(options=options))
+            objective = model.objective
+            optimizer = external_optimizer.ScipyOptimizerInterface(
+                objective, var_list=var_list, **optimizer_kwargs)
+            model.initialize(session=session)
+            return optimizer
 
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=False, anchor=True, **kwargs):
+                 maxiter=1000, disp=False, initialize=False, anchor=True, **kwargs):
         """
         Minimizes objective function of the model.
 
@@ -37,12 +65,12 @@ class ScipyOptimizer(optimizer.Optimizer):
         :param feed_dict: Feed dictionary of tensors passed to session run method.
         :param maxiter: Number of run interation. Note: scipy optimizer can do early stopping
             if model converged.
+        :param disp: ScipyOptimizer option. Set to True to print convergence messages.
         :param initialize: If `True` model parameters will be re-initialized even if they were
             initialized before for gotten session.
         :param anchor: If `True` trained parameters computed during optimization at
             particular session will be synchronized with internal parameter values.
-        :param kwargs: This is a dictionary of extra parameters for session run method and
-            one `disp` option which will be passed to scipy optimizer.
+        :param kwargs: This is a dictionary of extra parameters for session run method.
         """
         if model is None or not isinstance(model, Model):
             raise ValueError('Unknown type passed for optimization.')
@@ -50,24 +78,13 @@ class ScipyOptimizer(optimizer.Optimizer):
         if model.is_built_coherence() is Build.NO:
             raise GPflowError('Model is not built.')
 
-        var_list = self._gen_var_list(model, var_list)
         session = model.enquire_session(session)
         self._model = model
-
-        with session.graph.as_default():
-            disp = kwargs.pop('disp', False)
-            options = dict(options={'maxiter': maxiter, 'disp': disp})
-            optimizer_kwargs = self._optimizer_kwargs.copy()
-            optimizer_kwargs.update(options)
-
-            objective = model.objective
-            self._optimizer = external_optimizer.ScipyOptimizerInterface(
-                objective, var_list=var_list, **optimizer_kwargs)
-
-        model.initialize(session=session, force=initialize)
-
+        optimizer = self.make_optimize_tensor(model, session,
+            var_list=var_list, maxiter=maxiter, disp=disp)
+        self._optimizer = optimizer
         feed_dict = self._gen_feed_dict(model, feed_dict)
-        self._optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
+        optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
         if anchor:
             model.anchor(session)
 
