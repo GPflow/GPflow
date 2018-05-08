@@ -13,11 +13,10 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
-from . import densities
+from . import logdensities
 from . import settings
 
 from .params import Parameterized
@@ -28,6 +27,33 @@ class Prior(Parameterized, IPrior):  # pylint: disable=W0223
     pass
 
 
+class Exponential(Prior):
+    """
+    Exponential distribution.
+
+    Support: [0, inf)
+    """
+
+    def __init__(self, rate):
+        """
+        :param float rate: Rate parameter (inverse scale) (rate > 0)
+        """
+        Prior.__init__(self)
+        self.rate = np.atleast_1d(np.array(rate, settings.float_type))
+        if rate <= 0:  # pragma: no cover
+            raise ValueError("The rate parameter has to be positive.")
+
+    def logp(self, x):
+        scale = 1 / self.rate
+        return tf.reduce_sum(logdensities.exponential(x, scale))
+
+    def sample(self, shape=(1,)):
+        return np.random.exponential(scale=1 / self.rate, size=shape)
+
+    def __str__(self):
+        return "Exp({})".format(self.rate)
+
+
 class Gaussian(Prior):
     def __init__(self, mu, var):
         Prior.__init__(self)
@@ -35,13 +61,13 @@ class Gaussian(Prior):
         self.var = np.atleast_1d(np.array(var, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.gaussian(x, self.mu, self.var))
+        return tf.reduce_sum(logdensities.gaussian(x, self.mu, self.var))
 
     def sample(self, shape=(1,)):
-        return self.mu + np.sqrt(self.var)*np.random.randn(*shape)
+        return self.mu + np.sqrt(self.var) * np.random.randn(*shape)
 
     def __str__(self):
-        return "N("+str(self.mu) + "," + str(self.var) + ")"
+        return "N({},{})".format(self.mu, self.var)
 
 
 class LogNormal(Prior):
@@ -51,13 +77,13 @@ class LogNormal(Prior):
         self.var = np.atleast_1d(np.array(var, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.lognormal(x, self.mu, self.var))
+        return tf.reduce_sum(logdensities.lognormal(x, self.mu, self.var))
 
     def sample(self, shape=(1,)):
         return np.exp(self.mu + np.sqrt(self.var) * np.random.randn(*shape))
 
     def __str__(self):
-        return "logN("+str(self.mu) + "," + str(self.var) + ")"
+        return "logN({},{})".format(self.mu, self.var)
 
 
 class Gamma(Prior):
@@ -67,13 +93,13 @@ class Gamma(Prior):
         self.scale = np.atleast_1d(np.array(scale, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.gamma(self.shape, self.scale, x))
+        return tf.reduce_sum(logdensities.gamma(x, self.shape, self.scale))
 
     def sample(self, shape=(1,)):
         return np.random.gamma(self.shape, self.scale, size=shape)
 
     def __str__(self):
-        return "Ga("+str(self.shape) + "," + str(self.scale) + ")"
+        return "Ga({},{})".format(self.shape, self.scale)
 
 
 class Laplace(Prior):
@@ -83,13 +109,13 @@ class Laplace(Prior):
         self.sigma = np.atleast_1d(np.array(sigma, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.laplace(self.mu, self.sigma, x))
+        return tf.reduce_sum(logdensities.laplace(x, self.mu, self.sigma))
 
     def sample(self, shape=(1,)):
         return np.random.laplace(self.mu, self.sigma, size=shape)
 
     def __str__(self):
-        return "Lap.("+str(self.mu) + "," + str(self.sigma) + ")"
+        return "Lap.({},{})".format(self.mu, self.sigma)
 
 
 class Beta(Prior):
@@ -99,20 +125,23 @@ class Beta(Prior):
         self.b = np.atleast_1d(np.array(b, settings.float_type))
 
     def logp(self, x):
-        return tf.reduce_sum(densities.beta(self.a, self.b, x))
+        return tf.reduce_sum(logdensities.beta(x, self.a, self.b))
 
     def sample(self, shape=(1,)):
         return np.random.beta(self.a, self.b, size=shape)
 
     def __str__(self):
-        return "Beta(" + str(self.a) + "," + str(self.b) + ")"
+        return "Beta({},{})".format(self.a, self.b)
 
 
 class Uniform(Prior):
     def __init__(self, lower=0., upper=1.):
         Prior.__init__(self)
-        self.log_height = - np.log(upper - lower)
         self.lower, self.upper = lower, upper
+
+    @property
+    def log_height(self):
+        return - np.log(self.upper - self.lower)
 
     def logp(self, x):
         return self.log_height * tf.cast(tf.size(x), settings.float_type)
@@ -122,4 +151,5 @@ class Uniform(Prior):
                 (self.upper - self.lower)*np.random.rand(*shape))
 
     def __str__(self):
-        return "U("+str(self.lower) + "," + str(self.upper) + ")"
+        return "U({},{})".format(self.lower, self.upper)
+

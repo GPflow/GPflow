@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 # pylint: disable=E1123
 
@@ -1207,6 +1207,15 @@ def test_parentable_set_parent_failures(param, arg):
 def test_parentable_set_parent_self_reference(params_tree):
     with pytest.raises(ValueError):
         params_tree.a.set_parent(params_tree)
+
+
+def test_as_pandas_table_static(params_tree):
+    pt1 = params_tree.as_pandas_table()
+    pt2 = params_tree.as_pandas_table()
+    assert pt1.equals(pt2)
+    params_tree.a = params_tree.a.value + 5.0
+    pt3 = params_tree.as_pandas_table()
+    assert not pt1.equals(pt3)
 
 
 if __name__ == '__main__':

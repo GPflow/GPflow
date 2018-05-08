@@ -30,19 +30,19 @@ def lognormal(x, mu, var):
     return gaussian(lnx, mu, var) - lnx
 
 
-def bernoulli(p, y):
-    return tf.log(tf.where(tf.equal(y, 1), p, 1-p))
+def bernoulli(x, p):
+    return tf.log(tf.where(tf.equal(x, 1), p, 1-p))
 
 
-def poisson(lamb, y):
-    return y * tf.log(lamb) - lamb - tf.lgamma(y + 1.)
+def poisson(x, lam):
+    return x * tf.log(lam) - lam - tf.lgamma(x + 1.)
 
 
-def exponential(lamb, y):
-    return - y/lamb - tf.log(lamb)
+def exponential(x, scale):
+    return - x/scale - tf.log(scale)
 
 
-def gamma(shape, scale, x):
+def gamma(x, shape, scale):
     return -shape * tf.log(scale) - tf.lgamma(shape)\
         + (shape - 1.) * tf.log(x) - x / scale
 
@@ -57,17 +57,17 @@ def student_t(x, mean, scale, deg_free):
         tf.log(1. + (1. / deg_free) * (tf.square((x - mean) / scale)))
 
 
-def beta(alpha, beta, y):
-    # need to clip y, since log of 0 is nan...
-    y = tf.clip_by_value(y, 1e-6, 1-1e-6)
-    return (alpha - 1.) * tf.log(y) + (beta - 1.) * tf.log(1. - y) \
+def beta(x, alpha, beta):
+    # need to clip x, since log of 0 is nan...
+    x = tf.clip_by_value(x, 1e-6, 1-1e-6)
+    return (alpha - 1.) * tf.log(x) + (beta - 1.) * tf.log(1. - x) \
         + tf.lgamma(alpha + beta)\
         - tf.lgamma(alpha)\
         - tf.lgamma(beta)
 
 
-def laplace(mu, sigma, y):
-    return - tf.abs(mu - y) / sigma - tf.log(2. * sigma)
+def laplace(x, mu, sigma):
+    return - tf.abs(mu - x) / sigma - tf.log(2. * sigma)
 
 
 def multivariate_normal(x, mu, L):
@@ -93,7 +93,7 @@ def multivariate_normal(x, mu, L):
         warnings.warn('Shape of mu may be unknown or not 2D.')
     elif mu.shape.ndims != 2:
         raise ValueError('Shape of mu must be 2D.')
-        
+
     d = x - mu
     alpha = tf.matrix_triangular_solve(L, d, lower=True)
     num_dims = tf.cast(tf.shape(d)[0], L.dtype)

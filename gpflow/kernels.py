@@ -14,7 +14,6 @@
 # limitations under the License.
 
 
-from __future__ import print_function, absolute_import
 from functools import reduce
 import warnings
 
@@ -293,7 +292,9 @@ class Stationary(Kernel):
         Returns |(X - X2ᵀ)/lengthscales| (L2-norm).
         """
         r2 = self.scaled_square_dist(X, X2)
-        return tf.sqrt(r2 + 1e-12)
+        # Clipping around the (single) float precision which is ~1e-45.
+        return tf.sqrt(tf.maximum(r2, 1e-40))
+
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -586,7 +587,13 @@ class Periodic(Kernel):
     D.J.C.MacKay. Introduction to Gaussian processes. In C.M.Bishop, editor,
     Neural Networks and Machine Learning, pages 133--165. Springer, 1998.
 
-    Derived using the mapping u=(cos(x), sin(x)) on the inputs.
+    Derived using an RBF kernel once mapped the original inputs through
+    the mapping u=(cos(x), sin(x)).
+
+    The resulting kernel can be expressed as:
+    k_per(x, x') = variance * exp( -0.5 Sum_i sin^2((x_i-x'_i) * pi /period)/ell^2)
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into ell
+    hyperparameter).
     """
 
     def __init__(self, input_dim, period=1.0, variance=1.0,

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from __future__ import absolute_import
 import tensorflow as tf
 
 from .. import likelihoods
@@ -22,7 +20,7 @@ from .. import settings
 from ..params import DataHolder
 from ..decors import params_as_tensors
 from ..decors import name_scope
-from ..densities import multivariate_normal
+from ..logdensities import multivariate_normal
 
 from .model import GPModel
 
