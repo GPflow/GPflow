@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import functools
 import warnings
@@ -191,7 +191,7 @@ def expectation(p, obj1, obj2=None, nghp=None):
     :return: a 1-D, 2-D, or 3-D tensor containing the expectation
 
     Allowed combinations
-    
+
     - Psi statistics:
         >>> eKdiag = expectation(p, kern)  (N)  # Psi0
         >>> eKxz = expectation(p, (kern, feat))  (NxM)  # Psi1
@@ -765,7 +765,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
     :return: N
     """
     return functools.reduce(tf.add, [
-        expectation(p, k, nghp=nghp) for k in kern.kern_list])
+        expectation(p, k, nghp=nghp) for k in kern.kernels])
 
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, type(None), type(None))
@@ -778,7 +778,7 @@ def _expectation(p, kern, feat, none2, none3, nghp=None):
     :return: NxM
     """
     return functools.reduce(tf.add, [
-        expectation(p, (k, feat), nghp=nghp) for k in kern.kern_list])
+        expectation(p, (k, feat), nghp=nghp) for k in kern.kernels])
 
 
 @dispatch(Gaussian,
@@ -793,7 +793,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
     :return: NxQxM
     """
     return functools.reduce(tf.add, [
-        expectation(p, mean, (k, feat), nghp=nghp) for k in kern.kern_list])
+        expectation(p, mean, (k, feat), nghp=nghp) for k in kern.kernels])
 
 
 @dispatch(MarkovGaussian, mean_functions.Identity, type(None), kernels.Sum, InducingPoints)
@@ -806,7 +806,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
     :return: NxDxM
     """
     return functools.reduce(tf.add, [
-        expectation(p, mean, (k, feat), nghp=nghp) for k in kern.kern_list])
+        expectation(p, mean, (k, feat), nghp=nghp) for k in kern.kernels])
 
 
 @dispatch((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
@@ -821,15 +821,15 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
     crossexps = []
 
     if kern1 == kern2 and feat1 == feat2:  # avoid duplicate computation by using transposes
-        for i, k1 in enumerate(kern1.kern_list):
+        for i, k1 in enumerate(kern1.kernels):
             crossexps.append(expectation(p, (k1, feat1), (k1, feat1), nghp=nghp))
 
-            for k2 in kern1.kern_list[:i]:
+            for k2 in kern1.kernels[:i]:
                 eKK = expectation(p, (k1, feat1), (k2, feat2), nghp=nghp)
                 eKK += tf.matrix_transpose(eKK)
                 crossexps.append(eKK)
     else:
-        for k1, k2 in it.product(kern1.kern_list, kern2.kern_list):
+        for k1, k2 in it.product(kern1.kernels, kern2.kernels):
             crossexps.append(expectation(p, (k1, feat1), (k2, feat2), nghp=nghp))
 
     return functools.reduce(tf.add, crossexps)
@@ -914,7 +914,7 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2, nghp=None):
 
 
 # ============================== Product kernels ==============================
-# Note: product kernels are only supported if the kernels in kern.kern_list act
+# Note: product kernels are only supported if the kernels in kern.kernels act
 #       on disjoint sets of active_dims and the Gaussian we are integrating over
 #       is Diagonal
 
@@ -933,7 +933,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
             "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
     return functools.reduce(tf.multiply, [
-        expectation(p, k, nghp=nghp) for k in kern.kern_list])
+        expectation(p, k, nghp=nghp) for k in kern.kernels])
 
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, type(None), type(None))
@@ -951,7 +951,7 @@ def _expectation(p, kern, feat, none2, none3, nghp=None):
             "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
     return functools.reduce(tf.multiply, [
-        expectation(p, (k, feat), nghp=nghp) for k in kern.kern_list])
+        expectation(p, (k, feat), nghp=nghp) for k in kern.kernels])
 
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
@@ -981,7 +981,7 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
             "Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
     return functools.reduce(tf.multiply, [
-        expectation(p, (k, feat), (k, feat), nghp=nghp) for k in kern.kern_list])
+        expectation(p, (k, feat), (k, feat), nghp=nghp) for k in kern.kernels])
 
 
 # ============== Conversion to Gaussian from Diagonal or Markov ===============

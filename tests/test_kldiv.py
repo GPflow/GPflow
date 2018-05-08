@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 # -*- coding: utf-8 -*-
 
@@ -143,6 +143,27 @@ def test_oned(session_tf, white, mu, sqrt, K_batch):
                    tf.reshape(s1d,(-1,)), # N
                    None if white else tf.reshape(K1d,(-1,))) # N
     np.testing.assert_allclose(kl.eval(), kl_tf.eval())
+
+
+def test_unknown_size_inputs(session_tf):
+    """
+    Test for #725 and #734. When the shape of the Gaussian's mean had at least
+    one unknown parameter, `gauss_kl` would blow up. This happened because
+    `tf.size` can only output types `tf.int32` or `tf.int64`.
+    """
+    mu_ph = tf.placeholder(settings.float_type, [None, None])
+    sqrt_ph = tf.placeholder(settings.float_type, [None, None, None])
+    mu = np.ones([1, 4], dtype=settings.float_type)
+    sqrt = np.ones([4, 1, 1], dtype=settings.float_type)
+    
+    feed_dict = {mu_ph: mu, sqrt_ph: sqrt}
+    known_shape_tf = gauss_kl(*map(tf.constant, [mu, sqrt]))
+    unknown_shape_tf = gauss_kl(mu_ph, sqrt_ph)
+    
+    known_shape = session_tf.run(known_shape_tf)
+    unknown_shape = session_tf.run(unknown_shape_tf, feed_dict=feed_dict)
+    
+    np.testing.assert_allclose(known_shape, unknown_shape)
 
 
 if __name__ == "__main__":

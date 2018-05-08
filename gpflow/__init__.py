@@ -15,8 +15,6 @@
 
 # flake8: noqa
 
-from __future__ import absolute_import
-
 from ._version import __version__
 from ._settings import SETTINGS as settings
 
@@ -27,7 +25,7 @@ from .session_manager import reset_default_session
 from . import misc
 from . import transforms
 from . import conditionals
-from . import densities
+from . import logdensities
 from . import likelihoods
 from . import kernels
 from . import priors
@@ -53,3 +51,5 @@ from .params import ParamList
 from .params import DataHolder
 from .params import Minibatch
 from .params import Parameterized
+from .saver import Saver
+from .saver import SaverContext
