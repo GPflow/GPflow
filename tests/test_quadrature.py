@@ -65,5 +65,3 @@ def test_diagquad_with_kwarg(mu2, var2):
         res = session.run(quad)
         expected = np.exp(alpha * mu2 + alpha**2 * var2/2)
         assert_allclose(res, expected, atol=1e-10)
-
-
