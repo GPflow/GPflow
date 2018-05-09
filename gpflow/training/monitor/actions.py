@@ -217,8 +217,12 @@ class LmlTensorBoard(ModelTensorBoard):
             tfX, tfY = self.model.X, self.model.Y
 
         if self.verbose:
-            import tqdm
-            wrapper = tqdm.tqdm
+            try:
+                import tqdm
+                wrapper = tqdm.tqdm
+            except ModuleNotFoundError:
+                print("monitor: for `verbose=True`, install `tqdm`.")
+                wrapper = lambda x: x
             print("")
         else:
             wrapper = lambda x: x
