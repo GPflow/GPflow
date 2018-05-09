@@ -65,8 +65,9 @@ class TriggeredAction(Action):
                 self.watcher.stop()
 
             # Move to the next trigger time, and make sure it's after this current iteration
-            while self._next <= self._current_trigger_value(context):
-                self._next = next(self._seq)
+            if not force_run:
+                while self._next <= self._current_trigger_value(context):
+                    self._next = next(self._seq)
 
 
 class PrintLikelihood(TriggeredAction):
@@ -93,7 +94,7 @@ class PrintTimings(TriggeredAction):
         self.single_line = single_line
 
     def run(self, context: ActionContext) -> None:
-        current_iter = context.iteration
+        current_iter = context.iteration if context.iteration is not None else 0
         global_step_eval = context.iteration if self.global_step is None else context.session.run(self.global_step)
         if current_iter == 0:
             opt_iter = 0.0
