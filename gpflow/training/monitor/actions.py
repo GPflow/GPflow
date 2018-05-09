@@ -57,7 +57,7 @@ class TriggeredAction(Action):
                 itself as a context owner.
         """
         context = ActionContext(self) if context is None else context
-        if self._current_trigger_value(context) >= self._next or force_run:
+        if force_run or self._current_trigger_value(context) >= self._next:
             try:
                 self.watcher.start()
                 self.run(context)
