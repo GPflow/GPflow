@@ -38,7 +38,8 @@ NOTEBOOK_FILES = [
     "models.ipynb",
     "multiclass.ipynb",
     "classification.ipynb",
-    "multioutput.ipynb"
+    "multioutput.ipynb",
+    "monitor-tensorboard.ipynb",
     # Blacklist:
     #   "FITCvsVFE.ipynb",
     #   "svi.ipynb",
