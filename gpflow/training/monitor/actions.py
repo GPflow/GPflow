@@ -2,22 +2,23 @@ import enum
 import glob
 import os
 import time
-from typing import Any, Callable, List, Optional, Iterator
+from typing import Callable, List, Iterator
 from typing import Optional
 
 import numpy as np
 import tensorflow as tf
 
+from ... import params_as_tensors_for
+from ... import settings
 from ...actions import Action, ActionContext, Watcher
 from ...models import Model
 from ...params import Parameter
 
 
-# TODO: Make TriggeredAction, which allows a sequence to be passed of iterations or times for the action to be run.
-# TODO: Implement TensorBoard action
-# TODO: Implement model saving action
 # TODO: Make PrintAction print the timings, like before
 # TODO: Change interface to have sequence and trigger do tasks every iteration by default
+# TODO: Fix total iterations after a load of a model (need to use loaded global_step or something)
+# TODO: Make sure that all monitor actions are run at the end of an optimisation run
 
 
 @enum.unique
@@ -44,7 +45,7 @@ class TriggeredAction(Action):
         else:
             raise NotImplementedError
 
-    def __call__(self, context: Optional[ActionContext] = None) -> None:
+    def __call__(self, context: Optional[ActionContext] = None, *, force_run: bool = False) -> None:
         """
         Action call method.
         The `action()` activates watcher, then calls `run` method and deactivates
@@ -55,7 +56,7 @@ class TriggeredAction(Action):
                 itself as a context owner.
         """
         context = ActionContext(self) if context is None else context
-        if self._current_trigger_value(context) >= self._next:
+        if self._current_trigger_value(context) >= self._next or force_run:
             try:
                 self.watcher.start()
                 self.run(context)
@@ -69,7 +70,7 @@ class TriggeredAction(Action):
 
 class PrintLikelihood(TriggeredAction):
     def __init__(self, sequence: Iterator, trigger: Trigger, model: Model, text: str, *,
-            single_line: bool = False) -> None:
+                 single_line: bool = False) -> None:
         super().__init__(sequence, trigger)
         self.model = model
         self.text = text
@@ -82,29 +83,31 @@ class PrintLikelihood(TriggeredAction):
 
 
 class PrintTimings(TriggeredAction):
+    # Total iterations is currently broken after a load. See notebook after running it twice.
+    # opt iterations is broken, since we don't have an "optimisation only" timer. Is there a way to do this, or remove?
     def __init__(self, sequence: Iterator, trigger: Trigger,
-            global_step: Optional[tf.Variable] = None, single_line: bool = True) -> None:
+                 global_step: Optional[tf.Variable] = None, single_line: bool = True) -> None:
         super().__init__(sequence, trigger)
         self.global_step = global_step
         self.single_line = single_line
 
     def run(self, context: ActionContext) -> None:
         current_iter = context.iteration
+        global_step_eval = context.iteration if self.global_step is None else context.session.run(self.global_step)
         if current_iter == 0:
             opt_iter = 0.0
             total_iter = 0.0
             last_iter = 0.0
         else:
             opt_iter = np.nan
-            total_iter = current_iter / context.time_spent
+            total_iter = global_step_eval / context.time_spent
             last_iter = (0.0 if not hasattr(self, '_last_iter')
-                         else (current_iter - self._last_iter) / self._last_iter_timer.elapsed)
+                         else (global_step_eval - self._last_iter) / self._last_iter_timer.elapsed)
 
-        step = context.iteration if self.global_step is None else context.session.run(self.global_step)
         print("\r%i, %i:\t%.2f optimisation iter/s\t%.2f total iter/s\t%.2f last iter/s" %
-              (current_iter, step, opt_iter, total_iter, last_iter), end='' if self.single_line else '\n')
+              (current_iter, global_step_eval, opt_iter, total_iter, last_iter), end='' if self.single_line else '\n')
 
-        self._last_iter = current_iter
+        self._last_iter = global_step_eval
         self._last_iter_timer = Watcher()
         self._last_iter_timer.start()
 
@@ -130,8 +133,8 @@ class SleepAction(TriggeredAction):
 
 class StoreSession(TriggeredAction):
     def __init__(self, sequence: Iterator, trigger: Trigger, session: tf.Session, hist_path: str,
-            saver: Optional[tf.train.Saver] = None, restore_path: Optional[str] = None,
-            global_step: Optional[tf.Variable] = None) -> None:
+                 saver: Optional[tf.train.Saver] = None, restore_path: Optional[str] = None,
+                 global_step: Optional[tf.Variable] = None) -> None:
         super().__init__(sequence, trigger)
         self.hist_path = hist_path
         self.restore_path = restore_path
@@ -156,10 +159,11 @@ class StoreSession(TriggeredAction):
 
 
 class ModelTensorBoard(TriggeredAction):
-    def __init__(self, sequence: Iterator, trigger: Trigger, model: Model, file_writer: tf.summary.FileWriter,
-            only_scalars: bool = True,
-            parameters: Optional[List[Parameter]] = None,
-            additional_summaries: Optional[List[tf.Summary]] = None) -> None:
+    def __init__(self, sequence: Iterator, trigger: Trigger, model: Model, file_writer: tf.summary.FileWriter, *,
+                 only_scalars: bool = True,
+                 parameters: Optional[List[Parameter]] = None,
+                 additional_summaries: Optional[List[tf.Summary]] = None,
+                 global_step: Optional[tf.Variable] = None) -> None:
         """
         Creates a Task that creates a sensible TensorBoard for a model.
         :param sequence:
@@ -172,6 +176,7 @@ class ModelTensorBoard(TriggeredAction):
         """
         super().__init__(sequence, trigger)
         self.model = model
+        self.global_step = global_step
         all_summaries = [] if additional_summaries is None else additional_summaries
         parameters = model.parameters if parameters is None else parameters
 
@@ -189,4 +194,46 @@ class ModelTensorBoard(TriggeredAction):
 
     def run(self, ctx: ActionContext):
         summary = ctx.session.run(self.summary)
-        self.file_writer.add_summary(summary, ctx.iteration)
+        step = ctx.session.run(self.global_step) if self.global_step is not None else ctx.iteration
+        self.file_writer.add_summary(summary, step)
+
+
+class LmlTensorBoard(ModelTensorBoard):
+    """
+    Only outputs a full LML of the model to TensorBoard, computed in minibatches.
+    """
+
+    def __init__(self, sequence: Iterator, trigger: Trigger, model: Model, file_writer: tf.summary.FileWriter, *,
+                 minibatch_size: Optional[int] = 100, global_step: Optional[tf.Variable] = None,
+                 verbose: Optional[bool] = True):
+        super().__init__(sequence, trigger, model, file_writer, global_step=global_step)
+        self.minibatch_size = minibatch_size
+        self._full_lml = tf.placeholder(settings.tf_float, shape=())
+        self.summary = tf.summary.scalar("full_lml", self._full_lml)
+        self.verbose = verbose
+
+    def run(self, ctx: ActionContext):
+        with params_as_tensors_for(self.model):
+            tfX, tfY = self.model.X, self.model.Y
+
+        if self.verbose:
+            import tqdm
+            wrapper = tqdm.tqdm
+            print("")
+        else:
+            wrapper = lambda x: x
+
+        lml = 0.0
+        num_batches = -(-len(self.model.X._value) // self.minibatch_size)  # round up
+        for mb in wrapper(range(num_batches)):
+            start = mb * self.minibatch_size
+            finish = (mb + 1) * self.minibatch_size
+            Xmb = self.model.X._value[start:finish, :]
+            Ymb = self.model.Y._value[start:finish, :]
+            mb_lml = self.model.compute_log_likelihood(feed_dict={tfX: Xmb, tfY: Ymb})
+            lml += mb_lml * len(Xmb)
+        lml = lml / len(self.model.X._value)
+
+        summary, step = ctx.session.run([self.summary, self.global_step], feed_dict={self._full_lml: lml})
+        print("Full lml: %f (%.2e)" % (lml, lml))
+        self.file_writer.add_summary(summary, step)
