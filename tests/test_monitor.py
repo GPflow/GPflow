@@ -1,14 +1,14 @@
 import itertools
 
-import numpy as np
-import tensorflow as tf
-
 import gpflow
 import gpflow.actions
 import gpflow.training.monitor as mon
+from gpflow.test_util import session_tf
+import numpy as np
+import tensorflow as tf
 
 
-def test_monitor():
+def test_monitor(session_tf):
     np.random.seed(0)
     X = np.random.rand(10000, 1) * 10
     Y = np.sin(X) + np.random.randn(*X.shape)
@@ -21,7 +21,7 @@ def test_monitor():
     m.compile()
 
     global_step = tf.Variable(0, trainable=False, name="global_step")
-    m.enquire_session().run(global_step.initializer)
+    session_tf.run(global_step.initializer)
 
     adam = gpflow.train.AdamOptimizer(0.01).make_optimize_action(m, global_step=global_step)
 
@@ -30,7 +30,7 @@ def test_monitor():
 
     print_lml = mon.PrintTimings(itertools.count(), mon.Trigger.ITER, single_line=True, global_step=global_step)
     sleep = mon.SleepAction(itertools.count(), mon.Trigger.ITER, 0.0)
-    saver = mon.StoreSession(itertools.count(step=3), mon.Trigger.ITER, m.enquire_session(),
+    saver = mon.StoreSession(itertools.count(step=3), mon.Trigger.ITER, session_tf,
                              hist_path="./monitor-saves/checkpoint", global_step=global_step)
     tensorboard = mon.ModelTensorBoard(itertools.count(step=3), mon.Trigger.ITER, m, fw, global_step=global_step)
     lml_tensorboard = mon.LmlTensorBoard(itertools.count(step=5), mon.Trigger.ITER, m, fw, global_step=global_step)
