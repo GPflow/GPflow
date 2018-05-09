@@ -34,7 +34,8 @@ def test_monitor(session_tf):
                              hist_path="./monitor-saves/checkpoint", global_step=global_step)
     tensorboard = mon.ModelTensorBoard(itertools.count(step=3), mon.Trigger.ITER, m, fw, global_step=global_step)
     lml_tensorboard = mon.LmlTensorBoard(itertools.count(step=5), mon.Trigger.ITER, m, fw, global_step=global_step)
+    callback = mon.CallbackAction(mon.seq_exp_lin(2.0, np.inf, 1e-3), mon.Trigger.TOTAL_TIME, lambda x, b: x, m)
 
-    actions = [adam, print_lml, tensorboard, lml_tensorboard, saver, sleep]
+    actions = [adam, print_lml, tensorboard, lml_tensorboard, saver, sleep, callback]
 
     gpflow.actions.Loop(actions, stop=11)()

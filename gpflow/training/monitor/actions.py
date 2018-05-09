@@ -70,20 +70,6 @@ class TriggeredAction(Action):
                     self._next = next(self._seq)
 
 
-class PrintLikelihood(TriggeredAction):
-    def __init__(self, sequence: Iterator, trigger: Trigger, model: Model, text: str, *,
-                 single_line: bool = False) -> None:
-        super().__init__(sequence, trigger)
-        self.model = model
-        self.text = text
-        self.single_line = single_line
-
-    def run(self, ctx: ActionContext):
-        likelihood = ctx.session.run(self.model.likelihood_tensor)
-        print('{}: iteration {} likelihood {:.4f}'.format(self.text, ctx.iteration, likelihood),
-              end="\r" if self.single_line else "\n")
-
-
 class PrintTimings(TriggeredAction):
     # Total iterations is currently broken after a load. See notebook after running it twice.
     # opt iterations is broken, since we don't have an "optimisation only" timer. Is there a way to do this, or remove?
@@ -227,7 +213,7 @@ class LmlTensorBoard(ModelTensorBoard):
         with params_as_tensors_for(self.model):
             tfX, tfY = self.model.X, self.model.Y
 
-        if self.verbose:
+        if self.verbose:  # pragma: no cover
             try:
                 import tqdm
                 wrapper = tqdm.tqdm
@@ -235,7 +221,7 @@ class LmlTensorBoard(ModelTensorBoard):
                 print("monitor: for `verbose=True`, install `tqdm`.")
                 wrapper = lambda x: x
             print("")
-        else:
+        else:  # pragma: no cover
             wrapper = lambda x: x
 
         lml = 0.0
