@@ -19,6 +19,7 @@ from ...params import Parameter
 # TODO: Change interface to have sequence and trigger do tasks every iteration by default
 # TODO: Fix total iterations after a load of a model (need to use loaded global_step or something)
 # TODO: Make sure that all monitor actions are run at the end of an optimisation run
+# TODO: Implement something that does PrintAllTimings
 
 
 @enum.unique
@@ -135,6 +136,15 @@ class StoreSession(TriggeredAction):
     def __init__(self, sequence: Iterator, trigger: Trigger, session: tf.Session, hist_path: str,
                  saver: Optional[tf.train.Saver] = None, restore_path: Optional[str] = None,
                  global_step: Optional[tf.Variable] = None) -> None:
+        """
+        :param sequence:
+        :param trigger:
+        :param session:
+        :param hist_path: Path to store checkpoint to.
+        :param saver:
+        :param restore_path: If None, will restore from `hist_path`.
+        :param global_step:
+        """
         super().__init__(sequence, trigger)
         self.hist_path = hist_path
         self.restore_path = restore_path
@@ -241,3 +251,18 @@ class LmlTensorBoard(ModelTensorBoard):
         summary, step = ctx.session.run([self.summary, self.global_step], feed_dict={self._full_lml: lml})
         print("Full lml: %f (%.2e)" % (lml, lml))
         self.file_writer.add_summary(summary, step)
+
+
+def seq_exp_lin(growth, max, start=1.0, start_jump=None):
+    """
+    Returns an iterator that constructs a sequence beginning with `start`, growing exponentially:
+    the step size starts out as `start_jump` (if given, otherwise `start`), multiplied by `growth`
+    in each step. Once `max` is reached, growth will be linear with `max` step size.
+    """
+    start_jump = start if start_jump is None else start_jump
+    gap = start_jump
+    last = start - start_jump
+    while 1:
+        yield gap + last
+        last = last + gap
+        gap = min(gap * growth, max)
