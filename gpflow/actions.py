@@ -83,7 +83,7 @@ class ActionContext:
     def iteration(self) -> int:
         """
         Current iteration number.
-        In fact, this is proxy method for Loop's owner interation.
+        In fact, this is proxy method for Loop's owner interaction.
 
             :return: Iteration number or None, in case when owner doesn't
                 have any references to iteration.
@@ -108,7 +108,6 @@ class Action(metaclass=abc.ABCMeta):
     which gauge how much time action spent on execution. Action may contain
     information about iteration, but usually 
     """
-
     @abc.abstractmethod
     def run(self, context: ActionContext) -> None:
         """
@@ -125,7 +124,9 @@ class Action(metaclass=abc.ABCMeta):
 
             :return: Action's watcher instance.
         """
-        return _get_attr(self, _watcher=Watcher())
+        if not hasattr(self, "_watcher"):
+            self._watcher = Watcher()
+        return self._watcher
     
     def __call__(self, context: Optional[ActionContext] = None) -> None:
         """
