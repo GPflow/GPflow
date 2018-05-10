@@ -135,6 +135,7 @@ def params_as_tensors_for(*objs, convert=True):
     :param convert: Flag which is used for turning tensor convertion
         feature on, `True`, or turning it off, `False`.
     """
+    objs = set(objs)  # remove duplicate objects so the tensor mode won't be changed before saving
     prev_values = [_params_as_tensors_enter(o, convert) for o in objs]
     try:
         yield
