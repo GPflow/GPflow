@@ -177,7 +177,7 @@ class ModelTensorBoard(TriggeredAction):
         all_summaries = [] if additional_summaries is None else additional_summaries
         parameters = model.parameters if parameters is None else parameters
 
-        all_summaries += [tf.summary.scalar(p.full_name, p.constrained_tensor)
+        all_summaries += [tf.summary.scalar(p.full_name, tf.reshape(p.constrained_tensor, []))
                           for p in parameters if p.size == 1]
 
         if not only_scalars:
