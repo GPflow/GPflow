@@ -140,7 +140,7 @@ def params_as_tensors_for(*objs, convert=True):
     try:
         yield
     finally:
-        for o, pv in reversed(zip(objs, prev_values)):
+        for o, pv in reversed(list(zip(objs, prev_values))):
             _params_as_tensors_exit(o, pv)
 
 
