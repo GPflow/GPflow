@@ -32,7 +32,7 @@ RTOL = 1e-6
 
 
 class Data:
-    num_data = 5
+    num_data = 7
     num_ind = 4
     D_in = 2
     D_out = 2
@@ -42,12 +42,17 @@ class Data:
     Xcov = rng.randn(num_data, D_in, D_in)
     Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
     Z = rng.randn(num_ind, D_in)
+    Z2 = rng.randn(num_ind + 1, D_in)
 
 
 @pytest.fixture
-def feature(session_tf):
+def feature():
     return features.InducingPoints(Data.Z)
 
+
+@cache_tensor
+def feature2():
+    return features.InducingPoints(Data.Z2)
 
 @cache_tensor
 def gauss():
@@ -101,6 +106,9 @@ def dirac_markov_gauss():
 def rbf_kern():
     return kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand() + 1.)
 
+@cache_tensor
+def rbf_kern_2():
+    return kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand() + 1.)
 
 @cache_tensor
 def lin_kern():
@@ -259,7 +267,7 @@ def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
     assert_allclose(eKzxKxz, KzxKxz, rtol=RTOL)
 
 
-def test_RBF_eKzxKxz_gradient_notNaN(session_tf):
+def test_RBF_eKzxKxz_gradient_not_NaN(session_tf):
     """
     Ensure that <K_{Z, x} K_{x, Z}>_p(x) is not NaN and correct, when
     K_{Z, Z} is zero with finite precision. See pull request #595.
@@ -322,3 +330,14 @@ def test_cov_shape_inference(session_tf, distribution, feature):
     _check((gauss_tuple, (rbf_kern(), feature)))
     if isinstance(distribution(), MarkovGaussian):
         _check((gauss_tuple, None, (rbf_kern(), feature)))
+
+
+@pytest.mark.parametrize("distribution", [gauss, gauss_diag])
+@pytest.mark.parametrize("kernel1", [rbf_kern, rbf_kern_2])
+@pytest.mark.parametrize("kernel2", [rbf_kern, rbf_kern_2])
+@pytest.mark.parametrize("feat1", [feature, feature2])
+@pytest.mark.parametrize("feat2", [feature, feature2])
+def test_eKzxKxz_rbf_cross_covariance(session_tf,
+                                      distribution, kernel1, kernel2,
+                                      feat1, feat2):
+    _check((distribution(), (kernel1(), feat1()), (kernel2(), feat2())))
