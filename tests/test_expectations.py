@@ -309,7 +309,7 @@ def test_eKzxKxz_same_vs_different_sum_kernels(session_tf, feature):
     same, different = session.run([same, different])
     assert_allclose(same, different, rtol=RTOL)
 
-@pytest.mark.xfail
+
 @pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, rbf_lin_sum_kern])
 def test_exKxz_markov(session_tf, kernel, feature):
     _check((markov_gauss(), (kernel(), feature), identity_mean()))

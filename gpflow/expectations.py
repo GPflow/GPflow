@@ -113,9 +113,6 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite
     """
     num_gauss_hermite_points = 100 if num_gauss_hermite_points is None else num_gauss_hermite_points
 
-    warnings.warn("Quadrature is used to calculate the expectation. This means that "
-                  "an analytical implementations is not available for the given combination.")
-
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -155,8 +152,7 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite
     """
     num_gauss_hermite_points = 40 if num_gauss_hermite_points is None else num_gauss_hermite_points
 
-    warnings.warn("Quadrature is used to calculate the expectation. This means that "
-                  "an analytical implementations is not available for the given combination.")
+
 
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
@@ -233,7 +229,15 @@ def expectation(p, obj1, obj2=None, nghp=None):
     try:
         return _expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
     except NotImplementedError as e:
-        print(str(e))
+
+        def custom_warning_format(msg, *args, **kwargs):
+            # ignore everything except the message
+            return str(msg) + '\n'
+
+        warnings.formatwarning = custom_warning_format
+        warn_msg = "Quadrature is used to calculate the expectation. " + str(e)
+        warnings.warn(warn_msg)
+
         return _quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp)
 
 
