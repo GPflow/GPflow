@@ -37,7 +37,8 @@ NOTEBOOK_FILES = [
     "vgp_notes.ipynb",
     "models.ipynb",
     "multiclass.ipynb",
-    "classification.ipynb"
+    "classification.ipynb",
+    "monitor-tensorboard.ipynb"
     # Blacklist:
     #   "FITCvsVFE.ipynb",
     #   "svi.ipynb",
