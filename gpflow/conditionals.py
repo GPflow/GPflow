@@ -27,29 +27,29 @@ float_type = settings.float_type
 jitter_level = settings.numerics.jitter_level
 
 
-def expand_independent_outputs(fvar, full_cov, full_cov_output):
+def expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
-    Reshapes fvar to the correct shape, specified by `full_cov` and `full_cov_output`.
+    Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
 
     :param fvar: has shape N x P (full_cov = False) or P x N x N (full_cov = True).
     :return:
-    1. full_cov: True and full_cov_output: True
+    1. full_cov: True and full_output_cov: True
        fvar N x P x N x P
-    2. full_cov: True and full_cov_output: False
+    2. full_cov: True and full_output_cov: False
        fvar P x N x N
-    3. full_cov: False and full_cov_output: True
+    3. full_cov: False and full_output_cov: True
        fvar N x P x P
-    4. full_cov: False and full_cov_output: False
+    4. full_cov: False and full_output_cov: False
        fvar N x P
     """
-    if full_cov and full_cov_output:
+    if full_cov and full_output_cov:
         fvar = tf.matrix_diag(tf.transpose(fvar))   # N x N x P x P
         fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
-    if not full_cov and full_cov_output:
+    if not full_cov and full_output_cov:
         fvar = tf.matrix_diag(fvar)   # N x P x P
-    if full_cov and not full_cov_output:
+    if full_cov and not full_output_cov:
         pass  # P x N x N
-    if not full_cov and not full_cov_output:
+    if not full_cov and not full_output_cov:
         pass  # N x P
     
     return fvar
@@ -61,7 +61,7 @@ def expand_independent_outputs(fvar, full_cov, full_cov_output):
 
 @conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("conditional")
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Single-output GP allowing repetitions R.
 
@@ -81,7 +81,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     :param Xnew: data matrix, size N x D.
     :param f: data matrix, M x R
     :param full_cov: return the covariance between the datapoints
-    :param full_cov_output: return the covariance between the outputs.
+    :param full_output_cov: return the covariance between the outputs.
      Note: as we are using a single-output kernel with repetitions these covariances will be zero.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size M x R or R x M x M.
@@ -90,17 +90,17 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         - mean:     N x R
         - variance: N x R, R x N x N, N x R x R or N x R x N x R
         Please see `gpflow.conditional.expand_independent_outputs` for more information
-        about the shape of the variance, depending on `full_cov` and `full_cov_output`.
+        about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     print("Conditional: Inducing Feature - Kernel")
-    print(full_cov, full_cov_output)
+    print(full_cov, full_output_cov)
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
     Knn = kern.K(Xnew) if full_cov else kern.Kdiag(Xnew)
 
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, 
                                    q_sqrt=q_sqrt, white=white)  # N x R,  R x N x N or N x R
-    return fmean, expand_independent_outputs(fvar, full_cov, full_cov_output)
+    return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
 @conditional.register(object, object, Kernel, object)
@@ -183,7 +183,7 @@ def sample_mvn(mean, cov, cov_structure):
 
 @sample_conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("sample_conditional")
-def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=None, white=False):
+def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
     In most cases this means calculating the conditional mean m and variance v and then
@@ -191,12 +191,12 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=No
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficent one.
 
-    :return: N x P (full_cov_output = False) or N x P x P (full_cov_output = True)
+    :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
     print("sample conditional: InducingFeature Kernel")
-    mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_cov_output=full_cov_output,
+    mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_output_cov=full_output_cov,
                             q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
-    cov_structure = "full" if full_cov_output else "diag"
+    cov_structure = "full" if full_output_cov else "diag"
     return sample_mvn(mean, var, cov_structure)
 
 
@@ -282,7 +282,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
 
 @name_scope()
 def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
-                          mean_function=None, full_cov_output=False, full_cov=False, white=False):
+                          mean_function=None, full_output_cov=False, full_cov=False, white=False):
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
@@ -293,12 +293,12 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     :param kern: gpflow kernel or ekernel object.
     :param q_mu: mean inducing points, size M x Dout
     :param q_sqrt: cholesky of the covariance matrix of the inducing points, size Dout x M x M
-    :param full_cov_output: boolean wheter to compute covariance between output dimension.
+    :param full_output_cov: boolean wheter to compute covariance between output dimension.
                             Influences the shape of return value ``fvar``. Default is False
     :param white: boolean whether to use whitened representation. Default is False.
 
     :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is N x Dout,
-            size ``fvar`` depends on ``full_cov_output``: if True ``f_var`` is N x Dout x Dout,
+            size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is N x Dout x Dout,
             if False then ``f_var`` is N x Dout
     """
 
@@ -360,7 +360,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
         e_fmean_mean = tf.einsum("nqm,mz->nqz", e_mean_Kuf, Lit_q_mu)  # N x D x D
         e_related_to_mean = e_fmean_mean + tf.matrix_transpose(e_fmean_mean) + e_mean_mean
 
-    if full_cov_output:
+    if full_output_cov:
         fvar = (
                 tf.matrix_diag(tf.tile((eKff - tf.trace(Li_eKuffu_Lit))[:, None], [1, num_func])) +
                 tf.matrix_diag(tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov)) +
