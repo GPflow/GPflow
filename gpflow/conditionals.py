@@ -23,9 +23,6 @@ from .features import Kuu, Kuf, InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .probability_distributions import Gaussian
 
-float_type = settings.float_type
-jitter_level = settings.numerics.jitter_level
-
 
 def expand_independent_outputs(fvar, full_cov, full_cov_output):
     """
@@ -168,11 +165,11 @@ def sample_mvn(mean, cov, cov_structure):
     - "full": cov holds the full covariance matrix (without jitter)
     :return: sample from the MVN of shape N x D
     """
-    eps = tf.random_normal(tf.shape(mean), dtype=float_type)  # N x P
+    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # N x P
     if cov_structure == "diag":
         sample = mean + tf.sqrt(cov) * eps  # N x P
     elif cov_structure == "full":
-        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=float_type) * jitter_level)[None, ...]  # N x P x P
+        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=settings.float_type) * settings.numerics.jitter_level)[None, ...]  # N x P x P
         chol = tf.cholesky(cov)  # N x P x P
         return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
     else:

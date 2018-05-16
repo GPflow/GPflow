@@ -19,7 +19,6 @@ from ..features import InducingPoints, InducingFeature, Kuu, Kuf
 from ..dispatch import dispatch
 from .. import settings
 
-float_type = settings.float_type
 
 class Mof(InducingFeature):
     """
@@ -111,40 +110,40 @@ def Kuf(feat, kern, Xnew):
 def Kuu(feat, kern, *, jitter=0.0):
     Kmm = kern.K(feat.Z, full_cov_output=True)  # M x P x M x P
     M = tf.shape(Kmm)[0] * tf.shape(Kmm)[1]
-    jittermat = jitter * tf.reshape(tf.eye(M, dtype=float_type), tf.shape(Kmm))
+    jittermat = jitter * tf.reshape(tf.eye(M, dtype=settings.float_type), tf.shape(Kmm))
     return Kmm + jittermat
 
 
 @dispatch(SharedIndependentMof, SharedIndependentMok)
 def Kuu(feat, kern, *, jitter=0.0):
     Kmm = Kuu(feat.feat, kern.kern)  # M x M
-    jittermat = tf.eye(len(feat), dtype=float_type) * jitter
+    jittermat = tf.eye(len(feat), dtype=settings.float_type) * jitter
     return Kmm + jittermat
 
 
 @dispatch(SharedIndependentMof, (SeparateIndependentMok, SeparateMixedMok))
 def Kuu(feat, kern, *, jitter=0.0):
     Kmm = tf.stack([Kuu(feat.feat, k) for k in kern.kern_list], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
+    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
     return Kmm + jittermat
 
 
 @dispatch(SeparateIndependentMof, SharedIndependentMok)
 def Kuu(feat, kern, *, jitter):
     Kmm = tf.stack([Kuu(f, kern.kern) for f in feat.feat_list], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
+    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
     return Kmm + jittermat
 
 
 @dispatch(SeparateIndependentMof, (SeparateIndependentMok, SeparateMixedMok))
 def Kuu(feat, kern, *, jitter=0.0):
     Kmm = tf.stack([Kuu(f, k) for f, k in zip(feat.feat_list, kern.kern_list)], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
+    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
     return Kmm + jittermat
 
 
 @dispatch(MixedKernelSharedMof, SeparateMixedMok)
 def Kuu(feat, kern, *, jitter=0.0):
     Kmm = tf.stack([Kuu(feat.feat, k) for k in kern.kern_list], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=float_type)[None, :, :] * jitter
+    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
     return Kmm + jittermat

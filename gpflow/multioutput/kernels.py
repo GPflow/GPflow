@@ -21,7 +21,6 @@ from ..decors import params_as_tensors, autoflow
 from ..kernels import Kernel, Combination
 from ..params import Parameter
 
-float_type = settings.float_type
 
 class Mok(Kernel):
     """
