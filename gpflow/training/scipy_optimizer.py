@@ -80,11 +80,11 @@ class ScipyOptimizer(optimizer.Optimizer):
 
         session = model.enquire_session(session)
         self._model = model
-        optimizer = self.make_optimize_tensor(model, session,
-            var_list=var_list, maxiter=maxiter, disp=disp)
-        self._optimizer = optimizer
+        if initialize or self._optimizer is None:
+            self._optimizer = self.make_optimize_tensor(model, session,
+                      var_list=var_list, maxiter=maxiter, disp=disp)
         feed_dict = self._gen_feed_dict(model, feed_dict)
-        optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
+        self._optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
         if anchor:
             model.anchor(session)
 
