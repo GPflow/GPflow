@@ -28,7 +28,7 @@ from gpflow.test_util import session_tf
 
 def gauss_kl_tf_distributions(q_mu, q_sqrt, K=None):
     """
-    Kullbach-Leiber divergence KL[q(U) || p(U)],
+    Kullback-Leibler divergence KL[q(U) || p(U)],
     with q(U) ~ N(q_mu, q_sqrt^2) the variational Gaussian posterior
     and p(U) ~ N(0, K) the prior. If K is None we assume a whitened
     prior, p(U) ~ N(0, I).
@@ -38,7 +38,7 @@ def gauss_kl_tf_distributions(q_mu, q_sqrt, K=None):
     :param q_mu: L variational means, M x L
     :param q_sqrt: L variational covariances,
                 - cholesky: L x M x M or
-                - diag elements: M x L
+                - sqrt of diag elements: M x L
     :param K (Kuu): M x M or L x M x M
     """
     q_mu = tf.matrix_transpose(q_mu)  # L x M
