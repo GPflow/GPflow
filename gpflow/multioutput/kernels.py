@@ -34,7 +34,7 @@ class Mok(Kernel):
     - N x P if full_cov_output = False
 
     The `full_cov_output` argument holds whether the kernel should calculate
-    the covariance between the outputs. In case there is no correlation but 
+    the covariance between the outputs. In case there is no correlation but
     `full_cov_output` is set to True the covariance matrix will be filled with zeros
     until the appropriate size is reached.
     """
@@ -45,7 +45,7 @@ class Mok(Kernel):
         :param X: data matrix, N1 x D
         :param X2: data matrix, N2 x D
         :param full_cov_output: calculate correlation between outputs.
-        :return: cov[f(X1), f(X2)] with shape  
+        :return: cov[f(X1), f(X2)] with shape
         - N1 x P x N2 x P if `full_cov_output` = True
         - P x N1 x N2 if `full_cov_output` = False
         """
@@ -56,7 +56,7 @@ class Mok(Kernel):
         Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
         :param X: data matrix, N x D
         :param full_cov_output: calculate correlation between outputs.
-        :return: var[f(X)] with shape  
+        :return: var[f(X)] with shape
         - N x P x N x P if `full_cov_output` = True
         - N x P if `full_cov_output` = False
         """
@@ -82,9 +82,9 @@ class SharedIndependentMok(Mok):
             return tf.transpose(tf.matrix_diag(Ks), [0, 2, 1, 3])  # N x P x N2 x P
         else:
             return tf.tile(K[None, ...], [self.P, 1, 1])  # P x N x N2
-        
+
     def Kdiag(self, X, full_cov_output=True):
-        K = self.kern.Kdiag(X)  # N 
+        K = self.kern.Kdiag(X)  # N
         Ks = tf.tile(K[:, None], [1, self.P])  # N x P
         return tf.matrix_diag(Ks) if full_cov_output else Ks  # N x P x P or N x P
 
@@ -94,18 +94,18 @@ class SeparateIndependentMok(Mok, Combination):
     - Separate: we use different kernel for each output latent
     - Independent: Latents are uncorrelated a priori.
     """
-    def __init__(self, kern_list, name=None):
-        Combination.__init__(self, kern_list, name)
+    def __init__(self, kernels, name=None):
+        Combination.__init__(self, kernels, name)
 
     def K(self, X, X2=None, full_cov_output=True):
         if full_cov_output:
-            Kxxs = tf.stack([k.K(X, X2) for k in self.kern_list], axis=2)  # N x N2 x P
+            Kxxs = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)  # N x N2 x P
             return tf.transpose(tf.matrix_diag(Kxxs), [0, 2, 1, 3])  # N x P x N2 x P
         else:
-            return tf.stack([k.K(X, X2) for k in self.kern_list], axis=0)  # P x N x N2
+            return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # P x N x N2
 
     def Kdiag(self, X, full_cov_output=False):
-        stacked = tf.stack([k.Kdiag(X) for k in self.kern_list], axis=1)  # N x P
+        stacked = tf.stack([k.Kdiag(X) for k in self.kernels], axis=1)  # N x P
         return tf.matrix_diag(stacked) if full_cov_output else stacked  # N x P x P  or  N x P
 
 
@@ -114,14 +114,14 @@ class SeparateMixedMok(Mok, Combination):
     Linear mixing of the latent GPs to form the output
     """
 
-    def __init__(self, kern_list, W, name=None):
-        Combination.__init__(self, kern_list, name)
+    def __init__(self, kernels, W, name=None):
+        Combination.__init__(self, kernels, name)
         self.W = Parameter(W)  # P x L
 
     @params_as_tensors
     def Kgg(self, X, X2):
-        return tf.stack([k.K(X, X2) for k in self.kern_list], axis=0)  # L x N x N2
-    
+        return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # L x N x N2
+
     @autoflow((settings.float_type, [None, None]),
               (settings.float_type, [None, None]))
     def compute_Kgg(self, X, X2):
@@ -141,7 +141,7 @@ class SeparateMixedMok(Mok, Combination):
 
     @params_as_tensors
     def Kdiag(self, X, full_cov_output=True):
-        K = tf.stack([k.Kdiag(X) for k in self.kern_list], axis=1)  # N x L
+        K = tf.stack([k.Kdiag(X) for k in self.kernels], axis=1)  # N x L
         if full_cov_output:
             # Can currently not use einsum due to unknown shape from `tf.stack()`
             # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # N x P x P
