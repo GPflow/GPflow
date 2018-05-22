@@ -2,12 +2,15 @@ import os
 import copy
 import collections
 import warnings
+import logging
+import inspect
 
 from collections import OrderedDict
 from six.moves import configparser
 
 import numpy as np
 import tensorflow as tf
+
 
 
 class _SettingsContextManager(object):
@@ -83,6 +86,17 @@ class _SettingsManager(object):
     @property
     def int_type(self):
         return self.dtypes.int_type
+
+    @property
+    def logging_level(self):
+        return self.logging.level
+
+    def logger(self):
+        frm = inspect.stack()[1]
+        mod = inspect.getmodule(frm[0])  # calling module
+        level = getattr(logging, self.logging.level)
+        logging.basicConfig(level=level)
+        return logging.getLogger(mod.__name__)
 
 
 class _MutableNamedTuple(OrderedDict):
