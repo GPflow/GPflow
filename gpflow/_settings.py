@@ -94,9 +94,10 @@ class _SettingsManager(object):
     def logger(self):
         frame = inspect.currentframe().f_back
         module = inspect.getmodule(frame)
+        name = 'gpflow' if module is None else module.__name__
         level = logging.getLevelName(self.logging.level)
         logging.basicConfig()
-        log = logging.getLogger(module.__name__)
+        log = logging.getLogger(name)
         log.setLevel(level)
         return log
 

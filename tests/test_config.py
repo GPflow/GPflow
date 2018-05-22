@@ -15,13 +15,15 @@
 
 # pylint: disable=W0212
 
-import os
-import numpy as np
-import tensorflow as tf
+import inspect
 import logging
+import os
 
 import gpflow
+import numpy as np
+import tensorflow as tf
 from gpflow.test_util import GPflowTestCase
+
 
 CONFIG_TXT = """
 [first_section]
@@ -112,7 +114,6 @@ class TestSettingsManager(GPflowTestCase):
             _ = s.np_float
         with self.assertWarns(DeprecationWarning):
             _ = s.np_int
-    
 
     def testMutability(self):
         orig = gpflow.settings.verbosity.hmc_verb
@@ -146,6 +147,8 @@ def test_logging():
     gpflow.settings.logging.level = debug
     logger = gpflow.settings.logger()
     assert level_name(logger) == debug
+    module_name = inspect.getmodule(inspect.currentframe()).__name__
+    assert logger.name == module_name
 
 
 if __name__ == '__main__':
