@@ -95,6 +95,7 @@ class _SettingsManager(object):
         frame = inspect.currentframe().f_back
         module = inspect.getmodule(frame)
         level = logging.getLevelName(self.logging.level)
+        logging.basicConfig()
         log = logging.getLogger(module.__name__)
         log.setLevel(level)
         return log
