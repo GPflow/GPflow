@@ -18,6 +18,7 @@
 import os
 import numpy as np
 import tensorflow as tf
+import logging
 
 import gpflow
 from gpflow.test_util import GPflowTestCase
@@ -111,6 +112,7 @@ class TestSettingsManager(GPflowTestCase):
             _ = s.np_float
         with self.assertWarns(DeprecationWarning):
             _ = s.np_int
+    
 
     def testMutability(self):
         orig = gpflow.settings.verbosity.hmc_verb
@@ -130,6 +132,20 @@ class TestSettingsManager(GPflowTestCase):
             self.assertEqual(gpflow.settings.verbosity.hmc_verb, False)
         self.assertEqual(gpflow.settings.verbosity.hmc_verb, True)
         gpflow.settings.verbosity.hmc_verb = orig
+
+def test_logging():
+    def level_name(log):
+        return logging.getLevelName(log.level)
+
+    warning = 'WARNING'
+    assert gpflow.settings.logging_level == warning
+    logger = gpflow.settings.logger()
+    assert level_name(logger) == warning
+
+    debug = 'DEBUG'
+    gpflow.settings.logging.level = debug
+    logger = gpflow.settings.logger()
+    assert level_name(logger) == debug
 
 
 if __name__ == '__main__':
