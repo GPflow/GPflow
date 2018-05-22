@@ -92,11 +92,12 @@ class _SettingsManager(object):
         return self.logging.level
 
     def logger(self):
-        frm = inspect.stack()[1]
-        mod = inspect.getmodule(frm[0])  # calling module
-        level = getattr(logging, self.logging.level)
-        logging.basicConfig(level=level)
-        return logging.getLogger(mod.__name__)
+        frame = inspect.currentframe().f_back
+        module = inspect.getmodule(frame)
+        level = logging.getLevelName(self.logging.level)
+        log = logging.getLogger(module.__name__)
+        log.setLevel(level)
+        return log
 
 
 class _MutableNamedTuple(OrderedDict):
