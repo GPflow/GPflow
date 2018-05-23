@@ -43,6 +43,12 @@ class Data:
     Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
     Z = rng.randn(num_ind, D_in)
     Z2 = rng.randn(num_ind - 1, D_in)
+    
+    cov_params = rng.randn(num_data + 1, D_in, 2 * D_in) / 2.  # (N+1)xDx2D
+    NN_cov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
+    NNplus1_cross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
+    NNplus1_cross = np.concatenate((NNplus1_cross, np.zeros((1, D_in, D_in))), 0)  # (N+1)xDxD
+    Xcov_markov = np.stack([NN_cov, NNplus1_cross])  # 2x(N+1)xDxD
 
 
 @pytest.fixture
@@ -84,15 +90,9 @@ def dirac_diag():
 
 @cache_tensor
 def markov_gauss():
-    D_in = Data.D_in
-    cov_params = rng.randn(Data.num_data + 1, D_in, 2 * D_in) / 2.  # (N+1)xDx2D
-    Xcov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
-    Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
-    Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # (N+1)xDxD
-    Xcov = np.stack([Xcov, Xcross])  # 2x(N+1)xDxD
     return MarkovGaussian(
         tf.convert_to_tensor(Data.Xmu_markov),
-        tf.convert_to_tensor(Xcov))
+        tf.convert_to_tensor(Data.Xcov_markov))
 
 
 @cache_tensor
