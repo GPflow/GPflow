@@ -133,7 +133,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, **Ys):
     gh_w = wn.reshape(-1, 1) * np.pi ** (-0.5 * Din)  # H**Din x 1
 
     for name, Y in Ys.items():
-        if not isinstance(Y,tf.Tensor):
+        if not isinstance(Y,(np.array,tf.Tensor)):
             # some things that one might wish to pass the likelihood are not 
             # Tensors (like when the latent and likelihood are in different
             # spaces, and you want to transform between them for the 
