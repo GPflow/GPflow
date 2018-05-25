@@ -133,6 +133,12 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, **Ys):
     gh_w = wn.reshape(-1, 1) * np.pi ** (-0.5 * Din)  # H**Din x 1
 
     for name, Y in Ys.items():
+        if not isinstance(Y,tf.Tensor):
+            # some things that one might wish to pass the likelihood are not 
+            # Tensors (like when the latent and likelihood are in different
+            # spaces, and you want to transform between them for the 
+            # conditional_mean, etc.)
+            continue
         Y = tf.reshape(Y, (-1, 1))
         Y = tf.tile(Y, [1, H**Din])  # broadcast Y to match X
         # without the tiling, some calls such as tf.where() (in bernoulli) fail
