@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 
@@ -134,7 +134,7 @@ class TestArcCosine(GPflowTestCase):
         with self.test_context():
             D = 1
             N = 3
-            weight_variances = None
+            weight_variances = 1.
             bias_variance = 1.
             variance = 1.
             ARDs = {False, True}
@@ -485,10 +485,17 @@ class TestARDInit(GPflowTestCase):
     def test_scalar(self):
         with self.test_context():
             k1 = gpflow.kernels.RBF(3, lengthscales=2.3)
-            k2 = gpflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3)
+            k2 = gpflow.kernels.RBF(3, lengthscales=np.ones(3) * 2.3, ARD=True)
             k1_lengthscales = k1.lengthscales.read_value()
             k2_lengthscales = k2.lengthscales.read_value()
             self.assertTrue(np.all(k1_lengthscales == k2_lengthscales))
+
+    def test_init(self):
+        for ARD in (False, True, None):
+            with self.assertRaises(ValueError):
+                k1 = gpflow.kernels.RBF(1, lengthscales=[1., 1.], ARD=ARD)
+            with self.assertRaises(ValueError):
+                k2 = gpflow.kernels.RBF(2, lengthscales=[1., 1., 1.], ARD=ARD)
 
     def test_MLP(self):
         with self.test_context():

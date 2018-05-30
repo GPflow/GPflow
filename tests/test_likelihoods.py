@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import six
 import tensorflow as tf
@@ -229,7 +229,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
 
         class MockRobustMax(gpflow.likelihoods.RobustMax):
             def prob_is_largest(self, Y, Fmu, Fvar, gh_x, gh_w):
-                return tf.ones((num_points, 1)) * mock_prob
+                return tf.ones((num_points, 1), dtype=settings.float_type) * mock_prob
 
         with self.test_context() as session:
             epsilon = 0.231
@@ -251,6 +251,29 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             # log((1-\epsilon) * 0.73 + (1-0.73) * \epsilon/(num_classes -1))
 
             self.assertTrue(np.allclose(pred, expected_prediction, tol, tol))
+
+    def testEpsK1Changes(self):
+        """
+        Checks that eps K1 changes when epsilon changes. This used to not happen and had to be manually changed.
+        """
+        with self.test_context() as session:
+            initial_eps = 1e-3
+            num_classes = 5
+            rm = gpflow.likelihoods.RobustMax(num_classes, initial_eps)
+
+            expected_eps_k1 = initial_eps / (num_classes - 1.)
+            actual_eps_k1 = session.run(rm._eps_K1)
+            self.assertAlmostEqual(expected_eps_k1, actual_eps_k1)
+
+            new_eps = 0.412
+            rm.epsilon.assign(new_eps, session=session)
+            expected_eps_k2 = new_eps / (num_classes - 1.)
+            actual_eps_k2 = session.run(rm._eps_K1)
+            self.assertAlmostEqual(expected_eps_k2, actual_eps_k2)
+
+
+
+
 
 
 class TestMulticlassIndexFix(GPflowTestCase):
