@@ -294,7 +294,7 @@ def test_VGP_vs_GPR(session_tf):
     NatGradOptimizer(1.).minimize(m_vgp, [(m_vgp.q_mu, m_vgp.q_sqrt)], maxiter=1)
 
     assert_allclose(m_gpr.compute_log_likelihood(),
-                    m_vgp.compute_log_likelihood(), atol=1e-4)
+                    m_vgp.compute_log_likelihood(), atol=1e-5)
 
 
 def test_other_XiTransform_VGP_vs_GPR(session_tf, xi_transform=XiSqrtMeanVar()):
