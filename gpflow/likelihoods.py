@@ -219,7 +219,7 @@ class StudentT(Likelihood):
 
     @params_as_tensors
     def conditional_variance(self, F):
-        return F * 0.0 + (self.deg_free / (self.deg_free - 2.0))
+        return F * 0.0 + self.scale**2 * (self.deg_free / (self.deg_free - 2.0))
 
 
 def probit(x):
