@@ -207,7 +207,8 @@ class StudentT(Likelihood):
     def __init__(self, deg_free=3.0):
         Likelihood.__init__(self)
         self.deg_free = deg_free
-        self.scale = Parameter(1.0, transform=transforms.positive)
+        self.scale = Parameter(1.0, transform=transforms.positive,
+            dtype=settings.float_type)
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -219,7 +220,8 @@ class StudentT(Likelihood):
 
     @params_as_tensors
     def conditional_variance(self, F):
-        return F * 0.0 + self.scale**2 * (self.deg_free / (self.deg_free - 2.0))
+        var = self.scale**2 * (self.deg_free / (self.deg_free - 2.0))
+        return tf.fill(tf.shape(F), tf.squeeze(var))
 
 
 def probit(x):
