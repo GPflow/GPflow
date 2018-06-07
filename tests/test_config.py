@@ -15,12 +15,15 @@
 
 # pylint: disable=W0212
 
+import inspect
+import logging
 import os
-import numpy as np
-import tensorflow as tf
 
 import gpflow
+import numpy as np
+import tensorflow as tf
 from gpflow.test_util import GPflowTestCase
+
 
 CONFIG_TXT = """
 [first_section]
@@ -130,6 +133,22 @@ class TestSettingsManager(GPflowTestCase):
             self.assertEqual(gpflow.settings.verbosity.tf_compile_verb, False)
         self.assertEqual(gpflow.settings.verbosity.tf_compile_verb, True)
         gpflow.settings.verbosity.tf_compile_verb = orig
+
+def test_logging():
+    def level_name(log):
+        return logging.getLevelName(log.level)
+
+    warning = 'WARNING'
+    assert gpflow.settings.logging_level == warning
+    logger = gpflow.settings.logger()
+    assert level_name(logger) == warning
+
+    debug = 'DEBUG'
+    gpflow.settings.logging.level = debug
+    logger = gpflow.settings.logger()
+    assert level_name(logger) == debug
+    module_name = inspect.getmodule(inspect.currentframe()).__name__
+    assert logger.name == module_name
 
 
 if __name__ == '__main__':
