@@ -2,12 +2,15 @@ import os
 import copy
 import collections
 import warnings
+import logging
+import inspect
 
 from collections import OrderedDict
 from six.moves import configparser
 
 import numpy as np
 import tensorflow as tf
+
 
 
 class _SettingsContextManager(object):
@@ -83,6 +86,20 @@ class _SettingsManager(object):
     @property
     def int_type(self):
         return self.dtypes.int_type
+
+    @property
+    def logging_level(self):
+        return self.logging.level
+
+    def logger(self):
+        frame = inspect.currentframe().f_back
+        module = inspect.getmodule(frame)
+        name = 'gpflow' if module is None else module.__name__
+        level = logging.getLevelName(self.logging.level)
+        logging.basicConfig()
+        log = logging.getLogger(name)
+        log.setLevel(level)
+        return log
 
 
 class _MutableNamedTuple(OrderedDict):

@@ -129,7 +129,7 @@ class StoreSession(TriggeredAction):
         :param session:
         :param hist_path: Path to store checkpoint to.
         :param saver:
-        :param restore_path: If None, will restore from `hist_path`.
+        :param restore_path: If None, will restore from `hist_path`. If False, it won't restore.
         :param global_step:
         """
         super().__init__(sequence, trigger)
@@ -139,13 +139,14 @@ class StoreSession(TriggeredAction):
         self.session = session
         self.global_step = global_step
 
-        restore_path = self.restore_path
         if restore_path is None:
             if len(glob.glob(self.hist_path + "-*")) > 0:
                 # History exists
                 latest_step = np.max([int(os.path.splitext(os.path.basename(x))[0].split('-')[-1])
                                       for x in glob.glob(self.hist_path + "-*")])
                 restore_path = self.hist_path + "-%i" % latest_step
+        elif restore_path is False:
+            restore_path = None
 
         if restore_path is not None:
             print("Restoring session from `%s`." % restore_path)

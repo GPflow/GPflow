@@ -23,11 +23,8 @@ from .features import Kuu, Kuf, InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .probability_distributions import Gaussian
 
-float_type = settings.float_type
-jitter_level = settings.numerics.jitter_level
 
-
-def expand_independent_outputs(fvar, full_cov, full_output_cov):
+def _expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
     Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
 
@@ -54,6 +51,8 @@ def expand_independent_outputs(fvar, full_cov, full_output_cov):
     
     return fvar
 
+logger = settings.logger()
+
 
 # ----------------------------------------------------------------------------
 ############################### CONDITIONAL ##################################
@@ -66,13 +65,13 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Single-output GP allowing repetitions R.
 
     The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: M x M 
+    - Kuu: M x M
     - Kuf: M x N
     - Kff: N or N x N
-    
+
     Further reference
     -----------------
-    - See `gpflow.conditionals._conditional` (below) for a detailed explanation of 
+    - See `gpflow.conditionals._conditional` (below) for a detailed explanation of
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
 
@@ -86,21 +85,20 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size M x R or R x M x M.
     :param white: boolean of whether to use the whitened representation
-    :return: 
+    :return:
         - mean:     N x R
         - variance: N x R, R x N x N, N x R x R or N x R x N x R
-        Please see `gpflow.conditional.expand_independent_outputs` for more information
+        Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    print("Conditional: Inducing Feature - Kernel")
-    print(full_cov, full_output_cov)
+    logger.debug("Conditional: Inducing Feature - Kernel")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
     Knn = kern.K(Xnew) if full_cov else kern.Kdiag(Xnew)
 
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, 
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov,
                                    q_sqrt=q_sqrt, white=white)  # N x R,  R x N x N or N x R
-    return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
+    return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
 @conditional.register(object, object, Kernel, object)
@@ -136,12 +134,11 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         size M x R or R x M x M.
     :param white: boolean of whether to use the whitened representation as
         described above.
-    :return: 
+    :return:
         - mean:     N x R
         - variance: N x R (full_cov = False), R x N x N (full_cov = True)
     """
-    print("Conditional: Kernel")
-    print(full_cov)
+    logger.debug("Conditional: Kernel")
     num_data = tf.shape(X)[0]  # M
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
     Kmn = kern.K(X, Xnew)
@@ -168,16 +165,16 @@ def sample_mvn(mean, cov, cov_structure):
     - "full": cov holds the full covariance matrix (without jitter)
     :return: sample from the MVN of shape N x D
     """
-    eps = tf.random_normal(tf.shape(mean), dtype=float_type)  # N x P
+    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # N x P
     if cov_structure == "diag":
         sample = mean + tf.sqrt(cov) * eps  # N x P
     elif cov_structure == "full":
-        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=float_type) * jitter_level)[None, ...]  # N x P x P
+        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=settings.float_type) * settings.numerics.jitter_level)[None, ...]  # N x P x P
         chol = tf.cholesky(cov)  # N x P x P
         return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
     else:
         raise NotImplementedError
-    
+
     return sample  # N x P
 
 
@@ -193,7 +190,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
 
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
-    print("sample conditional: InducingFeature Kernel")
+    logger.debug("sample conditional: InducingFeature Kernel")
     mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_output_cov=full_output_cov,
                             q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
     cov_structure = "full" if full_output_cov else "diag"
@@ -203,7 +200,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
 @sample_conditional.register(object, object, Kernel, object)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False):
-    print("sample conditional: Kernel")
+    logger.debug("sample conditional: Kernel")
     mean, var = conditional(Xnew, X, kern, f, q_sqrt=q_sqrt, white=white, full_cov=False)  # N x P, N x P
     return sample_mvn(mean, var, "diag")  # N x P
 
@@ -232,7 +229,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     :param white: bool
     :return: N x R  or R x N x N
     """
-    print("base conditional")
+    logger.debug("base conditional")
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # R
     Lm = tf.cholesky(Kmm)
@@ -302,7 +299,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
             if False then ``f_var`` is N x Dout
     """
 
-    # TODO: Tensorflow 1.4 doesn't support broadcasting in``tf.matmul`` and
+    # TODO(VD): Tensorflow 1.7 doesn't support broadcasting in``tf.matmul`` and
     # ``tf.matrix_triangular_solve``. This is reported in issue 216.
     # As a temporary workaround, we are using ``tf.einsum`` for the matrix
     # multiplications and tiling in the triangular solves.
@@ -312,7 +309,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
         raise NotImplementedError
 
     if full_cov:
-        # TODO: ``full_cov`` True would return a ``fvar`` of shape N x N x D x D,
+        # TODO(VD): ``full_cov`` True would return a ``fvar`` of shape N x N x D x D,
         # encoding the covariance between input datapoints as well.
         # This is not implemented as this feature is only used for plotting purposes.
         raise NotImplementedError
@@ -380,3 +377,32 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
         )
 
     return fmean, fvar
+
+
+
+def _expand_independent_outputs(fvar, full_cov, full_cov_output):
+    """
+    Reshapes fvar to the correct shape, specified by `full_cov` and `full_cov_output`.
+
+    :param fvar: has shape N x P (full_cov = False) or P x N x N (full_cov = True).
+    :return:
+    1. full_cov: True and full_cov_output: True
+       fvar N x P x N x P
+    2. full_cov: True and full_cov_output: False
+       fvar P x N x N
+    3. full_cov: False and full_cov_output: True
+       fvar N x P x P
+    4. full_cov: False and full_cov_output: False
+       fvar N x P
+    """
+    if full_cov and full_cov_output:
+        fvar = tf.matrix_diag(tf.transpose(fvar))   # N x N x P x P
+        fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
+    if not full_cov and full_cov_output:
+        fvar = tf.matrix_diag(fvar)   # N x P x P
+    if full_cov and not full_cov_output:
+        pass  # P x N x N
+    if not full_cov and not full_cov_output:
+        pass  # N x P
+
+    return fvar

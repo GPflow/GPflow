@@ -21,7 +21,6 @@ from ..decors import params_as_tensors, autoflow
 from ..kernels import Kernel, Combination
 from ..params import Parameter
 
-float_type = settings.float_type
 
 class Mok(Kernel):
     """
@@ -95,18 +94,18 @@ class SeparateIndependentMok(Mok, Combination):
     - Separate: we use different kernel for each output latent
     - Independent: Latents are uncorrelated a priori.
     """
-    def __init__(self, kern_list, name=None):
-        Combination.__init__(self, kern_list, name)
+    def __init__(self, kernels, name=None):
+        Combination.__init__(self, kernels, name)
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
-            Kxxs = tf.stack([k.K(X, X2) for k in self.kern_list], axis=2)  # N x N2 x P
+            Kxxs = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)  # N x N2 x P
             return tf.transpose(tf.matrix_diag(Kxxs), [0, 2, 1, 3])  # N x P x N2 x P
         else:
-            return tf.stack([k.K(X, X2) for k in self.kern_list], axis=0)  # P x N x N2
+            return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # P x N x N2
 
     def Kdiag(self, X, full_output_cov=False):
-        stacked = tf.stack([k.Kdiag(X) for k in self.kern_list], axis=1)  # N x P
+        stacked = tf.stack([k.Kdiag(X) for k in self.kernels], axis=1)  # N x P
         return tf.matrix_diag(stacked) if full_output_cov else stacked  # N x P x P  or  N x P
 
 
@@ -115,14 +114,14 @@ class SeparateMixedMok(Mok, Combination):
     Linear mixing of the latent GPs to form the output
     """
 
-    def __init__(self, kern_list, W, name=None):
-        Combination.__init__(self, kern_list, name)
+    def __init__(self, kernels, W, name=None):
+        Combination.__init__(self, kernels, name)
         self.W = Parameter(W)  # P x L
 
     @params_as_tensors
     def Kgg(self, X, X2):
-        return tf.stack([k.K(X, X2) for k in self.kern_list], axis=0)  # L x N x N2
-    
+        return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # L x N x N2
+
     @autoflow((settings.float_type, [None, None]),
               (settings.float_type, [None, None]))
     def compute_Kgg(self, X, X2):
@@ -142,7 +141,7 @@ class SeparateMixedMok(Mok, Combination):
 
     @params_as_tensors
     def Kdiag(self, X, full_output_cov=True):
-        K = tf.stack([k.Kdiag(X) for k in self.kern_list], axis=1)  # N x L
+        K = tf.stack([k.Kdiag(X) for k in self.kernels], axis=1)  # N x L
         if full_output_cov:
             # Can currently not use einsum due to unknown shape from `tf.stack()`
             # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # N x P x P
