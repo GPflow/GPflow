@@ -86,7 +86,7 @@ class SGPMC(GPModel):
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y))
 
     @params_as_tensors
-    def _build_predict(self, Xnew, full_cov=False, full_cov_output=False):
+    def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -98,5 +98,5 @@ class SGPMC(GPModel):
 
         """
         mu, var = conditional(Xnew, self.feature, self.kern, self.V, full_cov=full_cov, q_sqrt=None,
-                              white=True, full_cov_output=full_cov_output)
+                              white=True, full_output_cov=full_output_cov)
         return mu + self.mean_function(Xnew), var

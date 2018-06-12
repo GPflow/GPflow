@@ -131,7 +131,7 @@ class SVGP(GPModel):
         KL = self.build_prior_KL()
 
         # Get conditionals
-        fmean, fvar = self._build_predict(self.X, full_cov=False, full_cov_output=False)
+        fmean, fvar = self._build_predict(self.X, full_cov=False, full_output_cov=False)
 
         # Get variational expectations.
         var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
@@ -142,7 +142,7 @@ class SVGP(GPModel):
         return tf.reduce_sum(var_exp) * scale - KL
 
     @params_as_tensors
-    def _build_predict(self, Xnew, full_cov=False, full_cov_output=False):
+    def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):
         mu, var = conditional(Xnew, self.feature, self.kern, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov,
-                              white=self.whiten, full_cov_output=full_cov_output)
+                              white=self.whiten, full_output_cov=full_output_cov)
         return mu + self.mean_function(Xnew), var
