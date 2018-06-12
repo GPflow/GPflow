@@ -717,6 +717,6 @@ def _convert_to_string(value: Union[AnyStr, np.ndarray]):
 
 def _get_type_args(union_type):
     if hasattr(union_type, '__args__'):
-        return type_object.__args__
+        return union_type.__args__
     if hasattr(union_type, '__union_params__'):
-        return type_object.__union_params__
+        return union_type.__union_params__
