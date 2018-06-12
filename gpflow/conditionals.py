@@ -24,33 +24,6 @@ from .kernels import Kernel, Combination
 from .probability_distributions import Gaussian
 
 
-def _expand_independent_outputs(fvar, full_cov, full_output_cov):
-    """
-    Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
-
-    :param fvar: has shape N x P (full_cov = False) or P x N x N (full_cov = True).
-    :return:
-    1. full_cov: True and full_output_cov: True
-       fvar N x P x N x P
-    2. full_cov: True and full_output_cov: False
-       fvar P x N x N
-    3. full_cov: False and full_output_cov: True
-       fvar N x P x P
-    4. full_cov: False and full_output_cov: False
-       fvar N x P
-    """
-    if full_cov and full_output_cov:
-        fvar = tf.matrix_diag(tf.transpose(fvar))   # N x N x P x P
-        fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
-    if not full_cov and full_output_cov:
-        fvar = tf.matrix_diag(fvar)   # N x P x P
-    if full_cov and not full_output_cov:
-        pass  # P x N x N
-    if not full_cov and not full_output_cov:
-        pass  # N x P
-    
-    return fvar
-
 logger = settings.logger()
 
 
@@ -380,29 +353,30 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 
 
 
-def _expand_independent_outputs(fvar, full_cov, full_cov_output):
+def _expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
-    Reshapes fvar to the correct shape, specified by `full_cov` and `full_cov_output`.
+    Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
 
     :param fvar: has shape N x P (full_cov = False) or P x N x N (full_cov = True).
     :return:
-    1. full_cov: True and full_cov_output: True
+    1. full_cov: True and full_output_cov: True
        fvar N x P x N x P
-    2. full_cov: True and full_cov_output: False
+    2. full_cov: True and full_output_cov: False
        fvar P x N x N
-    3. full_cov: False and full_cov_output: True
+    3. full_cov: False and full_output_cov: True
        fvar N x P x P
-    4. full_cov: False and full_cov_output: False
+    4. full_cov: False and full_output_cov: False
        fvar N x P
     """
-    if full_cov and full_cov_output:
+    if full_cov and full_output_cov:
         fvar = tf.matrix_diag(tf.transpose(fvar))   # N x N x P x P
         fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
-    if not full_cov and full_cov_output:
+    if not full_cov and full_output_cov:
         fvar = tf.matrix_diag(fvar)   # N x P x P
-    if full_cov and not full_cov_output:
+    if full_cov and not full_output_cov:
         pass  # P x N x N
-    if not full_cov and not full_cov_output:
+    if not full_cov and not full_output_cov:
         pass  # N x P
 
     return fvar
+
