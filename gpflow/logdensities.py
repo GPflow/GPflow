@@ -25,7 +25,7 @@ logger = settings.logger()
 
 
 def gaussian(x, mu, var):
-    return -0.5 * (np.log(2 * np.pi) + tf.log(var) + tf.square(mu-x)/var)
+    return -0.5 * (np.log(2 * np.pi) + tf.log(var) + tf.square(mu-x) / var)
 
 
 def lognormal(x, mu, var):

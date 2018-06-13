@@ -78,7 +78,7 @@ def debug_kuf(feat, kern):
 @dispatch(InducingPoints, Mok, object)
 def Kuf(feat, kern, Xnew):
     debug_kuf(feat, kern)
-    return kern.K(feat.Z, Xnew, full_cov_output=True)  #  M x P x N x P
+    return kern.K(feat.Z, Xnew, full_output_cov=True)  #  M x P x N x P
 
 
 @dispatch(SharedIndependentMof, SharedIndependentMok, object)
@@ -135,7 +135,7 @@ def debug_kuu(feat, kern, jitter):
 @dispatch(InducingPoints, Mok)
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
-    Kmm = kern.K(feat.Z, full_cov_output=True)  # M x P x M x P
+    Kmm = kern.K(feat.Z, full_output_cov=True)  # M x P x M x P
     M = tf.shape(Kmm)[0] * tf.shape(Kmm)[1]
     jittermat = jitter * tf.reshape(tf.eye(M, dtype=settings.float_type), tf.shape(Kmm))
     return Kmm + jittermat

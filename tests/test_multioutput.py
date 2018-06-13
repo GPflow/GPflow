@@ -53,7 +53,7 @@ def check_equality_predictions(sess, models, decimal=4):
     assert_all_array_elements_almost_equal(all_means, decimal=decimal)
 
     # check equality of all the variances within a category
-    # (e.g. full_cov=True and full_cov_output=False)
+    # (e.g. full_cov=True and full_output_cov=False)
     all_vars = [vars_tt, vars_tf, vars_ft, vars_ff]
     _ = [assert_all_array_elements_almost_equal(var, decimal=decimal) for var in all_vars]
 

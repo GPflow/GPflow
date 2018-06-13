@@ -34,7 +34,7 @@ class Mok(Kernel):
     - N x P if full_output_cov = False
 
     The `full_output_cov` argument holds whether the kernel should calculate
-    the covariance between the outputs. In case there is no correlation but 
+    the covariance between the outputs. In case there is no correlation but
     `full_output_cov` is set to True the covariance matrix will be filled with zeros
     until the appropriate size is reached.
     """
@@ -45,7 +45,7 @@ class Mok(Kernel):
         :param X: data matrix, N1 x D
         :param X2: data matrix, N2 x D
         :param full_output_cov: calculate correlation between outputs.
-        :return: cov[f(X1), f(X2)] with shape  
+        :return: cov[f(X1), f(X2)] with shape
         - N1 x P x N2 x P if `full_output_cov` = True
         - P x N1 x N2 if `full_output_cov` = False
         """
@@ -56,7 +56,7 @@ class Mok(Kernel):
         Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
         :param X: data matrix, N x D
         :param full_output_cov: calculate correlation between outputs.
-        :return: var[f(X)] with shape  
+        :return: var[f(X)] with shape
         - N x P x N x P if `full_output_cov` = True
         - N x P if `full_output_cov` = False
         """
@@ -82,9 +82,9 @@ class SharedIndependentMok(Mok):
             return tf.transpose(tf.matrix_diag(Ks), [0, 2, 1, 3])  # N x P x N2 x P
         else:
             return tf.tile(K[None, ...], [self.P, 1, 1])  # P x N x N2
-        
+
     def Kdiag(self, X, full_output_cov=True):
-        K = self.kern.Kdiag(X)  # N 
+        K = self.kern.Kdiag(X)  # N
         Ks = tf.tile(K[:, None], [1, self.P])  # N x P
         return tf.matrix_diag(Ks) if full_output_cov else Ks  # N x P x P or N x P
 
