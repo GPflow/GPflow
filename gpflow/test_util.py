@@ -110,15 +110,15 @@ class GPflowTestCase(tf.test.TestCase):
             yield session
 
 
-def is_continuous_integration():
+def is_continuous_integration():  # pragma: no cover
     ci = os.environ.get('CI')
     return (ci == 'true') or (ci == '1')
 
-def nb_niter(n, test_n=2):
+def nb_niter(n, test_n=2):  # pragma: no cover
     if is_continuous_integration():
         return test_n
     else:
         return n
 
-def nb_range(n, test_n=2):
+def nb_range(n, test_n=2):  # pragma: no cover
     return range(nb_niter(n, test_n))
