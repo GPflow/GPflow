@@ -35,7 +35,7 @@ logger = settings.logger()
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
-    Single-output GP allowing repetitions R.
+    Single-output GP conditional.
 
     The covariance matrices used to calculate the conditional have the following shape:
     - Kuu: M x M
@@ -96,9 +96,9 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     each output (default) or the full covariance matrix (full_cov=True).
 
     We assume R independent GPs, represented by the columns of f (and the
-    last dimension of q_sqrt).
+    first dimension of q_sqrt).
 
-    :param Xnew: data matrix, size N x D.
+    :param Xnew: data matrix, size N x D. Evaluate the GP at these new points
     :param X: data points, size M x D.
     :param kern: GPflow kernel.
     :param f: data matrix, M x R, representing the function values at X,
