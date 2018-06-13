@@ -157,10 +157,10 @@ class TestQuadrature(GPflowTestCase):
                 # compile and run the functions:
                 F1 = session.run(F1)
                 F2 = session.run(F2)
-                self.assertTrue(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
+                assert_allclose(F1, F2, test_setup.tolerance, test_setup.tolerance)
 
     def test_pred_density(self):
-        # get all the likelihoods where predict_density  has been overwritten.
+        # get all the likelihoods where predict_density has been overwritten.
         for test_setup in self.test_setups:
             with self.test_context() as session:
                 if not test_setup.is_analytic:
@@ -174,7 +174,7 @@ class TestQuadrature(GPflowTestCase):
                 # compile and run the functions:
                 F1 = session.run(F1)
                 F2 = session.run(F2)
-                self.assertTrue(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
+                assert_allclose(F1, F2, test_setup.tolerance, test_setup.tolerance)
 
 
 class TestRobustMaxMulticlass(GPflowTestCase):
@@ -211,16 +211,15 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             expected_mu = (1./nClasses * (1. - epsilon) + (1. - 1. / nClasses) *\
                            epsilon / (nClasses - 1)) * np.ones((nPoints, 1))
 
-            self.assertTrue(np.allclose(mu, expected_mu, tolerance, tolerance))
+            self.assertTrue(np.allclose(mu, expected_mu, tolerance, tolerance))  # assert_allclose() would complain about shape mismatch
             expected_log_denisty = np.log(expected_mu)
             self.assertTrue(np.allclose(pred, expected_log_denisty, 1e-3, 1e-3))
             validation_variational_expectation = 1./nClasses * np.log(1. - epsilon) + \
                 (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
-            self.assertTrue(
-                np.allclose(
+            assert_allclose(
                     variational_expectations,
                     np.ones((nPoints, 1)) * validation_variational_expectation,
-                    tolerance, tolerance))
+                    tolerance, tolerance)
 
     def testPredictDensity(self):
         tol = 1e-4
@@ -250,7 +249,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             # ^^^ evaluated on calculator:
             # log((1-\epsilon) * 0.73 + (1-0.73) * \epsilon/(num_classes -1))
 
-            self.assertTrue(np.allclose(pred, expected_prediction, tol, tol))
+            assert_allclose(pred, expected_prediction, tol, tol)
 
     def testEpsK1Changes(self):
         """
@@ -330,7 +329,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
             rslts = []
             for lik, y, f in zip(self.likelihoods, self.Y_list, self.F_list):
                 rslts.append(session.run(lik.logp(f, y)))
-            self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+            assert_allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :])
 
     def test_predict_density(self):
         with self.test_context() as session:
@@ -345,7 +344,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
                                        self.F_list,
                                        self.Fvar_list):
                 rslts.append(session.run(lik.predict_density(f, fvar, y)))
-            self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+            assert_allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :])
 
     def test_variational_expectations(self):
         # switchedlikelihood
@@ -360,7 +359,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
                                        self.F_list,
                                        self.Fvar_list):
                 rslts.append(session.run(lik.variational_expectations(f, fvar, y)))
-            self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+            assert_allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :])
 
 
 class TestSwitchedLikelihoodRegression(GPflowTestCase):
