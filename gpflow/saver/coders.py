@@ -134,7 +134,7 @@ class PrimitiveTypeCoder(BaseCoder):
 
     @classmethod
     def _types(cls):
-        return PrimitiveType.__args__
+        return _get_type_args(PrimitiveType)
 
 
 class TensorFlowCoder(BaseCoder):
@@ -143,7 +143,7 @@ class TensorFlowCoder(BaseCoder):
 
     @classmethod
     def support_encoding(cls, item):
-        supported_types = TensorType.__args__
+        supported_types = _get_type_args(TensorType)
         return isinstance(item, supported_types)
 
     @classmethod
@@ -713,3 +713,10 @@ def _convert_to_string(value: Union[AnyStr, np.ndarray]):
     if isinstance(value, np.ndarray):
         value = np.string_(value)
     return value.decode('utf-8')
+
+
+def _get_type_args(union_type):
+    if hasattr(union_type, '__args__'):
+        return union_type.__args__
+    if hasattr(union_type, '__union_params__'):
+        return union_type.__union_params__
