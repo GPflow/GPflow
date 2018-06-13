@@ -39,8 +39,8 @@ NOTEBOOK_FILES = [
     "multiclass.ipynb",
     "classification.ipynb",
     "monitor-tensorboard.ipynb"
+    "FITCvsVFE.ipynb",
     # Blacklist:
-    #   "FITCvsVFE.ipynb",
     #   "svi.ipynb",
     #   "GPLVM.ipynb",
     #   "regression.ipynb"
