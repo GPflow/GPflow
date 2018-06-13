@@ -14,15 +14,15 @@ from gpflow.test_util import session_tf
 float_type = gpflow.settings.float_type
 np.random.seed(1)
 
-def predict(sess, model, Xnew, full_cov, full_cov_output):
-    m, v = model._build_predict(Xnew, full_cov=full_cov, full_cov_output=full_cov_output)
+def predict(sess, model, Xnew, full_cov, full_output_cov):
+    m, v = model._build_predict(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
     return sess.run([m, v])
 
 
-def predict_all(sess, models, Xnew, full_cov, full_cov_output):
+def predict_all(sess, models, Xnew, full_cov, full_output_cov):
     ms, vs = [], []
     for model in models:
-        m, v = predict(sess, model, Xnew, full_cov, full_cov_output)
+        m, v = predict(sess, model, Xnew, full_cov, full_output_cov)
         ms.append(m)
         vs.append(v)
     return ms, vs
@@ -39,14 +39,14 @@ def check_equality_predictions(sess, models, decimal=4):
     # Check equality of log likelihood
     # assert_all_array_elements_almost_equal(log_likelihoods, decimal=5)
 
-    # Predict: full_cov = True and full_cov_output = True
-    means_tt, vars_tt = predict_all(sess, models, Data.Xs, full_cov=True, full_cov_output=True)
-    # Predict: full_cov = True and full_cov_output = False
-    means_tf, vars_tf = predict_all(sess, models, Data.Xs, full_cov=True, full_cov_output=False)
-    # Predict: full_cov = False and full_cov_output = True
-    means_ft, vars_ft = predict_all(sess, models, Data.Xs, full_cov=False, full_cov_output=True)
-    # Predict: full_cov = False and full_cov_output = False
-    means_ff, vars_ff = predict_all(sess, models, Data.Xs, full_cov=False, full_cov_output=False)
+    # Predict: full_cov = True and full_output_cov = True
+    means_tt, vars_tt = predict_all(sess, models, Data.Xs, full_cov=True, full_output_cov=True)
+    # Predict: full_cov = True and full_output_cov = False
+    means_tf, vars_tf = predict_all(sess, models, Data.Xs, full_cov=True, full_output_cov=False)
+    # Predict: full_cov = False and full_output_cov = True
+    means_ft, vars_ft = predict_all(sess, models, Data.Xs, full_cov=False, full_output_cov=True)
+    # Predict: full_cov = False and full_output_cov = False
+    means_ff, vars_ff = predict_all(sess, models, Data.Xs, full_cov=False, full_output_cov=False)
 
     # check equality of all the means
     all_means = means_tt + means_tf + means_ft + means_ff

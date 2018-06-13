@@ -34,7 +34,7 @@ logger = settings.logger()
 
 @conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
 @name_scope("conditional")
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Multioutput conditional for an independent kernel and shared inducing features.
     Same behaviour as conditional with non-multioutput kernels.
@@ -55,7 +55,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     :param Xnew: data matrix, size N x D.
     :param f: data matrix, M x P
     :param full_cov: return the covariance between the datapoints
-    :param full_cov_output: return the covariance between the outputs.
+    :param full_output_cov: return the covariance between the outputs.
         Note: as we are using a independent kernel these covariances will be zero.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size M x P or P x M x M.
@@ -64,8 +64,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
         - mean:     N x P
         - variance: N x P, P x N x N, N x P x P or N x P x N x P
         Please see `gpflow.conditional._expand_independent_outputs` for more information
-        about the shape of the variance, depending on `full_cov` and `full_cov_output`.
-
+        about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     logger.debug("Conditional: SharedIndependentMof - SharedIndepedentMok")
 
@@ -73,19 +72,19 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
     if full_cov:
-        Knn = kern.K(Xnew, full_cov_output=False)[0, ...]  # N x N
+        Knn = kern.K(Xnew, full_output_cov=False)[0, ...]  # N x N
     else:
-        Knn = kern.Kdiag(Xnew, full_cov_output=False)[..., 0]  # N
+        Knn = kern.Kdiag(Xnew, full_output_cov=False)[..., 0]  # N
 
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  P x N x N or N x P
-    return fmean, _expand_independent_outputs(fvar, full_cov, full_cov_output)
+    return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
 @conditional.register(object, SeparateIndependentMof, SeparateIndependentMok, object)
 @conditional.register(object, SharedIndependentMof, SeparateIndependentMok, object)
 @conditional.register(object, SeparateIndependentMof, SharedIndependentMok, object)
 @name_scope("conditional")
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P).
@@ -128,12 +127,12 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     else:
         fvar = tf.transpose(rvar[..., 0])  # N x P
 
-    return fmu, _expand_independent_outputs(fvar, full_cov, full_cov_output)
+    return fmu, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
 @conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
 @name_scope("conditional")
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Interdomain conditional with independent latents.
     In this case the number of latent GPs (L) will be different than the number of outputs (P)
@@ -154,16 +153,16 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     logger.debug("Conditional: (SharedIndependentMof, SeparateIndepedentMof) - SeparateMixedMok")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # L x M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
-    Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
-        else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x P(x N)x P  or  N x P(x P)
+    Knn = kern.K(Xnew, full_output_cov=full_output_cov) if full_cov \
+        else kern.Kdiag(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
-    return independent_interdomain_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_cov_output=full_cov_output,
+    return independent_interdomain_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_output_cov=full_output_cov,
                                                q_sqrt=q_sqrt, white=white)
 
 
 @conditional.register(object, InducingPoints, Mok, object)
 @name_scope("conditional")
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
@@ -188,13 +187,13 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     logger.debug("Conditional: InducingPoints -- Mok")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x L x M x L
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
-    Knn = kern.K(Xnew, full_cov_output=full_cov_output) if full_cov \
-        else kern.Kdiag(Xnew, full_cov_output=full_cov_output)  # N x P(x N)x P  or  N x P(x P)
+    Knn = kern.K(Xnew, full_output_cov=full_output_cov) if full_cov \
+        else kern.Kdiag(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
     M, L, N, K = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
     Kmm = tf.reshape(Kmm, (M * L, M * L))
 
-    if full_cov == full_cov_output:
+    if full_cov == full_output_cov:
         Kmn = tf.reshape(Kmn, (M * L, N * K))
         Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
         fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # NK x 1, 1 x NK(x NK)
@@ -203,13 +202,13 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     else:
         Kmn = tf.reshape(Kmn, (M * L, N, K))
         fmean, fvar = fully_correlated_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov,
-                                                   full_cov_output=full_cov_output, q_sqrt=q_sqrt, white=white)
+                                                   full_output_cov=full_output_cov, q_sqrt=q_sqrt, white=white)
     return fmean, fvar
 
 
 @conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
 @name_scope("conditional")
-def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Most efficient routine to project L independent latent gps through a mixing matrix W.
     The mixing matrix is a member of the `SeparateMixedMok` and has shape P x L.
@@ -229,7 +228,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
     logger.debug("conditional: MixedKernelSharedMof, SeparateMixedMok")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                 full_cov_output=False, white=white)  # N x L, L x N x N or N x L
+                                 full_output_cov=False, white=white)  # N x L, L x N x N or N x L
 
     gmu = tf.matrix_transpose(gmu)  # L x N
     if not full_cov:
@@ -237,7 +236,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 
     Wgmu = tf.tensordot(gmu, kern.W, [[0], [1]])  # N x P
 
-    if full_cov_output:
+    if full_output_cov:
         Wt_expanded = tf.matrix_transpose(kern.W)[:, None, :]  # L x 1 x P
         if full_cov:
             Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # L x 1 x P x 1
@@ -259,7 +258,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_cov_output=False, 
 
 @sample_conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
 @name_scope("sample_conditional")
-def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=None, white=False):
+def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
     In most cases this means calculating the conditional mean m and variance v and then
@@ -267,12 +266,12 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=No
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficent one.
 
-    :return: N x P (full_cov_output = False) or N x P x P (full_cov_output = True)
+    :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
     logger.debug("sample conditional: MixedKernelSharedMof, SeparateMixedMok")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
-                                   full_cov_output=False, full_cov=False)  # N x L, N x L
+                                   full_output_cov=False, full_cov=False)  # N x L, N x L
     g_sample = sample_mvn(g_mu, g_var, "diag")  # N x L
     f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
     return f_sample
@@ -282,7 +281,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov_output=False, q_sqrt=No
 # Conditional maths
 # -----------------
 
-def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False,
+def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False,
                                         q_sqrt=None, white=False):
     """
     The inducing outputs live in the g-space (R^L).
@@ -293,8 +292,8 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     :param Knn: N x P  or  N x N  or  P x N x N  or  N x P x N x P
     :param f: data matrix, M x L
     :param q_sqrt: L x M x M  or  M x L
-    :param full_cov: calculate covariance between inputs
-    :param full_cov_output: calculate covariance between ouputs
+    :param full_cov: calculate covariance between inputs 
+    :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
         - mean: N x P
@@ -311,15 +310,15 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     Ar = tf.reshape(A, (L, M, N, P))
 
     # compute the covariance due to the conditioning
-    if full_cov and full_cov_output:
+    if full_cov and full_output_cov:
         fvar = Knn - tf.tensordot(Ar, Ar, [[0, 1], [0, 1]])  # N x P x N x P
-    elif full_cov and not full_cov_output:
+    elif full_cov and not full_output_cov:
         At = tf.reshape(tf.transpose(Ar), (P, N, M * L))  # P x N x ML
         fvar = Knn - tf.matmul(At, At, transpose_b=True)  # P x N x N
-    elif not full_cov and full_cov_output:
+    elif not full_cov and full_output_cov:
         At = tf.reshape(tf.transpose(Ar, [2, 3, 1, 0]), (N, P, M * L))  # N x P x ML
         fvar = Knn - tf.matmul(At, At, transpose_b=True)  # N x P x P
-    elif not full_cov and not full_cov_output:
+    elif not full_cov and not full_output_cov:
         fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, P))  # Knn: N x P
 
     # another backsubstitution in the unwhitened case
@@ -336,21 +335,21 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         else:
             raise NotImplementedError()
 
-        if full_cov and full_cov_output:
+        if full_cov and full_output_cov:
             LTAr = tf.reshape(LTA, (L * M, N * P))
             fvar = fvar + tf.reshape(tf.matmul(LTAr, LTAr, transpose_a=True), (N, P, N, P))
-        elif full_cov and not full_cov_output:
+        elif full_cov and not full_output_cov:
             LTAr = tf.transpose(tf.reshape(LTA, (L * M, N, P)), [2, 0, 1])  # P x LM x N
             fvar = fvar + tf.matmul(LTAr, LTAr, transpose_a=True)  # P x N x N
-        elif not full_cov and full_cov_output:
+        elif not full_cov and full_output_cov:
             LTAr = tf.transpose(tf.reshape(LTA, (L * M, N, P)), [1, 0, 2])  # N x LM x P
             fvar = fvar + tf.matmul(LTAr, LTAr, transpose_a=True)  # N x P x P
-        elif not full_cov and not full_cov_output:
+        elif not full_cov and not full_output_cov:
             fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (0, 1)), (N, P))
     return fmean, fvar
 
 
-def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None, white=False):
+def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
@@ -359,19 +358,19 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_o
     :param Knn: N x P or N x P x N x P
     :param f: data matrix, LM x 1
     :param q_sqrt: 1 x LM x LM  or 1 x ML
-    :param full_cov: calculate covariance between inputs
-    :param full_cov_output: calculate covariance between ouputs
+    :param full_cov: calculate covariance between inputs 
+    :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
         - mean: N x P
         - variance: N x P, N x P x P, P x N x N, N x P x N x P
     """
     m, v = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, full_cov=full_cov,
-                                               full_cov_output=full_cov_output, q_sqrt=q_sqrt, white=white)
+                                               full_output_cov=full_output_cov, q_sqrt=q_sqrt, white=white)
     return m[0, ...], v[0, ...]
 
 
-def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, full_cov_output=False, q_sqrt=None,
+def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
                                         white=False):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
@@ -384,8 +383,8 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     :param Knn: N x P or N x P x N x P
     :param f: data matrix, LM x R
     :param q_sqrt: R x LM x LM  or R x ML
-    :param full_cov: calculate covariance between inputs
-    :param full_cov_output: calculate covariance between ouputs
+    :param full_cov: calculate covariance between inputs 
+    :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
         - mean: R x N x P
@@ -403,18 +402,18 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     Ar = tf.reshape(A, (M, N, K))
 
     # compute the covariance due to the conditioning
-    if full_cov and full_cov_output:
+    if full_cov and full_output_cov:
         # fvar = Knn - tf.matmul(Ar, Ar, transpose_a=True)  # NK x NK, then reshape?
         fvar = Knn - tf.tensordot(Ar, Ar, [[0], [0]])  # N x K x N x K
-    elif full_cov and not full_cov_output:
+    elif full_cov and not full_output_cov:
         At = tf.transpose(Ar)  # K x N x M
         fvar = Knn - tf.matmul(At, At, transpose_b=True)  # K x N x N
-    elif not full_cov and full_cov_output:
+    elif not full_cov and full_output_cov:
         # This transpose is annoying
         At = tf.transpose(Ar, [1, 0, 2])  # N x M x K
         # fvar = Knn - tf.einsum('mnk,mnl->nkl', Ar, Ar)
         fvar = Knn - tf.matmul(At, At, transpose_a=True)  # N x K x K
-    elif not full_cov and not full_cov_output:
+    elif not full_cov and not full_output_cov:
         # Knn: N x K
         fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, K))  # Can also do this with a matmul
 
@@ -438,17 +437,17 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
             raise ValueError("Bad dimension for q_sqrt: %s" %
                              str(q_sqrt.get_shape().ndims))
 
-        if full_cov and full_cov_output:
+        if full_cov and full_output_cov:
             addvar = tf.matmul(LTA, LTA, transpose_a=True)  # R x NK x NK
             fvar = fvar[None, :, :, :, :] + tf.reshape(addvar, (R, N, K, N, K))
-        elif full_cov and not full_cov_output:
+        elif full_cov and not full_output_cov:
             LTAr = tf.transpose(tf.reshape(LTA, [R, M, N, K]), [0, 3, 1, 2])  # R x K x M x N
             addvar = tf.matmul(LTAr, LTAr, transpose_a=True)  # R x K x N x N
             fvar = fvar[None, ...] + addvar  # R x K x N x N
-        elif not full_cov and full_cov_output:
+        elif not full_cov and full_output_cov:
             LTAr = tf.transpose(tf.reshape(LTA, (R, M, N, K)), [0, 2, 3, 1])  # R x N x K x M
             fvar = fvar[None, ...] + tf.matmul(LTAr, LTAr, transpose_b=True)  # R x N x K x K
-        elif not full_cov and not full_cov_output:
+        elif not full_cov and not full_output_cov:
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # R x N x K
             fvar = fvar[None, ...] + addvar  # R x N x K
     return fmean, fvar
