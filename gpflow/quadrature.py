@@ -92,15 +92,18 @@ def mvnquad(func, means, covs, H: int, Din: int=None, Dout=None):
     return tf.reduce_sum(fX * wr, 0)
 
 
-def ndiagquad(funcs, H: int, Fmu, Fvar, **Ys):
+def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool=False, **Ys):
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Gauss-Hermite quadrature. The Gaussians must be independent.
 
-    :param funcs: Callable or Iterable of Callables that operates elementwise
+    :param funcs: the integrand(s):
+        Callable or Iterable of Callables that operates elementwise
     :param H: number of Gauss-Hermite quadrature points
     :param Fmu: array/tensor or `Din`-tuple/list thereof
     :param Fvar: array/tensor or `Din`-tuple/list thereof
+    :param logspace: if True, funcs are the log-integrands and this calculates
+        the log-expectation of exp(funcs)
     :param **Ys: arrays/tensors; deterministic arguments to be passed by name
 
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
@@ -130,7 +133,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, **Ys):
     Xall = gh_x * tf.sqrt(2.0 * Fvar) + Fmu   # N x H**Din x Din
     Xs = [Xall[:, :, i] for i in range(Din)]  # N x H**Din  each
 
-    gh_w = wn.reshape(-1, 1) * np.pi ** (-0.5 * Din)  # H**Din x 1
+    gh_w = wn * np.pi ** (-0.5 * Din)  # H**Din x 1
 
     for name, Y in Ys.items():
         Y = tf.reshape(Y, (-1, 1))
@@ -140,7 +143,12 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, **Ys):
 
     def eval_func(f):
         feval = f(*Xs, **Ys)  # f should be elementwise: return shape N x H**Din
-        return tf.reshape(tf.matmul(feval, gh_w), shape)
+        if logspace:
+            log_gh_w = np.log(gh_w.reshape(1, -1))
+            result = tf.reduce_logsumexp(feval + log_gh_w, axis=1)
+        else:
+            result = tf.matmul(feval, gh_w.reshape(-1, 1))
+        return tf.reshape(result, shape)
 
     if isinstance(funcs, Iterable):
         return [eval_func(f) for f in funcs]

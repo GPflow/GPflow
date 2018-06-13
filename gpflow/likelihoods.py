@@ -86,10 +86,9 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        exp_p = ndiagquad(lambda X, Y: tf.exp(self.logp(X, Y)),
+        return ndiagquad(lambda X, Y: self.logp(X, Y),
                 self.num_gauss_hermite_points,
-                Fmu, Fvar, Y=Y)
-        return tf.log(exp_p)
+                Fmu, Fvar, logspace=True, Y=Y)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         """
@@ -111,7 +110,7 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        return ndiagquad(self.logp,
+        return ndiagquad(lambda X, Y: self.logp(X, Y),
                 self.num_gauss_hermite_points,
                 Fmu, Fvar, Y=Y)
 
