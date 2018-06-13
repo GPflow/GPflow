@@ -33,13 +33,11 @@ NOTEBOOK_FILES = [
     "mcmc.ipynb",
     "models.ipynb",
     "multiclass.ipynb",
-    "natural_gradients.ipynb",
     "ordinal.ipynb",
     "Sanity_check.ipynb",
     "settings.ipynb",
     "SGPR_notes.ipynb",
     "vgp_notes.ipynb",
-    "upper_bound.ipynb"
     "monitor-tensorboard.ipynb"
     # Blacklist:
     #   "FITCvsVFE.ipynb",
