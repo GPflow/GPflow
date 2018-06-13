@@ -17,6 +17,7 @@ import functools
 import contextlib
 import tensorflow as tf
 import pytest
+import os
 
 
 @pytest.fixture
@@ -106,3 +107,17 @@ class GPflowTestCase(tf.test.TestCase):
         graph = self.test_graph if graph is None else graph
         with graph.as_default(), self.test_session(graph=graph) as session:
             yield session
+
+
+def is_continuous_integration():
+    ci = os.environ.get('CI')
+    return (ci == 'true') or (ci == '1')
+
+def nb_niter(n, test_n=1):
+    if is_continuous_integration():
+        return test_n
+    else:
+        return n
+
+def nb_range(n, test_n=1):
+    return range(nb_niter(n, test_n))
