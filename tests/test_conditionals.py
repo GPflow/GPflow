@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 
@@ -33,7 +33,7 @@ class DiagsTest(GPflowTestCase):
         num_latent = 2
         num_data = 3
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
-        k.white.variance = 0.01
+        k.kernels[1].variance = 0.01
         X = tf.placeholder(settings.float_type)
         mu = tf.placeholder(settings.float_type)
         Xs = tf.placeholder(settings.float_type)
@@ -87,7 +87,7 @@ class DiagsTest(GPflowTestCase):
 class WhitenTest(GPflowTestCase):
     def prepare(self):
         k = gpflow.kernels.Matern32(1) + gpflow.kernels.White(1)
-        k.white.variance = 0.01
+        k.kernels[1].variance = 0.01
 
         num_data = 10
         num_test_data = 100

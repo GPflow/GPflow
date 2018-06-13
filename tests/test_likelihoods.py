@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import six
 import tensorflow as tf
@@ -157,10 +157,10 @@ class TestQuadrature(GPflowTestCase):
                 # compile and run the functions:
                 F1 = session.run(F1)
                 F2 = session.run(F2)
-                self.assertTrue(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
+                assert_allclose(F1, F2, test_setup.tolerance, test_setup.tolerance)
 
     def test_pred_density(self):
-        # get all the likelihoods where predict_density  has been overwritten.
+        # get all the likelihoods where predict_density has been overwritten.
         for test_setup in self.test_setups:
             with self.test_context() as session:
                 if not test_setup.is_analytic:
@@ -174,7 +174,7 @@ class TestQuadrature(GPflowTestCase):
                 # compile and run the functions:
                 F1 = session.run(F1)
                 F2 = session.run(F2)
-                self.assertTrue(np.allclose(F1, F2, test_setup.tolerance, test_setup.tolerance))
+                assert_allclose(F1, F2, test_setup.tolerance, test_setup.tolerance)
 
 
 class TestRobustMaxMulticlass(GPflowTestCase):
@@ -211,16 +211,15 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             expected_mu = (1./nClasses * (1. - epsilon) + (1. - 1. / nClasses) *\
                            epsilon / (nClasses - 1)) * np.ones((nPoints, 1))
 
-            self.assertTrue(np.allclose(mu, expected_mu, tolerance, tolerance))
+            self.assertTrue(np.allclose(mu, expected_mu, tolerance, tolerance))  # assert_allclose() would complain about shape mismatch
             expected_log_denisty = np.log(expected_mu)
             self.assertTrue(np.allclose(pred, expected_log_denisty, 1e-3, 1e-3))
             validation_variational_expectation = 1./nClasses * np.log(1. - epsilon) + \
                 (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
-            self.assertTrue(
-                np.allclose(
+            assert_allclose(
                     variational_expectations,
                     np.ones((nPoints, 1)) * validation_variational_expectation,
-                    tolerance, tolerance))
+                    tolerance, tolerance)
 
     def testPredictDensity(self):
         tol = 1e-4
@@ -229,7 +228,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
 
         class MockRobustMax(gpflow.likelihoods.RobustMax):
             def prob_is_largest(self, Y, Fmu, Fvar, gh_x, gh_w):
-                return tf.ones((num_points, 1)) * mock_prob
+                return tf.ones((num_points, 1), dtype=settings.float_type) * mock_prob
 
         with self.test_context() as session:
             epsilon = 0.231
@@ -250,7 +249,30 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             # ^^^ evaluated on calculator:
             # log((1-\epsilon) * 0.73 + (1-0.73) * \epsilon/(num_classes -1))
 
-            self.assertTrue(np.allclose(pred, expected_prediction, tol, tol))
+            assert_allclose(pred, expected_prediction, tol, tol)
+
+    def testEpsK1Changes(self):
+        """
+        Checks that eps K1 changes when epsilon changes. This used to not happen and had to be manually changed.
+        """
+        with self.test_context() as session:
+            initial_eps = 1e-3
+            num_classes = 5
+            rm = gpflow.likelihoods.RobustMax(num_classes, initial_eps)
+
+            expected_eps_k1 = initial_eps / (num_classes - 1.)
+            actual_eps_k1 = session.run(rm._eps_K1)
+            self.assertAlmostEqual(expected_eps_k1, actual_eps_k1)
+
+            new_eps = 0.412
+            rm.epsilon.assign(new_eps, session=session)
+            expected_eps_k2 = new_eps / (num_classes - 1.)
+            actual_eps_k2 = session.run(rm._eps_K1)
+            self.assertAlmostEqual(expected_eps_k2, actual_eps_k2)
+
+
+
+
 
 
 class TestMulticlassIndexFix(GPflowTestCase):
@@ -307,7 +329,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
             rslts = []
             for lik, y, f in zip(self.likelihoods, self.Y_list, self.F_list):
                 rslts.append(session.run(lik.logp(f, y)))
-            self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+            assert_allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :])
 
     def test_predict_density(self):
         with self.test_context() as session:
@@ -322,7 +344,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
                                        self.F_list,
                                        self.Fvar_list):
                 rslts.append(session.run(lik.predict_density(f, fvar, y)))
-            self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+            assert_allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :])
 
     def test_variational_expectations(self):
         # switchedlikelihood
@@ -337,7 +359,7 @@ class TestSwitchedLikelihood(GPflowTestCase):
                                        self.F_list,
                                        self.Fvar_list):
                 rslts.append(session.run(lik.variational_expectations(f, fvar, y)))
-            self.assertTrue(np.allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :]))
+            assert_allclose(switched_rslt, np.concatenate(rslts)[self.Y_perm, :])
 
 
 class TestSwitchedLikelihoodRegression(GPflowTestCase):

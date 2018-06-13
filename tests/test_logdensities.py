@@ -10,14 +10,14 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import numpy as np
 from numpy.random import randn
 import tensorflow as tf
 import pytest
 import gpflow
-from gpflow import densities, settings
+from gpflow import logdensities, settings
 from gpflow.test_util import session_tf
 from scipy.stats import multivariate_normal as mvn
 from numpy.testing import assert_allclose
@@ -35,14 +35,14 @@ def test_multivariate_normal(session_tf, x, mu, cov_sqrt):
 
     if len(x.shape) != 2 or len(mu.shape) != 2:
         with pytest.raises(Exception) as e_info:
-            gp_result = densities.multivariate_normal(
+            gp_result = logdensities.multivariate_normal(
                 tf.convert_to_tensor(x),
                 tf.convert_to_tensor(mu),
                 tf.convert_to_tensor(L))
     else:
         x_tf = tf.placeholder(settings.float_type)
         mu_tf = tf.placeholder(settings.float_type)
-        gp_result = densities.multivariate_normal(
+        gp_result = logdensities.multivariate_normal(
             x_tf, mu_tf, tf.convert_to_tensor(L))
 
         gp_result = session_tf.run(gp_result, feed_dict={x_tf: x, mu_tf: mu})

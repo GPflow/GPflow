@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function, absolute_import
-
 import abc
 
 import numpy as np
@@ -54,7 +52,7 @@ class Model(Parameterized):
         return self.likelihood_tensor
 
     def is_built(self, graph):
-        is_built = super(Model, self).is_built(graph)
+        is_built = super().is_built(graph)
         if is_built is not Build.YES:
             return is_built
         if self._likelihood_tensor is None:
