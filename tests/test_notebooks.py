@@ -40,6 +40,8 @@ NOTEBOOK_FILES = [
     "classification.ipynb",
     "monitor-tensorboard.ipynb",
     "FITCvsVFE.ipynb",
+    "natural_gradients.ipynb",
+    "upper_bound.ipynb",
     # Blacklist:
     #   "svi.ipynb",
     #   "GPLVM.ipynb",
