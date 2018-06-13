@@ -122,3 +122,9 @@ def nb_niter(n, test_n=2):  # pragma: no cover
 
 def nb_range(n, test_n=2):  # pragma: no cover
     return range(nb_niter(n, test_n))
+
+def nb_list(lst, test_n=2):  # pragma: no cover
+    if is_continuous_integration():
+        return lst[:test_n]
+    else:
+        return lst
