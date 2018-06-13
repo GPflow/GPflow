@@ -27,7 +27,8 @@ def session_tf():
     ```
     def test_simple(session_tf):
         tensor = tf.constant(1.0)
-        ... do something
+        result = session_tf.run(tensor)
+        # ...
     ```
 
     In example above the test_simple is wrapped within graph and session created
