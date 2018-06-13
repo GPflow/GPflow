@@ -8,7 +8,7 @@ import cProfile
 import csv
 
 tol=1e-11
-nRepeats = 50
+nRepeats = nb_niter(50)
 
 predict_limits = [-4., 4.]
 inducing_points_limits = [-1., 9]
