@@ -139,7 +139,7 @@ class PrimitiveTypeCoder(BaseCoder):
 
 class TensorFlowCoder(BaseCoder):
     """Coder for TensorFlow tensors and dataset iterators. TensorFlow objects are not
-    serialized at all, they stored as None."""
+    serialized at all, they are stored as None."""
 
     @classmethod
     def support_encoding(cls, item):
@@ -159,7 +159,7 @@ class TensorFlowCoder(BaseCoder):
 
 class StructCoder(BaseCoder):
     """
-    Coder for composite types like List, Dict, Slice, Objects and cetera.
+    Coder for composite types like List, Dict, Slice, Objects et cetera.
     It defines two abstract methods *encoding_type* and *decoding_type*.
     All structure-like pythonic types are encoded as structured numpy arrays
     with required field '__type__' and other optional fields, which are defined
