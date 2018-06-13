@@ -40,6 +40,7 @@ NOTEBOOK_FILES = [
     "SGPR_notes.ipynb",
     "vgp_notes.ipynb",
     "upper_bound.ipynb"
+    "monitor-tensorboard.ipynb"
     # Blacklist:
     #   "FITCvsVFE.ipynb",
     #   "svi_test.ipynb",
