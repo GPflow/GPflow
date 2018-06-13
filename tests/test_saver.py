@@ -174,14 +174,13 @@ def test_loading_without_autocompile(session_tf, filename, model):
 
 
 def test_loading_into_specific_session(session_tf, filename, model):
-    gp.Saver().save(filename, model)
-    with session_context() as session:
-        pass
-    context = gp.SaverContext(session=session)
-    loaded = gp.Saver().load(filename, context=context)
     x_new = Data.x_new()
     predict_origin = model.predict_f(x_new)
-    predict_loaded = loaded.predict_f(x_new, session=session)
+    gp.Saver().save(filename, model)
+    with session_context() as session:
+        context = gp.SaverContext(session=session)
+        loaded = gp.Saver().load(filename, context=context)
+        predict_loaded = loaded.predict_f(x_new, session=session)
     assert_allclose(predict_origin, predict_loaded)
 
 
