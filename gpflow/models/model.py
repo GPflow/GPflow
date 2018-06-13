@@ -82,6 +82,15 @@ class Model(Parameterized):
         self._likelihood_tensor = likelihood
         self._objective = objective
 
+    def sample_feed_dict(self, sample):
+        tensor_feed_dict = {}
+        for param in self.parameters:
+            constrained_value = sample[param.pathname]
+            unconstrained_value = param.transform.backward(constrained_value)
+            tensor = param.unconstrained_tensor
+            tensor_feed_dict[tensor] = unconstrained_value
+        return tensor_feed_dict
+
     def _build_objective(self, likelihood_tensor, prior_tensor):
         func = tf.add(likelihood_tensor, prior_tensor, name='nonneg_objective')
         return tf.negative(func, name='objective')
