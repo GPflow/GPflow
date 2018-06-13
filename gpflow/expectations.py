@@ -27,6 +27,10 @@ from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussia
 
 from .dispatch import dispatch
 
+
+logger = settings.logger()
+
+
 # Sections:
 # - Quadrature Expectations
 # - Analytic Expectations
@@ -106,8 +110,8 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite
     """
     num_gauss_hermite_points = 100 if num_gauss_hermite_points is None else num_gauss_hermite_points
 
-    warnings.warn("Quadrature is used to calculate the expectation. This means that "
-                  "an analytical implementations is not available for the given combination.")
+    logger.warn("Quadrature is used to calculate the expectation. This means that "
+                "an analytical implementations is not available for the given combination.")
 
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
@@ -148,8 +152,8 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite
     """
     num_gauss_hermite_points = 40 if num_gauss_hermite_points is None else num_gauss_hermite_points
 
-    warnings.warn("Quadrature is used to calculate the expectation. This means that "
-                  "an analytical implementations is not available for the given combination.")
+    logger.warn("Quadrature is used to calculate the expectation. This means that "
+                "an analytical implementations is not available for the given combination.")
 
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)

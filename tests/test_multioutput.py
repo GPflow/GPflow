@@ -37,7 +37,7 @@ def check_equality_predictions(sess, models, decimal=4):
     log_likelihoods = [m.compute_log_likelihood() for m in models]
 
     # Check equality of log likelihood
-    # assert_all_array_elements_almost_equal(log_likelihoods, decimal=5)    
+    # assert_all_array_elements_almost_equal(log_likelihoods, decimal=5)
 
     # Predict: full_cov = True and full_cov_output = True
     means_tt, vars_tt = predict_all(sess, models, Data.Xs, full_cov=True, full_cov_output=True)
@@ -52,21 +52,21 @@ def check_equality_predictions(sess, models, decimal=4):
     all_means = means_tt + means_tf + means_ft + means_ff
     assert_all_array_elements_almost_equal(all_means, decimal=decimal)
 
-    # check equality of all the variances within a category 
+    # check equality of all the variances within a category
     # (e.g. full_cov=True and full_cov_output=False)
     all_vars = [vars_tt, vars_tf, vars_ft, vars_ff]
     _ = [assert_all_array_elements_almost_equal(var, decimal=decimal) for var in all_vars]
 
     # Here we check that the variance in different categories are equal
-    # after transforming to the right shape. 
+    # after transforming to the right shape.
     var_tt = vars_tt[0]  # N x P x N x P
     var_tf = vars_tf[0]  # P x N x N
     var_ft = vars_ft[0]  # N x P x P
     var_ff = vars_ff[0]  # N x P
-    
+
     np.testing.assert_almost_equal(np.diagonal(var_tt, axis1=1, axis2=3),
                                    np.transpose(var_tf, [1, 2, 0]), decimal=decimal)
-    np.testing.assert_almost_equal(np.diagonal(var_tt, axis1=0, axis2=2), 
+    np.testing.assert_almost_equal(np.diagonal(var_tt, axis1=0, axis2=2),
                                    np.transpose(var_ft, [1, 2, 0]), decimal=decimal)
     np.testing.assert_almost_equal(np.diagonal(np.diagonal(var_tt, axis1=0, axis2=2)),
                                    var_ff, decimal=decimal)
@@ -199,7 +199,7 @@ def test_seperate_independent_mok(session_tf):
     We can achieve this in two ways:
         1) efficient: SeparateIndependentMok with Shared/SeparateIndependentMof
         2) inefficient: SeparateIndependentMok with InducingPoints
-    However, both methods should return the same conditional, 
+    However, both methods should return the same conditional,
     and after optimization return the same log likelihood.
     """
     # Model 1 (INefficient)
