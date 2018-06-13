@@ -113,11 +113,11 @@ def is_continuous_integration():
     ci = os.environ.get('CI')
     return (ci == 'true') or (ci == '1')
 
-def nb_niter(n, test_n=1):
+def nb_niter(n, test_n=2):
     if is_continuous_integration():
         return test_n
     else:
         return n
 
-def nb_range(n, test_n=1):
+def nb_range(n, test_n=2):
     return range(nb_niter(n, test_n))
