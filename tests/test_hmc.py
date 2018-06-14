@@ -147,7 +147,7 @@ class SampleModelTest(GPflowTestCase):
 
             llh = [m.compute_log_likelihood(feed_dict=m.sample_feed_dict(s))
                    for i, s in samples.iterrows()]
-            assert_allclose(llh, - (xs**2).sum(1), atol=1e-7)
+            assert_allclose(llh, - (xs**2).sum(1), atol=1e-6)
 
 
 class CheckTrainingVariableState(GPflowTestCase):
