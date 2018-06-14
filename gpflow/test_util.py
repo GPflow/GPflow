@@ -111,20 +111,13 @@ class GPflowTestCase(tf.test.TestCase):
 
 
 def is_continuous_integration():  # pragma: no cover
-    ci = os.environ.get('CI')
-    return (ci == 'true') or (ci == '1')
+    return os.environ.get('CI', False)
 
 def nb_niter(n, test_n=2):  # pragma: no cover
-    if is_continuous_integration():
-        return test_n
-    else:
-        return n
+    return test_n if is_continuous_integration() else n
 
 def nb_range(n, test_n=2):  # pragma: no cover
     return range(nb_niter(n, test_n))
 
 def nb_list(lst, test_n=2):  # pragma: no cover
-    if is_continuous_integration():
-        return lst[:test_n]
-    else:
-        return lst
+    return lst[:test_n] if is_continuous_integration() else lst
