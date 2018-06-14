@@ -24,11 +24,13 @@ from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
 
+
 logger = settings.logger()
 
-# ----------------------------------------------------------------------------
-############################### CONDITIONAL ##################################
-# ----------------------------------------------------------------------------
+
+# -----------
+# Conditional
+# -----------
 
 @conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
 @name_scope("conditional")
@@ -250,9 +252,9 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return Wgmu, WgvarW
 
 
-# ----------------------------------------------------------------------------
-############################ SAMPLE CONDITIONAL ##############################
-# ----------------------------------------------------------------------------
+# ------------------
+# Sample conditional
+# ------------------
 
 @sample_conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
 @name_scope("sample_conditional")
@@ -276,9 +278,9 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     return f_sample
 
 
-# ----------------------------------------------------------------------------
-############################# CONDITIONAL MATHS ##############################
-# ----------------------------------------------------------------------------
+# -----------------
+# Conditional maths
+# -----------------
 
 def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False,
                                         q_sqrt=None, white=False):

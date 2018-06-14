@@ -24,6 +24,9 @@ from .params import Parameter, Parameterized
 from .dispatch import dispatch
 
 
+logger = settings.logger()
+
+
 class InducingFeature(Parameterized):
     """
     Abstract base class for inducing features.
