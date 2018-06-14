@@ -179,7 +179,7 @@ class CheckTrainingVariableState(GPflowTestCase):
         with self.test_context():
             m = self.model()
             hmc = gpflow.train.HMC()
-            for n in range(1, 5):
+            for n in [1, 2]:
                 samples = hmc.sample(m, num_samples=n, lmax=10, epsilon=0.05)
                 self.check_last_variables_state(m, samples)
 
