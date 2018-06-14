@@ -85,6 +85,7 @@ class Model(Parameterized):
     def sample_feed_dict(self, sample):
         tensor_feed_dict = {}
         for param in self.parameters:
+            if not param.trainable: continue
             constrained_value = sample[param.pathname]
             unconstrained_value = param.transform.backward(constrained_value)
             tensor = param.unconstrained_tensor
