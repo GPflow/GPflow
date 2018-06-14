@@ -18,8 +18,8 @@ from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelS
 from .features import Kuu, Kuf
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .. import settings
-from ..conditionals import base_conditional, _expand_independent_outputs, sample_mvn
-from ..decors import name_scope
+from ..conditionals import base_conditional, _expand_independent_outputs, _sample_mvn
+from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
@@ -270,8 +270,9 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
                                    full_output_cov=False, full_cov=False)  # N x L, N x L
-    g_sample = sample_mvn(g_mu, g_var, "diag")  # N x L
-    f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
+    g_sample = _sample_mvn(g_mu, g_var, "diag")  # N x L
+    with params_as_tensors_for(kern):
+        f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
     return f_sample
 
 
@@ -290,7 +291,7 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     :param Knn: N x P  or  N x N  or  P x N x N  or  N x P x N x P
     :param f: data matrix, M x L
     :param q_sqrt: L x M x M  or  M x L
-    :param full_cov: calculate covariance between inputs 
+    :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
@@ -356,7 +357,7 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_outpu
     :param Knn: N x P or N x P x N x P
     :param f: data matrix, LM x 1
     :param q_sqrt: 1 x LM x LM  or 1 x ML
-    :param full_cov: calculate covariance between inputs 
+    :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
@@ -381,7 +382,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     :param Knn: N x P or N x P x N x P
     :param f: data matrix, LM x R
     :param q_sqrt: R x LM x LM  or R x ML
-    :param full_cov: calculate covariance between inputs 
+    :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
