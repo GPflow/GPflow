@@ -153,12 +153,13 @@ def vec_to_tri(vectors, N):
     # Check M is a valid triangle number
     assert((matrix * (N + 1)) == (2 * M))
     """
-    D = int(vectors.shape[0])
-    tril_indices = np.tile(np.array(np.tril_indices(N)).T, (D, 1, 1))
-    d_indices = np.arange(D).repeat(tril_indices.shape[1]).reshape((D, -1, 1))
+    D = tf.shape(vectors)[0]
+    tril_indices = np.array(np.tril_indices(N)).T.astype(np.int32)
+    tiled_tril_indices = tf.tile(tril_indices[None, ...], [D, 1, 1])
+    tiled_d_indices = tf.tile(tf.range(D)[:, None], [1, tril_indices.shape[0]])
+    tiled_d_indices = tf.reshape(tiled_d_indices, [D, -1, 1])
 
-    indices = np.concatenate((d_indices, tril_indices), axis=-1)
-    indices = tf.constant(indices, dtype=tf.int64)
+    indices = tf.concat((tiled_d_indices, tiled_tril_indices), axis=-1)
     return tf.scatter_nd(indices=indices, shape=[D, N, N], updates=vectors)
 
 
