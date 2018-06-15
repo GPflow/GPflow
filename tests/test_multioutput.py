@@ -1,6 +1,7 @@
 import gpflow
 import numpy as np
 import pytest
+import scipy
 import tensorflow as tf
 
 import gpflow.multioutput.features as mf
@@ -98,38 +99,21 @@ def check_equality_predictions(sess, models, decimal=4):
                                    var_ff, decimal=decimal)
 
 
-def expand_cov(G, W):
+def expand_cov(q_sqrt, W):
     """
-    :param G: covariance matrix, L x M x M
-    :param W: mixing matrix,  L x L
-    :return: matrix LM x LM
+    :param G: cholesky of covariance matrices, L x M x M
+    :param W: mixing matrix (square),  L x L
+    :return: cholesky of LM x LM covariance matrix
     """
-    L, M, _ = G.shape
-    O = np.zeros((L * M, L * M))
-    for l1 in range(L):
-        for l2 in range(L):
-            O[l1 * M:(l1 + 1) * M, l2 * M:(l2 + 1) * M] = W[l1, l2] * G[l1, :, :]
-    return O[None, :, :]
+    q_cov = np.matmul(q_sqrt, q_sqrt.transpose(0, 2, 1))  # L x M x M
+    q_cov_expanded = scipy.linalg.block_diag(*q_cov)  # LM x LM
+    q_sqrt_expanded = np.linalg.cholesky(q_cov_expanded)  # LM x LM
+    return q_sqrt_expanded
 
 
-def q_sqrts_to_Q_sqrt(q_sqrt, W):
-    """
-    :parma q_sqrt: array of L covariance cholesky's L x M x M
-    :param W: square mixing matrix, L x L
-    :return: LM x LM
-    """
-    cov = np.matmul(q_sqrt, q_sqrt.transpose(0, 2, 1))
-    Cov = expand_cov(cov, W)
-    return np.linalg.cholesky(Cov)
-
-
-def mus_to_Mu(mu, W):
-    M, L = mu.shape
-    Mu = np.zeros((M * L, 1))
-    for l1 in range(L):
-        for l2 in range(L):
-            Mu[l1 * M:(l1 + 1) * M, 0] += mu[:, l2] * W[l1, l2]
-    return Mu
+def create_q_sqrt(M, L):
+    """ returns an array of L lower triangular matrices of size M x M """
+    return np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])  # L x M x M
 
 
 # ------------------------------------------
@@ -137,8 +121,7 @@ def mus_to_Mu(mu, W):
 # ------------------------------------------
 
 class Data:
-    N = 20
-    Ntest = 5
+    N, Ntest = 20, 5
     D = 1  # input dimension
     M = 3  # inducing points
     L = 2  # latent gps
@@ -155,30 +138,33 @@ class Data:
 
 class DataMixedKernelWithEye(Data):
     """ Note in this class L == P """
-    M, L = 7, 3
+    M, L = 4, 3
     W = np.eye(L)
+
     G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
                    Data.X,
                    3.0 * np.cos(Data.X) - Data.X])  # N x P
 
     mu_data = np.random.randn(M, L)  # M x L
-    sqrt_data = np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])  # L x M x M
+    sqrt_data = create_q_sqrt(M, L)  # L x M x M
 
-    mu_data_full = mus_to_Mu(mu_data, W)  # 1 x ML
-    sqrt_data_full = q_sqrts_to_Q_sqrt(sqrt_data, W)  # 1 x LM x LM
+    mu_data_full = (mu_data @ W).reshape(-1, 1)  # ML x 1
+    sqrt_data_full = expand_cov(sqrt_data, W)  # 1 x LM x LM
 
     Y = np.matmul(G, W)
     Y += np.random.randn(*Y.shape) * np.ones((L,)) * 0.2
 
 
 class DataMixedKernel(Data):
-    M, L, P = 5, 2, 3
+    M = 5
+    L = 2
+    P = 3
     W = np.random.randn(P, L)
     G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
                    3.0 * np.cos(Data.X) - Data.X])  # N x L
 
     mu_data = np.random.randn(M, L)  # M x L
-    sqrt_data = np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])  # L x M x M
+    sqrt_data = create_q_sqrt(M, L)  # L x M x M
 
     Y = np.matmul(G, W.T)
     Y += np.random.randn(*Y.shape) * np.ones((P,)) * 0.1
@@ -422,7 +408,8 @@ def test_separate_independent_mof(session_tf):
     m2.q_mu.set_trainable(True)
     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
-    # Model 3 (efficient)
+    # Model 3 (INefficient): an idenitical feature is used P times,
+    # and treated as a separate feature.
     q_mu_3 = np.random.randn(Data.M, Data.P)
     q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
     kern_list = [RBF(Data.D, variance=0.5, lengthscales=1.2)  for _ in range(Data.P)]
@@ -434,7 +421,6 @@ def test_separate_independent_mof(session_tf):
     m3.q_sqrt.set_trainable(True)
     m3.q_mu.set_trainable(True)
     gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
-
 
     check_equality_predictions(session_tf, [m1, m2, m3])
 
@@ -478,8 +464,3 @@ def test_compare_mixed_kernel(session_tf):
 
     check_equality_predictions(session_tf, [m1, m2])
 
-
-
-
-if __name__ == "__main__":
-    test_MixedMok_Kgg()
