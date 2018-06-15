@@ -103,12 +103,12 @@ def expand_cov(q_sqrt, W):
     """
     :param G: cholesky of covariance matrices, L x M x M
     :param W: mixing matrix (square),  L x L
-    :return: cholesky of LM x LM covariance matrix
+    :return: cholesky of 1 x LM x LM covariance matrix
     """
     q_cov = np.matmul(q_sqrt, q_sqrt.transpose(0, 2, 1))  # L x M x M
     q_cov_expanded = scipy.linalg.block_diag(*q_cov)  # LM x LM
     q_sqrt_expanded = np.linalg.cholesky(q_cov_expanded)  # LM x LM
-    return q_sqrt_expanded
+    return q_sqrt_expanded[None, ...]
 
 
 def create_q_sqrt(M, L):
@@ -142,8 +142,8 @@ class DataMixedKernelWithEye(Data):
     W = np.eye(L)
 
     G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
-                   Data.X,
-                   3.0 * np.cos(Data.X) - Data.X])  # N x P
+                   3.0 * np.cos(Data.X) - Data.X,
+                   1.0 + Data.X])  # N x P
 
     mu_data = np.random.randn(M, L)  # M x L
     sqrt_data = create_q_sqrt(M, L)  # L x M x M
@@ -464,3 +464,21 @@ def test_compare_mixed_kernel(session_tf):
 
     check_equality_predictions(session_tf, [m1, m2])
 
+
+def test_multioutput_with_diag_q_sqrt(session_tf):
+    data = DataMixedKernel
+
+    q_sqrt_diag = np.ones((data.M, data.L)) * 2
+    q_sqrt = np.repeat(np.eye(data.M)[None, ...], data.L, axis=0) * 2 # L x M x M
+
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
+
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f2 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
+
+    check_equality_predictions(session_tf, [m1, m2])

@@ -330,11 +330,11 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     fmean = tf.tensordot(Ar, f, [[1, 0], [0, 1]])  # N x P
 
     if q_sqrt is not None:
-        Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # L x M x M
         if q_sqrt.shape.ndims == 3:
+            Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # L x M x M
             LTA = tf.matmul(Lf, A, transpose_a=True)  # L x M x M  *  L x M x NP  ->  L x M x NP
-        else:
-            raise NotImplementedError()  # pragma: no cover
+        else:  # q_sqrt M x L
+            LTA = (A * tf.transpose(q_sqrt)[..., None])  # L x M x NP
 
         if full_cov and full_output_cov:
             LTAr = tf.reshape(LTA, (L * M, N * P))

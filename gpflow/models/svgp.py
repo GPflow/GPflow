@@ -89,7 +89,31 @@ class SVGP(GPModel):
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
         """
-        TODO(VD): explain
+        Constructs the mean and cholesky of the covariance of the variational Gaussian posterior.
+        If a user passes values for `q_mu` and `q_sqrt` the routine checks if they have consistent
+        and correct shapes. If a user does not specify any values for `q_mu` and `q_sqrt`, the routine
+        initializes them, their shape depends on `num_inducing` and `q_diag`.
+
+        Note: most often the comments refer to the number of observations (=output dimensions) with P,
+        number of latent GPs with L, and number of inducing points M. Typically P equals L,
+        but when certain multioutput kernels are used, this can change.
+
+        Parameters
+        ----------
+        :param num_inducing: int
+            Number of inducing variables, typically refered to as M.
+        :param q_mu: np.array or None
+            Mean of the variational Gaussian posterior. If None the function will initialise
+            the mean with zeros. If not None, the shape of `q_mu` is checked.
+        :param q_sqrt: np.array or None
+            Cholesky of the covariance of the variational Gaussian posterior.
+            If None the function will initialise `q_sqrt` with identity matrix.
+            If not None, the shape of `q_sqrt` is checked, depending on `q_diag`.
+        :param q_diag: bool
+            Used to check if `q_mu` and `q_sqrt` have the correct shape or to
+            construct them with the correct shape. If `q_diag` is true,
+            `q_sqrt` is two dimensional and only holds the square root of the
+            covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
         q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
         self.q_mu = Parameter(q_mu, dtype=settings.float_type)  # M x P
