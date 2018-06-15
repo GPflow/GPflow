@@ -1,18 +1,25 @@
 import gpflow
 import numpy as np
 import pytest
+import tensorflow as tf
 
 import gpflow.multioutput.features as mf
 import gpflow.multioutput.kernels as mk
 
-from gpflow.models import SVGP
-from gpflow.kernels import RBF
 from gpflow.features import InducingPoints
+from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
+from gpflow.models import SVGP
 from gpflow.test_util import session_tf
+from gpflow.training import ScipyOptimizer
 
 float_type = gpflow.settings.float_type
 np.random.seed(1)
+
+
+# ------------------------------------------
+# Helpers
+# ------------------------------------------
 
 def predict(sess, model, Xnew, full_cov, full_output_cov):
     m, v = model._build_predict(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
@@ -20,6 +27,9 @@ def predict(sess, model, Xnew, full_cov, full_output_cov):
 
 
 def predict_all(sess, models, Xnew, full_cov, full_output_cov):
+    """
+    Returns the mean and variance of f(Xnew) for each model in `models`.
+    """
     ms, vs = [], []
     for model in models:
         m, v = predict(sess, model, Xnew, full_cov, full_output_cov)
@@ -29,15 +39,31 @@ def predict_all(sess, models, Xnew, full_cov, full_output_cov):
 
 
 def assert_all_array_elements_almost_equal(arr, decimal):
+    """
+    Check if consecutive elements of `arr` are almost equal.
+    """
     for i in range(len(arr) - 1):
         np.testing.assert_almost_equal(arr[i], arr[i+1], decimal=decimal)
 
 
 def check_equality_predictions(sess, models, decimal=4):
+    """
+    Executes a couple of checks to compare the equality of predictions
+    of different models. The models should be configured with the same
+    training data (X, Y). The following checks are done:
+    - check if log_likelihood is (almost) equal for all models
+    - check if predicted mean is (almost) equal
+    - check if predicted variance is (almost) equal.
+      All possible variances over the inputs and outputs are calculated
+      and equality is checked.
+    - check if variances within model are consistent. Parts of the covariance
+      matrices should overlap, and this is tested.
+    """
+
     log_likelihoods = [m.compute_log_likelihood() for m in models]
 
     # Check equality of log likelihood
-    # assert_all_array_elements_almost_equal(log_likelihoods, decimal=5)
+    assert_all_array_elements_almost_equal(log_likelihoods, decimal=5)
 
     # Predict: full_cov = True and full_output_cov = True
     means_tt, vars_tt = predict_all(sess, models, Data.Xs, full_cov=True, full_output_cov=True)
@@ -73,14 +99,16 @@ def check_equality_predictions(sess, models, decimal=4):
 
 
 def make_sqrt_data(rng, N, M):
+    """ Returns N choleskies of size M x M """
     return np.array([np.tril(rng.randn(M, M)) for _ in range(N)])  # N x M x M
 
 
 def expand_cov(G, W):
-    ''' G is L x M x M
-        W is L x L
-        Output is LM x LM
-    '''
+    """
+    :param G: covariance matrix, L x M x M
+    :param W: mixing matrix,  L x L
+    :return: matrix LM x LM
+    """
     L, M, _ = G.shape
     O = np.zeros((L * M, L * M))
     for l1 in range(L):
@@ -107,6 +135,9 @@ def mus_to_Mu(mu, W):
             Mu[l1 * M:(l1 + 1) * M, 0] += mu[:, l2] * W[l1, l2]
     return Mu
 
+# ------------------------------------------
+# Data classes: storing constants
+# ------------------------------------------
 
 class Data:
     N = 20
@@ -126,10 +157,10 @@ class Data:
 
 
 class DataMixedKernelWithEye(Data):
-    M = 7
-    L = 3
+    """ Note in this class L == P """
+    M, L = 7, 3
     W = np.eye(L)
-    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X, 
+    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
                    Data.X,
                    3.0 * np.cos(Data.X) - Data.X])  # N x P
 
@@ -143,6 +174,127 @@ class DataMixedKernelWithEye(Data):
     Y = np.matmul(G, W)
     Y += np.random.randn(*Y.shape) * np.ones((L,)) * 0.2
 
+
+class DataMixedKernel(Data):
+    M, L, P = 5, 2, 3
+    W = np.random.randn(P, L)
+    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
+                   3.0 * np.cos(Data.X) - Data.X])  # N x L
+
+    rng = np.random.RandomState(0)
+    mu_data = np.zeros((M, L)) #  rng.randn(M, L)  # M x L
+    mu_data = rng.randn(M, L)  # M x L
+    sqrt_data = make_sqrt_data(rng, L, M)  # L x M x M
+
+    Y = np.matmul(G, W.T)
+    Y += np.random.randn(*Y.shape) * np.ones((P,)) * 0.1
+
+# ------------------------------------------
+# Test sample conditional
+# ------------------------------------------
+
+
+@pytest.mark.parametrize("cov_structure", ["full", "diag"])
+def test_sample_mvn(session_tf, cov_structure):
+    """
+    Draws 10,000 samples from a distribution
+    with known mean and covariance. The test checks
+    if the mean and covariance of the samples is
+    close to the true mean and covariance.
+    """
+
+    N, D = 10000, 2
+    means = tf.ones((N, D), dtype=float_type)
+    if cov_structure == "full":
+        covs = tf.eye(D, batch_shape=[N], dtype=float_type)
+    elif cov_structure == "diag":
+        covs = tf.ones((N, D), dtype=float_type)
+
+    samples = _sample_mvn(means, covs, cov_structure)
+    value = session_tf.run(samples)
+    samples_mean = np.mean(value, axis=0)
+    samples_cov = np.cov(value, rowvar=False)
+    np.testing.assert_array_almost_equal(samples_mean, [1., 1.], decimal=1)
+    np.testing.assert_array_almost_equal(samples_cov, [[1., 0.], [0., 1.]], decimal=1)
+
+
+def _create_placeholder_dict(values):
+    return {name: tf.placeholder(float_type, shape=arr.shape) for name, arr in values.items()}
+
+def _create_feed_dict(placeholders_dict, value_dict):
+    return {placeholder: value_dict[name] for name, placeholder in placeholders_dict.items()}
+
+
+@pytest.mark.parametrize("whiten", [True, False])
+def test_sample_conditional(session_tf, whiten):
+    q_mu = np.random.randn(Data.M , Data.P)  # M x P
+    q_sqrt = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+    Z = Data.X[:Data.M, ...]  # M x D
+    Xs = np.ones((int(10e5), Data.D), dtype=float_type)
+
+    feature = InducingPoints(Z.copy())
+    kernel = RBF(Data.D)
+
+    values = {"Z": Z, "Xnew": Xs, "q_mu": q_mu, "q_sqrt": q_sqrt}
+    placeholders = _create_placeholder_dict(values)
+    feed_dict = _create_feed_dict(placeholders, values)
+
+    # Path 1
+    sample = sample_conditional(placeholders["Xnew"], placeholders["Z"], kernel,
+                                placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten)
+    value = session_tf.run(sample, feed_dict=feed_dict)
+
+    # Path 2
+    sample2 = sample_conditional(placeholders["Xnew"], feature, kernel,
+                                 placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten)
+    value2 = session_tf.run(sample2, feed_dict=feed_dict)
+
+    # check if mean and covariance of samples are similar
+    np.testing.assert_array_almost_equal(np.mean(value, axis=0),
+                                         np.mean(value2, axis=0), decimal=1)
+    np.testing.assert_array_almost_equal(np.cov(value, rowvar=False),
+                                         np.cov(value2, rowvar=False), decimal=1)
+
+
+def test_sample_conditional_mixedkernel(session_tf):
+    q_mu = np.random.randn(Data.M , Data.L)  # M x L
+    q_sqrt = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.L)])  # L x M x M
+    Z = Data.X[:Data.M,...]  # M x D
+    N = int(10e5)
+    Xs = np.ones((N, Data.D), dtype=float_type)
+
+
+    values = {"Xnew": Xs, "q_mu": q_mu, "q_sqrt": q_sqrt}
+    placeholders = _create_placeholder_dict(values)
+    feed_dict = _create_feed_dict(placeholders, values)
+
+    # Path 1: mixed kernel: most efficient route
+    W = np.random.randn(Data.P, Data.L)
+    mixed_kernel = mk.SeparateMixedMok([RBF(Data.D) for _ in range(Data.L)], W)
+    mixed_feature = mf.MixedKernelSharedMof(InducingPoints(Z.copy()))
+
+    sample = sample_conditional(placeholders["Xnew"], mixed_feature, mixed_kernel,
+                                placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
+    value = session_tf.run(sample, feed_dict=feed_dict)
+
+
+    # Path 2: independent kernels, mixed later
+    separate_kernel = mk.SeparateIndependentMok([RBF(Data.D) for _ in range(Data.L)])
+    shared_feature = mf.SharedIndependentMof(InducingPoints(Z.copy()))
+    sample2 = sample_conditional(placeholders["Xnew"], shared_feature, separate_kernel,
+                                 placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
+    value2 = session_tf.run(sample2, feed_dict=feed_dict)
+    value2 = np.matmul(value2, W.T)
+    # check if mean and covariance of samples are similar
+    np.testing.assert_array_almost_equal(np.mean(value, axis=0),
+                                         np.mean(value2, axis=0), decimal=1)
+    np.testing.assert_array_almost_equal(np.cov(value, rowvar=False),
+                                         np.cov(value2, rowvar=False), decimal=1)
+
+
+# ------------------------------------------
+# Integration tests
+# ------------------------------------------
 
 
 def test_shared_independent_mok(session_tf):
@@ -281,5 +433,20 @@ def test_mixed_mok_with_Id_vs_independent_mok(session_tf):
     m2.set_trainable(False)
     m2.q_sqrt.set_trainable(True)
     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=DataMixedKernelWithEye.MAXITER)
+
+    check_equality_predictions(session_tf, [m1, m2])
+
+def test_compare_mixed_kernel(session_tf):
+    data = DataMixedKernel
+
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f2 = mf.MixedKernelSharedMof(InducingPoints(data.X[:data.M,...].copy()))
+    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(session_tf, [m1, m2])
