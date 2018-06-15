@@ -86,7 +86,7 @@ def check_equality_predictions(sess, models, decimal=4):
     # Here we check that the variance in different categories are equal
     # after transforming to the right shape.
     var_tt = vars_tt[0]  # N x P x N x P
-    var_tf = vars_tf[0]  # P x N x N
+    var_tf = vars_tf[0]  # P x N x c
     var_ft = vars_ft[0]  # N x P x P
     var_ff = vars_ff[0]  # N x P
 
@@ -96,11 +96,6 @@ def check_equality_predictions(sess, models, decimal=4):
                                    np.transpose(var_ft, [1, 2, 0]), decimal=decimal)
     np.testing.assert_almost_equal(np.diagonal(np.diagonal(var_tt, axis1=0, axis2=2)),
                                    var_ff, decimal=decimal)
-
-
-def make_sqrt_data(rng, N, M):
-    """ Returns N choleskies of size M x M """
-    return np.array([np.tril(rng.randn(M, M)) for _ in range(N)])  # N x M x M
 
 
 def expand_cov(G, W):
@@ -118,10 +113,11 @@ def expand_cov(G, W):
 
 
 def q_sqrts_to_Q_sqrt(q_sqrt, W):
-    ''' G is L x M x M
-        W is L x L
-        Output is LM x LM
-    '''
+    """
+    :parma q_sqrt: array of L covariance cholesky's L x M x M
+    :param W: square mixing matrix, L x L
+    :return: LM x LM
+    """
     cov = np.matmul(q_sqrt, q_sqrt.transpose(0, 2, 1))
     Cov = expand_cov(cov, W)
     return np.linalg.cholesky(Cov)
@@ -165,9 +161,8 @@ class DataMixedKernelWithEye(Data):
                    Data.X,
                    3.0 * np.cos(Data.X) - Data.X])  # N x P
 
-    rng = np.random.RandomState(0)
-    mu_data = rng.randn(M, L)  # M x L
-    sqrt_data = make_sqrt_data(rng, L, M)  # L x M x M
+    mu_data = np.random.randn(M, L)  # M x L
+    sqrt_data = np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])  # L x M x M
 
     mu_data_full = mus_to_Mu(mu_data, W)  # 1 x ML
     sqrt_data_full = q_sqrts_to_Q_sqrt(sqrt_data, W)  # 1 x LM x LM
@@ -182,10 +177,8 @@ class DataMixedKernel(Data):
     G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
                    3.0 * np.cos(Data.X) - Data.X])  # N x L
 
-    rng = np.random.RandomState(0)
-    mu_data = np.zeros((M, L)) #  rng.randn(M, L)  # M x L
-    mu_data = rng.randn(M, L)  # M x L
-    sqrt_data = make_sqrt_data(rng, L, M)  # L x M x M
+    mu_data = np.random.randn(M, L)  # M x L
+    sqrt_data = np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])  # L x M x M
 
     Y = np.matmul(G, W.T)
     Y += np.random.randn(*Y.shape) * np.ones((P,)) * 0.1
@@ -292,6 +285,23 @@ def test_sample_conditional_mixedkernel(session_tf):
     np.testing.assert_array_almost_equal(np.cov(value, rowvar=False),
                                          np.cov(value2, rowvar=False), decimal=1)
 
+# ------------------------------------------
+# Test Mixed Mok Kgg
+# ------------------------------------------
+
+def test_MixedMok_Kgg():
+    data = DataMixedKernel
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    kern = mk.SeparateMixedMok(kern_list, W=data.W)
+
+    Kgg = kern.compute_Kgg(Data.X, Data.X)  # L x N x N
+    Kff = kern.compute_K(Data.X, Data.X)  # N x P x N x P
+
+    # Kff = W @ Kgg @ W^T
+    Kff_infered = np.einsum("lnm,pl,ql->npmq", Kgg, data.W, data.W)
+
+    np.testing.assert_array_almost_equal(Kff, Kff_infered, decimal=5)
+
 
 # ------------------------------------------
 # Integration tests
@@ -346,7 +356,7 @@ def test_shared_independent_mok(session_tf):
 
 
 
-def test_seperate_independent_mok(session_tf):
+def test_separate_independent_mok(session_tf):
     """
     We use different independent kernels for each of the output dimensions.
     We can achieve this in two ways:
@@ -382,7 +392,7 @@ def test_seperate_independent_mok(session_tf):
     check_equality_predictions(session_tf, [m1, m2])
 
 
-def test_seperate_independent_mof(session_tf):
+def test_separate_independent_mof(session_tf):
     """
     Same test as above but we use different (i.e. separate) inducing features
     for each of the output dimensions.
@@ -412,28 +422,43 @@ def test_seperate_independent_mof(session_tf):
     m2.q_mu.set_trainable(True)
     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
-    check_equality_predictions(session_tf, [m1, m2])
+    # Model 3 (efficient)
+    q_mu_3 = np.random.randn(Data.M, Data.P)
+    q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+    kern_list = [RBF(Data.D, variance=0.5, lengthscales=1.2)  for _ in range(Data.P)]
+    kernel_3 = mk.SeparateIndependentMok(kern_list)
+    feat_list_3 = [InducingPoints(Data.X[:Data.M, ...].copy()) for _ in range(Data.P)]
+    feature_3 = mf.SeparateIndependentMof(feat_list_3)
+    m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
+    m3.set_trainable(False)
+    m3.q_sqrt.set_trainable(True)
+    m3.q_mu.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
+
+
+    check_equality_predictions(session_tf, [m1, m2, m3])
 
 
 def test_mixed_mok_with_Id_vs_independent_mok(session_tf):
+    data = DataMixedKernelWithEye
     # Independent model
-    k1 = mk.SharedIndependentMok(RBF(DataMixedKernelWithEye.D, variance=0.5, lengthscales=1.2), DataMixedKernelWithEye.L)
-    f1 = InducingPoints(DataMixedKernelWithEye.X[:DataMixedKernelWithEye.M, ...].copy())
-    m1 = SVGP(DataMixedKernelWithEye.X, DataMixedKernelWithEye.Y, k1, Gaussian(), f1,
-              q_mu=DataMixedKernelWithEye.mu_data_full, q_sqrt=DataMixedKernelWithEye.sqrt_data_full)
+    k1 = mk.SharedIndependentMok(RBF(data.D, variance=0.5, lengthscales=1.2), data.L)
+    f1 = InducingPoints(data.X[:data.M, ...].copy())
+    m1 = SVGP(data.X, data.Y, k1, Gaussian(), f1,
+              q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
     m1.set_trainable(False)
     m1.q_sqrt.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=DataMixedKernelWithEye.MAXITER)
+    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=data.MAXITER)
 
     # Mixed Model
-    kern_list = [RBF(DataMixedKernelWithEye.D, variance=0.5, lengthscales=1.2) for _ in range(DataMixedKernelWithEye.L)]
-    k2 = mk.SeparateMixedMok(kern_list, DataMixedKernelWithEye.W)
-    f2 = InducingPoints(DataMixedKernelWithEye.X[:DataMixedKernelWithEye.M, ...].copy())
-    m2 = SVGP(DataMixedKernelWithEye.X, DataMixedKernelWithEye.Y, k2, Gaussian(), f2,
-              q_mu=DataMixedKernelWithEye.mu_data_full, q_sqrt=DataMixedKernelWithEye.sqrt_data_full)
+    kern_list = [RBF(data.D, variance=0.5, lengthscales=1.2) for _ in range(data.L)]
+    k2 = mk.SeparateMixedMok(kern_list, data.W)
+    f2 = InducingPoints(data.X[:data.M, ...].copy())
+    m2 = SVGP(data.X, data.Y, k2, Gaussian(), f2,
+              q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
     m2.set_trainable(False)
     m2.q_sqrt.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=DataMixedKernelWithEye.MAXITER)
+    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=data.MAXITER)
 
     check_equality_predictions(session_tf, [m1, m2])
 
@@ -452,3 +477,9 @@ def test_compare_mixed_kernel(session_tf):
     m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(session_tf, [m1, m2])
+
+
+
+
+if __name__ == "__main__":
+    test_MixedMok_Kgg()

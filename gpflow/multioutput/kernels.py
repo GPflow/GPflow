@@ -49,7 +49,7 @@ class Mok(Kernel):
         - N1 x P x N2 x P if `full_output_cov` = True
         - P x N1 x N2 if `full_output_cov` = False
         """
-        raise NotImplemented
+        raise NotImplemented  # pragma: no cover
 
     def Kdiag(self, X, full_output_cov=True):
         """
@@ -60,7 +60,7 @@ class Mok(Kernel):
         - N x P x N x P if `full_output_cov` = True
         - N x P if `full_output_cov` = False
         """
-        raise NotImplemented
+        raise NotImplemented  # pragma: no cover
 
 class SharedIndependentMok(Mok):
     """

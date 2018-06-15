@@ -334,7 +334,7 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         if q_sqrt.shape.ndims == 3:
             LTA = tf.matmul(Lf, A, transpose_a=True)  # L x M x M  *  L x M x NP  ->  L x M x NP
         else:
-            raise NotImplementedError()
+            raise NotImplementedError()  # pragma: no cover
 
         if full_cov and full_output_cov:
             LTAr = tf.reshape(LTA, (L * M, N * P))
@@ -420,8 +420,8 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # M x NK
-        raise NotImplementedError("Need to verify this.")
+        # A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # M x NK
+        raise NotImplementedError("Need to verify this.")  # pragma: no cover
 
     # f: M x R
     fmean = tf.matmul(f, A, transpose_a=True)  # R x M  *  M x NK  ->  R x NK
@@ -432,7 +432,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         if q_sqrt.get_shape().ndims == 3:
             A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # R x M x NK
             LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x M x NK
-        elif q_sqrt.get_shape().ndims == 2:
+        elif q_sqrt.get_shape().ndims == 2:  # pragma: no cover
             raise NotImplementedError("Does not support diagonal q_sqrt yet...")
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
