@@ -86,7 +86,7 @@ class SVGP(GPModel):
         # init variational parameters
         num_inducing = len(self.feature)
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
-    
+
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
         """
         TODO(VD): explain
@@ -96,8 +96,8 @@ class SVGP(GPModel):
 
         if q_sqrt is None:
             if self.q_diag:
-                self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.float_type), 
-                                        transforms.positive)  # M x P
+                self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.float_type),
+                                        transform=transforms.positive)  # M x P
             else:
                 q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type) for _ in range(self.num_latent)])
                 self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # P x M x M

@@ -18,8 +18,8 @@ from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelS
 from .features import Kuu, Kuf
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .. import settings
-from ..conditionals import base_conditional, _expand_independent_outputs, sample_mvn
-from ..decors import name_scope
+from ..conditionals import base_conditional, _expand_independent_outputs, _sample_mvn
+from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
@@ -272,8 +272,9 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
                                    full_output_cov=False, full_cov=False)  # N x L, N x L
-    g_sample = sample_mvn(g_mu, g_var, "diag")  # N x L
-    f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
+    g_sample = _sample_mvn(g_mu, g_var, "diag")  # N x L
+    with params_as_tensors_for(kern):
+        f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
     return f_sample
 
 
@@ -292,7 +293,7 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     :param Knn: N x P  or  N x N  or  P x N x N  or  N x P x N x P
     :param f: data matrix, M x L
     :param q_sqrt: L x M x M  or  M x L
-    :param full_cov: calculate covariance between inputs 
+    :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
@@ -326,14 +327,14 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         A = tf.matrix_triangular_solve(Lm, Ar)  # L x M x M  *  L x M x NP  ->  L x M x NP
         Ar = tf.reshape(A, (L, M, N, P))
 
-    fmean = tf.tensordot(Ar, f, [[0, 1], [0, 1]])  # N x P
+    fmean = tf.tensordot(Ar, f, [[1, 0], [0, 1]])  # N x P
 
     if q_sqrt is not None:
         Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # L x M x M
         if q_sqrt.shape.ndims == 3:
             LTA = tf.matmul(Lf, A, transpose_a=True)  # L x M x M  *  L x M x NP  ->  L x M x NP
         else:
-            raise NotImplementedError()
+            raise NotImplementedError()  # pragma: no cover
 
         if full_cov and full_output_cov:
             LTAr = tf.reshape(LTA, (L * M, N * P))
@@ -358,7 +359,7 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_outpu
     :param Knn: N x P or N x P x N x P
     :param f: data matrix, LM x 1
     :param q_sqrt: 1 x LM x LM  or 1 x ML
-    :param full_cov: calculate covariance between inputs 
+    :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
@@ -383,7 +384,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     :param Knn: N x P or N x P x N x P
     :param f: data matrix, LM x R
     :param q_sqrt: R x LM x LM  or R x ML
-    :param full_cov: calculate covariance between inputs 
+    :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
     :return:
@@ -419,8 +420,8 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # M x NK
-        raise NotImplementedError("Need to verify this.")
+        # A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # M x NK
+        raise NotImplementedError("Need to verify this.")  # pragma: no cover
 
     # f: M x R
     fmean = tf.matmul(f, A, transpose_a=True)  # R x M  *  M x NK  ->  R x NK
@@ -431,7 +432,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         if q_sqrt.get_shape().ndims == 3:
             A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # R x M x NK
             LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x M x NK
-        elif q_sqrt.get_shape().ndims == 2:
+        elif q_sqrt.get_shape().ndims == 2:  # pragma: no cover
             raise NotImplementedError("Does not support diagonal q_sqrt yet...")
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
