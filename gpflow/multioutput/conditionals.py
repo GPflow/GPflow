@@ -18,8 +18,8 @@ from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelS
 from .features import Kuu, Kuf
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .. import settings
-from ..conditionals import base_conditional, _expand_independent_outputs, sample_mvn
-from ..decors import name_scope
+from ..conditionals import base_conditional, _expand_independent_outputs, _sample_mvn
+from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
@@ -272,8 +272,9 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
                                    full_output_cov=False, full_cov=False)  # N x L, N x L
-    g_sample = sample_mvn(g_mu, g_var, "diag")  # N x L
-    f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
+    g_sample = _sample_mvn(g_mu, g_var, "diag")  # N x L
+    with params_as_tensors_for(kern):
+        f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
     return f_sample
 
 

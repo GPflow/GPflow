@@ -12,10 +12,10 @@ from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
 from gpflow.test_util import session_tf
 from gpflow.training import ScipyOptimizer
+from gpflow.conditionals import _sample_mvn, sample_conditional
 
 float_type = gpflow.settings.float_type
 np.random.seed(1)
-
 
 # ------------------------------------------
 # Helpers
@@ -134,6 +134,7 @@ def mus_to_Mu(mu, W):
         for l2 in range(L):
             Mu[l1 * M:(l1 + 1) * M, 0] += mu[:, l2] * W[l1, l2]
     return Mu
+
 
 # ------------------------------------------
 # Data classes: storing constants
@@ -435,6 +436,7 @@ def test_mixed_mok_with_Id_vs_independent_mok(session_tf):
     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=DataMixedKernelWithEye.MAXITER)
 
     check_equality_predictions(session_tf, [m1, m2])
+
 
 def test_compare_mixed_kernel(session_tf):
     data = DataMixedKernel

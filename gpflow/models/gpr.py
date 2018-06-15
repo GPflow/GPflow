@@ -85,3 +85,4 @@ class GPR(GPModel):
         Knn = self.kern.K(Xnew) if full_cov else self.kern.Kdiag(Xnew)
         f_mean, f_var = base_conditional(Kmn, Kmm_sigma, Knn, y, full_cov=full_cov, white=False)  # N x P, N x P or P x N x N
         return f_mean + self.mean_function(Xnew), f_var
+
