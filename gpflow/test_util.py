@@ -111,7 +111,7 @@ class GPflowTestCase(tf.test.TestCase):
 
 
 def is_continuous_integration():  # pragma: no cover
-    ci = os.environ.get('CI')
+    ci = os.environ.get('CI').lower()
     return (ci == 'true') or (ci == '1')
 
 
