@@ -39,7 +39,7 @@ class NatGradOptimizer(optimizer.Optimizer):
         return self._natgrad_op
 
     def minimize(self, model, var_list=None, session=None, feed_dict=None,
-                 maxiter=1000, anchor=True, **kwargs):
+                 maxiter=1000, anchor=True, step_callback=None, **kwargs):
         """
         Minimizes objective function of the model.
         Natural Gradient optimizer works with variational parameters only.
@@ -65,6 +65,8 @@ class NatGradOptimizer(optimizer.Optimizer):
             :param maxiter: Number of run interation. Default value: 1000.
             :param anchor: Synchronize updated parameters for a session with internal
                 parameter's values.
+            :param step_callback: A callback function to execute at each optimization step,
+                supplied with the current value of the packed variable vector.
             :param kwargs: Extra parameters passed to session run's method.
         """
 
@@ -76,10 +78,11 @@ class NatGradOptimizer(optimizer.Optimizer):
         opt = self.make_optimize_action(model, session=session, var_list=var_list, **kwargs)
         with session.as_default():
             for _i in range(maxiter):
-                opt()
+                result = opt()
+                if step_callback is not None:
+                    step_callback(result)
         if anchor:
             model.anchor(session)
-    
 
     def make_optimize_tensor(self, model, session=None, var_list=None):
         """

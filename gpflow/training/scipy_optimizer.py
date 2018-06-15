@@ -25,7 +25,6 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._optimizer_kwargs = kwargs
         self._optimizer = None
         self._model = None
-    
 
     def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
         """
@@ -54,8 +53,8 @@ class ScipyOptimizer(optimizer.Optimizer):
             model.initialize(session=session)
             return optimizer
 
-    def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, disp=False, initialize=False, anchor=True, **kwargs):
+    def minimize(self, model, session=None, var_list=None, feed_dict=None, maxiter=1000,
+                 disp=False, initialize=False, anchor=True, step_callback=None, **kwargs):
         """
         Minimizes objective function of the model.
 
@@ -63,6 +62,9 @@ class ScipyOptimizer(optimizer.Optimizer):
         :param session: Session where optimization will be run.
         :param var_list: List of extra variables which should be trained during optimization.
         :param feed_dict: Feed dictionary of tensors passed to session run method.
+        :param step_callback: A function to be called at each optimization step;
+            arguments are the current values of all optimization variables
+            flattened into a single vector.
         :param maxiter: Number of run interation. Note: scipy optimizer can do early stopping
             if model converged.
         :param disp: ScipyOptimizer option. Set to True to print convergence messages.
@@ -84,7 +86,8 @@ class ScipyOptimizer(optimizer.Optimizer):
             var_list=var_list, maxiter=maxiter, disp=disp)
         self._optimizer = optimizer
         feed_dict = self._gen_feed_dict(model, feed_dict)
-        optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
+        optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback,
+                           **kwargs)
         if anchor:
             model.anchor(session)
 
