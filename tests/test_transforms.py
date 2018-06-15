@@ -241,6 +241,17 @@ class TestMatrixTransforms(GPflowTestCase):
         with self.assertRaises(ValueError):
             gpflow.transforms.LowerTriangular(N=3, num_matrices=2, squeeze=True)
 
+    def test_vec_to_tri_unknown_shape(self):
+        t = gpflow.transforms.LowerTriangular(2, 8)
+        M = np.random.randn(8, 2, 2) * np.tri(2, 2)[None, :, :]
+        M_free = t.backward(M)
+
+        with self.test_context() as session:
+            M_free_p = tf.placeholder(settings.float_type, shape=[None, 3])
+            M_tf_tensor = gpflow.misc.vec_to_tri(M_free_p, 2)
+
+            M_tf = session.run(M_tf_tensor, feed_dict={M_free_p: M_free})
+            assert_allclose(M, M_tf)
 
     def test_DiagMatrix(self):
         t = gpflow.transforms.DiagMatrix(3)
