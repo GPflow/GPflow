@@ -151,7 +151,7 @@ def test_shared_independent_mok(session_tf):
     for each of the outputs. The outputs are considered to be uncorrelated.
     This is how GPflow handled multiple outputs before the multioutput framework was added.
     We compare three models here:
-        1) an inefffient one, where we use a SharedIndepedentMok with InducingPoints.
+        1) an ineffient one, where we use a SharedIndepedentMok with InducingPoints.
            This combination will uses a Kff of size N x P x N x P, Kfu if size N x P x M x P
            which is extremely inefficient as most of the elements are zero.
         2) efficient: SharedIndependentMok and SharedIndependentMof
