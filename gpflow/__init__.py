@@ -51,5 +51,8 @@ from .params import ParamList
 from .params import DataHolder
 from .params import Minibatch
 from .params import Parameterized
+
 from .saver import Saver
 from .saver import SaverContext
+
+from . import multioutput

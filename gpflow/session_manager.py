@@ -21,6 +21,9 @@ from tensorflow.python.client import timeline
 from . import settings
 
 
+logger = settings.logger()
+
+
 class _DefaultSessionKeeper:
     session = None
 
@@ -33,8 +36,7 @@ class TracerSession(tf.Session):
         self.each_time = each_time
         self.local_run_metadata = None
         if self.each_time:
-            warnings.warn("Outputting a trace for each run. "
-                          "May result in large disk usage.")
+            logger.warn("Outputting a trace for each run. May result in large disk usage.")
 
         super(TracerSession, self).__init__(**kwargs)
         self.counter = 0
