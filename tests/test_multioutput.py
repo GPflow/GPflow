@@ -275,7 +275,7 @@ def test_sample_conditional_mixedkernel(session_tf):
 # Test Mixed Mok Kgg
 # ------------------------------------------
 
-def test_MixedMok_Kgg():
+def test_MixedMok_Kgg(session_tf):
     data = DataMixedKernel
     kern_list = [RBF(data.D) for _ in range(data.L)]
     kern = mk.SeparateMixedMok(kern_list, W=data.W)
