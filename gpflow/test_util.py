@@ -13,6 +13,10 @@
 # limitations under the License.
 
 
+# pragma: no cover
+# pylint: skip-file
+
+
 import functools
 import contextlib
 import tensorflow as tf

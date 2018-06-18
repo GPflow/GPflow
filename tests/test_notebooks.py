@@ -38,6 +38,7 @@ NOTEBOOK_FILES = [
     "models.ipynb",
     "multiclass.ipynb",
     "classification.ipynb",
+    "multioutput.ipynb",
     "monitor-tensorboard.ipynb",
     "FITCvsVFE.ipynb",
     "natural_gradients.ipynb",
