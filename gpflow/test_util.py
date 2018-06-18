@@ -13,6 +13,10 @@
 # limitations under the License.
 
 
+# pragma: no cover
+# pylint: skip-file
+
+
 import functools
 import contextlib
 import tensorflow as tf
@@ -109,12 +113,12 @@ class GPflowTestCase(tf.test.TestCase):
         with graph.as_default(), self.test_session(graph=graph) as session:
             yield session
 
-def is_continuous_integration():  # pragma: no cover
+def is_continuous_integration():
     ci = os.environ.get('CI')
     return (ci == 'true') or (ci == '1')
 
-def notebook_niter(n, test_n=1):  # pragma: no cover
+def notebook_niter(n, test_n=1):
     return test_n if is_continuous_integration() else n
 
-def notebook_range(n, test_n=1):  # pragma: no cover
+def notebook_range(n, test_n=1):
     return range(notebook_niter(n, test_n))

@@ -17,6 +17,7 @@ import tensorflow as tf
 from .. import settings
 from ..dispatch import dispatch
 from ..features import InducingPoints, InducingFeature, Kuu, Kuf
+from ..decors import params_as_tensors_for
 from ..params import ParamList
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 
@@ -110,7 +111,8 @@ def Kuf(feat, kern, Xnew):
     debug_kuf(feat, kern)
     kuf_impl = Kuf.dispatch(type(feat), SeparateIndependentMok, object)
     K = tf.transpose(kuf_impl(feat, kern, Xnew), [1, 0, 2])  # M x L x N
-    return K[:, :, :, None] * tf.transpose(kern.W)[None, :, None, :]  # M x L x N x P
+    with params_as_tensors_for(kern):
+        return K[:, :, :, None] * tf.transpose(kern.W)[None, :, None, :]  # M x L x N x P
 
 
 @dispatch(MixedKernelSharedMof, SeparateMixedMok, object)

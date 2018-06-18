@@ -408,7 +408,7 @@ def test_separate_independent_mof(session_tf):
     m2.q_mu.set_trainable(True)
     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
-    # Model 3 (INefficient): an idenitical feature is used P times,
+    # Model 3 (Inefficient): an idenitical feature is used P times,
     # and treated as a separate feature.
     q_mu_3 = np.random.randn(Data.M, Data.P)
     q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
