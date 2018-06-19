@@ -43,12 +43,12 @@ NOTEBOOK_FILES = [
     "FITCvsVFE.ipynb",
     "natural_gradients.ipynb",
     "upper_bound.ipynb",
+    "GPLVM.ipynb",
+    "regression.ipynb",
 ]
 
 BLACKLISTED_NOTEBOOKS = [
     "svi_test.ipynb",
-    "GPLVM.ipynb",
-    "regression.ipynb",
 ]
 
 
