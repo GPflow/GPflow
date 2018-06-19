@@ -13,10 +13,15 @@
 # limitations under the License.
 
 
+# pragma: no cover
+# pylint: skip-file
+
+
 import functools
 import contextlib
 import tensorflow as tf
 import pytest
+import os
 
 
 @pytest.fixture
@@ -27,7 +32,8 @@ def session_tf():
     ```
     def test_simple(session_tf):
         tensor = tf.constant(1.0)
-        ... do something
+        result = session_tf.run(tensor)
+        # ...
     ```
 
     In example above the test_simple is wrapped within graph and session created
@@ -106,3 +112,18 @@ class GPflowTestCase(tf.test.TestCase):
         graph = self.test_graph if graph is None else graph
         with graph.as_default(), self.test_session(graph=graph) as session:
             yield session
+
+
+def is_continuous_integration():
+    ci = os.environ.get('CI', '').lower()
+    return (ci == 'true') or (ci == '1')
+
+
+def notebook_niter(n, test_n=2):
+    return test_n if is_continuous_integration() else n
+
+def notebook_range(n, test_n=2):
+    return range(notebook_niter(n, test_n))
+
+def notebook_list(lst, test_n=2):
+    return lst[:test_n] if is_continuous_integration() else lst
