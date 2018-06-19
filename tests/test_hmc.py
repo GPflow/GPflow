@@ -17,7 +17,7 @@ import tensorflow as tf
 
 
 import numpy as np
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_almost_equal, assert_allclose
 
 import gpflow
 from gpflow.test_util import GPflowTestCase
@@ -145,6 +145,10 @@ class SampleModelTest(GPflowTestCase):
             self.assertEqual(xs.shape, (400, 2))
             assert_almost_equal(xs.mean(0), np.zeros(2), decimal=1)
 
+            llh = [m.compute_log_likelihood(feed_dict=m.sample_feed_dict(s))
+                   for i, s in samples.iterrows()]
+            assert_allclose(llh, - (xs**2).sum(1), atol=1e-6)
+
 
 class CheckTrainingVariableState(GPflowTestCase):
     def model(self):
@@ -175,7 +179,7 @@ class CheckTrainingVariableState(GPflowTestCase):
         with self.test_context():
             m = self.model()
             hmc = gpflow.train.HMC()
-            for n in range(1, 3):
+            for n in [1, 2]:
                 samples = hmc.sample(m, num_samples=n, lmax=10, epsilon=0.05)
                 self.check_last_variables_state(m, samples)
 
