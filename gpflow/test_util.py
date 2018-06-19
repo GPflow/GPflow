@@ -119,11 +119,11 @@ def is_continuous_integration():  # pragma: no cover
     return (ci == 'true') or (ci == '1')
 
 
-def nb_niter(n, test_n=2):  # pragma: no cover
+def notebook_niter(n, test_n=2):  # pragma: no cover
     return test_n if is_continuous_integration() else n
 
-def nb_range(n, test_n=2):  # pragma: no cover
-    return range(nb_niter(n, test_n))
+def notebook_range(n, test_n=2):  # pragma: no cover
+    return range(notebook_niter(n, test_n))
 
-def nb_list(lst, test_n=2):  # pragma: no cover
+def notebook_list(lst, test_n=2):  # pragma: no cover
     return lst[:test_n] if is_continuous_integration() else lst
