@@ -91,6 +91,11 @@ def reset_default_session(*args, **kwargs):
     _DefaultSessionKeeper.session = get_session(*args, **kwargs)
 
 
+def reset_default_graph_and_session(*args, **kwargs):
+    tf.reset_default_graph()
+    reset_default_session(*args, **kwargs)
+
+
 def get_default_session(*args, **kwargs):
     reset = kwargs.pop('reset', False)
     if reset or _DefaultSessionKeeper.session is None:
