@@ -38,18 +38,30 @@ NOTEBOOK_FILES = [
     "models.ipynb",
     "multiclass.ipynb",
     "classification.ipynb",
-    "monitor-tensorboard.ipynb"
-    # Blacklist:
-    #   "FITCvsVFE.ipynb",
-    #   "svi.ipynb",
-    #   "GPLVM.ipynb",
-    #   "regression.ipynb"
+    "multioutput.ipynb",
+    "monitor-tensorboard.ipynb",
+    "FITCvsVFE.ipynb",
+    "natural_gradients.ipynb",
+    "upper_bound.ipynb",
+    "GPLVM.ipynb",
+    "regression.ipynb",
+    "svi_test.ipynb",
+]
+
+BLACKLISTED_NOTEBOOKS = [
 ]
 
 
 @pytest.mark.parametrize('notebook_file', NOTEBOOK_FILES)
 def test_notebook(notebook_file):
     _exec_notebook_ts(notebook_file)
+
+
+def test_no_notebook_missing():
+    import glob
+    all_notebooks = glob.glob(os.path.join(_nbpath(), '*.ipynb'))
+    actual_notebook_files = set(map(os.path.basename, all_notebooks))
+    assert set(NOTEBOOK_FILES) == actual_notebook_files - set(BLACKLISTED_NOTEBOOKS)
 
 
 def _nbpath():
