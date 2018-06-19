@@ -45,10 +45,10 @@ NOTEBOOK_FILES = [
     "upper_bound.ipynb",
     "GPLVM.ipynb",
     "regression.ipynb",
+    "svi_test.ipynb",
 ]
 
 BLACKLISTED_NOTEBOOKS = [
-    "svi_test.ipynb",
 ]
 
 
