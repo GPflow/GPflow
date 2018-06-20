@@ -19,22 +19,18 @@ from collections import namedtuple
 import tempfile
 import pathlib
 
-import numpy as np
-import tensorflow as tf
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-
 import gpflow
 import gpflow.actions
-import gpflow.training.monitor as mon
+import gpflow.training.monitor.monitor as mon
 from gpflow.test_util import session_context
+import numpy as np
+import tensorflow as tf
 
 
 class _DummyMonitorTask(mon.MonitorTask):
 
     def __init__(self):
-        super().__init__(True)
+        super().__init__()
         self.call_count = 0
 
     def run(self, context: mon.MonitorContext, *args, **kwargs):
@@ -67,14 +63,13 @@ class DummyLinearModel(gpflow.models.Model):
 
 class TestMonitor(TestCase):
 
-    @mock.patch('gpflow.training.monitor.get_hr_time')
+    @mock.patch('gpflow.training.monitor.monitor.get_hr_time')
     def test_on_iteration_timing(self, mock_timer):
         """
         Tests how the Monitor keeps track of the total running time and total optimisation time.
         """
         mock_timer.side_effect = [1.0, 3.5, 4.0, 6.0, 7.0]
-        context = mon.MonitorContext()
-        monitor = mon.Monitor([], context=context)
+        monitor = mon.Monitor([])
         # In each call to the _on_iteration the timer is called twice - at the beginning and at
         # the end of the call.
         monitor._on_iteration()
@@ -87,7 +82,7 @@ class TestMonitor(TestCase):
 
 class TestMonitorTask(TestCase):
 
-    @mock.patch('gpflow.training.monitor.get_hr_time')
+    @mock.patch('gpflow.training.monitor.monitor.get_hr_time')
     def test_call_timing(self, mock_timer):
         """
         Test how a monitoring task keeps track of the last execution time and accumulated execution
@@ -147,21 +142,6 @@ class TestGenericCondition(TestCase):
             self.assertEqual(condition(monitor_context), expected_result)
 
 
-class TestPeriodicIterationCondition(TestCase):
-
-    def test_condition(self):
-        """
-        Tests periodic condition based on the iteration number
-        """
-        monitor_context = mon.MonitorContext()
-        condition = mon.PeriodicIterationCondition(5)
-        count = 0
-        for monitor_context.iteration_no in range(37):
-            if condition(monitor_context):
-                count += 1
-        self.assertEqual(count, 7)
-
-
 class TestGrowingIntervalCondition(TestCase):
 
     def test_sequence(self):
@@ -214,30 +194,6 @@ class TestPrintTimingsTask(TestCase):
             monitor_task(monitor_context)
             args = monitor_task._print_timings.call_args_list[1][0]
             self.assertTupleEqual(args, (24, 196, 0.8, 1.4, 4.0, 5.75))
-
-
-class TestCallbackTask(TestCase):
-
-    def test_callback(self):
-
-        callback = mock.MagicMock()
-        monitor_task = mon.CallbackTask(callback)
-        monitor_task(mon.MonitorContext())
-        self.assertEqual(callback.call_count, 1)
-
-
-class TestSleepTask(TestCase):
-
-    def test_sleep_lower_bound(self):
-        """
-        Test that the sleep task breaks the execution for at least the required period of time
-        (up to certain precision).
-        """
-        monitor_task = mon.SleepTask(0.2)
-        start_time = mon.get_hr_time()
-        monitor_task(mon.MonitorContext())
-        elapsed = mon.get_hr_time() - start_time
-        self.assertGreater(elapsed, 0.1)
 
 
 class TestCheckpointTask(TestCase):
@@ -298,68 +254,9 @@ class TestCheckpointTask(TestCase):
         return dummy_var
 
 
-class TestLogdirWriter(TestCase):
+class TestsStandardTensorBoardTask(TestCase):
 
-    def test_create_no_error(self):
-        """
-        Tests that it is possible to create multiple LogdirWriters so long as they write to
-        different directories or have different file suffixes.
-        """
-        with tempfile.TemporaryDirectory() as tmp_dir1, tempfile.TemporaryDirectory() as tmp_dir2:
-            writer1 = mon.LogdirWriter(tmp_dir1)
-            writer2 = mon.LogdirWriter(tmp_dir2)
-            writer3 = mon.LogdirWriter(tmp_dir2, filename_suffix='suffix')
-            writer1.close()
-            writer2.close()
-            writer3.close()
-
-    def test_reuse_location_no_error(self):
-        """
-        Tests that it is possible to reuse the location if the original writer is closed.
-        """
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            writer = mon.LogdirWriter(tmp_dir)
-            writer.close()
-            writer = mon.LogdirWriter(tmp_dir)
-            writer.close()
-
-    def test_reopen_writer_no_error(self):
-        """
-        Tests that it is possible to close and then reopen a writer if its location has not
-        been taken by another writer.
-        """
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            writer = mon.LogdirWriter(tmp_dir)
-            writer.close()
-            writer.reopen()
-            writer.close()
-
-    def test_create_error(self):
-        """
-        Tests that an attempt to create two writers with the same location causes an error.
-        """
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            _ = mon.LogdirWriter(tmp_dir, filename_suffix='suffix')
-            with self.assertRaises(RuntimeError):
-                _ = mon.LogdirWriter(tmp_dir, filename_suffix='suffix')
-
-    def test_reopen_error(self):
-        """
-        Tests that an attempt to reopen a writer causes an error if the writer's location has
-        been taken by another writer.
-        """
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            writer = mon.LogdirWriter(tmp_dir, filename_suffix='suffix')
-            writer.close()
-            _ = mon.LogdirWriter(tmp_dir, filename_suffix='suffix')
-            with self.assertRaises(RuntimeError):
-                writer.reopen()
-
-
-class TestModelToTensorBoardTask(TestCase):
-
-    def test_std_tensorboard_only_scalars(self):
+    def test_tensorboard_only_scalars(self):
         """
         Tests the standard tensorboard task with scalar parameters only
         """
@@ -367,8 +264,8 @@ class TestModelToTensorBoardTask(TestCase):
         with session_context(tf.Graph()):
             model = create_linear_model()
 
-            def task_factory(writer: mon.LogdirWriter):
-                return mon.ModelToTensorBoardTask(writer, model, only_scalars=True)
+            def task_factory(event_dir: str):
+                return mon.StandardTensorBoardTask(model, event_dir, only_scalars=True)
 
             summary = run_tensorboard_task(task_factory)
             self.assertAlmostEqual(summary['DummyLinearModel/b'].simple_value, float(model.b.value))
@@ -378,22 +275,23 @@ class TestModelToTensorBoardTask(TestCase):
                                    model.compute_log_likelihood(), places=5)
             self.assertNotIn('DummyLinearModel/w', summary.keys())
 
-    def test_std_tensorboard_all_parameters(self):
+    def test_tensorboard_all_parameters(self):
         """
         Tests the standard tensorboard task with all parameters and extra summaries
         """
+
         with session_context(tf.Graph()):
             model = create_linear_model()
 
-            def task_factory(writer: mon.LogdirWriter):
+            def task_factory(event_dir: str):
                 # create 2 extra summaries
                 dummy_vars = [tf.Variable(5.0), tf.Variable(6.0)]
                 dummy_vars_init = tf.variables_initializer(dummy_vars)
                 model.enquire_session().run(dummy_vars_init)
                 add_summaries = [tf.summary.scalar('dummy' + str(i), dummy_var)
                                  for i, dummy_var in enumerate(dummy_vars)]
-                return mon.ModelToTensorBoardTask(writer, model, only_scalars=False,
-                                                  additional_summaries=add_summaries)
+                return mon.StandardTensorBoardTask(model, event_dir, only_scalars=False,
+                                                   additional_summaries=add_summaries)
 
             summary = run_tensorboard_task(task_factory)
             self.assertAlmostEqual(summary['dummy0'].simple_value, 5.0)
@@ -401,9 +299,9 @@ class TestModelToTensorBoardTask(TestCase):
             self.assertIn('DummyLinearModel/w', summary.keys())
 
 
-class TestLmlToTensorBoardTask(TestCase):
+class TestLmlTensorBoardTask(TestCase):
 
-    def test_lml_tensorboard(self):
+    def test_tensorboard(self):
         """
         Tests the LML tensorboard task
         """
@@ -431,104 +329,15 @@ class TestLmlToTensorBoardTask(TestCase):
             d = mini_batch_data[0]
             model = DummyLinearModel(xs, ys, d.w, d.b, d.var)
 
-            def task_factory(writer: mon.LogdirWriter):
-                return mon.LmlToTensorBoardTask(writer, model, minibatch_size=complete_size,
-                                                display_progress=False)
+            def task_factory(event_dir: str):
+                return mon.LmlTensorBoardTask(model, event_dir, minibatch_size=complete_size,
+                                              display_progress=False)
 
             # Run LML task, extract the LML value and compare with the one computed over models with
             # small data sets
             summary = run_tensorboard_task(task_factory)
             self.assertAlmostEqual(summary['DummyLinearModel/full_lml'].simple_value, avg_lml,
                                    places=5)
-
-
-class TestScalarFuncToTensorBoardTask(TestCase):
-
-    def test_scalar_tensorboard(self):
-        """
-        Tests Scalar function tensorboard task.
-        """
-
-        user_func_name = 'test_scalar_function'
-        user_func_value = 5.55
-
-        def user_func(*args, **kwargs):
-            return user_func_value
-
-        def task_factory(writer: mon.LogdirWriter):
-            return mon.ScalarFuncToTensorBoardTask(writer, user_func, user_func_name)
-
-        summary = run_tensorboard_task(task_factory)
-        self.assertAlmostEqual(summary[user_func_name].simple_value, user_func_value, places=5)
-
-
-class TestVectorFuncToTensorBoardTask(TestCase):
-
-    def test_vector_tensorboard(self):
-        """
-        Tests Vector function tensorboard task.
-        """
-
-        user_func_name = 'test_vector_function'
-        user_func_values = [3.3, 4.4, 5.5]
-
-        def user_func(*args, **kwargs):
-            return user_func_values
-
-        def task_factory(writer: mon.LogdirWriter):
-            return mon.VectorFuncToTensorBoardTask(writer, user_func, user_func_name,
-                                                   len(user_func_values))
-
-        summary = run_tensorboard_task(task_factory)
-        for i, func_value in enumerate(user_func_values):
-            self.assertAlmostEqual(summary[user_func_name + '_' + str(i)].simple_value,
-                                   func_value, places=5)
-
-
-class TestHistogramToTensorBoardTask(TestCase):
-
-    def test_histogram_tensorboard(self):
-        """
-        Tests Histogram function tensorboard task. Just checks that the histogram summary object
-        is created.
-        """
-
-        user_func_name = 'test_histogram_function'
-        user_func_values = [[1.1, 1.2], [2.1, 2.2], [3.1, 3.3]]
-
-        def user_func(*args, **kwargs):
-            return user_func_values
-
-        def task_factory(writer: mon.LogdirWriter):
-            return mon.HistogramToTensorBoardTask(writer, user_func, user_func_name,
-                                                np.array(user_func_values).shape)
-
-        summary = run_tensorboard_task(task_factory)
-        self.assertIsNotNone(summary[user_func_name].histo)
-
-
-class TestImageToTensorBoardTask(TestCase):
-
-    def test_image_tensorboard(self):
-        """
-        Tests Matplotlib image tensorboard task. Just checks that the image summary object
-        is created
-        """
-
-        plot_func_name = 'test_plot_function'
-
-        def plot_func(*args, **kwargs):
-            x = np.linspace(0, 2, 100)
-            plt.plot(x, x, label='linear')
-            plt.plot(x, x ** 2, label='quadratic')
-            plt.plot(x, x ** 3, label='cubic')
-            return plt.figure()
-
-        def task_factory(writer: mon.LogdirWriter):
-            return mon.ImageToTensorBoardTask(writer, plot_func, plot_func_name)
-
-        summary = run_tensorboard_task(task_factory)
-        self.assertIsNotNone(summary[plot_func_name + '/image/0'].image)
 
 
 class TestMonitorIntegration(TestCase):
@@ -539,9 +348,7 @@ class TestMonitorIntegration(TestCase):
         """
 
         def optimise(model, step_callback, global_step_tensor) -> None:
-            """
-            Optimisation function that creates and calls the tensorflow AdamOptimizer optimiser.
-            """
+            """Optimisation function that creates and calls the tensorflow AdamOptimizer optimiser"""
             optimiser = gpflow.train.AdamOptimizer(0.01)
             optimiser.minimize(model, maxiter=10, step_callback=step_callback,
                                global_step=global_step_tensor)
@@ -549,25 +356,18 @@ class TestMonitorIntegration(TestCase):
         with session_context(tf.Graph()):
             self._optimise_model(create_linear_model(), optimise, True)
 
-    @mock.patch('gpflow.training.monitor.update_optimiser')
-    def test_with_scipy_optimiser(self, update_optimiser):
+    def test_with_scipy_optimiser(self):
         """
         Tests the monitor with the Scipy optimiser
         """
 
-        optimiser = gpflow.train.ScipyOptimizer()
-
         def optimise(model, step_callback, _) -> None:
-            """
-            Optimisation function that creates and calls ScipyOptimizer optimiser.
-            """
-            nonlocal optimiser
+            """Optimisation function that creates and calls ScipyOptimizer optimiser"""
+            optimiser = gpflow.train.ScipyOptimizer()
             optimiser.minimize(model, maxiter=10, step_callback=step_callback)
 
         with session_context(tf.Graph()):
-            self._optimise_model(create_linear_model(), optimise, optimiser=optimiser)
-
-        self.assertGreater(update_optimiser.call_count, 0)
+            self._optimise_model(create_linear_model(), optimise)
 
     def test_with_natgrad_optimiser(self):
         """
@@ -575,9 +375,7 @@ class TestMonitorIntegration(TestCase):
         """
 
         def optimise(model, step_callback, _) -> None:
-            """
-            Optimisation function that creates and calls NatGradPtimizer optimiser.
-            """
+            """Optimisation function that creates and calls NatGradPtimizer optimiser"""
             var_list = [(model.q_mu, model.q_sqrt)]
             # we don't want adam optimizing these
             model.q_mu.set_trainable(False)
@@ -587,7 +385,7 @@ class TestMonitorIntegration(TestCase):
             optimiser.minimize(model, maxiter=10, var_list=var_list, step_callback=step_callback)
 
         with session_context(tf.Graph()):
-            # NatGrad optimiser works only with variational parameters. So we can't use the
+            # NatGrad optimiser works only with variational parameters. So we can't user the
             # dummy linear model here.
             model_data = create_leaner_model_data(20)
             z = np.linspace(0, 1, 5)[:, None]
@@ -595,41 +393,9 @@ class TestMonitorIntegration(TestCase):
                                        gpflow.likelihoods.Gaussian(), Z=z)
             self._optimise_model(model, optimise)
 
-    def test_update_scipy_optimiser(self):
-        """
-        Checks that the `update_optimiser` function sets the ScipyOptimizer state to the model
-        parameters. Also checks that it sets the `optimiser_updated` flag to True.
-        """
-
-        with session_context(tf.Graph()):
-            model = create_linear_model()
-            optimiser = gpflow.train.ScipyOptimizer()
-            context = mon.MonitorContext()
-            context.session = model.enquire_session()
-            context.optimiser = optimiser
-            w, b, var = model.w.value, model.b.value, model.var.value
-            call_count = 0
-
-            def step_callback(*args, **kwargs):
-                nonlocal model, optimiser, context, w, b, var, call_count
-                context.optimiser_updated = False
-                mon.update_optimiser(context, *args, **kwargs)
-                w_new, b_new, var_new = model.enquire_session().run([model.w.unconstrained_tensor,
-                                                                     model.b.unconstrained_tensor,
-                                                                     model.var.unconstrained_tensor])
-                self.assertTrue(np.alltrue(np.not_equal(w, w_new)))
-                self.assertTrue(np.alltrue(np.not_equal(b, b_new)))
-                self.assertTrue(np.alltrue(np.not_equal(var, var_new)))
-                self.assertTrue(context.optimiser_updated)
-                call_count += 1
-                w, b, var = w_new, b_new, var_new
-
-            optimiser.minimize(model, maxiter=10, step_callback=step_callback)
-            self.assertGreater(call_count, 0)
-
     def _optimise_model(self, model: gpflow.models.Model,
                         optimise_func: Callable[[gpflow.models.Model, Callable, tf.Variable], None],
-                        use_global_step: Optional[bool]=False, optimiser=None) -> None:
+                        use_global_step: Optional[bool]=False) -> None:
         """
         Runs optimisation test with given model and optimisation function.
         :param model: Model derived from `gpflow.models.Model`
@@ -642,14 +408,12 @@ class TestMonitorIntegration(TestCase):
         global_step_tensor = mon.create_global_step(session) if use_global_step else None
 
         monitor_task = _DummyMonitorTask()
+        monitor = mon.Monitor([monitor_task], session, global_step_tensor)
+        monitor.start_monitoring()
 
+        # Calculate LML before the optimisation, run optimisation and calculate LML after that.
         lml_before = model.compute_log_likelihood()
-
-        # Run optimisation
-        with mon.Monitor([monitor_task], session, global_step_tensor, optimiser=optimiser) \
-                as monitor:
-            optimise_func(model, monitor, global_step_tensor)
-
+        optimise_func(model, monitor, global_step_tensor)
         lml_after = model.compute_log_likelihood()
 
         if use_global_step:
@@ -661,7 +425,7 @@ class TestMonitorIntegration(TestCase):
             self.assertGreater(monitor_task.call_count, 0)
 
         # Check that the optimiser has done something
-        # self.assertGreater(lml_after, lml_before)
+        self.assertGreater(lml_after, lml_before)
 
 
 LinearModelSetup = namedtuple('LinearModelSetup', ['w', 'b', 'var', 'x', 'y'])
@@ -688,8 +452,7 @@ def create_leaner_model_data(data_points) -> LinearModelSetup:
     return LinearModelSetup(w=w, b=b, var=var, x=x, y=y)
 
 
-def run_tensorboard_task(task_factory: Callable[[mon.LogdirWriter],
-                                                mon.BaseTensorBoardTask]) -> Dict:
+def run_tensorboard_task(task_factory: Callable[[str], mon.BaseTensorBoardTask]) -> Dict:
     """
     Runs a tensorboard monitoring task, reads summary from the created event file and returns
     decoded proto values in a dictionary
@@ -700,29 +463,24 @@ def run_tensorboard_task(task_factory: Callable[[mon.LogdirWriter],
 
     with tempfile.TemporaryDirectory() as tmp_event_dir:
 
-        writer = mon.LogdirWriter(tmp_event_dir)
-        try:
-            monitor_task = task_factory(writer)
+        monitor_task = task_factory(tmp_event_dir)
 
-            session = monitor_task.model.enquire_session()\
-                if monitor_task.model is not None else tf.Session()
-            global_step_tensor = mon.create_global_step(session)
+        session = monitor_task.model.enquire_session()
+        global_step_tensor = mon.create_global_step(session)
 
-            monitor_task.with_flush_immediately(True)
+        monitor_task.with_global_step_tensor(global_step_tensor).with_flush_immediately(True)
 
-            monitor_context = mon.MonitorContext()
-            monitor_context.session = session
-            monitor_context.global_step_tensor = global_step_tensor
+        monitor_context = mon.MonitorContext()
+        monitor_context.session = session
+        monitor_context.global_step_tensor = global_step_tensor
 
-            monitor_task(monitor_context)
+        monitor_task(monitor_context)
 
-            # There should be one event file in the temporary directory
-            event_file = str(next(pathlib.Path(tmp_event_dir).iterdir().__iter__()))
+        # There should be one event file in the temporary directory
+        event_file = str(next(pathlib.Path(tmp_event_dir).iterdir().__iter__()))
 
-            for e in tf.train.summary_iterator(event_file):
-                for v in e.summary.value:
-                    summary[v.tag] = v
-        finally:
-            writer.close()
+        for e in tf.train.summary_iterator(event_file):
+            for v in e.summary.value:
+                summary[v.tag] = v
 
     return summary

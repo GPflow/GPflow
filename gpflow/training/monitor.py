@@ -69,56 +69,56 @@ print_task = mon.PrintTimingsTask()\
     .with_name('print')\
     .with_condition(mon.PeriodicIterationCondition(10))\
 
+# This task will create a Tensoreflow summary of the model for Tensorboard. It will run at
+# every 100-th iteration. We also want to do this after the optimisation is finished.
+#
+tensorboard_task = mon.StandardTensorBoardTask(model, './model-tensorboard')\
+    .with_name('tensorboard')\
+    .with_condition(mon.PeriodicIterationCondition(100))\
+    .with_exit_condition(True)
+
 # This task will save the Tensorflow session every 15-th iteration.
 # The directory pointed to by `checkpoint_dir` must exist.
 #
 checkpoint_task = mon.CheckpointTask(checkpoint_dir="./model-saves")\
-        .with_name('checkpoint')\
-        .with_condition(mon.PeriodicIterationCondition(15))\
+    .with_name('checkpoint')\
+    .with_condition(mon.PeriodicIterationCondition(15))\
 
-# This task will create a TensorFlow summary of the model for TensorBoard. It will run at
-# every 100-th iteration. We also want to do this after the optimisation is finished.
-# *** IMPORTANT ***
-# Please make sure that if multiple LogdirWriters are used they are created with different
-# locations (event file directory and file suffix). It is possible to share a writer between
-# multiple tasks. But it is not possible to share event location between multiple writers.
+monitor_tasks = [print_task, tensorboard_task, checkpoint_task]
+
+# Create and start the monitor.
 #
-with mon.LogdirWriter('./model-tensorboard') as writer:
-    tensorboard_task = mon.ModelToTensorBoardTask(writer, model)\
-        .with_name('tensorboard')\
-        .with_condition(mon.PeriodicIterationCondition(100))\
-        .with_exit_condition(True)
+monitor = mon.Monitor(monitor_tasks, session, global_step)
+monitor.start_monitoring()
 
-    monitor_tasks = [print_task, tensorboard_task, checkpoint_task]
-
-    optimiser = gpflow.train.AdamOptimizer(0.01)
-
-    # Create a monitor and run the optimiser providing the monitor as a callback function
+try:
+    # Run the optimiser providing it with the monitor as the callback function
     #
-    with mon.Monitor(monitor_tasks, session, global_step, print_summary=True) as monitor:
-        optimiser.minimize(model, step_callback=monitor, global_step=global_step)
+    optimiser = gpflow.train.AdamOptimizer(0.01)
+    optimiser.minimize(model, step_callback=monitor, global_step=global_step)
+finally:
+    # Let the monitor know that the optimisation has finished and print the timing summary
+    #
+    monitor.stop_monitoring()
+    monitor.print_summary()
 """
 
 import time
 import abc
-from typing import Callable, List, Dict, Set, Optional, Iterator, Any, Tuple
+from typing import Callable, List, Dict, Optional, Iterator, Any
 import itertools
 import logging
 import math
 from pathlib import PurePath
-import io
-from timeit import default_timer as timer
 
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 
-from gpflow import params_as_tensors_for
-from gpflow import settings
-from gpflow.models import Model
-from gpflow.params import Parameter
-from gpflow.training.scipy_optimizer import ScipyOptimizer
+from ... import params_as_tensors_for
+from ... import settings
+from ...models import Model
+from ...params import Parameter
+from timeit import default_timer as timer
 
 
 def get_hr_time() -> float:
@@ -164,37 +164,6 @@ def get_default_saver(max_to_keep: int=3) -> tf.train.Saver:
     return tf.train.Saver(max_to_keep=max_to_keep)
 
 
-def update_optimiser(context, *args, **kwargs) -> None:
-    """
-    Writes optimiser state into corresponding TensorFlow variables. This may need to be done
-    for optimisers like ScipyOptimiser that work with their own copies of the variables.
-    Normally the source variables would be updated only when the optimiser has finished the
-    minimisation. This function may be called from the callback in order to get the TensorFlow
-    variables up-to-date so that they can be written into TensorBoard for example.
-
-    The expected state parameters and the procedure of writing them into variables is specific
-    to each optimiser. Currently it is implemented only for ScipyOptimiser.
-
-    After the state is updated a flag is set to the context to prevent multiple updates in
-    the same callback.
-
-    :param context: Monitor context
-    :param args: Optimiser's state passed to the callback
-    :param kwargs: Optimiser's state passed to the callback
-    """
-
-    if context.optimiser is None or context.optimiser_updated:
-        return
-
-    if isinstance(context.optimiser, ScipyOptimizer) and len(args) > 0:
-
-        optimizer = context.optimiser.optimizer  # get access to ExternalOptimizerInterface
-        var_vals = [args[0][packing_slice] for packing_slice in optimizer._packing_slices]
-        context.session.run(optimizer._var_updates,
-                            feed_dict=dict(zip(optimizer._update_placeholders, var_vals)))
-        context.optimiser_updated = True
-
-
 class MonitorContext(object):
     """
     This is a property bag that will be passed to all monitoring tasks. New attributes can
@@ -216,11 +185,6 @@ class MonitorContext(object):
 
     - init_global_step: Initial value of the global step. This will be checked at the start of
         monitoring. The value may be greater than zero if the graph was restored from a checkpoint.
-
-    - optimiser: Optimiser running under the monitor
-
-    - optimiser_updated: Flag indicating that the optimiser's state has already been written to
-        the correspondent variables in the current step.
     """
     def __init__(self) -> None:
 
@@ -231,8 +195,6 @@ class MonitorContext(object):
         self.session = None          # type: tf.Session
         self.global_step_tensor = None  # type: tf.Variable
         self.init_global_step = 0
-        self.optimiser = None   # type: Any
-        self.optimiser_updated = False
 
     @property
     def global_step(self) -> int:
@@ -241,7 +203,7 @@ class MonitorContext(object):
         current iteration number.
         """
         if self.session is None or self.global_step_tensor is None:
-            return self.iteration_no + self.init_global_step
+            return self.iteration_no
         else:
             return self.session.run(self.global_step_tensor)
 
@@ -264,18 +226,13 @@ class MonitorTask(metaclass=abc.ABCMeta):
     after the optimisation is done. The flag can be set using `with_exit_condition` function.
     """
 
-    def __init__(self, need_optimiser_update: Optional[bool]=False) -> None:
-        """
-        :param need_optimiser_update: Need to make sure the optimiser's state is written into
-        corresponding TensorFlow variables every time the task is fired.
-        """
+    def __init__(self) -> None:
 
         self._condition = lambda context: True
         self._exit_condition = False
         self._task_name = self.__class__.__name__
         self._total_time = 0.0
         self._last_call_time = 0.0
-        self._need_optimiser_update = need_optimiser_update
 
     def with_condition(self, condition: Callable[[MonitorContext], bool]) -> 'MonitorTask':
         """
@@ -284,7 +241,7 @@ class MonitorTask(metaclass=abc.ABCMeta):
         self._condition = condition
         return self
 
-    def with_exit_condition(self, exit_condition: Optional[bool]=True) -> 'MonitorTask':
+    def with_exit_condition(self, exit_condition: bool) -> 'MonitorTask':
         """
         Sets the flag indicating that the task should also run after the optimisation is ended.
         """
@@ -336,8 +293,6 @@ class MonitorTask(metaclass=abc.ABCMeta):
             fire_task = self._exit_condition if context.optimisation_finished else \
                 self._condition(context)
             if fire_task:
-                if self._need_optimiser_update:
-                    update_optimiser(context, *args, **kwargs)
                 self.run(context, *args, **kwargs)
         finally:
             # Remember the time of the last execution and update the accumulated time.
@@ -352,46 +307,25 @@ class Monitor(object):
 
     In its initialisation it will create a MonitorContext object that will be passed to monitoring
     tasks.
-
-    It is recommended to open the Monitor in a context using `with` statement (see the module-level
-    doc).
     """
 
     def __init__(self, monitor_tasks: Iterator[MonitorTask], session: Optional[tf.Session]=None,
-                 global_step_tensor: Optional[tf.Variable]=None,
-                 print_summary: Optional[bool]=False,
-                 optimiser: Optional[Any]=None, context: Optional[MonitorContext]=None) -> None:
+                 global_step_tensor: Optional[tf.Variable]=None) -> None:
         """
         :param monitor_tasks: A collection of monitoring tasks to run. The tasks will be called in
         the same order they are specified here.
         :param session: Tensorflow session the optimiser is running in.
         :param global_step_tensor: the Tensorflow 'global_step' variable
         (see notes in MonitorContext.global_step_tensor)
-        :param print_summary: Prints tasks' timing summary after the monitoring is stopped.
-        :param optimiser: Optimiser object that is going to run under this monitor.
-        :param context: MonitorContext object, if not provided a new one will be created.
         """
 
         self._monitor_tasks = list(monitor_tasks)
-        self._context = context or MonitorContext()
-        self._context.optimisation_finished = False
-        if session is not None:
-            self._context.session = session
-        if global_step_tensor is not None:
-            self._context.global_step_tensor = global_step_tensor
-        if optimiser is not None:
-            self._context.optimiser = optimiser
-        self._print_summary = print_summary
+        self._context = MonitorContext()
+        self._context.session = session
+        self._context.global_step_tensor = global_step_tensor
 
         self._start_timestamp = get_hr_time()
         self._last_timestamp = self._start_timestamp
-
-    def __enter__(self):
-        self.start_monitoring()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stop_monitoring()
 
     def __call__(self, *args, **kwargs) -> None:
         """
@@ -404,40 +338,31 @@ class Monitor(object):
 
     def start_monitoring(self) -> None:
         """
-        The recommended way of using Monitor is opening it with the `with` statement. In this case
-        the user doesn't need to call this function explicitly. Otherwise, the function should be
-        called before starting the optimiser.
-
-        The function evaluates the global_step variable in order to get its initial value. It also
-        resets the starting timer since the time set in the __init__ may no longer be accurate.
+        This function should be called before starting the optimiser. It evaluates the global_step
+        variable in order to get its initial value. It also resets the starting timer since the
+        time set in the __init__ may no longer be accurate.
         """
         self._context.init_global_step = self._context.global_step
         self._start_timestamp = get_hr_time()
         self._last_timestamp = self._start_timestamp
 
-    def stop_monitoring(self) -> None:
+    def stop_monitoring(self, *args, **kwargs) -> None:
         """
-        The recommended way of using Monitor is opening it with the `with` statement. In this case
-        the user doesn't need to call this function explicitly. Otherwise the function should be
-        called when the optimisation is done.
-
-        The function sets the optimisation completed flag in the monitoring context and runs the
-        tasks once more. If the monitor was created with the `print_summary` option it prints the
-        tasks' timing summary.
+        This function should be called when the optimisation is done. It sets the optimisation
+        completed flag in the monitoring context and runs the tasks once more. All extra arguments
+        will be passed to the monitoring tasks.
         """
-
         self._context.optimisation_finished = True
-        self._on_iteration()
+        self._on_iteration(*args, **kwargs)
 
-        if self._print_summary:
-            self.print_summary()
-
-    def print_summary(self) -> None:
+    def print_summary(self, monitor_tasks: Optional[Iterator['MonitorTask']]=None) -> None:
         """
         Prints the tasks' timing summary.
+        :param monitor_tasks: List of monitoring tasks to print the summary for, defaults to
+        all tasks.
         """
         print("Tasks execution time summary:")
-        for mon_task in self._monitor_tasks:
+        for mon_task in (monitor_tasks or self._monitor_tasks):
             print("%s:\t%.4f (sec)" % (mon_task.task_name, mon_task.total_time))
 
     def _on_iteration(self, *args, **kwargs) -> None:
@@ -452,7 +377,6 @@ class Monitor(object):
         current_timestamp = get_hr_time()
         self._context.optimisation_time += current_timestamp - self._last_timestamp
         self._context.total_time = current_timestamp - self._start_timestamp
-        self._context.optimiser_updated = False
         if not self._context.optimisation_finished:
             self._context.iteration_no += 1
 
@@ -695,90 +619,6 @@ class CheckpointTask(MonitorTask):
                          global_step=context.global_step_tensor)
 
 
-class LogdirWriter(tf.summary.FileWriter):
-    """
-    This is a wrapper around the TensorFlow summary.EventWriter that provides a workaround for
-    a bug currently present in this module. The EventWriter can only open the file in exclusive
-    mode, however when multiple instances of the writer attempt to access the same file no error
-    is raised.
-
-    This class prevents user from opening multiple writers with the same location (event file
-    directory and file name suffix). It keeps a global set of used locations adding a new location
-    there when a writer is created or reopened. It removes the location from the global set when
-    the writer is closed or garbage collected.
-
-    Once the bug in TensorFlow is fixed this class can be removed or reduced to trivial:
-    class LogdirWriter(tf.summary.FileWriter):
-        pass
-    """
-
-    _locked_locations = set()     # type: Set[Tuple[str, Optional[str]]
-
-    def __init__(self, logdir: str, graph: Optional[tf.Graph]=None, max_queue: int=10,
-                 flush_secs: float=120, filename_suffix: Optional[str]=None):
-        """
-        A thin wrapper around the summary.FileWriter __init__. It remembers the location (a tuple
-        of event file directory and file name suffix) and attempts to lock it. If the location
-        is already locked by another writer an error will be raised.
-
-        :param logdir: Directory where event file will be written.
-        :param graph: A `Graph` object
-        :param max_queue: Size of the queue for pending events and summaries.
-        :param flush_secs: How often, in seconds, to flush the added summaries and events to disk.
-        :param filename_suffix: Optional suffix of the event file's name.
-        """
-
-        self._location = (str(PurePath(logdir)), filename_suffix)
-        self._is_active = False
-        self.__lock_location()
-        super().__init__(logdir, graph, max_queue, flush_secs, filename_suffix=filename_suffix)
-
-    def __del__(self):
-        self.__release_location()
-        if hasattr(super(), '__del__'):
-            super().__del__()
-
-    def close(self) -> None:
-        """
-        Closes the summary.FileWriter. Releases the lock on the location so that another writer
-        can take it.
-        """
-        super().close()
-        self.__release_location()
-
-    def reopen(self) -> None:
-        """
-        Reopens the summary.FileWriter that has been previously closed. Attempts to lock the event
-        file location. Will raise an error if the location  has been taken by another writer since
-        it was closed by this writer.
-        """
-        self.__lock_location()
-        super().reopen()
-
-    def __lock_location(self) -> None:
-        """
-        Attempts to lock the location used by this writer. Will raise an error if the location is
-        already locked by another writer. Will do nothing if the location is already locked by
-        this writer.
-        """
-        if not self._is_active:
-            if self._location in LogdirWriter._locked_locations:
-                raise RuntimeError('TensorBoard event file in directory %s with suffix %s '
-                                   'is already in use. At present multiple TensoBoard file writers '
-                                   'cannot write data into the same file.' % self._location)
-            LogdirWriter._locked_locations.add(self._location)
-            self._is_active = True
-
-    def __release_location(self) -> None:
-        """
-        Releases the lock on the location used by this writer. Will do nothing if the lock is
-        already released.
-        """
-        if self._is_active:
-            LogdirWriter._locked_locations.remove(self._location)
-            self._is_active = False
-
-
 class BaseTensorBoardTask(MonitorTask):
     """
     Base class for TensorBoard monitoring tasks.
@@ -787,24 +627,17 @@ class BaseTensorBoardTask(MonitorTask):
     If the summary object contains one or more placeholders it may also override the `run`
     method where it can calculate the correspondent values. It will then call the _eval_summary
     providing these values as the input values dictionary.
-
-    A TensorBoard task requests access to the TensorFlow summary FileWriter object providing the
-    location of the event file. The FileWriter object will be created if it doesn't exist. When
-    the task is no longer needed the `close` method should be called. This will release the
-    FileWriter object.
     """
 
-    def __init__(self, file_writer: LogdirWriter, model: Optional[Model]=None) -> None:
+    def __init__(self, model: Model, event_path: str) -> None:
         """
-        :param file_writer: Event file writer object.
         :param model: Model object
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
         """
-        super().__init__(need_optimiser_update=True)
-        if not isinstance(file_writer, LogdirWriter):
-            raise RuntimeError('The event file writer object provided to a TensorBoard task must '
-                               'be of the type LogdirWriter or a descendant type.')
-        self._file_writer = file_writer
+        super().__init__()
         self._model = model
+        self._file_writer = tf.summary.FileWriter(event_path, model.graph)
         self._summary = None    # type: tf.Summary
         self._flush_immediately = False
 
@@ -818,12 +651,21 @@ class BaseTensorBoardTask(MonitorTask):
     def run(self, context: MonitorContext, *args, **kwargs) -> None:
         self._eval_summary(context)
 
-    def with_flush_immediately(self, flush_immediately: Optional[bool]=True)\
-            -> 'BaseTensorBoardTask':
+    def with_flush_immediately(self, flush_immediately) -> 'BaseTensorBoardTask':
         """
         Sets the flag indicating that the event file should be flushed at each call.
         """
         self._flush_immediately = flush_immediately
+        return self
+
+    def with_global_step_tensor(self, global_step_tensor: tf.Variable) -> 'BaseTensorBoardTask':
+        """
+        Adds optimisation global step to the summary.
+        """
+        if self._summary is not None:
+            self._summary = tf.summary.merge(
+                [self._summary, tf.summary.scalar('optimisation/global_step',
+                                                  global_step_tensor)])
         return self
 
     def flush(self):
@@ -849,12 +691,12 @@ class BaseTensorBoardTask(MonitorTask):
                                ' must be provided when creating an instance of the Monitor')
 
         summary = context.session.run(self._summary, feed_dict=feed_dict)
-        self._file_writer.add_summary(summary, context.global_step)
+        self._file_writer.add_summary(summary)
         if self._flush_immediately:
             self.flush()
 
 
-class ModelToTensorBoardTask(BaseTensorBoardTask):
+class StandardTensorBoardTask(BaseTensorBoardTask):
     """
     Monitoring task that creates a sensible TensorBoard for a model.
     It sends to the TensorBoard the likelihood value and the model parameters.
@@ -866,18 +708,19 @@ class ModelToTensorBoardTask(BaseTensorBoardTask):
     merged with the model parameters' summary.
     """
 
-    def __init__(self, file_writer: LogdirWriter, model: Model, only_scalars: bool = True,
+    def __init__(self, model: Model, event_path: str, only_scalars: bool = True,
                  parameters: Optional[List[Parameter]] = None,
                  additional_summaries: Optional[List[tf.Summary]] = None) -> None:
         """
         :param model: Model tensor
-        :param file_writer: Event file writer object.
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
         :param only_scalars: Restricts the list of output parameters to scalars.
         :param parameters: List of model parameters to send to TensorBoard. If not
         provided all parameters will be sent to TensorBoard.
         :param additional_summaries: List of additional summary objects to send to TensorBoard.
         """
-        super().__init__(file_writer, model)
+        super().__init__(model, event_path)
         all_summaries = additional_summaries or []
         parameters = parameters or list(model.parameters)
 
@@ -898,7 +741,7 @@ class ModelToTensorBoardTask(BaseTensorBoardTask):
         self._summary = tf.summary.merge(all_summaries)
 
 
-class LmlToTensorBoardTask(BaseTensorBoardTask):
+class LmlTensorBoardTask(BaseTensorBoardTask):
     """
     Monitoring task that creates a TensorBoard with just one scalar value -
     the unbiased estimator of the evidence lower bound (ELBO or LML).
@@ -911,40 +754,42 @@ class LmlToTensorBoardTask(BaseTensorBoardTask):
     are left to compute). For that the `tqdm' progress bar should be installed (pip install tqdm).
     """
 
-    def __init__(self, file_writer: LogdirWriter, model: Model, minibatch_size: Optional[int] = 100,
+    def __init__(self, model: Model, event_path: str, minibatch_size: Optional[int] = 100,
                  display_progress: Optional[bool] = True) -> None:
         """
         :param model: Model tensor
-        :param file_writer: Event file writer object.
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
         :param minibatch_size: Number of points per minibatch
         :param display_progress: if True the task displays the progress of calculating LML.
         """
 
-        super().__init__(file_writer, model)
+        super().__init__(model, event_path)
         self._minibatch_size = minibatch_size
         self._full_lml = tf.placeholder(settings.tf_float, shape=())
         self._summary = tf.summary.scalar(model.name + '/full_lml', self._full_lml)
-
-        self.wrapper = None  # type: Callable[[Iterator], Iterator]
-        if display_progress:  # pragma: no cover
-            try:
-                import tqdm
-                self.wrapper = tqdm.tqdm
-            except ImportError:
-                logger = settings.logger()
-                if logger.isEnabledFor(logging.WARNING):
-                    logger.warning("LML monitor task: to display progress install `tqdm`.")
-        if self.wrapper is None:
-            self.wrapper = lambda x: x
+        self._display_progress = display_progress
 
     def run(self, context: MonitorContext, *args, **kwargs) -> None:
 
         with params_as_tensors_for(self._model):
             tf_x, tf_y = self._model.X, self._model.Y
 
+        wrapper = None  # type: Callable[[Iterator], Iterator]
+        if self._display_progress:  # pragma: no cover
+            try:
+                import tqdm
+                wrapper = tqdm.tqdm
+            except ImportError:
+                logger = settings.logger()
+                if logger.isEnabledFor(logging.WARNING):
+                    logger.warning("LML monitor task: to display progress install `tqdm`.")
+        if wrapper is None:
+            wrapper = lambda x: x
+
         lml = 0.0
         num_batches =  int(math.ceil(len(self._model.X._value) / self._minibatch_size))  # round up
-        for mb in self.wrapper(range(num_batches)):
+        for mb in wrapper(range(num_batches)):
             start = mb * self._minibatch_size
             finish = (mb + 1) * self._minibatch_size
             x_mb = self._model.X._value[start:finish, :]
@@ -954,117 +799,3 @@ class LmlToTensorBoardTask(BaseTensorBoardTask):
         lml = lml / len(self._model.X._value)
 
         self._eval_summary(context, {self._full_lml: lml})
-
-
-class ScalarFuncToTensorBoardTask(BaseTensorBoardTask):
-    """
-    Monitoring task that creates a TensorBoard with a single scalar value computed by a user
-    provided function.
-    """
-
-    def __init__(self, file_writer: LogdirWriter, func: Callable, func_name: str) -> None:
-        """
-        :param file_writer: Event file writer object.
-        :param func: User function that provides a value for the TensorBoard
-        :param func_name: Name the function should be seen with in the TensorBoard. This name may
-        get altered by tf.summary. For example spaces will be replaced with underscores.
-        """
-        super().__init__(file_writer)
-        self.func = func
-        self.placeholder = tf.placeholder(tf.float64)
-        self._summary = tf.summary.scalar(func_name, self.placeholder)
-
-    def run(self, context: MonitorContext, *args, **kwargs) -> None:
-        self._eval_summary(context, {self.placeholder: self.func(*args, **kwargs)})
-
-
-class VectorFuncToTensorBoardTask(BaseTensorBoardTask):
-    """
-    Monitoring task that creates a TensorBoard with multiple values computed by a user
-    provided function. The function can return values in an array of various complexity.
-    The array will be stored in the TensorBoard in a flat form made by the numpy `array.flatten()`
-    function.
-    """
-
-    def __init__(self, file_writer: LogdirWriter, func: Callable, func_name: str,
-                 num_outputs: int) -> None:
-        """
-        :param file_writer: Event file writer object.
-        :param func: User function that provides vector values for the TensorBoard.
-        :param func_name: Name the function should be seen with in the TensorBoard. This name may
-        get altered by tf.summary. For example spaces will be replaced with underscores.
-        :param num_outputs: The total number of values returned by the function.
-        """
-
-        super().__init__(file_writer)
-        self.func = func
-        self.placeholders = [tf.placeholder(tf.float64) for _ in range(num_outputs)]
-        self._summary = tf.summary.merge([tf.summary.scalar(
-            func_name + "_" + str(i), pl) for i, pl in enumerate(self.placeholders)])
-
-    def run(self, context: MonitorContext, *args, **kwargs) -> None:
-
-        values = np.array(self.func()).flatten()
-        feeds = {pl: value for pl, value in zip(self.placeholders, values)}
-        self._eval_summary(context, feeds)
-
-
-class HistogramToTensorBoardTask(BaseTensorBoardTask):
-    """
-    Monitoring task that creates a TensorBoard with a histogram made of values computed by a user
-    provided function.
-    """
-
-    def __init__(self, file_writer: LogdirWriter, func: Callable, func_name: str, output_dims):
-        """
-        :param file_writer: Event file writer object.
-        :param func: User function that provides histogram values for the TensorBoard.
-        :param func_name: Name the function should be seen with in the TensorBoard. This name may
-        get altered by tf.summary. For example spaces will be replaced with underscores.
-        :param output_dims: The shape of the data returned by the function. The shape must be in
-        the format accepted by the `tf.placeholder(...)`
-        """
-
-        super().__init__(file_writer)
-        self.func = func
-        self.placeholder = tf.placeholder(tf.float64, shape=output_dims)
-        self._summary = tf.summary.histogram(func_name, self.placeholder)
-
-    def run(self, context: MonitorContext, *args, **kwargs) -> None:
-        self._eval_summary(context, {self.placeholder: self.func()})
-
-
-class ImageToTensorBoardTask(BaseTensorBoardTask):
-    """
-    Monitoring task that creates a TensorBoard with an image returned by a user provided function.
-    """
-
-    def __init__(self, file_writer: LogdirWriter, func: Callable[[], Figure], func_name: str):
-        """
-        :param file_writer: Event file writer object.
-        :param func: User function that provides histogram values for the TensorBoard.
-        :param func_name: Name the function should be seen with in the TensorBoard. The name will
-        be appended by '/image/0'. Th name itself may also get altered by tf.summary. For example
-        spaces will be replaced with underscores.
-        """
-
-        super().__init__(file_writer)
-        self.func = func
-        self.placeholder = tf.placeholder(tf.float64, [1, None, None, None])
-        self._summary = tf.summary.image(func_name, self.placeholder)
-
-    def run(self, context: MonitorContext, *args, **kwargs) -> None:
-
-        # Get the image and write it into a buffer in the PNG format.
-        fig = self.func()
-        buf = io.BytesIO()
-        fig.savefig(buf, format='png', bbox_inches='tight')
-        plt.close(fig)
-
-        # Create TF image and load its content from the buffer.
-        buf.seek(0)
-        image = tf.image.decode_png(buf.getvalue())
-        # Add the image number as a new dimension
-        image = context.session.run(tf.expand_dims(image, 0))
-
-        self._eval_summary(context, {self.placeholder: image})
