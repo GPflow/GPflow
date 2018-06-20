@@ -116,10 +116,10 @@ class Likelihood(Parameterized):
 
 
 class Gaussian(Likelihood):
-    def __init__(self, var=1.0, name=None):
+    def __init__(self, variance=1.0, name=None):
         super().__init__(name=name)
         self.variance = Parameter(
-            var, transform=transforms.positive, dtype=settings.float_type)
+            variance, transform=transforms.positive, dtype=settings.float_type)
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -638,21 +638,9 @@ class MonteCarloLikelihood(Likelihood):
 
            \int p(y=Y|f)q(f) df
 
-        Here, we implement a default Gauss-Hermite quadrature routine, but some
-        likelihoods (Gaussian, Poisson) will implement specific cases.
+        Here, we implement a default Monte Carlo routine.
         """
-        # gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-        #
-        # gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
-        # shape = tf.shape(Fmu)
-        # Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
-        # X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
-        #
-        # Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-        #
-        # logp = self.logp(X, Y)
-        # return tf.reshape(tf.log(tf.matmul(tf.exp(logp), gh_w)), shape)
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         r"""
@@ -682,6 +670,26 @@ class MonteCarloLikelihood(Likelihood):
         mc_logp = tf.reshape(self.logp(mc_Xr, mc_Yr),
                              (self.num_monte_carlo_points, N, 1))  # S x N x 1
         return tf.reduce_mean(mc_logp, 0)  # N x 1
+
+
+# pylint: disable=abstract-method
+
+class GaussianMC(MonteCarloLikelihood):
+    """
+    Stochastic version of Gaussian likelihood for comparison.
+    """
+
+    def __init__(self, variance=1.0):
+        super().__init__()
+        self.variance = Parameter(
+            variance, transform=transforms.positive, dtype=settings.float_type)
+
+    @params_as_tensors
+    def logp(self, F, Y):
+        return logdensities.gaussian(F, Y, self.variance)
+
+    def conditional_mean(self, F):  # pylint: disable=R0201
+        return tf.identity(F)
 
 
 class SoftMax(MonteCarloLikelihood):
