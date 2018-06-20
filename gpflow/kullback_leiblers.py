@@ -35,7 +35,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 
     q_mu is a matrix (M x L), each column contains a mean.
 
-    q_sqrt can be a 3D tensor (L xM x M), each matrix within is a lower
+    q_sqrt can be a 3D tensor (L x M x M), each matrix within is a lower
         triangular square-root matrix of the covariance of q.
     q_sqrt can be a matrix (M x L), each column represents the diagonal of a
         square-root matrix of the covariance of q.
@@ -70,7 +70,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - B * M
-    constant = tf.cast(-tf.size(q_mu, out_type=tf.int64), dtype=settings.float_type)
+    constant = - tf.cast(tf.size(q_mu, out_type=tf.int64), dtype=settings.float_type)
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.log(tf.square(Lq_diag)))
