@@ -17,7 +17,8 @@ import numpy as np
 import tensorflow as tf
 
 from ..models.model import GPModel
-from ..features import inducingpoint_wrapper, conditional
+from ..conditionals import conditional
+from ..features import inducingpoint_wrapper
 from ..params import Parameter, DataHolder
 from ..priors import Gaussian
 from ..decors import params_as_tensors
@@ -85,7 +86,7 @@ class SGPMC(GPModel):
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y))
 
     @params_as_tensors
-    def _build_predict(self, Xnew, full_cov=False):
+    def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -96,6 +97,6 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z,
 
         """
-        mu, var = conditional(self.feature, self.kern, Xnew, self.V, full_cov=full_cov, q_sqrt=None,
-                              white=True)
+        mu, var = conditional(Xnew, self.feature, self.kern, self.V, full_cov=full_cov, q_sqrt=None,
+                              white=True, full_output_cov=full_output_cov)
         return mu + self.mean_function(Xnew), var
