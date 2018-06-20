@@ -21,7 +21,7 @@ import pathlib
 
 import gpflow
 import gpflow.actions
-import gpflow.training.monitor as mon
+import gpflow.training.monitor.monitor as mon
 from gpflow.test_util import session_context
 import numpy as np
 import tensorflow as tf
@@ -173,15 +173,15 @@ class TestPrintTimingsTask(TestCase):
             monitor_task = mon.PrintTimingsTask()
             monitor_task._print_timings = mock.MagicMock()
             monitor_context = mon.MonitorContext()
-            monitor_context.tf_session = tf.Session()
-            monitor_context.global_step_tensor = mon.create_global_step(monitor_context.tf_session)
+            monitor_context.session = tf.Session()
+            monitor_context.global_step_tensor = mon.create_global_step(monitor_context.session)
             monitor_context.init_global_step = 100
 
             # First call
             monitor_context.iteration_no = 10
             monitor_context.total_time = 20.0
             monitor_context.optimisation_time = 16.0
-            monitor_context.tf_session.run(monitor_context.global_step_tensor.assign(150))
+            monitor_context.session.run(monitor_context.global_step_tensor.assign(150))
             monitor_task(monitor_context)
             args = monitor_task._print_timings.call_args_list[0][0]
             self.assertTupleEqual(args, (10, 150, 0.5, 0.5, 3.125, 3.125))
@@ -190,7 +190,7 @@ class TestPrintTimingsTask(TestCase):
             monitor_context.iteration_no = 24
             monitor_context.total_time = 30.0
             monitor_context.optimisation_time = 24.0
-            monitor_context.tf_session.run(monitor_context.global_step_tensor.assign(196))
+            monitor_context.session.run(monitor_context.global_step_tensor.assign(196))
             monitor_task(monitor_context)
             args = monitor_task._print_timings.call_args_list[1][0]
             self.assertTupleEqual(args, (24, 196, 0.8, 1.4, 4.0, 5.75))
@@ -222,35 +222,35 @@ class TestCheckpointTask(TestCase):
         with tempfile.TemporaryDirectory() as tmp_event_dir:
 
             # Create a variable and do several checkpoints
-            with session_context(tf.Graph()) as tf_session:
-                dummy_var = self._create_dummy_variable(tf_session)
+            with session_context(tf.Graph()) as session:
+                dummy_var = self._create_dummy_variable(session)
                 monitor_context = mon.MonitorContext()
-                monitor_context.tf_session = tf_session
+                monitor_context.session = session
                 if use_global_step:
-                    monitor_context.global_step_tensor = mon.create_global_step(tf_session)
+                    monitor_context.global_step_tensor = mon.create_global_step(session)
                 monitor_task = mon.CheckpointTask(tmp_event_dir)
 
                 for i in range(num_checkpoints):
-                    tf_session.run(dummy_var.assign(i))
+                    session.run(dummy_var.assign(i))
                     if use_global_step:
-                        tf_session.run(monitor_context.global_step_tensor.assign(10 * i))
+                        session.run(monitor_context.global_step_tensor.assign(10 * i))
                     monitor_task(monitor_context)
 
             # Restore the session and read the variables.
             # Verify if the latest checkpoint was restored.
-            with session_context(tf.Graph()) as tf_session:
-                dummy_var = self._create_dummy_variable(tf_session)
-                global_step_tensor = mon.create_global_step(tf_session) if use_global_step else None
-                mon.restore_session(tf_session, tmp_event_dir)
-                self.assertEqual(tf_session.run(dummy_var), num_checkpoints - 1)
+            with session_context(tf.Graph()) as session:
+                dummy_var = self._create_dummy_variable(session)
+                global_step_tensor = mon.create_global_step(session) if use_global_step else None
+                mon.restore_session(session, tmp_event_dir)
+                self.assertEqual(session.run(dummy_var), num_checkpoints - 1)
                 if use_global_step:
-                    self.assertEqual(tf_session.run(global_step_tensor), 10 * (num_checkpoints - 1))
+                    self.assertEqual(session.run(global_step_tensor), 10 * (num_checkpoints - 1))
 
     @staticmethod
-    def _create_dummy_variable(tf_session: tf.Session):
+    def _create_dummy_variable(session: tf.Session):
 
         dummy_var = tf.Variable(0, name='dummy_var', dtype=tf.int32)
-        tf_session.run(tf.variables_initializer([dummy_var]))
+        session.run(tf.variables_initializer([dummy_var]))
         return dummy_var
 
 
@@ -404,11 +404,11 @@ class TestMonitorIntegration(TestCase):
         :param use_global_step: flag indicating the the `global_step` variable should be used
         """
 
-        tf_session = model.enquire_session()
-        global_step_tensor = mon.create_global_step(tf_session) if use_global_step else None
+        session = model.enquire_session()
+        global_step_tensor = mon.create_global_step(session) if use_global_step else None
 
         monitor_task = _DummyMonitorTask()
-        monitor = mon.Monitor([monitor_task], tf_session, global_step_tensor)
+        monitor = mon.Monitor([monitor_task], session, global_step_tensor)
         monitor.start_monitoring()
 
         # Calculate LML before the optimisation, run optimisation and calculate LML after that.
@@ -418,7 +418,7 @@ class TestMonitorIntegration(TestCase):
 
         if use_global_step:
             # Check that the 'global_step' has the actual number of iterations
-            global_step = tf_session.run(global_step_tensor)
+            global_step = session.run(global_step_tensor)
             self.assertEqual(global_step, monitor_task.call_count)
         else:
             # Just check that there were some iterations
@@ -465,13 +465,13 @@ def run_tensorboard_task(task_factory: Callable[[str], mon.BaseTensorBoardTask])
 
         monitor_task = task_factory(tmp_event_dir)
 
-        tf_session = monitor_task.model.enquire_session()
-        global_step_tensor = mon.create_global_step(tf_session)
+        session = monitor_task.model.enquire_session()
+        global_step_tensor = mon.create_global_step(session)
 
         monitor_task.with_global_step_tensor(global_step_tensor).with_flush_immediately(True)
 
         monitor_context = mon.MonitorContext()
-        monitor_context.tf_session = tf_session
+        monitor_context.session = session
         monitor_context.global_step_tensor = global_step_tensor
 
         monitor_task(monitor_context)

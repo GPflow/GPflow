@@ -65,8 +65,7 @@ class NatGradOptimizer(optimizer.Optimizer):
             :param maxiter: Number of run interation. Default value: 1000.
             :param anchor: Synchronize updated parameters for a session with internal
                 parameter's values.
-            :param step_callback: A callback function to execute at each optimization step,
-                supplied with the current value of the packed variable vector.
+            :param step_callback: A callback function to execute at each optimization step.
             :param kwargs: Extra parameters passed to session run's method.
         """
 

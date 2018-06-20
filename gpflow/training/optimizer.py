@@ -37,7 +37,24 @@ class Optimizer:
 
     @abc.abstractmethod
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=True, anchor=True, **kwargs):
+                 maxiter=1000, initialize=True, anchor=True, step_callback=None, **kwargs):
+        """
+        :param model: GPflow model with objective tensor.
+        :param session: Session where optimization will be run.
+        :param var_list: List of extra variables which should be trained during optimization.
+        :param feed_dict: Feed dictionary of tensors passed to session run method.
+        :param maxiter: Number of run interation.
+        :param initialize: If `True` model parameters will be re-initialized even if they were
+            initialized before in the specified session.
+        :param anchor: If `True` trained variable values computed during optimization at
+            particular session will be synchronized with internal parameter values.
+        :param step_callback: A callback function to execute at each optimization step.
+            It must take an arbitrary list of arguments. The optimiser may pass to the callback
+            function some data it thinks might be of interest to the calling code. For instance,
+            this can be the current values of trainable variables.
+        :param kwargs: This is a dictionary of extra parameters for session run method.
+
+        """
         raise NotImplementedError()
 
     @staticmethod

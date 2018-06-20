@@ -62,9 +62,6 @@ class ScipyOptimizer(optimizer.Optimizer):
         :param session: Session where optimization will be run.
         :param var_list: List of extra variables which should be trained during optimization.
         :param feed_dict: Feed dictionary of tensors passed to session run method.
-        :param step_callback: A function to be called at each optimization step;
-            arguments are the current values of all optimization variables
-            flattened into a single vector.
         :param maxiter: Number of run interation. Note: scipy optimizer can do early stopping
             if model converged.
         :param disp: ScipyOptimizer option. Set to True to print convergence messages.
@@ -72,6 +69,9 @@ class ScipyOptimizer(optimizer.Optimizer):
             initialized before for gotten session.
         :param anchor: If `True` trained parameters computed during optimization at
             particular session will be synchronized with internal parameter values.
+        :param step_callback: A function to be called at each optimization step;
+            arguments are the current values of all optimization variables
+            flattened into a single vector.
         :param kwargs: This is a dictionary of extra parameters for session run method.
         """
         if model is None or not isinstance(model, Model):

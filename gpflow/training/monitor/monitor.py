@@ -107,6 +107,8 @@ import time
 import abc
 from typing import Callable, List, Dict, Optional, Iterator, Any
 import itertools
+import logging
+import math
 from pathlib import PurePath
 
 import numpy as np
@@ -126,65 +128,72 @@ def get_hr_time() -> float:
     return timer()
 
 
-def create_global_step(tf_session: tf.Session) -> tf.Variable:
+def create_global_step(session: tf.Session) -> tf.Variable:
     """
     Creates the Tensorflow 'global_step' variable (see `MonitorContext.global_step_tensor`).
-    :param tf_session: Tensorflow session the optimiser is running in
+    :param session: Tensorflow session the optimiser is running in
     :return: The variable tensor.
     """
     global_step_tensor = tf.Variable(0, trainable=False, name="global_step")
-    tf_session.run(global_step_tensor.initializer)
+    session.run(global_step_tensor.initializer)
     return global_step_tensor
 
 
-def restore_session(tf_session: tf.Session, checkpoint_dir: str,
+def restore_session(session: tf.Session, checkpoint_dir: str,
                     saver: Optional[tf.train.Saver] = None) -> None:
     """
     Restores Tensorflow session from the latest checkpoint.
-    :param tf_session: The TF session
+    :param session: The TF session
     :param checkpoint_dir: checkpoint files directory.
     :param saver: The saver object, if not provided a default saver object will be created.
     """
     checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
-    print("Restoring session from `%s`." % checkpoint_path)
+    logger = settings.logger()
+    if logger.isEnabledFor(logging.INFO):
+        logger.info("Restoring session from `%s`.", checkpoint_path)
+
     saver = saver or get_default_saver()
-    saver.restore(tf_session, checkpoint_path)
+    saver.restore(session, checkpoint_path)
 
 
-def get_default_saver() -> tf.train.Saver:
+def get_default_saver(max_to_keep: int=3) -> tf.train.Saver:
     """
     Creates Tensorflow Saver object with 3 recent checkpoints to keep.
+    :param max_to_keep: Maximum number of recent checkpoints to keep, defaults to 3
     """
-    return tf.train.Saver(max_to_keep=3)
+    return tf.train.Saver(max_to_keep=max_to_keep)
 
 
 class MonitorContext(object):
     """
     This is a property bag that will be passed to all monitoring tasks. New attributes can
     be added here when needed. This doesn't require changes in the monitor task interface.
+    Below is the list of currently defined public attributes.
+
+    - iteration_no: Current optimisation iteration number.
+
+    - optimisation_time: Total time elapsed excluding monitoring tasks.
+
+    - total_time: Total time elapsed including monitoring tasks.
+
+    - optimisation_finished: Optimisation finished flag.
+
+    - session: Tensorflow session the optimiser is running in.
+
+    - global_step_tensor: 'global_step' Tensorflow variable. This is used by all (or most)
+        Tensorflow optimisers to indicate the current step number.
+
+    - init_global_step: Initial value of the global step. This will be checked at the start of
+        monitoring. The value may be greater than zero if the graph was restored from a checkpoint.
     """
     def __init__(self) -> None:
-        # Current optimisation iteration number
+
         self.iteration_no = 0
-
-        # Total time elapsed excluding monitoring tasks
         self.optimisation_time = 0.0
-
-        # Total time elapsed including monitoring tasks
         self.total_time = 0.0
-
-        # Optimisation finished flag
         self.optimisation_finished = False
-
-        # Tensorflow session the optimiser is running in
-        self.tf_session = None          # type: tf.Session
-
-        # 'global_step' Tensorflow variable. This is used by all (or most) Tensorflow optimisers
-        # to indicate the current step number.
+        self.session = None          # type: tf.Session
         self.global_step_tensor = None  # type: tf.Variable
-
-        # Initial value of the global step. This will be checked at the start of the monitoring.
-        # The value may be greater than zero if the session was restored from a checkpoint.
         self.init_global_step = 0
 
     @property
@@ -193,10 +202,10 @@ class MonitorContext(object):
         Evaluates the value of the global step variable if it is set, otherwise returns the
         current iteration number.
         """
-        if self.tf_session is None or self.global_step_tensor is None:
+        if self.session is None or self.global_step_tensor is None:
             return self.iteration_no
         else:
-            return self.tf_session.run(self.global_step_tensor)
+            return self.session.run(self.global_step_tensor)
 
 
 class MonitorTask(metaclass=abc.ABCMeta):
@@ -300,19 +309,19 @@ class Monitor(object):
     tasks.
     """
 
-    def __init__(self, monitor_tasks: Iterator[MonitorTask], tf_session: Optional[tf.Session]=None,
+    def __init__(self, monitor_tasks: Iterator[MonitorTask], session: Optional[tf.Session]=None,
                  global_step_tensor: Optional[tf.Variable]=None) -> None:
         """
         :param monitor_tasks: A collection of monitoring tasks to run. The tasks will be called in
         the same order they are specified here.
-        :param tf_session: Tensorflow session the optimiser is running in.
+        :param session: Tensorflow session the optimiser is running in.
         :param global_step_tensor: the Tensorflow 'global_step' variable
         (see notes in MonitorContext.global_step_tensor)
         """
 
         self._monitor_tasks = list(monitor_tasks)
         self._context = MonitorContext()
-        self._context.tf_session = tf_session
+        self._context.session = session
         self._context.global_step_tensor = global_step_tensor
 
         self._start_timestamp = get_hr_time()
@@ -606,7 +615,7 @@ class CheckpointTask(MonitorTask):
 
     def run(self, context: MonitorContext, *args, **kwargs) -> None:
 
-        self._saver.save(context.tf_session, self._checkpoint_path,
+        self._saver.save(context.session, self._checkpoint_path,
                          global_step=context.global_step_tensor)
 
 
@@ -677,11 +686,11 @@ class BaseTensorBoardTask(MonitorTask):
         if self._summary is None:
             raise RuntimeError('TensorBoard monitor task should set the Tensorflow.Summary object')
 
-        if context.tf_session is None:
+        if context.session is None:
             raise RuntimeError('To run a TensorBoard monitor task the TF session object'
                                ' must be provided when creating an instance of the Monitor')
 
-        summary = context.tf_session.run(self._summary, feed_dict=feed_dict)
+        summary = context.session.run(self._summary, feed_dict=feed_dict)
         self._file_writer.add_summary(summary)
         if self._flush_immediately:
             self.flush()
@@ -716,7 +725,7 @@ class StandardTensorBoardTask(BaseTensorBoardTask):
         parameters = parameters or list(model.parameters)
 
         # Add scalar parameters
-        all_summaries += [tf.summary.scalar(p.full_name, tf.reshape(p.constrained_tensor, []))
+        all_summaries += [tf.summary.scalar(p.pathname, tf.reshape(p.constrained_tensor, []))
                           for p in parameters if p.size == 1]
 
         # Add non-scalar parameters
@@ -766,18 +775,20 @@ class LmlTensorBoardTask(BaseTensorBoardTask):
         with params_as_tensors_for(self._model):
             tf_x, tf_y = self._model.X, self._model.Y
 
+        wrapper = None  # type: Callable[[Iterator], Iterator]
         if self._display_progress:  # pragma: no cover
             try:
                 import tqdm
                 wrapper = tqdm.tqdm
             except ImportError:
-                print("LML monitor task: to display progress install `tqdm`.")
-                wrapper = lambda x: x
-        else:   # pragma: no cover
+                logger = settings.logger()
+                if logger.isEnabledFor(logging.WARNING):
+                    logger.warning("LML monitor task: to display progress install `tqdm`.")
+        if wrapper is None:
             wrapper = lambda x: x
 
         lml = 0.0
-        num_batches = -(-len(self._model.X._value) // self._minibatch_size)  # round up
+        num_batches =  int(math.ceil(len(self._model.X._value) / self._minibatch_size))  # round up
         for mb in wrapper(range(num_batches)):
             start = mb * self._minibatch_size
             finish = (mb + 1) * self._minibatch_size
