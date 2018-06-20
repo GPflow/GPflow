@@ -83,6 +83,16 @@ class Model(Parameterized):
         self._likelihood_tensor = likelihood
         self._objective = objective
 
+    def sample_feed_dict(self, sample):
+        tensor_feed_dict = {}
+        for param in self.parameters:
+            if not param.trainable: continue
+            constrained_value = sample[param.pathname]
+            unconstrained_value = param.transform.backward(constrained_value)
+            tensor = param.unconstrained_tensor
+            tensor_feed_dict[tensor] = unconstrained_value
+        return tensor_feed_dict
+
     def _build_objective(self, likelihood_tensor, prior_tensor):
         func = tf.add(likelihood_tensor, prior_tensor, name='nonneg_objective')
         return tf.negative(func, name='objective')
@@ -162,11 +172,11 @@ class GPModel(Model):
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
-        mu, var = self._build_predict(Xnew, full_cov=True)
+        mu, var = self._build_predict(Xnew, full_cov=True)  # N x P, # P x N x N
         jitter = tf.eye(tf.shape(mu)[0], dtype=settings.float_type) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:, :, i] + jitter)
+            L = tf.cholesky(var[i, :, :] + jitter)
             shape = tf.stack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=settings.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))

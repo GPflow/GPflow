@@ -86,10 +86,9 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        exp_p = ndiagquad(lambda X, Y: tf.exp(self.logp(X, Y)),
+        return ndiagquad(lambda X, Y: self.logp(X, Y),
                 self.num_gauss_hermite_points,
-                Fmu, Fvar, Y=Y)
-        return tf.log(exp_p)
+                Fmu, Fvar, logspace=True, Y=Y)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         """
@@ -111,7 +110,7 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        return ndiagquad(self.logp,
+        return ndiagquad(lambda X, Y: self.logp(X, Y),
                 self.num_gauss_hermite_points,
                 Fmu, Fvar, Y=Y)
 
@@ -207,7 +206,8 @@ class StudentT(Likelihood):
     def __init__(self, deg_free=3.0):
         Likelihood.__init__(self)
         self.deg_free = deg_free
-        self.scale = Parameter(1.0, transform=transforms.positive)
+        self.scale = Parameter(1.0, transform=transforms.positive,
+            dtype=settings.float_type)
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -219,7 +219,8 @@ class StudentT(Likelihood):
 
     @params_as_tensors
     def conditional_variance(self, F):
-        return F * 0.0 + (self.deg_free / (self.deg_free - 2.0))
+        var = self.scale**2 * (self.deg_free / (self.deg_free - 2.0))
+        return tf.fill(tf.shape(F), tf.squeeze(var))
 
 
 def probit(x):
