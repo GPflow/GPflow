@@ -340,8 +340,6 @@ class TestRobustMaxMulticlass(GPflowTestCase):
 
 
 
-
-
 class TestMulticlassIndexFix(GPflowTestCase):
     """
     A regression test for a bug in multiclass likelihood.
