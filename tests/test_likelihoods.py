@@ -36,6 +36,8 @@ def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
     for likelihoodClass in gpflow.likelihoods.Likelihood.__subclasses__():
+        if likelihoodClass == gpflow.likelihoods.MonteCarloLikelihood:
+            continue  # abstract base class
         if likelihoodClass == gpflow.likelihoods.Ordinal:
             test_setups.append(
                 LikelihoodSetup(likelihoodClass(np.array([-1, 1])),
