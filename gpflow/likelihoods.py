@@ -633,7 +633,9 @@ class MonteCarloLikelihood(Likelihood):
         """
         mc_cm = self._mc_evals(self.conditional_mean, Fmu, Fvar, epsilon=epsilon)
 
-        mean, var = tf.nn.moments(mc_cm, [0])
+        mean, var = tf.nn.moments(mc_cm, [0])  # this calculates the *sample* variance
+
+        # apply https://en.wikipedia.org/wiki/Bessel's_correction :
         unbiased_var = var * self.num_monte_carlo_points / (self.num_monte_carlo_points - 1)
 
         return mean, unbiased_var  # N x D
@@ -681,8 +683,6 @@ class MonteCarloLikelihood(Likelihood):
         mc_logp = self._mc_evals(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
         return tf.reduce_mean(mc_logp, 0)  # N x 1
 
-
-# pylint: disable=abstract-method
 
 class GaussianMC(MonteCarloLikelihood):
     """
