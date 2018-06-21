@@ -591,6 +591,24 @@ class MonteCarloLikelihood(Likelihood):
         self.num_monte_carlo_points = 100
         del self.num_gauss_hermite_points
 
+    def _mc_evals(self, func, Fmu, Fvar, Y=None, epsilon=None):
+        N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
+        if epsilon is None:
+            epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
+        mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
+        mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
+
+        if Y is not None:
+            mc_Yr = tf.tile(Y, [self.num_monte_carlo_points, 1])  # broadcast Y to match X
+            f_eval = tf.reshape(func(mc_Xr, mc_Yr),
+                                (self.num_monte_carlo_points, N, 1))  # S x N x 1
+
+        else:
+            f_eval = tf.reshape(func(mc_Xr),
+                                (self.num_monte_carlo_points, N, D))
+
+        return f_eval
+
     def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
         r"""
         Given a Normal distribution for the latent function,
@@ -613,12 +631,7 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
-        if epsilon is None:
-            epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
-        mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
-        mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
-        mc_cm = tf.reshape(self.conditional_mean(mc_Xr), (self.num_monte_carlo_points, N, D))
+        mc_cm = self._mc_evals(self.conditional_mean, Fmu, Fvar, epsilon=epsilon)
 
         mean, var = tf.nn.moments(mc_cm, [0])
         unbiased_var = var * self.num_monte_carlo_points / (self.num_monte_carlo_points - 1)
@@ -643,14 +656,7 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
-        if epsilon is None:
-            epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
-        mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
-        mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
-        mc_Yr = tf.tile(Y, [self.num_monte_carlo_points, 1])  # broadcast Y to match X
-        mc_logp = tf.reshape(self.logp(mc_Xr, mc_Yr),
-                             (self.num_monte_carlo_points, N, 1))  # S x N x 1
+        mc_logp = self._mc_evals(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
         return tf.reduce_logsumexp(mc_logp, 0) - tf.log(self.num_monte_carlo_points)  # N x 1
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
@@ -672,14 +678,7 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo quadrature routine.
         """
-        N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
-        if epsilon is None:
-            epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
-        mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
-        mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
-        mc_Yr = tf.tile(Y, [self.num_monte_carlo_points, 1])  # broadcast Y to match X
-        mc_logp = tf.reshape(self.logp(mc_Xr, mc_Yr),
-                             (self.num_monte_carlo_points, N, 1))  # S x N x 1
+        mc_logp = self._mc_evals(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
         return tf.reduce_mean(mc_logp, 0)  # N x 1
 
 
