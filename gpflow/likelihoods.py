@@ -591,7 +591,7 @@ class MonteCarloLikelihood(Likelihood):
         self.num_monte_carlo_points = 100
         del self.num_gauss_hermite_points
 
-    def predict_mean_and_var(self, Fmu, Fvar):
+    def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
         r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
@@ -614,15 +614,18 @@ class MonteCarloLikelihood(Likelihood):
         Here, we implement a default Monte Carlo routine.
         """
         N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
-        mc_x = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type) \
-               * (Fvar[None, :, :] ** 0.5) + Fmu[None, :, :]
+        if epsilon is None:
+            epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
+        mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
         mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
         mc_cm = tf.reshape(self.conditional_mean(mc_Xr), (self.num_monte_carlo_points, N, D))
 
-        # TODO return actual variance, not just zeros!?
-        return tf.reduce_mean(mc_cm, 0), tf.zeros((N, D), settings.float_type)  # N x D
+        mean, var = tf.nn.moments(mc_cm, [0])
+        unbiased_var = var * self.num_monte_carlo_points / (self.num_monte_carlo_points - 1)
 
-    def predict_density(self, Fmu, Fvar, Y):
+        return mean, unbiased_var  # N x D
+
+    def predict_density(self, Fmu, Fvar, Y, epsilon=None):
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the (log) predictive density of Y.
@@ -640,7 +643,15 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        raise NotImplementedError
+        N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
+        if epsilon is None:
+            epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
+        mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
+        mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
+        mc_Yr = tf.tile(Y, [self.num_monte_carlo_points, 1])  # broadcast Y to match X
+        mc_logp = tf.reshape(self.logp(mc_Xr, mc_Yr),
+                             (self.num_monte_carlo_points, N, 1))  # S x N x 1
+        return tf.reduce_logsumexp(mc_logp, 0) - tf.log(self.num_monte_carlo_points)  # N x 1
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         r"""
