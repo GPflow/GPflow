@@ -16,6 +16,7 @@
 
 import tensorflow as tf
 import numpy as np
+from collections import Iterable
 
 from . import settings
 from . import logdensities
@@ -37,7 +38,7 @@ class Likelihood(Parameterized):
         self.num_gauss_hermite_points = 20
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        """
+        r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
 
@@ -59,16 +60,15 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
         """
-        integrand2 = lambda *X: self.conditional_variance(*X) \
-            + tf.square(self.conditional_mean(*X))
+        integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
         E_y, E_y2 = ndiagquad([self.conditional_mean, integrand2],
-                self.num_gauss_hermite_points,
-                Fmu, Fvar)
+                              self.num_gauss_hermite_points,
+                              Fmu, Fvar)
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y
 
     def predict_density(self, Fmu, Fvar, Y):
-        """
+        r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the (log) predictive density of Y.
 
@@ -87,11 +87,11 @@ class Likelihood(Parameterized):
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
         return ndiagquad(lambda X, Y: self.logp(X, Y),
-                self.num_gauss_hermite_points,
-                Fmu, Fvar, logspace=True, Y=Y)
+                         self.num_gauss_hermite_points,
+                         Fmu, Fvar, logspace=True, Y=Y)
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        """
+        r"""
         Compute the expected log density of the data, given a Gaussian
         distribution for the function values.
 
@@ -111,8 +111,8 @@ class Likelihood(Parameterized):
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
         return ndiagquad(lambda X, Y: self.logp(X, Y),
-                self.num_gauss_hermite_points,
-                Fmu, Fvar, Y=Y)
+                         self.num_gauss_hermite_points,
+                         Fmu, Fvar, Y=Y)
 
 
 class Gaussian(Likelihood):
@@ -569,7 +569,7 @@ class Ordinal(Likelihood):
         """
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
-        return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
+        return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma) \
             - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
     def conditional_mean(self, F):
@@ -591,7 +591,7 @@ class MonteCarloLikelihood(Likelihood):
         self.num_monte_carlo_points = 100
         del self.num_gauss_hermite_points
 
-    def _mc_evals(self, func, Fmu, Fvar, Y=None, epsilon=None):
+    def _mc_evals(self, funcs, Fmu, Fvar, Y=None, epsilon=None):
         N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
         if epsilon is None:
             epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
@@ -600,14 +600,19 @@ class MonteCarloLikelihood(Likelihood):
 
         if Y is not None:
             mc_Yr = tf.tile(Y, [self.num_monte_carlo_points, 1])  # broadcast Y to match X
-            f_eval = tf.reshape(func(mc_Xr, mc_Yr),
-                                (self.num_monte_carlo_points, N, 1))  # S x N x 1
+            def eval_func(func):
+                return tf.reshape(func(mc_Xr, mc_Yr),
+                                  (self.num_monte_carlo_points, N, 1))  # S x N x 1
 
         else:
-            f_eval = tf.reshape(func(mc_Xr),
-                                (self.num_monte_carlo_points, N, D))
+            def eval_func(func):
+                return tf.reshape(func(mc_Xr),
+                                  (self.num_monte_carlo_points, N, D))
 
-        return f_eval
+        if isinstance(funcs, Iterable):
+            return [eval_func(f) for f in funcs]
+        else:
+            return eval_func(funcs)
 
     def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
         r"""
@@ -631,14 +636,13 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        mc_cm = self._mc_evals(self.conditional_mean, Fmu, Fvar, epsilon=epsilon)
-
-        mean, var = tf.nn.moments(mc_cm, [0])  # this calculates the *sample* variance
-
-        # apply https://en.wikipedia.org/wiki/Bessel's_correction :
-        unbiased_var = var * self.num_monte_carlo_points / (self.num_monte_carlo_points - 1)
-
-        return mean, unbiased_var  # N x D
+        integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
+        mc_y, mc_y2 = self._mc_evals([self.conditional_mean, integrand2],
+                                     Fmu, Fvar, epsilon=epsilon)
+        E_y = tf.reduce_mean(mc_y, axis=0)
+        E_y2 = tf.reduce_mean(mc_y2, axis=0)
+        V_y = E_y2 - tf.square(E_y)
+        return E_y, V_y  # N x D
 
     def predict_density(self, Fmu, Fvar, Y, epsilon=None):
         r"""
@@ -660,7 +664,7 @@ class MonteCarloLikelihood(Likelihood):
         """
         mc_logp = self._mc_evals(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
         log_N = tf.log(tf.cast(self.num_monte_carlo_points, settings.float_type))
-        return tf.reduce_logsumexp(mc_logp, 0) - log_N  # N x 1
+        return tf.reduce_logsumexp(mc_logp, axis=0) - log_N  # N x 1
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         r"""
@@ -682,7 +686,7 @@ class MonteCarloLikelihood(Likelihood):
         Here, we implement a default Monte Carlo quadrature routine.
         """
         mc_logp = self._mc_evals(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
-        return tf.reduce_mean(mc_logp, 0)  # N x 1
+        return tf.reduce_mean(mc_logp, axis=0)  # N x 1
 
 
 class GaussianMC(MonteCarloLikelihood, Gaussian):
