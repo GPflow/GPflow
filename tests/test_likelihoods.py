@@ -132,8 +132,8 @@ class TestPredictConditional(GPflowTestCase):
 
 class TestQuadrature(GPflowTestCase):
     """
-    Where quadratre methods have been overwritten, make sure the new code
-     does something close to the quadrature
+    Where quadrature methods have been overwritten, make sure the new code
+    does something close to the quadrature
     """
     def setUp(self):
         self.test_graph = tf.Graph()
@@ -177,6 +177,71 @@ class TestQuadrature(GPflowTestCase):
                 F1 = session.run(F1)
                 F2 = session.run(F2)
                 assert_allclose(F1, F2, test_setup.tolerance, test_setup.tolerance)
+
+    def test_pred_mean_and_var(self):
+        # get all the likelihoods where predict_density has been overwritten.
+        for test_setup in self.test_setups:
+            with self.test_context() as session:
+                if not test_setup.is_analytic:
+                    continue
+                l = test_setup.likelihood
+                l.compile()
+                # 'build' the functions
+                F1 = l.predict_mean_and_var(self.Fmu, self.Fvar)
+                F2 = gpflow.likelihoods.Likelihood.predict_mean_and_var(l, self.Fmu, self.Fvar)
+                # compile and run the functions:
+                F1 = session.run(F1)
+                F2 = session.run(F2)
+                assert_allclose(F1, F2, test_setup.tolerance, test_setup.tolerance)
+
+
+class TestMonteCarlo(GPflowTestCase):
+    def setUp(self):
+        self.test_graph = tf.Graph()
+        self.rng = np.random.RandomState()
+        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 1).astype(settings.float_type)
+        self.Fvar = 0.01 * (self.Fvar ** 2)
+
+    def test_var_exp(self):
+        with self.test_context() as session:
+            l = gpflow.likelihoods.GaussianMC(0.3)
+            l.num_monte_carlo_points = 1000000
+            # 'build' the functions
+            l.compile()
+            F1 = l.variational_expectations(self.Fmu, self.Fvar, self.Y)
+            F2 = gpflow.likelihoods.Gaussian.variational_expectations(
+                l, self.Fmu, self.Fvar, self.Y)
+            # compile and run the functions:
+            F1 = session.run(F1)
+            F2 = session.run(F2)
+            assert_allclose(F1, F2, rtol=3e-4, atol=1e-4)
+
+    def test_pred_density(self):
+        with self.test_context() as session:
+            l = gpflow.likelihoods.GaussianMC(0.3)
+            l.num_monte_carlo_points = 1000000
+            l.compile()
+            # 'build' the functions
+            F1 = l.predict_density(self.Fmu, self.Fvar, self.Y)
+            F2 = gpflow.likelihoods.Gaussian.predict_density(l, self.Fmu, self.Fvar, self.Y)
+            # compile and run the functions:
+            F1 = session.run(F1)
+            F2 = session.run(F2)
+            assert_allclose(F1, F2, rtol=3e-4, atol=1e-4)
+
+    def test_pred_mean_and_var(self):
+        with self.test_context() as session:
+            l = gpflow.likelihoods.GaussianMC(0.3)
+            l.num_monte_carlo_points = 1000000
+            l.compile()
+            # 'build' the functions
+            F1 = l.predict_mean_and_var(self.Fmu, self.Fvar)
+            F2 = gpflow.likelihoods.Gaussian.predict_mean_and_var(l, self.Fmu, self.Fvar)
+            # compile and run the functions:
+            F1m, F1v = session.run(F1)
+            F2m, F2v = session.run(F2)
+            assert_allclose(F1m, F2m, rtol=1e-3, atol=1e-3)
+            assert_allclose(F1v, F2v, rtol=1e-3, atol=1e-3)
 
 
 class TestRobustMaxMulticlass(GPflowTestCase):
