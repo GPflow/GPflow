@@ -587,7 +587,7 @@ class Ordinal(Likelihood):
 
 class MonteCarloLikelihood(Likelihood):
     def __init__(self, name=None):
-        super().__init__(name)
+        super().__init__(name=name)
         self.num_monte_carlo_points = 100
         del self.num_gauss_hermite_points
 
@@ -659,7 +659,8 @@ class MonteCarloLikelihood(Likelihood):
         Here, we implement a default Monte Carlo routine.
         """
         mc_logp = self._mc_evals(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
-        return tf.reduce_logsumexp(mc_logp, 0) - tf.log(self.num_monte_carlo_points)  # N x 1
+        log_N = tf.log(tf.cast(self.num_monte_carlo_points, settings.float_type))
+        return tf.reduce_logsumexp(mc_logp, 0) - log_N  # N x 1
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         r"""
@@ -684,22 +685,13 @@ class MonteCarloLikelihood(Likelihood):
         return tf.reduce_mean(mc_logp, 0)  # N x 1
 
 
-class GaussianMC(MonteCarloLikelihood):
+class GaussianMC(MonteCarloLikelihood, Gaussian):
     """
     Stochastic version of Gaussian likelihood for comparison.
     """
-
-    def __init__(self, variance=1.0):
-        super().__init__()
-        self.variance = Parameter(
-            variance, transform=transforms.positive, dtype=settings.float_type)
-
-    @params_as_tensors
-    def logp(self, F, Y):
-        return logdensities.gaussian(F, Y, self.variance)
-
-    def conditional_mean(self, F):  # pylint: disable=R0201
-        return tf.identity(F)
+    def __init__(self, variance=1.0, name=None):
+        super().__init__(name=name)
+        self.variance = variance
 
 
 class SoftMax(MonteCarloLikelihood):
@@ -708,7 +700,7 @@ class SoftMax(MonteCarloLikelihood):
     """
 
     def __init__(self, num_classes, name=None):
-        super().__init__(name)
+        super().__init__(name=name)
         self.num_classes = num_classes
 
     def logp(self, F, Y):
