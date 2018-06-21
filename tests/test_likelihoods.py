@@ -214,7 +214,7 @@ class TestMonteCarlo(GPflowTestCase):
             # compile and run the functions:
             F1 = session.run(F1)
             F2 = session.run(F2)
-            assert_allclose(F1, F2, rtol=3e-4, atol=1e-4)
+            assert_allclose(F1, F2, rtol=1e-3, atol=1e-4)
 
     def test_pred_density(self):
         with self.test_context() as session:
@@ -227,7 +227,7 @@ class TestMonteCarlo(GPflowTestCase):
             # compile and run the functions:
             F1 = session.run(F1)
             F2 = session.run(F2)
-            assert_allclose(F1, F2, rtol=3e-4, atol=1e-4)
+            assert_allclose(F1, F2, rtol=1e-3, atol=1e-4)
 
     def test_pred_mean_and_var(self):
         with self.test_context() as session:
