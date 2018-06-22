@@ -199,11 +199,13 @@ class TestMonteCarlo(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
         self.rng = np.random.RandomState()
+        self.rng.seed(1)
         self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 1).astype(settings.float_type)
         self.Fvar = 0.01 * (self.Fvar ** 2)
 
     def test_var_exp(self):
         with self.test_context() as session:
+            tf.set_random_seed(1)
             l = gpflow.likelihoods.GaussianMC(0.3)
             l.num_monte_carlo_points = 1000000
             # 'build' the functions
@@ -214,10 +216,11 @@ class TestMonteCarlo(GPflowTestCase):
             # compile and run the functions:
             F1 = session.run(F1)
             F2 = session.run(F2)
-            assert_allclose(F1, F2, rtol=1e-3, atol=1e-4)
+            assert_allclose(F1, F2, rtol=5e-4, atol=1e-4)
 
     def test_pred_density(self):
         with self.test_context() as session:
+            tf.set_random_seed(1)
             l = gpflow.likelihoods.GaussianMC(0.3)
             l.num_monte_carlo_points = 1000000
             l.compile()
@@ -227,10 +230,11 @@ class TestMonteCarlo(GPflowTestCase):
             # compile and run the functions:
             F1 = session.run(F1)
             F2 = session.run(F2)
-            assert_allclose(F1, F2, rtol=1e-3, atol=1e-4)
+            assert_allclose(F1, F2, rtol=5e-4, atol=1e-4)
 
     def test_pred_mean_and_var(self):
         with self.test_context() as session:
+            tf.set_random_seed(1)
             l = gpflow.likelihoods.GaussianMC(0.3)
             l.num_monte_carlo_points = 1000000
             l.compile()
@@ -240,8 +244,8 @@ class TestMonteCarlo(GPflowTestCase):
             # compile and run the functions:
             F1m, F1v = session.run(F1)
             F2m, F2v = session.run(F2)
-            assert_allclose(F1m, F2m, rtol=1e-3, atol=1e-3)
-            assert_allclose(F1v, F2v, rtol=1e-3, atol=1e-3)
+            assert_allclose(F1m, F2m, rtol=5e-4, atol=1e-4)
+            assert_allclose(F1v, F2v, rtol=5e-4, atol=1e-4)
 
 
 class TestRobustMaxMulticlass(GPflowTestCase):
