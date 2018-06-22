@@ -69,7 +69,7 @@ class Likelihood(Parameterized):
     def predict_density(self, Fmu, Fvar, Y):
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
-        compute the (log) predictive density of Y.
+        compute the log predictive density of Y.
 
         i.e. if
             q(f) = N(Fmu, Fvar)
@@ -80,7 +80,7 @@ class Likelihood(Parameterized):
 
         then this method computes the predictive density
 
-           \int p(y=Y|f)q(f) df
+            \log \int p(y=Y|f)q(f) df
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
@@ -628,7 +628,7 @@ class MonteCarloLikelihood(Likelihood):
     def predict_density(self, Fmu, Fvar, Y, epsilon=None):
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
-        compute the (log) predictive density of Y.
+        compute the log predictive density of Y.
 
         i.e. if
             q(f) = N(Fmu, Fvar)
@@ -639,7 +639,7 @@ class MonteCarloLikelihood(Likelihood):
 
         then this method computes the predictive density
 
-           \int p(y=Y|f)q(f) df
+            \log \int p(y=Y|f)q(f) df
 
         Here, we implement a default Monte Carlo routine.
         """
