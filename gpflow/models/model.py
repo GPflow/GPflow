@@ -161,11 +161,11 @@ class GPModel(Model):
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
-        mu, var = self._build_predict(Xnew, full_cov=True)
+        mu, var = self._build_predict(Xnew, full_cov=True)  # N x P, # P x N x N
         jitter = tf.eye(tf.shape(mu)[0], dtype=settings.float_type) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:, :, i] + jitter)
+            L = tf.cholesky(var[i, :, :] + jitter)
             shape = tf.stack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=settings.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))
