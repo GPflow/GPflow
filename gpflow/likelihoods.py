@@ -202,15 +202,19 @@ class Exponential(Likelihood):
 
 
 class StudentT(Likelihood):
-    def __init__(self, deg_free=3.0, **kwargs):
-        Likelihood.__init__(self, **kwargs)
-        self.deg_free = deg_free
-        self.scale = Parameter(1.0, transform=transforms.positive,
+    def __init__(self, scale=1.0, df=3.0, **kwargs):
+        """
+        :param scale float: scale parameter
+        :param df float: degrees of freedom
+        """
+        super().__init__(**kwargs)
+        self.df = df
+        self.scale = Parameter(scale, transform=transforms.positive,
             dtype=settings.float_type)
 
     @params_as_tensors
     def logp(self, F, Y):
-        return logdensities.student_t(Y, F, self.scale, self.deg_free)
+        return logdensities.student_t(Y, F, self.scale, self.df)
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -218,7 +222,7 @@ class StudentT(Likelihood):
 
     @params_as_tensors
     def conditional_variance(self, F):
-        var = self.scale**2 * (self.deg_free / (self.deg_free - 2.0))
+        var = self.scale**2 * (self.df / (self.df - 2.0))
         return tf.fill(tf.shape(F), tf.squeeze(var))
 
 
