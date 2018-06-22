@@ -33,8 +33,8 @@ from .quadrature import hermgauss
 
 
 class Likelihood(Parameterized):
-    def __init__(self, name=None):
-        super(Likelihood, self).__init__(name)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.num_gauss_hermite_points = 20
 
     def predict_mean_and_var(self, Fmu, Fvar):
@@ -116,8 +116,8 @@ class Likelihood(Parameterized):
 
 
 class Gaussian(Likelihood):
-    def __init__(self, variance=1.0, name=None):
-        super().__init__(name=name)
+    def __init__(self, variance=1.0, **kwargs):
+        super().__init__(**kwargs)
         self.variance = Parameter(
             variance, transform=transforms.positive, dtype=settings.float_type)
 
@@ -162,8 +162,8 @@ class Poisson(Likelihood):
     of size 'binsize') and using this Poisson likelihood.
     """
 
-    def __init__(self, invlink=tf.exp, binsize=1.):
-        Likelihood.__init__(self)
+    def __init__(self, invlink=tf.exp, binsize=1., **kwargs):
+        super().__init__(**kwargs)
         self.invlink = invlink
         self.binsize = np.double(binsize)
 
@@ -183,8 +183,8 @@ class Poisson(Likelihood):
         return super(Poisson, self).variational_expectations(Fmu, Fvar, Y)
 
 class Exponential(Likelihood):
-    def __init__(self, invlink=tf.exp):
-        super().__init__()
+    def __init__(self, invlink=tf.exp, **kwargs):
+        super().__init__(**kwargs)
         self.invlink = invlink
 
     def logp(self, F, Y):
@@ -203,8 +203,8 @@ class Exponential(Likelihood):
 
 
 class StudentT(Likelihood):
-    def __init__(self, deg_free=3.0):
-        Likelihood.__init__(self)
+    def __init__(self, deg_free=3.0, **kwargs):
+        Likelihood.__init__(self, **kwargs)
         self.deg_free = deg_free
         self.scale = Parameter(1.0, transform=transforms.positive,
             dtype=settings.float_type)
@@ -228,8 +228,8 @@ def probit(x):
 
 
 class Bernoulli(Likelihood):
-    def __init__(self, invlink=probit):
-        Likelihood.__init__(self)
+    def __init__(self, invlink=probit, **kwargs):
+        super().__init__(**kwargs)
         self.invlink = invlink
 
     def logp(self, F, Y):
@@ -260,8 +260,8 @@ class Gamma(Likelihood):
     Use the transformed GP to give the *scale* (inverse rate) of the Gamma
     """
 
-    def __init__(self, invlink=tf.exp):
-        Likelihood.__init__(self)
+    def __init__(self, invlink=tf.exp, **kwargs):
+        super().__init__(**kwargs)
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=transforms.positive)
 
@@ -304,8 +304,8 @@ class Beta(Likelihood):
         beta  = scale * (1-m)
     """
 
-    def __init__(self, invlink=probit, scale=1.0):
-        Likelihood.__init__(self)
+    def __init__(self, invlink=probit, scale=1.0, **kwargs):
+        super().__init__(**kwargs)
         self.scale = Parameter(scale, transform=transforms.positive)
         self.invlink = invlink
 
@@ -339,8 +339,8 @@ class RobustMax(Parameterized):
           eps/(k-1)  otherwise.
     """
 
-    def __init__(self, num_classes, epsilon=1e-3, name=None):
-        super().__init__(name)
+    def __init__(self, num_classes, epsilon=1e-3, **kwargs):
+        super().__init__(**kwargs)
         self.epsilon = Parameter(epsilon, transforms.Logistic(), trainable=False, dtype=settings.float_type,
                                  prior=priors.Beta(0.2, 5.))
         self.num_classes = num_classes
@@ -383,13 +383,13 @@ class RobustMax(Parameterized):
 
 
 class MultiClass(Likelihood):
-    def __init__(self, num_classes, invlink=None):
+    def __init__(self, num_classes, invlink=None, **kwargs):
         """
         A likelihood that can do multi-way classification.
         Currently the only valid choice
         of inverse-link function (invlink) is an instance of RobustMax.
         """
-        Likelihood.__init__(self)
+        super().__init__(**kwargs)
         self.num_classes = num_classes
         if invlink is None:
             invlink = RobustMax(self.num_classes)
@@ -451,12 +451,12 @@ class MultiClass(Likelihood):
 
 
 class SwitchedLikelihood(Likelihood):
-    def __init__(self, likelihood_list):
+    def __init__(self, likelihood_list, **kwargs):
         """
         In this likelihood, we assume at extra column of Y, which contains
         integers that specify a likelihood from the list of likelihoods.
         """
-        Likelihood.__init__(self)
+        super().__init__(**kwargs)
         for l in likelihood_list:
             assert isinstance(l, Likelihood)
         self.likelihood_list = ParamList(likelihood_list)
@@ -536,13 +536,13 @@ class Ordinal(Likelihood):
       year={2005}
     }
     """
-    def __init__(self, bin_edges):
+    def __init__(self, bin_edges, **kwargs):
         """
         bin_edges is a numpy array specifying at which function value the
-        output label should switch. In the possible Y values are 0...K, then
+        output label should switch. If the possible Y values are 0...K, then
         the size of bin_edges should be (K-1).
         """
-        Likelihood.__init__(self)
+        super().__init__(**kwargs)
         self.bin_edges = bin_edges
         self.num_bins = bin_edges.size + 1
         self.sigma = Parameter(1.0, transform=transforms.positive)
@@ -586,8 +586,8 @@ class Ordinal(Likelihood):
 
 
 class MonteCarloLikelihood(Likelihood):
-    def __init__(self, name=None):
-        super().__init__(name=name)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.num_monte_carlo_points = 100
         del self.num_gauss_hermite_points
 
@@ -693,9 +693,7 @@ class GaussianMC(MonteCarloLikelihood, Gaussian):
     """
     Stochastic version of Gaussian likelihood for comparison.
     """
-    def __init__(self, variance=1.0, name=None):
-        super().__init__(name=name)
-        self.variance = variance
+    pass
 
 
 class SoftMax(MonteCarloLikelihood):
@@ -703,8 +701,8 @@ class SoftMax(MonteCarloLikelihood):
     The soft-max multi-class likelihood.
     """
 
-    def __init__(self, num_classes, name=None):
-        super().__init__(name=name)
+    def __init__(self, num_classes, **kwargs):
+        super().__init__(**kwargs)
         self.num_classes = num_classes
 
     def logp(self, F, Y):
