@@ -16,7 +16,6 @@
 
 import tensorflow as tf
 import numpy as np
-from collections import Iterable
 
 from . import settings
 from . import logdensities
@@ -28,7 +27,7 @@ from .decors import params_as_tensors_for
 from .params import Parameter
 from .params import Parameterized
 from .params import ParamList
-from .quadrature import ndiagquad
+from .quadrature import ndiagquad, ndiag_mc
 from .quadrature import hermgauss
 
 
@@ -591,28 +590,8 @@ class MonteCarloLikelihood(Likelihood):
         self.num_monte_carlo_points = 100
         del self.num_gauss_hermite_points
 
-    def _mc_evals(self, funcs, Fmu, Fvar, Y=None, epsilon=None):
-        N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
-        if epsilon is None:
-            epsilon = tf.random_normal((self.num_monte_carlo_points, N, D), dtype=settings.float_type)
-        mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
-        mc_Xr = tf.reshape(mc_x, (self.num_monte_carlo_points * N, D))
-
-        if Y is not None:
-            mc_Yr = tf.tile(Y, [self.num_monte_carlo_points, 1])  # broadcast Y to match X
-            def eval_func(func):
-                return tf.reshape(func(mc_Xr, mc_Yr),
-                                  (self.num_monte_carlo_points, N, 1))  # S x N x 1
-
-        else:
-            def eval_func(func):
-                return tf.reshape(func(mc_Xr),
-                                  (self.num_monte_carlo_points, N, D))
-
-        if isinstance(funcs, Iterable):
-            return [eval_func(f) for f in funcs]
-        else:
-            return eval_func(funcs)
+    def _mc_quadrature(self, funcs, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys):
+        return ndiag_mc(funcs, self.num_monte_carlo_points, Fmu, Fvar, logspace, epsilon, **Ys)
 
     def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
         r"""
@@ -637,10 +616,8 @@ class MonteCarloLikelihood(Likelihood):
         Here, we implement a default Monte Carlo routine.
         """
         integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
-        mc_y, mc_y2 = self._mc_evals([self.conditional_mean, integrand2],
-                                     Fmu, Fvar, epsilon=epsilon)
-        E_y = tf.reduce_mean(mc_y, axis=0)
-        E_y2 = tf.reduce_mean(mc_y2, axis=0)
+        E_y, E_y2 = self._mc_quadrature([self.conditional_mean, integrand2],
+                                        Fmu, Fvar, epsilon=epsilon)
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y  # N x D
 
@@ -662,9 +639,7 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        mc_logp = self._mc_evals(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
-        log_N = tf.log(tf.cast(self.num_monte_carlo_points, settings.float_type))
-        return tf.reduce_logsumexp(mc_logp, axis=0) - log_N  # N x 1
+        return self._mc_quadrature(self.logp, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon)
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         r"""
@@ -685,8 +660,7 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo quadrature routine.
         """
-        mc_logp = self._mc_evals(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
-        return tf.reduce_mean(mc_logp, axis=0)  # N x 1
+        return self._mc_quadrature(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
 
 
 class GaussianMC(MonteCarloLikelihood, Gaussian):
