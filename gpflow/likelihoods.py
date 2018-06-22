@@ -85,7 +85,7 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        return ndiagquad(lambda X, Y: self.logp(X, Y),
+        return ndiagquad(self.logp,
                          self.num_gauss_hermite_points,
                          Fmu, Fvar, logspace=True, Y=Y)
 
@@ -109,7 +109,7 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        return ndiagquad(lambda X, Y: self.logp(X, Y),
+        return ndiagquad(self.logp,
                          self.num_gauss_hermite_points,
                          Fmu, Fvar, Y=Y)
 
