@@ -680,7 +680,8 @@ class SoftMax(MonteCarloLikelihood):
         self.num_classes = num_classes
 
     def logp(self, F, Y):
-        return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]
+        with tf.control_dependencies([tf.assert_equal(tf.shape(Y)[1], 1)]):
+            return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]
 
     def conditional_mean(self, F):
         return tf.nn.softmax(F)
