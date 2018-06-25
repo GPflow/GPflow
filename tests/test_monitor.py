@@ -19,12 +19,14 @@ from collections import namedtuple
 import tempfile
 import pathlib
 
-import gpflow
-import gpflow.actions
-import gpflow.training.monitor.monitor as mon
-from gpflow.test_util import session_context
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
+
+import gpflow
+import gpflow.actions
+import gpflow.training.monitor as mon
+from gpflow.test_util import session_context
 
 
 class _DummyMonitorTask(mon.MonitorTask):
@@ -63,7 +65,7 @@ class DummyLinearModel(gpflow.models.Model):
 
 class TestMonitor(TestCase):
 
-    @mock.patch('gpflow.training.monitor.monitor.get_hr_time')
+    @mock.patch('gpflow.training.monitor.get_hr_time')
     def test_on_iteration_timing(self, mock_timer):
         """
         Tests how the Monitor keeps track of the total running time and total optimisation time.
@@ -82,7 +84,7 @@ class TestMonitor(TestCase):
 
 class TestMonitorTask(TestCase):
 
-    @mock.patch('gpflow.training.monitor.monitor.get_hr_time')
+    @mock.patch('gpflow.training.monitor.get_hr_time')
     def test_call_timing(self, mock_timer):
         """
         Test how a monitoring task keeps track of the last execution time and accumulated execution
@@ -254,9 +256,9 @@ class TestCheckpointTask(TestCase):
         return dummy_var
 
 
-class TestsStandardTensorBoardTask(TestCase):
+class TestModelToTensorBoardTask(TestCase):
 
-    def test_tensorboard_only_scalars(self):
+    def test_std_tensorboard_only_scalars(self):
         """
         Tests the standard tensorboard task with scalar parameters only
         """
@@ -265,7 +267,7 @@ class TestsStandardTensorBoardTask(TestCase):
             model = create_linear_model()
 
             def task_factory(event_dir: str):
-                return mon.StandardTensorBoardTask(model, event_dir, only_scalars=True)
+                return mon.ModelToTensorBoardTask(event_dir, model, only_scalars=True)
 
             summary = run_tensorboard_task(task_factory)
             self.assertAlmostEqual(summary['DummyLinearModel/b'].simple_value, float(model.b.value))
@@ -275,7 +277,7 @@ class TestsStandardTensorBoardTask(TestCase):
                                    model.compute_log_likelihood(), places=5)
             self.assertNotIn('DummyLinearModel/w', summary.keys())
 
-    def test_tensorboard_all_parameters(self):
+    def test_std_tensorboard_all_parameters(self):
         """
         Tests the standard tensorboard task with all parameters and extra summaries
         """
@@ -290,8 +292,8 @@ class TestsStandardTensorBoardTask(TestCase):
                 model.enquire_session().run(dummy_vars_init)
                 add_summaries = [tf.summary.scalar('dummy' + str(i), dummy_var)
                                  for i, dummy_var in enumerate(dummy_vars)]
-                return mon.StandardTensorBoardTask(model, event_dir, only_scalars=False,
-                                                   additional_summaries=add_summaries)
+                return mon.ModelToTensorBoardTask(event_dir, model, only_scalars=False,
+                                                  additional_summaries=add_summaries)
 
             summary = run_tensorboard_task(task_factory)
             self.assertAlmostEqual(summary['dummy0'].simple_value, 5.0)
@@ -299,9 +301,9 @@ class TestsStandardTensorBoardTask(TestCase):
             self.assertIn('DummyLinearModel/w', summary.keys())
 
 
-class TestLmlTensorBoardTask(TestCase):
+class TestLmlToTensorBoardTask(TestCase):
 
-    def test_tensorboard(self):
+    def test_lml_tensorboard(self):
         """
         Tests the LML tensorboard task
         """
@@ -330,14 +332,103 @@ class TestLmlTensorBoardTask(TestCase):
             model = DummyLinearModel(xs, ys, d.w, d.b, d.var)
 
             def task_factory(event_dir: str):
-                return mon.LmlTensorBoardTask(model, event_dir, minibatch_size=complete_size,
-                                              display_progress=False)
+                return mon.LmlToTensorBoardTask(event_dir, model, minibatch_size=complete_size,
+                                                display_progress=False)
 
             # Run LML task, extract the LML value and compare with the one computed over models with
             # small data sets
             summary = run_tensorboard_task(task_factory)
             self.assertAlmostEqual(summary['DummyLinearModel/full_lml'].simple_value, avg_lml,
                                    places=5)
+
+
+class TestScalarFuncToTensorBoardTask(TestCase):
+
+    def test_scalar_tensorboard(self):
+        """
+        Tests Scalar function tensorboard task.
+        """
+
+        user_func_name = 'test_scalar_function'
+        user_func_value = 5.55
+
+        def user_func(*args, **kwargs):
+            return user_func_value
+
+        def task_factory(event_dir: str):
+            return mon.ScalarFuncToTensorBoardTask(event_dir, user_func, user_func_name)
+
+        summary = run_tensorboard_task(task_factory)
+        self.assertAlmostEqual(summary[user_func_name].simple_value, user_func_value, places=5)
+
+
+class TestVectorFuncToTensorBoardTask(TestCase):
+
+    def test_vector_tensorboard(self):
+        """
+        Tests Vector function tensorboard task.
+        """
+
+        user_func_name = 'test_vector_function'
+        user_func_values = [3.3, 4.4, 5.5]
+
+        def user_func(*args, **kwargs):
+            return user_func_values
+
+        def task_factory(event_dir: str):
+            return mon.VectorFuncToTensorBoardTask(event_dir, user_func, user_func_name,
+                                                 len(user_func_values))
+
+        summary = run_tensorboard_task(task_factory)
+        for i, func_value in enumerate(user_func_values):
+            self.assertAlmostEqual(summary[user_func_name + '_' + str(i)].simple_value,
+                                   func_value, places=5)
+
+
+class TestHistogramToTensorBoardTask(TestCase):
+
+    def test_histogram_tensorboard(self):
+        """
+        Tests Histogram function tensorboard task. Just checks that the histogram summary object
+        is created.
+        """
+
+        user_func_name = 'test_histogram_function'
+        user_func_values = [[1.1, 1.2], [2.1, 2.2], [3.1, 3.3]]
+
+        def user_func(*args, **kwargs):
+            return user_func_values
+
+        def task_factory(event_dir: str):
+            return mon.HistogramToTensorBoardTask(event_dir, user_func, user_func_name,
+                                                np.array(user_func_values).shape)
+
+        summary = run_tensorboard_task(task_factory)
+        self.assertIsNotNone(summary[user_func_name].histo)
+
+
+class TestImageToTensorBoardTask(TestCase):
+
+    def test_image_tensorboard(self):
+        """
+        Tests Matplotlib image tensorboard task. Just checks that the image summary object
+        is created
+        """
+
+        plot_func_name = 'test_plot_function'
+
+        def plot_func(*args, **kwargs):
+            x = np.linspace(0, 2, 100)
+            plt.plot(x, x, label='linear')
+            plt.plot(x, x ** 2, label='quadratic')
+            plt.plot(x, x ** 3, label='cubic')
+            return plt.figure()
+
+        def task_factory(event_dir: str):
+            return mon.ImageToTensorBoardTask(event_dir, plot_func, plot_func_name)
+
+        summary = run_tensorboard_task(task_factory)
+        self.assertIsNotNone(summary[plot_func_name + '/image/0'].image)
 
 
 class TestMonitorIntegration(TestCase):
@@ -348,7 +439,9 @@ class TestMonitorIntegration(TestCase):
         """
 
         def optimise(model, step_callback, global_step_tensor) -> None:
-            """Optimisation function that creates and calls the tensorflow AdamOptimizer optimiser"""
+            """
+            Optimisation function that creates and calls the tensorflow AdamOptimizer optimiser.
+            """
             optimiser = gpflow.train.AdamOptimizer(0.01)
             optimiser.minimize(model, maxiter=10, step_callback=step_callback,
                                global_step=global_step_tensor)
@@ -362,7 +455,9 @@ class TestMonitorIntegration(TestCase):
         """
 
         def optimise(model, step_callback, _) -> None:
-            """Optimisation function that creates and calls ScipyOptimizer optimiser"""
+            """
+            Optimisation function that creates and calls ScipyOptimizer optimiser.
+            """
             optimiser = gpflow.train.ScipyOptimizer()
             optimiser.minimize(model, maxiter=10, step_callback=step_callback)
 
@@ -375,7 +470,9 @@ class TestMonitorIntegration(TestCase):
         """
 
         def optimise(model, step_callback, _) -> None:
-            """Optimisation function that creates and calls NatGradPtimizer optimiser"""
+            """
+            Optimisation function that creates and calls NatGradPtimizer optimiser.
+            """
             var_list = [(model.q_mu, model.q_sqrt)]
             # we don't want adam optimizing these
             model.q_mu.set_trainable(False)
@@ -465,10 +562,11 @@ def run_tensorboard_task(task_factory: Callable[[str], mon.BaseTensorBoardTask])
 
         monitor_task = task_factory(tmp_event_dir)
 
-        session = monitor_task.model.enquire_session()
+        session = monitor_task.model.enquire_session()\
+            if monitor_task.model is not None else tf.Session()
         global_step_tensor = mon.create_global_step(session)
 
-        monitor_task.with_global_step_tensor(global_step_tensor).with_flush_immediately(True)
+        monitor_task.with_flush_immediately(True)
 
         monitor_context = mon.MonitorContext()
         monitor_context.session = session
