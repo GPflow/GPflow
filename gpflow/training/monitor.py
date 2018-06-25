@@ -72,7 +72,7 @@ print_task = mon.PrintTimingsTask()\
 # This task will create a Tensoreflow summary of the model for Tensorboard. It will run at
 # every 100-th iteration. We also want to do this after the optimisation is finished.
 #
-tensorboard_task = mon.StandardTensorBoardTask(model, './model-tensorboard')\
+tensorboard_task = mon.ModelToTensorBoardTask('./model-tensorboard', model)\
     .with_name('tensorboard')\
     .with_condition(mon.PeriodicIterationCondition(100))\
     .with_exit_condition(True)
@@ -110,15 +110,17 @@ import itertools
 import logging
 import math
 from pathlib import PurePath
+import io
+from timeit import default_timer as timer
 
 import numpy as np
 import tensorflow as tf
+from matplotlib.figure import Figure
 
-from ... import params_as_tensors_for
-from ... import settings
-from ...models import Model
-from ...params import Parameter
-from timeit import default_timer as timer
+from gpflow import params_as_tensors_for
+from gpflow import settings
+from gpflow.models import Model
+from gpflow.params import Parameter
 
 
 def get_hr_time() -> float:
@@ -629,15 +631,16 @@ class BaseTensorBoardTask(MonitorTask):
     providing these values as the input values dictionary.
     """
 
-    def __init__(self, model: Model, event_path: str) -> None:
+    def __init__(self, event_path: str, model: Optional[Model]=None) -> None:
         """
-        :param model: Model object
         :param event_path: Path of the event file where the summary protocol buffers will
         be written to.
+        :param model: Model object
         """
         super().__init__()
         self._model = model
-        self._file_writer = tf.summary.FileWriter(event_path, model.graph)
+        self._file_writer = tf.summary.FileWriter(event_path,
+                                                  model.graph if model is not None else None)
         self._summary = None    # type: tf.Summary
         self._flush_immediately = False
 
@@ -656,16 +659,6 @@ class BaseTensorBoardTask(MonitorTask):
         Sets the flag indicating that the event file should be flushed at each call.
         """
         self._flush_immediately = flush_immediately
-        return self
-
-    def with_global_step_tensor(self, global_step_tensor: tf.Variable) -> 'BaseTensorBoardTask':
-        """
-        Adds optimisation global step to the summary.
-        """
-        if self._summary is not None:
-            self._summary = tf.summary.merge(
-                [self._summary, tf.summary.scalar('optimisation/global_step',
-                                                  global_step_tensor)])
         return self
 
     def flush(self):
@@ -691,12 +684,12 @@ class BaseTensorBoardTask(MonitorTask):
                                ' must be provided when creating an instance of the Monitor')
 
         summary = context.session.run(self._summary, feed_dict=feed_dict)
-        self._file_writer.add_summary(summary)
+        self._file_writer.add_summary(summary, context.global_step)
         if self._flush_immediately:
             self.flush()
 
 
-class StandardTensorBoardTask(BaseTensorBoardTask):
+class ModelToTensorBoardTask(BaseTensorBoardTask):
     """
     Monitoring task that creates a sensible TensorBoard for a model.
     It sends to the TensorBoard the likelihood value and the model parameters.
@@ -708,7 +701,7 @@ class StandardTensorBoardTask(BaseTensorBoardTask):
     merged with the model parameters' summary.
     """
 
-    def __init__(self, model: Model, event_path: str, only_scalars: bool = True,
+    def __init__(self, event_path: str, model: Model, only_scalars: bool = True,
                  parameters: Optional[List[Parameter]] = None,
                  additional_summaries: Optional[List[tf.Summary]] = None) -> None:
         """
@@ -720,7 +713,7 @@ class StandardTensorBoardTask(BaseTensorBoardTask):
         provided all parameters will be sent to TensorBoard.
         :param additional_summaries: List of additional summary objects to send to TensorBoard.
         """
-        super().__init__(model, event_path)
+        super().__init__(event_path, model)
         all_summaries = additional_summaries or []
         parameters = parameters or list(model.parameters)
 
@@ -741,7 +734,7 @@ class StandardTensorBoardTask(BaseTensorBoardTask):
         self._summary = tf.summary.merge(all_summaries)
 
 
-class LmlTensorBoardTask(BaseTensorBoardTask):
+class LmlToTensorBoardTask(BaseTensorBoardTask):
     """
     Monitoring task that creates a TensorBoard with just one scalar value -
     the unbiased estimator of the evidence lower bound (ELBO or LML).
@@ -754,7 +747,7 @@ class LmlTensorBoardTask(BaseTensorBoardTask):
     are left to compute). For that the `tqdm' progress bar should be installed (pip install tqdm).
     """
 
-    def __init__(self, model: Model, event_path: str, minibatch_size: Optional[int] = 100,
+    def __init__(self, event_path: str, model: Model, minibatch_size: Optional[int] = 100,
                  display_progress: Optional[bool] = True) -> None:
         """
         :param model: Model tensor
@@ -764,32 +757,31 @@ class LmlTensorBoardTask(BaseTensorBoardTask):
         :param display_progress: if True the task displays the progress of calculating LML.
         """
 
-        super().__init__(model, event_path)
+        super().__init__(event_path, model)
         self._minibatch_size = minibatch_size
         self._full_lml = tf.placeholder(settings.tf_float, shape=())
         self._summary = tf.summary.scalar(model.name + '/full_lml', self._full_lml)
-        self._display_progress = display_progress
+
+        self.wrapper = None  # type: Callable[[Iterator], Iterator]
+        if display_progress:  # pragma: no cover
+            try:
+                import tqdm
+                self.wrapper = tqdm.tqdm
+            except ImportError:
+                logger = settings.logger()
+                if logger.isEnabledFor(logging.WARNING):
+                    logger.warning("LML monitor task: to display progress install `tqdm`.")
+        if self.wrapper is None:
+            self.wrapper = lambda x: x
 
     def run(self, context: MonitorContext, *args, **kwargs) -> None:
 
         with params_as_tensors_for(self._model):
             tf_x, tf_y = self._model.X, self._model.Y
 
-        wrapper = None  # type: Callable[[Iterator], Iterator]
-        if self._display_progress:  # pragma: no cover
-            try:
-                import tqdm
-                wrapper = tqdm.tqdm
-            except ImportError:
-                logger = settings.logger()
-                if logger.isEnabledFor(logging.WARNING):
-                    logger.warning("LML monitor task: to display progress install `tqdm`.")
-        if wrapper is None:
-            wrapper = lambda x: x
-
         lml = 0.0
         num_batches =  int(math.ceil(len(self._model.X._value) / self._minibatch_size))  # round up
-        for mb in wrapper(range(num_batches)):
+        for mb in self.wrapper(range(num_batches)):
             start = mb * self._minibatch_size
             finish = (mb + 1) * self._minibatch_size
             x_mb = self._model.X._value[start:finish, :]
@@ -799,3 +791,120 @@ class LmlTensorBoardTask(BaseTensorBoardTask):
         lml = lml / len(self._model.X._value)
 
         self._eval_summary(context, {self._full_lml: lml})
+
+
+class ScalarFuncToTensorBoardTask(BaseTensorBoardTask):
+    """
+    Monitoring task that creates a TensorBoard with a single scalar value computed by a user
+    provided function.
+    """
+
+    def __init__(self, event_path: str, func: Callable, func_name: str) -> None:
+        """
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
+        :param func: User function that provides a value for the TensorBoard
+        :param func_name: Name the function should be seen with in the TensorBoard. This name may
+        get altered by tf.summary. For example spaces will be replaced with underscores.
+        """
+        super().__init__(event_path)
+        self.func = func
+        self.placeholder = tf.placeholder(tf.float64)
+        self._summary = tf.summary.scalar(func_name, self.placeholder)
+
+    def run(self, context: MonitorContext, *args, **kwargs) -> None:
+        self._eval_summary(context, {self.placeholder: self.func(*args, **kwargs)})
+
+
+class VectorFuncToTensorBoardTask(BaseTensorBoardTask):
+    """
+    Monitoring task that creates a TensorBoard with multiple values computed by a user
+    provided function. The function can return values in an array of various complexity.
+    The array will be stored in the TensorBoard in a flat form made by the numpy `array.flatten()`
+    function.
+    """
+
+    def __init__(self, event_path: str, func: Callable, func_name: str, num_outputs: int) -> None:
+        """
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
+        :param func: User function that provides vector values for the TensorBoard.
+        :param func_name: Name the function should be seen with in the TensorBoard. This name may
+        get altered by tf.summary. For example spaces will be replaced with underscores.
+        :param num_outputs: The total number of values returned by the function.
+        """
+
+        super().__init__(event_path)
+        self.func = func
+        self.placeholders = [tf.placeholder(tf.float64) for _ in range(num_outputs)]
+        self._summary = tf.summary.merge([tf.summary.scalar(
+            func_name + "_" + str(i), pl) for i, pl in enumerate(self.placeholders)])
+
+    def run(self, context: MonitorContext, *args, **kwargs) -> None:
+
+        values = np.array(self.func()).flatten()
+        feeds = {pl: value for pl, value in zip(self.placeholders, values)}
+        self._eval_summary(context, feeds)
+
+
+class HistogramToTensorBoardTask(BaseTensorBoardTask):
+    """
+    Monitoring task that creates a TensorBoard with a histogram made of values computed by a user
+    provided function.
+    """
+
+    def __init__(self, event_path: str, func: Callable, func_name: str, output_dims):
+        """
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
+        :param func: User function that provides histogram values for the TensorBoard.
+        :param func_name: Name the function should be seen with in the TensorBoard. This name may
+        get altered by tf.summary. For example spaces will be replaced with underscores.
+        :param output_dims: The shape of the data returned by the function. The shape must be in
+        the format accepted by the `tf.placeholder(...)`
+        """
+
+        super().__init__(event_path)
+        self.func = func
+        self.placeholder = tf.placeholder(tf.float64, shape=output_dims)
+        self._summary = tf.summary.histogram(func_name, self.placeholder)
+
+    def run(self, context: MonitorContext, *args, **kwargs) -> None:
+        self._eval_summary(context, {self.placeholder: self.func()})
+
+
+class ImageToTensorBoardTask(BaseTensorBoardTask):
+    """
+    Monitoring task that creates a TensorBoard with an image returned by a user provided function.
+    """
+
+    def __init__(self, event_path: str, func: Callable[[], Figure], func_name: str):
+        """
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
+        :param func: User function that provides histogram values for the TensorBoard.
+        :param func_name: Name the function should be seen with in the TensorBoard. The name will
+        be appended by '/image/0'. Th name itself may also get altered by tf.summary. For example
+        spaces will be replaced with underscores.
+        """
+
+        super().__init__(event_path)
+        self.func = func
+        self.placeholder = tf.placeholder(tf.float64, [1, None, None, None])
+        self._summary = tf.summary.image(func_name, self.placeholder)
+
+    def run(self, context: MonitorContext, *args, **kwargs) -> None:
+
+        # Get the image and write it into a buffer in the PNG format.
+        fig = self.func()
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', bbox_inches='tight')
+
+        # Create TF image and load its content from the buffer.
+        buf.seek(0)
+        image = tf.image.decode_png(buf.getvalue())
+        # Add the image number as a new dimension
+        image = context.session.run(tf.expand_dims(image, 0))
+
+        self._eval_summary(context, {self.placeholder: image})
+
