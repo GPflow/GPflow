@@ -662,10 +662,9 @@ class BaseTensorBoardTask(MonitorTask):
         """
         Adds optimisation global step to the summary.
         """
+        print("WITH GLOBAL")
         if self._summary is not None:
-            self._summary = tf.summary.merge(
-                [self._summary, tf.summary.scalar('optimisation/global_step',
-                                                  global_step_tensor)])
+            self._summary = [self._summary, global_step_tensor]
         return self
 
     def flush(self):
@@ -690,8 +689,8 @@ class BaseTensorBoardTask(MonitorTask):
             raise RuntimeError('To run a TensorBoard monitor task the TF session object'
                                ' must be provided when creating an instance of the Monitor')
 
-        summary = context.session.run(self._summary, feed_dict=feed_dict)
-        self._file_writer.add_summary(summary)
+        summary, step = context.session.run(self._summary, feed_dict=feed_dict)
+        self._file_writer.add_summary(summary, step)
         if self._flush_immediately:
             self.flush()
 
