@@ -226,13 +226,13 @@ class StudentT(Likelihood):
         return tf.fill(tf.shape(F), tf.squeeze(var))
 
 
-def probit(x):
+def inv_probit(x):
     jitter = 1e-3  # ensures output is strictly between 0 and 1
     return 0.5 * (1.0 + tf.erf(x / np.sqrt(2.0))) * (1 - 2*jitter) + jitter
 
 
 class Bernoulli(Likelihood):
-    def __init__(self, invlink=probit, **kwargs):
+    def __init__(self, invlink=inv_probit, **kwargs):
         super().__init__(**kwargs)
         self.invlink = invlink
 
@@ -240,8 +240,8 @@ class Bernoulli(Likelihood):
         return logdensities.bernoulli(Y, self.invlink(F))
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        if self.invlink is probit:
-            p = probit(Fmu / tf.sqrt(1 + Fvar))
+        if self.invlink is inv_probit:
+            p = inv_probit(Fmu / tf.sqrt(1 + Fvar))
             return p, p - tf.square(p)
         else:
             # for other invlink, use quadrature
@@ -308,7 +308,7 @@ class Beta(Likelihood):
         beta  = scale * (1-m)
     """
 
-    def __init__(self, invlink=probit, scale=1.0, **kwargs):
+    def __init__(self, invlink=inv_probit, scale=1.0, **kwargs):
         super().__init__(**kwargs)
         self.scale = Parameter(scale, transform=transforms.positive)
         self.invlink = invlink
@@ -527,7 +527,7 @@ class Ordinal(Likelihood):
     ...
     p(Y=K|F) = 1 - phi((a_{K-1} - F) / sigma)
 
-    where phi is the cumulative density function of a Gaussian (the probit
+    where phi is the cumulative density function of a Gaussian (the inverse probit
     function) and sigma is a parameter to be learned. A reference is:
 
     @article{chu2005gaussian,
@@ -559,8 +559,8 @@ class Ordinal(Likelihood):
         selected_bins_left = tf.gather(scaled_bins_left, Y)
         selected_bins_right = tf.gather(scaled_bins_right, Y)
 
-        return tf.log(probit(selected_bins_left - F / self.sigma) -
-                      probit(selected_bins_right - F / self.sigma) + 1e-6)
+        return tf.log(inv_probit(selected_bins_left - F / self.sigma) -
+                      inv_probit(selected_bins_right - F / self.sigma) + 1e-6)
 
     @params_as_tensors
     def _make_phi(self, F):
@@ -573,8 +573,8 @@ class Ordinal(Likelihood):
         """
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
-        return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma) \
-            - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
+        return inv_probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma) \
+            - inv_probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
     def conditional_mean(self, F):
         phi = self._make_phi(F)
