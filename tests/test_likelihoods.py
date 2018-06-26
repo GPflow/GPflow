@@ -248,6 +248,55 @@ class TestMonteCarlo(GPflowTestCase):
             assert_allclose(F1v, F2v, rtol=5e-4, atol=1e-4)
 
 
+class TestSoftMax(GPflowTestCase):
+    def setUp(self):
+        self.test_graph = tf.Graph()
+        self.rng = np.random.RandomState(1)
+
+    def prepare(self, dimF, dimY, num=10):
+        feed = {}
+
+        def make_tensor(data, dtype=settings.float_type):
+            tensor = tf.placeholder(dtype)
+            feed[tensor] = data.astype(dtype)
+            return tensor
+
+        F = make_tensor(self.rng.randn(num, dimF))
+        Y = make_tensor(self.rng.randn(num, dimY) > 0, settings.int_type)  # 0 or 1
+        return F, Y, feed
+
+    def test_y_shape_assert(self):
+        with self.test_context() as sess:
+            F, Y, feed = self.prepare(dimF=5, dimY=2)
+            l = gpflow.likelihoods.SoftMax(5)
+            l.compile()
+            try:
+                sess.run(l.logp(F, Y), feed_dict=feed)
+            except tf.errors.InvalidArgumentError as e:
+                assert "assertion failed" in e.message
+
+    def test_bernoulli_equivalence(self):
+        with self.test_context() as sess:
+            F, Y, feed = self.prepare(dimF=2, dimY=1)
+
+            q = tf.exp(F[:,0] - F[:,1])[:,None]
+            p = 1. / (1. + q)
+
+            l = gpflow.likelihoods.SoftMax(2)
+            l.compile()
+
+            logp_softmax = sess.run(l.logp(F, Y), feed_dict=feed)
+            logp_bernoulli = sess.run(gpflow.logdensities.bernoulli(Y, p), feed_dict=feed)
+
+            assert_allclose(logp_softmax, logp_bernoulli)
+
+            cm_softmax = sess.run(l.conditional_mean(F), feed_dict=feed)
+            p_np = sess.run(p, feed_dict=feed)
+            cm_bernoulli = np.c_[1 - p_np, p_np]
+
+            assert_allclose(cm_softmax, cm_bernoulli)
+
+
 class TestRobustMaxMulticlass(GPflowTestCase):
     """
     Some specialized tests to the multiclass likelihood with RobustMax inverse link function.
