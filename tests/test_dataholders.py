@@ -193,6 +193,21 @@ class TestMinibatch(GPflowTestCase):
                 self.assertEqual(m2_value.shape[0], batch_size, msg='Index range "{}"'.format(i))
                 assert_allclose(m1_value, m2_value)
 
+    def test_change_variable_size(self):
+        with self.test_context() as session:
+            m = gpflow.Parameterized()
+            length = 10
+            arr = np.random.randn(length, 2)
+            m.X = gpflow.Minibatch(arr, shuffle=False)
+            for i in range(length):
+                assert_allclose(m.X.read_value(session=session), [arr[i]])
+            
+            length = 20
+            arr = np.random.randn(length, 2)
+            m.X = arr
+            for i in range(length):
+                assert_allclose(m.X.read_value(session=session), [arr[i]])
+
     def test_change_batch_size(self):
         with self.test_context() as session:
             length = 10
