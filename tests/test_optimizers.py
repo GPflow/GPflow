@@ -245,6 +245,31 @@ def test_scipy_optimizer_options(session_tf):
     assert o1.optimizer.optimizer_kwargs['options'][gtol] == gtol_value
     assert gtol not in o2.optimizer.optimizer_kwargs['options']
 
+def test_small_q_sqrt_handeled_correctly(session_tf):
+    """
+    This is an extra test to make sure things still work when q_sqrt is small. This was breaking (#767)
+    """
+    N, D = 3, 2
+    X = np.random.randn(N, D)
+    Y = np.random.randn(N, 1)
+    kern = gpflow.kernels.RBF(D)
+    lik_var = 0.1
+    lik = gpflow.likelihoods.Gaussian()
+    lik.variance = lik_var
+
+    m_vgp = gpflow.models.VGP(X, Y, kern, lik)
+    m_gpr = gpflow.models.GPR(X, Y, kern)
+    m_gpr.likelihood.variance = lik_var
+
+    m_vgp.set_trainable(False)
+    m_vgp.q_mu.set_trainable(True)
+    m_vgp.q_sqrt.set_trainable(True)
+    m_vgp.q_mu = np.random.randn(N, 1)
+    m_vgp.q_sqrt = np.eye(N)[None, :, :] * 1e-3
+    NatGradOptimizer(1.).minimize(m_vgp, [(m_vgp.q_mu, m_vgp.q_sqrt)], maxiter=1)
+
+    assert_allclose(m_gpr.compute_log_likelihood(),
+                    m_vgp.compute_log_likelihood(), atol=1e-4)
 
 def test_VGP_vs_GPR(session_tf):
     """
@@ -269,7 +294,7 @@ def test_VGP_vs_GPR(session_tf):
     NatGradOptimizer(1.).minimize(m_vgp, [(m_vgp.q_mu, m_vgp.q_sqrt)], maxiter=1)
 
     assert_allclose(m_gpr.compute_log_likelihood(),
-                    m_vgp.compute_log_likelihood(), atol=1e-5)
+                    m_vgp.compute_log_likelihood(), atol=1e-4)
 
 
 def test_other_XiTransform_VGP_vs_GPR(session_tf, xi_transform=XiSqrtMeanVar()):
