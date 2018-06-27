@@ -146,6 +146,21 @@ class TestGenericCondition(TestCase):
             self.assertEqual(condition(monitor_context), expected_result)
 
 
+class TestPeriodicIterationCondition(TestCase):
+
+    def test_condition(self):
+        """
+        Tests periodic condition based on the iteration number
+        """
+        monitor_context = mon.MonitorContext()
+        condition = mon.PeriodicIterationCondition(5)
+        count = 0
+        for monitor_context.iteration_no in range(37):
+            if condition(monitor_context):
+                count += 1
+        self.assertEqual(count, 7)
+
+
 class TestGrowingIntervalCondition(TestCase):
 
     def test_sequence(self):
@@ -198,6 +213,30 @@ class TestPrintTimingsTask(TestCase):
             monitor_task(monitor_context)
             args = monitor_task._print_timings.call_args_list[1][0]
             self.assertTupleEqual(args, (24, 196, 0.8, 1.4, 4.0, 5.75))
+
+
+class TestCallbackTask(TestCase):
+
+    def test_callback(self):
+
+        callback = mock.MagicMock()
+        monitor_task = mon.CallbackTask(callback)
+        monitor_task(mon.MonitorContext())
+        self.assertEqual(callback.call_count, 1)
+
+
+class TestSleepTask(TestCase):
+
+    def test_sleep_lower_bound(self):
+        """
+        Test that the sleep task breaks the execution for at least the required period of time
+        (up to certain precision).
+        """
+        monitor_task = mon.SleepTask(0.2)
+        start_time = mon.get_hr_time()
+        monitor_task(mon.MonitorContext())
+        elapsed = mon.get_hr_time() - start_time
+        self.assertGreater(elapsed, 0.1)
 
 
 class TestCheckpointTask(TestCase):
