@@ -349,7 +349,7 @@ def natural_to_meanvarsqrt(nat_1, nat_2):
     mu = tf.matmul(S, nat_1)
     # We need the decomposition of S as L L^T, not as L^T L,
     # hence we need another cholesky.
-    return mu, _cholesky_with_jitter(S)
+    return mu, tf.cholesky(S)
 
 
 @swap_dimensions
@@ -372,24 +372,13 @@ def expectation_to_natural(eta_1, eta_2):
 @swap_dimensions
 def expectation_to_meanvarsqrt(eta_1, eta_2):
     var = eta_2 - tf.matmul(eta_1, eta_1, transpose_b=True)
-    return eta_1, _cholesky_with_jitter(var)
+    return eta_1, tf.cholesky(var)
 
 
 @swap_dimensions
 def meanvarsqrt_to_expectation(m, v_sqrt):
     v = tf.matmul(v_sqrt, v_sqrt, transpose_b=True)
     return m, v + tf.matmul(m, m, transpose_b=True)
-
-
-def _cholesky_with_jitter(M):
-    """
-    Add jitter and take Cholesky
-
-    :param M: Tensor of shape NxNx...N
-    :return: The Cholesky decomposition of the input `M`. It's a `tf.Tensor` of shape ...xNxN
-    """
-    N = tf.shape(M)[-1]
-    return tf.cholesky(M + settings.jitter * tf.eye(N, dtype=M.dtype))
 
 def _inverse_lower_triangular(M):
     """
