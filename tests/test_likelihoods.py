@@ -36,6 +36,8 @@ def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
     test_setups = []
     rng = np.random.RandomState(1)
     for likelihoodClass in gpflow.likelihoods.Likelihood.__subclasses__():
+        if likelihoodClass == gpflow.likelihoods.MonteCarloLikelihood:
+            continue  # abstract base class
         if likelihoodClass == gpflow.likelihoods.Ordinal:
             test_setups.append(
                 LikelihoodSetup(likelihoodClass(np.array([-1, 1])),
@@ -130,8 +132,8 @@ class TestPredictConditional(GPflowTestCase):
 
 class TestQuadrature(GPflowTestCase):
     """
-    Where quadratre methods have been overwritten, make sure the new code
-     does something close to the quadrature
+    Where quadrature methods have been overwritten, make sure the new code
+    does something close to the quadrature
     """
     def setUp(self):
         self.test_graph = tf.Graph()
@@ -175,6 +177,124 @@ class TestQuadrature(GPflowTestCase):
                 F1 = session.run(F1)
                 F2 = session.run(F2)
                 assert_allclose(F1, F2, test_setup.tolerance, test_setup.tolerance)
+
+    def test_pred_mean_and_var(self):
+        # get all the likelihoods where predict_density has been overwritten.
+        for test_setup in self.test_setups:
+            with self.test_context() as session:
+                if not test_setup.is_analytic:
+                    continue
+                l = test_setup.likelihood
+                l.compile()
+                # 'build' the functions
+                F1 = l.predict_mean_and_var(self.Fmu, self.Fvar)
+                F2 = gpflow.likelihoods.Likelihood.predict_mean_and_var(l, self.Fmu, self.Fvar)
+                # compile and run the functions:
+                F1 = session.run(F1)
+                F2 = session.run(F2)
+                assert_allclose(F1, F2, test_setup.tolerance, test_setup.tolerance)
+
+
+class TestMonteCarlo(GPflowTestCase):
+    def setUp(self):
+        self.test_graph = tf.Graph()
+        self.rng = np.random.RandomState()
+        self.rng.seed(1)
+        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 1).astype(settings.float_type)
+        self.Fvar = 0.01 * (self.Fvar ** 2)
+
+    def test_var_exp(self):
+        with self.test_context() as session:
+            tf.set_random_seed(1)
+            l = gpflow.likelihoods.GaussianMC(0.3)
+            l.num_monte_carlo_points = 1000000
+            # 'build' the functions
+            l.compile()
+            F1 = l.variational_expectations(self.Fmu, self.Fvar, self.Y)
+            F2 = gpflow.likelihoods.Gaussian.variational_expectations(
+                l, self.Fmu, self.Fvar, self.Y)
+            # compile and run the functions:
+            F1 = session.run(F1)
+            F2 = session.run(F2)
+            assert_allclose(F1, F2, rtol=5e-4, atol=1e-4)
+
+    def test_pred_density(self):
+        with self.test_context() as session:
+            tf.set_random_seed(1)
+            l = gpflow.likelihoods.GaussianMC(0.3)
+            l.num_monte_carlo_points = 1000000
+            l.compile()
+            # 'build' the functions
+            F1 = l.predict_density(self.Fmu, self.Fvar, self.Y)
+            F2 = gpflow.likelihoods.Gaussian.predict_density(l, self.Fmu, self.Fvar, self.Y)
+            # compile and run the functions:
+            F1 = session.run(F1)
+            F2 = session.run(F2)
+            assert_allclose(F1, F2, rtol=5e-4, atol=1e-4)
+
+    def test_pred_mean_and_var(self):
+        with self.test_context() as session:
+            tf.set_random_seed(1)
+            l = gpflow.likelihoods.GaussianMC(0.3)
+            l.num_monte_carlo_points = 1000000
+            l.compile()
+            # 'build' the functions
+            F1 = l.predict_mean_and_var(self.Fmu, self.Fvar)
+            F2 = gpflow.likelihoods.Gaussian.predict_mean_and_var(l, self.Fmu, self.Fvar)
+            # compile and run the functions:
+            F1m, F1v = session.run(F1)
+            F2m, F2v = session.run(F2)
+            assert_allclose(F1m, F2m, rtol=5e-4, atol=1e-4)
+            assert_allclose(F1v, F2v, rtol=5e-4, atol=1e-4)
+
+
+class TestSoftMax(GPflowTestCase):
+    def setUp(self):
+        self.test_graph = tf.Graph()
+        self.rng = np.random.RandomState(1)
+
+    def prepare(self, dimF, dimY, num=10):
+        feed = {}
+
+        def make_tensor(data, dtype=settings.float_type):
+            tensor = tf.placeholder(dtype)
+            feed[tensor] = data.astype(dtype)
+            return tensor
+
+        F = make_tensor(self.rng.randn(num, dimF))
+        Y = make_tensor(self.rng.randn(num, dimY) > 0, settings.int_type)  # 0 or 1
+        return F, Y, feed
+
+    def test_y_shape_assert(self):
+        with self.test_context() as sess:
+            F, Y, feed = self.prepare(dimF=5, dimY=2)
+            l = gpflow.likelihoods.SoftMax(5)
+            l.compile()
+            try:
+                sess.run(l.logp(F, Y), feed_dict=feed)
+            except tf.errors.InvalidArgumentError as e:
+                assert "assertion failed" in e.message
+
+    def test_bernoulli_equivalence(self):
+        with self.test_context() as sess:
+            F, Y, feed = self.prepare(dimF=2, dimY=1)
+
+            q = tf.exp(F[:,0] - F[:,1])[:,None]
+            p = 1. / (1. + q)
+
+            l = gpflow.likelihoods.SoftMax(2)
+            l.compile()
+
+            logp_softmax = sess.run(l.logp(F, Y), feed_dict=feed)
+            logp_bernoulli = sess.run(gpflow.logdensities.bernoulli(Y, p), feed_dict=feed)
+
+            assert_allclose(logp_softmax, logp_bernoulli)
+
+            cm_softmax = sess.run(l.conditional_mean(F), feed_dict=feed)
+            p_np = sess.run(p, feed_dict=feed)
+            cm_bernoulli = np.c_[1 - p_np, p_np]
+
+            assert_allclose(cm_softmax, cm_bernoulli)
 
 
 class TestRobustMaxMulticlass(GPflowTestCase):
@@ -269,8 +389,6 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             expected_eps_k2 = new_eps / (num_classes - 1.)
             actual_eps_k2 = session.run(rm._eps_K1)
             self.assertAlmostEqual(expected_eps_k2, actual_eps_k2)
-
-
 
 
 

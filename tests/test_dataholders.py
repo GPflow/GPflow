@@ -201,7 +201,7 @@ class TestMinibatch(GPflowTestCase):
             m.X = gpflow.Minibatch(arr, shuffle=False)
             for i in range(length):
                 assert_allclose(m.X.read_value(session=session), [arr[i]])
-            
+
             length = 20
             arr = np.random.randn(length, 2)
             m.X = arr
