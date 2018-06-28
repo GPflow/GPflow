@@ -261,11 +261,20 @@ class TestSoftMax(GPflowTestCase):
             feed[tensor] = data.astype(dtype)
             return tensor
 
-        F = make_tensor(self.rng.randn(num, dimF))
-        Y = make_tensor(self.rng.randn(num, dimY) > 0, settings.int_type)  # 0 or 1
+        dF = np.vstack((self.rng.randn(num - 3, dimF), np.array([[-3., 0.], [3, 0.], [0., 0.]]))) if dimF == 2 else \
+            self.rng.randn(num, dimF)
+        dY = np.vstack((self.rng.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
+        F = make_tensor(dF)
+        Y = make_tensor(dY, settings.int_type)  # 0 or 1
         return F, Y, feed
 
     def test_y_shape_assert(self):
+        """
+        @st--, could you add an explanation here? I'm not sure I get what's
+        happening. You say that GPflow only allows 1D observations? Or does
+        this only hold for classification likelihoods?
+        :return:
+        """
         with self.test_context() as sess:
             F, Y, feed = self.prepare(dimF=5, dimY=2)
             l = gpflow.likelihoods.SoftMax(5)
@@ -278,23 +287,35 @@ class TestSoftMax(GPflowTestCase):
     def test_bernoulli_equivalence(self):
         with self.test_context() as sess:
             F, Y, feed = self.prepare(dimF=2, dimY=1)
+            Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1))
+            F = tf.stack([F[:, 0], tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1)
 
-            q = tf.exp(F[:, 0] - F[:, 1])[:, None]
-            p = 1. / (1. + q)
+            def logistic_link(x):
+                return 1.0 / (1.0 + tf.exp(-x))
 
-            l = gpflow.likelihoods.SoftMax(2)
-            l.compile()
+            ls = gpflow.likelihoods.SoftMax(2)
+            ls.num_monte_carlo_points = 10000000
+            ls.compile()
+            lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
+            lb.num_gauss_hermite_points = 50
+            lb.compile()
 
-            logp_softmax = sess.run(l.logp(F, Y), feed_dict=feed)
-            logp_bernoulli = sess.run(gpflow.logdensities.bernoulli(Y, p), feed_dict=feed)
+            ls_cm = sess.run(ls.conditional_mean(F), feed_dict=feed)[:, 0, None]
+            lb_cm = sess.run(lb.conditional_mean(F[:, 0, None]), feed_dict=feed)
+            ls_cv = sess.run(ls.conditional_variance(F), feed_dict=feed)[:, 0, None]
+            lb_cv = sess.run(lb.conditional_variance(F[:, 0, None]), feed_dict=feed)
+            ls_lp = sess.run(ls.logp(F, 1 - Y), feed_dict=feed)  # We need the 1 - Y, as we need to pass the *label*
+            lb_lp = sess.run(lb.logp(F[:, 0, None], Y), feed_dict=feed)
 
-            assert_allclose(logp_softmax, logp_bernoulli)
+            assert_allclose(ls_cm, lb_cm)
+            assert_allclose(ls_cv, lb_cv)
+            assert_allclose(ls_lp, lb_lp)
 
-            cm_softmax = sess.run(l.conditional_mean(F), feed_dict=feed)
-            p_np = sess.run(p, feed_dict=feed)
-            cm_bernoulli = np.c_[1 - p_np, p_np]
+            ls_pm, ls_pv = sess.run(ls.predict_mean_and_var(F, Fvar), feed_dict=feed)
+            lb_pm, lb_pv = sess.run(lb.predict_mean_and_var(F[:, 0, None], Fvar[:, 0, None]), feed_dict=feed)
 
-            assert_allclose(cm_softmax, cm_bernoulli)
+            assert_allclose(ls_pm[:, 0, None], lb_pm, rtol=1e-3)
+            assert_allclose(ls_pv[:, 0, None], lb_pv, rtol=1e-3)
 
 
 class TestRobustMaxMulticlass(GPflowTestCase):
