@@ -14,21 +14,20 @@
 # limitations under the License.
 
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-from . import settings
 from . import logdensities
-from . import transforms
 from . import priors
-
+from . import settings
+from . import transforms
 from .decors import params_as_tensors
 from .decors import params_as_tensors_for
+from .params import ParamList
 from .params import Parameter
 from .params import Parameterized
-from .params import ParamList
-from .quadrature import ndiagquad, ndiag_mc
 from .quadrature import hermgauss
+from .quadrature import ndiagquad, ndiag_mc
 
 
 class Likelihood(Parameterized):
@@ -181,6 +180,7 @@ class Poisson(Likelihood):
                    - tf.lgamma(Y + 1) + Y * tf.log(self.binsize)
         return super(Poisson, self).variational_expectations(Fmu, Fvar, Y)
 
+
 class Exponential(Likelihood):
     def __init__(self, invlink=tf.exp, **kwargs):
         super().__init__(**kwargs)
@@ -210,7 +210,7 @@ class StudentT(Likelihood):
         super().__init__(**kwargs)
         self.df = df
         self.scale = Parameter(scale, transform=transforms.positive,
-            dtype=settings.float_type)
+                               dtype=settings.float_type)
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -222,13 +222,13 @@ class StudentT(Likelihood):
 
     @params_as_tensors
     def conditional_variance(self, F):
-        var = self.scale**2 * (self.df / (self.df - 2.0))
+        var = self.scale ** 2 * (self.df / (self.df - 2.0))
         return tf.fill(tf.shape(F), tf.squeeze(var))
 
 
 def inv_probit(x):
     jitter = 1e-3  # ensures output is strictly between 0 and 1
-    return 0.5 * (1.0 + tf.erf(x / np.sqrt(2.0))) * (1 - 2*jitter) + jitter
+    return 0.5 * (1.0 + tf.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
 
 
 class Bernoulli(Likelihood):
@@ -245,7 +245,7 @@ class Bernoulli(Likelihood):
             return p, p - tf.square(p)
         else:
             # for other invlink, use quadrature
-            return Likelihood.predict_mean_and_var(self, Fmu, Fvar)
+            return super().predict_mean_and_var(Fmu, Fvar)
 
     def predict_density(self, Fmu, Fvar, Y):
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
@@ -255,7 +255,7 @@ class Bernoulli(Likelihood):
         return self.invlink(F)
 
     def conditional_variance(self, F):
-        p = self.invlink(F)
+        p = self.conditional_mean(F)
         return p - tf.square(p)
 
 
@@ -286,9 +286,9 @@ class Gamma(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return -self.shape * Fmu - tf.lgamma(self.shape) \
-                + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
+                   + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
-            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+            return super().variational_expectations(Fmu, Fvar, Y)
 
 
 class Beta(Likelihood):
@@ -358,7 +358,6 @@ class RobustMax(Parameterized):
     @params_as_tensors
     def _eps_K1(self):
         return self.epsilon / (self.num_classes - 1.)
-
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         Y = tf.cast(Y, tf.int64)
@@ -540,6 +539,7 @@ class Ordinal(Likelihood):
       year={2005}
     }
     """
+
     def __init__(self, bin_edges, **kwargs):
         """
         bin_edges is a numpy array specifying at which function value the
@@ -554,8 +554,8 @@ class Ordinal(Likelihood):
     @params_as_tensors
     def logp(self, F, Y):
         Y = tf.cast(Y, tf.int64)
-        scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
+        scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
         selected_bins_left = tf.gather(scaled_bins_left, Y)
         selected_bins_right = tf.gather(scaled_bins_right, Y)
 
@@ -572,9 +572,9 @@ class Ordinal(Likelihood):
         Note that a matrix of F values is flattened.
         """
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
         return inv_probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma) \
-            - inv_probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
+               - inv_probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
     def conditional_mean(self, F):
         phi = self._make_phi(F)
@@ -595,7 +595,7 @@ class MonteCarloLikelihood(Likelihood):
         self.num_monte_carlo_points = 100
         del self.num_gauss_hermite_points
 
-    def _mc_quadrature(self, funcs, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys):
+    def _mc_quadrature(self, funcs, Fmu, Fvar, logspace: bool = False, epsilon=None, **Ys):
         return ndiag_mc(funcs, self.num_monte_carlo_points, Fmu, Fvar, logspace, epsilon, **Ys)
 
     def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
@@ -691,3 +691,7 @@ class SoftMax(MonteCarloLikelihood):
 
     def conditional_mean(self, F):
         return tf.nn.softmax(F)
+
+    def conditional_variance(self, F):
+        p = self.conditional_mean(F)
+        return p - tf.square(p)
