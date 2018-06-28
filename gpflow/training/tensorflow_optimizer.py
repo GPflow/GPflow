@@ -82,7 +82,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         return opt
     
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=False, anchor=True, **kwargs):
+                 maxiter=1000, initialize=False, anchor=True, step_callback=None, **kwargs):
         """
         Minimizes objective function of the model.
 
@@ -95,6 +95,9 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             initialized before for gotten session.
         :param anchor: If `True` trained variable values computed during optimization at
             particular session will be synchronized with internal parameter values.
+        :param step_callback: A callback function to execute at each optimization step.
+            If provided, the function will be called with the current value of the packed variable
+            vector as an argument.
         :param kwargs: This is a dictionary of extra parameters for session run method.
         """
 
@@ -112,7 +115,9 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         session = model.enquire_session(session)
         with session.as_default():
             for _ in range(maxiter):
-                opt()
+                result = opt()
+                if step_callback is not None:
+                    step_callback(result)
 
         if anchor:
             opt.model.anchor(session)
