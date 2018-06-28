@@ -245,7 +245,7 @@ class Bernoulli(Likelihood):
             return p, p - tf.square(p)
         else:
             # for other invlink, use quadrature
-            return Likelihood.predict_mean_and_var(self, Fmu, Fvar)
+            return super().predict_mean_and_var(Fmu, Fvar)
 
     def predict_density(self, Fmu, Fvar, Y):
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
@@ -288,7 +288,7 @@ class Gamma(Likelihood):
             return -self.shape * Fmu - tf.lgamma(self.shape) \
                    + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
-            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+            return super().variational_expectations(Fmu, Fvar, Y)
 
 
 class Beta(Likelihood):
