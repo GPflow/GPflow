@@ -270,10 +270,10 @@ class TestSoftMax(GPflowTestCase):
 
     def test_y_shape_assert(self):
         """
-        @st--, could you add an explanation here? I'm not sure I get what's
-        happening. You say that GPflow only allows 1D observations? Or does
-        this only hold for classification likelihoods?
-        :return:
+        SoftMax assumes the class is given as a label (not, e.g., one-hot
+        encoded), and hence just uses the first column of Y. To prevent
+        silent errors, there is a tf assertion that ensures Y only has one
+        dimension. This test checks that this assert works as intended.
         """
         with self.test_context() as sess:
             F, Y, feed = self.prepare(dimF=5, dimY=2)
@@ -316,6 +316,27 @@ class TestSoftMax(GPflowTestCase):
 
             assert_allclose(ls_pm[:, 0, None], lb_pm, rtol=1e-3)
             assert_allclose(ls_pv[:, 0, None], lb_pv, rtol=1e-3)
+
+    def test_bernoulli_equivalence2(self):
+        with self.test_context() as sess:
+            F, Y, feed = self.prepare(dimF=2, dimY=1)
+
+            q = tf.exp(F[:,0] - F[:,1])[:,None]
+            p = 1. / (1. + q)
+
+            l = gpflow.likelihoods.SoftMax(2)
+            l.compile()
+
+            logp_softmax = sess.run(l.logp(F, Y), feed_dict=feed)
+            logp_bernoulli = sess.run(gpflow.logdensities.bernoulli(Y, p), feed_dict=feed)
+
+            assert_allclose(logp_softmax, logp_bernoulli)
+
+            cm_softmax = sess.run(l.conditional_mean(F), feed_dict=feed)
+            p_np = sess.run(p, feed_dict=feed)
+            cm_bernoulli = np.c_[1 - p_np, p_np]
+
+            assert_allclose(cm_softmax, cm_bernoulli)
 
 
 class TestRobustMaxMulticlass(GPflowTestCase):
