@@ -691,3 +691,7 @@ class SoftMax(MonteCarloLikelihood):
 
     def conditional_mean(self, F):
         return tf.nn.softmax(F)
+
+    def conditional_variance(self, F):
+        p = self.conditional_mean(F)
+        return p - p ** 2.0
