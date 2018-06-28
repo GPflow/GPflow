@@ -255,7 +255,7 @@ class Bernoulli(Likelihood):
         return self.invlink(F)
 
     def conditional_variance(self, F):
-        p = self.invlink(F)
+        p = self.conditional_mean(F)
         return p - tf.square(p)
 
 
@@ -694,4 +694,4 @@ class SoftMax(MonteCarloLikelihood):
 
     def conditional_variance(self, F):
         p = self.conditional_mean(F)
-        return p - p ** 2.0
+        return p - tf.square(p)
