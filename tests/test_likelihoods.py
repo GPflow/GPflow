@@ -12,24 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import numpy as np
 import six
 import tensorflow as tf
-
-import numpy as np
 from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
-import pytest
-
 
 class LikelihoodSetup(object):
     def __init__(self, likelihood, Y, tolerance):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
-        self.is_analytic = six.get_unbound_function(likelihood.predict_density) is not\
-            six.get_unbound_function(gpflow.likelihoods.Likelihood.predict_density)
+        self.is_analytic = six.get_unbound_function(likelihood.predict_density) is not \
+                           six.get_unbound_function(gpflow.likelihoods.Likelihood.predict_density)
 
 
 def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
@@ -41,7 +38,7 @@ def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
         if likelihoodClass == gpflow.likelihoods.Ordinal:
             test_setups.append(
                 LikelihoodSetup(likelihoodClass(np.array([-1, 1])),
-                          rng.randint(0, 3, (10, 2)), 1e-6))
+                                rng.randint(0, 3, (10, 2)), 1e-6))
         elif likelihoodClass == gpflow.likelihoods.SwitchedLikelihood:
             continue  # switched likelihood tested separately
         elif likelihoodClass == gpflow.likelihoods.MultiClass:
@@ -51,25 +48,26 @@ def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
                 tolerance = 1e-3
                 test_setups.append(
                     LikelihoodSetup(likelihoodClass(2),
-                              np.argmax(sample, 1).reshape(-1, 1), tolerance))
+                                    np.argmax(sample, 1).reshape(-1, 1), tolerance))
         else:
             # most likelihoods follow this standard:
             test_setups.append(
                 LikelihoodSetup(likelihoodClass(),
-                          rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                rng.rand(10, 2).astype(settings.float_type), 1e-6))
 
     if addNonStandardLinks:
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Poisson(invlink=tf.square),
-                                     rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                           rng.rand(10, 2).astype(settings.float_type), 1e-6))
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Exponential(invlink=tf.square),
-                                     rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                           rng.rand(10, 2).astype(settings.float_type), 1e-6))
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Gamma(invlink=tf.square),
-                                     rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                           rng.rand(10, 2).astype(settings.float_type), 1e-6))
 
         def sigmoid(x):
-            return 1./(1 + tf.exp(-x))
+            return 1. / (1 + tf.exp(-x))
+
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Bernoulli(invlink=sigmoid),
-                                     rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                           rng.rand(10, 2).astype(settings.float_type), 1e-6))
     return test_setups
 
 
@@ -79,6 +77,7 @@ class TestPredictConditional(GPflowTestCase):
     give the same result as the predict_mean_and_var function if the prediction
     has no uncertainty.
     """
+
     def setUp(self):
         self.test_graph = tf.Graph()
 
@@ -135,6 +134,7 @@ class TestQuadrature(GPflowTestCase):
     Where quadrature methods have been overwritten, make sure the new code
     does something close to the quadrature
     """
+
     def setUp(self):
         self.test_graph = tf.Graph()
         self.rng = np.random.RandomState()
@@ -279,7 +279,7 @@ class TestSoftMax(GPflowTestCase):
         with self.test_context() as sess:
             F, Y, feed = self.prepare(dimF=2, dimY=1)
 
-            q = tf.exp(F[:,0] - F[:,1])[:,None]
+            q = tf.exp(F[:, 0] - F[:, 1])[:, None]
             p = 1. / (1. + q)
 
             l = gpflow.likelihoods.SoftMax(2)
@@ -301,6 +301,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
     """
     Some specialized tests to the multiclass likelihood with RobustMax inverse link function.
     """
+
     def setUp(self):
         self.test_graph = tf.Graph()
 
@@ -328,18 +329,19 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             pred = session.run(l.predict_density(F, F, Y), feed_dict=feed)
             variational_expectations = session.run(
                 l.variational_expectations(F, F, Y), feed_dict=feed)
-            expected_mu = (1./nClasses * (1. - epsilon) + (1. - 1. / nClasses) *\
+            expected_mu = (1. / nClasses * (1. - epsilon) + (1. - 1. / nClasses) * \
                            epsilon / (nClasses - 1)) * np.ones((nPoints, 1))
 
-            self.assertTrue(np.allclose(mu, expected_mu, tolerance, tolerance))  # assert_allclose() would complain about shape mismatch
+            self.assertTrue(np.allclose(mu, expected_mu, tolerance,
+                                        tolerance))  # assert_allclose() would complain about shape mismatch
             expected_log_denisty = np.log(expected_mu)
             self.assertTrue(np.allclose(pred, expected_log_denisty, 1e-3, 1e-3))
-            validation_variational_expectation = 1./nClasses * np.log(1. - epsilon) + \
-                (1. - 1./nClasses) * np.log(epsilon / (nClasses - 1))
+            validation_variational_expectation = 1. / nClasses * np.log(1. - epsilon) + \
+                                                 (1. - 1. / nClasses) * np.log(epsilon / (nClasses - 1))
             assert_allclose(
-                    variational_expectations,
-                    np.ones((nPoints, 1)) * validation_variational_expectation,
-                    tolerance, tolerance)
+                variational_expectations,
+                np.ones((nPoints, 1)) * validation_variational_expectation,
+                tolerance, tolerance)
 
     def testPredictDensity(self):
         tol = 1e-4
@@ -391,12 +393,11 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             self.assertAlmostEqual(expected_eps_k2, actual_eps_k2)
 
 
-
-
 class TestMulticlassIndexFix(GPflowTestCase):
     """
     A regression test for a bug in multiclass likelihood.
     """
+
     def testA(self):
         with self.test_context():
             mu = tf.placeholder(settings.float_type)
@@ -412,17 +413,18 @@ class TestSwitchedLikelihood(GPflowTestCase):
     SwitchedLikelihood is separately tested here.
     Here, we make sure the partition-stitch works fine.
     """
+
     def setUp(self):
         self.test_graph = tf.Graph()
 
         with self.test_context():
             rng = np.random.RandomState(1)
-            self.Y_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
-            self.F_list = [rng.randn(3, 2),  rng.randn(4, 2),  rng.randn(5, 2)]
-            self.Fvar_list = [np.exp(rng.randn(3, 2)),  np.exp(rng.randn(4, 2)),
+            self.Y_list = [rng.randn(3, 2), rng.randn(4, 2), rng.randn(5, 2)]
+            self.F_list = [rng.randn(3, 2), rng.randn(4, 2), rng.randn(5, 2)]
+            self.Fvar_list = [np.exp(rng.randn(3, 2)), np.exp(rng.randn(4, 2)),
                               np.exp(rng.randn(5, 2))]
-            self.Y_label = [np.ones((3, 1))*0, np.ones((4, 1))*1, np.ones((5, 1))*2]
-            self.Y_perm = list(range(3+4+5))
+            self.Y_label = [np.ones((3, 1)) * 0, np.ones((4, 1)) * 1, np.ones((5, 1)) * 2]
+            self.Y_perm = list(range(3 + 4 + 5))
             rng.shuffle(self.Y_perm)
 
             # shuffle the original data
@@ -487,6 +489,7 @@ class TestSwitchedLikelihoodRegression(GPflowTestCase):
     one. The final column of Y is used to index the switch. If the number of
     latent functions does not match, an exception will be raised.
     """
+
     def setUp(self):
         self.test_graph = tf.Graph()
 
