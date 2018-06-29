@@ -72,6 +72,7 @@ class ScipyOptimizer(optimizer.Optimizer):
         :param step_callback: A function to be called at each optimization step;
             arguments are the current values of all optimization variables
             flattened into a single vector.
+        :type step_callback: Callable[[ndarray], None]
         :param kwargs: This is a dictionary of extra parameters for session run method.
         """
         if model is None or not isinstance(model, Model):

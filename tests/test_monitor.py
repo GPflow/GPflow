@@ -297,6 +297,23 @@ class TestCheckpointTask(TestCase):
         return dummy_var
 
 
+class TestBaseTensorBoardTask(TestCase):
+
+    def test_file_writer_sharing(self):
+        """
+        Tests that TensorBoard tasks opened with the same event path share the tf.summary.FileWriter
+        """
+        def user_func(*args, **kwargs):
+            return 0.0
+
+        with tempfile.TemporaryDirectory() as tmp_dir1, tempfile.TemporaryDirectory() as tmp_dir2:
+            tb_task1 = mon.ScalarFuncToTensorBoardTask(tmp_dir1, user_func, 'task1')
+            tb_task2 = mon.ScalarFuncToTensorBoardTask(tmp_dir2, user_func, 'task2')
+            tb_task3 = mon.ScalarFuncToTensorBoardTask(tmp_dir1, user_func, 'task3')
+            self.assertIs(tb_task1._file_writer, tb_task3._file_writer)
+            self.assertIsNot(tb_task1._file_writer, tb_task2._file_writer)
+
+
 class TestModelToTensorBoardTask(TestCase):
 
     def test_std_tensorboard_only_scalars(self):
@@ -418,7 +435,7 @@ class TestVectorFuncToTensorBoardTask(TestCase):
 
         def task_factory(event_dir: str):
             return mon.VectorFuncToTensorBoardTask(event_dir, user_func, user_func_name,
-                                                 len(user_func_values))
+                                                   len(user_func_values))
 
         summary = run_tensorboard_task(task_factory)
         for i, func_value in enumerate(user_func_values):
