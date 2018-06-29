@@ -185,11 +185,11 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
         Y = tf.reshape(Y, (-1, 1))
         mc_Yr = tf.tile(Y, [S, 1])  # broadcast Y to match X
         # without the tiling, some calls such as tf.where() (in bernoulli) fail
-        Ys[name] = mc_Yr  # now S * N x D
+        Ys[name] = mc_Yr  # now S * N x 1
 
     def eval_func(func):
         feval = func(mc_Xr, **Ys)
-        feval = tf.reshape(feval, (S, N, D))
+        feval = tf.reshape(feval, (S, N, -1))
         if logspace:
             log_S = tf.log(tf.cast(S, settings.float_type))
             return tf.reduce_logsumexp(feval, axis=0) - log_S  # N x D
