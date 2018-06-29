@@ -115,6 +115,7 @@ from timeit import default_timer as timer
 
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 from gpflow import params_as_tensors_for
@@ -243,7 +244,7 @@ class MonitorTask(metaclass=abc.ABCMeta):
         self._condition = condition
         return self
 
-    def with_exit_condition(self, exit_condition: bool) -> 'MonitorTask':
+    def with_exit_condition(self, exit_condition: Optional[bool]=True) -> 'MonitorTask':
         """
         Sets the flag indicating that the task should also run after the optimisation is ended.
         """
@@ -631,6 +632,8 @@ class BaseTensorBoardTask(MonitorTask):
     providing these values as the input values dictionary.
     """
 
+    _all_file_writers = {}  # type: Dict[str, tf.summary.FileWriter]
+
     def __init__(self, event_path: str, model: Optional[Model]=None) -> None:
         """
         :param event_path: Path of the event file where the summary protocol buffers will
@@ -638,9 +641,18 @@ class BaseTensorBoardTask(MonitorTask):
         :param model: Model object
         """
         super().__init__()
+        event_path = str(PurePath(event_path))
         self._model = model
-        self._file_writer = tf.summary.FileWriter(event_path,
-                                                  model.graph if model is not None else None)
+
+        # Cache all used file writers and make sure tasks that write to the same event location
+        # share the FileWriter. This is because FileWriter doesn't support shared access. Only one
+        # writer will have access to the location.
+        self._file_writer = self._all_file_writers.get(event_path)
+        if self._file_writer is None:
+            self._file_writer = tf.summary.FileWriter(event_path,
+                                                      model.graph if model is not None else None)
+            self._all_file_writers[event_path] = self._file_writer
+
         self._summary = None    # type: tf.Summary
         self._flush_immediately = False
 
@@ -654,7 +666,8 @@ class BaseTensorBoardTask(MonitorTask):
     def run(self, context: MonitorContext, *args, **kwargs) -> None:
         self._eval_summary(context)
 
-    def with_flush_immediately(self, flush_immediately) -> 'BaseTensorBoardTask':
+    def with_flush_immediately(self, flush_immediately: Optional[bool]=True)\
+            -> 'BaseTensorBoardTask':
         """
         Sets the flag indicating that the event file should be flushed at each call.
         """
@@ -899,6 +912,7 @@ class ImageToTensorBoardTask(BaseTensorBoardTask):
         fig = self.func()
         buf = io.BytesIO()
         fig.savefig(buf, format='png', bbox_inches='tight')
+        plt.close(fig)
 
         # Create TF image and load its content from the buffer.
         buf.seek(0)
@@ -907,4 +921,3 @@ class ImageToTensorBoardTask(BaseTensorBoardTask):
         image = context.session.run(tf.expand_dims(image, 0))
 
         self._eval_summary(context, {self.placeholder: image})
-
