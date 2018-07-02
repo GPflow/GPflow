@@ -46,18 +46,17 @@ def exponential(x, scale):
 
 
 def gamma(x, shape, scale):
-    return -shape * tf.log(scale) - tf.lgamma(shape)\
+    return -shape * tf.log(scale) - tf.lgamma(shape) \
         + (shape - 1.) * tf.log(x) - x / scale
 
 
-def student_t(x, mean, scale, deg_free):
-    const = tf.lgamma(tf.cast((deg_free + 1.) * 0.5, settings.float_type))\
-        - tf.lgamma(tf.cast(deg_free * 0.5, settings.float_type))\
-        - 0.5*(tf.log(tf.square(scale)) + tf.cast(tf.log(deg_free), settings.float_type)
-               + np.log(np.pi))
+def student_t(x, mean, scale, df):
+    df = tf.cast(df, settings.float_type)
+    const = tf.lgamma((df + 1.) * 0.5) - tf.lgamma(df * 0.5) \
+        - 0.5 * (tf.log(tf.square(scale)) + tf.log(df) + np.log(np.pi))
     const = tf.cast(const, settings.float_type)
-    return const - 0.5*(deg_free + 1.) * \
-        tf.log(1. + (1. / deg_free) * (tf.square((x - mean) / scale)))
+    return const - 0.5 * (df + 1.) * \
+        tf.log(1. + (1. / df) * (tf.square((x - mean) / scale)))
 
 
 def beta(x, alpha, beta):
