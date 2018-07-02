@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 import numpy as np
@@ -192,6 +192,21 @@ class TestMinibatch(GPflowTestCase):
                 self.assertEqual(m1_value.shape[0], batch_size, msg='Index range "{}"'.format(i))
                 self.assertEqual(m2_value.shape[0], batch_size, msg='Index range "{}"'.format(i))
                 assert_allclose(m1_value, m2_value)
+
+    def test_change_variable_size(self):
+        with self.test_context() as session:
+            m = gpflow.Parameterized()
+            length = 10
+            arr = np.random.randn(length, 2)
+            m.X = gpflow.Minibatch(arr, shuffle=False)
+            for i in range(length):
+                assert_allclose(m.X.read_value(session=session), [arr[i]])
+
+            length = 20
+            arr = np.random.randn(length, 2)
+            m.X = arr
+            for i in range(length):
+                assert_allclose(m.X.read_value(session=session), [arr[i]])
 
     def test_change_batch_size(self):
         with self.test_context() as session:

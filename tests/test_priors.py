@@ -10,12 +10,13 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 import gpflow
 from gpflow import settings
@@ -53,6 +54,19 @@ class TestPriorMode(GPflowTestCase):
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m)
             _ = [assert_allclose(v, -1.) for v in m.read_trainables().values()]
+
+    def testExponential(self):
+        with self.test_context():
+            m = self.prepare()
+            m.x = gpflow.Param(1.0, prior=gpflow.priors.Exponential(1.0))
+            m.compile()
+            self.assertTrue(np.allclose(m.compute_log_prior(), -1.0))
+
+        with self.test_context():
+            m = self.prepare()
+            m.x = gpflow.Param(1.0, prior=gpflow.priors.Exponential(2.0))
+            m.compile()
+            self.assertTrue(np.allclose(m.compute_log_prior(), np.log(2) - 2))
 
     def testGammaMode(self):
         with self.test_context():
@@ -115,9 +129,65 @@ class TestPriorMode(GPflowTestCase):
             m.x = np.random.randn(1)[0]
             p2 = m.compute_log_prior()
 
-            # prior should no be the same because a transformation has been applied.
+            # prior should not be the same because a transformation has been applied.
             self.assertTrue(p1 != p2)
 
+
+def mc_moments(prior, size=(10000, 1000)):
+    np.random.seed(1)
+    x = prior.sample(size)
+    assert x.shape == size, "inline test that .sample() returns correct shape"
+    mean = x.mean()
+    var = x.var()
+    # analytic moments are all np.atleast_1d() due to the parameters in gpflow.priors
+    # hence we need to do the same for the MC moments so that the shapes match
+    return np.atleast_1d(mean), np.atleast_1d(var)
+
+def gaussian_moments(prior):
+    return prior.mu, prior.var
+
+def exponential_moments(prior):
+    return 1 / prior.rate, prior.rate ** (-2)
+
+def lognormal_moments(prior):
+    mu, var = prior.mu, prior.var
+    return np.exp(mu + var / 2), (np.exp(var) - 1) * np.exp(2 * mu + var)
+
+def gamma_moments(prior):
+    return prior.shape * prior.scale, prior.shape * prior.scale ** 2
+
+def laplace_moments(prior):
+    return prior.mu, 2 * prior.sigma ** 2
+
+def beta_moments(prior):
+    a, b = prior.a, prior.b
+    return a / (a + b), (a * b) / ((a + b)**2 * (a + b + 1))
+
+def uniform_moments(prior):
+    a, b = prior.lower, prior.upper
+    # this is the only prior that does not wrap parameters in np.atleast_1d()
+    # so do it here to make sure all the shapes are consistent:
+    a = np.atleast_1d(a)
+    b = np.atleast_1d(b)
+    return (a + b) / 2, (b - a)**2 / 12
+
+@pytest.mark.parametrize("args", [
+    ("Exponential", [1.3]),
+    ("Gaussian", [-2.5, 3.4]),
+    ("LogNormal", [-2.5, 1.4]),
+    ("Gamma", [1.5, 0.7]),
+    ("Laplace", [-2.5, 3.4]),
+    ("Beta", [3.6, 0.4]),
+    ("Uniform", [5.4, 8.9]),
+    ])
+def test_moments(args):
+    classname, params = args
+    cls = eval("gpflow.priors.{}".format(classname))
+    prior = cls(*params)
+    moments_func = eval("{}_moments".format(cls.__name__.lower()))
+    rtol = 5e-3 if classname == "LogNormal" else 1e-3
+    assert_allclose(moments_func(prior), mc_moments(prior), rtol=rtol,
+                    err_msg="for {} prior".format(classname))
 
 if __name__ == "__main__":
     tf.test.main()

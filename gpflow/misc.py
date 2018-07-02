@@ -16,19 +16,20 @@
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+from collections import OrderedDict
 
 from . import settings
+from ._version import __version__
 
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
 
 
-def pretty_pandas_table(names, keys, values):
-    df = pd.DataFrame(dict(zip(keys, values)))
-    df.index = names
-    df = df.reindex_axis(keys, axis=1)
-    return df
+def pretty_pandas_table(row_names, column_names, column_values):
+    return pd.DataFrame(
+        OrderedDict(zip(column_names, column_values)),
+        index=row_names)
 
 
 def tensor_name(*subnames):
@@ -249,3 +250,6 @@ def _get_tensor_safe(name, index, graph):
         return graph.get_tensor_by_name(':'.join([name, index]))
     except KeyError:
         return None
+
+def version():
+    return __version__

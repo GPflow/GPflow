@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 import numpy as np
@@ -99,10 +99,10 @@ class TestEquivalence(GPflowTestCase):
         with self.test_context():
             self.setup()
             assert_allclose(self.vgp0.kern.variance.read_value(),
-                            self.cvgp.kern.coregion.kappa.read_value()[0],
+                            self.cvgp.kern.kernels[1].kappa.read_value()[0],
                             atol=1.0e-2)
             assert_allclose(self.vgp1.kern.variance.read_value(),
-                            self.cvgp.kern.coregion.kappa.read_value()[1],
+                            self.cvgp.kern.kernels[1].kappa.read_value()[1],
                             atol=1.0e-2)
 
     def test_mean_values(self):
@@ -154,7 +154,7 @@ class TestEquivalence(GPflowTestCase):
             self.assertTrue(np.allclose(pred_ydensity0, pred_ydensity_c0, atol=1e-2))
             pred_ydensity1 = self.vgp1.predict_density(self.Xtest, Ytest)
             pred_ydensity_c1 = self.cvgp.predict_density(X_augumented1, Y_augumented1)
-            assert_allclose(pred_ydensity1, pred_ydensity_c1, atol=1e-2)
+            np.testing.assert_allclose(pred_ydensity1, pred_ydensity_c1, atol=1e-2)
 
             # just check predict_f_samples(self) works
             self.cvgp.predict_f_samples(X_augumented0, 1)

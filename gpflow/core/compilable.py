@@ -59,7 +59,7 @@ class AutoBuild(abc.ABCMeta):
         def __init__(self):
             pass
 
-    a = A(autobuild=False) # works fine, even when __init__ arguemnt list is empty.
+    a = A(autobuild=False) # works fine, even when __init__ argument list is empty.
     b = B(autobuild=False) # raises TypeError exception.
     ```
     """
@@ -89,6 +89,7 @@ class AutoBuild(abc.ABCMeta):
             if autobuild_on and global_autobuild_on:
                 self.build()
                 self.initialize(force=True)
+        __init__.__doc__ = origin_init.__doc__
         setattr(new_cls, '__init__', __init__)
         return new_cls
 
@@ -110,40 +111,85 @@ class Build(enum.Enum):
 class ICompilable(metaclass=AutoBuild):
     @abc.abstractproperty
     def graph(self):
+        """
+        TensorFlow graph property.
+
+        :return: tf.Graph which was used during building.
+        """
         raise NotImplementedError()
 
     @abc.abstractproperty
     def feeds(self):
+        """
+        TensorFlow feed dictionary for passing to tf.Session.run()
+
+        :return: TensorFlow feed dictionary or None.
+        """
         raise NotImplementedError()
 
     @abc.abstractproperty
     def initializables(self):
+        """
+        List of TensorFlow tensors which must be initialized.
+        This list is necessary for successfull _initialize_ call.
+
+        :return: List of TensorFlow variables, data iterators or both,
+            which are capable to be initialized.
+
+        """
         raise NotImplementedError()
 
     @abc.abstractproperty
     def initializable_feeds(self):
-        raise NotImplementedError()
+        """
+        Feed dictionary which will be used along with `initializables` list
+        at `initialize` function.
 
-    @abc.abstractmethod
-    def build(self):
+        :return: Standard TensorFlow feed dictionary which must be used at
+            at initialization.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def initialize(self, session=None, force=False):
+        """
+        This method initializes all TensorFlow tensors listed by `initializables`
+        property with the aid of feed dictionary presented by `initializable_feeds`.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def build(self):
+        """
+        Public method for building tensors defined by ICompilable object at default
+        TensorFlow graph. Wrapper for internal `_build` method.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def compile(self, session=None):
+        """
+        Two-phase method. At first it builds tensors and then initializes them at
+        for a specific session session.
+
+        :param session: TensorFlow session.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def is_built(self, graph):
+        """
+        Checks if tensors belonging to this ICompilable object were built for
+        the `graph` argument.
+
+        :param graph: TensorFlow graph.
+        :return: `Build` status.
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def clear(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _build(self):
+        """
+        Clears out tensors from ICompilable object and removes all ties with them.
+        """
         raise NotImplementedError()

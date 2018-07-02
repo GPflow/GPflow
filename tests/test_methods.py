@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 
@@ -203,9 +203,9 @@ class TestStochasticGradients(GPflowTestCase):
         return indexedModel
 
     def check_models_close(self, m1, m2, tolerance=1e-2):
-        m1_params = {p.full_name: p for p in list(m1.trainable_parameters)}
-        m2_params = {p.full_name: p for p in list(m2.trainable_parameters)}
-        if set(m1_params.keys()) != set(m2_params.keys()):
+        m1_params = {p.pathname: p for p in list(m1.trainable_parameters)}
+        m2_params = {p.pathname: p for p in list(m2.trainable_parameters)}
+        if set(m2_params.keys()) != set(m2_params.keys()):
             return False
         for key in m1_params:
             p1 = m1_params[key]

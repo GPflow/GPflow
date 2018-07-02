@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 from collections import namedtuple
 
@@ -23,8 +23,8 @@ import pytest
 
 import gpflow
 from gpflow import settings
+from gpflow.conditionals import conditional
 from gpflow.conditionals import uncertain_conditional
-from gpflow.conditionals import feature_conditional
 from gpflow.quadrature import mvnquad
 from gpflow.test_util import session_context
 
@@ -35,7 +35,7 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
         return uncertain_conditional(
                 Xmu, Xcov, self.feature, self.kern, self.q_mu, self.q_sqrt,
                 mean_function=self.mean_function, white=self.whiten,
-                full_cov_output=self.full_cov_output)
+                full_output_cov=self.full_output_cov)
 
     def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=int(1e6)):
         rng = np.random.RandomState(0)
@@ -135,15 +135,15 @@ class DataQuadrature:
         }
 
         def mean_fn(X):
-            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
+            mean, _ = conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return mean + effective_mean(X)
 
         def var_fn(X):
-            _, var = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
+            _, var = conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return var
 
         def mean_sq_fn(X):
-            mean, _ = feature_conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
+            mean, _ = conditional(X, feat, kern, q_mu, q_sqrt=q_sqrt, white=white)
             return (mean + effective_mean(X)) ** 2
 
         Collection = namedtuple('QuadratureCollection',
@@ -176,7 +176,7 @@ def test_no_uncertainty(white, mean):
         model = MomentMatchingSVGP(
             Data.X, Data.Y, k, gpflow.likelihoods.Gaussian(),
             mean_function=m, Z=Data.X.copy(), whiten=white)
-        model.full_cov_output = False
+        model.full_output_cov = False
         gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
 
         mean1, var1 = model.predict_f(Data.Xnew_mu)
@@ -198,7 +198,7 @@ def test_monte_carlo_1_din(white, mean):
         model = MomentMatchingSVGP(
             DataMC1.X, DataMC1.Y, k, gpflow.likelihoods.Gaussian(),
             Z=DataMC1.X.copy(), whiten=white)
-        model.full_cov_output = True
+        model.full_output_cov = True
         gpflow.train.AdamOptimizer().minimize(model, maxiter=50)
 
         pred_mm = model.uncertain_predict_f_moment_matching(
@@ -222,7 +222,7 @@ def test_monte_carlo_2_din(white, mean):
         model = MomentMatchingSVGP(
             DataMC2.X, DataMC2.Y, k, gpflow.likelihoods.Gaussian(),
             mean_function=m, Z=DataMC2.X.copy(), whiten=white)
-        model.full_cov_output = True
+        model.full_output_cov = True
         gpflow.train.AdamOptimizer().minimize(model)
 
         pred_mm = model.uncertain_predict_f_moment_matching(
@@ -251,7 +251,7 @@ def test_quadrature(white, mean):
             d.Xmu, d.Xvar, d.feat, d.kern,
             d.q_mu, d.q_sqrt,
             mean_function=d.mean_function,
-            full_cov_output=False,
+            full_output_cov=False,
             white=white)
 
         mean_quad, var_quad, mean_sq_quad = session.run(

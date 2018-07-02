@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 # Eventually, it would be nice to not have to have our own classes for
 # proability distributions. The TensorFlow "distributions" framework would
@@ -32,9 +32,9 @@ class Gaussian(ProbabilityDistribution):
 
 
 class DiagonalGaussian(ProbabilityDistribution):
-    def __init__(self, mu, var):
+    def __init__(self, mu, cov):
         self.mu = mu  # N x D
-        self.var = var  # N x D
+        self.cov = cov  # N x D
 
 
 class MarkovGaussian(ProbabilityDistribution):

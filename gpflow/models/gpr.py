@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from __future__ import absolute_import
 import tensorflow as tf
 
 from .. import likelihoods
 from .. import settings
 
+from ..conditionals import base_conditional
 from ..params import DataHolder
 from ..decors import params_as_tensors
 from ..decors import name_scope
-from ..densities import multivariate_normal
+from ..logdensities import multivariate_normal
 
 from .model import GPModel
 
@@ -63,8 +62,9 @@ class GPR(GPModel):
         K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.float_type) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
+        logpdf = multivariate_normal(self.Y, m, L)  # (R,) log-likelihoods for each independent dimension of Y
 
-        return multivariate_normal(self.Y, m, L)
+        return tf.reduce_sum(logpdf)
 
     @name_scope('predict')
     @params_as_tensors
@@ -79,17 +79,10 @@ class GPR(GPModel):
         where F* are points on the GP at Xnew, Y are noisy observations at X.
 
         """
-        Kx = self.kern.K(self.X, Xnew)
-        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.float_type) * self.likelihood.variance
-        L = tf.cholesky(K)
-        A = tf.matrix_triangular_solve(L, Kx, lower=True)
-        V = tf.matrix_triangular_solve(L, self.Y - self.mean_function(self.X))
-        fmean = tf.matmul(A, V, transpose_a=True) + self.mean_function(Xnew)
-        if full_cov:
-            fvar = self.kern.K(Xnew) - tf.matmul(A, A, transpose_a=True)
-            shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
-            fvar = tf.tile(tf.expand_dims(fvar, 2), shape)
-        else:
-            fvar = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(A), 0)
-            fvar = tf.tile(tf.reshape(fvar, (-1, 1)), [1, tf.shape(self.Y)[1]])
-        return fmean, fvar
+        y = self.Y - self.mean_function(self.X)
+        Kmn = self.kern.K(self.X, Xnew)
+        Kmm_sigma = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.float_type) * self.likelihood.variance
+        Knn = self.kern.K(Xnew) if full_cov else self.kern.Kdiag(Xnew)
+        f_mean, f_var = base_conditional(Kmn, Kmm_sigma, Knn, y, full_cov=full_cov, white=False)  # N x P, N x P or P x N x N
+        return f_mean + self.mean_function(Xnew), f_var
+

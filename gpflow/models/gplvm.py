@@ -1,3 +1,17 @@
+# Copyright 2016 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import tensorflow as tf
 import numpy as np
 
@@ -115,8 +129,8 @@ class BayesianGPLVM(GPModel):
 
         num_inducing = len(self.feature)
         psi0 = tf.reduce_sum(expectation(pX, self.kern))
-        psi1 = expectation(pX, (self.feature, self.kern))
-        psi2 = tf.reduce_sum(expectation(pX, (self.feature, self.kern), (self.feature, self.kern)), axis=0)
+        psi1 = expectation(pX, (self.kern, self.feature))
+        psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         L = tf.cholesky(Kuu)
         sigma2 = self.likelihood.variance
@@ -162,8 +176,8 @@ class BayesianGPLVM(GPModel):
         pX = DiagonalGaussian(self.X_mean, self.X_var)
 
         num_inducing = len(self.feature)
-        psi1 = expectation(pX, (self.feature, self.kern))
-        psi2 = tf.reduce_sum(expectation(pX, (self.feature, self.kern), (self.feature, self.kern)), axis=0)
+        psi1 = expectation(pX, (self.kern, self.feature))
+        psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         Kus = self.feature.Kuf(self.kern, Xnew)
         sigma2 = self.likelihood.variance
@@ -201,8 +215,6 @@ def PCA_reduce(X, Q):
     :return: PCA projection array of size N x Q.
     """
     assert Q <= X.shape[1], 'Cannot have more latent dimensions than observed'
-    evecs, evals = np.linalg.eigh(np.cov(X.T))
-    i = np.argsort(evecs)[::-1]
-    W = evals[:, i]
-    W = W[:, :Q]
+    evals, evecs = np.linalg.eigh(np.cov(X.T))
+    W = evecs[:, -Q:]
     return (X - X.mean(0)).dot(W)

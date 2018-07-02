@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 import numpy as np
@@ -85,7 +85,7 @@ class TestFullCov(GPflowTestCase):
     rng = np.random.RandomState(0)
     num_samples = 5
     samples_shape = (num_samples, Ntest, output_dim)
-    covar_shape = (Ntest, Ntest, output_dim)
+    covar_shape = (output_dim, Ntest, Ntest)
     X = rng.randn(N, input_dim)
     Y = rng.randn(N, output_dim)
     Z = rng.randn(M, input_dim)
@@ -107,12 +107,13 @@ class TestFullCov(GPflowTestCase):
             self.assertTrue(covar.shape == self.covar_shape)
             self.assertTrue(var.shape == (self.Ntest, self.output_dim))
             for i in range(self.output_dim):
-                self.assertTrue(np.allclose(var[:, i], np.diag(covar[:, :, i])))
+                self.assertTrue(np.allclose(var[:, i], np.diag(covar[i, :, :])))
 
     def test_samples(self):
         with self.test_context():
             m = self.prepare()
             samples = m.predict_f_samples(self.Xtest, self.num_samples)
+            print(samples.shape)
             self.assertTrue(samples.shape == self.samples_shape)
 
 

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function, absolute_import
-
 import abc
 
 import numpy as np
@@ -54,7 +52,7 @@ class Model(Parameterized):
         return self.likelihood_tensor
 
     def is_built(self, graph):
-        is_built = super(Model, self).is_built(graph)
+        is_built = super().is_built(graph)
         if is_built is not Build.YES:
             return is_built
         if self._likelihood_tensor is None:
@@ -83,6 +81,16 @@ class Model(Parameterized):
         objective = self._build_objective(likelihood, prior)
         self._likelihood_tensor = likelihood
         self._objective = objective
+
+    def sample_feed_dict(self, sample):
+        tensor_feed_dict = {}
+        for param in self.parameters:
+            if not param.trainable: continue
+            constrained_value = sample[param.pathname]
+            unconstrained_value = param.transform.backward(constrained_value)
+            tensor = param.unconstrained_tensor
+            tensor_feed_dict[tensor] = unconstrained_value
+        return tensor_feed_dict
 
     def _build_objective(self, likelihood_tensor, prior_tensor):
         func = tf.add(likelihood_tensor, prior_tensor, name='nonneg_objective')
@@ -163,11 +171,11 @@ class GPModel(Model):
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
-        mu, var = self._build_predict(Xnew, full_cov=True)
+        mu, var = self._build_predict(Xnew, full_cov=True)  # N x P, # P x N x N
         jitter = tf.eye(tf.shape(mu)[0], dtype=settings.float_type) * settings.numerics.jitter_level
         samples = []
         for i in range(self.num_latent):
-            L = tf.cholesky(var[:, :, i] + jitter)
+            L = tf.cholesky(var[i, :, :] + jitter)
             shape = tf.stack([tf.shape(L)[0], num_samples])
             V = tf.random_normal(shape, dtype=settings.float_type)
             samples.append(mu[:, i:i + 1] + tf.matmul(L, V))

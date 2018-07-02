@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import
-
 import numpy as np
 import tensorflow as tf
 import itertools
@@ -318,90 +316,84 @@ class LowerTriangular(Transform):
     """
     A transform of the form
 
-       tri_mat = vec_to_tri(x)
+       y = vec_to_tri(x)
 
-    x is a free variable, y is always a list of lower triangular matrices sized
-    (D x N x N).
+    x is the 'packed' version of shape num_matrices x (N**2 + N)/2
+    y is the 'unpacked' version of shape num_matrices x N x N.
+    
+    :param N: the size of the final lower triangular matrices.
+    :param num_matrices: Number of matrices to be stored.
+    :param squeeze: If num_matrices == 1, drop the redundant axis.
+    
+    :raises ValueError: squeezing is impossible when num_matrices > 1.
     """
 
     def __init__(self, N, num_matrices=1, squeeze=False):
         """
         Create an instance of LowerTriangular transform.
-        Args:
-            N the size of the final lower triangular matrices.
-            num_matrices: Number of matrices to be stored.
-            squeeze: If num_matrices == 1, drop the redundant axis.
         """
+        self.N = N
         self.num_matrices = num_matrices  # We need to store this for reconstruction.
         self.squeeze = squeeze
-        self.N = N
 
-    def _validate_vector_length(self, length):
-        """
-        Check whether the vector length is consistent with being a triangular
-         matrix and with `self.num_matrices`.
-        Args:
-            length: Length of the free state vector.
-
-        Returns: Length of the vector with the lower triangular elements.
-
-        """
-        L = length / self.num_matrices
-        if int(((L * 8) + 1) ** 0.5) ** 2.0 != (L * 8 + 1):
-            raise ValueError("The free state must be a triangle number.")
-        return L
+        if self.squeeze and (num_matrices != 1):
+            raise ValueError("cannot squeeze matrices unless num_matrices is 1.")
 
     def forward(self, x):
         """
-        Transforms from the free state to the variable.
-        Args:
-            x: Free state vector. Must have length of `self.num_matrices` *
-                triangular_number.
-
-        Returns:
-            Reconstructed variable.
+        Transforms from the packed to unpacked representations (numpy)
+        
+        :param x: packed numpy array. Must have shape `self.num_matrices x triangular_number
+        :return: Reconstructed numpy array y of shape self.num_matrices x N x N
         """
-        L = self._validate_vector_length(len(x))
-        matsize = int((L * 8 + 1) ** 0.5 * 0.5 - 0.5)
-        xr = np.reshape(x, (self.num_matrices, -1))
-        var = np.zeros((self.num_matrices, matsize, matsize), settings.float_type)
+        fwd = np.zeros((self.num_matrices, self.N, self.N), settings.float_type)
+        indices = np.tril_indices(self.N, 0)
+        z = np.zeros(len(indices[0])).astype(int)
         for i in range(self.num_matrices):
-            indices = np.tril_indices(matsize, 0)
-            var[(np.zeros(len(indices[0])).astype(int) + i,) + indices] = xr[i, :]
-        return var.squeeze() if self.squeeze else var
+            fwd[(z + i,) + indices] = x[i, :]
+        return fwd.squeeze(axis=0) if self.squeeze else fwd
 
     def backward(self, y):
         """
-        Transforms from the variable to the free state.
-        Args:
-            y: Variable representation.
-
-        Returns:
-            Free state.
+        Transforms a series of triangular matrices y to the packed representation x (numpy)
+        
+        :param y: unpacked numpy array y, shape self.num_matrices x N x N
+        :return: packed numpy array, x, shape self.num_matrices x triangular number
         """
-        N = int(np.sqrt(y.size / self.num_matrices))
-        reshaped = np.reshape(y, (self.num_matrices, N, N))
-        # return reshaped[np.tril_indices(N, 0)].T
-        return np.vstack([reshaped[i, :, :][np.tril_indices(N, 0)] for i in range(len(reshaped))])
+        if self.squeeze:
+            y = y[None, :, :]
+        ind = np.tril_indices(self.N)
+        return np.vstack([y_i[ind] for y_i in y])
 
     def forward_tensor(self, x):
-        reshaped = tf.reshape(x, (self.num_matrices, -1))
-        fwd = vec_to_tri(reshaped, self.N)
-        return tf.squeeze(fwd) if self.squeeze else fwd
+        """
+        Transforms from the packed to unpacked representations (tf.tensors)
+        
+        :param x: packed tensor. Must have shape `self.num_matrices x triangular_number
+        :return: Reconstructed tensor y of shape self.num_matrices x N x N
+        """
+        fwd = vec_to_tri(x, self.N)
+        return tf.squeeze(fwd, axis=0) if self.squeeze else fwd
 
     def backward_tensor(self, y):
         """
-        CAVEAT: Requires defined shape and can't work with unknown shape.
+        Transforms a series of triangular matrices y to the packed representation x (tf.tensors)
+        
+        :param y: unpacked tensor with shape self.num_matrices, self.N, self.N
+        :return: packed tensor with shape self.num_matrices, (self.N**2 + self.N) / 2
         """
-        size = np.prod(y.shape.as_list())
-        N = int(np.sqrt(size / self.num_matrices))
-        reshaped = tf.reshape(y, shape=(self.num_matrices, N, N))
-        indices = np.array([np.hstack(x) for x in
-                            itertools.product(np.arange(self.num_matrices), np.dstack(np.tril_indices(N))[0])])
-        triangular = tf.reshape(tf.gather_nd(reshaped, indices), shape=[-1])
-        return triangular[None, :]
+        if self.squeeze:
+            y = tf.expand_dims(y, axis=0)
+        indices = np.vstack(np.tril_indices(self.N)).T
+        indices = itertools.product(np.arange(self.num_matrices), indices)
+        indices = np.array([np.hstack(x) for x in indices])
+        triangular = tf.gather_nd(y, indices)
+        return tf.reshape(triangular, [self.num_matrices, (self.N**2 + self.N) // 2])
 
     def log_jacobian_tensor(self, x):
+        """
+        This function has a jacobian of one, since it is simply an identity mapping (with some packing/unpacking)
+        """
         return tf.zeros((1,), settings.float_type)
 
     def __str__(self):

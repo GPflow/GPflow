@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import tensorflow as tf
 
@@ -84,7 +84,7 @@ class VariationalUnivariateTest(GPflowTestCase):
     posteriorStd = np.sqrt(posteriorVariance)
 
     def likelihood(self):
-        return gpflow.likelihoods.Gaussian(var=self.noiseVariance)
+        return gpflow.likelihoods.Gaussian(variance=self.noiseVariance)
 
     def get_model(self, is_diagonal, is_whitened):
         m = gpflow.models.SVGP(

@@ -1,6 +1,19 @@
-from __future__ import print_function, absolute_import
+# Copyright 2017-2018 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import itertools
+from collections import Iterable
 
 import numpy as np
 import tensorflow as tf
@@ -9,13 +22,13 @@ from . import settings
 from .core.errors import GPflowError
 
 
-def hermgauss(n):
+def hermgauss(n: int):
     x, w = np.polynomial.hermite.hermgauss(n)
     x, w = x.astype(settings.float_type), w.astype(settings.float_type)
     return x, w
 
 
-def mvhermgauss(H, D):
+def mvhermgauss(H: int, D: int):
     """
     Return the evaluation locations 'xn', and weights 'wn' for a multivariate
     Gauss-Hermite quadrature.
@@ -33,7 +46,7 @@ def mvhermgauss(H, D):
     return x, w
 
 
-def mvnquad(func, means, covs, H, Din=None, Dout=None):
+def mvnquad(func, means, covs, H: int, Din: int=None, Dout=None):
     """
     Computes N Gaussian expectation integrals of a single function 'f'
     using Gauss-Hermite quadrature.
@@ -77,3 +90,113 @@ def mvnquad(func, means, covs, H, Din=None, Dout=None):
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
                     (-1,) + (1,) * (1 + len(Dout)))
     return tf.reduce_sum(fX * wr, 0)
+
+
+def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool=False, **Ys):
+    """
+    Computes N Gaussian expectation integrals of one or more functions
+    using Gauss-Hermite quadrature. The Gaussians must be independent.
+
+    :param funcs: the integrand(s):
+        Callable or Iterable of Callables that operates elementwise
+    :param H: number of Gauss-Hermite quadrature points
+    :param Fmu: array/tensor or `Din`-tuple/list thereof
+    :param Fvar: array/tensor or `Din`-tuple/list thereof
+    :param logspace: if True, funcs are the log-integrands and this calculates
+        the log-expectation of exp(funcs)
+    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
+
+    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :return: shape is the same as that of the first Fmu
+    """
+    def unify(f_list):
+        """
+        Stack a list of means/vars into a full block
+        """
+        return tf.reshape(
+                tf.concat([tf.reshape(f, (-1, 1)) for f in f_list], axis=1),
+                (-1, 1, Din))
+
+    if isinstance(Fmu, (tuple, list)):
+        Din = len(Fmu)
+        shape = tf.shape(Fmu[0])
+        Fmu, Fvar = map(unify, [Fmu, Fvar])    # both N x 1 x Din
+    else:
+        Din = 1
+        shape = tf.shape(Fmu)
+        Fmu, Fvar = [tf.reshape(f, (-1, 1, 1)) for f in [Fmu, Fvar]]
+
+    xn, wn = mvhermgauss(H, Din)
+    # xn: H**Din x Din, wn: H**Din
+
+    gh_x = xn.reshape(1, -1, Din)             # 1 x H**Din x Din
+    Xall = gh_x * tf.sqrt(2.0 * Fvar) + Fmu   # N x H**Din x Din
+    Xs = [Xall[:, :, i] for i in range(Din)]  # N x H**Din  each
+
+    gh_w = wn * np.pi ** (-0.5 * Din)  # H**Din x 1
+
+    for name, Y in Ys.items():
+        Y = tf.reshape(Y, (-1, 1))
+        Y = tf.tile(Y, [1, H**Din])  # broadcast Y to match X
+        # without the tiling, some calls such as tf.where() (in bernoulli) fail
+        Ys[name] = Y  # now N x H**Din
+
+    def eval_func(f):
+        feval = f(*Xs, **Ys)  # f should be elementwise: return shape N x H**Din
+        if logspace:
+            log_gh_w = np.log(gh_w.reshape(1, -1))
+            result = tf.reduce_logsumexp(feval + log_gh_w, axis=1)
+        else:
+            result = tf.matmul(feval, gh_w.reshape(-1, 1))
+        return tf.reshape(result, shape)
+
+    if isinstance(funcs, Iterable):
+        return [eval_func(f) for f in funcs]
+    else:
+        return eval_func(funcs)
+
+
+def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys):
+    """
+    Computes N Gaussian expectation integrals of one or more functions
+    using Monte Carlo samples. The Gaussians must be independent.
+
+    :param funcs: the integrand(s):
+        Callable or Iterable of Callables that operates elementwise
+    :param S: number of Monte Carlo sampling points
+    :param Fmu: array/tensor
+    :param Fvar: array/tensor
+    :param logspace: if True, funcs are the log-integrands and this calculates
+        the log-expectation of exp(funcs)
+    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
+
+    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :return: shape is the same as that of the first Fmu
+    """
+    N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
+
+    if epsilon is None:
+        epsilon = tf.random_normal((S, N, D), dtype=settings.float_type)
+
+    mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
+    mc_Xr = tf.reshape(mc_x, (S * N, D))
+
+    for name, Y in Ys.items():
+        Y = tf.reshape(Y, (-1, 1))
+        mc_Yr = tf.tile(Y, [S, 1])  # broadcast Y to match X
+        # without the tiling, some calls such as tf.where() (in bernoulli) fail
+        Ys[name] = mc_Yr  # now S * N x 1
+
+    def eval_func(func):
+        feval = func(mc_Xr, **Ys)
+        feval = tf.reshape(feval, (S, N, -1))
+        if logspace:
+            log_S = tf.log(tf.cast(S, settings.float_type))
+            return tf.reduce_logsumexp(feval, axis=0) - log_S  # N x D
+        else:
+            return tf.reduce_mean(feval, axis=0)
+
+    if isinstance(funcs, Iterable):
+        return [eval_func(f) for f in funcs]
+    else:
+        return eval_func(funcs)

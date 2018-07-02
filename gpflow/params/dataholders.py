@@ -73,14 +73,14 @@ class DataHolder(Parameter):
         column_names = ['class', 'shape', 'fixed_shape', 'value']
         column_values = [self.__class__.__name__, self.shape, self.fixed_shape, self.value]
         column_values = [[value] for value in column_values]
-        df = misc.pretty_pandas_table([self.full_name], column_names, column_values)
+        df = misc.pretty_pandas_table([self.pathname], column_names, column_values)
         return df
 
     def _parameter_name(self):
-        return misc.tensor_name(self.hidden_full_name, 'dataholder')
+        return misc.tensor_name(self.tf_pathname, 'dataholder')
 
     def _clear(self):
-        self._reset_name()
+        self.reset_name()
         self._initial_value_tensor = None
         self._dataholder_tensor = None
         self._is_initialized_tensor = None
@@ -112,9 +112,6 @@ class DataHolder(Parameter):
 
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
-
-    def __repr__(self):
-        return str(self.as_pandas_table())
 
 
 class Minibatch(DataHolder):
@@ -198,14 +195,11 @@ class Minibatch(DataHolder):
             self.initialize(session=session, force=True)
 
     def _clear(self):
-        self._reset_name()
+        self.reset_name()
         self._cache_tensor = None
         self._batch_size_tensor = None
         self._dataholder_tensor = None
         self._iterator_tensor = None
-        self._shuffle = True
-        self._batch_size = 1
-        self._seed = None
 
     def _build(self):
         initial_tensor = self._build_placeholder_cache()
@@ -214,7 +208,7 @@ class Minibatch(DataHolder):
 
     def _build_placeholder_cache(self):
         value = self._value
-        return tf.placeholder(dtype=value.dtype, shape=value.shape, name='minibatch_init')
+        return tf.placeholder(dtype=value.dtype, shape=None, name='minibatch_init')
 
     def _build_dataholder(self, initial_tensor):
         if initial_tensor is None:
@@ -242,5 +236,5 @@ class Minibatch(DataHolder):
     def _parameter_name(self):
         name = 'minibatch'
         if self.parent is self:
-            return misc.tensor_name(self.hidden_full_name, name)
+            return misc.tensor_name(self.tf_pathname, name)
         return name

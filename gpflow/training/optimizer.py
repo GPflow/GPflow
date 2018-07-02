@@ -20,14 +20,48 @@ import abc
 
 class Optimizer:
     @abc.abstractmethod
+    def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
+        """
+        Make optimization tensor.
+        The `make_optimize_tensor` method builds optimization tensor and initializes
+        all necessary variables created by optimizer.
+
+            :param model: GPflow model.
+            :param session: Tensorflow session.
+            :param var_list: List of variables for training.
+            :param kwargs: Dictionary of extra parameters necessary for building
+                optimizer tensor.
+            :return: Tensorflow optimization tensor or operation.
+        """
+        pass
+
+    @abc.abstractmethod
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, initialize=True, anchor=True, **kwargs):
+                 maxiter=1000, initialize=True, anchor=True, step_callback=None, **kwargs):
+        """
+        :param model: GPflow model with objective tensor.
+        :param session: Session where optimization will be run.
+        :param var_list: List of extra variables which should be trained during optimization.
+        :param feed_dict: Feed dictionary of tensors passed to session run method.
+        :param maxiter: Number of run interation.
+        :param initialize: If `True` model parameters will be re-initialized even if they were
+            initialized before in the specified session.
+        :param anchor: If `True` trained variable values computed during optimization at
+            particular session will be synchronized with internal parameter values.
+        :param step_callback: A callback function to execute at each optimization step.
+            It must take an arbitrary list of arguments. The optimiser may pass to the callback
+            function some data it thinks might be of interest to the calling code. For instance,
+            this can be the current values of trainable variables.
+        :param kwargs: This is a dictionary of extra parameters for session run method.
+
+        """
         raise NotImplementedError()
 
     @staticmethod
     def _gen_var_list(model, var_list):
         var_list = var_list or []
-        return list(set(model.trainable_tensors).union(var_list))
+        all_vars = list(set(model.trainable_tensors).union(var_list))
+        return sorted(all_vars, key=lambda x: x.name)
 
     @staticmethod
     def _gen_feed_dict(model, feed_dict):

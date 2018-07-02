@@ -293,10 +293,20 @@ class Parameter(Node):
     def as_pandas_table(self):
         column_names = ['class', 'prior', 'transform', 'trainable', 'shape', 'fixed_shape', 'value']
         column_values = [self.__class__.__name__, str(self.prior), str(self.transform),
-                         self.trainable, self.shape, self.fixed_shape, self.value]
+                         self.trainable, self.shape, self.fixed_shape, self.value.copy()]
         column_values = [[value] for value in column_values]
-        df = misc.pretty_pandas_table([self.full_name], column_names, column_values)
+        df = misc.pretty_pandas_table([self.pathname], column_names, column_values)
         return df
+
+    def tf_compilation_index(self):
+        """
+        Takes out index from the parameter's tensor name. E.g. parameter tensor name is 
+        GPR-0000/kern/lengthscales, the method for that parameter will return '0000' index.
+        """
+        if self.parameter_tensor is None:
+            return None
+        name = self.parameter_tensor.name
+        return name.split('-', 1)[-1].split('/')[0]
 
     def _valid_input(self, value, dtype=None):
         if not misc.is_valid_param_value(value):
@@ -333,7 +343,7 @@ class Parameter(Node):
         return value
 
     def _clear(self):
-        self._reset_name()
+        self.reset_name()
         self._externally_defined = False
         self._is_initialized_tensor = None
         self._initial_value_tensor = None
@@ -440,7 +450,7 @@ class Parameter(Node):
         return self.transform.backward(value)
 
     def _parameter_name(self):
-        return '/'.join([self.hidden_full_name, 'unconstrained'])
+        return misc.tensor_name(self.tf_pathname, 'unconstrained')
 
     def _set_parameter_tensor(self, tensor):
         self._unconstrained_tensor = tensor
@@ -452,7 +462,7 @@ class Parameter(Node):
 
         is_built = self.is_built_coherence(self.graph)
         if is_built is Build.YES:
-            raise GPflowError('Parameter "{}" has already been compiled.'.format(self.full_name))
+            raise GPflowError('Parameter "{}" has already been compiled.'.format(self.pathname))
 
         name = attr.value
         if value is not None and not isinstance(value, attr.interface):
@@ -469,7 +479,7 @@ class Parameter(Node):
             pass
         object.__setattr__(self, name, value)
 
-    def __repr__(self):
+    def __str__(self):
         return str(self.as_pandas_table())
 
     @property

@@ -10,7 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.from __future__ import print_function
+# limitations under the License.
 
 import warnings
 import tensorflow as tf
@@ -33,7 +33,7 @@ class TransformTests(GPflowTestCase):
             if transform_class == Chain:
                 continue  # Chain transform cannot be tested on its own
             if transform_class == gpflow.transforms.LowerTriangular:
-                transforms.append(transform_class(4))
+                pass  # Test triangular transforms separately.
             elif transform_class == gpflow.transforms.DiagMatrix:
                 transforms.append(transform_class(5))
             else:
@@ -197,10 +197,50 @@ class TestMatrixTransforms(GPflowTestCase):
     Some extra tests for the matrix transformations.
     """
     def test_LowerTriangular(self):
-        t = gpflow.transforms.LowerTriangular(1, 3)
-        t.forward(np.ones(3 * 6))
+        t = gpflow.transforms.LowerTriangular(N=3, num_matrices=2)
+        t.forward(np.ones((2, 6)))
         with self.assertRaises(ValueError):
-            t.forward(np.ones(3 * 7))
+            t.forward(np.ones((2, 7)))
+
+    def test_LowerTriangular_squeezes_only_first_axis(self):
+        t = gpflow.transforms.LowerTriangular(1, 1, squeeze=True)
+        ret = t.forward(np.ones((1, 1)))
+        self.assertEqual(ret.shape, (1, 1))
+
+    def test_LowerTriangularConsistency(self):
+        t = gpflow.transforms.LowerTriangular(2, 4)
+        M = np.random.randn(4, 2, 2) * np.tri(2, 2)[None, :, :]
+
+        M_free = t.backward(M)
+        assert_allclose(M, t.forward(M_free))
+
+        with self.test_context() as session:
+            M_free_tf = session.run(t.backward_tensor(tf.identity(M)))
+            assert_allclose(M_free, M_free_tf)
+            assert_allclose(M, session.run(t.forward_tensor(tf.identity(M_free_tf))))
+
+    def test_LowerTriangular_squeezes(self):
+        t1 = gpflow.transforms.LowerTriangular(N=3, num_matrices=1)
+        t2 = gpflow.transforms.LowerTriangular(N=3, num_matrices=1, squeeze=True)
+        X = np.random.randn(1, 6)
+        Y = np.random.randn(1, 3, 3)
+
+        self.assertTrue(np.all(t1.forward(X).squeeze() == t2.forward(X)))
+        self.assertTrue(np.all(t1.forward(X).squeeze().shape == t2.forward(X).shape))
+        self.assertTrue(np.all(t1.backward(Y) == t2.backward(Y.squeeze())))
+        self.assertTrue(np.all(t1.backward(Y).shape == t2.backward(Y.squeeze()).shape))
+
+        with self.test_context() as session:
+            self.assertTrue(np.all(session.run(tf.squeeze(t1.forward_tensor(X))) == 
+                                   session.run(t2.forward_tensor(X))))
+
+            self.assertTrue(np.all(session.run(t1.backward_tensor(Y)) == 
+                                   session.run(t2.backward_tensor(Y.squeeze()))))
+
+        # make sure we don't try to squeeze when there are more than 1 matrices.
+        with self.assertRaises(ValueError):
+            gpflow.transforms.LowerTriangular(N=3, num_matrices=2, squeeze=True)
+
 
     def test_DiagMatrix(self):
         t = gpflow.transforms.DiagMatrix(3)

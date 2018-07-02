@@ -1,13 +1,13 @@
 from __future__ import print_function
 import gpflow
+from gpflow.test_util import notebook_niter
 import tensorflow as tf
 import os
 import numpy as np
 import cProfile
 import csv
 
-tol=1e-11
-nRepeats = 50
+nRepeats = notebook_niter(50)
 
 predict_limits = [-4., 4.]
 inducing_points_limits = [-1., 9]
@@ -75,9 +75,9 @@ def getSparseModel(X,Y,isFITC=False):
     return m
 
 def printModelParameters(model):
-    print("Likelihood variance ", model.likelihood.variance, "\n")
-    print("Kernel variance ", model.kern.variance, "\n")
-    print("Kernel lengthscale ", model.kern.lengthscales, "\n")
+    print("Likelihood variance ", model.likelihood.variance.value, "\n")
+    print("Kernel variance ", model.kern.variance.value, "\n")
+    print("Kernel lengthscale ", model.kern.lengthscales.value, "\n")
 
 def plotPredictions(ax, model, color, label):
     xtest = np.sort(readCsvFile('data/snelson_test_inputs'))
@@ -92,9 +92,10 @@ def trainSparseModel(xtrain,ytrain,exact_model,isFITC, xtest, ytest):
     sparse_model.kern.lengthscales = exact_model.kern.lengthscales.read_value().copy()
     sparse_model.kern.variance = exact_model.kern.variance.read_value().copy()
     callback = cb(sparse_model, xtest, ytest)
+    opt = gpflow.train.ScipyOptimizer()
     for repeatIndex in range(nRepeats):
-        print("repeatIndex ",repeatIndex)
-        sparse_model.optimize(disp=False, maxiter= 2000, tol=tol, callback=callback)
+        print("repeatIndex ", repeatIndex)
+        opt.minimize(sparse_model, disp=False, maxiter=notebook_niter(2000), step_callback=callback)
     return sparse_model, callback
 
 def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_inducing_points, ax_optimization, iterations, log_likelihoods,hold_out_likelihood, title):
@@ -149,7 +150,8 @@ def snelsonDemo():
 
     #run exact inference on training data.
     exact_model = getRegressionModel(xtrain,ytrain)
-    exact_model.optimize(maxiter= 2000000, tol=tol)
+    opt = gpflow.train.ScipyOptimizer()
+    opt.minimize(exact_model, maxiter=notebook_niter(2000000))
 
     figA, axes = plt.subplots(1,1)
     inds = np.argsort(xtrain.flatten())

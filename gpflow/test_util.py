@@ -13,8 +13,64 @@
 # limitations under the License.
 
 
+# pragma: no cover
+# pylint: skip-file
+
+
+import functools
 import contextlib
 import tensorflow as tf
+import pytest
+import os
+
+
+@pytest.fixture
+def session_tf():
+    """
+    Session creation pytest fixture.
+
+    ```
+    def test_simple(session_tf):
+        tensor = tf.constant(1.0)
+        result = session_tf.run(tensor)
+        # ...
+    ```
+
+    In example above the test_simple is wrapped within graph and session created
+    at `session_tf()` fixture. Session and graph are created per each pytest
+    function where `session_tf` argument is used.
+    """
+    with session_context() as session:
+        yield session
+
+
+def cache_tensor(method):
+    """
+    Caches result for wrapped function wrt default TensorFlow graph.
+    Whenever function is called under another default graph, execution will be
+    performed. It does make sense cache tensors: build once, use multiple times
+    per TensorFlow graph.
+
+    Example:
+    ```
+    @cache_tensor
+    def create_const():
+        return tf.constant(1.0, name='wow')
+
+    > const1 = create_const()
+    > const2 = create_const()
+    > const1 == const2
+    True
+    ```
+    """
+    cache = {}
+    @functools.wraps(method)
+    def wrapper(*args, **kwargs):
+        graph = tf.get_default_graph()
+        if graph not in cache:
+            cache[graph] = method(*args, **kwargs)
+        return cache[graph]
+    return wrapper
 
 
 class session_context(contextlib.ContextDecorator):
@@ -56,3 +112,18 @@ class GPflowTestCase(tf.test.TestCase):
         graph = self.test_graph if graph is None else graph
         with graph.as_default(), self.test_session(graph=graph) as session:
             yield session
+
+
+def is_continuous_integration():
+    ci = os.environ.get('CI', '').lower()
+    return (ci == 'true') or (ci == '1')
+
+
+def notebook_niter(n, test_n=2):
+    return test_n if is_continuous_integration() else n
+
+def notebook_range(n, test_n=2):
+    return range(notebook_niter(n, test_n))
+
+def notebook_list(lst, test_n=2):
+    return lst[:test_n] if is_continuous_integration() else lst

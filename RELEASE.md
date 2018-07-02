@@ -1,3 +1,7 @@
+# Master branch
+ - Added likelihoods where expectations are evaluated with Monte Carlo (`MonteCarloLikelihood`) (#799).
+ - Added `SoftMax` likelihood (#799).
+
 # Release 1.1
  - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feature.Z`.
 

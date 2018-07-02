@@ -15,19 +15,18 @@
 
 # flake8: noqa
 
-from __future__ import absolute_import
-
 from ._version import __version__
 from ._settings import SETTINGS as settings
 
 from .session_manager import get_session
 from .session_manager import get_default_session
 from .session_manager import reset_default_session
+from .session_manager import reset_default_graph_and_session
 
 from . import misc
 from . import transforms
 from . import conditionals
-from . import densities
+from . import logdensities
 from . import likelihoods
 from . import kernels
 from . import priors
@@ -37,7 +36,6 @@ from . import test_util
 from . import training as train
 from . import features
 from . import expectations
-from . import expectations_quadrature
 from . import probability_distributions
 
 from .decors import autoflow
@@ -54,3 +52,8 @@ from .params import ParamList
 from .params import DataHolder
 from .params import Minibatch
 from .params import Parameterized
+
+from .saver import Saver
+from .saver import SaverContext
+
+from . import multioutput

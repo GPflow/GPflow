@@ -2,12 +2,15 @@ import os
 import copy
 import collections
 import warnings
+import logging
+import inspect
 
 from collections import OrderedDict
 from six.moves import configparser
 
 import numpy as np
 import tensorflow as tf
+
 
 
 class _SettingsContextManager(object):
@@ -54,26 +57,26 @@ class _SettingsManager(object):
 
     @property
     def tf_float(self):
-        warnings.warn('The tf_float is depricated and will be removed at '
-                      'GPflow 1.2.0 version. Use float_type.', DeprecationWarning)
+        warnings.warn('tf_float is deprecated and will be removed at GPflow '
+                      'version 1.2.0. Use float_type.', DeprecationWarning)
         return self.float_type
 
     @property
     def tf_int(self):
-        warnings.warn('The tf_int is depricated and will be removed at '
-                      'GPflow 1.2.0 version. Use int_type.', DeprecationWarning)
+        warnings.warn('tf_int is deprecated and will be removed at GPflow '
+                      'version 1.2.0. Use int_type.', DeprecationWarning)
         return self.int_type
 
     @property
     def np_float(self):
-        warnings.warn('The np_float is depricated and will be removed at '
-                      'GPflow 1.2.0 version. Use float_type.', DeprecationWarning)
+        warnings.warn('np_float is deprecated and will be removed at GPflow '
+                      'version 1.2.0. Use float_type.', DeprecationWarning)
         return self.float_type
 
     @property
     def np_int(self):
-        warnings.warn('The np_int is depricated and will be removed at '
-                      'GPflow 1.2.0 version. Use int_type.', DeprecationWarning)
+        warnings.warn('np_int is deprecated and will be removed at GPflow '
+                      'version 1.2.0. Use int_type.', DeprecationWarning)
         return self.int_type
 
     @property
@@ -83,6 +86,20 @@ class _SettingsManager(object):
     @property
     def int_type(self):
         return self.dtypes.int_type
+
+    @property
+    def logging_level(self):
+        return self.logging.level
+
+    def logger(self):
+        frame = inspect.currentframe().f_back
+        module = inspect.getmodule(frame)
+        name = 'gpflow' if module is None else module.__name__
+        level = logging.getLevelName(self.logging.level)
+        logging.basicConfig()
+        log = logging.getLogger(name)
+        log.setLevel(level)
+        return log
 
 
 class _MutableNamedTuple(OrderedDict):

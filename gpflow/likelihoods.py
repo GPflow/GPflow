@@ -14,30 +14,29 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
-
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
+from . import logdensities
+from . import priors
 from . import settings
-from . import densities
 from . import transforms
-
 from .decors import params_as_tensors
 from .decors import params_as_tensors_for
+from .params import ParamList
 from .params import Parameter
 from .params import Parameterized
-from .params import ParamList
 from .quadrature import hermgauss
+from .quadrature import ndiagquad, ndiag_mc
 
 
 class Likelihood(Parameterized):
-    def __init__(self, name=None):
-        super(Likelihood, self).__init__(name)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.num_gauss_hermite_points = 20
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        """
+        r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
 
@@ -59,27 +58,17 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
         """
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-        gh_w /= np.sqrt(np.pi)
-        gh_w = gh_w.reshape(-1, 1)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar)]
-        X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
-
-        # here's the quadrature for the mean
-        E_y = tf.reshape(tf.matmul(self.conditional_mean(X), gh_w), shape)
-
-        # here's the quadrature for the variance
-        integrand = self.conditional_variance(X) \
-            + tf.square(self.conditional_mean(X))
-        V_y = tf.reshape(tf.matmul(integrand, gh_w), shape) - tf.square(E_y)
-
+        integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
+        E_y, E_y2 = ndiagquad([self.conditional_mean, integrand2],
+                              self.num_gauss_hermite_points,
+                              Fmu, Fvar)
+        V_y = E_y2 - tf.square(E_y)
         return E_y, V_y
 
     def predict_density(self, Fmu, Fvar, Y):
-        """
+        r"""
         Given a Normal distribution for the latent function, and a datum Y,
-        compute the (log) predictive density of Y.
+        compute the log predictive density of Y.
 
         i.e. if
             q(f) = N(Fmu, Fvar)
@@ -90,25 +79,17 @@ class Likelihood(Parameterized):
 
         then this method computes the predictive density
 
-           \int p(y=Y|f)q(f) df
+            \log \int p(y=Y|f)q(f) df
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-
-        gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
-        X = gh_x[None, :] * tf.sqrt(2.0 * Fvar) + Fmu
-
-        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-
-        logp = self.logp(X, Y)
-        return tf.reshape(tf.log(tf.matmul(tf.exp(logp), gh_w)), shape)
+        return ndiagquad(self.logp,
+                         self.num_gauss_hermite_points,
+                         Fmu, Fvar, logspace=True, Y=Y)
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        """
+        r"""
         Compute the expected log density of the data, given a Gaussian
         distribution for the function values.
 
@@ -127,28 +108,20 @@ class Likelihood(Parameterized):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-
-        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-        gh_x = gh_x.reshape(1, -1)
-        gh_w = gh_w.reshape(-1, 1) / np.sqrt(np.pi)
-        shape = tf.shape(Fmu)
-        Fmu, Fvar, Y = [tf.reshape(e, (-1, 1)) for e in (Fmu, Fvar, Y)]
-        X = gh_x * tf.sqrt(2.0 * Fvar) + Fmu
-        Y = tf.tile(Y, [1, self.num_gauss_hermite_points])  # broadcast Y to match X
-
-        logp = self.logp(X, Y)
-        return tf.reshape(tf.matmul(logp, gh_w), shape)
+        return ndiagquad(self.logp,
+                         self.num_gauss_hermite_points,
+                         Fmu, Fvar, Y=Y)
 
 
 class Gaussian(Likelihood):
-    def __init__(self, var=1.0):
-        super().__init__()
+    def __init__(self, variance=1.0, **kwargs):
+        super().__init__(**kwargs)
         self.variance = Parameter(
-            var, transform=transforms.positive, dtype=settings.float_type)
+            variance, transform=transforms.positive, dtype=settings.float_type)
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.gaussian(F, Y, self.variance)
+        return logdensities.gaussian(Y, F, self.variance)
 
     @params_as_tensors
     def conditional_mean(self, F):  # pylint: disable=R0201
@@ -164,7 +137,7 @@ class Gaussian(Likelihood):
 
     @params_as_tensors
     def predict_density(self, Fmu, Fvar, Y):
-        return densities.gaussian(Fmu, Y, Fvar + self.variance)
+        return logdensities.gaussian(Y, Fmu, Fvar + self.variance)
 
     @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):
@@ -187,13 +160,13 @@ class Poisson(Likelihood):
     of size 'binsize') and using this Poisson likelihood.
     """
 
-    def __init__(self, invlink=tf.exp, binsize=1.):
-        Likelihood.__init__(self)
+    def __init__(self, invlink=tf.exp, binsize=1., **kwargs):
+        super().__init__(**kwargs)
         self.invlink = invlink
         self.binsize = np.double(binsize)
 
     def logp(self, F, Y):
-        return densities.poisson(self.invlink(F) * self.binsize, Y)
+        return logdensities.poisson(Y, self.invlink(F) * self.binsize)
 
     def conditional_variance(self, F):
         return self.invlink(F) * self.binsize
@@ -207,13 +180,14 @@ class Poisson(Likelihood):
                    - tf.lgamma(Y + 1) + Y * tf.log(self.binsize)
         return super(Poisson, self).variational_expectations(Fmu, Fvar, Y)
 
+
 class Exponential(Likelihood):
-    def __init__(self, invlink=tf.exp):
-        super().__init__()
+    def __init__(self, invlink=tf.exp, **kwargs):
+        super().__init__(**kwargs)
         self.invlink = invlink
 
     def logp(self, F, Y):
-        return densities.exponential(self.invlink(F), Y)
+        return logdensities.exponential(Y, self.invlink(F))
 
     def conditional_mean(self, F):
         return self.invlink(F)
@@ -228,14 +202,19 @@ class Exponential(Likelihood):
 
 
 class StudentT(Likelihood):
-    def __init__(self, deg_free=3.0):
-        Likelihood.__init__(self)
-        self.deg_free = deg_free
-        self.scale = Parameter(1.0, transform=transforms.positive)
+    def __init__(self, scale=1.0, df=3.0, **kwargs):
+        """
+        :param scale float: scale parameter
+        :param df float: degrees of freedom
+        """
+        super().__init__(**kwargs)
+        self.df = df
+        self.scale = Parameter(scale, transform=transforms.positive,
+                               dtype=settings.float_type)
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.student_t(Y, F, self.scale, self.deg_free)
+        return logdensities.student_t(Y, F, self.scale, self.df)
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -243,38 +222,40 @@ class StudentT(Likelihood):
 
     @params_as_tensors
     def conditional_variance(self, F):
-        return F * 0.0 + (self.deg_free / (self.deg_free - 2.0))
+        var = self.scale ** 2 * (self.df / (self.df - 2.0))
+        return tf.fill(tf.shape(F), tf.squeeze(var))
 
 
-def probit(x):
-    return 0.5 * (1.0 + tf.erf(x / np.sqrt(2.0))) * (1 - 2e-3) + 1e-3
+def inv_probit(x):
+    jitter = 1e-3  # ensures output is strictly between 0 and 1
+    return 0.5 * (1.0 + tf.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
 
 
 class Bernoulli(Likelihood):
-    def __init__(self, invlink=probit):
-        Likelihood.__init__(self)
+    def __init__(self, invlink=inv_probit, **kwargs):
+        super().__init__(**kwargs)
         self.invlink = invlink
 
     def logp(self, F, Y):
-        return densities.bernoulli(self.invlink(F), Y)
+        return logdensities.bernoulli(Y, self.invlink(F))
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        if self.invlink is probit:
-            p = probit(Fmu / tf.sqrt(1 + Fvar))
+        if self.invlink is inv_probit:
+            p = inv_probit(Fmu / tf.sqrt(1 + Fvar))
             return p, p - tf.square(p)
         else:
             # for other invlink, use quadrature
-            return Likelihood.predict_mean_and_var(self, Fmu, Fvar)
+            return super().predict_mean_and_var(Fmu, Fvar)
 
     def predict_density(self, Fmu, Fvar, Y):
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
-        return densities.bernoulli(p, Y)
+        return logdensities.bernoulli(Y, p)
 
     def conditional_mean(self, F):
         return self.invlink(F)
 
     def conditional_variance(self, F):
-        p = self.invlink(F)
+        p = self.conditional_mean(F)
         return p - tf.square(p)
 
 
@@ -283,14 +264,14 @@ class Gamma(Likelihood):
     Use the transformed GP to give the *scale* (inverse rate) of the Gamma
     """
 
-    def __init__(self, invlink=tf.exp):
-        Likelihood.__init__(self)
+    def __init__(self, invlink=tf.exp, **kwargs):
+        super().__init__(**kwargs)
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=transforms.positive)
 
     @params_as_tensors
     def logp(self, F, Y):
-        return densities.gamma(self.shape, self.invlink(F), Y)
+        return logdensities.gamma(Y, self.shape, self.invlink(F))
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -305,9 +286,9 @@ class Gamma(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return -self.shape * Fmu - tf.lgamma(self.shape) \
-                + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
+                   + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
-            return Likelihood.variational_expectations(self, Fmu, Fvar, Y)
+            return super().variational_expectations(Fmu, Fvar, Y)
 
 
 class Beta(Likelihood):
@@ -327,8 +308,8 @@ class Beta(Likelihood):
         beta  = scale * (1-m)
     """
 
-    def __init__(self, invlink=probit, scale=1.0):
-        Likelihood.__init__(self)
+    def __init__(self, invlink=inv_probit, scale=1.0, **kwargs):
+        super().__init__(**kwargs)
         self.scale = Parameter(scale, transform=transforms.positive)
         self.invlink = invlink
 
@@ -337,7 +318,7 @@ class Beta(Likelihood):
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
-        return densities.beta(alpha, beta, Y)
+        return logdensities.beta(Y, alpha, beta)
 
     @params_as_tensors
     def conditional_mean(self, F):
@@ -349,7 +330,7 @@ class Beta(Likelihood):
         return (mean - tf.square(mean)) / (self.scale + 1.)
 
 
-class RobustMax(object):
+class RobustMax(Parameterized):
     """
     This class represent a multi-class inverse-link function. Given a vector
     f=[f_1, f_2, ... f_k], the result of the mapping is
@@ -360,18 +341,23 @@ class RobustMax(object):
 
     y_i = (1-eps)  i == argmax(f)
           eps/(k-1)  otherwise.
-
-
     """
 
-    def __init__(self, num_classes, epsilon=1e-3):
-        self.epsilon = epsilon
+    def __init__(self, num_classes, epsilon=1e-3, **kwargs):
+        super().__init__(**kwargs)
+        self.epsilon = Parameter(epsilon, transforms.Logistic(), trainable=False, dtype=settings.float_type,
+                                 prior=priors.Beta(0.2, 5.))
         self.num_classes = num_classes
-        self._eps_K1 = self.epsilon / (self.num_classes - 1.)
 
+    @params_as_tensors
     def __call__(self, F):
         i = tf.argmax(F, 1)
-        return tf.one_hot(i, self.num_classes, 1. - self.epsilon, self._eps_K1)
+        return tf.one_hot(i, self.num_classes, tf.squeeze(1. - self.epsilon), tf.squeeze(self._eps_K1))
+
+    @property
+    @params_as_tensors
+    def _eps_K1(self):
+        return self.epsilon / (self.num_classes - 1.)
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         Y = tf.cast(Y, tf.int64)
@@ -400,13 +386,13 @@ class RobustMax(object):
 
 
 class MultiClass(Likelihood):
-    def __init__(self, num_classes, invlink=None):
+    def __init__(self, num_classes, invlink=None, **kwargs):
         """
         A likelihood that can do multi-way classification.
         Currently the only valid choice
         of inverse-link function (invlink) is an instance of RobustMax.
         """
-        Likelihood.__init__(self)
+        super().__init__(**kwargs)
         self.num_classes = num_classes
         if invlink is None:
             invlink = RobustMax(self.num_classes)
@@ -416,19 +402,22 @@ class MultiClass(Likelihood):
 
     def logp(self, F, Y):
         if isinstance(self.invlink, RobustMax):
-            hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
-            yes = tf.ones(tf.shape(Y), dtype=settings.float_type) - self.invlink.epsilon
-            no = tf.zeros(tf.shape(Y), dtype=settings.float_type) + self.invlink._eps_K1
-            p = tf.where(hits, yes, no)
+            with params_as_tensors_for(self.invlink):
+                hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
+                yes = tf.ones(tf.shape(Y), dtype=settings.float_type) - self.invlink.epsilon
+                no = tf.zeros(tf.shape(Y), dtype=settings.float_type) + self.invlink._eps_K1
+                p = tf.where(hits, yes, no)
             return tf.log(p)
         else:
             raise NotImplementedError
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-            p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * np.log(1 - self.invlink.epsilon) + (1. - p) * np.log(self.invlink._eps_K1)
+            with params_as_tensors_for(self.invlink):
+                gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+                p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+                ve = p * tf.log(1. - self.invlink.epsilon) + (1. - p) * tf.log(self.invlink._eps_K1)
+            return ve
         else:
             raise NotImplementedError
 
@@ -448,9 +437,11 @@ class MultiClass(Likelihood):
 
     def _predict_non_logged_density(self, Fmu, Fvar, Y):
         if isinstance(self.invlink, RobustMax):
-            gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
-            p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-            return p * (1 - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
+            with params_as_tensors_for(self.invlink):
+                gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+                p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+                den = p * (1. - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
+            return den
         else:
             raise NotImplementedError
 
@@ -463,12 +454,12 @@ class MultiClass(Likelihood):
 
 
 class SwitchedLikelihood(Likelihood):
-    def __init__(self, likelihood_list):
+    def __init__(self, likelihood_list, **kwargs):
         """
         In this likelihood, we assume at extra column of Y, which contains
         integers that specify a likelihood from the list of likelihoods.
         """
-        Likelihood.__init__(self)
+        super().__init__(**kwargs)
         for l in likelihood_list:
             assert isinstance(l, Likelihood)
         self.likelihood_list = ParamList(likelihood_list)
@@ -535,7 +526,7 @@ class Ordinal(Likelihood):
     ...
     p(Y=K|F) = 1 - phi((a_{K-1} - F) / sigma)
 
-    where phi is the cumulative density function of a Gaussian (the probit
+    where phi is the cumulative density function of a Gaussian (the inverse probit
     function) and sigma is a parameter to be learned. A reference is:
 
     @article{chu2005gaussian,
@@ -548,13 +539,14 @@ class Ordinal(Likelihood):
       year={2005}
     }
     """
-    def __init__(self, bin_edges):
+
+    def __init__(self, bin_edges, **kwargs):
         """
         bin_edges is a numpy array specifying at which function value the
-        output label should switch. In the possible Y values are 0...K, then
+        output label should switch. If the possible Y values are 0...K, then
         the size of bin_edges should be (K-1).
         """
-        Likelihood.__init__(self)
+        super().__init__(**kwargs)
         self.bin_edges = bin_edges
         self.num_bins = bin_edges.size + 1
         self.sigma = Parameter(1.0, transform=transforms.positive)
@@ -562,13 +554,13 @@ class Ordinal(Likelihood):
     @params_as_tensors
     def logp(self, F, Y):
         Y = tf.cast(Y, tf.int64)
-        scaled_bins_left = tf.concat([self.bin_edges/self.sigma, np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
+        scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
         selected_bins_left = tf.gather(scaled_bins_left, Y)
         selected_bins_right = tf.gather(scaled_bins_right, Y)
 
-        return tf.log(probit(selected_bins_left - F / self.sigma) -
-                      probit(selected_bins_right - F / self.sigma) + 1e-6)
+        return tf.log(inv_probit(selected_bins_left - F / self.sigma) -
+                      inv_probit(selected_bins_right - F / self.sigma) + 1e-6)
 
     @params_as_tensors
     def _make_phi(self, F):
@@ -580,9 +572,9 @@ class Ordinal(Likelihood):
         Note that a matrix of F values is flattened.
         """
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges/self.sigma], 0)
-        return probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma)\
-            - probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
+        return inv_probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma) \
+               - inv_probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
     def conditional_mean(self, F):
         phi = self._make_phi(F)
@@ -595,3 +587,111 @@ class Ordinal(Likelihood):
         E_y = tf.matmul(phi, Ys)
         E_y2 = tf.matmul(phi, tf.square(Ys))
         return tf.reshape(E_y2 - tf.square(E_y), tf.shape(F))
+
+
+class MonteCarloLikelihood(Likelihood):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.num_monte_carlo_points = 100
+        del self.num_gauss_hermite_points
+
+    def _mc_quadrature(self, funcs, Fmu, Fvar, logspace: bool = False, epsilon=None, **Ys):
+        return ndiag_mc(funcs, self.num_monte_carlo_points, Fmu, Fvar, logspace, epsilon, **Ys)
+
+    def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
+        r"""
+        Given a Normal distribution for the latent function,
+        return the mean of Y
+
+        if
+            q(f) = N(Fmu, Fvar)
+
+        and this object represents
+
+            p(y|f)
+
+        then this method computes the predictive mean
+
+           \int\int y p(y|f)q(f) df dy
+
+        and the predictive variance
+
+           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
+
+        Here, we implement a default Monte Carlo routine.
+        """
+        integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
+        E_y, E_y2 = self._mc_quadrature([self.conditional_mean, integrand2],
+                                        Fmu, Fvar, epsilon=epsilon)
+        V_y = E_y2 - tf.square(E_y)
+        return E_y, V_y  # N x D
+
+    def predict_density(self, Fmu, Fvar, Y, epsilon=None):
+        r"""
+        Given a Normal distribution for the latent function, and a datum Y,
+        compute the log predictive density of Y.
+
+        i.e. if
+            q(f) = N(Fmu, Fvar)
+
+        and this object represents
+
+            p(y|f)
+
+        then this method computes the predictive density
+
+            \log \int p(y=Y|f)q(f) df
+
+        Here, we implement a default Monte Carlo routine.
+        """
+        return self._mc_quadrature(self.logp, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon)
+
+    def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
+        r"""
+        Compute the expected log density of the data, given a Gaussian
+        distribution for the function values.
+
+        if
+            q(f) = N(Fmu, Fvar)  - Fmu: N x D  Fvar: N x D
+
+        and this object represents
+
+            p(y|f)  - Y: N x 1
+
+        then this method computes
+
+           \int (\log p(y|f)) q(f) df.
+
+
+        Here, we implement a default Monte Carlo quadrature routine.
+        """
+        return self._mc_quadrature(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
+
+
+class GaussianMC(MonteCarloLikelihood, Gaussian):
+    """
+    Stochastic version of Gaussian likelihood for comparison.
+    """
+    pass
+
+
+class SoftMax(MonteCarloLikelihood):
+    """
+    The soft-max multi-class likelihood.
+    """
+
+    def __init__(self, num_classes, **kwargs):
+        super().__init__(**kwargs)
+        self.num_classes = num_classes
+
+    def logp(self, F, Y):
+        with tf.control_dependencies([tf.assert_equal(tf.shape(Y)[1], 1),
+                                      tf.assert_equal(tf.shape(F)[1], self.num_classes)]):
+            return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]
+
+    def conditional_mean(self, F):
+        return tf.nn.softmax(F)
+
+    def conditional_variance(self, F):
+        p = self.conditional_mean(F)
+        return p - tf.square(p)

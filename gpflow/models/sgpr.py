@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
 import tensorflow as tf
 import numpy as np
 
@@ -184,13 +183,11 @@ class SGPR(GPModel, SGPRUpperMixin):
         if full_cov:
             var = self.kern.K(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
                   - tf.matmul(tmp1, tmp1, transpose_a=True)
-            shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
-            var = tf.tile(tf.expand_dims(var, 2), shape)
+            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # P x N x N
         else:
             var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
                   - tf.reduce_sum(tf.square(tmp1), 0)
-            shape = tf.stack([1, tf.shape(self.Y)[1]])
-            var = tf.tile(tf.expand_dims(var, 1), shape)
+            var = tf.tile(var[:, None], [1, self.num_latent])
         return mean + self.mean_function(Xnew), var
 
 
@@ -316,11 +313,11 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         if full_cov:
             var = self.kern.K(Xnew) - tf.matmul(w, w, transpose_a=True) \
                   + tf.matmul(intermediateA, intermediateA, transpose_a=True)
-            var = tf.tile(tf.expand_dims(var, 2), tf.stack([1, 1, tf.shape(self.Y)[1]]))
+            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # P x N x N
         else:
             var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(w), 0) \
                   + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,
-            var = tf.tile(tf.expand_dims(var, 1), tf.stack([1, tf.shape(self.Y)[1]]))
+            var = tf.tile(var[:, None], [1, self.num_latent])
 
         return mean, var
 
