@@ -89,7 +89,7 @@ class VGP(GPModel):
                                   **self._copy_parameter_options(self.q_mu))
             self.q_sqrt = Parameter(np.array([np.eye(self.num_data) for _ in range(self.num_latent)]),
                                     **self._copy_parameter_options(self.q_sqrt))
-        return super(VGP, self)._build()
+        return super()._build()
 
     @params_as_tensors
     def _build_likelihood(self):
@@ -184,9 +184,9 @@ class VGP_opper_archambeau(GPModel):
         self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
 
-    def compile(self, session=None):
+    def _build(self):
         """
-        Before calling the standard compile function, check to see if the size
+        Before calling the standard _build function, check to see if the size
         of the data has changed and add variational parameters appropriately.
 
         This is necessary because the shape of the parameters depends on the
@@ -197,7 +197,7 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
                                       transforms.positive)
-        return super(VGP_opper_archambeau, self).compile(session=session)
+        return super()._build()
 
     @params_as_tensors
     def _build_likelihood(self):
