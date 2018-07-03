@@ -86,26 +86,17 @@ checkpoint_task = mon.CheckpointTask(checkpoint_dir="./model-saves")\
 
 monitor_tasks = [print_task, tensorboard_task, checkpoint_task]
 
-# Create and start the monitor.
-#
-monitor = mon.Monitor(monitor_tasks, session, global_step)
-monitor.start_monitoring()
+optimiser = gpflow.train.AdamOptimizer(0.01)
 
-try:
-    # Run the optimiser providing it with the monitor as the callback function
-    #
-    optimiser = gpflow.train.AdamOptimizer(0.01)
+# Create a monitor and run the optimiser providing the monitor as a callback function
+#
+with mon.Monitor(monitor_tasks, session, global_step, print_summary=True) as monitor:
     optimiser.minimize(model, step_callback=monitor, global_step=global_step)
-finally:
-    # Let the monitor know that the optimisation has finished and print the timing summary
-    #
-    monitor.stop_monitoring()
-    monitor.print_summary()
 """
 
 import time
 import abc
-from typing import Callable, List, Dict, Optional, Iterator, Any
+from typing import Callable, List, Dict, Set, Optional, Iterator, Any, Tuple
 import itertools
 import logging
 import math
@@ -282,6 +273,13 @@ class MonitorTask(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
+    def close(self) -> None:
+        """
+        Releases whatever resources are held by the task. Most likely this will be a TensorBoard
+        writer.
+        """
+        pass
+
     def __call__(self, context: MonitorContext, *args, **kwargs) -> None:
         """
         Class as a function implementation. It calls the 'run' function and measures its
@@ -310,25 +308,38 @@ class Monitor(object):
 
     In its initialisation it will create a MonitorContext object that will be passed to monitoring
     tasks.
+
+    It is recommended to open the Monitor in a context using `with` statement (see the module-level
+    doc).
     """
 
     def __init__(self, monitor_tasks: Iterator[MonitorTask], session: Optional[tf.Session]=None,
-                 global_step_tensor: Optional[tf.Variable]=None) -> None:
+                 global_step_tensor: Optional[tf.Variable]=None,
+                 print_summary: Optional[bool]=False) -> None:
         """
         :param monitor_tasks: A collection of monitoring tasks to run. The tasks will be called in
         the same order they are specified here.
         :param session: Tensorflow session the optimiser is running in.
         :param global_step_tensor: the Tensorflow 'global_step' variable
         (see notes in MonitorContext.global_step_tensor)
+        :param print_summary: Prints tasks' timing summary after the monitoring is stopped.
         """
 
         self._monitor_tasks = list(monitor_tasks)
         self._context = MonitorContext()
         self._context.session = session
         self._context.global_step_tensor = global_step_tensor
+        self._print_summary = print_summary
 
         self._start_timestamp = get_hr_time()
         self._last_timestamp = self._start_timestamp
+
+    def __enter__(self):
+        self.start_monitoring()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop_monitoring()
 
     def __call__(self, *args, **kwargs) -> None:
         """
@@ -341,31 +352,45 @@ class Monitor(object):
 
     def start_monitoring(self) -> None:
         """
-        This function should be called before starting the optimiser. It evaluates the global_step
-        variable in order to get its initial value. It also resets the starting timer since the
-        time set in the __init__ may no longer be accurate.
+        The recommended way of using Monitor is opening it with the `with` statement. In this case
+        the user doesn't need to call this function explicitly. Otherwise, the function should be
+        called before starting the optimiser.
+
+        The function evaluates the global_step variable in order to get its initial value. It also
+        resets the starting timer since the time set in the __init__ may no longer be accurate.
         """
         self._context.init_global_step = self._context.global_step
         self._start_timestamp = get_hr_time()
         self._last_timestamp = self._start_timestamp
 
-    def stop_monitoring(self, *args, **kwargs) -> None:
+    def stop_monitoring(self) -> None:
         """
-        This function should be called when the optimisation is done. It sets the optimisation
-        completed flag in the monitoring context and runs the tasks once more. All extra arguments
-        will be passed to the monitoring tasks.
-        """
-        self._context.optimisation_finished = True
-        self._on_iteration(*args, **kwargs)
+        The recommended way of using Monitor is opening it with the `with` statement. In this case
+        the user doesn't need to call this function explicitly. Otherwise the function should be
+        called when the optimisation is done.
 
-    def print_summary(self, monitor_tasks: Optional[Iterator['MonitorTask']]=None) -> None:
+        The function sets the optimisation completed flag in the monitoring context and runs the
+        tasks once more. If the monitor was created with the `print_summary` option it prints the
+        tasks' timing summary. Finally it calls `close` function on all tasks allowing them to
+        close their resources.
+        """
+        try:
+            self._context.optimisation_finished = True
+            self._on_iteration()
+
+            if self._print_summary:
+                self.print_summary()
+
+        finally:
+            for func in self._monitor_tasks:
+                func.close()
+
+    def print_summary(self) -> None:
         """
         Prints the tasks' timing summary.
-        :param monitor_tasks: List of monitoring tasks to print the summary for, defaults to
-        all tasks.
         """
         print("Tasks execution time summary:")
-        for mon_task in (monitor_tasks or self._monitor_tasks):
+        for mon_task in self._monitor_tasks:
             print("%s:\t%.4f (sec)" % (mon_task.task_name, mon_task.total_time))
 
     def _on_iteration(self, *args, **kwargs) -> None:
@@ -622,6 +647,80 @@ class CheckpointTask(MonitorTask):
                          global_step=context.global_step_tensor)
 
 
+class _TensorBoardWriters(object):
+    """
+    This class implements a cache for the TensorFlow FileWriter objects. The file writer doesn't
+    support shared access. If multiple tasks want to write data to the same location they have to
+    share the FileWriter object.
+
+    The cache makes sure that
+        - only one FileWriter per location is opened.
+        - It gets closed as soon as the last task stopped using it.
+
+    This class maintains the usage count of each FileWriter object. It increments it when access
+    to the writer is requested and decrements it when the access is released. When the count goes
+    down to zero the writer gets closed and removed from the cache.
+
+    The class also keeps a set of graphs added to each writer. When a client requests access to a
+    writer it can specify a graph. The graph will be added to the writer unless it is already there.
+    """
+
+    _file_writers = {}  # type: Dict[str, Tuple[tf.summary.FileWriter, Set[tf.Graph], int]]
+
+    @staticmethod
+    def get(event_path, graph: Optional[tf.Graph]=None) -> tf.summary.FileWriter:
+        """
+        Opens a new FileWriter or gets access to existing FileWriter. This function increments
+        the usage count of the writer.
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
+        :param graph: Tensorflow graph that will be added to the event file.
+        :return: FileWriter object
+        """
+        event_path = _TensorBoardWriters._get_standard_path(event_path)
+        file_writer, graphs, count = _TensorBoardWriters._file_writers.get(
+            event_path, (None, None, 0))
+        if file_writer is None:
+            file_writer = tf.summary.FileWriter(event_path)
+            graphs = set()
+            count = 0
+        if graph is not None and graph not in graphs:
+            file_writer.add_graph(graph)
+            graphs.add(graph)
+        count += 1
+        _TensorBoardWriters._file_writers[event_path] = (file_writer, graphs, count)
+        return file_writer
+
+    @staticmethod
+    def release(event_path) -> None:
+        """
+        Releases access to the FileWriter. This function decrements the usage count of the writer.
+        If the usage counts reaches zero the writer gets closed and removed from the cache.
+        :param event_path: Path of the event file where the summary protocol buffers will
+        be written to.
+        """
+        event_path = _TensorBoardWriters._get_standard_path(event_path)
+        file_writer, graphs, count = _TensorBoardWriters._file_writers.get(
+            event_path, (None, None, 0))
+        if file_writer is None:
+            raise RuntimeError('Attempted to close a TensorFlow summary FileWriter that has not'
+                               ' been opened.')
+        else:
+            count -= 1
+            if count == 0:
+                file_writer.close()
+                del _TensorBoardWriters._file_writers[event_path]
+            else:
+                _TensorBoardWriters._file_writers[event_path] = (file_writer, graphs, count)
+
+    @staticmethod
+    def _get_standard_path(event_path: str) -> str:
+        """
+        Converts the specified path to a standard form.
+        """
+        return str(PurePath(event_path))
+
+
 class BaseTensorBoardTask(MonitorTask):
     """
     Base class for TensorBoard monitoring tasks.
@@ -630,6 +729,11 @@ class BaseTensorBoardTask(MonitorTask):
     If the summary object contains one or more placeholders it may also override the `run`
     method where it can calculate the correspondent values. It will then call the _eval_summary
     providing these values as the input values dictionary.
+
+    A TensorBoard task requests access to the Tensorflow summary FileWrite object providing the
+    location of the event file. The FileWriter object will be created if it doesn't exist. When
+    the task is no longer needed the `close` method should be called. This will release the
+    FileWriter object.
     """
 
     _all_file_writers = {}  # type: Dict[str, tf.summary.FileWriter]
@@ -641,18 +745,10 @@ class BaseTensorBoardTask(MonitorTask):
         :param model: Model object
         """
         super().__init__()
-        event_path = str(PurePath(event_path))
+        self._event_path = event_path
         self._model = model
-
-        # Cache all used file writers and make sure tasks that write to the same event location
-        # share the FileWriter. This is because FileWriter doesn't support shared access. Only one
-        # writer will have access to the location.
-        self._file_writer = self._all_file_writers.get(event_path)
-        if self._file_writer is None:
-            self._file_writer = tf.summary.FileWriter(event_path,
-                                                      model.graph if model is not None else None)
-            self._all_file_writers[event_path] = self._file_writer
-
+        self._file_writer = _TensorBoardWriters.get(event_path,
+                                                    model.graph if model is not None else None)
         self._summary = None    # type: tf.Summary
         self._flush_immediately = False
 
@@ -681,6 +777,14 @@ class BaseTensorBoardTask(MonitorTask):
         """
         self._file_writer.flush()
 
+    def close(self) -> None:
+        """
+        Releases TensorBoard writer if it's not done already.
+        """
+        if self._file_writer is not None:
+            _TensorBoardWriters.release(self._event_path)
+            self._file_writer = None
+
     def _eval_summary(self, context: MonitorContext, feed_dict: Optional[Dict]=None) -> None:
         """
         Evaluates the summary tensor and writes the result to the event file.
@@ -691,6 +795,10 @@ class BaseTensorBoardTask(MonitorTask):
 
         if self._summary is None:
             raise RuntimeError('TensorBoard monitor task should set the Tensorflow.Summary object')
+
+        if self._file_writer is None:
+            raise RuntimeError('Attempted to write TensorBoard summary after the event writer was'
+                               ' closed.')
 
         if context.session is None:
             raise RuntimeError('To run a TensorBoard monitor task the TF session object'
