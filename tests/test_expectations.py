@@ -108,6 +108,7 @@ def rbf_kern():
 
 @cache_tensor
 def rbf_kern_2():
+    # Additional cached rbf kernel for rbf cross covariance tests 
     return kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand() + 1.)
 
 @cache_tensor
