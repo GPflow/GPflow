@@ -69,29 +69,34 @@ print_task = mon.PrintTimingsTask()\
     .with_name('print')\
     .with_condition(mon.PeriodicIterationCondition(10))\
 
-# This task will create a Tensoreflow summary of the model for Tensorboard. It will run at
-# every 100-th iteration. We also want to do this after the optimisation is finished.
-#
-tensorboard_task = mon.ModelToTensorBoardTask('./model-tensorboard', model)\
-    .with_name('tensorboard')\
-    .with_condition(mon.PeriodicIterationCondition(100))\
-    .with_exit_condition(True)
-
 # This task will save the Tensorflow session every 15-th iteration.
 # The directory pointed to by `checkpoint_dir` must exist.
 #
 checkpoint_task = mon.CheckpointTask(checkpoint_dir="./model-saves")\
-    .with_name('checkpoint')\
-    .with_condition(mon.PeriodicIterationCondition(15))\
+        .with_name('checkpoint')\
+        .with_condition(mon.PeriodicIterationCondition(15))\
 
-monitor_tasks = [print_task, tensorboard_task, checkpoint_task]
-
-optimiser = gpflow.train.AdamOptimizer(0.01)
-
-# Create a monitor and run the optimiser providing the monitor as a callback function
+# This task will create a Tensoreflow summary of the model for Tensorboard. It will run at
+# every 100-th iteration. We also want to do this after the optimisation is finished.
+# *** IMPORTANT ***
+# Please make sure that if multiple LogdirWriters are used they are created with different
+# locations (event file directory and file suffix). It is possible to share a writer between
+# multiple tasks. But it is not possible to share event location between multiple writers.
 #
-with mon.Monitor(monitor_tasks, session, global_step, print_summary=True) as monitor:
-    optimiser.minimize(model, step_callback=monitor, global_step=global_step)
+with mon.LogdirWriter('./model-tensorboard') as writer:
+    tensorboard_task = mon.ModelToTensorBoardTask(writer, model)\
+        .with_name('tensorboard')\
+        .with_condition(mon.PeriodicIterationCondition(100))\
+        .with_exit_condition(True)
+
+    monitor_tasks = [print_task, tensorboard_task, checkpoint_task]
+
+    optimiser = gpflow.train.AdamOptimizer(0.01)
+
+    # Create a monitor and run the optimiser providing the monitor as a callback function
+    #
+    with mon.Monitor(monitor_tasks, session, global_step, print_summary=True) as monitor:
+        optimiser.minimize(model, step_callback=monitor, global_step=global_step)
 """
 
 import time
@@ -273,13 +278,6 @@ class MonitorTask(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def close(self) -> None:
-        """
-        Releases whatever resources are held by the task. Most likely this will be a TensorBoard
-        writer.
-        """
-        pass
-
     def __call__(self, context: MonitorContext, *args, **kwargs) -> None:
         """
         Class as a function implementation. It calls the 'run' function and measures its
@@ -371,19 +369,14 @@ class Monitor(object):
 
         The function sets the optimisation completed flag in the monitoring context and runs the
         tasks once more. If the monitor was created with the `print_summary` option it prints the
-        tasks' timing summary. Finally it calls `close` function on all tasks allowing them to
-        close their resources.
+        tasks' timing summary.
         """
-        try:
-            self._context.optimisation_finished = True
-            self._on_iteration()
 
-            if self._print_summary:
-                self.print_summary()
+        self._context.optimisation_finished = True
+        self._on_iteration()
 
-        finally:
-            for func in self._monitor_tasks:
-                func.close()
+        if self._print_summary:
+            self.print_summary()
 
     def print_summary(self) -> None:
         """
@@ -647,78 +640,88 @@ class CheckpointTask(MonitorTask):
                          global_step=context.global_step_tensor)
 
 
-class _TensorBoardWriters(object):
+class LogdirWriter(tf.summary.FileWriter):
     """
-    This class implements a cache for the TensorFlow FileWriter objects. The file writer doesn't
-    support shared access. If multiple tasks want to write data to the same location they have to
-    share the FileWriter object.
+    This is a wrapper around the TensorFlow summary.EventWriter that provides a workaround for
+    a bug currently present in this module. The EventWriter can only open the file in exclusive
+    mode, however when multiple instances of the writer attempt to access the same file no error
+    is raised.
 
-    The cache makes sure that
-        - only one FileWriter per location is opened.
-        - It gets closed as soon as the last task stopped using it.
+    This class prevents user from opening multiple writers with the same location (event file
+    directory and file name suffix). It keeps a global set of used locations adding a new location
+    there when a writer is created or reopened. It removes the location from the global set when
+    the writer is closed or garbage collected.
 
-    This class maintains the usage count of each FileWriter object. It increments it when access
-    to the writer is requested and decrements it when the access is released. When the count goes
-    down to zero the writer gets closed and removed from the cache.
-
-    The class also keeps a set of graphs added to each writer. When a client requests access to a
-    writer it can specify a graph. The graph will be added to the writer unless it is already there.
+    Once the bug in TensorFlow is fixed this class can be removed or reduced to trivial:
+    class LogdirWriter(tf.summary.FileWriter):
+        pass
     """
 
-    _file_writers = {}  # type: Dict[str, Tuple[tf.summary.FileWriter, Set[tf.Graph], int]]
+    _used_locations = set()     # type: Set[Tuple[str, Optional[str]]
 
-    @staticmethod
-    def get(event_path, graph: Optional[tf.Graph]=None) -> tf.summary.FileWriter:
+    def __init__(self, logdir: str, graph: Optional[tf.Graph]=None, max_queue: int=10,
+                 flush_secs: float=120, filename_suffix: Optional[str]=None):
         """
-        Opens a new FileWriter or gets access to existing FileWriter. This function increments
-        the usage count of the writer.
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
-        :param graph: Tensorflow graph that will be added to the event file.
-        :return: FileWriter object
-        """
-        event_path = _TensorBoardWriters._get_standard_path(event_path)
-        file_writer, graphs, count = _TensorBoardWriters._file_writers.get(
-            event_path, (None, None, 0))
-        if file_writer is None:
-            file_writer = tf.summary.FileWriter(event_path)
-            graphs = set()
-            count = 0
-        if graph is not None and graph not in graphs:
-            file_writer.add_graph(graph)
-            graphs.add(graph)
-        count += 1
-        _TensorBoardWriters._file_writers[event_path] = (file_writer, graphs, count)
-        return file_writer
+        A thin wrapper around the summary.FileWriter __init__. It remembers the location (a tuple
+        of event file directory and file name suffix) and attempts to lock it. If the location
+        is already locked by another writer an error will be raised.
 
-    @staticmethod
-    def release(event_path) -> None:
+        :param logdir: Directory where event file will be written.
+        :param graph: A `Graph` object
+        :param max_queue: Size of the queue for pending events and summaries.
+        :param flush_secs: How often, in seconds, to flush the added summaries and events to disk.
+        :param filename_suffix: Optional suffix of the event file's name.
         """
-        Releases access to the FileWriter. This function decrements the usage count of the writer.
-        If the usage counts reaches zero the writer gets closed and removed from the cache.
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
-        """
-        event_path = _TensorBoardWriters._get_standard_path(event_path)
-        file_writer, graphs, count = _TensorBoardWriters._file_writers.get(
-            event_path, (None, None, 0))
-        if file_writer is None:
-            raise RuntimeError('Attempted to close a TensorFlow summary FileWriter that has not'
-                               ' been opened.')
-        else:
-            count -= 1
-            if count == 0:
-                file_writer.close()
-                del _TensorBoardWriters._file_writers[event_path]
-            else:
-                _TensorBoardWriters._file_writers[event_path] = (file_writer, graphs, count)
 
-    @staticmethod
-    def _get_standard_path(event_path: str) -> str:
+        self._location = (str(PurePath(logdir)), filename_suffix)
+        self._is_locked = False
+        self.__lock_location()
+        super().__init__(logdir, graph, max_queue, flush_secs, filename_suffix=filename_suffix)
+
+    def __del__(self):
+        self.__release_location()
+        if hasattr(super(), '__del__'):
+            super().__del__()
+
+    def close(self) -> None:
         """
-        Converts the specified path to a standard form.
+        Closes the summary.FileWriter. Releases the lock on the location so that another writer
+        can take it.
         """
-        return str(PurePath(event_path))
+        super().close()
+        self.__release_location()
+
+    def reopen(self) -> None:
+        """
+        Reopens the summary.FileWriter that has been previously closed. Attempts to lock the event
+        file location. Will raise an error if the location  has been taken by another writer since
+        it was closed by this writer.
+        """
+        self.__lock_location()
+        super().reopen()
+
+    def __lock_location(self) -> None:
+        """
+        Attempts to lock the location used by this writer. Will raise an error if the location is
+        already locked by another writer. Will do nothing if the location is already locked by
+        this writer.
+        """
+        if not self._is_locked:
+            if self._location in LogdirWriter._used_locations:
+                raise RuntimeError('TensorBoard event file in directory %s with suffix %s '
+                                   'is already in use. At present multiple TensoBoard file writers '
+                                   'cannot write data into the same file.' % self._location)
+            LogdirWriter._used_locations.add(self._location)
+            self._is_locked = True
+
+    def __release_location(self) -> None:
+        """
+        Releases the lock on the location used by this writer. Will do nothing if the lock is
+        already released.
+        """
+        if self._is_locked:
+            LogdirWriter._used_locations.remove(self._location)
+            self._is_locked = False
 
 
 class BaseTensorBoardTask(MonitorTask):
@@ -736,19 +739,14 @@ class BaseTensorBoardTask(MonitorTask):
     FileWriter object.
     """
 
-    _all_file_writers = {}  # type: Dict[str, tf.summary.FileWriter]
-
-    def __init__(self, event_path: str, model: Optional[Model]=None) -> None:
+    def __init__(self, file_writer: LogdirWriter, model: Optional[Model]=None) -> None:
         """
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
+        :param file_writer: Event file writer object.
         :param model: Model object
         """
         super().__init__()
-        self._event_path = event_path
+        self._file_writer = file_writer
         self._model = model
-        self._file_writer = _TensorBoardWriters.get(event_path,
-                                                    model.graph if model is not None else None)
         self._summary = None    # type: tf.Summary
         self._flush_immediately = False
 
@@ -777,14 +775,6 @@ class BaseTensorBoardTask(MonitorTask):
         """
         self._file_writer.flush()
 
-    def close(self) -> None:
-        """
-        Releases TensorBoard writer if it's not done already.
-        """
-        if self._file_writer is not None:
-            _TensorBoardWriters.release(self._event_path)
-            self._file_writer = None
-
     def _eval_summary(self, context: MonitorContext, feed_dict: Optional[Dict]=None) -> None:
         """
         Evaluates the summary tensor and writes the result to the event file.
@@ -795,10 +785,6 @@ class BaseTensorBoardTask(MonitorTask):
 
         if self._summary is None:
             raise RuntimeError('TensorBoard monitor task should set the Tensorflow.Summary object')
-
-        if self._file_writer is None:
-            raise RuntimeError('Attempted to write TensorBoard summary after the event writer was'
-                               ' closed.')
 
         if context.session is None:
             raise RuntimeError('To run a TensorBoard monitor task the TF session object'
@@ -822,19 +808,18 @@ class ModelToTensorBoardTask(BaseTensorBoardTask):
     merged with the model parameters' summary.
     """
 
-    def __init__(self, event_path: str, model: Model, only_scalars: bool = True,
+    def __init__(self, file_writer: LogdirWriter, model: Model, only_scalars: bool = True,
                  parameters: Optional[List[Parameter]] = None,
                  additional_summaries: Optional[List[tf.Summary]] = None) -> None:
         """
         :param model: Model tensor
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
+        :param file_writer: Event file writer object.
         :param only_scalars: Restricts the list of output parameters to scalars.
         :param parameters: List of model parameters to send to TensorBoard. If not
         provided all parameters will be sent to TensorBoard.
         :param additional_summaries: List of additional summary objects to send to TensorBoard.
         """
-        super().__init__(event_path, model)
+        super().__init__(file_writer, model)
         all_summaries = additional_summaries or []
         parameters = parameters or list(model.parameters)
 
@@ -868,17 +853,16 @@ class LmlToTensorBoardTask(BaseTensorBoardTask):
     are left to compute). For that the `tqdm' progress bar should be installed (pip install tqdm).
     """
 
-    def __init__(self, event_path: str, model: Model, minibatch_size: Optional[int] = 100,
+    def __init__(self, file_writer: LogdirWriter, model: Model, minibatch_size: Optional[int] = 100,
                  display_progress: Optional[bool] = True) -> None:
         """
         :param model: Model tensor
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
+        :param file_writer: Event file writer object.
         :param minibatch_size: Number of points per minibatch
         :param display_progress: if True the task displays the progress of calculating LML.
         """
 
-        super().__init__(event_path, model)
+        super().__init__(file_writer, model)
         self._minibatch_size = minibatch_size
         self._full_lml = tf.placeholder(settings.tf_float, shape=())
         self._summary = tf.summary.scalar(model.name + '/full_lml', self._full_lml)
@@ -920,15 +904,14 @@ class ScalarFuncToTensorBoardTask(BaseTensorBoardTask):
     provided function.
     """
 
-    def __init__(self, event_path: str, func: Callable, func_name: str) -> None:
+    def __init__(self, file_writer: LogdirWriter, func: Callable, func_name: str) -> None:
         """
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
+        :param file_writer: Event file writer object.
         :param func: User function that provides a value for the TensorBoard
         :param func_name: Name the function should be seen with in the TensorBoard. This name may
         get altered by tf.summary. For example spaces will be replaced with underscores.
         """
-        super().__init__(event_path)
+        super().__init__(file_writer)
         self.func = func
         self.placeholder = tf.placeholder(tf.float64)
         self._summary = tf.summary.scalar(func_name, self.placeholder)
@@ -945,17 +928,17 @@ class VectorFuncToTensorBoardTask(BaseTensorBoardTask):
     function.
     """
 
-    def __init__(self, event_path: str, func: Callable, func_name: str, num_outputs: int) -> None:
+    def __init__(self, file_writer: LogdirWriter, func: Callable, func_name: str,
+                 num_outputs: int) -> None:
         """
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
+        :param file_writer: Event file writer object.
         :param func: User function that provides vector values for the TensorBoard.
         :param func_name: Name the function should be seen with in the TensorBoard. This name may
         get altered by tf.summary. For example spaces will be replaced with underscores.
         :param num_outputs: The total number of values returned by the function.
         """
 
-        super().__init__(event_path)
+        super().__init__(file_writer)
         self.func = func
         self.placeholders = [tf.placeholder(tf.float64) for _ in range(num_outputs)]
         self._summary = tf.summary.merge([tf.summary.scalar(
@@ -974,10 +957,9 @@ class HistogramToTensorBoardTask(BaseTensorBoardTask):
     provided function.
     """
 
-    def __init__(self, event_path: str, func: Callable, func_name: str, output_dims):
+    def __init__(self, file_writer: LogdirWriter, func: Callable, func_name: str, output_dims):
         """
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
+        :param file_writer: Event file writer object.
         :param func: User function that provides histogram values for the TensorBoard.
         :param func_name: Name the function should be seen with in the TensorBoard. This name may
         get altered by tf.summary. For example spaces will be replaced with underscores.
@@ -985,7 +967,7 @@ class HistogramToTensorBoardTask(BaseTensorBoardTask):
         the format accepted by the `tf.placeholder(...)`
         """
 
-        super().__init__(event_path)
+        super().__init__(file_writer)
         self.func = func
         self.placeholder = tf.placeholder(tf.float64, shape=output_dims)
         self._summary = tf.summary.histogram(func_name, self.placeholder)
@@ -999,17 +981,16 @@ class ImageToTensorBoardTask(BaseTensorBoardTask):
     Monitoring task that creates a TensorBoard with an image returned by a user provided function.
     """
 
-    def __init__(self, event_path: str, func: Callable[[], Figure], func_name: str):
+    def __init__(self, file_writer: LogdirWriter, func: Callable[[], Figure], func_name: str):
         """
-        :param event_path: Path of the event file where the summary protocol buffers will
-        be written to.
+        :param file_writer: Event file writer object.
         :param func: User function that provides histogram values for the TensorBoard.
         :param func_name: Name the function should be seen with in the TensorBoard. The name will
         be appended by '/image/0'. Th name itself may also get altered by tf.summary. For example
         spaces will be replaced with underscores.
         """
 
-        super().__init__(event_path)
+        super().__init__(file_writer)
         self.func = func
         self.placeholder = tf.placeholder(tf.float64, [1, None, None, None])
         self._summary = tf.summary.image(func_name, self.placeholder)
