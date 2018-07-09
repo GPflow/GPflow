@@ -11,9 +11,9 @@
 - Fixed bug at `params_as_tensors_for` (#751)
 - Fixed GPflow SciPy optimizer to pass options to _actual_ scipy optimizer correctly (#738)
 - Improved quadrature for likelihoods. Unified quadrature method introduced - `ndiagquad` (#736), (#747)
-- Added multi-output stuff (#724)
+- Added support for multi-output GPs, check `multioutput.ipynb` for details (#724)
     * Multi-output features
-    * Multi-output MultiOutputKernels
+    * Multi-output kernels
     * Multi-dispatch for conditional
     * Multi-dispatch for Kuu and Kuf
 - Support Exponential distribution as prior (#717)
