@@ -66,6 +66,10 @@ class NatGradOptimizer(optimizer.Optimizer):
             :param anchor: Synchronize updated parameters for a session with internal
                 parameter's values.
             :param step_callback: A callback function to execute at each optimization step.
+                The function should accept variable argument list. Currently the function is called
+                with no arguments but this may change in the future. For instance the values of
+                trainable variables may be provided.
+            :type step_callback: Callable[[], None]
             :param kwargs: Extra parameters passed to session run's method.
         """
 
