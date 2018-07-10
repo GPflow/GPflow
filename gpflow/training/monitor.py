@@ -76,7 +76,7 @@ checkpoint_task = mon.CheckpointTask(checkpoint_dir="./model-saves")\
         .with_name('checkpoint')\
         .with_condition(mon.PeriodicIterationCondition(15))\
 
-# This task will create a Tensoreflow summary of the model for Tensorboard. It will run at
+# This task will create a TensorFlow summary of the model for TensorBoard. It will run at
 # every 100-th iteration. We also want to do this after the optimisation is finished.
 # *** IMPORTANT ***
 # Please make sure that if multiple LogdirWriters are used they are created with different
@@ -657,7 +657,7 @@ class LogdirWriter(tf.summary.FileWriter):
         pass
     """
 
-    _used_locations = set()     # type: Set[Tuple[str, Optional[str]]
+    _locked_locations = set()     # type: Set[Tuple[str, Optional[str]]
 
     def __init__(self, logdir: str, graph: Optional[tf.Graph]=None, max_queue: int=10,
                  flush_secs: float=120, filename_suffix: Optional[str]=None):
@@ -674,7 +674,7 @@ class LogdirWriter(tf.summary.FileWriter):
         """
 
         self._location = (str(PurePath(logdir)), filename_suffix)
-        self._is_locked = False
+        self._is_active = False
         self.__lock_location()
         super().__init__(logdir, graph, max_queue, flush_secs, filename_suffix=filename_suffix)
 
@@ -706,22 +706,22 @@ class LogdirWriter(tf.summary.FileWriter):
         already locked by another writer. Will do nothing if the location is already locked by
         this writer.
         """
-        if not self._is_locked:
-            if self._location in LogdirWriter._used_locations:
+        if not self._is_active:
+            if self._location in LogdirWriter._locked_locations:
                 raise RuntimeError('TensorBoard event file in directory %s with suffix %s '
                                    'is already in use. At present multiple TensoBoard file writers '
                                    'cannot write data into the same file.' % self._location)
-            LogdirWriter._used_locations.add(self._location)
-            self._is_locked = True
+            LogdirWriter._locked_locations.add(self._location)
+            self._is_active = True
 
     def __release_location(self) -> None:
         """
         Releases the lock on the location used by this writer. Will do nothing if the lock is
         already released.
         """
-        if self._is_locked:
-            LogdirWriter._used_locations.remove(self._location)
-            self._is_locked = False
+        if self._is_active:
+            LogdirWriter._locked_locations.remove(self._location)
+            self._is_active = False
 
 
 class BaseTensorBoardTask(MonitorTask):
@@ -733,7 +733,7 @@ class BaseTensorBoardTask(MonitorTask):
     method where it can calculate the correspondent values. It will then call the _eval_summary
     providing these values as the input values dictionary.
 
-    A TensorBoard task requests access to the Tensorflow summary FileWrite object providing the
+    A TensorBoard task requests access to the TensorFlow summary FileWriter object providing the
     location of the event file. The FileWriter object will be created if it doesn't exist. When
     the task is no longer needed the `close` method should be called. This will release the
     FileWriter object.
@@ -745,6 +745,9 @@ class BaseTensorBoardTask(MonitorTask):
         :param model: Model object
         """
         super().__init__()
+        if not isinstance(file_writer, LogdirWriter):
+            raise RuntimeError('The event file writer object provided to a TensorBoard task must '
+                               'be of the type LogdirWriter or a descendant type.')
         self._file_writer = file_writer
         self._model = model
         self._summary = None    # type: tf.Summary
