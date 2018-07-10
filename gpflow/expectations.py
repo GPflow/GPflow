@@ -374,9 +374,10 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
         - Ka_{.,.}, Kb_{.,.} :: RBF kernels
     Ka and Kb as well as Z1 and Z2 can differ from each other.
 
-    :return: Nxdim(Z1)xdim(Z2)
+    :return: N x dim(Z1) x dim(Z2)
     """
-    if kern1.on_separate_dims(kern2) and isinstance(p, DiagonalGaussian):  # no joint expectations required
+    if kern1.on_separate_dims(kern2) and isinstance(p, DiagonalGaussian):
+        # no joint expectations required
         eKxz1 = expectation(p, (kern1, feat1))
         eKxz2 = expectation(p, (kern2, feat2))
         return eKxz1[:, :, None] * eKxz2[:, None, :]
@@ -410,7 +411,9 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
         C = tf.cholesky(tf.matrix_diag(LaLb) + Xcov)  # NxDxD
         dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(C)), axis=1))  # N
 
-        def get_C_and_z_terms(Z, C=C):
+        # for mahalanobis computation we need Zᵀ (CCᵀ)⁻¹ Z  as well as C⁻¹ Z
+        # with Z = Z₁, Z₂  for two rbf kernels
+        def get_cholesky_solve_terms(Z, C=C):
             C_inv_z = tf.matrix_triangular_solve(
                 C, tf.tile(tf.expand_dims(tf.transpose(Z), 0),
                            [N, 1, 1]), lower=True)  # NxDxM
@@ -421,16 +424,18 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
         C_inv_mu = tf.matrix_triangular_solve(C, tf.expand_dims(Xmu, 2), lower=True)  # NxDx1
         mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
 
-        C_inv_z1, z1_CC_inv_z1 = get_C_and_z_terms(Z1 / La * LaLb)
+        C_inv_z1, z1_CC_inv_z1 = get_cholesky_solve_terms(Z1 / La * LaLb)
         z1_CC_inv_mu = 2 * tf.matmul(C_inv_z1, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM1
 
         if feat1 == feat2 and Ka == Kb:
+            # in this case Z2==Z1 so we  can reuse the Z1 terms
             C_inv_z2, z2_CC_inv_z2  = C_inv_z1, z1_CC_inv_z1
             z2_CC_inv_mu = z1_CC_inv_mu  # NxM
             Z2 = Z1
         else:
+            # compute terms related to Z2
             Z2, _ = Kb._slice(feat2.Z, p.mu)
-            C_inv_z2, z2_CC_inv_z2 = get_C_and_z_terms(Z2 / Lb * LaLb)
+            C_inv_z2, z2_CC_inv_z2 = get_cholesky_solve_terms(Z2 / Lb * LaLb)
             z2_CC_inv_mu = 2 * tf.matmul(C_inv_z2, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM2
 
         z1_CC_inv_z2 = tf.matmul(C_inv_z1, C_inv_z2, transpose_a=True)  # NxM1xM2
