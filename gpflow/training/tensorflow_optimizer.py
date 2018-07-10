@@ -95,11 +95,9 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             initialized before for gotten session.
         :param anchor: If `True` trained variable values computed during optimization at
             particular session will be synchronized with internal parameter values.
-        :param step_callback: A callback function to execute at each optimization step. The
-            function should accept variable argument list. Currently the function is called with
-            no arguments but this may change in the future. For instance the values of trainable
-            variables may be provided.
-        :type step_callback: Callable[[], None]
+        :param step_callback: A callback function to execute at each optimization step.
+            Callback accepts an optimization step number as a first argument.
+        :type step_callback: Callable[[int], None]
         :param kwargs: This is a dictionary of extra parameters for session run method.
         """
 
@@ -110,16 +108,16 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             session=session,
             var_list=var_list,
             feed_dict=feed_dict, **kwargs)
-        
+
         self._model = opt.model
         self._minimize_operation = opt.optimizer_tensor
-        
+
         session = model.enquire_session(session)
         with session.as_default():
-            for _ in range(maxiter):
-                result = opt()
+            for step in range(maxiter):
+                opt()
                 if step_callback is not None:
-                    step_callback(result)
+                    step_callback(step)
 
         if anchor:
             opt.model.anchor(session)
