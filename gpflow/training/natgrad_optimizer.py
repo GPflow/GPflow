@@ -66,9 +66,8 @@ class NatGradOptimizer(optimizer.Optimizer):
             :param anchor: Synchronize updated parameters for a session with internal
                 parameter's values.
             :param step_callback: A callback function to execute at each optimization step.
-                The function should accept variable argument list. Currently the function is called
-                with no arguments but this may change in the future. For instance the values of
-                trainable variables may be provided.
+                The callback should accept variable argument list, where first argument is
+                optimization step number.
             :type step_callback: Callable[[], None]
             :param kwargs: Extra parameters passed to session run's method.
         """
@@ -80,10 +79,10 @@ class NatGradOptimizer(optimizer.Optimizer):
         session = model.enquire_session(session)
         opt = self.make_optimize_action(model, session=session, var_list=var_list, **kwargs)
         with session.as_default():
-            for _i in range(maxiter):
-                result = opt()
+            for step in range(maxiter):
+                opt()
                 if step_callback is not None:
-                    step_callback(result)
+                    step_callback(step)
         if anchor:
             model.anchor(session)
 
