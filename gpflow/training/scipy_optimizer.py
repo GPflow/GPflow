@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ..core.errors import GPflowError
+from . import external_optimizer, optimizer
 from ..core.compilable import Build
+from ..core.errors import GPflowError
 from ..models.model import Model
-
-from . import optimizer
-from . import external_optimizer
 
 
 class ScipyOptimizer(optimizer.Optimizer):
@@ -72,6 +70,7 @@ class ScipyOptimizer(optimizer.Optimizer):
         :param step_callback: A function to be called at each optimization step;
             arguments are the current values of all optimization variables
             flattened into a single vector.
+        :type step_callback: Callable[[np.ndarray], None]
         :param kwargs: This is a dictionary of extra parameters for session run method.
         """
         if model is None or not isinstance(model, Model):

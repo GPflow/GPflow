@@ -49,9 +49,8 @@ class Optimizer:
         :param anchor: If `True` trained variable values computed during optimization at
             particular session will be synchronized with internal parameter values.
         :param step_callback: A callback function to execute at each optimization step.
-            It must take an arbitrary list of arguments. The optimiser may pass to the callback
-            function some data it thinks might be of interest to the calling code. For instance,
-            this can be the current values of trainable variables.
+            Callback takes an arbitrary list of arguments. Input arguments depend on
+            interface implementation.
         :param kwargs: This is a dictionary of extra parameters for session run method.
 
         """
