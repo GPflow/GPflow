@@ -182,10 +182,9 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
     mc_Xr = tf.reshape(mc_x, (S * N, D))
 
     for name, Y in Ys.items():
-        Y = tf.reshape(Y, (-1, 1))
-        mc_Yr = tf.tile(Y, [S, 1])  # broadcast Y to match X
-        # without the tiling, some calls such as tf.where() (in bernoulli) fail
-        Ys[name] = mc_Yr  # now S * N x 1
+        D_out = tf.shape(Y)[1]
+        mc_Yr = tf.tile(Y[None, ...], [S, 1, 1])  # S x N x P
+        Ys[name] = tf.reshape(mc_Yr, (S * N, D_out))  # S * N x P
 
     def eval_func(func):
         feval = func(mc_Xr, **Ys)
