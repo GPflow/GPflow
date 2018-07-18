@@ -16,16 +16,11 @@
 # ==============================================================================
 """TensorFlow interface for third-party optimizers."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import numpy as np
-
 from tensorflow.python.framework import ops
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import gradients
-from tensorflow.python.ops import variables
+from tensorflow.python.ops import array_ops, gradients, variables
 from tensorflow.python.platform import tf_logging as logging
 
 __all__ = ['ExternalOptimizerInterface', 'ScipyOptimizerInterface']
@@ -134,54 +129,93 @@ class ExternalOptimizerInterface(object):
       **run_kwargs: kwargs to pass to `session.run`.
     """
     session = session or ops.get_default_session()
+    self.init_optimize(session=session, feed_dict=feed_dict, fetches=fetches, loss_callback=loss_callback)
+    self.run_optimize(session=session, step_callback=step_callback, **run_kwargs)
+
+  def init_optimize(self,
+                    session=None,
+                    feed_dict=None,
+                    fetches=None,
+                    loss_callback=None):
+    """Create intermediate tensors for optimizing a scalar `Tensor`.
+
+    Variables subject to optimization are updated in-place at the end of
+    optimization.
+
+    Note that this method does *not* just return a minimization `Op`, unlike
+    `Optimizer.minimize()`; instead it actually performs minimization by
+    executing commands to control a `Session`.
+
+    Args:
+      session: A `Session` instance.
+      feed_dict: A feed dict to be passed to calls to `session.run`.
+      fetches: A list of `Tensor`s to fetch and supply to `loss_callback`
+        as positional arguments.
+      step_callback: A function to be called at each optimization step;
+        arguments are the current values of all optimization variables
+        flattened into a single vector.
+      loss_callback: A function to be called every time the loss and gradients
+        are computed, with evaluated fetches supplied as positional arguments.
+      **run_kwargs: kwargs to pass to `session.run`.
+    """
+    session = session or ops.get_default_session()
     feed_dict = feed_dict or {}
     fetches = fetches or []
 
     loss_callback = loss_callback or (lambda *fetches: None)
-    step_callback = step_callback or (lambda xk: None)
-
-    self._initialize_updated_shapes(session)
-
-    # Construct loss function and associated gradient.
-    loss_grad_func = self._make_eval_func([self._loss,
-                                           self._packed_loss_grad], session,
-                                          feed_dict, fetches, loss_callback)
-
-    # Construct equality constraint functions and associated gradients.
-    equality_funcs = self._make_eval_funcs(self._equalities, session, feed_dict,
-                                           fetches)
-    equality_grad_funcs = self._make_eval_funcs(self._packed_equality_grads,
-                                                session, feed_dict, fetches)
-
-    # Construct inequality constraint functions and associated gradients.
-    inequality_funcs = self._make_eval_funcs(self._inequalities, session,
-                                             feed_dict, fetches)
-    inequality_grad_funcs = self._make_eval_funcs(self._packed_inequality_grads,
-                                                  session, feed_dict, fetches)
 
     # Get initial value from TF session.
-    initial_packed_var_val = session.run(self._packed_var)
+    self._initialize_updated_shapes(session)
+    self._make_minimize_tensors(session, feed_dict, fetches, loss_callback)
+
+  def optimize(self, session=None, step_callback=None, **run_kwargs):
+    """
+    Runs optimization on a scalar `Tensor` defined by `init_optimize`.
+
+    Args:
+      **run_kwargs: kwargs to pass to `session.run`.
+    """
+    session = session or ops.get_default_session()
+    step_callback = step_callback or (lambda xk: None)
 
     # Perform minimization.
+    initial_packed_var_val = session.run(self._packed_var)
     packed_var_val = self._minimize(
         initial_val=initial_packed_var_val,
-        loss_grad_func=loss_grad_func,
-        equality_funcs=equality_funcs,
-        equality_grad_funcs=equality_grad_funcs,
-        inequality_funcs=inequality_funcs,
-        inequality_grad_funcs=inequality_grad_funcs,
         packed_bounds=self._packed_bounds,
+        optimizer_kwargs=self.optimizer_kwargs,
         step_callback=step_callback,
-        optimizer_kwargs=self.optimizer_kwargs)
-    var_vals = [
-        packed_var_val[packing_slice] for packing_slice in self._packing_slices
-    ]
+        **self._minimize_args)
+
+    var_vals = [packed_var_val[packing_slice] for packing_slice in self._packing_slices]
 
     # Set optimization variables to their new values.
     session.run(
         self._var_updates,
         feed_dict=dict(zip(self._update_placeholders, var_vals)),
         **run_kwargs)
+
+  def _make_minimize_tensors(self, session, feed_dict, fetches, callback):
+    # Construct loss function and associated gradient.
+    loss_grad_func = self._make_eval_func([self._loss, self._packed_loss_grad],
+                                          session, feed_dict, fetches, callback)
+
+    # Construct equality constraint functions and associated gradients.
+    equality_funcs = self._make_eval_funcs(
+      self._equalities, session, feed_dict, fetches)
+    equality_grad_funcs = self._make_eval_funcs(
+      self._packed_equality_grads, session, feed_dict, fetches)
+
+    # Construct inequality constraint functions and associated gradients.
+    inequality_funcs = self._make_eval_funcs(
+      self._inequalities, session, feed_dict, fetches)
+    inequality_grad_funcs = self._make_eval_funcs(
+      self._packed_inequality_grads, session, feed_dict, fetches)
+    self._minimize_args = dict(loss_grad_func=loss_grad_func,
+                               equality_funcs=equality_funcs,
+                               equality_grad_funcs=equality_grad_funcs,
+                               inequality_funcs=inequality_funcs,
+                               inequality_grad_funcs=inequality_grad_funcs)
 
   def _initialize_updated_shapes(self, session):
     shapes = array_ops.shape_n(self._vars)

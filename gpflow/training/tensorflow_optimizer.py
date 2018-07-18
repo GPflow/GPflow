@@ -55,7 +55,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
             model.initialize(session=session)
             self._initialize_optimizer(session)
             return minimize
-    
+
     def make_optimize_action(self, model, session=None, var_list=None, **kwargs):
         """
         Build Optimization action task with Tensorflow optimizer.
@@ -80,7 +80,7 @@ class _TensorFlowOptimizer(optimizer.Optimizer):
         opt.with_optimizer_tensor(optimizer_tensor)
         opt.with_run_kwargs(**run_kwargs)
         return opt
-    
+
     def minimize(self, model, session=None, var_list=None, feed_dict=None,
                  maxiter=1000, initialize=False, anchor=True, step_callback=None, **kwargs):
         """
