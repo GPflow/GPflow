@@ -1,3 +1,29 @@
+# Release 1.2.0
+
+- Added `SoftMax` likelihood (#799)
+- Added likelihoods where expectations are evaluated with Monte Carlo, `MonteCarloLikelihood` (#799)
+- GPflow monitor refactoring, check `monitor-tensorboard.ipynb` for details (#792)
+- Speedup testing on Travis using utility functions for configuration in notebooks (#789)
+- Support Python 3.5.2 in typing checks (Ubuntu 16.04 default python3) (#787)
+- Corrected scaling in Students-t likelihood variance (#777)
+- Removed jitter before taking the cholesky of the covariance in NatGrad optimizer (#768)
+- Added GPflow logger. Created option for setting logger level in `gpflowrc` (#764)
+- Fixed bug at `params_as_tensors_for` (#751)
+- Fixed GPflow SciPy optimizer to pass options to _actual_ scipy optimizer correctly (#738)
+- Improved quadrature for likelihoods. Unified quadrature method introduced - `ndiagquad` (#736), (#747)
+- Added support for multi-output GPs, check `multioutput.ipynb` for details (#724)
+    * Multi-output features
+    * Multi-output kernels
+    * Multi-dispatch for conditional
+    * Multi-dispatch for Kuu and Kuf
+- Support Exponential distribution as prior (#717)
+- Added notebook to demonstrate advanced usage of GPflow, such as combining GP with Neural Network (#712)
+- Minibatch shape is `None` by default to allow dynamic change of data size (#704)
+- Epsilon parameter of the Robustmax likelihood is trainable now (#635)
+- GPflow model saver (#660)
+    * Supports native GPflow models and provides an interface for defining custom savers for user's models
+    * Saver stores GPflow structures and pythonic types as numpy structured arrays and serializes them using HDF5
+
 # Release 1.1
  - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feature.Z`.
 

@@ -208,7 +208,7 @@ class Minibatch(DataHolder):
 
     def _build_placeholder_cache(self):
         value = self._value
-        return tf.placeholder(dtype=value.dtype, shape=value.shape, name='minibatch_init')
+        return tf.placeholder(dtype=value.dtype, shape=None, name='minibatch_init')
 
     def _build_dataholder(self, initial_tensor):
         if initial_tensor is None:
