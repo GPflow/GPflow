@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import numpy as np
-import six
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
@@ -25,8 +24,8 @@ from gpflow.test_util import GPflowTestCase
 class LikelihoodSetup(object):
     def __init__(self, likelihood, Y, tolerance):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
-        self.is_analytic = six.get_unbound_function(likelihood.predict_density) is not \
-                           six.get_unbound_function(gpflow.likelihoods.Likelihood.predict_density)
+        self.is_analytic = likelihood.predict_density is not \
+                           gpflow.likelihoods.Likelihood.predict_density
 
 
 def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
