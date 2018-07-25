@@ -191,7 +191,7 @@ class ExternalOptimizerInterface(object):
 
     # Set optimization variables to their new values.
     feed_dict = dict(zip(self._update_placeholders, var_vals))
-    run_feed_dict = run_kwargs.popitem('feed_dict')
+    run_feed_dict = run_kwargs.pop('feed_dict', None)
     if run_feed_dict is not None:
       feed_dict.update(run_feed_dict)
     session.run(self._var_updates, feed_dict=feed_dict, **run_kwargs)
