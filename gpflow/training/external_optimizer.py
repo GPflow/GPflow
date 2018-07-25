@@ -130,7 +130,7 @@ class ExternalOptimizerInterface(object):
     """
     session = session or ops.get_default_session()
     self.init_optimize(session=session, feed_dict=feed_dict, fetches=fetches, loss_callback=loss_callback)
-    self.run_optimize(session=session, step_callback=step_callback, **run_kwargs)
+    self.optimize(session=session, step_callback=step_callback, **run_kwargs)
 
   def init_optimize(self,
                     session=None,
