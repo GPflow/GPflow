@@ -190,10 +190,11 @@ class ExternalOptimizerInterface(object):
     var_vals = [packed_var_val[packing_slice] for packing_slice in self._packing_slices]
 
     # Set optimization variables to their new values.
-    session.run(
-        self._var_updates,
-        feed_dict=dict(zip(self._update_placeholders, var_vals)),
-        **run_kwargs)
+    feed_dict = dict(zip(self._update_placeholders, var_vals))
+    run_feed_dict = run_kwargs.get('feed_dict')
+    if run_feed_dict is not None:
+      feed_dict.update(run_feed_dict)
+    session.run(self._var_updates, feed_dict=feed_dict, **run_kwargs)
 
   def _make_minimize_tensors(self, session, feed_dict, fetches, callback):
     # Construct loss function and associated gradient.
