@@ -99,6 +99,7 @@ class ExternalOptimizerInterface(object):
     self._packed_equality_grads = []
     self._packed_inequality_grads = []
     self._var_shapes = None
+    self._feed_dict = None
 
   def minimize(self,
                session=None,
@@ -106,7 +107,7 @@ class ExternalOptimizerInterface(object):
                fetches=None,
                step_callback=None,
                loss_callback=None,
-               **run_kwargs):
+               **optimizer_kwargs):
     """Minimize a scalar `Tensor`.
 
     Variables subject to optimization are updated in-place at the end of
@@ -126,17 +127,17 @@ class ExternalOptimizerInterface(object):
         flattened into a single vector.
       loss_callback: A function to be called every time the loss and gradients
         are computed, with evaluated fetches supplied as positional arguments.
-      **run_kwargs: kwargs to pass to `session.run`.
+      **optimizer_kwargs: kwargs to pass to ScipyOptimizer `minimize` method.
     """
     session = session or ops.get_default_session()
-    self.init_optimize(session=session, feed_dict=feed_dict, fetches=fetches, loss_callback=loss_callback)
-    self.optimize(session=session, step_callback=step_callback, **run_kwargs)
+    self.init_optimize(session=session, fetches=fetches, loss_callback=loss_callback, **optimizer_kwargs)
+    self.optimize(session=session, step_callback=step_callback, feed_dict=feed_dict)
 
   def init_optimize(self,
                     session=None,
-                    feed_dict=None,
                     fetches=None,
-                    loss_callback=None):
+                    loss_callback=None,
+                    **optimizer_kwargs):
     """Create intermediate tensors for optimizing a scalar `Tensor`.
 
     Variables subject to optimization are updated in-place at the end of
@@ -156,19 +157,18 @@ class ExternalOptimizerInterface(object):
         flattened into a single vector.
       loss_callback: A function to be called every time the loss and gradients
         are computed, with evaluated fetches supplied as positional arguments.
-      **run_kwargs: kwargs to pass to `session.run`.
+      **optimizer_kwargs: kwargs to pass to ScipyOptimizer `minimize` method.
     """
     session = session or ops.get_default_session()
-    feed_dict = feed_dict or {}
     fetches = fetches or []
 
     loss_callback = loss_callback or (lambda *fetches: None)
 
     # Get initial value from TF session.
     self._initialize_updated_shapes(session)
-    self._make_minimize_tensors(session, feed_dict, fetches, loss_callback)
+    self._make_minimize_tensors(session, fetches, loss_callback, **optimizer_kwargs)
 
-  def optimize(self, session=None, step_callback=None, **run_kwargs):
+  def optimize(self, session=None, step_callback=None, feed_dict=None):
     """
     Runs optimization on a scalar `Tensor` defined by `init_optimize`.
 
@@ -179,6 +179,7 @@ class ExternalOptimizerInterface(object):
     step_callback = step_callback or (lambda xk: None)
 
     # Perform minimization.
+    self._feed_dict = feed_dict if feed_dict is not None else {}
     initial_packed_var_val = session.run(self._packed_var)
     packed_var_val = self._minimize(
         initial_val=initial_packed_var_val,
@@ -190,33 +191,27 @@ class ExternalOptimizerInterface(object):
     var_vals = [packed_var_val[packing_slice] for packing_slice in self._packing_slices]
 
     # Set optimization variables to their new values.
-    feed_dict = dict(zip(self._update_placeholders, var_vals))
-    run_feed_dict = run_kwargs.pop('feed_dict', None)
-    if run_feed_dict is not None:
-      feed_dict.update(run_feed_dict)
-    session.run(self._var_updates, feed_dict=feed_dict, **run_kwargs)
+    run_feed_dict = dict(zip(self._update_placeholders, var_vals))
+    session.run(self._var_updates, feed_dict=run_feed_dict)
 
-  def _make_minimize_tensors(self, session, feed_dict, fetches, callback):
+  def _make_minimize_tensors(self, session, fetches, callback, **optimizer_kwargs):
     # Construct loss function and associated gradient.
-    loss_grad_func = self._make_eval_func([self._loss, self._packed_loss_grad],
-                                          session, feed_dict, fetches, callback)
+    loss_grad_func = self._make_eval_func([self._loss, self._packed_loss_grad], session, fetches, callback)
 
     # Construct equality constraint functions and associated gradients.
-    equality_funcs = self._make_eval_funcs(
-      self._equalities, session, feed_dict, fetches)
-    equality_grad_funcs = self._make_eval_funcs(
-      self._packed_equality_grads, session, feed_dict, fetches)
+    equality_funcs = self._make_eval_funcs(self._equalities, session, fetches)
+    equality_grad_funcs = self._make_eval_funcs(self._packed_equality_grads, session, fetches)
 
     # Construct inequality constraint functions and associated gradients.
-    inequality_funcs = self._make_eval_funcs(
-      self._inequalities, session, feed_dict, fetches)
-    inequality_grad_funcs = self._make_eval_funcs(
-      self._packed_inequality_grads, session, feed_dict, fetches)
-    self._minimize_args = dict(loss_grad_func=loss_grad_func,
-                               equality_funcs=equality_funcs,
-                               equality_grad_funcs=equality_grad_funcs,
-                               inequality_funcs=inequality_funcs,
-                               inequality_grad_funcs=inequality_grad_funcs)
+    inequality_funcs = self._make_eval_funcs(self._inequalities, session, fetches)
+    inequality_grad_funcs = self._make_eval_funcs(self._packed_inequality_grads, session, fetches)
+    kwargs = dict(loss_grad_func=loss_grad_func,
+                equality_funcs=equality_funcs,
+                equality_grad_funcs=equality_grad_funcs,
+                inequality_funcs=inequality_funcs,
+                inequality_grad_funcs=inequality_grad_funcs)
+    kwargs.update(optimizer_kwargs)
+    self._minimize_args = kwargs
 
   def _initialize_updated_shapes(self, session):
     shapes = array_ops.shape_n(self._vars)
@@ -323,8 +318,7 @@ class ExternalOptimizerInterface(object):
       flattened = [array_ops.reshape(tensor, [-1]) for tensor in tensors]
       return array_ops.concat(flattened, 0)
 
-  def _make_eval_func(self, tensors, session, feed_dict, fetches,
-                      callback=None):
+  def _make_eval_func(self, tensors, session, fetches, callback=None):
     """Construct a function that evaluates a `Tensor` or list of `Tensor`s."""
     if not isinstance(tensors, list):
       tensors = [tensors]
@@ -337,7 +331,7 @@ class ExternalOptimizerInterface(object):
           var: x[packing_slice].reshape(shapes[var])
           for var, packing_slice in zip(self._vars, self._packing_slices)
       }
-      augmented_feed_dict.update(feed_dict)
+      augmented_feed_dict.update(self._feed_dict)
       augmented_fetches = tensors + fetches
 
       augmented_fetch_vals = session.run(
@@ -353,11 +347,10 @@ class ExternalOptimizerInterface(object):
   def _make_eval_funcs(self,
                        tensors,
                        session,
-                       feed_dict,
                        fetches,
                        callback=None):
     return [
-        self._make_eval_func(tensor, session, feed_dict, fetches, callback)
+        self._make_eval_func(tensor, session, fetches, callback)
         for tensor in tensors
     ]
 
