@@ -53,7 +53,7 @@ class Likelihood(Parameterized):
 
         and the predictive variance
 
-           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
+           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y p(y|f)q(f) df dy ]^2
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
@@ -616,7 +616,7 @@ class MonteCarloLikelihood(Likelihood):
 
         and the predictive variance
 
-           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
+           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y p(y|f)q(f) df dy ]^2
 
         Here, we implement a default Monte Carlo routine.
         """
