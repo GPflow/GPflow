@@ -300,6 +300,17 @@ class Stationary(Kernel):
     def Kdiag(self, X, presliced=False):
         return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
+    @params_as_tensors
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+        return self.Kr(self.scaled_square_dist(X, X2))
+
+    @params_as_tensors
+    def Kr(self, r):
+        """ Returns the kernel evaluated on `r`, which is the scaled square dist """
+        raise NotImplementedError
+
 
 class RBF(Stationary):
     """
@@ -307,10 +318,9 @@ class RBF(Stationary):
     """
 
     @params_as_tensors
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self._slice(X, X2)
-        return self.variance * tf.exp(-self.scaled_square_dist(X, X2) / 2)
+    def Kr(self, r):
+        """ Returns the kernel evaluated on `r`, which is the scaled square dist """
+        return self.variance * tf.exp(-r / 2.)
 
 SquaredExponential = RBF
 
@@ -335,11 +345,8 @@ class RationalQuadratic(Stationary):
                                dtype=settings.float_type)
 
     @params_as_tensors
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self._slice(X, X2)
-        return self.variance * (1 + self.scaled_square_dist(X, X2) /
-                                (2 * self.alpha)) ** (- self.alpha)
+    def Kr(self, r):
+        return self.variance * (1 + r / (2 * self.alpha)) ** (- self.alpha)
 
 
 class Linear(Kernel):
@@ -418,23 +425,17 @@ class Exponential(Stationary):
     """
 
     @params_as_tensors
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self._slice(X, X2)
-        r = self.scaled_euclid_dist(X, X2)
+    def Kr(self, r):
         return self.variance * tf.exp(-0.5 * r)
 
 
 class Matern12(Stationary):
     """
-    The Matern 1/2 kernel
+    The Exponential kernel
     """
 
     @params_as_tensors
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self._slice(X, X2)
-        r = self.scaled_euclid_dist(X, X2)
+    def Kr(self, r):
         return self.variance * tf.exp(-r)
 
 
@@ -444,12 +445,9 @@ class Matern32(Stationary):
     """
 
     @params_as_tensors
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self._slice(X, X2)
-        r = self.scaled_euclid_dist(X, X2)
-        return self.variance * (1. + np.sqrt(3.) * r) * \
-               tf.exp(-np.sqrt(3.) * r)
+    def Kr(self, r):
+        sqrt3 = np.sqrt(3.)
+        return self.variance * (1. + sqrt3 * r) * tf.exp(-sqrt3 * r)
 
 
 class Matern52(Stationary):
@@ -458,12 +456,9 @@ class Matern52(Stationary):
     """
 
     @params_as_tensors
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self._slice(X, X2)
-        r = self.scaled_euclid_dist(X, X2)
-        return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) \
-               * tf.exp(-np.sqrt(5.) * r)
+    def Kr(self, r):
+        sqrt5 = np.sqrt(5.)
+        return self.variance * (1.0 + sqrt5 * r + 5. / 3. * tf.square(r)) * tf.exp(-sqrt5 * r)
 
 
 class Cosine(Stationary):
@@ -472,10 +467,7 @@ class Cosine(Stationary):
     """
 
     @params_as_tensors
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self._slice(X, X2)
-        r = self.scaled_euclid_dist(X, X2)
+    def Kr(self, r):
         return self.variance * tf.cos(r)
 
 
