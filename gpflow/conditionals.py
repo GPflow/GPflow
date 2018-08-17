@@ -76,7 +76,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
 @conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
-def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False, full_output_cov=False):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -112,6 +112,9 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         - variance: N x R (full_cov = False), R x N x N (full_cov = True)
     """
     logger.debug("Conditional: Kernel")
+    if full_output_cov:
+        raise NotImplementedError
+
     num_data = tf.shape(X)[0]  # M
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
     Kmn = kern.K(X, Xnew)
@@ -131,7 +134,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 
 @sample_conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("sample_conditional")
-def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
+def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, eps=None):
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
     In most cases this means calculating the conditional mean m and variance v and then
@@ -142,18 +145,32 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
     logger.debug("sample conditional: InducingFeature Kernel")
-    mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_output_cov=full_output_cov,
+
+    mean, var = conditional(Xnew, feat, kern, f, full_cov=full_cov, full_output_cov=full_output_cov,
                             q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
-    cov_structure = "full" if full_output_cov else "diag"
-    return _sample_mvn(mean, var, cov_structure)
+
+    if full_cov is False:
+        cov_structure = "full" if full_output_cov else "diag"
+        return _sample_mvn(mean, var, cov_structure, eps=eps)
+    else:
+        # var is P, N, N
+        N = tf.shape(var)[2]
+        P = tf.shape(var)[0]
+        var += settings.jitter * tf.eye(N, dtype=settings.float_type)[None, :, :]
+        chol_PNN = tf.cholesky(var)
+        z_PN1 = tf.random_normal([P, N, 1], dtype=settings.float_type) if eps is None else eps
+        s_PN1 = tf.matmul(chol_PNN, z_PN1)
+        return mean +  tf.transpose(s_PN1[:, :, 0])
 
 
 @sample_conditional.register(object, object, Kernel, object)
 @name_scope("sample_conditional")
-def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False):
+def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, eps=None, full_output_cov=False, full_cov=False):
     logger.debug("sample conditional: Kernel")
+    if full_output_cov or full_cov:
+        raise NotImplementedError
     mean, var = conditional(Xnew, X, kern, f, q_sqrt=q_sqrt, white=white, full_cov=False)  # N x P, N x P
-    return _sample_mvn(mean, var, "diag")  # N x P
+    return _sample_mvn(mean, var, "diag", eps=eps)  # N x P
 
 
 # ----------------------------------------------------------------------------
@@ -334,7 +351,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 ########################## HELPERS ##############################
 # ---------------------------------------------------------------
 
-def _sample_mvn(mean, cov, cov_structure):
+def _sample_mvn(mean, cov, cov_structure, eps=None):
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution
     :param mean: N x D
@@ -344,7 +361,7 @@ def _sample_mvn(mean, cov, cov_structure):
     - "full": cov holds the full covariance matrix (without jitter)
     :return: sample from the MVN of shape N x D
     """
-    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # N x P
+    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type) if eps is None else eps  # N x P
     if cov_structure == "diag":
         sample = mean + tf.sqrt(cov) * eps  # N x P
     elif cov_structure == "full":
