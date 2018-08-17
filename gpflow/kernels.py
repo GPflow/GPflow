@@ -347,7 +347,7 @@ class RationalQuadratic(Stationary):
 
     @params_as_tensors
     def Kr(self, r):
-        return self.variance * (1 + r / (2 * self.alpha)) ** (- self.alpha)
+        return self.variance * (1 + r**2 / (2 * self.alpha)) ** (- self.alpha)
 
 
 class Linear(Kernel):
