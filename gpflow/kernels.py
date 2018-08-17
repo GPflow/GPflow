@@ -304,25 +304,26 @@ class Stationary(Kernel):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        return self.Kr(self.scaled_square_dist(X, X2))
+        return self.Kr(self.scaled_euclid_dist(X, X2))
 
     @params_as_tensors
     def Kr(self, r):
-        """ Returns the kernel evaluated on `r`, which is the scaled square dist """
+        """
+        Returns the kernel evaluated on `r`, which is the scaled Euclidean distance
+        """
         raise NotImplementedError
 
 
-class RBF(Stationary):
+class SquaredExponential(Stationary):
     """
     The radial basis function (RBF) or squared exponential kernel
     """
 
     @params_as_tensors
     def Kr(self, r):
-        """ Returns the kernel evaluated on `r`, which is the scaled square dist """
-        return self.variance * tf.exp(-r / 2.)
+        return self.variance * tf.exp(-r**2 / 2.)
 
-SquaredExponential = RBF
+RBF = SquaredExponential
 
 
 class RationalQuadratic(Stationary):
@@ -431,7 +432,7 @@ class Exponential(Stationary):
 
 class Matern12(Stationary):
     """
-    The Exponential kernel
+    The Matern 1/2 kernel
     """
 
     @params_as_tensors
