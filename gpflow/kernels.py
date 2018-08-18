@@ -250,20 +250,6 @@ class Stationary(Kernel):
                                       dtype=settings.float_type)
 
 
-    def square_dist(self, X, X2):  # pragma: no cover
-        warnings.warn('square_dist is deprecated and will be removed at '
-                      'GPflow version 1.2.0. Use scaled_square_dist.',
-                      DeprecationWarning)
-        return self.scaled_square_dist(X, X2)
-
-
-    def euclid_dist(self, X, X2):  # pragma: no cover
-        warnings.warn('euclid_dist is deprecated and will be removed at '
-                      'GPflow version 1.2.0. Use scaled_euclid_dist.',
-                      DeprecationWarning)
-        return self.scaled_euclid_dist(X, X2)
-
-
     @params_as_tensors
     def scaled_square_dist(self, X, X2):
         """
@@ -287,13 +273,17 @@ class Stationary(Kernel):
         return dist
 
 
+    @staticmethod
+    def _clipped_sqrt(r2):
+        # Clipping around the (single) float precision which is ~1e-45.
+        return tf.sqrt(tf.maximum(r2, 1e-40))
+
     def scaled_euclid_dist(self, X, X2):
         """
         Returns |(X - X2ᵀ)/lengthscales| (L2-norm).
         """
         r2 = self.scaled_square_dist(X, X2)
-        # Clipping around the (single) float precision which is ~1e-45.
-        return tf.sqrt(tf.maximum(r2, 1e-40))
+        return self._clipped_sqrt(r2)
 
 
     @params_as_tensors
@@ -307,11 +297,19 @@ class Stationary(Kernel):
         return self.Kr(self.scaled_euclid_dist(X, X2))
 
     @params_as_tensors
-    def Kr(self, r):
+    def k_r(self, r):
         """
         Returns the kernel evaluated on `r`, which is the scaled Euclidean distance
         """
         raise NotImplementedError
+
+    def k_r2(self, r2):
+        """
+        Returns the kernel evaluated on `r2`, which is the scaled squared distance.
+        Will call k_r(r=sqrt(r2)), or can be overwritten directly.
+        """
+        r = self._clipped_sqrt(r2)
+        return self.k_r(r)
 
 
 class SquaredExponential(Stationary):
@@ -320,8 +318,8 @@ class SquaredExponential(Stationary):
     """
 
     @params_as_tensors
-    def Kr(self, r):
-        return self.variance * tf.exp(-r**2 / 2.)
+    def k_r2(self, r2):
+        return self.variance * tf.exp(-r2 / 2.)
 
 RBF = SquaredExponential
 
@@ -346,8 +344,8 @@ class RationalQuadratic(Stationary):
                                dtype=settings.float_type)
 
     @params_as_tensors
-    def Kr(self, r):
-        return self.variance * (1 + r**2 / (2 * self.alpha)) ** (- self.alpha)
+    def k_r2(self, r2):
+        return self.variance * (1 + r2 / (2 * self.alpha)) ** (- self.alpha)
 
 
 class Linear(Kernel):
@@ -426,7 +424,7 @@ class Exponential(Stationary):
     """
 
     @params_as_tensors
-    def Kr(self, r):
+    def k_r(self, r):
         return self.variance * tf.exp(-0.5 * r)
 
 
@@ -436,7 +434,7 @@ class Matern12(Stationary):
     """
 
     @params_as_tensors
-    def Kr(self, r):
+    def k_r(self, r):
         return self.variance * tf.exp(-r)
 
 
@@ -446,7 +444,7 @@ class Matern32(Stationary):
     """
 
     @params_as_tensors
-    def Kr(self, r):
+    def k_r(self, r):
         sqrt3 = np.sqrt(3.)
         return self.variance * (1. + sqrt3 * r) * tf.exp(-sqrt3 * r)
 
@@ -457,7 +455,7 @@ class Matern52(Stationary):
     """
 
     @params_as_tensors
-    def Kr(self, r):
+    def k_r(self, r):
         sqrt5 = np.sqrt(5.)
         return self.variance * (1.0 + sqrt5 * r + 5. / 3. * tf.square(r)) * tf.exp(-sqrt5 * r)
 
@@ -468,7 +466,7 @@ class Cosine(Stationary):
     """
 
     @params_as_tensors
-    def Kr(self, r):
+    def k_r(self, r):
         return self.variance * tf.cos(r)
 
 
