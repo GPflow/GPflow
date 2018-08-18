@@ -306,7 +306,7 @@ class Stationary(Kernel):
     def k_r2(self, r2):
         """
         Returns the kernel evaluated on `r2`, which is the scaled squared distance.
-        Will call k_r(r=sqrt(r2)), or can be overwritten directly.
+        Will call self.k_r(r=sqrt(r2)), or can be overwritten directly.
         """
         r = self._clipped_sqrt(r2)
         return self.k_r(r)
