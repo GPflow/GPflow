@@ -294,7 +294,7 @@ class Stationary(Kernel):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self._slice(X, X2)
-        return self.Kr(self.scaled_euclid_dist(X, X2))
+        return self.k_r2(self.scaled_square_dist(X, X2))
 
     @params_as_tensors
     def k_r(self, r):
