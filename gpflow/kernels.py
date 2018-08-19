@@ -196,8 +196,8 @@ class White(Static):
             return tf.matrix_diag(d)
         else:
             shape = tf.concat([tf.shape(X)[:-2],
-                               tf.reshape(tf.shape(X)[-1], [1]),
-                               tf.reshape(tf.shape(X2)[-1], [1])], 0)
+                               tf.reshape(tf.shape(X)[-2], [1]),
+                               tf.reshape(tf.shape(X2)[-2], [1])], 0)
             return tf.zeros(shape, settings.float_type)
 
 
@@ -209,13 +209,10 @@ class Constant(Static):
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            shape = tf.concat([tf.shape(X)[:-2],
-                               tf.reshape(tf.shape(X)[-1], [1]),
-                               tf.reshape(tf.shape(X)[-1], [1])], 0)
-        else:
-            shape = tf.concat([tf.shape(X)[:-2],
-                               tf.reshape(tf.shape(X)[-1], [1]),
-                               tf.reshape(tf.shape(X2)[-1], [1])], 0)
+            X2 = X
+        shape = tf.concat([tf.shape(X)[:-2],
+                           tf.reshape(tf.shape(X)[-2], [1]),
+                           tf.reshape(tf.shape(X2)[-2], [1])], 0)
         return tf.fill(shape, tf.squeeze(self.variance))
 
 

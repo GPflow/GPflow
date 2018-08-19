@@ -287,9 +287,9 @@ def tile_over_new_axis(X : tf.Tensor, repeats : tf.Tensor, axis : int):
     """
     Inserts a new axis and tiles k times
     e.g. if X.shape = [S, N, D], and axis=-2 then this is equivalent to
-     tf.tile(X[:, :, None, :], [1, 1, repeats, 1])
+    tf.tile(X[:, :, None, :], [1, 1, repeats, 1])
 
-     Supports negative indexing
+    Supports negative indexing
     """
     axis = tf.floormod(axis, tf.rank(X))
     X = tf.expand_dims(X, axis=axis)
@@ -299,7 +299,6 @@ def tile_over_new_axis(X : tf.Tensor, repeats : tf.Tensor, axis : int):
                    tf.ones([tf.rank(X) - axis - 1], dtype=settings.int_type)], 0)
 
     return tf.tile(X, d)
-
 
 
 def version():
