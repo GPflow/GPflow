@@ -254,7 +254,8 @@ def _get_tensor_safe(name, index, graph):
 
 def swap_final_dims(X: tf.Tensor):
     """
-    equivalent to np.swapaxes(X, -2, -1)
+    Equivalent to np.swapaxes(X, -2, -1).
+    Check https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.swapaxes.html for details.
     """
     K = tf.rank(X)
     num_broadcasting_dims = tf.reduce_max([K - 2, 0])
@@ -268,20 +269,18 @@ def slice_final_dim(X: tf.Tensor, sl: slice, dim: int):
     If the slice is the whole of the final dimension (i.e. sl=slice(0, dim)) then there is nothing to do
     NB tensorflow does not support slicing with step!=1, so raise error if this is attempted
     """
-    if (sl.start is None) and (sl.step is None) and (sl.stop == dim):  # nothing to do
-        return X
-    else:
-        if sl.step and (sl.step != 1):
-            raise NotImplementedError('only slices with step=1 supported by tensorflow')
 
-        start = 1 if sl.start is None else sl.start
+    if sl.step and (sl.step != 1):
+        raise NotImplementedError('only slices with step=1 supported by tensorflow')
 
-        begin = tf.concat([tf.zeros([tf.rank(X) - 1], dtype=settings.int_type),
-                           tf.reshape(start, [1])], 0)
+    start = sl.start or 0
 
-        size = tf.concat([tf.shape(X)[:-1], tf.reshape(sl.stop - start, [1])], 0)
+    begin = tf.concat([tf.zeros([tf.rank(X) - 1], dtype=settings.int_type),
+                       tf.reshape(start, [1])], 0)
 
-        return tf.slice(X, begin, size)
+    size = tf.concat([tf.shape(X)[:-1], tf.reshape(sl.stop - start , [1])], 0)
+
+    return tf.slice(X, begin, size)
 
 
 def tile_over_new_axis(X : tf.Tensor, repeats : tf.Tensor, axis : int):
