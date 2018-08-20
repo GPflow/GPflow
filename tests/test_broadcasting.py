@@ -15,14 +15,12 @@
 import tensorflow as tf
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_allclose
+from numpy.testing import assert_allclose
 import pytest
 
 import gpflow
 from gpflow import settings
-from gpflow.test_util import GPflowTestCase
 from gpflow import kernels
-from gpflow.test_util import session_tf
 
 # TODO: kernels.Coregion
 
@@ -45,22 +43,7 @@ Kerns = [
     kernels.ArcCosine,
     kernels.Periodic,
 ]
-from gpflow.misc import slice_final_dim
 
-# class SliceTest(GPflowTestCase):
-#     def test_slice(self):
-#         S, N, D = 5, 4, 4
-#         X = np.random.randn(N, D)
-#         sl = slice(2, 3)
-#         with self.test_context() as sess:
-#             X_sliced_np = X[:, sl]
-#             X_sliced_tf = sess.run(slice_final_dim(tf.identity(X), sl, D))
-#             print(X_sliced_np.shape)
-#             print(X_sliced_tf.shape)
-#             print(X_sliced_tf - X_sliced_np)
-
-
-# class KernsTest(GPflowTestCase):
 def _test_no_active_dims(Kern, sess):
     S, N, M, D = 5, 4, 3, 2
     X1 = tf.identity(np.random.randn(S, N, D))
