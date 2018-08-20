@@ -25,7 +25,7 @@ from . import settings
 
 from .params import Parameter, Parameterized, ParamList
 from .decors import params_as_tensors, autoflow
-from .misc import swap_final_dims, slice_final_dim
+from .misc import slice_final_dim
 
 
 
@@ -286,13 +286,13 @@ class Stationary(Kernel):
 
         if X2 is None:
             dist = -2 * tf.matmul(X, X, transpose_b=True)
-            dist += Xs + swap_final_dims(Xs)
+            dist += Xs + tf.matrix_transpose(Xs)
             return dist
 
         X2 = X2 / self.lengthscales
         X2s = tf.reduce_sum(tf.square(X2), axis=-1, keepdims=True)
         dist = -2 * tf.matmul(X, X2, transpose_b=True)
-        dist += Xs + swap_final_dims(X2s)
+        dist += Xs + tf.matrix_transpose(X2s)
         return dist
 
 
@@ -572,7 +572,7 @@ class ArcCosine(Kernel):
 
         numerator = self._weighted_product(X, X2)
         X_denominator = tf.expand_dims(X_denominator, -1)
-        X2_denominator = swap_final_dims(tf.expand_dims(X2_denominator, -1))
+        X2_denominator = tf.matrix_transpose(tf.expand_dims(X2_denominator, -1))
         cos_theta = numerator / X_denominator / X2_denominator
         jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)

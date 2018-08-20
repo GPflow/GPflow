@@ -252,17 +252,6 @@ def _get_tensor_safe(name, index, graph):
         return None
 
 
-def swap_final_dims(X: tf.Tensor):
-    """
-    Equivalent to np.swapaxes(X, -2, -1).
-    Check https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.swapaxes.html for details.
-    """
-    K = tf.rank(X)
-    num_broadcasting_dims = tf.reduce_max([K - 2, 0])
-    perm = tf.concat([tf.range(num_broadcasting_dims), [K - 1, K - 2]], 0)
-    return tf.transpose(X, perm)
-
-
 def slice_final_dim(X: tf.Tensor, sl: slice, dim: int):
     """
     Takes the slice sl from the final dimension of X
@@ -281,24 +270,6 @@ def slice_final_dim(X: tf.Tensor, sl: slice, dim: int):
     size = tf.concat([tf.shape(X)[:-1], tf.reshape(sl.stop - start , [1])], 0)
 
     return tf.slice(X, begin, size)
-
-
-def tile_over_new_axis(X : tf.Tensor, repeats : tf.Tensor, axis : int):
-    """
-    Inserts a new axis and tiles k times
-    e.g. if X.shape = [S, N, D], and axis=-2 then this is equivalent to
-    tf.tile(X[:, :, None, :], [1, 1, repeats, 1])
-
-    Supports negative indexing
-    """
-    axis = tf.floormod(axis, tf.rank(X))
-    X = tf.expand_dims(X, axis=axis)
-
-    d = tf.concat([tf.ones([axis], dtype=settings.int_type),
-                   tf.cast(tf.reshape(repeats, [1]), dtype=settings.int_type),
-                   tf.ones([tf.rank(X) - axis - 1], dtype=settings.int_type)], 0)
-
-    return tf.tile(X, d)
 
 
 def version():
