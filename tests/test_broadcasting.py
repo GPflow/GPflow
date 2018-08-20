@@ -65,7 +65,7 @@ def _test_no_active_dims(Kern, sess):
     S, N, M, D = 5, 4, 3, 2
     X1 = tf.identity(np.random.randn(S, N, D))
     X2 = tf.identity(np.random.randn(S, M, D))
-    kern = Kern(D)
+    kern = Kern(D) + gpflow.kernels.White(2)
 
     compare_vs_map(X1, X2, kern, sess)
 

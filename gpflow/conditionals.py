@@ -22,7 +22,7 @@ from .expectations import expectation
 from .features import Kuu, Kuf, InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .probability_distributions import Gaussian
-from .misc import tile_over_new_axis, swap_final_dims
+
 
 logger = settings.logger()
 
@@ -36,18 +36,15 @@ logger = settings.logger()
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Single-output GP conditional.
-
     The covariance matrices used to calculate the conditional have the following shape:
     - Kuu: M x M
     - Kuf: M x N
     - Kff: N or N x N
-
     Further reference
     -----------------
     - See `gpflow.conditionals._conditional` (below) for a detailed explanation of
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
-
     Parameters
     ----------
     :param Xnew: data matrix, size N x D.
@@ -80,24 +77,19 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
-
     Additionally, there may be Gaussian uncertainty about f as represented by
     q_sqrt. In this case `f` represents the mean of the distribution and
     q_sqrt the square-root of the covariance.
-
     Additionally, the GP may have been centered (whitened) so that
         p(v) = N(0, I)
         f = L v
     thus
         p(f) = N(0, LL^T) = N(0, K).
     In this case `f` represents the values taken by v.
-
     The method can either return the diagonals of the covariance matrix for
     each output (default) or the full covariance matrix (full_cov=True).
-
     We assume R independent GPs, represented by the columns of f (and the
     first dimension of q_sqrt).
-
     :param Xnew: data matrix, size N x D. Evaluate the GP at these new points
     :param X: data points, size M x D.
     :param kern: GPflow kernel.
@@ -112,7 +104,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         - variance: N x R (full_cov = False), R x N x N (full_cov = True)
     """
     logger.debug("Conditional: Kernel")
-    num_data = tf.shape(X)[-2]  # M
+    num_data = tf.shape(X)[0]  # M
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
     Kmn = kern.K(X, Xnew)
     if full_cov:
@@ -138,7 +130,6 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     returning m + sqrt(v) * eps, with eps ~ N(0, 1).
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficent one.
-
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
     logger.debug("sample conditional: InducingFeature Kernel")
@@ -171,42 +162,36 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
       q(g2) = N(g2;f,q_sqrt*q_sqrt^T)
     This method computes the mean and (co)variance of
       q(g1) = \int q(g2) p(g1|g2)
-    :param Kmn: ... x M x N
-    :param Kmm: ... x M x M
-    :param Knn: ... x N x N  or ... x N
+    :param Kmn: M x N
+    :param Kmm: M x M
+    :param Knn: N x N  or  N
     :param f: M x R
     :param full_cov: bool
     :param q_sqrt: None or R x M x M (lower triangular)
     :param white: bool
-    :return: ... x N x R  or ... x R x N x N
+    :return: N x R  or R x N x N
     """
     logger.debug("base conditional")
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # R
-    Lm = tf.cholesky(Kmm)  # ... x M x M
+    Lm = tf.cholesky(Kmm)
 
     # Compute the projection matrix A
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # ... x M x N
+    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
 
     # compute the covariance due to the conditioning
     if full_cov:
         fvar = Knn - tf.matmul(A, A, transpose_a=True)
-        # fvar = tf.tile(fvar[None, :, :], [num_func, 1, 1])  # R x N x N
-        fvar = tile_over_new_axis(fvar, num_func, -2) # R x N x N
+        fvar = tf.tile(fvar[None, :, :], [num_func, 1, 1])  # R x N x N
     else:
-
-        fvar = Knn - tf.reduce_sum(tf.square(A), -2)
-        # fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
-        fvar = tile_over_new_axis(fvar, num_func, -1)  # ... x R x N
+        fvar = Knn - tf.reduce_sum(tf.square(A), 0)
+        fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
 
     # another backsubstitution in the unwhitened case
-
     if not white:
-        A = tf.matrix_triangular_solve(swap_final_dims(Lm), A, lower=False)
+        A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
 
     # construct the conditional mean
-    if A.get_shape().ndims == 3:
-        f = tile_over_new_axis(f, tf.shape(A)[0], 0)
     fmean = tf.matmul(A, f, transpose_a=True)
 
     if q_sqrt is not None:
@@ -214,8 +199,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # R x M x N
         elif q_sqrt.get_shape().ndims == 3:
             L = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
-            # A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
-            A_tiled = tile_over_new_axis(A, num_func, -2)
+            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
             LTA = tf.matmul(L, A_tiled, transpose_a=True)  # R x M x N
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
@@ -223,10 +207,10 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
         if full_cov:
             fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # R x N x N
         else:
-            fvar = fvar + tf.reduce_sum(tf.square(LTA), -2)  # R x N
+            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # R x N
 
     if not full_cov:
-        fvar = swap_final_dims(fvar)  # N x R
+        fvar = tf.transpose(fvar)  # N x R
 
     return fmean, fvar  # N x R, R x N x N or N x R
 
@@ -241,7 +225,6 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
-
     :param Xnew_mu: mean of the inputs, size N x Din
     :param Xnew_var: covariance matrix of the inputs, size N x Din x Din
     :param feat: gpflow.InducingFeature object, only InducingPoints is supported
@@ -251,7 +234,6 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     :param full_output_cov: boolean wheter to compute covariance between output dimension.
                             Influences the shape of return value ``fvar``. Default is False
     :param white: boolean whether to use whitened representation. Default is False.
-
     :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is N x Dout,
             size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is N x Dout x Dout,
             if False then ``f_var`` is N x Dout
@@ -366,7 +348,6 @@ def _sample_mvn(mean, cov, cov_structure):
 def _expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
     Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
-
     :param fvar: has shape N x P (full_cov = False) or P x N x N (full_cov = True).
     :return:
     1. full_cov: True and full_output_cov: True
