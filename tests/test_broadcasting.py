@@ -19,6 +19,7 @@ from numpy.testing import assert_allclose
 import pytest
 
 import gpflow
+from gpflow.test_util import session_tf
 from gpflow import settings
 from gpflow import kernels
 
@@ -96,40 +97,4 @@ def test_rbf_indices_active_dims(session_tf):
 @pytest.mark.parametrize("Kern", Kerns)
 def test_all_no_active_dims(session_tf, Kern):
     _test_no_active_dims(Kern, session_tf)
-
-
-# class ConditionalTest(GPflowTestCase):
-#     def _test_conditional(self, use_q_sqrt=True, full_cov=True):
-#         with self.test_context() as sess:
-#             S, N, M, Dx, Dy = 6, 5, 4, 3, 2
-#
-#             X1 = tf.identity(np.random.randn(S, N, Dx))
-#             X2 = tf.identity(np.random.randn(S, M, Dx))
-#             f = tf.identity(np.random.randn(M, Dy))
-#             if use_q_sqrt:
-#                 q_sqrt = tf.identity(np.random.randn(Dy, M, M))
-#             else:
-#                 q_sqrt = None
-#
-#             kern = kernels.RBF(Dx)
-#
-#             fn = lambda x: gpflow.conditionals.conditional(x[0], x[1], kern, f, q_sqrt=q_sqrt, full_cov=full_cov)
-#
-#             m, v = gpflow.conditionals.conditional(X1, X2, kern, f, q_sqrt=q_sqrt, full_cov=full_cov)
-#             m_map, v_map = tf.map_fn(fn, [X1, X2], dtype=(settings.float_type, settings.float_type))
-#
-#             assert_allclose(*sess.run([m, m_map]))
-#             assert_allclose(*sess.run([v, v_map]))
-#
-#     def test_full_cov(self):
-#         self._test_conditional(use_q_sqrt=False, full_cov=True)
-#
-#     def test_full_cov_q_sqrt(self):
-#         self._test_conditional(use_q_sqrt=True, full_cov=True)
-#
-#     def test(self):
-#         self._test_conditional(use_q_sqrt=False, full_cov=False)
-#
-#     def test_q_sqrt(self):
-#         self._test_conditional(use_q_sqrt=True, full_cov=False)
 

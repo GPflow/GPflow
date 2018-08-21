@@ -25,8 +25,6 @@ from . import settings
 
 from .params import Parameter, Parameterized, ParamList
 from .decors import params_as_tensors, autoflow
-from .misc import slice_final_dim
-
 
 
 class Kernel(Parameterized):
@@ -123,10 +121,15 @@ class Kernel(Parameterized):
         :param X2: Input 2 (MxD), may be None.
         :return: Sliced X, X2, (Nxself.input_dim).
         """
+
+        # X = X[..., self.active_dims]
+        # if X2 is not None:
+        #     X2 = X2[..., self.active_dims]
+
         if isinstance(self.active_dims, slice):
-            X = slice_final_dim(X, self.active_dims, self.input_dim)
+            X = X[..., self.active_dims]
             if X2 is not None:
-                X2 = slice_final_dim(X2, self.active_dims, self.input_dim)
+                X2 = X2[..., self.active_dims]
         else:
             X = tf.gather(X, self.active_dims, axis=-1)
             if X2 is not None:

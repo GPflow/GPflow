@@ -252,25 +252,5 @@ def _get_tensor_safe(name, index, graph):
         return None
 
 
-def slice_final_dim(X: tf.Tensor, sl: slice, dim: int):
-    """
-    Takes the slice sl from the final dimension of X
-    If the slice is the whole of the final dimension (i.e. sl=slice(0, dim)) then there is nothing to do
-    NB tensorflow does not support slicing with step!=1, so raise error if this is attempted
-    """
-
-    if sl.step and (sl.step != 1):
-        raise NotImplementedError('only slices with step=1 supported by tensorflow')
-
-    start = sl.start or 0
-
-    begin = tf.concat([tf.zeros([tf.rank(X) - 1], dtype=settings.int_type),
-                       tf.reshape(start, [1])], 0)
-
-    size = tf.concat([tf.shape(X)[:-1], tf.reshape(sl.stop - start , [1])], 0)
-
-    return tf.slice(X, begin, size)
-
-
 def version():
     return __version__
