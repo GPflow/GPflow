@@ -36,15 +36,18 @@ logger = settings.logger()
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Single-output GP conditional.
+
     The covariance matrices used to calculate the conditional have the following shape:
     - Kuu: M x M
     - Kuf: M x N
     - Kff: N or N x N
+
     Further reference
     -----------------
     - See `gpflow.conditionals._conditional` (below) for a detailed explanation of
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
+
     Parameters
     ----------
     :param Xnew: data matrix, size N x D.
@@ -77,19 +80,24 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
+
     Additionally, there may be Gaussian uncertainty about f as represented by
     q_sqrt. In this case `f` represents the mean of the distribution and
     q_sqrt the square-root of the covariance.
+
     Additionally, the GP may have been centered (whitened) so that
         p(v) = N(0, I)
         f = L v
     thus
         p(f) = N(0, LL^T) = N(0, K).
     In this case `f` represents the values taken by v.
+
     The method can either return the diagonals of the covariance matrix for
     each output (default) or the full covariance matrix (full_cov=True).
+
     We assume R independent GPs, represented by the columns of f (and the
     first dimension of q_sqrt).
+
     :param Xnew: data matrix, size N x D. Evaluate the GP at these new points
     :param X: data points, size M x D.
     :param kern: GPflow kernel.
@@ -130,6 +138,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     returning m + sqrt(v) * eps, with eps ~ N(0, 1).
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficent one.
+
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
     logger.debug("sample conditional: InducingFeature Kernel")
@@ -225,6 +234,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
+
     :param Xnew_mu: mean of the inputs, size N x Din
     :param Xnew_var: covariance matrix of the inputs, size N x Din x Din
     :param feat: gpflow.InducingFeature object, only InducingPoints is supported
@@ -234,6 +244,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     :param full_output_cov: boolean wheter to compute covariance between output dimension.
                             Influences the shape of return value ``fvar``. Default is False
     :param white: boolean whether to use whitened representation. Default is False.
+
     :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is N x Dout,
             size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is N x Dout x Dout,
             if False then ``f_var`` is N x Dout
@@ -348,6 +359,7 @@ def _sample_mvn(mean, cov, cov_structure):
 def _expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
     Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
+
     :param fvar: has shape N x P (full_cov = False) or P x N x N (full_cov = True).
     :return:
     1. full_cov: True and full_output_cov: True
