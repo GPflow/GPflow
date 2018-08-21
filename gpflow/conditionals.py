@@ -326,20 +326,20 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 def _sample_mvn(mean, cov, cov_structure):
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution
-    :param mean: N x D
-    :param cov: N x D or N x D x D
+    :param mean: [..., D]
+    :param cov: [..., D] or [..., D, D]
     :param cov_structure: "diag" or "full"
     - "diag": cov holds the diagonal elements of the covariance matrix
     - "full": cov holds the full covariance matrix (without jitter)
-    :return: sample from the MVN of shape N x D
+    :return: sample from the MVN of shape [..., D]
     """
-    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # N x P
+    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # [..., D]
     if cov_structure == "diag":
-        sample = mean + tf.sqrt(cov) * eps  # N x P
+        sample = mean + tf.sqrt(cov) * eps  # [..., D]
     elif cov_structure == "full":
-        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=settings.float_type) * settings.numerics.jitter_level)  # N x P x P
-        chol = tf.cholesky(cov)  # N x P x P
-        return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
+        cov = cov + (tf.eye(tf.shape(mean)[-1], dtype=settings.float_type) * settings.numerics.jitter_level)  # [..., D, D]
+        chol = tf.cholesky(cov)  # [..., D, D]
+        return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # [..., D]
     else:
         raise NotImplementedError  # pragma: no cover
 
