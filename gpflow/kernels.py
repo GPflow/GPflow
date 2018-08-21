@@ -292,6 +292,15 @@ class Stationary(Kernel):
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
+        """
+        Calculates the kernel matrix K(X, X2) (or K(X, X) if X2 is None).
+        Handles the slicing as well as scaling and computes k(x, x') = k(r),
+        where r² = ((x - x')/lengthscales)².
+        Internally, this calls self.k_r2(r²), which in turn computes the
+        square-root and calls self.k_r(r). Classes implementing stationary
+        kernels can either overwrite `k_r2(r2)` if they only depend on the
+        squared distance, or `k_r(r)` if they need the actual radial distance.
+        """
         if not presliced:
             X, X2 = self._slice(X, X2)
         return self.k_r2(self.scaled_square_dist(X, X2))
