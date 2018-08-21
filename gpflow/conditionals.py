@@ -337,7 +337,7 @@ def _sample_mvn(mean, cov, cov_structure):
     if cov_structure == "diag":
         sample = mean + tf.sqrt(cov) * eps  # N x P
     elif cov_structure == "full":
-        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=settings.float_type) * settings.numerics.jitter_level)[None, ...]  # N x P x P
+        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=settings.float_type) * settings.numerics.jitter_level)  # N x P x P
         chol = tf.cholesky(cov)  # N x P x P
         return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
     else:
