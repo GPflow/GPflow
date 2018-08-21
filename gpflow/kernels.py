@@ -296,30 +296,30 @@ class Stationary(Kernel):
         Calculates the kernel matrix K(X, X2) (or K(X, X) if X2 is None).
         Handles the slicing as well as scaling and computes k(x, x') = k(r),
         where r² = ((x - x')/lengthscales)².
-        Internally, this calls self.k_r2(r²), which in turn computes the
-        square-root and calls self.k_r(r). Classes implementing stationary
-        kernels can either overwrite `k_r2(r2)` if they only depend on the
-        squared distance, or `k_r(r)` if they need the actual radial distance.
+        Internally, this calls self.K_r2(r²), which in turn computes the
+        square-root and calls self.K_r(r). Classes implementing stationary
+        kernels can either overwrite `K_r2(r2)` if they only depend on the
+        squared distance, or `K_r(r)` if they need the actual radial distance.
         """
         if not presliced:
             X, X2 = self._slice(X, X2)
-        return self.k_r2(self.scaled_square_dist(X, X2))
+        return self.K_r2(self.scaled_square_dist(X, X2))
 
     @params_as_tensors
-    def k_r(self, r):
+    def K_r(self, r):
         """
         Returns the kernel evaluated on `r`, which is the scaled Euclidean distance
         Should operate element-wise on r
         """
         raise NotImplementedError
 
-    def k_r2(self, r2):
+    def K_r2(self, r2):
         """
         Returns the kernel evaluated on `r2`, which is the scaled squared distance.
-        Will call self.k_r(r=sqrt(r2)), or can be overwritten directly (and should operate element-wise on r2).
+        Will call self.K_r(r=sqrt(r2)), or can be overwritten directly (and should operate element-wise on r2).
         """
         r = self._clipped_sqrt(r2)
-        return self.k_r(r)
+        return self.K_r(r)
 
 
 class SquaredExponential(Stationary):
@@ -328,7 +328,7 @@ class SquaredExponential(Stationary):
     """
 
     @params_as_tensors
-    def k_r2(self, r2):
+    def K_r2(self, r2):
         return self.variance * tf.exp(-r2 / 2.)
 
 RBF = SquaredExponential
@@ -354,7 +354,7 @@ class RationalQuadratic(Stationary):
                                dtype=settings.float_type)
 
     @params_as_tensors
-    def k_r2(self, r2):
+    def K_r2(self, r2):
         return self.variance * (1 + r2 / (2 * self.alpha)) ** (- self.alpha)
 
 
@@ -434,7 +434,7 @@ class Exponential(Stationary):
     """
 
     @params_as_tensors
-    def k_r(self, r):
+    def K_r(self, r):
         return self.variance * tf.exp(-0.5 * r)
 
 
@@ -444,7 +444,7 @@ class Matern12(Stationary):
     """
 
     @params_as_tensors
-    def k_r(self, r):
+    def K_r(self, r):
         return self.variance * tf.exp(-r)
 
 
@@ -454,7 +454,7 @@ class Matern32(Stationary):
     """
 
     @params_as_tensors
-    def k_r(self, r):
+    def K_r(self, r):
         sqrt3 = np.sqrt(3.)
         return self.variance * (1. + sqrt3 * r) * tf.exp(-sqrt3 * r)
 
@@ -465,7 +465,7 @@ class Matern52(Stationary):
     """
 
     @params_as_tensors
-    def k_r(self, r):
+    def K_r(self, r):
         sqrt5 = np.sqrt(5.)
         return self.variance * (1.0 + sqrt5 * r + 5. / 3. * tf.square(r)) * tf.exp(-sqrt5 * r)
 
@@ -476,7 +476,7 @@ class Cosine(Stationary):
     """
 
     @params_as_tensors
-    def k_r(self, r):
+    def K_r(self, r):
         return self.variance * tf.cos(r)
 
 
