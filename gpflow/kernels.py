@@ -309,13 +309,14 @@ class Stationary(Kernel):
     def k_r(self, r):
         """
         Returns the kernel evaluated on `r`, which is the scaled Euclidean distance
+        Should operate element-wise on r
         """
         raise NotImplementedError
 
     def k_r2(self, r2):
         """
         Returns the kernel evaluated on `r2`, which is the scaled squared distance.
-        Will call self.k_r(r=sqrt(r2)), or can be overwritten directly.
+        Will call self.k_r(r=sqrt(r2)), or can be overwritten directly (and should operate element-wise on r2).
         """
         r = self._clipped_sqrt(r2)
         return self.k_r(r)
