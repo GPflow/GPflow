@@ -263,12 +263,8 @@ def slice_final_dim(X: tf.Tensor, sl: slice, dim: int):
         raise NotImplementedError('only slices with step=1 supported by tensorflow')
 
     start = sl.start or 0
-
-    begin = tf.concat([tf.zeros([tf.rank(X) - 1], dtype=settings.int_type),
-                       tf.reshape(start, [1])], 0)
-
+    begin = tf.concat([tf.zeros([tf.rank(X) - 1], dtype=settings.int_type), tf.reshape(start, [1])], 0)
     size = tf.concat([tf.shape(X)[:-1], tf.reshape(sl.stop - start , [1])], 0)
-
     return tf.slice(X, begin, size)
 
 
