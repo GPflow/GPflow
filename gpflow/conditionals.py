@@ -133,11 +133,11 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
     """
-    `sample_conditional` will return a sample from the conditinoal distribution.
+    `sample_conditional` will return a sample from the conditional distribution.
     In most cases this means calculating the conditional mean m and variance v and then
     returning m + sqrt(v) * eps, with eps ~ N(0, 1).
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
-    The dispatcher will make sure that we use the most efficent one.
+    The dispatcher will make sure that we use the most efficient one.
 
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
