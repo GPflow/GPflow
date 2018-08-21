@@ -21,6 +21,7 @@ from gpflow.test_util import session_tf
 from gpflow.features import InducingPoints
 
 import gpflow
+from gpflow.test_util import session_tf
 from gpflow import settings
 from gpflow import kernels
 
@@ -86,19 +87,18 @@ def compare_vs_map(X1, X2, kern, sess):
     Kdiag_native = kern.Kdiag(X1)
     assert_allclose(*sess.run([Kdiag_map, Kdiag_native]))
 
-# def test_rbf_no_active_dims(session_tf):
-#     _test_no_active_dims(gpflow.kernels.RBF, session_tf)
-#
-# def test_rbf_slice_active_dims(session_tf):
-#     _test_slice_active_dims(gpflow.kernels.RBF, session_tf)
-#
-# def test_rbf_indices_active_dims(session_tf):
-#     _test_indices_active_dims(gpflow.kernels.RBF, session_tf)
-#
-# @pytest.mark.parametrize("Kern", Kerns)
-# def test_all_no_active_dims(session_tf, Kern):
-#     _test_no_active_dims(Kern, session_tf)
+def test_rbf_no_active_dims(session_tf):
+    _test_no_active_dims(gpflow.kernels.RBF, session_tf)
 
+def test_rbf_slice_active_dims(session_tf):
+    _test_slice_active_dims(gpflow.kernels.RBF, session_tf)
+
+def test_rbf_indices_active_dims(session_tf):
+    _test_indices_active_dims(gpflow.kernels.RBF, session_tf)
+
+@pytest.mark.parametrize("Kern", Kerns)
+def test_all_no_active_dims(session_tf, Kern):
+    _test_no_active_dims(Kern, session_tf)
 
 
 def _test_conditional(sess, white=False, use_q_sqrt=True, full_cov=True):
@@ -129,6 +129,7 @@ def _test_conditional(sess, white=False, use_q_sqrt=True, full_cov=True):
     assert_allclose(*sess.run([m, m_map]))
     assert_allclose(*sess.run([v, v_map]))
 
+
 def test_full_cov(session_tf):
     _test_conditional(session_tf, use_q_sqrt=False, full_cov=True)
 
@@ -152,5 +153,4 @@ def test_q_sqrt_full_cov_white(session_tf):
 
 def test_q_sqrt_white(session_tf):
     _test_conditional(session_tf, white=True, use_q_sqrt=True, full_cov=False)
-
 
