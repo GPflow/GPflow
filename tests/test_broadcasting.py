@@ -117,7 +117,7 @@ def _test_conditional(sess, white=False, use_q_sqrt=True, full_cov=True):
     fn = lambda x: gpflow.conditionals.conditional(x, X2, kern, f,
                                                    white=white, q_sqrt=q_sqrt, full_cov=full_cov)
 
-    m, v = gpflow.conditionals.conditional(X1, X2, kern, f,
+    m, v = gpflow.conditionals.multisample_conditional(X1, X2, kern, f,
                                            white=white, q_sqrt=q_sqrt, full_cov=full_cov)
     m_map, v_map = tf.map_fn(fn, X1, dtype=(settings.float_type, settings.float_type))
 
