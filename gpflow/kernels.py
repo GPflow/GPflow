@@ -121,11 +121,6 @@ class Kernel(Parameterized):
         :param X2: Input 2 (MxD), may be None.
         :return: Sliced X, X2, (Nxself.input_dim).
         """
-
-        # X = X[..., self.active_dims]
-        # if X2 is not None:
-        #     X2 = X2[..., self.active_dims]
-
         if isinstance(self.active_dims, slice):
             X = X[..., self.active_dims]
             if X2 is not None:
@@ -224,9 +219,6 @@ class Bias(Constant):
     Another name for the Constant kernel, included for convenience.
     """
     pass
-
-
-
 
 
 class Stationary(Kernel):

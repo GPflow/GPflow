@@ -251,6 +251,5 @@ def _get_tensor_safe(name, index, graph):
     except KeyError:
         return None
 
-
 def version():
     return __version__
