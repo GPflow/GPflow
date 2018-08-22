@@ -196,8 +196,7 @@ class Parameterized(Node):
 
     @trainable.setter
     def trainable(self, value):
-        for param in self.params:
-            param.trainable = value
+        self.set_trainable(value)
 
     def fix_shape(self, parameters=True, data_holders=True):
         if parameters:

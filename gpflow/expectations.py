@@ -448,7 +448,7 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
         if Z1 == Z2:
             # Compute sqrt(self.K(Z)) explicitly to prevent automatic gradient from
             # being NaN sometimes, see pull request #615
-            dist_term = tf.exp(-0.25 * Ka.square_dist(Z1, None))
+            dist_term = tf.exp(-0.25 * Ka.scaled_square_dist(Z1, None))
         else:
             # Compute exp( -.5 (Z-Z')^top (L_1+L_2)^{-1} (Z-Z') )
             lengthscales_rms = tf.sqrt(La + Lb)
