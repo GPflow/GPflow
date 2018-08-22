@@ -251,7 +251,7 @@ class Stationary(Kernel):
 
 
     @params_as_tensors
-    def scaled_square_dist(self, X, X2):
+    def _scaled_square_dist(self, X, X2):
         """
         Returns ((X - X2ᵀ)/lengthscales)².
         Due to the implementation and floating-point imprecision, the
@@ -278,10 +278,21 @@ class Stationary(Kernel):
         # Clipping around the (single) float precision which is ~1e-45.
         return tf.sqrt(tf.maximum(r2, 1e-40))
 
-    def scaled_euclid_dist(self, X, X2):
+    def scaled_square_dist(self, X, X2):  # pragma: no cover
+        warnings.warn('scaled_square_dist is deprecated and will be removed '
+                      'in GPflow version 1.4.0. For stationary kernels, '
+                      'define K_r2(r2) instead.',
+                      DeprecationWarning)
+        return self._scaled_square_dist(X, X2)
+
+    def scaled_euclid_dist(self, X, X2):  # pragma: no cover
         """
         Returns |(X - X2ᵀ)/lengthscales| (L2-norm).
         """
+        warnings.warn('scaled_euclid_dist is deprecated and will be removed '
+                      'in GPflow version 1.4.0. For stationary kernels, '
+                      'define K_r(r) instead.',
+                      DeprecationWarning)
         r2 = self.scaled_square_dist(X, X2)
         return self._clipped_sqrt(r2)
 
