@@ -124,8 +124,7 @@ class Zero(Constant):
         del self.c
 
     def __call__(self, X):
-        shape = tf.concat([tf.shape(X)[:-1], tf.reshape(self.output_dim, [1])], 0)
-        return tf.zeros(shape, dtype=settings.tf_float)
+        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=settings.tf_float)
 
 
 class SwitchedMeanFunction(MeanFunction):

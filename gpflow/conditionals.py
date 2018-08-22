@@ -337,20 +337,20 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 def _sample_mvn(mean, cov, cov_structure):
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution
-    :param mean: [..., D]
-    :param cov: [..., D] or [..., D, D]
+    :param mean: N x D
+    :param cov: N x D or N x D x D
     :param cov_structure: "diag" or "full"
     - "diag": cov holds the diagonal elements of the covariance matrix
     - "full": cov holds the full covariance matrix (without jitter)
-    :return: sample from the MVN of shape [..., D]
+    :return: sample from the MVN of shape N x D
     """
-    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # [..., D]
+    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # N x P
     if cov_structure == "diag":
-        sample = mean + tf.sqrt(cov) * eps  # [..., D]
+        sample = mean + tf.sqrt(cov) * eps  # N x P
     elif cov_structure == "full":
-        cov = cov + (tf.eye(tf.shape(mean)[-1], dtype=settings.float_type) * settings.numerics.jitter_level)  # [..., D, D]
-        chol = tf.cholesky(cov)  # [..., D, D]
-        return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # [..., D]
+        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=settings.float_type) * settings.numerics.jitter_level)[None, ...]  # N x P x P
+        chol = tf.cholesky(cov)  # N x P x P
+        return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
     else:
         raise NotImplementedError  # pragma: no cover
 
@@ -382,87 +382,4 @@ def _expand_independent_outputs(fvar, full_cov, full_output_cov):
         pass  # N x P
 
     return fvar
-
-
-# ---------------------------------------------------------------
-########################## MULTISAMPLE ##############################
-# ---------------------------------------------------------------
-
-def multisample_conditional(Xnew : tf.Tensor, feat : InducingPoints, kern : Kernel, f : tf.Tensor, *,
-                            full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
-        """
-        Multisample, single-output GP conditional.
-        
-        NB if full_cov=False is required, this functionality can be achieved by reshaping Xnew to SN x D 
-        nd using conditional. The purpose of this function is to compute full covariances in batch over S samples.  
-        
-        The covariance matrices used to calculate the conditional have the following shape:
-        - Kuu: M x M
-        - Kuf: S x M x N
-        - Kff: S x N or S x N x N
-        ----------
-        :param Xnew: data matrix, size S x N x D.
-        :param f: data matrix, M x R
-        :param full_cov: return the covariance between the datapoints
-        :param full_output_cov: return the covariance between the outputs. Must be False
-        :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
-            size M x R or R x M x M.
-        :param white: boolean of whether to use the whitened representation
-        :return:
-            - mean:     S x N x R
-            - variance: S x N x R, S x R x N x N
-        """
-        if full_output_cov:
-            raise NotImplementedError
-
-        Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
-
-        S, N, D = tf.shape(Xnew)[0], tf.shape(Xnew)[1], tf.shape(Xnew)[2]
-        M = tf.shape(Kmm)[0]
-
-        Kmn_M_SN = Kuf(feat, kern, tf.reshape(Xnew, [S*N, D]))  # M x SN
-        Knn = kern.K(Xnew) if full_cov else kern.Kdiag(Xnew)  # S x N or S x N x N
-
-        num_func = tf.shape(f)[1]  # (=R)
-        Lm = tf.cholesky(Kmm)  # M x M
-
-        # Compute the projection matrix A
-        A_M_SN = tf.matrix_triangular_solve(Lm, Kmn_M_SN, lower=True)
-        A = tf.transpose(tf.reshape(A_M_SN, [M, S, N]), [1, 0, 2])  # S x M x N
-
-        # compute the covariance due to the conditioning
-        if full_cov:
-            fvar = Knn - tf.matmul(A, A, transpose_a=True)  # S x N x N
-            fvar = tf.tile(fvar[:, None, :, :], [1, num_func, 1, 1])  # S x R x N x N
-        else:
-            fvar = Knn - tf.reduce_sum(tf.square(A), -2)  # S x N
-            fvar = tf.tile(fvar[:, None, :], [1, num_func, 1])  # S x R x N
-
-        # another backsubstitution in the unwhitened case
-        if not white:
-            A_M_SN = tf.matrix_triangular_solve(tf.transpose(Lm), A_M_SN, lower=False)
-            A = tf.transpose(tf.reshape(A_M_SN, [M, S, N]), [1, 0, 2])  # S x M x N
-
-        # construct the conditional mean
-        fmean = tf.matmul(A, tf.tile(f[None, :, :], [S, 1, 1]), transpose_a=True)  # S x N x R
-
-        if q_sqrt is not None:
-            if q_sqrt.get_shape().ndims == 2:
-                LTA = A[:, None, :, :] * tf.transpose(q_sqrt)[None, :, :, None]  # S x R x M x N
-            elif q_sqrt.get_shape().ndims == 3:
-                L = tf.tile(tf.matrix_band_part(q_sqrt, -1, 0)[None, :, :, :], [S, 1, 1, 1])  # S x R x M x M
-                A_tiled = tf.tile(tf.expand_dims(A, 1), tf.stack([1, num_func, 1, 1]))  # S x R x M x N
-                LTA = tf.matmul(L, A_tiled, transpose_a=True)  # S x R x M x N
-            else:  # pragma: no cover
-                raise ValueError("Bad dimension for q_sqrt: %s" %
-                                 str(q_sqrt.get_shape().ndims))
-            if full_cov:
-                fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # S x R x N x N
-            else:
-                fvar = fvar + tf.reduce_sum(tf.square(LTA), 2)  # S x R x N
-
-        if not full_cov:
-            fvar = tf.matrix_transpose(fvar)  # S x N x R
-
-        return fmean, fvar  # fmean is S x N x R, fvar is S x R x N x N or S x N x R
 

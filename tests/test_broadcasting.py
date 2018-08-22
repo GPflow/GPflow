@@ -17,8 +17,6 @@ import tensorflow as tf
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
-from gpflow.test_util import session_tf
-from gpflow.features import InducingPoints
 
 import gpflow
 from gpflow.test_util import session_tf
@@ -99,58 +97,4 @@ def test_rbf_indices_active_dims(session_tf):
 @pytest.mark.parametrize("Kern", Kerns)
 def test_all_no_active_dims(session_tf, Kern):
     _test_no_active_dims(Kern, session_tf)
-
-
-def _test_conditional(sess, white=False, use_q_sqrt=True, full_cov=True):
-    S, N, M, Dx, Dy = 6, 5, 4, 3, 2
-
-    X1 = tf.identity(np.random.randn(S, N, Dx))
-    X2 = InducingPoints(np.random.randn(M, Dx))
-    f = tf.identity(np.random.randn(M, Dy))
-    if use_q_sqrt:
-        q_sqrt = tf.identity(np.random.randn(Dy, M, M))
-    else:
-        q_sqrt = None
-
-    kern = kernels.RBF(Dx)
-
-    fn = lambda x: gpflow.conditionals.conditional(x, X2, kern, f,
-                                                   white=white, q_sqrt=q_sqrt, full_cov=full_cov)
-
-    m, v = gpflow.conditionals.multisample_conditional(X1, X2, kern, f,
-                                           white=white, q_sqrt=q_sqrt, full_cov=full_cov)
-    m_map, v_map = tf.map_fn(fn, X1, dtype=(settings.float_type, settings.float_type))
-
-    _m, _m_map = sess.run([m, m_map])
-    _v, _v_map = sess.run([v, v_map])
-    print(_m.shape, _m_map.shape)
-    print(_v.shape, _v_map.shape)
-
-    assert_allclose(*sess.run([m, m_map]))
-    assert_allclose(*sess.run([v, v_map]))
-
-
-def test_full_cov(session_tf):
-    _test_conditional(session_tf, use_q_sqrt=False, full_cov=True)
-
-def test(session_tf):
-    _test_conditional(session_tf, use_q_sqrt=False, full_cov=False)
-
-def test_full_cov_white(session_tf):
-    _test_conditional(session_tf, white=True, use_q_sqrt=False, full_cov=True)
-
-def test_white(session_tf):
-    _test_conditional(session_tf, white=True, use_q_sqrt=False, full_cov=False)
-
-def test_q_sqrt_full_cov(session_tf):
-    _test_conditional(session_tf, use_q_sqrt=True, full_cov=True)
-
-def test_q_sqrt(session_tf):
-    _test_conditional(session_tf, use_q_sqrt=True, full_cov=False)
-
-def test_q_sqrt_full_cov_white(session_tf):
-    _test_conditional(session_tf, white=True, use_q_sqrt=True, full_cov=True)
-
-def test_q_sqrt_white(session_tf):
-    _test_conditional(session_tf, white=True, use_q_sqrt=True, full_cov=False)
 
