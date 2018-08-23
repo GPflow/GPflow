@@ -223,7 +223,7 @@ def expectation(p, obj1, obj2=None, nghp=None):
 
     try:
         return _expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
-    except NotImplementedError as e:
+    except NotImplementedError as e:  # pragma: no cover
 
         warn_msg = "Quadrature is used to calculate the expectation. " + str(e)
         logger.warn(warn_msg)
