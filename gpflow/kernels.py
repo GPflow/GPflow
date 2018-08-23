@@ -122,14 +122,15 @@ class Kernel(Parameterized):
         :return: Sliced X, X2, (Nxself.input_dim).
         """
         if isinstance(self.active_dims, slice):
-            X = X[:, self.active_dims]
+            X = X[..., self.active_dims]
             if X2 is not None:
-                X2 = X2[:, self.active_dims]
+                X2 = X2[..., self.active_dims]
         else:
-            X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
+            X = tf.gather(X, self.active_dims, axis=-1)
             if X2 is not None:
-                X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
-        input_dim_shape = tf.shape(X)[1]
+                X2 = tf.gather(X2, self.active_dims, axis=-1)
+
+        input_dim_shape = tf.shape(X)[-1]
         input_dim = tf.convert_to_tensor(self.input_dim, dtype=settings.tf_int)
         with tf.control_dependencies([tf.assert_equal(input_dim_shape, input_dim)]):
             X = tf.identity(X)
@@ -178,7 +179,7 @@ class Static(Kernel):
 
     @params_as_tensors
     def Kdiag(self, X):
-        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
 
 class White(Static):
@@ -189,10 +190,12 @@ class White(Static):
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            d = tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+            d = tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
             return tf.matrix_diag(d)
         else:
-            shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
+            shape = tf.concat([tf.shape(X)[:-2],
+                               tf.reshape(tf.shape(X)[-2], [1]),
+                               tf.reshape(tf.shape(X2)[-2], [1])], 0)
             return tf.zeros(shape, settings.float_type)
 
 
@@ -204,9 +207,10 @@ class Constant(Static):
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            shape = tf.stack([tf.shape(X)[0], tf.shape(X)[0]])
-        else:
-            shape = tf.stack([tf.shape(X)[0], tf.shape(X2)[0]])
+            X2 = X
+        shape = tf.concat([tf.shape(X)[:-2],
+                           tf.reshape(tf.shape(X)[-2], [1]),
+                           tf.reshape(tf.shape(X2)[-2], [1])], 0)
         return tf.fill(shape, tf.squeeze(self.variance))
 
 
@@ -259,17 +263,17 @@ class Stationary(Kernel):
         close to each other.
         """
         X = X / self.lengthscales
-        Xs = tf.reduce_sum(tf.square(X), axis=1)
+        Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
 
         if X2 is None:
             dist = -2 * tf.matmul(X, X, transpose_b=True)
-            dist += tf.reshape(Xs, (-1, 1))  + tf.reshape(Xs, (1, -1))
+            dist += Xs + tf.matrix_transpose(Xs)
             return dist
 
         X2 = X2 / self.lengthscales
-        X2s = tf.reduce_sum(tf.square(X2), axis=1)
+        X2s = tf.reduce_sum(tf.square(X2), axis=-1, keepdims=True)
         dist = -2 * tf.matmul(X, X2, transpose_b=True)
-        dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
+        dist += Xs + tf.matrix_transpose(X2s)
         return dist
 
 
@@ -299,7 +303,7 @@ class Stationary(Kernel):
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -401,7 +405,7 @@ class Linear(Kernel):
     def Kdiag(self, X, presliced=False):
         if not presliced:
             X, _ = self._slice(X, None)
-        return tf.reduce_sum(tf.square(X) * self.variance, 1)
+        return tf.reduce_sum(tf.square(X) * self.variance, -1)
 
 
 class Polynomial(Linear):
@@ -545,7 +549,7 @@ class ArcCosine(Kernel):
     @params_as_tensors
     def _weighted_product(self, X, X2=None):
         if X2 is None:
-            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=-1) + self.bias_variance
         return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
 
     def _J(self, theta):
@@ -574,13 +578,15 @@ class ArcCosine(Kernel):
             X2_denominator = tf.sqrt(self._weighted_product(X2))
 
         numerator = self._weighted_product(X, X2)
-        cos_theta = numerator / X_denominator[:, None] / X2_denominator[None, :]
+        X_denominator = tf.expand_dims(X_denominator, -1)
+        X2_denominator = tf.matrix_transpose(tf.expand_dims(X2_denominator, -1))
+        cos_theta = numerator / X_denominator / X2_denominator
         jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
         return self.variance * (1. / np.pi) * self._J(theta) * \
-               X_denominator[:, None] ** self.order * \
-               X2_denominator[None, :] ** self.order
+               X_denominator ** self.order * \
+               X2_denominator ** self.order
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -622,7 +628,7 @@ class Periodic(Kernel):
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -632,11 +638,17 @@ class Periodic(Kernel):
             X2 = X
 
         # Introduce dummy dimension so we can use broadcasting
-        f = tf.expand_dims(X, 1)  # now N x 1 x D
-        f2 = tf.expand_dims(X2, 0)  # now 1 x M x D
+        f = tf.expand_dims(X, -2)  #  ... x N x 1 x D
+        f2 = tf.expand_dims(X2, -2) # ... x M x 1 x D
+        K = tf.rank(f2)  # 3, or 4 if broadcasting
+        perm = tf.concat([tf.reshape(tf.range(K-3), [K-3]),  # [], or [0] if broadcasting
+                          tf.reshape(K-2, [1]),  # [1], or [2] if broadcasting
+                          tf.reshape(K-3, [1]),  # [0], or [1] if broadcasting
+                          tf.reshape(K-1, [1])], 0)  # [2], or [2] if broadcasting
+        f2 = tf.transpose(f2, perm)  # ... x 1 x M x D
 
         r = np.pi * (f - f2) / self.period
-        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), 2)
+        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), -1)
 
         return self.variance * tf.exp(-0.5 * r)
 
