@@ -110,9 +110,6 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite
     """
     num_gauss_hermite_points = 100 if num_gauss_hermite_points is None else num_gauss_hermite_points
 
-    logger.warn("Quadrature is used to calculate the expectation. This means that "
-                "an analytical implementations is not available for the given combination.")
-
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
     elif obj1 is None:
@@ -151,9 +148,6 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, num_gauss_hermite
                transpose and then transpose the result of the expectation
     """
     num_gauss_hermite_points = 40 if num_gauss_hermite_points is None else num_gauss_hermite_points
-
-    logger.warn("Quadrature is used to calculate the expectation. This means that "
-                "an analytical implementations is not available for the given combination.")
 
     if obj2 is None:
         eval_func = lambda x: get_eval_func(obj1, feature1)(x)
@@ -231,13 +225,8 @@ def expectation(p, obj1, obj2=None, nghp=None):
         return _expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
     except NotImplementedError as e:
 
-        def custom_warning_format(msg, *args, **kwargs):
-            # ignore everything except the message
-            return str(msg) + '\n'
-
-        warnings.formatwarning = custom_warning_format
         warn_msg = "Quadrature is used to calculate the expectation. " + str(e)
-        warnings.warn(warn_msg)
+        logger.warn(warn_msg)
 
         return _quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp)
 
@@ -376,6 +365,7 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
 
     :return: N x dim(Z1) x dim(Z2)
     """
+
     if kern1.on_separate_dims(kern2) and isinstance(p, DiagonalGaussian):
         # no joint expectations required
         eKxz1 = expectation(p, (kern1, feat1))
@@ -402,13 +392,13 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
         if Ka == Kb:
             La = get_squared_length_scales(Ka)
             Lb = La
-            LaLb = La * 0.5
+            half_mean_L = La * 0.5  # average length scale
         else:
             La, Lb = map(get_squared_length_scales, (Ka, Kb))
-            LaLb = La * Lb / (La + Lb)  # average length scale
+            half_mean_L = La * Lb / (La + Lb)  # average length scale
 
-        sqrt_det_L = tf.reduce_prod(LaLb) ** 0.5
-        C = tf.cholesky(tf.matrix_diag(LaLb) + Xcov)  # NxDxD
+        sqrt_det_L = tf.reduce_prod(half_mean_L) ** 0.5
+        C = tf.cholesky(tf.matrix_diag(half_mean_L) + Xcov)  # NxDxD
         dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(C)), axis=1))  # N
 
         # for mahalanobis computation we need Zᵀ (CCᵀ)⁻¹ Z  as well as C⁻¹ Z
@@ -424,7 +414,7 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
         C_inv_mu = tf.matrix_triangular_solve(C, tf.expand_dims(Xmu, 2), lower=True)  # NxDx1
         mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
 
-        C_inv_z1, z1_CC_inv_z1 = get_cholesky_solve_terms(Z1 / La * LaLb)
+        C_inv_z1, z1_CC_inv_z1 = get_cholesky_solve_terms(Z1 / La * half_mean_L)
         z1_CC_inv_mu = 2 * tf.matmul(C_inv_z1, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM1
 
         if feat1 == feat2 and Ka == Kb:
@@ -435,18 +425,30 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
         else:
             # compute terms related to Z2
             Z2, _ = Kb._slice(feat2.Z, p.mu)
-            C_inv_z2, z2_CC_inv_z2 = get_cholesky_solve_terms(Z2 / Lb * LaLb)
+            C_inv_z2, z2_CC_inv_z2 = get_cholesky_solve_terms(Z2 / Lb * half_mean_L)
             z2_CC_inv_mu = 2 * tf.matmul(C_inv_z2, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM2
 
         z1_CC_inv_z2 = tf.matmul(C_inv_z1, C_inv_z2, transpose_a=True)  # NxM1xM2
 
-        exponent_mahalanobis = mu_CC_inv_mu + tf.expand_dims(z2_CC_inv_z2, 1) + \
-                               tf.expand_dims(z1_CC_inv_z1, 2) + 2 * z1_CC_inv_z2 - \
-                               tf.expand_dims(z1_CC_inv_mu, 2) - tf.expand_dims(z2_CC_inv_mu, 1)  # NxM1xM2
+        # expand dims for broadcasting
+        # along M1
+        z2_CC_inv_z2 = tf.expand_dims(z2_CC_inv_z2, 1)
+        z2_CC_inv_mu = tf.expand_dims(z2_CC_inv_mu, 1)
+
+        # along M2
+        z1_CC_inv_mu = tf.expand_dims(z1_CC_inv_mu, 2)
+        z1_CC_inv_z1 = tf.expand_dims(z1_CC_inv_z1, 2)
+
+        # expanded version of ((Z1 + Z2)-mu) (CCT)-1 ((Z1 + Z2)-mu)
+        exponent_mahalanobis = mu_CC_inv_mu + z2_CC_inv_z2 + \
+                               z1_CC_inv_z1 + 2 * z1_CC_inv_z2 - \
+                               z1_CC_inv_mu- z2_CC_inv_mu  # NxM1xM2
+
         exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM1xM2
 
         if Z1 == Z2:
-            # Compute sqrt(self.K(Z)) explicitly to prevent automatic gradient from
+            # CAVEAT : Compute sqrt(self.K(Z)) explicitly
+            # to prevent automatic gradient from
             # being NaN sometimes, see pull request #615
             dist_term = tf.exp(-0.25 * Ka.scaled_square_dist(Z1, None))
         else:
