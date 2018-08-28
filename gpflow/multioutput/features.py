@@ -15,12 +15,12 @@
 import tensorflow as tf
 
 from .. import settings
-from ..dispatch import dispatch
-from ..features import InducingPoints, InducingFeature, Kuu, Kuf
 from ..decors import params_as_tensors_for
+from ..dispatch import dispatch
+from ..features import InducingFeature, InducingPoints, Kuf, Kuu
 from ..params import ParamList
-from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
-
+from .kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
+                      SharedIndependentMok, SharedMixedMok)
 
 logger = settings.logger()
 
@@ -121,6 +121,12 @@ def Kuf(feat, kern, Xnew):
     return tf.stack([Kuf(feat.feat, k, Xnew) for k in kern.kernels], axis=0)  # L x M x N
 
 
+@dispatch(MixedKernelSharedMof, SharedMixedMok, object)
+def Kuf(feat, kern, Xnew):
+    debug_kuf(feat, kern)
+    return Kuf(feat.feat, kern.kern, Xnew)
+
+
 # ---
 # Kuu
 # ---
@@ -180,4 +186,12 @@ def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = tf.stack([Kuu(feat.feat, k) for k in kern.kernels], axis=0)  # L x M x M
     jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
+    return Kmm + jittermat
+
+
+@dispatch(MixedKernelSharedMof, SharedMixedMok)
+def Kuu(feat, kern, *, jitter=0.0):
+    debug_kuu(feat, kern, jitter)
+    Kmm = Kuu(feat.feat, kern.kern)  # M x M
+    jittermat = tf.eye(len(feat), dtype=settings.float_type) * jitter
     return Kmm + jittermat

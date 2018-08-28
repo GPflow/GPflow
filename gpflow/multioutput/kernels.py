@@ -13,12 +13,14 @@
 # limitations under the License.
 
 
+from typing import Optional
+
+import numpy as np
 import tensorflow as tf
 
-from .. import kernels
-from .. import settings
-from ..decors import params_as_tensors, autoflow
-from ..kernels import Kernel, Combination
+from .. import kernels, settings
+from ..decors import autoflow, params_as_tensors
+from ..kernels import Combination, Kernel
 from ..params import Parameter
 
 
@@ -49,7 +51,7 @@ class Mok(Kernel):
         - N1 x P x N2 x P if `full_output_cov` = True
         - P x N1 x N2 if `full_output_cov` = False
         """
-        raise NotImplemented  # pragma: no cover
+        raise NotImplementedError  # pragma: no cover
 
     def Kdiag(self, X, full_output_cov=True):
         """
@@ -60,7 +62,7 @@ class Mok(Kernel):
         - N x P x N x P if `full_output_cov` = True
         - N x P if `full_output_cov` = False
         """
-        raise NotImplemented  # pragma: no cover
+        raise NotImplementedError  # pragma: no cover
 
 class SharedIndependentMok(Mok):
     """
@@ -150,3 +152,32 @@ class SeparateMixedMok(Mok, Combination):
         else:
             # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # N x P
             return tf.matmul(K, self.W ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P
+
+
+class SharedMixedMok(Mok):
+    """
+    Linear mixing of the latent GPs to form the output
+    """
+
+    def __init__(self, kern: Kernel, W: np.ndarray, name: Optional[str]=None):
+        super().__init__(self, kern.input_dim, name)
+        self.kern = kern
+        self.output_dim, self.latent_dim = W.shape  # P, L
+        self.W = Parameter(W)  # P x L
+
+    @params_as_tensors
+    def Kgg(self, X, X2):
+        return self.kern.K(X, X2)  # N x N2
+
+    @autoflow((settings.float_type, [None, None]),
+              (settings.float_type, [None, None]))
+    def compute_Kgg(self, X, X2):
+        return self.Kgg(X, X2)
+
+    @params_as_tensors
+    def K(self, X, X2=None, full_output_cov=True):
+        raise NotImplementedError
+
+    @params_as_tensors
+    def Kdiag(self, X, full_output_cov=True):
+        raise NotImplementedError

@@ -14,16 +14,17 @@
 
 import tensorflow as tf
 
-from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
-from .features import Kuu, Kuf
-from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .. import settings
-from ..conditionals import base_conditional, _expand_independent_outputs, _sample_mvn
+from ..conditionals import (_expand_independent_outputs, _sample_mvn,
+                            base_conditional)
 from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
-
+from .features import (Kuf, Kuu, MixedKernelSharedMof, SeparateIndependentMof,
+                       SharedIndependentMof)
+from .kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
+                      SharedIndependentMok, SharedMixedMok)
 
 logger = settings.logger()
 
@@ -252,6 +253,11 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return Wgmu, WgvarW
 
 
+@conditional.register(object, MixedKernelSharedMof, SharedMixedMok, object)
+@name_scope("conditional")
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+    raise NotImplementedError
+
 # ------------------
 # Sample conditional
 # ------------------
@@ -274,7 +280,28 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
                                    full_output_cov=False, full_cov=False)  # N x L, N x L
     g_sample = _sample_mvn(g_mu, g_var, "diag")  # N x L
     with params_as_tensors_for(kern):
-        f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
+        f_sample = tf.matmul(g_sample, kern.W, transpose_b=True)
+    return f_sample
+
+
+@sample_conditional.register(object, MixedKernelSharedMof, SharedMixedMok, object)
+@name_scope("sample_conditional")
+def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
+    """
+    `sample_conditional` will return a sample from the conditinoal distribution.
+    In most cases this means calculating the conditional mean m and variance v and then
+    returning m + sqrt(v) * eps, with eps ~ N(0, 1).
+    However, for some combinations of Mok and Mof more efficient sampling routines exists.
+    The dispatcher will make sure that we use the most efficent one.
+
+    :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
+    """
+    logger.debug("sample conditional: MixedKernelSharedMof, SharedMixedMok")
+    g_mu, g_var = conditional(Xnew, feat.feat, kern.kern, f, white=white, q_sqrt=q_sqrt,
+                              full_output_cov=False, full_cov=False)  # N x L, N x L
+    g_sample = _sample_mvn(g_mu, g_var, "diag")  # N x L
+    with params_as_tensors_for(kern):
+        f_sample = tf.matmul(g_sample, kern.W, transpose_b=True)
     return f_sample
 
 

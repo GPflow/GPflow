@@ -165,7 +165,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
         Callable or Iterable of Callables that operates elementwise
     :param S: number of Monte Carlo sampling points
     :param Fmu: array/tensor
-    :param Fvar: array/tensor
+    :param Fvar: array/tensor, N x D // N x D x D
     :param logspace: if True, funcs are the log-integrands and this calculates
         the log-expectation of exp(funcs)
     :param **Ys: arrays/tensors; deterministic arguments to be passed by name
@@ -189,6 +189,67 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
 
     def eval_func(func):
         feval = func(mc_Xr, **Ys)
+        feval = tf.reshape(feval, (S, N, -1))
+        if logspace:
+            log_S = tf.log(tf.cast(S, settings.float_type))
+            return tf.reduce_logsumexp(feval, axis=0) - log_S  # N x D
+        else:
+            return tf.reduce_mean(feval, axis=0)
+
+    if isinstance(funcs, Iterable):
+        return [eval_func(f) for f in funcs]
+    else:
+        return eval_func(funcs)
+
+
+def full_gaussian_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys):
+    """
+    Computes N Gaussian expectation integrals of one or more functions
+    using Monte Carlo samples. The Gaussians must be independent.
+
+    :param funcs: the integrand(s):
+        Callable or Iterable of Callables that operates elementwise
+    :param S: number of Monte Carlo sampling points
+    :param Fmu: array/tensor
+    :param Fvar: array/tensor, N x D // N x D x D
+    :param logspace: if True, funcs are the log-integrands and this calculates
+        the log-expectation of exp(funcs)
+    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
+
+    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :return: shape is the same as that of the first Fmu
+    """
+    N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
+
+    if epsilon is None:
+        epsilon = tf.random_normal((N, S, D), dtype=settings.float_type)
+
+    jittermat = tf.eye(D, dtype=settings.float_type) * settings.jitter
+    chol = tf.cholesky(Fvar + jittermat[None, ...])  # N x D x D
+    mc_x = Fmu[None, ...] + tf.transpose(tf.matmul(epsilon, chol, transpose_b=True), [1, 0, 2])  # S x N x D
+
+    # mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
+    mc_Xr = tf.reshape(mc_x, (S * N, D))
+
+    for name, Y in Ys.items():
+        D_out = tf.shape(Y)[1]
+        # we can't rely on broadcasting and need tiling
+        mc_Yr = tf.tile(Y[None, ...], [S, 1, 1])  # S x N x D_out
+        Ys[name] = tf.reshape(mc_Yr, (S * N, D_out))  # S * N x D_out
+
+    def _debug_func(x, y, e, c, m, v):
+        import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+        from IPython import embed; embed()  # XXX DEBUG
+        return False
+
+
+    def eval_func(func):
+        feval = func(mc_Xr, **Ys)
+
+        # debug_op = tf.py_func(_debug_func, [mc_Xr, feval, epsilon, chol, Fmu, Fvar], [tf.bool])
+        # with tf.control_dependencies(debug_op):
+        #     feval = tf.identity(feval, name='out')
+
         feval = tf.reshape(feval, (S, N, -1))
         if logspace:
             log_S = tf.log(tf.cast(S, settings.float_type))
