@@ -440,30 +440,30 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
         z1_CC_inv_z1 = tf.expand_dims(z1_CC_inv_z1, 2)
 
         # expanded version of ((Z1 + Z2)-mu) (CCT)-1 ((Z1 + Z2)-mu)
-        exponent_mahalanobis = mu_CC_inv_mu + z2_CC_inv_z2 + \
-                               z1_CC_inv_z1 + 2 * z1_CC_inv_z2 - \
-                               z1_CC_inv_mu- z2_CC_inv_mu  # NxM1xM2
+        mahalanobis = mu_CC_inv_mu + z2_CC_inv_z2 + \
+                      z1_CC_inv_z1 + 2 * z1_CC_inv_z2 - \
+                      z1_CC_inv_mu - z2_CC_inv_mu  # NxM1xM2
 
-        exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM1xM2
+        exp_mahalanobis = tf.exp(-0.5 * mahalanobis)  # NxM1xM2
 
         if Z1 == Z2:
             # CAVEAT : Compute sqrt(self.K(Z)) explicitly
             # to prevent automatic gradient from
             # being NaN sometimes, see pull request #615
-            dist_term = tf.exp(-0.25 * Ka.scaled_square_dist(Z1, None))
+            exp_dist = tf.exp(-0.25 * Ka.scaled_square_dist(Z1, None))
         else:
             # Compute exp( -.5 (Z-Z')^top (L_1+L_2)^{-1} (Z-Z') )
             lengthscales_rms = tf.sqrt(La + Lb)
             Z1 = Z1 / lengthscales_rms
-            Z1s = tf.reduce_sum(tf.square(Z1), axis=1)
+            Z1sqr = tf.reduce_sum(tf.square(Z1), axis=1)
             Z2 = Z2 / lengthscales_rms
-            Z2s = tf.reduce_sum(tf.square(Z2), axis=1)
-            dist = -2 * tf.matmul(Z1, Z2, transpose_b=True)
-            dist += tf.reshape(Z1s, (-1, 1)) + tf.reshape(Z2s, (1, -1))
-            dist_term = tf.exp(-0.5 *dist)  # M1 x M2
+            Z2sqr = tf.reduce_sum(tf.square(Z2), axis=1)
+            dist = -2 * tf.matmul(Z1, Z2, transpose_b=True) \
+                   + tf.reshape(Z1sqr, (-1, 1)) + tf.reshape(Z2sqr, (1, -1))
+            exp_dist = tf.exp(-0.5 * dist)  # M1 x M2
 
-        return Ka.variance * Kb.variance * dist_term * \
-               tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis
+        return Ka.variance * Kb.variance * exp_dist * \
+               tf.reshape(dets, [N, 1, 1]) * exp_mahalanobis
 
 
 # =============================== Linear Kernel ===============================
