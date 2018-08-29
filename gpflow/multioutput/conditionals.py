@@ -23,6 +23,7 @@ from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
+from ..types import TensorArray
 
 
 logger = settings.logger()
@@ -256,9 +257,9 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 # Sample conditional
 # ------------------
 
-@sample_conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
+@sample_conditional.register(TensorArray, MixedKernelSharedMof, SeparateMixedMok, TensorArray)
 @name_scope("sample_conditional")
-def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
+def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
     In most cases this means calculating the conditional mean m and variance v and then
@@ -269,6 +270,12 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
     logger.debug("sample conditional: MixedKernelSharedMof, SeparateMixedMok")
+    if full_cov:
+        raise NotImplementedError("full_cov not yet implemented")
+    if full_output_cov:
+        raise NotImplementedError("full_output_cov not yet implemented")
+    if num_samples is not None:
+        raise NotImplementedError("num_samples > 1 not yet implemented")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
                                    full_output_cov=False, full_cov=False)  # N x L, N x L

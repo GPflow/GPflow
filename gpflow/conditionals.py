@@ -22,6 +22,7 @@ from .expectations import expectation
 from .features import Kuu, Kuf, InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .probability_distributions import Gaussian
+from .types import TensorArray
 
 
 logger = settings.logger()
@@ -129,9 +130,9 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 # ----------------------------------------------------------------------------
 
 
-@sample_conditional.register(object, InducingFeature, Kernel, object)
+@sample_conditional.register(TensorArray, InducingFeature, Kernel, TensorArray)
 @name_scope("sample_conditional")
-def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
+def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
     """
     `sample_conditional` will return a sample from the conditional distribution.
     In most cases this means calculating the conditional mean m and variance v and then
@@ -142,18 +143,37 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
     logger.debug("sample conditional: InducingFeature Kernel")
-    mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_output_cov=full_output_cov,
+    mean, var = conditional(Xnew, feat, kern, f, full_cov=full_cov, full_output_cov=full_output_cov,
                             q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
-    cov_structure = "full" if full_output_cov else "diag"
-    return _sample_mvn(mean, var, cov_structure)
+    if full_cov:
+        if full_output_cov:
+            raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
+                                      "implemented for sample_conditional.")
+		N, D = tf.shape(mean)[0], tf.shape(mean)[1]
+		S = num_samples
+		jittermat = settings.numerics.jitter_level * tf.eye(N, batch_shape=[D], dtype=settings.float_type)  # [D, N, N]
+		L = tf.cholesky(var + jittermat)  # [D, N, N]
+		nu = tf.random_normal([D, N, S], dtype=float_type)  # [D, N, S]
+		samples = mean[..., None] + tf.transpose(tf.matmul(L, nu), [1, 0, 2])  # [N, D, S]
+    else:
+        if num_samples is not None:
+            raise NotImplementedError("num_samples not yet implemented for full_cov=False")
+        cov_structure = "full" if full_output_cov else "diag"
+        samples = _sample_mvn(mean, var, cov_structure)  # [N, P]
+        samples = tf.expand_dims(samples, 2)  # [N, P, 1]
+
+    if num_samples is None:
+        return samples[..., 0]  # [N, D] (full_cov) or [N, P] (not full_cov)
+
+    return samples, mean, var
 
 
-@sample_conditional.register(object, object, Kernel, object)
+@sample_conditional.register(TensorArray, TensorArray, Kernel, TensorArray)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False):
     logger.debug("sample conditional: Kernel")
     mean, var = conditional(Xnew, X, kern, f, q_sqrt=q_sqrt, white=white, full_cov=False)  # N x P, N x P
-    return _sample_mvn(mean, var, "diag")  # N x P
+    return _sample_mvn(mean, var, "diag"), mean, var  # N x P
 
 
 # ----------------------------------------------------------------------------
