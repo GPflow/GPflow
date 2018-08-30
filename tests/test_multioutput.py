@@ -222,18 +222,20 @@ def test_sample_conditional(session_tf, whiten):
     # Path 1
     sample = sample_conditional(placeholders["Xnew"], placeholders["Z"], kernel,
                                 placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten)
-    value = session_tf.run(sample, feed_dict=feed_dict)
+    value, mean, var = session_tf.run(sample, feed_dict=feed_dict)
 
     # Path 2
     sample2 = sample_conditional(placeholders["Xnew"], feature, kernel,
                                  placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten)
-    value2 = session_tf.run(sample2, feed_dict=feed_dict)
+    value2, mean2, var2 = session_tf.run(sample2, feed_dict=feed_dict)
 
     # check if mean and covariance of samples are similar
     np.testing.assert_array_almost_equal(np.mean(value, axis=0),
                                          np.mean(value2, axis=0), decimal=1)
     np.testing.assert_array_almost_equal(np.cov(value, rowvar=False),
                                          np.cov(value2, rowvar=False), decimal=1)
+    np.testing.assert_allclose(mean, mean2)
+    np.testing.assert_allclose(var, var2)
 
 
 def test_sample_conditional_mixedkernel(session_tf):
@@ -255,7 +257,7 @@ def test_sample_conditional_mixedkernel(session_tf):
 
     sample = sample_conditional(placeholders["Xnew"], mixed_feature, mixed_kernel,
                                 placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
-    value = session_tf.run(sample, feed_dict=feed_dict)
+    value, mean, var = session_tf.run(sample, feed_dict=feed_dict)
 
 
     # Path 2: independent kernels, mixed later
@@ -263,7 +265,7 @@ def test_sample_conditional_mixedkernel(session_tf):
     shared_feature = mf.SharedIndependentMof(InducingPoints(Z.copy()))
     sample2 = sample_conditional(placeholders["Xnew"], shared_feature, separate_kernel,
                                  placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
-    value2 = session_tf.run(sample2, feed_dict=feed_dict)
+    value2, mean2, var2 = session_tf.run(sample2, feed_dict=feed_dict)
     value2 = np.matmul(value2, W.T)
     # check if mean and covariance of samples are similar
     np.testing.assert_array_almost_equal(np.mean(value, axis=0),
