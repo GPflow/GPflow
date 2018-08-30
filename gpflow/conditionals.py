@@ -149,12 +149,12 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
         if full_output_cov:
             raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
                                       "implemented for sample_conditional.")
-		N, D = tf.shape(mean)[0], tf.shape(mean)[1]
-		S = num_samples
-		jittermat = settings.numerics.jitter_level * tf.eye(N, batch_shape=[D], dtype=settings.float_type)  # [D, N, N]
-		L = tf.cholesky(var + jittermat)  # [D, N, N]
-		nu = tf.random_normal([D, N, S], dtype=float_type)  # [D, N, S]
-		samples = mean[..., None] + tf.transpose(tf.matmul(L, nu), [1, 0, 2])  # [N, D, S]
+        N, D = tf.shape(mean)[0], tf.shape(mean)[1]
+        S = num_samples
+        jittermat = settings.numerics.jitter_level * tf.eye(N, batch_shape=[D], dtype=settings.float_type)  # [D, N, N]
+        L = tf.cholesky(var + jittermat)  # [D, N, N]
+        nu = tf.random_normal([D, N, S], dtype=float_type)  # [D, N, S]
+        samples = mean[..., None] + tf.transpose(tf.matmul(L, nu), [1, 0, 2])  # [N, D, S]
     else:
         if num_samples is not None:
             raise NotImplementedError("num_samples not yet implemented for full_cov=False")
