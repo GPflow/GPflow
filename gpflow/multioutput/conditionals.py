@@ -282,7 +282,9 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     g_sample = _sample_mvn(g_mu, g_var, "diag")  # N x L
     with params_as_tensors_for(kern):
         f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
-    return f_sample
+        f_mu = g_mu # XXX
+        f_var = g_var # XXX
+    return f_sample, f_mu, f_var
 
 
 # -----------------
