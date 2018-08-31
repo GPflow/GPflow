@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ..core.errors import GPflowError
+from . import external_optimizer, optimizer
 from ..core.compilable import Build
+from ..core.errors import GPflowError
 from ..models.model import Model
-
-from . import optimizer
-from . import external_optimizer
 
 
 class ScipyOptimizer(optimizer.Optimizer):
@@ -25,7 +23,6 @@ class ScipyOptimizer(optimizer.Optimizer):
         self._optimizer_kwargs = kwargs
         self._optimizer = None
         self._model = None
-    
 
     def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
         """
@@ -54,8 +51,8 @@ class ScipyOptimizer(optimizer.Optimizer):
             model.initialize(session=session)
             return optimizer
 
-    def minimize(self, model, session=None, var_list=None, feed_dict=None,
-                 maxiter=1000, disp=False, initialize=False, anchor=True, **kwargs):
+    def minimize(self, model, session=None, var_list=None, feed_dict=None, maxiter=1000,
+                 disp=False, initialize=False, anchor=True, step_callback=None, **kwargs):
         """
         Minimizes objective function of the model.
 
@@ -70,6 +67,10 @@ class ScipyOptimizer(optimizer.Optimizer):
             initialized before for gotten session.
         :param anchor: If `True` trained parameters computed during optimization at
             particular session will be synchronized with internal parameter values.
+        :param step_callback: A function to be called at each optimization step;
+            arguments are the current values of all optimization variables
+            flattened into a single vector.
+        :type step_callback: Callable[[np.ndarray], None]
         :param kwargs: This is a dictionary of extra parameters for session run method.
         """
         if model is None or not isinstance(model, Model):
@@ -84,7 +85,8 @@ class ScipyOptimizer(optimizer.Optimizer):
             var_list=var_list, maxiter=maxiter, disp=disp)
         self._optimizer = optimizer
         feed_dict = self._gen_feed_dict(model, feed_dict)
-        optimizer.minimize(session=session, feed_dict=feed_dict, **kwargs)
+        optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback,
+                           **kwargs)
         if anchor:
             model.anchor(session)
 

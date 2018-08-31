@@ -21,8 +21,11 @@ import warnings
 from . import settings
 
 
+logger = settings.logger()
+
+
 def gaussian(x, mu, var):
-    return -0.5 * (np.log(2 * np.pi) + tf.log(var) + tf.square(mu-x)/var)
+    return -0.5 * (np.log(2 * np.pi) + tf.log(var) + tf.square(mu-x) / var)
 
 
 def lognormal(x, mu, var):
@@ -43,18 +46,17 @@ def exponential(x, scale):
 
 
 def gamma(x, shape, scale):
-    return -shape * tf.log(scale) - tf.lgamma(shape)\
+    return -shape * tf.log(scale) - tf.lgamma(shape) \
         + (shape - 1.) * tf.log(x) - x / scale
 
 
-def student_t(x, mean, scale, deg_free):
-    const = tf.lgamma(tf.cast((deg_free + 1.) * 0.5, settings.float_type))\
-        - tf.lgamma(tf.cast(deg_free * 0.5, settings.float_type))\
-        - 0.5*(tf.log(tf.square(scale)) + tf.cast(tf.log(deg_free), settings.float_type)
-               + np.log(np.pi))
+def student_t(x, mean, scale, df):
+    df = tf.cast(df, settings.float_type)
+    const = tf.lgamma((df + 1.) * 0.5) - tf.lgamma(df * 0.5) \
+        - 0.5 * (tf.log(tf.square(scale)) + tf.log(df) + np.log(np.pi))
     const = tf.cast(const, settings.float_type)
-    return const - 0.5*(deg_free + 1.) * \
-        tf.log(1. + (1. / deg_free) * (tf.square((x - mean) / scale)))
+    return const - 0.5 * (df + 1.) * \
+        tf.log(1. + (1. / df) * (tf.square((x - mean) / scale)))
 
 
 def beta(x, alpha, beta):
@@ -86,11 +88,11 @@ def multivariate_normal(x, mu, L):
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
     if x.shape.ndims is None:
-        warnings.warn('Shape of x must be 2D at computation.')
+        logger.warn('Shape of x must be 2D at computation.')
     elif x.shape.ndims != 2:
         raise ValueError('Shape of x must be 2D.')
     if mu.shape.ndims is None:
-        warnings.warn('Shape of mu may be unknown or not 2D.')
+        logger.warn('Shape of mu may be unknown or not 2D.')
     elif mu.shape.ndims != 2:
         raise ValueError('Shape of mu must be 2D.')
 

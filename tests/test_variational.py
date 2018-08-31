@@ -84,7 +84,7 @@ class VariationalUnivariateTest(GPflowTestCase):
     posteriorStd = np.sqrt(posteriorVariance)
 
     def likelihood(self):
-        return gpflow.likelihoods.Gaussian(var=self.noiseVariance)
+        return gpflow.likelihoods.Gaussian(variance=self.noiseVariance)
 
     def get_model(self, is_diagonal, is_whitened):
         m = gpflow.models.SVGP(

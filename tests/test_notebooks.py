@@ -26,30 +26,42 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
 NOTEBOOK_FILES = [
+    "advanced_usage.ipynb",
     "classification.ipynb",
     "coreg_demo.ipynb",
+    "FITCvsVFE.ipynb",
+    "GPLVM.ipynb",
     "kernels.ipynb",
     "mcmc.ipynb",
+    "models.ipynb",
+    "monitor-tensorboard.ipynb",
+    "multiclass.ipynb",
+    "multioutput.ipynb",
+    "natural_gradients.ipynb",
     "ordinal.ipynb",
+    "regression.ipynb",
     "Sanity_check.ipynb",
     "settings.ipynb",
     "SGPR_notes.ipynb",
+    "svi_test.ipynb",
+    "upper_bound.ipynb",
     "vgp_notes.ipynb",
-    "models.ipynb",
-    "multiclass.ipynb",
-    "classification.ipynb",
-    "monitor-tensorboard.ipynb"
-    # Blacklist:
-    #   "FITCvsVFE.ipynb",
-    #   "svi.ipynb",
-    #   "GPLVM.ipynb",
-    #   "regression.ipynb"
+]
+
+BLACKLISTED_NOTEBOOKS = [
 ]
 
 
 @pytest.mark.parametrize('notebook_file', NOTEBOOK_FILES)
 def test_notebook(notebook_file):
     _exec_notebook_ts(notebook_file)
+
+
+def test_no_notebook_missing():
+    import glob
+    all_notebooks = glob.glob(os.path.join(_nbpath(), '*.ipynb'))
+    actual_notebook_files = set(map(os.path.basename, all_notebooks))
+    assert set(NOTEBOOK_FILES) == actual_notebook_files - set(BLACKLISTED_NOTEBOOKS)
 
 
 def _nbpath():

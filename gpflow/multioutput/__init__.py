@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman
+# Copyright 2018 GPflow authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,5 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# flake8: noqa
 
-__version__ = "1.2.0"
+from .kernels import Mok
+from .kernels import SharedIndependentMok
+from .kernels import SeparateIndependentMok
+from .kernels import SeparateMixedMok
+
+from .features import Mof
+from .features import SharedIndependentMof
+from .features import SeparateIndependentMof
+from .features import MixedKernelSharedMof
+
+from . import conditionals

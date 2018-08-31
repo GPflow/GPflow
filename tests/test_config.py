@@ -116,23 +116,23 @@ class TestSettingsManager(GPflowTestCase):
             _ = s.np_int
 
     def testMutability(self):
-        orig = gpflow.settings.verbosity.hmc_verb
-        gpflow.settings.verbosity.hmc_verb = False
-        self.assertEqual(gpflow.settings.verbosity.hmc_verb, False)
-        gpflow.settings.verbosity.hmc_verb = True
-        self.assertEqual(gpflow.settings.verbosity.hmc_verb, True)
-        gpflow.settings.verbosity.hmc_verb = orig
+        orig = gpflow.settings.verbosity.tf_compile_verb
+        gpflow.settings.verbosity.tf_compile_verb = False
+        self.assertEqual(gpflow.settings.verbosity.tf_compile_verb, False)
+        gpflow.settings.verbosity.tf_compile_verb = True
+        self.assertEqual(gpflow.settings.verbosity.tf_compile_verb, True)
+        gpflow.settings.verbosity.tf_compile_verb = orig
 
     def testContextManager(self):
-        orig = gpflow.settings.verbosity.hmc_verb
-        gpflow.settings.verbosity.hmc_verb = True
+        orig = gpflow.settings.verbosity.tf_compile_verb
+        gpflow.settings.verbosity.tf_compile_verb = True
         config = gpflow.settings.get_settings()
-        config.verbosity.hmc_verb = False
-        self.assertEqual(gpflow.settings.verbosity.hmc_verb, True)
+        config.verbosity.tf_compile_verb = False
+        self.assertEqual(gpflow.settings.verbosity.tf_compile_verb, True)
         with gpflow.settings.temp_settings(config):
-            self.assertEqual(gpflow.settings.verbosity.hmc_verb, False)
-        self.assertEqual(gpflow.settings.verbosity.hmc_verb, True)
-        gpflow.settings.verbosity.hmc_verb = orig
+            self.assertEqual(gpflow.settings.verbosity.tf_compile_verb, False)
+        self.assertEqual(gpflow.settings.verbosity.tf_compile_verb, True)
+        gpflow.settings.verbosity.tf_compile_verb = orig
 
 def test_logging():
     def level_name(log):
