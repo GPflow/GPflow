@@ -67,7 +67,7 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 | [VFF](https://github.com/jameshensman/VFF)       | Variational Fourier Features for Gaussian Processes. |
 | [Doubly-Stochastic-DGP](https://github.com/ICL-SML/Doubly-Stochastic-DGP)| Deep Gaussian Processes with Doubly Stochastic Variational Inference.|
 | [BranchedGP](https://github.com/ManchesterBioinference/BranchedGP) | Gaussian processes with branching kernels.|
-| [gpflow-monitor](https://github.com/markvdw/gpflow-monitor) | Tools for monitoring and checkpoining optimisation. |
+| [heterogp](https://github.com/Joshuaalbert/heterogp) | Heteroscedastic noise for sparse variational GP. |
 | [widedeepnetworks](https://github.com/widedeepnetworks/widedeepnetworks) | Measuring the relationship between random wide deep neural networks and GPs.| 
 
 Let us know if you would like your project listed here.
