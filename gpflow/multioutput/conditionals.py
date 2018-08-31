@@ -14,7 +14,7 @@
 
 import tensorflow as tf
 
-from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof
+from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof, MixedKernelSeparateMof
 from .features import Kuu, Kuf
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .. import settings
@@ -207,7 +207,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, fvar
 
 
-@conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
+@conditional.register(object, (MixedKernelSharedMof,MixedKernelSeparateMof), SeparateMixedMok, object)
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
@@ -226,7 +226,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     - See the multiouput notebook for more information about the multiouput framework.
 
     """
-    logger.debug("conditional: MixedKernelSharedMof, SeparateMixedMok")
+    logger.debug("conditional: (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                  full_output_cov=False, white=white)  # N x L, L x N x N or N x L
@@ -257,7 +257,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 # Sample conditional
 # ------------------
 
-@sample_conditional.register(TensorArray, MixedKernelSharedMof, SeparateMixedMok, TensorArray)
+@sample_conditional.register(TensorArray, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, TensorArray)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
     """
@@ -269,7 +269,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
 
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
-    logger.debug("sample conditional: MixedKernelSharedMof, SeparateMixedMok")
+    logger.debug("sample conditional: (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
     if full_cov:
         raise NotImplementedError("full_cov not yet implemented")
     if full_output_cov:

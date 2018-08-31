@@ -291,6 +291,11 @@ def test_MixedMok_Kgg(session_tf):
     np.testing.assert_array_almost_equal(Kff, Kff_infered, decimal=5)
 
 
+
+
+
+
+
 # ------------------------------------------
 # Integration tests
 # ------------------------------------------
@@ -484,3 +489,21 @@ def test_multioutput_with_diag_q_sqrt(session_tf):
     m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
 
     check_equality_predictions(session_tf, [m1, m2])
+
+def test_MixedKernelSeparateMof(session_tf):
+    data = DataMixedKernel
+
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
+    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f1 = mf.SeparateIndependentMof(feat_list)
+    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
+    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f2 = mf.MixedKernelSeparateMof(feat_list)
+    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+
+    check_equality_predictions(session_tf, [m1, m2])
+
