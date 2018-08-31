@@ -283,10 +283,6 @@ class Stationary(Kernel):
         return tf.sqrt(tf.maximum(r2, 1e-40))
 
     def scaled_square_dist(self, X, X2):  # pragma: no cover
-        warnings.warn('scaled_square_dist is deprecated and will be removed '
-                      'in GPflow version 1.4.0. For stationary kernels, '
-                      'define K_r2(r2) instead.',
-                      DeprecationWarning)
         return self._scaled_square_dist(X, X2)
 
     def scaled_euclid_dist(self, X, X2):  # pragma: no cover
