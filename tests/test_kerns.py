@@ -505,6 +505,8 @@ class TestARDInit(GPflowTestCase):
             k2_variances = k2.weight_variances.read_value()
             self.assertTrue(np.all(k1_variances == k2_variances))
 
+def test_slice_active_dim_regression():
+    gpflow.kernels.RBF(3,active_dims=slice(0,3,1))
 
 if __name__ == "__main__":
     tf.test.main()
