@@ -175,7 +175,8 @@ class DataMixedKernel(Data):
 
 
 @pytest.mark.parametrize("cov_structure", ["full", "diag"])
-def test_sample_mvn(session_tf, cov_structure):
+@pytest.mark.parametrize("num_samples", [None, 1, 10])
+def test_sample_mvn(session_tf, cov_structure, num_samples):
     """
     Draws 10,000 samples from a distribution
     with known mean and covariance. The test checks
@@ -190,8 +191,15 @@ def test_sample_mvn(session_tf, cov_structure):
     elif cov_structure == "diag":
         covs = tf.ones((N, D), dtype=float_type)
 
-    samples = _sample_mvn(means, covs, cov_structure)
+    samples = _sample_mvn(means, covs, cov_structure, num_samples=num_samples)
     value = session_tf.run(samples)
+
+    if num_samples is None:
+        assert value.shape == (N, D)
+    else:
+        assert value.shape == (num_samples, N, D)
+        value = value.reshape(-1, D)
+
     samples_mean = np.mean(value, axis=0)
     samples_cov = np.cov(value, rowvar=False)
     np.testing.assert_array_almost_equal(samples_mean, [1., 1.], decimal=1)
