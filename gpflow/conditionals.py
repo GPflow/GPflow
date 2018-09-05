@@ -140,27 +140,29 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficient one.
 
-    :return: (S x) N x P
+    :return: samples, mean, cov
+        samples has shape [num_samples, N, P] or [N, P] if num_samples is None
+        mean and cov as for conditional()
     """
     if full_cov and full_output_cov:
         raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
                                   "implemented for sample_conditional.")
 
     logger.debug("sample conditional: InducingFeature Kernel")
-    mean, var = conditional(Xnew, feat, kern, f, q_sqrt=q_sqrt, white=white,
+    mean, cov = conditional(Xnew, feat, kern, f, q_sqrt=q_sqrt, white=white,
                             full_cov=full_cov, full_output_cov=full_output_cov)
     if full_cov:
         # mean: N x P
-        # var: P x N x N
+        # cov: P x N x N
         mean = tf.transpose(mean, [0, 1])  # now P x N
-        samples = _sample_mvn(mean, var, 'full', num_samples=num_samples)  # (S x) P x N
+        samples = _sample_mvn(mean, cov, 'full', num_samples=num_samples)  # (S x) P x N
         samples = tf.transpose(samples, [-1, -2])  # now (S x) N x P
 
     else:
         cov_structure = "full" if full_output_cov else "diag"
-        samples = _sample_mvn(mean, var, cov_structure, num_samples=num_samples)  # [(S,), N, P]
+        samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [(S,), N, P]
 
-    return samples, mean, var
+    return samples, mean, cov
 
 
 @sample_conditional.register(TensorArray, TensorArray, Kernel, TensorArray)
