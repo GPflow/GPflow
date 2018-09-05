@@ -507,7 +507,7 @@ class TestARDInit(GPflowTestCase):
 
 def test_slice_active_dim_regression(session_tf):
     """ Check that we can instantiate a kernel with active_dims given as a slice object """
-    gpflow.kernels.RBF(2,active_dims=slice(1,3,1))
+    gpflow.kernels.RBF(2, active_dims=slice(1, 3, 1))
 
 if __name__ == "__main__":
     tf.test.main()
