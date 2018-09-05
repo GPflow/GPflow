@@ -140,7 +140,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficient one.
 
-    :return: (S x) N x (P/D)
+    :return: (S x) N x P
     """
     if full_cov and full_output_cov:
         raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
