@@ -140,30 +140,25 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficient one.
 
-    :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
+    :return: (S x) N x (P/D)
     """
-    logger.debug("sample conditional: InducingFeature Kernel")
-    mean, var = conditional(Xnew, feat, kern, f, full_cov=full_cov, full_output_cov=full_output_cov,
-                            q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
-    if full_cov:
-        if full_output_cov:
-            raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
-                                      "implemented for sample_conditional.")
-        N, D = tf.shape(mean)[0], tf.shape(mean)[1]
-        S = num_samples
-        jittermat = settings.numerics.jitter_level * tf.eye(N, batch_shape=[D], dtype=settings.float_type)  # [D, N, N]
-        L = tf.cholesky(var + jittermat)  # [D, N, N]
-        nu = tf.random_normal([D, N, S], dtype=float_type)  # [D, N, S]
-        samples = mean[..., None] + tf.transpose(tf.matmul(L, nu), [1, 0, 2])  # [N, D, S]
-    else:
-        if num_samples is not None:
-            raise NotImplementedError("num_samples not yet implemented for full_cov=False")
-        cov_structure = "full" if full_output_cov else "diag"
-        samples = _sample_mvn(mean, var, cov_structure)  # [N, P]
-        samples = tf.expand_dims(samples, 2)  # [N, P, 1]
+    if full_cov and full_output_cov:
+        raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
+                                  "implemented for sample_conditional.")
 
-    if num_samples is None:
-        return samples[..., 0]  # [N, D] (full_cov) or [N, P] (not full_cov)
+    logger.debug("sample conditional: InducingFeature Kernel")
+    mean, var = conditional(Xnew, feat, kern, f, q_sqrt=q_sqrt, white=white,
+                            full_cov=full_cov, full_output_cov=full_output_cov)
+    if full_cov:
+        # mean: N x P
+        # var: P x N x N
+        mean = tf.transpose(mean, [0, 1])  # now P x N
+        samples = _sample_mvn(mean, var, 'full', num_samples=num_samples)  # (S x) P x N
+        samples = tf.transpose(samples, [-1, -2])  # now (S x) N x P
+
+    else:
+        cov_structure = "full" if full_output_cov else "diag"
+        samples = _sample_mvn(mean, var, cov_structure, num_samples=num_samples)  # [(S,), N, P]
 
     return samples, mean, var
 
@@ -354,7 +349,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 ########################## HELPERS ##############################
 # ---------------------------------------------------------------
 
-def _sample_mvn(mean, cov, cov_structure):
+def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution
     :param mean: N x D
@@ -364,17 +359,29 @@ def _sample_mvn(mean, cov, cov_structure):
     - "full": cov holds the full covariance matrix (without jitter)
     :return: sample from the MVN of shape N x D
     """
-    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # N x P
+    rank_mean = len(mean.get_shape())
+    rank_cov = len(cov.get_shape())
+    N, D = tf.shape(mean)[0], tf.shape(mean)[1]
+    # assert shape(cov) == (N, D) or (N, D, D)
+    S = num_samples if num_samples is not None else 1
+
     if cov_structure == "diag":
-        sample = mean + tf.sqrt(cov) * eps  # N x P
+        assert rank(cov) == rank(mean)
+        eps = tf.random_normal([S, N, D], dtype=settings.float_type)  # S x N x D
+        sample = mean + tf.sqrt(cov) * eps  # S x N x D
     elif cov_structure == "full":
-        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=settings.float_type) * settings.numerics.jitter_level)[None, ...]  # N x P x P
-        chol = tf.cholesky(cov)  # N x P x P
-        return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
+        assert rank(cov) == rank(mean) + 1
+        jittermat = settings.numerics.jitter_level * tf.eye(D, batch_shape=[N], dtype=settings.float_type)[None, ...]  # N x D x D
+        eps = tf.random_normal([N, D, S], dtype=settings.float_type)  # N x D x S
+        chol = tf.cholesky(cov + jittermat)  # N x D x D
+        samples = mean[..., None] + tf.matmul(chol, eps)  # N x D x S
+        samples = tf.transpose(samples, [2, 0, 1])  # S x N x D
     else:
         raise NotImplementedError  # pragma: no cover
 
-    return sample  # N x P
+    if num_samples is None:
+        return samples[..., 0]  # [N, D] (full_cov) or [N, P] (not full_cov)
+    return samples  # S x N x D
 
 def _expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
