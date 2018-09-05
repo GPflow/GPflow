@@ -368,12 +368,12 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     S = num_samples if num_samples is not None else 1
 
     if cov_structure == "diag":
-        assert rank(cov) == rank(mean)
+        assert rank_cov == rank_mean
         eps = tf.random_normal([S, N, D], dtype=settings.float_type)  # S x N x D
-        sample = mean + tf.sqrt(cov) * eps  # S x N x D
+        samples = mean + tf.sqrt(cov) * eps  # S x N x D
     elif cov_structure == "full":
-        assert rank(cov) == rank(mean) + 1
-        jittermat = settings.numerics.jitter_level * tf.eye(D, batch_shape=[N], dtype=settings.float_type)[None, ...]  # N x D x D
+        assert rank_cov == rank_mean + 1
+        jittermat = settings.numerics.jitter_level * tf.eye(D, batch_shape=[N], dtype=settings.float_type)  # N x D x D
         eps = tf.random_normal([N, D, S], dtype=settings.float_type)  # N x D x S
         chol = tf.cholesky(cov + jittermat)  # N x D x D
         samples = mean[..., None] + tf.matmul(chol, eps)  # N x D x S
@@ -382,7 +382,7 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         raise NotImplementedError  # pragma: no cover
 
     if num_samples is None:
-        return samples[..., 0]  # [N, D] (full_cov) or [N, P] (not full_cov)
+        return samples[0]  # N x D
     return samples  # S x N x D
 
 def _expand_independent_outputs(fvar, full_cov, full_output_cov):
