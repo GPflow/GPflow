@@ -154,9 +154,9 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     if full_cov:
         # mean: N x P
         # cov: P x N x N
-        mean = tf.transpose(mean, [0, 1])  # now P x N
+        mean = tf.matrix_transpose(mean)  # now P x N
         samples = _sample_mvn(mean, cov, 'full', num_samples=num_samples)  # (S x) P x N
-        samples = tf.transpose(samples, [-1, -2])  # now (S x) N x P
+        samples = tf.matrix_transpose(samples)  # now (S x) N x P
 
     else:
         cov_structure = "full" if full_output_cov else "diag"
