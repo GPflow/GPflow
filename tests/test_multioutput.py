@@ -214,11 +214,12 @@ def _create_feed_dict(placeholders_dict, value_dict):
 
 
 @pytest.mark.parametrize("whiten", [True, False])
-def test_sample_conditional(session_tf, whiten):
+@pytest.mark.parametrize("full_cov,full_output_cov", [(False, False), (False, True), (True, False)])
+def test_sample_conditional(session_tf, whiten, full_cov, full_output_cov):
     q_mu = np.random.randn(Data.M , Data.P)  # M x P
     q_sqrt = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
     Z = Data.X[:Data.M, ...]  # M x D
-    Xs = np.ones((int(10e5), Data.D), dtype=float_type)
+    Xs = np.ones((Data.N, Data.D), dtype=float_type)
 
     feature = InducingPoints(Z.copy())
     kernel = RBF(Data.D)
@@ -228,22 +229,29 @@ def test_sample_conditional(session_tf, whiten):
     feed_dict = _create_feed_dict(placeholders, values)
 
     # Path 1
-    sample = sample_conditional(placeholders["Xnew"], placeholders["Z"], kernel,
-                                placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten)
-    value, mean, var = session_tf.run(sample, feed_dict=feed_dict)
+    sample_f = sample_conditional(placeholders["Xnew"], feature, kernel,
+                                  placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten,
+                                  full_cov=full_cov, full_output_cov=full_output_cov, num_samples=int(1e5))
+    value_f, mean_f, var_f = session_tf.run(sample_f, feed_dict=feed_dict)
+    value_f = value_f.reshape((-1,) + value_f.shape[2:])
 
     # Path 2
-    sample2 = sample_conditional(placeholders["Xnew"], feature, kernel,
-                                 placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten)
-    value2, mean2, var2 = session_tf.run(sample2, feed_dict=feed_dict)
+    if full_output_cov:
+        pytest.skip("sample_conditional with X instead of feature does not support full_output_cov")
+
+    sample_x = sample_conditional(placeholders["Xnew"], placeholders["Z"], kernel,
+                                  placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten,
+                                  full_cov=full_cov, full_output_cov=full_output_cov, num_samples=int(1e5))
+    value_x, mean_x, var_x = session_tf.run(sample_x, feed_dict=feed_dict)
+    value_x = value_x.reshape((-1,) + value_x.shape[2:])
 
     # check if mean and covariance of samples are similar
-    np.testing.assert_array_almost_equal(np.mean(value, axis=0),
-                                         np.mean(value2, axis=0), decimal=1)
-    np.testing.assert_array_almost_equal(np.cov(value, rowvar=False),
-                                         np.cov(value2, rowvar=False), decimal=1)
-    np.testing.assert_allclose(mean, mean2)
-    np.testing.assert_allclose(var, var2)
+    np.testing.assert_array_almost_equal(np.mean(value_x, axis=0),
+                                         np.mean(value_f, axis=0), decimal=1)
+    np.testing.assert_array_almost_equal(np.cov(value_x, rowvar=False),
+                                         np.cov(value_f, rowvar=False), decimal=1)
+    np.testing.assert_allclose(mean_x, mean_f)
+    np.testing.assert_allclose(var_x, var_f)
 
 
 def test_sample_conditional_mixedkernel(session_tf):
