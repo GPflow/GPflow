@@ -237,7 +237,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
         if q_sqrt.get_shape().ndims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # R x M x N
         elif q_sqrt.get_shape().ndims == 3:
-            L = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
+            L = q_sqrt
             A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
             LTA = tf.matmul(L, A_tiled, transpose_a=True)  # R x M x N
         else:  # pragma: no cover
@@ -374,29 +374,32 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     - "full": cov holds the full covariance matrix (without jitter)
     :return: sample from the MVN of shape N x D
     """
-    rank_mean = len(mean.get_shape())
-    rank_cov = len(cov.get_shape())
     N, D = tf.shape(mean)[0], tf.shape(mean)[1]
     # assert shape(cov) == (N, D) or (N, D, D)
     S = num_samples if num_samples is not None else 1
+    cov_shape = tf.shape(cov)
+    with tf.control_dependencies([
+            tf.Assert((cov_shape == [N, D]) | (cov_shape == [N, D, D]))
+            ]):
 
-    if cov_structure == "diag":
-        assert rank_cov == rank_mean
-        eps = tf.random_normal([S, N, D], dtype=settings.float_type)  # S x N x D
-        samples = mean + tf.sqrt(cov) * eps  # S x N x D
-    elif cov_structure == "full":
-        assert rank_cov == rank_mean + 1
-        jittermat = settings.numerics.jitter_level * tf.eye(D, batch_shape=[N], dtype=settings.float_type)  # N x D x D
-        eps = tf.random_normal([N, D, S], dtype=settings.float_type)  # N x D x S
-        chol = tf.cholesky(cov + jittermat)  # N x D x D
-        samples = mean[..., None] + tf.matmul(chol, eps)  # N x D x S
-        samples = tf.transpose(samples, [2, 0, 1])  # S x N x D
-    else:
-        raise NotImplementedError  # pragma: no cover
+        if cov_structure == "diag":
+            with tf.control_dependencies([tf.assert_equal(tf.rank(mean), tf.rank(cov))]):
+                eps = tf.random_normal([S, N, D], dtype=settings.float_type)  # S x N x D
+                samples = mean + tf.sqrt(cov) * eps  # S x N x D
+        elif cov_structure == "full":
+            with tf.control_dependencies([tf.assert_equal(tf.rank(mean) + 1, tf.rank(cov))]):
+                jittermat = settings.numerics.jitter_level * \
+                            tf.eye(D, batch_shape=[N], dtype=settings.float_type)  # N x D x D
+                eps = tf.random_normal([N, D, S], dtype=settings.float_type)  # N x D x S
+                chol = tf.cholesky(cov + jittermat)  # N x D x D
+                samples = mean[..., None] + tf.matmul(chol, eps)  # N x D x S
+                samples = tf.transpose(samples, [2, 0, 1])  # S x N x D
+        else:
+            raise NotImplementedError  # pragma: no cover
 
-    if num_samples is None:
-        return samples[0]  # N x D
-    return samples  # S x N x D
+        if num_samples is None:
+            return samples[0]  # N x D
+        return samples  # S x N x D
 
 def _expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
