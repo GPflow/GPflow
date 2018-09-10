@@ -374,12 +374,14 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     - "full": cov holds the full covariance matrix (without jitter)
     :return: sample from the MVN of shape N x D
     """
-    N, D = tf.shape(mean)[0], tf.shape(mean)[1]
-    # assert shape(cov) == (N, D) or (N, D, D)
-    S = num_samples if num_samples is not None else 1
+    mean_shape = tf.shape(mean)
     cov_shape = tf.shape(cov)
+    N, D = mean_shape[0], mean_shape[1]
+    S = num_samples if num_samples is not None else 1
+    # assert shape(cov) == (N, D) or (N, D, D)
     with tf.control_dependencies([
-            tf.Assert((cov_shape == [N, D]) | (cov_shape == [N, D, D]))
+            tf.Assert(tf.equal(cov_shape[0], N) & tf.reduce_all(tf.equal(cov_shape[1:], D)),
+                      data=[mean_shape, cov_shape])
             ]):
 
         if cov_structure == "diag":
