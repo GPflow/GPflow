@@ -40,7 +40,7 @@ class Exponential(Prior):
         """
         Prior.__init__(self)
         self.rate = np.atleast_1d(np.array(rate, settings.float_type))
-        if rate <= 0:  # pragma: no cover
+        if (self.rate <= 0).any():  # pragma: no cover
             raise ValueError("The rate parameter has to be positive.")
 
     def logp(self, x):
@@ -51,7 +51,7 @@ class Exponential(Prior):
         return np.random.exponential(scale=1 / self.rate, size=shape)
 
     def __str__(self):
-        return "Exp({})".format(self.rate)
+        return "Exp({})".format(self.rate.squeeze())
 
 
 class Gaussian(Prior):
@@ -59,6 +59,8 @@ class Gaussian(Prior):
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.var = np.atleast_1d(np.array(var, settings.float_type))
+        if (self.var <= 0).any():  # pragma: no cover
+            raise ValueError("The var parameter has to be positive.")
 
     def logp(self, x):
         return tf.reduce_sum(logdensities.gaussian(x, self.mu, self.var))
@@ -67,7 +69,7 @@ class Gaussian(Prior):
         return self.mu + np.sqrt(self.var) * np.random.randn(*shape)
 
     def __str__(self):
-        return "N({},{})".format(self.mu, self.var)
+        return "N({},{})".format(self.mu.squeeze(), self.var.squeeze())
 
 
 class LogNormal(Prior):
@@ -75,6 +77,8 @@ class LogNormal(Prior):
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.var = np.atleast_1d(np.array(var, settings.float_type))
+        if (self.var <= 0).any():  # pragma: no cover
+            raise ValueError("The var parameter has to be positive.")
 
     def logp(self, x):
         return tf.reduce_sum(logdensities.lognormal(x, self.mu, self.var))
@@ -83,7 +87,7 @@ class LogNormal(Prior):
         return np.exp(self.mu + np.sqrt(self.var) * np.random.randn(*shape))
 
     def __str__(self):
-        return "logN({},{})".format(self.mu, self.var)
+        return "logN({},{})".format(self.mu.squeeze(), self.var.squeeze())
 
 
 class Gamma(Prior):
@@ -91,6 +95,8 @@ class Gamma(Prior):
         Prior.__init__(self)
         self.shape = np.atleast_1d(np.array(shape, settings.float_type))
         self.scale = np.atleast_1d(np.array(scale, settings.float_type))
+        if (self.scale <= 0).any():  # pragma: no cover
+            raise ValueError("The scale parameter has to be positive.")
 
     def logp(self, x):
         return tf.reduce_sum(logdensities.gamma(x, self.shape, self.scale))
@@ -99,7 +105,7 @@ class Gamma(Prior):
         return np.random.gamma(self.shape, self.scale, size=shape)
 
     def __str__(self):
-        return "Ga({},{})".format(self.shape, self.scale)
+        return "Ga({},{})".format(self.shape.squeeze(), self.scale.squeeze())
 
 
 class Laplace(Prior):
@@ -107,6 +113,8 @@ class Laplace(Prior):
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.sigma = np.atleast_1d(np.array(sigma, settings.float_type))
+        if (self.sigma <= 0).any():  # pragma: no cover
+            raise ValueError("The sigma parameter has to be positive.")
 
     def logp(self, x):
         return tf.reduce_sum(logdensities.laplace(x, self.mu, self.sigma))
@@ -115,7 +123,7 @@ class Laplace(Prior):
         return np.random.laplace(self.mu, self.sigma, size=shape)
 
     def __str__(self):
-        return "Lap.({},{})".format(self.mu, self.sigma)
+        return "Lap.({},{})".format(self.mu.squeeze(), self.sigma.squeeze())
 
 
 class Beta(Prior):
@@ -123,6 +131,8 @@ class Beta(Prior):
         Prior.__init__(self)
         self.a = np.atleast_1d(np.array(a, settings.float_type))
         self.b = np.atleast_1d(np.array(b, settings.float_type))
+        if (self.a <= 0).any() or (self.b <= 0).any():  # pragma: no cover
+            raise ValueError("The parameters have to be positive.")
 
     def logp(self, x):
         return tf.reduce_sum(logdensities.beta(x, self.a, self.b))
@@ -131,13 +141,15 @@ class Beta(Prior):
         return np.random.beta(self.a, self.b, size=shape)
 
     def __str__(self):
-        return "Beta({},{})".format(self.a, self.b)
+        return "Beta({},{})".format(self.a.squeeze(), self.b.squeeze())
 
 
 class Uniform(Prior):
     def __init__(self, lower=0., upper=1.):
         Prior.__init__(self)
         self.lower, self.upper = lower, upper
+        if lower >= upper:  # pragma: no cover
+            raise ValueError("The lower bound has to be smaller than the upper bound.")
 
     @property
     def log_height(self):
