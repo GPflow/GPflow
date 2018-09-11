@@ -98,7 +98,7 @@ class Parameterized(Node):
 
     @property
     def params(self):
-        for key, param in self.__dict__.items():
+        for key, param in sorted(self.__dict__.items()):
             if not key.startswith('_') and Parameterized._is_param_like(param):
                 yield param
 
