@@ -54,7 +54,7 @@ class Kernel(Parameterized):
         elif isinstance(active_dims, slice):
             self.active_dims = active_dims
             if active_dims.start is not None and active_dims.stop is not None and active_dims.step is not None:
-                assert len(range(*active_dims)) == input_dim  # pragma: no cover
+                assert len(range(active_dims.start, active_dims.stop, active_dims.step)) == input_dim  # pragma: no cover
         else:
             self.active_dims = np.array(active_dims, dtype=np.int32)
             assert len(active_dims) == input_dim
