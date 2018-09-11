@@ -23,7 +23,6 @@ from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
-from ..types import TensorArray
 
 
 logger = settings.logger()
@@ -257,7 +256,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 # Sample conditional
 # ------------------
 
-@sample_conditional.register(TensorArray, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, TensorArray)
+@sample_conditional.register(object, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, object)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
     """

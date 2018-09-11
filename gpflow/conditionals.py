@@ -22,7 +22,6 @@ from .expectations import expectation
 from .features import Kuu, Kuf, InducingPoints, InducingFeature
 from .kernels import Kernel, Combination
 from .probability_distributions import Gaussian
-from .types import TensorArray
 
 
 logger = settings.logger()
@@ -130,7 +129,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 # ----------------------------------------------------------------------------
 
 
-@sample_conditional.register(TensorArray, InducingFeature, Kernel, TensorArray)
+@sample_conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
     """
@@ -165,7 +164,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     return samples, mean, cov
 
 
-@sample_conditional.register(TensorArray, TensorArray, Kernel, TensorArray)
+@sample_conditional.register(object, object, Kernel, object)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=False, full_output_cov=False, num_samples=None):
     if full_cov and full_output_cov:
