@@ -258,7 +258,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
 @sample_conditional.register(object, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, object)
 @name_scope("sample_conditional")
-def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
+def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
     In most cases this means calculating the conditional mean m and variance v and then
@@ -269,13 +269,24 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
     logger.debug("sample conditional: (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
+    if full_cov:
+        raise NotImplementedError("full_cov not yet implemented")
+    if full_output_cov:
+        raise NotImplementedError("full_output_cov not yet implemented")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
                                    full_output_cov=False, full_cov=False)  # N x L, N x L
-    g_sample = _sample_mvn(g_mu, g_var, "diag")  # N x L
+    g_sample = _sample_mvn(g_mu, g_var, "diag", num_samples=num_samples)  # N x L
     with params_as_tensors_for(kern):
         f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
-    return f_sample
+        f_mu = tf.einsum("pl,nl->np", kern.W, g_mu)
+        # W g_var W.T
+        # [P, L] @ [L, L] @ [L, P]
+        # \sum_l,l' W_pl g_var_ll' W_p'l'
+        # \sum_l W_pl g_var_nl W_p'l
+        # -> 
+        f_var = tf.einsum("pl,nl,pl->np", kern.W, g_var, kern.W)
+    return f_sample, f_mu, f_var
 
 
 # -----------------
