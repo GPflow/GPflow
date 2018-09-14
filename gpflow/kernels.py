@@ -307,6 +307,7 @@ class Stationary(Kernel):
         Calculates the kernel matrix K(X, X2) (or K(X, X) if X2 is None).
         Handles the slicing as well as scaling and computes k(x, x') = k(r),
         where r² = ((x - x')/lengthscales)².
+
         Internally, this calls self.K_r2(r²), which in turn computes the
         square-root and calls self.K_r(r). Classes implementing stationary
         kernels can either overwrite `K_r2(r2)` if they only depend on the
