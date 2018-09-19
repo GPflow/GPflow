@@ -1,6 +1,6 @@
 # GPflow
 
-GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://www.lancaster.ac.uk/staff/hensmanj/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
+GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
 The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Artem Artemev, Rasmus Bonnevie, Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson, Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
 
 [![Python3.5 Status](https://travis-ci.org/GPflow/GPflow.svg?branch=master)](https://travis-ci.org/GPflow/GPflow)
@@ -9,7 +9,7 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 
 ## What does GPflow do?
 
-GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online user manual](http://gpflow.readthedocs.io/en/latest/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), for more discussion of the comparison see [this page](http://gpflow.readthedocs.io/en/latest/intro.html#what-s-the-difference-between-gpy-and-gpflow).
+GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online user manual (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), and the docs have further [discussion of the comparison](http://gpflow.readthedocs.io/en/develop/intro.html#what-s-the-difference-between-gpy-and-gpflow).
 
 GPflow uses [TensorFlow](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python 3.5 or above.
 
@@ -23,7 +23,7 @@ pip install .
 in the root folder. This also installs required dependencies including TensorFlow. When GPU support is needed, a manual installation of TensorFlow is recommended (next section), as one cannot rely on pip to get this running.
 
 ### 2) Alternative method
-A different option to install GPflow requires installation of TensorFlow first. Please see instructions on the main TensorFlow [webpage](https://www.tensorflow.org/versions/r1.3/get_started/get_started). You will need at least version 1.3 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend
+A different option to install GPflow requires installation of TensorFlow first. Please see [instructions on the main TensorFlow webpage](https://www.tensorflow.org/install/). You will need at least version 1.6 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend
 ```
 python setup.py develop
 ```
