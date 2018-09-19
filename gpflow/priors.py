@@ -40,7 +40,7 @@ class Exponential(Prior):
         """
         Prior.__init__(self)
         self.rate = np.atleast_1d(np.array(rate, settings.float_type))
-        if (self.rate <= 0).any():  # pragma: no cover
+        if any(self.rate <= 0):  # pragma: no cover
             raise ValueError("The rate parameter has to be positive.")
 
     def logp(self, x):
@@ -59,7 +59,7 @@ class Gaussian(Prior):
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.var = np.atleast_1d(np.array(var, settings.float_type))
-        if (self.var <= 0).any():  # pragma: no cover
+        if any(self.var <= 0):  # pragma: no cover
             raise ValueError("The var parameter has to be positive.")
 
     def logp(self, x):
@@ -77,7 +77,7 @@ class LogNormal(Prior):
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.var = np.atleast_1d(np.array(var, settings.float_type))
-        if (self.var <= 0).any():  # pragma: no cover
+        if any(self.var <= 0):  # pragma: no cover
             raise ValueError("The var parameter has to be positive.")
 
     def logp(self, x):
@@ -95,7 +95,7 @@ class Gamma(Prior):
         Prior.__init__(self)
         self.shape = np.atleast_1d(np.array(shape, settings.float_type))
         self.scale = np.atleast_1d(np.array(scale, settings.float_type))
-        if (self.scale <= 0).any():  # pragma: no cover
+        if any(self.scale <= 0):  # pragma: no cover
             raise ValueError("The scale parameter has to be positive.")
 
     def logp(self, x):
@@ -113,7 +113,7 @@ class Laplace(Prior):
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.sigma = np.atleast_1d(np.array(sigma, settings.float_type))
-        if (self.sigma <= 0).any():  # pragma: no cover
+        if any(self.sigma <= 0):  # pragma: no cover
             raise ValueError("The sigma parameter has to be positive.")
 
     def logp(self, x):
@@ -131,7 +131,7 @@ class Beta(Prior):
         Prior.__init__(self)
         self.a = np.atleast_1d(np.array(a, settings.float_type))
         self.b = np.atleast_1d(np.array(b, settings.float_type))
-        if (self.a <= 0).any() or (self.b <= 0).any():  # pragma: no cover
+        if any(self.a <= 0) or any(self.b <= 0):  # pragma: no cover
             raise ValueError("The parameters have to be positive.")
 
     def logp(self, x):
