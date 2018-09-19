@@ -1,3 +1,7 @@
+# Unmaintained demo script
+# see the GP Regression notebook in the GPflow documentation,
+# https://gpflow.readthedocs.io/en/develop/notebooks/regression.html
+
 import gpflow
 import tensorflow as tf
 import os

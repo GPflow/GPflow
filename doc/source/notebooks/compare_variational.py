@@ -1,3 +1,5 @@
+# Unmaintained demo script
+
 import gpflow
 import numpy as np
 from matplotlib import pyplot as plt
