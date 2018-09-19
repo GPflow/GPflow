@@ -28,11 +28,13 @@ def optimizeModel(m):
 
 def setModelPriors(m):
     #we'll choose rather arbitrary priors.
+    m.clear()
     m.kern.lengthscales.prior = gpflow.priors.Gamma(1., 1.)
     m.kern.variance.prior = gpflow.priors.Gamma(1., 1.)
     m.likelihood.variance.prior = gpflow.priors.Gamma(1., 1.)
     m.mean_function.A.prior = gpflow.priors.Gaussian(0., 10.)
     m.mean_function.b.prior = gpflow.priors.Gaussian(0., 10.)
+    m.compile()
     print("model with priors ", m)
 
 def getSamples(m):
