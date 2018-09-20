@@ -27,142 +27,96 @@ from .params import Parameter, Parameterized, ParamList
 from .decors import params_as_tensors, autoflow
 
 
-class Kernel(Parameterized):
+class Kernel(Module):
     """
-    The basic kernel class. Handles input_dim and active dims, and provides a
-    generic '_slice' function to implement them.
+    The basic kernel class. Handles active dims.
     """
 
-    def __init__(self, input_dim, active_dims=None, name=None):
+    def __init__(self, active_dims=None):
         """
-        input dim is an integer
-        active dims is either an iterable of integers or None.
-
-        Input dim is the number of input dimensions to the kernel. If the
-        kernel is computed on a matrix X which has more columns than input_dim,
-        then by default, only the first input_dim columns are used. If
-        different columns are required, then they may be specified by
-        active_dims.
-
-        If active dims is None, it effectively defaults to range(input_dim),
-        but we store it as a slice for efficiency.
         """
-        super().__init__(name=name)
-        self.input_dim = int(input_dim)
-        if active_dims is None:
-            self.active_dims = slice(input_dim)
-        elif isinstance(active_dims, slice):
-            self.active_dims = active_dims
-            if active_dims.start is not None and active_dims.stop is not None and active_dims.step is not None:
-                assert len(range(*active_dims)) == input_dim  # pragma: no cover
-        else:
-            self.active_dims = np.array(active_dims, dtype=np.int32)
-            assert len(active_dims) == input_dim
+        super().__init__()
+        self.active_dims = active_dims
 
-    def _validate_ard_shape(self, name, value, ARD=None):
-        """
-        Validates the shape of a potentially ARD hyperparameter
+    @property
+    def active_dims(self):
+        return self._active_dims
 
-        :param name: The name of the parameter (used for error messages)
-        :param value: A scalar or an array.
-        :param ARD: None, False, or True. If None, infers ARD from shape of value.
-        :return: Tuple (value, ARD), where _value_ is a scalar if input_dim==1 or not ARD, array otherwise.
-            The _ARD_ is False if input_dim==1 or not ARD, True otherwise.
-        """
-        if ARD is None:
-            ARD = np.asarray(value).squeeze().shape != ()
+    @active_dims.setter
+    def active_dims(self, value):
+        if value is None:
+            value = full_slice
+        if not isinstance(value, slice):
+            value = np.array(value, dtype=np.int32)
+        self._active_dims = value
 
-        if ARD:
-            # accept float or array:
-            value = value * np.ones(self.input_dim, dtype=settings.float_type)
-
-        if self.input_dim == 1 or not ARD:
-            correct_shape = ()
-        else:
-            correct_shape = (self.input_dim,)
-
-        if np.asarray(value).squeeze().shape != correct_shape:
-            raise ValueError("shape of {} does not match input_dim".format(name))
-
-        return value, ARD
-
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]))
-    def compute_K(self, X, Z):
-        return self.K(X, Z)
-
-    @autoflow((settings.float_type, [None, None]))
-    def compute_K_symm(self, X):
-        return self.K(X)
-
-    @autoflow((settings.float_type, [None, None]))
-    def compute_Kdiag(self, X):
-        return self.Kdiag(X)
-
-    def on_separate_dims(self, other_kernel):
+    def on_separate_dims(self, other):
         """
         Checks if the dimensions, over which the kernels are specified, overlap.
         Returns True if they are defined on different/separate dimensions and False otherwise.
         """
-        if isinstance(self.active_dims, slice) or isinstance(other_kernel.active_dims, slice):
+        if isinstance(self.active_dims, slice) or isinstance(other.active_dims, slice):
             # Be very conservative for kernels defined over slices of dimensions
             return False
 
-        if np.any(self.active_dims.reshape(-1, 1) == other_kernel.active_dims.reshape(1, -1)):
-            return False
+        this_dims = self.active_dims.reshape(-1, 1)
+        other_dims = other.active_dims.reshape(1, -1)
+        return not np.any(this_dims == other_dims)
 
-        return True
-
-    def _slice(self, X, X2):
+    def slice(self, X: th.Tensor, Y: Optional[th.Tensor] = None):
         """
-        Slice the correct dimensions for use in the kernel, as indicated by
-        `self.active_dims`.
-        :param X: Input 1 (NxD).
-        :param X2: Input 2 (MxD), may be None.
-        :return: Sliced X, X2, (Nxself.input_dim).
+        Slice the correct dimensions for use in the kernel, as indicated by `self.active_dims`.
+            :param X: Input 1 (N×D).
+            :param Y: Input 2 (M×D), can be None.
+            :return: Sliced X, Y, (N×I), I - input dimention.
         """
-        if isinstance(self.active_dims, slice):
-            X = X[:, self.active_dims]
-            if X2 is not None:
-                X2 = X2[:, self.active_dims]
-        else:
-            X = tf.transpose(tf.gather(tf.transpose(X), self.active_dims))
-            if X2 is not None:
-                X2 = tf.transpose(tf.gather(tf.transpose(X2), self.active_dims))
-        input_dim_shape = tf.shape(X)[1]
-        input_dim = tf.convert_to_tensor(self.input_dim, dtype=settings.tf_int)
-        with tf.control_dependencies([tf.assert_equal(input_dim_shape, input_dim)]):
-            X = tf.identity(X)
+        X = X[..., self.active_dims]
+        Y = Y[..., self.active_dims] if Y is not None else X
+        return X, Y
 
-        return X, X2
-
-    def _slice_cov(self, cov):
+    def slice_cov(self, cov: th.Tensor):
         """
         Slice the correct dimensions for use in the kernel, as indicated by
         `self.active_dims` for covariance matrices. This requires slicing the
         rows *and* columns. This will also turn flattened diagonal
         matrices into a tensor of full diagonal matrices.
-        :param cov: Tensor of covariance matrices (NxDxD or NxD).
-        :return: N x self.input_dim x self.input_dim.
+            :param cov: Tensor of covariance matrices, (𝖭×𝖣×𝖣) or (𝖭×𝖣).
+            :return: (𝖭×I×I).
         """
-        cov = tf.cond(tf.equal(tf.rank(cov), 2), lambda: tf.matrix_diag(cov), lambda: cov)
+        if cov.dim() == 2:
+            cov = matrix_diag(cov)
 
-        if isinstance(self.active_dims, slice):
-            cov = cov[..., self.active_dims, self.active_dims]
-        else:
-            cov_shape = tf.shape(cov)
-            covr = tf.reshape(cov, [-1, cov_shape[-1], cov_shape[-1]])
-            gather1 = tf.gather(tf.transpose(covr, [2, 1, 0]), self.active_dims)
-            gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), self.active_dims)
-            cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat([cov_shape[:-2], [len(self.active_dims), len(self.active_dims)]], 0))
-        return cov
+        act_dims = self.active_dims
+        if isinstance(act_dims, slice):
+            return cov[..., self.active_dims, self.active_dims]
+
+        N = cov.size(0)
+        I = len(act_dims)
+        covr = tf.reshape(cov, (-1, cov.size(-1), cov.size(-1)))
+        return tf.reshape(covr[..., act_dims, act_dims], (N, I, I))
+
+    @abstractmethod
+    def K(self, X, Y=None, presliced=False):
+        pass
+
+    @abstractmethod
+    def Kdiag(self, X, presliced=False):
+        pass
+
+    def call(X, Y=None, presliced=False, cov_struct=covstruct.diag):
+        is_diag = conv_stuct is covstruct.diag
+        if is_diag and Y is not None:
+            raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
+        if is_diag:
+            return self.Kdiag(X, presliced=presliced)
+        return self.K(X, Y, presliced=presliced)
 
     def __add__(self, other):
         return Sum([self, other])
 
     def __mul__(self, other):
         return Product([self, other])
+
 
 
 class Static(Kernel):
