@@ -601,30 +601,31 @@ class TestMonitorIntegration(TestCase):
         parameters. Also checks that it sets the `optimiser_updated` flag to True.
         """
 
-        model = create_linear_model()
-        optimiser = gpflow.train.ScipyOptimizer()
-        context = mon.MonitorContext()
-        context.session = model.enquire_session()
-        context.optimiser = optimiser
-        w, b, var = model.w.value, model.b.value, model.var.value
-        call_count = 0
+        with session_context(tf.Graph()):
+            model = create_linear_model()
+            optimiser = gpflow.train.ScipyOptimizer()
+            context = mon.MonitorContext()
+            context.session = model.enquire_session()
+            context.optimiser = optimiser
+            w, b, var = model.w.value, model.b.value, model.var.value
+            call_count = 0
 
-        def step_callback(*args, **kwargs):
-            nonlocal model, optimiser, context, w, b, var, call_count
-            context.optimiser_updated = False
-            mon.update_optimiser(context, *args, **kwargs)
-            w_new, b_new, var_new = model.enquire_session().run([model.w.unconstrained_tensor,
-                                                                 model.b.unconstrained_tensor,
-                                                                 model.var.unconstrained_tensor])
-            self.assertTrue(np.alltrue(np.not_equal(w, w_new)))
-            self.assertTrue(np.alltrue(np.not_equal(b, b_new)))
-            self.assertTrue(np.alltrue(np.not_equal(var, var_new)))
-            self.assertTrue(context.optimiser_updated)
-            call_count += 1
-            w, b, var = w_new, b_new, var_new
+            def step_callback(*args, **kwargs):
+                nonlocal model, optimiser, context, w, b, var, call_count
+                context.optimiser_updated = False
+                mon.update_optimiser(context, *args, **kwargs)
+                w_new, b_new, var_new = model.enquire_session().run([model.w.unconstrained_tensor,
+                                                                     model.b.unconstrained_tensor,
+                                                                     model.var.unconstrained_tensor])
+                self.assertTrue(np.alltrue(np.not_equal(w, w_new)))
+                self.assertTrue(np.alltrue(np.not_equal(b, b_new)))
+                self.assertTrue(np.alltrue(np.not_equal(var, var_new)))
+                self.assertTrue(context.optimiser_updated)
+                call_count += 1
+                w, b, var = w_new, b_new, var_new
 
-        optimiser.minimize(model, maxiter=10, step_callback=step_callback)
-        self.assertGreater(call_count, 0)
+            optimiser.minimize(model, maxiter=10, step_callback=step_callback)
+            self.assertGreater(call_count, 0)
 
     def _optimise_model(self, model: gpflow.models.Model,
                         optimise_func: Callable[[gpflow.models.Model, Callable, tf.Variable], None],
