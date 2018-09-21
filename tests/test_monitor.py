@@ -34,7 +34,7 @@ from gpflow.test_util import session_context
 class _DummyMonitorTask(mon.MonitorTask):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(True)
         self.call_count = 0
 
     def run(self, context: mon.MonitorContext, *args, **kwargs):
@@ -73,7 +73,8 @@ class TestMonitor(TestCase):
         Tests how the Monitor keeps track of the total running time and total optimisation time.
         """
         mock_timer.side_effect = [1.0, 3.5, 4.0, 6.0, 7.0]
-        monitor = mon.Monitor([])
+        context = mon.MonitorContext()
+        monitor = mon.Monitor([], context=context)
         # In each call to the _on_iteration the timer is called twice - at the beginning and at
         # the end of the call.
         monitor._on_iteration()
@@ -548,20 +549,25 @@ class TestMonitorIntegration(TestCase):
         with session_context(tf.Graph()):
             self._optimise_model(create_linear_model(), optimise, True)
 
-    def test_with_scipy_optimiser(self):
+    @mock.patch('gpflow.training.monitor.update_optimiser')
+    def test_with_scipy_optimiser(self, update_optimiser):
         """
         Tests the monitor with the Scipy optimiser
         """
+
+        optimiser = gpflow.train.ScipyOptimizer()
 
         def optimise(model, step_callback, _) -> None:
             """
             Optimisation function that creates and calls ScipyOptimizer optimiser.
             """
-            optimiser = gpflow.train.ScipyOptimizer()
+            nonlocal optimiser
             optimiser.minimize(model, maxiter=10, step_callback=step_callback)
 
         with session_context(tf.Graph()):
-            self._optimise_model(create_linear_model(), optimise)
+            self._optimise_model(create_linear_model(), optimise, optimiser=optimiser)
+
+        self.assertGreater(update_optimiser.call_count, 0)
 
     def test_with_natgrad_optimiser(self):
         """
@@ -581,7 +587,7 @@ class TestMonitorIntegration(TestCase):
             optimiser.minimize(model, maxiter=10, var_list=var_list, step_callback=step_callback)
 
         with session_context(tf.Graph()):
-            # NatGrad optimiser works only with variational parameters. So we can't user the
+            # NatGrad optimiser works only with variational parameters. So we can't use the
             # dummy linear model here.
             model_data = create_leaner_model_data(20)
             z = np.linspace(0, 1, 5)[:, None]
@@ -589,9 +595,40 @@ class TestMonitorIntegration(TestCase):
                                        gpflow.likelihoods.Gaussian(), Z=z)
             self._optimise_model(model, optimise)
 
+    def test_update_scipy_optimiser(self):
+        """
+        Checks that the `update_optimiser` function sets the ScipyOptimizer state to the model
+        parameters. Also checks that it sets the `optimiser_updated` flag to True.
+        """
+
+        model = create_linear_model()
+        optimiser = gpflow.train.ScipyOptimizer()
+        context = mon.MonitorContext()
+        context.session = model.enquire_session()
+        context.optimiser = optimiser
+        w, b, var = model.w.value, model.b.value, model.var.value
+        call_count = 0
+
+        def step_callback(*args, **kwargs):
+            nonlocal model, optimiser, context, w, b, var, call_count
+            context.optimiser_updated = False
+            mon.update_optimiser(context, *args, **kwargs)
+            w_new, b_new, var_new = model.enquire_session().run([model.w.unconstrained_tensor,
+                                                                 model.b.unconstrained_tensor,
+                                                                 model.var.unconstrained_tensor])
+            self.assertTrue(np.alltrue(np.not_equal(w, w_new)))
+            self.assertTrue(np.alltrue(np.not_equal(b, b_new)))
+            self.assertTrue(np.alltrue(np.not_equal(var, var_new)))
+            self.assertTrue(context.optimiser_updated)
+            call_count += 1
+            w, b, var = w_new, b_new, var_new
+
+        optimiser.minimize(model, maxiter=10, step_callback=step_callback)
+        self.assertGreater(call_count, 0)
+
     def _optimise_model(self, model: gpflow.models.Model,
                         optimise_func: Callable[[gpflow.models.Model, Callable, tf.Variable], None],
-                        use_global_step: Optional[bool]=False) -> None:
+                        use_global_step: Optional[bool]=False, optimiser=None) -> None:
         """
         Runs optimisation test with given model and optimisation function.
         :param model: Model derived from `gpflow.models.Model`
@@ -608,7 +645,8 @@ class TestMonitorIntegration(TestCase):
         lml_before = model.compute_log_likelihood()
 
         # Run optimisation
-        with mon.Monitor([monitor_task], session, global_step_tensor) as monitor:
+        with mon.Monitor([monitor_task], session, global_step_tensor, optimiser=optimiser) \
+                as monitor:
             optimise_func(model, monitor, global_step_tensor)
 
         lml_after = model.compute_log_likelihood()
