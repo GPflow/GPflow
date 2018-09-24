@@ -186,7 +186,7 @@ def update_optimiser(context, *args, **kwargs) -> None:
     if context.optimiser is None or context.optimiser_updated:
         return
 
-    if isinstance(context.optimiser, ScipyOptimizer):
+    if isinstance(context.optimiser, ScipyOptimizer) and len(args) > 0:
 
         optimizer = context.optimiser.optimizer  # get access to ExternalOptimizerInterface
         var_vals = [args[0][packing_slice] for packing_slice in optimizer._packing_slices]
@@ -241,7 +241,7 @@ class MonitorContext(object):
         current iteration number.
         """
         if self.session is None or self.global_step_tensor is None:
-            return self.iteration_no
+            return self.iteration_no + self.init_global_step
         else:
             return self.session.run(self.global_step_tensor)
 
@@ -374,6 +374,7 @@ class Monitor(object):
 
         self._monitor_tasks = list(monitor_tasks)
         self._context = context or MonitorContext()
+        self._context.optimisation_finished = False
         if session is not None:
             self._context.session = session
         if global_step_tensor is not None:
