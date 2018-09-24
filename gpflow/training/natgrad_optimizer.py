@@ -66,9 +66,8 @@ class NatGradOptimizer(optimizer.Optimizer):
             :param anchor: Synchronize updated parameters for a session with internal
                 parameter's values.
             :param step_callback: A callback function to execute at each optimization step.
-                The function should accept variable argument list. Currently the function is called
-                with no arguments but this may change in the future. For instance the values of
-                trainable variables may be provided.
+                The callback should accept variable argument list, where first argument is
+                optimization step number.
             :type step_callback: Callable[[], None]
             :param kwargs: Extra parameters passed to session run's method.
         """
@@ -80,10 +79,10 @@ class NatGradOptimizer(optimizer.Optimizer):
         session = model.enquire_session(session)
         opt = self.make_optimize_action(model, session=session, var_list=var_list, **kwargs)
         with session.as_default():
-            for _i in range(maxiter):
-                result = opt()
+            for step in range(maxiter):
+                opt()
                 if step_callback is not None:
-                    step_callback(result)
+                    step_callback(step)
         if anchor:
             model.anchor(session)
 
@@ -353,7 +352,7 @@ def natural_to_meanvarsqrt(nat_1, nat_2):
     mu = tf.matmul(S, nat_1)
     # We need the decomposition of S as L L^T, not as L^T L,
     # hence we need another cholesky.
-    return mu, _cholesky_with_jitter(S)
+    return mu, tf.cholesky(S)
 
 
 @swap_dimensions
@@ -376,24 +375,13 @@ def expectation_to_natural(eta_1, eta_2):
 @swap_dimensions
 def expectation_to_meanvarsqrt(eta_1, eta_2):
     var = eta_2 - tf.matmul(eta_1, eta_1, transpose_b=True)
-    return eta_1, _cholesky_with_jitter(var)
+    return eta_1, tf.cholesky(var)
 
 
 @swap_dimensions
 def meanvarsqrt_to_expectation(m, v_sqrt):
     v = tf.matmul(v_sqrt, v_sqrt, transpose_b=True)
     return m, v + tf.matmul(m, m, transpose_b=True)
-
-
-def _cholesky_with_jitter(M):
-    """
-    Add jitter and take Cholesky
-
-    :param M: Tensor of shape NxNx...N
-    :return: The Cholesky decomposition of the input `M`. It's a `tf.Tensor` of shape ...xNxN
-    """
-    N = tf.shape(M)[-1]
-    return tf.cholesky(M + settings.jitter * tf.eye(N, dtype=M.dtype))
 
 def _inverse_lower_triangular(M):
     """
