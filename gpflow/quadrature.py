@@ -98,7 +98,12 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool=False, **Ys):
     using Gauss-Hermite quadrature. The Gaussians must be independent.
 
     :param funcs: the integrand(s):
-        Callable or Iterable of Callables that operates elementwise
+        Callable or Iterable of Callables that operates elementwise, on the following arguments:
+        - `Din` positional arguments to match Fmu and Fvar; i.e., 1 if Fmu and Fvar are tensors;
+          otherwise len(Fmu) (== len(Fvar)) positional arguments F1, F2, ...
+        - the same keyword arguments as given by **Ys
+        All arguments will be tensors of shape (N, 1)
+
     :param H: number of Gauss-Hermite quadrature points
     :param Fmu: array/tensor or `Din`-tuple/list thereof
     :param Fvar: array/tensor or `Din`-tuple/list thereof
@@ -106,8 +111,45 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool=False, **Ys):
         the log-expectation of exp(funcs)
     :param **Ys: arrays/tensors; deterministic arguments to be passed by name
 
-    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    Fmu, Fvar, Ys should all have same shape, with overall size `N` (i.e., shape (N,) or (N, 1))
     :return: shape is the same as that of the first Fmu
+
+
+    Example use-cases:
+
+        Fmu, Fvar are mean and variance of the latent GP, can be shape (N, 1) or (N,)
+        m1, m2 are 'scalar' functions of a single argument F, broadcasting over arrays
+
+        Em1, Em2 = ndiagquad([m1, m2], 50, Fmu, Fvar)
+            calculates Em1 = ∫ m1(F) N(F; Fmu, Fvar) dF and Em2 = ∫ m2(F) N(F; Fmu, Fvar) dF
+            for each of the elements of Fmu and Fvar. Em1 and Em2 have the same shape as Fmu.
+
+        logp is a 'scalar' function of F and Y
+        Y are the observations, with shape (N,) or (N, 1) with same length as Fmu and Fvar
+
+        Ev = ndiagquad(logp, 50, Fmu, Fvar, Y=Y)
+            calculates Ev = ∫ logp(F, Y) N(F; Fmu, Fvar) dF (variational expectations)
+            for each of the elements of Y, Fmu and Fvar. Ev has the same shape as Fmu.
+
+        Ep = ndiagquad(logp, 50, Fmu, Fvar, logspace=True, Y=Y)
+            calculates Ep = log ∫ exp(logp(F, Y)) N(F; Fmu, Fvar) dF (predictive density)
+            for each of the elements of Y, Fmu and Fvar. Ep has the same shape as Fmu.
+
+        Heteroskedastic likelihoods:
+        g1, g2 are now functions of both F and G
+        logp is a function of F, G and Y
+        Gmu, Gvar are mean and variance of a different GP controlling the variance
+
+        Em = ndiagquad(m1, 50, Fmu, Fvar)
+            -> Em1 = ∫∫ m1(F, G) N(F; Fmu, Fvar) N(G; Gmu, Gvar) dF dG
+
+        Ev = ndiagquad(logp, 50, Fmu, Fvar, Y=Y)
+            -> Ev = ∫∫ logp(F, G, Y) N(F; Fmu, Fvar) N(G; Gmu, Gvar) dF dG
+               (variational expectations)
+
+        Ep = ndiagquad(logp, 50, Fmu, Fvar, logspace=True, Y=Y)
+            -> Ep = log ∫∫ exp(logp(F, G, Y)) N(F; Fmu, Fvar) N(G; Gmu, Gvar) dF dG
+               (predictive density)
     """
     def unify(f_list):
         """

@@ -160,7 +160,7 @@ class SharedMixedMok(Mok):
     """
 
     def __init__(self, kern: Kernel, W: np.ndarray, name: Optional[str]=None):
-        super().__init__(self, kern.input_dim, name)
+        super().__init__(kern.input_dim, name)
         self.kern = kern
         self.output_dim, self.latent_dim = W.shape  # P, L
         self.W = Parameter(W)  # P x L

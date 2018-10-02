@@ -20,7 +20,7 @@ from . import settings
 from .params import Parameter
 from .params import Parameterized
 from .params import ParamList
-from .decors import params_as_tensors
+from .decors import params_as_tensors, autoflow
 
 
 class MeanFunction(Parameterized):
@@ -42,6 +42,10 @@ class MeanFunction(Parameterized):
 
     def __mul__(self, other):
         return Product(self, other)
+
+    @autoflow((settings.float_type, [None, None]))
+    def eval(self, X):
+        return self.__call__(X)
 
 
 class Linear(MeanFunction):

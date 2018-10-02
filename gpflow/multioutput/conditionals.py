@@ -19,10 +19,10 @@ from ..conditionals import (_expand_independent_outputs, _sample_mvn,
                             base_conditional)
 from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
-from ..features import InducingPoints
-from ..kernels import Combination
+from ..features import InducingPoints, InducingFeature
+from ..kernels import Combination, Kernel
 from .features import (Kuf, Kuu, MixedKernelSharedMof, SeparateIndependentMof,
-                       SharedIndependentMof)
+                       SharedIndependentMof, MixedKernelSeparateMof)
 from .kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
                       SharedIndependentMok, SharedMixedMok)
 
@@ -208,6 +208,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
 
 @conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
+@conditional.register(object, MixedKernelSeparateMof, SeparateMixedMok, object)
+# @conditional.register(object, MixedKernelSeparateMof, SharedMixedMok, object)
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
@@ -226,7 +228,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     - See the multiouput notebook for more information about the multiouput framework.
 
     """
-    logger.debug("conditional: MixedKernelSharedMof, SeparateMixedMok")
+    logger.debug("conditional: (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                  full_output_cov=False, white=white)  # N x L, L x N x N or N x L
@@ -256,13 +258,37 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 @conditional.register(object, MixedKernelSharedMof, SharedMixedMok, object)
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
-    raise NotImplementedError
+    logger.debug("conditional: (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
+    independent_cond = conditional.dispatch(object, InducingFeature, Kernel, object)
+    gmu, gvar = independent_cond(Xnew, feat.feat, kern.kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
+                                 full_output_cov=False, white=white)  # N x L, L x N x N or N x L
+
+    gmu = tf.matrix_transpose(gmu)  # L x N
+    if not full_cov:
+        gvar = tf.matrix_transpose(gvar)  # L x N (x N)
+
+    Wgmu = tf.tensordot(gmu, kern.W, [[0], [1]])  # N x P
+
+    if full_output_cov:
+        Wt_expanded = tf.matrix_transpose(kern.W)[:, None, :]  # L x 1 x P
+        if full_cov:
+            Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # L x 1 x P x 1
+
+        gvarW = tf.expand_dims(gvar, axis=2) * Wt_expanded  # L x N x P (x N)
+        WgvarW = tf.tensordot(gvarW, kern.W, [[0], [1]])  # N x P (x N) x P
+    else:
+        if not full_cov:
+            WgvarW = tf.tensordot(gvar, kern.W ** 2, [[0], [1]])  # N x P
+        else:
+            WgvarW = tf.tensordot(kern.W ** 2, gvar, [[1], [0]])  # P x N (x N)
+
+    return Wgmu, WgvarW
 
 # ------------------
 # Sample conditional
 # ------------------
 
-@sample_conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
+@sample_conditional.register(object, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, object)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
     """
@@ -274,7 +300,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
 
     :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
     """
-    logger.debug("sample conditional: MixedKernelSharedMof, SeparateMixedMok")
+    logger.debug("sample conditional: (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
                                    full_output_cov=False, full_cov=False)  # N x L, N x L
