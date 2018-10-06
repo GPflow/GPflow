@@ -22,7 +22,8 @@ requirements = [
     'multipledispatch>=0.4.9',
     'pytest>=3.5.0',
     'h5py>=2.7.0',
-    'matplotlib>=2.2.2'
+    'matplotlib>=2.2.2',
+    'tensorflow-probability'
 ]
 
 min_tf_version = '1.5.0'

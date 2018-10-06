@@ -13,15 +13,12 @@
 # limitations under the License.
 
 import abc
+from typing import Tuple, Optional
 
 import numpy as np
 import tensorflow as tf
 
-from .. import settings
-from ..core.compilable import Build
-from ..params import Parameterized, DataHolder
-from ..decors import autoflow
-from ..mean_functions import Zero
+from ..base import Parameter, Module
 
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
@@ -44,12 +41,12 @@ class BayesianModel(Module):
             return 0
         return tf.add_n([p.log_prior() for p in self.parameters])
 
-    @abstractmethod
+    @abc.abstractmethod
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         pass
 
 
-class GPModel(BaysianModel):
+class GPModel(BayesianModel):
     """
     A base class for Gaussian process models, that is, those of the form
 
@@ -98,18 +95,19 @@ class GPModel(BaysianModel):
     def predict_f(self, X: tf.Tensor, cov_struct=None) -> MeanAndVariance:
         pass
 
-    def predict_f_samples(self, X, num_samples):
+    def predict_f_samples(self, X, num_samples, jitter=None):
         """
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
+        jitter = make_jitter(jitter)
         mu, var = self.predict_f(X, cov_struct=covstruct.full)  # [N, P] or [P, N, N]
-        jitter = tf.eye(tf.shape(mu)[0], dtype=X.dtype) * settings.numerics.jitter_level
-        samples = []
+        jitter = tf.eye(tf.shape(mu)[0], dtype=X.dtype) * jitter
+        samples = [None] * self.num_latent
         for i in range(self.num_latent):
             L = tf.cholesky(var[i, :, :] + jitter)
             shape = tf.stack([tf.shape(L)[0], num_samples])
-            V = tf.random_normal(shape, dtype=settings.float_type, seed=self.seed)
+            V = tf.random_normal(shape, dtype=L.dtype, seed=self.seed)
             samples[i] = mu[:, i:(i+1)] + L @ V
         return tf.matrix_transpose(tf.stack(samples))
 

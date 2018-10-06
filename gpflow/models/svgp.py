@@ -20,11 +20,8 @@ from .. import kullback_leiblers, features
 from .. import settings
 from .. import transforms
 from ..conditionals import conditional, Kuu
-from ..decors import params_as_tensors
 from ..models.model import GPModel
-from ..params import DataHolder
-from ..params import Minibatch
-from ..params import Parameter
+from ..base import Parameter
 
 
 class SVGP(GPModel):
@@ -43,17 +40,18 @@ class SVGP(GPModel):
 
     """
 
-    def __init__(self, X, Y, kern, likelihood, feat=None,
+    def __init__(self,
+                 kernel,
+                 likelihood,
+                 feat=None,
                  mean_function=None,
                  num_latent=None,
                  q_diag=False,
-                 whiten=True,
-                 minibatch_size=None,
                  Z=None,
-                 num_data=None,
                  q_mu=None,
                  q_sqrt=None,
-                 **kwargs):
+                 whiten=True,
+                 num_data=None):
         """
         - X is a data matrix, size N x D
         - Y is a data matrix, size N x P
@@ -69,18 +67,11 @@ class SVGP(GPModel):
         - num_data is the total number of observations, default to X.shape[0]
           (relevant when feeding in external minibatches)
         """
-        # sort out the X, Y into MiniBatch objects if required.
-        if minibatch_size is None:
-            X = DataHolder(X)
-            Y = DataHolder(Y)
-        else:
-            X = Minibatch(X, batch_size=minibatch_size, seed=0)
-            Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
-
         # init the super class, accept args
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
-        self.num_data = num_data or X.shape[0]
-        self.q_diag, self.whiten = q_diag, whiten
+        super().__init__(kernel, likelihood, mean_function, num_latent)
+        self.num_data = num_data
+        self.q_diag = q_diag
+        self.whiten = whiten
         self.feature = features.inducingpoint_wrapper(feat, Z)
 
         # init variational parameters
@@ -124,49 +115,36 @@ class SVGP(GPModel):
                                         transform=transforms.positive)  # M x P
             else:
                 q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type) for _ in range(self.num_latent)])
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # P x M x M
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # [P, M, M]
         else:
             if q_diag:
                 assert q_sqrt.ndim == 2
                 self.num_latent = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.positive)  # M x L/P
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.positive)  # [M, L|P]
             else:
                 assert q_sqrt.ndim == 3
                 self.num_latent = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # L/P x M x M
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # [L|P, M, M]
 
-    @params_as_tensors
-    def build_prior_KL(self):
-        if self.whiten:
-            K = None
-        else:
-            K = Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)  # (P x) x M x M
-
+    def prior_kl(self):
+        K = None
+        if not self.whiten:
+            K = Kuu(self.feature, self.kernel, jitter=jitter())  # [P, M, M] or [M, M]
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
-    @params_as_tensors
-    def _build_likelihood(self):
+
+    def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
         This gives a variational bound on the model likelihood.
         """
+        kl = self.prior_kl()
+        f_mean, f_var = self.predict_f(X)
+        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+        scale = tf.cast(self.num_data, f_mean.dtype) / tf.cast(tf.shape(X)[0], f_mean.dtype)
+        return tf.reduce_sum(var_exp) * scale - kl
 
-        # Get prior KL.
-        KL = self.build_prior_KL()
-
-        # Get conditionals
-        fmean, fvar = self._build_predict(self.X, full_cov=False, full_output_cov=False)
-
-        # Get variational expectations.
-        var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
-
-        # re-scale for minibatch size
-        scale = tf.cast(self.num_data, settings.float_type) / tf.cast(tf.shape(self.X)[0], settings.float_type)
-
-        return tf.reduce_sum(var_exp) * scale - KL
-
-    @params_as_tensors
-    def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):
+    def predict_f(self, Xnew, full_cov=False, full_output_cov=False) -> tf.Tensor:
         mu, var = conditional(Xnew, self.feature, self.kern, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov,
                               white=self.whiten, full_output_cov=full_output_cov)
         return mu + self.mean_function(Xnew), var
