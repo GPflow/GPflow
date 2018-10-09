@@ -1,0 +1,182 @@
+# Copyright 2018 GPflow
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import abc
+from functools import reduce
+from typing import Optional
+
+import numpy as np
+import tensorflow as tf
+
+from ..base import Module, ModuleList, Parameter, positive
+
+
+class Kernel(Module):
+    """
+    The basic kernel class. Handles active dims.
+    """
+
+    def __init__(self, active_dims=None):
+        """
+        """
+        super().__init__()
+        self.active_dims = active_dims
+
+    @property
+    def active_dims(self):
+        return self._active_dims
+
+    @active_dims.setter
+    def active_dims(self, value):
+        if value is None:
+            value = slice(None, None, None)
+        if not isinstance(value, slice):
+            value = np.array(value, dtype=int)
+        self._active_dims = value
+
+    def on_separate_dims(self, other):
+        """
+        Checks if the dimensions, over which the kernels are specified, overlap.
+        Returns True if they are defined on different/separate dimensions and False otherwise.
+        """
+        if isinstance(self.active_dims, slice) or isinstance(other.active_dims, slice):
+            # Be very conservative for kernels defined over slices of dimensions
+            return False
+
+        this_dims = tf.reshape(self.active_dims, (-1, 1))
+        other_dims = tf.reshape(other.active_dims, (1, -1))
+        return not np.any(this_dims == other_dims)
+
+    def slice(self, X: tf.Tensor, Y: Optional[tf.Tensor] = None):
+        """
+        Slice the correct dimensions for use in the kernel, as indicated by `self.active_dims`.
+
+        :param X: Input 1 [N, D].
+        :param Y: Input 2 [M, D], can be None.
+        :return: Sliced X, Y, [N, I], I - input dimension.
+        """
+        X = X[..., self.active_dims]
+        Y = Y[..., self.active_dims] if Y is not None else X
+        return X, Y
+
+    def slice_cov(self, cov: tf.Tensor) -> tf.Tensor:
+        """
+        Slice the correct dimensions for use in the kernel, as indicated by
+        `self.active_dims` for covariance matrices. This requires slicing the
+        rows *and* columns. This will also turn flattened diagonal
+        matrices into a tensor of full diagonal matrices.
+            :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
+            :return: [N, I, I].
+        """
+        if cov.shape.ndims == 2:
+            cov = tf.matrix_diag(cov)
+
+        act_dims = self.active_dims
+        if isinstance(act_dims, slice):
+            return cov[..., self.active_dims, self.active_dims]
+
+        N = cov.shape[0]
+        I = len(act_dims)
+        cov_reshaped = tf.reshape(cov, (-1, cov.shape[-1], cov.shape[-1]))
+        return tf.reshape(cov_reshaped[..., act_dims, act_dims], (N, I, I))
+
+    @abc.abstractmethod
+    def K(self, X, Y=None, presliced=False):
+        pass
+
+    @abc.abstractmethod
+    def K_diag(self, X, presliced=False):
+        pass
+
+    def __call__(self, X, Y=None, presliced=False, diag=False):
+        if diag and Y is not None:
+            raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
+        if diag:
+            return self.K_diag(X, presliced=presliced)
+        return self.K(X, Y, presliced=presliced)
+
+    def __add__(self, other):
+        return Sum([self, other])
+
+    def __mul__(self, other):
+        return Product([self, other])
+
+
+class Combination(Kernel):
+    """
+    Combine a list of kernels, e.g. by adding or multiplying (see inheriting
+    classes).
+
+    The names of the kernels to be combined are generated from their class
+    names.
+    """
+
+    _reduction = None
+
+    def __init__(self, kernels):
+        if not all(isinstance(k, Kernel) for k in kernels):
+            raise TypeError("can only combine Kernel instances")  # pragma: no cover
+
+        # input_dim = np.max([k.input_dim
+        #                     if type(k.active_dims) is slice else
+        #                     np.max(k.active_dims) + 1
+        #                     for k in kernels])
+        # super().__init__(input_dim=input_dim)
+
+        super().__init__()
+
+        # add kernels to a list, flattening out instances of this class therein
+        kernels_list = []
+        for k in kernels:
+            if isinstance(k, Combination):
+                kernels_list.extend(k.kernels)
+            else:
+                kernels_list.append(k)
+        self.kernels = ModuleList(kernels_list)
+
+    @property
+    def on_separate_dimensions(self):
+        """
+        Checks whether the kernels in the combination act on disjoint subsets
+        of dimensions. Currently, it is hard to asses whether two slice objects
+        will overlap, so this will always return False.
+        :return: Boolean indicator.
+        """
+        if np.any([isinstance(k.active_dims, slice) for k in self.kernels]):
+            # Be conservative in the case of a slice object
+            return False
+        else:
+            dimlist = [k.active_dims for k in self.kernels]
+            overlapping = False
+            for i, dims_i in enumerate(dimlist):
+                for dims_j in dimlist[i + 1:]:
+                    if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
+                        overlapping = True
+            return not overlapping
+
+
+    def K(self, X, X2=None, presliced=False):
+        return reduce(self._reduction, [k.K(X, X2) for k in self.kernels])
+
+
+    def K_diag(self, X, presliced=False):
+        return reduce(self._reduction, [k.K_diag(X) for k in self.kernels])
+
+
+class Sum(Combination):
+    _reduction = tf.add
+
+
+class Product(Combination):
+    _reduction = tf.multiply
