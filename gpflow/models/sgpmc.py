@@ -19,9 +19,7 @@ import tensorflow as tf
 from ..models.model import GPModel
 from ..conditionals import conditional
 from ..features import inducingpoint_wrapper
-from ..params import Parameter, DataHolder
 from ..priors import Gaussian
-from ..decors import params_as_tensors
 
 
 class SGPMC(GPModel):

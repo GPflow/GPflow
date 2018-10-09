@@ -26,7 +26,7 @@ from numpy.testing import assert_allclose
 
 class Foo(gpflow.models.Model):
     def _build_likelihood(self):
-        return tf.zeros([1], dtype=gpflow.settings.float_type)
+        return tf.zeros([1], dtype=gpflow.default_float())
 
 
 class TestNaming(GPflowTestCase):
@@ -885,7 +885,7 @@ class TestParamList(GPflowTestCase):
     def test_naming(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
+            p2 = gpflow.Param(np.array([3.4, 5.6], default_float()))
             l = gpflow.ParamList([p1, p2])
             assert p1.pathname == l.name + '/0'
             assert p2.pathname == l.name + '/1'
@@ -893,7 +893,7 @@ class TestParamList(GPflowTestCase):
     def test_setitem(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
+            p2 = gpflow.Param(np.array([3.4, 5.6], default_float()))
             param_list = gpflow.ParamList([p1, p2], name='param_list', autobuild=False)
 
             self.assertEqual(p1.read_value(), param_list[0].read_value())
@@ -904,7 +904,7 @@ class TestParamList(GPflowTestCase):
             self.assertEqual(p1.root, p1)
             self.assertEqual(param_list[0].read_value(), 2.0)
 
-            arr = np.array([1.1, 2.2], settings.float_type)
+            arr = np.array([1.1, 2.2], default_float())
             param_list[1] = gpflow.Param(arr)
             self.assertEqual(p2.root, p2)
             self.assertTrue(np.all(param_list[1].read_value() == arr))
@@ -916,7 +916,7 @@ class TestParamList(GPflowTestCase):
     def test_append(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p4 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
+            p4 = gpflow.Param(np.array([3.4, 5.6], default_float()))
             with gpflow.defer_build():
                 p2 = gpflow.Param(1.2)
                 param_list = gpflow.ParamList([p1])
@@ -936,7 +936,7 @@ class TestParamList(GPflowTestCase):
     def test_len(self):
         with self.test_context():
             p1 = gpflow.Param(1.2)
-            p2 = gpflow.Param(np.array([3.4, 5.6], settings.float_type))
+            p2 = gpflow.Param(np.array([3.4, 5.6], default_float()))
             l = gpflow.ParamList([p1, p2])
             self.assertTrue(len(l) == 2)
 
@@ -964,7 +964,7 @@ class TestParamList(GPflowTestCase):
             m.compile()
             optimizer = gpflow.train.ScipyOptimizer()
             optimizer.minimize(m, maxiter=10)
-            atol = 1e-6 if settings.float_type is np.float32 else 1e-8
+            atol = 1e-6 if default_float() is np.float32 else 1e-8
             params = [param.read_value() for param in m.parameters]
             self.assertTrue(np.allclose(params, 0., atol=atol))
 
@@ -1138,7 +1138,7 @@ class TestScopes(GPflowTestCase):
             @gpflow.name_scope('test_kernel')
             @gpflow.params_as_tensors
             def run_kernel(m):
-                return m.kern.K(m.X)
+                return m.kern(m.X)
             K = run_kernel(self.m)
             self.assertTrue(K.name.startswith('test_kernel/'))
 

@@ -3,12 +3,18 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.eager as tfe
 import tensorflow_probability as tfp
+from .util import default_float
 
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
+ModuleLike = Union['Module', 'ModuleList']
+
+
+positive = tfp.bijectors.Softplus
+triangular = tfp.bijectors.FillTriangular
 
 
 class Parameter(tfe.Variable):
@@ -22,8 +28,8 @@ class Parameter(tfe.Variable):
     def __init__(self, data: VariableData,
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
-                 trainable=True,
-                 dtype=None):
+                 trainable: bool = True,
+                 dtype: np.dtype = None):
         data = _to_variable_data(data, dtype=dtype)
         unconstrained_data = _to_unconstrained(data, transform)
         super().__init__(unconstrained_data, trainable=trainable)
@@ -53,7 +59,7 @@ class Parameter(tfe.Variable):
             log_prob = self.prior.log_prob(x)
         log_det_jacobian = 0.
         if self.transform is not None:
-            log_det_jacobian = bijector.forward_log_det_jacobian(y, (0))
+            log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
         return log_prob + log_det_jacobian
 
     def __ilshift__(self, data: VariableData):
@@ -81,16 +87,44 @@ class Module:
     def __getattr__(self, name):
         if name in self._parameters:
             parameter = self._parameters[name]
-            return parameter.constrained
+            if isinstance(parameter, Parameter):
+                return parameter.constrained  # NOTE: Very important line
+            return parameter
         elif name in self._modules:
             return self._modules[name]
 
     def __setattr__(self, name, value):
         if isinstance(value, Parameter):
             self._parameters[name] = value
-        elif isinstance(value, Module):
+        elif isinstance(value, (Module, ModuleList)):
             self._modules[name] = value
         super().__setattr__(name, value)
+
+
+class ModuleList:
+    def __init__(self, modules: List[ModuleLike]):
+        self._modules = modules
+
+    @property
+    def variables(self) -> List[tfe.Variable]:
+        module_variables = sum([m.variables for m in self._modules], [])
+        return module_variables
+
+    @property
+    def trainable_variables(self) -> List[tfe.Variable]:
+        return [v for v in self.variables if v.trainable]
+
+    def __len__(self):
+        return len(self._modules)
+
+    def append(self, module: ModuleLike):
+        self._modules.append(module)
+
+    def __getitem__(self, index: int) -> ModuleLike:
+        return self._modules[index]
+
+    def __setitem__(self, index: int, module: ModuleLike):
+        self._modules[index] = module
 
 
 def _to_variable_data(data: VariableData, dtype: Optional[DType] = None) -> np.ndarray:
@@ -100,6 +134,8 @@ def _to_variable_data(data: VariableData, dtype: Optional[DType] = None) -> np.n
         return data
     if dtype is not None and isinstance(dtype, tf.DType):
         dtype = dtype.as_numpy_dtype
+    if dtype is None and not isinstance(data, np.ndarray):
+        dtype = default_float()
     return np.array(data, dtype=dtype)
 
 
@@ -109,6 +145,3 @@ def _to_unconstrained(data: VariableData, transform: Transform) -> tf.Tensor:
         unconstrained_data = transform.inverse(data)
     return unconstrained_data
 
-
-class ModuleList:
-    pass

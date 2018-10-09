@@ -17,12 +17,9 @@ import numpy as np
 
 from .. import settings
 from .. import likelihoods
-from .. import transforms
 from .. import kernels
 from .. import features
 
-from ..params import Parameter
-from ..decors import params_as_tensors
 from ..mean_functions import Zero
 from ..expectations import expectation
 from ..probability_distributions import DiagonalGaussian
@@ -111,8 +108,8 @@ class BayesianGPLVM(GPModel):
         if X_prior_var is None:
             X_prior_var = np.ones((self.num_data, self.num_latent))
 
-        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=settings.float_type)
-        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=settings.float_type)
+        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=default_float())
+        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=default_float())
 
         assert self.X_prior_mean.shape[0] == self.num_data
         assert self.X_prior_mean.shape[1] == self.num_latent
@@ -140,22 +137,22 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + tf.eye(num_inducing, dtype=settings.float_type)
+        B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.cholesky(B)
         log_det_B = 2. * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
         dX_var = self.X_var if len(self.X_var.get_shape()) == 2 else tf.matrix_diag_part(self.X_var)
-        NQ = tf.cast(tf.size(self.X_mean), settings.float_type)
-        D = tf.cast(tf.shape(self.Y)[1], settings.float_type)
+        NQ = tf.cast(tf.size(self.X_mean), default_float())
+        D = tf.cast(tf.shape(self.Y)[1], default_float())
         KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
              + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
              - 0.5 * NQ \
              + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
 
         # compute log marginal bound
-        ND = tf.cast(tf.size(self.Y), settings.float_type)
+        ND = tf.cast(tf.size(self.Y), default_float())
         bound = -0.5 * ND * tf.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
@@ -187,19 +184,19 @@ class BayesianGPLVM(GPModel):
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
         AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
-        B = AAT + tf.eye(num_inducing, dtype=settings.float_type)
+        B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.cholesky(B)
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
         tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
         tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
         mean = tf.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kern.K(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
+            var = self.kern(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
                   - tf.matmul(tmp1, tmp1, transpose_a=True)
             shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
-            var = self.kern.Kdiag(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
+            var = self.kern(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
                   - tf.reduce_sum(tf.square(tmp1), 0)
             shape = tf.stack([1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)

@@ -226,7 +226,7 @@ def test_kernel_mean_function_expectations(
 @pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
 def test_eKdiag_no_uncertainty(session_tf, kernel):
     eKdiag = expectation(dirac_diag(), kernel())
-    Kdiag = kernel().Kdiag(Data.Xmu)
+    Kdiag = kernel()(Data.Xmu)
     eKdiag, Kdiag = session_tf.run([eKdiag, Kdiag])
     assert_allclose(eKdiag, Kdiag, rtol=RTOL)
 
@@ -234,7 +234,7 @@ def test_eKdiag_no_uncertainty(session_tf, kernel):
 @pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
 def test_eKxz_no_uncertainty(session_tf, kernel, feature):
     eKxz = expectation(dirac_diag(), (kernel(), feature))
-    Kxz = kernel().K(Data.Xmu, Data.Z)
+    Kxz = kernel()(Data.Xmu, Data.Z)
     eKxz, Kxz = session_tf.run([eKxz, Kxz])
     assert_allclose(eKxz, Kxz, rtol=RTOL)
 
@@ -243,7 +243,7 @@ def test_eKxz_no_uncertainty(session_tf, kernel, feature):
 @pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
 def test_eMxKxz_no_uncertainty(session_tf, kernel, feature, mean):
     exKxz = expectation(dirac_diag(), mean(), (kernel(), feature))
-    Kxz = kernel().K(Data.Xmu, Data.Z)
+    Kxz = kernel()(Data.Xmu, Data.Z)
     xKxz = expectation(dirac_gauss(), mean())[:, :, None] * Kxz[:, None, :]
     exKxz, xKxz = session_tf.run([exKxz, xKxz])
     assert_allclose(exKxz, xKxz, rtol=RTOL)
@@ -253,7 +253,7 @@ def test_eMxKxz_no_uncertainty(session_tf, kernel, feature, mean):
 def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
     kern = kernel()
     eKzxKxz = expectation(dirac_diag(), (kern, feature), (kern, feature))
-    Kxz = kern.K(Data.Xmu, Data.Z)
+    Kxz = kern(Data.Xmu, Data.Z)
     eKzxKxz, Kxz = session_tf.run([eKzxKxz, Kxz])
     KzxKxz = Kxz[:, :, None] * Kxz[:, None, :]
     assert_allclose(eKzxKxz, KzxKxz, rtol=RTOL)

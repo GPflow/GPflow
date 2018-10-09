@@ -18,10 +18,8 @@
 import tensorflow as tf
 
 from . import settings
-from .decors import name_scope
 
 
-@name_scope()
 def gauss_kl(q_mu, q_sqrt, K=None):
     """
     Compute the KL divergence KL[q || p] between
@@ -70,7 +68,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - B * M
-    constant = - tf.cast(tf.size(q_mu, out_type=tf.int64), dtype=settings.float_type)
+    constant = - tf.cast(tf.size(q_mu, out_type=tf.int64), dtype=default_float())
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.log(tf.square(Lq_diag)))
@@ -82,7 +80,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         if diag and not batch:
             # K is M x M and q_sqrt is M x B: fast specialisation
             LpT = tf.transpose(Lp)  # M x M
-            Lp_inv = tf.matrix_triangular_solve(Lp, tf.eye(M, dtype=settings.float_type),lower=True)  # M x M
+            Lp_inv = tf.matrix_triangular_solve(Lp, tf.eye(M, dtype=default_float()),lower=True)  # M x M
             K_inv = tf.matrix_diag_part(tf.matrix_triangular_solve(LpT, Lp_inv, lower=False))[:, None]  # M x M -> M x 1
             trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
         else:
@@ -97,8 +95,8 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     if not white:
         log_sqdiag_Lp = tf.log(tf.square(tf.matrix_diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
-        # If K is B x M x M, num_latent is no longer implicit, no need to multiply the single kernel logdet
-        scale = 1.0 if batch else tf.cast(B, settings.float_type)
+        # If K is [B, M, M], num_latent is no longer implicit, no need to multiply the single kernel logdet
+        scale = 1.0 if batch else tf.cast(B, default_float())
         twoKL += scale * sum_log_sqdiag_Lp
 
     return 0.5 * twoKL

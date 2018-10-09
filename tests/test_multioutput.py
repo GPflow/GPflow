@@ -15,7 +15,7 @@ from gpflow.test_util import session_tf
 from gpflow.training import ScipyOptimizer
 from gpflow.conditionals import _sample_mvn, sample_conditional
 
-float_type = gpflow.settings.float_type
+float_type = gpflow.default_float()
 np.random.seed(1)
 
 # ------------------------------------------

@@ -34,7 +34,7 @@ def var1(): return np.array([3.0, 3.5])
 def var2(): return np.array([4.0, 4.2])
 
 def cast(x):
-    return tf.cast(np.asarray(x), dtype=gpflow.settings.float_type)
+    return tf.cast(np.asarray(x), dtype=gpflow.default_float())
 
 
 def test_diagquad_1d(session_tf, mu1, var1):

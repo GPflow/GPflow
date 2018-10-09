@@ -40,8 +40,8 @@ def test_multivariate_normal(session_tf, x, mu, cov_sqrt):
                 tf.convert_to_tensor(mu),
                 tf.convert_to_tensor(L))
     else:
-        x_tf = tf.placeholder(settings.float_type)
-        mu_tf = tf.placeholder(settings.float_type)
+        x_tf = tf.placeholder(default_float())
+        mu_tf = tf.placeholder(default_float())
         gp_result = logdensities.multivariate_normal(
             x_tf, mu_tf, tf.convert_to_tensor(L))
 

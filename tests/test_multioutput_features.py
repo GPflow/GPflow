@@ -11,7 +11,7 @@ from gpflow.models import SVGP
 from gpflow.test_util import session_tf
 
 
-float_type = gpflow.settings.float_type
+float_type = gpflow.default_float()
 np.random.seed(1)
 
 

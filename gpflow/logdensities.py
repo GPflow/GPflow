@@ -51,10 +51,10 @@ def gamma(x, shape, scale):
 
 
 def student_t(x, mean, scale, df):
-    df = tf.cast(df, settings.float_type)
+    df = tf.cast(df, default_float())
     const = tf.lgamma((df + 1.) * 0.5) - tf.lgamma(df * 0.5) \
         - 0.5 * (tf.log(tf.square(scale)) + tf.log(df) + np.log(np.pi))
-    const = tf.cast(const, settings.float_type)
+    const = tf.cast(const, default_float())
     return const - 0.5 * (df + 1.) * \
         tf.log(1. + (1. / df) * (tf.square((x - mean) / scale)))
 

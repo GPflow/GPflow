@@ -53,21 +53,21 @@ def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
             # most likelihoods follow this standard:
             test_setups.append(
                 LikelihoodSetup(likelihoodClass(),
-                                rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                rng.rand(10, 2).astype(default_float()), 1e-6))
 
     if addNonStandardLinks:
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Poisson(invlink=tf.square),
-                                           rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                           rng.rand(10, 2).astype(default_float()), 1e-6))
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Exponential(invlink=tf.square),
-                                           rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                           rng.rand(10, 2).astype(default_float()), 1e-6))
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Gamma(invlink=tf.square),
-                                           rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                           rng.rand(10, 2).astype(default_float()), 1e-6))
 
         def sigmoid(x):
             return 1. / (1 + tf.exp(-x))
 
         test_setups.append(LikelihoodSetup(gpflow.likelihoods.Bernoulli(invlink=sigmoid),
-                                           rng.rand(10, 2).astype(settings.float_type), 1e-6))
+                                           rng.rand(10, 2).astype(default_float()), 1e-6))
     return test_setups
 
 
@@ -84,8 +84,8 @@ class TestPredictConditional(GPflowTestCase):
     def prepare(self):
         test_setups = getLikelihoodSetups(addNonStandardLinks=True)
         rng = np.random.RandomState(0)
-        F = tf.placeholder(settings.float_type)
-        F_data = rng.randn(10, 2).astype(settings.float_type)
+        F = tf.placeholder(default_float())
+        F_data = rng.randn(10, 2).astype(default_float())
         feed = {F: F_data}
         return test_setups, F, feed
 
@@ -138,7 +138,7 @@ class TestQuadrature(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
         self.rng = np.random.RandomState()
-        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(settings.float_type)
+        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 2).astype(default_float())
         self.Fvar = 0.01 * (self.Fvar ** 2)
         with self.test_context():
             self.test_setups = getLikelihoodSetups(includeMultiClass=False)
@@ -200,7 +200,7 @@ class TestMonteCarlo(GPflowTestCase):
         self.test_graph = tf.Graph()
         self.rng = np.random.RandomState()
         self.rng.seed(1)
-        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 1).astype(settings.float_type)
+        self.Fmu, self.Fvar, self.Y = self.rng.randn(3, 10, 1).astype(default_float())
         self.Fvar = 0.01 * (self.Fvar ** 2)
 
     def test_var_exp(self):
@@ -256,7 +256,7 @@ class TestSoftMax(GPflowTestCase):
     def prepare(self, dimF, dimY, num=10):
         feed = {}
 
-        def make_tensor(data, dtype=settings.float_type):
+        def make_tensor(data, dtype=default_float()):
             tensor = tf.placeholder(dtype)
             feed[tensor] = data.astype(dtype)
             return tensor
@@ -342,7 +342,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
             nPoints = 10
             tolerance = 1e-4
             epsilon = 1e-3
-            F = tf.placeholder(settings.float_type)
+            F = tf.placeholder(default_float())
             F_data = np.ones((nPoints, nClasses))
             feed = {F: F_data}
             rng = np.random.RandomState(1)
@@ -377,7 +377,7 @@ class TestRobustMaxMulticlass(GPflowTestCase):
 
         class MockRobustMax(gpflow.likelihoods.RobustMax):
             def prob_is_largest(self, Y, Fmu, Fvar, gh_x, gh_w):
-                return tf.ones((num_points, 1), dtype=settings.float_type) * mock_prob
+                return tf.ones((num_points, 1), dtype=default_float()) * mock_prob
 
         with self.test_context() as session:
             epsilon = 0.231
@@ -386,8 +386,8 @@ class TestRobustMaxMulticlass(GPflowTestCase):
                 num_classes, invlink=MockRobustMax(num_classes, epsilon))
             l.compile()
 
-            F = tf.placeholder(settings.float_type)
-            y = tf.placeholder(settings.float_type)
+            F = tf.placeholder(default_float())
+            y = tf.placeholder(default_float())
             F_data = np.ones((num_points, num_classes))
             rng = np.random.RandomState(1)
             Y_data = rng.randint(num_classes, size=(num_points, 1))
@@ -427,8 +427,8 @@ class TestMulticlassIndexFix(GPflowTestCase):
 
     def testA(self):
         with self.test_context():
-            mu = tf.placeholder(settings.float_type)
-            var = tf.placeholder(settings.float_type)
+            mu = tf.placeholder(default_float())
+            var = tf.placeholder(default_float())
             Y = tf.placeholder(tf.int32)
             lik = gpflow.likelihoods.MultiClass(3)
             ve = lik.variational_expectations(mu, var, Y)

@@ -114,10 +114,8 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
-from gpflow import params_as_tensors_for
 from gpflow import settings
 from gpflow.models import Model
-from gpflow.params import Parameter
 
 
 def get_hr_time() -> float:

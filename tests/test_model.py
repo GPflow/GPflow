@@ -54,7 +54,7 @@ class Empty(gpflow.models.Model):
             kwargs['name'] = 'Empty'
         super().__init__(*args, **kwargs)
     def _build_likelihood(self):
-        return tf.convert_to_tensor(1., dtype=gpflow.settings.float_type)
+        return tf.convert_to_tensor(1., dtype=gpflow.default_float())
 
 
 class EmptyTest(GPflowTestCase):

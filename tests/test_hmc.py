@@ -32,7 +32,7 @@ class SampleGaussianTest(GPflowTestCase):
         def build_objective(self):
             return 0.5 * tf.reduce_sum(tf.square(self.x))
         def _build_likelihood(self):
-            return tf.constant(0.0, dtype=gpflow.settings.float_type)
+            return tf.constant(0.0, dtype=gpflow.default_float())
 
     @gpflow.defer_build()
     def setUp(self):
@@ -119,7 +119,7 @@ class Quadratic(gpflow.models.Model):
     def __init__(self):
         super(Quadratic, self).__init__()
         rng = np.random.RandomState(0)
-        self.x = gpflow.Param(rng.randn(2), dtype=gpflow.settings.float_type)
+        self.x = gpflow.Param(rng.randn(2), dtype=gpflow.default_float())
     @gpflow.params_as_tensors
     def _build_likelihood(self):
         return -tf.reduce_sum(tf.square(self.x))

@@ -19,12 +19,11 @@ import numpy as np
 import tensorflow as tf
 
 from . import settings
-from .core.errors import GPflowError
 
 
 def hermgauss(n: int):
     x, w = np.polynomial.hermite.hermgauss(n)
-    x, w = x.astype(settings.float_type), w.astype(settings.float_type)
+    x, w = x.astype(default_float()), w.astype(default_float())
     return x, w
 
 
@@ -64,9 +63,9 @@ def mvnquad(func, means, covs, H: int, Din: int=None, Dout=None):
         Din = means.shape[1] if type(means.shape) is tuple else means.shape[1].value
 
     if Din is None:
-        raise GPflowError("If `Din` is passed as `None`, `means` must have a known shape. "
-                          "Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
-                          "is problematic. Consider using your own session.")  # pragma: no cover
+        raise ValueError("If `Din` is passed as `None`, `means` must have a known shape. "
+                         "Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
+                         "is problematic. Consider using your own session.")  # pragma: no cover
 
     xn, wn = mvhermgauss(H, Din)
     N = tf.shape(means)[0]
@@ -83,9 +82,9 @@ def mvnquad(func, means, covs, H: int, Din: int=None, Dout=None):
         Dout = tuple((d if type(d) is int else d.value) for d in fevals.shape[1:])
 
     if any([d is None for d in Dout]):
-        raise GPflowError("If `Dout` is passed as `None`, the output of `func` must have known "
-                          "shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
-                          "is problematic. Consider using your own session.")  # pragma: no cover
+        raise ValueError("If `Dout` is passed as `None`, the output of `func` must have known "
+                         "shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
+                         "is problematic. Consider using your own session.")  # pragma: no cover
     fX = tf.reshape(fevals, (H ** Din, N,) + Dout)
     wr = np.reshape(wn * np.pi ** (-Din * 0.5),
                     (-1,) + (1,) * (1 + len(Dout)))
@@ -176,7 +175,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
     N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
 
     if epsilon is None:
-        epsilon = tf.random_normal((S, N, D), dtype=settings.float_type)
+        epsilon = tf.random_normal((S, N, D), dtype=default_float())
 
     mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
     mc_Xr = tf.reshape(mc_x, (S * N, D))
@@ -191,7 +190,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
         feval = func(mc_Xr, **Ys)
         feval = tf.reshape(feval, (S, N, -1))
         if logspace:
-            log_S = tf.log(tf.cast(S, settings.float_type))
+            log_S = tf.log(tf.cast(S, default_float()))
             return tf.reduce_logsumexp(feval, axis=0) - log_S  # N x D
         else:
             return tf.reduce_mean(feval, axis=0)

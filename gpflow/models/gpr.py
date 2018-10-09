@@ -18,9 +18,6 @@ from .. import likelihoods
 from .. import settings
 
 from ..conditionals import base_conditional
-from ..params import DataHolder
-from ..decors import params_as_tensors
-from ..decors import name_scope
 from ..logdensities import multivariate_normal
 
 from .model import GPModel
@@ -39,36 +36,37 @@ class GPR(GPModel):
 
        \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
-    def __init__(self, X, Y, kern, mean_function=None, **kwargs):
+    def __init__(self, X, Y, kernel, mean_function=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         kern, mean_function are appropriate GPflow objects
         """
         likelihood = likelihoods.Gaussian()
-        X = DataHolder(X)
-        Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
 
-    @name_scope('likelihood')
-    @params_as_tensors
-    def _build_likelihood(self):
+        def convert_to_tensor(x):
+            if isinstance(x, (tf.Tensor, tfe.Variable)):
+                return x
+            return tf.convert_to_tensor(x)
+
+        self.X = convert_to_tensor(X)
+        self.Y = convert_to_tensor(Y)
+        GPModel.__init__(self, kernel, likelihood, mean_function)
+
+    def log_likelihood(self):
         """
         Construct a tensorflow function to compute the likelihood.
 
             \log p(Y | theta).
 
         """
-        K = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.float_type) * self.likelihood.variance
+        K = self.kernel(self.X) + tf.eye(self.X.shape[0], dtype=X.dtype) * self.likelihood.variance
         L = tf.cholesky(K)
         m = self.mean_function(self.X)
         logpdf = multivariate_normal(self.Y, m, L)  # (R,) log-likelihoods for each independent dimension of Y
-
         return tf.reduce_sum(logpdf)
 
-    @name_scope('predict')
-    @params_as_tensors
-    def _build_predict(self, Xnew, full_cov=False):
+    def predict_f(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -77,12 +75,11 @@ class GPR(GPModel):
             p(F* | Y )
 
         where F* are points on the GP at Xnew, Y are noisy observations at X.
-
         """
         y = self.Y - self.mean_function(self.X)
-        Kmn = self.kern.K(self.X, Xnew)
-        Kmm_sigma = self.kern.K(self.X) + tf.eye(tf.shape(self.X)[0], dtype=settings.float_type) * self.likelihood.variance
-        Knn = self.kern.K(Xnew) if full_cov else self.kern.Kdiag(Xnew)
-        f_mean, f_var = base_conditional(Kmn, Kmm_sigma, Knn, y, full_cov=full_cov, white=False)  # N x P, N x P or P x N x N
+        Kmn = self.kernel(self.X, Xnew)
+        Kmm_sigma = self.kernel(self.X) + tf.eye(self.X.shape[0], dtype=X.dtype) * self.likelihood.variance
+        Knn = self.kernel(Xnew, diag=(not full_cov))
+        f_mean, f_var = base_conditional(Kmn, Kmm_sigma, Knn, y, full_cov=full_cov, white=False)  # [N, P], [N, P] or [P, N, N]
         return f_mean + self.mean_function(Xnew), f_var
 

@@ -24,7 +24,7 @@ from gpflow.test_util import GPflowTestCase
 
 class Foo(gpflow.models.Model):
     def _build_likelihood(self):
-        return tf.constant(0, dtype=gpflow.settings.float_type)
+        return tf.constant(0, dtype=gpflow.default_float())
 
 class TestDataHolderSimple(GPflowTestCase):
     def prepare(self, autobuild=True):
@@ -41,19 +41,19 @@ class TestDataHolderSimple(GPflowTestCase):
     def test_types(self):
         with self.test_context():
             m, _ = self.prepare(False)
-            self.assertEqual(m.X.dtype, settings.float_type)
-            self.assertEqual(m.Y.dtype, settings.float_type)
-            self.assertEqual(m.Z.dtype, settings.float_type)
-            self.assertEqual(m.X.read_value().dtype, settings.float_type)
-            self.assertEqual(m.Y.read_value().dtype, settings.float_type)
-            self.assertEqual(m.Z.read_value().dtype, settings.float_type)
+            self.assertEqual(m.X.dtype, default_float())
+            self.assertEqual(m.Y.dtype, default_float())
+            self.assertEqual(m.Z.dtype, default_float())
+            self.assertEqual(m.X.read_value().dtype, default_float())
+            self.assertEqual(m.Y.read_value().dtype, default_float())
+            self.assertEqual(m.Z.read_value().dtype, default_float())
             m.compile()
-            self.assertEqual(m.X.dtype, settings.float_type)
-            self.assertEqual(m.Y.dtype, settings.float_type)
-            self.assertEqual(m.Z.dtype, settings.float_type)
-            self.assertEqual(m.X.read_value().dtype, settings.float_type)
-            self.assertEqual(m.Y.read_value().dtype, settings.float_type)
-            self.assertEqual(m.Z.read_value().dtype, settings.float_type)
+            self.assertEqual(m.X.dtype, default_float())
+            self.assertEqual(m.Y.dtype, default_float())
+            self.assertEqual(m.Z.dtype, default_float())
+            self.assertEqual(m.X.read_value().dtype, default_float())
+            self.assertEqual(m.Y.read_value().dtype, default_float())
+            self.assertEqual(m.Z.read_value().dtype, default_float())
 
     def test_same_shape(self):
         with self.test_context():

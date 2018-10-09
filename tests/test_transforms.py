@@ -27,7 +27,7 @@ from gpflow import settings
 
 class TransformTests(GPflowTestCase):
     def prepare(self):
-        x_np = np.random.randn(10).astype(settings.float_type)
+        x_np = np.random.randn(10).astype(default_float())
         transforms = []
         for transform_class in gpflow.transforms.Transform.__subclasses__():
             if transform_class == Chain:
@@ -125,7 +125,7 @@ class TransformTests(GPflowTestCase):
 
 class TestChainIdentity(GPflowTestCase):
     def prepare(self):
-        x_np = np.random.randn(10).astype(settings.float_type)
+        x_np = np.random.randn(10).astype(default_float())
         transforms = []
         for transform in gpflow.transforms.Transform.__subclasses__():
             if transform != Chain and transform != gpflow.transforms.LowerTriangular:

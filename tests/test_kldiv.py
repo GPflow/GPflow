@@ -151,10 +151,10 @@ def test_unknown_size_inputs(session_tf):
     one unknown parameter, `gauss_kl` would blow up. This happened because
     `tf.size` can only output types `tf.int32` or `tf.int64`.
     """
-    mu_ph = tf.placeholder(settings.float_type, [None, None])
-    sqrt_ph = tf.placeholder(settings.float_type, [None, None, None])
-    mu = np.ones([1, 4], dtype=settings.float_type)
-    sqrt = np.ones([4, 1, 1], dtype=settings.float_type)
+    mu_ph = tf.placeholder(default_float(), [None, None])
+    sqrt_ph = tf.placeholder(default_float(), [None, None, None])
+    mu = np.ones([1, 4], dtype=default_float())
+    sqrt = np.ones([4, 1, 1], dtype=default_float())
     
     feed_dict = {mu_ph: mu, sqrt_ph: sqrt}
     known_shape_tf = gauss_kl(*map(tf.constant, [mu, sqrt]))

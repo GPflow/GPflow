@@ -17,9 +17,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import settings
-from ..decors import params_as_tensors, autoflow
 from ..kernels import Kernel, Combination
-from ..params import Parameter
 
 
 class Mok(Kernel):
@@ -76,7 +74,7 @@ class SharedIndependentMok(Mok):
         self.P = output_dimensionality
 
     def K(self, X, X2=None, full_output_cov=True):
-        K = self.kern.K(X, X2)  # N x N2
+        K = self.kern(X, X2)  # N x N2
         if full_output_cov:
             Ks = tf.tile(K[..., None], [1, 1, self.P])  # N x N2 x P
             return tf.transpose(tf.matrix_diag(Ks), [0, 2, 1, 3])  # N x P x N2 x P
@@ -84,7 +82,7 @@ class SharedIndependentMok(Mok):
             return tf.tile(K[None, ...], [self.P, 1, 1])  # P x N x N2
 
     def Kdiag(self, X, full_output_cov=True):
-        K = self.kern.Kdiag(X)  # N
+        K = self.kern(X)  # N
         Ks = tf.tile(K[:, None], [1, self.P])  # N x P
         return tf.matrix_diag(Ks) if full_output_cov else Ks  # N x P x P or N x P
 
@@ -99,13 +97,13 @@ class SeparateIndependentMok(Mok, Combination):
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
-            Kxxs = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)  # N x N2 x P
+            Kxxs = tf.stack([k(X, X2) for k in self.kernels], axis=2)  # N x N2 x P
             return tf.transpose(tf.matrix_diag(Kxxs), [0, 2, 1, 3])  # N x P x N2 x P
         else:
-            return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # P x N x N2
+            return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # P x N x N2
 
     def Kdiag(self, X, full_output_cov=False):
-        stacked = tf.stack([k.Kdiag(X) for k in self.kernels], axis=1)  # N x P
+        stacked = tf.stack([k(X) for k in self.kernels], axis=1)  # N x P
         return tf.matrix_diag(stacked) if full_output_cov else stacked  # N x P x P  or  N x P
 
 
@@ -120,10 +118,10 @@ class SeparateMixedMok(Mok, Combination):
 
     @params_as_tensors
     def Kgg(self, X, X2):
-        return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # L x N x N2
+        return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # L x N x N2
 
-    @autoflow((settings.float_type, [None, None]),
-              (settings.float_type, [None, None]))
+    @autoflow((default_float(), [None, None]),
+              (default_float(), [None, None]))
     def compute_Kgg(self, X, X2):
         return self.Kgg(X, X2)
 
@@ -141,7 +139,7 @@ class SeparateMixedMok(Mok, Combination):
 
     @params_as_tensors
     def Kdiag(self, X, full_output_cov=True):
-        K = tf.stack([k.Kdiag(X) for k in self.kernels], axis=1)  # N x L
+        K = tf.stack([k(X) for k in self.kernels], axis=1)  # N x L
         if full_output_cov:
             # Can currently not use einsum due to unknown shape from `tf.stack()`
             # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # N x P x P

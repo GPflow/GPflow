@@ -116,7 +116,7 @@ class DataQuadrature:
 
     @classmethod
     def tensors(cls, white, mean_name):
-        float_type = settings.float_type
+        float_type = default_float()
         Xmu = tf.placeholder(float_type, [cls.num_data, cls.D_in])
         Xvar = tf.placeholder(float_type, [cls.num_data, cls.D_in, cls.D_in])
         q_mu = tf.placeholder(float_type, [cls.num_ind, cls.D_out])

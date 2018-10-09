@@ -21,7 +21,8 @@ from .. import settings
 from .. import transforms
 from ..conditionals import conditional, Kuu
 from ..models.model import GPModel
-from ..base import Parameter
+from ..base import Parameter, positive, triangular
+from ..util import default_float, jitter
 
 
 class SVGP(GPModel):
@@ -107,30 +108,30 @@ class SVGP(GPModel):
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
         q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
-        self.q_mu = Parameter(q_mu, dtype=settings.float_type)  # M x P
+        self.q_mu = Parameter(q_mu, dtype=default_float())  # M x P
 
         if q_sqrt is None:
             if self.q_diag:
-                self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.float_type),
-                                        transform=transforms.positive)  # M x P
+                ones = np.ones((num_inducing, self.num_latent), dtype=default_float())
+                self.q_sqrt = Parameter(ones, transform=positive())  # M x P
             else:
-                q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type) for _ in range(self.num_latent)])
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # [P, M, M]
+                q_sqrt = np.array([np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)])
+                self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [P, M, M]
         else:
             if q_diag:
                 assert q_sqrt.ndim == 2
                 self.num_latent = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.positive)  # [M, L|P]
+                self.q_sqrt = Parameter(q_sqrt, transform=positive())  # [M, L|P]
             else:
                 assert q_sqrt.ndim == 3
                 self.num_latent = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # [L|P, M, M]
+                self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
         K = None
         if not self.whiten:
-            K = Kuu(self.feature, self.kernel, jitter=jitter())  # [P, M, M] or [M, M]
+            K = Kuu(self.feature, self.kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
 
@@ -141,7 +142,7 @@ class SVGP(GPModel):
         kl = self.prior_kl()
         f_mean, f_var = self.predict_f(X)
         var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
-        scale = tf.cast(self.num_data, f_mean.dtype) / tf.cast(tf.shape(X)[0], f_mean.dtype)
+        scale = tf.cast(self.num_data, kl.dtype) / tf.cast(tf.shape(X)[0], kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
     def predict_f(self, Xnew, full_cov=False, full_output_cov=False) -> tf.Tensor:

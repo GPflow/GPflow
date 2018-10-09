@@ -13,27 +13,28 @@
 # limitations under the License.
 
 import abc
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter, Module
-
+from ..base import Module, Parameter
+from utils import default_jitter
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
-class covstruct(Enum):
-    none = 0
-    diag = 1
-    full = 2
+# class covstruct(Enum):
+#     none = 0
+#     diag = 1
+#     full = 2
+#     full_output = 3
 
 
 class BayesianModel(Module):
     """ Bayesian model. """
 
-    def negative_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
+    def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
         return - tf.add(self.log_likelihood(*args, **kwargs), self.log_prior())
 
     def log_prior(self) -> tf.Tensor:
@@ -91,17 +92,17 @@ class GPModel(BayesianModel):
         self.kernel = kernel
         self.likelihood = likelihood
 
-    @abstractmethod
-    def predict_f(self, X: tf.Tensor, cov_struct=None) -> MeanAndVariance:
+    @abc.abstractmethod
+    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         pass
 
-    def predict_f_samples(self, X, num_samples, jitter=None):
+    def predict_f_samples(self, X, num_samples, full_cov=False, full_output_cov=False, jitter=None):
         """
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
-        jitter = make_jitter(jitter)
-        mu, var = self.predict_f(X, cov_struct=covstruct.full)  # [N, P] or [P, N, N]
+        jitter = default_jitter() if jitter is None else jitter
+        mu, var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)  # [N, P] or [P, N, N]
         jitter = tf.eye(tf.shape(mu)[0], dtype=X.dtype) * jitter
         samples = [None] * self.num_latent
         for i in range(self.num_latent):

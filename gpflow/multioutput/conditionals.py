@@ -19,7 +19,6 @@ from .features import Kuu, Kuf
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 from .. import settings
 from ..conditionals import base_conditional, _expand_independent_outputs, _sample_mvn
-from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
@@ -33,7 +32,6 @@ logger = settings.logger()
 # -----------
 
 @conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
-@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Multioutput conditional for an independent kernel and shared inducing features.
@@ -72,9 +70,9 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x N
     if full_cov:
-        Knn = kern.K(Xnew, full_output_cov=False)[0, ...]  # N x N
+        Knn = kern(Xnew, full_output_cov=False)[0, ...]  # N x N
     else:
-        Knn = kern.Kdiag(Xnew, full_output_cov=False)[..., 0]  # N
+        Knn = kern(Xnew, full_output_cov=False)[..., 0]  # N
 
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  P x N x N or N x P
     return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
@@ -83,7 +81,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 @conditional.register(object, SeparateIndependentMof, SeparateIndependentMok, object)
 @conditional.register(object, SharedIndependentMof, SeparateIndependentMok, object)
 @conditional.register(object, SeparateIndependentMof, SharedIndependentMok, object)
-@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Multi-output GP with independent GP priors.
@@ -107,7 +104,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Kmms = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # P x M x M
     Kmns = Kuf(feat, kern, Xnew)  # P x M x N
     kern_list = kern.kernels if isinstance(kern, Combination) else [kern.kern] * len(feat.feat_list)
-    Knns = tf.stack([k.K(Xnew) if full_cov else k.Kdiag(Xnew) for k in kern_list], axis=0)
+    Knns = tf.stack([k(Xnew) if full_cov else k(Xnew) for k in kern_list], axis=0)
     fs = tf.transpose(f)[:, :, None]  # P x M x 1
     # P x 1 x M x M  or  P x M x 1
     q_sqrts = tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
@@ -118,7 +115,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
     rmu, rvar = tf.map_fn(single_gp_conditional,
                           (Kmms, Kmns, Knns, fs, q_sqrts),
-                          (settings.float_type, settings.float_type))  # P x N x 1, P x 1 x N x N or P x N x 1
+                          (default_float(), default_float()))  # P x N x 1, P x 1 x N x N or P x N x 1
 
     fmu = tf.matrix_transpose(rmu[:, :, 0])  # N x P
 
@@ -131,7 +128,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
 
 @conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
-@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Interdomain conditional with independent latents.
@@ -153,15 +149,14 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     logger.debug("Conditional: (SharedIndependentMof, SeparateIndepedentMof) - SeparateMixedMok")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # L x M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
-    Knn = kern.K(Xnew, full_output_cov=full_output_cov) if full_cov \
-        else kern.Kdiag(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
+    Knn = kern(Xnew, full_output_cov=full_output_cov) if full_cov \
+        else kern(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
     return independent_interdomain_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_output_cov=full_output_cov,
                                                q_sqrt=q_sqrt, white=white)
 
 
 @conditional.register(object, InducingPoints, Mok, object)
-@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Multi-output GP with fully correlated inducing variables.
@@ -187,8 +182,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     logger.debug("Conditional: InducingPoints -- Mok")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x L x M x L
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
-    Knn = kern.K(Xnew, full_output_cov=full_output_cov) if full_cov \
-        else kern.Kdiag(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
+    Knn = kern(Xnew, full_output_cov=full_output_cov) if full_cov \
+        else kern(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
     M, L, N, K = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
     Kmm = tf.reshape(Kmm, (M * L, M * L))
@@ -207,7 +202,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
 
 @conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
-@name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Most efficient routine to project L independent latent gps through a mixing matrix W.
@@ -257,7 +251,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 # ------------------
 
 @sample_conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
-@name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
@@ -273,8 +266,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
                                    full_output_cov=False, full_cov=False)  # N x L, N x L
     g_sample = _sample_mvn(g_mu, g_var, "diag")  # N x L
-    with params_as_tensors_for(kern):
-        f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
+    f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
     return f_sample
 
 

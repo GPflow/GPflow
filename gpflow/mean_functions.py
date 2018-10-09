@@ -13,17 +13,15 @@
 # limitations under the License.
 
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 from . import settings
-from .params import Parameter
-from .params import Parameterized
-from .params import ParamList
-from .decors import params_as_tensors
+from .base import Module, ModuleList, Parameter
+from .util import default_float
 
 
-class MeanFunction(Parameterized):
+class MeanFunction(Module):
     """
     The base mean function class.
     To implement a mean function, write the __call__ method. This takes a
@@ -56,15 +54,14 @@ class Linear(MeanFunction):
         If X has N rows and D columns, and Y is intended to have Q columns,
         then A must be D x Q, b must be a vector of length Q.
         """
-        A = np.ones((1, 1)) if A is None else A
-        b = np.zeros(1) if b is None else b
+        A = np.ones((1, 1), dtype=default_float()) if A is None else A
+        b = np.zeros(1, dtype=default_float()) if b is None else b
         MeanFunction.__init__(self)
-        self.A = Parameter(np.atleast_2d(A), dtype=settings.float_type)
-        self.b = Parameter(b, dtype=settings.float_type)
+        self.A = Parameter(np.atleast_2d(A))
+        self.b = Parameter(b)
 
-    @params_as_tensors
     def __call__(self, X):
-        return tf.matmul(X, self.A) + self.b
+        return X @ self.A + self.b
 
 
 class Identity(Linear):
@@ -83,8 +80,7 @@ class Identity(Linear):
         if self.input_dim is None:
             raise ValueError("An input_dim needs to be specified when using the "
                              "`Identity` mean function in combination with expectations.")
-
-        return tf.eye(self.input_dim, dtype=settings.float_type)
+        return tf.eye(self.input_dim, dtype=default_float())
 
     @property
     def b(self):
@@ -92,7 +88,7 @@ class Identity(Linear):
             raise ValueError("An input_dim needs to be specified when using the "
                              "`Identity` mean function in combination with expectations.")
 
-        return tf.zeros(self.input_dim, dtype=settings.float_type)
+        return tf.zeros(self.input_dim, dtype=default_float())
 
     @A.setter
     def A(self, A):
@@ -111,7 +107,6 @@ class Constant(MeanFunction):
         c = np.zeros(1) if c is None else c
         self.c = Parameter(c)
 
-    @params_as_tensors
     def __call__(self, X):
         shape = tf.stack([tf.shape(X)[0], 1])
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
@@ -124,7 +119,7 @@ class Zero(Constant):
         del self.c
 
     def __call__(self, X):
-        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=settings.tf_float)
+        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=X.dtype)
 
 
 class SwitchedMeanFunction(MeanFunction):
@@ -137,9 +132,8 @@ class SwitchedMeanFunction(MeanFunction):
         MeanFunction.__init__(self)
         for m in meanfunction_list:
             assert isinstance(m, MeanFunction)
-        self.meanfunction_list = ParamList(meanfunction_list)
+        self.meanfunction_list = ModuleList(meanfunction_list)
 
-    @params_as_tensors
     def __call__(self, X):
         ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)

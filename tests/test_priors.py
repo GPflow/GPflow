@@ -24,7 +24,7 @@ from gpflow.test_util import GPflowTestCase
 
 class FlatModel(gpflow.models.Model):
     def _build_likelihood(self):
-        return np.array(0., dtype=settings.float_type)
+        return np.array(0., dtype=default_float())
 
 class TestPriorMode(GPflowTestCase):
     """

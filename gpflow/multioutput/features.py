@@ -17,8 +17,6 @@ import tensorflow as tf
 from .. import settings
 from ..dispatch import dispatch
 from ..features import InducingPoints, InducingFeature, Kuu, Kuf
-from ..decors import params_as_tensors_for
-from ..params import ParamList
 from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
 
 
@@ -79,7 +77,7 @@ def debug_kuf(feat, kern):
 @dispatch(InducingPoints, Mok, object)
 def Kuf(feat, kern, Xnew):
     debug_kuf(feat, kern)
-    return kern.K(feat.Z, Xnew, full_output_cov=True)  #  M x P x N x P
+    return kern(feat.Z, Xnew, full_output_cov=True)  #  M x P x N x P
 
 
 @dispatch(SharedIndependentMof, SharedIndependentMok, object)
@@ -137,9 +135,9 @@ def debug_kuu(feat, kern, jitter):
 @dispatch(InducingPoints, Mok)
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
-    Kmm = kern.K(feat.Z, full_output_cov=True)  # M x P x M x P
+    Kmm = kern(feat.Z, full_output_cov=True)  # M x P x M x P
     M = tf.shape(Kmm)[0] * tf.shape(Kmm)[1]
-    jittermat = jitter * tf.reshape(tf.eye(M, dtype=settings.float_type), tf.shape(Kmm))
+    jittermat = jitter * tf.reshape(tf.eye(M, dtype=default_float()), tf.shape(Kmm))
     return Kmm + jittermat
 
 
@@ -147,7 +145,7 @@ def Kuu(feat, kern, *, jitter=0.0):
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = Kuu(feat.feat, kern.kern)  # M x M
-    jittermat = tf.eye(len(feat), dtype=settings.float_type) * jitter
+    jittermat = tf.eye(len(feat), dtype=default_float()) * jitter
     return Kmm + jittermat
 
 
@@ -155,7 +153,7 @@ def Kuu(feat, kern, *, jitter=0.0):
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = tf.stack([Kuu(feat.feat, k) for k in kern.kernels], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
+    jittermat = tf.eye(len(feat), dtype=default_float())[None, :, :] * jitter
     return Kmm + jittermat
 
 
@@ -163,7 +161,7 @@ def Kuu(feat, kern, *, jitter=0.0):
 def Kuu(feat, kern, *, jitter):
     debug_kuu(feat, kern, jitter)
     Kmm = tf.stack([Kuu(f, kern.kern) for f in feat.feat_list], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
+    jittermat = tf.eye(len(feat), dtype=default_float())[None, :, :] * jitter
     return Kmm + jittermat
 
 
@@ -171,7 +169,7 @@ def Kuu(feat, kern, *, jitter):
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = tf.stack([Kuu(f, k) for f, k in zip(feat.feat_list, kern.kernels)], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
+    jittermat = tf.eye(len(feat), dtype=default_float())[None, :, :] * jitter
     return Kmm + jittermat
 
 
@@ -179,5 +177,5 @@ def Kuu(feat, kern, *, jitter=0.0):
 def Kuu(feat, kern, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
     Kmm = tf.stack([Kuu(feat.feat, k) for k in kern.kernels], axis=0)  # L x M x M
-    jittermat = tf.eye(len(feat), dtype=settings.float_type)[None, :, :] * jitter
+    jittermat = tf.eye(len(feat), dtype=default_float())[None, :, :] * jitter
     return Kmm + jittermat

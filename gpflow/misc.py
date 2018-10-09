@@ -37,7 +37,7 @@ def normalize_num_type(num_type):
         num_type = num_type.as_numpy_dtype.type
 
     if num_type in [np.float32, np.float64]:  # pylint: disable=E1101
-        num_type = settings.float_type
+        num_type = default_float()
     elif num_type in [np.int16, np.int32, np.int64]:
         num_type = settings.int_type
     else:
@@ -53,31 +53,6 @@ def get_attribute(obj, name, allow_fail=False, default=None):
         if allow_fail:
             return default
         raise error
-
-
-def vec_to_tri(vectors, N):
-    """
-    Takes a D x M tensor `vectors' and maps it to a D x matrix_size X matrix_sizetensor
-    where the where the lower triangle of each matrix_size x matrix_size matrix is
-    constructed by unpacking each M-vector.
-
-    Native TensorFlow version of Custom Op by Mark van der Wilk.
-
-    def int_shape(x):
-        return list(map(int, x.get_shape()))
-
-    D, M = int_shape(vectors)
-    N = int( np.floor( 0.5 * np.sqrt( M * 8. + 1. ) - 0.5 ) )
-    # Check M is a valid triangle number
-    assert((matrix * (N + 1)) == (2 * M))
-    """
-    indices = list(zip(*np.tril_indices(N)))
-    indices = tf.constant([list(i) for i in indices], dtype=tf.int64)
-
-    def vec_to_tri_vector(vector):
-        return tf.scatter_nd(indices=indices, shape=[N, N], updates=vector)
-
-    return tf.map_fn(vec_to_tri_vector, vectors)
 
 
 def version():
