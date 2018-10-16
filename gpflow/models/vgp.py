@@ -81,7 +81,7 @@ class VGP(GPModel):
 
         return super(VGP, self).compile(session=session)
 
-    @params_as_tensors
+
     def _build_likelihood(self):
         """
         This method computes the variational lower bound on the likelihood,
@@ -119,7 +119,7 @@ class VGP(GPModel):
 
         return tf.reduce_sum(var_exp) - KL
 
-    @params_as_tensors
+
     def _build_predict(self, Xnew, full_cov=False):
         mu, var = conditional(Xnew, self.X, self.kern, self.q_mu,
                               q_sqrt=self.q_sqrt, full_cov=full_cov, white=True)
@@ -189,7 +189,7 @@ class VGP_opper_archambeau(GPModel):
                                       transforms.positive)
         return super(VGP_opper_archambeau, self).compile(session=session)
 
-    @params_as_tensors
+
     def _build_likelihood(self):
         """
         q_alpha, q_lambda are variational parameters, size N x R
@@ -223,7 +223,7 @@ class VGP_opper_archambeau(GPModel):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         return tf.reduce_sum(v_exp) - KL
 
-    @params_as_tensors
+
     def _build_predict(self, Xnew, full_cov=False):
         """
         The posterior variance of F is given by

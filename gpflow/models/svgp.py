@@ -19,10 +19,11 @@ import tensorflow as tf
 from .. import kullback_leiblers, features
 from .. import settings
 from .. import transforms
-from ..conditionals import conditional, Kuu
+from ..conditionals import conditional
+from ..covariances import Kuu
 from ..models.model import GPModel
 from ..base import Parameter, positive, triangular
-from ..util import default_float, jitter
+from ..util import default_float, default_jitter
 
 
 class SVGP(GPModel):
@@ -48,7 +49,6 @@ class SVGP(GPModel):
                  mean_function=None,
                  num_latent=None,
                  q_diag=False,
-                 Z=None,
                  q_mu=None,
                  q_sqrt=None,
                  whiten=True,
@@ -73,7 +73,7 @@ class SVGP(GPModel):
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
-        self.feature = features.inducingpoint_wrapper(feat, Z)
+        self.feature = features.InducingPoints(feat) if isinstance(feat, np.ndarray) else feat
 
         # init variational parameters
         num_inducing = len(self.feature)

@@ -116,7 +116,6 @@ class BayesianGPLVM(GPModel):
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent
 
-    @params_as_tensors
     def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
@@ -162,7 +161,7 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    @params_as_tensors
+
     def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points.

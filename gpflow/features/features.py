@@ -1,4 +1,4 @@
-# Copyright 2017 st--, Mark van der Wilk
+# Copyright 2017 GPflow 
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import numpy as np
 import tensorflow as tf
 
 from . import kernels, settings
-from ..base import Module, Parameter
+from ..base import Module, Parameter, positive
 from ..util import create_logger, default_float
-from ..dispatch import dispatch
+
 
 logger = create_logger()
 
@@ -37,7 +37,7 @@ class InducingFeature(Module):
         Returns the number of features, relevant for example to determine the
         size of the variational distribution.
         """
-        raise NotImplementedError()
+        pass
 
 
 class InducingPointsBase(InducingFeature):
@@ -59,16 +59,6 @@ class InducingPointsBase(InducingFeature):
 class InducingPoints(InducingPointsBase):
     pass
 
-@dispatch(InducingPoints, kernels.Kernel)
-def Kuu(feat, kern, *, jitter=0.0):
-    Kzz = kern(feat.Z)
-    Kzz += jitter * tf.eye(len(feat), dtype=default_float())
-    return Kzz
-
-@dispatch(InducingPoints, kernels.Kernel, object)
-def Kuf(feat, kern, Xnew):
-    return kern(feat.Z, Xnew)
-
 
 class Multiscale(InducingPointsBase):
     """
@@ -83,13 +73,11 @@ class Multiscale(InducingPointsBase):
         booktitle = {Advances in Neural Information Processing Systems 22},
         year = {2009},
       }
-
     """
-
     def __init__(self, Z, scales):
         super().__init__(Z)
-        self.scales = Parameter(scales,
-                                transform=transforms.positive)  # Multi-scale feature widths (std. dev. of Gaussian)
+        # Multi-scale feature widths (std. dev. of Gaussian)
+        self.scales = Parameter(scales, transform=positive())
         if self.Z.shape != scales.shape:
             raise ValueError("Input locations `Z` and `scales` must have the same shape.")  # pragma: no cover
 
@@ -101,45 +89,3 @@ class Multiscale(InducingPointsBase):
         """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
 
-
-@dispatch(Multiscale, kernels.RBF, object)
-def Kuf(feat, kern, Xnew):
-    Xnew, _ = kern.slice(Xnew, None)
-    Zmu, Zlen = kern.slice(feat.Z, feat.scales)
-    idlengthscales = kern.lengthscales + Zlen
-    d = feat._cust_square_dist(Xnew, Zmu, idlengthscales)
-    Kuf = tf.transpose(kern.variance * tf.exp(-d / 2) *
-                        tf.reshape(tf.reduce_prod(kern.lengthscales / idlengthscales, 1),
-                                    (1, -1)))
-    return Kuf
-
-@dispatch(Multiscale, kernels.RBF)
-def Kuu(feat, kern, *, jitter=0.0):
-    Zmu, Zlen = kern.slice(feat.Z, feat.scales)
-    idlengthscales2 = tf.square(kern.lengthscales + Zlen)
-    sc = tf.sqrt(
-        tf.expand_dims(idlengthscales2, 0) + tf.expand_dims(idlengthscales2, 1) - tf.square(
-            kern.lengthscales))
-    d = feat._cust_square_dist(Zmu, Zmu, sc)
-    Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
-    Kzz += jitter * tf.eye(len(feat), dtype=default_float())
-    return Kzz
-
-
-def inducingpoint_wrapper(feat, Z):
-    """
-    Models which used to take only Z can now pass `feat` and `Z` to this method. This method will
-    check for consistency and return the correct feature. This allows backwards compatibility in
-    for the methods.
-    """
-    if feat is not None and Z is not None:
-        raise ValueError("Cannot pass both an InducingFeature instance and Z values")  # pragma: no cover
-    elif feat is None and Z is None:
-        raise ValueError("You must pass either an InducingFeature instance or Z values")  # pragma: no cover
-    elif Z is not None:
-        feat = InducingPoints(Z)
-    elif isinstance(feat, np.ndarray):
-        feat = InducingPoints(feat)
-    else:
-        assert isinstance(feat, InducingFeature)  # pragma: no cover
-    return feat

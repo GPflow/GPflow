@@ -30,6 +30,7 @@ def inv_probit(x):
     return 0.5 * (1.0 + tf.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
 
 
+
 class Likelihood(Module):
     def __init__(self):
         super().__init__()

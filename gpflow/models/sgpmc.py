@@ -74,7 +74,7 @@ class SGPMC(GPModel):
         self.V = Parameter(np.zeros((len(self.feature), self.num_latent)))
         self.V.prior = Gaussian(0., 1.)
 
-    @params_as_tensors
+
     def _build_likelihood(self):
         """
         This function computes the optimal density for v, q*(v), up to a constant
@@ -83,7 +83,7 @@ class SGPMC(GPModel):
         fmean, fvar = self._build_predict(self.X, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y))
 
-    @params_as_tensors
+
     def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict

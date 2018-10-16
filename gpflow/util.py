@@ -6,8 +6,8 @@ import tensorflow.contrib.eager as tfe
 import tensorflow_probability as tfp
 
 
-def create_logger():
-    return logging.getLogger('temporary')
+def create_logger(name=None):
+    return logging.getLogger('Temporary Logger Solution')
 
 
 def jitter_eye(num_rows: int, num_columns: int = None, value: float = None) -> float:

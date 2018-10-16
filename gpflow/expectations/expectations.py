@@ -60,7 +60,7 @@ def quadrature_expectation(p, obj1, obj2=None, num_gauss_hermite_points=None):
     if isinstance(p, tuple):
         assert len(p) == 2
 
-        if   p[1].shape.ndims == 2:
+        if p[1].shape.ndims == 2:
             p = DiagonalGaussian(*p)
         elif p[1].shape.ndims == 3:
             p = Gaussian(*p)

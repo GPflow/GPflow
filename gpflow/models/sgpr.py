@@ -50,7 +50,7 @@ class SGPRUpperMixin(object):
     """
 
     @autoflow()
-    @params_as_tensors
+
     def compute_upper_bound(self):
         num_data = tf.cast(tf.shape(self.Y)[0], default_float())
 
@@ -117,7 +117,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         self.feature = features.inducingpoint_wrapper(feat, Z)
         self.num_data = X.shape[0]
 
-    @params_as_tensors
+
     def _build_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
@@ -155,7 +155,7 @@ class SGPR(GPModel, SGPRUpperMixin):
 
         return bound
 
-    @params_as_tensors
+
     def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points
@@ -225,7 +225,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         self.num_data = X.shape[0]
         self.num_latent = Y.shape[1]
 
-    @params_as_tensors
+
     def _build_common_terms(self):
         num_inducing = len(self.feature)
         err = self.Y - self.mean_function(self.X)  # size N x R
@@ -292,7 +292,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
 
-    @params_as_tensors
+
     def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points

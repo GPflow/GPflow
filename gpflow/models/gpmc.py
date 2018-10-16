@@ -68,7 +68,7 @@ class GPMC(GPModel):
 
         return super(GPMC, self).compile(session=session)
 
-    @params_as_tensors
+
     def _build_likelihood(self):
         """
         Construct a tf function to compute the likelihood of a general GP
@@ -84,7 +84,7 @@ class GPMC(GPModel):
 
         return tf.reduce_sum(self.likelihood.logp(F, self.Y))
 
-    @params_as_tensors
+
     def _build_predict(self, Xnew, full_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
