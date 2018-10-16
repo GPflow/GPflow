@@ -1,5 +1,3 @@
-from typing import Callable
-
 import tensorflow as tf
 
 from ..features import InducingFeature
@@ -15,7 +13,7 @@ logger = create_logger()
 def _sample_conditional(Xnew: tf.Tensor,
                         feature: InducingFeature,
                         kernel: Kernel,
-                        function: Callable, *,
+                        function: tf.Tensor, *,
                         full_output_cov=False, q_sqrt=None, white=False):
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
@@ -35,7 +33,7 @@ def _sample_conditional(Xnew: tf.Tensor,
 
 
 @sample_conditional.register(object, object, Kernel, object)
-def _sample_conditional(Xnew: tf.Tensor, X: tf.Tensor, kernel: Kernel, function: Callable, *, q_sqrt=None, white=False):
+def _sample_conditional(Xnew: tf.Tensor, X: tf.Tensor, kernel: Kernel, function: tf.Tensor, *, q_sqrt=None, white=False):
     logger.debug("Sample conditional: Kernel")
     mean, var = conditional(Xnew, X, kernel, function, q_sqrt=q_sqrt, white=white, full_cov=False)  # [N, P], [N, P]
     return sample_mvn(mean, var, "diag")  # [N, P]

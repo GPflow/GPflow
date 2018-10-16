@@ -24,6 +24,7 @@ from ..covariances import Kuu
 from ..models.model import GPModel
 from ..base import Parameter, positive, triangular
 from ..util import default_float, default_jitter
+from .util inducingpoint_wrapper
 
 
 class SVGP(GPModel):
@@ -73,7 +74,7 @@ class SVGP(GPModel):
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
-        self.feature = features.InducingPoints(feat) if isinstance(feat, np.ndarray) else feat
+        self.feature = inducingpoint_wrapper(feat)
 
         # init variational parameters
         num_inducing = len(self.feature)

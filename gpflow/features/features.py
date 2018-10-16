@@ -12,16 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings
-from abc import abstractmethod
+import abc
 
-import numpy as np
 import tensorflow as tf
 
-from . import kernels, settings
 from ..base import Module, Parameter, positive
 from ..util import create_logger, default_float
-
 
 logger = create_logger()
 
@@ -31,7 +27,7 @@ class InducingFeature(Module):
     Abstract base class for inducing features.
     """
 
-    @abstractmethod
+    @abc.abstractmethod
     def __len__(self) -> int:
         """
         Returns the number of features, relevant for example to determine the
@@ -88,4 +84,3 @@ class Multiscale(InducingPointsBase):
         scales. sc: N x M x D.
         """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
-

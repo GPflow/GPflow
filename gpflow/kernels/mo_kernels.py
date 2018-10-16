@@ -14,10 +14,11 @@
 
 
 import abc
+
 import tensorflow as tf
 
-from .kernels import Kernel, Combination
 from ..base import Parameter
+from .base import Combination, Kernel
 
 
 class Mok(metaclass=abc.ABCMeta):

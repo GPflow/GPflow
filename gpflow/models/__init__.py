@@ -14,17 +14,18 @@
 
 # flake8: noqa
 
-from .model import Model
+from .model import BayesianModel
 from .model import GPModel
 from .gpr import GPR
-from .gpmc import GPMC
-from .gplvm import GPLVM
-from .gplvm import BayesianGPLVM
-from .gplvm import PCA_reduce
-from .sgpmc import SGPMC
-from .sgpr import SGPRUpperMixin
-from .sgpr import SGPR
-from .sgpr import GPRFITC
-from .svgp import SVGP
-from .vgp import VGP
-from .vgp import VGP_opper_archambeau
+
+# from .gpmc import GPMC
+# from .gplvm import GPLVM
+# from .gplvm import BayesianGPLVM
+# from .gplvm import PCA_reduce
+# from .sgpmc import SGPMC
+# from .sgpr import SGPRUpperMixin
+# from .sgpr import SGPR
+# from .sgpr import GPRFITC
+# from .svgp import SVGP
+# from .vgp import VGP
+# from .vgp import VGP_opper_archambeau

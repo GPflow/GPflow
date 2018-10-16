@@ -1,12 +1,13 @@
-from typing import Callable
-
 import tensorflow as tf
 
+from .. import mean_functions
+
+from ..covariances import Kuu
+from ..expectations import expectation
 from ..features import InducingFeature, InducingPoints
 from ..kernels import Kernel
-from ..util import create_logger
-from .dispatch import conditional, sample_conditional
-from .util import sample_mvn
+from ..probability_distributions import Gaussian
+from ..util import default_float, default_jitter
 
 
 def uncertain_conditional(Xnew_mu: tf.Tensor,
@@ -58,8 +59,7 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
     q_sqrt_r = tf.matrix_band_part(q_sqrt, -1, 0)  # D x M x M
 
     eKuf = tf.transpose(expectation(pXnew, (kernel, feature)))  # M x N (psi1)
-    Kuu = feature.Kuu(kernel, jitter=default_jitter())  # M x M
-    Luu = tf.cholesky(Kuu)  # M x M
+    Luu = tf.cholesky(Kuu(feature, kernel, jitter=default_jitter()))
 
     if not white:
         q_mu = tf.matrix_triangular_solve(Luu, q_mu, lower=True)

@@ -15,11 +15,13 @@
 import abc
 from typing import Optional, Tuple
 
-import numpy as np
 import tensorflow as tf
 
-from ..base import Module, Parameter
-from utils import default_jitter
+from ..base import Module
+from ..kernels import Kernel
+from ..likelihoods import Likelihood
+from ..mean_functions import MeanFunction, Zero
+from ..util import default_jitter
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
@@ -85,10 +87,12 @@ class GPModel(BayesianModel):
                  num_latent: int = 1,
                  seed: Optional[int] = None):
         super().__init__()
-        self.mean_function = mean_function
         self.num_latent = num_latent
         if mean_function is not None:
             self.num_latent = len(mean_function)
+        else:
+            mean_function = Zero()
+        self.mean_function = mean_function
         self.kernel = kernel
         self.likelihood = likelihood
 

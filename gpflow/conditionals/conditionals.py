@@ -1,13 +1,13 @@
-from typing import Callable
+# noqa: F811
 
 import tensorflow as tf
 
 from ..covariances import Kuf, Kuu
 from ..features import InducingFeature
 from ..kernels import Kernel
-from ..util import create_logger, jitter_eye
-from .dispatch import conditional, sample_conditional
-from .util import base_conditional, expand_independent_outputs, sample_mvn
+from ..util import create_logger, default_jitter_eye
+from .dispatch import conditional
+from .util import base_conditional, expand_independent_outputs
 
 logger = create_logger()
 
@@ -16,7 +16,7 @@ logger = create_logger()
 def _conditional(Xnew: tf.Tensor,
                  feature: InducingFeature,
                  kernel: Kernel,
-                 function: Callable,
+                 function: tf.Tensor,
                  *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
     Single-output GP conditional.
@@ -61,7 +61,7 @@ def _conditional(
         Xnew: tf.Tensor,
         X: tf.Tensor,
         kernel: Kernel,
-        function: Callable,
+        function: tf.Tensor,
         *, full_cov=False, q_sqrt=None, white=False):
     """
     Given f, representing the GP at the points X, produce the mean and
@@ -99,7 +99,7 @@ def _conditional(
     """
     logger.debug("Conditional: Kernel")
     num_data = X.shape[0]  # [M]
-    Kmm = kernel(X) + jitter_eye(num_data)
+    Kmm = kernel(X) + default_jitter_eye(num_data)
     Kmn = kernel(X, Xnew)
     Knn = kernel(Xnew, diag=(not full_cov))
     mean, var = base_conditional(Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white)

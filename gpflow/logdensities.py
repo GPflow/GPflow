@@ -15,13 +15,10 @@
 
 import tensorflow as tf
 import numpy as np
-import warnings
+from .util import create_logger, default_float
 
 
-from . import settings
-
-
-logger = settings.logger()
+logger = create_logger()
 
 
 def gaussian(x, mu, var):

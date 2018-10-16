@@ -18,25 +18,11 @@
 
 import tensorflow as tf
 
-tf.enable_eager_execution()
+from . import (conditionals, expectations, features, kernels, likelihoods,
+               logdensities, models, probability_distributions, util)
 
-from ._version import __version__
 from ._settings import SETTINGS as settings
+from ._version import __version__
+from .base import Parameter, positive, triangular
 
-
-from . import kernels
-
-# from . import misc
-# from . import conditionals
-# from . import logdensities
-# from . import likelihoods
-# from . import models
-# from . import test_util
-# from . import training as train
-# from . import features
-# from . import expectations
-# from . import probability_distributions
-# from . import multioutput
-
-from .base import Parameter
-from .base import positive, triangular
+tf.enable_eager_execution()

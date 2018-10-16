@@ -1,14 +1,12 @@
-from typing import Callable
-
 import tensorflow as tf
 
 from ..covariances import Kuf, Kuu
-from ..features import (InducingFeature, SeparateIndependentMof,
-                        SharedIndependentMof)
-from ..kernels import (Combination, Kernel, SeparateIndependentMok,
+from ..features import (InducingPoints, MixedKernelSharedMof,
+                        SeparateIndependentMof, SharedIndependentMof)
+from ..kernels import (Combination, Mok, SeparateIndependentMok,
                        SeparateMixedMok, SharedIndependentMok)
-from ..util import create_logger, default_float, default_jitter
-from .dispatch import conditional, sample_conditional
+from ..util import create_logger, default_jitter
+from .dispatch import conditional
 from .util import (base_conditional, expand_independent_outputs,
                    fully_correlated_conditional,
                    independent_interdomain_conditional)
@@ -51,8 +49,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     """
     logger.debug("Conditional: SharedIndependentMof - SharedIndepedentMok")
 
-
-    Kmm = Kuu(feature, kernel, jitter=settings.numerics.jitter_level)  # M x M
+    Kmm = Kuu(feature, kernel, jitter=default_jitter())  # M x M
     Kmn = Kuf(feature, kernel, Xnew)  # M x N
     if full_cov:
         Knn = kernel(Xnew, full_output_cov=False)[0, ...]  # N x N

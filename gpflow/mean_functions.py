@@ -16,7 +16,6 @@
 import numpy as np
 import tensorflow as tf
 
-from . import settings
 from .base import Module, ModuleList, Parameter
 from .util import default_float
 
@@ -97,6 +96,7 @@ class Identity(Linear):
     @b.setter
     def b(self, b):
         pass
+
 
 class Constant(MeanFunction):
     """

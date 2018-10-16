@@ -1,5 +1,6 @@
 import numpy as np
-import ..features import InducingPoints
+
+from ..features import InducingPoints
 
 
 def inducingpoint_wrapper(feature):
@@ -9,5 +10,5 @@ def inducingpoint_wrapper(feature):
     for the methods.
     """
     if isinstance(feature, np.ndarray):
-        feat = InducingPoints(Z)
+        feat = InducingPoints(feature)
     return feat

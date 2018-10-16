@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
 import tensorflow as tf
 
 from .. import likelihoods
-from .. import settings
-
 from ..conditionals import base_conditional
+from ..kernels import Kernel
 from ..logdensities import multivariate_normal
-
+from ..mean_functions import MeanFunction
 from .model import GPModel
 
 
@@ -36,7 +36,11 @@ class GPR(GPModel):
 
        \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
-    def __init__(self, X, Y, kernel, mean_function=None):
+    def __init__(self,
+                 X: tf.Tensor,
+                 Y: tf.Tensor,
+                 kernel: Kernel,
+                 mean_function: Optional[MeanFunction] = None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -44,14 +48,9 @@ class GPR(GPModel):
         """
         likelihood = likelihoods.Gaussian()
 
-        def convert_to_tensor(x):
-            if isinstance(x, (tf.Tensor, tfe.Variable)):
-                return x
-            return tf.convert_to_tensor(x)
-
-        self.X = convert_to_tensor(X)
-        self.Y = convert_to_tensor(Y)
-        GPModel.__init__(self, kernel, likelihood, mean_function)
+        self.X = X
+        self.Y = Y
+        super().__init__(kernel, likelihood, mean_function)
 
     def log_likelihood(self):
         """
@@ -76,10 +75,10 @@ class GPR(GPModel):
 
         where F* are points on the GP at Xnew, Y are noisy observations at X.
         """
-        y = self.Y - self.mean_function(self.X)
-        Kmn = self.kernel(self.X, Xnew)
-        Kmm_sigma = self.kernel(self.X) + tf.eye(self.X.shape[0], dtype=X.dtype) * self.likelihood.variance
+        X = self.X
+        y = self.Y - self.mean_function(X)
+        Kmn = self.kernel(X, Xnew)
+        Kmm_sigma = self.kernel(X) + tf.eye(X.shape[0], dtype=X.dtype) * self.likelihood.variance
         Knn = self.kernel(Xnew, diag=(not full_cov))
         f_mean, f_var = base_conditional(Kmn, Kmm_sigma, Knn, y, full_cov=full_cov, white=False)  # [N, P], [N, P] or [P, N, N]
         return f_mean + self.mean_function(Xnew), f_var
-

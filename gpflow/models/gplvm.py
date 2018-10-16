@@ -127,8 +127,8 @@ class BayesianGPLVM(GPModel):
         psi0 = tf.reduce_sum(expectation(pX, self.kern))
         psi1 = expectation(pX, (self.kern, self.feature))
         psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
-        Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-        L = tf.cholesky(Kuu)
+        cov_uu = Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)
+        L = tf.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
 
@@ -174,11 +174,11 @@ class BayesianGPLVM(GPModel):
         num_inducing = len(self.feature)
         psi1 = expectation(pX, (self.kern, self.feature))
         psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
-        Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-        Kus = self.feature.Kuf(self.kern, Xnew)
+        jitter = settings.numerics.jitter_level
+        Kus = Kuf(self.feature, self.kern, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
-        L = tf.cholesky(Kuu)
+        L = tf.cholesky(Kuu(self.feature, self.kern, jitter=jitter))
 
         A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
