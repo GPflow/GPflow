@@ -16,8 +16,7 @@
 
 
 import tensorflow as tf
-
-from . import settings
+from .util import default_float
 
 
 def gauss_kl(q_mu, q_sqrt, K=None):

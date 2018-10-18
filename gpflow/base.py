@@ -40,19 +40,23 @@ class Parameter(tfe.Variable):
     def trainable(self) -> bool:
         return super().trainable
 
+    @property
+    def unconstrained(self):
+        return self.transform.inverse(self)
+
     @trainable.setter
     def trainable(self, flag: Union[bool, int]):
         self._trainable = bool(flag)
 
-    @property
-    def constrained(self):
+    def _read_variable_op(self):
+        variable = super()._read_variable_op()
         if self.transform is None:
-            return self
-        return self.transform.forward(self)
+            return variable
+        return self.transform.forward(variable)
 
     def log_prior(self):
-        x = self.constrained
-        y = self
+        x = self
+        y = self.unconstrained
         log_prob = 0.
         bijector = self.transform
         if self.prior is not None:
@@ -85,19 +89,33 @@ class Module:
         return [v for v in self.variables if v.trainable]
 
     def __getattr__(self, name):
-        if name in self._parameters:
-            parameter = self._parameters[name]
-            if isinstance(parameter, Parameter):
-                return parameter.constrained  # NOTE: Very important line
-            return parameter
+        if name in self.__dict__['_parameters']:
+            return self.__dict__['_parameters'].get(name)
         elif name in self._modules:
             return self._modules[name]
+        raise AttributeError
 
     def __setattr__(self, name, value):
-        if isinstance(value, Parameter):
-            self._parameters[name] = value
-        elif isinstance(value, (Module, ModuleList)):
+        parameters = self.__dict__.get('_parameters')
+        is_parameter = isinstance(value, (Parameter, tfe.Variable))
+        if is_parameter and parameters is None:
+            raise AttributeError()
+        if parameters is not None and name in parameters and not is_parameter:
+            raise AttributeError()
+        if is_parameter and parameters is not None:
+            parameters[name] = value
+            return
+
+        modules = self.__dict__.get('_modules')
+        is_module = isinstance(value, (Module, ModuleList))
+        if is_module and modules is None:
+            raise AttributeError()
+        if modules is not None and name in modules and not is_module:
+            raise AttributeError()
+        if is_module and modules is not None:
             self._modules[name] = value
+            return
+
         super().__setattr__(name, value)
 
 
@@ -144,4 +162,3 @@ def _to_unconstrained(data: VariableData, transform: Transform) -> tf.Tensor:
     if transform is not None:
         unconstrained_data = transform.inverse(data)
     return unconstrained_data
-

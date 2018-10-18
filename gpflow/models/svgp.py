@@ -16,15 +16,13 @@
 import numpy as np
 import tensorflow as tf
 
-from .. import kullback_leiblers, features
-from .. import settings
-from .. import transforms
+from .. import kullback_leiblers
 from ..conditionals import conditional
 from ..covariances import Kuu
 from ..models.model import GPModel
 from ..base import Parameter, positive, triangular
 from ..util import default_float, default_jitter
-from .util inducingpoint_wrapper
+from .util import inducingpoint_wrapper
 
 
 class SVGP(GPModel):
@@ -46,18 +44,18 @@ class SVGP(GPModel):
     def __init__(self,
                  kernel,
                  likelihood,
-                 feat=None,
+                 feature=None,
                  mean_function=None,
-                 num_latent=None,
+                 num_latent=1,
                  q_diag=False,
                  q_mu=None,
                  q_sqrt=None,
                  whiten=True,
-                 num_data=None):
+                 num_data=1):
         """
         - X is a data matrix, size N x D
         - Y is a data matrix, size N x P
-        - kern, likelihood, mean_function are appropriate GPflow objects
+        - kernel, likelihood, mean_function are appropriate GPflow objects
         - Z is a matrix of pseudo inputs, size M x D
         - num_latent is the number of latent process to use, default to
           Y.shape[1]
@@ -74,7 +72,7 @@ class SVGP(GPModel):
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
-        self.feature = inducingpoint_wrapper(feat)
+        self.feature = inducingpoint_wrapper(feature)
 
         # init variational parameters
         num_inducing = len(self.feature)
@@ -116,7 +114,8 @@ class SVGP(GPModel):
                 ones = np.ones((num_inducing, self.num_latent), dtype=default_float())
                 self.q_sqrt = Parameter(ones, transform=positive())  # M x P
             else:
-                q_sqrt = np.array([np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)])
+                q_sqrt = [np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)]
+                q_sqrt = np.array(q_sqrt)
                 self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [P, M, M]
         else:
             if q_diag:
@@ -135,7 +134,6 @@ class SVGP(GPModel):
             K = Kuu(self.feature, self.kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
-
     def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
         This gives a variational bound on the model likelihood.
@@ -147,6 +145,9 @@ class SVGP(GPModel):
         return tf.reduce_sum(var_exp) * scale - kl
 
     def predict_f(self, Xnew, full_cov=False, full_output_cov=False) -> tf.Tensor:
-        mu, var = conditional(Xnew, self.feature, self.kern, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov,
-                              white=self.whiten, full_output_cov=full_output_cov)
+        q_mu = self.q_mu
+        q_sqrt = self.q_sqrt
+        mu, var = conditional(Xnew, self.feature, self.kernel, q_mu, q_sqrt=q_sqrt,
+                              full_cov=full_cov, white=self.whiten,
+                              full_output_cov=full_output_cov)
         return mu + self.mean_function(Xnew), var

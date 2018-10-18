@@ -17,6 +17,7 @@
 from .model import BayesianModel
 from .model import GPModel
 from .gpr import GPR
+from .svgp import SVGP
 
 # from .gpmc import GPMC
 # from .gplvm import GPLVM

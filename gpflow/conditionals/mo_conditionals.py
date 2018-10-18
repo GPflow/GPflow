@@ -1,3 +1,8 @@
+# flake8: ignore=F811
+# noqa: ignore=F811
+# flake8: F811
+# noqa: F811
+
 import tensorflow as tf
 
 from ..covariances import Kuf, Kuu

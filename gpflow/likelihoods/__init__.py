@@ -1,1 +1,4 @@
-from .likelihoods import Likelihood, Gaussian, GaussianMC, Exponential, Poisson, Gamma, Beta, MultiClass, SwitchedLikelihood, Ordinal, MonteCarloLikelihood, Softmax
+from .likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian,
+                          GaussianMC, Likelihood, MonteCarloLikelihood,
+                          MultiClass, Ordinal, Poisson, Softmax,
+                          SwitchedLikelihood)
