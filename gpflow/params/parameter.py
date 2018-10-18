@@ -246,6 +246,14 @@ class Parameter(Node):
             return Build.NO
         return Build.YES
 
+    @property
+    def trainable(self):
+        return self._trainable
+
+    @trainable.setter
+    def trainable(self, value):
+        self.set_trainable(value)
+
     def set_trainable(self, value):
         if not isinstance(value, bool):
             raise ValueError('Fixed property value must be boolean.')
@@ -263,7 +271,7 @@ class Parameter(Node):
             else:
                 misc.remove_from_trainables(self.parameter_tensor, graph)
 
-        object.__setattr__(self, 'trainable', value)
+        self._trainable = value
 
     def assign(self, value, session=None, dtype=None, force=True):
         if self._externally_defined:
@@ -481,6 +489,9 @@ class Parameter(Node):
 
     def __str__(self):
         return str(self.as_pandas_table())
+
+    def _repr_html_(self):
+        return self.as_pandas_table()._repr_html_()
 
     @property
     def fixed(self):

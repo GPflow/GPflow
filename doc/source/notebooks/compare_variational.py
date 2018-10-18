@@ -1,3 +1,5 @@
+# Unmaintained demo script
+
 import gpflow
 import numpy as np
 from matplotlib import pyplot as plt
@@ -23,9 +25,9 @@ m4.feature.trainable = False
 model_list = [m2,m3,m4]
 
 for m in model_list:
-    m.kern.lengthscales.fixed = True
-    m.kern.variance.fixed = True
-    m.likelihood.variance.fixed = True
+    m.kern.lengthscales.trainable = False
+    m.kern.variance.trainable = False
+    m.likelihood.variance.trainable = False
 
 opt = gpflow.train.ScipyOptimizer()
 opt.minimize(m2, maxiter=100000)
