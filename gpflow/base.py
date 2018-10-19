@@ -29,30 +29,68 @@ class Parameter(tfe.Variable):
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
                  trainable: bool = True,
-                 dtype: np.dtype = None):
+                 dtype: np.dtype = None,
+                 unconstrained: bool = False,
+                 constrained: bool = True):
         data = _to_variable_data(data, dtype=dtype)
         unconstrained_data = _to_unconstrained(data, transform)
         super().__init__(unconstrained_data, trainable=trainable)
         self.transform = transform
         self.prior = prior
+        self.is_constrained = constrained
 
     @property
     def trainable(self) -> bool:
         return super().trainable
 
     @property
+    def shape(self):
+        return self._shape
+
+        # if self.is_constrained:
+        #     return self._read_variable_op().shape
+        # return super().shape
+
+    @property
+    def is_constrained(self):
+        constrained = self.__dict__.get('_is_constrained')
+        return bool(constrained)
+
+    @is_constrained.setter
+    def is_constrained(self, value: bool):
+        value = bool(value)
+        constrained = self.__dict__.get('_is_constrained')
+        if constrained is not None and value == constrained:
+            return
+        if value:
+            shape = self.constrained.shape
+        else:
+            shape = super()._read_variable_op().shape
+        self._shape = shape
+        self._is_constrained = value
+
+    @property
     def unconstrained(self):
+        if self.transform is None:
+            return self
         return self.transform.inverse(self)
+
+    @property
+    def constrained(self):
+        if self.transform is None:
+            return self
+        return self.transform.forward(super()._read_variable_op())
 
     @trainable.setter
     def trainable(self, flag: Union[bool, int]):
         self._trainable = bool(flag)
 
     def _read_variable_op(self):
-        variable = super()._read_variable_op()
-        if self.transform is None:
-            return variable
-        return self.transform.forward(variable)
+        value = super()._read_variable_op()
+        constrained = self.__dict__.get('_is_constrained')
+        if self.transform is None or (constrained is not None and not constrained):
+            return value
+        return self.transform.forward(value)
 
     def log_prior(self):
         x = self
