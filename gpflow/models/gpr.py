@@ -27,17 +27,18 @@ from .model import GPModel
 
 
 class GPR(GPModel):
-    """
+    r"""
     Gaussian Process Regression.
 
     This is a vanilla implementation of GP regression with a Gaussian
     likelihood.  Multiple columns of Y are treated independently.
 
-    The log likelihood i this models is sometimes referred to as the 'marginal log likelihood', and is given by
+    The log likelihood of this model is sometimes referred to as the
+    'marginal log likelihood', and is given by
 
     .. math::
 
-       \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
+       \log p(\mathbf y | \mathbf f) = \mathcal N(\mathbf y | 0, \mathbf K + \sigma_n \mathbf I)
     """
     def __init__(self, X, Y, kern, mean_function=None, **kwargs):
         """
@@ -53,7 +54,7 @@ class GPR(GPModel):
     @name_scope('likelihood')
     @params_as_tensors
     def _build_likelihood(self):
-        """
+        r"""
         Construct a tensorflow function to compute the likelihood.
 
             \log p(Y | theta).
@@ -70,11 +71,11 @@ class GPR(GPModel):
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False):
         """
-        Xnew is a data matrix, point at which we want to predict
+        Xnew is a data matrix, the points at which we want to predict.
 
         This method computes
 
-            p(F* | Y )
+            p(F* | Y)
 
         where F* are points on the GP at Xnew, Y are noisy observations at X.
 

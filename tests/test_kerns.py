@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 
 import copy
 import gpflow
-from gpflow.test_util import GPflowTestCase
+from gpflow.test_util import GPflowTestCase, session_tf
 
 from .reference import referenceRbfKernel, referenceArcCosineKernel, referencePeriodicKernel
 
@@ -505,6 +505,9 @@ class TestARDInit(GPflowTestCase):
             k2_variances = k2.weight_variances.read_value()
             self.assertTrue(np.all(k1_variances == k2_variances))
 
+def test_slice_active_dim_regression(session_tf):
+    """ Check that we can instantiate a kernel with active_dims given as a slice object """
+    gpflow.kernels.RBF(2, active_dims=slice(1, 3, 1))
 
 if __name__ == "__main__":
     tf.test.main()
