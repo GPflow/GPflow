@@ -10,7 +10,7 @@ Ytrain = np.loadtxt('notebooks/data/banana_Y_train', delimiter=',').reshape(-1, 
 idx = np.random.choice(range(Xtrain.shape[0]), size=3, replace=False)
 feature = Xtrain[idx, ...]
 
-# 1. `input_dims` are not required anymore.
+# 1. `input_dim` is not required anymore.
 kernel = gpflow.kernels.RBF()
 
 # 2. Assigned value (10.0) here is constrained.
