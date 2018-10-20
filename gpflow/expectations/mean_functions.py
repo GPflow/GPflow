@@ -85,8 +85,8 @@ def _E(p, mean1, _, mean2, __, nghp=None):
     """
     N = tf.shape(p.mu)[0]
     e_xxt = p.cov + (p.mu[:, :, None] * p.mu[:, None, :])  # NxDxD
-    e_xxt_A = tf.matmul(e_xxt, tf.tile(mean2.A[None, ...], (N, 1, 1)))  # NxDxQ
-    e_x_bt = p.mu[:, :, None] * mean2.b[None, None, :]  # NxDxQ
+    e_xxt_A = tf.matmul(e_xxt, tf.tile(mean2.A()[None, ...], (N, 1, 1)))  # NxDxQ
+    e_x_bt = p.mu[:, :, None] * mean2.b()[None, None, :]  # NxDxQ
 
     return e_xxt_A + e_x_bt
 
@@ -103,8 +103,8 @@ def _E(p, mean1, _, mean2, __, nghp=None):
     """
     N = tf.shape(p.mu)[0]
     e_xxt = p.cov + (p.mu[:, :, None] * p.mu[:, None, :])  # NxDxD
-    e_A_xxt = tf.matmul(tf.tile(mean1.A[None, ...], (N, 1, 1)), e_xxt, transpose_a=True)  # NxQxD
-    e_b_xt = mean1.b[None, :, None] * p.mu[:, None, :]  # NxQxD
+    e_A_xxt = tf.matmul(tf.tile(mean1.A()[None, ...], (N, 1, 1)), e_xxt, transpose_a=True)  # NxQxD
+    e_b_xt = mean1.b()[None, :, None] * p.mu[:, None, :]  # NxQxD
 
     return e_A_xxt + e_b_xt
 
@@ -119,9 +119,9 @@ def _E(p, mean1, _, mean2, __, nghp=None):
     :return: NxQ1xQ2
     """
     e_xxt = p.cov + (p.mu[:, :, None] * p.mu[:, None, :])  # NxDxD
-    e_A1t_xxt_A2 = tf.einsum("iq,nij,jz->nqz", mean1.A, e_xxt, mean2.A)  # NxQ1xQ2
-    e_A1t_x_b2t = tf.einsum("iq,ni,z->nqz", mean1.A, p.mu, mean2.b)  # NxQ1xQ2
-    e_b1_xt_A2 = tf.einsum("q,ni,iz->nqz", mean1.b, p.mu, mean2.A)  # NxQ1xQ2
-    e_b1_b2t = mean1.b[:, None] * mean2.b[None, :]  # Q1xQ2
+    e_A1t_xxt_A2 = tf.einsum("iq,nij,jz->nqz", mean1.A(), e_xxt, mean2.A())  # NxQ1xQ2
+    e_A1t_x_b2t = tf.einsum("iq,ni,z->nqz", mean1.A(), p.mu, mean2.b())  # NxQ1xQ2
+    e_b1_xt_A2 = tf.einsum("q,ni,iz->nqz", mean1.b(), p.mu, mean2.A())  # NxQ1xQ2
+    e_b1_b2t = mean1.b()[:, None] * mean2.b()[None, :]  # Q1xQ2
 
     return e_A1t_xxt_A2 + e_A1t_x_b2t + e_b1_xt_A2 + e_b1_b2t

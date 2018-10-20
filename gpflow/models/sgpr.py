@@ -320,8 +320,8 @@ class GPRFITC(GPModel, SGPRUpperMixin):
 
     @property
     def Z(self):
-        raise NotImplementedError("Inducing points are now in `model.feature.Z`.")
+        raise NotImplementedError("Inducing points are now in `model.feature.Z()`.")
 
     @Z.setter
     def Z(self, _):
-        raise NotImplementedError("Inducing points are now in `model.feature.Z`.")
+        raise NotImplementedError("Inducing points are now in `model.feature.Z()`.")

@@ -86,22 +86,22 @@ class SeparateMixedMok(Combination, Mok):
 
     def K(self, X, X2=None, full_output_cov=True):
         Kxx = self.Kgg(X, X2)  # L x N x N2
-        KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # P x L x N x N2
+        KxxW = Kxx[None, :, :, :] * self.W()[:, :, None, None]  # P x L x N x N2
         if full_output_cov:
             # return tf.einsum('lnm,kl,ql->nkmq', Kxx, self.W, self.W)
-            WKxxW = tf.tensordot(self.W, KxxW, [[1], [1]])  # P x P x N x N2
+            WKxxW = tf.tensordot(self.W(), KxxW, [[1], [1]])  # P x P x N x N2
             return tf.transpose(WKxxW, [2, 0, 3, 1])  # N x P x N2 x P
         else:
             # return tf.einsum('lnm,kl,kl->knm', Kxx, self.W, self.W)
-            return tf.reduce_sum(self.W[:, :, None, None] * KxxW, [1])  # P x N x N2
+            return tf.reduce_sum(self.W()[:, :, None, None] * KxxW, [1])  # P x N x N2
 
     def Kdiag(self, X, full_output_cov=True):
         K = tf.stack([k(X) for k in self.kernels], axis=1)  # N x L
         if full_output_cov:
             # Can currently not use einsum due to unknown shape from `tf.stack()`
             # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # N x P x P
-            Wt = tf.transpose(self.W)  # L x P
+            Wt = tf.transpose(self.W())  # L x P
             return tf.reduce_sum(K[:, :, None, None] * Wt[None, :, :, None] * Wt[None, :, None, :], axis=1)  # N x P x P
         else:
             # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # N x P
-            return tf.matmul(K, self.W ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P
+            return tf.matmul(K, self.W() ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P

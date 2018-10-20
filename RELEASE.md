@@ -25,7 +25,7 @@
     * Saver stores GPflow structures and pythonic types as numpy structured arrays and serializes them using HDF5
 
 # Release 1.1
- - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feature.Z`.
+ - Added inter-domain inducing features. Inducing points are used by default and are now set with `model.feature.Z()`.
 
 # Release 1.0
 * Clear and aligned with tree-like structure of GPflow models design.

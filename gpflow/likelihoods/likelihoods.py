@@ -128,7 +128,7 @@ class Gaussian(Likelihood):
         return tf.identity(F)
 
     def conditional_variance(self, F):
-        return tf.fill(tf.shape(F), tf.squeeze(self.variance))
+        return tf.fill(tf.shape()(F), tf.squeeze(self.variance))
 
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
@@ -205,18 +205,17 @@ class StudentT(Likelihood):
         """
         super().__init__(**kwargs)
         self.df = df
-        self.scale = Parameter(scale, transform=positive(),
-                               dtype=default_float())
+        self.scale = Parameter(scale, transform=positive(), dtype=default_float())
 
     def logp(self, F, Y):
-        return logdensities.student_t(Y, F, self.scale, self.df)
+        return logdensities.student_t(Y, F, self.scale(), self.df)
 
     def conditional_mean(self, F):
         return F
 
     def conditional_variance(self, F):
-        var = (self.scale ** 2) * (self.df / (self.df - 2.0))
-        return tf.fill(tf.shape(F), tf.squeeze(var))
+        var = (self.scale() ** 2) * (self.df / (self.df - 2.0))
+        return tf.fill(tf.shape()(F), tf.squeeze(var))
 
 
 class Bernoulli(Likelihood):
@@ -258,19 +257,19 @@ class Gamma(Likelihood):
         self.shape = Parameter(1.0, transform=positive())
 
     def logp(self, F, Y):
-        return logdensities.gamma(Y, self.shape, self.invlink(F))
+        return logdensities.gamma(Y, self.shape(), self.invlink(F))
 
     def conditional_mean(self, F):
-        return self.shape * self.invlink(F)
+        return self.shape() * self.invlink(F)
 
     def conditional_variance(self, F):
         scale = self.invlink(F)
-        return self.shape * tf.square(scale)
+        return self.shape() * tf.square(scale)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return -self.shape * Fmu - tf.lgamma(self.shape) \
-                   + (self.shape - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
+            return -self.shape() * Fmu - tf.lgamma(self.shape()) \
+                   + (self.shape() - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
             return super().variational_expectations(Fmu, Fvar, Y)
 
@@ -299,8 +298,8 @@ class Beta(Likelihood):
 
     def logp(self, F, Y):
         mean = self.invlink(F)
-        alpha = mean * self.scale
-        beta = self.scale - alpha
+        alpha = mean * self.scale()
+        beta = self.scale() - alpha
         return logdensities.beta(Y, alpha, beta)
 
     def conditional_mean(self, F):
@@ -308,7 +307,7 @@ class Beta(Likelihood):
 
     def conditional_variance(self, F):
         mean = self.invlink(F)
-        return (mean - tf.square(mean)) / (self.scale + 1.)
+        return (mean - tf.square(mean)) / (self.scale() + 1.)
 
 
 class MultiClass(Likelihood):
@@ -331,8 +330,8 @@ class MultiClass(Likelihood):
 
     def logp(self, F, Y):
         hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
-        yes = tf.ones(tf.shape(Y), dtype=default_float()) - self.invlink.epsilon
-        no = tf.zeros(tf.shape(Y), dtype=default_float()) + self.invlink._eps_K1
+        yes = tf.ones(tf.shape()(Y), dtype=default_float()) - self.invlink.epsilon
+        no = tf.zeros(tf.shape()(Y), dtype=default_float()) + self.invlink._eps_K1
         p = tf.where(hits, yes, no)
         return tf.log(p)
 
@@ -343,7 +342,7 @@ class MultiClass(Likelihood):
         return ve
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        possible_outputs = [tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
+        possible_outputs = [tf.fill(tf.stack([tf.shape()(Fmu)[0], 1]), np.array(i, dtype=np.int64)) for i in
                             range(self.num_classes)]
         ps = [self._predict_non_logged_density(Fmu, Fvar, po) for po in possible_outputs]
         ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
@@ -466,13 +465,13 @@ class Ordinal(Likelihood):
 
     def logp(self, F, Y):
         Y = tf.cast(Y, default_int())
-        scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
+        scaled_bins_left = tf.concat([self.bin_edges / self.sigma(), np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma()], 0)
         selected_bins_left = tf.gather(scaled_bins_left, Y)
         selected_bins_right = tf.gather(scaled_bins_right, Y)
 
-        return tf.log(inv_probit(selected_bins_left - F / self.sigma) -
-                      inv_probit(selected_bins_right - F / self.sigma) + 1e-6)
+        return tf.log(inv_probit(selected_bins_left - F / self.sigma()) -
+                      inv_probit(selected_bins_right - F / self.sigma()) + 1e-6)
 
     def _make_phi(self, F):
         """
@@ -482,22 +481,22 @@ class Ordinal(Likelihood):
 
         Note that a matrix of F values is flattened.
         """
-        scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
-        return inv_probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma) \
-               - inv_probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
+        scaled_bins_left = tf.concat([self.bin_edges / self.sigma(), np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma()], 0)
+        return inv_probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma()) \
+               - inv_probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma())
 
     def conditional_mean(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
-        return tf.reshape(tf.matmul(phi, Ys), tf.shape(F))
+        return tf.reshape(tf.matmul(phi, Ys), tf.shape()(F))
 
     def conditional_variance(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
         E_y = phi @ Ys
         E_y2 = phi @ (Ys ** 2)
-        return tf.reshape(E_y2 - E_y ** 2, F.shape)
+        return tf.reshape(E_y2 - E_y ** 2, F.shape())
 
 
 class MonteCarloLikelihood(Likelihood):
@@ -596,8 +595,8 @@ class Softmax(MonteCarloLikelihood):
         self.num_classes = num_classes
 
     def logp(self, F, Y):
-        with tf.control_dependencies([tf.assert_equal(tf.shape(Y)[1], 1),
-                                      tf.assert_equal(tf.shape(F)[1], self.num_classes)]):
+        with tf.control_dependencies([tf.assert_equal(tf.shape()(Y)[1], 1),
+                                      tf.assert_equal(tf.shape()(F)[1], self.num_classes)]):
             return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]
 
     def conditional_mean(self, F):

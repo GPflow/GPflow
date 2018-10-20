@@ -17,11 +17,11 @@ from typing import Optional, Tuple
 
 import tensorflow as tf
 
-from ..base import Module
+from ..base import Module, Parameter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
-from ..util import default_jitter
+from ..util import default_jitter, default_float
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
@@ -40,9 +40,9 @@ class BayesianModel(Module):
         return - tf.add(self.log_likelihood(*args, **kwargs), self.log_prior())
 
     def log_prior(self) -> tf.Tensor:
-        if len(self.parameters()) == 0:
-            return 0
-        return tf.add_n([p.log_prior() for p in self.parameters])
+        if len(self.variables) == 0:
+            return tf.convert_to_tensor(0., dtype=default_float())
+        return tf.add_n([p.log_prior() for p in self.variables if isinstance(p, Parameter)])
 
     @abc.abstractmethod
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:

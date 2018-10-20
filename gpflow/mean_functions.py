@@ -53,14 +53,14 @@ class Linear(MeanFunction):
         If X has N rows and D columns, and Y is intended to have Q columns,
         then A must be D x Q, b must be a vector of length Q.
         """
+        super.__init__()
         A = np.ones((1, 1), dtype=default_float()) if A is None else A
         b = np.zeros(1, dtype=default_float()) if b is None else b
-        MeanFunction.__init__(self)
         self.A = Parameter(np.atleast_2d(A))
         self.b = Parameter(b)
 
     def __call__(self, X):
-        return X @ self.A + self.b
+        return X @ self.A() + self.b()
 
 
 class Identity(Linear):
@@ -109,14 +109,14 @@ class Constant(MeanFunction):
 
     def __call__(self, X):
         shape = tf.stack([tf.shape(X)[0], 1])
-        return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+        return tf.tile(tf.reshape(self.c(), (1, -1)), shape)
 
 
 class Zero(Constant):
     def __init__(self, output_dim=1):
         Constant.__init__(self)
         self.output_dim = output_dim
-        # del self.c
+        # del self.c()
 
     def __call__(self, X):
         return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=X.dtype)

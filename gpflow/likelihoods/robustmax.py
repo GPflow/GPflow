@@ -28,11 +28,11 @@ class RobustMax(Module):
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
-        return tf.one_hot(i, self.num_classes, tf.squeeze(1. - self.epsilon), tf.squeeze(self._eps_K1))
+        return tf.one_hot(i, self.num_classes, tf.squeeze(1. - self.epsilon()), tf.squeeze(self._eps_K1))
 
     @property
     def _eps_K1(self):
-        return self.epsilon / (self.num_classes - 1.)
+        return self.epsilon() / (self.num_classes - 1.)
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         Y = tf.cast(Y, default_int())

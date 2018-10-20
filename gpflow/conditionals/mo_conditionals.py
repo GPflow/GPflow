@@ -214,19 +214,19 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     if not full_cov:
         gvar = tf.matrix_transpose(gvar)  # L x N (x N)
 
-    Wgmu = tf.tensordot(gmu, kernel.W, [[0], [1]])  # N x P
+    Wgmu = tf.tensordot(gmu, kernel.W(), [[0], [1]])  # N x P
 
     if full_output_cov:
-        Wt_expanded = tf.matrix_transpose(kernel.W)[:, None, :]  # L x 1 x P
+        Wt_expanded = tf.matrix_transpose(kernel.W())[:, None, :]  # L x 1 x P
         if full_cov:
             Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # L x 1 x P x 1
 
         gvarW = tf.expand_dims(gvar, axis=2) * Wt_expanded  # L x N x P (x N)
-        WgvarW = tf.tensordot(gvarW, kernel.W, [[0], [1]])  # N x P (x N) x P
+        WgvarW = tf.tensordot(gvarW, kernel.W(), [[0], [1]])  # N x P (x N) x P
     else:
         if not full_cov:
-            WgvarW = tf.tensordot(gvar, kernel.W ** 2, [[0], [1]])  # N x P
+            WgvarW = tf.tensordot(gvar, kernel.W() ** 2, [[0], [1]])  # N x P
         else:
-            WgvarW = tf.tensordot(kernel.W ** 2, gvar, [[1], [0]])  # P x N (x N)
+            WgvarW = tf.tensordot(kernel.W() ** 2, gvar, [[1], [0]])  # P x N (x N)
 
     return Wgmu, WgvarW

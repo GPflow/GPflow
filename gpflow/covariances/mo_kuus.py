@@ -24,7 +24,7 @@ def debug_kuu(feat, kern, jitter):
 def _Kuu(feat: InducingPoints,
          kern: Mok, *, jitter=0.0):
     debug_kuu(feat, kern, jitter)
-    Kmm = kern(feat.Z, full_output_cov=True)  # [M, P, M, P]
+    Kmm = kern(feat.Z(), full_output_cov=True)  # [M, P, M, P]
     M = tf.shape(Kmm)[0] * tf.shape(Kmm)[1]
     jittermat = jitter * tf.reshape(tf.eye(M, dtype=Kmm.dtype), tf.shape(Kmm))
     return Kmm + jittermat

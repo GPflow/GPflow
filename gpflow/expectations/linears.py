@@ -23,7 +23,7 @@ def _E(p, kern, _, __, ___, nghp=None):
     Xmu, _ = kern.slice(p.mu, None)
     Xcov = kern.slice_cov(p.cov)
 
-    return tf.reduce_sum(kern.variance * (tf.matrix_diag_part(Xcov) + Xmu ** 2), 1)
+    return tf.reduce_sum(kern.variance() * (tf.matrix_diag_part(Xcov) + Xmu ** 2), 1)
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, NoneType, NoneType)
@@ -36,9 +36,9 @@ def _E(p, kern, feat, _, __, nghp=None):
     :return: NxM
     """
     # use only active dimensions
-    Z, Xmu = kern.slice(feat.Z, p.mu)
+    Z, Xmu = kern.slice(feat.Z(), p.mu)
 
-    return tf.matmul(Xmu, Z * kern.variance, transpose_b=True)
+    return tf.matmul(Xmu, Z * kern.variance(), transpose_b=True)
 
 
 @dispatch.expectation.register(
@@ -60,7 +60,7 @@ def _E(p, kern, feat, mean, _, nghp=None):
     #     Xmu = tf.identity(Xmu)
 
     N = tf.shape(Xmu)[0]
-    var_Z = kern.variance * feat.Z  # MxD
+    var_Z = kern.variance() * feat.Z()  # MxD
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     return tf.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
 
@@ -85,7 +85,7 @@ def _E(p, kern, feat, mean, _, nghp=None):
     #     Xmu = tf.identity(Xmu)
 
     N = tf.shape(Xmu)[0] - 1
-    var_Z = kern.variance * feat.Z  # MxD
+    var_Z = kern.variance() * feat.Z()  # MxD
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     eXX = Xcov[1, :-1] + (Xmu[:-1][..., None] * Xmu[1:][:, None, :])  # NxDxD
     return tf.matmul(tiled_Z, eXX)
@@ -119,10 +119,10 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     # use only active dimensions
     Xcov = kern.slice_cov(tf.matrix_diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
-    Z, Xmu = kern.slice(feat.Z, p.mu)
+    Z, Xmu = kern.slice(feat.Z(), p.mu)
 
     N = tf.shape(Xmu)[0]
-    var_Z = kern.variance * Z
+    var_Z = kern.variance() * Z
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     XX = Xcov + tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2)  # NxDxD
     return tf.matmul(tf.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)

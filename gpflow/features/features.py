@@ -49,7 +49,7 @@ class InducingPointsBase(InducingFeature):
         self.Z = Parameter(Z, dtype=default_float())
 
     def __len__(self):
-        return self.Z.shape[0]
+        return self.Z().shape[0]
 
 
 class InducingPoints(InducingPointsBase):
@@ -74,7 +74,7 @@ class Multiscale(InducingPointsBase):
         super().__init__(Z)
         # Multi-scale feature widths (std. dev. of Gaussian)
         self.scales = Parameter(scales, transform=positive())
-        if self.Z.shape != scales.shape:
+        if self.Z().shape != scales.shape:
             raise ValueError("Input locations `Z` and `scales` must have the same shape.")  # pragma: no cover
 
     @staticmethod

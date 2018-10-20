@@ -19,8 +19,7 @@ def optimize(loss_cb: LossCallback,
         with tf.GradientTape() as tape:
             loss = loss_cb()
         grads = tape.gradient(loss, variables)
-        with unconstrain_variables(variables):
-            optimizer.apply_gradients(zip(grads, variables))
+        optimizer.apply_gradients(zip(grads, variables))
         if callable(step_cb):
             step_cb(iteration, loss, grads)
 

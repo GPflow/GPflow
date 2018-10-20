@@ -80,7 +80,7 @@ class BayesianGPLVM(GPModel):
         del self.X  # in GPLVM this is a Param
         self.X_mean = Parameter(X_mean)
         # diag_transform = transforms.DiagMatrix(X_var.shape[1])
-        # self.X_var = Parameter(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
+        # self.X_var() = Parameter(diag_transform.forward(transforms.positive.backward(X_var)) if X_var.ndim == 2 else X_var,
         #                    diag_transform)
         assert X_var.ndim == 2
         self.X_var = Parameter(X_var, transform=transforms.positive)
@@ -121,7 +121,7 @@ class BayesianGPLVM(GPModel):
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
         """
-        pX = DiagonalGaussian(self.X_mean, self.X_var)
+        pX = DiagonalGaussian(self.X_mean(), self.X_var())
 
         num_inducing = len(self.feature)
         psi0 = tf.reduce_sum(expectation(pX, self.kern))
@@ -142,13 +142,13 @@ class BayesianGPLVM(GPModel):
         c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        dX_var = self.X_var if len(self.X_var.get_shape()) == 2 else tf.matrix_diag_part(self.X_var)
-        NQ = tf.cast(tf.size(self.X_mean), default_float())
+        dX_var = self.X_var() if len(self.X_var().get_shape()) == 2 else tf.matrix_diag_part(self.X_var())
+        NQ = tf.cast(tf.size(self.X_mean()), default_float())
         D = tf.cast(tf.shape(self.Y)[1], default_float())
         KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
              + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
              - 0.5 * NQ \
-             + 0.5 * tf.reduce_sum((tf.square(self.X_mean - self.X_prior_mean) + dX_var) / self.X_prior_var)
+             + 0.5 * tf.reduce_sum((tf.square(self.X_mean() - self.X_prior_mean) + dX_var) / self.X_prior_var)
 
         # compute log marginal bound
         ND = tf.cast(tf.size(self.Y), default_float())
@@ -169,7 +169,7 @@ class BayesianGPLVM(GPModel):
         there are notes in the SGPR notebook.
         :param Xnew: Point to predict at.
         """
-        pX = DiagonalGaussian(self.X_mean, self.X_var)
+        pX = DiagonalGaussian(self.X_mean(), self.X_var())
 
         num_inducing = len(self.feature)
         psi1 = expectation(pX, (self.kern, self.feature))

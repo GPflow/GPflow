@@ -32,7 +32,7 @@ def _E(p, rbf_kern, feat1, lin_kern, feat2, nghp=None):
 
     # use only active dimensions
     Xcov = rbf_kern.slice_cov(tf.matrix_diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
-    Z, Xmu = rbf_kern.slice(feat1.Z, p.mu)
+    Z, Xmu = rbf_kern.slice(feat1.Z(), p.mu)
 
     N = tf.shape(Xmu)[0]
     D = tf.shape(Xmu)[1]
@@ -42,8 +42,8 @@ def _E(p, rbf_kern, feat1, lin_kern, feat2, nghp=None):
             return tf.zeros((D,), dtype=value.dtype) + value
         return value
 
-    lin_kern_variances = take_with_ard(lin_kern.variance)
-    rbf_kern_lengthscales = take_with_ard(rbf_kern.lengthscales)
+    lin_kern_variances = take_with_ard(lin_kern.variance())
+    rbf_kern_lengthscales = take_with_ard(rbf_kern.lengthscales())
 
     chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(rbf_kern_lengthscales ** 2) + Xcov)  # NxDxD
 
@@ -56,7 +56,7 @@ def _E(p, rbf_kern, feat1, lin_kern, feat2, nghp=None):
     sqrt_det_L = tf.reduce_prod(rbf_kern_lengthscales)
     sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.log(tf.matrix_diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
-    eKxz_rbf = rbf_kern.variance * (determinants[:, None] * exponent_mahalanobis)  ## NxM <- End RBF eKxz code
+    eKxz_rbf = rbf_kern.variance() * (determinants[:, None] * exponent_mahalanobis)  ## NxM <- End RBF eKxz code
 
     tiled_Z = tf.tile(tf.expand_dims(Z_transpose, 0), (N, 1, 1))  # NxDxM
     z_L_inv_Xcov = tf.matmul(tiled_Z, Xcov / rbf_kern_lengthscales[:, None] ** 2., transpose_a=True)  # NxMxD

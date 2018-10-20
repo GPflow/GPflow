@@ -43,66 +43,73 @@ class Parameter(tfe.Variable):
     def trainable(self) -> bool:
         return super().trainable
 
-    @property
-    def shape(self):
-        return self._shape
+    # TODO(@awav): proper solution
+    # @property
+    # def shape(self):
+    #     return self._shape
 
-        # if self.is_constrained:
-        #     return self._read_variable_op().shape
-        # return super().shape
+    #     # if self.is_constrained:
+    #     #     return self._read_variable_op().shape
+    #     # return super().shape
 
-    @property
-    def is_constrained(self):
-        constrained = self.__dict__.get('_is_constrained')
-        return bool(constrained)
+    # @property
+    # def is_constrained(self):
+    #     constrained = self.__dict__.get('_is_constrained')
+    #     return bool(constrained)
 
-    @is_constrained.setter
-    def is_constrained(self, value: bool):
-        value = bool(value)
-        constrained = self.__dict__.get('_is_constrained')
-        if constrained is not None and value == constrained:
-            return
-        if value:
-            shape = self.constrained.shape
-        else:
-            shape = super()._read_variable_op().shape
-        self._shape = shape
-        self._is_constrained = value
-
-    @property
-    def unconstrained(self):
-        if self.transform is None:
-            return self
-        return self.transform.inverse(self)
+    # @is_constrained.setter
+    # def is_constrained(self, value: bool):
+    #     value = bool(value)
+    #     constrained = self.__dict__.get('_is_constrained')
+    #     if constrained is not None and value == constrained:
+    #         return
+    #     if value:
+    #         shape = self.constrained.shape
+    #     else:
+    #         shape = super()._read_variable_op().shape
+    #     self._shape = shape
+    #     self._is_constrained = value
+    #
+    # def _read_variable_op(self):
+    #     value = super()._read_variable_op()
+    #     constrained = self.__dict__.get('_is_constrained')
+    #     if self.transform is None or (constrained is not None and not constrained):
+    #         return value
+    #     return self.transform.forward(value)
+    #
+    # @property
+    # def unconstrained(self):
+    #     if self.transform is None:
+    #         return self
+    #     return self.transform.inverse(self)
 
     @property
     def constrained(self):
         if self.transform is None:
             return self
-        return self.transform.forward(super()._read_variable_op())
+        return self.transform.forward(self)
 
     @trainable.setter
     def trainable(self, flag: Union[bool, int]):
         self._trainable = bool(flag)
 
-    def _read_variable_op(self):
-        value = super()._read_variable_op()
-        constrained = self.__dict__.get('_is_constrained')
-        if self.transform is None or (constrained is not None and not constrained):
-            return value
-        return self.transform.forward(value)
-
     def log_prior(self):
-        x = self
-        y = self.unconstrained
-        log_prob = 0.
+        x = self.constrained
+        y = self
+        dtype = x.dtype
+        log_prob = tf.convert_to_tensor(0., dtype=dtype)
         bijector = self.transform
-        if self.prior is not None:
+        prior_exists = self.prior is not None
+        transform_exists = self.transform is not None
+        if prior_exists:
             log_prob = self.prior.log_prob(x)
-        log_det_jacobian = 0.
-        if self.transform is not None:
+        log_det_jacobian = tf.convert_to_tensor(0., dtype=dtype)
+        if transform_exists:
             log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
         return log_prob + log_det_jacobian
+
+    def __call__(self):
+        return self.constrained
 
     def __ilshift__(self, data: VariableData):
         data = _to_variable_data(data)

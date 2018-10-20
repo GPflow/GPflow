@@ -96,7 +96,7 @@ class VGP(GPModel):
         """
 
         # Get prior KL.
-        KL = gauss_kl(self.q_mu, self.q_sqrt)
+        KL = gauss_kl(self.q_mu, self.q_sqrt())
 
         # Get conditionals
         K = self.kern(self.X) + tf.eye(self.num_data, dtype=default_float()) * \
@@ -105,7 +105,7 @@ class VGP(GPModel):
 
         fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
 
-        q_sqrt_dnn = tf.matrix_band_part(self.q_sqrt, -1, 0)  # D x N x N
+        q_sqrt_dnn = tf.matrix_band_part(self.q_sqrt(), -1, 0)  # D x N x N
 
         L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent, 1, 1]))
 
@@ -122,7 +122,7 @@ class VGP(GPModel):
 
     def _build_predict(self, Xnew, full_cov=False):
         mu, var = conditional(Xnew, self.X, self.kern, self.q_mu,
-                              q_sqrt=self.q_sqrt, full_cov=full_cov, white=True)
+                              q_sqrt=self.q_sqrt(), full_cov=full_cov, white=True)
         return mu + self.mean_function(Xnew), var
 
 
