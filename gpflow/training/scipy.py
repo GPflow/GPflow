@@ -9,12 +9,13 @@ __all__ = ['ScipyOptimizer']
 
 
 LossClosure = Callable[..., Tuple[tf.Tensor, List[tf.Tensor]]]
+Variables = List[tf.Variable]
 
 
 class ScipyOptimizer:
     def minimize(self,
                  closure: LossClosure,
-                 variables: List[tf.Variable],
+                 variables: Variables,
                  **scipy_kwargs) -> OptimizeResult:
         """
         Minimize is a proxy method for `scipy.optimize.minimize` function.
@@ -39,7 +40,7 @@ class ScipyOptimizer:
     @classmethod
     def eval_func(cls,
                   closure: LossClosure,
-                  variables: List[tf.Variables]):
+                  variables: Variables):
         def _eval(x, *args):
             cls.unpack_tensors(variables, x)
             loss, grads = closure(*args)
