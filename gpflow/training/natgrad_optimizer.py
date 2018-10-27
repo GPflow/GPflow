@@ -187,7 +187,7 @@ class NatGradOptimizer(optimizer.Optimizer):
         ∂L/∂η = (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt])
 
         In total there are three derivative calculations:
-        natgrad L w.r.t ξ  = (∂ξ / ∂nat ) [ (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt]) ]^T
+        natgrad L w.r.t ξ  = (∂ξ / ∂nat) [ (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt]) ]^T
 
         Note that if ξ = nat or [q_μ, q_sqrt] some of these calculations are the identity.
 

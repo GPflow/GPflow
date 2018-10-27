@@ -1,6 +1,8 @@
 # pylint: disable=wildcard-import
 
 from .optimize import optimize
+from .scipy import ScipyOptimizer
+
 # from .scipy_optimizer import ScipyOptimizer
 # from .hmc import HMC
 # from .natgrad_optimizer import XiTransform
