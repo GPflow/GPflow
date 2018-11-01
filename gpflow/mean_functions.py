@@ -103,7 +103,7 @@ class Constant(MeanFunction):
     y_i = c,,
     """
     def __init__(self, c=None):
-        MeanFunction.__init__(self)
+        super().__init__()
         c = np.zeros(1) if c is None else c
         self.c = Parameter(c)
 
@@ -112,11 +112,10 @@ class Constant(MeanFunction):
         return tf.tile(tf.reshape(self.c(), (1, -1)), shape)
 
 
-class Zero(Constant):
+class Zero(MeanFunction):
     def __init__(self, output_dim=1):
-        Constant.__init__(self)
+        super().__init__()
         self.output_dim = output_dim
-        # del self.c()
 
     def __call__(self, X):
         return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=X.dtype)
@@ -129,7 +128,7 @@ class SwitchedMeanFunction(MeanFunction):
     We assume the 'label' is stored in the extra column of X.
     """
     def __init__(self, meanfunction_list):
-        MeanFunction.__init__(self)
+        super().__init__()
         for m in meanfunction_list:
             assert isinstance(m, MeanFunction)
         self.meanfunction_list = ModuleList(meanfunction_list)

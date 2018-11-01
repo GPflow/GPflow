@@ -133,6 +133,15 @@ class Module:
     def trainable_variables(self) -> List[tfe.Variable]:
         return [v for v in self.variables if v.trainable]
 
+    @property
+    def trainable(self):
+        return self.trainable_variables != []
+
+    @trainable.setter
+    def trainable(self, value: bool):
+        for variable in self.variables:
+            variable.trainable = value
+
     def __getattr__(self, name):
         if name in self.__dict__['_parameters']:
             return self.__dict__['_parameters'].get(name)

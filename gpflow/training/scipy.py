@@ -4,6 +4,7 @@ import numpy as np
 import scipy.optimize
 import tensorflow as tf
 from scipy.optimize import OptimizeResult
+from .optimize import loss_gradients
 
 __all__ = ['ScipyOptimizer']
 
@@ -41,9 +42,9 @@ class ScipyOptimizer:
     def eval_func(cls,
                   closure: LossClosure,
                   variables: Variables):
-        def _eval(x, *args):
+        def _eval(x):
             cls.unpack_tensors(variables, x)
-            loss, grads = closure(*args)
+            loss, grads = loss_gradients(closure, variables)
             return loss, cls.pack_tensors(grads)
         return _eval
 
@@ -57,7 +58,9 @@ class ScipyOptimizer:
     def unpack_tensors(to_tensors: Iterator[tf.Tensor], from_vector: np.ndarray):
         s = 0
         for tensor in to_tensors:
-            tensor_size = np.prod(tensor.shape)
+            shape = tensor.shape
+            tensor_size = np.prod(shape)
             tensor_vector = from_vector[s: s + tensor_size]
+            tensor_vector = tf.reshape(tensor_vector, shape)
             tensor.assign(tensor_vector)
             s += tensor_size

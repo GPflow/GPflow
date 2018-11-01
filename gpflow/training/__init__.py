@@ -1,6 +1,6 @@
 # pylint: disable=wildcard-import
 
-from .optimize import optimize
+from .optimize import create_iterator, loss_gradients, optimize
 from .scipy import ScipyOptimizer
 
 # from .scipy_optimizer import ScipyOptimizer
