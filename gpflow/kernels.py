@@ -636,13 +636,7 @@ class Periodic(Kernel):
 
         # Introduce dummy dimension so we can use broadcasting
         f = tf.expand_dims(X, -2)  #  ... x N x 1 x D
-        f2 = tf.expand_dims(X2, -2) # ... x M x 1 x D
-        K = tf.rank(f2)  # 3, or 4 if broadcasting
-        perm = tf.concat([tf.reshape(tf.range(K-3), [K-3]),  # [], or [0] if broadcasting
-                          tf.reshape(K-2, [1]),  # [1], or [2] if broadcasting
-                          tf.reshape(K-3, [1]),  # [0], or [1] if broadcasting
-                          tf.reshape(K-1, [1])], 0)  # [2], or [2] if broadcasting
-        f2 = tf.transpose(f2, perm)  # ... x 1 x M x D
+        f2 = tf.expand_dims(X2, -3) # ... x 1 x M x D
 
         r = np.pi * (f - f2) / self.period
         r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), -1)
