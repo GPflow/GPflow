@@ -5,10 +5,9 @@ import tensorflow as tf
 from ..covariances import Kuf, Kuu
 from ..features import InducingFeature
 from ..kernels import Kernel
-from ..util import create_logger, default_jitter_eye
+from ..util import create_logger, default_jitter, default_jitter_eye
 from .dispatch import conditional
 from .util import base_conditional, expand_independent_outputs
-
 
 logger = create_logger()
 
@@ -50,7 +49,7 @@ def _conditional(Xnew: tf.Tensor,
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     logger.debug("Conditional: Inducing Feature - Kernel")
-    Kmm = Kuu(feature, kernel)  # [M, M]
+    Kmm = Kuu(feature, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(feature, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, diag=(not full_cov))
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # [N, R],  [R, N, N] or [N, R]
