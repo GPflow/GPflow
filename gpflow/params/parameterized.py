@@ -367,8 +367,8 @@ class Parameterized(Node):
 
     @property
     def fixed(self):
-        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
+        raise GPflowError("`fixed` property is no longer supported. Please use `trainable` instead.")
 
     @fixed.setter
     def fixed(self, _):
-        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
+        raise GPflowError("`fixed` property is no longer supported. Please use `trainable` instead.")
