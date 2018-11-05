@@ -1,4 +1,5 @@
 
+import numpy as np
 import tensorflow as tf
 from ..base import Parameter, positive
 from .base import Kernel

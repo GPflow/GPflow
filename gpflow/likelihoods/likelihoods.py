@@ -131,14 +131,13 @@ class Gaussian(Likelihood):
         return tf.fill(tf.shape()(F), tf.squeeze(self.variance))
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        return tf.identity(Fmu), Fvar + self.variance
+        return tf.identity(Fmu), Fvar + self.variance()
 
     def predict_density(self, Fmu, Fvar, Y):
-        return logdensities.gaussian(Y, Fmu, Fvar + self.variance)
+        return logdensities.gaussian(Y, Fmu, Fvar + self.variance())
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        return -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(self.variance) \
-               - 0.5 * (tf.square(Y - Fmu) + Fvar) / self.variance
+        return -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(self.variance()) - 0.5 * ((Y - Fmu) ** 2 + Fvar) / self.variance()
 
 
 class Poisson(Likelihood):
@@ -243,7 +242,7 @@ class Bernoulli(Likelihood):
 
     def conditional_variance(self, F):
         p = self.conditional_mean(F)
-        return p - tf.square(p)
+        return p - (p ** 2)
 
 
 class Gamma(Likelihood):
@@ -264,12 +263,11 @@ class Gamma(Likelihood):
 
     def conditional_variance(self, F):
         scale = self.invlink(F)
-        return self.shape() * tf.square(scale)
+        return self.shape() * (scale ** 2)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return -self.shape() * Fmu - tf.lgamma(self.shape()) \
-                   + (self.shape() - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
+            return -self.shape() * Fmu - tf.lgamma(self.shape()) + (self.shape() - 1.) * tf.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
             return super().variational_expectations(Fmu, Fvar, Y)
 
@@ -330,7 +328,7 @@ class MultiClass(Likelihood):
 
     def logp(self, F, Y):
         hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
-        yes = tf.ones(tf.shape()(Y), dtype=default_float()) - self.invlink.epsilon
+        yes = tf.ones(tf.shape()(Y), dtype=default_float()) - self.invlink.epsilon()
         no = tf.zeros(tf.shape()(Y), dtype=default_float()) + self.invlink._eps_K1
         p = tf.where(hits, yes, no)
         return tf.log(p)
@@ -338,7 +336,7 @@ class MultiClass(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-        ve = p * tf.log(1. - self.invlink.epsilon) + (1. - p) * tf.log(self.invlink._eps_K1)
+        ve = p * tf.log(1. - self.invlink.epsilon()) + (1. - p) * tf.log(self.invlink._eps_K1)
         return ve
 
     def predict_mean_and_var(self, Fmu, Fvar):
@@ -354,7 +352,7 @@ class MultiClass(Likelihood):
     def _predict_non_logged_density(self, Fmu, Fvar, Y):
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-        den = p * (1. - self.invlink.epsilon) + (1. - p) * (self.invlink._eps_K1)
+        den = p * (1. - self.invlink.epsilon()) + (1. - p) * (self.invlink._eps_K1)
         return den
 
     def conditional_mean(self, F):

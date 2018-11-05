@@ -56,15 +56,14 @@ def base_conditional(
     fmean = tf.matmul(A, function, transpose_a=True)
 
     if q_sqrt is not None:
-        if q_sqrt.get_shape().ndims == 2:
+        if q_sqrt.shape.ndims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
-        elif q_sqrt.get_shape().ndims == 3:
+        elif q_sqrt.shape.ndims == 3:
             L = tf.matrix_band_part(q_sqrt, -1, 0)  # [R, M, M]
             A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
             LTA = tf.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover
-            raise ValueError("Bad dimension for q_sqrt: %s" %
-                             str(q_sqrt.get_shape().ndims))
+            raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt.shape.ndims}")
         if full_cov:
             fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # [R, N, N]
         else:
@@ -274,14 +273,13 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
     if q_sqrt is not None:
         Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
-        if q_sqrt.get_shape().ndims == 3:
+        if q_sqrt.shape.ndims == 3:
             A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # R x M x NK
             LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x M x NK
-        elif q_sqrt.get_shape().ndims == 2:  # pragma: no cover
+        elif q_sqrt.shape.ndims == 2:  # pragma: no cover
             raise NotImplementedError("Does not support diagonal q_sqrt yet...")
         else:  # pragma: no cover
-            raise ValueError("Bad dimension for q_sqrt: %s" %
-                             str(q_sqrt.get_shape().ndims))
+            raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt.shape.ndims}")
 
         if full_cov and full_output_cov:
             addvar = tf.matmul(LTA, LTA, transpose_a=True)  # R x NK x NK
@@ -294,6 +292,6 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
             LTAr = tf.transpose(tf.reshape(LTA, (R, M, N, K)), [0, 2, 3, 1])  # R x N x K x M
             fvar = fvar[None, ...] + tf.matmul(LTAr, LTAr, transpose_b=True)  # R x N x K x K
         elif not full_cov and not full_output_cov:
-            addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # R x N x K
+            addvar = tf.reshape(tf.reduce_sum(LTA ** 2, axis=1), (R, N, K))  # R x N x K
             fvar = fvar[None, ...] + addvar  # R x N x K
     return fmean, fvar

@@ -38,7 +38,8 @@ def _conditional(Xnew: tf.Tensor,
     :param f: data matrix, M x R
     :param full_cov: return the covariance between the datapoints
     :param full_output_cov: return the covariance between the outputs.
-     Note: as we are using a single-output kernel with repetitions these covariances will be zero.
+           NOTE: as we are using a single-output kernel with repetitions
+                 these covariances will be zero.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size M x R or R x M x M.
     :param white: boolean of whether to use the whitened representation
@@ -98,8 +99,7 @@ def _conditional(
         - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
     """
     logger.debug("Conditional: Kernel")
-    num_data = X.shape[0]  # [M]
-    Kmm = kernel(X) + default_jitter_eye(num_data)
+    Kmm = kernel(X) + default_jitter_eye(X.shape[0])
     Kmn = kernel(X, Xnew)
     Knn = kernel(Xnew, diag=(not full_cov))
     mean, var = base_conditional(Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white)

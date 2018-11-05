@@ -45,7 +45,7 @@ class ScipyOptimizer:
         def _eval(x):
             cls.unpack_tensors(variables, x)
             loss, grads = loss_gradients(closure, variables)
-            return loss, cls.pack_tensors(grads)
+            return loss.numpy(), cls.pack_tensors(grads)
         return _eval
 
     @staticmethod

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from functools import reduce
+from functools import partial, reduce
 from typing import Optional
 
 import numpy as np
@@ -165,18 +165,18 @@ class Combination(Kernel):
                         overlapping = True
             return not overlapping
 
-
     def K(self, X, X2=None, presliced=False):
-        return reduce(self._reduction, [k.K(X, X2) for k in self.kernels])
-
+        res = [k.K(X, X2, presliced=presliced) for k in self.kernels]
+        return self.__class__._reduce(res)
 
     def K_diag(self, X, presliced=False):
-        return reduce(self._reduction, [k.K_diag(X) for k in self.kernels])
+        res = [k.K_diag(X, presliced=presliced) for k in self.kernels]
+        return self.__class__._reduce(res)
 
 
 class Sum(Combination):
-    _reduction = tf.add
+    _reduce = tf.add_n
 
 
 class Product(Combination):
-    _reduction = tf.multiply
+    _reduce = partial(reduce, tf.multiply)
