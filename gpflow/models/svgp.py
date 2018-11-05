@@ -51,7 +51,7 @@ class SVGP(GPModel):
                  q_mu=None,
                  q_sqrt=None,
                  whiten=True,
-                 num_data=1):
+                 num_data=None):
         """
         - X is a data matrix, size N x D
         - Y is a data matrix, size N x P
@@ -141,7 +141,11 @@ class SVGP(GPModel):
         kl = self.prior_kl()
         f_mean, f_var = self.predict_f(X)
         var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
-        scale = tf.cast(self.num_data, kl.dtype) / tf.cast(tf.shape(X)[0], kl.dtype)
+        scale = tf.cast(1.0, kl.data)
+        if self.num_data is not None:
+            num_data = tf.cast(self.num_data, kl.dtype)
+            minibatch_size = tf.cast(tf.shape(X)[0], kl.dtype)
+            scale = num_data / minibatch_size
         return tf.reduce_sum(var_exp) * scale - kl
 
     def predict_f(self, Xnew, full_cov=False, full_output_cov=False) -> tf.Tensor:

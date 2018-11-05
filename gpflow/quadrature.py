@@ -151,8 +151,8 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool=False, **Ys):
 
     if isinstance(funcs, Iterable):
         return [eval_func(f) for f in funcs]
-    else:
-        return eval_func(funcs)
+
+    return eval_func(funcs)
 
 
 def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys):
