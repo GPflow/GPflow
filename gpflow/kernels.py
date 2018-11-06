@@ -131,7 +131,7 @@ class Kernel(Parameterized):
                 X2 = tf.gather(X2, self.active_dims, axis=-1)
 
         input_dim_shape = tf.shape(X)[-1]
-        input_dim = tf.convert_to_tensor(self.input_dim, dtype=settings.tf_int)
+        input_dim = tf.convert_to_tensor(self.input_dim, dtype=settings.int_type)
         with tf.control_dependencies([tf.assert_equal(input_dim_shape, input_dim)]):
             X = tf.identity(X)
 
