@@ -33,8 +33,7 @@ class SVGP(GPModel):
 
       @inproceedings{hensman2014scalable,
         title={Scalable Variational Gaussian Process Classification},
-        author={Hensman, James and Matthews,
-                Alexander G. de G. and Ghahramani, Zoubin},
+        author={Hensman, James and Matthews, Alexander G. de G. and Ghahramani, Zoubin},
         booktitle={Proceedings of AISTATS},
         year={2015}
       }
