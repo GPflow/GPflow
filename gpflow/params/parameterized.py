@@ -364,11 +364,3 @@ class Parameterized(Node):
 
     def _repr_html_(self):
         return self.as_pandas_table()._repr_html_()
-
-    @property
-    def fixed(self):
-        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
-
-    @fixed.setter
-    def fixed(self, _):
-        raise NotImplementedError("`fixed` property is no longer supported. Please use `trainable` instead.")
