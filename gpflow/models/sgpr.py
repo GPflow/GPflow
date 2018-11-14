@@ -13,19 +13,18 @@
 # limitations under the License.
 
 
-import tensorflow as tf
 import numpy as np
-
-from .. import settings
-from .. import likelihoods
-from .. import features
-
-from ..decors import autoflow
-from ..decors import params_as_tensors
-from ..params import Parameter, DataHolder
-from ..mean_functions import Zero
+import tensorflow as tf
 
 from .model import GPModel
+from .. import features
+from .. import likelihoods
+from .. import settings
+from ..decors import autoflow
+from ..decors import params_as_tensors
+from ..mean_functions import Zero
+from ..params import DataHolder
+
 
 class SGPRUpperMixin(object):
     """
@@ -189,6 +188,30 @@ class SGPR(GPModel, SGPRUpperMixin):
                   - tf.reduce_sum(tf.square(tmp1), 0)
             var = tf.tile(var[:, None], [1, self.num_latent])
         return mean + self.mean_function(Xnew), var
+
+    @autoflow()
+    @params_as_tensors
+    def compute_qu(self):
+        """
+        Computes the mean and variance of q(u), the variational distribution on
+        inducing outputs. SVGP with this q(u) should predict identically to
+        SGPR.
+        :return: mu, A
+        """
+        Kuf = self.feature.Kuf(self.kern, self.X)
+        Kuu = self.feature.Kuu(self.kern, jitter=settings.jitter)
+
+        Sig = Kuu + (self.likelihood.variance ** -1) * tf.matmul(Kuf, Kuf, transpose_b=True)
+        Sig_sqrt = tf.cholesky(Sig)
+
+        Sig_sqrt_Kuu = tf.matrix_triangular_solve(Sig_sqrt, Kuu)
+
+        A = tf.matmul(Sig_sqrt_Kuu, Sig_sqrt_Kuu, transpose_a=True)
+        mu = tf.matmul(Sig_sqrt_Kuu,
+                       tf.matrix_triangular_solve(Sig_sqrt, tf.matmul(Kuf, self.Y - self.mean_function(self.X))),
+                       transpose_a=True) * self.likelihood.variance ** -1.0
+
+        return mu, A
 
 
 class GPRFITC(GPModel, SGPRUpperMixin):
