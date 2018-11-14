@@ -17,21 +17,19 @@
 # limitations under the License.
 
 
-import tensorflow as tf
 import pandas as pd
+import tensorflow as tf
 
-from ..core.errors import GPflowError
-from ..core.compilable import Build
-from ..core.node import Node
-
-from ..core.autoflow import AutoFlow
-from ..core.tensor_converter import TensorConverter
-
+from .dataholders import DataHolder
+from .parameter import Parameter
 from .. import misc
 from .. import settings
+from ..core.autoflow import AutoFlow
+from ..core.compilable import Build
+from ..core.errors import GPflowError
+from ..core.node import Node
+from ..core.tensor_converter import TensorConverter
 
-from .parameter import Parameter
-from .dataholders import DataHolder
 
 class Parameterized(Node):
     """
@@ -163,6 +161,7 @@ class Parameterized(Node):
                 tensors = param.initializables
                 if tensors is not None:
                     inits += tensors
+
         inits = []
         get_initializables(self.parameters, inits)
         get_initializables(self.data_holders, inits)
@@ -175,6 +174,7 @@ class Parameterized(Node):
                 param_feeds = param.initializable_feeds
                 if param_feeds is not None:
                     feeds.update(param_feeds)
+
         feeds = {}
         get_initializable_feeds(self.parameters, feeds)
         get_initializable_feeds(self.data_holders, feeds)
@@ -323,11 +323,11 @@ class Parameterized(Node):
         else:
             msg = '"{0}" type cannot be assigned to "{1}".'
             raise ValueError(msg.format(type(value), name))
-    
+
     def _replace_node(self, name, old, new):
         self.unset_child(name, old)
         self._set_node(name, new)
-    
+
     def _set_node(self, name, value):
         if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
             raise GPflowError('Tensors for this object are already built and cannot be modified.')
@@ -358,9 +358,17 @@ class Parameterized(Node):
             return
 
         object.__setattr__(self, name, value)
-    
+
     def __str__(self):
         return str(self.as_pandas_table())
 
     def _repr_html_(self):
         return self.as_pandas_table()._repr_html_()
+
+    @property
+    def fixed(self):
+        assert False, "`fixed` property is no longer supported. Please use `trainable` instead."
+
+    @fixed.setter
+    def fixed(self, _):
+        assert False, "`fixed` property is no longer supported. Please use `trainable` instead."
