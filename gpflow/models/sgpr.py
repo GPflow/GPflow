@@ -199,9 +199,9 @@ class SGPR(GPModel, SGPRUpperMixin):
         :return: mu, A
         """
         Kuf = self.feature.Kuf(self.kern, self.X)
-        Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
+        Kuu = self.feature.Kuu(self.kern, jitter=settings.jitter)
 
-        Sig = Kuu + self.likelihood.variance ** -1 * tf.matmul(Kuf, Kuf, transpose_b=True)
+        Sig = Kuu + (self.likelihood.variance ** -1) * tf.matmul(Kuf, Kuf, transpose_b=True)
         Sig_sqrt = tf.cholesky(Sig)
 
         Sig_sqrt_Kuu = tf.matrix_triangular_solve(Sig_sqrt, Kuu)
