@@ -15,11 +15,11 @@
 import gpflow
 import numpy as np
 import tensorflow as tf
-from gpflow.test_util import GPflowTestCase
+from gpflow.test_util import GPflowTestCase, session_tf
 from numpy.testing import assert_array_equal, assert_array_less, assert_allclose
 
 
-def test_sgpr_qu():
+def test_sgpr_qu(session_tf):
     rng = np.random.RandomState(0)
     X = rng.randn(100, 2)
     Y = np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * np.random.randn(len(X), 1)
