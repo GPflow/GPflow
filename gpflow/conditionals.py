@@ -74,6 +74,25 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
+# def broadcast_rowwise_over_leading_dims(fn, M, output=-1):
+#     """
+#     Performs reshaping and transposing to get a function to broadcast over leading dimensions
+#
+#     :param fn: a function which takes [A, B] and returns [a,...,b]
+#     :param M: an array of shape [..., A, B]
+#     :return: an array of shape [..., a...b]  where the operation is [.x.x.A, B]
+#     """
+#     N, D = tf.shape(M)[-2], tf.shape(M)[-1]
+#     leading_dims = tf.shape(M)[:-2]
+#     leading_size = tf.reduce_prod(leading_dims)
+#     M_flattened = tf.reshape(M, [leading_size * N, D])
+#     ret_flattened = fn(M_flattened)
+#     flat_shape = tf.shape(ret_flattened)
+#     new_shape = tf.concat([leading_dims, flat_shape[:-1], [N]], 0)
+#     ret = tf.reshape(ret_flattened, new_shape)
+#     return ret
+
+
 @conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
 def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
@@ -112,13 +131,26 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         - variance: N x R (full_cov = False), R x N x N (full_cov = True)
     """
     logger.debug("Conditional: Kernel")
-    num_data = tf.shape(X)[0]  # M
-    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
-    Kmn = kern.K(X, Xnew)
+    num_data = tf.shape(X)[-2]  # M
+    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level  #  [M, M]
+
+    Ns, D = tf.shape(Xnew)[-2], tf.shape(Xnew)[-1]
+    leading_dims = tf.shape(Xnew)[:-2]  # [...]
+    leading_size = tf.reduce_prod(tf.concat([[1,], leading_dims], 0))
+    Xnew_flattened = tf.reshape(Xnew, [leading_size * Ns, D])  #[prod(...)*N,D]
+    Knm_flattened = kern.K(Xnew_flattened, X)  # [prod(...)*N, M]
+    # flat_shape = tf.shape(Knm_flattened)
+    new_shape = tf.concat([leading_dims, [Ns, num_data]], 0)
+    Knm = tf.reshape(Knm_flattened, new_shape)
+    Kmn = tf.matrix_transpose(Knm)
+
+    # Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
+    # Kmn = kern.K(X, Xnew)
     if full_cov:
-        Knn = kern.K(Xnew)
+        Knn = kern.K(Xnew)  # [...,N,N]
     else:
-        Knn = kern.Kdiag(Xnew)
+        Knn = kern.Kdiag(Xnew)  # [...,N]
+
     mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     return mean, var  # N x R, N x R or R x N x N
@@ -153,8 +185,8 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     if full_cov:
         # mean: N x P
         # cov: P x N x N
-        mean = tf.matrix_transpose(mean)  # now P x N
-        samples = _sample_mvn(mean, cov, 'full', num_samples=num_samples)  # (S x) P x N
+        mean_PN = tf.matrix_transpose(mean)  # now P x N
+        samples = _sample_mvn(mean_PN, cov, 'full', num_samples=num_samples)  # (S x) P x N
         samples = tf.matrix_transpose(samples)  # now (S x) N x P
 
     else:
@@ -189,6 +221,7 @@ def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=
 ############################# CONDITIONAL MATHS ##############################
 # ----------------------------------------------------------------------------
 
+
 @name_scope()
 def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=False):
     """
@@ -200,9 +233,9 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
       q(g2) = N(g2;f,q_sqrt*q_sqrt^T)
     This method computes the mean and (co)variance of
       q(g1) = \int q(g2) p(g1|g2)
-    :param Kmn: M x N
+    :param Kmn: [...] x M x N
     :param Kmm: M x M
-    :param Knn: N x N  or  N
+    :param Knn: [...] x N x N  or  N
     :param f: M x R
     :param full_cov: bool
     :param q_sqrt: None or R x M x M (lower triangular)
@@ -212,32 +245,48 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     logger.debug("base conditional")
     # compute kernel stuff
     num_func = tf.shape(f)[1]  # R
-    Lm = tf.cholesky(Kmm)
+    N = tf.shape(Kmn)[-1]
+    M = tf.shape(f)[0]
+    leading_dims = tf.shape(Kmn)[:-2]
+    Lm = tf.cholesky(Kmm)  # [M,M]
 
     # Compute the projection matrix A
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
-
+    # A = broadcast_rowwise_over_leading_dims(lambda x: tf.matrix_triangular_solve(Lm, x, lower=True), Kmn)
+    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [...,M,M]
+    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # [...,M,N]
     # compute the covariance due to the conditioning
     if full_cov:
-        fvar = Knn - tf.matmul(A, A, transpose_a=True)
-        fvar = tf.tile(fvar[None, :, :], [num_func, 1, 1])  # R x N x N
+        fvar = Knn - tf.matmul(A, A, transpose_a=True)  # [...,N,N]
+        cov_shape = tf.concat([leading_dims, [num_func, N, N]], 0)
+        fvar = tf.broadcast_to(tf.expand_dims(fvar, -3), cov_shape)  # [...,R,N,N]
     else:
-        fvar = Knn - tf.reduce_sum(tf.square(A), 0)
-        fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
+        # fvar = Knn - tf.reduce_sum(tf.square(A), 0)
+        # fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
+
+        fvar = Knn - tf.reduce_sum(tf.square(A), -2)  # [...,N]
+        cov_shape = tf.concat([leading_dims, [num_func, N]], 0) # [...,R,N]
+        fvar = tf.broadcast_to(tf.expand_dims(fvar, -2), cov_shape)  # [...,R,N]
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
+        # fn = lambda x: tf.matrix_triangular_solve(tf.transpose(Lm), x, lower=False)
+        # A = broadcast_rowwise_over_leading_dims(fn, A)
+        A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)
 
     # construct the conditional mean
-    fmean = tf.matmul(A, f, transpose_a=True)
+    f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [...,M,R]
+    f = tf.broadcast_to(f, f_shape)  # [...,M,R]
+    fmean = tf.matmul(A, f, transpose_a=True)  # [...,N,R]
 
     if q_sqrt is not None:
         if q_sqrt.get_shape().ndims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # R x M x N
         elif q_sqrt.get_shape().ndims == 3:
             L = q_sqrt
-            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
+            L = tf.broadcast_to(L, tf.concat([leading_dims, tf.shape(L)], 0))
+
+            shape = tf.concat([leading_dims, [num_func, M, N]], 0)
+            A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
             LTA = tf.matmul(L, A_tiled, transpose_a=True)  # R x M x N
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
@@ -245,13 +294,12 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
         if full_cov:
             fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # R x N x N
         else:
-            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # R x N
+            fvar = fvar + tf.reduce_sum(tf.square(LTA), -2)  # R x N
 
     if not full_cov:
-        fvar = tf.transpose(fvar)  # N x R
+        fvar = tf.matrix_transpose(fvar)  # N x R
 
     return fmean, fvar  # N x R, R x N x N or N x R
-
 
 # ----------------------------------------------------------------------------
 ############################ UNCERTAIN CONDITIONAL ###########################

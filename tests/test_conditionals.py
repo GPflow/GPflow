@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import pytest
+from gpflow.test_util import session_tf
 import tensorflow as tf
 
 import numpy as np
@@ -158,6 +161,101 @@ class WhitenTestGaussian(WhitenTest):
 
             assert_allclose(mean_difference, 0, atol=4)
             assert_allclose(var_difference, 0, atol=4)
+
+
+
+@pytest.mark.parametrize("full_cov", [True, False])
+def test_vs_ref(session_tf, full_cov):
+    """
+    Test that conditionals agree with a slow-but-clear numpy implementation
+    """
+    Dy, N, M, Dx = 5, 4, 3, 2
+    X = np.random.randn(N, Dx)
+    Z = np.random.randn(M, Dx)
+    kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
+
+    Kmm = kern.compute_K_symm(Z) + np.eye(M) * settings.numerics.jitter_level
+    Kmn = kern.compute_K(Z, X)
+    Knn = kern.compute_K_symm(X)
+
+    Kmm, Kmn, Knm, Knn = [np.tile(k[None, :, :], [Dy, 1, 1]) for k in [Kmm, Kmn, Kmn.T, Knn]]
+
+    q_mu = np.random.randn(M, Dy)
+    q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
+
+    S = q_sqrt @ np.transpose(q_sqrt, [0, 2, 1])
+
+    Kmm_inv = np.linalg.inv(Kmm)
+    mean_np = np.einsum('dmn,dmM,Md->nd', Kmn, Kmm_inv, q_mu)
+    cov_np = Knn + Knm @ Kmm_inv @ (S - Kmm) @ Kmm_inv @ Kmn
+
+    mean_tf, cov_tf = gpflow.conditionals.conditional(X, Z, kern, q_mu,
+                                                      q_sqrt=tf.identity(q_sqrt),
+                                                      white=False,
+                                                      full_cov=full_cov)
+
+    mean_tf, cov_tf = session_tf.run([mean_tf, cov_tf])
+
+    if not full_cov:
+        cov_np = np.diagonal(cov_np, axis1=-1, axis2=-2).T
+
+    assert_allclose(mean_np, mean_tf)
+    assert_allclose(cov_np, cov_tf)
+
+
+@pytest.mark.parametrize("full_cov", [True, False])
+@pytest.mark.parametrize("white", [True, False])
+def test_multisample2(session_tf, full_cov, white):
+    """
+    Test that the conditional broadcasts correctly over leading dimensions of Xnew
+
+    Xnew can be shape [...,N,D], and conditional should broadcast over the [...]
+
+    """
+    S1, S2, Dy, N, M, Dx = 7, 6, 5, 4, 3, 2
+
+    SX = np.random.randn(S1*S2, N, Dx)
+    S1_S2_X = np.reshape(SX, [S1, S2, N, Dx])
+    Z = np.random.randn(M, Dx)
+    kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
+
+    q_mu = np.random.randn(M, Dy)
+    q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
+
+    x = tf.placeholder(tf.float64, [None, None])
+
+    mean_tf, cov_tf = gpflow.conditionals.conditional(x, Z, kern, q_mu,
+                                                      q_sqrt=tf.identity(q_sqrt),
+                                                      white=white,
+                                                      full_cov=full_cov)
+    ms, vs = [], []
+    for X in SX:
+        m, v = session_tf.run([mean_tf, cov_tf], {x:X})
+        ms.append(m)
+        vs.append(v)
+
+    ms = np.array(ms)
+    vs = np.array(vs)
+
+    ms_S12, vs_S12 = session_tf.run(gpflow.conditionals.conditional(SX, Z, kern, q_mu,
+                                                                    q_sqrt=tf.identity(q_sqrt),
+                                                                    white=white,
+                                                                    full_cov=full_cov))
+
+    ms_S1_S2, vs_S1_S2 = session_tf.run(gpflow.conditionals.conditional(S1_S2_X, Z, kern, q_mu,
+                                                                        q_sqrt=tf.identity(q_sqrt),
+                                                                        white=white,
+                                                                        full_cov=full_cov))
+
+    assert_allclose(ms_S12, ms)
+    assert_allclose(vs_S12, vs)
+
+    assert_allclose(ms_S1_S2.reshape(S1 * S2, N, Dy), ms)
+
+    if full_cov:
+        assert_allclose(vs_S1_S2.reshape(S1 * S2, Dy, N, N), vs)
+    else:
+        assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
 
 if __name__ == '__main__':
