@@ -74,6 +74,25 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
+# def broadcast_rowwise_over_leading_dims(fn, M, output=-1):
+#     """
+#     Performs reshaping and transposing to get a function to broadcast over leading dimensions
+#
+#     :param fn: a function which takes [A, B] and returns [a,...,b]
+#     :param M: an array of shape [..., A, B]
+#     :return: an array of shape [..., a...b]  where the operation is [.x.x.A, B]
+#     """
+#     N, D = tf.shape(M)[-2], tf.shape(M)[-1]
+#     leading_dims = tf.shape(M)[:-2]
+#     leading_size = tf.reduce_prod(leading_dims)
+#     M_flattened = tf.reshape(M, [leading_size * N, D])
+#     ret_flattened = fn(M_flattened)
+#     flat_shape = tf.shape(ret_flattened)
+#     new_shape = tf.concat([leading_dims, flat_shape[:-1], [N]], 0)
+#     ret = tf.reshape(ret_flattened, new_shape)
+#     return ret
+
+
 @conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
 def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
@@ -195,6 +214,7 @@ def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=
     samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)
     if full_cov:
         samples = tf.matrix_transpose(samples)
+        mean = tf.matrix_transpose(mean)
     return samples, mean, cov
 
 
