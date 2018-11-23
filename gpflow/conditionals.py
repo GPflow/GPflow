@@ -214,6 +214,7 @@ def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=
     samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)
     if full_cov:
         samples = tf.matrix_transpose(samples)
+        mean = tf.matrix_transpose(mean)
     return samples, mean, cov
 
 
@@ -476,4 +477,3 @@ def _expand_independent_outputs(fvar, full_cov, full_output_cov):
         pass  # N x P
 
     return fvar
-

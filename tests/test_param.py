@@ -354,30 +354,30 @@ class TestParameter(GPflowTestCase):
             with self.assertRaises(ValueError):
                 p.assign(val)
 
-    def test_create_and_replace(self):
-        with self.test_context():
-            tensor = tf.get_variable('a', shape=()) + 1.0
-            param = gpflow.Param(1e3)
-
-            with self.assertRaises(ValueError):
-                external_param = gpflow.Param(tensor)
-
-            external_param = gpflow.Param(tensor, trainable=False)
-            new_param = gpflow.Param(1.0, name='new_param')
-
-            self.m.b = external_param
-            self.assertEqual(self.m.b, external_param)
-
-            p = self.m.p
-            self.m.p = param
-
-            assert self.m.p is param
-            assert p.name.startswith('Parameter')
-            assert p.root is p
-
-            self.m.d = new_param
-            assert self.m.d is new_param
-            assert self.m.d.pathname == '{name}/d'.format(name=self.m.name)
+    # def test_create_and_replace(self):
+    #     with self.test_context():
+    #         tensor = tf.get_variable('a', shape=()) + 1.0
+    #         param = gpflow.Param(1e3)
+    #
+    #         with self.assertRaises(ValueError):
+    #             external_param = gpflow.Param(tensor)
+    #
+    #         external_param = gpflow.Param(tensor, trainable=False)
+    #         new_param = gpflow.Param(1.0, name='new_param')
+    #
+    #         self.m.b = external_param
+    #         self.assertEqual(self.m.b, external_param)
+    #
+    #         p = self.m.p
+    #         self.m.p = param
+    #
+    #         assert self.m.p is param
+    #         assert p.name.startswith('Parameter')
+    #         assert p.root is p
+    #
+    #         self.m.d = new_param
+    #         assert self.m.d is new_param
+    #         assert self.m.d.pathname == '{name}/d'.format(name=self.m.name)
 
     def test_assign_with_compile(self):
         with self.test_context():
