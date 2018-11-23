@@ -169,7 +169,7 @@ def test_vs_ref(session_tf, full_cov):
     """
     Test that conditionals agree with a slow-but-clear numpy implementation
     """
-    Dy, N, M, Dx = 5, 4, 3, 2
+    Dy, N, M, Dx = 6, 4, 3, 2
     X = np.random.randn(N, Dx)
     Z = np.random.randn(M, Dx)
     kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
