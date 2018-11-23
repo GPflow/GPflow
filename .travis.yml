@@ -13,7 +13,8 @@ install:
   - python setup.py install
 
 script:
-  - pytest -W ignore::UserWarning --durations=5 --cov=./gpflow -d --tx 3*popen//python=python3.6 --pyargs ./tests
+  - export TESTRUN="pytest -W ignore::UserWarning --durations=5 --cov=./gpflow -n auto"
+  - if [ "$TRAVIS_BRANCH" = "develop" ] || [ "$TRAVIS_BRANCH" = "master" ]; then ${TESTRUN} ./tests; else ${TESTRUN} -k 'not notebooks' ./tests; fi
   - codecov --token=2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
 
 cache:

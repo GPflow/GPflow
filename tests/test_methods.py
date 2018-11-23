@@ -12,13 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
-
+import gpflow
 import numpy as np
+import tensorflow as tf
+from gpflow.test_util import GPflowTestCase, session_tf
 from numpy.testing import assert_array_equal, assert_array_less, assert_allclose
 
-import gpflow
-from gpflow.test_util import GPflowTestCase
+
+def test_sgpr_qu(session_tf):
+    rng = np.random.RandomState(0)
+    X = rng.randn(100, 2)
+    Y = np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * np.random.randn(len(X), 1)
+    Z = rng.randn(20, 2)
+
+    m = gpflow.models.SGPR(X, Y, gpflow.kernels.RBF(2), Z=Z)
+    gpflow.train.ScipyOptimizer().minimize(m)
+
+    for v1, v2 in zip(m.compute_qu(), m.predict_f_full_cov(m.feature.Z.value)):
+        pd = np.max(np.abs((v1 / v2 - 1))) * 100.0
+        assert pd < 0.5
 
 
 class TestMethods(GPflowTestCase):
@@ -33,7 +45,7 @@ class TestMethods(GPflowTestCase):
 
         # make one of each model
         ms = []
-        #for M in (gpflow.models.GPMC, gpflow.models.VGP):
+        # for M in (gpflow.models.GPMC, gpflow.models.VGP):
         for M in (gpflow.models.VGP, gpflow.models.GPMC):
             ms.append(M(X, Y, kern, lik))
         for M in (gpflow.models.SGPMC, gpflow.models.SVGP):
@@ -85,10 +97,11 @@ class TestSVGP(GPflowTestCase):
     Here we make sure that the bound on the likelihood is the same when using
     both representations (as far as possible)
     """
+
     def setUp(self):
         self.rng = np.random.RandomState(0)
         self.X = self.rng.randn(20, 1)
-        self.Y = self.rng.randn(20, 2)**2
+        self.Y = self.rng.randn(20, 2) ** 2
         self.Z = self.rng.randn(3, 1)
 
     def test_white(self):
@@ -108,7 +121,7 @@ class TestSVGP(GPflowTestCase):
                 q_diag=False,
                 whiten=True)
             qsqrt, qmean = self.rng.randn(2, 3, 2)
-            qsqrt = (qsqrt**2) * 0.01
+            qsqrt = (qsqrt ** 2) * 0.01
             m1.q_sqrt = qsqrt
             m1.q_mu = qmean
             m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])])
@@ -137,7 +150,7 @@ class TestSVGP(GPflowTestCase):
                 q_diag=False,
                 whiten=False)
             qsqrt, qmean = self.rng.randn(2, 3, 2)
-            qsqrt = (qsqrt**2)*0.01
+            qsqrt = (qsqrt ** 2) * 0.01
             m1.q_sqrt = qsqrt
             m1.q_mu = qmean
             m2.q_sqrt = np.array([np.diag(qsqrt[:, 0]), np.diag(qsqrt[:, 1])])
@@ -158,6 +171,7 @@ class TestSVGP(GPflowTestCase):
                 Z=self.Z)
             m1.q_sqrt.trainable = False
 
+
 class TestStochasticGradients(GPflowTestCase):
     """
     In response to bug #281, we need to make sure stochastic update
@@ -172,11 +186,12 @@ class TestStochasticGradients(GPflowTestCase):
     In this test we substitute a deterministic analogue of the batchs
     sampler for which we can predict the effects of different updates.
     """
+
     def setUp(self):
         tf.set_random_seed(0)
         self.XAB = np.atleast_2d(np.array([0., 1.])).T
         self.YAB = np.atleast_2d(np.array([-1., 3.])).T
-        self.sharedZ = np.atleast_2d(np.array([0.5]) )
+        self.sharedZ = np.atleast_2d(np.array([0.5]))
         self.indexA = 0
         self.indexB = 1
 
@@ -215,7 +230,7 @@ class TestStochasticGradients(GPflowTestCase):
         return True
 
     def compare_models(self, indicesOne, indicesTwo,
-                         batchOne, batchTwo, maxiter, checkSame=True):
+                       batchOne, batchTwo, maxiter, checkSame=True):
         m1 = self.get_indexed_model(self.XAB, self.YAB, self.sharedZ, batchOne, indicesOne)
         m2 = self.get_indexed_model(self.XAB, self.YAB, self.sharedZ, batchTwo, indicesTwo)
 
@@ -254,11 +269,13 @@ class TestStochasticGradients(GPflowTestCase):
                 [self.indexA, self.indexB],
                 batchOne=1, batchTwo=1, maxiter=2)
 
+
 class TestSparseMCMC(GPflowTestCase):
     """
     This test makes sure that when the inducing points are the same as the data
     points, the sparse mcmc is the same as full mcmc
     """
+
     def test_likelihoods_and_gradients(self):
         with self.test_context() as session:
             rng = np.random.RandomState(0)
