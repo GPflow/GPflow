@@ -14,7 +14,7 @@ echo $(git status -s -b)
 if [[ ! ${TRAVIS_BRANCH} =~ ^(master|develop)$ ]]; then
     ${TESTRUN} ./tests
 # Special case for PRs from develop to master
-elif [[ ${TRAVIS_PULL_REQUEST} != "false" ]] && [[ ${TRAVIS_PULL_REQUEST_BRANCH} != "master" ]]
+elif [[ ${TRAVIS_PULL_REQUEST} != "false" ]] && [[ ${TRAVIS_PULL_REQUEST_BRANCH} != "master" ]]; then
     ${TESTRUN} ./tests
 else
     ${TESTRUN} -k 'not notebooks' ./tests
