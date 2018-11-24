@@ -11,7 +11,7 @@ echo "TRAVIS_PULL_REQUEST=${TRAVIS_PULL_REQUEST}"
 echo "TRAVIS_PULL_REQUEST_BRANCH=${TRAVIS_PULL_REQUEST_BRANCH}"
 echo $(git status -s -b)
 
-if [[ "${TRAVIS_BRANCH}" =~ ^(master|develop)$ ]]; then
+if [[ ${TRAVIS_BRANCH} =~ ^(master|develop)$ ]]; then
     ${TESTRUN} -k 'not notebooks' ./tests;
 else
     ${TESTRUN} ./tests;
