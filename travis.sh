@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -ev
+set -ex
+
 
 TESTRUN="pytest -W ignore::UserWarning --durations=5 --cov=./gpflow -n auto"
 
