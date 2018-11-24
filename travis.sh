@@ -4,6 +4,8 @@ set -ex
 
 TESTRUN="pytest -W ignore::UserWarning --durations=5 --cov=./gpflow -n auto"
 
+echo "TEST"
+
 if [[ ! ${TRAVIS_BRANCH} =~ ^(master|develop)$ ]]; then
     ${TESTRUN} -k 'not notebooks' ./tests
 # Special case for PRs from develop to master
