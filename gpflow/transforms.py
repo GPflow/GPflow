@@ -126,7 +126,7 @@ class Log1pe(Transform):
     A transform of the form
     .. math::
 
-       y = \log(1 + \exp(x))
+       y = \log(x)
 
     x is a free variable, y is always positive.
 
