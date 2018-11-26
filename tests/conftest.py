@@ -19,12 +19,12 @@ import pytest
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--skipslowtests", action="store_true", default=False, help="run slow tests"
+        "--skipslow", action="store_true", default=False, help="skip slow tests"
     )
 
 
 def pytest_collection_modifyitems(config, items):
-    if config.getoption("--skipslowtests"):
+    if config.getoption("--skipslow"):
         # --skipslowtests is given in cli, so all tests marked with
         # pytest.mark.slow will be skipped.
         skip_slow = pytest.mark.skip(reason="Run with `--skipslowtests` to run this test.")

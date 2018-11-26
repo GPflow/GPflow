@@ -284,7 +284,6 @@ class TestSoftMax(GPflowTestCase):
             except tf.errors.InvalidArgumentError as e:
                 assert "assertion failed" in e.message
 
-    @pytest.mark.slow
     def test_bernoulli_equivalence(self):
         with self.test_context() as sess:
             F, Y, feed = self.prepare(dimF=2, dimY=1)
