@@ -249,9 +249,6 @@ class TestMonteCarlo(GPflowTestCase):
             assert_allclose(F1v, F2v, rtol=5e-4, atol=1e-4)
 
 
-
-
-
 def _prepare(dimF, dimY, num=10):
     rng = np.random.RandomState(1)
     feed = {}
