@@ -2,11 +2,7 @@
 
 set -ex
 
-# TESTRUN="pytest -W ignore::UserWarning --durations=5 -n 4 --cov=./gpflow"
-
-TESTRUN="pytest -W ignore::UserWarning --durations=10 -d --tx 3*popen//python=python3.6 --cov=./gpflow"
-
-
+TESTRUN="pytest -W ignore::UserWarning --durations=5 -n 1 --cov=./gpflow"
 
 if [[ ! ${TRAVIS_BRANCH} =~ ^(master|develop)$ ]]; then
     ${TESTRUN} '--skipslow' ./tests
