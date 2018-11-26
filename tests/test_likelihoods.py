@@ -14,6 +14,7 @@
 
 import numpy as np
 import tensorflow as tf
+import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
@@ -283,6 +284,7 @@ class TestSoftMax(GPflowTestCase):
             except tf.errors.InvalidArgumentError as e:
                 assert "assertion failed" in e.message
 
+    @pytest.mark.slow
     def test_bernoulli_equivalence(self):
         with self.test_context() as sess:
             F, Y, feed = self.prepare(dimF=2, dimY=1)
@@ -294,7 +296,7 @@ class TestSoftMax(GPflowTestCase):
                 return 1.0 / (1.0 + tf.exp(-x))
 
             ls = gpflow.likelihoods.SoftMax(2)
-            ls.num_monte_carlo_points = 10000000
+            ls.num_monte_carlo_points = int(1e7)
             ls.compile()
             lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
             lb.num_gauss_hermite_points = 50
