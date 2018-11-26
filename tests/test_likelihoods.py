@@ -295,7 +295,7 @@ class TestSoftMax(GPflowTestCase):
                 return 1.0 / (1.0 + tf.exp(-x))
 
             ls = gpflow.likelihoods.SoftMax(2)
-            ls.num_monte_carlo_points = int(1e7)
+            ls.num_monte_carlo_points = int(5e6)
             ls.compile()
             lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
             lb.num_gauss_hermite_points = 50
