@@ -4,6 +4,8 @@ set -ex
 
 TESTRUN="pytest -W ignore::UserWarning --durations=5 -n auto --cov=./gpflow"
 
+export PYTEST_DEBUG=1
+
 if [[ ! ${TRAVIS_BRANCH} =~ ^(master|develop)$ ]]; then
     ${TESTRUN} '--skipslow' ./tests
 # Special case for PRs from develop to master
