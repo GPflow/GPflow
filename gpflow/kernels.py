@@ -279,7 +279,7 @@ class Stationary(Kernel):
         X2 = X2 / self.lengthscales
         X2s = tf.reduce_sum(tf.square(X2), axis=-1, keepdims=True)
         dist = -2 * tf.tensordot(X, X2, [[-1], [-1]])
-        dist += Xs + tf.matrix_transpose(X2s)
+        dist += tf.tensordot(Xs, X2s, [[-1], [-1]])  # equivalent to X + X2 (element-wise)
         return dist
 
 

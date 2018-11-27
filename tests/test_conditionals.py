@@ -165,7 +165,8 @@ class WhitenTestGaussian(WhitenTest):
 
 
 @pytest.mark.parametrize("full_cov", [True, False])
-def test_vs_ref(session_tf, full_cov):
+@pytest.mark.parametrize("features_inducing_points", [False, True])
+def test_vs_ref(session_tf, full_cov, features_inducing_points):
     """
     Test that conditionals agree with a slow-but-clear numpy implementation
     """
@@ -189,6 +190,8 @@ def test_vs_ref(session_tf, full_cov):
     mean_np = np.einsum('dmn,dmM,Md->nd', Kmn, Kmm_inv, q_mu)
     cov_np = Knn + Knm @ Kmm_inv @ (S - Kmm) @ Kmm_inv @ Kmn
 
+    if features_inducing_points:
+        Z = gpflow.features.InducingPoints(Z)
     mean_tf, cov_tf = gpflow.conditionals.conditional(X, Z, kern, q_mu,
                                                       q_sqrt=tf.identity(q_sqrt),
                                                       white=False,
@@ -205,7 +208,8 @@ def test_vs_ref(session_tf, full_cov):
 
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("white", [True, False])
-def test_multisample2(session_tf, full_cov, white):
+@pytest.mark.parametrize("features_inducing_points", [False, True])
+def test_multisample2(session_tf, full_cov, white, features_inducing_points):
     """
     Test that the conditional broadcasts correctly over leading dimensions of Xnew
 
@@ -217,6 +221,9 @@ def test_multisample2(session_tf, full_cov, white):
     SX = np.random.randn(S1*S2, N, Dx)
     S1_S2_X = np.reshape(SX, [S1, S2, N, Dx])
     Z = np.random.randn(M, Dx)
+    if features_inducing_points:
+        Z = gpflow.features.InducingPoints(Z)
+
     kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
 
     q_mu = np.random.randn(M, Dy)
