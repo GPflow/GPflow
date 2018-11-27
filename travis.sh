@@ -2,7 +2,7 @@
 
 set -ex
 
-TESTRUN="pytest -W ignore::UserWarning --durations=5 -n auto --cov=./gpflow"
+TESTRUN="pytest -W ignore::UserWarning --durations=5 -n 1 --cov=./gpflow"
 
 export PYTEST_DEBUG=1
 
