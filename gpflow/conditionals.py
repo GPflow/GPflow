@@ -74,24 +74,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
-# def broadcast_rowwise_over_leading_dims(fn, M, output=-1):
-#     """
-#     Performs reshaping and transposing to get a function to broadcast over leading dimensions
-#
-#     :param fn: a function which takes [A, B] and returns [a,...,b]
-#     :param M: an array of shape [..., A, B]
-#     :return: an array of shape [..., a...b]  where the operation is [.x.x.A, B]
-#     """
-#     N, D = tf.shape(M)[-2], tf.shape(M)[-1]
-#     leading_dims = tf.shape(M)[:-2]
-#     leading_size = tf.reduce_prod(leading_dims)
-#     M_flattened = tf.reshape(M, [leading_size * N, D])
-#     ret_flattened = fn(M_flattened)
-#     flat_shape = tf.shape(ret_flattened)
-#     new_shape = tf.concat([leading_dims, flat_shape[:-1], [N]], 0)
-#     ret = tf.reshape(ret_flattened, new_shape)
-#     return ret
-
 
 @conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
@@ -132,17 +114,8 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     """
     logger.debug("Conditional: Kernel")
     num_data = tf.shape(X)[-2]  # M
-    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level  #  [M, M]
-
-    Ns, D = tf.shape(Xnew)[-2], tf.shape(Xnew)[-1]
-    leading_dims = tf.shape(Xnew)[:-2]  # [...]
-    leading_size = tf.reduce_prod(tf.concat([[1,], leading_dims], 0))
-    Xnew_flattened = tf.reshape(Xnew, [leading_size * Ns, D])  #[prod(...)*N,D]
-    Knm_flattened = kern.K(Xnew_flattened, X)  # [prod(...)*N, M]
-    # flat_shape = tf.shape(Knm_flattened)
-    new_shape = tf.concat([leading_dims, [Ns, num_data]], 0)
-    Knm = tf.reshape(Knm_flattened, new_shape)
-    Kmn = tf.matrix_transpose(Knm)
+    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level  #  [..., M, M]
+    Kmn = tf.matrix_transpose(kern.K(Xnew, X))  # [... M, N]
 
     # Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
     # Kmn = kern.K(X, Xnew)
