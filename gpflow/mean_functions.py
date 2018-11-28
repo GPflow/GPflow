@@ -64,16 +64,7 @@ class Linear(MeanFunction):
 
     @params_as_tensors
     def __call__(self, X):
-        if X.get_shape().ndims is not None and X.get_shape().ndims >= 2:
-            new_shape_A = tf.concat((tf.shape(X)[:-2], tf.shape(self.A)), axis=0)
-            new_shape_b = tf.concat((tf.shape(X)[:-1], tf.shape(self.b)), axis=0)
-            A = tf.broadcast_to(self.A, new_shape_A)
-            b = tf.broadcast_to(self.b, new_shape_b)
-        else:
-            A = self.A
-            b = self.b
-
-        return tf.matmul(X, A) + b
+        return tf.matmul(X, self.A) + self.b
 
 
 class Identity(Linear):
@@ -124,8 +115,8 @@ class Constant(MeanFunction):
 
     @params_as_tensors
     def __call__(self, X):
-        shape = tf.concat([tf.shape(X)[:-1], [tf.shape(self.c)[-1]]], 0)
-        return tf.broadcast_to(self.c, shape)
+        shape = tf.stack([tf.shape(X)[0], 1])
+        return tf.tile(self.c, shape)
 
 
 class Zero(Constant):
