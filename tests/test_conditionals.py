@@ -192,6 +192,7 @@ def test_vs_ref(session_tf, full_cov, features_inducing_points):
 
     if features_inducing_points:
         Z = gpflow.features.InducingPoints(Z)
+
     mean_tf, cov_tf = gpflow.conditionals.conditional(X, Z, kern, q_mu,
                                                       q_sqrt=tf.identity(q_sqrt),
                                                       white=False,
@@ -263,63 +264,6 @@ def test_multisample2(session_tf, full_cov, white, features_inducing_points):
         assert_allclose(vs_S1_S2.reshape(S1 * S2, Dy, N, N), vs)
     else:
         assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
-
-
-# def test_multisample(session_tf):
-#     """
-#     Test that the conditional broadcasts correctly over leading dimensions of Xnew
-
-#     Xnew can be shape [...,N, D], and conditional should broadcast over the [...]
-
-#     """
-#     full_cov = False
-#     white = True
-
-#     S1, S2, Dy, N, M, Dx = 7, 6, 5, 4, 3, 2
-
-#     SX = np.random.randn(S1*S2, N, Dx)
-#     S1_S2_X = np.reshape(SX, [S1, S2, N, Dx])
-#     Z = np.random.randn(M, Dx)
-#     feat = gpflow.features.InducingPoints(Z)
-#     kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
-
-#     q_mu = np.random.randn(M, Dy)
-#     q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
-
-#     x = tf.placeholder(tf.float64, [None, None])
-
-#     mean_tf, cov_tf = gpflow.conditionals.conditional(x, feat, kern, q_mu,
-#                                                       q_sqrt=tf.identity(q_sqrt),
-#                                                       white=white,
-#                                                       full_cov=full_cov)
-#     ms, vs = [], []
-#     for X in SX:
-#         m, v = session_tf.run([mean_tf, cov_tf], {x: X})
-#         ms.append(m)
-#         vs.append(v)
-
-#     ms = np.array(ms)
-#     vs = np.array(vs)
-
-#     ms_S12, vs_S12 = session_tf.run(gpflow.conditionals.conditional(SX, feat, kern, q_mu,
-#                                                                     q_sqrt=tf.identity(q_sqrt),
-#                                                                     white=white,
-#                                                                     full_cov=full_cov))
-
-#     ms_S1_S2, vs_S1_S2 = session_tf.run(gpflow.conditionals.conditional(S1_S2_X, feat, kern, q_mu,
-#                                                                         q_sqrt=tf.identity(q_sqrt),
-#                                                                         white=white,
-#                                                                         full_cov=full_cov))
-
-#     assert_allclose(ms_S12, ms)
-#     assert_allclose(vs_S12, vs)
-
-#     assert_allclose(ms_S1_S2.reshape(S1 * S2, N, Dy), ms)
-
-#     if full_cov:
-#         assert_allclose(vs_S1_S2.reshape(S1 * S2, Dy, N, N), vs)
-#     else:
-#         assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
 
 

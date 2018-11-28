@@ -229,27 +229,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                  full_output_cov=False, white=white)  # N x L, L x N x N or N x L
-
-    gmu = tf.matrix_transpose(gmu)  # L x N
-    if not full_cov:
-        gvar = tf.matrix_transpose(gvar)  # L x N (x N)
-
-    Wgmu = tf.tensordot(gmu, kern.W, [[0], [1]])  # N x P
-
-    if full_output_cov:
-        Wt_expanded = tf.matrix_transpose(kern.W)[:, None, :]  # L x 1 x P
-        if full_cov:
-            Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # L x 1 x P x 1
-
-        gvarW = tf.expand_dims(gvar, axis=2) * Wt_expanded  # L x N x P (x N)
-        WgvarW = tf.tensordot(gvarW, kern.W, [[0], [1]])  # N x P (x N) x P
-    else:
-        if not full_cov:
-            WgvarW = tf.tensordot(gvar, kern.W ** 2, [[0], [1]])  # N x P
-        else:
-            WgvarW = tf.tensordot(kern.W ** 2, gvar, [[1], [0]])  # P x N (x N)
-
-    return Wgmu, WgvarW
+    return _mix_latent_gp(kern.W, gmu, gvar, full_cov, full_output_cov)
 
 
 # ------------------
@@ -284,7 +264,7 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
         # [P, L] @ [L, L] @ [L, P]
         # \sum_l,l' W_pl g_var_ll' W_p'l'
         # \sum_l W_pl g_var_nl W_p'l
-        # -> 
+        # ->
         f_var = tf.einsum("pl,nl,pl->np", kern.W, g_var, kern.W)
     return f_sample, f_mu, f_var
 
@@ -463,3 +443,64 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # R x N x K
             fvar = fvar[None, ...] + addvar  # R x N x K
     return fmean, fvar
+
+
+def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
+    r"""
+    Takes the mean and variance of a uncorrelated L-dimensional latent GP
+    and returns the mean and the variance of the mixed GP, `f = W \times g`,
+    where both f and g are GPs.
+
+    :param W: [P, L]
+    :param g_mu: [..., N, L]
+    :param g_var: [..., N, L] or [..., L, N, N] 
+    :return: f_mu and f_var, shape depends on `full_cov` and `full_output_cov`.
+    """
+    f_mu = tf.tensordot(g_mu, W, [[-1], [-1]])  # [..., N, P]
+
+    K = tf.rank(g_var)
+    leading_dims = (K - 3) if full_cov else (K - 2)
+
+    def _get_perm_with_leading_dims(leading_dims, *axis):
+        """
+        Constructs a permuation array that can be used in `tf.transpose`.
+        Will keep the leading dims uneffected, and transpose the last 
+        dimensions accordings to the order specified in `axis`.
+        :param leading_dims: int or tf.int
+            number of leading dimensions, order of these axis will stay unchanged
+        :param *axis: int's or tf.int's
+        :return: one-dimensional tf.Tensor that can be used as permutation arg.
+        """
+        perm = [tf.reshape(tf.range(leading_dims), [leading_dims])]
+        perm += [tf.reshape(a, [1]) for a in axis]
+        perm = tf.concat(perm, 0)
+        return perm
+
+    if full_cov and full_output_cov:  # g_var is [..., L, N, N]
+        # this branch is practically never taken
+        perm = _get_perm_with_leading_dims(leading_dims, K-2, K-1, K-3)
+        g_var = tf.transpose(g_var, perm)  # [..., N, N, L]
+        g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
+        g_var_W = g_var * W  # [..., N, P, L]
+        f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, N, P, P]
+        perm = _get_perm_with_leading_dims(leading_dims, K-3, K-1, K-2, K)
+        f_var = tf.transpose(f_var, perm)  # [..., N, P, N, P]
+
+    elif full_cov and not full_output_cov:  # g_var is [..., L, N, N]
+        # this branch is practically never taken
+        f_var = tf.tensordot(g_var, W**2, [[-3], [-1]])  # [..., N, N, P]
+        perm = _get_perm_with_leading_dims(leading_dims, K-1, K-3, K-2)
+        f_var = tf.transpose(f_var, perm)  # [..., P, N, N]
+
+    elif not full_cov and full_output_cov:  # g_var is [..., N, L]
+        g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, 1, L]
+        g_var_W = g_var * W  # [..., N, P, L]
+        f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, P, P]
+
+    elif not full_cov and not full_output_cov:  # g_var is [..., N, L]
+        W_squared = W**2  # [P, L]
+        f_var = tf.tensordot(g_var, W_squared, [[-1], [-1]])  # [..., N, P]
+
+    return f_mu, f_var
+
+
