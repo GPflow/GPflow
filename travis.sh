@@ -2,13 +2,13 @@
 
 set -ex
 
-TESTRUN="pytest -W ignore::UserWarning --durations=5 --cov=./gpflow -n auto"
+TESTRUN="pytest -W ignore::UserWarning --durations=5 --cov=./gpflow"
 
 if [[ ! ${TRAVIS_BRANCH} =~ ^(master|develop)$ ]]; then
-    ${TESTRUN} -k 'not notebooks' ./tests
+    ${TESTRUN} '--skipslow' ./tests
 # Special case for PRs from develop to master
 elif [[ ${TRAVIS_PULL_REQUEST} != false ]] && [[ ${TRAVIS_PULL_REQUEST_BRANCH} != master ]]; then
-    ${TESTRUN} -k 'not notebooks' ./tests
+    ${TESTRUN} '--skipslow' ./tests
 else
     ${TESTRUN} ./tests
 fi
