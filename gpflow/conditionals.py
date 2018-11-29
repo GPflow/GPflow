@@ -74,25 +74,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
-# def broadcast_rowwise_over_leading_dims(fn, M, output=-1):
-#     """
-#     Performs reshaping and transposing to get a function to broadcast over leading dimensions
-#
-#     :param fn: a function which takes [A, B] and returns [a,...,b]
-#     :param M: an array of shape [..., A, B]
-#     :return: an array of shape [..., a...b]  where the operation is [.x.x.A, B]
-#     """
-#     N, D = tf.shape(M)[-2], tf.shape(M)[-1]
-#     leading_dims = tf.shape(M)[:-2]
-#     leading_size = tf.reduce_prod(leading_dims)
-#     M_flattened = tf.reshape(M, [leading_size * N, D])
-#     ret_flattened = fn(M_flattened)
-#     flat_shape = tf.shape(ret_flattened)
-#     new_shape = tf.concat([leading_dims, flat_shape[:-1], [N]], 0)
-#     ret = tf.reshape(ret_flattened, new_shape)
-#     return ret
-
-
 @conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
 def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
@@ -139,13 +120,11 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     leading_size = tf.reduce_prod(tf.concat([[1,], leading_dims], 0))
     Xnew_flattened = tf.reshape(Xnew, [leading_size * Ns, D])  #[prod(...)*N,D]
     Knm_flattened = kern.K(Xnew_flattened, X)  # [prod(...)*N, M]
-    # flat_shape = tf.shape(Knm_flattened)
+
     new_shape = tf.concat([leading_dims, [Ns, num_data]], 0)
     Knm = tf.reshape(Knm_flattened, new_shape)
     Kmn = tf.matrix_transpose(Knm)
 
-    # Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
-    # Kmn = kern.K(X, Xnew)
     if full_cov:
         Knn = kern.K(Xnew)  # [...,N,N]
     else:
@@ -252,7 +231,6 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     Lm = tf.cholesky(Kmm)  # [M,M]
 
     # Compute the projection matrix A
-    # A = broadcast_rowwise_over_leading_dims(lambda x: tf.matrix_triangular_solve(Lm, x, lower=True), Kmn)
     Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [...,M,M]
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # [...,M,N]
     # compute the covariance due to the conditioning
@@ -261,17 +239,12 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
         cov_shape = tf.concat([leading_dims, [num_func, N, N]], 0)
         fvar = tf.broadcast_to(tf.expand_dims(fvar, -3), cov_shape)  # [...,R,N,N]
     else:
-        # fvar = Knn - tf.reduce_sum(tf.square(A), 0)
-        # fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
-
         fvar = Knn - tf.reduce_sum(tf.square(A), -2)  # [...,N]
         cov_shape = tf.concat([leading_dims, [num_func, N]], 0) # [...,R,N]
         fvar = tf.broadcast_to(tf.expand_dims(fvar, -2), cov_shape)  # [...,R,N]
 
     # another backsubstitution in the unwhitened case
     if not white:
-        # fn = lambda x: tf.matrix_triangular_solve(tf.transpose(Lm), x, lower=False)
-        # A = broadcast_rowwise_over_leading_dims(fn, A)
         A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)
 
     # construct the conditional mean
