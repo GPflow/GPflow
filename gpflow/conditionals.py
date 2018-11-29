@@ -231,7 +231,7 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     Lm = tf.cholesky(Kmm)  # [M,M]
 
     # Compute the projection matrix A
-    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [...,M,M]
+    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
     A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # [...,M,N]
     # compute the covariance due to the conditioning
     if full_cov:
