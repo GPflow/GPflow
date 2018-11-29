@@ -4,17 +4,29 @@ language: python
 python:
   - 3.6
 
-before_install:
-  - sudo apt-get update -qq
-
 install:
-  - pip install numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov codecov multipledispatch mock
-  - pip install tensorflow==1.12.0
+  - sudo apt-get update
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a  # useful for debugging conda
+
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+  - source activate test-environment
+  - conda install -y tensorflow==1.12.0
+  - conda install -y numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov multipledispatch mock 
+  - pip install codecov
   - python setup.py install
 
 script:
-  - pytest -W ignore::UserWarning --durations=5 --cov=./gpflow -d --tx 3*popen//python=python3.6 --pyargs ./tests
-  - codecov --token=2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
+  - ./travis.sh
 
 cache:
   apt: true
