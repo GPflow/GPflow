@@ -6,21 +6,24 @@ python:
 
 
 env:
-  - TEST_SUITE=units
-  - TEST_SUITE=notebooks
+  global:
+    - CONDA=$HOME/miniconda
+  matrix:
+    - TEST_SUITE=units
+    - TEST_SUITE=notebooks
 
 
 before_install:
   - sudo apt update
-  - if [ -d "$HOME/miniconda/bin" ]; then
+  - if [ -d "$CONDA/bin" ]; then
       echo "Use cached miniconda";
-      export PATH="$HOME/miniconda/bin:$PATH";
+      export PATH="$CONDA/bin:$PATH";
     else
       mkdir -p $HOME/downloads;
-      rm -rf $HOME/miniconda;
+      rm -rf $CONDA;
       wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/downloads/miniconda.sh;
-      bash $HOME/downloads/miniconda.sh -b -p $HOME/miniconda;
-      export PATH="$HOME/miniconda/bin:$PATH";
+      bash $HOME/downloads/miniconda.sh -b -p $CONDA;
+      export PATH="$CONDA/bin:$PATH";
       conda create -q -n testenv python=3.6;
     fi
   - hash -r
@@ -41,13 +44,13 @@ cache:
   # pip: true
   directories:
     # - $HOME/.cache/pip
-    - $HOME/miniconda
+    - $CONDA
     - $HOME/downloads
 
 
 before_cache:
-  - rm -rf $HOME/miniconda/locks $HOME/miniconda/pkgs $HOME/miniconda/var $HOME/miniconda/conda-meta/history
-  - rm -rf $HOME/miniconda/envs/testenv/lib/python3.6/site-packages/gpflow*
+  - rm -rf $CONDA/locks $CONDA/pkgs $CONDA/var $CONDA/conda-meta/history
+  - rm -rf $CONDA/envs/testenv/lib/python3.6/site-packages/gpflow*
 
 
 script:
