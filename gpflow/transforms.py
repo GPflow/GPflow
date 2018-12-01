@@ -91,7 +91,7 @@ class Chain(Transform):
 
 
 class Exp(Transform):
-    """
+    r"""
     The exponential transform:
 
        y = \exp(x) + \epsilon
@@ -122,7 +122,7 @@ class Exp(Transform):
 
 
 class Log1pe(Transform):
-    """
+    r"""
     A transform of the form
     .. math::
 
@@ -193,7 +193,7 @@ class Log1pe(Transform):
 
 
 class Logistic(Transform):
-    """
+    r"""
     The logistic transform, useful for keeping variables constrained between the limits a and b:
     .. math::
 
@@ -320,11 +320,11 @@ class LowerTriangular(Transform):
 
     x is the 'packed' version of shape num_matrices x (N**2 + N)/2
     y is the 'unpacked' version of shape num_matrices x N x N.
-    
+
     :param N: the size of the final lower triangular matrices.
     :param num_matrices: Number of matrices to be stored.
     :param squeeze: If num_matrices == 1, drop the redundant axis.
-    
+
     :raises ValueError: squeezing is impossible when num_matrices > 1.
     """
 

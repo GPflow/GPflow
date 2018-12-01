@@ -190,7 +190,7 @@ def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=
 
 @name_scope()
 def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=False):
-    """
+    r"""
     Given a g1 and g2, and distribution p and q such that
       p(g2) = N(g2;0,Kmm)
       p(g1) = N(g1;0,Knn)

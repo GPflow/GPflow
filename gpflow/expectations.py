@@ -802,7 +802,7 @@ def _expectation(p, mean1, none1, mean2, none2, nghp=None):
 
 @dispatch(Gaussian, kernels.Sum, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\Sum_i diag(Ki_{X, X})>_p(X)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -815,7 +815,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\Sum_i Ki_{X, Z}>_p(X)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -830,7 +830,7 @@ def _expectation(p, kern, feat, none2, none3, nghp=None):
           (mean_functions.Linear, mean_functions.Identity, mean_functions.Constant),
           type(None), kernels.Sum, InducingPoints)
 def _expectation(p, mean, none, kern, feat, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <m(x_n)^T (\Sum_i Ki_{x_n, Z})>_p(x_n)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -843,7 +843,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
 
 @dispatch(MarkovGaussian, mean_functions.Identity, type(None), kernels.Sum, InducingPoints)
 def _expectation(p, mean, none, kern, feat, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <x_{n+1} (\Sum_i Ki_{x_n, Z})>_p(x_{n:n+1})
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -856,7 +856,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
 
 @dispatch((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <(\Sum_i K1_i_{Z1, x_n}) (\Sum_j K2_j_{x_n, Z2})>_p(x_n)
         - \Sum_i K1_i_{.,.}, \Sum_j K2_j_{.,.} :: Sum kernels
