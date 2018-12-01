@@ -10,19 +10,6 @@ env:
   - TEST_SUITE=notebooks
 
 
-cache:
-  apt: true
-  pip: true
-  directories:
-    - $HOME/.cache/pip
-    - $HOME/miniconda
-    - $HOME/downloads
-
-
-before_cache:
-  - rm -rf $HOME/miniconda/locks $HOME/miniconda/pkgs $HOME/miniconda/var $HOME/miniconda/conda-meta/history
-
-
 before_install:
   - sudo apt-get update
   - if [ -d "$HOME/miniconda/bin" ]; then
@@ -37,6 +24,9 @@ before_install:
 
 
 install:
+  - if [ -d "$HOME/miniconda/bin" ]; then
+      echo "MIIIIINICONDA FOUND!!!!!!!!"
+    fi
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
@@ -46,6 +36,20 @@ install:
   - conda install -y tensorflow==1.12.0 numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov multipledispatch mock
   - pip install codecov
   - python setup.py install
+
+
+cache:
+  apt: true
+  pip: true
+  directories:
+    - $HOME/.cache/pip
+    - $HOME/miniconda
+    - $HOME/downloads
+
+
+before_cache:
+  - rm -rf $HOME/miniconda/locks $HOME/miniconda/pkgs $HOME/miniconda/var $HOME/miniconda/conda-meta/history
+
 
 
 script:
