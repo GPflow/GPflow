@@ -68,8 +68,8 @@ class TestMultiScaleInducing(GPflowTestCase):
             pd = np.max(np.abs(ms - point) / point * 100)
             self.assertTrue(pd < 0.1)
 
-            ms, point = session.run([features.Kuf(feature_0lengthscale, rbf),
-                                     features.Kuf(feature_inducingpoint, rbf)])
+            ms, point = session.run([features.Kuu(feature_0lengthscale, rbf),
+                                     features.Kuu(feature_inducingpoint, rbf)])
             pd = np.max(np.abs(ms - point) / point * 100)
             self.assertTrue(pd < 0.1)
 
