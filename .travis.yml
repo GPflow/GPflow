@@ -4,33 +4,50 @@ language: python
 python:
   - 3.6
 
-install:
-  - sudo apt-get update
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    fi
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a  # useful for debugging conda
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
-  - source activate test-environment
-  - conda install -y tensorflow==1.12.0
-  - conda install -y numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov multipledispatch mock 
-  - pip install codecov
-  - python setup.py install
+env:
+  - TEST_SUITE=units
+  - TEST_SUITE=notebooks
+  # - TEST_SUITE=slow
 
-script:
-  - ./travis.sh
 
 cache:
   apt: true
   pip: true
   directories:
     - $HOME/.cache/pip
-    - $HOME/download
+    - $HOME/miniconda
+    - $HOME/downloads
+
+
+before_cache:
+  - rm -rf $HOME/miniconda/locks $HOME/miniconda/pkgs $HOME/miniconda/var $HOME/miniconda/conda-meta/history
+
+
+before_install:
+  - sudo apt-get update
+  - if [ -d "$HOME/miniconda/bin" ]; then
+      echo "Use cached miniconda."
+    else
+      mkdir -p $HOME/downloads
+      rm -rf $HOME/miniconda
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/downloads/miniconda.sh
+      bash miniconda.sh -b -p $HOME/downloads/miniconda
+      export PATH="$HOME/miniconda/bin:$PATH"
+    fi
+
+
+install:
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda create -q -n testenv python=3.6
+  - source activate testenv
+  - conda install -y tensorflow==1.12.0 numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov multipledispatch mock
+  - pip install codecov
+  - python setup.py install
+
+
+script:
+  - 
