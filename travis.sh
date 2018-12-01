@@ -3,7 +3,7 @@
 set -ex
 
 
-TESTRUN="pytest -W ignore::UserWarning --durations=10 --cov=./gpflow"
+TESTRUN="pytest -W ignore::UserWarning --durations=10 -n auto --cov=./gpflow"
 
 
 if [[ ${TEST_SUITE:-all} = all ]]; then
