@@ -75,7 +75,7 @@ def Kuf(feat, kern, Xnew):
 
 
 class Multiscale(InducingPointsBase):
-    """
+    r"""
     Multi-scale inducing features
     Originally proposed in
 

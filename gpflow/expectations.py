@@ -964,7 +964,7 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\HadamardProd_i diag(Ki_{X[:, active_dims_i], X[:, active_dims_i]})>_p(X)
         - \HadamardProd_i Ki_{.,.} :: Product kernel
@@ -982,7 +982,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\HadamardProd_i Ki_{X[:, active_dims_i], Z[:, active_dims_i]}>_p(X)
         - \HadamardProd_i Ki_{.,.} :: Product kernel
@@ -1000,7 +1000,7 @@ def _expectation(p, kern, feat, none2, none3, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = < prodK_{Z, x_n} prodK_{x_n, Z} >_p(x_n)
                    = < (\HadamardProd_i Ki_{Z[:, active_dims_i], x[n, active_dims_i]})  <-- Mx1

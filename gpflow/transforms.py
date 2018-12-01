@@ -160,7 +160,7 @@ class Log1pe(Transform):
         return tf.negative(tf.reduce_sum(tf.nn.softplus(tf.negative(x))))
 
     def backward(self, y):
-        """
+        r"""
         Inverse of the softplus transform:
         .. math::
 
