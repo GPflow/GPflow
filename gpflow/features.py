@@ -40,30 +40,6 @@ class InducingFeature(Parameterized):
         """
         raise NotImplementedError()
 
-    def Kuu(self, kern, jitter=0.0):
-        """
-        Calculates the covariance matrix between features for kernel `kern`.
-
-        Return shape M x M
-        M = len(feat)
-        """
-        warnings.warn('Please replace feature.Kuu(kernel) with Kuu(feature, kernel)',
-                      DeprecationWarning)
-        return Kuu(self, kern, jitter=jitter)
-
-    def Kuf(self, kern, Xnew):
-        """
-        Calculates the covariance matrix with function values at new points
-        `Xnew` for kernel `kern`.
-
-        Return shape M x N
-        M = len(feat)
-        N = len(Xnew)
-        """
-        warnings.warn('Please replace feature.Kuf(kernel, Xnew) with Kuf(feature, kernel, Xnew)',
-                      DeprecationWarning)
-        return Kuf(self, kern, Xnew)
-
 
 class InducingPointsBase(InducingFeature):
     """
