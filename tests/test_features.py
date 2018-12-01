@@ -16,7 +16,10 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
+from gpflow import features
+from gpflow import settings
 from gpflow.test_util import GPflowTestCase
+
 
 
 class TestInducingPoints(GPflowTestCase):
@@ -35,7 +38,7 @@ class TestInducingPoints(GPflowTestCase):
         # Inducing features must be the same as the kernel evaluations
         with self.test_context() as session:
             Z = np.random.randn(101, 3)
-            f = gpflow.features.InducingPoints(Z)
+            f = features.InducingPoints(Z)
 
             kernels = [
                 gpflow.kernels.RBF(3, 0.46, lengthscales=np.array([0.143, 1.84, 2.0]), ARD=True),
@@ -43,7 +46,7 @@ class TestInducingPoints(GPflowTestCase):
             ]
 
             for k in kernels:
-                self.assertTrue(np.allclose(session.run(f.Kuu(k)), k.compute_K_symm(Z)))
+                self.assertTrue(np.allclose(session.run(features.Kuu(f, k)), k.compute_K_symm(Z)))
 
 
 class TestMultiScaleInducing(GPflowTestCase):
@@ -60,11 +63,13 @@ class TestMultiScaleInducing(GPflowTestCase):
             rbf, feature_0lengthscale, feature_inducingpoint = self.prepare()
             Xnew = np.random.randn(13, 3)
 
-            ms, point = session.run([feature_0lengthscale.Kuf(rbf, Xnew), feature_inducingpoint.Kuf(rbf, Xnew)])
+            ms, point = session.run([features.Kuf(feature_0lengthscale, rbf, Xnew),
+                                     features.Kuf(feature_inducingpoint, rbf, Xnew)])
             pd = np.max(np.abs(ms - point) / point * 100)
             self.assertTrue(pd < 0.1)
 
-            ms, point = session.run([feature_0lengthscale.Kuu(rbf), feature_inducingpoint.Kuu(rbf)])
+            ms, point = session.run([features.Kuf(feature_0lengthscale, rbf),
+                                     features.Kuf(feature_inducingpoint, rbf)])
             pd = np.max(np.abs(ms - point) / point * 100)
             self.assertTrue(pd < 0.1)
 
@@ -88,7 +93,8 @@ class TestFeaturesPsdSchur(GPflowTestCase):
                 # rbf, feature, feature_0lengthscale, feature_inducingpoint = self.prepare()
                 kern = kern_class(2, 1.84, lengthscales=[0.143, 1.53])
                 feature = init_feat(feat_class)
-                Kuf, Kuu = session.run([feature.Kuf(kern, X), feature.Kuu(kern, jitter=gpflow.settings.jitter)])
+                Kuf, Kuu = session.run([features.Kuf(feature, kern, X),
+                                        features.Kuu(feature, kern, jitter=settings.jitter)])
                 Kff = kern.compute_K_symm(X)
             Qff = Kuf.T @ np.linalg.solve(Kuu, Kuf)
             self.assertTrue(np.all(np.linalg.eig(Kff - Qff)[0] > 0.0))

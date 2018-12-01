@@ -57,8 +57,8 @@ class SGPRUpperMixin(object):
         num_data = tf.cast(tf.shape(self.Y)[0], settings.float_type)
 
         Kdiag = self.kern.Kdiag(self.X)
-        Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-        Kuf = self.feature.Kuf(self.kern, self.X)
+        Kuu = features.Kuu(self.feature, self.kern, jitter=settings.jitter)
+        Kuf = features.Kuf(self.feature, self.kern, self.X)
 
         L = tf.cholesky(Kuu)
         LB = tf.cholesky(Kuu + self.likelihood.variance ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
@@ -133,8 +133,8 @@ class SGPR(GPModel, SGPRUpperMixin):
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kern.Kdiag(self.X)
-        Kuf = self.feature.Kuf(self.kern, self.X)
-        Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
+        Kuf = features.Kuf(self.feature, self.kern, self.X)
+        Kuu = features.Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)
         L = tf.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -166,9 +166,9 @@ class SGPR(GPModel, SGPRUpperMixin):
         """
         num_inducing = len(self.feature)
         err = self.Y - self.mean_function(self.X)
-        Kuf = self.feature.Kuf(self.kern, self.X)
-        Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-        Kus = self.feature.Kuf(self.kern, Xnew)
+        Kuf = features.Kuf(self.feature, self.kern, self.X)
+        Kuu = features.Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)
+        Kus = features.Kuf(self.feature, self.kern, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.cholesky(Kuu)
         A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
@@ -198,8 +198,8 @@ class SGPR(GPModel, SGPRUpperMixin):
         SGPR.
         :return: mu, A
         """
-        Kuf = self.feature.Kuf(self.kern, self.X)
-        Kuu = self.feature.Kuu(self.kern, jitter=settings.jitter)
+        Kuf = features.Kuf(self.feature, self.kern, self.X)
+        Kuu = features.Kuu(self.feature, self.kern, jitter=settings.jitter)
 
         Sig = Kuu + (self.likelihood.variance ** -1) * tf.matmul(Kuf, Kuf, transpose_b=True)
         Sig_sqrt = tf.cholesky(Sig)
@@ -256,8 +256,8 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         num_inducing = len(self.feature)
         err = self.Y - self.mean_function(self.X)  # size N x R
         Kdiag = self.kern.Kdiag(self.X)
-        Kuf = self.feature.Kuf(self.kern, self.X)
-        Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
+        Kuf = features.Kuf(self.feature, self.kern, self.X)
+        Kuu = features.Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)
 
         Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
         V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
@@ -325,7 +325,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         Xnew.
         """
         _, _, Luu, L, _, _, gamma = self._build_common_terms()
-        Kus = self.feature.Kuf(self.kern, Xnew)  # size  M x Xnew
+        Kus = features.Kuf(self.feature, self.kern, Xnew)  # size  M x Xnew
 
         w = tf.matrix_triangular_solve(Luu, Kus, lower=True)  # size M x Xnew
 
@@ -346,8 +346,8 @@ class GPRFITC(GPModel, SGPRUpperMixin):
 
     @property
     def Z(self):
-        raise NotImplementedError("Inducing points are now in `model.feature.Z`.")
+        raise NotImplementedError("Inducing points are now in `model.features.Z`.")
 
     @Z.setter
     def Z(self, _):
-        raise NotImplementedError("Inducing points are now in `model.feature.Z`.")
+        raise NotImplementedError("Inducing points are now in `model.features.Z`.")

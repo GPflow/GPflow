@@ -20,7 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from . import kernels, mean_functions, settings
-from .features import InducingFeature, InducingPoints
+from .features import Kuf, InducingFeature, InducingPoints
 from .decors import params_as_tensors_for
 from .quadrature import mvnquad
 from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
@@ -90,7 +90,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
         # kernel + feature combination
         if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kernel):
             raise TypeError("If `feature` is supplied, `obj` must be a kernel.")
-        return lambda x: tf.transpose(feature.Kuf(obj, x))[slice]
+        return lambda x: tf.transpose(Kuf(feature, obj, x))[slice]
     elif isinstance(obj, mean_functions.MeanFunction):
         return lambda x: obj(x)[slice]
     elif isinstance(obj, kernels.Kernel):
