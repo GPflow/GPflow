@@ -47,7 +47,9 @@ cache:
 before_cache:
   - pip uninstall -y gpflow
   - rm -rf $CONDA/locks $CONDA/pkgs $CONDA/var $CONDA/conda-meta/history
+  - rm -rf $CONDA/envs/testenv/var $CONDA/envs/testenv/conda-meta/history
   - rm -rf $CONDA/envs/testenv/lib/python3.6/site-packages/gpflow*
+  - find $CONDA/envs/testenv/ | grep -E "(__pycache__|\.pyc$)" | xargs rm -rf
 
 
 script: ./travis.sh
