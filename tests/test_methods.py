@@ -173,7 +173,7 @@ class TestSVGP(GPflowTestCase):
 
 
 class TestStochasticGradients(GPflowTestCase):
-    """
+    r"""
     In response to bug #281, we need to make sure stochastic update
     happens correctly in tf optimizer mode.
     To do this compare stochastic updates with deterministic updates

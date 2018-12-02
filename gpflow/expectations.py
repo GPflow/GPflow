@@ -20,7 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from . import kernels, mean_functions, settings
-from .features import InducingFeature, InducingPoints
+from .features import Kuf, InducingFeature, InducingPoints
 from .decors import params_as_tensors_for
 from .quadrature import mvnquad
 from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
@@ -90,7 +90,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
         # kernel + feature combination
         if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kernel):
             raise TypeError("If `feature` is supplied, `obj` must be a kernel.")
-        return lambda x: tf.transpose(feature.Kuf(obj, x))[slice]
+        return lambda x: tf.transpose(Kuf(feature, obj, x))[slice]
     elif isinstance(obj, mean_functions.MeanFunction):
         return lambda x: obj(x)[slice]
     elif isinstance(obj, kernels.Kernel):
@@ -802,7 +802,7 @@ def _expectation(p, mean1, none1, mean2, none2, nghp=None):
 
 @dispatch(Gaussian, kernels.Sum, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\Sum_i diag(Ki_{X, X})>_p(X)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -815,7 +815,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\Sum_i Ki_{X, Z}>_p(X)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -830,7 +830,7 @@ def _expectation(p, kern, feat, none2, none3, nghp=None):
           (mean_functions.Linear, mean_functions.Identity, mean_functions.Constant),
           type(None), kernels.Sum, InducingPoints)
 def _expectation(p, mean, none, kern, feat, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <m(x_n)^T (\Sum_i Ki_{x_n, Z})>_p(x_n)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -843,7 +843,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
 
 @dispatch(MarkovGaussian, mean_functions.Identity, type(None), kernels.Sum, InducingPoints)
 def _expectation(p, mean, none, kern, feat, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <x_{n+1} (\Sum_i Ki_{x_n, Z})>_p(x_{n:n+1})
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -856,7 +856,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
 
 @dispatch((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <(\Sum_i K1_i_{Z1, x_n}) (\Sum_j K2_j_{x_n, Z2})>_p(x_n)
         - \Sum_i K1_i_{.,.}, \Sum_j K2_j_{.,.} :: Sum kernels
@@ -964,7 +964,7 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\HadamardProd_i diag(Ki_{X[:, active_dims_i], X[:, active_dims_i]})>_p(X)
         - \HadamardProd_i Ki_{.,.} :: Product kernel
@@ -982,7 +982,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\HadamardProd_i Ki_{X[:, active_dims_i], Z[:, active_dims_i]}>_p(X)
         - \HadamardProd_i Ki_{.,.} :: Product kernel
@@ -1000,7 +1000,7 @@ def _expectation(p, kern, feat, none2, none3, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = < prodK_{Z, x_n} prodK_{x_n, Z} >_p(x_n)
                    = < (\HadamardProd_i Ki_{Z[:, active_dims_i], x[n, active_dims_i]})  <-- Mx1
