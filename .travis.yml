@@ -4,33 +4,52 @@ language: python
 python:
   - 3.6
 
-install:
-  - sudo apt-get update
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+
+env:
+  global:
+    - CONDA=$HOME/miniconda
+  matrix:
+    - TEST_SUITE=units
+    - TEST_SUITE=notebooks
+
+
+before_install:
+  - sudo apt update
+  - if [ -d "$CONDA/bin" ]; then
+      echo "Use cached miniconda";
+      export PATH="$CONDA/bin:$PATH";
     else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      mkdir -p $HOME/downloads;
+      rm -rf $CONDA;
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/downloads/miniconda.sh;
+      bash $HOME/downloads/miniconda.sh -b -p $CONDA;
+      export PATH="$CONDA/bin:$PATH";
+      conda create -q -n testenv python=3.6;
     fi
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
-  - conda info -a  # useful for debugging conda
+  - conda info -a
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
-  - source activate test-environment
-  - conda install -y tensorflow==1.12.0
-  - conda install -y numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov multipledispatch mock 
+
+install:
+  - source activate testenv
+  - conda install -y tensorflow==1.12.0 numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov multipledispatch mock
   - pip install codecov
-  - python setup.py install
+  - pip install -e .
 
-script:
-  - ./travis.sh
 
 cache:
   apt: true
-  pip: true
   directories:
-    - $HOME/.cache/pip
-    - $HOME/download
+    - $CONDA
+
+
+before_cache:
+  - pip uninstall -y gpflow
+  - rm -rf $CONDA/locks $CONDA/pkgs $CONDA/var $CONDA/conda-meta/history
+  - rm -rf $CONDA/envs/testenv/lib/python3.6/site-packages/gpflow*
+
+
+script:
+  - ./travis.sh

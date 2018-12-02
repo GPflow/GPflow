@@ -29,7 +29,7 @@ from ..models.model import GPModel
 
 
 class VGP(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
     The idea is that the posterior over the function-value vector F is
@@ -87,7 +87,7 @@ class VGP(GPModel):
 
     @params_as_tensors
     def _build_likelihood(self):
-        """
+        r"""
         This method computes the variational lower bound on the likelihood,
         which is:
 
@@ -131,7 +131,7 @@ class VGP(GPModel):
 
 
 class VGP_opper_archambeau(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:
     ::
@@ -195,7 +195,7 @@ class VGP_opper_archambeau(GPModel):
 
     @params_as_tensors
     def _build_likelihood(self):
-        """
+        r"""
         q_alpha, q_lambda are variational parameters, size N x R
         This method computes the variational lower bound on the likelihood,
         which is:
