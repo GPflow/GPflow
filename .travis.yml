@@ -35,7 +35,6 @@ install:
   - source activate testenv
   - conda install -y tensorflow==1.12.0 numpy scipy pandas pytest nbformat nbconvert jupyter_client jupyter matplotlib pytest-xdist pytest-cov multipledispatch mock
   - pip install codecov
-  - pip install -e .
 
 
 cache:
@@ -47,8 +46,22 @@ cache:
 before_cache:
   - pip uninstall -y gpflow
   - rm -rf $CONDA/locks $CONDA/pkgs $CONDA/var $CONDA/conda-meta/history
+  - rm -rf $CONDA/envs/testenv/var $CONDA/envs/testenv/conda-meta/history
   - rm -rf $CONDA/envs/testenv/lib/python3.6/site-packages/gpflow*
+  - find $CONDA/envs/testenv/ | grep -E "(__pycache__|\.pyc$)" | xargs rm -rf
 
 
 script:
+  - pip install -e .
   - ./travis.sh
+
+
+jobs:
+  include:
+    - stage: prepare cache
+      script: true
+
+
+stages:
+  - prepare cache
+  - test
