@@ -32,7 +32,7 @@ RTOL = 1e-6
 
 
 class Data:
-    num_data = 5
+    num_data = 3
     num_ind = 4
     D_in = 2
     D_out = 2
@@ -43,7 +43,7 @@ class Data:
     Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
     Z = rng.randn(num_ind, D_in)
     Z2 = rng.randn(num_ind - 1, D_in)
-    
+
     cov_params = rng.randn(num_data + 1, D_in, 2 * D_in) / 2.  # (N+1)xDx2D
     NN_cov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
     NNplus1_cross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
