@@ -51,14 +51,24 @@ class Data:
     Xcov_markov = np.stack([NN_cov, NNplus1_cross])  # 2x(N+1)xDxD
 
 
+
+def feat1():
+    return features.InducingPoints(Data.Z)
+
+
+def feat2():
+    return features.InducingPoints(Data.Z2)
+
+
 @pytest.fixture
 def feature():
-    return features.InducingPoints(Data.Z)
+    return feat1()
 
 
 @cache_tensor
 def feature2():
-    return features.InducingPoints(Data.Z2)
+    return feat2()
+
 
 @cache_tensor
 def gauss():
@@ -336,8 +346,8 @@ def test_cov_shape_inference(session_tf, distribution, feature):
 @pytest.mark.parametrize("distribution", [gauss, gauss_diag])
 @pytest.mark.parametrize("kernel1", [rbf_kern, rbf_kern_2])
 @pytest.mark.parametrize("kernel2", [rbf_kern, rbf_kern_2])
-@pytest.mark.parametrize("feat1", [feature, feature2])
-@pytest.mark.parametrize("feat2", [feature, feature2])
+@pytest.mark.parametrize("feat1", [feat1, feat2])
+@pytest.mark.parametrize("feat2", [feat1, feat2])
 def test_eKzxKxz_rbf_cross_covariance(session_tf,
                                       distribution, kernel1, kernel2,
                                       feat1, feat2):
