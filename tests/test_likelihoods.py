@@ -282,7 +282,7 @@ def test_softmax_y_shape_assert(session_tf):
         assert "assertion failed" in e.message
 
 
-def test_bernoulli_equivalence():
+def test_bernoulli_equiv_cond_mean_var():
     sess = gpflow.get_default_session()
     F, Y, feed = _prepare(dimF=2, dimY=1)
     Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1))
@@ -294,10 +294,8 @@ def test_bernoulli_equivalence():
 
     ls = gpflow.likelihoods.SoftMax(2)
     ls.num_monte_carlo_points = int(1e7)
-    ls.compile()
     lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
     lb.num_gauss_hermite_points = 50
-    lb.compile()
 
     runs = [ls.conditional_mean(F),
             lb.conditional_mean(F[:, :1]),
@@ -313,12 +311,44 @@ def test_bernoulli_equivalence():
     assert_allclose(ls_cv, lb_cv)
     assert_allclose(ls_lp, lb_lp)
 
+
+def test_bernoulli_equiv_pred_mean_var():
+    sess = gpflow.get_default_session()
+    F, Y, feed = _prepare(dimF=2, dimY=1)
+    Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1))
+    F = tf.stack([F[:, 0], tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1)
+    Ylabel = 1 - Y  # We need the 1 - Y, as we need to pass the *label* to SoftMax
+
+    def logistic_link(x):
+        return 1.0 / (1.0 + tf.exp(-x))
+
+    ls = gpflow.likelihoods.SoftMax(2)
+    ls.num_monte_carlo_points = int(1e7)
+    lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
+    lb.num_gauss_hermite_points = 50
+
     preds = [ls.predict_mean_and_var(F, Fvar),
              lb.predict_mean_and_var(F[:, :1], Fvar[:, :1])]
     (ls_pm, ls_pv), (lb_pm, lb_pv) = sess.run(preds, feed_dict=feed)
 
     assert_allclose(ls_pm[:, 0, None], lb_pm, rtol=1e-3)
     assert_allclose(ls_pv[:, 0, None], lb_pv, rtol=1e-3)
+
+
+def test_bernoulli_equiv_var_exps():
+    sess = gpflow.get_default_session()
+    F, Y, feed = _prepare(dimF=2, dimY=1)
+    Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1))
+    F = tf.stack([F[:, 0], tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1)
+    Ylabel = 1 - Y  # We need the 1 - Y, as we need to pass the *label* to SoftMax
+
+    def logistic_link(x):
+        return 1.0 / (1.0 + tf.exp(-x))
+
+    ls = gpflow.likelihoods.SoftMax(2)
+    ls.num_monte_carlo_points = int(1e7)
+    lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
+    lb.num_gauss_hermite_points = 50
 
     var_exps = [ls.variational_expectations(F, Fvar, Ylabel),
                 lb.variational_expectations(F[:, :1], Fvar[:, :1], Y)]
