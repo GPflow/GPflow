@@ -312,6 +312,7 @@ def test_bernoulli_equiv_cond_mean_var():
     assert_allclose(ls_lp, lb_lp)
 
 
+@pytest.mark.skip(message="Memory hungry")
 def test_bernoulli_equiv_pred_mean_var():
     sess = gpflow.get_default_session()
     F, Y, feed = _prepare(dimF=2, dimY=1)
@@ -335,6 +336,7 @@ def test_bernoulli_equiv_pred_mean_var():
     assert_allclose(ls_pv[:, 0, None], lb_pv, rtol=1e-3)
 
 
+@pytest.mark.skip(message="Memory hungry")
 def test_bernoulli_equiv_var_exps():
     sess = gpflow.get_default_session()
     F, Y, feed = _prepare(dimF=2, dimY=1)
