@@ -120,8 +120,8 @@ class GPflowTestCase(tf.test.TestCase):
 
 
 def is_continuous_integration():
-    ci = os.environ.get('CI', '').lower()
-    return (ci == 'true') or (ci == '1')
+    ci = os.environ.get('CI', '').strip()
+    return len(ci) > 0
 
 
 def notebook_niter(n, test_n=2):
