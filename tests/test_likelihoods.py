@@ -306,7 +306,7 @@ def test_bernoulli_equivalence():
             ls.logp(F, Ylabel),
             lb.logp(F[:, :1], Y)]
 
-    ls_cm, lb_cm, ls_cv, lb_cv, ls_lp, lb_lp = sess.run(run, feed_dict=feed)
+    ls_cm, lb_cm, ls_cv, lb_cv, ls_lp, lb_lp = sess.run(runs, feed_dict=feed)
     ls_cm, ls_cv = ls_cm[:, :1], ls_cv[:, :1]
 
     assert_allclose(ls_cm, lb_cm)
