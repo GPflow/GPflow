@@ -206,7 +206,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, fvar
 
 
-@conditional.register(object, (MixedKernelSharedMof,MixedKernelSeparateMof), SeparateMixedMok, object)
+@conditional.register(object, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, object)
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
@@ -357,8 +357,16 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_outpu
         - mean: N x P
         - variance: N x P, N x P x P, P x N x N, N x P x N x P
     """
-    m, v = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, full_cov=full_cov,
-                                               full_output_cov=full_output_cov, q_sqrt=q_sqrt, white=white)
+    m, v = fully_correlated_conditional_repeat(
+        Kmn,
+        Kmm,
+        Knn,
+        f,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+        q_sqrt=q_sqrt,
+        white=white
+    )
     return m[0, ...], v[0, ...]
 
 
@@ -453,8 +461,8 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
 
     :param W: [P, L]
     :param g_mu: [..., N, L]
-    :param g_var: [..., N, L] or [..., L, N, N] 
-    :return: f_mu and f_var, shape depends on `full_cov` and `full_output_cov`.
+    :param g_var: [..., N, L] or [..., L, N, N]
+    :return: f_mu and f_var, shape depends on `full_cov` and `full_output_cov`
     """
     f_mu = tf.tensordot(g_mu, W, [[-1], [-1]])  # [..., N, P]
 
@@ -465,11 +473,13 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
         """
         Constructs a permuation array that can be used in `tf.transpose`.
         Will keep the leading dims uneffected, and transpose the last 
-        dimensions accordings to the order specified in `axis`.
+        dimensions according to the order specified in `axis`.
         :param leading_dims: int or tf.int
             number of leading dimensions, order of these axis will stay unchanged
         :param *axis: int's or tf.int's
-        :return: one-dimensional tf.Tensor that can be used as permutation arg.
+            specifies the order of the last `len(axis)`.
+        :return: one-dimensional tf.Tensor that can be used as permutation argument
+            in tf.transpose.
         """
         perm = [tf.reshape(tf.range(leading_dims), [leading_dims])]
         perm += [tf.reshape(a, [1]) for a in axis]
@@ -502,5 +512,3 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
         f_var = tf.tensordot(g_var, W_squared, [[-1], [-1]])  # [..., N, P]
 
     return f_mu, f_var
-
-
