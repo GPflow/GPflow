@@ -120,12 +120,19 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
                           (Kmms, Kmns, Knns, fs, q_sqrts),
                           (settings.float_type, settings.float_type))  # P x N x 1, P x 1 x N x N or P x N x 1
 
-    fmu = tf.matrix_transpose(rmu[:, :, 0])  # N x P
+    def rollaxis(A, axis):
+        """ Roll the specified axis backwards, until it is the first dimension of the tensor. """
+        assert axis > 0
+        rank = tf.rank(A)
+        perm = tf.concat([axis + tf.range(rank - axis), tf.range(axis)], 0)
+        return tf.transpose(A, perm)
+
+    fmu = rollaxis(rmu[..., 0], 1)  # N x P
 
     if full_cov:
-        fvar = rvar[:, 0, :, :]  # P x N x N
+        fvar = rvar[:, 0, ...]  # P x N x N
     else:
-        fvar = tf.transpose(rvar[..., 0])  # N x P
+        fvar = rollaxis(rvar[..., 0], 1)  # N x P
 
     return fmu, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
@@ -226,10 +233,14 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
     """
     logger.debug("conditional: (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
-    independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
-    gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                 full_output_cov=False, white=white)  # N x L, L x N x N or N x L
-    return _mix_latent_gp(kern.W, gmu, gvar, full_cov, full_output_cov)
+    with params_as_tensors_for(feat, kern):
+        independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+        gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
+                                    full_output_cov=False, white=white)  # N x L, L x N x N or N x L
+        print(">>>>>>>>>>> W", kern.W.get_shape())
+        print(">>>>>>>>>>> gmu", gmu.get_shape())
+        print(">>>>>>>>>>> gvar", gvar.get_shape())
+        return _mix_latent_gp(kern.W, gmu, gvar, full_cov, full_output_cov)
 
 
 # ------------------

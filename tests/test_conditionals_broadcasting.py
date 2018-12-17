@@ -14,8 +14,8 @@
 
 
 """
-This test suite will check if the conditionals broadcast correct
-when the input tensors have a leading dimensions.
+This test suite will check if the conditionals broadcast correctly
+when the input tensors have leading dimensions.
 """
 
 
@@ -25,16 +25,95 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.test_util import session_tf
+import gpflow.multioutput.features as mf
+import gpflow.multioutput.kernels as mk
 from gpflow.conditionals import conditional
-
 from gpflow.multioutput.conditionals import _mix_latent_gp
+from gpflow.test_util import session_tf
 
 
+@pytest.mark.parametrize("full_cov", [False])
+@pytest.mark.parametrize("white", [True, False])
+def test_mixing_conditional_broadcasting(session_tf, full_cov, white):
+    """
+    Test that the conditional broadcasts correctly over leading dimensions of Xnew
+    Xnew can be shape [..., N, D], and conditional should broadcast over the [...]
+    """
+
+    S1, S2, N, M = 7, 6, 4, 3
+    Dx, Dy, L = 2, 5, 3  # input dim, output dim, observation dimensionality i.e. num latent GPs
+    W = np.random.randn(Dy, L)  # mixing matrix
+
+    SX = np.random.randn(S1*S2, N, Dx)
+    S1_S2_X = np.reshape(SX, [S1, S2, N, Dx])
+
+    Z = np.random.randn(M, Dx)
+    Z = gpflow.features.InducingPoints(Z)
+    Z = mf.MixedKernelSharedMof(Z)
+
+    kern = mk.SeparateMixedMok(
+        kernels=[gpflow.kernels.Matern52(Dx, lengthscales=0.5) for _ in range(L)],
+        W=W
+    )
+
+    q_mu = np.random.randn(M, L)
+    q_sqrt = np.tril(np.random.randn(L, M, M), -1)
+
+    x = tf.placeholder(tf.float64, [None, None])
+
+    mean_tf, cov_tf = conditional(
+        x,
+        Z,
+        kern,
+        tf.convert_to_tensor(q_mu),
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    )
+
+    ms, vs = [], []
+    for X in SX:
+        m, v = session_tf.run([mean_tf, cov_tf], {x: X})
+        ms.append(m)
+        vs.append(v)
+
+    ms = np.array(ms)
+    vs = np.array(vs)
+
+    ms_S12, vs_S12 = session_tf.run(conditional(
+        SX,
+        Z,
+        kern,
+        tf.convert_to_tensor(q_mu),
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    ))
+
+    ms_S1_S2, vs_S1_S2 = session_tf.run(conditional(
+        S1_S2_X,
+        Z,
+        kern,
+        tf.convert_to_tensor(q_mu),
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    ))
+
+    assert_allclose(ms_S12, ms)
+    assert_allclose(vs_S12, vs)
+    assert_allclose(ms_S1_S2.reshape(S1 * S2, N, Dy), ms)
+
+    if full_cov:
+        assert_allclose(vs_S1_S2.reshape(S1 * S2, Dy, N, N), vs)
+    else:
+        assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
+
+# @pytest.mark.skip
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("features_inducing_points", [False, True])
-def test_base_conditional_leading_dims(session_tf, full_cov, white, features_inducing_points):
+def test_base_conditional_broadcasting(session_tf, full_cov, white, features_inducing_points):
     """
     Test that the conditional broadcasts correctly over leading dimensions of Xnew
     Xnew can be shape [..., N, D], and conditional should broadcast over the [...]
@@ -103,6 +182,7 @@ def test_base_conditional_leading_dims(session_tf, full_cov, white, features_ind
         assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
 
+# @pytest.mark.skip
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [True, False])
 def test_broadcasting_mixing(session_tf, full_cov, full_output_cov):
@@ -111,7 +191,7 @@ def test_broadcasting_mixing(session_tf, full_cov, full_output_cov):
     W = np.random.randn(P, L)  # mixing matrix
     g_mu = np.random.randn(S, N, L)  # mean of the L latent GPs
 
-    g_sqrt_diag = np.array([np.tril(np.random.randn(N, N)) for _ in range(S*L)])  # [S*L, N, N]
+    g_sqrt_diag = np.tril(np.random.randn(S*L, N, N), -1)  # [S*L, N, N]
     g_sqrt_diag = np.reshape(g_sqrt_diag, [S, L, N, N])
     g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [S, L, N, N]
     g_var = np.zeros([S, N, L, N, L])
