@@ -922,7 +922,7 @@ class LmlToTensorBoardTask(BaseTensorBoardTask):
 
         super().__init__(file_writer, model)
         self._minibatch_size = minibatch_size
-        self._full_lml = tf.placeholder(settings.tf_float, shape=())
+        self._full_lml = tf.placeholder(settings.float_type, shape=())
         self._summary = tf.summary.scalar(model.name + '/full_lml', self._full_lml)
 
         self.wrapper = None  # type: Callable[[Iterator], Iterator]

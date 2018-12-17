@@ -103,6 +103,7 @@ class Identity(Linear):
     def b(self, b):
         pass
 
+
 class Constant(MeanFunction):
     """
     y_i = c,,
@@ -110,12 +111,13 @@ class Constant(MeanFunction):
     def __init__(self, c=None):
         MeanFunction.__init__(self)
         c = np.zeros(1) if c is None else c
+        c = np.reshape(c, (1, -1))
         self.c = Parameter(c)
 
     @params_as_tensors
     def __call__(self, X):
         shape = tf.stack([tf.shape(X)[0], 1])
-        return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+        return tf.tile(self.c, shape)
 
 
 class Zero(Constant):
@@ -125,7 +127,8 @@ class Zero(Constant):
         del self.c
 
     def __call__(self, X):
-        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=settings.tf_float)
+        shape = tf.concat([tf.shape(X)[:-1], [self.output_dim]], 0)
+        return tf.zeros(shape, dtype=settings.float_type)
 
 
 class SwitchedMeanFunction(MeanFunction):
