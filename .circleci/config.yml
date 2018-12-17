@@ -15,17 +15,17 @@ jobs:
           file: ./coverage.xml
           token: 2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
   notebook-test:
-    docker:
-      - image: awav/tensorflow:1.12.0
     environment:
       CI: notebooks
+    docker:
+      - image: awav/tensorflow:1.12.0
     steps:
       - checkout
       - run: python setup.py install
       - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m notebooks ./tests
       - codecov/upload:
-          token: 2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
           file: ./coverage.xml
+          token: 2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
 
 workflows:
   version: 2
