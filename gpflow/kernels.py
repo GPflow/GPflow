@@ -193,9 +193,7 @@ class White(Static):
             d = tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
             return tf.matrix_diag(d)
         else:
-            shape = tf.concat([tf.shape(X)[:-2],
-                               tf.reshape(tf.shape(X)[-2], [1]),
-                               tf.reshape(tf.shape(X2)[-2], [1])], 0)
+            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], 0)
             return tf.zeros(shape, settings.float_type)
 
 
@@ -208,9 +206,11 @@ class Constant(Static):
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
             X2 = X
-        shape = tf.concat([tf.shape(X)[:-2],
-                           tf.reshape(tf.shape(X)[-2], [1]),
-                           tf.reshape(tf.shape(X2)[-2], [1])], 0)
+            shape = tf.concat([tf.shape(X)[:-2],
+                            tf.reshape(tf.shape(X)[-2], [1]),
+                            tf.reshape(tf.shape(X2)[-2], [1])], 0)
+        else:
+            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], 0)
         return tf.fill(shape, tf.squeeze(self.variance))
 
 
@@ -268,18 +268,20 @@ class Stationary(Kernel):
         [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D] 
         then the output will be [N1, S1, N2, S2].
         """
+
         X = X / self.lengthscales
-        Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
 
         if X2 is None:
+            Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
             dist = -2 * tf.matmul(X, X, transpose_b=True)
             dist += Xs + tf.matrix_transpose(Xs)
             return dist
 
+        Xs = tf.reduce_sum(tf.square(X), axis=-1)
         X2 = X2 / self.lengthscales
-        X2s = tf.reduce_sum(tf.square(X2), axis=-1, keepdims=True)
+        X2s = tf.reduce_sum(tf.square(X2), axis=-1)
         dist = -2 * tf.tensordot(X, X2, [[-1], [-1]])
-        dist += tf.tensordot(Xs, X2s, [[-1], [-1]])  # equivalent to X + X2 (element-wise)
+        dist += _broadcasting_elementwise_op(tf.add, Xs, X2s)
         return dist
 
 
@@ -402,7 +404,7 @@ class Linear(Kernel):
         if X2 is None:
             return tf.matmul(X * self.variance, X, transpose_b=True)
         else:
-            return tf.matmul(X * self.variance, X2, transpose_b=True)
+            return tf.tensordot(X * self.variance, X2, [[-1], [-1]])
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -765,6 +767,18 @@ class Product(Combination):
 
     def Kdiag(self, X, presliced=False):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kernels])
+
+
+def _broadcasting_elementwise_op(op, a, b):
+    r"""
+    Apply binary operation `op` to every pair of in input tensors `a` and `b`.
+    :param op: binary operator on tensors, e.g. tf.add, tf.substract
+    :param a: tf.Tensor, shape [n_1, ..., n_a]
+    :param b: tf.Tensor, shape [m_1, ..., m_b]
+    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
+    """
+    flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
+    return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
 def make_deprecated_class(oldname, NewClass):
