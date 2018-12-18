@@ -10,11 +10,8 @@ jobs:
     steps:
       - checkout
       - run: python setup.py install
-      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m "not notebooks" ./tests
+      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow -m "not notebooks" ./tests
       - run: codecov --token=2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
-      # - codecov/upload:
-      #     file: ./coverage.xml
-      #     token: 2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
 
   notebook-test:
     environment:
@@ -24,11 +21,8 @@ jobs:
     steps:
       - checkout
       - run: python setup.py install
-      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m notebooks ./tests
+      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow -m notebooks ./tests
       - run: codecov --token=2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
-      # - codecov/upload:
-      #     file: ./coverage.xml
-      #     token: 2ae2a756-f39c-467c-bd9c-4bdb3dc439c8
 
 workflows:
   version: 2
