@@ -1,3 +1,13 @@
+# defaults: &defaults
+#   docker:
+#     - image: awav/tensorflow:1.12.0
+#   steps:
+#     - checkout
+#     - run: python setup.py install
+#     - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml "${TEST_FILTER}" ./tests
+#     - codecov/upload:
+#         file: ./coverage.xml
+
 version: 2.1
 
 orbs:
@@ -10,9 +20,9 @@ jobs:
     steps:
       - checkout
       - run: python setup.py install
-      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow -m "not notebooks" ./tests
+      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m "not notebooks" ./tests
       - codecov/upload:
-          file: .coverage
+          file: ./coverage.xml
 
   notebook-test:
     environment:
@@ -22,9 +32,9 @@ jobs:
     steps:
       - checkout
       - run: python setup.py install
-      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow -m notebooks ./tests
+      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m notebooks ./tests
       - codecov/upload:
-          file: .coverage
+          file: ./coverage.xml
 
 workflows:
   # version: 2
