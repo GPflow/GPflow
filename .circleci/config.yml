@@ -3,7 +3,7 @@ runtest: &runtest
     - checkout
     - run: env
     - run: python setup.py install
-    - run: pytest -v -W ignore::UserWarning --durations=10 ${PYTEST_FILTER} --cov=./gpflow --cov-report=xml ./tests
+    - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow --cov-report=xml ./tests
     - codecov/upload:
         file: ./coverage.xml
 
@@ -18,14 +18,14 @@ jobs:
     docker:
       - image: awav/tensorflow:1.12.0
         environment:
-          PYTEST_FILTER: "-m 'not notebooks'"
+          PYTEST_FILTER: not notebooks
 
   notebook-test:
     <<: *runtest
     docker:
       - image: awav/tensorflow:1.12.0
         environment:
-          PYTEST_FILTER: -m notebooks
+          PYTEST_FILTER: notebooks
 
 workflows:
   # version: 2
