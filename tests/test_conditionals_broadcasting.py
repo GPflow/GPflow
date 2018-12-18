@@ -109,7 +109,6 @@ def test_mixing_conditional_broadcasting(session_tf, full_cov, white):
     else:
         assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
-# @pytest.mark.skip
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("features_inducing_points", [False, True])
@@ -182,7 +181,6 @@ def test_base_conditional_broadcasting(session_tf, full_cov, white, features_ind
         assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
 
-# @pytest.mark.skip
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [True, False])
 def test_broadcasting_mixing(session_tf, full_cov, full_output_cov):

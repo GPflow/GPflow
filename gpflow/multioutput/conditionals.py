@@ -120,10 +120,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
                           (Kmms, Kmns, Knns, fs, q_sqrts),
                           (settings.float_type, settings.float_type))  # P x N x 1, P x 1 x N x N or P x N x 1
 
-    print(">>>>>>>>>>> rmu", rmu.get_shape())
-    print(">>>>>>>>>>> rvar", rvar.get_shape())
-
-
     fmu = _rollaxis(rmu[..., 0], 1)  # N x P
 
     if full_cov:
@@ -234,9 +230,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
         independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
         gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                     full_output_cov=False, white=white)  # N x L, L x N x N or N x L
-        print(">>>>>>>>>>> W", kern.W.get_shape())
-        print(">>>>>>>>>>> gmu", gmu.get_shape())
-        print(">>>>>>>>>>> gvar", gvar.get_shape())
         return _mix_latent_gp(kern.W, gmu, gvar, full_cov, full_output_cov)
 
 
@@ -365,16 +358,8 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_outpu
         - mean: N x P
         - variance: N x P, N x P x P, P x N x N, N x P x N x P
     """
-    m, v = fully_correlated_conditional_repeat(
-        Kmn,
-        Kmm,
-        Knn,
-        f,
-        full_cov=full_cov,
-        full_output_cov=full_output_cov,
-        q_sqrt=q_sqrt,
-        white=white
-    )
+    m, v = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, full_cov=full_cov,
+                                               full_output_cov=full_output_cov, q_sqrt=q_sqrt, white=white)
     return m[0, ...], v[0, ...]
 
 
@@ -479,8 +464,6 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
 
     if full_cov and full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
-        # perm = _get_perm_with_leading_dims(leading_dims, K-2, K-1, K-3)
-        # g_var = tf.transpose(g_var, perm)  # [..., N, N, L]
         g_var = _rollaxis(g_var, 1)  # [..., N, N, L]
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]

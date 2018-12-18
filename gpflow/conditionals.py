@@ -114,7 +114,6 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     logger.debug("Conditional: Kernel")
     num_data = tf.shape(X)[-2]  # M
     Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level  #  [..., M, M]
-    # Kmn = tf.matrix_transpose(kern.K(Xnew, X))  # [..., M, N]
     Kmn = kern.K(X, Xnew)  # [M, ..., N]
 
     if full_cov:
