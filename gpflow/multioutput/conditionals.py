@@ -120,19 +120,16 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
                           (Kmms, Kmns, Knns, fs, q_sqrts),
                           (settings.float_type, settings.float_type))  # P x N x 1, P x 1 x N x N or P x N x 1
 
-    def rollaxis(A, axis):
-        """ Roll the specified axis backwards, until it is the first dimension of the tensor. """
-        assert axis > 0
-        rank = tf.rank(A)
-        perm = tf.concat([axis + tf.range(rank - axis), tf.range(axis)], 0)
-        return tf.transpose(A, perm)
+    print(">>>>>>>>>>> rmu", rmu.get_shape())
+    print(">>>>>>>>>>> rvar", rvar.get_shape())
 
-    fmu = rollaxis(rmu[..., 0], 1)  # N x P
+
+    fmu = _rollaxis(rmu[..., 0], 1)  # N x P
 
     if full_cov:
-        fvar = rvar[:, 0, ...]  # P x N x N
+        fvar = rvar[..., 0, :, :]  # P x N x N
     else:
-        fvar = rollaxis(rvar[..., 0], 1)  # N x P
+        fvar = _rollaxis(rvar[..., 0], 1)  # N x P
 
     return fmu, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
@@ -472,7 +469,7 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
 
     :param W: [P, L]
     :param g_mu: [..., N, L]
-    :param g_var: [..., N, L] or [..., L, N, N]
+    :param g_var: [..., N, L] or [L, ..., N, N]
     :return: f_mu and f_var, shape depends on `full_cov` and `full_output_cov`
     """
     f_mu = tf.tensordot(g_mu, W, [[-1], [-1]])  # [..., N, P]
@@ -480,36 +477,20 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
     K = tf.rank(g_var)
     leading_dims = (K - 3) if full_cov else (K - 2)
 
-    def _get_perm_with_leading_dims(leading_dims, *axis):
-        """
-        Constructs a permuation array that can be used in `tf.transpose`.
-        Will keep the leading dims uneffected, and transpose the last 
-        dimensions according to the order specified in `axis`.
-        :param leading_dims: int or tf.int
-            number of leading dimensions, order of these axis will stay unchanged
-        :param *axis: int's or tf.int's
-            specifies the order of the last `len(axis)`.
-        :return: one-dimensional tf.Tensor that can be used as permutation argument
-            in tf.transpose.
-        """
-        perm = [tf.reshape(tf.range(leading_dims), [leading_dims])]
-        perm += [tf.reshape(a, [1]) for a in axis]
-        perm = tf.concat(perm, 0)
-        return perm
-
-    if full_cov and full_output_cov:  # g_var is [..., L, N, N]
+    if full_cov and full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
-        perm = _get_perm_with_leading_dims(leading_dims, K-2, K-1, K-3)
-        g_var = tf.transpose(g_var, perm)  # [..., N, N, L]
+        # perm = _get_perm_with_leading_dims(leading_dims, K-2, K-1, K-3)
+        # g_var = tf.transpose(g_var, perm)  # [..., N, N, L]
+        g_var = _rollaxis(g_var, 1)  # [..., N, N, L]
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, N, P, P]
         perm = _get_perm_with_leading_dims(leading_dims, K-3, K-1, K-2, K)
         f_var = tf.transpose(f_var, perm)  # [..., N, P, N, P]
 
-    elif full_cov and not full_output_cov:  # g_var is [..., L, N, N]
+    elif full_cov and not full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
-        f_var = tf.tensordot(g_var, W**2, [[-3], [-1]])  # [..., N, N, P]
+        f_var = tf.tensordot(g_var, W**2, [[0], [-1]])  # [..., N, N, P]
         perm = _get_perm_with_leading_dims(leading_dims, K-1, K-3, K-2)
         f_var = tf.transpose(f_var, perm)  # [..., P, N, N]
 
@@ -523,3 +504,29 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
         f_var = tf.tensordot(g_var, W_squared, [[-1], [-1]])  # [..., N, P]
 
     return f_mu, f_var
+
+
+def _rollaxis(A, axis):
+    """ Roll the specified axis backwards, until it is the first dimension of the tensor. """
+    assert axis > 0
+    rank = tf.rank(A)
+    perm = tf.concat([axis + tf.range(rank - axis), tf.range(axis)], 0)
+    return tf.transpose(A, perm)
+
+
+def _get_perm_with_leading_dims(leading_dims, *axis):
+    """
+    Constructs a permuation array that can be used in `tf.transpose`.
+    Will keep the leading dims uneffected, and transpose the last 
+    dimensions according to the order specified in `axis`.
+    :param leading_dims: int or tf.int
+        number of leading dimensions, order of these axis will stay unchanged
+    :param *axis: int's or tf.int's
+        specifies the order of the last `len(axis)`.
+    :return: one-dimensional tf.Tensor that can be used as permutation argument
+        in tf.transpose.
+    """
+    perm = [tf.reshape(tf.range(leading_dims), [leading_dims])]
+    perm += [tf.reshape(a, [1]) for a in axis]
+    perm = tf.concat(perm, 0)
+    return perm

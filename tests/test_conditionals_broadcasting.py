@@ -32,7 +32,7 @@ from gpflow.multioutput.conditionals import _mix_latent_gp
 from gpflow.test_util import session_tf
 
 
-@pytest.mark.parametrize("full_cov", [False])
+@pytest.mark.parametrize("full_cov", [False, True])
 @pytest.mark.parametrize("white", [True, False])
 def test_mixing_conditional_broadcasting(session_tf, full_cov, white):
     """
@@ -191,12 +191,12 @@ def test_broadcasting_mixing(session_tf, full_cov, full_output_cov):
     W = np.random.randn(P, L)  # mixing matrix
     g_mu = np.random.randn(S, N, L)  # mean of the L latent GPs
 
-    g_sqrt_diag = np.tril(np.random.randn(S*L, N, N), -1)  # [S*L, N, N]
-    g_sqrt_diag = np.reshape(g_sqrt_diag, [S, L, N, N])
-    g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [S, L, N, N]
+    g_sqrt_diag = np.tril(np.random.randn(S*L, N, N), -1)  # [L*S, N, N]
+    g_sqrt_diag = np.reshape(g_sqrt_diag, [L, S, N, N])
+    g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [L, S, N, N]
     g_var = np.zeros([S, N, L, N, L])
     for l in range(L):
-        g_var[:, :, l, :, l] = g_var_diag[:, l, :, :]  # replace diagonal elements by g_var_diag
+        g_var[:, :, l, :, l] = g_var_diag[l, :, :, :]  # replace diagonal elements by g_var_diag
 
     # reference numpy implementation for mean
     f_mu_ref = g_mu @ W.T  # [S, N, P]
@@ -207,8 +207,8 @@ def test_broadcasting_mixing(session_tf, full_cov, full_output_cov):
     f_var_ref = np.transpose(f_var_ref, [0, 1, 3, 2, 4])  # [S, N, P, N, P]
 
     if not full_cov:
-        g_var_diag = np.array([g_var_diag[:, :, n, n] for n in range(N)])  # [N, S, L]
-        g_var_diag = np.transpose(g_var_diag, [1, 0, 2])  # [S, N, L]
+        g_var_diag = np.array([g_var_diag[:, :, n, n] for n in range(N)])  # [N, L, S]
+        g_var_diag = np.transpose(g_var_diag, [2, 0, 1])  # [S, N, L]
 
     # run gpflow's implementation
     f_mu, f_var = session_tf.run(_mix_latent_gp(
