@@ -1,12 +1,11 @@
-# defaults: &defaults
-#   docker:
-#     - image: awav/tensorflow:1.12.0
-#   steps:
-#     - checkout
-#     - run: python setup.py install
-#     - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml "${TEST_FILTER}" ./tests
-#     - codecov/upload:
-#         file: ./coverage.xml
+runtest: &runtest
+  steps:
+    - checkout
+    - run: env
+    - run: python setup.py install
+    - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml $PYTEST_FILTER ./tests
+    - codecov/upload:
+        file: ./coverage.xml
 
 version: 2.1
 
@@ -15,26 +14,18 @@ orbs:
 
 jobs:
   unit-test:
+    <<: *runtest
     docker:
       - image: awav/tensorflow:1.12.0
-    steps:
-      - checkout
-      - run: env
-      - run: python setup.py install
-      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m "not notebooks" ./tests
-      - codecov/upload:
-          file: ./coverage.xml
+        environment:
+          PYTEST_FILTER: -m "not notebooks"
 
   notebook-test:
+    <<: *runtest
     docker:
       - image: awav/tensorflow:1.12.0
-    steps:
-      - checkout
-      - run: env
-      - run: python setup.py install
-      - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m notebooks ./tests
-      - codecov/upload:
-          file: ./coverage.xml
+        environment:
+          PYTEST_FILTER: -m notebooks
 
 workflows:
   # version: 2
