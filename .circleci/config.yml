@@ -19,18 +19,18 @@ jobs:
       - image: awav/tensorflow:1.12.0
     steps:
       - checkout
+      - run: env
       - run: python setup.py install
       - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m "not notebooks" ./tests
       - codecov/upload:
           file: ./coverage.xml
 
   notebook-test:
-    environment:
-      CI: notebooks
     docker:
       - image: awav/tensorflow:1.12.0
     steps:
       - checkout
+      - run: env
       - run: python setup.py install
       - run: pytest -v -W ignore::UserWarning --durations=10 --cov=./gpflow --cov-report=xml -m notebooks ./tests
       - codecov/upload:
