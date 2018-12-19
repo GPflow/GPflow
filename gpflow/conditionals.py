@@ -73,7 +73,6 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
-
 @conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
 def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):

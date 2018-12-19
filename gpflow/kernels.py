@@ -770,7 +770,7 @@ class Product(Combination):
 
 def _broadcasting_elementwise_op(op, a, b):
     r"""
-    Apply binary operation `op` to every pair of in input tensors `a` and `b`.
+    Apply binary operation `op` to every pair in tensors `a` and `b`.
     :param op: binary operator on tensors, e.g. tf.add, tf.substract
     :param a: tf.Tensor, shape [n_1, ..., n_a]
     :param b: tf.Tensor, shape [m_1, ..., m_b]

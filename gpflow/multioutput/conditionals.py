@@ -448,13 +448,13 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
 def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
     r"""
-    Takes the mean and variance of a uncorrelated L-dimensional latent GP
+    Takes the mean and variance of an uncorrelated L-dimensional latent GP
     and returns the mean and the variance of the mixed GP, `f = W \times g`,
     where both f and g are GPs.
 
     :param W: [P, L]
     :param g_mu: [..., N, L]
-    :param g_var: [..., N, L] or [L, ..., N, N]
+    :param g_var: [..., N, L] (full_cov = False) or [L, ..., N, N] (full_cov = True)
     :return: f_mu and f_var, shape depends on `full_cov` and `full_output_cov`
     """
     f_mu = tf.tensordot(g_mu, W, [[-1], [-1]])  # [..., N, P]
