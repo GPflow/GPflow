@@ -27,11 +27,46 @@ from numpy.testing import assert_allclose
 import gpflow
 import gpflow.multioutput.features as mf
 import gpflow.multioutput.kernels as mk
-from gpflow.conditionals import conditional
+from gpflow.conditionals import conditional, sample_conditional, _rollaxis_left, _rollaxis_right
 from gpflow.multioutput.conditionals import _mix_latent_gp
 from gpflow.test_util import session_tf
 
 
+@pytest.mark.skip
+@pytest.mark.parametrize("rolls", [1, 2])
+@pytest.mark.parametrize("direction", ["left", "right"])
+def test_rollaxis_left(session_tf, rolls, direction):
+    A = np.random.randn(10, 5, 3)
+    A_tf = tf.convert_to_tensor(A)
+
+    if direction == "left":
+        perm = [1, 2, 0] if rolls == 1 else [2, 0, 1]
+    elif direction == "right":
+        perm = [2, 0, 1] if rolls == 1 else [1, 2, 0]
+
+    A_rolled_ref = np.transpose(A, perm)
+
+    if direction == "left":
+        A_rolled_tf = _rollaxis_left(A_tf, rolls)
+    elif direction == "right":
+        A_rolled_tf = _rollaxis_right(A_tf, rolls)
+
+    A_rolled_tf = session_tf.run(A_rolled_tf)
+    assert_allclose(A_rolled_ref, A_rolled_tf)
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize("rolls", [1, 2])
+def test_rollaxis_idempotent(session_tf, rolls):
+    A = np.random.randn(10, 5, 3, 20, 1)
+    A_tf = tf.convert_to_tensor(A)
+    A_left_right = session_tf.run(_rollaxis_left(_rollaxis_right(A_tf, 2), 2))
+    A_right_left = session_tf.run(_rollaxis_right(_rollaxis_left(A_tf, 2), 2))
+
+    assert_allclose(A, A_left_right)
+    assert_allclose(A, A_right_left)
+
+@pytest.mark.skip
 @pytest.mark.parametrize("full_cov", [False, True])
 @pytest.mark.parametrize("white", [True, False])
 def test_mixing_conditional_broadcasting(session_tf, full_cov, white):
@@ -109,6 +144,7 @@ def test_mixing_conditional_broadcasting(session_tf, full_cov, white):
     else:
         assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
+@pytest.mark.skip
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("features_inducing_points", [False, True])
@@ -181,6 +217,76 @@ def test_base_conditional_broadcasting(session_tf, full_cov, white, features_ind
         assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
 
+@pytest.mark.parametrize("full_cov", [False])
+def test_sample_conditional_broadcasting(session_tf, full_cov):
+    """
+    Test that the *sample* conditional broadcasts correctly over leading dimensions of Xnew
+    Xnew can be shape [..., N, D], and conditional should broadcast over the [...]
+    """
+    white = True
+    S1, S2, Dy, N, M, Dx = 7, 6, 5, 4, 3, 2
+
+    SX = np.random.randn(S1*S2, N, Dx)
+    S1_S2_X = np.reshape(SX, [S1, S2, N, Dx])
+    Z = np.random.randn(M, Dx)
+    Z = gpflow.features.InducingPoints(Z)
+
+    kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
+
+    q_mu = np.random.randn(M, Dy)
+    q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
+
+    x = tf.placeholder(tf.float64, [None, None])
+
+    _, mean_tf, cov_tf = sample_conditional(
+        x,
+        Z,
+        kern,
+        q_mu,
+        q_sqrt=tf.identity(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    )
+
+    ms, vs = [], []
+    for X in SX:
+        m, v = session_tf.run([mean_tf, cov_tf], {x: X})
+        ms.append(m)
+        vs.append(v)
+
+    ms = np.array(ms)
+    vs = np.array(vs)
+
+    ms_S12, vs_S12 = session_tf.run(conditional(
+        SX,
+        Z,
+        kern,
+        q_mu,
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    ))
+
+    ms_S1_S2, vs_S1_S2 = session_tf.run(conditional(
+        S1_S2_X,
+        Z,
+        kern,
+        q_mu,
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    ))
+
+    assert_allclose(ms_S12, ms)
+    assert_allclose(vs_S12, vs)
+    assert_allclose(ms_S1_S2.reshape(S1 * S2, N, Dy), ms)
+
+    if full_cov:
+        assert_allclose(vs_S1_S2.reshape(S1 * S2, Dy, N, N), vs)
+    else:
+        assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
+
+@pytest.mark.skip
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [True, False])
 def test_broadcasting_mixing(session_tf, full_cov, full_output_cov):
@@ -239,5 +345,5 @@ def test_broadcasting_mixing(session_tf, full_cov, full_output_cov):
     assert_allclose(f_var_ref, f_var)
 
 
-if __name__ == '__main__':
-    tf.test.main()
+# if __name__ == '__main__':
+#     tf.test.main()

@@ -75,7 +75,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
 @conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
-def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False, full_output_cov=None):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -130,6 +130,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 # ----------------------------------------------------------------------------
 
 
+@sample_conditional.register(object, object, Kernel, object)
 @sample_conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
@@ -152,39 +153,44 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     mean, cov = conditional(Xnew, feat, kern, f, q_sqrt=q_sqrt, white=white,
                             full_cov=full_cov, full_output_cov=full_output_cov)
     if full_cov:
-        # mean: N x P
-        # cov: P x N x N
-        mean_PN = tf.matrix_transpose(mean)  # now P x N
-        samples = _sample_mvn(mean_PN, cov, 'full', num_samples=num_samples)  # (S x) P x N
-        samples = tf.matrix_transpose(samples)  # now (S x) N x P
+        # mean: [..., N, P]
+        # cov: [P, ..., N, N]
+        mean_PN = tf.matrix_transpose(mean)  # [..., P, N]
+        rk = tf.rank(mean)
+        perm = _get_perm_with_leading_dims(rk - 2, 0, rk - 2, rk - 1, offset=1)
+        cov_PNN = tf.transpose(cov, perm=perm)  # [..., P, N, N]
+        samples = _sample_mvn(mean_PN, cov_PNN, 'full', num_samples=num_samples)  # [(S), ..., P, N]
+        samples = tf.matrix_transpose(samples)  # [(S), ..., N, P]
 
     else:
+        # mean: [..., N, P]
+        # cov: [..., N, P] or [..., N, P, P]
         cov_structure = "full" if full_output_cov else "diag"
-        samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [(S,), N, P]
+        samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [(S), ..., N, P]
 
     return samples, mean, cov
 
 
-@sample_conditional.register(object, object, Kernel, object)
-@name_scope("sample_conditional")
-def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=False, full_output_cov=False, num_samples=None):
-    if full_cov and full_output_cov:
-        raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
-                                  "implemented for sample_conditional.")
+# @sample_conditional.register(object, object, Kernel, object)
+# @name_scope("sample_conditional")
+# def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=False, full_output_cov=False, num_samples=None):
+#     if full_cov and full_output_cov:
+#         raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
+#                                   "implemented for sample_conditional.")
 
-    logger.debug("sample conditional: Kernel")
-    if full_output_cov:
-        raise NotImplementedError("full_output_cov is not implemented")
+#     logger.debug("sample conditional: Kernel")
+#     if full_output_cov:
+#         raise NotImplementedError("full_output_cov is not implemented")
 
-    mean, cov = conditional(Xnew, X, kern, f, q_sqrt=q_sqrt, white=white, full_cov=full_cov)
-    if full_cov:
-        mean = tf.matrix_transpose(mean)
-    cov_structure = "full" if full_cov else "diag"
-    samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)
-    if full_cov:
-        samples = tf.matrix_transpose(samples)
-        mean = tf.matrix_transpose(mean)
-    return samples, mean, cov
+#     mean, cov = conditional(Xnew, X, kern, f, q_sqrt=q_sqrt, white=white, full_cov=full_cov)
+#     if full_cov:
+#         mean = tf.matrix_transpose(mean)
+#     cov_structure = "full" if full_cov else "diag"
+#     samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)
+#     if full_cov:
+#         samples = tf.matrix_transpose(samples)
+#         mean = tf.matrix_transpose(mean)
+#     return samples, mean, cov
 
 
 # -----------------
@@ -387,41 +393,42 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution
-    :param mean: N x D
-    :param cov: N x D or N x D x D
+    :param mean: [..., N, D]
+    :param cov: [..., N, D] or [..., N, D, D]
     :param cov_structure: "diag" or "full"
     - "diag": cov holds the diagonal elements of the covariance matrix
     - "full": cov holds the full covariance matrix (without jitter)
-    :return: sample from the MVN of shape N x D
+    :return: sample from the MVN of shape [(S), ..., N, D], S = num_samples
     """
     mean_shape = tf.shape(mean)
-    cov_shape = tf.shape(cov)
-    N, D = mean_shape[0], mean_shape[1]
     S = num_samples if num_samples is not None else 1
-    # assert shape(cov) == (N, D) or (N, D, D)
-    with tf.control_dependencies([
-            tf.Assert(tf.equal(cov_shape[0], N) & tf.reduce_all(tf.equal(cov_shape[1:], D)),
-                      data=[mean_shape, cov_shape])
-            ]):
+    D = mean_shape[-1]
 
-        if cov_structure == "diag":
-            with tf.control_dependencies([tf.assert_equal(tf.rank(mean), tf.rank(cov))]):
-                eps = tf.random_normal([S, N, D], dtype=settings.float_type)  # S x N x D
-                samples = mean + tf.sqrt(cov) * eps  # S x N x D
-        elif cov_structure == "full":
-            with tf.control_dependencies([tf.assert_equal(tf.rank(mean) + 1, tf.rank(cov))]):
-                jittermat = settings.numerics.jitter_level * \
-                            tf.eye(D, batch_shape=[N], dtype=settings.float_type)  # N x D x D
-                eps = tf.random_normal([N, D, S], dtype=settings.float_type)  # N x D x S
-                chol = tf.cholesky(cov + jittermat)  # N x D x D
-                samples = mean[..., None] + tf.matmul(chol, eps)  # N x D x S
-                samples = tf.transpose(samples, [2, 0, 1])  # S x N x D
-        else:
-            raise NotImplementedError  # pragma: no cover
+    if cov_structure == "diag":
+        # mean: [..., N, D] and cov [..., N, D]
+        with tf.control_dependencies([tf.assert_equal(tf.rank(mean), tf.rank(cov))]):
+            eps_shape = tf.concat([[S], mean_shape], 0)
+            eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [S, ..., N, D]
+            samples = mean + tf.sqrt(cov)[None, ...] * eps  # [S, ..., N, D]
+    elif cov_structure == "full":
+        # mean: [..., N, D] and cov [..., N, D, D]
+        with tf.control_dependencies([tf.assert_equal(tf.rank(mean) + 1, tf.rank(cov))]):
+            jittermat = (
+                tf.eye(D, batch_shape=mean_shape[:-1], dtype=settings.float_type)
+                * settings.jitter
+            )  # [..., N, D, D]
+            eps_shape = tf.concat([mean_shape, [S]], 0)
+            eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [..., N, D, S]
+            chol = tf.cholesky(cov + jittermat)  # [..., N, D, D]
+            samples = mean[..., None] + tf.matmul(chol, eps)  # [..., N, D, S]
+            samples = _rollaxis_right(samples, 1)  # [S, ..., N, D]
+    else:
+        raise NotImplementedError  # pragma: no cover
 
-        if num_samples is None:
-            return samples[0]  # N x D
-        return samples  # S x N x D
+    if num_samples is None:
+        return samples[0]  # [..., N, D]
+    return samples  # [S, ..., N, D]
+
 
 def _expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
@@ -449,3 +456,37 @@ def _expand_independent_outputs(fvar, full_cov, full_output_cov):
         pass  # N x P
 
     return fvar
+
+
+def _rollaxis_left(A, num_rolls):
+    """ Roll the tensor `A` backwards `num_rolls` times """
+    assert num_rolls > 0
+    rank = tf.rank(A)
+    perm = tf.concat([num_rolls + tf.range(rank - num_rolls), tf.range(num_rolls)], 0)
+    return tf.transpose(A, perm)
+
+
+def _rollaxis_right(A, num_rolls):
+    """ Roll the tensor `A` forward `num_rolls` times """
+    assert num_rolls > 0
+    rank = tf.rank(A)
+    perm = tf.concat([rank - num_rolls + tf.range(num_rolls), tf.range(rank - num_rolls)], 0)
+    return tf.transpose(A, perm)
+
+
+def _get_perm_with_leading_dims(leading_dims, *axis, offset=0):
+    """
+    Constructs a permuation array that can be used in `tf.transpose`.
+    Will keep the leading dims uneffected, and transpose the last 
+    dimensions according to the order specified in `axis`.
+    :param leading_dims: int or tf.int
+        number of leading dimensions, order of these axis will stay unchanged
+    :param *axis: int's or tf.int's
+        specifies the order of the last `len(axis)`.
+    :return: one-dimensional tf.Tensor that can be used as permutation argument
+        in tf.transpose.
+    """
+    perm = [tf.reshape(tf.range(leading_dims) + offset, [leading_dims])]
+    perm += [tf.reshape(a, [1]) for a in axis]
+    perm = tf.concat(perm, 0)
+    return perm
