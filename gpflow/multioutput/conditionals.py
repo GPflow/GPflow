@@ -16,7 +16,7 @@ import tensorflow as tf
 
 from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof, MixedKernelSeparateMof
 from .features import Kuu, Kuf
-from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
+from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok, SharedMixedMok
 from .. import settings
 from ..conditionals import base_conditional, _expand_independent_outputs, _sample_mvn
 from ..decors import name_scope, params_as_tensors_for
@@ -196,7 +196,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     if full_cov == full_output_cov:
         Kmn = tf.reshape(Kmn, (M * L, N * K))
         Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
-        fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # NK x 1, 1 x NK(x NK)
+        fmean, fvar = base_conditional(
+            Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # NK x 1, 1 x NK(x NK)
         fmean = tf.reshape(fmean, (N, K))
         fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
     else:
@@ -232,6 +233,32 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
                                     full_output_cov=False, white=white)  # N x L, L x N x N or N x L
         return _mix_latent_gp(kern.W, gmu, gvar, full_cov, full_output_cov)
 
+
+@conditional.register(object, MixedKernelSharedMof, SharedMixedMok, object)
+@name_scope("conditional")
+def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+    """
+    Most efficient routine to project L independent latent gps through a mixing matrix W.
+    The mixing matrix is a member of the `SeparateMixedMok` and has shape P x L.
+
+    The covariance matrices used to calculate the conditional have the following shape:
+    - Kuu: L x M x M
+    - Kuf: L x M x N
+    - Kff: L x N or L x N x N
+
+    Further reference
+    -----------------
+    - See `gpflow.conditionals._conditional` for a detailed explanation of
+      conditional in the single-output case.
+    - See the multiouput notebook for more information about the multiouput framework.
+
+    """
+    logger.debug("conditional: MixedKernelSharedMof, SharedMixedMok")
+    with params_as_tensors_for(feat, kern):
+        independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+        gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
+                                    full_output_cov=False, white=white)  # N x L, L x N x N or N x L
+        return _mix_latent_gp(kern.W, gmu, gvar, full_cov, full_output_cov)
 
 # ------------------
 # Sample conditional

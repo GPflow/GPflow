@@ -69,6 +69,8 @@ class SharedIndependentMok(Mok):
 
     Note: this class is created only for testing and comparison purposes.
     Use `gpflow.kernels` instead for more efficient code.
+    This implementation is inefficient because we explicitly tile the k(X, X) matrix  P-times.
+    In `gpflow.kernels` the tiling is done implicitly, making it faster and more memory efficient.
     """
     def __init__(self, kern: Kernel, output_dimensionality, name=None):
         Mok.__init__(self, kern.input_dim, name)
@@ -109,9 +111,55 @@ class SeparateIndependentMok(Mok, Combination):
         return tf.matrix_diag(stacked) if full_output_cov else stacked  # N x P x P  or  N x P
 
 
+class SharedMixedMok(Mok):
+    """
+    Linear mixing of independent, latent GPs to form the correlated, observed GP. That is `f = W g`,
+    with g the L-dimensional latent GP, and f the P-dimensional observed GP. The linear projection
+    is done by matrix multiplying the latent GP with W, referred to as the 'mixing matrix'.
+
+    The same kernel is used for each the L independent latent GPs.
+
+    This kernel should be combined with the multioutput features: `MixedKernelSharedMof`
+    or `MixedKernelSeparateMof` for the most efficient conditional code.
+    """
+
+    def __init__(self, kern: Kernel, W, name=None):
+        """
+        :param kern: gpflow.Kernel
+            Kernel used for each of the latent GPs.
+        :param W: np.ndarray, shape [P, L]
+            Mixing matrix.
+        """
+        super().__init__(kern.input_dim, name)
+        self.kern = kern
+        self.W = Parameter(W)  # [P, L], with P = dim oberservations, L = latent GP dimension
+
+    @params_as_tensors
+    def Kgg(self, X, X2):
+        return self.kern.K(X, X2)  # N x N2
+
+    @params_as_tensors
+    def Kgg_diag(self, X):
+        return self.kern.Kdiag(X)  # N
+
+    @autoflow((settings.float_type, [None, None]),
+              (settings.float_type, [None, None]))
+    def compute_Kgg(self, X, X2):
+        return self.Kgg(X, X2)
+
+    @params_as_tensors
+    def K(self, X, X2=None, full_output_cov=True):
+        raise NotImplementedError
+
+    @params_as_tensors
+    def Kdiag(self, X, full_output_cov=True):
+        raise NotImplementedError
+
+
 class SeparateMixedMok(Mok, Combination):
     """
     Linear mixing of the latent GPs to form the output
+    A Separate kernel is used for each of the independent latent GPs.
     """
 
     def __init__(self, kernels, W, name=None):

@@ -47,7 +47,7 @@ def assert_all_array_elements_almost_equal(arr, decimal):
         np.testing.assert_almost_equal(arr[i], arr[i+1], decimal=decimal)
 
 
-def check_equality_predictions(sess, models, decimal=3):
+def check_equality_predictions(sess, models, decimal=4):
     """
     Executes a couple of checks to compare the equality of predictions
     of different models. The models should be configured with the same
@@ -140,6 +140,7 @@ class DataMixedKernelWithEye(Data):
     """ Note in this class L == P """
     M, L = 4, 3
     W = np.eye(L)
+    MAXITER = 100
 
     G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
                    3.0 * np.cos(Data.X) - Data.X,
@@ -313,209 +314,233 @@ def test_MixedMok_Kgg(session_tf):
 # ------------------------------------------
 
 
-def test_shared_independent_mok(session_tf):
-    """
-    In this test we use the same kernel and the same inducing features
-    for each of the outputs. The outputs are considered to be uncorrelated.
-    This is how GPflow handled multiple outputs before the multioutput framework was added.
-    We compare three models here:
-        1) an ineffient one, where we use a SharedIndepedentMok with InducingPoints.
-           This combination will uses a Kff of size N x P x N x P, Kfu if size N x P x M x P
-           which is extremely inefficient as most of the elements are zero.
-        2) efficient: SharedIndependentMok and SharedIndependentMof
-           This combinations uses the most efficient form of matrices
-        3) the old way, efficient way: using Kernel and InducingPoints
-        Model 2) and 3) follow more or less the same code path.
-    """
-    # Model 1
-    q_mu_1 = np.random.randn(Data.M * Data.P, 1)  # MP x 1
-    q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
-    kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
-    feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
-    m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
-    m1.set_trainable(False)
-    m1.q_sqrt.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
+# def test_shared_independent_mok(session_tf):
+#     """
+#     In this test we use the same kernel and the same inducing features
+#     for each of the outputs. The outputs are considered to be uncorrelated.
+#     This is how GPflow handled multiple outputs before the multioutput framework was added.
+#     We compare three models here:
+#         1) an ineffient one, where we use a SharedIndepedentMok with InducingPoints.
+#            This combination will uses a Kff of size N x P x N x P, Kfu if size N x P x M x P
+#            which is extremely inefficient as most of the elements are zero.
+#         2) efficient: SharedIndependentMok and SharedIndependentMof
+#            This combinations uses the most efficient form of matrices
+#         3) the old way, efficient way: using Kernel and InducingPoints
+#         Model 2) and 3) follow more or less the same code path.
+#     """
+#     # Model 1
+#     q_mu_1 = np.random.randn(Data.M * Data.P, 1)  # MP x 1
+#     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
+#     kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+#     feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
+#     m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
+#     m1.set_trainable(False)
+#     m1.q_sqrt.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
 
-    # Model 2
-    q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
-    q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kernel_2 = RBF(Data.D, variance=0.5, lengthscales=1.2)
-    feature_2 = InducingPoints(Data.X[:Data.M, ...].copy())
-    m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
-    m2.set_trainable(False)
-    m2.q_sqrt.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
+#     # Model 2
+#     q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
+#     q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+#     kernel_2 = RBF(Data.D, variance=0.5, lengthscales=1.2)
+#     feature_2 = InducingPoints(Data.X[:Data.M, ...].copy())
+#     m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
+#     m2.set_trainable(False)
+#     m2.q_sqrt.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
-    # Model 3
-    q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
-    q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kernel_3 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
-    feature_3 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
-    m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
-    m3.set_trainable(False)
-    m3.q_sqrt.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
+#     # Model 3
+#     q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
+#     q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+#     kernel_3 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+#     feature_3 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
+#     m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
+#     m3.set_trainable(False)
+#     m3.q_sqrt.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
 
-    check_equality_predictions(session_tf, [m1, m2, m3])
-
-
-
-def test_separate_independent_mok(session_tf):
-    """
-    We use different independent kernels for each of the output dimensions.
-    We can achieve this in two ways:
-        1) efficient: SeparateIndependentMok with Shared/SeparateIndependentMof
-        2) inefficient: SeparateIndependentMok with InducingPoints
-    However, both methods should return the same conditional,
-    and after optimization return the same log likelihood.
-    """
-    # Model 1 (INefficient)
-    q_mu_1 = np.random.randn(Data.M * Data.P, 1)
-    q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
-    kern_list_1 = [RBF(Data.D, variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
-    kernel_1 = mk.SeparateIndependentMok(kern_list_1)
-    feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
-    m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
-    m1.set_trainable(False)
-    m1.q_sqrt.set_trainable(True)
-    m1.q_mu.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
-
-    # Model 2 (efficient)
-    q_mu_2 = np.random.randn(Data.M, Data.P)
-    q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kern_list_2 = [RBF(Data.D, variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
-    kernel_2 = mk.SeparateIndependentMok(kern_list_2)
-    feature_2 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
-    m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
-    m2.set_trainable(False)
-    m2.q_sqrt.set_trainable(True)
-    m2.q_mu.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
-
-    check_equality_predictions(session_tf, [m1, m2])
+#     check_equality_predictions(session_tf, [m1, m2, m3])
 
 
-def test_separate_independent_mof(session_tf):
-    """
-    Same test as above but we use different (i.e. separate) inducing features
-    for each of the output dimensions.
-    """
-    np.random.seed(0)
 
-    # Model 1 (INefficient)
-    q_mu_1 = np.random.randn(Data.M * Data.P, 1)
-    q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
-    kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
-    feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
-    m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
-    m1.set_trainable(False)
-    m1.q_sqrt.set_trainable(True)
-    m1.q_mu.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
+# def test_separate_independent_mok(session_tf):
+#     """
+#     We use different independent kernels for each of the output dimensions.
+#     We can achieve this in two ways:
+#         1) efficient: SeparateIndependentMok with Shared/SeparateIndependentMof
+#         2) inefficient: SeparateIndependentMok with InducingPoints
+#     However, both methods should return the same conditional,
+#     and after optimization return the same log likelihood.
+#     """
+#     # Model 1 (INefficient)
+#     q_mu_1 = np.random.randn(Data.M * Data.P, 1)
+#     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
+#     kern_list_1 = [RBF(Data.D, variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
+#     kernel_1 = mk.SeparateIndependentMok(kern_list_1)
+#     feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
+#     m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
+#     m1.set_trainable(False)
+#     m1.q_sqrt.set_trainable(True)
+#     m1.q_mu.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
 
-    # Model 2 (efficient)
-    q_mu_2 = np.random.randn(Data.M, Data.P)
-    q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kernel_2 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
-    feat_list_2 = [InducingPoints(Data.X[:Data.M, ...].copy()) for _ in range(Data.P)]
-    feature_2 = mf.SeparateIndependentMof(feat_list_2)
-    m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
-    m2.set_trainable(False)
-    m2.q_sqrt.set_trainable(True)
-    m2.q_mu.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
+#     # Model 2 (efficient)
+#     q_mu_2 = np.random.randn(Data.M, Data.P)
+#     q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+#     kern_list_2 = [RBF(Data.D, variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
+#     kernel_2 = mk.SeparateIndependentMok(kern_list_2)
+#     feature_2 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
+#     m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
+#     m2.set_trainable(False)
+#     m2.q_sqrt.set_trainable(True)
+#     m2.q_mu.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
-    # Model 3 (Inefficient): an idenitical feature is used P times,
-    # and treated as a separate feature.
-    q_mu_3 = np.random.randn(Data.M, Data.P)
-    q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kern_list = [RBF(Data.D, variance=0.5, lengthscales=1.2)  for _ in range(Data.P)]
-    kernel_3 = mk.SeparateIndependentMok(kern_list)
-    feat_list_3 = [InducingPoints(Data.X[:Data.M, ...].copy()) for _ in range(Data.P)]
-    feature_3 = mf.SeparateIndependentMof(feat_list_3)
-    m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
-    m3.set_trainable(False)
-    m3.q_sqrt.set_trainable(True)
-    m3.q_mu.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
-
-    check_equality_predictions(session_tf, [m1, m2, m3])
+#     check_equality_predictions(session_tf, [m1, m2])
 
 
-def test_mixed_mok_with_Id_vs_independent_mok(session_tf):
-    data = DataMixedKernelWithEye
-    # Independent model
-    k1 = mk.SharedIndependentMok(RBF(data.D, variance=0.5, lengthscales=1.2), data.L)
-    f1 = InducingPoints(data.X[:data.M, ...].copy())
-    m1 = SVGP(data.X, data.Y, k1, Gaussian(), f1,
-              q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
-    m1.set_trainable(False)
-    m1.q_sqrt.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=data.MAXITER)
+# def test_separate_independent_mof(session_tf):
+#     """
+#     Same test as above but we use different (i.e. separate) inducing features
+#     for each of the output dimensions.
+#     """
+#     np.random.seed(0)
 
-    # Mixed Model
-    kern_list = [RBF(data.D, variance=0.5, lengthscales=1.2) for _ in range(data.L)]
-    k2 = mk.SeparateMixedMok(kern_list, data.W)
-    f2 = InducingPoints(data.X[:data.M, ...].copy())
-    m2 = SVGP(data.X, data.Y, k2, Gaussian(), f2,
-              q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
-    m2.set_trainable(False)
-    m2.q_sqrt.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=data.MAXITER)
+#     # Model 1 (INefficient)
+#     q_mu_1 = np.random.randn(Data.M * Data.P, 1)
+#     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
+#     kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+#     feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
+#     m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
+#     m1.set_trainable(False)
+#     m1.q_sqrt.set_trainable(True)
+#     m1.q_mu.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
 
-    check_equality_predictions(session_tf, [m1, m2])
+#     # Model 2 (efficient)
+#     q_mu_2 = np.random.randn(Data.M, Data.P)
+#     q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+#     kernel_2 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+#     feat_list_2 = [InducingPoints(Data.X[:Data.M, ...].copy()) for _ in range(Data.P)]
+#     feature_2 = mf.SeparateIndependentMof(feat_list_2)
+#     m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
+#     m2.set_trainable(False)
+#     m2.q_sqrt.set_trainable(True)
+#     m2.q_mu.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
+
+#     # Model 3 (Inefficient): an idenitical feature is used P times,
+#     # and treated as a separate feature.
+#     q_mu_3 = np.random.randn(Data.M, Data.P)
+#     q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+#     kern_list = [RBF(Data.D, variance=0.5, lengthscales=1.2)  for _ in range(Data.P)]
+#     kernel_3 = mk.SeparateIndependentMok(kern_list)
+#     feat_list_3 = [InducingPoints(Data.X[:Data.M, ...].copy()) for _ in range(Data.P)]
+#     feature_3 = mf.SeparateIndependentMof(feat_list_3)
+#     m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
+#     m3.set_trainable(False)
+#     m3.q_sqrt.set_trainable(True)
+#     m3.q_mu.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
+
+#     check_equality_predictions(session_tf, [m1, m2, m3])
 
 
-def test_compare_mixed_kernel(session_tf):
+# def test_mixed_mok_with_Id_vs_independent_mok(session_tf):
+#     data = DataMixedKernelWithEye
+#     # Independent model
+#     k1 = mk.SharedIndependentMok(RBF(data.D, variance=0.5, lengthscales=1.2), data.L)
+#     f1 = InducingPoints(data.X[:data.M, ...].copy())
+#     m1 = SVGP(data.X, data.Y, k1, Gaussian(), f1,
+#               q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
+#     m1.set_trainable(False)
+#     m1.q_sqrt.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m1, maxiter=data.MAXITER)
+
+#     # Mixed Model
+#     kern_list = [RBF(data.D, variance=0.5, lengthscales=1.2) for _ in range(data.L)]
+#     k2 = mk.SeparateMixedMok(kern_list, data.W)
+#     f2 = InducingPoints(data.X[:data.M, ...].copy())
+#     m2 = SVGP(data.X, data.Y, k2, Gaussian(), f2,
+#               q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
+#     m2.set_trainable(False)
+#     m2.q_sqrt.set_trainable(True)
+#     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=data.MAXITER)
+
+#     check_equality_predictions(session_tf, [m1, m2])
+
+
+# def test_compare_mixed_kernel(session_tf):
+#     data = DataMixedKernel
+
+#     kern_list = [RBF(data.D) for _ in range(data.L)]
+#     k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+#     f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+#     m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+
+#     kern_list = [RBF(data.D) for _ in range(data.L)]
+#     k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+#     f2 = mf.MixedKernelSharedMof(InducingPoints(data.X[:data.M,...].copy()))
+#     m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+
+#     check_equality_predictions(session_tf, [m1, m2])
+
+
+# def test_multioutput_with_diag_q_sqrt(session_tf):
+#     data = DataMixedKernel
+
+#     q_sqrt_diag = np.ones((data.M, data.L)) * 2
+#     q_sqrt = np.repeat(np.eye(data.M)[None, ...], data.L, axis=0) * 2 # L x M x M
+
+#     kern_list = [RBF(data.D) for _ in range(data.L)]
+#     k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+#     f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+#     m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
+
+#     kern_list = [RBF(data.D) for _ in range(data.L)]
+#     k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+#     f2 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+#     m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
+
+#     check_equality_predictions(session_tf, [m1, m2])
+
+# def test_MixedKernelSeparateMof(session_tf):
+#     data = DataMixedKernel
+
+#     kern_list = [RBF(data.D) for _ in range(data.L)]
+#     feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
+#     k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+#     f1 = mf.SeparateIndependentMof(feat_list)
+#     m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+
+#     kern_list = [RBF(data.D) for _ in range(data.L)]
+#     feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
+#     k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+#     f2 = mf.MixedKernelSeparateMof(feat_list)
+#     m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+
+#     check_equality_predictions(session_tf, [m1, m2])
+
+
+def test(session_tf):
     data = DataMixedKernel
+    kern_params = {"variance": 0.1, "lengthscales": 0.2}
 
-    kern_list = [RBF(data.D) for _ in range(data.L)]
-    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
-    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    kern_shared = mk.SharedMixedMok(RBF(data.D, **kern_params), data.W)
+    feat_shared = mf.MixedKernelSharedMof(data.X[:data.M, ...].copy())
+    model_shared = SVGP(data.X, data.Y, kern_shared, Gaussian(),
+                        feat=feat_shared, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_shared.kern.set_trainable(False)
+    model_shared.feature.set_trainable(False)
+    gpflow.training.ScipyOptimizer().minimize(model_shared, maxiter=data.MAXITER)
 
-    kern_list = [RBF(data.D) for _ in range(data.L)]
-    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f2 = mf.MixedKernelSharedMof(InducingPoints(data.X[:data.M,...].copy()))
-    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
-
-    check_equality_predictions(session_tf, [m1, m2])
-
-
-def test_multioutput_with_diag_q_sqrt(session_tf):
-    data = DataMixedKernel
-
-    q_sqrt_diag = np.ones((data.M, data.L)) * 2
-    q_sqrt = np.repeat(np.eye(data.M)[None, ...], data.L, axis=0) * 2 # L x M x M
-
-    kern_list = [RBF(data.D) for _ in range(data.L)]
-    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
-    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
-
-    kern_list = [RBF(data.D) for _ in range(data.L)]
-    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f2 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
-    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
-
-    check_equality_predictions(session_tf, [m1, m2])
-
-def test_MixedKernelSeparateMof(session_tf):
-    data = DataMixedKernel
-
-    kern_list = [RBF(data.D) for _ in range(data.L)]
+    kern_list = [RBF(data.D, **kern_params) for _ in range(data.L)]
     feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
-    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f1 = mf.SeparateIndependentMof(feat_list)
-    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    kern_separate = mk.SeparateMixedMok(kern_list, W=data.W)
+    feat_separate = mf.MixedKernelSeparateMof(feat_list)
+    model_separate = SVGP(data.X, data.Y, kern_separate, Gaussian(),
+                          feat=feat_separate, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_separate.kern.set_trainable(False)
+    model_separate.feature.set_trainable(False)
+    gpflow.training.ScipyOptimizer().minimize(model_separate, maxiter=data.MAXITER)
 
-    kern_list = [RBF(data.D) for _ in range(data.L)]
-    feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
-    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f2 = mf.MixedKernelSeparateMof(feat_list)
-    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
-
-    check_equality_predictions(session_tf, [m1, m2])
-
+    check_equality_predictions(session_tf, [model_shared, model_separate])
