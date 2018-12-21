@@ -156,8 +156,8 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
         # mean: [..., N, P]
         # cov: [P, ..., N, N]
         mean_PN = tf.matrix_transpose(mean)  # [..., P, N]
-        rk = tf.rank(mean)
-        perm = _get_perm_with_leading_dims(rk - 2, 0, rk - 2, rk - 1, offset=1)
+        rk = tf.rank(cov)
+        perm = _get_perm_with_leading_dims(rk - 3, 0, rk - 2, rk - 1, offset=1)
         cov_PNN = tf.transpose(cov, perm=perm)  # [..., P, N, N]
         samples = _sample_mvn(mean_PN, cov_PNN, 'full', num_samples=num_samples)  # [(S), ..., P, N]
         samples = tf.matrix_transpose(samples)  # [(S), ..., N, P]
