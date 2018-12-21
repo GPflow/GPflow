@@ -3,15 +3,9 @@ runtest: &runtest
     - checkout
     - run: python setup.py install
     - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
-    # - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow --cov-report=xml ./tests
-    # - codecov/upload:
-    #     file: ./coverage.xml
-    - run: bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
+    - run: bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
 
 version: 2.1
-
-orbs:
-  codecov: codecov/codecov@1.0.1
 
 jobs:
   unit-test:
@@ -29,7 +23,6 @@ jobs:
           PYTEST_FILTER: notebooks
 
 workflows:
-  # version: 2
   build_and_test:
     jobs:
       - unit-test
