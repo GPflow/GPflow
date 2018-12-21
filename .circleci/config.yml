@@ -1,7 +1,6 @@
 runtest: &runtest
   steps:
     - checkout
-    - run: env
     - run: python setup.py install
     - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow --cov-report=xml ./tests
     - codecov/upload:
@@ -10,7 +9,7 @@ runtest: &runtest
 version: 2.1
 
 orbs:
-  codecov: codecov/codecov@1.0.1
+  codecov: codecov/codecov@1.0.0
 
 jobs:
   unit-test:
