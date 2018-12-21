@@ -6,18 +6,7 @@ runtest: &runtest
     # - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow --cov-report=xml ./tests
     # - codecov/upload:
     #     file: ./coverage.xml
-    - run: |
-        curl --request POST --retry 3 --silent --show-error --fail \
-        --data-binary ./.coverage \
-        "https://codecov.io/upload/v2?service=circleci\
-        &token=$CODECOV_TOKEN\
-        &commit=$CIRCLE_SHA1\
-        &branch=$CIRCLE_BRANCH\
-        &build=$CIRCLE_BUILD_NUM\
-        &job=$CIRCLE_NODE_INDEX\
-        &build_url=$CIRCLE_BUILD_URL\
-        &slug=$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME\
-        &pr=$CIRCLE_PR_NUMBER"
+    - run: bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
 
 version: 2.1
 
