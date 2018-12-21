@@ -2,12 +2,13 @@ runtest: &runtest
   steps:
     - checkout
     - run: python setup.py install
-    - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow --cov-report=xml ./tests
+    - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
+    # - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow --cov-report=xml ./tests
     # - codecov/upload:
     #     file: ./coverage.xml
     - run: |
         curl --request POST --retry 3 --silent --show-error --fail \
-        --data-binary ./coverage.xml \
+        --data-binary ./.coverage \
         "https://codecov.io/upload/v2?service=circleci\
         &token=$CODECOV_TOKEN\
         &commit=$CIRCLE_SHA1\
