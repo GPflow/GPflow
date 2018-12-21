@@ -17,11 +17,15 @@
 # pylint: skip-file
 
 
-import functools
 import contextlib
-import tensorflow as tf
-import pytest
+import functools
 import os
+
+import pytest
+import tensorflow as tf
+
+from .session_manager import (get_default_session,
+                              reset_default_graph_and_session)
 
 
 @pytest.fixture
@@ -40,7 +44,8 @@ def session_tf():
     at `session_tf()` fixture. Session and graph are created per each pytest
     function where `session_tf` argument is used.
     """
-    with session_context() as session:
+    reset_default_graph_and_session()
+    with get_default_session() as session:
         yield session
 
 
@@ -115,8 +120,8 @@ class GPflowTestCase(tf.test.TestCase):
 
 
 def is_continuous_integration():
-    ci = os.environ.get('CI', '').lower()
-    return (ci == 'true') or (ci == '1')
+    ci = os.environ.get('CI', '').strip()
+    return len(ci) > 0
 
 
 def notebook_niter(n, test_n=2):

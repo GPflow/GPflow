@@ -1,0 +1,29 @@
+runtest: &runtest
+  steps:
+    - checkout
+    - run: python setup.py install
+    - run: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
+    - run: bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
+
+version: 2.1
+
+jobs:
+  unit-test:
+    <<: *runtest
+    docker:
+      - image: awav/tensorflow:1.12.0
+        environment:
+          PYTEST_FILTER: not notebooks
+
+  notebook-test:
+    <<: *runtest
+    docker:
+      - image: awav/tensorflow:1.12.0
+        environment:
+          PYTEST_FILTER: notebooks
+
+workflows:
+  build_and_test:
+    jobs:
+      - unit-test
+      - notebook-test
