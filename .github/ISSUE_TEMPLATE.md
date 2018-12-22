@@ -1,5 +1,9 @@
 # Standard GPflow issue template
 
+## Question
+
+For questions on how to work with GPflow, or support for problems that are not bugs, please go to [StackOverflow](https://stackoverflow.com/). Make sure to tag your question with `gpflow`.
+
 ## Bug case
 
 1. Describe a bug shortly - reasons and context.
