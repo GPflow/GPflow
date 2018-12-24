@@ -52,25 +52,31 @@ class Datum:
 def mu(session_tf):
     return tf.convert_to_tensor(Datum.mu_data)
 
+
 @pytest.fixture
 def sqrt_diag(session_tf):
     return tf.convert_to_tensor(Datum.sqrt_diag_data)
+
 
 @pytest.fixture
 def K(session_tf):
     return tf.convert_to_tensor(Datum.K_data)
 
+
 @pytest.fixture
 def K_batch(session_tf):
     return tf.convert_to_tensor(Datum.K_batch_data)
+
 
 @pytest.fixture
 def sqrt(session_tf):
     return tf.convert_to_tensor(Datum.sqrt_data)
 
+
 @pytest.fixture()
 def I(session_tf):
     return tf.convert_to_tensor(Datum.I)
+
 
 @pytest.mark.parametrize('white', [True, False])
 def test_diags(session_tf, white, mu, sqrt_diag, K):
@@ -86,6 +92,7 @@ def test_diags(session_tf, white, mu, sqrt_diag, K):
 
     np.testing.assert_allclose(kl_diag.eval(), kl_dense.eval())
 
+
 @pytest.mark.parametrize('diag', [True, False])
 def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     """
@@ -98,6 +105,7 @@ def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     kl_nonwhite = gauss_kl(mu, s, I)
 
     np.testing.assert_allclose(kl_white.eval(), kl_nonwhite.eval())
+
 
 @pytest.mark.parametrize('shared_k', [True, False])
 @pytest.mark.parametrize('diag', [True, False])
@@ -122,11 +130,13 @@ def test_sumkl_equals_batchkl(session_tf, shared_k, diag, mu,
     kl_sum =tf.reduce_sum(kl_sum)
     assert_almost_equal(kl_sum.eval(), kl_batch.eval())
 
+
 def tf_kl_1d(q_mu, q_sigma, p_var=1.0):
     p_var = tf.ones_like(q_sigma) if p_var is None else p_var
     q_var = tf.square(q_sigma)
     kl = 0.5 * (q_var / p_var + tf.square(q_mu) / p_var - 1 + tf.log(p_var / q_var))
     return tf.reduce_sum(kl)
+
 
 @pytest.mark.parametrize('white', [True, False])
 def test_oned(session_tf, white, mu, sqrt, K_batch):
@@ -155,14 +165,14 @@ def test_unknown_size_inputs(session_tf):
     sqrt_ph = tf.placeholder(default_float(), [None, None, None])
     mu = np.ones([1, 4], dtype=default_float())
     sqrt = np.ones([4, 1, 1], dtype=default_float())
-    
+
     feed_dict = {mu_ph: mu, sqrt_ph: sqrt}
     known_shape_tf = gauss_kl(*map(tf.constant, [mu, sqrt]))
     unknown_shape_tf = gauss_kl(mu_ph, sqrt_ph)
-    
+
     known_shape = session_tf.run(known_shape_tf)
     unknown_shape = session_tf.run(unknown_shape_tf, feed_dict=feed_dict)
-    
+
     np.testing.assert_allclose(known_shape, unknown_shape)
 
 

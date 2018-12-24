@@ -22,55 +22,74 @@ def base_conditional(
       q(g2) = N(g2;f,q_sqrt*q_sqrt^T)
     This method computes the mean and (co)variance of
       q(g1) = \int q(g2) p(g1|g2)
-    :param Kmn: M x N
-    :param Kmm: M x M
-    :param Knn: N x N  or  N
-    :param f: M x R
+    :param Kmn: [M, N]
+    :param Kmm: [M, M]
+    :param Knn: [N, N] or [N]
+    :param function: [M, R]
     :param full_cov: bool
-    :param q_sqrt: None or R x M x M (lower triangular)
+    :param q_sqrt: None or [R, M, M] (lower triangular)
     :param white: bool
-    :return: N x R  or R x N x N
+    :return: [N, R]  or [R, N, N]
     """
     logger.debug("base conditional")
-
     # compute kernel stuff
-    num_func = tf.shape(function)[1]  # [R]
-    Lm = tf.cholesky(Kmm)
+    num_func = tf.shape(function)[1]  # R
+    N = tf.shape(Kmn)[-1]
+    M = tf.shape(function)[0]
 
-    # Compute the projection matrix [A]
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
+    # get the leadings dims in Kmn to the front of the tensor
+    # if Kmn has rank two, i.e. [M, N], this is the identity op.
+    Kmn_rank = tf.rank(Kmn)
+    leading_indices = tf.range(1, Kmn_rank - 1)
+    permute_indices = tf.concat([leading_indices, [0], [Kmn_rank - 1]], 0)  # [Kmn_rank]
+    Kmn = tf.transpose(Kmn, permute_indices)  # [..., M, N]
 
-    # Compute the covariance due to the conditioning
+    leading_dims = tf.shape(Kmn)[:-2]
+    Lm = tf.cholesky(Kmm)  # [M, M]
+
+    # Compute the projection matrix A
+    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
+    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
+
+    # compute the covariance due to the conditioning
     if full_cov:
-        fvar = Knn - tf.matmul(A, A, transpose_a=True)
-        fvar = tf.tile(fvar[None, :, :], [num_func, 1, 1])  # [R, N, N]
+        fvar = Knn - tf.matmul(A, A, transpose_a=True)  # [..., N, N]
+        cov_shape = tf.concat([leading_dims, [num_func, N, N]], 0)
+        fvar = tf.broadcast_to(tf.expand_dims(fvar, -3), cov_shape)  # [..., R, N, N]
     else:
-        fvar = Knn - tf.reduce_sum(tf.square(A), 0)
-        fvar = tf.tile(fvar[None, :], [num_func, 1])  # [R, N]
+        fvar = Knn - tf.reduce_sum(tf.square(A), -2)  # [...,N]
+        cov_shape = tf.concat([leading_dims, [num_func, N]], 0)  # [..., R, N]
+        fvar = tf.broadcast_to(tf.expand_dims(fvar, -2), cov_shape)  # [..., R, N]
 
-    # Another backsubstitution in the unwhitened case
+    # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
+        A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)
 
-    # Construct the conditional mean
-    fmean = tf.matmul(A, function, transpose_a=True)
+    # construct the conditional mean
+    f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [..., M, R]
+    function = tf.broadcast_to(function, f_shape)  # [..., M, R]
+    fmean = tf.matmul(A, function, transpose_a=True)  # [..., N, R]
 
     if q_sqrt is not None:
-        if q_sqrt.shape.ndims == 2:
+        q_sqrt_dims = q_sqrt.shape.ndims
+        if q_sqrt_dims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
-        elif q_sqrt.shape.ndims == 3:
-            L = tf.matrix_band_part(q_sqrt, -1, 0)  # [R, M, M]
-            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
-            LTA = tf.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
+        elif q_sqrt_dims == 3:
+            L = q_sqrt
+            L = tf.broadcast_to(L, tf.concat([leading_dims, tf.shape(L)], 0))
+            shape = tf.concat([leading_dims, [num_func, M, N]], 0)
+            A = tf.broadcast_to(tf.expand_dims(A, -3), shape)
+            LTA = tf.matmul(L, A, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover
-            raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt.shape.ndims}")
+            raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt_dims}")
+
         if full_cov:
             fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # [R, N, N]
         else:
-            fvar = fvar + tf.reduce_sum(LTA ** 2, 1)  # [R, N]
+            fvar = fvar + tf.reduce_sum(tf.square(LTA), -2)  # [R, N]
 
     if not full_cov:
-        fvar = tf.transpose(fvar)  # [N, R]
+        fvar = tf.matrix_transpose(fvar)  # [N, R]
 
     return fmean, fvar  # [N, R], [R, N, N] or [N, R]
 
@@ -274,8 +293,8 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     if q_sqrt is not None:
         Lf = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
         if q_sqrt.shape.ndims == 3:
-            A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # R x M x NK
-            LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # R x M x NK
+            A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # [R, M, N]K
+            LTA = tf.matmul(Lf, A_tiled, transpose_a=True)  # [R, M, N]K
         elif q_sqrt.shape.ndims == 2:  # pragma: no cover
             raise NotImplementedError("Does not support diagonal q_sqrt yet...")
         else:  # pragma: no cover

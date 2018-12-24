@@ -191,7 +191,7 @@ class Coregion(Kernel):
         B = tf.matmul(self.W(), self.W(), transpose_b=True) + tf.matrix_diag(self.kappa())
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
-    def K_diag(self, X):
+    def K_diag(self, X, presliced=False):
         X, _ = self.slice(X, None)
         X = tf.cast(X[:, 0], tf.int32)
         Bdiag = tf.reduce_sum(tf.square(self.W()), 1) + self.kappa()

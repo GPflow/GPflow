@@ -12,6 +12,8 @@ def create_logger(name=None):
 
 def default_jitter_eye(num_rows: int, num_columns: int = None, value: float = None) -> float:
     value = default_jitter() if value is None else value
+    num_rows = int(num_rows)
+    num_columns = int(num_columns) if num_columns is not None else num_columns
     return tf.eye(num_rows, num_columns=num_columns, dtype=default_float()) * value
 
 
