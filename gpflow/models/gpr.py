@@ -81,6 +81,6 @@ class GPR(GPModel):
         Kmn = self.kernel(X, Xnew)
         S = tf.eye(X.shape[0], dtype=X.dtype) * self.likelihood.variance()
         Kmm = self.kernel(X)
-        Knn = self.kernel(Xnew, diag=(not full_cov))
+        Knn = self.kernel(Xnew, full=full_cov)
         f_mean, f_var = base_conditional(Kmn, Kmm + S, Knn, y, full_cov=full_cov, white=False)  # [N, P], [N, P] or [P, N, N]
         return f_mean + self.mean_function(Xnew), f_var

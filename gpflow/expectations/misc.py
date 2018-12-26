@@ -3,11 +3,11 @@ import tensorflow as tf
 from . import dispatch
 from .. import kernels
 from .. import mean_functions as mfn
-from ..features import InducingPoints, InducingFeature
+from ..features import InducingFeature, InducingPoints
+from ..probability_distributions import (DiagonalGaussian, Gaussian,
+                                         MarkovGaussian)
 from ..util import NoneType
 from .expectations import expectation
-from .probability_distributions import (DiagonalGaussian, Gaussian,
-                                        MarkovGaussian)
 
 # ================ exKxz transpose and mean function handling =================
 

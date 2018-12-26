@@ -3,14 +3,14 @@ import tensorflow as tf
 
 from . import dispatch
 from .. import kernels
-from .. import mfn as mfn
+from .. import mean_functions as mfn
 from ..covariances import Kuf
 from ..features import InducingFeature
+from ..probability_distributions import (DiagonalGaussian, Gaussian,
+                                         MarkovGaussian)
 from ..quadrature import mvnquad
 from ..util import NoneType, create_logger
 from .expectations import quadrature_expectation
-from .probability_distributions import (DiagonalGaussian, Gaussian,
-                                        MarkovGaussian)
 
 logger = create_logger()
 register = dispatch.quadrature_expectation.register
@@ -31,15 +31,15 @@ def get_eval_func(obj, feature, slice=None):
     elif isinstance(obj, mfn.MeanFunction):
         return lambda x: obj(x)[slice]
     elif isinstance(obj, kernels.Kernel):
-        return obj
+        return lambda x: obj(x, full=False)
 
     raise NotImplementedError()
 
 
-@register((Gaussian, DiagonalGaussian),
-          object, (InducingFeature, NoneType),
-          object, (InducingFeature, NoneType),
-          (int, NoneType))
+@dispatch.quadrature_expectation.register(
+    (Gaussian, DiagonalGaussian),
+    object, (InducingFeature, NoneType),
+    object, (InducingFeature, NoneType))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
@@ -47,22 +47,15 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     nghp = 100 if nghp is None else nghp
 
-    logger.warn("Quadrature is used to calculate the expectation. This means that "
-                "an analytical implementations is not available for the given combination.")
+    logger.warning("Quadrature is used to calculate the expectation. This means that "
+                   "an analytical implementations is not available for the given combination.")
 
     if obj1 is None:
         raise NotImplementedError("First object cannot be None.")
 
-    if obj2 is None:
-        def eval_fun(x):
-            return get_eval_func(obj1, feature1)(x)
+    if not isinstance(p, DiagonalGaussian):
+        cov = p.cov
     else:
-        def eval_func(x):
-            res1 = get_eval_func(obj1, feature1, np.s_[:, :, None])(x)
-            res2 = get_eval_func(obj2, feature2, np.s_[:, None, :])(x)
-            return res1 * res2
-
-    if isinstance(p, DiagonalGaussian):
         iskernel1 = isinstance(obj1, kernels.Kernel)
         iskernel2 = isinstance(obj2, kernels.Kernel)
         separate_dims = obj1.on_separate_dims(obj2)
@@ -70,18 +63,25 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
             eKxz1 = quadrature_expectation(p, (obj1, feature1), nghp=nghp)
             eKxz2 = quadrature_expectation(p, (obj2, feature2), nghp=nghp)
             return eKxz1[:, :, None] * eKxz2[:, None, :]
+        cov = tf.matrix_diag(p.cov)
 
-        else:
-            cov = tf.matrix_diag(p.cov)
+    if obj2 is None:
+        def eval_func(x):
+            fn = get_eval_func(obj1, feature1)
+            return fn(x)
     else:
-        cov = p.cov
+        def eval_func(x):
+            fn1 = get_eval_func(obj1, feature1, np.s_[:, :, None])
+            fn2 = get_eval_func(obj2, feature2, np.s_[:, None, :])
+            return fn1(x) * fn2(x)
+
     return mvnquad(eval_func, p.mu, cov, nghp)
 
 
-@register(MarkovGaussian,
-          object, (InducingFeature, NoneType),
-          object, (InducingFeature, NoneType),
-          (int, NoneType))
+@dispatch.quadrature_expectation.register(
+    MarkovGaussian,
+    object, (InducingFeature, NoneType),
+    object, (InducingFeature, NoneType))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     Handling of quadrature expectations for Markov Gaussians (useful for time series)
@@ -92,8 +92,8 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     nghp = 40 if nghp is None else nghp
 
-    logger.warn("Quadrature is used to calculate the expectation. This means that "
-                "an analytical implementations is not available for the given combination.")
+    logger.warning("Quadrature is used to calculate the expectation. This means that "
+                   "an analytical implementations is not available for the given combination.")
 
     if obj2 is None:
         def eval_func(x):

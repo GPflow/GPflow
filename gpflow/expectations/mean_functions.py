@@ -4,9 +4,9 @@ import tensorflow as tf
 
 from . import dispatch
 from .. import mean_functions as mfn
+from ..probability_distributions import Gaussian
 from ..util import NoneType
 from .expectations import expectation
-from .probability_distributions import Gaussian
 
 
 @dispatch.expectation.register(Gaussian, (mfn.Linear, mfn.Constant), NoneType, NoneType, NoneType)

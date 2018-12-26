@@ -3,8 +3,8 @@ import tensorflow as tf
 from . import dispatch
 from .. import kernels
 from ..features import InducingPoints
+from ..probability_distributions import DiagonalGaussian, Gaussian
 from .expectations import expectation
-from .probability_distributions import DiagonalGaussian, Gaussian
 
 
 @dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.RBF, InducingPoints, kernels.Linear, InducingPoints)

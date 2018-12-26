@@ -52,7 +52,7 @@ def _conditional(Xnew: tf.Tensor,
     logger.debug("Conditional: Inducing Feature - Kernel")
     Kmm = Kuu(feature, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(feature, kernel, Xnew)  # [M, N]
-    Knn = kernel(Xnew, diag=(not full_cov))
+    Knn = kernel(Xnew, full=full_cov)
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # [N, R],  [R, N, N] or [N, R]
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
@@ -101,7 +101,7 @@ def _conditional(
     logger.debug("Conditional: Kernel")
     Kmm = kernel(X) + default_jitter_eye(X.shape[0])
     Kmn = kernel(X, Xnew)
-    Knn = kernel(Xnew, diag=(not full_cov))
+    Knn = kernel(Xnew, full=full_cov)
     mean, var = base_conditional(Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     return mean, var  # [N, R], [N, R] or [R, N, N]

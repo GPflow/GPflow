@@ -118,7 +118,7 @@ class Parameter(tfe.Variable):
         return self
 
 
-class Module:
+class Module(object):
     def __init__(self):
         self._modules = dict()
         self._parameters = dict()
@@ -173,7 +173,7 @@ class Module:
         super().__setattr__(name, value)
 
 
-class ModuleList:
+class ModuleList(object):
     def __init__(self, modules: List[ModuleLike]):
         self._modules = modules
 

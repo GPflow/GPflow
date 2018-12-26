@@ -66,8 +66,14 @@ class Kernel(Module):
         :param Y: Input 2 [M, D], can be None.
         :return: Sliced X, Y, [N, I], I - input dimension.
         """
-        X = X[..., self.active_dims]
-        Y = Y[..., self.active_dims] if Y is not None else X
+        dims = self.active_dims
+        if isinstance(dims, slice):
+            X = X[..., dims]
+            Y = Y[..., dims] if Y is not None else X
+            return X, Y
+
+        X = tf.gather(X, dims, axis=-1)
+        Y = tf.gather(Y, dims, axis=-1) if Y is not None else X
         return X, Y
 
     def slice_cov(self, cov: tf.Tensor) -> tf.Tensor:
@@ -79,7 +85,7 @@ class Kernel(Module):
             :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
             :return: [N, I, I].
         """
-        if cov.shape.ndims == 2:
+        if cov.ndims == 2:
             cov = tf.matrix_diag(cov)
 
         act_dims = self.active_dims
@@ -99,10 +105,10 @@ class Kernel(Module):
     def K_diag(self, X, presliced=False):
         pass
 
-    def __call__(self, X, Y=None, presliced=False, diag=False):
-        if diag and Y is not None:
+    def __call__(self, X, Y=None, presliced=False, full=True):
+        if not full and Y is not None:
             raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
-        if diag:
+        if not full:
             return self.K_diag(X, presliced=presliced)
         return self.K(X, Y, presliced=presliced)
 
@@ -127,13 +133,6 @@ class Combination(Kernel):
     def __init__(self, kernels):
         if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError("can only combine Kernel instances")  # pragma: no cover
-
-        # input_dim = np.max([k.input_dim
-        #                     if type(k.active_dims) is slice else
-        #                     np.max(k.active_dims) + 1
-        #                     for k in kernels])
-        # super().__init__(input_dim=input_dim)
-
         super().__init__()
 
         # add kernels to a list, flattening out instances of this class therein

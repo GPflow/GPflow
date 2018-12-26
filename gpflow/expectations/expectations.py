@@ -55,9 +55,9 @@ def expectation(p, obj1, obj2=None, nghp=None):
     """
     p, obj1, feat1, obj2, feat2 = _init_expectation(p, obj1, obj2)
     try:
-        return dispatch.expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
-    except NotImplementedError as e:
-        logger.debug(e)
+        return dispatch.expectation(p, obj1, feat1, obj2, feat2, nghp)
+    except NotImplementedError as error:
+        logger.debug(error)
         return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
 
@@ -81,7 +81,7 @@ def _init_expectation(p, obj1, obj2):
     if isinstance(p, tuple):
         mu, cov = p
         classes = [DiagonalGaussian, Gaussian, MarkovGaussian]
-        p = classes[cov.dim() - 2](*p)
+        p = classes[cov.ndim - 2](*p)
 
     obj1, feat1 = obj1 if isinstance(obj1, tuple) else (obj1, None)
     obj2, feat2 = obj2 if isinstance(obj2, tuple) else (obj2, None)

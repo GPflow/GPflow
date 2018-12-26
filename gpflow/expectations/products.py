@@ -1,12 +1,13 @@
 from functools import reduce
+
 import tensorflow as tf
 
 from . import dispatch
 from .. import kernels
 from ..features import InducingPoints
+from ..probability_distributions import DiagonalGaussian
 from ..util import NoneType
 from .expectations import expectation
-from .probability_distributions import DiagonalGaussian
 
 
 @dispatch.expectation.register(DiagonalGaussian, kernels.Product, NoneType, NoneType, NoneType)

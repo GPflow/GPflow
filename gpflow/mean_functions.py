@@ -53,7 +53,7 @@ class Linear(MeanFunction):
         If X has N rows and D columns, and Y is intended to have Q columns,
         then A must be D x Q, b must be a vector of length Q.
         """
-        super.__init__()
+        MeanFunction.__init__(self)
         A = np.ones((1, 1), dtype=default_float()) if A is None else A
         b = np.zeros(1, dtype=default_float()) if b is None else b
         self.A = Parameter(np.atleast_2d(A))

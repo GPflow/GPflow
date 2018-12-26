@@ -12,254 +12,185 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-import tensorflow as tf
-import copy
 
+import numpy as np
 import pytest
+import tensorflow as tf
+from numpy.testing import assert_allclose
+from tensorflow import convert_to_tensor as ctt
 
 import gpflow
+from gpflow import features, kernels
+from gpflow import mean_functions as mf
 from gpflow.expectations import expectation, quadrature_expectation
-from gpflow.probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
-from gpflow import kernels, mean_functions, features
-from gpflow.test_util import session_tf
-from gpflow.test_util import cache_tensor
-
-from numpy.testing import assert_allclose
+from gpflow.probability_distributions import (DiagonalGaussian, Gaussian,
+                                              MarkovGaussian)
 
 rng = np.random.RandomState(1)
 RTOL = 1e-6
 
 
-class Data:
-    num_data = 5
-    num_ind = 4
-    D_in = 2
-    D_out = 2
+num_data = 5
+num_ind = 4
+D_in = 2
+D_out = 2
 
-    Xmu = rng.randn(num_data, D_in)
-    Xmu_markov = rng.randn(num_data + 1, D_in)  # (N+1)xD
-    Xcov = rng.randn(num_data, D_in, D_in)
-    Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
-    Z = rng.randn(num_ind, D_in)
-
-
-@pytest.fixture
-def feature(session_tf):
-    return features.InducingPoints(Data.Z)
+Xmu = rng.randn(num_data, D_in)
+Xmu_markov = rng.randn(num_data + 1, D_in)  # (N+1)xD
+Xcov = rng.randn(num_data, D_in, D_in)
+Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
+Z = rng.randn(num_ind, D_in)
 
 
-@cache_tensor
-def gauss():
-    return Gaussian(
-        tf.convert_to_tensor(Data.Xmu),
-        tf.convert_to_tensor(Data.Xcov))
-
-
-@cache_tensor
-def dirac_gauss():
-    return Gaussian(
-        tf.convert_to_tensor(Data.Xmu),
-        tf.convert_to_tensor(np.zeros((Data.num_data, Data.D_in, Data.D_in))))
-
-
-@cache_tensor
-def gauss_diag():
-    return DiagonalGaussian(
-        tf.convert_to_tensor(Data.Xmu),
-        tf.convert_to_tensor(rng.rand(Data.num_data, Data.D_in)))
-
-
-@cache_tensor
-def dirac_diag():
-    return DiagonalGaussian(
-        tf.convert_to_tensor(Data.Xmu),
-        tf.convert_to_tensor(np.zeros((Data.num_data, Data.D_in))))
-
-
-@cache_tensor
 def markov_gauss():
-    D_in = Data.D_in
-    cov_params = rng.randn(Data.num_data + 1, D_in, 2 * D_in) / 2.  # (N+1)xDx2D
+    cov_params = rng.randn(num_data + 1, D_in, 2 * D_in) / 2.  # (N+1)xDx2D
     Xcov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
     Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
     Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # (N+1)xDxD
     Xcov = np.stack([Xcov, Xcross])  # 2x(N+1)xDxD
-    return MarkovGaussian(
-        tf.convert_to_tensor(Data.Xmu_markov),
-        tf.convert_to_tensor(Xcov))
+    return MarkovGaussian(ctt(Xmu_markov), ctt(Xcov))
 
 
-@cache_tensor
-def dirac_markov_gauss():
-    return MarkovGaussian(
-        tf.convert_to_tensor(Data.Xmu_markov),
-        tf.convert_to_tensor(np.zeros((2, Data.num_data + 1, Data.D_in, Data.D_in))))
+_means = {
+    'lin': mf.Linear(A=rng.randn(D_in, D_out), b=rng.randn(D_out)),
+    'identity': mf.Identity(input_dim=D_in),
+    'const': mf.Constant(c=rng.randn(D_out)),
+    'zero': mf.Zero(output_dim=D_out)
+}
 
 
-@cache_tensor
-def rbf_kern():
-    return kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand() + 1.)
+_distrs = {
+    'gauss': Gaussian(ctt(Xmu), ctt(Xcov)),
+    'dirac_gauss': Gaussian(ctt(Xmu), ctt(np.zeros((num_data, D_in, D_in)))),
+    'gauss_diag': DiagonalGaussian(ctt(Xmu), ctt(rng.rand(num_data, D_in))),
+    'dirac_diag': DiagonalGaussian(ctt(Xmu), ctt(np.zeros((num_data, D_in)))),
+    'dirac_markov_gauss': MarkovGaussian(ctt(Xmu_markov), ctt(np.zeros((2, num_data + 1, D_in, D_in)))),
+    'markov_gauss': markov_gauss()
+}
 
 
-@cache_tensor
-def lin_kern():
-    return kernels.Linear(Data.D_in, variance=rng.rand())
-
-
-@cache_tensor
-def matern_kern():
-    return kernels.Matern32(Data.D_in, variance=rng.rand())
-
-
-@cache_tensor
-def rbf_lin_sum_kern():
-    return kernels.Sum([
-        kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand() + 1.),
-        kernels.Linear(Data.D_in, variance=rng.rand())
+_kerns = {
+    'rbf': kernels.RBF(variance=rng.rand(), lengthscales=rng.rand() + 1.),
+    'lin': kernels.Linear(variance=rng.rand()),
+    'matern': kernels.Matern32(variance=rng.rand()),
+    'rbf_act_dim_0': kernels.RBF(variance=rng.rand(), lengthscales=rng.rand() + 1., active_dims=[0]),
+    'rbf_act_dim_1': kernels.RBF(variance=rng.rand(), lengthscales=rng.rand() + 1., active_dims=[1]),
+    'lin_act_dim_0': kernels.Linear(variance=rng.rand(), active_dims=[0]),
+    'lin_act_dim_1': kernels.Linear(variance=rng.rand(), active_dims=[1]),
+    'rbf_lin_sum': kernels.Sum([
+        kernels.RBF(variance=rng.rand(), lengthscales=rng.rand() + 1.),
+        kernels.Linear(variance=rng.rand())
+    ]),
+    'rbf_lin_sum2': kernels.Sum([
+        kernels.Linear(variance=rng.rand()),
+        kernels.RBF(variance=rng.rand(), lengthscales=rng.rand() + 1.),
+        kernels.Linear(variance=rng.rand()),
+        kernels.RBF(variance=rng.rand(), lengthscales=rng.rand() + 1.),
+    ]),
+    'rbf_lin_prod': kernels.Product([
+        kernels.RBF(variance=rng.rand(), lengthscales=rng.rand() + 1., active_dims=[0]),
+        kernels.Linear(variance=rng.rand(), active_dims=[1])
     ])
+}
 
 
-@cache_tensor
-def rbf_lin_sum_kern2():
-    return kernels.Sum([
-        kernels.Linear(Data.D_in, variance=rng.rand()),
-        kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand() + 1.),
-        kernels.Linear(Data.D_in, variance=rng.rand()),
-        kernels.RBF(Data.D_in, variance=rng.rand(), lengthscales=rng.rand() + 1.),
-    ])
+def kerns(*args):
+    return [_kerns[k] for k in args]
 
 
-@cache_tensor
-def rbf_lin_prod_kern():
-    return kernels.Product([
-        kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand() + 1., active_dims=[0]),
-        kernels.Linear(1, variance=rng.rand(), active_dims=[1])
-    ])
+def distrs(*args):
+    return [_distrs[k] for k in args]
 
 
-@cache_tensor
-def rbf_kern_act_dim_0():
-    return kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand() + 1., active_dims=[0])
+def means(*args):
+    return [_means[k] for k in args]
 
 
-@cache_tensor
-def rbf_kern_act_dim_1():
-    return kernels.RBF(1, variance=rng.rand(), lengthscales=rng.rand() + 1., active_dims=[1])
-
-
-@cache_tensor
-def lin_kern_act_dim_0():
-    return kernels.Linear(1, variance=rng.rand(), active_dims=[0])
-
-
-@cache_tensor
-def lin_kern_act_dim_1():
-    return kernels.Linear(1, variance=rng.rand(), active_dims=[1])
-
-
-@cache_tensor
-def lin_mean():
-    return mean_functions.Linear(A=rng.randn(Data.D_in, Data.D_out), b=rng.randn(Data.D_out))
-
-
-@cache_tensor
-def identity_mean():
-    # Note: Identity can only be used if Din == Dout
-    return mean_functions.Identity(input_dim=Data.D_in)
-
-
-@cache_tensor
-def const_mean():
-    return mean_functions.Constant(c=rng.randn(Data.D_out))
-
-
-@cache_tensor
-def zero_mean():
-    return mean_functions.Zero(output_dim=Data.D_out)
+@pytest.fixture
+def feature():
+    return features.InducingPoints(Z)
 
 
 def _check(params):
     analytic = expectation(*params)
     quad = quadrature_expectation(*params)
-    session = tf.get_default_session()
-    analytic, quad = session.run([analytic, quad])
     assert_allclose(analytic, quad, rtol=RTOL)
 
 
 # =================================== TESTS ===================================
 
-@pytest.mark.parametrize("distribution", [gauss])
-@pytest.mark.parametrize("mean1", [lin_mean, identity_mean, const_mean, zero_mean])
-@pytest.mark.parametrize("mean2", [lin_mean, identity_mean, const_mean, zero_mean])
+distr_args1 = distrs("gauss")
+mean_args = means("lin", "identity", "const", "zero")
+kern_args1 = kerns("lin", "rbf", "rbf_lin_sum", "rbf_lin_prod")
+kern_args2 = kerns("rbf", "lin", "rbf_lin_sum")
+
+
+@pytest.mark.parametrize("distribution", distr_args1)
+@pytest.mark.parametrize("mean1", mean_args)
+@pytest.mark.parametrize("mean2", mean_args)
 @pytest.mark.parametrize("arg_filter",
                          [lambda p, m1, m2: (p, m1),
                           lambda p, m1, m2: (p, m1, m2)])
-def test_mean_function_only_expectations(session_tf, distribution, mean1, mean2, arg_filter):
-    params = arg_filter(distribution(), mean1(), mean2())
+def test_mean_function_only_expectations(distribution, mean1, mean2, arg_filter):
+    params = arg_filter(distribution, mean1, mean2)
     _check(params)
 
 
-@pytest.mark.parametrize("distribution", [gauss, gauss_diag])
-@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
+@pytest.mark.parametrize("distribution", distrs("gauss", "gauss_diag"))
+@pytest.mark.parametrize("kernel", kern_args1)
 @pytest.mark.parametrize("arg_filter",
                          [lambda p, k, f: (p, k),
                           lambda p, k, f: (p, (k, f)),
                           lambda p, k, f: (p, (k, f), (k, f))])
-def test_kernel_only_expectations(session_tf, distribution, kernel, feature, arg_filter):
-    params = arg_filter(distribution(), kernel(), feature)
+def test_kernel_only_expectations(distribution, kernel, feature, arg_filter):
+    params = arg_filter(distribution, kernel, feature)
     _check(params)
 
 
-@pytest.mark.parametrize("distribution", [gauss])
-@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, matern_kern, rbf_lin_sum_kern])
-@pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
+@pytest.mark.parametrize("distribution", distr_args1)
+@pytest.mark.parametrize("kernel", kerns("rbf", "lin", "matern", "rbf_lin_sum"))
+@pytest.mark.parametrize("mean", mean_args)
 @pytest.mark.parametrize("arg_filter",
                          [lambda p, k, f, m: (p, (k, f), m),
                           lambda p, k, f, m: (p, m, (k, f))])
 def test_kernel_mean_function_expectations(
-        session_tf, distribution, kernel, feature, mean, arg_filter):
-    params = arg_filter(distribution(), kernel(), feature, mean())
+        distribution, kernel, feature, mean, arg_filter):
+    params = arg_filter(distribution, kernel, feature, mean)
     _check(params)
 
 
-@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
-def test_eKdiag_no_uncertainty(session_tf, kernel):
-    eKdiag = expectation(dirac_diag(), kernel())
-    Kdiag = kernel()(Data.Xmu)
-    eKdiag, Kdiag = session_tf.run([eKdiag, Kdiag])
+@pytest.mark.parametrize("kernel", kern_args1)
+def test_eKdiag_no_uncertainty(kernel):
+    eKdiag = expectation(_distrs['dirac_diag'], kernel)
+    Kdiag = kernel(Xmu, full=False)
     assert_allclose(eKdiag, Kdiag, rtol=RTOL)
 
 
-@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
-def test_eKxz_no_uncertainty(session_tf, kernel, feature):
-    eKxz = expectation(dirac_diag(), (kernel(), feature))
-    Kxz = kernel()(Data.Xmu, Data.Z)
-    eKxz, Kxz = session_tf.run([eKxz, Kxz])
+@pytest.mark.parametrize("kernel", kern_args1)
+def test_eKxz_no_uncertainty(kernel, feature):
+    eKxz = expectation(_distrs['dirac_diag'], (kernel, feature))
+    Kxz = kernel(Xmu, Z)
     assert_allclose(eKxz, Kxz, rtol=RTOL)
 
 
-@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern])
-@pytest.mark.parametrize("mean", [lin_mean, identity_mean, const_mean, zero_mean])
-def test_eMxKxz_no_uncertainty(session_tf, kernel, feature, mean):
-    exKxz = expectation(dirac_diag(), mean(), (kernel(), feature))
-    Kxz = kernel()(Data.Xmu, Data.Z)
-    xKxz = expectation(dirac_gauss(), mean())[:, :, None] * Kxz[:, None, :]
-    exKxz, xKxz = session_tf.run([exKxz, xKxz])
+@pytest.mark.parametrize("kernel", kern_args2)
+@pytest.mark.parametrize("mean", mean_args)
+def test_eMxKxz_no_uncertainty(kernel, feature, mean):
+    exKxz = expectation(_distrs['dirac_diag'], mean, (kernel, feature))
+    Kxz = kernel(Xmu, Z)
+    xKxz = expectation(_distrs['dirac_gauss'], mean)[:, :, None] * Kxz[:, None, :]
     assert_allclose(exKxz, xKxz, rtol=RTOL)
 
 
-@pytest.mark.parametrize("kernel", [lin_kern, rbf_kern, rbf_lin_sum_kern, rbf_lin_prod_kern])
-def test_eKzxKxz_no_uncertainty(session_tf, kernel, feature):
-    kern = kernel()
-    eKzxKxz = expectation(dirac_diag(), (kern, feature), (kern, feature))
-    Kxz = kern(Data.Xmu, Data.Z)
-    eKzxKxz, Kxz = session_tf.run([eKzxKxz, Kxz])
+@pytest.mark.parametrize("kernel", kern_args1)
+def test_eKzxKxz_no_uncertainty(kernel, feature):
+    eKzxKxz = expectation(_distrs['dirac_diag'], (kernel, feature), (kernel, feature))
+    Kxz = kernel(Xmu, Z)
     KzxKxz = Kxz[:, :, None] * Kxz[:, None, :]
     assert_allclose(eKzxKxz, KzxKxz, rtol=RTOL)
 
 
-def test_RBF_eKzxKxz_gradient_notNaN(session_tf):
+def test_RBF_eKzxKxz_gradient_notNaN():
     """
     Ensure that <K_{Z, x} K_{x, Z}>_p(x) is not NaN and correct, when
     K_{Z, Z} is zero with finite precision. See pull request #595.
@@ -274,51 +205,61 @@ def test_RBF_eKzxKxz_gradient_notNaN(session_tf):
 
     ekz = expectation(p, (kern, z), (kern, z))
 
-    g, = tf.gradients(ekz, kern.lengthscales._unconstrained_tensor)
-    grad = session_tf.run(g)
+    grad, = tf.gradients(ekz, kern.lengthscales)
     assert grad is not None and not np.isnan(grad)
 
 
-@pytest.mark.parametrize("kernel1", [rbf_kern_act_dim_0, lin_kern_act_dim_0])
-@pytest.mark.parametrize("kernel2", [rbf_kern_act_dim_1, lin_kern_act_dim_1])
-def test_eKzxKxz_separate_dims_simplification(
-        session_tf, kernel1, kernel2, feature):
-    _check((gauss_diag(), (kernel1(), feature), (kernel2(), feature)))
+@pytest.mark.parametrize("distribution", distrs("gauss_diag"))
+@pytest.mark.parametrize("kern1", kerns("rbf_act_dim_0", "lin_act_dim_0"))
+@pytest.mark.parametrize("kern2", kerns("rbf_act_dim_1", "lin_act_dim_1"))
+def test_eKzxKxz_separate_dims_simplification(distribution, kern1, kern2, feature):
+    _check((distribution, (kern1, feature), (kern2, feature)))
 
 
-def test_eKzxKxz_different_sum_kernels(session_tf, feature):
-    kern1, kern2 = rbf_lin_sum_kern(), rbf_lin_sum_kern2()
-    _check((gauss(), (kern1, feature), (kern2, feature)))
+@pytest.mark.parametrize("distribution", distr_args1)
+@pytest.mark.parametrize("kern1", kerns("rbf_lin_sum"))
+@pytest.mark.parametrize("kern2", kerns("rbf_lin_sum2"))
+def test_eKzxKxz_different_sum_kernels(distribution, kern1, kern2, feature):
+    _check((distribution, (kern1, feature), (kern2, feature)))
 
 
-def test_eKzxKxz_same_vs_different_sum_kernels(session_tf, feature):
+@pytest.mark.parametrize("distribution", distr_args1)
+@pytest.mark.parametrize("kern1", kerns("rbf_lin_sum2"))
+@pytest.mark.parametrize("kern2", kerns("rbf_lin_sum2"))
+def test_eKzxKxz_same_vs_different_sum_kernels(distribution, kern1, kern2, feature):
     # check the result is the same if we pass different objects with the same value
-    kern1 = rbf_lin_sum_kern2()
-    kern2 = copy.copy(rbf_lin_sum_kern2())
-    same = expectation(*(gauss(), (kern1, feature), (kern1, feature)))
-    different = expectation(*(gauss(), (kern1, feature), (kern2, feature)))
-    session = tf.get_default_session()
-    same, different = session.run([same, different])
+    same = expectation(*(distribution, (kern1, feature), (kern1, feature)))
+    different = expectation(*(distribution, (kern1, feature), (kern2, feature)))
     assert_allclose(same, different, rtol=RTOL)
 
 
-@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, rbf_lin_sum_kern])
-def test_exKxz_markov(session_tf, kernel, feature):
-    _check((markov_gauss(), (kernel(), feature), identity_mean()))
+@pytest.mark.parametrize("distribution", distrs("markov_gauss"))
+@pytest.mark.parametrize("kernel", kern_args2)
+@pytest.mark.parametrize("mean", means("identity"))
+def test_exKxz_markov(distribution, kernel, mean, feature):
+    _check((distribution, (kernel, feature), mean))
 
 
-@pytest.mark.parametrize("kernel", [rbf_kern, lin_kern, rbf_lin_sum_kern])
-def test_exKxz_markov_no_uncertainty(session_tf, kernel, feature):
-    exKxz = expectation(dirac_markov_gauss(), (kernel(), feature), identity_mean())
-    exKxz = session_tf.run(exKxz)
-    Kzx = kernel().compute_K(Data.Xmu_markov[:-1, :], Data.Z)  # NxM
-    xKxz = Kzx[..., None] * Data.Xmu_markov[1:, None, :]  # NxMxD
+@pytest.mark.parametrize("distribution", distrs("dirac_markov_gauss"))
+@pytest.mark.parametrize("kernel", kern_args2)
+@pytest.mark.parametrize("mean", means("identity"))
+def test_exKxz_markov_no_uncertainty(distribution, kernel, mean, feature):
+    exKxz = expectation(distribution, (kernel, feature), mean)
+    Kzx = kernel(Xmu_markov[:-1, :], Z)  # NxM
+    xKxz = Kzx[..., None] * Xmu_markov[1:, None, :]  # NxMxD
     assert_allclose(exKxz, xKxz, rtol=RTOL)
 
 
-@pytest.mark.parametrize("distribution", [gauss, gauss_diag, markov_gauss])
-def test_cov_shape_inference(session_tf, distribution, feature):
-    gauss_tuple = (distribution().mu, distribution().cov)
-    _check((gauss_tuple, (rbf_kern(), feature)))
-    if isinstance(distribution(), MarkovGaussian):
-        _check((gauss_tuple, None, (rbf_kern(), feature)))
+@pytest.mark.parametrize("kernel", kerns("rbf"))
+@pytest.mark.parametrize("distribution", distrs("gauss", "gauss_diag", "markov_gauss"))
+def test_cov_shape_inference(distribution, kernel, feature):
+    gauss_tuple = (distribution.mu, distribution.cov)
+    _check((gauss_tuple, (kernel, feature)))
+    if isinstance(distribution, MarkovGaussian):
+        _check((gauss_tuple, None, (kernel, feature)))
+
+
+# if __name__ == "__main__":
+    # pytest.main()
+# test_cov_shape_inference(_distrs['gauss_diag'], _kerns['rbf'], features.InducingPoints(Z))
+# test_kernel_only_expectations(_distrs['gauss'], _kerns['lin'], features.InducingPoints(Z), lambda p, k, f: (p, k))
