@@ -38,7 +38,7 @@ def _E(p, rbf_kern, feat1, lin_kern, feat2, nghp=None):
     D = tf.shape(Xmu)[1]
 
     def take_with_ard(value):
-        if rbf_kern.ard:
+        if not rbf_kern.ard:
             return tf.zeros((D,), dtype=value.dtype) + value
         return value
 

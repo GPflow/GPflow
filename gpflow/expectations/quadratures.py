@@ -56,10 +56,9 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     if not isinstance(p, DiagonalGaussian):
         cov = p.cov
     else:
-        iskernel1 = isinstance(obj1, kernels.Kernel)
-        iskernel2 = isinstance(obj2, kernels.Kernel)
-        separate_dims = obj1.on_separate_dims(obj2)
-        if iskernel1 and iskernel2 and separate_dims:  # no joint expectations required
+        iskern1 = isinstance(obj1, kernels.Kernel)
+        iskern2 = isinstance(obj2, kernels.Kernel)
+        if iskern1 and iskern2 and obj1.on_separate_dims(obj2):  # no joint expectations required
             eKxz1 = quadrature_expectation(p, (obj1, feature1), nghp=nghp)
             eKxz2 = quadrature_expectation(p, (obj2, feature2), nghp=nghp)
             return eKxz1[:, :, None] * eKxz2[:, None, :]

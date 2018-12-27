@@ -19,7 +19,7 @@ def _E(p, kern, _, __, ___, nghp=None):
 
     :return: N
     """
-    return kern(p.mu)
+    return kern(p.mu, full=False)
 
 
 @dispatch.expectation.register(Gaussian, kernels.RBF, InducingPoints, NoneType, NoneType)
@@ -37,7 +37,7 @@ def _E(p, kern, feat, _, __, nghp=None):
     D = tf.shape(Xmu)[1]
 
     lengthscales = kern.lengthscales()
-    if kern.ard:
+    if not kern.ard:
         lengthscales = tf.zeros((D,), dtype=lengthscales.dtype) + kern.lengthscales()
 
     chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales ** 2) + Xcov)  # NxDxD
@@ -74,7 +74,7 @@ def _E(p, mean, _, kern, feat, nghp=None):
     D = tf.shape(Xmu)[1]
 
     lengthscales = kern.lengthscales()
-    if kern.ard:
+    if not kern.ard:
         lengthscales = tf.zeros((D,), dtype=lengthscales.dtype) + lengthscales
 
     chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales ** 2) + Xcov)  # NxDxD
@@ -114,7 +114,7 @@ def _E(p, mean, _, kern, feat, nghp=None):
 
     D = tf.shape(Xmu)[1]
     lengthscales = kern.lengthscales()
-    if kern.ard:
+    if not kern.ard:
         lengthscales = tf.zeros((D,), dtype=lengthscales.dtype) + lengthscales
 
     chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales ** 2) + Xcov[0, :-1])  # NxDxD
@@ -166,7 +166,7 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     D = tf.shape(Xmu)[1]
 
     squared_lengthscales = kern.lengthscales() ** 2
-    if kern.ard:
+    if not kern.ard:
         squared_lengthscales = tf.zeros((D,), dtype=squared_lengthscales.dtype) + squared_lengthscales
 
     sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscales) ** 0.5
@@ -189,5 +189,5 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     # Compute sqrt(self(Z)) explicitly to prevent automatic gradient from
     # being NaN sometimes, see pull request #615
-    kernel_sqrt = tf.exp(-0.25 * kern.square_dist(Z, None))
+    kernel_sqrt = tf.exp(-0.25 * kern.scaled_square_dist(Z, None))
     return kern.variance() ** 2 * kernel_sqrt * tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis

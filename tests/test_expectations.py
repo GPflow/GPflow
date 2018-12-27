@@ -113,6 +113,7 @@ def feature():
 
 def _check(params):
     analytic = expectation(*params)
+    print(f">>> params = {params}")
     quad = quadrature_expectation(*params)
     assert_allclose(analytic, quad, rtol=RTOL)
 
@@ -196,17 +197,17 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     K_{Z, Z} is zero with finite precision. See pull request #595.
     """
     kern = gpflow.kernels.RBF(1, lengthscales=0.1)
-    kern.variance = 2.
+    kern.variance <<= 2.
 
     p = gpflow.probability_distributions.Gaussian(
         tf.constant([[10]], dtype=gpflow.settings.tf_float),
         tf.constant([[[0.1]]], dtype=gpflow.settings.tf_float))
     z = gpflow.features.InducingPoints([[-10.], [10.]])
 
-    ekz = expectation(p, (kern, z), (kern, z))
-
-    grad, = tf.gradients(ekz, kern.lengthscales)
-    assert grad is not None and not np.isnan(grad)
+    with tf.GradientTape() as tape:
+        ekz = expectation(p, (kern, z), (kern, z))
+        grad = tape.gradient(ekz, kern.lengthscales)
+        assert grad is not None and not np.isnan(grad)
 
 
 @pytest.mark.parametrize("distribution", distrs("gauss_diag"))

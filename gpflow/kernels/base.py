@@ -85,17 +85,28 @@ class Kernel(Module):
             :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
             :return: [N, I, I].
         """
-        if cov.ndims == 2:
+        if cov.ndim == 2:
             cov = tf.matrix_diag(cov)
 
-        act_dims = self.active_dims
-        if isinstance(act_dims, slice):
-            return cov[..., self.active_dims, self.active_dims]
+        dims = self.active_dims
+        if isinstance(dims, slice):
+            return cov[..., dims, dims]
 
-        N = cov.shape[0]
-        I = len(act_dims)
-        cov_reshaped = tf.reshape(cov, (-1, cov.shape[-1], cov.shape[-1]))
-        return tf.reshape(cov_reshaped[..., act_dims, act_dims], (N, I, I))
+        nlast = cov.shape[-1]
+        ndims = len(dims)
+
+        cov_shape = tf.shape(cov)
+        cov_reshaped = tf.reshape(cov, [-1, nlast, nlast])
+        gather1 = tf.gather(tf.transpose(cov_reshaped, [2, 1, 0]), dims)
+        gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), dims)
+        cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
+                         tf.concat([cov_shape[:-2], [ndims, ndims]], 0))
+
+        # nbatch = cov.shape[0]
+        # cov_reshaped = tf.reshape(cov, (-1, nlast, nlast))
+        # return tf.reshape(cov_reshaped[..., dims, dims], (nbatch, ndims, ndims))
+
+        return cov
 
     @abc.abstractmethod
     def K(self, X, Y=None, presliced=False):

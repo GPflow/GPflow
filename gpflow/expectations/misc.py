@@ -94,8 +94,8 @@ def _E(p, identity_mean, _, kern, feat, nghp=None):
 
 
 @dispatch.expectation.register(DiagonalGaussian,
-          object, (InducingFeature, NoneType),
-          object, (InducingFeature, NoneType))
+                               object, (InducingFeature, NoneType),
+                               object, (InducingFeature, NoneType))
 def _E(p, obj1, feat1, obj2, feat2, nghp=None):
     gaussian = Gaussian(p.mu, tf.matrix_diag(p.cov))
     return expectation(gaussian, (obj1, feat1), (obj2, feat2), nghp=nghp)
@@ -104,8 +104,8 @@ def _E(p, obj1, feat1, obj2, feat2, nghp=None):
 # Catching missing MarkovGaussian implementations by converting to Gaussian (when indifferent):
 
 @dispatch.expectation.register(MarkovGaussian,
-          object, (InducingFeature, NoneType),
-          object, (InducingFeature, NoneType))
+                               object, (InducingFeature, NoneType),
+                               object, (InducingFeature, NoneType))
 def _E(p, obj1, feat1, obj2, feat2, nghp=None):
     """
     Nota Bene: if only one object is passed, obj1 is

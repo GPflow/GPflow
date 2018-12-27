@@ -9,7 +9,8 @@ from ..util import NoneType
 from .expectations import expectation
 
 
-@dispatch.expectation.register(Gaussian, (mfn.Linear, mfn.Constant), NoneType, NoneType, NoneType)
+@dispatch.expectation.register(Gaussian, (mfn.Linear, mfn.Constant),
+                               NoneType, NoneType, NoneType)
 def _E(p, mean, _, __, ___, nghp=None):
     """
     Compute the expectation:
@@ -21,7 +22,8 @@ def _E(p, mean, _, __, ___, nghp=None):
     return mean(p.mu)
 
 
-@dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, mfn.Constant, NoneType)
+@dispatch.expectation.register(Gaussian, mfn.Constant,
+                               NoneType, mfn.Constant, NoneType)
 def _E(p, mean1, _, mean2, __, nghp=None):
     """
     Compute the expectation:
@@ -33,7 +35,8 @@ def _E(p, mean1, _, mean2, __, nghp=None):
     return mean1(p.mu)[:, :, None] * mean2(p.mu)[:, None, :]
 
 
-@dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, mfn.MeanFunction, NoneType)
+@dispatch.expectation.register(Gaussian, mfn.Constant,
+                               NoneType, mfn.MeanFunction, NoneType)
 def _E(p, mean1, _, mean2, __, nghp=None):
     """
     Compute the expectation:
@@ -47,7 +50,8 @@ def _E(p, mean1, _, mean2, __, nghp=None):
     return mean1(p.mu)[:, :, None] * e_mean2[:, None, :]
 
 
-@dispatch.expectation.register(Gaussian, mfn.MeanFunction, NoneType, mfn.Constant, NoneType)
+@dispatch.expectation.register(Gaussian, mfn.MeanFunction,
+                               NoneType, mfn.Constant, NoneType)
 def _E(p, mean1, _, mean2, __, nghp=None):
     """
     Compute the expectation:
