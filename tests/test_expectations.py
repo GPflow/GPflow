@@ -123,7 +123,7 @@ def _check(params):
 distr_args1 = distrs("gauss")
 mean_args = means("lin", "identity", "const", "zero")
 kern_args1 = kerns("lin", "rbf", "rbf_lin_sum", "rbf_lin_prod")
-kern_args2 = kerns("rbf", "lin", "rbf_lin_sum")
+kern_args2 = kerns("lin", "rbf", "rbf_lin_sum")
 
 
 @pytest.mark.parametrize("distribution", distr_args1)

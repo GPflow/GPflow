@@ -12,86 +12,110 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
+import copy
 
 import numpy as np
+import tensorflow as tf
 from numpy.testing import assert_allclose
 
-import copy
 import gpflow
+from gpflow.kernels import (RBF, ArcCosine, Constant, Coregion, Linear,
+                            Matern32, Matern52, Periodic, Polynomial,
+                            RationalQuadratic, Stationary)
 from gpflow.test_util import GPflowTestCase
 
-from .reference import referenceRbfKernel, referenceArcCosineKernel, referencePeriodicKernel
 
-class TestRbf(GPflowTestCase):
-    def setUp(self):
-        self.test_graph = tf.Graph()
-
-    def test_1d(self):
-        with self.test_context() as session:
-            lengthscale = 1.4
-            variance = 2.3
-            kernel = gpflow.kernels.RBF(1, lengthscales=lengthscale, variance=variance)
-            rng = np.random.RandomState(1)
-
-            X = tf.placeholder(gpflow.default_float())
-            X_data = rng.randn(3, 1).astype(gpflow.default_float())
-
-            kernel.compile()
-            gram_matrix = session.run(kernel(X), feed_dict={X: X_data})
-            reference_gram_matrix = referenceRbfKernel(X_data, lengthscale, variance)
-            self.assertTrue(np.allclose(gram_matrix, reference_gram_matrix))
+def ref_rbf(X, lengthScale, signalVariance):
+    nDataPoints, _ = X.shape
+    kernel = np.zeros((nDataPoints, nDataPoints))
+    for row_index in range(nDataPoints):
+        for column_index in range(nDataPoints):
+            vecA = X[row_index, :]
+            vecB = X[column_index, :]
+            delta = vecA - vecB
+            distanceSquared = np.dot(delta.T, delta)
+            kernel[row_index, column_index] = signalVariance * np.exp(-0.5 * distanceSquared / lengthScale**2)
+    return kernel
 
 
-class TestRQ(GPflowTestCase):
-    def setUp(self):
-        self.test_graph = tf.Graph()
+def ref_arccosine(X, order, weightVariances, biasVariance, signalVariance):
+    num_points = X.shape[0]
+    kernel = np.empty((num_points, num_points))
+    for row in range(num_points):
+        for col in range(num_points):
+            x = X[row]
+            y = X[col]
 
-    def test_1d(self):
-        with self.test_context() as session:
-            lengthscale = 1.4
-            variance = 2.3
-            kSE = gpflow.kernels.RBF(1, lengthscales=lengthscale, variance=variance)
-            kRQ = gpflow.kernels.RationalQuadratic(1, lengthscales=lengthscale, variance=variance, alpha=1e8)
-            rng = np.random.RandomState(1)
+            numerator = (weightVariances * x).dot(y) + biasVariance
 
-            X = tf.placeholder(gpflow.default_float())
-            X_data = rng.randn(6, 1).astype(gpflow.default_float())
+            x_denominator = np.sqrt((weightVariances * x).dot(x) + biasVariance)
+            y_denominator = np.sqrt((weightVariances * y).dot(y) + biasVariance)
+            denominator = x_denominator * y_denominator
 
-            kSE.compile()
-            kRQ.compile()
-            gram_matrix_SE = session.run(kSE(X), feed_dict={X: X_data})
-            gram_matrix_RQ = session.run(kRQ(X), feed_dict={X: X_data})
-            np.testing.assert_allclose(gram_matrix_SE, gram_matrix_RQ)
+            theta = np.arccos(np.clip(numerator / denominator, -1., 1.))
+            if order == 0:
+                J = np.pi - theta
+            elif order == 1:
+                J = np.sin(theta) + (np.pi - theta) * np.cos(theta)
+            elif order == 2:
+                J = 3. * np.sin(theta) * np.cos(theta)
+                J += (np.pi - theta) * (1. + 2. * np.cos(theta) ** 2)
+
+            kernel[row, col] = signalVariance * (1. / np.pi) * J * \
+                               x_denominator ** order * \
+                               y_denominator ** order
+    return kernel
+
+
+def ref_periodic(X, lengthScale, signalVariance, period):
+    # Based on the GPy implementation of standard_period kernel
+    base = np.pi * (X[:, None, :] - X[None, :, :]) / period
+    exp_dist = np.exp(-0.5 * np.sum(np.square(np.sin(base) / lengthScale), axis=-1))
+    return signalVariance * exp_dist
+
+
+def test_rbf_1d(self):
+    lengthscale = 1.4
+    variance = 2.3
+    kernel = gpflow.kernels.RBF(1, lengthscales=lengthscale, variance=variance)
+    rng = np.random.RandomState(1)
+
+    X = rng.randn(3, 1)
+    gram_matrix = kernel(X)
+    reference_gram_matrix = ref_rbf(X, lengthscale, variance)
+
+    assert_allclose(gram_matrix, reference_gram_matrix)
+
+
+def test_rq_1d(self):
+    lengthscale = 1.4
+    variance = 2.3
+    kSE = gpflow.kernels.RBF(1, lengthscales=lengthscale, variance=variance)
+    kRQ = gpflow.kernels.RationalQuadratic(1, lengthscales=lengthscale, variance=variance, alpha=1e8)
+    rng = np.random.RandomState(1)
+    X = rng.randn(6, 1).astype(gpflow.default_float())
+
+    gram_matrix_SE = kSE(X)
+    gram_matrix_RQ = kRQ(X)
+    assert_allclose(gram_matrix_SE, gram_matrix_RQ)
 
 
 class TestArcCosine(GPflowTestCase):
-    def setUp(self):
-        self.test_graph = tf.Graph()
+    def assert_kern_err(self, D, variance, weight_variances, bias_variance, order, ARD, X):
+        kernel = gpflow.kernels.ArcCosine(
+            D,
+            order=order,
+            variance=variance,
+            weight_variances=weight_variances,
+            bias_variance=bias_variance,
+            ARD=ARD)
 
-    def evalKernelError(self, D, variance, weight_variances,
-                        bias_variance, order, ARD, X_data):
-        with self.test_context() as session:
-            kernel = gpflow.kernels.ArcCosine(
-                D,
-                order=order,
-                variance=variance,
-                weight_variances=weight_variances,
-                bias_variance=bias_variance,
-                ARD=ARD)
+        if weight_variances is None:
+            weight_variances = 1.
 
-            if weight_variances is None:
-                weight_variances = 1.
-            kernel.compile()
-            X = tf.placeholder(gpflow.default_float())
-            gram_matrix = session.run(kernel(X), feed_dict={X: X_data})
-            reference_gram_matrix = referenceArcCosineKernel(
-                X_data, order,
-                weight_variances,
-                bias_variance,
-                variance)
-
-            assert_allclose(gram_matrix, reference_gram_matrix)
+        gram_matrix = kernel(X)
+        reference_gram_matrix = ref_arccosine(X, order, weight_variances, bias_variance, variance)
+        assert_allclose(gram_matrix, reference_gram_matrix)
 
     def test_1d(self):
         with self.test_context():
@@ -173,7 +197,7 @@ class TestPeriodic(GPflowTestCase):
                 D, period=period, variance=variance, lengthscales=lengthscale)
 
             X = tf.placeholder(gpflow.default_float())
-            reference_gram_matrix = referencePeriodicKernel(
+            reference_gram_matrix = ref_periodic(
                 X_data, lengthscale, variance, period)
             kernel.compile()
             gram_matrix = session.run(kernel(X), feed_dict={X: X_data})
@@ -278,38 +302,26 @@ class TestKernSymmetry(GPflowTestCase):
                 self.assertTrue(np.allclose(errors, 0))
 
 
-class TestKernDiags(GPflowTestCase):
-    def setUp(self):
-        self.test_graph = tf.Graph()
-        with self.test_context():
-            inputdim = 3
-            rng = np.random.RandomState(1)
-            self.rng = rng
-            self.dim = inputdim
-            self.kernels = [k(inputdim) for k in gpflow.kernels.Stationary.__subclasses__() +
-                            [gpflow.kernels.Constant,
-                             gpflow.kernels.Linear,
-                             gpflow.kernels.Polynomial]]
-            self.kernels.append(gpflow.kernels.RBF(inputdim) + gpflow.kernels.Linear(inputdim))
-            self.kernels.append(gpflow.kernels.RBF(inputdim) * gpflow.kernels.Linear(inputdim))
-            self.kernels.append(gpflow.kernels.RBF(inputdim) +
-                                gpflow.kernels.Linear(
-                                    inputdim, ARD=True, variance=rng.rand(inputdim)))
-            self.kernels.append(gpflow.kernels.Periodic(inputdim))
-            self.kernels.extend(gpflow.kernels.ArcCosine(inputdim, order=order)
-                                for order in gpflow.kernels.ArcCosine.implemented_orders)
+def kernels():
+    rng = np.random.RandomState(1)
+    dim = 3
+    ks = [k() for k in Stationary.__subclasses__() + [Constant, Linear, Polynomial, Periodic]]
+    orders = ArcCosine.implemented_orders
+    ks += [ArcCosine(order=order) for order in orders]
+    ks += [RBF() + Linear(),
+           RBF() * Linear(),
+           RBF() + Linear(ard=True, variance=rng.rand(dim))]
+    return ks
 
-    def test(self):
-        with self.test_context() as session:
-            for k in self.kernels:
-                k.initialize(session=session, force=True)
-                X = tf.placeholder(tf.float64, [30, self.dim])
-                rng = np.random.RandomState(1)
-                X_data = rng.randn(30, self.dim)
-                k1 = k(X)
-                k2 = tf.diag_part(k(X))
-                k1, k2 = session.run([k1, k2], feed_dict={X: X_data})
-                self.assertTrue(np.allclose(k1, k2))
+
+def test_diags(kernel):
+    X = tf.placeholder(tf.float64, [30, self.dim])
+    rng = np.random.RandomState(1)
+    X_data = np.random.randn(30, self.dim)
+    k1 = k(X)
+    k2 = tf.diag_part(k(X))
+    k1, k2 = session.run([k1, k2], feed_dict={X: X_data})
+    self.assertTrue(np.allclose(k1, k2))
 
 
 class TestAdd(GPflowTestCase):
