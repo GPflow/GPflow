@@ -3,8 +3,8 @@ name: Feature request
 about: Use this template for raising a feature request
 ---
 
-**Please make sure that this is a feature request.**\
-**Please fill out the template below**
+### Please make sure that this is a feature request.
+### Please fill out the template below.
 ___
 
 ... Are you willing to contribute it (Yes/No):

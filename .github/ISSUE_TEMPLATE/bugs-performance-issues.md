@@ -3,8 +3,9 @@ name: Bug or performance issue report
 about: Use this template for reporting a bug or a performance issue.
 ---
 
-**Please make sure this is a bug, performance or build issue.**\
-**Please fill out the template below.**
+### Please make sure this is a bug, performance or build issue.
+
+### Please fill out the template below.
 ___
 
 System information:
