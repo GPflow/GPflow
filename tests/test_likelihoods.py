@@ -282,7 +282,8 @@ def test_softmax_y_shape_assert(session_tf):
         assert "assertion failed" in e.message
 
 
-def test_bernoulli_equivalence(session_tf):
+def test_bernoulli_equiv_cond_mean_var():
+    sess = gpflow.get_default_session()
     F, Y, feed = _prepare(dimF=2, dimY=1)
     Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1))
     F = tf.stack([F[:, 0], tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1)
@@ -293,30 +294,68 @@ def test_bernoulli_equivalence(session_tf):
 
     ls = gpflow.likelihoods.SoftMax(2)
     ls.num_monte_carlo_points = int(1e7)
-    ls.compile()
     lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
     lb.num_gauss_hermite_points = 50
-    lb.compile()
 
-    ls_cm = session_tf.run(ls.conditional_mean(F), feed_dict=feed)[:, :1]
-    lb_cm = session_tf.run(lb.conditional_mean(F[:, :1]), feed_dict=feed)
-    ls_cv = session_tf.run(ls.conditional_variance(F), feed_dict=feed)[:, :1]
-    lb_cv = session_tf.run(lb.conditional_variance(F[:, :1]), feed_dict=feed)
-    ls_lp = session_tf.run(ls.logp(F, Ylabel), feed_dict=feed)
-    lb_lp = session_tf.run(lb.logp(F[:, :1], Y), feed_dict=feed)
+    runs = [ls.conditional_mean(F),
+            lb.conditional_mean(F[:, :1]),
+            ls.conditional_variance(F),
+            lb.conditional_variance(F[:, :1]),
+            ls.logp(F, Ylabel),
+            lb.logp(F[:, :1], Y)]
+
+    ls_cm, lb_cm, ls_cv, lb_cv, ls_lp, lb_lp = sess.run(runs, feed_dict=feed)
+    ls_cm, ls_cv = ls_cm[:, :1], ls_cv[:, :1]
 
     assert_allclose(ls_cm, lb_cm)
     assert_allclose(ls_cv, lb_cv)
     assert_allclose(ls_lp, lb_lp)
 
-    ls_pm, ls_pv = session_tf.run(ls.predict_mean_and_var(F, Fvar), feed_dict=feed)
-    lb_pm, lb_pv = session_tf.run(lb.predict_mean_and_var(F[:, :1], Fvar[:, :1]), feed_dict=feed)
+
+@pytest.mark.skip(message="Memory hungry")
+def test_bernoulli_equiv_pred_mean_var():
+    sess = gpflow.get_default_session()
+    F, Y, feed = _prepare(dimF=2, dimY=1)
+    Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1))
+    F = tf.stack([F[:, 0], tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1)
+    Ylabel = 1 - Y  # We need the 1 - Y, as we need to pass the *label* to SoftMax
+
+    def logistic_link(x):
+        return 1.0 / (1.0 + tf.exp(-x))
+
+    ls = gpflow.likelihoods.SoftMax(2)
+    ls.num_monte_carlo_points = int(1e7)
+    lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
+    lb.num_gauss_hermite_points = 50
+
+    preds = [ls.predict_mean_and_var(F, Fvar),
+             lb.predict_mean_and_var(F[:, :1], Fvar[:, :1])]
+    (ls_pm, ls_pv), (lb_pm, lb_pv) = sess.run(preds, feed_dict=feed)
 
     assert_allclose(ls_pm[:, 0, None], lb_pm, rtol=1e-3)
     assert_allclose(ls_pv[:, 0, None], lb_pv, rtol=1e-3)
 
-    ls_ve = session_tf.run(ls.variational_expectations(F, Fvar, Ylabel), feed_dict=feed)
-    lb_ve = session_tf.run(lb.variational_expectations(F[:, :1], Fvar[:, :1], Y), feed_dict=feed)
+
+@pytest.mark.skip(message="Memory hungry")
+def test_bernoulli_equiv_var_exps():
+    sess = gpflow.get_default_session()
+    F, Y, feed = _prepare(dimF=2, dimY=1)
+    Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1))
+    F = tf.stack([F[:, 0], tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1)
+    Ylabel = 1 - Y  # We need the 1 - Y, as we need to pass the *label* to SoftMax
+
+    def logistic_link(x):
+        return 1.0 / (1.0 + tf.exp(-x))
+
+    ls = gpflow.likelihoods.SoftMax(2)
+    ls.num_monte_carlo_points = int(1e7)
+    lb = gpflow.likelihoods.Bernoulli(invlink=logistic_link)
+    lb.num_gauss_hermite_points = 50
+
+    var_exps = [ls.variational_expectations(F, Fvar, Ylabel),
+                lb.variational_expectations(F[:, :1], Fvar[:, :1], Y)]
+
+    ls_ve, lb_ve = sess.run(var_exps, feed_dict=feed)
 
     assert_allclose(ls_ve[:, 0, None], lb_ve, rtol=1e-3)
 
