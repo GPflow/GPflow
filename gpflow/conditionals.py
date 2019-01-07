@@ -171,28 +171,6 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
     return samples, mean, cov
 
 
-# @sample_conditional.register(object, object, Kernel, object)
-# @name_scope("sample_conditional")
-# def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=False, full_output_cov=False, num_samples=None):
-#     if full_cov and full_output_cov:
-#         raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
-#                                   "implemented for sample_conditional.")
-
-#     logger.debug("sample conditional: Kernel")
-#     if full_output_cov:
-#         raise NotImplementedError("full_output_cov is not implemented")
-
-#     mean, cov = conditional(Xnew, X, kern, f, q_sqrt=q_sqrt, white=white, full_cov=full_cov)
-#     if full_cov:
-#         mean = tf.matrix_transpose(mean)
-#     cov_structure = "full" if full_cov else "diag"
-#     samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)
-#     if full_cov:
-#         samples = tf.matrix_transpose(samples)
-#         mean = tf.matrix_transpose(mean)
-#     return samples, mean, cov
-
-
 # -----------------
 # CONDITIONAL MATHS
 # -----------------
