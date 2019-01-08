@@ -449,8 +449,8 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
     r"""
     Takes the mean and variance of an uncorrelated L-dimensional latent GP
-    and returns the mean and the variance of the mixed GP, `f = W \times g`,
-    where both f and g are GPs.
+    and returns the mean and the variance of the mixed GP, `f = W g`,
+    where both f and g are GPs, with W having a shape [P, L]
 
     :param W: [P, L]
     :param g_mu: [..., N, L]
