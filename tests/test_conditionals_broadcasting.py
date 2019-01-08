@@ -49,8 +49,8 @@ class Data:
 # @pytest.mark.parametrize("conditional_type", ["mixing", "Z", "inducing_points"])
 def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type):
     """
-    Test that the `conditional` and `sample_conditional` broadcasts correctly 
-    over leading dimensions of Xnew. Xnew can be shape [..., N, D], 
+    Test that the `conditional` and `sample_conditional` broadcasts correctly
+    over leading dimensions of Xnew. Xnew can be shape [..., N, D],
     and conditional should broadcast over the [...].
     """
     X_ = tf.placeholder(tf.float64, [None, None])
@@ -121,7 +121,7 @@ def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type)
         )
     )
 
-    assert_allclose(ss_S12, ss)
+    assert_allclose(ss_S12.shape, ss.shape)
     assert_allclose(ms_S12, ms)
     assert_allclose(vs_S12, vs)
     assert_allclose(ms_S1_S2.reshape(Data.S1 * Data.S2, Data.N, Data.Dy), ms)
@@ -133,169 +133,169 @@ def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type)
         assert_allclose(vs_S1_S2.reshape(Data.S1 * Data.S2, Data.N, Data.Dy), vs)
 
 
-# @pytest.mark.parametrize("full_cov", [False])
-# def test_sample_conditional_broadcasting(session_tf, full_cov):
-#     """
-#     Test that the *sample* conditional broadcasts correctly over leading dimensions of Xnew
-#     Xnew can be shape [..., N, D], and conditional should broadcast over the [...]
-#     """
-#     white = True
-#     S1, S2, Dy, N, M, Dx = 7, 6, 5, 4, 3, 2
+@pytest.mark.parametrize("full_cov", [False])
+def test_sample_conditional_broadcasting(session_tf, full_cov):
+    """
+    Test that the *sample* conditional broadcasts correctly over leading dimensions of Xnew
+    Xnew can be shape [..., N, D], and conditional should broadcast over the [...]
+    """
+    white = True
+    S1, S2, Dy, N, M, Dx = 7, 6, 5, 4, 3, 2
 
-#     SX = np.random.randn(S1*S2, N, Dx)
-#     S1_S2_X = np.reshape(SX, [S1, S2, N, Dx])
-#     Z = np.random.randn(M, Dx)
-#     Z = gpflow.features.InducingPoints(Z)
+    SX = np.random.randn(S1*S2, N, Dx)
+    S1_S2_X = np.reshape(SX, [S1, S2, N, Dx])
+    Z = np.random.randn(M, Dx)
+    Z = gpflow.features.InducingPoints(Z)
 
-#     kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
+    kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
 
-#     q_mu = np.random.randn(M, Dy)
-#     q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
+    q_mu = np.random.randn(M, Dy)
+    q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
 
-#     x = tf.placeholder(tf.float64, [None, None])
+    x = tf.placeholder(tf.float64, [None, None])
 
-#     _, mean_tf, cov_tf = sample_conditional(
-#         x,
-#         Z,
-#         kern,
-#         q_mu,
-#         q_sqrt=tf.identity(q_sqrt),
-#         white=white,
-#         full_cov=full_cov
-#     )
+    _, mean_tf, cov_tf = sample_conditional(
+        x,
+        Z,
+        kern,
+        q_mu,
+        q_sqrt=tf.identity(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    )
 
-#     ms, vs = [], []
-#     for X in SX:
-#         m, v = session_tf.run([mean_tf, cov_tf], {x: X})
-#         ms.append(m)
-#         vs.append(v)
+    ms, vs = [], []
+    for X in SX:
+        m, v = session_tf.run([mean_tf, cov_tf], {x: X})
+        ms.append(m)
+        vs.append(v)
 
-#     ms = np.array(ms)
-#     vs = np.array(vs)
+    ms = np.array(ms)
+    vs = np.array(vs)
 
-#     ms_S12, vs_S12 = session_tf.run(conditional(
-#         SX,
-#         Z,
-#         kern,
-#         q_mu,
-#         q_sqrt=tf.convert_to_tensor(q_sqrt),
-#         white=white,
-#         full_cov=full_cov
-#     ))
+    ms_S12, vs_S12 = session_tf.run(conditional(
+        SX,
+        Z,
+        kern,
+        q_mu,
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    ))
 
-#     ms_S1_S2, vs_S1_S2 = session_tf.run(conditional(
-#         S1_S2_X,
-#         Z,
-#         kern,
-#         q_mu,
-#         q_sqrt=tf.convert_to_tensor(q_sqrt),
-#         white=white,
-#         full_cov=full_cov
-#     ))
+    ms_S1_S2, vs_S1_S2 = session_tf.run(conditional(
+        S1_S2_X,
+        Z,
+        kern,
+        q_mu,
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov
+    ))
 
-#     assert_allclose(ms_S12, ms)
-#     assert_allclose(vs_S12, vs)
-#     assert_allclose(ms_S1_S2.reshape(S1 * S2, N, Dy), ms)
+    assert_allclose(ms_S12, ms)
+    assert_allclose(vs_S12, vs)
+    assert_allclose(ms_S1_S2.reshape(S1 * S2, N, Dy), ms)
 
-#     if full_cov:
-#         assert_allclose(vs_S1_S2.reshape(S1 * S2, Dy, N, N), vs)
-#     else:
-#         assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
-
-
-# # -------------------------------------------
-# # Test utility functions used in conditionals
-# # -------------------------------------------
-
-# # _mix_latent_gps
-# @pytest.mark.parametrize("full_cov", [True, False])
-# @pytest.mark.parametrize("full_output_cov", [True, False])
-# def test_broadcasting_mix_latent_gps(session_tf, full_cov, full_output_cov):
-#     S, N = 7, 20  # batch size, num data points
-#     P, L = 10, 5  # observation dimensionality, num latent GPs
-#     W = np.random.randn(P, L)  # mixing matrix
-#     g_mu = np.random.randn(S, N, L)  # mean of the L latent GPs
-
-#     g_sqrt_diag = np.tril(np.random.randn(S*L, N, N), -1)  # [L*S, N, N]
-#     g_sqrt_diag = np.reshape(g_sqrt_diag, [L, S, N, N])
-#     g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [L, S, N, N]
-#     g_var = np.zeros([S, N, L, N, L])
-#     for l in range(L):
-#         g_var[:, :, l, :, l] = g_var_diag[l, :, :, :]  # replace diagonal elements by g_var_diag
-
-#     # reference numpy implementation for mean
-#     f_mu_ref = g_mu @ W.T  # [S, N, P]
-
-#     # reference numpy implementation for variance
-#     g_var_tmp = np.transpose(g_var, [0, 1, 3, 2, 4])  # [S, N, N, L, L]
-#     f_var_ref = W @ g_var_tmp @ W.T  # [S, N, N, P, P]
-#     f_var_ref = np.transpose(f_var_ref, [0, 1, 3, 2, 4])  # [S, N, P, N, P]
-
-#     if not full_cov:
-#         g_var_diag = np.array([g_var_diag[:, :, n, n] for n in range(N)])  # [N, L, S]
-#         g_var_diag = np.transpose(g_var_diag, [2, 0, 1])  # [S, N, L]
-
-#     # run gpflow's implementation
-#     f_mu, f_var = session_tf.run(_mix_latent_gp(
-#         tf.convert_to_tensor(W),
-#         tf.convert_to_tensor(g_mu),
-#         tf.convert_to_tensor(g_var_diag),
-#         full_cov,
-#         full_output_cov
-#     ))
-
-#     # we strip down f_var_ref to the elements we need
-#     if not full_output_cov and not full_cov:
-#         f_var_ref = np.array([f_var_ref[:, :, p, :, p] for p in range(P)])  # [P, S, N, N]
-#         f_var_ref = np.array([f_var_ref[:, :, n, n] for n in range(N)])  # [N, P, S]
-#         f_var_ref = np.transpose(f_var_ref, [2, 0, 1])  # [S, N, P]
-
-#     elif not full_output_cov and full_cov:
-#         f_var_ref = np.array([f_var_ref[:, :, p, :, p] for p in range(P)])  # [P, S, N, N]
-#         f_var_ref = np.transpose(f_var_ref, [1, 0, 2, 3])  # [S, P, N, N]
-
-#     elif full_output_cov and not full_cov:
-#         f_var_ref = np.array([f_var_ref[:, n, :, n, :] for n in range(N)])  # [N, S, P, P]
-#         f_var_ref = np.transpose(f_var_ref, [1, 0, 2, 3])  # [S, N, P, P]
-
-#     else:
-#         pass  # f_var_ref has shape [..., N, P, N, P] as expected
-
-#     # check equality for mean and variance of f
-#     assert_allclose(f_mu_ref, f_mu)
-#     assert_allclose(f_var_ref, f_var)
+    if full_cov:
+        assert_allclose(vs_S1_S2.reshape(S1 * S2, Dy, N, N), vs)
+    else:
+        assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
 
-# # rollaxis
-# @pytest.mark.parametrize("rolls", [1, 2])
-# @pytest.mark.parametrize("direction", ["left", "right"])
-# def test_rollaxis(session_tf, rolls, direction):
-#     A = np.random.randn(10, 5, 3)
-#     A_tf = tf.convert_to_tensor(A)
+# -------------------------------------------
+# Test utility functions used in conditionals
+# -------------------------------------------
 
-#     if direction == "left":
-#         perm = [1, 2, 0] if rolls == 1 else [2, 0, 1]
-#     elif direction == "right":
-#         perm = [2, 0, 1] if rolls == 1 else [1, 2, 0]
+# _mix_latent_gps
+@pytest.mark.parametrize("full_cov", [True, False])
+@pytest.mark.parametrize("full_output_cov", [True, False])
+def test_broadcasting_mix_latent_gps(session_tf, full_cov, full_output_cov):
+    S, N = 7, 20  # batch size, num data points
+    P, L = 10, 5  # observation dimensionality, num latent GPs
+    W = np.random.randn(P, L)  # mixing matrix
+    g_mu = np.random.randn(S, N, L)  # mean of the L latent GPs
 
-#     A_rolled_ref = np.transpose(A, perm)
+    g_sqrt_diag = np.tril(np.random.randn(S*L, N, N), -1)  # [L*S, N, N]
+    g_sqrt_diag = np.reshape(g_sqrt_diag, [L, S, N, N])
+    g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [L, S, N, N]
+    g_var = np.zeros([S, N, L, N, L])
+    for l in range(L):
+        g_var[:, :, l, :, l] = g_var_diag[l, :, :, :]  # replace diagonal elements by g_var_diag
 
-#     if direction == "left":
-#         A_rolled_tf = _rollaxis_left(A_tf, rolls)
-#     elif direction == "right":
-#         A_rolled_tf = _rollaxis_right(A_tf, rolls)
+    # reference numpy implementation for mean
+    f_mu_ref = g_mu @ W.T  # [S, N, P]
 
-#     A_rolled_tf = session_tf.run(A_rolled_tf)
-#     assert_allclose(A_rolled_ref, A_rolled_tf)
+    # reference numpy implementation for variance
+    g_var_tmp = np.transpose(g_var, [0, 1, 3, 2, 4])  # [S, N, N, L, L]
+    f_var_ref = W @ g_var_tmp @ W.T  # [S, N, N, P, P]
+    f_var_ref = np.transpose(f_var_ref, [0, 1, 3, 2, 4])  # [S, N, P, N, P]
+
+    if not full_cov:
+        g_var_diag = np.array([g_var_diag[:, :, n, n] for n in range(N)])  # [N, L, S]
+        g_var_diag = np.transpose(g_var_diag, [2, 0, 1])  # [S, N, L]
+
+    # run gpflow's implementation
+    f_mu, f_var = session_tf.run(_mix_latent_gp(
+        tf.convert_to_tensor(W),
+        tf.convert_to_tensor(g_mu),
+        tf.convert_to_tensor(g_var_diag),
+        full_cov,
+        full_output_cov
+    ))
+
+    # we strip down f_var_ref to the elements we need
+    if not full_output_cov and not full_cov:
+        f_var_ref = np.array([f_var_ref[:, :, p, :, p] for p in range(P)])  # [P, S, N, N]
+        f_var_ref = np.array([f_var_ref[:, :, n, n] for n in range(N)])  # [N, P, S]
+        f_var_ref = np.transpose(f_var_ref, [2, 0, 1])  # [S, N, P]
+
+    elif not full_output_cov and full_cov:
+        f_var_ref = np.array([f_var_ref[:, :, p, :, p] for p in range(P)])  # [P, S, N, N]
+        f_var_ref = np.transpose(f_var_ref, [1, 0, 2, 3])  # [S, P, N, N]
+
+    elif full_output_cov and not full_cov:
+        f_var_ref = np.array([f_var_ref[:, n, :, n, :] for n in range(N)])  # [N, S, P, P]
+        f_var_ref = np.transpose(f_var_ref, [1, 0, 2, 3])  # [S, N, P, P]
+
+    else:
+        pass  # f_var_ref has shape [..., N, P, N, P] as expected
+
+    # check equality for mean and variance of f
+    assert_allclose(f_mu_ref, f_mu)
+    assert_allclose(f_var_ref, f_var)
 
 
-# @pytest.mark.parametrize("rolls", [1, 2])
-# def test_rollaxis_idempotent(session_tf, rolls):
-#     A = np.random.randn(10, 5, 3, 20, 1)
-#     A_tf = tf.convert_to_tensor(A)
-#     A_left_right = session_tf.run(_rollaxis_left(_rollaxis_right(A_tf, 2), 2))
-#     A_right_left = session_tf.run(_rollaxis_right(_rollaxis_left(A_tf, 2), 2))
+# rollaxis
+@pytest.mark.parametrize("rolls", [1, 2])
+@pytest.mark.parametrize("direction", ["left", "right"])
+def test_rollaxis(session_tf, rolls, direction):
+    A = np.random.randn(10, 5, 3)
+    A_tf = tf.convert_to_tensor(A)
 
-#     assert_allclose(A, A_left_right)
-#     assert_allclose(A, A_right_left)
+    if direction == "left":
+        perm = [1, 2, 0] if rolls == 1 else [2, 0, 1]
+    elif direction == "right":
+        perm = [2, 0, 1] if rolls == 1 else [1, 2, 0]
+
+    A_rolled_ref = np.transpose(A, perm)
+
+    if direction == "left":
+        A_rolled_tf = _rollaxis_left(A_tf, rolls)
+    elif direction == "right":
+        A_rolled_tf = _rollaxis_right(A_tf, rolls)
+
+    A_rolled_tf = session_tf.run(A_rolled_tf)
+    assert_allclose(A_rolled_ref, A_rolled_tf)
+
+
+@pytest.mark.parametrize("rolls", [1, 2])
+def test_rollaxis_idempotent(session_tf, rolls):
+    A = np.random.randn(10, 5, 3, 20, 1)
+    A_tf = tf.convert_to_tensor(A)
+    A_left_right = session_tf.run(_rollaxis_left(_rollaxis_right(A_tf, 2), 2))
+    A_right_left = session_tf.run(_rollaxis_right(_rollaxis_left(A_tf, 2), 2))
+
+    assert_allclose(A, A_left_right)
+    assert_allclose(A, A_right_left)
 

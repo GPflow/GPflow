@@ -157,16 +157,17 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
         # cov: [P, ..., N, N]
         mean_PN = tf.matrix_transpose(mean)  # [..., P, N]
         rk = tf.rank(cov)
-        perm = _get_perm_with_leading_dims(rk - 3, 0, rk - 2, rk - 1, offset=1)
-        cov_PNN = tf.transpose(cov, perm=perm)  # [..., P, N, N]
-        samples = _sample_mvn(mean_PN, cov_PNN, 'full', num_samples=num_samples)  # [(S), ..., P, N]
-        samples = tf.matrix_transpose(samples)  # [(S), ..., N, P]
+        # perm = _get_perm_with_leading_dims(rk - 3, 0, rk - 2, rk - 1, offset=1)
+        # cov_PNN = tf.transpose(cov, perm=perm)  # [..., P, N, N]
+        cov_PNN = cov
+        samples = _sample_mvn(mean_PN, cov_PNN, 'full', num_samples=num_samples)  # [..., (S), P, N]
+        samples = tf.matrix_transpose(samples)  # [..., (S), P, N]
 
     else:
         # mean: [..., N, P]
         # cov: [..., N, P] or [..., N, P, P]
         cov_structure = "full" if full_output_cov else "diag"
-        samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [(S), ..., N, P]
+        samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [..., (S), P, N]
 
     return samples, mean, cov
 
@@ -376,18 +377,19 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     :param cov_structure: "diag" or "full"
     - "diag": cov holds the diagonal elements of the covariance matrix
     - "full": cov holds the full covariance matrix (without jitter)
-    :return: sample from the MVN of shape [(S), ..., N, D], S = num_samples
+    :return: sample from the MVN of shape [..., (S), N, D], S = num_samples
     """
     mean_shape = tf.shape(mean)
     S = num_samples if num_samples is not None else 1
     D = mean_shape[-1]
+    leading_dims = mean_shape[:-2]
 
     if cov_structure == "diag":
         # mean: [..., N, D] and cov [..., N, D]
         with tf.control_dependencies([tf.assert_equal(tf.rank(mean), tf.rank(cov))]):
-            eps_shape = tf.concat([[S], mean_shape], 0)
-            eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [S, ..., N, D]
-            samples = mean + tf.sqrt(cov)[None, ...] * eps  # [S, ..., N, D]
+            eps_shape = tf.concat([leading_dims, [S], mean_shape[-2:]], 0)
+            eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [..., S, N, D]
+            samples = mean[..., None, :, :] + tf.sqrt(cov)[..., None, :, :] * eps  # [..., S, N, D]
     elif cov_structure == "full":
         # mean: [..., N, D] and cov [..., N, D, D]
         with tf.control_dependencies([tf.assert_equal(tf.rank(mean) + 1, tf.rank(cov))]):
@@ -399,7 +401,10 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
             eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [..., N, D, S]
             chol = tf.cholesky(cov + jittermat)  # [..., N, D, D]
             samples = mean[..., None] + tf.matmul(chol, eps)  # [..., N, D, S]
-            samples = _rollaxis_right(samples, 1)  # [S, ..., N, D]
+            k = tf.rank(samples)
+            perm = _get_perm_with_leading_dims(k - 3, k - 1, k - 3, k - 2)
+            samples = tf.transpose(samples, perm)  # [..., S, N, D]
+            # samples = _rollaxis_right(samples, 1)  # [S, ..., N, D]
     else:
         raise NotImplementedError  # pragma: no cover
 
