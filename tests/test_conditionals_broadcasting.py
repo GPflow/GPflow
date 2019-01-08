@@ -45,7 +45,7 @@ class Data:
 
 @pytest.mark.parametrize("full_cov", [False, True])
 @pytest.mark.parametrize("white", [True, False])
-@pytest.mark.parametrize("conditional_type", ["Z", "inducing_points"])
+@pytest.mark.parametrize("conditional_type", ["mixing"])
 # @pytest.mark.parametrize("conditional_type", ["mixing", "Z", "inducing_points"])
 def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type):
     """
@@ -73,6 +73,10 @@ def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type)
             W=Data.W
         )
 
+    if conditional_type == "mixing" and full_cov:
+        pytest.skip("combination is not implemented")
+
+    num_samples = 5
     sample_tf, mean_tf, cov_tf = sample_conditional(
         X_,
         feat,
@@ -81,7 +85,7 @@ def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type)
         q_sqrt=tf.convert_to_tensor(q_sqrt),
         white=white,
         full_cov=full_cov,
-        num_samples=3
+        num_samples=num_samples
     )
 
     ss, ms, vs = [], [], []
@@ -104,7 +108,7 @@ def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type)
             q_sqrt=tf.convert_to_tensor(q_sqrt),
             white=white,
             full_cov=full_cov,
-            num_samples=3
+            num_samples=num_samples
         )
     )
 
@@ -117,7 +121,7 @@ def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type)
             q_sqrt=tf.convert_to_tensor(q_sqrt),
             white=white,
             full_cov=full_cov,
-            num_samples=3
+            num_samples=num_samples
         )
     )
 
@@ -125,82 +129,12 @@ def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type)
     assert_allclose(ms_S12, ms)
     assert_allclose(vs_S12, vs)
     assert_allclose(ms_S1_S2.reshape(Data.S1 * Data.S2, Data.N, Data.Dy), ms)
+    assert_allclose(ss_S1_S2.shape, [Data.S1, Data.S2, num_samples, Data.N, Data.Dy])
 
     if full_cov:
-        assert_allclose(
-            vs_S1_S2.reshape(Data.S1 * Data.S2, Data.Dy, Data.N, Data.N), vs)
+        assert_allclose(vs_S1_S2.reshape(Data.S1 * Data.S2, Data.Dy, Data.N, Data.N), vs)
     else:
         assert_allclose(vs_S1_S2.reshape(Data.S1 * Data.S2, Data.N, Data.Dy), vs)
-
-
-@pytest.mark.parametrize("full_cov", [False])
-def test_sample_conditional_broadcasting(session_tf, full_cov):
-    """
-    Test that the *sample* conditional broadcasts correctly over leading dimensions of Xnew
-    Xnew can be shape [..., N, D], and conditional should broadcast over the [...]
-    """
-    white = True
-    S1, S2, Dy, N, M, Dx = 7, 6, 5, 4, 3, 2
-
-    SX = np.random.randn(S1*S2, N, Dx)
-    S1_S2_X = np.reshape(SX, [S1, S2, N, Dx])
-    Z = np.random.randn(M, Dx)
-    Z = gpflow.features.InducingPoints(Z)
-
-    kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
-
-    q_mu = np.random.randn(M, Dy)
-    q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
-
-    x = tf.placeholder(tf.float64, [None, None])
-
-    _, mean_tf, cov_tf = sample_conditional(
-        x,
-        Z,
-        kern,
-        q_mu,
-        q_sqrt=tf.identity(q_sqrt),
-        white=white,
-        full_cov=full_cov
-    )
-
-    ms, vs = [], []
-    for X in SX:
-        m, v = session_tf.run([mean_tf, cov_tf], {x: X})
-        ms.append(m)
-        vs.append(v)
-
-    ms = np.array(ms)
-    vs = np.array(vs)
-
-    ms_S12, vs_S12 = session_tf.run(conditional(
-        SX,
-        Z,
-        kern,
-        q_mu,
-        q_sqrt=tf.convert_to_tensor(q_sqrt),
-        white=white,
-        full_cov=full_cov
-    ))
-
-    ms_S1_S2, vs_S1_S2 = session_tf.run(conditional(
-        S1_S2_X,
-        Z,
-        kern,
-        q_mu,
-        q_sqrt=tf.convert_to_tensor(q_sqrt),
-        white=white,
-        full_cov=full_cov
-    ))
-
-    assert_allclose(ms_S12, ms)
-    assert_allclose(vs_S12, vs)
-    assert_allclose(ms_S1_S2.reshape(S1 * S2, N, Dy), ms)
-
-    if full_cov:
-        assert_allclose(vs_S1_S2.reshape(S1 * S2, Dy, N, N), vs)
-    else:
-        assert_allclose(vs_S1_S2.reshape(S1 * S2, N, Dy), vs)
 
 
 # -------------------------------------------

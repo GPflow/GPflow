@@ -258,17 +258,11 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
         raise NotImplementedError("full_output_cov not yet implemented")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
-                                   full_output_cov=False, full_cov=False)  # N x L, N x L
-    g_sample = _sample_mvn(g_mu, g_var, "diag", num_samples=num_samples)  # N x L
+                                   full_output_cov=False, full_cov=False)  # [..., N, L], [..., N, L]
+    g_sample = _sample_mvn(g_mu, g_var, "diag", num_samples=num_samples)  # [..., (S), N, L]
     with params_as_tensors_for(kern):
-        f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
-        f_mu = tf.einsum("pl,nl->np", kern.W, g_mu)
-        # W g_var W.T
-        # [P, L] @ [L, L] @ [L, P]
-        # \sum_l,l' W_pl g_var_ll' W_p'l'
-        # \sum_l W_pl g_var_nl W_p'l
-        # ->
-        f_var = tf.einsum("pl,nl,pl->np", kern.W, g_var, kern.W)
+        f_mu, f_var = _mix_latent_gp(kern.W, g_mu, g_var, full_cov, full_output_cov)
+        f_sample = tf.tensordot(g_sample, kern.W, [[-1], [-1]])  # [..., N, P]
     return f_sample, f_mu, f_var
 
 
@@ -465,8 +459,8 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
     """
     f_mu = tf.tensordot(g_mu, W, [[-1], [-1]])  # [..., N, P]
 
-    K = tf.rank(g_var)
-    leading_dims = (K - 3) if full_cov else (K - 2)
+    rk = tf.rank(g_var)
+    leading_dims = (rk - 3) if full_cov else (rk - 2)
 
     if full_cov and full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
@@ -474,13 +468,13 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, N, P, P]
-        perm = _get_perm_with_leading_dims(leading_dims, K-3, K-1, K-2, K)
+        perm = _get_perm_with_leading_dims(leading_dims, rk - 3, rk - 1, rk - 2, rk)
         f_var = tf.transpose(f_var, perm)  # [..., N, P, N, P]
 
     elif full_cov and not full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
         f_var = tf.tensordot(g_var, W**2, [[0], [-1]])  # [..., N, N, P]
-        perm = _get_perm_with_leading_dims(leading_dims, K-1, K-3, K-2)
+        perm = _get_perm_with_leading_dims(leading_dims, rk - 1, rk - 3, rk - 2)
         f_var = tf.transpose(f_var, perm)  # [..., P, N, N]
 
     elif not full_cov and full_output_cov:  # g_var is [..., N, L]
