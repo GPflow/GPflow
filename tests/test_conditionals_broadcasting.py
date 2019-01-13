@@ -45,8 +45,7 @@ class Data:
 
 @pytest.mark.parametrize("full_cov", [False, True])
 @pytest.mark.parametrize("white", [True, False])
-@pytest.mark.parametrize("conditional_type", ["mixing"])
-# @pytest.mark.parametrize("conditional_type", ["mixing", "Z", "inducing_points"])
+@pytest.mark.parametrize("conditional_type", ["mixing", "Z", "inducing_points"])
 def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type):
     """
     Test that the `conditional` and `sample_conditional` broadcasts correctly
