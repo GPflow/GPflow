@@ -398,7 +398,7 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
             eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [..., N, D, S]
             chol = tf.cholesky(cov + jittermat)  # [..., N, D, D]
             samples = mean[..., None] + tf.matmul(chol, eps)  # [..., N, D, S]
-            samples = _transpose(samples, [1, 0, 2, 3], leading_dims=num_leading_dims)  # [S, ..., N, D]
+            samples = _transpose(samples, [3, 0, 1, 2], leading_dims=num_leading_dims)  # [S, ..., N, D]
     else:
         raise NotImplementedError  # pragma: no cover
 
