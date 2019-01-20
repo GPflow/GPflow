@@ -379,6 +379,7 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     S = num_samples if num_samples is not None else 1
     D = mean_shape[-1]
     leading_dims = mean_shape[:-2]
+    num_leading_dims = tf.size(leading_dims)
 
     if cov_structure == "diag":
         # mean: [..., N, D] and cov [..., N, D]
@@ -397,10 +398,7 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
             eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [..., N, D, S]
             chol = tf.cholesky(cov + jittermat)  # [..., N, D, D]
             samples = mean[..., None] + tf.matmul(chol, eps)  # [..., N, D, S]
-            k = tf.rank(samples)
-            perm = _get_perm_with_leading_dims(k - 3, k - 1, k - 3, k - 2)
-            samples = tf.transpose(samples, perm)  # [..., S, N, D]
-            # samples = _rollaxis_right(samples, 1)  # [S, ..., N, D]
+            samples = _transpose(samples, [1, 0, 2, 3], leading_dims=num_leading_dims)  # [S, ..., N, D]
     else:
         raise NotImplementedError  # pragma: no cover
 
@@ -469,3 +467,16 @@ def _get_perm_with_leading_dims(leading_dims, *axis, offset=0):
     perm += [tf.reshape(a, [1]) for a in axis]
     perm = tf.concat(perm, 0)
     return perm
+
+
+def _transpose(tensor, perm=None, leading_dims=None):
+    """
+    Transposes tensors which have leading dimensions, and represented as 0 index
+    in permutation list.
+    """
+    if leading_dims is not None:
+        idx = perm.index(0)
+        leading_indices = tf.range(leading_dims)
+        shifts = perms + tf.size(leading_indices) - 1
+        perm = tf.concat([shifts[:idx], leading_indices, shifts[idx+1:]], 0)
+    return tf.transpose(tensor, perm)
