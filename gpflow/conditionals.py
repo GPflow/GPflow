@@ -477,6 +477,6 @@ def _transpose(tensor, perm=None, leading_dims=None):
     if leading_dims is not None:
         idx = perm.index(0)
         leading_indices = tf.range(leading_dims)
-        shifts = perms + tf.size(leading_indices) - 1
+        shifts = perm + tf.size(leading_indices) - 1
         perm = tf.concat([shifts[:idx], leading_indices, shifts[idx+1:]], 0)
     return tf.transpose(tensor, perm)
