@@ -13,12 +13,6 @@
 # limitations under the License.
 
 
-from datetime import datetime
-
-import h5py
-import numpy as np
-import tensorflow as tf
-
 from .coders import CoderDispatcher
 from .context import BaseContext
 from .serializers import HDF5Serializer
@@ -31,14 +25,14 @@ class SaverContext(BaseContext):
 
 
 class Saver:
-    def save(self, pathname, target, context=None):
+    def save(self, pathname_or_file_like, target, context=None):
         context = Saver.__get_context(context)
         encoded_target = CoderDispatcher(context).encode(target)
-        context.serializer(context).dump(pathname, encoded_target)
+        context.serializer(context).dump(pathname_or_file_like, encoded_target)
 
-    def load(self, pathname, context=None):
+    def load(self, pathname_or_file_like, context=None):
         context = Saver.__get_context(context)
-        encoded_target = context.serializer(context).load(pathname)
+        encoded_target = context.serializer(context).load(pathname_or_file_like)
         return CoderDispatcher(context).decode(encoded_target)
 
     @staticmethod
