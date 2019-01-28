@@ -148,8 +148,12 @@ class AutoBuild(abc.ABCMeta):
     def __new__(mcs, name, bases, namespace, **kwargs):
         new_cls = super(AutoBuild, mcs).__new__(mcs, name, bases, namespace, **kwargs)
         if getattr(new_cls.__init__, '_autobuild_wrapped_', False):
+            # The decorator hack to make the autobuild keyword argument work does not play nicely
+            # with recursive wrapping. If we already wrapped this __init__ (because a class does
+            # not overwrite its superclass's __init__), just let it be.
             return new_cls
-        def new_init(origin_init, self, *args, **kwargs):
+
+        def init_wrapper(origin_init, self, *args, **kwargs):
             """
             The `kwargs` may or may not contain 'autobuild' option. This option is
             inherited implicitly by all classes.
@@ -169,9 +173,14 @@ class AutoBuild(abc.ABCMeta):
             if autobuild_on and global_autobuild_on:
                 self.build()
                 self.initialize(force=True)
-        __init__ = autobuild_decorate(new_cls.__init__, new_init)
+
+        # Keep the original __init__'s signature and documentation:
+        __init__ = autobuild_decorate(new_cls.__init__, init_wrapper)
         __init__.__doc__ = new_cls.__init__.__doc__
+
+        # Track that this specific method already got wrapped:
         __init__._autobuild_wrapped_ = True
+
         setattr(new_cls, '__init__', __init__)
         return new_cls
 
