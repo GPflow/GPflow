@@ -37,7 +37,8 @@ We document the [version history](https://github.com/GPflow/GPflow/blob/master/R
 
 ### Compiling documentation
 
-Online documentation of GPflow can be found at https://gpflow.readthedocs.io/en/master/
+Online documentation of the latest GPflow release can be found at https://gpflow.readthedocs.io/en/master/
+(If you are using the "develop" branch off github, you can find corresponding documentation at https://gpflow.readthedocs.io/en/develop/)
 
 To compile the GPflow documentation locally:
 
@@ -47,7 +48,7 @@ To compile the GPflow documentation locally:
 2a. install pandoc
     pip install pandoc
 
-2b. if pandoc does not install via pip, go to pandoc.org/installing.html
+2b. if pandoc does not install via pip, or step 4 does not work, go to pandoc.org/installing.html
 
 3. change directory to doc
     cd doc
