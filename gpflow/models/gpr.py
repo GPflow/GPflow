@@ -31,7 +31,12 @@ class GPR(GPModel):
     Gaussian Process Regression.
 
     This is a vanilla implementation of GP regression with a Gaussian
-    likelihood.  Multiple columns of Y are treated independently.
+    likelihood. In this case infrence is exact, but costs O(N^3). This means
+    that we can compute the predictive distributions (predict_f, predict_y) in
+    closed-form, as well as the marginal likelihood, which we use to estimate
+    (optimize) the kernel parameters. 
+    
+    Multiple columns of Y are treated independently, using the same kernel. 
 
     The log likelihood of this model is sometimes referred to as the
     'marginal log likelihood', and is given by
@@ -40,7 +45,7 @@ class GPR(GPModel):
 
        \log p(\mathbf y | \mathbf f) = \mathcal N(\mathbf y | 0, \mathbf K + \sigma_n \mathbf I)
     """
-    def __init__(self, X, Y, kern, mean_function=None, **kwargs):
+    def __init__(self, X, Y, kern, mean_function=None, name='GPRegression'):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
@@ -49,7 +54,9 @@ class GPR(GPModel):
         likelihood = likelihoods.Gaussian()
         X = DataHolder(X)
         Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
+        num_latent = Y.shape[1]
+        GPModel.__init__(self, X=X, Y=Y, kern=kern, likelihood=likelihood,
+                         mean_function=mean_function, num_latent=num_latent, name=name)
 
     @name_scope('likelihood')
     @params_as_tensors
