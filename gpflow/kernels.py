@@ -345,12 +345,11 @@ class SquaredExponential(Stationary):
     """
     The radial basis function (RBF) or squared exponential kernel. The kernel equation is
 
-        k(r) = σ² exp{-½ r²/ℓ²}
+        k(r) = σ² exp{-½ r²}
 
-    where r is the (scaled) Euclidean distance between the input points. 
-
-    σ² : variance
-    ℓ  : lengthscales
+    where:
+    r   is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ²  is the variance parameter
 
     Fucntions drawn from a GP with this kernel are infinitely differentiable!
     """
@@ -364,15 +363,14 @@ RBF = SquaredExponential
 
 class RationalQuadratic(Stationary):
     """
-    Rational Quadratic kernel,
+    Rational Quadratic kernel. The kernel equation is
 
-    k(r) = σ² (1 + r² / 2αℓ²)^(-α)
+    k(r) = σ² (1 + r² / 2α)^(-α)
 
-    where r is the (scaled) Euclidean distance between the input points. 
-
-    σ² : variance
-    ℓ  : lengthscales
-    α  : alpha, determines relative weighting of small-scale and large-scale fluctuations
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ² is the variance parameter 
+    α  determines relative weighting of small-scale and large-scale fluctuations
 
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
@@ -394,7 +392,8 @@ class Linear(Kernel):
 
         k(x, y) = σ²xy
 
-    σ² : variance
+    where:
+    σ²  is the variance parameter
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=None, name=None):
@@ -480,7 +479,9 @@ class Matern12(Stationary):
 
     k(r) = σ² exp{-r}
 
-    where r is the (scaled) Euclidean distance between the input points. 
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ² is the variance parameter 
     """
 
     @params_as_tensors
@@ -495,7 +496,9 @@ class Matern32(Stationary):
 
     k(r) =  σ² (1 + √3r) exp{-√3 r}
 
-    where r is the (scaled) Euclidean distance between the input points. 
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ² is the variance parameter 
     """
 
     @params_as_tensors
@@ -511,7 +514,9 @@ class Matern52(Stationary):
 
     k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
 
-    where r is the (scaled) Euclidean distance between the input points. 
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ² is the variance parameter 
     """
 
     @params_as_tensors
@@ -527,7 +532,9 @@ class Cosine(Stationary):
 
         k(r) =  σ² cos{r}
 
-    where r is the (scaled) Euclidean distance between the input points. 
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ² is the variance parameter 
     """
 
     @params_as_tensors
