@@ -43,7 +43,7 @@ class VGP(GPModel):
 
     .. math::
 
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+       q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
 
@@ -95,7 +95,7 @@ class VGP(GPModel):
 
         with
 
-            q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+            q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
         """
 
@@ -149,8 +149,8 @@ class VGP_opper_archambeau(GPModel):
     only the diagonal elements of the precision need be adjusted.
     The posterior approximation is
     .. math::
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\mathbf K \\boldsymbol \\alpha,
-                         [\\mathbf K^{-1} + \\textrm{diag}(\\boldsymbol \\lambda))^2]^{-1})
+       q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,
+                         [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})
 
     This approach has only 2ND parameters, rather than the N + N^2 of vgp,
     but the optimization is non-convex and in practice may cause difficulty.
