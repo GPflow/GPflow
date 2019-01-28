@@ -43,62 +43,43 @@ class AutobuildFunctionMaker(decorator.FunctionMaker):
 
     def __init__(self, func=None, name=None, signature=None,
                  defaults=None, doc=None, module=None, funcdict=None):
-        self.shortsignature = signature
-        if func:
-            # func can be a class or a callable, but not an instance method
-            self.name = func.__name__
-            if self.name == '<lambda>':  # small hack for lambda functions
-                self.name = '_lambda_'
-            self.doc = func.__doc__
-            self.module = func.__module__
-            if inspect.isfunction(func):
-                argspec = inspect.getfullargspec(func)
-                self.annotations = getattr(func, '__annotations__', {})
-                for a in ('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs',
-                          'kwonlydefaults'):
-                    setattr(self, a, getattr(argspec, a))
-                ##### BEGIN OF CHANGES
-                # The following four lines are manually added for GPflow:
-                self.kwonlyargs.append('autobuild')
-                if self.kwonlydefaults is None:
-                    self.kwonlydefaults = {}
-                self.kwonlydefaults['autobuild'] = True
-                ##### END OF CHANGES
-                for i, arg in enumerate(self.args):
-                    setattr(self, 'arg%d' % i, arg)
-                allargs = list(self.args)
-                allshortargs = list(self.args)
-                if self.varargs:
-                    allargs.append('*' + self.varargs)
-                    allshortargs.append('*' + self.varargs)
-                elif self.kwonlyargs:
-                    allargs.append('*')  # single star syntax
-                for a in self.kwonlyargs:
-                    allargs.append('%s=None' % a)
-                    allshortargs.append('%s=%s' % (a, a))
-                if self.varkw:
-                    allargs.append('**' + self.varkw)
-                    allshortargs.append('**' + self.varkw)
-                self.signature = ', '.join(allargs)
-                self.shortsignature = ', '.join(allshortargs)
-                self.dict = func.__dict__.copy()
-        # func=None happens when decorating a caller
-        if name:
-            self.name = name
+        super().__init__(func=func, name=name, signature=signature, defaults=defaults,
+                         doc=doc, module=module, funcdict=funcdict)
+
+        if not func or not inspect.isfunction(func):
+            return
+
+        # We need to add the autobuild keyword argument manually.
+        if 'autobuild' in self.kwonlyargs:
+            return
+
+        self.kwonlyargs.append('autobuild')
+        if self.kwonlydefaults is None:
+            self.kwonlydefaults = {}
+        self.kwonlydefaults['autobuild'] = True
+
+        # The following is copied from decorator.FunctionMaker.__init__,
+        # as we need to reconstruct self.signature and self.shortsignature
+        # from scratch having added the autobuild keyword argument:
+        allargs = list(self.args)
+        allshortargs = list(self.args)
+        if self.varargs:
+            allargs.append('*' + self.varargs)
+            allshortargs.append('*' + self.varargs)
+        elif self.kwonlyargs:
+            allargs.append('*')  # single star syntax
+        for a in self.kwonlyargs:
+            allargs.append('%s=None' % a)
+            allshortargs.append('%s=%s' % (a, a))
+        if self.varkw:
+            allargs.append('**' + self.varkw)
+            allshortargs.append('**' + self.varkw)
+        self.signature = ', '.join(allargs)
+        self.shortsignature = ', '.join(allshortargs)
+
         if signature is not None:
             self.signature = signature
-        if defaults:
-            self.defaults = defaults
-        if doc:
-            self.doc = doc
-        if module:
-            self.module = module
-        if funcdict:
-            self.dict = funcdict
-        # check existence required attributes
-        assert hasattr(self, 'name')
-        if not hasattr(self, 'signature'):
-            raise TypeError('You are decorating a non function: %s' % func)
+        # Everything else was set up already by the super().__init__().
 
 def autobuild_decorate(func, caller):
     """
