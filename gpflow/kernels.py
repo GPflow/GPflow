@@ -352,7 +352,7 @@ class SquaredExponential(Stationary):
     σ² : variance
     ℓ  : lengthscales
 
-    Fucntions drawn from a GP with this kernel are infinitely differentiable!
+    Functions drawn from a GP with this kernel are infinitely differentiable!
     """
 
     @params_as_tensors
