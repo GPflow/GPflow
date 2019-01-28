@@ -71,7 +71,7 @@ class GPMC(GPModel):
 
     @params_as_tensors
     def _build_likelihood(self):
-        """
+        r"""
         Construct a tf function to compute the likelihood of a general GP
         model.
 
