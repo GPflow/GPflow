@@ -85,7 +85,7 @@ class TestDataholder(GPflowTestCase):
 
     def test_is_built(self):
         with self.test_context():
-            d = gpflow.DataHolder(1.0)
+            d = gpflow.DataHolder(1.0, allow_1d=True)
             with self.assertRaises(ValueError):
                 d.is_built(None)
 
