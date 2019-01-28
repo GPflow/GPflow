@@ -351,7 +351,7 @@ class SquaredExponential(Stationary):
     r   is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
     σ²  is the variance parameter
 
-    Fucntions drawn from a GP with this kernel are infinitely differentiable!
+    Functions drawn from a GP with this kernel are infinitely differentiable!
     """
 
     @params_as_tensors
