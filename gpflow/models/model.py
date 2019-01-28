@@ -108,12 +108,12 @@ class GPModel(Model):
     .. math::
        :nowrap:
 
-       \\begin{align}
-       \\theta & \sim p(\\theta) \\\\
-       f       & \sim \\mathcal{GP}(m(x), k(x, x'; \\theta)) \\\\
-       f_i       & = f(x_i) \\\\
+       \begin{align}
+       \theta & \sim p(\theta) \\
+       f       & \sim \mathcal{GP}(m(x), k(x, x'; \theta)) \\
+       f_i       & = f(x_i) \\
        y_i\,|\,f_i     & \sim p(y_i|f_i)
-       \\end{align}
+       \end{align}
 
     This class mostly adds functionality to compile predictions. To use it,
     inheriting classes must define a build_predict function, which computes
