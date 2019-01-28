@@ -176,7 +176,6 @@ class AutoBuild(abc.ABCMeta):
 
         # Keep the original __init__'s signature and documentation:
         __init__ = autobuild_decorate(new_cls.__init__, init_wrapper)
-        __init__.__doc__ = new_cls.__init__.__doc__
 
         # Track that this specific method already got wrapped:
         __init__._autobuild_wrapped_ = True
