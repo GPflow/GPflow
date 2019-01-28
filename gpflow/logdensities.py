@@ -15,8 +15,6 @@
 
 import tensorflow as tf
 import numpy as np
-import warnings
-
 
 from . import settings
 
@@ -88,11 +86,11 @@ def multivariate_normal(x, mu, L):
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
     if x.shape.ndims is None:
-        logger.warn('Shape of x must be 2D at computation.')
+        logger.warning('Shape of x must be 2D at computation.')
     elif x.shape.ndims != 2:
         raise ValueError('Shape of x must be 2D.')
     if mu.shape.ndims is None:
-        logger.warn('Shape of mu may be unknown or not 2D.')
+        logger.warning('Shape of mu may be unknown or not 2D.')
     elif mu.shape.ndims != 2:
         raise ValueError('Shape of mu must be 2D.')
 

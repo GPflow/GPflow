@@ -15,21 +15,20 @@
 
 import tensorflow as tf
 
-from . import settings, mean_functions
+from . import features, mean_functions, settings
 from .decors import name_scope
 from .dispatch import conditional, sample_conditional
 from .expectations import expectation
-from .features import Kuu, Kuf, InducingPoints, InducingFeature
-from .kernels import Kernel, Combination
+from .features import InducingFeature, InducingPoints, Kuf, Kuu
+from .kernels import Kernel
 from .probability_distributions import Gaussian
-
 
 logger = settings.logger()
 
 
-# ----------------------------------------------------------------------------
-############################### CONDITIONAL ##################################
-# ----------------------------------------------------------------------------
+# -----------
+# CONDITIONAL
+# -----------
 
 @conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("conditional")
@@ -185,13 +184,13 @@ def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False, full_cov=
     return samples, mean, cov
 
 
-# ----------------------------------------------------------------------------
-############################# CONDITIONAL MATHS ##############################
-# ----------------------------------------------------------------------------
+# -----------------
+# CONDITIONAL MATHS
+# -----------------
 
 @name_scope()
 def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=False):
-    """
+    r"""
     Given a g1 and g2, and distribution p and q such that
       p(g2) = N(g2;0,Kmm)
       p(g1) = N(g1;0,Knn)
@@ -303,7 +302,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     q_sqrt_r = tf.matrix_band_part(q_sqrt, -1, 0)  # D x M x M
 
     eKuf = tf.transpose(expectation(pXnew, (kern, feat)))  # M x N (psi1)
-    Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
+    Kuu = features.Kuu(feat, kern, jitter=settings.jitter)  # M x M
     Luu = tf.cholesky(Kuu)  # M x M
 
     if not white:
@@ -428,4 +427,3 @@ def _expand_independent_outputs(fvar, full_cov, full_output_cov):
         pass  # N x P
 
     return fvar
-

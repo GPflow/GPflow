@@ -98,11 +98,11 @@ class Model(Parameterized):
 
     @abc.abstractmethod
     def _build_likelihood(self):
-        raise NotImplementedError('')  # TODO(@awav): write error message
+        pass
 
 
 class GPModel(Model):
-    """
+    r"""
     A base class for Gaussian process models, that is, those of the form
 
     .. math::
@@ -172,7 +172,7 @@ class GPModel(Model):
         Xnew.
         """
         mu, var = self._build_predict(Xnew, full_cov=True)  # N x P, # P x N x N
-        jitter = tf.eye(tf.shape(mu)[0], dtype=settings.float_type) * settings.numerics.jitter_level
+        jitter = tf.eye(tf.shape(mu)[0], dtype=settings.float_type) * settings.jitter
         samples = []
         for i in range(self.num_latent):
             L = tf.cholesky(var[i, :, :] + jitter)
@@ -203,4 +203,4 @@ class GPModel(Model):
 
     @abc.abstractmethod
     def _build_predict(self, *args, **kwargs):
-        raise NotImplementedError('') # TODO(@awav): write error message
+        pass

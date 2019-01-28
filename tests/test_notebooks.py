@@ -52,6 +52,7 @@ BLACKLISTED_NOTEBOOKS = [
 ]
 
 
+@pytest.mark.notebooks
 @pytest.mark.parametrize('notebook_file', NOTEBOOK_FILES)
 def test_notebook(notebook_file):
     _exec_notebook_ts(notebook_file)
