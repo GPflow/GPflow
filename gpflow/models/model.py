@@ -98,7 +98,7 @@ class Model(Parameterized):
 
     @abc.abstractmethod
     def _build_likelihood(self):
-        raise NotImplementedError('')  # TODO(@awav): write error message
+        pass
 
 
 class GPModel(Model):
@@ -203,4 +203,4 @@ class GPModel(Model):
 
     @abc.abstractmethod
     def _build_predict(self, *args, **kwargs):
-        raise NotImplementedError('') # TODO(@awav): write error message
+        pass
