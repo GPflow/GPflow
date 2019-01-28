@@ -26,8 +26,8 @@ from numpy.testing import assert_allclose
 rng = np.random.RandomState(1)
 
 
-@pytest.mark.parametrize("x", [randn(4,10), randn(4,1), randn(4,4)])
-@pytest.mark.parametrize("mu", [randn(4,10), randn(4,1), randn(4,4)])
+@pytest.mark.parametrize("x", [randn(4,10), randn(4,1)])
+@pytest.mark.parametrize("mu", [randn(4,10), randn(4,1)])
 @pytest.mark.parametrize("cov_sqrt", [randn(4,4), np.eye(4)])
 def test_multivariate_normal(session_tf, x, mu, cov_sqrt):
     cov = np.dot(cov_sqrt, cov_sqrt.T)
