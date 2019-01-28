@@ -35,6 +35,29 @@ You can run the tests with `python setup.py test`.
 
 We document the [version history](https://github.com/GPflow/GPflow/blob/master/RELEASE.md).
 
+### Compiling documentation
+
+Online documentation of GPflow can be found at https://gpflow.readthedocs.io/en/master/
+
+To compile the GPflow documentation locally:
+
+1. install doc dependencies
+    pip install sphinx sphinx_rtd_theme numpydoc nbsphinx
+
+2a. install pandoc
+    pip install pandoc
+
+2b. if pandoc does not install via pip, go to pandoc.org/installing.html
+
+3. change directory to doc
+    cd doc
+
+4. compile the documentation as html
+    make html
+
+5. Check documentation locally by opening (in a browser)
+    doc/build/html/index.html
+
 ### Docker image
 
 We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which can be run using
