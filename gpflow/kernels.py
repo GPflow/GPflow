@@ -169,7 +169,7 @@ class Kernel(Parameterized):
 class Static(Kernel):
     """
     Kernels who don't depend on the value of the inputs are 'Static'.  The only
-    parameter is a variance, σ²
+    parameter is a variance, σ².
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, name=None):
@@ -188,7 +188,9 @@ class White(Static):
 
         k(x_n, x_m) = δ(n, m) σ²
 
-    where δ(.,.) is the Kronecker delta. 
+    where:
+    δ(.,.) is the Kronecker delta, 
+    σ²  is the variance parameter.
     """
 
     @params_as_tensors
@@ -209,6 +211,9 @@ class Constant(Static):
     are constant, i.e. f(x) = c, with c ~ N(0, σ^2). The kernel equation is
 
         k(x, y) = σ²
+
+    where:
+    σ²  is the variance parameter.
     """
 
     @params_as_tensors
@@ -368,9 +373,9 @@ class RationalQuadratic(Stationary):
     k(r) = σ² (1 + r² / 2α)^(-α)
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
-    σ² is the variance parameter 
-    α  determines relative weighting of small-scale and large-scale fluctuations
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter,
+    α  determines relative weighting of small-scale and large-scale fluctuations.
 
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
@@ -393,7 +398,7 @@ class Linear(Kernel):
         k(x, y) = σ²xy
 
     where:
-    σ²  is the variance parameter
+    σ²  is the variance parameter.
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=None, name=None):
@@ -429,7 +434,14 @@ class Linear(Kernel):
 class Polynomial(Linear):
     """
     The Polynomial kernel. Functions drawn from a GP with this kernel are
-    polynomials of degree `d`.
+    polynomials of degree `d`. The kernel equation is
+
+        k(x, y) = (σ²xy + γ) ^ d
+
+    where:
+    σ² is the variance parameter,
+    γ is the offset parameter,
+    d is the degree parameter.
     """
 
     def __init__(self, input_dim,
@@ -497,8 +509,8 @@ class Matern32(Stationary):
     k(r) =  σ² (1 + √3r) exp{-√3 r}
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
-    σ² is the variance parameter 
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     @params_as_tensors
@@ -515,8 +527,8 @@ class Matern52(Stationary):
     k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
-    σ² is the variance parameter 
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     @params_as_tensors
@@ -533,8 +545,8 @@ class Cosine(Stationary):
         k(r) =  σ² cos{r}
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
-    σ² is the variance parameter 
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     @params_as_tensors
@@ -656,8 +668,15 @@ class Periodic(Kernel):
     the mapping u=(cos(x), sin(x)).
 
     The resulting kernel can be expressed as:
-    k_per(x, x') = variance * exp( -0.5 Sum_i sin^2((x_i-x'_i) * pi /period)/ell^2)
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into ell
+        k(r) =  σ² exp{ -0.5 sin²(π r / γ) / ℓ²}
+
+    where:
+    r  is the Euclidean distance between the input points
+    ℓ is the lengthscale parameter,
+    σ² is the variance parameter,
+    γ is the period parameter.
+
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
     hyperparameter).
     """
 
