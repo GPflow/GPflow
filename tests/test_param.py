@@ -1173,34 +1173,34 @@ def test_parentable_childname_not_found(param, params_tree):
 @pytest.mark.parametrize('arg', failures())
 def test_parentable_set_child_failure(params_tree, arg):
     with pytest.raises(ValueError):
-        params_tree.set_child('b', arg)
+        params_tree._set_child('b', arg)
     with pytest.raises(ValueError):
-        params_tree.set_child('a', arg)
+        params_tree._set_child('a', arg)
 
 
 def test_parentable_unset_child_not_found(params_tree, param):
     with pytest.raises(ValueError):
-        params_tree.unset_child('b', param)
+        params_tree._unset_child('b', param)
     with pytest.raises(ValueError):
-        params_tree.unset_child('a', param)
+        params_tree._unset_child('a', param)
 
 
 def test_parentable_unset_child_not_found(params_tree, param):
     with pytest.raises(ValueError):
-        params_tree.unset_child('b', param)
+        params_tree._unset_child('b', param)
     with pytest.raises(ValueError):
-        params_tree.unset_child('a', param)
+        params_tree._unset_child('a', param)
 
 
 @pytest.mark.parametrize('arg', failures()[1:])
 def test_parentable_set_parent_failures(param, arg):
     with pytest.raises(ValueError):
-        param.set_parent(arg)
+        param._set_parent(arg)
 
 
 def test_parentable_set_parent_self_reference(params_tree):
     with pytest.raises(ValueError):
-        params_tree.a.set_parent(params_tree)
+        params_tree.a._set_parent(params_tree)
 
 
 def test_as_pandas_table_static(params_tree):

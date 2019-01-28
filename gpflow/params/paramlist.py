@@ -47,10 +47,10 @@ class ParamList(Parameterized):
             self.append(item)
 
     @property
-    def children(self):
+    def _children(self):
         return {str(i): v for i, v in enumerate(self._list)}
 
-    def store_child(self, index, child):
+    def _store_child(self, index, child):
         if index == len(self):
             self._list.append(child)
         else:
@@ -70,8 +70,8 @@ class ParamList(Parameterized):
         return self._list[name]
 
     def _replace_node(self, index, old, new):
-        old.set_parent()
-        self.set_child(index, new)
+        old._set_parent()
+        self._set_child(index, new)
 
     def _valid_list_input(self, value, trainable):
         if not Parameterized._is_param_like(value):
