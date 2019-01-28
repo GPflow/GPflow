@@ -1,11 +1,15 @@
 # GPflow
 
-GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
-The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexander G. de G. Matthews, Alexis Boukouvalas, Artem Artemev, Daniel Marthaler, David J. Harris, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
-
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=master)](http://gpflow.readthedocs.io/en/master/?badge=master)
+
+[Website](https://gpflow.org) |
+[Documentation](https://gpflow.readthedocs.io/en/master/) |
+[Tips & Tricks](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/tips_and_tricks.ipynb)
+
+GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
+The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexander G. de G. Matthews, Alexis Boukouvalas, Artem Artemev, Daniel Marthaler, David J. Harris, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
 
 ## What does GPflow do?
 
@@ -16,26 +20,29 @@ GPflow uses [TensorFlow](http://www.tensorflow.org) for running computations, wh
 ## Install
 
 ### 1) Quick install
-GPflow can be installed by cloning the repository and running
+GPflow latest release can be installed using `pip`:
+
 ```
-pip install .
+pip install gpflow
 ```
-in the root folder. This also installs required dependencies including TensorFlow. When GPU support is needed, a manual installation of TensorFlow is recommended (next section), as one cannot rely on pip to get this running.
 
 ### 2) Alternative method
-A different option to install GPflow requires installation of TensorFlow first. Please see [instructions on the main TensorFlow webpage](https://www.tensorflow.org/install/). You will need at least version 1.6 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend
+A different option to install GPflow requires installation of TensorFlow first. Please see [instructions on the main TensorFlow webpage](https://www.tensorflow.org/install/). You will need at least version 1.10 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend
+
 ```
 python setup.py develop
 ```
+
 but installation should work well too:
+
 ```
 python setup.py install
 ```
+
 You can run the tests with `python setup.py test`.
 
-We document the [version history](https://github.com/GPflow/GPflow/blob/master/RELEASE.md).
 
-### Compiling documentation
+## Compiling documentation
 
 Online documentation of the latest GPflow release can be found at https://gpflow.readthedocs.io/en/master/
 (If you are using the "develop" branch off github, you can find corresponding documentation at https://gpflow.readthedocs.io/en/develop/)
