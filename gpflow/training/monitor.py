@@ -887,7 +887,7 @@ class ModelToTensorBoardTask(BaseTensorBoardTask):
 
         # Add non-scalar parameters
         if not only_scalars:
-            all_summaries += [tf.summary.histogram(p.full_name, p.constrained_tensor)
+            all_summaries += [tf.summary.histogram(p.pathname, p.constrained_tensor)
                               for p in parameters if p.size > 1]
 
         # Add likelihood
