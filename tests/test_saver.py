@@ -65,9 +65,9 @@ class Data:
 
 
 @pytest.fixture(params=['file', 'filename'])
-def filename(file_or_filename):
+def filename(request):
     with tempfile.NamedTemporaryFile() as file:
-        if file_or_filename.param == 'file':
+        if request.param == 'file':
             yield file
         else:
             yield file.name
