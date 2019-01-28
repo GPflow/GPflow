@@ -100,23 +100,25 @@ class SGPR(GPModel, SGPRUpperMixin):
         year={2009}
       }
 
-
-
     """
 
-    def __init__(self, X, Y, kern, feat=None, mean_function=None, Z=None, **kwargs):
+    def __init__(self, X, Y, kern, feat=None, mean_function=None, Z=None, name=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         Z is a matrix of pseudo inputs, size M x D
+        feat is a set of unducing features (defaults to inducing points with Z input locations)
         kern, mean_function are appropriate GPflow objects
+        name is a string to identify this model (useful when you have multiple models on one tensorflow graph)
 
         This method only works with a Gaussian likelihood.
         """
         X = DataHolder(X)
         Y = DataHolder(Y)
         likelihood = likelihoods.Gaussian()
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
+        num_latent = Y.shape[1]
+        GPModel.__init__(self, X=X, Y=Y, kern=kern, likelihood=likelihood,
+                         num_latent=num_latent, name=name)
         self.feature = features.inducingpoint_wrapper(feat, Z)
         self.num_data = X.shape[0]
 
@@ -163,7 +165,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
-        notebook.
+        notebook 
         """
         num_inducing = len(self.feature)
         err = self.Y - self.mean_function(self.X)
