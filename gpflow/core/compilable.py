@@ -37,6 +37,10 @@ class AutoBuildStatus(enum.Enum):
 
 
 class AutobuildFunctionMaker(decorator.FunctionMaker):
+    """
+    This overwrites the __init__ of decorator.FunctionMaker to insert the autobuild keyword argument.
+    """
+
     def __init__(self, func=None, name=None, signature=None,
                  defaults=None, doc=None, module=None, funcdict=None):
         self.shortsignature = signature
@@ -53,10 +57,13 @@ class AutobuildFunctionMaker(decorator.FunctionMaker):
                 for a in ('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs',
                           'kwonlydefaults'):
                     setattr(self, a, getattr(argspec, a))
+                ##### BEGIN OF CHANGES
+                # The following four lines are manually added for GPflow:
                 self.kwonlyargs.append('autobuild')
                 if self.kwonlydefaults is None:
                     self.kwonlydefaults = {}
                 self.kwonlydefaults['autobuild'] = True
+                ##### END OF CHANGES
                 for i, arg in enumerate(self.args):
                     setattr(self, 'arg%d' % i, arg)
                 allargs = list(self.args)
@@ -97,6 +104,7 @@ def autobuild_decorate(func, caller):
     """
     autobuild_decorate(func, caller) decorates a function using a caller.
     Allows for an extra `autobuild` keyword arg.
+    The only difference to decorator.decorate() is to use our custom AutobuildFunctionMaker instead.
     """
     evaldict = dict(_call_=caller, _func_=func)
     fun = AutobuildFunctionMaker.create(
@@ -183,8 +191,10 @@ class Build(enum.Enum):
 
 
 class ICompilable(metaclass=AutoBuild):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self):
+        # We need an empty __init__ so that the AutoBuild decorator magic works.
+        # Otherwise, the type of __init__ would be wrapper_descriptor, not a function.
+        pass
 
     @abc.abstractproperty
     def graph(self):
