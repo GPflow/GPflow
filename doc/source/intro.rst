@@ -31,6 +31,8 @@ GPflow has origins in `GPy <http://github.com/sheffieldml/gpy>`_ by the `GPy con
  -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
  -  GPflow does not have any plotting functionality.
 
+.. _implemented_models:
+
 What models are implemented?
 ----------------------------
 GPflow has a slew of kernels that can be combined in a straightforward way. See the later section on `Using kernels in GPflow`. As for inference, the options are currently:
@@ -51,14 +53,14 @@ It's often sufficient to approximate the function values as a Gaussian, for whic
 
 The following table summarizes the model options in GPflow.
 
-+----------------------+--------------------------+----------------------------+-----------------------------+
-|                      | Gaussian                 | Non-Gaussian (variational) | Non-Gaussian                |
-|                      | Likelihood               |                            | (MCMC)                      |
-+======================+==========================+============================+=============================+
-| Full-covariance      | :class:`gpflow.models.GPR`  | :class:`gpflow.models.VGP`    | :class:`gpflow.models.GPMC`   |
-+----------------------+--------------------------+----------------------------+-----------------------------+
-| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`  | :class:`gpflow.models.SGPMC` |
-+----------------------+--------------------------+----------------------------+-----------------------------+
++----------------------+----------------------------+----------------------------+------------------------------+
+|                      | Gaussian                   | Non-Gaussian (variational) | Non-Gaussian                 |
+|                      | Likelihood                 |                            | (MCMC)                       |
++======================+============================+============================+==============================+
+| Full-covariance      | :class:`gpflow.models.GPR` | :class:`gpflow.models.VGP` | :class:`gpflow.models.GPMC`  |
++----------------------+----------------------------+----------------------------+------------------------------+
+| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`| :class:`gpflow.models.SGPMC` |
++----------------------+----------------------------+----------------------------+------------------------------+
 
 A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of `Matthews <http://mlg.eng.cam.ac.uk/matthews/thesis.pdf>`_ [8].
 

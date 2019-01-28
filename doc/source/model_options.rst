@@ -3,6 +3,8 @@
 The six core models of GPflow
 ========================
 
+Models are typically the highest level component that are used in GPflow; usually they comprise of at least one `kernel <kernel_options.html>`_ and at least one `likelihood <likelihood_options.html>`_. They additionally sometimes contain a `mean function <mean_function_options.html>`_, and `priors <prior_options.html>`_ over model parameters.
+
 The following table summarizes the six core model options in GPflow.
 
 +----------------------+--------------------------+----------------------------+-----------------------------+
