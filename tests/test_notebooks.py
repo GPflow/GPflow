@@ -46,6 +46,7 @@ NOTEBOOK_FILES = [
     "svi_test.ipynb",
     "upper_bound.ipynb",
     "vgp_notes.ipynb",
+    "tips_and_tricks.ipynb"
 ]
 
 BLACKLISTED_NOTEBOOKS = [
