@@ -36,17 +36,17 @@ What models are implemented?
 GPflow has a slew of kernels that can be combined in a straightforward way. See the later section on `Using kernels in GPflow`. As for inference, the options are currently:
 
 Regression
-~~~~~~~~~~
+""""""""""
 For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `gpflow.models.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters  (`notebook <notebooks/regression.html>`_).
 
 It's also possible to do Sparse GP regression using the :class:`gpflow.models.SGPR` class. This is based on work by `Michalis Titsias <http://www.jmlr.org/proceedings/papers/v5/titsias09a.html>`_ [4].
 
 MCMC
-~~~~
+""""
 For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: :class:`gpflow.models.GPMC`. There's also a sparse equivalent in :class:`gpflow.models.SGPMC`, based on a `recent paper <https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes>`_ [1].
 
 Variational inference
-~~~~~~~~~~~~~~~~~~~~~
+"""""""""""""""""""""
 It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`gpflow.models.VGP`. In addition, there is a sparse version based on [3] in :class:`gpflow.models.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`gpflow.models.SGPR` . All of the sparse methods in GPflow are solidified in [5].
 
 The following table summarizes the model options in GPflow.
@@ -63,7 +63,7 @@ The following table summarizes the model options in GPflow.
 A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of `Matthews <http://mlg.eng.cam.ac.uk/matthews/thesis.pdf>`_ [8].
 
 GPLVM
-~~~~~~~~~~~~~~~~~~~~~
+"""""
 For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
 in GPflow (`notebook <notebooks/GPLVM.html>`_).
 
