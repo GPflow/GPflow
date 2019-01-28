@@ -83,15 +83,15 @@ class Parameterized(Node):
         self._prior_tensor = None
 
     @property
-    def children(self):
+    def _children(self):
         allowed = lambda x: self._is_param_like(x) and x is not self.parent
         children = {n: v for n, v in self.__dict__.items() if allowed(v)}
         return children
 
-    def store_child(self, name, child):
+    def _store_child(self, name, child):
         object.__setattr__(self, name, child)
 
-    def remove_child(self, name, child):
+    def _remove_child(self, name, child):
         object.__delattr__(self, name)
 
     @property
@@ -101,7 +101,7 @@ class Parameterized(Node):
                 yield param
 
     @property
-    def non_empty_params(self):
+    def _non_empty_params(self):
         for param in self.params:
             if isinstance(param, Parameterized) and param.empty:
                 continue
@@ -247,7 +247,7 @@ class Parameterized(Node):
     def is_built(self, graph):
         if not isinstance(graph, tf.Graph):
             raise ValueError('TensorFlow graph expected for checking build status.')
-        statuses = set([param.is_built(graph) for param in self.non_empty_params])
+        statuses = set([param.is_built(graph) for param in self._non_empty_params])
         if Build.NOT_COMPATIBLE_GRAPH in statuses:
             return Build.NOT_COMPATIBLE_GRAPH
         elif Build.NO in statuses:
@@ -325,13 +325,13 @@ class Parameterized(Node):
             raise ValueError(msg.format(type(value), name))
 
     def _replace_node(self, name, old, new):
-        self.unset_child(name, old)
+        self._unset_child(name, old)
         self._set_node(name, new)
 
     def _set_node(self, name, value):
         if not self.empty and self.is_built_coherence(value.graph) is Build.YES:
             raise GPflowError('Tensors for this object are already built and cannot be modified.')
-        self.set_child(name, value)
+        self._set_child(name, value)
 
     def __getattribute__(self, name):
         attr = misc.get_attribute(self, name)
