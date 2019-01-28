@@ -31,7 +31,7 @@ class GPR(GPModel):
     Gaussian Process Regression.
 
     This is a vanilla implementation of GP regression with a Gaussian
-    likelihood. In this case infrence is exact, but costs O(N^3). This means
+    likelihood. In this case inference is exact, but costs O(N^3). This means
     that we can compute the predictive distributions (predict_f, predict_y) in
     closed-form, as well as the marginal likelihood, which we use to estimate
     (optimize) the kernel parameters. 

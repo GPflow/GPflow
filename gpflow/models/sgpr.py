@@ -106,7 +106,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         Z is a matrix of pseudo inputs, size M x D
-        feat is a set of unducing features (defaults to inducing points with Z input locations)
+        feat is a set of inducing features (defaults to inducing points with Z input locations)
         kern, mean_function are appropriate GPflow objects
         name is a string to identify this model (useful when you have multiple models on one tensorflow graph)
 
