@@ -49,12 +49,15 @@ class DataHolder(Parameter):
 
     def __init__(self, value, dtype=None, fix_shape=False, allow_1d=False, name=None):
         self._dataholder_tensor = None
-        if not allow_1d and np.asarray(value).ndim == 1:
-            raise ValueError("GPflow generally expects all inputs (e.g. X, Y) to be two-dimensional, "
-                             "e.g. N x D, where D is the number of input features or the number of "
-                             "outputs. If single input features or outputs are used, the shape should "
-                             "be N x 1. If this DataHolder is supposed to hold one-dimensional arrays, "
-                             "set allow_1d=True when constructing it.")
+        if not allow_1d:
+            if ((isinstance(value, tf.Tensor)
+                 and (value.get_shape().ndims not in (None, 2)))
+                or (np.asarray(value).ndim != 2):
+                raise ValueError("GPflow generally expects all inputs (e.g. X, Y) to be two-dimensional, "
+                                 "e.g. N x D, where D is the number of input features or the number of "
+                                 "outputs. If single input features or outputs are used, the shape should "
+                                 "be N x 1. If this DataHolder is supposed to hold one-dimensional arrays, "
+                                 "set allow_1d=True when constructing it.")
         super().__init__(value=value, name=name, dtype=dtype, fix_shape=fix_shape)
 
     @property
