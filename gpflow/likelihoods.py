@@ -15,7 +15,7 @@
 r"""
 Likelihoods are another core component of GPflow. This describes how likely the
 data is under the assumptions made about the underlying latent functions
-:math:`p(\mathbf{Y}|\mathbf{F})`. Different likelihoods make different
+p(Y|F). Different likelihoods make different
 assumptions about the distribution of the data, as such different data-types
 (continuous, binary, ordinal, count) are better modelled with different
 likelihood assumptions.
@@ -33,27 +33,23 @@ Creating new likelihoods
 ----------
 Likelihoods are defined by their
 log-likelihood. When creating new likelihoods, the
-:func:`logp <gpflow.likelihoods.Likelihood.logp>` method
-(:math:`\log p(\mathbf{Y}|\mathbf{F})`), the
+:func:`logp <gpflow.likelihoods.Likelihood.logp>` method (log p(Y|F)), the
 :func:`conditional_mean <gpflow.likelihoods.Likelihood.conditional_mean>`,
 :func:`conditional_variance
 <gpflow.likelihoods.Likelihood.conditional_variance>`.
 
 In order to perform variational inference with non-Gaussian likelihoods a term
-called ``variational expectations``,
-:math:`\int q(\mathbf{F})\log p(\mathbf{Y}|\mathbf{F}) d\mathbf{F}`, needs to
-be computed under a Gaussian distribution
-:math:`q(\mathbf{F}) \sim N(\mathbf{\mu}, \mathbf{\Sigma})`.
+called ``variational expectations``, ∫ q(F) log p(Y|F) dF, needs to
+be computed under a Gaussian distribution q(F) ~ N(μ, Σ).
 
 The :func:`variational_expectations <gpflow.likelihoods.Likelihood.variational_expectations>`
 method can be overriden if this can be computed in closed form, otherwise; if
 the new likelihood inherits
 :class:`Likelihood <gpflow.likelihoods.Likelihood>` the default will use
-Gauss-Hermite numerical integration (works well when :math:`\mathbf{F}` is 1D
+Gauss-Hermite numerical integration (works well when F is 1D
 or 2D), if the new likelihood inherits from
 :class:`MonteCarloLikelihood <gpflow.likelihoods.MonteCarloLikelihood>` the
-integration is done by sampling (can be more suitable when
-:math:`\mathbf{F}` is higher dimensional).
+integration is done by sampling (can be more suitable when F is higher dimensional).
 """
 
 import numpy as np

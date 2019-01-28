@@ -14,9 +14,9 @@
 # limitations under the License.
 r"""
 Kernels form a core component of GPflow models and allow prior information to
-be encoded about a latent function of interest. A notebook showing the effect
-of choosing different kernels, and showing how it is possible to combine
-multiple kernels can be found `here <notebooks/kernels.html>`_.
+be encoded about a latent function of interest. The effect of choosing
+different kernels, and how it is possible to combine multiple kernels is shown
+in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 """
 
 
