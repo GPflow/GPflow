@@ -41,6 +41,7 @@ class DataHolder(Parameter):
     :param fix_shape: Default value is `False` and indicates that shape
         of internal tensor does not have specific shape, in other words,
         it is None.
+    :param allow_1d: do not check shape of data input value.
     :param name: Name of the parameter.
 
     :raises: ValueError exception if value is not valid.
