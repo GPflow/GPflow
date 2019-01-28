@@ -169,7 +169,7 @@ class Kernel(Parameterized):
 class Static(Kernel):
     """
     Kernels who don't depend on the value of the inputs are 'Static'.  The only
-    parameter is a variance.
+    parameter is a variance, σ²
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, name=None):
@@ -184,7 +184,11 @@ class Static(Kernel):
 
 class White(Static):
     """
-    The White kernel
+    The White kernel: this kernel produces 'white noise'. The kernel equation is
+
+        k(x_n, x_m) = δ(n, m) σ²
+
+    where δ(.,.) is the Kronecker delta. 
     """
 
     @params_as_tensors
@@ -201,7 +205,10 @@ class White(Static):
 
 class Constant(Static):
     """
-    The Constant (aka Bias) kernel
+    The Constant (aka Bias) kernel. Functions drawn from a GP with this kernel
+    are constant, i.e. f(x) = c, with c ~ N(0, σ^2). The kernel equation is
+
+        k(x, y) = σ²
     """
 
     @params_as_tensors
@@ -336,7 +343,16 @@ class Stationary(Kernel):
 
 class SquaredExponential(Stationary):
     """
-    The radial basis function (RBF) or squared exponential kernel
+    The radial basis function (RBF) or squared exponential kernel. The kernel equation is
+
+        k(r) = σ² exp{-½ r²/ℓ²}
+
+    where r is the (scaled) Euclidean distance between the input points. 
+
+    σ² : variance
+    ℓ  : lengthscales
+
+    Fucntions drawn from a GP with this kernel are infinitely differentiable!
     """
 
     @params_as_tensors
@@ -351,6 +367,8 @@ class RationalQuadratic(Stationary):
     Rational Quadratic kernel,
 
     k(r) = σ² (1 + r² / 2αℓ²)^(-α)
+
+    where r is the (scaled) Euclidean distance between the input points. 
 
     σ² : variance
     ℓ  : lengthscales
@@ -372,7 +390,11 @@ class RationalQuadratic(Stationary):
 
 class Linear(Kernel):
     """
-    The linear kernel
+    The linear kernel. Functions drawn from a GP with this kernel are linear, i.e. f(x) = cx. The kernel equation is
+
+        k(x, y) = σ²xy
+
+    σ² : variance
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=None, name=None):
@@ -407,7 +429,8 @@ class Linear(Kernel):
 
 class Polynomial(Linear):
     """
-    The Polynomial kernel. Samples are polynomials of degree `d`.
+    The Polynomial kernel. Functions drawn from a GP with this kernel are
+    polynomials of degree `d`.
     """
 
     def __init__(self, input_dim,
@@ -442,7 +465,7 @@ class Polynomial(Linear):
 
 class Exponential(Stationary):
     """
-    The Exponential kernel
+    The Exponential kernel, 
     """
 
     @params_as_tensors
@@ -452,7 +475,12 @@ class Exponential(Stationary):
 
 class Matern12(Stationary):
     """
-    The Matern 1/2 kernel
+    The Matern 1/2 kernel. Functions drawn from a GP with this kernel are not
+    differentiable anywhere. The kernel equation is
+
+    k(r) = σ² exp{-r}
+
+    where r is the (scaled) Euclidean distance between the input points. 
     """
 
     @params_as_tensors
@@ -462,7 +490,12 @@ class Matern12(Stationary):
 
 class Matern32(Stationary):
     """
-    The Matern 3/2 kernel
+    The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once
+    differentiable. The kernel equation is
+
+    k(r) =  σ² (1 + √3r) exp{-√3 r}
+
+    where r is the (scaled) Euclidean distance between the input points. 
     """
 
     @params_as_tensors
@@ -473,7 +506,12 @@ class Matern32(Stationary):
 
 class Matern52(Stationary):
     """
-    The Matern 5/2 kernel
+    The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice
+    differentiable. The kernel equation is
+
+    k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
+
+    where r is the (scaled) Euclidean distance between the input points. 
     """
 
     @params_as_tensors
@@ -484,7 +522,12 @@ class Matern52(Stationary):
 
 class Cosine(Stationary):
     """
-    The Cosine kernel
+    The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids
+    (with a random phase).  The kernel equation is
+
+        k(r) =  σ² cos{r}
+
+    where r is the (scaled) Euclidean distance between the input points. 
     """
 
     @params_as_tensors
