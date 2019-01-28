@@ -12,6 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""
+Kernels form a core component of GPflow models and allow prior information to
+be encoded about a latent function of interest. A notebook showing the effect
+of choosing different kernels, and showing how it is possible to combine
+multiple kernels can be found `here <notebooks/kernels.html>`_.
+"""
 
 
 from functools import reduce
@@ -189,7 +195,7 @@ class White(Static):
         k(x_n, x_m) = δ(n, m) σ²
 
     where:
-    δ(.,.) is the Kronecker delta, 
+    δ(.,.) is the Kronecker delta,
     σ²  is the variance parameter.
     """
 
@@ -476,7 +482,7 @@ class Polynomial(Linear):
 
 class Exponential(Stationary):
     """
-    The Exponential kernel, 
+    The Exponential kernel,
     """
 
     @params_as_tensors
@@ -493,7 +499,7 @@ class Matern12(Stationary):
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
-    σ² is the variance parameter 
+    σ² is the variance parameter
     """
 
     @params_as_tensors
