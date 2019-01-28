@@ -45,11 +45,12 @@ class GPR(GPModel):
 
        \log p(\mathbf y | \mathbf f) = \mathcal N(\mathbf y | 0, \mathbf K + \sigma_n \mathbf I)
     """
-    def __init__(self, X, Y, kern, mean_function=None, name='GPRegression'):
+    def __init__(self, X, Y, kern, mean_function=None, name=None):
         """
         X is a data matrix, size N x D
         Y is a data matrix, size N x R
         kern, mean_function are appropriate GPflow objects
+        name is a string which can be used to name this model (useful for handling multiple models on one tf.graph)
         """
         likelihood = likelihoods.Gaussian()
         X = DataHolder(X)

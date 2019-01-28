@@ -164,7 +164,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
-        notebook 
+        notebook. 
         """
         num_inducing = len(self.feature)
         err = self.Y - self.mean_function(self.X)
