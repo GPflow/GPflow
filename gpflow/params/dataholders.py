@@ -17,6 +17,7 @@
 # limitations under the License.
 
 
+import numpy as np
 import tensorflow as tf
 
 from .. import misc
@@ -45,8 +46,14 @@ class DataHolder(Parameter):
     :raises: ValueError exception if value is not valid.
     """
 
-    def __init__(self, value, dtype=None, fix_shape=False, name=None):
+    def __init__(self, value, dtype=None, fix_shape=False, allow_1d=False, name=None):
         self._dataholder_tensor = None
+        if not allow_1d and np.asarray(value).ndim == 1:
+            raise ValueError("GPflow generally expects all inputs (e.g. X, Y) to be two-dimensional, "
+                             "e.g. N x D, where D is the number of input features or the number of "
+                             "outputs. If single input features or outputs are used, the shape should "
+                             "be N x 1. If this DataHolder is supposed to hold one-dimensional arrays, "
+                             "set allow_1d=True when constructing it.")
         super().__init__(value=value, name=name, dtype=dtype, fix_shape=fix_shape)
 
     @property
