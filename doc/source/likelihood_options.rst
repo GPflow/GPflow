@@ -12,7 +12,7 @@ Likelihoods are defined by their log-likelihood. When creating new likelihoods, 
 
 In order to perform variational inference with non-Gaussian likelihoods a term called ``variational expectations``, :math:`\int q(\mathbf{F})\log p(\mathbf{Y}|\mathbf{F}) d\mathbf{F}`, needs to be computed under a Gaussian distribution :math:`q(\mathbf{F}) \sim N(\mathbf{\mu}, \mathbf{\Sigma})`. 
 
-The :func:`variational_expectations <gpflow.likelihoods.Likelihood.variational_expectations>` method can be overriden if this can be computed in closed form, otherwise; if the new likelihood inherits :class:`Likelihood <gpflow.likelihoods.Likelihood>` the default will use Gauss-Hermite numerical integration (works well when :math:`\mathbf{F}` is 1D or 2D), if the new likelihood inherits from :class:`MonteCarloLikelihood <gpflow.likelihoods.MonteCarloLikelihood>` the integration (can be more suitable when :math:`\mathbf{F}` is higher dimensional).
+The :func:`variational_expectations <gpflow.likelihoods.Likelihood.variational_expectations>` method can be overriden if this can be computed in closed form, otherwise; if the new likelihood inherits :class:`Likelihood <gpflow.likelihoods.Likelihood>` the default will use Gauss-Hermite numerical integration (works well when :math:`\mathbf{F}` is 1D or 2D), if the new likelihood inherits from :class:`MonteCarloLikelihood <gpflow.likelihoods.MonteCarloLikelihood>` the integration is done by sampling (can be more suitable when :math:`\mathbf{F}` is higher dimensional).
 
 Likelihoods
 -------

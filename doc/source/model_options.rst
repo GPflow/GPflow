@@ -7,14 +7,14 @@ Models are typically the highest level component that are used in GPflow; usuall
 
 The following table summarizes the six core model options in GPflow.
 
-+----------------------+--------------------------+----------------------------+-----------------------------+
-|                      | Gaussian                 | Non-Gaussian (variational) | Non-Gaussian                |
-|                      | Likelihood               |                            | (MCMC)                      |
-+======================+==========================+============================+=============================+
-| Full covariance      | :class:`gpflow.models.GPR`  | :class:`gpflow.models.VGP`    | :class:`gpflow.models.GPMC`   |
-+----------------------+--------------------------+----------------------------+-----------------------------+
-| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`  | :class:`gpflow.models.SGPMC` |
-+----------------------+--------------------------+----------------------------+-----------------------------+
++----------------------+----------------------------+----------------------------+-----------------------------+
+|                      | Gaussian                   | Non-Gaussian (variational) | Non-Gaussian                |
+|                      | Likelihood                 |                            | (MCMC)                      |
++======================+============================+============================+=============================+
+| Full covariance      | :class:`gpflow.models.GPR` | :class:`gpflow.models.VGP` | :class:`gpflow.models.GPMC` |
++----------------------+----------------------------+----------------------------+-----------------------------+
+| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`| :class:`gpflow.models.SGPMC`|
++----------------------+----------------------------+----------------------------+-----------------------------+
 
 The GPLVM which adds latent variables is also included (`notebook <notebooks/GPLVM.html>`_).
 
