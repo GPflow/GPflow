@@ -85,15 +85,6 @@ def multivariate_normal(x, mu, L):
     p[n] = log pdf of:
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
-    if x.shape.ndims is None:
-        logger.warning('Shape of x must be 2D at computation.')
-    elif x.shape.ndims != 2:
-        raise ValueError('Shape of x must be 2D.')
-    if mu.shape.ndims is None:
-        logger.warning('Shape of mu may be unknown or not 2D.')
-    elif mu.shape.ndims != 2:
-        raise ValueError('Shape of mu must be 2D.')
-
     d = x - mu
     alpha = tf.matrix_triangular_solve(L, d, lower=True)
     num_dims = tf.cast(tf.shape(d)[0], L.dtype)
