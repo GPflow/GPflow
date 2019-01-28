@@ -2,13 +2,10 @@
 Kernels included in GPflow
 ==================
 
+Kernels form a core component of GPflow models and allow prior information to be encoded about a latent function of interest. A notebook showing the effect of choosing different kernels, and showing how it is possible to combine multiple kernels can be found `here <notebooks/kernels.html>`_.
+
 Kernels
 -------
 .. automodule:: gpflow.kernels
-.. autoclass:: gpflow.kernels.Linear
-.. autoclass:: gpflow.kernels.RBF
-.. autoclass:: gpflow.kernels.Constant
-.. autoclass:: gpflow.kernels.White
-.. autoclass:: gpflow.kernels.Matern12
-.. autoclass:: gpflow.kernels.Matern32
-.. autoclass:: gpflow.kernels.Matern52
+    :members:
+    :exclude-members: Add, Kern, Prod, PeriodicKernel
