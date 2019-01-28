@@ -104,8 +104,8 @@ class ReplaceParameterTest(GPflowTestCase):
         class OriginAllDataholders(ReplaceParameterTest.Origin):
             def __init__(self):
                 super(OriginAllDataholders, self).__init__()
-                self.a = gpflow.DataHolder(np.array(2.))
-                self.b = gpflow.DataHolder(np.array(2.))
+                self.a = gpflow.DataHolder(np.array(2.), allow_1d=True)
+                self.b = gpflow.DataHolder(np.array(2.), allow_1d=True)
 
         with self.test_context():
             m0 = self.Origin()
