@@ -53,15 +53,17 @@ class TestNaming(GPflowTestCase):
         with self.test_context():
             a = gpflow.Param(1)
             b = gpflow.Param(1, name='test_name')
+            a_pathname = a.pathname
+            b_pathname = b.pathname
             assert a.name != b.name
-            assert a.pathname != b.pathname
+            assert a_pathname != b_pathname
 
             m = gpflow.params.Parameterized()
             m.a = a
             m.b = b
             assert m.a.name != m.b.name
-            assert m.a.pathname != a.pathname
-            assert m.b.pathname != b.pathname
+            assert m.a.pathname != a_pathname
+            assert m.b.pathname != b_pathname
             assert m.a.pathname.split("/")[0] == m.name
             assert m.b.pathname.split("/")[0] == m.name
 
