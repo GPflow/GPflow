@@ -32,7 +32,7 @@ RTOL = 1e-6
 
 
 class Data:
-    num_data = 5
+    num_data = 3
     num_ind = 4
     D_in = 2
     D_out = 2
@@ -43,7 +43,7 @@ class Data:
     Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
     Z = rng.randn(num_ind, D_in)
     Z2 = rng.randn(num_ind - 1, D_in)
-    
+
     cov_params = rng.randn(num_data + 1, D_in, 2 * D_in) / 2.  # (N+1)xDx2D
     NN_cov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
     NNplus1_cross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
@@ -51,14 +51,24 @@ class Data:
     Xcov_markov = np.stack([NN_cov, NNplus1_cross])  # 2x(N+1)xDxD
 
 
+
+def feat1():
+    return features.InducingPoints(Data.Z)
+
+
+def feat2():
+    return features.InducingPoints(Data.Z2)
+
+
 @pytest.fixture
 def feature():
-    return features.InducingPoints(Data.Z)
+    return feat1()
 
 
 @cache_tensor
 def feature2():
-    return features.InducingPoints(Data.Z2)
+    return feat2()
+
 
 @cache_tensor
 def gauss():
@@ -277,8 +287,8 @@ def test_RBF_eKzxKxz_gradient_not_NaN(session_tf):
     kern.variance = 2.
 
     p = gpflow.probability_distributions.Gaussian(
-        tf.constant([[10]], dtype=gpflow.settings.tf_float),
-        tf.constant([[[0.1]]], dtype=gpflow.settings.tf_float))
+        tf.constant([[10]], dtype=gpflow.settings.float_type),
+        tf.constant([[[0.1]]], dtype=gpflow.settings.float_type))
     z = gpflow.features.InducingPoints([[-10.], [10.]])
 
     ekz = expectation(p, (kern, z), (kern, z))
@@ -336,8 +346,8 @@ def test_cov_shape_inference(session_tf, distribution, feature):
 @pytest.mark.parametrize("distribution", [gauss, gauss_diag])
 @pytest.mark.parametrize("kernel1", [rbf_kern, rbf_kern_2])
 @pytest.mark.parametrize("kernel2", [rbf_kern, rbf_kern_2])
-@pytest.mark.parametrize("feat1", [feature, feature2])
-@pytest.mark.parametrize("feat2", [feature, feature2])
+@pytest.mark.parametrize("feat1", [feat1, feat2])
+@pytest.mark.parametrize("feat2", [feat1, feat2])
 def test_eKzxKxz_rbf_cross_covariance(session_tf,
                                       distribution, kernel1, kernel2,
                                       feat1, feat2):

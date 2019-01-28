@@ -20,7 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from . import kernels, mean_functions, settings
-from .features import InducingFeature, InducingPoints
+from .features import Kuf, InducingFeature, InducingPoints
 from .decors import params_as_tensors_for
 from .quadrature import mvnquad
 from .probability_distributions import Gaussian, DiagonalGaussian, MarkovGaussian
@@ -90,7 +90,7 @@ def get_eval_func(obj, feature, slice=np.s_[...]):
         # kernel + feature combination
         if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kernel):
             raise TypeError("If `feature` is supplied, `obj` must be a kernel.")
-        return lambda x: tf.transpose(feature.Kuf(obj, x))[slice]
+        return lambda x: tf.transpose(Kuf(feature, obj, x))[slice]
     elif isinstance(obj, mean_functions.MeanFunction):
         return lambda x: obj(x)[slice]
     elif isinstance(obj, kernels.Kernel):
@@ -226,7 +226,7 @@ def expectation(p, obj1, obj2=None, nghp=None):
     except NotImplementedError as e:  # pragma: no cover
 
         warn_msg = "Quadrature is used to calculate the expectation. " + str(e)
-        logger.warn(warn_msg)
+        logger.warning(warn_msg)
 
         return _quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp)
 
@@ -262,7 +262,7 @@ def _expectation(p, kern, feat, none1, none2, nghp=None):
         if kern.ARD:
             lengthscales = kern.lengthscales
         else:
-            lengthscales = tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales
+            lengthscales = tf.zeros((D,), dtype=settings.float_type) + kern.lengthscales
 
         chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(lengthscales ** 2) + Xcov)  # NxDxD
 
@@ -290,7 +290,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
     Xmu, Xcov = p.mu, p.cov
 
     with tf.control_dependencies([tf.assert_equal(
-            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
+            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.int_type),
             message="Currently cannot handle slicing in exKxz.")]):
         Xmu = tf.identity(Xmu)
 
@@ -329,7 +329,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
     Xmu, Xcov = p.mu, p.cov
 
     with tf.control_dependencies([tf.assert_equal(
-            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
+            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.int_type),
             message="Currently cannot handle slicing in exKxz.")]):
         Xmu = tf.identity(Xmu)
 
@@ -386,7 +386,7 @@ def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
 
         def get_squared_length_scales(kern):
             squared_lengthscales = kern.lengthscales ** 2. if kern.ARD \
-                        else tf.zeros((D,), dtype=settings.tf_float) + kern.lengthscales ** 2.
+                        else tf.zeros((D,), dtype=settings.float_type) + kern.lengthscales ** 2.
             return squared_lengthscales
 
         if Ka == Kb:
@@ -513,7 +513,7 @@ def _expectation(p, kern, feat, mean, none, nghp=None):
     Xmu, Xcov = p.mu, p.cov
 
     with tf.control_dependencies([tf.assert_equal(
-            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
+            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.int_type),
             message="Currently cannot handle slicing in exKxz.")]):
         Xmu = tf.identity(Xmu)
 
@@ -537,7 +537,7 @@ def _expectation(p, kern, feat, mean, none, nghp=None):
     Xmu, Xcov = p.mu, p.cov
 
     with tf.control_dependencies([tf.assert_equal(
-            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
+            tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.int_type),
             message="Currently cannot handle slicing in exKxz.")]):
         Xmu = tf.identity(Xmu)
 
@@ -802,7 +802,7 @@ def _expectation(p, mean1, none1, mean2, none2, nghp=None):
 
 @dispatch(Gaussian, kernels.Sum, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\Sum_i diag(Ki_{X, X})>_p(X)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -815,7 +815,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
 
 @dispatch(Gaussian, kernels.Sum, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\Sum_i Ki_{X, Z}>_p(X)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -830,7 +830,7 @@ def _expectation(p, kern, feat, none2, none3, nghp=None):
           (mean_functions.Linear, mean_functions.Identity, mean_functions.Constant),
           type(None), kernels.Sum, InducingPoints)
 def _expectation(p, mean, none, kern, feat, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <m(x_n)^T (\Sum_i Ki_{x_n, Z})>_p(x_n)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -843,7 +843,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
 
 @dispatch(MarkovGaussian, mean_functions.Identity, type(None), kernels.Sum, InducingPoints)
 def _expectation(p, mean, none, kern, feat, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <x_{n+1} (\Sum_i Ki_{x_n, Z})>_p(x_{n:n+1})
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -856,7 +856,7 @@ def _expectation(p, mean, none, kern, feat, nghp=None):
 
 @dispatch((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <(\Sum_i K1_i_{Z1, x_n}) (\Sum_j K2_j_{x_n, Z2})>_p(x_n)
         - \Sum_i K1_i_{.,.}, \Sum_j K2_j_{.,.} :: Sum kernels
@@ -914,10 +914,10 @@ def _expectation(p, rbf_kern, feat1, lin_kern, feat2, nghp=None):
         D = tf.shape(Xmu)[1]
 
         lin_kern_variances = lin_kern.variance if lin_kern.ARD \
-            else tf.zeros((D,), dtype=settings.tf_float) + lin_kern.variance
+            else tf.zeros((D,), dtype=settings.float_type) + lin_kern.variance
 
         rbf_kern_lengthscales = rbf_kern.lengthscales if rbf_kern.ARD \
-            else tf.zeros((D,), dtype=settings.tf_float) + rbf_kern.lengthscales  ## Begin RBF eKxz code:
+            else tf.zeros((D,), dtype=settings.float_type) + rbf_kern.lengthscales  ## Begin RBF eKxz code:
 
         chol_L_plus_Xcov = tf.cholesky(tf.matrix_diag(rbf_kern_lengthscales ** 2) + Xcov)  # NxDxD
 
@@ -964,7 +964,7 @@ def _expectation(p, lin_kern, feat1, rbf_kern, feat2, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, type(None), type(None), type(None))
 def _expectation(p, kern, none1, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\HadamardProd_i diag(Ki_{X[:, active_dims_i], X[:, active_dims_i]})>_p(X)
         - \HadamardProd_i Ki_{.,.} :: Product kernel
@@ -982,7 +982,7 @@ def _expectation(p, kern, none1, none2, none3, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, type(None), type(None))
 def _expectation(p, kern, feat, none2, none3, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\HadamardProd_i Ki_{X[:, active_dims_i], Z[:, active_dims_i]}>_p(X)
         - \HadamardProd_i Ki_{.,.} :: Product kernel
@@ -1000,7 +1000,7 @@ def _expectation(p, kern, feat, none2, none3, nghp=None):
 
 @dispatch(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 def _expectation(p, kern1, feat1, kern2, feat2, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = < prodK_{Z, x_n} prodK_{x_n, Z} >_p(x_n)
                    = < (\HadamardProd_i Ki_{Z[:, active_dims_i], x[n, active_dims_i]})  <-- Mx1
