@@ -93,19 +93,11 @@ class Parentable:
         return misc.tensor_name(parent.pathname, parent.childname(self))
     
     @property
-    def full_name(self):
-        """
-        Backward compatibility with previous versions.
-        WARNING: WILL BE DEPRICATED SOON.
-        """
-        return self.pathname
-
-    @property
     def index(self):
         return self._index
 
     @abc.abstractproperty
-    def children(self):
+    def _children(self):
         """
         Abstract property for getting pairs of names and children, respectively.
 
@@ -114,7 +106,7 @@ class Parentable:
         pass
 
     @abc.abstractmethod
-    def store_child(self, name, child):
+    def _store_child(self, name, child):
         """
         Abstract method for saving association between child and its name in
         parent's specific storage.
@@ -123,7 +115,7 @@ class Parentable:
 
 
     @abc.abstractmethod
-    def remove_child(self, name, child):
+    def _remove_child(self, name, child):
         """
         Abstract method for removing an association between child and its name in
         parent's specific storage.
@@ -131,35 +123,35 @@ class Parentable:
         pass
 
     @property
-    def descendants(self):
+    def _descendants(self):
         """
         Scans full list of node descendants.
 
         :return: Generator of nodes.
         """
-        children = self.children
+        children = self._children
         if children is not None:
             for child in children.values():
-                yield from child.descendants
+                yield from child._descendants
                 yield child
     
-    def contains(self, node):
+    def _contains(self, node):
         """
         Checks either node already exist somewhere among descendants.
 
         :return: Boolean value.
         """
-        return node in list(self.descendants)
+        return node in list(self._descendants)
 
     def childname(self, child):
         if not isinstance(child, Parentable):
             raise ValueError('Parentable object expected, {child} passed.'.format(child=child))
-        name = [ch[0] for ch in self.children.items() if ch[1] is child]
+        name = [ch[0] for ch in self._children.items() if ch[1] is child]
         if not name:
             raise KeyError('Parent {parent} does not have child {child}'.format(parent=self, child=child))
         return name[0]
 
-    def set_child(self, name, child):
+    def _set_child(self, name, child):
         """
         Set child.
 
@@ -168,24 +160,24 @@ class Parentable:
         """
         if not isinstance(child, Parentable):
             raise ValueError('Parentable child object expected, not {child}'.format(child=child))
-        child.set_parent(self)
-        self.store_child(name, child)
+        child._set_parent(self)
+        self._store_child(name, child)
     
-    def unset_child(self, name, child):
+    def _unset_child(self, name, child):
         """
         Untie child from parent.
 
         :param name: Child name.
         :param child: Parentable object.
         """
-        if name not in self.children or self.children[name] is not child:
+        if name not in self._children or self._children[name] is not child:
             msg = 'Child {child} with name "{name}" is not found'
             raise ValueError(msg.format(child=child, name=name))
-        child.set_parent(None)
-        self.remove_child(name, child)
+        child._set_parent(None)
+        self._remove_child(name, child)
 
 
-    def set_parent(self, parent=None):
+    def _set_parent(self, parent=None):
         """
         Set parent.
 
@@ -196,7 +188,7 @@ class Parentable:
         if parent is not None:
             if not isinstance(parent, Parentable):
                 raise ValueError('Parent object must implement Parentable interface.')
-            if parent is self or parent.contains(self):
+            if parent is self or parent._contains(self):
                 raise ValueError('Self references are not allowed.')
         self._parent = parent if parent is not None else None
     
