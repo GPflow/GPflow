@@ -50,7 +50,8 @@ class DataHolder(Parameter):
     def __init__(self, value, dtype=None, fix_shape=False, check_ndim_is: int=None, name=None):
         self._dataholder_tensor = None
         if isinstance(value, tf.Tensor):
-            shape_is_valid = value.get_shape().ndims in (None, check_ndim_is)
+            # tensors can also have a None shape that we cannot validate here
+            shape_is_valid = value.shape.ndims in (None, check_ndim_is)
         else:
             shape_is_valid = np.asarray(value).ndim == check_ndim_is
         if check_ndim_is is not None and not shape_is_valid:
