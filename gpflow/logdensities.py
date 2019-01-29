@@ -84,10 +84,10 @@ def multivariate_normal(x, mu, L):
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
 
-    assert_x_shape = tf.Assert(tensor_ndim_equal(x, 2), [tf.shape(x)],
-        summarize='multivariate_normal requires the shape of x to be (N, D)')
-    assert_mu_shape = tf.Assert(tensor_ndim_equal(mu, 2), [tf.shape(mu)],
-        summarize='multivariate_normal requires the shape of mu to be (N, D)')
+    assert_x_shape = tf.Assert(tensor_ndim_equal(x, 2), [
+        'multivariate_normal requires the shape of x to be (N, D)'])
+    assert_mu_shape = tf.Assert(tensor_ndim_equal(mu, 2), [
+        'multivariate_normal requires the shape of mu to be (N, D)'])
     with tf.control_dependencies([assert_x_shape, assert_mu_shape]):
         d = x - mu
         alpha = tf.matrix_triangular_solve(L, d, lower=True)
