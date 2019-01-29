@@ -199,14 +199,6 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     N = tf.shape(Kmn)[-1]
     M = tf.shape(f)[-2]
 
-    # get the leadings dims in Kmn to the front of the tensor
-    # if Kmn has rank two, i.e. [M, N], this is the identity op.
-    K = tf.rank(Kmn)
-    perm = tf.concat([tf.reshape(tf.range(1, K-1), [K-2]), # leading dims (...)
-                      tf.reshape(0, [1]),  # [M]
-                      tf.reshape(K-1, [1])], 0)  # [N]
-    Kmn = tf.transpose(Kmn, perm)  # ... x M x N
-
     leading_dims = tf.shape(Kmn)[:-2]
     Lm = tf.cholesky(Kmm)  # [M,M]
 

@@ -279,8 +279,8 @@ class Stationary(Kernel):
         Xs = tf.reduce_sum(tf.square(X), axis=-1)
         X2 = X2 / self.lengthscales
         X2s = tf.reduce_sum(tf.square(X2), axis=-1)
-        dist = -2 * tf.tensordot(X, X2, [[-1], [-1]])
-        dist += _broadcasting_elementwise_op(tf.add, Xs, X2s)
+        dist = -2 * _last_index_contract(X, X2)
+        dist += tf.expand_dims(Xs, -1) + tf.expand_dims(X2s, -2)
         return dist
 
 
@@ -403,7 +403,7 @@ class Linear(Kernel):
         if X2 is None:
             return tf.matmul(X * self.variance, X, transpose_b=True)
         else:
-            return tf.tensordot(X * self.variance, X2, [[-1], [-1]])
+            return _last_index_contract(X * self.variance, X2)
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -767,18 +767,12 @@ class Product(Combination):
     def Kdiag(self, X, presliced=False):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kernels])
 
-
-def _broadcasting_elementwise_op(op, a, b):
-    r"""
-    Apply binary operation `op` to every pair in tensors `a` and `b`.
-    :param op: binary operator on tensors, e.g. tf.add, tf.substract
-    :param a: tf.Tensor, shape [n_1, ..., n_a]
-    :param b: tf.Tensor, shape [m_1, ..., m_b]
-    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
-    """
-    flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
-    return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
-
+def _last_index_contract(A, B):
+    A_leading_dims = tf.shape(A)[:-2]
+    B_leading_dims = tf.shape(B)[:-2]
+    A += tf.zeros(tf.concat([B_leading_dims, [1, 1]], 0), dtype=settings.float_type)
+    B += tf.zeros(tf.concat([A_leading_dims, [1, 1]], 0), dtype=settings.float_type)
+    return tf.matmul(A, B, transpose_b=True)
 
 def make_deprecated_class(oldname, NewClass):
     """
