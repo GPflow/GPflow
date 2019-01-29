@@ -95,6 +95,7 @@ def autobuild_decorate(func, caller):
         fun.__qualname__ = func.__qualname__
     return fun
 
+
 class AutoBuild(abc.ABCMeta):
     """
     AutoBuild meta class is used for changing an initializing behaviour at its descendants.
