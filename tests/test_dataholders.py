@@ -27,9 +27,6 @@ class TestDataholder(GPflowTestCase):
     def test_create_dataholder(self):
         with self.test_context():
             shape = (10,)
-            with self.assertRaises(ValueError):
-                d = gpflow.DataHolder(np.ones(shape))
-
             d = gpflow.DataHolder(np.ones(shape))
             self.assertAllEqual(d.shape, shape)
             self.assertEqual(d.dtype, np.float64)
@@ -105,6 +102,10 @@ class TestDataholder(GPflowTestCase):
             for value in values:
                 with self.assertRaises(ValueError, msg='Value {}'.format(value)):
                     gpflow.DataHolder(tensor)
+
+            with self.assertRaises(ValueError):
+                d = gpflow.DataHolder(np.ones((10,)), check_ndim_is=2)
+
 
     def test_fixed_shape(self):
         with self.test_context():
