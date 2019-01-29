@@ -49,22 +49,27 @@ Online documentation of the latest GPflow release can be found at https://gpflow
 
 To compile the GPflow documentation locally:
 
-1. install doc dependencies
-    pip install sphinx sphinx_rtd_theme numpydoc nbsphinx
+1. Install doc dependencies
+```
+pip install sphinx sphinx_rtd_theme numpydoc nbsphinx
+```
+2. Install pandoc 
+```
+pip install pandoc
+```
+If pandoc does not install via pip, or step 4 does not work, go to pandoc.org/installing.html
 
-2a. install pandoc
-    pip install pandoc
+3. Change directory to `doc`
+```
+cd doc
+```
 
-2b. if pandoc does not install via pip, or step 4 does not work, go to pandoc.org/installing.html
+4. Compile the documentation as html
+```
+make html
+```
 
-3. change directory to doc
-    cd doc
-
-4. compile the documentation as html
-    make html
-
-5. Check documentation locally by opening (in a browser)
-    doc/build/html/index.html
+5. Check documentation locally by opening (in a browser) doc/build/html/index.html
 
 ### Docker image
 
