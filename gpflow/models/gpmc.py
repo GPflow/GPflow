@@ -47,8 +47,8 @@ class GPMC(GPModel):
             L L^T = K
 
         """
-        X = DataHolder(X)
-        Y = DataHolder(Y)
+        X = DataHolder(X, check_ndim_is=2)
+        Y = DataHolder(Y, check_ndim_is=2)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
         self.num_data = X.shape[0]
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))

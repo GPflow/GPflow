@@ -116,7 +116,7 @@ class TestShareArgs(GPflowTestCase):
 class IncrementModel(DumbModel):
     def __init__(self):
         DumbModel.__init__(self)
-        self.b = gpflow.DataHolder(np.array([3.]), allow_1d=True)
+        self.b = gpflow.DataHolder(np.array([3.]))
 
     @gpflow.autoflow((tf.float64,))
     @gpflow.params_as_tensors

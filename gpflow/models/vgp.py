@@ -58,8 +58,8 @@ class VGP(GPModel):
 
         """
 
-        X = DataHolder(X)
-        Y = DataHolder(Y)
+        X = DataHolder(X, check_ndim_is=2)
+        Y = DataHolder(Y, check_ndim_is=2)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
         self.num_data = X.shape[0]
 
@@ -169,8 +169,8 @@ class VGP_opper_archambeau(GPModel):
 
         mean_function = Zero() if mean_function is None else mean_function
 
-        X = DataHolder(X)
-        Y = DataHolder(Y)
+        X = DataHolder(X, check_ndim_is=2)
+        Y = DataHolder(Y, check_ndim_is=2)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]

@@ -278,7 +278,7 @@ class TestParameter(GPflowTestCase):
 
             d_str = ('                 class shape  fixed_shape value'
                      '\n{name}  DataHolder    ()        False   1.0')
-            d = gpflow.DataHolder(1., name="short", allow_1d=True)
+            d = gpflow.DataHolder(1., name="short")
             check_str(d, d_str)
 
             params_str = ('                     class prior transform  trainable shape'
@@ -451,7 +451,7 @@ class TestParameterized(GPflowTestCase):
         p.b = gpflow.Param(11.)
         p.c = gpflow.Parameterized()
         p.c.d = gpflow.Param(12., fix_shape=False)
-        p.c.e = gpflow.DataHolder(13., allow_1d=True)
+        p.c.e = gpflow.DataHolder(13.)
         return p
 
     def test_is_built(self):

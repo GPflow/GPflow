@@ -41,26 +41,26 @@ class DataHolder(Parameter):
     :param fix_shape: Default value is `False` and indicates that shape
         of internal tensor does not have specific shape, in other words,
         it is None.
-    :param allow_1d: do not check shape of data input value.
+    :param check_ndim_is: if not None, checks that value.ndim matches this
     :param name: Name of the parameter.
 
     :raises: ValueError exception if value is not valid.
     """
 
-    def __init__(self, value, dtype=None, fix_shape=False, allow_1d=False, name=None):
+    def __init__(self, value, dtype=None, fix_shape=False, check_ndim_is: int=None, name=None):
         self._dataholder_tensor = None
         if isinstance(value, tf.Tensor):
-            shape_is_valid = value.get_shape().ndims in (None, 2)
+            shape_is_valid = value.get_shape().ndims in (None, check_ndim_is)
         else:
-            shape_is_valid = np.asarray(value).ndim == 2
-        if not shape_is_valid and not allow_1d:
-            raise ValueError(
-                "GPflow generally expects all inputs (e.g. X, Y) to be "
-                "two-dimensional, e.g. N x D, where D is the number of input "
-                "features or the number of outputs. If single input features "
-                "or outputs are used, the shape should be N x 1.\n"
-                "If this DataHolder is supposed to hold values of other "
-                "shapes, set allow_1d=True when constructing it.")
+            shape_is_valid = np.asarray(value).ndim == check_ndim_is
+        if check_ndim_is is not None and not shape_is_valid:
+            message = "This DataHolder expects a {}-dimensional value.".format(check_ndim_is)
+            if check_ndim_is == 2:
+                message += (" GPflow generally expects all inputs (e.g. X, Y) to be "
+                            "two-dimensional, e.g. N x D, where D is the number of input "
+                            "features or the number of outputs. If single input features "
+                            "or outputs are used, the shape should be N x 1.")
+            raise ValueError(message)
         super().__init__(value=value, name=name, dtype=dtype, fix_shape=fix_shape)
 
     @property
@@ -163,11 +163,11 @@ class Minibatch(DataHolder):
     """
 
     def __init__(self, value, batch_size=1, shuffle=True,
-                 seed=None, dtype=None, name=None):
+                 seed=None, dtype=None, check_ndim_is=None, name=None):
         if not misc.is_valid_param_value(value) or misc.is_tensor(value):
             raise ValueError('The value must be either an array or a scalar.')
 
-        super().__init__(value, name=name, dtype=dtype)
+        super().__init__(value, name=name, dtype=dtype, check_ndim_is=check_ndim_is)
 
         self._batch_size = batch_size
         self._shuffle = shuffle

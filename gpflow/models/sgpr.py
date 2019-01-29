@@ -112,8 +112,8 @@ class SGPR(GPModel, SGPRUpperMixin):
 
         This method only works with a Gaussian likelihood.
         """
-        X = DataHolder(X)
-        Y = DataHolder(Y)
+        X = DataHolder(X, check_ndim_is=2)
+        Y = DataHolder(Y, check_ndim_is=2)
         likelihood = likelihoods.Gaussian()
         num_latent = Y.shape[1]
         GPModel.__init__(self, X=X, Y=Y, kern=kern, likelihood=likelihood,
@@ -245,8 +245,8 @@ class GPRFITC(GPModel, SGPRUpperMixin):
 
         mean_function = Zero() if mean_function is None else mean_function
 
-        X = DataHolder(X)
-        Y = DataHolder(Y)
+        X = DataHolder(X, check_ndim_is=2)
+        Y = DataHolder(Y, check_ndim_is=2)
         likelihood = likelihoods.Gaussian()
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
         self.feature = features.inducingpoint_wrapper(feat, Z)

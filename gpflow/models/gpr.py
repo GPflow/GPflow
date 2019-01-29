@@ -53,8 +53,8 @@ class GPR(GPModel):
         name is a string which can be used to name this model (useful for handling multiple models on one tf.graph)
         """
         likelihood = likelihoods.Gaussian()
-        X = DataHolder(X)
-        Y = DataHolder(Y)
+        X = DataHolder(X, check_ndim_is=2)
+        Y = DataHolder(Y, check_ndim_is=2)
         num_latent = Y.shape[1]
         GPModel.__init__(self, X=X, Y=Y, kern=kern, likelihood=likelihood,
                          mean_function=mean_function, num_latent=num_latent, name=name)

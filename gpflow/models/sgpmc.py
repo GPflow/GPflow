@@ -68,8 +68,8 @@ class SGPMC(GPModel):
         kern, likelihood, mean_function are appropriate GPflow objects
 
         """
-        X = DataHolder(X)
-        Y = DataHolder(Y)
+        X = DataHolder(X, check_ndim_is=2)
+        Y = DataHolder(Y, check_ndim_is=2)
         GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent=num_latent, **kwargs)
         self.num_data = X.shape[0]
         self.feature = inducingpoint_wrapper(feat, Z)

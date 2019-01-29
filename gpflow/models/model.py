@@ -142,11 +142,11 @@ class GPModel(Model):
 
         if isinstance(X, np.ndarray):
             # X is a data matrix; each row represents one instance
-            X = DataHolder(X)
+            X = DataHolder(X, check_ndim_is=2)
         if isinstance(Y, np.ndarray):
             # Y is a data matrix, rows correspond to the rows in X,
             # columns are treated independently
-            Y = DataHolder(Y)
+            Y = DataHolder(Y, check_ndim_is=2)
         self.X, self.Y = X, Y
 
     @autoflow((settings.float_type, [None, None]))
