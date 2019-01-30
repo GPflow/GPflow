@@ -253,8 +253,12 @@ def _get_tensor_safe(name, index, graph):
 
 
 def tensor_ndim_equal(tensor, ndim):
+    """
+    Returns a scalar bool tensor that is True if the rank of `tensor` is equal to `ndim`.
+    """
     tensor_shape = tf.shape(tensor)
     tensor_ndim = tf.shape(tensor_shape)
+    # The return value of tf.equal() is a 1-vector; turn it into a scalar using tf.reduce_all():
     return tf.reduce_all(tf.equal(tensor_ndim, ndim))
 
 
