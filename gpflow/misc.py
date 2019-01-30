@@ -255,7 +255,7 @@ def _get_tensor_safe(name, index, graph):
 def tensor_ndim_equal(tensor, ndim):
     tensor_shape = tf.shape(tensor)
     tensor_ndim = tf.shape(tensor_shape)
-    return tf.equal(tensor_ndim, ndim)
+    return tf.reduce_all(tf.equal(tensor_ndim, ndim))
 
 
 def version():
