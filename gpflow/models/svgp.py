@@ -148,6 +148,9 @@ class SVGP(GPModel):
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
+    def elbo(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
+        return self.neg_log_marginal_likelihood(X, Y)
+
     def predict_f(self, Xnew, full_cov=False, full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu()
         q_sqrt = self.q_sqrt()
