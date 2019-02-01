@@ -195,9 +195,9 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     """
     logger.debug("base conditional")
     # compute kernel stuff
-    num_func = tf.shape(f)[1]  # R
+    num_func = tf.shape(f)[-1]  # R
     N = tf.shape(Kmn)[-1]
-    M = tf.shape(f)[0]
+    M = tf.shape(f)[-2]
 
     # get the leadings dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
@@ -403,7 +403,7 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         raise NotImplementedError  # pragma: no cover
 
     if num_samples is None:
-        return samples[..., 0, : , :]  # [..., N, D]
+        return samples[..., 0, :, :]  # [..., N, D]
     return samples  # [..., S, N, D]
 
 
