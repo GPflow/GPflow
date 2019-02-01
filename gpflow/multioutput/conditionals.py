@@ -469,7 +469,7 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, N, P, P]
-        f_var = misc.leading_transform(f_var, [..., -4, -2, -3, -1])  # [..., N, P, N, P]
+        f_var = misc.leading_transpose(f_var, [..., -4, -2, -3, -1])  # [..., N, P, N, P]
 
     elif full_cov and not full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
