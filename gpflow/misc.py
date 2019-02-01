@@ -93,6 +93,9 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]]) -> t
     considers them as a single grouped element indexed by 0 in `perm` list. So, passing
     `perm=[-2, ..., -1]`, you assume that your input tensor has [..., A, B] shape,
     and you want to move leading dims between A and B dimensions.
+    Dimension indices in permutation list can be negative or positive. Valid positive
+    indices start from 1 up to the tensor rank, viewing leading dimensions `...` as zero
+    index.
 
     Example:
         a = tf.random.normal((1, 2, 3, 4, 5, 6))

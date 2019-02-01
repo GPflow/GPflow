@@ -14,7 +14,7 @@
 
 import tensorflow as tf
 
-from . import misc
+from .. import misc
 from .. import settings
 from ..conditionals import (_expand_independent_outputs, _rollaxis_left,
                             _sample_mvn, base_conditional)
