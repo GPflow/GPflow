@@ -14,17 +14,18 @@
 
 import tensorflow as tf
 
-from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof, MixedKernelSeparateMof
-from .features import Kuu, Kuf
-from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
+from .. import misc
 from .. import settings
-from ..conditionals import (base_conditional, _expand_independent_outputs,
-                            _sample_mvn, _rollaxis_left, _get_perm_with_leading_dims)
+from ..conditionals import (_expand_independent_outputs, _rollaxis_left,
+                            _sample_mvn, base_conditional)
 from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
-
+from .features import (Kuf, Kuu, MixedKernelSeparateMof, MixedKernelSharedMof,
+                       SeparateIndependentMof, SharedIndependentMof)
+from .kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
+                      SharedIndependentMok)
 
 logger = settings.logger()
 
@@ -404,7 +405,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         fvar = Knn - tf.matmul(At, At, transpose_a=True)  # N x K x K
     elif not full_cov and not full_output_cov:
         # Knn: N x K
-        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [1]), (N, K))  # Can also do this with a matmul
+        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (N, K))  # Can also do this with a matmul
 
     # another backsubstitution in the unwhitened case
     if not white:
@@ -468,14 +469,12 @@ def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, N, P, P]
-        perm = _get_perm_with_leading_dims(leading_dims, rk - 3, rk - 1, rk - 2, rk)
-        f_var = tf.transpose(f_var, perm)  # [..., N, P, N, P]
+        f_var = misc.leading_transpose(f_var, [..., -4, -2, -3, -1])  # [..., N, P, N, P]
 
     elif full_cov and not full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
         f_var = tf.tensordot(g_var, W**2, [[0], [-1]])  # [..., N, N, P]
-        perm = _get_perm_with_leading_dims(leading_dims, rk - 1, rk - 3, rk - 2)
-        f_var = tf.transpose(f_var, perm)  # [..., P, N, N]
+        f_var = misc.leading_transpose(f_var, [..., -1, -3, -2])  # [..., P, N, N]
 
     elif not full_cov and full_output_cov:  # g_var is [..., N, L]
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, 1, L]

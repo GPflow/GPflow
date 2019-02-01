@@ -15,7 +15,7 @@
 
 import tensorflow as tf
 
-from . import features, mean_functions, settings
+from . import features, mean_functions, settings, misc
 from .decors import name_scope
 from .dispatch import conditional, sample_conditional
 from .expectations import expectation
@@ -379,6 +379,7 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     S = num_samples if num_samples is not None else 1
     D = mean_shape[-1]
     leading_dims = mean_shape[:-2]
+    num_leading_dims = tf.size(leading_dims)
 
     if cov_structure == "diag":
         # mean: [..., N, D] and cov [..., N, D]
@@ -397,16 +398,13 @@ def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
             eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [..., N, D, S]
             chol = tf.cholesky(cov + jittermat)  # [..., N, D, D]
             samples = mean[..., None] + tf.matmul(chol, eps)  # [..., N, D, S]
-            k = tf.rank(samples)
-            perm = _get_perm_with_leading_dims(k - 3, k - 1, k - 3, k - 2)
-            samples = tf.transpose(samples, perm)  # [..., S, N, D]
-            # samples = _rollaxis_right(samples, 1)  # [S, ..., N, D]
+            samples = misc.leading_transpose(samples, [..., -1, -3, -2])  # [..., S, N, D]
     else:
         raise NotImplementedError  # pragma: no cover
 
     if num_samples is None:
         return samples[..., 0, :, :]  # [..., N, D]
-    return samples  # [S, ..., N, D]
+    return samples  # [..., S, N, D]
 
 
 def _expand_independent_outputs(fvar, full_cov, full_output_cov):
@@ -451,21 +449,3 @@ def _rollaxis_right(A, num_rolls):
     rank = tf.rank(A)
     perm = tf.concat([rank - num_rolls + tf.range(num_rolls), tf.range(rank - num_rolls)], 0)
     return tf.transpose(A, perm)
-
-
-def _get_perm_with_leading_dims(leading_dims, *axis, offset=0):
-    """
-    Constructs a permuation array that can be used in `tf.transpose`.
-    Will keep the leading dims uneffected, and transpose the last 
-    dimensions according to the order specified in `axis`.
-    :param leading_dims: int or tf.int
-        number of leading dimensions, order of these axis will stay unchanged
-    :param *axis: int's or tf.int's
-        specifies the order of the last `len(axis)`.
-    :return: one-dimensional tf.Tensor that can be used as permutation argument
-        in tf.transpose.
-    """
-    perm = [tf.reshape(tf.range(leading_dims) + offset, [leading_dims])]
-    perm += [tf.reshape(a, [1]) for a in axis]
-    perm = tf.concat(perm, 0)
-    return perm
