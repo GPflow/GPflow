@@ -87,7 +87,6 @@ def multivariate_normal(x, mu, L):
     with tf.control_dependencies([
             assert_tensor_ndim(x, 2, 'multivariate_normal requires the shape of x to be (N, D)'),
             assert_tensor_ndim(mu, 2, 'multivariate_normal requires the shape of mu to be (N, D)'),
-            tf.assert_equal(tf.shape(x), tf.shape(mu)),
             tf.assert_equal(tf.shape(L), [tf.shape(x)[0], tf.shape(x)[0]]),
             ]):
         d = x - mu
