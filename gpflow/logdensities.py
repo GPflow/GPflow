@@ -17,7 +17,7 @@ import tensorflow as tf
 import numpy as np
 
 from . import settings
-from .misc import tensor_ndim_equal
+from .misc import assert_tensor_ndim
 
 
 def gaussian(x, mu, var):
@@ -84,11 +84,10 @@ def multivariate_normal(x, mu, L):
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
 
-    assert_x_shape = tf.Assert(tensor_ndim_equal(x, 2), [
-        'multivariate_normal requires the shape of x to be (N, D)'])
-    assert_mu_shape = tf.Assert(tensor_ndim_equal(mu, 2), [
-        'multivariate_normal requires the shape of mu to be (N, D)'])
-    with tf.control_dependencies([assert_x_shape, assert_mu_shape]):
+    with tf.control_dependencies([
+            assert_tensor_ndim(x, 2, 'multivariate_normal requires the shape of x to be (N, D)'),
+            assert_tensor_ndim(mu, 2, 'multivariate_normal requires the shape of mu to be (N, D)'),
+            ]):
         d = x - mu
         alpha = tf.matrix_triangular_solve(L, d, lower=True)
         num_dims = tf.cast(tf.shape(d)[0], L.dtype)
