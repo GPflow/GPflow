@@ -4,6 +4,7 @@ Tutorials and examples
 .. toctree::
    :maxdepth: 1
 
+   notebooks/tips_and_tricks
    notebooks/models
    notebooks/regression
    notebooks/classification
