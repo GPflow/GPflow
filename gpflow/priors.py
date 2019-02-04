@@ -11,7 +11,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+For a fully Bayesian treatment of a model it is necessary to assign prior
+distributions over unknown parameters. Ideally the uncertainty of these
+parameters in the posterior should also be utilised when making predictions.
 
+GPflow allows priors to be assigned to any parameter, such as kernel
+hyperparameters, likelihood parameters, model parameters, mean function
+parameters, etc. If prior information is available about the likely values of
+these parameters, this can often aid optimisation.
+
+Many default GPflow models only allow Maximum a Posteriori (MAP) estimation of
+these parameters (the most likely value in the posterior is used during
+prediction, but the uncertainty around this value is not used). However,
+assigning prior distributions for unknown values can still be useful in this
+situation.
+
+MCMC based inference models are the exception, here the uncertainty in the
+parameters is approximately integrated over during predictions, using samples.
+See the `MCMC notebook <notebooks/mcmc.html>`_ for further details on using MCMC
+models in GPflow.
+
+GPflow provides a range of standard prior distributions to be used, all being
+subclasses of :class:`Prior <gpflow.priors.Prior>`. Each distribution makes
+different assumptions about the distribution of likely values and contains more
+or less support for different parameter values that it is assigned to depending
+on both the distribution type and their own (fixed) hyperparameters.
+
+For example is a value is known to only be positive, a prior distribution with
+only positive support should be chosen, such as a LogNormal prior. If a value
+should only be between 0 and 1, a Beta distribution may be used.
+"""
 
 import tensorflow as tf
 import numpy as np
@@ -29,9 +59,13 @@ class Prior(Parameterized, IPrior):  # pylint: disable=W0223
 
 class Exponential(Prior):
     """
-    Exponential distribution.
+    Exponential distribution, parameterised in terms of its rate
+    (inverse scale).
 
     Support: [0, inf)
+
+    Note, the rate parameter may be a vector, this assumes a different
+    rate parameter per dimension of the parameter the prior is over.
     """
 
     def __init__(self, rate):
@@ -55,7 +89,20 @@ class Exponential(Prior):
 
 
 class Gaussian(Prior):
+    """
+    Gaussian distribution, parameterised in terms of its mean and variance
+
+    Support: (-inf, inf)
+
+    Note, the mean and variance parameters may be vectors, this assumes a
+    different univariate Gaussian per dimension of the parameter the prior is
+    over. The variance parameter must also be positive.
+    """
     def __init__(self, mu, var):
+        """
+        :param float mu: mean parameter of Gaussian
+        :param float var: variance parameter of Gaussian (var > 0)
+        """
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.var = np.atleast_1d(np.array(var, settings.float_type))
@@ -73,7 +120,20 @@ class Gaussian(Prior):
 
 
 class LogNormal(Prior):
+    """
+    Log-normal distribution, parameterised in terms of its mean and variance
+
+    Support: [0, inf)
+
+    Note, the mean and variance parameters may be vectors, this assumes a
+    different univariate log-normal per dimension of the parameter the prior is
+    over. The variance parameter must also be positive.
+    """
     def __init__(self, mu, var):
+        """
+        :param float mu: mean parameter of log-normal
+        :param float var: variance parameter of log-normal (var > 0)
+        """
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.var = np.atleast_1d(np.array(var, settings.float_type))
@@ -91,10 +151,25 @@ class LogNormal(Prior):
 
 
 class Gamma(Prior):
+    """
+    Gamma distribution, parameterised in terms of its shape and scale
+
+    Support: [0, inf)
+
+    Note, the shape and scale parameters may be vectors, this assumes a
+    different univariate Gammma distribution per dimension of the parameter the
+    prior is over. Both shape and scale parameters must be positive
+    """
     def __init__(self, shape, scale):
+        """
+        :param float shape: shape parameter of Gamma distribution (shape > 0)
+        :param float scale: scale parameter of Gamma distribution (scale > 0)
+        """
         Prior.__init__(self)
         self.shape = np.atleast_1d(np.array(shape, settings.float_type))
         self.scale = np.atleast_1d(np.array(scale, settings.float_type))
+        if any(self.shape <= 0):  # pragma: no cover
+            raise ValueError("The shape parameter has to be positive.")
         if any(self.scale <= 0):  # pragma: no cover
             raise ValueError("The scale parameter has to be positive.")
 
@@ -109,7 +184,21 @@ class Gamma(Prior):
 
 
 class Laplace(Prior):
+    """
+    Laplace distribution, parameterised in terms of its mu (shape) and sigma
+    (scale)
+
+    Support: (-inf, inf)
+
+    Note, the mean and scale parameters may be vectors, this assumes a
+    different univariate Laplace distribution per dimension of the parameter
+    the prior is over. The scale parameter must be positive.
+    """
     def __init__(self, mu, sigma):
+        """
+        :param float mu: shape parameter of Laplace distribution
+        :param float sigma: scale parameter of Laplace distribution (sigma > 0)
+        """
         Prior.__init__(self)
         self.mu = np.atleast_1d(np.array(mu, settings.float_type))
         self.sigma = np.atleast_1d(np.array(sigma, settings.float_type))
@@ -127,7 +216,21 @@ class Laplace(Prior):
 
 
 class Beta(Prior):
+    """
+    Beta distribution, parameterised in terms of its 'a' (shape) and 'b'
+    (scale) parameters
+
+    Support: [0, 1]
+
+    Note, the shape and scale parameters may be vectors, this assumes a
+    different univariate Beta distribution per dimension of the parameter
+    the prior is over. Both parameters must be positive.
+    """
     def __init__(self, a, b):
+        """
+        :param float a: shape parameter of Laplace distribution (a > 0)
+        :param float b: scale parameter of Laplace distribution (b > 0)
+        """
         Prior.__init__(self)
         self.a = np.atleast_1d(np.array(a, settings.float_type))
         self.b = np.atleast_1d(np.array(b, settings.float_type))
@@ -145,7 +248,16 @@ class Beta(Prior):
 
 
 class Uniform(Prior):
+    """
+    Uniform distribution, parameterised in terms of its lower and upper
+
+    Support: [lower, upper]
+    """
     def __init__(self, lower=0., upper=1.):
+        """
+        :param float lower: lower possible value of the uniform distribution
+        :param float upper: upper possible value of the uniform distribution
+        """
         Prior.__init__(self)
         self.lower, self.upper = lower, upper
         if lower >= upper:  # pragma: no cover

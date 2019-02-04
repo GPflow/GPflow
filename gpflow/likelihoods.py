@@ -54,6 +54,7 @@ integration is done by sampling (can be more suitable when F is higher dimension
 
 import numpy as np
 import tensorflow as tf
+import abc
 
 from . import logdensities
 from . import priors
@@ -78,7 +79,7 @@ class Likelihood(Parameterized):
         Given a Normal distribution for the latent function,
         return the mean of Y
 
-        if
+        i.e. if
             q(f) = N(Fmu, Fvar)
 
         and this object represents
@@ -87,14 +88,17 @@ class Likelihood(Parameterized):
 
         then this method computes the predictive mean
 
-           \int\int y p(y|f)q(f) df dy
+           ∫∫ y p(y|f)q(f) df dy
 
         and the predictive variance
 
-           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y p(y|f)q(f) df dy ]^2
+           ∫∫ y^2 p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]^2
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
+
+        :param Fmu: mean of Gaussian, q(f), to take the expectation over [N, P]
+        :param Fvar: variances (independent per data) of Gaussian, q(f), to take the expectation over [N, P]
         """
         integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
         E_y, E_y2 = ndiagquad([self.conditional_mean, integrand2],
@@ -107,7 +111,6 @@ class Likelihood(Parameterized):
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the log predictive density of Y.
-
         i.e. if
             q(f) = N(Fmu, Fvar)
 
@@ -117,10 +120,13 @@ class Likelihood(Parameterized):
 
         then this method computes the predictive density
 
-            \log \int p(y=Y|f)q(f) df
+            log ∫ p(y=Y|f)q(f) df
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
+
+        :param Fmu: mean of Gaussian, q(f), to take the expectation over [N, P]
+        :param Fvar: variances (independent per data) of Gaussian, q(f), to take the expectation over [N, P]
         """
         return ndiagquad(self.logp,
                          self.num_gauss_hermite_points,
@@ -130,8 +136,7 @@ class Likelihood(Parameterized):
         r"""
         Compute the expected log density of the data, given a Gaussian
         distribution for the function values.
-
-        if
+        i.e. if
             q(f) = N(Fmu, Fvar)
 
         and this object represents
@@ -140,19 +145,69 @@ class Likelihood(Parameterized):
 
         then this method computes
 
-           \int (\log p(y|f)) q(f) df.
-
+           ∫ (log p(y|f)) q(f) df.
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
+
+        :param Fmu: mean of Gaussian, q(f), to take the expectation over [N, P]
+        :param Fvar: variances (independent per data) of Gaussian, q(f), to take the expectation over [N, P]
+        :param Y: observed data to use for likelihood, log p(y|f)
         """
         return ndiagquad(self.logp,
                          self.num_gauss_hermite_points,
                          Fmu, Fvar, Y=Y)
 
+    @abc.abstractmethod
+    def logp(self, F, Y):
+        """
+        Log probability of Y given F, where F is typically the latent function
+        for each output, and Y is the data
+
+        log p(Y|F)
+
+        :param F: Latent function(s) [N, P]
+        :param Y: Observed data [N, P]
+        """
+        pass
+
+    @abc.abstractmethod
+    def conditional_mean(self, F):  # pylint: disable=R0201
+        """
+        Conditional mean of the distribution
+
+        E[Y|F] = ∫ Y p(Y|F) dY
+
+        :param F: Latent function(s) [N, P]
+        """
+        pass
+
+    @abc.abstractmethod
+    def conditional_variance(self, F):  # pylint: disable=R0201
+        """
+        Conditional variance of the distribution
+
+        Var[Y|F] = ∫ (Y-μ)² p(Y|F) dY
+
+        where μ = E[Y|F] is the conditional_mean
+
+        :param F: Latent function(s) [N, P]
+        """
+        pass
+
 
 class Gaussian(Likelihood):
+    r"""
+    Univariate Gaussian likelihood as defined by its variance. The mean is assumed
+    to be input dependant.
+
+    p(Y|F) = 𝒩 (Y|F,Iσ²) = \prod^{N}_{i=1} 1/(2πσ²) exp[-(fᵢ - yᵢ)² / 2σ²]
+    """
     def __init__(self, variance=1.0, **kwargs):
+        """
+        :param float variance: variance of the independent univariate Gaussian
+                               likelihoods (variance > 0)
+        """
         super().__init__(**kwargs)
         self.variance = Parameter(
             variance, transform=transforms.positive, dtype=settings.float_type)
@@ -185,13 +240,17 @@ class Gaussian(Likelihood):
 
 class Poisson(Likelihood):
     """
-    Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.
+    Poisson likelihood for use with count data, where the rate is given by the
+    (transformed) GP.
 
-    let g(.) be the inverse-link function, then this likelihood represents
+    Let g(.) be the inverse-link function, then this likelihood represents
 
-    p(y_i | f_i) = Poisson(y_i | g(f_i) * binsize)
+    p(yᵢ | fᵢ) = Poisson(yᵢ | g(fᵢ) * bᵢ) = [g(fᵢ)*bᵢ]^{yᵢ} exp(-g(fᵢ)*bᵢ) / yᵢ!
 
-    Note:binsize
+    where bᵢ is the binsize for each datapoint. If a scalar is provided for
+    binsize, it is assumed that each datapoint has the same binsize.
+
+    Note: binsize
     For use in a Log Gaussian Cox process (doubly stochastic model) where the
     rate function of an inhomogeneous Poisson process is given by a GP.  The
     intractable likelihood can be approximated by gridding the space (into bins
@@ -199,6 +258,14 @@ class Poisson(Likelihood):
     """
 
     def __init__(self, invlink=tf.exp, binsize=1., **kwargs):
+        """
+        :param invlink: inverse link function, often used to transform the
+                        latent function to ensure that the rate of the Poisson
+                        is positive
+        :type invlink: :class:`gpflow.transforms.Transform`
+        :param float binsize: binsize in which latent function is assumed to
+                             constant (as an approximation)
+        """
         super().__init__(**kwargs)
         self.invlink = invlink
         self.binsize = np.double(binsize)
@@ -220,7 +287,21 @@ class Poisson(Likelihood):
 
 
 class Exponential(Likelihood):
+    """
+    Exponential likelihood for positive continuous data, where the rate is
+    given by the (transformed) GP.
+
+    Let g(.) be the inverse-link function, then this likelihood represents
+
+    p(yᵢ|fᵢ) = g(fᵢ)exp(-g(fᵢ)yᵢ)
+    """
     def __init__(self, invlink=tf.exp, **kwargs):
+        """
+        :param invlink: inverse link function, often used to transform the
+                        latent function to ensure that the rate of the
+                        Exponential is positive
+        :type invlink: :class:`gpflow.transforms.Transform`
+        """
         super().__init__(**kwargs)
         self.invlink = invlink
 
@@ -240,6 +321,18 @@ class Exponential(Likelihood):
 
 
 class StudentT(Likelihood):
+    """
+    Student-T likelihood for continuous heavy tailed data.
+
+    p(yᵢ|fᵢ) = [ Γ((v+1)/2) / Γ(v/2)√(vπ)σ ]
+               × [1 + (1/v)((yᵢ - fᵢ)/2)²]^{-(v+1)/2}
+
+    where v is the degrees of freedom (df).
+
+    Note: df
+    for the conditional variance is only defined for df > 2
+    """
+
     def __init__(self, scale=1.0, df=3.0, **kwargs):
         """
         :param scale float: scale parameter
@@ -270,7 +363,20 @@ def inv_probit(x):
 
 
 class Bernoulli(Likelihood):
+    """
+    Bernoulli likelihood for binary data, classification where the probability
+    of the class being equal to 1 is given by the (transformed) GP.
+
+    Let g(.) be the inverse-link function, then this likelihood represents
+
+    p(yᵢ|fᵢ) = g(fᵢ)ᵏ(1-g(fᵢ))¹⁻ᵏ
+    """
     def __init__(self, invlink=inv_probit, **kwargs):
+        """
+        :param invlink: inverse link function, used to transform the latent
+                        function to ensure that the function is between 0 and 1
+        :type invlink: :class:`gpflow.transforms.Transform`
+        """
         super().__init__(**kwargs)
         self.invlink = invlink
 
@@ -299,10 +405,18 @@ class Bernoulli(Likelihood):
 
 class Gamma(Likelihood):
     """
-    Use the transformed GP to give the *scale* (inverse rate) of the Gamma
+    Gamma likelihood for positive data, where the *scale* (θ, inverse rate)
+    of the Gamma distribution is given by the (transformed) GP.
+
+    The shape, k, is initialised and optimised but is not input dependant.
     """
 
     def __init__(self, invlink=tf.exp, **kwargs):
+        """
+        :param invlink: inverse link function, used to transform the latent
+                        function to ensure that the scale is positive
+        :type invlink: :class:`gpflow.transforms.Transform`
+        """
         super().__init__(**kwargs)
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=transforms.positive)
@@ -650,13 +764,16 @@ class MonteCarloLikelihood(Likelihood):
 
         then this method computes the predictive mean
 
-           \int\int y p(y|f)q(f) df dy
+           ∫∫ y p(y|f)q(f) df dy
 
         and the predictive variance
 
-           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y p(y|f)q(f) df dy ]^2
+           ∫∫ y^2 p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]^2
 
         Here, we implement a default Monte Carlo routine.
+
+        :param Fmu: mean of Gaussian, q(f), to take the expectation over [N, P]
+        :param Fvar: variances (independent per data) of Gaussian, q(f), to take the expectation over [N, P]
         """
         integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
         E_y, E_y2 = self._mc_quadrature([self.conditional_mean, integrand2],
@@ -678,9 +795,12 @@ class MonteCarloLikelihood(Likelihood):
 
         then this method computes the predictive density
 
-            \log \int p(y=Y|f)q(f) df
+            log ∫ p(y=Y|f)q(f) df
 
         Here, we implement a default Monte Carlo routine.
+
+        :param Fmu: mean of Gaussian, q(f), to take the expectation over [N, P]
+        :param Fvar: variances (independent per data) of Gaussian, q(f), to take the expectation over [N, P]
         """
         return self._mc_quadrature(self.logp, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon)
 
@@ -690,7 +810,7 @@ class MonteCarloLikelihood(Likelihood):
         distribution for the function values.
 
         if
-            q(f) = N(Fmu, Fvar)  - Fmu: N x D  Fvar: N x D
+            q(f) = N(Fmu, Fvar)
 
         and this object represents
 
@@ -700,8 +820,11 @@ class MonteCarloLikelihood(Likelihood):
 
            \int (\log p(y|f)) q(f) df.
 
-
         Here, we implement a default Monte Carlo quadrature routine.
+
+        :param Fmu: mean of Gaussian, q(f), to take the expectation over [N, P]
+        :param Fvar: variances (independent per data) of Gaussian, q(f), to take the expectation over [N, P]
+        :param Y: observed data to use for likelihood, log p(y|f)
         """
         return self._mc_quadrature(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
 

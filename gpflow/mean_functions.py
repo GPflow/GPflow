@@ -23,6 +23,17 @@ with some unknown parameters θ, resulting in f ~ GP(μ(x;θ), k(x,x')).
 The GPflow :class:`MeanFunction <gpflow.mean_functions.MeanFunction>` class
 allows this to be done whilst additionally learning parameters of the
 parametric function.
+
+The + and * operators have been overloaded for convenience, allowing
+multiple mean functions to be combined easily:
+
+.. code-block:: python
+
+    mean1 = Linear(A1, b1)
+    mean2 = Linear(A2, b2)
+    mean3 = Constant(c)
+    mean = mean1 + mean2 * mean3
+
 """
 
 import tensorflow as tf
@@ -58,15 +69,17 @@ class MeanFunction(Parameterized):
 
 class Linear(MeanFunction):
     """
-    y_i = A x_i + b
+    Linear mean function with parameterised mapping matrix A and offset b
+
+    yᵢ = Axᵢ + b
     """
     def __init__(self, A=None, b=None):
         """
-        A is a matrix which maps each element of X to Y, b is an additive
-        constant.
-
         If X has N rows and D columns, and Y is intended to have Q columns,
         then A must be D x Q, b must be a vector of length Q.
+
+        :param A: Matrix which maps each element of X to Y
+        :param b: An additive constant.
         """
         A = np.ones((1, 1)) if A is None else A
         b = np.zeros(1) if b is None else b
@@ -81,7 +94,9 @@ class Linear(MeanFunction):
 
 class Identity(Linear):
     """
-    y_i = x_i
+    Identity mean function
+
+    yᵢ = xᵢ
     """
     def __init__(self, input_dim=None):
         Linear.__init__(self)
@@ -117,7 +132,9 @@ class Identity(Linear):
 
 class Constant(MeanFunction):
     """
-    y_i = c,,
+    Constant (not input dependant) mean function with a parameterised constant c
+
+    yᵢ = c
     """
     def __init__(self, c=None):
         MeanFunction.__init__(self)
@@ -132,6 +149,11 @@ class Constant(MeanFunction):
 
 
 class Zero(Constant):
+    """
+    Zero mean function
+
+    yᵢ = 0
+    """
     def __init__(self, output_dim=1):
         Constant.__init__(self)
         self.output_dim = output_dim
@@ -144,11 +166,16 @@ class Zero(Constant):
 
 class SwitchedMeanFunction(MeanFunction):
     """
-    This class enables to use different (independent) mean_functions respective
-    to the data 'label'.
+    Switched mean function, that allows different (independent) mean functions
+    to be used on per datapoint basis, using a data 'label' to indext the
+    correct mean function from a list.
+
     We assume the 'label' is stored in the extra column of X.
     """
     def __init__(self, meanfunction_list):
+        """
+
+        """
         MeanFunction.__init__(self)
         for m in meanfunction_list:
             assert isinstance(m, MeanFunction)
@@ -170,8 +197,16 @@ class SwitchedMeanFunction(MeanFunction):
 
 
 class Additive(MeanFunction):
+    """
+    Additive mean function class, allows two mean function instances
+    to be combined additively.
+
+    yᵢ = μ₁(xᵢ;Θ₁) + μ₂(xᵢ;Θ₂)
+    """
     def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
+        assert isinstance(first_part, MeanFunction)
+        assert isinstance(second_part, MeanFunction)
         self.add_1 = first_part
         self.add_2 = second_part
 
@@ -180,9 +215,16 @@ class Additive(MeanFunction):
 
 
 class Product(MeanFunction):
+    """
+    Additive mean function class, allows two mean function instances
+    to be combined additively
+
+    yᵢ = μ₁(xᵢ;Θ₁) * μ₂(xᵢ;Θ₂)
+    """
     def __init__(self, first_part, second_part):
         MeanFunction.__init__(self)
-
+        assert isinstance(first_part, MeanFunction)
+        assert isinstance(second_part, MeanFunction)
         self.prod_1 = first_part
         self.prod_2 = second_part
 
