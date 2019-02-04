@@ -76,7 +76,7 @@ class Linear(MeanFunction):
 
     @params_as_tensors
     def __call__(self, X):
-        return tf.matmul(X, self.A) + self.b
+        return tf.tensordot(X, self.A, [[-1], [0]]) + self.b
 
 
 class Identity(Linear):
