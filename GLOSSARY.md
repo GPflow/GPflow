@@ -14,6 +14,6 @@
   <dt>N</dt>
   <dd>in docstrings and shape constructions, data or minibatch size.</dd>
 
-  <dt>Shape construction</dt>
+  <dt>[] shape constructions</dt>
   <dd>the way of describing tensor shape in docstrings and comments. Example: [..., N, D, D], this is tensor with leading dimensions and last two dimensions are equal.</dd>
 </dl>
