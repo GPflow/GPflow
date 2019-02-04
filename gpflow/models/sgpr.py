@@ -117,7 +117,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         likelihood = likelihoods.Gaussian()
         num_latent = Y.shape[1]
         GPModel.__init__(self, X=X, Y=Y, kern=kern, likelihood=likelihood,
-                         num_latent=num_latent, name=name)
+                         mean_function=mean_function, num_latent=num_latent, name=name)
         self.feature = features.inducingpoint_wrapper(feat, Z)
         self.num_data = X.shape[0]
 

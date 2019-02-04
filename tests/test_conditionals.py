@@ -174,20 +174,24 @@ def test_base_conditional_vs_ref(session_tf, full_cov, features_inducing_points)
     Z = np.random.randn(M, Dx)
     kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
 
-    Kmm = kern.compute_K_symm(Z) + np.eye(M) * settings.numerics.jitter_level
-    Kmn = kern.compute_K(Z, X)
-    Knn = kern.compute_K_symm(X)
-
-    Kmm, Kmn, Knm, Knn = [np.tile(k[None, :, :], [Dy, 1, 1]) for k in [Kmm, Kmn, Kmn.T, Knn]]
-
     q_mu = np.random.randn(M, Dy)
     q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
 
-    S = q_sqrt @ np.transpose(q_sqrt, [0, 2, 1])
+    def numpy_conditional(X, Z, kern, q_mu, q_sqrt):
+        Kmm = kern.compute_K_symm(Z) + np.eye(M) * settings.numerics.jitter_level
+        Kmn = kern.compute_K(Z, X)
+        Knn = kern.compute_K_symm(X)
 
-    Kmm_inv = np.linalg.inv(Kmm)
-    mean_np = np.einsum('dmn,dmM,Md->nd', Kmn, Kmm_inv, q_mu)
-    cov_np = Knn + Knm @ Kmm_inv @ (S - Kmm) @ Kmm_inv @ Kmn
+        Kmm, Kmn, Knm, Knn = [np.tile(k[None, :, :], [Dy, 1, 1]) for k in [Kmm, Kmn, Kmn.T, Knn]]
+
+        S = q_sqrt @ np.transpose(q_sqrt, [0, 2, 1])
+
+        Kmm_inv = np.linalg.inv(Kmm)
+        mean = np.einsum('dmn,dmM,Md->nd', Kmn, Kmm_inv, q_mu)
+        cov = Knn + Knm @ Kmm_inv @ (S - Kmm) @ Kmm_inv @ Kmn
+        return mean, cov
+
+    mean_np, cov_np = numpy_conditional(X, Z, kern, q_mu, q_sqrt)
 
     if features_inducing_points:
         Z = gpflow.features.InducingPoints(Z)
