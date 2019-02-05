@@ -6,7 +6,7 @@
   <dd>stochastic variational inference for Gaussian process models</dd>
 
   <dt>[] shape constructions</dt>
-  <dd>the way of describing tensor shape in docstrings and comments. Example: [..., N, D, D], this is tensor with leading dimensions and last two dimensions are equal</dd>
+  <dd>the way of describing tensor shape in docstrings and comments. Example: [..., N, D, D], this is tensor with unknown number of leading dimensions and last two dimensions are equal</dd>
 
   <dt>X</dt>
   <dd>and its variations like Xnew in GPflow code mean input data (numpy or tensorflow)</dd>
