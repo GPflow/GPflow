@@ -4,16 +4,17 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+
+
 def plot_posterior_predictions(m):
-    
-    colors = plt.cm.winter(np.linspace(0, 1, m.likelihood.num_classes))
 
     f = plt.figure(figsize=(12,6))
     a1 = f.add_axes([0.05, 0.05, 0.9, 0.6])
     a2 = f.add_axes([0.05, 0.7, 0.9, 0.1])
     a3 = f.add_axes([0.05, 0.85, 0.9, 0.1])
-    
-    
+
     xx = np.linspace(m.X.read_value().min(), m.X.read_value().max(), 200).reshape(-1,1)
     mu, var = m.predict_f(xx)
     mu, var = mu.copy(), var.copy()
@@ -44,3 +45,5 @@ def plot_posterior_predictions(m):
     
     handles, labels = a1.get_legend_handles_labels()
     a1.legend(handles, labels)
+    f.tight_layout()
+    plt.show()
