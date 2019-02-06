@@ -1,7 +1,7 @@
 
-========================
+=============================
 The six core models of GPflow
-========================
+=============================
 .. automodule:: gpflow.models
 
 GP Regression
@@ -12,14 +12,14 @@ GP Regression
 Sparse GP Regression
 --------------------
 
-See also the documentation of the `derivation  <notebooks/SGPR_notes.html>`_.
+See also the documentation of the `SGPR derivation  <notebooks/SGPR_notes.html>`_.
 
 .. autoclass:: gpflow.models.SGPR
 
 Variational Gaussian Approximation
 ----------------------------------
 
-See also the documentation of the `derivation  <notebooks/VGP_notes.html>`_.
+See also the documentation of the `VGP derivation  <notebooks/VGP_notes.html>`_.
 
 .. autoclass:: gpflow.models.VGP
 

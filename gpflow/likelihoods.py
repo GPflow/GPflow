@@ -30,7 +30,7 @@ illustrating non-Gaussian likelihood regressions are available for
 <notebooks/ordinal.html>`_ and `multiclass <notebooks/multiclass.html>`_.
 
 Creating new likelihoods
-----------
+------------------------
 Likelihoods are defined by their
 log-likelihood. When creating new likelihoods, the
 :func:`logp <gpflow.likelihoods.Likelihood.logp>` method (log p(Y|F)), the
@@ -408,7 +408,11 @@ class Gamma(Likelihood):
     Gamma likelihood for positive data, where the *scale* (θ, inverse rate)
     of the Gamma distribution is given by the (transformed) GP.
 
-    The shape, k, is initialised and optimised but is not input dependant.
+    Let g(.) be the inverse-link function, then this likelihood represents
+
+    p(yᵢ|fᵢ) = {1 / Γ(k)g(fᵢ)ᵏ}yᵢᵏ⁻¹exp(-yᵢ/g(fᵢ))
+
+    The shape, k, is not input dependant.
     """
 
     def __init__(self, invlink=tf.exp, **kwargs):
@@ -445,22 +449,45 @@ class Gamma(Likelihood):
 
 class Beta(Likelihood):
     """
-    This uses a reparameterisation of the Beta density. We have the mean of the
-    Beta distribution given by the transformed process:
+    Beta likelihood for data between 0 and 1.
 
-        m = sigma(f)
+    This uses a reparameterisation of the Beta density such that the *mean*, μ,
+    of the Beta distribution is given by the (transformed) GP, which restricts
+    the mean of the distribution to be between 0 and 1.
 
-    and a scale parameter. The familiar alpha, beta parameters are given by
+    Let g(.) be the inverse-link function, the mean is thus given by μᵢ = g(fᵢ)
 
-        m     = alpha / (alpha + beta)
-        scale = alpha + beta
+    in addition the distribution has a scale parameter. The scale parameter is
+    not input dependant.
+    The familiar alpha, beta parameters are given by
 
-    so:
-        alpha = scale * m
-        beta  = scale * (1-m)
+    μ     = α / (α + β)
+
+    scale = α + β
+
+    as such the input dependant shape parameters of the Beta distribution are
+    given by
+
+    αᵢ = scale * g(fᵢ)
+
+    βᵢ = scale * (1-g(fᵢ))
+
+    Finally the likelihood is parameterised as:
+
+    p(yᵢ|fᵢ) = yᵢ^{αᵢ-1}(1-yᵢ)^{βᵢ-1) / B(αᵢ,βᵢ)
+
+    where B(αᵢ,βᵢ) is the Beta function:
+
+    B(αᵢ,βᵢ) = Γ(αᵢ)Γ(βᵢ) / Γ(αᵢ + βᵢ)
+
     """
 
     def __init__(self, invlink=inv_probit, scale=1.0, **kwargs):
+        """
+        :param invlink: inverse link function, used to transform the latent
+                        function to ensure that the mean is between 0 and 1
+        :type invlink: :class:`gpflow.transforms.Transform`
+        """
         super().__init__(**kwargs)
         self.scale = Parameter(scale, transform=transforms.positive)
         self.invlink = invlink

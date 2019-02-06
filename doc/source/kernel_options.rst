@@ -1,6 +1,6 @@
-==================
+==========================
 Kernels included in GPflow
-==================
+==========================
 
 .. automodule:: gpflow.kernels
     :members:
