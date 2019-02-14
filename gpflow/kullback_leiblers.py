@@ -22,7 +22,7 @@ from .decors import name_scope
 
 
 @name_scope()
-def gauss_kl(q_mu, q_sqrt, K=None):
+def gauss_kl(q_mu, q_sqrt, K=None, L=None):
     """
     Compute the KL divergence KL[q || p] between
 
@@ -41,11 +41,16 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         square-root matrix of the covariance of q.
 
     K is the covariance of p.
+    L is the cholesky of the covariance of p
     It is a positive definite matrix (M x M) or a tensor of stacked such matrices (L x M x M)
     If K is None, compute the KL divergence to p(x) = N(0, I) instead.
     """
 
-    white = K is None
+    if (K is not None) and (L is not None):
+        raise ValueError("Ambigious args are passed to `gauss_kl`, "
+                         "Either `L` or `K` need to be `None`")
+
+    white = (K is None) and (L is None)
     diag = q_sqrt.get_shape().ndims == 2
 
     M, B = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
@@ -53,9 +58,13 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     if white:
         alpha = q_mu  # M x B
     else:
-        batch = K.get_shape().ndims == 3
+        if K is not None:
+            batch = K.get_shape().ndims == 3
+            Lp = tf.cholesky(K)  # B x M x M or M x M
+        elif L is not None:
+            batch = L.get_shape().ndims == 3
+            Lp = L
 
-        Lp = tf.cholesky(K)  # B x M x M or M x M
         q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # B x M x 1 or M x B
         alpha = tf.matrix_triangular_solve(Lp, q_mu, lower=True)  # B x M x 1 or M x B
 
