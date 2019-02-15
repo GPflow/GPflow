@@ -42,13 +42,17 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
 
     K is the covariance of p, [M, M] or [L, M, M]
     K_cholesky is the cholesky of the covariance of p, [M, M] or [L, M, M]
-    Either `K` or `K_cholesky` have to be None.
-    If `K` and `K_cholesky` are None, compute the KL divergence to p(x) = N(0, I) instead.
+    
+    Note: if no K matrix is given (both `K` and `K_cholesky` are None),
+    `gauss_kl` computes the KL divergence from p(x) = N(0, I) instead.
+    The K matrix can be passed either directly as `K`, or as its Cholesky factor, `K_cholesky`. 
+    In either case, it can be a single matrix [M, M], in which case the sum of the L KL divergences 
+    is computed by broadcasting, or L different covariances [L, M, M].
     """
 
     if (K is not None) and (K_cholesky is not None):
-        raise ValueError("Ambigious args are passed to `gauss_kl`, "
-                         "Either `K` or `K_cholesky` need to be `None`")
+        raise ValueError("Ambiguous arguments: gauss_kl() must only "
+                         "be passed one of `K` or `K_cholesky`.")
 
     white = (K is None) and (K_cholesky is None)
     diag = q_sqrt.get_shape().ndims == 2
