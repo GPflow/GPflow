@@ -61,6 +61,10 @@ def K(session_tf):
     return tf.convert_to_tensor(Datum.K_data)
 
 @pytest.fixture
+def K_cholesky(session_tf):
+    return tf.cholesky(tf.convert_to_tensor(Datum.K_data))
+
+@pytest.fixture
 def K_batch(session_tf):
     return tf.convert_to_tensor(Datum.K_batch_data)
 
@@ -85,6 +89,16 @@ def test_diags(session_tf, white, mu, sqrt_diag, K):
     kl_dense = gauss_kl(mu, chol_from_diag, K if white else None)
 
     np.testing.assert_allclose(kl_diag.eval(), kl_dense.eval())
+
+@pytest.mark.parametrize('diag', [True, False])
+def test_kl_k_cholesky(session_tf, mu, sqrt, sqrt_diag, K, K_cholesky, diag):
+    """
+    Test that passing K or K_cholesky yield the same answer
+    """
+    kl_K = gauss_kl(mu, sqrt_diag if diag else sqrt, K=K)
+    kl_K_chol = gauss_kl(mu, sqrt_diag if diag else sqrt, K_cholesky=K_cholesky)
+
+    np.testing.assert_allclose(kl_K.eval(), kl_K_chol.eval())
 
 @pytest.mark.parametrize('diag', [True, False])
 def test_whitened(session_tf, diag, mu, sqrt_diag, I):
@@ -155,14 +169,14 @@ def test_unknown_size_inputs(session_tf):
     sqrt_ph = tf.placeholder(settings.float_type, [None, None, None])
     mu = np.ones([1, 4], dtype=settings.float_type)
     sqrt = np.ones([4, 1, 1], dtype=settings.float_type)
-    
+
     feed_dict = {mu_ph: mu, sqrt_ph: sqrt}
     known_shape_tf = gauss_kl(*map(tf.constant, [mu, sqrt]))
     unknown_shape_tf = gauss_kl(mu_ph, sqrt_ph)
-    
+
     known_shape = session_tf.run(known_shape_tf)
     unknown_shape = session_tf.run(unknown_shape_tf, feed_dict=feed_dict)
-    
+
     np.testing.assert_allclose(known_shape, unknown_shape)
 
 
