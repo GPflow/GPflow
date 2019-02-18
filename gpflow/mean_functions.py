@@ -11,7 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""
+Throughout GPflow, by default, latent functions being modelled with Gaussian
+processes are assumed to have zero mean, f ~ GP(0, k(x,x')).
 
+In some cases we may wish to model only the deviation from a fixed function
+with a Gaussian process.  For flexibility this fixed function could be both
+input dependent and parameterised function, μ(x; θ),
+with some unknown parameters θ, resulting in f ~ GP(μ(x;θ), k(x,x')).
+
+The GPflow :class:`MeanFunction <gpflow.mean_functions.MeanFunction>` class
+allows this to be done whilst additionally learning parameters of the
+parametric function.
+"""
 
 import tensorflow as tf
 import numpy as np

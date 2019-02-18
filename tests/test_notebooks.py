@@ -45,7 +45,7 @@ NOTEBOOK_FILES = [
     "SGPR_notes.ipynb",
     "svi_test.ipynb",
     "upper_bound.ipynb",
-    "vgp_notes.ipynb",
+    "vgp_notes.ipynb"
 ]
 
 BLACKLISTED_NOTEBOOKS = [
@@ -58,6 +58,7 @@ def test_notebook(notebook_file):
     _exec_notebook_ts(notebook_file)
 
 
+@pytest.mark.notebooks
 def test_no_notebook_missing():
     import glob
     all_notebooks = glob.glob(os.path.join(_nbpath(), '*.ipynb'))
