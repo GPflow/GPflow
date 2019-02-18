@@ -43,8 +43,8 @@ You can run the tests with `python setup.py test`.
 
 ## Getting Started
 
-Get started with our [examples and tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/nbviewer/doc/source/notebooks/manual/intro.ipynb),
-and for more information check out the [online user manual (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/). TODO: change path to develop once this branch is merged!
+Get started with our [examples and tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb),
+and for more information check out the [online user manual (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/).
 
 
 ## Compiling documentation
