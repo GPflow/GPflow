@@ -1,18 +1,19 @@
 <dl>
   <dt>GPR</dt>
-  <dd>gaussian process regression</dd>
+  <dd>Gaussian process regression</dd>
 
   <dt>SVGP</dt>
   <dd>stochastic variational inference for Gaussian process models</dd>
 
   <dt>[] shape constructions</dt>
-  <dd>the way of describing tensor shape in docstrings and comments. Example: [..., N, D, D], this is tensor with unknown number of leading dimensions and last two dimensions are equal</dd>
+  <dd>The way of describing tensor shapes in docstrings and comments. Example: [..., N, D, D], this is a tensor with an arbitrary number of leading dimensions, and the last two dimensions are equal</dd>
 
   <dt>X</dt>
-  <dd>and its variations like Xnew in GPflow code mean input data (numpy or tensorflow)</dd>
+  <dd>(and variations like Xnew) refers to input points; always of rank 2, e.g. shape [N, D], even when D=1</dd>
 
   <dt>Y</dt>
-  <dd>throughout is used to denote observed data, potentially with multiple output dimensions</dd>
+  <dd>refers to observed output values, potentially with multiple output dimensions; always of rank 2, e.g. shape [N,
+ P], even when P=1</dd>
 
   <dt>N</dt>
   <dd>stands for data or minibatch size in docstrings and shape constructions</dd>
@@ -24,8 +25,8 @@
   <dd>stands for the number of input dimensions in docstrings and shape constructions</dd>
 
   <dt>Z</dt>
-  <dd>inducing points tensor</dd>
+  <dd>inducing points</dd>
 
   <dt>...</dt>
-  <dd>leading dimensions in docstrings and in the code it is ellipsis.</dd>
+  <dd>arbitrary leading dimensions</dd>
 </dl>
