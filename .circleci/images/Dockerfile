@@ -26,7 +26,7 @@ RUN apt-get update --fix-missing && \
 
 RUN pip install -q tensorflow==1.12.0 numpy scipy pandas pytest nbformat \
     nbconvert jupyter_client matplotlib pytest-xdist pytest-cov \
-    multipledispatch mock codecov
+    multipledispatch mock codecov sklearn
 
 ENV TINI_VERSION v0.16.1
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
