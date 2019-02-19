@@ -489,7 +489,7 @@ class Polynomial(Linear):
 
 class Exponential(Stationary):
     """
-    The Exponential kernel,
+    The Exponential kernel. It is equivalent to a Matern12 kernel with doubled lengthscales.
     """
 
     @params_as_tensors
