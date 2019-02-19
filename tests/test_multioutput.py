@@ -311,7 +311,7 @@ def test_fully_correlated_conditional_repeat_shapes(func):
                 q_sqrt=q_sqrt,
                 white=white)
 
-    assert v.shape == m.shape
+    assert v.shape.as_list() == m.shape.as_list()
 
 
 # ------------------------------------------
