@@ -79,3 +79,4 @@ def _exec_notebook_ts(notebook_filename):
 @pytest.mark.parametrize('notebook_file', get_notebooks())
 def test_notebook(notebook_file):
     _exec_notebook_ts(notebook_file)
+
