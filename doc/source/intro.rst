@@ -23,7 +23,7 @@ Code to generate the image can be found `here <https://github.com/GPflow/GPflow/
 
 Getting Started
 ---------------
-Get started with our `examples and tutorials <https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb>`_.
+Get started with our `examples and tutorials <https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true>`_.
 
 
 What's the difference between GPy and GPflow?
