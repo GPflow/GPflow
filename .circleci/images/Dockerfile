@@ -25,7 +25,7 @@ RUN apt-get update --fix-missing && \
     rm -rf /var/lib/apt/lists/*
 
 RUN pip install -q tensorflow==1.12.0 numpy scipy pandas pytest nbformat \
-    nbconvert jupyter_client matplotlib pytest-xdist pytest-cov \
+    nbconvert ipykernel jupyter_client matplotlib pytest-xdist pytest-cov \
     multipledispatch mock codecov sklearn
 
 ENV TINI_VERSION v0.16.1
