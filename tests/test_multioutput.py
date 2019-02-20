@@ -292,11 +292,11 @@ def test_sample_conditional_mixedkernel(session_tf):
                                          np.cov(value2, rowvar=False), decimal=1)
 
 
+@pytest.mark.parametrize('R', [1, 5])
 @pytest.mark.parametrize("func", [fully_correlated_conditional_repeat,
                                   fully_correlated_conditional])
-def test_fully_correlated_conditional_repeat_shapes(func):
+def test_fully_correlated_conditional_repeat_shapes(func, R):
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
-    R = 1
 
     Kmm = tf.ones((L * M, L * M))
     Kmn = tf.ones((L * M, N, P))

@@ -405,7 +405,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         fvar = Knn - tf.matmul(At, At, transpose_a=True)  # N x K x K
     elif not full_cov and not full_output_cov:
         # Knn: N x K
-        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (1, N, K))  # Can also do this with a matmul
+        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (N, K))  # Can also do this with a matmul
 
     # another backsubstitution in the unwhitened case
     if not white:
@@ -440,6 +440,8 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         elif not full_cov and not full_output_cov:
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # R x N x K
             fvar = fvar[None, ...] + addvar  # R x N x K
+    else:
+        fvar = tf.tile(fvar[None], [R]+[1]*fvar.shape.ndims)
     return fmean, fvar
 
 
