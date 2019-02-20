@@ -19,10 +19,10 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
-from ..base import Module, ModuleList, Parameter, positive
+from ..base import Parameter, positive
 
 
-class Kernel(Module):
+class Kernel(tf.Module):
     """
     The basic kernel class. Handles active dims.
     """
@@ -153,7 +153,7 @@ class Combination(Kernel):
                 kernels_list.extend(k.kernels)
             else:
                 kernels_list.append(k)
-        self.kernels = ModuleList(kernels_list)
+        self.kernels = kernels_list
 
     @property
     def on_separate_dimensions(self):

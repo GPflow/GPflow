@@ -9,11 +9,8 @@ from .optimize import loss_gradients
 __all__ = ['ScipyOptimizer']
 
 
-tfe = tf.contrib.eager
-
-
 Loss = tf.Tensor
-Variables = List[tfe.Variable]
+Variables = List[tf.Variable]
 Gradients = List[tf.Tensor]
 StepCallback = Callable[[Loss, Variables, Gradients], None]
 LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]

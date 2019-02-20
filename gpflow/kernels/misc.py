@@ -56,8 +56,8 @@ class ArcCosine(Kernel):
 
     def _weighted_product(self, X, X2=None):
         if X2 is None:
-            return tf.reduce_sum(self.weight_variances() * tf.square(X), axis=1) + self.bias_variance()
-        return tf.matmul((self.weight_variances() * X), X2, transpose_b=True) + self.bias_variance()
+            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+        return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
 
     def _J(self, theta):
         """
@@ -88,7 +88,7 @@ class ArcCosine(Kernel):
         jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
-        return self.variance() * (1. / np.pi) * self._J(theta) * \
+        return self.variance * (1. / np.pi) * self._J(theta) * \
                X_denominator[:, None] ** self.order * \
                X2_denominator[None, :] ** self.order
 
@@ -97,7 +97,7 @@ class ArcCosine(Kernel):
             X, _ = self.slice(X, None)
 
         X_product = self._weighted_product(X)
-        return self.variance() * (1. / np.pi) * self._J(0.) * X_product ** self.order
+        return self.variance * (1. / np.pi) * self._J(0.) * X_product ** self.order
 
 
 class Periodic(Kernel):
@@ -126,7 +126,7 @@ class Periodic(Kernel):
         self.period = Parameter(period, transform=positive())
 
     def K_diag(self, X, presliced=False):
-        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance()))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -138,10 +138,10 @@ class Periodic(Kernel):
         f = tf.expand_dims(X, 1)  # now N x 1 x D
         f2 = tf.expand_dims(X2, 0)  # now 1 x M x D
 
-        r = np.pi * (f - f2) / self.period()
-        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales()), 2)
+        r = np.pi * (f - f2) / self.period
+        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), 2)
 
-        return self.variance() * tf.exp(-0.5 * r)
+        return self.variance * tf.exp(-0.5 * r)
 
 
 class Coregion(Kernel):
@@ -188,11 +188,11 @@ class Coregion(Kernel):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.matmul(self.W(), self.W(), transpose_b=True) + tf.matrix_diag(self.kappa())
+        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.matrix_diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X, presliced=False):
         X, _ = self.slice(X, None)
         X = tf.cast(X[:, 0], tf.int32)
-        Bdiag = tf.reduce_sum(tf.square(self.W()), 1) + self.kappa()
+        Bdiag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
         return tf.gather(Bdiag, X)

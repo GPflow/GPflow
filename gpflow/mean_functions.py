@@ -16,11 +16,11 @@
 import numpy as np
 import tensorflow as tf
 
-from .base import Module, ModuleList, Parameter
+from .base import Parameter
 from .util import default_float
 
 
-class MeanFunction(Module):
+class MeanFunction(tf.Module):
     """
     The base mean function class.
     To implement a mean function, write the __call__ method. This takes a
@@ -131,7 +131,7 @@ class SwitchedMeanFunction(MeanFunction):
         super().__init__()
         for m in meanfunction_list:
             assert isinstance(m, MeanFunction)
-        self.meanfunction_list = ModuleList(meanfunction_list)
+        self.meanfunctions = meanfunction_list
 
     def __call__(self, X):
         ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
@@ -139,11 +139,11 @@ class SwitchedMeanFunction(MeanFunction):
         X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, tf.shape(X)[1]-1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
-        x_list = tf.dynamic_partition(X, ind, len(self.meanfunction_list))
+        x_list = tf.dynamic_partition(X, ind, len(self.meanfunctions))
         # apply the likelihood-function to each section of the data
-        results = [m(x) for x, m in zip(x_list, self.meanfunction_list)]
+        results = [m(x) for x, m in zip(x_list, self.meanfunctions)]
         # stitch the results back together
-        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, len(self.meanfunction_list))
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, len(self.meanfunctions))
         return tf.dynamic_stitch(partitions, results)
 
 

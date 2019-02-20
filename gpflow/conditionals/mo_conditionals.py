@@ -90,7 +90,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     # Following are: P x M x M  -  P x M x N  -  P x N(x N)
     Kmms = Kuu(feature, kernel, jitter=default_jitter())  # P x M x M
     Kmns = Kuf(feature, kernel, Xnew)  # P x M x N
-    kern_list = kernel.kernels if isinstance(kernel, Combination) else [kernel.kern] * len(feature.feat_list)
+    kern_list = kernel.kernels if isinstance(kernel, Combination) else [kernel.kern] * len(feature.features)
     Knns = tf.stack([k(Xnew) if full_cov else k(Xnew) for k in kern_list], axis=0)
     fs = tf.transpose(f)[:, :, None]  # P x M x 1
     # P x 1 x M x M  or  P x M x 1

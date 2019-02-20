@@ -24,6 +24,4 @@ from . import (conditionals, expectations, features, kernels, likelihoods,
 from .training import optimize
 from ._settings import SETTINGS as settings
 from ._version import __version__
-from .base import Parameter, Module, positive, triangular
-
-tf.enable_eager_execution()
+from .base import Parameter, positive, triangular

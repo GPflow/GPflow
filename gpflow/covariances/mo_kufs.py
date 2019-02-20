@@ -39,7 +39,7 @@ def _Kuf(feat: SeparateIndependentMof,
          kern: SharedIndependentMok,
          Xnew: tf.Tensor):
     debug_kuf(feat, kern)
-    return tf.stack([Kuf(f, kern.kern, Xnew) for f in feat.feat_list], axis=0)  # [L, M, N]
+    return tf.stack([Kuf(f, kern.kern, Xnew) for f in feat.features], axis=0)  # [L, M, N]
 
 
 @Kuf.register(SharedIndependentMof, SeparateIndependentMok, object)
@@ -55,7 +55,7 @@ def _Kuf(feat: SeparateIndependentMof,
          kern: SeparateIndependentMok,
          Xnew: tf.Tensor):
     debug_kuf(feat, kern)
-    Kufs = [Kuf(f, k, Xnew) for f, k in zip(feat.feat_list, kern.kernels)]
+    Kufs = [Kuf(f, k, Xnew) for f, k in zip(feat.features, kern.kernels)]
     return tf.stack(Kufs, axis=0)  # [L, M, N]
 
 

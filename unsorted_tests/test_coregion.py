@@ -109,10 +109,10 @@ class TestEquivalence(GPflowTestCase):
         with self.test_context():
             self.setup()
             assert_allclose(self.vgp0.mean_function.c.read_value(),
-                            self.cvgp.mean_function.meanfunction_list[0].c.read_value(),
+                            self.cvgp.mean_function.meanfunctions[0].c.read_value(),
                             atol=1.0e-2)
             assert_allclose(self.vgp1.mean_function.c.read_value(),
-                            self.cvgp.mean_function.meanfunction_list[1].c.read_value(),
+                            self.cvgp.mean_function.meanfunctions[1].c.read_value(),
                             atol=1.0e-2)
 
     def test_predicts(self):

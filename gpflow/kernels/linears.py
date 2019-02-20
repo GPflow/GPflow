@@ -27,14 +27,14 @@ class Linear(Kernel):
             X, X2 = self.slice(X, X2)
 
         if X2 is None:
-            return tf.matmul(X * self.variance(), X, transpose_b=True)
+            return tf.matmul(X * self.variance, X, transpose_b=True)
 
-        return tf.matmul(X * self.variance(), X2, transpose_b=True)
+        return tf.matmul(X * self.variance, X2, transpose_b=True)
 
     def K_diag(self, X, presliced=False):
         if not presliced:
             X, _ = self.slice(X, None)
-        return tf.reduce_sum(tf.square(X) * self.variance(), 1)
+        return tf.reduce_sum(tf.square(X) * self.variance, 1)
 
 
 class Polynomial(Linear):
@@ -62,8 +62,8 @@ class Polynomial(Linear):
         self.offset = Parameter(offset, transform=positive())
 
     def K(self, X, X2=None, presliced=False):
-        return (Linear(self, X, X2, presliced=presliced) + self.offset()) ** self.degree
+        return (Linear(self, X, X2, presliced=presliced) + self.offset) ** self.degree
 
     def K_diag(self, X, presliced=False):
-        return (Linear(self, X, presliced=presliced) + self.offset()) ** self.degree
+        return (Linear(self, X, presliced=presliced) + self.offset) ** self.degree
 

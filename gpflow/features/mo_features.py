@@ -15,7 +15,6 @@
 
 import abc
 
-from ..base import ModuleList
 from ..util import create_logger
 from .features import InducingFeature
 
@@ -49,10 +48,10 @@ class SeparateIndependentMof(InducingFeature, Mof):
     """
     def __init__(self, feat_list):
         Mof.__init__(self)
-        self.feat_list = ModuleList(feat_list)
+        self.features = feat_list
 
     def __len__(self):
-        return len(self.feat_list[0])
+        return len(self.features[0])
 
 
 class MixedKernelSharedMof(SharedIndependentMof):

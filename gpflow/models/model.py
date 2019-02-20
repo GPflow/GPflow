@@ -17,7 +17,7 @@ from typing import Optional, Tuple
 
 import tensorflow as tf
 
-from ..base import Module, Parameter
+from ..base import Parameter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
@@ -33,7 +33,7 @@ MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 #     full_output = 3
 
 
-class BayesianModel(Module):
+class BayesianModel(tf.Module):
     """ Bayesian model. """
 
     def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:

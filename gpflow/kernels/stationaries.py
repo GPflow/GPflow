@@ -41,7 +41,7 @@ class Stationary(Kernel):
         result may actually be very slightly negative for entries very
         close to each other.
         """
-        X = X / self.lengthscales()
+        X = X / self.lengthscales
         Xs = tf.reduce_sum(tf.square(X), axis=1)
 
         if X2 is None:
@@ -49,7 +49,7 @@ class Stationary(Kernel):
             dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
             return dist
 
-        X2 = X2 / self.lengthscales()
+        X2 = X2 / self.lengthscales
         X2s = tf.reduce_sum(tf.square(X2), axis=1)
         dist = -2 * tf.matmul(X, X2, transpose_b=True)
         dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
@@ -66,7 +66,7 @@ class Stationary(Kernel):
 
 
     def K_diag(self, X, presliced=False):
-        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance()))
+        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
 
 
 class RBF(Stationary):
@@ -77,7 +77,7 @@ class RBF(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
-        return self.variance() * tf.exp(-self.scaled_square_dist(X, X2) / 2)
+        return self.variance * tf.exp(-self.scaled_square_dist(X, X2) / 2)
 
 
 class RationalQuadratic(Stationary):
@@ -100,7 +100,7 @@ class RationalQuadratic(Stationary):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
-        return self.variance() * (1 + self.scaled_square_dist(X, X2) / (2 * self.alpha())) ** (-self.alpha())
+        return self.variance * (1 + self.scaled_square_dist(X, X2) / (2 * self.alpha)) ** (-self.alpha)
 
 
 class Exponential(Stationary):
@@ -112,7 +112,7 @@ class Exponential(Stationary):
         if not presliced:
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-        return self.variance() * tf.exp(-0.5 * r)
+        return self.variance * tf.exp(-0.5 * r)
 
 
 class Matern12(Stationary):
@@ -124,7 +124,7 @@ class Matern12(Stationary):
         if not presliced:
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-        return self.variance() * tf.exp(-r)
+        return self.variance * tf.exp(-r)
 
 
 class Matern32(Stationary):
@@ -136,7 +136,7 @@ class Matern32(Stationary):
         if not presliced:
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-        return self.variance() * (1. + np.sqrt(3.) * r) * tf.exp(-np.sqrt(3.) * r)
+        return self.variance * (1. + np.sqrt(3.) * r) * tf.exp(-np.sqrt(3.) * r)
 
 
 class Matern52(Stationary):
@@ -148,7 +148,7 @@ class Matern52(Stationary):
         if not presliced:
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-        return self.variance() * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) * tf.exp(-np.sqrt(5.) * r)
+        return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) * tf.exp(-np.sqrt(5.) * r)
 
 
 class Cosine(Stationary):
@@ -160,5 +160,5 @@ class Cosine(Stationary):
         if not presliced:
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-        return self.variance() * tf.cos(r)
+        return self.variance * tf.cos(r)
 
