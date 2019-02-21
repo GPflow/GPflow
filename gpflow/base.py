@@ -1,9 +1,12 @@
-from typing import Optional, Union, List, Tuple
+import functools
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from .util import default_float
+from tensorflow.python.ops import array_ops
 
+from .util import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
@@ -15,7 +18,7 @@ positive = tfp.bijectors.Softplus
 triangular = tfp.bijectors.FillTriangular
 
 
-class Parameter(tf.Variable):
+class Parameter(tf.Module):
     def __init__(self,
                  value, *,
                  transform: Optional[Transform] = None,
@@ -30,6 +33,7 @@ class Parameter(tf.Variable):
         to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
         therefore we need positive constraint and it is natural to use constrained values.
         """
+        super().__init__()
         if isinstance(value, tf.Variable):
             self._unconstrained = value
         else:
@@ -38,20 +42,6 @@ class Parameter(tf.Variable):
 
         self.prior = prior
         self._transform = transform
-
-    @property
-    def _in_graph_mode(self):
-        return self._unconstrained._in_graph_mode
-
-    @property
-    def _unique_id(self):
-        return self._unconstrained._unique_id
-
-    def constrained(self):
-
-    @property
-    def _shared_name(self):
-        return self._unconstrained._shared_name
 
     def log_prior(self):
         x = self.read_value()
@@ -77,6 +67,10 @@ class Parameter(tf.Variable):
 
     def read_value(self):
         return _to_constrained(self._unconstrained.read_value(), self.transform)
+
+    @property
+    def unconstrained_variable(self):
+        return self._unconstrained
 
     @property
     def transform(self):
@@ -140,6 +134,43 @@ class Parameter(tf.Variable):
     def __ilshift__(self, value: VariableData) -> 'Parameter':
         self.assign(value)
         return self
+
+    @classmethod
+    def _OverloadAllOperators(cls):  # pylint: disable=invalid-name
+        """Register overloads for all operators."""
+        for operator in tf.Tensor.OVERLOADABLE_OPERATORS:
+            cls._OverloadOperator(operator)
+        # For slicing, bind getitem differently than a tensor (use SliceHelperVar
+        # instead)
+        # pylint: disable=protected-access
+        setattr(cls, "__getitem__", array_ops._SliceHelperVar)
+
+    @classmethod
+    def _OverloadOperator(cls, operator):  # pylint: disable=invalid-name
+        """Defer an operator overload to `ops.Tensor`.
+
+        We pull the operator out of ops.Tensor dynamically to avoid ordering issues.
+
+        Args:
+            operator: string. The operator name.
+        """
+        tensor_oper = getattr(tf.Tensor, operator)
+
+        def _run_op(a, *args, **kwargs):
+            # pylint: disable=protected-access
+            return tensor_oper(a.value(), *args, **kwargs)
+
+        functools.update_wrapper(_run_op, tensor_oper)
+        setattr(cls, operator, _run_op)
+
+    # NOTE(mrry): This enables the Variable's overloaded "right" binary
+    # operators to run when the left operand is an ndarray, because it
+    # accords the Variable class higher priority than an ndarray, or a
+    # numpy matrix.
+    # TODO(mrry): Convert this to using numpy's __numpy_ufunc__
+    # mechanism, which allows more control over how Variables interact
+    # with ndarrays.
+    __array_priority__ = 100
 
 
 Parameter._OverloadAllOperators()
