@@ -22,7 +22,7 @@ class Parameter(tf.Variable):
                  prior: Optional[Prior] = None,
                  trainable: bool = True,
                  dtype: DType = None,
-                 name: str =None):
+                 name: str = None):
         """
         Unconstrained parameter representation.
         According to standart terminology `y` is always transformed representation or,
@@ -38,6 +38,20 @@ class Parameter(tf.Variable):
 
         self.prior = prior
         self._transform = transform
+
+    @property
+    def _in_graph_mode(self):
+        return self._unconstrained._in_graph_mode
+
+    @property
+    def _unique_id(self):
+        return self._unconstrained._unique_id
+
+    def constrained(self):
+
+    @property
+    def _shared_name(self):
+        return self._unconstrained._shared_name
 
     def log_prior(self):
         x = self.read_value()
