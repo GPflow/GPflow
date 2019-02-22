@@ -20,7 +20,7 @@ likelihood = gpflow.likelihoods.Bernoulli()
 
 # 3. Constrained vs unconstrained values.
 print(f"Unconstrained parameter value of `kernel.lengthscales` = {kernel.lengthscales}")
-print(f"Constrained parameter value of `kernel.lengthscales` = {kernel.lengthscales()}")
+print(f"Constrained parameter value of `kernel.lengthscales` = {kernel.lengthscales}")
 
 # 4. X's and Y's are no longer part of the model.
 m = gpflow.models.SVGP(kernel=kernel, feature=feature, likelihood=likelihood)

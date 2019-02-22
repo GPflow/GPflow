@@ -24,7 +24,7 @@ def _E(p, mean, _, kern, feat, nghp=None):
 
     :return: NxDxM
     """
-    return tf.matrix_transpose(expectation(p, (kern, feat), mean))
+    return tf.linalg.transpose(expectation(p, (kern, feat), mean))
 
 
 @dispatch.expectation.register((Gaussian, MarkovGaussian),
@@ -38,7 +38,7 @@ def _E(p, kern, feat, mean, _, nghp=None):
 
     :return: NxMxQ
     """
-    return tf.matrix_transpose(expectation(p, mean, (kern, feat), nghp=nghp))
+    return tf.linalg.transpose(expectation(p, mean, (kern, feat), nghp=nghp))
 
 
 @dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, kernels.Kernel, InducingPoints)
@@ -67,12 +67,12 @@ def _E(p, linear_mean, _, kern, feat, nghp=None):
 
     :return: NxQxM
     """
-    N = p.mu.shape[0].value
-    D = p.mu.shape[1].value
+    N = p.mu.shape[0]
+    D = p.mu.shape[1]
     exKxz = expectation(p, mfn.Identity(D), (kern, feat), nghp=nghp)
     eKxz = expectation(p, (kern, feat), nghp=nghp)
-    eAxKxz = tf.matmul(tf.tile(linear_mean.A()[None, :, :], (N, 1, 1)), exKxz, transpose_a=True)
-    ebKxz = linear_mean.b()[None, :, None] * eKxz[:, None, :]
+    eAxKxz = tf.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)), exKxz, transpose_a=True)
+    ebKxz = linear_mean.b[None, :, None] * eKxz[:, None, :]
     return eAxKxz + ebKxz
 
 
@@ -97,7 +97,7 @@ def _E(p, identity_mean, _, kern, feat, nghp=None):
                                object, (InducingFeature, NoneType),
                                object, (InducingFeature, NoneType))
 def _E(p, obj1, feat1, obj2, feat2, nghp=None):
-    gaussian = Gaussian(p.mu, tf.matrix_diag(p.cov))
+    gaussian = Gaussian(p.mu, tf.linalg.diag(p.cov))
     return expectation(gaussian, (obj1, feat1), (obj2, feat2), nghp=nghp)
 
 

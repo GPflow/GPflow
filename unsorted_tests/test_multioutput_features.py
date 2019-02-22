@@ -75,7 +75,7 @@ class Moks:
 @pytest.mark.parametrize('kernel', Moks().kernels())
 def test_kuu(session_tf, feature, kernel):
     Kuu = mf.Kuu(feature(), kernel(), jitter=1e-9)
-    session_tf.run(tf.cholesky(Kuu))
+    session_tf.run(tf.linalg.cholesky(Kuu))
 
 
 @pytest.mark.parametrize('feature', Mofs().features())
@@ -90,7 +90,7 @@ def test_mixed_shared(session_tf, fun):
     f = Mofs().mixed_shared()
     k = Moks().separate_mixed()
     if fun is mf.Kuu:
-        t = tf.cholesky(fun(f, k, jitter=1e-9))
+        t = tf.linalg.cholesky(fun(f, k, jitter=1e-9))
     else:
         t = fun(f, k, Datum.Xnew)
         print(t.shape)

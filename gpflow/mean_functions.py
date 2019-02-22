@@ -60,7 +60,7 @@ class Linear(MeanFunction):
         self.b = Parameter(b)
 
     def __call__(self, X):
-        return X @ self.A() + self.b()
+        return X @ self.A + self.b
 
 
 class Identity(Linear):
@@ -108,8 +108,8 @@ class Constant(MeanFunction):
         self.c = Parameter(c)
 
     def __call__(self, X):
-        shape = tf.stack([tf.shape(X)[0], 1])
-        return tf.tile(tf.reshape(self.c(), (1, -1)), shape)
+        shape = tf.stack([X.shape[0], 1])
+        return tf.tile(tf.reshape(self.c, (1, -1)), shape)
 
 
 class Zero(MeanFunction):
@@ -118,7 +118,7 @@ class Zero(MeanFunction):
         self.output_dim = output_dim
 
     def __call__(self, X):
-        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=X.dtype)
+        return tf.zeros((X.shape[0], self.output_dim), dtype=X.dtype)
 
 
 class SwitchedMeanFunction(MeanFunction):
@@ -134,9 +134,9 @@ class SwitchedMeanFunction(MeanFunction):
         self.meanfunctions = meanfunction_list
 
     def __call__(self, X):
-        ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
+        ind = tf.gather(tf.transpose(X), X.shape[1]-1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
-        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, tf.shape(X)[1]-1)))  # X = X[:,:-1]
+        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, X.shape[1]-1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, len(self.meanfunctions))

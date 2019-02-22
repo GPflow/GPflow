@@ -42,14 +42,14 @@ class SharedIndependentMok(Kernel, Mok):
         K = self.kern(X, X2)  # N x N2
         if full_output_cov:
             Ks = tf.tile(K[..., None], [1, 1, self.P])  # N x N2 x P
-            return tf.transpose(tf.matrix_diag(Ks), [0, 2, 1, 3])  # N x P x N2 x P
+            return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # N x P x N2 x P
         else:
             return tf.tile(K[None, ...], [self.P, 1, 1])  # P x N x N2
 
     def Kdiag(self, X, full_output_cov=True):
         K = self.kern(X)  # N
         Ks = tf.tile(K[:, None], [1, self.P])  # N x P
-        return tf.matrix_diag(Ks) if full_output_cov else Ks  # N x P x P or N x P
+        return tf.linalg.diag(Ks) if full_output_cov else Ks  # N x P x P or N x P
 
 
 class SeparateIndependentMok(Combination, Mok):
@@ -63,13 +63,13 @@ class SeparateIndependentMok(Combination, Mok):
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
             Kxxs = tf.stack([k(X, X2) for k in self.kernels], axis=2)  # N x N2 x P
-            return tf.transpose(tf.matrix_diag(Kxxs), [0, 2, 1, 3])  # N x P x N2 x P
+            return tf.transpose(tf.linalg.diag(Kxxs), [0, 2, 1, 3])  # N x P x N2 x P
         else:
             return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # P x N x N2
 
     def Kdiag(self, X, full_output_cov=False):
         stacked = tf.stack([k(X) for k in self.kernels], axis=1)  # N x P
-        return tf.matrix_diag(stacked) if full_output_cov else stacked  # N x P x P  or  N x P
+        return tf.linalg.diag(stacked) if full_output_cov else stacked  # N x P x P  or  N x P
 
 
 class SeparateMixedMok(Combination, Mok):

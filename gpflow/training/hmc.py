@@ -207,7 +207,7 @@ def _reject_accept_proposal(xs, xs_prev,
 
     with tf.control_dependencies(ps_upd):
         log_accept_ratio = logprob - 0.5 * dot(ps_upd) - logprob_prev + 0.5 * dot(ps_prev)
-        logu = tf.log(tf.random_uniform(shape=tf.shape(log_accept_ratio), dtype=logprob.dtype))
+        logu = tf.math.log(tf.random_uniform(shape=tf.shape(log_accept_ratio), dtype=logprob.dtype))
 
         def accept():
             with tf.control_dependencies([logu, log_accept_ratio]):
@@ -269,7 +269,7 @@ def _copy_variables(variables):
 
 
 def _init_ps(xs):
-    return _map(lambda x: tf.random_normal(tf.shape(x), dtype=x.dtype.as_numpy_dtype), xs)
+    return _map(lambda x: tf.random_normal(x.shape, dtype=x.dtype.as_numpy_dtype), xs)
 
 
 def _update_ps(ps, grads, epsilon, coeff=1):

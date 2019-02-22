@@ -287,8 +287,8 @@ class TestSoftMax(GPflowTestCase):
     def test_bernoulli_equivalence(self):
         with self.test_context() as sess:
             F, Y, feed = self.prepare(dimF=2, dimY=1)
-            Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1))
-            F = tf.stack([F[:, 0], tf.zeros(tf.shape(F)[0], dtype=F.dtype)], axis=1)
+            Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(F.shape[0], dtype=F.dtype)], axis=1))
+            F = tf.stack([F[:, 0], tf.zeros(F.shape[0], dtype=F.dtype)], axis=1)
             Ylabel = 1 - Y  # We need the 1 - Y, as we need to pass the *label* to SoftMax
 
             def logistic_link(x):

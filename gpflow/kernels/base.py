@@ -86,7 +86,7 @@ class Kernel(tf.Module):
             :return: [N, I, I].
         """
         if cov.ndim == 2:
-            cov = tf.matrix_diag(cov)
+            cov = tf.linalg.diag(cov)
 
         dims = self.active_dims
         if isinstance(dims, slice):
@@ -95,16 +95,12 @@ class Kernel(tf.Module):
         nlast = cov.shape[-1]
         ndims = len(dims)
 
-        cov_shape = tf.shape(cov)
+        cov_shape = cov.shape
         cov_reshaped = tf.reshape(cov, [-1, nlast, nlast])
         gather1 = tf.gather(tf.transpose(cov_reshaped, [2, 1, 0]), dims)
         gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), dims)
         cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
                          tf.concat([cov_shape[:-2], [ndims, ndims]], 0))
-
-        # nbatch = cov.shape[0]
-        # cov_reshaped = tf.reshape(cov, (-1, nlast, nlast))
-        # return tf.reshape(cov_reshaped[..., dims, dims], (nbatch, ndims, ndims))
 
         return cov
 
@@ -142,9 +138,10 @@ class Combination(Kernel):
     _reduction = None
 
     def __init__(self, kernels):
+        super().__init__()
+
         if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError("can only combine Kernel instances")  # pragma: no cover
-        super().__init__()
 
         # add kernels to a list, flattening out instances of this class therein
         kernels_list = []
@@ -177,16 +174,20 @@ class Combination(Kernel):
 
     def K(self, X, X2=None, presliced=False):
         res = [k.K(X, X2, presliced=presliced) for k in self.kernels]
-        return self.__class__._reduce(res)
+        return self._reduce(res)
 
     def K_diag(self, X, presliced=False):
         res = [k.K_diag(X, presliced=presliced) for k in self.kernels]
-        return self.__class__._reduce(res)
+        return self._reduce(res)
 
 
 class Sum(Combination):
-    _reduce = tf.add_n
+    @property
+    def _reduce(cls):
+        return tf.add_n
 
 
 class Product(Combination):
-    _reduce = partial(reduce, tf.multiply)
+    @property
+    def _reduce(cls):
+        return partial(reduce, tf.multiply)

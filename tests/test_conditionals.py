@@ -57,7 +57,7 @@ def sqrt():
 
 @pytest.fixture(scope='module')
 def chol(sqrt):
-    return tf.stack([tf.diag(sqrt[:, i]) for i in range(Ln)])
+    return tf.stack([tf.linalg.diag(sqrt[:, i]) for i in range(Ln)])
 
 
 @pytest.mark.parametrize('white', [True, False])
@@ -79,8 +79,8 @@ def test_whiten(Xdata, Xnew, kern, mu, sqrt):
     """
 
     K = kern(Xdata) + tf.eye(Nn, dtype=default_float()) * 1e-6
-    L = tf.cholesky(K)
-    V = tf.matrix_triangular_solve(L, mu, lower=True)
+    L = tf.linalg.cholesky(K)
+    V = tf.linalg.triangular_solve(L, mu, lower=True)
     mean1, var1 = conditional(Xnew, Xdata, kern, mu)
     mean2, var2 = conditional(Xnew, Xdata, kern, V, white=True)
 
@@ -96,12 +96,12 @@ def test_gaussian_whiten(Xdata, Xnew, kern, mu, sqrt):
     F_sqrt = tf.convert_to_tensor(rng.rand(Nn, Ln))
 
     K = kern(Xdata)
-    L = tf.cholesky(K)
-    V = tf.matrix_triangular_solve(L, mu, lower=True)
-    V_prime = tf.matrix_diag(tf.transpose(F_sqrt))
+    L = tf.linalg.cholesky(K)
+    V = tf.linalg.triangular_solve(L, mu, lower=True)
+    V_prime = tf.linalg.diag(tf.transpose(F_sqrt))
     common_shape = tf.broadcast_static_shape(V_prime.shape, L.shape)
     L = tf.broadcast_to(L, common_shape)
-    V_sqrt = tf.matrix_triangular_solve(L, tf.matrix_diag(tf.transpose(F_sqrt)), lower=True)
+    V_sqrt = tf.linalg.triangular_solve(L, tf.linalg.diag(tf.transpose(F_sqrt)), lower=True)
 
     Fstar_mean, Fstar_var = conditional(Xnew, Xdata, kern, mu, q_sqrt=F_sqrt)
     Fstar_w_mean, Fstar_w_var = conditional(Xnew, Xdata, kern, V, q_sqrt=V_sqrt, white=True)

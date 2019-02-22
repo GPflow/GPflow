@@ -22,51 +22,51 @@ logger = create_logger()
 
 
 def gaussian(x, mu, var):
-    return -0.5 * (np.log(2 * np.pi) + tf.log(var) + tf.square(mu-x) / var)
+    return -0.5 * (np.log(2 * np.pi) + tf.math.log(var) + tf.square(mu-x) / var)
 
 
 def lognormal(x, mu, var):
-    lnx = tf.log(x)
+    lnx = tf.math.log(x)
     return gaussian(lnx, mu, var) - lnx
 
 
 def bernoulli(x, p):
-    return tf.log(tf.where(tf.equal(x, 1), p, 1-p))
+    return tf.math.log(tf.where(tf.equal(x, 1), p, 1-p))
 
 
 def poisson(x, lam):
-    return x * tf.log(lam) - lam - tf.lgamma(x + 1.)
+    return x * tf.math.log(lam) - lam - tf.lgamma(x + 1.)
 
 
 def exponential(x, scale):
-    return - x/scale - tf.log(scale)
+    return - x/scale - tf.math.log(scale)
 
 
 def gamma(x, shape, scale):
-    return -shape * tf.log(scale) - tf.lgamma(shape) \
-        + (shape - 1.) * tf.log(x) - x / scale
+    return -shape * tf.math.log(scale) - tf.lgamma(shape) \
+        + (shape - 1.) * tf.math.log(x) - x / scale
 
 
 def student_t(x, mean, scale, df):
     df = tf.cast(df, default_float())
     const = tf.lgamma((df + 1.) * 0.5) - tf.lgamma(df * 0.5) \
-        - 0.5 * (tf.log(tf.square(scale)) + tf.log(df) + np.log(np.pi))
+        - 0.5 * (tf.math.log(tf.square(scale)) + tf.math.log(df) + np.log(np.pi))
     const = tf.cast(const, default_float())
     return const - 0.5 * (df + 1.) * \
-        tf.log(1. + (1. / df) * (tf.square((x - mean) / scale)))
+        tf.math.log(1. + (1. / df) * (tf.square((x - mean) / scale)))
 
 
 def beta(x, alpha, beta):
     # need to clip x, since log of 0 is nan...
     x = tf.clip_by_value(x, 1e-6, 1-1e-6)
-    return (alpha - 1.) * tf.log(x) + (beta - 1.) * tf.log(1. - x) \
+    return (alpha - 1.) * tf.math.log(x) + (beta - 1.) * tf.math.log(1. - x) \
         + tf.lgamma(alpha + beta)\
         - tf.lgamma(alpha)\
         - tf.lgamma(beta)
 
 
 def laplace(x, mu, sigma):
-    return - tf.abs(mu - x) / sigma - tf.log(2. * sigma)
+    return - tf.abs(mu - x) / sigma - tf.math.log(2. * sigma)
 
 
 def multivariate_normal(x, mu, L):
@@ -94,9 +94,9 @@ def multivariate_normal(x, mu, L):
         raise ValueError('Shape of mu must be 2D.')
 
     d = x - mu
-    alpha = tf.matrix_triangular_solve(L, d, lower=True)
-    num_dims = tf.cast(tf.shape(d)[0], L.dtype)
+    alpha = tf.linalg.triangular_solve(L, d, lower=True)
+    num_dims = tf.cast(d.shape[0], L.dtype)
     p = - 0.5 * tf.reduce_sum(tf.square(alpha), 0)
     p -= 0.5 * num_dims * np.log(2 * np.pi)
-    p -= tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
+    p -= tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
     return p

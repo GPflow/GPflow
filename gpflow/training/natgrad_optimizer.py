@@ -346,13 +346,13 @@ def swap_dimensions(method):
 
 @swap_dimensions
 def natural_to_meanvarsqrt(nat_1, nat_2):
-    var_sqrt_inv = tf.cholesky(-2 * nat_2)
+    var_sqrt_inv = tf.linalg.cholesky(-2 * nat_2)
     var_sqrt = _inverse_lower_triangular(var_sqrt_inv)
     S = tf.matmul(var_sqrt, var_sqrt, transpose_a=True)
     mu = tf.matmul(S, nat_1)
     # We need the decomposition of S as L L^T, not as L^T L,
     # hence we need another cholesky.
-    return mu, tf.cholesky(S)
+    return mu, tf.linalg.cholesky(S)
 
 
 @swap_dimensions
@@ -375,7 +375,7 @@ def expectation_to_natural(eta_1, eta_2):
 @swap_dimensions
 def expectation_to_meanvarsqrt(eta_1, eta_2):
     var = eta_2 - tf.matmul(eta_1, eta_1, transpose_b=True)
-    return eta_1, tf.cholesky(var)
+    return eta_1, tf.linalg.cholesky(var)
 
 
 @swap_dimensions
@@ -393,6 +393,6 @@ def _inverse_lower_triangular(M):
     """
     if M.get_shape().ndims != 3:  # pragma: no cover
         raise ValueError("Number of dimensions for input is required to be 3.")
-    D, N = tf.shape(M)[0], tf.shape(M)[1]
+    D, N = M.shape[0], M.shape[1]
     I_DNN = tf.eye(N, dtype=M.dtype)[None, :, :] * tf.ones((D, 1, 1), dtype=M.dtype)
-    return tf.matrix_triangular_solve(M, I_DNN)
+    return tf.linalg.triangular_solve(M, I_DNN)

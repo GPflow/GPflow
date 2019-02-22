@@ -84,7 +84,7 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
             for k2 in kern1.kernels[:i]:
                 eKK = expectation(p, (k1, feat1), (k2, feat2), nghp=nghp)
-                eKK += tf.matrix_transpose(eKK)
+                eKK += tf.linalg.transpose(eKK)
                 crossexps.append(eKK)
     else:
         for k1, k2 in itertools.product(kern1.kernels, kern2.kernels):

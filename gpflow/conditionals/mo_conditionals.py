@@ -103,7 +103,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     dtypes = (Kmms.dtype, Kmms.dtype)
     rmu, rvar = tf.map_fn(single_gp_conditional, (Kmms, Kmns, Knns, fs, q_sqrts), dtypes)  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
 
-    fmu = tf.matrix_transpose(rmu[:, :, 0])  # [N, P]
+    fmu = tf.linalg.transpose(rmu[:, :, 0])  # [N, P]
 
     if full_cov:
         fvar = rvar[:, 0, :, :]  # [P, N, N]
@@ -171,7 +171,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     Knn = kernel(Xnew, full_output_cov=full_output_cov) if full_cov \
         else kernel(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
-    M, L, N, K = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
+    M, L, N, K = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
     Kmm = tf.reshape(Kmm, (M * L, M * L))
 
     if full_cov == full_output_cov:
@@ -210,14 +210,14 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     gmu, gvar = independent_cond(Xnew, feature, kernel, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                  full_output_cov=False, white=white)  # N x L, L x N x N or N x L
 
-    gmu = tf.matrix_transpose(gmu)  # L x N
+    gmu = tf.linalg.transpose(gmu)  # L x N
     if not full_cov:
-        gvar = tf.matrix_transpose(gvar)  # L x N (x N)
+        gvar = tf.linalg.transpose(gvar)  # L x N (x N)
 
     Wgmu = tf.tensordot(gmu, kernel.W(), [[0], [1]])  # N x P
 
     if full_output_cov:
-        Wt_expanded = tf.matrix_transpose(kernel.W())[:, None, :]  # L x 1 x P
+        Wt_expanded = tf.linalg.transpose(kernel.W())[:, None, :]  # L x 1 x P
         if full_cov:
             Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # L x 1 x P x 1
 

@@ -78,7 +78,7 @@ class GPMC(GPModel):
 
         """
         K = self.kern(self.X)
-        L = tf.cholesky(
+        L = tf.linalg.cholesky(
             K + tf.eye(tf.shape(self.X)[0], dtype=default_float()) * settings.numerics.jitter_level)
         F = tf.matmul(L, self.V) + self.mean_function(self.X)
 

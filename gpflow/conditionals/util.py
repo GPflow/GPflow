@@ -33,9 +33,9 @@ def base_conditional(
     """
     logger.debug("base conditional")
     # compute kernel stuff
-    num_func = tf.shape(function)[1]  # R
-    N = tf.shape(Kmn)[-1]
-    M = tf.shape(function)[0]
+    num_func = function.shape[1]  # R
+    N = Kmn.shape[-1]
+    M = function.shape[0]
 
     # get the leadings dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
@@ -44,12 +44,12 @@ def base_conditional(
     permute_indices = tf.concat([leading_indices, [0], [Kmn_rank - 1]], 0)  # [Kmn_rank]
     Kmn = tf.transpose(Kmn, permute_indices)  # [..., M, N]
 
-    leading_dims = tf.shape(Kmn)[:-2]
-    Lm = tf.cholesky(Kmm)  # [M, M]
+    leading_dims = Kmn.shape[:-2]
+    Lm = tf.linalg.cholesky(Kmm)  # [M, M]
 
     # Compute the projection matrix A
-    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
+    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, Lm.shape], 0))  # [..., M, M]
+    A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
 
     # compute the covariance due to the conditioning
     if full_cov:
@@ -63,7 +63,7 @@ def base_conditional(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)
+        A = tf.linalg.triangular_solve(tf.linalg.transpose(Lm), A, lower=False)
 
     # construct the conditional mean
     f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [..., M, R]
@@ -76,7 +76,7 @@ def base_conditional(
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
         elif q_sqrt_dims == 3:
             L = q_sqrt
-            L = tf.broadcast_to(L, tf.concat([leading_dims, tf.shape(L)], 0))
+            L = tf.broadcast_to(L, tf.concat([leading_dims, L.shape], 0))
             shape = tf.concat([leading_dims, [num_func, M, N]], 0)
             A = tf.broadcast_to(tf.expand_dims(A, -3), shape)
             LTA = tf.matmul(L, A, transpose_a=True)  # [R, M, N]
@@ -89,7 +89,7 @@ def base_conditional(
             fvar = fvar + tf.reduce_sum(tf.square(LTA), -2)  # [R, N]
 
     if not full_cov:
-        fvar = tf.matrix_transpose(fvar)  # [N, R]
+        fvar = tf.linalg.transpose(fvar)  # [N, R]
 
     return fmean, fvar  # [N, R], [R, N, N] or [N, R]
 
@@ -109,7 +109,7 @@ def sample_mvn(mean, cov, cov_structure):
         sample = mean + tf.sqrt(cov) * eps  # N x P
     elif cov_structure == "full":
         cov = cov + (tf.eye(mean.shape[1], dtype=mean.dtype) * default_jitter())[None, ...]  # N x P x P
-        chol = tf.cholesky(cov)  # N x P x P
+        chol = tf.linalg.cholesky(cov)  # N x P x P
         return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
     else:
         raise NotImplementedError
@@ -133,10 +133,10 @@ def expand_independent_outputs(fvar, full_cov, full_output_cov):
        fvar N x P
     """
     if full_cov and full_output_cov:
-        fvar = tf.matrix_diag(tf.transpose(fvar))   # N x N x P x P
+        fvar = tf.linalg.diag(tf.transpose(fvar))   # N x N x P x P
         fvar = tf.transpose(fvar, [0, 2, 1, 3])  # N x P x N x P
     if not full_cov and full_output_cov:
-        fvar = tf.matrix_diag(fvar)   # N x P x P
+        fvar = tf.linalg.diag(fvar)   # N x P x P
     if full_cov and not full_output_cov:
         pass  # P x N x N
     if not full_cov and not full_output_cov:
@@ -164,13 +164,13 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         - variance: N x P, N x P x P, P x N x N, N x P x N x P
     """
     logger.debug("independent_interdomain_conditional")
-    M, L, N, P = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
+    M, L, N, P = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
 
-    Lm = tf.cholesky(Kmm)  # L x M x M
+    Lm = tf.linalg.cholesky(Kmm)  # L x M x M
 
     # Compute the projection matrix A
     Kmn = tf.reshape(tf.transpose(Kmn, (1, 0, 2, 3)), (L, M, N * P))
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # L x M x M  *  L x M x NP  ->  L x M x NP
+    A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # L x M x M  *  L x M x NP  ->  L x M x NP
     Ar = tf.reshape(A, (L, M, N, P))
 
     # compute the covariance due to the conditioning
@@ -187,7 +187,7 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.matrix_triangular_solve(Lm, Ar)  # L x M x M  *  L x M x NP  ->  L x M x NP
+        A = tf.linalg.triangular_solve(Lm, Ar)  # L x M x M  *  L x M x NP  ->  L x M x NP
         Ar = tf.reshape(A, (L, M, N, P))
 
     fmean = tf.tensordot(Ar, f, [[1, 0], [0, 1]])  # N x P
@@ -255,14 +255,14 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         - variance: R x N x P, R x N x P x P, R x P x N x N, R x N x P x N x P
     """
     logger.debug("fully correlated conditional")
-    R = tf.shape(f)[1]
-    M, N, K = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
-    Lm = tf.cholesky(Kmm)
+    R = f.shape[1]
+    M, N, K = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
+    Lm = tf.linalg.cholesky(Kmm)
 
     # Compute the projection matrix A
     # Lm: M x M    Kmn: M x NK
     Kmn = tf.reshape(Kmn, (M, N * K))  # M x NK
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # M x NK
+    A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # M x NK
     Ar = tf.reshape(A, (M, N, K))
 
     # compute the covariance due to the conditioning
@@ -283,7 +283,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
     # another backsubstitution in the unwhitened case
     if not white:
-        # A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)  # M x NK
+        # A = tf.linalg.triangular_solve(tf.linalg.transpose(Lm), A, lower=False)  # M x NK
         raise NotImplementedError("Need to verify this.")  # pragma: no cover
 
     # f: M x R

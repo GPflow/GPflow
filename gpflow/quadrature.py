@@ -60,7 +60,7 @@ def mvnquad(func, means, covs, H: int, Din: int=None, Dout=None):
     """
     # Figure out input shape information
     if Din is None:
-        Din = means.shape[1] if type(means.shape) is tuple else means.shape[1].value
+        Din = means.shape[1]
 
     if Din is None:
         raise ValueError("If `Din` is passed as `None`, `means` must have a known shape. "
@@ -68,10 +68,10 @@ def mvnquad(func, means, covs, H: int, Din: int=None, Dout=None):
                          "is problematic. Consider using your own session.")  # pragma: no cover
 
     xn, wn = mvhermgauss(H, Din)
-    N = tf.shape(means)[0]
+    N = means.shape[0]
 
     # transform points based on Gaussian parameters
-    cholXcov = tf.cholesky(covs)  # NxDxD
+    cholXcov = tf.linalg.cholesky(covs)  # NxDxD
     Xt = tf.matmul(cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)), transpose_b=True)  # NxDxH**D
     X = 2.0 ** 0.5 * Xt + tf.expand_dims(means, 2)  # NxDxH**D
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
@@ -122,7 +122,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool=False, **Ys):
         Fmu, Fvar = map(unify, [Fmu, Fvar])    # both N x 1 x Din
     else:
         Din = 1
-        shape = tf.shape(Fmu)
+        shape = Fmu.shape
         Fmu, Fvar = [tf.reshape(f, (-1, 1, 1)) for f in [Fmu, Fvar]]
 
     xn, wn = mvhermgauss(H, Din)
@@ -172,7 +172,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
     :return: shape is the same as that of the first Fmu
     """
-    N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
+    N, D = Fmu.shape[0], Fvar.shape[1]
 
     if epsilon is None:
         epsilon = tf.random_normal((S, N, D), dtype=default_float())
@@ -181,7 +181,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
     mc_Xr = tf.reshape(mc_x, (S * N, D))
 
     for name, Y in Ys.items():
-        D_out = tf.shape(Y)[1]
+        D_out = Y.shape[1]
         # we can't rely on broadcasting and need tiling
         mc_Yr = tf.tile(Y[None, ...], [S, 1, 1])  # S x N x D_out
         Ys[name] = tf.reshape(mc_Yr, (S * N, D_out))  # S * N x D_out
@@ -190,7 +190,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
         feval = func(mc_Xr, **Ys)
         feval = tf.reshape(feval, (S, N, -1))
         if logspace:
-            log_S = tf.log(tf.cast(S, default_float()))
+            log_S = tf.math.log(tf.cast(S, default_float()))
             return tf.reduce_logsumexp(feval, axis=0) - log_S  # N x D
         else:
             return tf.reduce_mean(feval, axis=0)

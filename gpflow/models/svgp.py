@@ -142,7 +142,7 @@ class SVGP(GPModel):
         var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
-            minibatch_size = tf.cast(tf.shape(X)[0], kl.dtype)
+            minibatch_size = tf.cast(X.shape[0], kl.dtype)
             scale = num_data / minibatch_size
         else:
             scale = tf.cast(1.0, kl.dtype)

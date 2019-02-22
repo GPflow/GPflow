@@ -101,7 +101,7 @@ class VGP(GPModel):
         # Get conditionals
         K = self.kern(self.X) + tf.eye(self.num_data, dtype=default_float()) * \
             settings.numerics.jitter_level
-        L = tf.cholesky(K)
+        L = tf.linalg.cholesky(K)
 
         fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
 
@@ -208,13 +208,13 @@ class VGP_opper_archambeau(GPModel):
                     [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
-        L = tf.cholesky(A)
-        Li = tf.matrix_triangular_solve(L, I)
+        L = tf.linalg.cholesky(A)
+        Li = tf.linalg.triangular_solve(L, I)
         tmp = Li / tf.expand_dims(tf.transpose(self.q_lambda), 1)
         f_var = 1. / tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
 
         # some statistics about A are used in the KL
-        A_logdet = 2.0 * tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
+        A_logdet = 2.0 * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
         trAi = tf.reduce_sum(tf.square(Li))
 
         KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent +
@@ -242,10 +242,10 @@ class VGP_opper_archambeau(GPModel):
         f_mean = tf.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)
 
         # predictive var
-        A = K + tf.matrix_diag(tf.transpose(1. / tf.square(self.q_lambda)))
-        L = tf.cholesky(A)
+        A = K + tf.linalg.diag(tf.transpose(1. / tf.square(self.q_lambda)))
+        L = tf.linalg.cholesky(A)
         Kx_tiled = tf.tile(tf.expand_dims(Kx, 0), [self.num_latent, 1, 1])
-        LiKx = tf.matrix_triangular_solve(L, Kx_tiled)
+        LiKx = tf.linalg.triangular_solve(L, Kx_tiled)
         if full_cov:
             f_var = self.kern(Xnew) - tf.matmul(LiKx, LiKx, transpose_a=True)
         else:

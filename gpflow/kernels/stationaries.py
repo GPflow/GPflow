@@ -66,7 +66,7 @@ class Stationary(Kernel):
 
 
     def K_diag(self, X, presliced=False):
-        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([X.shape[0]]), tf.squeeze(self.variance))
 
 
 class RBF(Stationary):

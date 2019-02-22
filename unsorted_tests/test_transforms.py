@@ -95,7 +95,7 @@ class TransformTests(GPflowTestCase):
             def jacobian(f):
                 return tf.stack([tf.gradients(f(x)[i], x)[0] for i in range(10)])
 
-            tf_jacs = [tf.log(tf.matrix_determinant(jacobian(t.forward_tensor)))
+            tf_jacs = [tf.math.log(tf.matrix_determinant(jacobian(t.forward_tensor)))
                        for t in transforms
                        if not isinstance(t, (gpflow.transforms.LowerTriangular,
                                              gpflow.transforms.DiagMatrix))]

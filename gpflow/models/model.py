@@ -107,14 +107,14 @@ class GPModel(BayesianModel):
         """
         jitter = default_jitter() if jitter is None else jitter
         mu, var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)  # [N, P] or [P, N, N]
-        jitter = tf.eye(tf.shape(mu)[0], dtype=X.dtype) * jitter
+        jitter = tf.eye(mu.shape[0], dtype=X.dtype) * jitter
         samples = [None] * self.num_latent
         for i in range(self.num_latent):
-            L = tf.cholesky(var[i, :, :] + jitter)
-            shape = tf.stack([tf.shape(L)[0], num_samples])
+            L = tf.linalg.cholesky(var[i, :, :] + jitter)
+            shape = tf.stack([L.shape[0], num_samples])
             V = tf.random_normal(shape, dtype=L.dtype, seed=self.seed)
             samples[i] = mu[:, i:(i+1)] + L @ V
-        return tf.matrix_transpose(tf.stack(samples))
+        return tf.linalg.transpose(tf.stack(samples))
 
     def predict_y(self, X):
         """

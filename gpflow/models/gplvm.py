@@ -128,36 +128,36 @@ class BayesianGPLVM(GPModel):
         psi1 = expectation(pX, (self.kern, self.feature))
         psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
         cov_uu = Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)
-        L = tf.cholesky(cov_uu)
+        L = tf.linalg.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
 
         # Compute intermediate matrices
-        A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
-        tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
-        AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
+        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
+        tmp = tf.linalg.triangular_solve(L, psi2, lower=True)
+        AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
-        LB = tf.cholesky(B)
-        log_det_B = 2. * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
-        c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
+        LB = tf.linalg.cholesky(B)
+        log_det_B = 2. * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
+        c = tf.linalg.triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        dX_var = self.X_var() if len(self.X_var().get_shape()) == 2 else tf.matrix_diag_part(self.X_var())
+        dX_var = self.X_var() if len(self.X_var().get_shape()) == 2 else tf.linalg.diag_part(self.X_var())
         NQ = tf.cast(tf.size(self.X_mean()), default_float())
         D = tf.cast(tf.shape(self.Y)[1], default_float())
-        KL = -0.5 * tf.reduce_sum(tf.log(dX_var)) \
-             + 0.5 * tf.reduce_sum(tf.log(self.X_prior_var)) \
+        KL = -0.5 * tf.reduce_sum(tf.math.log(dX_var)) \
+             + 0.5 * tf.reduce_sum(tf.math.log(self.X_prior_var)) \
              - 0.5 * NQ \
              + 0.5 * tf.reduce_sum((tf.square(self.X_mean() - self.X_prior_mean) + dX_var) / self.X_prior_var)
 
         # compute log marginal bound
         ND = tf.cast(tf.size(self.Y), default_float())
-        bound = -0.5 * ND * tf.log(2 * np.pi * sigma2)
+        bound = -0.5 * ND * tf.math.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
         bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 -
-                             tf.reduce_sum(tf.matrix_diag_part(AAT)))
+                             tf.reduce_sum(tf.linalg.diag_part(AAT)))
         bound -= KL
         return bound
 
@@ -178,16 +178,16 @@ class BayesianGPLVM(GPModel):
         Kus = Kuf(self.feature, self.kern, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
-        L = tf.cholesky(Kuu(self.feature, self.kern, jitter=jitter))
+        L = tf.linalg.cholesky(Kuu(self.feature, self.kern, jitter=jitter))
 
-        A = tf.matrix_triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
-        tmp = tf.matrix_triangular_solve(L, psi2, lower=True)
-        AAT = tf.matrix_triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
+        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
+        tmp = tf.linalg.triangular_solve(L, psi2, lower=True)
+        AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
-        LB = tf.cholesky(B)
-        c = tf.matrix_triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
-        tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
-        tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
+        LB = tf.linalg.cholesky(B)
+        c = tf.linalg.triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
+        tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
+        tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.matmul(tmp2, c, transpose_a=True)
         if full_cov:
             var = self.kern(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \

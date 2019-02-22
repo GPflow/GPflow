@@ -85,7 +85,7 @@ def test_diags(session_tf, white, mu, sqrt_diag, K):
     Here we make sure the behaviours overlap.
     """
     # the chols are diagonal matrices, with the same entries as the diag representation.
-    chol_from_diag = tf.stack([tf.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # N x M x M
+    chol_from_diag = tf.stack([tf.linalg.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # N x M x M
     # run
     kl_diag = gauss_kl(mu, sqrt_diag, K if white else None)
     kl_dense = gauss_kl(mu, chol_from_diag, K if white else None)
@@ -98,7 +98,7 @@ def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     """
     Check that K=Identity and K=None give same answer
     """
-    chol_from_diag = tf.stack([tf.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # N x M x M
+    chol_from_diag = tf.stack([tf.linalg.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # N x M x M
     s = sqrt_diag if diag else chol_from_diag
 
     kl_white = gauss_kl(mu, s)
@@ -134,7 +134,7 @@ def test_sumkl_equals_batchkl(session_tf, shared_k, diag, mu,
 def tf_kl_1d(q_mu, q_sigma, p_var=1.0):
     p_var = tf.ones_like(q_sigma) if p_var is None else p_var
     q_var = tf.square(q_sigma)
-    kl = 0.5 * (q_var / p_var + tf.square(q_mu) / p_var - 1 + tf.log(p_var / q_var))
+    kl = 0.5 * (q_var / p_var + tf.square(q_mu) / p_var - 1 + tf.math.log(p_var / q_var))
     return tf.reduce_sum(kl)
 
 

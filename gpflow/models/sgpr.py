@@ -58,10 +58,10 @@ class SGPRUpperMixin(object):
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         Kuf = self.feature.Kuf(self.kern, self.X)
 
-        L = tf.cholesky(Kuu)
-        LB = tf.cholesky(Kuu + self.likelihood.variance ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
+        L = tf.linalg.cholesky(Kuu)
+        LB = tf.linalg.cholesky(Kuu + self.likelihood.variance ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
 
-        LinvKuf = tf.matrix_triangular_solve(L, Kuf, lower=True)
+        LinvKuf = tf.linalg.triangular_solve(L, Kuf, lower=True)
         # Using the Trace bound, from Titsias' presentation
         c = tf.reduce_sum(Kdiag) - tf.reduce_sum(LinvKuf ** 2.0)
         # Kff = self.kern(self.X)
@@ -71,11 +71,11 @@ class SGPRUpperMixin(object):
         # c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
         corrected_noise = self.likelihood.variance + c
 
-        const = -0.5 * num_data * tf.log(2 * np.pi * self.likelihood.variance)
-        logdet = tf.reduce_sum(tf.log(tf.diag_part(L))) - tf.reduce_sum(tf.log(tf.diag_part(LB)))
+        const = -0.5 * num_data * tf.math.log(2 * np.pi * self.likelihood.variance)
+        logdet = tf.reduce_sum(tf.math.log(tf.diag_part(L))) - tf.reduce_sum(tf.math.log(tf.diag_part(LB)))
 
-        LC = tf.cholesky(Kuu + corrected_noise ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
-        v = tf.matrix_triangular_solve(LC, corrected_noise ** -1.0 * tf.matmul(Kuf, self.Y), lower=True)
+        LC = tf.linalg.cholesky(Kuu + corrected_noise ** -1.0 * tf.matmul(Kuf, Kuf, transpose_b=True))
+        v = tf.linalg.triangular_solve(LC, corrected_noise ** -1.0 * tf.matmul(Kuf, self.Y), lower=True)
         quad = -0.5 * corrected_noise ** -1.0 * tf.reduce_sum(self.Y ** 2.0) + 0.5 * tf.reduce_sum(v ** 2.0)
 
         return const + logdet + quad
@@ -133,25 +133,25 @@ class SGPR(GPModel, SGPRUpperMixin):
         Kdiag = self.kern(self.X)
         Kuf = self.feature.Kuf(self.kern, self.X)
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
-        L = tf.cholesky(Kuu)
+        L = tf.linalg.cholesky(Kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
         # Compute intermediate matrices
-        A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, Kuf, lower=True) / sigma
         AAT = tf.matmul(A, A, transpose_b=True)
         B = AAT + tf.eye(num_inducing, dtype=default_float())
-        LB = tf.cholesky(B)
+        LB = tf.linalg.cholesky(B)
         Aerr = tf.matmul(A, err)
-        c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
 
         # compute log marginal bound
         bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
-        bound += tf.negative(output_dim) * tf.reduce_sum(tf.log(tf.matrix_diag_part(LB)))
-        bound -= 0.5 * num_data * output_dim * tf.log(self.likelihood.variance)
+        bound += tf.negative(output_dim) * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
+        bound -= 0.5 * num_data * output_dim * tf.math.log(self.likelihood.variance)
         bound += -0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * output_dim * tf.reduce_sum(Kdiag) / self.likelihood.variance
-        bound += 0.5 * output_dim * tf.reduce_sum(tf.matrix_diag_part(AAT))
+        bound += 0.5 * output_dim * tf.reduce_sum(tf.linalg.diag_part(AAT))
 
         return bound
 
@@ -168,14 +168,14 @@ class SGPR(GPModel, SGPRUpperMixin):
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
         Kus = self.feature.Kuf(self.kern, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
-        L = tf.cholesky(Kuu)
-        A = tf.matrix_triangular_solve(L, Kuf, lower=True) / sigma
+        L = tf.linalg.cholesky(Kuu)
+        A = tf.linalg.triangular_solve(L, Kuf, lower=True) / sigma
         B = tf.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float())
-        LB = tf.cholesky(B)
+        LB = tf.linalg.cholesky(B)
         Aerr = tf.matmul(A, err)
-        c = tf.matrix_triangular_solve(LB, Aerr, lower=True) / sigma
-        tmp1 = tf.matrix_triangular_solve(L, Kus, lower=True)
-        tmp2 = tf.matrix_triangular_solve(LB, tmp1, lower=True)
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+        tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
+        tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.matmul(tmp2, c, transpose_a=True)
         if full_cov:
             var = self.kern(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
@@ -233,18 +233,18 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         Kuf = self.feature.Kuf(self.kern, self.X)
         Kuu = self.feature.Kuu(self.kern, jitter=settings.numerics.jitter_level)
 
-        Luu = tf.cholesky(Kuu)  # => Luu Luu^T = Kuu
-        V = tf.matrix_triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
+        Luu = tf.linalg.cholesky(Kuu)  # => Luu Luu^T = Kuu
+        V = tf.linalg.triangular_solve(Luu, Kuf)  # => V^T V = Qff = Kuf^T Kuu^-1 Kuf
 
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
 
         B = tf.eye(num_inducing, dtype=default_float()) + tf.matmul(V / nu, V, transpose_b=True)
-        L = tf.cholesky(B)
+        L = tf.linalg.cholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size N x R
         alpha = tf.matmul(V, beta)  # size N x R
 
-        gamma = tf.matrix_triangular_solve(L, alpha, lower=True)  # size N x R
+        gamma = tf.linalg.triangular_solve(L, alpha, lower=True)  # size N x R
 
         return err, nu, Luu, L, alpha, beta, gamma
 
@@ -286,8 +286,8 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
-        constantTerm = -0.5 * self.num_data * tf.log(tf.constant(2. * np.pi, default_float()))
-        logDeterminantTerm = -0.5 * tf.reduce_sum(tf.log(nu)) - tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
+        constantTerm = -0.5 * self.num_data * tf.math.log(tf.constant(2. * np.pi, default_float()))
+        logDeterminantTerm = -0.5 * tf.reduce_sum(tf.math.log(nu)) - tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
@@ -301,11 +301,11 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         _, _, Luu, L, _, _, gamma = self._build_common_terms()
         Kus = self.feature.Kuf(self.kern, Xnew)  # size  M x Xnew
 
-        w = tf.matrix_triangular_solve(Luu, Kus, lower=True)  # size M x Xnew
+        w = tf.linalg.triangular_solve(Luu, Kus, lower=True)  # size M x Xnew
 
-        tmp = tf.matrix_triangular_solve(tf.transpose(L), gamma, lower=False)
+        tmp = tf.linalg.triangular_solve(tf.transpose(L), gamma, lower=False)
         mean = tf.matmul(w, tmp, transpose_a=True) + self.mean_function(Xnew)
-        intermediateA = tf.matrix_triangular_solve(L, w, lower=True)
+        intermediateA = tf.linalg.triangular_solve(L, w, lower=True)
 
         if full_cov:
             var = self.kern(Xnew) - tf.matmul(w, w, transpose_a=True) \

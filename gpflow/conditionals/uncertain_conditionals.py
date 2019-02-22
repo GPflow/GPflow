@@ -59,21 +59,21 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
     q_sqrt_r = tf.matrix_band_part(q_sqrt, -1, 0)  # D x M x M
 
     eKuf = tf.transpose(expectation(pXnew, (kernel, feature)))  # M x N (psi1)
-    Luu = tf.cholesky(Kuu(feature, kernel, jitter=default_jitter()))
+    Luu = tf.linalg.cholesky(Kuu(feature, kernel, jitter=default_jitter()))
 
     if not white:
-        q_mu = tf.matrix_triangular_solve(Luu, q_mu, lower=True)
+        q_mu = tf.linalg.triangular_solve(Luu, q_mu, lower=True)
         Luu_tiled = tf.tile(Luu[None, :, :], [num_func, 1, 1])  # remove line once issue 216 is fixed
-        q_sqrt_r = tf.matrix_triangular_solve(Luu_tiled, q_sqrt_r, lower=True)
+        q_sqrt_r = tf.linalg.triangular_solve(Luu_tiled, q_sqrt_r, lower=True)
 
-    Li_eKuf = tf.matrix_triangular_solve(Luu, eKuf, lower=True)  # M x N
+    Li_eKuf = tf.linalg.triangular_solve(Luu, eKuf, lower=True)  # M x N
     fmean = tf.matmul(Li_eKuf, q_mu, transpose_a=True)
 
     eKff = expectation(pXnew, kernel)  # N (psi0)
     eKuffu = expectation(pXnew, (kernel, feature), (kernel, feature))  # N x M x M (psi2)
     Luu_tiled = tf.tile(Luu[None, :, :], [num_data, 1, 1])  # remove this line, once issue 216 is fixed
-    Li_eKuffu = tf.matrix_triangular_solve(Luu_tiled, eKuffu, lower=True)
-    Li_eKuffu_Lit = tf.matrix_triangular_solve(Luu_tiled, tf.matrix_transpose(Li_eKuffu), lower=True)  # N x M x M
+    Li_eKuffu = tf.linalg.triangular_solve(Luu_tiled, eKuffu, lower=True)
+    Li_eKuffu_Lit = tf.linalg.triangular_solve(Luu_tiled, tf.linalg.transpose(Li_eKuffu), lower=True)  # N x M x M
     cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True)  # D x M x M
 
     if mean_function is None or isinstance(mean_function, mean_functions.Zero):
@@ -85,18 +85,18 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
         # Calculate: m(x) m(x)^T + m(x) \mu(x)^T + \mu(x) m(x)^T,
         # where m(x) is the mean_function and \mu(x) is fmean
         e_mean_mean = expectation(pXnew, mean_function, mean_function)  # N x D x D
-        Lit_q_mu = tf.matrix_triangular_solve(Luu, q_mu, adjoint=True)
+        Lit_q_mu = tf.linalg.triangular_solve(Luu, q_mu, adjoint=True)
         e_mean_Kuf = expectation(pXnew, mean_function, (kernel, feature))  # N x D x M
         # einsum isn't able to infer the rank of e_mean_Kuf, hence we explicitly set the rank of the tensor:
         e_mean_Kuf = tf.reshape(e_mean_Kuf, [num_data, num_func, num_ind])
         e_fmean_mean = tf.einsum("nqm,mz->nqz", e_mean_Kuf, Lit_q_mu)  # N x D x D
-        e_related_to_mean = e_fmean_mean + tf.matrix_transpose(e_fmean_mean) + e_mean_mean
+        e_related_to_mean = e_fmean_mean + tf.linalg.transpose(e_fmean_mean) + e_mean_mean
 
     if full_output_cov:
         fvar = (
-                tf.matrix_diag(tf.tile((eKff - tf.trace(Li_eKuffu_Lit))[:, None], [1, num_func])) +
-                tf.matrix_diag(tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov)) +
-                # tf.matrix_diag(tf.trace(tf.matmul(Li_eKuffu_Lit, cov))) +
+                tf.linalg.diag(tf.tile((eKff - tf.trace(Li_eKuffu_Lit))[:, None], [1, num_func])) +
+                tf.linalg.diag(tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov)) +
+                # tf.linalg.diag(tf.trace(tf.matmul(Li_eKuffu_Lit, cov))) +
                 tf.einsum("ig,nij,jh->ngh", q_mu, Li_eKuffu_Lit, q_mu) -
                 # tf.matmul(q_mu, tf.matmul(Li_eKuffu_Lit, q_mu), transpose_a=True) -
                 fmean[:, :, None] * fmean[:, None, :] +
@@ -108,7 +108,7 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
                 tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov) +
                 tf.einsum("ig,nij,jg->ng", q_mu, Li_eKuffu_Lit, q_mu) -
                 fmean ** 2 +
-                tf.matrix_diag_part(e_related_to_mean)
+                tf.linalg.diag_part(e_related_to_mean)
         )
 
     return fmean, fvar

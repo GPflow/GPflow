@@ -126,7 +126,7 @@ class Periodic(Kernel):
         self.period = Parameter(period, transform=positive())
 
     def K_diag(self, X, presliced=False):
-        return tf.fill(tf.stack([tf.shape(X)[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([X.shape[0]]), tf.squeeze(self.variance))
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -188,7 +188,7 @@ class Coregion(Kernel):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.matrix_diag(self.kappa)
+        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X, presliced=False):

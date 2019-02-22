@@ -23,7 +23,7 @@ def _Kuf(feat: InducingPoints,
          kern: Mok,
          Xnew: tf.Tensor):
     debug_kuf(feat, kern)
-    return kern(feat.Z(), Xnew, full_output_cov=True)  # [M, P, N, P]
+    return kern(feat.Z, Xnew, full_output_cov=True)  # [M, P, N, P]
 
 
 @Kuf.register(SharedIndependentMof, SharedIndependentMok, object)
