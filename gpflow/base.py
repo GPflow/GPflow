@@ -1,4 +1,5 @@
 import functools
+import abc
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -34,6 +35,8 @@ class Parameter(tf.Module):
         therefore we need positive constraint and it is natural to use constrained values.
         """
         super().__init__()
+
+        value = _verified_value(value, dtype)
         if isinstance(value, tf.Variable):
             self._unconstrained = value
         else:
@@ -89,7 +92,7 @@ class Parameter(tf.Module):
         return self._unconstrained.initial_value
 
     def assign(self, value, use_locking=False, name=None, read_value=True):
-        unconstrained_value = _to_unconstrained_data(value, self.transform)
+        unconstrained_value = _to_unconstrained(value, self.transform)
         self._unconstrained.assign(unconstrained_value,
             read_value=read_value,
             use_locking=use_locking)
@@ -132,8 +135,11 @@ class Parameter(tf.Module):
         return self.read_value().__repr__()
 
     def __ilshift__(self, value: VariableData) -> 'Parameter':
-        self.assign(value)
+        self.assign(tf.cast(value, self.dtype))
         return self
+
+    # Below
+    # TensorFlow copy-paste code to make variable-like object to work
 
     @classmethod
     def _OverloadAllOperators(cls):  # pylint: disable=invalid-name
@@ -158,7 +164,7 @@ class Parameter(tf.Module):
 
         def _run_op(a, *args, **kwargs):
             # pylint: disable=protected-access
-            return tensor_oper(a.value(), *args, **kwargs)
+            return tensor_oper(a.read_value(), *args, **kwargs)
 
         functools.update_wrapper(_run_op, tensor_oper)
         setattr(cls, operator, _run_op)
@@ -177,16 +183,12 @@ Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
 
-def _to_unconstrained_data(data: VariableData, dtype: Optional[DType] = None) -> np.ndarray:
-    if isinstance(data, (tf.Tensor, tf.Variable)):
-        if dtype is not None and data.dtype != dtype:
-            return tf.cast(data, dtype)
-        return data
-    if dtype is not None and isinstance(dtype, tf.DType):
-        dtype = dtype.as_numpy_dtype
-    if dtype is None and not isinstance(data, np.ndarray):
+def _verified_value(value: VariableData, dtype: Optional[DType] = None) -> np.ndarray:
+    if isinstance(value, tf.Variable):
+        return value
+    if dtype is None:
         dtype = default_float()
-    return np.array(data, dtype=dtype)
+    return tf.cast(value, dtype)
 
 
 def _to_constrained(value: VariableData, transform: Transform) -> tf.Tensor:
