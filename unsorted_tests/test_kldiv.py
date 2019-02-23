@@ -31,7 +31,7 @@ def squareT(A):
     return A.dot(A.T)
 
 def make_sqrt_data(rng, N, M):
-    return np.array([np.tril(rng.randn(M, M)) for _ in range(N)]) # N x M x M
+    return np.array([np.tril(rng.randn(M, M)) for _ in range(N)]) # [N, M, M]
 
 def make_K_batch_data(rng, N, M):
     K_np = rng.randn(N, M, M)
@@ -41,11 +41,11 @@ def make_K_batch_data(rng, N, M):
 class Datum:
     M, N = 5, 4
     rng = np.random.RandomState(0)
-    mu_data = rng.randn(M, N)  # M x N
-    K_data = squareT(rng.randn(M, M)) + 1e-6 * np.eye(M)  # M x M
-    I = np.eye(M) # M x M
-    sqrt_data = make_sqrt_data(rng, N, M) # N x M x M
-    sqrt_diag_data = rng.randn(M, N) # M x N
+    mu_data = rng.randn(M, N)  # [M, N]
+    K_data = squareT(rng.randn(M, M)) + 1e-6 * np.eye(M)  # [M, M]
+    I = np.eye(M) # [M, M]
+    sqrt_data = make_sqrt_data(rng, N, M) # [N, M, M]
+    sqrt_diag_data = rng.randn(M, N) # [M, N]
     K_batch_data = make_K_batch_data(rng, N, M)
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def test_diags(session_tf, white, mu, sqrt_diag, K):
     Here we make sure the behaviours overlap.
     """
     # the chols are diagonal matrices, with the same entries as the diag representation.
-    chol_from_diag = tf.stack([tf.linalg.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # N x M x M
+    chol_from_diag = tf.stack([tf.linalg.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # [N, M, M]
     # run
     kl_diag = gauss_kl(mu, sqrt_diag, K if white else None)
     kl_dense = gauss_kl(mu, chol_from_diag, K if white else None)
@@ -98,7 +98,7 @@ def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     """
     Check that K=Identity and K=None give same answer
     """
-    chol_from_diag = tf.stack([tf.linalg.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # N x M x M
+    chol_from_diag = tf.stack([tf.linalg.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # [N, M, M]
     s = sqrt_diag if diag else chol_from_diag
 
     kl_white = gauss_kl(mu, s)
@@ -115,18 +115,18 @@ def test_sumkl_equals_batchkl(session_tf, shared_k, diag, mu,
     gauss_kl implicitely performs a sum of KL divergences
     This test checks that doing the sum outside of the function is equivalent
     For q(X)=prod q(x_l) and p(X)=prod p(x_l), check that sum KL(q(x_l)||p(x_l)) = KL(q(X)||p(X))
-    Here, q(X) has covariance L x M x M
-    p(X) has covariance L x M x M ( or M x M )
-    Here, q(x_i) has covariance 1 x M x M
-    p(x_i) has covariance M x M
+    Here, q(X) has covariance [L, M, M]
+    p(X) has covariance [L, M, M] ( or [M, M] )
+    Here, q(x_i) has covariance [1, M, M]
+    p(x_i) has covariance [M, M]
     """
     s = sqrt_diag if diag else sqrt
     kl_batch = gauss_kl(mu,s,K if shared_k else K_batch)
     kl_sum = []
     for n in range(Datum.N):
-        kl_sum.append(gauss_kl(mu[:, n][:,None], # M x 1
-            sqrt_diag[:, n][:, None] if diag else sqrt[n, :, :][None, :, :], # 1 x M x M or M x 1
-            K if shared_k else K_batch[n, :, :][None,:,:])) # 1 x M x M or M x M
+        kl_sum.append(gauss_kl(mu[:, n][:,None], # [M, 1]
+            sqrt_diag[:, n][:, None] if diag else sqrt[n, :, :][None, :, :], # [1, M, M] or [M, 1]
+            K if shared_k else K_batch[n, :, :][None,:,:])) # [1, M, M] or [M, M]
     kl_sum =tf.reduce_sum(kl_sum)
     assert_almost_equal(kl_sum.eval(), kl_batch.eval())
 
@@ -144,9 +144,9 @@ def test_oned(session_tf, white, mu, sqrt, K_batch):
     Check that the KL divergence matches a 1D by-hand calculation.
     """
     m = 0
-    mu1d = mu[m,:][None,:] # 1 x N
-    s1d = sqrt[:,m,m][:,None,None] # N x 1 x 1
-    K1d = K_batch[:,m,m][:,None,None] # N x 1 x 1
+    mu1d = mu[m,:][None,:] # [1, N]
+    s1d = sqrt[:,m,m][:,None,None] # [N, 1, 1]
+    K1d = K_batch[:,m,m][:,None,None] # [N, 1, 1]
 
     kl = gauss_kl(mu1d,s1d,K1d if not white else None)
     kl_tf = tf_kl_1d(tf.reshape(mu1d,(-1,)), # N

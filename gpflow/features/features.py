@@ -43,7 +43,7 @@ class InducingPointsBase(InducingFeature):
 
     def __init__(self, Z):
         """
-        :param Z: the initial positions of the inducing points, size M x D
+        :param Z: the initial positions of the inducing points, size [M, D]
         """
         super().__init__()
         self.Z = Parameter(Z, dtype=default_float())
@@ -81,6 +81,6 @@ class Multiscale(InducingPointsBase):
     def _cust_square_dist(A, B, sc):
         """
         Custom version of _square_dist that allows sc to provide per-datapoint length
-        scales. sc: N x M x D.
+        scales. sc: [N, M, D].
         """
         return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)

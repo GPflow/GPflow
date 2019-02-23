@@ -20,19 +20,19 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
 
-    :param Xnew_mu: mean of the inputs, size N x Din
-    :param Xnew_var: covariance matrix of the inputs, size N x Din x Din
+    :param Xnew_mu: mean of the inputs, size [N, Din]
+    :param Xnew_var: covariance matrix of the inputs, size [N, Din, Din]
     :param feature: gpflow.InducingFeature object, only InducingPoints is supported
     :param kernel: gpflow kernel or ekernel object.
-    :param q_mu: mean inducing points, size M x Dout
-    :param q_sqrt: cholesky of the covariance matrix of the inducing points, size Dout x M x M
+    :param q_mu: mean inducing points, size [M, Dout]
+    :param q_sqrt: cholesky of the covariance matrix of the inducing points, size Dou[t, M, M]
     :param full_output_cov: boolean wheter to compute covariance between output dimension.
                             Influences the shape of return value ``fvar``. Default is False
     :param white: boolean whether to use whitened representation. Default is False.
 
-    :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is N x Dout,
-            size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is N x Dout x Dout,
-            if False then ``f_var`` is N x Dout
+    :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is [N, Dout],
+            size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is [N, Dout, Dout],
+            if False then ``f_var`` is [N, Dout]
     """
 
     # TODO(VD): Tensorflow 1.7 doesn't support broadcasting in``tf.matmul`` and
@@ -45,7 +45,7 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
         raise NotImplementedError
 
     if full_cov:
-        # TODO(VD): ``full_cov`` True would return a ``fvar`` of shape N x N x D x D,
+        # TODO(VD): ``full_cov`` True would return a ``fvar`` of shape [N, N, D, D],
         # encoding the covariance between input datapoints as well.
         # This is not implemented as this feature is only used for plotting purposes.
         raise NotImplementedError
@@ -56,9 +56,9 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
     num_ind = tf.shape(q_mu)[0]  # number of inducing points (M)
     num_func = tf.shape(q_mu)[1]  # output dimension (D)
 
-    q_sqrt_r = tf.matrix_band_part(q_sqrt, -1, 0)  # D x M x M
+    q_sqrt_r = tf.matrix_band_part(q_sqrt, -1, 0)  # [D, M, M]
 
-    eKuf = tf.transpose(expectation(pXnew, (kernel, feature)))  # M x N (psi1)
+    eKuf = tf.transpose(expectation(pXnew, (kernel, feature)))  # [M, N] (psi1)
     Luu = tf.linalg.cholesky(Kuu(feature, kernel, jitter=default_jitter()))
 
     if not white:
@@ -66,15 +66,15 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
         Luu_tiled = tf.tile(Luu[None, :, :], [num_func, 1, 1])  # remove line once issue 216 is fixed
         q_sqrt_r = tf.linalg.triangular_solve(Luu_tiled, q_sqrt_r, lower=True)
 
-    Li_eKuf = tf.linalg.triangular_solve(Luu, eKuf, lower=True)  # M x N
+    Li_eKuf = tf.linalg.triangular_solve(Luu, eKuf, lower=True)  # [M, N]
     fmean = tf.matmul(Li_eKuf, q_mu, transpose_a=True)
 
     eKff = expectation(pXnew, kernel)  # N (psi0)
-    eKuffu = expectation(pXnew, (kernel, feature), (kernel, feature))  # N x M x M (psi2)
+    eKuffu = expectation(pXnew, (kernel, feature), (kernel, feature))  # [N, M, M] (psi2)
     Luu_tiled = tf.tile(Luu[None, :, :], [num_data, 1, 1])  # remove this line, once issue 216 is fixed
     Li_eKuffu = tf.linalg.triangular_solve(Luu_tiled, eKuffu, lower=True)
-    Li_eKuffu_Lit = tf.linalg.triangular_solve(Luu_tiled, tf.linalg.transpose(Li_eKuffu), lower=True)  # N x M x M
-    cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True)  # D x M x M
+    Li_eKuffu_Lit = tf.linalg.triangular_solve(Luu_tiled, tf.linalg.transpose(Li_eKuffu), lower=True)  # [N, M, M]
+    cov = tf.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True)  # [D, M, M]
 
     if mean_function is None or isinstance(mean_function, mean_functions.Zero):
         e_related_to_mean = tf.zeros((num_data, num_func, num_func), dtype=default_float())
@@ -84,12 +84,12 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
 
         # Calculate: m(x) m(x)^T + m(x) \mu(x)^T + \mu(x) m(x)^T,
         # where m(x) is the mean_function and \mu(x) is fmean
-        e_mean_mean = expectation(pXnew, mean_function, mean_function)  # N x D x D
+        e_mean_mean = expectation(pXnew, mean_function, mean_function)  # [N, D, D]
         Lit_q_mu = tf.linalg.triangular_solve(Luu, q_mu, adjoint=True)
-        e_mean_Kuf = expectation(pXnew, mean_function, (kernel, feature))  # N x D x M
+        e_mean_Kuf = expectation(pXnew, mean_function, (kernel, feature))  # [N, D, M]
         # einsum isn't able to infer the rank of e_mean_Kuf, hence we explicitly set the rank of the tensor:
         e_mean_Kuf = tf.reshape(e_mean_Kuf, [num_data, num_func, num_ind])
-        e_fmean_mean = tf.einsum("nqm,mz->nqz", e_mean_Kuf, Lit_q_mu)  # N x D x D
+        e_fmean_mean = tf.einsum("nqm,mz->nqz", e_mean_Kuf, Lit_q_mu)  # [N, D, D]
         e_related_to_mean = e_fmean_mean + tf.linalg.transpose(e_fmean_mean) + e_mean_mean
 
     if full_output_cov:

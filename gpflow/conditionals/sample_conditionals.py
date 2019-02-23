@@ -27,7 +27,7 @@ def _sample_conditional(Xnew: tf.Tensor,
     logger.debug("Sample conditional: InducingFeature Kernel")
     mean, var = conditional(Xnew, feature, kernel, function,
                             full_cov=False, full_output_cov=full_output_cov,
-                            q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
+                            q_sqrt=q_sqrt, white=white)  # [N, P], [N, P] (x P)
     cov_structure = "full" if full_output_cov else "diag"
     return sample_mvn(mean, var, cov_structure)
 

@@ -41,15 +41,15 @@ class SharedIndependentMok(Kernel, Mok):
     def K(self, X, X2=None, full_output_cov=True):
         K = self.kern(X, X2)  # N x N2
         if full_output_cov:
-            Ks = tf.tile(K[..., None], [1, 1, self.P])  # N x N2 x P
-            return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # N x P x N2 x P
+            Ks = tf.tile(K[..., None], [1, 1, self.P])  # [N, N2, P]
+            return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # [N, P, N]2 x P
         else:
-            return tf.tile(K[None, ...], [self.P, 1, 1])  # P x N x N2
+            return tf.tile(K[None, ...], [self.P, 1, 1])  # [P, N, N]2
 
     def Kdiag(self, X, full_output_cov=True):
         K = self.kern(X)  # N
         Ks = tf.tile(K[:, None], [1, self.P])  # N x P
-        return tf.linalg.diag(Ks) if full_output_cov else Ks  # N x P x P or N x P
+        return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or N x P
 
 
 class SeparateIndependentMok(Combination, Mok):
@@ -62,14 +62,14 @@ class SeparateIndependentMok(Combination, Mok):
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
-            Kxxs = tf.stack([k(X, X2) for k in self.kernels], axis=2)  # N x N2 x P
-            return tf.transpose(tf.linalg.diag(Kxxs), [0, 2, 1, 3])  # N x P x N2 x P
+            Kxxs = tf.stack([k(X, X2) for k in self.kernels], axis=2)  # [N, N2, P]
+            return tf.transpose(tf.linalg.diag(Kxxs), [0, 2, 1, 3])  # [N, P, N]2 x P
         else:
-            return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # P x N x N2
+            return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # [P, N, N]2
 
     def Kdiag(self, X, full_output_cov=False):
         stacked = tf.stack([k(X) for k in self.kernels], axis=1)  # N x P
-        return tf.linalg.diag(stacked) if full_output_cov else stacked  # N x P x P  or  N x P
+        return tf.linalg.diag(stacked) if full_output_cov else stacked  # [N, P, P]  or  N x P
 
 
 class SeparateMixedMok(Combination, Mok):
@@ -82,26 +82,26 @@ class SeparateMixedMok(Combination, Mok):
         self.W = Parameter(W)  # P x L
 
     def Kgg(self, X, X2):
-        return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # L x N x N2
+        return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # [L, N, N]2
 
     def K(self, X, X2=None, full_output_cov=True):
-        Kxx = self.Kgg(X, X2)  # L x N x N2
-        KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # P x L x N x N2
+        Kxx = self.Kgg(X, X2)  # [L, N, N]2
+        KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # [P, L, N, N]2
         if full_output_cov:
             # return tf.einsum('lnm,kl,ql->nkmq', Kxx, self.W, self.W)
-            WKxxW = tf.tensordot(self.W, KxxW, [[1], [1]])  # P x P x N x N2
-            return tf.transpose(WKxxW, [2, 0, 3, 1])  # N x P x N2 x P
+            WKxxW = tf.tensordot(self.W, KxxW, [[1], [1]])  # [P, P, N, N]2
+            return tf.transpose(WKxxW, [2, 0, 3, 1])  # [N, P, N]2 x P
         else:
             # return tf.einsum('lnm,kl,kl->knm', Kxx, self.W, self.W)
-            return tf.reduce_sum(self.W[:, :, None, None] * KxxW, [1])  # P x N x N2
+            return tf.reduce_sum(self.W[:, :, None, None] * KxxW, [1])  # [P, N, N]2
 
     def Kdiag(self, X, full_output_cov=True):
         K = tf.stack([k(X) for k in self.kernels], axis=1)  # N x L
         if full_output_cov:
             # Can currently not use einsum due to unknown shape from `tf.stack()`
-            # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # N x P x P
+            # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # [N, P, P]
             Wt = tf.transpose(self.W)  # L x P
-            return tf.reduce_sum(K[:, :, None, None] * Wt[None, :, :, None] * Wt[None, :, None, :], axis=1)  # N x P x P
+            return tf.reduce_sum(K[:, :, None, None] * Wt[None, :, :, None] * Wt[None, :, None, :], axis=1)  # [N, P, P]
         else:
             # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # N x P
             return tf.matmul(K, self.W ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P

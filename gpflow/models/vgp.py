@@ -48,8 +48,8 @@ class VGP(GPModel):
                  num_latent=None,
                  **kwargs):
         """
-        X is a data matrix, size N x D
-        Y is a data matrix, size N x R
+        X is a data matrix, size [N, D]
+        Y is a data matrix, size [N, R]
         kern, likelihood, mean_function are appropriate GPflow objects
 
         """
@@ -105,11 +105,11 @@ class VGP(GPModel):
 
         fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
 
-        q_sqrt_dnn = tf.matrix_band_part(self.q_sqrt(), -1, 0)  # D x N x N
+        q_sqrt_dnn = tf.matrix_band_part(self.q_sqrt(), -1, 0)  # [D, N, N]
 
         L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent, 1, 1]))
 
-        LTA = tf.matmul(L_tiled, q_sqrt_dnn)  # D x N x N
+        LTA = tf.matmul(L_tiled, q_sqrt_dnn)  # [D, N, N]
         fvar = tf.reduce_sum(tf.square(LTA), 2)
 
         fvar = tf.transpose(fvar)
@@ -158,8 +158,8 @@ class VGP_opper_archambeau(GPModel):
                  num_latent=None,
                  **kwargs):
         """
-        X is a data matrix, size N x D
-        Y is a data matrix, size N x R
+        X is a data matrix, size [N, D]
+        Y is a data matrix, size [N, R]
         kern, likelihood, mean_function are appropriate GPflow objects
         """
 
@@ -192,7 +192,7 @@ class VGP_opper_archambeau(GPModel):
 
     def _build_likelihood(self):
         """
-        q_alpha, q_lambda are variational parameters, size N x R
+        q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
         which is:
             E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]

@@ -30,8 +30,8 @@ class GPMC(GPModel):
                  num_latent=None,
                  **kwargs):
         """
-        X is a data matrix, size N x D
-        Y is a data matrix, size N x R
+        X is a data matrix, size [N, D]
+        Y is a data matrix, size [N, R]
         kern, likelihood, mean_function are appropriate GPflow objects
 
         This is a vanilla implementation of a GP with a non-Gaussian

@@ -60,9 +60,9 @@ class SGPMC(GPModel):
                  Z=None,
                  **kwargs):
         """
-        X is a data matrix, size N x D
-        Y is a data matrix, size N x R
-        Z is a data matrix, of inducing inputs, size M x D
+        X is a data matrix, size [N, D]
+        Y is a data matrix, size [N, R]
+        Z is a data matrix, of inducing inputs, size [M, D]
         kern, likelihood, mean_function are appropriate GPflow objects
 
         """

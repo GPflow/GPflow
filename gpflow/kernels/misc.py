@@ -135,8 +135,8 @@ class Periodic(Kernel):
             X2 = X
 
         # Introduce dummy dimension so we can use broadcasting
-        f = tf.expand_dims(X, 1)  # now N x 1 x D
-        f2 = tf.expand_dims(X2, 0)  # now 1 x M x D
+        f = tf.expand_dims(X, 1)  # now [N, 1, D]
+        f2 = tf.expand_dims(X2, 0)  # now [1, M, D]
 
         r = np.pi * (f - f2) / self.period
         r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), 2)

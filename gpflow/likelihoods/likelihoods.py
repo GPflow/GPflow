@@ -372,8 +372,7 @@ class SwitchedLikelihood(Likelihood):
         super().__init__(**kwargs)
         for l in likelihood_list:
             assert isinstance(l, Likelihood)
-        self.likelihood_list = ParamList(likelihood_list)
-        self.num_likelihoods = len(self.likelihood_list)
+        self.likelihoods = likelihood_list
 
     def _partition_and_stitch(self, args, func_name):
         """
@@ -392,15 +391,15 @@ class SwitchedLikelihood(Likelihood):
         args[-1] = Y
 
         # split up the arguments into chunks corresponding to the relevant likelihoods
-        args = zip(*[tf.dynamic_partition(X, ind, self.num_likelihoods) for X in args])
+        args = zip(*[tf.dynamic_partition(X, ind, len(self.likelihoods)) for X in args])
 
         # apply the likelihood-function to each section of the data
         with params_as_tensors_for(self, convert=False):
-            funcs = [getattr(lik, func_name) for lik in self.likelihood_list]
+            funcs = [getattr(lik, func_name) for lik in self.likelihoods]
         results = [f(*args_i) for f, args_i in zip(funcs, args)]
 
         # stitch the results back together
-        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, self.num_likelihoods)
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, len(self.likelihoods))
         results = tf.dynamic_stitch(partitions, results)
 
         return results
@@ -415,7 +414,7 @@ class SwitchedLikelihood(Likelihood):
         return self._partition_and_stitch([Fmu, Fvar, Y], 'variational_expectations')
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        mvs = [lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihood_list]
+        mvs = [lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihoods]
         mu_list, var_list = zip(*mvs)
         mu = tf.concat(mu_list, 1)
         var = tf.concat(var_list, 1)

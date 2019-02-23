@@ -27,14 +27,14 @@ class ProbabilityDistribution:
 
 class Gaussian(ProbabilityDistribution):
     def __init__(self, mu, cov):
-        self.mu = mu  # N x D
-        self.cov = cov  # N x D x D
+        self.mu = mu  # [N, D]
+        self.cov = cov  # [N, D, D]
 
 
 class DiagonalGaussian(ProbabilityDistribution):
     def __init__(self, mu, cov):
-        self.mu = mu  # N x D
-        self.cov = cov  # N x D
+        self.mu = mu  # [N, D]
+        self.cov = cov  # [N, D]
 
 
 class MarkovGaussian(ProbabilityDistribution):
@@ -47,5 +47,5 @@ class MarkovGaussian(ProbabilityDistribution):
     Cov[x_t, x_{t+1}] = cov[t, :, :] * cov[t+1, :, :]
     """
     def __init__(self, mu, cov):
-        self.mu = mu  # N+1 x D
-        self.cov = cov  # 2 x (N+1) x D x D
+        self.mu = mu  # N+[1, D]
+        self.cov = cov  # 2 x (N+1)[, D, D]

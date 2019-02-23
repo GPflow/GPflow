@@ -89,10 +89,10 @@ class TestEquivalence(GPflowTestCase):
         with self.test_context():
             self.setup()
             assert_allclose(self.vgp0.likelihood.variance.read_value(),
-                            self.cvgp.likelihood.likelihood_list[0].variance.read_value(),
+                            self.cvgp.likelihood.likelihoods[0].variance.read_value(),
                             atol=1e-2)
             assert_allclose(self.vgp1.likelihood.variance.read_value(),
-                            self.cvgp.likelihood.likelihood_list[1].variance.read_value(),
+                            self.cvgp.likelihood.likelihoods[1].variance.read_value(),
                             atol=1e-2)
 
     def test_kernel_variance(self):

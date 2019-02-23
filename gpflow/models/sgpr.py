@@ -180,7 +180,7 @@ class SGPR(GPModel, SGPRUpperMixin):
         if full_cov:
             var = self.kern(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
                   - tf.matmul(tmp1, tmp1, transpose_a=True)
-            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # P x N x N
+            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
         else:
             var = self.kern(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
                   - tf.reduce_sum(tf.square(tmp1), 0)
@@ -310,7 +310,7 @@ class GPRFITC(GPModel, SGPRUpperMixin):
         if full_cov:
             var = self.kern(Xnew) - tf.matmul(w, w, transpose_a=True) \
                   + tf.matmul(intermediateA, intermediateA, transpose_a=True)
-            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # P x N x N
+            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
         else:
             var = self.kern(Xnew) - tf.reduce_sum(tf.square(w), 0) \
                   + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,

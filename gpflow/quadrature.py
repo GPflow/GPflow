@@ -119,7 +119,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool=False, **Ys):
     if isinstance(Fmu, (tuple, list)):
         Din = len(Fmu)
         shape = tf.shape(Fmu[0])
-        Fmu, Fvar = map(unify, [Fmu, Fvar])    # both N x 1 x Din
+        Fmu, Fvar = map(unify, [Fmu, Fvar])    # both [N, 1, Din]
     else:
         Din = 1
         shape = Fmu.shape
@@ -183,7 +183,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool=False, epsilon=None, **Ys)
     for name, Y in Ys.items():
         D_out = Y.shape[1]
         # we can't rely on broadcasting and need tiling
-        mc_Yr = tf.tile(Y[None, ...], [S, 1, 1])  # S x N x D_out
+        mc_Yr = tf.tile(Y[None, ...], [S, 1, 1])  # [S, N, D]_out
         Ys[name] = tf.reshape(mc_Yr, (S * N, D_out))  # S * N x D_out
 
     def eval_func(func):

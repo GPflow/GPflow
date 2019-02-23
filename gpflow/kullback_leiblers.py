@@ -32,13 +32,13 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 
     q_mu is a matrix (M x L), each column contains a mean.
 
-    q_sqrt can be a 3D tensor (L x M x M), each matrix within is a lower
+    q_sqrt can be a 3D tensor ([L, M, M]), each matrix within is a lower
         triangular square-root matrix of the covariance of q.
     q_sqrt can be a matrix (M x L), each column represents the diagonal of a
         square-root matrix of the covariance of q.
 
     K is the covariance of p.
-    It is a positive definite matrix (M x M) or a tensor of stacked such matrices (L x M x M)
+    It is a positive definite matrix (M x M) or a tensor of stacked such matrices ([L, M, M])
     If K is None, compute the KL divergence to p(x) = N(0, I) instead.
     """
 
@@ -52,15 +52,15 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     else:
         batch = K.get_shape().ndims == 3
 
-        Lp = tf.linalg.cholesky(K)  # B x M x M or M x M
-        q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # B x M x 1 or M x B
-        alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # B x M x 1 or M x B
+        Lp = tf.linalg.cholesky(K)  # [B, M, M] or M x M
+        q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # [B, M, 1] or M x B
+        alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # [B, M, 1] or M x B
 
     if diag:
         Lq = Lq_diag = q_sqrt
-        Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # B x M x M
+        Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # [B, M, M]
     else:
-        Lq = Lq_full = tf.matrix_band_part(q_sqrt, -1, 0)  # force lower triangle # B x M x M
+        Lq = Lq_full = tf.matrix_band_part(q_sqrt, -1, 0)  # force lower triangle # [B, M, M]
         Lq_diag = tf.linalg.diag_part(Lq)  # M x B
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq

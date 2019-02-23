@@ -26,9 +26,9 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     Same behaviour as conditional with non-multioutput kernels.
 
     The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: M x M
-    - Kuf: M x N
-    - Kff: N or N x N
+    - Kuu: [M, M]
+    - Kuf: [M, N]
+    - Kff: N or [N, N]
 
     Further reference
     -----------------
@@ -38,30 +38,30 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
 
     Parameters
     ----------
-    :param Xnew: data matrix, size N x D.
-    :param f: data matrix, M x P
+    :param Xnew: data matrix, size [N, D].
+    :param f: data matrix, [M, P]
     :param full_cov: return the covariance between the datapoints
     :param full_output_cov: return the covariance between the outputs.
         Note: as we are using a independent kernel these covariances will be zero.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
-        size M x P or P x M x M.
+        size [M, P] or [P, M, M].
     :param white: boolean of whether to use the whitened representation
     :return:
-        - mean:     N x P
-        - variance: N x P, P x N x N, N x P x P or N x P x N x P
+        - mean:     [N, P]
+        - variance: [N, P], [P, N, N], [N, P, P] or [N, P, N, P]
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     logger.debug("Conditional: SharedIndependentMof - SharedIndepedentMok")
 
-    Kmm = Kuu(feature, kernel, jitter=default_jitter())  # M x M
-    Kmn = Kuf(feature, kernel, Xnew)  # M x N
+    Kmm = Kuu(feature, kernel, jitter=default_jitter())  # [M, M]
+    Kmn = Kuf(feature, kernel, Xnew)  # [M, N]
     if full_cov:
-        Knn = kernel(Xnew, full_output_cov=False)[0, ...]  # N x N
+        Knn = kernel(Xnew, full_output_cov=False)[0, ...]  # [N, N]
     else:
         Knn = kernel(Xnew, full_output_cov=False)[..., 0]  # N
 
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  P x N x N or N x P
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # [N, P],  [P, N, N] or [N, P]
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
@@ -74,9 +74,9 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     Number of latent processes equals the number of outputs (L = P).
 
     The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: P x M x M
-    - Kuf: P x M x N
-    - Kff: P x N or P x N x N
+    - Kuu: [P, M, M]
+    - Kuf: [P, M, N]
+    - Kff: [P, N] or [P, N, N]
 
     Further reference
     -----------------
@@ -87,13 +87,13 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     """
 
     logger.debug("conditional: object, SharedIndependentMof, SeparateIndependentMok, object")
-    # Following are: P x M x M  -  P x M x N  -  P x N(x N)
-    Kmms = Kuu(feature, kernel, jitter=default_jitter())  # P x M x M
-    Kmns = Kuf(feature, kernel, Xnew)  # P x M x N
+    # Following are: [P, M, M]  -  [P, M, N]  -  P x N(x N)
+    Kmms = Kuu(feature, kernel, jitter=default_jitter())  # [P, M, M]
+    Kmns = Kuf(feature, kernel, Xnew)  # [P, M, N]
     kern_list = kernel.kernels if isinstance(kernel, Combination) else [kernel.kern] * len(feature.features)
     Knns = tf.stack([k(Xnew) if full_cov else k(Xnew) for k in kern_list], axis=0)
-    fs = tf.transpose(f)[:, :, None]  # P x M x 1
-    # P x 1 x M x M  or  P x M x 1
+    fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
+    # [P, 1, M, M]  or  [P, M, 1]
     q_sqrts = tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
 
     def single_gp_conditional(t):
@@ -120,9 +120,9 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     In this case the number of latent GPs (L) will be different than the number of outputs (P)
 
     The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: L x M x M
-    - Kuf: M x L x N x P
-    - Kff: N x P x N x P, N x P x P, N x P
+    - Kuu: [L, M, M]
+    - Kuf: [M, L, N, P]
+    - Kff: [N, P, N, P], [N, P, P], N x P
 
     Further reference
     -----------------
@@ -133,8 +133,8 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     """
 
     logger.debug("Conditional: (SharedIndependentMof, SeparateIndepedentMof) - SeparateMixedMok")
-    Kmm = Kuu(feature, kernel, jitter=settings.numerics.jitter_level)  # L x M x M
-    Kmn = Kuf(feature, kernel, Xnew)  # M x L x N x P
+    Kmm = Kuu(feature, kernel, jitter=settings.numerics.jitter_level)  # [L, M, M]
+    Kmn = Kuf(feature, kernel, Xnew)  # [M, L, N, P]
     Knn = kernel(Xnew, full_output_cov=full_output_cov) if full_cov \
         else kernel(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
@@ -150,9 +150,9 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     inducing point scheme for multi-output kernels.
 
     The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: M x L x M x L
-    - Kuf: M x L x N x P
-    - Kff: N x P x N x P, N x P x P, N x P
+    - Kuu: [M, L, M, L]
+    - Kuf: [M, L, N, P]
+    - Kff: [N, P, N, P], [N, P, P], N x P
 
     Further reference
     -----------------
@@ -163,11 +163,11 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     Parameters
     ----------
     :param f: variational mean, ML x 1
-    :param q_sqrt: standard-deviations or cholesky, ML x 1  or  1 x ML x ML
+    :param q_sqrt: standard-deviations or cholesky, ML x 1  or  [1, ML, ML]
     """
     logger.debug("Conditional: InducingPoints -- Mok")
-    Kmm = Kuu(feature, kernel, jitter=settings.numerics.jitter_level)  # M x L x M x L
-    Kmn = Kuf(feature, kernel, Xnew)  # M x L x N x P
+    Kmm = Kuu(feature, kernel, jitter=settings.numerics.jitter_level)  # [M, L, M, L]
+    Kmn = Kuf(feature, kernel, Xnew)  # [M, L, N, P]
     Knn = kernel(Xnew, full_output_cov=full_output_cov) if full_cov \
         else kernel(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
@@ -194,9 +194,9 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     The mixing matrix is a member of the `SeparateMixedMok` and has shape P x L.
 
     The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: L x M x M
-    - Kuf: L x M x N
-    - Kff: L x N or L x N x N
+    - Kuu: [L, M, M]
+    - Kuf: [L, M, N]
+    - Kff: L x N or [L, N, N]
 
     Further reference
     -----------------
@@ -208,7 +208,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     logger.debug("conditional: MixedKernelSharedMof, SeparateMixedMok")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     gmu, gvar = independent_cond(Xnew, feature, kernel, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                 full_output_cov=False, white=white)  # N x L, L x N x N or N x L
+                                 full_output_cov=False, white=white)  # N x L, [L, N, N] or N x L
 
     gmu = tf.linalg.transpose(gmu)  # L x N
     if not full_cov:
@@ -217,11 +217,11 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     Wgmu = tf.tensordot(gmu, kernel.W(), [[0], [1]])  # N x P
 
     if full_output_cov:
-        Wt_expanded = tf.linalg.transpose(kernel.W())[:, None, :]  # L x 1 x P
+        Wt_expanded = tf.linalg.transpose(kernel.W())[:, None, :]  # [L, 1, P]
         if full_cov:
-            Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # L x 1 x P x 1
+            Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # [L, 1, P, 1]
 
-        gvarW = tf.expand_dims(gvar, axis=2) * Wt_expanded  # L x N x P (x N)
+        gvarW = tf.expand_dims(gvar, axis=2) * Wt_expanded  # [L, N, P] (x N)
         WgvarW = tf.tensordot(gvarW, kernel.W(), [[0], [1]])  # N x P (x N) x P
     else:
         if not full_cov:

@@ -52,10 +52,10 @@ class SVGP(GPModel):
                  whiten=True,
                  num_data=None):
         """
-        - X is a data matrix, size N x D
-        - Y is a data matrix, size N x P
+        - X is a data matrix, size [N, D]
+        - Y is a data matrix, size [N, P]
         - kernel, likelihood, mean_function are appropriate GPflow objects
-        - Z is a matrix of pseudo inputs, size M x D
+        - Z is a matrix of pseudo inputs, size [M, D]
         - num_latent is the number of latent process to use, default to
           Y.shape[1]
         - q_diag is a boolean. If True, the covariance is approximated by a
@@ -106,12 +106,12 @@ class SVGP(GPModel):
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
         q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
-        self.q_mu = Parameter(q_mu, dtype=default_float())  # M x P
+        self.q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
 
         if q_sqrt is None:
             if self.q_diag:
                 ones = np.ones((num_inducing, self.num_latent), dtype=default_float())
-                self.q_sqrt = Parameter(ones, transform=positive())  # M x P
+                self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
             else:
                 q_sqrt = [np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)]
                 q_sqrt = np.array(q_sqrt)
