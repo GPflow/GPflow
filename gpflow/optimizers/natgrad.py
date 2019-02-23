@@ -19,13 +19,12 @@ import tensorflow as tf
 
 from . import optimizer
 from .. import settings
-from ..actions import Optimization
 from ..models import Model
 
 
-class NatGradOptimizer(optimizer.Optimizer):
-    def __init__(self, gamma, **kwargs):
-        super().__init__(**kwargs)
+class NatGrad(tf.optimizers.Optimizer):
+    def __init__(self, gamma, name=None):
+        super().__init__(name)
         self.name = self.__class__.__name__
         self._gamma = gamma
         self._natgrad_op = None

@@ -1,3 +1,3 @@
 # pylint: disable=wildcard-import
 
-from .scipy import ScipyOptimizer
+from .scipy import Scipy

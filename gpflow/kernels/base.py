@@ -27,11 +27,11 @@ class Kernel(tf.Module):
     The basic kernel class. Handles active dims.
     """
 
-    def __init__(self, active_dims=None):
+    def __init__(self, active_dims: slice = None, name: str = None):
         """
         """
-        super().__init__()
-        self.active_dims = active_dims
+        super().__init__(name)
+        self._active_dims = active_dims
 
     @property
     def active_dims(self):

@@ -4,9 +4,8 @@ import numpy as np
 import scipy.optimize
 import tensorflow as tf
 from scipy.optimize import OptimizeResult
-from .optimize import loss_gradients
 
-__all__ = ['ScipyOptimizer']
+__all__ = ['Scipy']
 
 
 Loss = tf.Tensor
@@ -16,7 +15,7 @@ StepCallback = Callable[[Loss, Variables, Gradients], None]
 LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]
 
 
-class ScipyOptimizer(tf.optimizers.Optimizer):
+class Scipy:
     def minimize(self,
                  closure: LossClosure,
                  variables: Variables,
@@ -33,7 +32,6 @@ class ScipyOptimizer(tf.optimizers.Optimizer):
             The optimization result represented as a scipy ``OptimizeResult`` object.
             See `OptimizeResult` for a attributes description.
         """
-        super().__init__(name)
         if not callable(closure):
             raise ValueError('Callable object expected.')
         initial_params = self.initial_parameters(variables)
@@ -75,7 +73,7 @@ class ScipyOptimizer(tf.optimizers.Optimizer):
             s += tensor_size
 
 
-def _compute_loss_and_gradients(loss_cb: LossCallback, variables: Variables):
+def _compute_loss_and_gradients(loss_cb: LossClosure, variables: Variables):
     with tf.GradientTape() as tape:
         loss = loss_cb()
         grads = tape.gradient(loss, variables)

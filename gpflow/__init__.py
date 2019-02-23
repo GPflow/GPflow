@@ -15,13 +15,9 @@
 
 # flake8: noqa
 
-
-import tensorflow as tf
-
 from . import (conditionals, expectations, features, kernels, likelihoods,
-               logdensities, models, probability_distributions, util)
-
-
+               logdensities, models, optimizers, probability_distributions,
+               util)
 from ._settings import SETTINGS as settings
 from ._version import __version__
 from .base import Parameter, positive, triangular
