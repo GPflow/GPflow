@@ -231,4 +231,3 @@ def test_rollaxis_idempotent(session_tf, rolls):
 
     assert_allclose(A, A_left_right)
     assert_allclose(A, A_right_left)
-

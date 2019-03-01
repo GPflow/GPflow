@@ -49,7 +49,7 @@ def assert_all_array_elements_almost_equal(arr, decimal):
         np.testing.assert_almost_equal(arr[i], arr[i+1], decimal=decimal)
 
 
-def check_equality_predictions(sess, models, decimal=4):
+def check_equality_predictions(sess, models, decimal=3):
     """
     Executes a couple of checks to compare the equality of predictions
     of different models. The models should be configured with the same
