@@ -2,6 +2,7 @@
 ========================
 The six core models of GPflow
 ========================
+
 .. automodule:: gpflow.models
 
 GP Regression

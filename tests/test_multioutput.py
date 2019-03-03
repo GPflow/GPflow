@@ -11,6 +11,8 @@ from gpflow.features import InducingPoints
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
+from gpflow.multioutput.conditionals import fully_correlated_conditional_repeat, \
+    fully_correlated_conditional, independent_interdomain_conditional
 from gpflow.test_util import session_tf
 from gpflow.training import ScipyOptimizer
 from gpflow.conditionals import _sample_mvn, sample_conditional
@@ -47,7 +49,7 @@ def assert_all_array_elements_almost_equal(arr, decimal):
         np.testing.assert_almost_equal(arr[i], arr[i+1], decimal=decimal)
 
 
-def check_equality_predictions(sess, models, decimal=4):
+def check_equality_predictions(sess, models, decimal=3):
     """
     Executes a couple of checks to compare the equality of predictions
     of different models. The models should be configured with the same
@@ -288,6 +290,29 @@ def test_sample_conditional_mixedkernel(session_tf):
                                          np.mean(value2, axis=0), decimal=1)
     np.testing.assert_array_almost_equal(np.cov(value, rowvar=False),
                                          np.cov(value2, rowvar=False), decimal=1)
+
+
+@pytest.mark.parametrize('R', [1, 5])
+@pytest.mark.parametrize("func", [fully_correlated_conditional_repeat,
+                                  fully_correlated_conditional])
+def test_fully_correlated_conditional_repeat_shapes(func, R):
+    L, M, N, P = Data.L, Data.M, Data.N, Data.P
+
+    Kmm = tf.ones((L * M, L * M))
+    Kmn = tf.ones((L * M, N, P))
+    Knn = tf.ones((N, P))
+    f = tf.ones((L * M, R))
+    q_sqrt = None
+    white = True
+
+    m, v = func(Kmn, Kmm, Knn, f,
+                full_cov=False,
+                full_output_cov=False,
+                q_sqrt=q_sqrt,
+                white=white)
+
+    assert v.shape.as_list() == m.shape.as_list()
+
 
 # ------------------------------------------
 # Test Mixed Mok Kgg

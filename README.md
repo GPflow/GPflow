@@ -6,6 +6,7 @@
 
 [Website](https://gpflow.org) |
 [Documentation](https://gpflow.readthedocs.io/en/master/) |
+[Manual](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true) |
 [Glossary](GLOSSARY.md) |
 [Tips & Tricks](doc/source/notebooks/tips_and_tricks.ipynb)
 
@@ -14,7 +15,7 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
 
 ## What does GPflow do?
 
-GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online user manual (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), and the docs have further [discussion of the comparison](http://gpflow.readthedocs.io/en/develop/intro.html#what-s-the-difference-between-gpy-and-gpflow).
+GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), and the docs have further [discussion of the comparison](http://gpflow.readthedocs.io/en/develop/intro.html#what-s-the-difference-between-gpy-and-gpflow).
 
 GPflow uses [TensorFlow](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python 3.5 or above.
 
@@ -42,11 +43,12 @@ python setup.py install
 
 You can run the tests with `python setup.py test`.
 
+## Getting Started
+
+Get started with our [manual (develop)](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true) with examples and tutorials.
+
 
 ## Compiling documentation
-
-Online documentation of the latest GPflow release can be found at https://gpflow.readthedocs.io/en/master/
-(If you are using the "develop" branch off github, you can find corresponding documentation at https://gpflow.readthedocs.io/en/develop/)
 
 To compile the GPflow documentation locally:
 
