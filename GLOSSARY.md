@@ -29,7 +29,7 @@ The following is the convention we aim to use in the code.
   <dd>stands for the number of inducing features (e.g. length of Z)</dd>
 
   <dt>N</dt>
-  <dd>stands for data or minibatch size in docstrings and shape constructions</dd>
+  <dd>stands for the number of data or minibatch size in docstrings and shape constructions</dd>
 
   <dt>P</dt>
   <dd>stands for the number of output dimensions in docstrings and shape constructions</dd>
