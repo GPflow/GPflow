@@ -7,6 +7,7 @@
 [Website](https://gpflow.org) |
 [Documentation](https://gpflow.readthedocs.io/en/master/) |
 [Manual](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true) |
+[Glossary](GLOSSARY.md) |
 [Tips & Tricks](doc/source/notebooks/tips_and_tricks.ipynb)
 
 GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
