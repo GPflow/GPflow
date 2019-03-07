@@ -50,6 +50,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Parameters
     ----------
     :param Xnew: data matrix, size N x D.
+    :param feat: gpflow.InducingFeature object
+    :param kern: gpflow kernel object.
     :param f: data matrix, M x R
     :param full_cov: return the covariance between the datapoints
     :param full_output_cov: return the covariance between the outputs.
@@ -101,7 +103,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False, 
     :param X: data points, size M x D.
     :param kern: GPflow kernel.
     :param f: data matrix, M x R, representing the function values at X,
-        for K functions.
+        for R functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size M x R or R x M x M.
     :param white: boolean of whether to use the whitened representation as
@@ -269,7 +271,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     :param Xnew_mu: mean of the inputs, size N x Din
     :param Xnew_var: covariance matrix of the inputs, size N x Din x Din
     :param feat: gpflow.InducingFeature object, only InducingPoints is supported
-    :param kern: gpflow kernel or ekernel object.
+    :param kern: gpflow kernel object.
     :param q_mu: mean inducing points, size M x Dout
     :param q_sqrt: cholesky of the covariance matrix of the inducing points, size Dout x M x M
     :param full_output_cov: boolean wheter to compute covariance between output dimension.
