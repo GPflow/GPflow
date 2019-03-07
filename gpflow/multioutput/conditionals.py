@@ -440,6 +440,8 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         elif not full_cov and not full_output_cov:
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # R x N x K
             fvar = fvar[None, ...] + addvar  # R x N x K
+    else:
+        fvar = tf.broadcast_to(fvar[None], tf.shape(fmean))
     return fmean, fvar
 
 
