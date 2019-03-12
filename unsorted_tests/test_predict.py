@@ -16,6 +16,7 @@ import tensorflow as tf
 import numpy as np
 
 import gpflow
+from gpflow.kernels import Matern32
 import pytest
 
 
@@ -25,7 +26,7 @@ rng = np.random.RandomState(0)
 def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
     X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
-    kern = gpflow.kernels.Matern32() + gpflow.kernels.White()
+    kern = Matern32() + gpflow.kernels.White()
     model_gp = gpflow.models.GPR(X, Y, kernel=kern)
 
     mu_f, var_f = model_gp.predict_f(Xtest)
@@ -38,7 +39,7 @@ def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
 def test_gaussian_log_density(Ntrain, Ntest, D):
     X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
-    kern = gpflow.kernels.Matern32() + gpflow.kernels.White()
+    kern = Matern32() + gpflow.kernels.White()
     model_gp = gpflow.models.GPR(X, Y, kernel=kern)
 
     mu_y, var_y = model_gp.predict_y(Xtest)
@@ -54,7 +55,7 @@ def test_gaussian_log_density(Ntrain, Ntest, D):
 def test_gaussian_recompile(Ntrain, Ntest, D):
     X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
-    kern = gpflow.kernels.Matern32() + gpflow.kernels.White()
+    kern = Matern32() + gpflow.kernels.White()
     model_gp = gpflow.models.GPR(X, Y, kernel=kern)
 
     mu_f, var_f = model_gp.predict_f(Xtest)
@@ -70,34 +71,120 @@ def test_gaussian_recompile(Ntrain, Ntest, D):
     mu_y, var_y = model_gp.predict_y(Xtest)
     log_density = model_gp.predict_log_density(Xtest, Ytest)
 
-class TestGaussian():
-    def prepare(self):
-        self.rng = np.randomodel_gp.RandomState(0)
-        self.X = self.rng.randn(100, 2)
-        self.Y = self.rng.randn(100, 1)
-        self.kern = gpflow.kernels.Matern32() + gpflow.kernels.White()
-        self.Xtest = self.rng.randn(10, 2)
-        self.Ytest = self.rng.randn(10, 1)
-        # make a Gaussian model
-        return gpflow.models.GPR(self.X, self.Y, kernel=self.kern)
+
+@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M', [
+    [3, 2, 20, 30, 5]
+])
+def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
+    covar_shape = (output_dim, Ntest, Ntest)
+    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    Xtest = rng.randn(Ntest, input_dim)
+    kern = Matern32()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+
+    mu1, var = model_gp.predict_f(Xtest, full_cov=False)
+    mu2, covar = model_gp.predict_f(Xtest, full_cov=True)
+
+    assert np.allclose(mu1, mu2, atol=1.e-10)
+    assert covar.shape == covar_shape
+    assert var.shape == (Ntest, output_dim)
+    for i in range(output_dim):
+        assert np.allclose(var[:, i], np.diag(covar[i, :, :]))
+
+
+@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M, num_samples', [
+    [3, 2, 20, 30, 5, 5]
+])
+def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_samples):
+    samples_shape = (num_samples, Ntest, output_dim)
+    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    Xtest = rng.randn(Ntest, input_dim)
+    kern = Matern32()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+
+    samples = model_gp.predict_f_samples(Xtest, num_samples)
+    assert samples.shape == samples_shape
+
+
+# TODO(@sergio.pasc) As model classes are updated to TF2.0, prepare tests accordingly
+
+class ModelSetup:
+    def __init__(self, model_class, kernel=Matern32(), likelihood=gpflow.likelihoods.Gaussian(),
+                 whiten=None, q_diag=None, requires_Z_as_input = True):
+        self.model_class = model_class
+        self.kernel = kernel
+        self.likelihood = likelihood
+        self.whiten = whiten
+        self.q_diag = q_diag
+        self.requires_Z_as_input = requires_Z_as_input
+
+    def get_model(self, Z):
+        if self.whiten is not None and self.q_diag is not None:
+            return self.model_class(Z=Z, kernel=self.kernel, likelihood=self.likelihood,
+                                    whiten=self.whiten, q_diag=self.q_diag)
+        else:
+            return self.model_class(Z=Z, kernel=self.kernel, likelihood=self.likelihood)
+
+model_setups = [
+    ModelSetup(model_class=gpflow.models.SVGP,
+               whiten=False, q_diag=True),
+    ModelSetup(model_class=gpflow.models.SVGP,
+               whiten=True, q_diag=False),
+    ModelSetup(model_class=gpflow.models.SVGP,
+               whiten=True, q_diag=True),
+    ModelSetup(model_class=gpflow.models.SVGP,
+               whiten=False, q_diag=False),
+    ModelSetup(model_class=gpflow.models.SGPR),
+    ModelSetup(model_class=gpflow.models.GPRF),
+    ModelSetup(model_class=gpflow.models.VGP, requires_Z_as_input = False),
+    ModelSetup(model_class=gpflow.models.GPMC, requires_Z_as_input = False ),
+    ModelSetup(model_class=gpflow.models.SGPMC)
+]
+
+
+@pytest.mark.parametrize('model_setup', [model_setups])
+@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M', [
+    [3, 2, 20, 30, 5]
+])
+def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest, M):
+    covar_shape = (output_dim, Ntest, Ntest)
+    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    Xtest = rng.randn(Ntest, input_dim)
+    model_gp = model_setup.get_model(Z)
+
+    mu1, var = model_gp.predict_f(Xtest, full_cov=False)
+    mu2, covar = model_gp.predict_f(Xtest, full_cov=True)
+
+    assert np.allclose(mu1, mu2, atol=1.e-10)
+    assert covar.shape == covar_shape
+    assert var.shape == (Ntest, output_dim)
+    for i in range(output_dim):
+        assert np.allclose(var[:, i], np.diag(covar[i, :, :]))
+
+
+@pytest.mark.parametrize('model_setup', [model_setups])
+@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M, num_samples', [
+    [3, 2, 20, 30, 5, 5]
+])
+def test_other_models_full_cov_samples(model_setup, input_dim, output_dim, N, Ntest, M,
+                                       num_samples):
+    samples_shape = (num_samples, Ntest, output_dim)
+    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    Xtest = rng.randn(Ntest, input_dim)
+    model_gp = model_setup.get_model(Z)
+
+    samples = model_gp.predict_f_samples(Xtest, num_samples)
+    assert samples.shape == samples_shape
 
 
 
-    def test_recompile(self):
-        with self.test_context():
-            m = self.prepare()
-            mu_f, var_f = m.predict_f(self.Xtest)
-            mu_y, var_y = m.predict_y(self.Xtest)
-            density = m.predict_density(self.Xtest, self.Ytest)
 
-            #change a fix and see if these things still compile
-            m.likelihood.variance = 0.2
-            m.likelihood.variance.trainable = False
 
-            #this will fail unless a recompile has been triggered
-            mu_f, var_f = m.predict_f(self.Xtest)
-            mu_y, var_y = m.predict_y(self.Xtest)
-            density = m.predict_density(self.Xtest, self.Ytest)
+
+
+
+
+
 
 
 class TestFullCov():
@@ -121,7 +208,6 @@ class TestFullCov():
     X = rng.randn(N, input_dim)
     Y = rng.randn(N, output_dim)
     Z = rng.randn(M, input_dim)
-    Xtest = rng.randn(Ntest, input_dim)
 
     @classmethod
     def kernel(cls):
