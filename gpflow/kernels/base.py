@@ -70,10 +70,11 @@ class Kernel(tf.Module):
         if isinstance(dims, slice):
             X = X[..., dims]
             Y = Y[..., dims] if Y is not None else X
+            X = tf.gather(X, dims, axis=-1)
+            Y = tf.gather(Y, dims, axis=-1) if Y is not None else X
             return X, Y
 
-        X = tf.gather(X, dims, axis=-1)
-        Y = tf.gather(Y, dims, axis=-1) if Y is not None else X
+        Y = Y if Y is not None else X
         return X, Y
 
     def slice_cov(self, cov: tf.Tensor) -> tf.Tensor:

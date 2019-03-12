@@ -16,40 +16,72 @@ import tensorflow as tf
 import numpy as np
 
 import gpflow
-from gpflow.test_util import GPflowTestCase
+import pytest
 
 
-class TestGaussian(GPflowTestCase):
+rng = np.random.RandomState(0)
+
+@pytest.mark.parametrize('Ntrain, Ntest, D', [[100, 10, 2]])
+def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
+    X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
+    Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
+    kern = gpflow.kernels.Matern32() + gpflow.kernels.White()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+
+    mu_f, var_f = model_gp.predict_f(Xtest)
+    mu_y, var_y = model_gp.predict_y(Xtest)
+
+    assert np.allclose(mu_f, mu_y)
+    assert np.allclose(var_f, var_y - 1.)
+
+@pytest.mark.parametrize('Ntrain, Ntest, D', [[100, 10, 2]])
+def test_gaussian_log_density(Ntrain, Ntest, D):
+    X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
+    Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
+    kern = gpflow.kernels.Matern32() + gpflow.kernels.White()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+
+    mu_y, var_y = model_gp.predict_y(Xtest)
+    log_density = model_gp.predict_log_density(Xtest, Ytest)
+    log_density_hand = (-0.5 * np.log(2 * np.pi) -
+                0.5 * np.log(var_y) -
+                0.5 * np.square(mu_y - Ytest) / var_y)
+
+    assert np.allclose(log_density_hand, log_density)
+
+
+@pytest.mark.parametrize('Ntrain, Ntest, D', [[100, 10, 2]])
+def test_gaussian_recompile(Ntrain, Ntest, D):
+    X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
+    Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
+    kern = gpflow.kernels.Matern32() + gpflow.kernels.White()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+
+    mu_f, var_f = model_gp.predict_f(Xtest)
+    mu_y, var_y = model_gp.predict_y(Xtest)
+    log_density = model_gp.predict_log_density(Xtest, Ytest)
+
+    # change a fix and see if these things still compile
+    model_gp.likelihood.variance.assign(0.2)
+    model_gp.likelihood.variance.trainable = False
+
+    # this will fail unless a recompile has been triggered
+    mu_f, var_f = model_gp.predict_f(Xtest)
+    mu_y, var_y = model_gp.predict_y(Xtest)
+    log_density = model_gp.predict_log_density(Xtest, Ytest)
+
+class TestGaussian():
     def prepare(self):
-        self.rng = np.random.RandomState(0)
+        self.rng = np.randomodel_gp.RandomState(0)
         self.X = self.rng.randn(100, 2)
         self.Y = self.rng.randn(100, 1)
-        self.kern = gpflow.kernels.Matern32(2) + gpflow.kernels.White(1)
+        self.kern = gpflow.kernels.Matern32() + gpflow.kernels.White()
         self.Xtest = self.rng.randn(10, 2)
         self.Ytest = self.rng.randn(10, 1)
         # make a Gaussian model
-        return gpflow.models.GPR(self.X, self.Y, kern=self.kern)
+        return gpflow.models.GPR(self.X, self.Y, kernel=self.kern)
 
-    def test_all(self):
-        with self.test_context():
-            m = self.prepare()
-            mu_f, var_f = m.predict_f(self.Xtest)
-            mu_y, var_y = m.predict_y(self.Xtest)
 
-            self.assertTrue(np.allclose(mu_f, mu_y))
-            self.assertTrue(np.allclose(var_f, var_y - 1.))
-
-    def test_density(self):
-        with self.test_context():
-            m = self.prepare()
-            mu_y, var_y = m.predict_y(self.Xtest)
-            density = m.predict_density(self.Xtest, self.Ytest)
-
-            density_hand = (-0.5 * np.log(2 * np.pi) -
-                            0.5 * np.log(var_y) -
-                            0.5 * np.square(mu_y - self.Ytest)/var_y)
-
-            self.assertTrue(np.allclose(density_hand, density))
 
     def test_recompile(self):
         with self.test_context():
@@ -68,7 +100,7 @@ class TestGaussian(GPflowTestCase):
             density = m.predict_density(self.Xtest, self.Ytest)
 
 
-class TestFullCov(GPflowTestCase):
+class TestFullCov():
     """
     this base class requires inherriting to specify the model.
 
