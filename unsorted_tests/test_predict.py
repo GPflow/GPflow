@@ -177,126 +177,112 @@ def test_other_models_full_cov_samples(model_setup, input_dim, output_dim, N, Nt
     assert samples.shape == samples_shape
 
 
-
-
-
-
-
-
-
-
-
-
-class TestFullCov():
-    """
-    this base class requires inherriting to specify the model.
-
-    This test structure is more complex that, say, looping over the models, but
-    makses all the tests much smaller and so less prone to erroring out. Also,
-    if a test fails, it should be clearer where the error is.
-    """
-
-    input_dim = 3
-    output_dim = 2
-    N = 20
-    Ntest = 30
-    M = 5
-    rng = np.random.RandomState(0)
-    num_samples = 5
-    samples_shape = (num_samples, Ntest, output_dim)
-    covar_shape = (output_dim, Ntest, Ntest)
-    X = rng.randn(N, input_dim)
-    Y = rng.randn(N, output_dim)
-    Z = rng.randn(M, input_dim)
-
-    @classmethod
-    def kernel(cls):
-        return gpflow.kernels.Matern32(cls.input_dim)
-
-    def prepare(self):
-        return gpflow.models.GPR(self.X, self.Y, kern=self.kernel())
-
-    def test_cov(self):
-        with self.test_context():
-            m = self.prepare()
-            mu1, var = m.predict_f(self.Xtest)
-            mu2, covar = m.predict_f_full_cov(self.Xtest)
-            self.assertTrue(np.all(mu1 == mu2))
-            self.assertTrue(covar.shape == self.covar_shape)
-            self.assertTrue(var.shape == (self.Ntest, self.output_dim))
-            for i in range(self.output_dim):
-                self.assertTrue(np.allclose(var[:, i], np.diag(covar[i, :, :])))
-
-    def test_samples(self):
-        with self.test_context():
-            m = self.prepare()
-            samples = m.predict_f_samples(self.Xtest, self.num_samples)
-            self.assertTrue(samples.shape == self.samples_shape)
-
-
-class TestFullCovSGPR(TestFullCov):
-    def prepare(self):
-        return gpflow.models.SGPR(self.X, self.Y, Z=self.Z, kern=self.kernel())
-
-
-class TestFullCovGPRFITC(TestFullCov):
-    def prepare(self):
-        return gpflow.models.GPRFITC(self.X, self.Y, Z=self.Z, kern=self.kernel())
-
-
-class TestFullCovSVGP1(TestFullCov):
-    def prepare(self):
-        return gpflow.models.SVGP(
-            self.X, self.Y, Z=self.Z, kern=self.kernel(),
-            likelihood=gpflow.likelihoods.Gaussian(),
-            whiten=False, q_diag=True)
-
-
-class TestFullCovSVGP2(TestFullCov):
-    def prepare(self):
-        return gpflow.models.SVGP(
-            self.X, self.Y, Z=self.Z, kern=self.kernel(),
-            likelihood=gpflow.likelihoods.Gaussian(),
-            whiten=True, q_diag=False)
-
-
-class TestFullCovSVGP3(TestFullCov):
-    def prepare(self):
-        return gpflow.models.SVGP(
-            self.X, self.Y, Z=self.Z, kern=self.kernel(),
-            likelihood=gpflow.likelihoods.Gaussian(),
-            whiten=True, q_diag=True)
-
-
-class TestFullCovSVGP4(TestFullCov):
-    def prepare(self):
-        return gpflow.models.SVGP(
-            self.X, self.Y, Z=self.Z, kern=self.kernel(),
-            likelihood=gpflow.likelihoods.Gaussian(),
-            whiten=True, q_diag=False)
-
-
-class TestFullCovVGP(TestFullCov):
-    def prepare(self):
-        return gpflow.models.VGP(
-            self.X, self.Y, kern=self.kernel(),
-            likelihood=gpflow.likelihoods.Gaussian())
-
-
-class TestFullCovGPMC(TestFullCov):
-    def prepare(self):
-        return gpflow.models.GPMC(
-            self.X, self.Y, kern=self.kernel(),
-            likelihood=gpflow.likelihoods.Gaussian())
-
-
-class TestFullCovSGPMC(TestFullCov):
-    def prepare(self):
-        return gpflow.models.SGPMC(
-            self.X, self.Y, kern=self.kernel(),
-            likelihood=gpflow.likelihoods.Gaussian(),
-            Z=self.Z)
-
-
-if __name__ == "__main__":
-    tf.test.main()
+# class TestFullCov():
+#     """
+#     this base class requires inherriting to specify the model.
+#
+#     This test structure is more complex that, say, looping over the models, but
+#     makses all the tests much smaller and so less prone to erroring out. Also,
+#     if a test fails, it should be clearer where the error is.
+#     """
+#
+#     input_dim = 3
+#     output_dim = 2
+#     N = 20
+#     Ntest = 30
+#     M = 5
+#     rng = np.random.RandomState(0)
+#     num_samples = 5
+#     samples_shape = (num_samples, Ntest, output_dim)
+#     covar_shape = (output_dim, Ntest, Ntest)
+#     X = rng.randn(N, input_dim)
+#     Y = rng.randn(N, output_dim)
+#     Z = rng.randn(M, input_dim)
+#
+#     @classmethod
+#     def kernel(cls):
+#         return gpflow.kernels.Matern32(cls.input_dim)
+#
+#     def prepare(self):
+#         return gpflow.models.GPR(self.X, self.Y, kern=self.kernel())
+#
+#     def test_cov(self):
+#         with self.test_context():
+#             m = self.prepare()
+#             mu1, var = m.predict_f(self.Xtest)
+#             mu2, covar = m.predict_f_full_cov(self.Xtest)
+#             self.assertTrue(np.all(mu1 == mu2))
+#             self.assertTrue(covar.shape == self.covar_shape)
+#             self.assertTrue(var.shape == (self.Ntest, self.output_dim))
+#             for i in range(self.output_dim):
+#                 self.assertTrue(np.allclose(var[:, i], np.diag(covar[i, :, :])))
+#
+#     def test_samples(self):
+#         with self.test_context():
+#             m = self.prepare()
+#             samples = m.predict_f_samples(self.Xtest, self.num_samples)
+#             self.assertTrue(samples.shape == self.samples_shape)
+#
+#
+# class TestFullCovSGPR(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.SGPR(self.X, self.Y, Z=self.Z, kern=self.kernel())
+#
+#
+# class TestFullCovGPRFITC(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.GPRFITC(self.X, self.Y, Z=self.Z, kern=self.kernel())
+#
+#
+# class TestFullCovSVGP1(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.SVGP(
+#             self.X, self.Y, Z=self.Z, kern=self.kernel(),
+#             likelihood=gpflow.likelihoods.Gaussian(),
+#             whiten=False, q_diag=True)
+#
+#
+# class TestFullCovSVGP2(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.SVGP(
+#             self.X, self.Y, Z=self.Z, kern=self.kernel(),
+#             likelihood=gpflow.likelihoods.Gaussian(),
+#             whiten=True, q_diag=False)
+#
+#
+# class TestFullCovSVGP3(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.SVGP(
+#             self.X, self.Y, Z=self.Z, kern=self.kernel(),
+#             likelihood=gpflow.likelihoods.Gaussian(),
+#             whiten=True, q_diag=True)
+#
+#
+# class TestFullCovSVGP4(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.SVGP(
+#             self.X, self.Y, Z=self.Z, kern=self.kernel(),
+#             likelihood=gpflow.likelihoods.Gaussian(),
+#             whiten=True, q_diag=False)
+#
+#
+# class TestFullCovVGP(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.VGP(
+#             self.X, self.Y, kern=self.kernel(),
+#             likelihood=gpflow.likelihoods.Gaussian())
+#
+#
+# class TestFullCovGPMC(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.GPMC(
+#             self.X, self.Y, kern=self.kernel(),
+#             likelihood=gpflow.likelihoods.Gaussian())
+#
+#
+# class TestFullCovSGPMC(TestFullCov):
+#     def prepare(self):
+#         return gpflow.models.SGPMC(
+#             self.X, self.Y, kern=self.kernel(),
+#             likelihood=gpflow.likelihoods.Gaussian(),
+#             Z=self.Z)
