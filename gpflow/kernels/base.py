@@ -76,6 +76,7 @@ class Kernel(tf.Module):
             X = X[..., dims]
             Y = Y[..., dims] if Y is not None else X
         elif dims is not None:
+            # TODO(@awav): Convert when TF2.0 whill support proper slicing.
             X = tf.gather(X, dims, axis=-1)
             Y = tf.gather(Y, dims, axis=-1) if Y is not None else X
         return X, Y

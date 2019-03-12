@@ -1,4 +1,5 @@
 import tensorflow as tf
+
 from ..features import InducingPoints, Multiscale
 from ..kernels import Kernel, RBF
 from .dispatch import Kuu
@@ -13,7 +14,7 @@ def _Kuu(feat: InducingPoints, kern: Kernel, *, jitter=0.0):
 
 @Kuu.register(Multiscale, RBF)
 def _Kuu(feat: Multiscale, kern: RBF, *, jitter=0.0):
-    Zmu, Zlen = kern.slice(feat.Z, feat.scales())
+    Zmu, Zlen = kern.slice(feat.Z, feat.scales)
     idlengthscales2 = tf.square(kern.lengthscales + Zlen)
     sc = tf.sqrt(idlengthscales2[None, ...] + idlengthscales2[:, None, ...]
                  - kern.lengthscales ** 2)
