@@ -113,7 +113,6 @@ def feature():
 
 def _check(params):
     analytic = expectation(*params)
-    print(f">>> params = {params}")
     quad = quadrature_expectation(*params)
     assert_allclose(analytic, quad, rtol=RTOL)
 
