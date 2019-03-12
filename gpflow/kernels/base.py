@@ -31,6 +31,8 @@ class Kernel(tf.Module):
         """
         """
         super().__init__(name)
+        if isinstance(active_dims, list):
+            active_dims = np.array(active_dims)
         self._active_dims = active_dims
 
     @property
@@ -54,6 +56,9 @@ class Kernel(tf.Module):
             # Be very conservative for kernels defined over slices of dimensions
             return False
 
+        if self.active_dims is None or other.active_dims:
+            return False
+
         this_dims = tf.reshape(self.active_dims, (-1, 1))
         other_dims = tf.reshape(other.active_dims, (1, -1))
         return not np.any(this_dims == other_dims)
@@ -70,10 +75,10 @@ class Kernel(tf.Module):
         if isinstance(dims, slice):
             X = X[..., dims]
             Y = Y[..., dims] if Y is not None else X
+        elif dims is not None:
+            # TODO(@awav): Convert when TF2.0 whill support proper slicing.
             X = tf.gather(X, dims, axis=-1)
             Y = tf.gather(Y, dims, axis=-1) if Y is not None else X
-            return X, Y
-
         Y = Y if Y is not None else X
         return X, Y
 
@@ -90,18 +95,19 @@ class Kernel(tf.Module):
             cov = tf.linalg.diag(cov)
 
         dims = self.active_dims
+
         if isinstance(dims, slice):
             return cov[..., dims, dims]
+        elif dims is not None:
+            nlast = cov.shape[-1]
+            ndims = len(dims)
 
-        nlast = cov.shape[-1]
-        ndims = len(dims)
-
-        cov_shape = cov.shape
-        cov_reshaped = tf.reshape(cov, [-1, nlast, nlast])
-        gather1 = tf.gather(tf.transpose(cov_reshaped, [2, 1, 0]), dims)
-        gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), dims)
-        cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                         tf.concat([cov_shape[:-2], [ndims, ndims]], 0))
+            cov_shape = cov.shape
+            cov_reshaped = tf.reshape(cov, [-1, nlast, nlast])
+            gather1 = tf.gather(tf.transpose(cov_reshaped, [2, 1, 0]), dims)
+            gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), dims)
+            cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
+                             tf.concat([cov_shape[:-2], [ndims, ndims]], 0))
 
         return cov
 
@@ -169,6 +175,7 @@ class Combination(Kernel):
             overlapping = False
             for i, dims_i in enumerate(dimlist):
                 for dims_j in dimlist[i + 1:]:
+                    print(f"dims_i = {type(dims_i)}")
                     if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
                         overlapping = True
             return not overlapping

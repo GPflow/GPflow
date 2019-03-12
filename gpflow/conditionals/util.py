@@ -104,7 +104,7 @@ def sample_mvn(mean, cov, cov_structure):
     - "full": cov holds the full covariance matrix (without jitter)
     :return: sample from the MVN of shape N x D
     """
-    eps = tf.random_normal(mean.shape, dtype=mean.dtype)  # N x P
+    eps = tf.random.normal(mean.shape, dtype=mean.dtype)  # N x P
     if cov_structure == "diag":
         sample = mean + tf.sqrt(cov) * eps  # N x P
     elif cov_structure == "full":

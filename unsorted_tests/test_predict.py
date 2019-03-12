@@ -145,7 +145,6 @@ class TestFullCov():
         with self.test_context():
             m = self.prepare()
             samples = m.predict_f_samples(self.Xtest, self.num_samples)
-            print(samples.shape)
             self.assertTrue(samples.shape == self.samples_shape)
 
 

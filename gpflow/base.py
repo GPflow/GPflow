@@ -127,7 +127,7 @@ class Parameter(tf.Module):
     @property
     def shape(self):
         if self.transform is not None:
-            return self.transform.forward_event_shape(self._unconstrained)
+            return self.transform.forward_event_shape(self._unconstrained.shape)
         return self._unconstrained.shape
 
     def get_shape(self):
