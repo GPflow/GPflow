@@ -62,8 +62,6 @@ class Polynomial(Linear):
         self.offset = Parameter(offset, transform=positive())
 
     def K(self, X, X2=None, presliced=False):
-        return (Linear(self, X, X2, presliced=presliced) + self.offset) ** self.degree
+        return (super().K(X, X2, presliced=presliced) + self.offset) ** self.degree
 
-    def K_diag(self, X, presliced=False):
-        return (Linear(self, X, presliced=presliced) + self.offset) ** self.degree
 
