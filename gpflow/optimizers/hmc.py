@@ -269,7 +269,7 @@ def _copy_variables(variables):
 
 
 def _init_ps(xs):
-    return _map(lambda x: tf.random_normal(x.shape, dtype=x.dtype.as_numpy_dtype), xs)
+    return _map(lambda x: tf.random.normal(x.shape, dtype=x.dtype.as_numpy_dtype), xs)
 
 
 def _update_ps(ps, grads, epsilon, coeff=1):

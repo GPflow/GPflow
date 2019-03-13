@@ -131,7 +131,7 @@ class SVGP(GPModel):
         K = None
         if not self.whiten:
             K = Kuu(self.feature, self.kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
-        return kullback_leiblers.gauss_kl(self.q_mu(), self.q_sqrt(), K)
+        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
@@ -152,8 +152,8 @@ class SVGP(GPModel):
         return self.neg_log_marginal_likelihood(X, Y)
 
     def predict_f(self, Xnew, full_cov=False, full_output_cov=False) -> tf.Tensor:
-        q_mu = self.q_mu()
-        q_sqrt = self.q_sqrt()
+        q_mu = self.q_mu
+        q_sqrt = self.q_sqrt
         mu, var = conditional(Xnew, self.feature, self.kernel, q_mu, q_sqrt=q_sqrt,
                               full_cov=full_cov, white=self.whiten,
                               full_output_cov=full_output_cov)

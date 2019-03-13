@@ -112,7 +112,7 @@ class GPModel(BayesianModel):
         for i in range(self.num_latent):
             L = tf.linalg.cholesky(var[i, :, :] + jitter)
             shape = tf.stack([L.shape[0], num_samples])
-            V = tf.random_normal(shape, dtype=L.dtype, seed=self.seed)
+            V = tf.random.normal(shape, dtype=L.dtype, seed=self.seed)
             samples[i] = mu[:, i:(i+1)] + L @ V
         return tf.linalg.transpose(tf.stack(samples))
 

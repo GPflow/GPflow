@@ -10,5 +10,5 @@ def inducingpoint_wrapper(feature):
     for the methods.
     """
     if isinstance(feature, np.ndarray):
-        feat = InducingPoints(feature)
-    return feat
+        feature = InducingPoints(feature)
+    return feature

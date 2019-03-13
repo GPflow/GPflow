@@ -27,7 +27,7 @@ from .robustmax import RobustMax
 
 def inv_probit(x):
     jitter = 1e-3  # ensures output is strictly between 0 and 1
-    return 0.5 * (1.0 + tf.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
+    return 0.5 * (1.0 + tf.math.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
 
 
 
@@ -172,7 +172,7 @@ class Poisson(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return Y * Fmu - tf.exp(Fmu + Fvar / 2) * self.binsize \
-                   - tf.lgamma(Y + 1) + Y * tf.math.log(self.binsize)
+                   - tf.math.lgamma(Y + 1) + Y * tf.math.log(self.binsize)
         return super(Poisson, self).variational_expectations(Fmu, Fvar, Y)
 
 
@@ -267,7 +267,8 @@ class Gamma(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return -self.shape * Fmu - tf.lgamma(self.shape) + (self.shape - 1.) * tf.math.log(Y) - Y * tf.exp(-Fmu + Fvar / 2.)
+            return -self.shape * Fmu - tf.math.lgamma(self.shape) + (self.shape - 1.) * tf.math.log(
+                Y) - Y * tf.exp(-Fmu + Fvar / 2.)
         else:
             return super().variational_expectations(Fmu, Fvar, Y)
 
@@ -328,15 +329,15 @@ class MultiClass(Likelihood):
 
     def logp(self, F, Y):
         hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
-        yes = tf.ones(Y.shape, dtype=default_float()) - self.invlink.epsilon()
-        no = tf.zeros(Y.shape, dtype=default_float()) + self.invlink._eps_K1
+        yes = tf.ones(Y.shape, dtype=default_float()) - self.invlink.epsilon
+        no = tf.zeros(Y.shape, dtype=default_float()) + self.invlink.eps_k1
         p = tf.where(hits, yes, no)
         return tf.math.log(p)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-        ve = p * tf.math.log(1. - self.invlink.epsilon()) + (1. - p) * tf.math.log(self.invlink._eps_K1)
+        ve = p * tf.math.log(1. - self.invlink.epsilon) + (1. - p) * tf.math.log(self.invlink.eps_k1)
         return ve
 
     def predict_mean_and_var(self, Fmu, Fvar):
@@ -352,7 +353,7 @@ class MultiClass(Likelihood):
     def _predict_non_logged_density(self, Fmu, Fvar, Y):
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-        den = p * (1. - self.invlink.epsilon()) + (1. - p) * (self.invlink._eps_K1)
+        den = p * (1. - self.invlink.epsilon) + (1. - p) * (self.invlink.eps_k1)
         return den
 
     def conditional_mean(self, F):
@@ -394,8 +395,7 @@ class SwitchedLikelihood(Likelihood):
         args = zip(*[tf.dynamic_partition(X, ind, len(self.likelihoods)) for X in args])
 
         # apply the likelihood-function to each section of the data
-        with params_as_tensors_for(self, convert=False):
-            funcs = [getattr(lik, func_name) for lik in self.likelihoods]
+        funcs = [getattr(lik, func_name) for lik in self.likelihoods]
         results = [f(*args_i) for f, args_i in zip(funcs, args)]
 
         # stitch the results back together
@@ -478,10 +478,10 @@ class Ordinal(Likelihood):
 
         Note that a matrix of F values is flattened.
         """
-        scaled_bins_left = tf.concat([self.bin_edges / self.sigma(), np.array([np.inf])], 0)
-        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma()], 0)
-        return inv_probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma()) \
-               - inv_probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma())
+        scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
+        scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
+        return inv_probit(scaled_bins_left - tf.reshape(F, (-1, 1)) / self.sigma) \
+               - inv_probit(scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma)
 
     def conditional_mean(self, F):
         phi = self._make_phi(F)
