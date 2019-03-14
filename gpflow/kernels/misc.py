@@ -181,7 +181,7 @@ class Coregion(Kernel):
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())
 
-    def K(self, X, X2=None):
+    def K(self, X, X2=None, presliced=False):
         X, X2 = self.slice(X, X2)
         X = tf.cast(X[:, 0], tf.int32)
         if X2 is None:
