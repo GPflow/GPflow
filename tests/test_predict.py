@@ -81,7 +81,7 @@ def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
 ])
 def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_samples):
     samples_shape = (num_samples, Ntest, output_dim)
-    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     kern = Matern32()
     model_gp = gpflow.models.GPR(X, Y, kernel=kern)
