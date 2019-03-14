@@ -27,17 +27,19 @@ def test_inducing_points_feature_len(N, D):
     assert_equal(len(features), N)
 
 
-@pytest.mark.parametrize('N, D', [[101, 3], [10, 7]])
-def test_inducing_equivalence(N, D):
+_kernel_setups = [
+    gpflow.kernels.RBF(variance=0.46, lengthscales=np.random.uniform(0.5, 3., 5), ard=True),
+    gpflow.kernels.Periodic(period=0.4, variance=1.8)
+]
+
+
+@pytest.mark.parametrize('N', [10, 101])
+@pytest.mark.parametrize('kernel', _kernel_setups)
+def test_inducing_equivalence(N, kernel):
     # Inducing features must be the same as the kernel evaluations
-    Z = np.random.randn(N, D)
+    Z = np.random.randn(N, 5)
     features = InducingPoints(Z)
-    kernels = [
-        gpflow.kernels.RBF(variance=0.46, lengthscales=np.random.uniform(0.5, 3., D), ard=True),
-        gpflow.kernels.Periodic(0.4, 1.8)
-    ]
-    for kern in kernels:
-        assert_allclose(Kuu(features, kern), kern(Z))
+    assert_allclose(Kuu(features, kernel), kernel(Z))
 
 
 @pytest.mark.parametrize('N, M, D', [[23, 13, 3], [10, 5, 7]])
@@ -63,14 +65,17 @@ def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
     assert deviation_percent_Kuu < 0.1
 
 
-@pytest.mark.parametrize('feature, kernel', [
+_features_and_kernels = [
     [InducingPoints(np.random.randn(71, 2)),
-     gpflow.kernels.RBF(1.84, np.random.uniform(0.5, 3., 2))],
+     gpflow.kernels.RBF(variance=1.84, lengthscales=np.random.uniform(0.5, 3., 2))],
     [InducingPoints(np.random.randn(71, 2)),
-     gpflow.kernels.Matern12(1.84, np.random.uniform(0.5, 3., 2))],
+     gpflow.kernels.Matern12(variance=1.84, lengthscales=np.random.uniform(0.5, 3., 2))],
     [Multiscale(np.random.randn(71, 2), np.random.uniform(0.5, 3, size=(71, 2))),
-     gpflow.kernels.RBF(1.84, np.random.uniform(0.5, 3., 2))]
-])
+     gpflow.kernels.RBF(variance=1.84, lengthscales=np.random.uniform(0.5, 3., 2))]
+]
+
+
+@pytest.mark.parametrize('feature, kernel', _features_and_kernels)
 def test_features_psd_schur(feature, kernel):
     # Conditional variance must be PSD.
     X = np.random.randn(5, 2)
