@@ -60,7 +60,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         Lq = Lq_diag = q_sqrt
         Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # [B, M, M]
     else:
-        Lq = Lq_full = tf.matrix_band_part(q_sqrt, -1, 0)  # force lower triangle # [B, M, M]
+        Lq = Lq_full = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [B, M, M]
         Lq_diag = tf.linalg.diag_part(Lq)  # M x B
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq

@@ -21,18 +21,18 @@ class RobustMax(tf.Module):
 
     def __init__(self, num_classes, epsilon=1e-3, **kwargs):
         super().__init__(**kwargs)
-        transform = tfp.bijectors.Logistic()
+        transform = tfp.bijectors.Sigmoid()
         prior = tfp.distributions.Beta(0.2, 5.)
         self.epsilon = Parameter(epsilon, transform=transform, prior=prior, trainable=False)
         self.num_classes = num_classes
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
-        return tf.one_hot(i, self.num_classes, tf.squeeze(1. - self.epsilon()), tf.squeeze(self._eps_K1))
+        return tf.one_hot(i, self.num_classes, tf.squeeze(1. - self.epsilon), tf.squeeze(self.eps_k1))
 
     @property
-    def _eps_K1(self):
-        return self.epsilon() / (self.num_classes - 1.)
+    def eps_k1(self):
+        return self.epsilon / (self.num_classes - 1.)
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         Y = tf.cast(Y, default_int())
@@ -48,7 +48,7 @@ class RobustMax(tf.Module):
         # compute the CDF of the Gaussian between the latent functions and the grid (including the selected function)
         dist = (tf.expand_dims(X, 1) - tf.expand_dims(mu, 2)) / tf.expand_dims(
             tf.sqrt(tf.clip_by_value(var, 1e-10, np.inf)), 2)
-        cdfs = 0.5 * (1.0 + tf.erf(dist / np.sqrt(2.0)))
+        cdfs = 0.5 * (1.0 + tf.math.erf(dist / np.sqrt(2.0)))
 
         cdfs = cdfs * (1 - 2e-4) + 1e-4
 
@@ -57,4 +57,4 @@ class RobustMax(tf.Module):
         cdfs = cdfs * tf.expand_dims(oh_off, 2) + tf.expand_dims(oh_on, 2)
 
         # take the product over the latent functions, and the sum over the GH grid.
-        return tf.reduce_prod(cdfs, reduction_indices=[1]) @ tf.reshape(gh_w / np.sqrt(np.pi), (-1, 1))
+        return tf.reduce_prod(cdfs, axis=[1]) @ tf.reshape(gh_w / np.sqrt(np.pi), (-1, 1))

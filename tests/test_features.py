@@ -55,7 +55,7 @@ def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
     inducing_point_Kuf = Kuf(feature_inducing_point, rbf, Xnew)
 
     deviation_percent_Kuf = np.max(np.abs(multi_scale_Kuf - inducing_point_Kuf) /
-                                 inducing_point_Kuf * 100)
+                                   inducing_point_Kuf * 100)
     assert deviation_percent_Kuf < 0.1
 
     multi_scale_Kuu = Kuu(feature_zero_lengthscale, rbf)
@@ -79,7 +79,7 @@ _features_and_kernels = [
 @pytest.mark.parametrize('feature, kernel', _features_and_kernels)
 def test_features_psd_schur(feature, kernel):
     # Conditional variance must be PSD.
-    X = np.random.randn(13, 2)
+    X = np.random.randn(5, 2)
     Kuf_values = Kuf(feature, kernel, X)
     Kuu_values = Kuu(feature, kernel, jitter=gpflow.settings.jitter)
     Kff_values = kernel(X)
