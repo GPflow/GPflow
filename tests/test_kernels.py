@@ -299,8 +299,11 @@ def test_slice_asymmetric(kernel_triple, N, M, D):
     assert np.allclose(K2, K4)
 
 
-_kernel_setups_prod = [gpflow.kernels.Matern32(), gpflow.kernels.Matern52(lengthscales=0.3),
-                    (gpflow.kernels.Matern32() * gpflow.kernels.Matern52(lengthscales=0.3))]
+_kernel_setups_prod = [
+    gpflow.kernels.Matern32(),
+    gpflow.kernels.Matern52(lengthscales=0.3),
+    gpflow.kernels.Matern32() * gpflow.kernels.Matern52(lengthscales=0.3)
+]
 
 
 @pytest.mark.parametrize('N, D', [[30, 2]])
