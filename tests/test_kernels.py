@@ -1,4 +1,4 @@
-# Copyright 2017 the GPflow authors.
+# Copyright 2018 the GPflow authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,20 +27,22 @@ from gpflow.kernels import (RBF, ArcCosine, Constant, Linear,
 
 rng = np.random.RandomState(1)
 
-def _ref_rbf(X, lengthScale, signalVariance):
-    nDataPoints, _ = X.shape
-    kernel = np.zeros((nDataPoints, nDataPoints))
-    for row_index in range(nDataPoints):
-        for column_index in range(nDataPoints):
+
+def _ref_rbf(X, lengthscale, signal_variance):
+    num_data, _ = X.shape
+    kernel = np.zeros((num_data, num_data))
+    for row_index in range(num_data):
+        for column_index in range(num_data):
             vecA = X[row_index, :]
             vecB = X[column_index, :]
             delta = vecA - vecB
-            distanceSquared = np.dot(delta.T, delta)
-            kernel[row_index, column_index] = signalVariance * np.exp(-0.5 * distanceSquared / lengthScale**2)
+            distance_squared = np.dot(delta.T, delta)
+            kernel[row_index, column_index] = signal_variance * \
+                np.exp(-0.5 * distance_squared / lengthscale ** 2)
     return kernel
 
 
-def _ref_arccosine(X, order, weightVariances, biasVariance, signalVariance):
+def _ref_arccosine(X, order, weight_variances, bias_variance, signal_variance):
     num_points = X.shape[0]
     kernel = np.empty((num_points, num_points))
     for row in range(num_points):
@@ -48,10 +50,10 @@ def _ref_arccosine(X, order, weightVariances, biasVariance, signalVariance):
             x = X[row]
             y = X[col]
 
-            numerator = (weightVariances * x).dot(y) + biasVariance
+            numerator = (weight_variances * x).dot(y) + bias_variance
 
-            x_denominator = np.sqrt((weightVariances * x).dot(x) + biasVariance)
-            y_denominator = np.sqrt((weightVariances * y).dot(y) + biasVariance)
+            x_denominator = np.sqrt((weight_variances * x).dot(x) + bias_variance)
+            y_denominator = np.sqrt((weight_variances * y).dot(y) + bias_variance)
             denominator = x_denominator * y_denominator
 
             theta = np.arccos(np.clip(numerator / denominator, -1., 1.))
@@ -63,17 +65,17 @@ def _ref_arccosine(X, order, weightVariances, biasVariance, signalVariance):
                 J = 3. * np.sin(theta) * np.cos(theta)
                 J += (np.pi - theta) * (1. + 2. * np.cos(theta) ** 2)
 
-            kernel[row, col] = signalVariance * (1. / np.pi) * J * \
-                               x_denominator ** order * \
-                               y_denominator ** order
+            kernel[row, col] = signal_variance * (1. / np.pi) * J * \
+                x_denominator ** order * \
+                y_denominator ** order
     return kernel
 
 
-def _ref_periodic(X, lengthScale, signalVariance, period):
+def _ref_periodic(X, lengthScale, signal_variance, period):
     # Based on the GPy implementation of standard_period kernel
     base = np.pi * (X[:, None, :] - X[None, :, :]) / period
     exp_dist = np.exp(-0.5 * np.sum(np.square(np.sin(base) / lengthScale), axis=-1))
-    return signalVariance * exp_dist
+    return signal_variance * exp_dist
 
 
 @pytest.mark.parametrize('variance, lengthscale', [[2.3, 1.4]])
@@ -159,7 +161,7 @@ def _assert_periodic_kern_err(lengthscale, variance, period, X):
 
 @pytest.mark.parametrize('D', [1, 2])
 @pytest.mark.parametrize('N, lengthscale, variance, period', [
-    [3, 2., 2.3, 2.],
+    [3, 2.,   2.3, 2.],
     [5, 11.5, 1.3, 20.]
 ])
 def test_periodic_1d_and_2d(D, N, lengthscale, variance, period):
@@ -167,9 +169,12 @@ def test_periodic_1d_and_2d(D, N, lengthscale, variance, period):
     _assert_periodic_kern_err(lengthscale, variance, period, X)
 
 
-kernel_setups = [ kern() for kern in gpflow.kernels.Stationary.__subclasses__()] +  [
-    gpflow.kernels.Constant(), gpflow.kernels.Linear(),
-    gpflow.kernels.Polynomial(), gpflow.kernels.ArcCosine()]
+kernel_setups = [kern() for kern in gpflow.kernels.Stationary.__subclasses__()] + [
+    gpflow.kernels.Constant(),
+    gpflow.kernels.Linear(),
+    gpflow.kernels.Polynomial(),
+    gpflow.kernels.ArcCosine()
+]
 
 
 @pytest.mark.parametrize('D', [1, 5])
@@ -222,9 +227,12 @@ def test_coregion_slice(N, input_dim, output_dim, rank):
 
 
 _dim = 3
-kernel_setups_extended = kernel_setups + [RBF() + Linear(), RBF() * Linear(),
-           RBF() + Linear(ard=True, variance=rng.rand(_dim, 1).reshape(-1))]
-kernel_setups_extended += [ArcCosine(order=order) for order in ArcCosine.implemented_orders]
+kernel_setups_extended = kernel_setups + [
+    RBF() + Linear(),
+    RBF() * Linear(),
+    RBF() + Linear(ard=True, variance=rng.rand(_dim, 1).reshape(-1))
+] + [ArcCosine(order=order) for order in ArcCosine.implemented_orders]
+
 
 @pytest.mark.parametrize('kernel', kernel_setups_extended)
 @pytest.mark.parametrize('N, dim', [[30, _dim]])
@@ -237,8 +245,11 @@ def test_diags(kernel, N, dim):
 
 # Add a rbf and linear kernel, make sure the result is the same as adding the result of
 # the kernels separately.
-_kernel_setups_add = [gpflow.kernels.RBF(), gpflow.kernels.Linear(),
-                    (gpflow.kernels.RBF() + gpflow.kernels.Linear())]
+_kernel_setups_add = [
+    gpflow.kernels.RBF(),
+    gpflow.kernels.Linear(),
+    (gpflow.kernels.RBF() + gpflow.kernels.Linear())
+]
 
 
 @pytest.mark.parametrize('N, D', [[10, 1]])
@@ -271,12 +282,18 @@ def test_white(N, D):
     assert not np.allclose(Kff_sym, Kff_asym)
 
 
-_kernel_classes_slice = [kern for kern in gpflow.kernels.Stationary.__subclasses__()] +  [
-    gpflow.kernels.Constant, gpflow.kernels.Linear, gpflow.kernels.Polynomial]
+_kernel_classes_slice = [kern for kern in gpflow.kernels.Stationary.__subclasses__()] + \
+    [gpflow.kernels.Constant,
+     gpflow.kernels.Linear,
+     gpflow.kernels.Polynomial]
+
 _kernel_triples_slice = [
-    (kern1(active_dims=[0]), kern2(active_dims=[1]), kern3(active_dims=slice(0, 1))) for
-    kern1, kern2, kern3 in zip(_kernel_classes_slice, _kernel_classes_slice, _kernel_classes_slice)
+    (k1(active_dims=[0]),
+     k2(active_dims=[1]),
+     k3(active_dims=slice(0, 1))) for
+    k1, k2, k3 in zip(_kernel_classes_slice, _kernel_classes_slice, _kernel_classes_slice)
 ]
+
 
 @pytest.mark.parametrize('kernel_triple', _kernel_triples_slice)
 @pytest.mark.parametrize('N, D', [[20, 2]])
