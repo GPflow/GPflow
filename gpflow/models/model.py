@@ -88,9 +88,8 @@ class GPModel(BayesianModel):
                  seed: Optional[int] = None):
         super().__init__()
         self.num_latent = num_latent
-        if mean_function is not None:
-            self.num_latent = len(mean_function)
-        else:
+        #TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
+        if mean_function is None:
             mean_function = Zero()
         self.mean_function = mean_function
         self.kernel = kernel
