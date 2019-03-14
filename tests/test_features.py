@@ -14,7 +14,6 @@
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-import tensorflow as tf
 import pytest
 import gpflow
 from gpflow.features import InducingPoints, Multiscale
