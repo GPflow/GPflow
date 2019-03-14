@@ -73,6 +73,9 @@ def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
         assert np.allclose(var[:, i], np.diag(covar[i, :, :]))
 
 
+# TODO(@sergio.pasc) As model classes are updated to TF2.0, prepare all tests bellow accordingly
+
+@pytest.mark.skip(reason='GPR model is not ready')
 @pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M, num_samples', [
     [3, 2, 20, 30, 5, 5]
 ])
@@ -86,8 +89,6 @@ def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_sampl
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape
 
-
-# TODO(@sergio.pasc) As model classes are updated to TF2.0, prepare all tests bellow accordingly
 
 class ModelSetup:
     def __init__(self, model_class, kernel=Matern32(), likelihood=gpflow.likelihoods.Gaussian(),
@@ -116,11 +117,11 @@ model_setups = [
                whiten=True, q_diag=True),
     ModelSetup(model_class=gpflow.models.SVGP,
                whiten=False, q_diag=False),
-#     ModelSetup(model_class=gpflow.models.SGPR),
-#     ModelSetup(model_class=gpflow.models.GPRF),
-#     ModelSetup(model_class=gpflow.models.VGP, requires_Z_as_input = False),
-#     ModelSetup(model_class=gpflow.models.GPMC, requires_Z_as_input = False ),
-#     ModelSetup(model_class=gpflow.models.SGPMC)
+    #     ModelSetup(model_class=gpflow.models.SGPR),
+    #     ModelSetup(model_class=gpflow.models.GPRF),
+    #     ModelSetup(model_class=gpflow.models.VGP, requires_Z_as_input = False),
+    #     ModelSetup(model_class=gpflow.models.GPMC, requires_Z_as_input = False ),
+    #     ModelSetup(model_class=gpflow.models.SGPMC)
 ]
 
 
