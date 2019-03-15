@@ -77,8 +77,8 @@ class SeparateMixedMok(Combination, Mok):
     Linear mixing of the latent GPs to form the output
     """
 
-    def __init__(self, kernels, W, name=None):
-        super().__init__(kernels, name)
+    def __init__(self, kernels, W):
+        super().__init__(kernels)
         self.W = Parameter(W)  # P x L
 
     def Kgg(self, X, X2):

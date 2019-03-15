@@ -210,49 +210,42 @@ def test_sample_conditional(whiten):
     kernel = RBF()
 
     # Path 1
-    # sample = sample_conditional(Xs, Z, kernel, q_mu, q_sqrt=q_sqrt, white=whiten)
+    sample = sample_conditional(Xs, Z, kernel, q_mu, q_sqrt=q_sqrt, white=whiten)
     # Path 2
     sample2 = sample_conditional(Xs, feature, kernel, q_mu, q_sqrt=q_sqrt, white=whiten)
 
     # check if mean and covariance of samples are similar
-    # np.testing.assert_array_almost_equal(np.mean(sample, axis=0),
-    #                                      np.mean(sample2, axis=0), decimal=1)
-    # np.testing.assert_array_almost_equal(np.cov(sample, rowvar=False),
-    #                                      np.cov(sample2, rowvar=False), decimal=1)
+    np.testing.assert_array_almost_equal(np.mean(sample, axis=0),
+                                         np.mean(sample2, axis=0), decimal=1)
+    np.testing.assert_array_almost_equal(np.cov(sample, rowvar=False),
+                                         np.cov(sample2, rowvar=False), decimal=1)
 
 
 def test_sample_conditional_mixedkernel():
-    q_mu = np.random.randn(Data.M, Data.L)  # M x L
-    q_sqrt = np.array(
-        [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.L)])  # [L, M, M]
+    Xs = np.ones((int(1e3), Data.D), dtype=float_type)
     Z = Data.X[:Data.M, ...]  # M x D
-    N = int(10e5)
-    Xs = np.ones((N, Data.D), dtype=float_type)
 
-    values = {"Xnew": Xs, "q_mu": q_mu, "q_sqrt": q_sqrt}
-    placeholders = _create_placeholder_dict(values)
-    feed_dict = _create_feed_dict(placeholders, values)
+    q_mu = np.random.randn(Data.M, Data.P)  # M x P
+    q_sqrt = np.array(
+        [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # [P, M, M]
 
     # Path 1: mixed kernel: most efficient route
     W = np.random.randn(Data.P, Data.L)
-    mixed_kernel = mk.SeparateMixedMok([RBF(Data.D) for _ in range(Data.L)], W)
+    mixed_kernel = mk.SeparateMixedMok([RBF() for _ in range(Data.L)], W)
     mixed_feature = mf.MixedKernelSharedMof(InducingPoints(Z.copy()))
-
-    sample = sample_conditional(placeholders["Xnew"], mixed_feature, mixed_kernel,
-                                placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
+    sample = sample_conditional(Xs, mixed_feature, mixed_kernel, q_mu, q_sqrt=q_sqrt, white=True)
 
     # Path 2: independent kernels, mixed later
     separate_kernel = mk.SeparateIndependentMok([RBF(Data.D) for _ in range(Data.L)])
     shared_feature = mf.SharedIndependentMof(InducingPoints(Z.copy()))
-    sample2 = sample_conditional(placeholders["Xnew"], shared_feature, separate_kernel,
-                                 placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
-
-    value2 = np.matmul(value2, W.T)
+    sample2 = sample_conditional(Xs, shared_feature, separate_kernel, q_mu, q_sqrt=q_sqrt,
+                                 white=True)
+    sample2 = np.matmul(sample2, W.T)
     # check if mean and covariance of samples are similar
-    np.testing.assert_array_almost_equal(np.mean(value, axis=0),
-                                         np.mean(value2, axis=0), decimal=1)
-    np.testing.assert_array_almost_equal(np.cov(value, rowvar=False),
-                                         np.cov(value2, rowvar=False), decimal=1)
+    np.testing.assert_array_almost_equal(np.mean(sample, axis=0),
+                                         np.mean(sample2, axis=0), decimal=1)
+    np.testing.assert_array_almost_equal(np.cov(sample, rowvar=False),
+                                         np.cov(sample2, rowvar=False), decimal=1)
 
 
 # ------------------------------------------

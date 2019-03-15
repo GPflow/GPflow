@@ -43,14 +43,14 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     """
 
     white = K is None
-    diag = q_sqrt.shape.ndims == 2
+    diag = len(q_sqrt.shape) == 2
 
     M, B = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
     if white:
         alpha = q_mu  # M x B
     else:
-        batch = K.shape.ndims == 3
+        batch = len(K.shape) == 3
 
         Lp = tf.linalg.cholesky(K)  # [B, M, M] or M x M
         q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # [B, M, 1] or M x B

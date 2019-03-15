@@ -20,7 +20,8 @@ logger = create_logger()
 
 
 @conditional.register(object, SharedIndependentMof, SharedIndependentMok, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
+                 white=False):
     """
     Multioutput conditional for an independent kernel and shared inducing features.
     Same behaviour as conditional with non-multioutput kernels.
@@ -61,14 +62,16 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     else:
         Knn = kernel(Xnew, full_output_cov=False)[..., 0]  # N
 
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # [N, P],  [P, N, N] or [N, P]
+    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt,
+                                   white=white)  # [N, P],  [P, N, N] or [N, P]
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
 @conditional.register(object, SeparateIndependentMof, SeparateIndependentMok, object)
 @conditional.register(object, SharedIndependentMof, SeparateIndependentMok, object)
 @conditional.register(object, SeparateIndependentMof, SharedIndependentMok, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
+                 white=False):
     """
     Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P).
@@ -90,19 +93,25 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     # Following are: [P, M, M]  -  [P, M, N]  -  P x N(x N)
     Kmms = Kuu(feature, kernel, jitter=default_jitter())  # [P, M, M]
     Kmns = Kuf(feature, kernel, Xnew)  # [P, M, N]
-    kern_list = kernel.kernels if isinstance(kernel, Combination) else [kernel.kern] * len(feature.features)
-    Knns = tf.stack([k(Xnew) if full_cov else k(Xnew) for k in kern_list], axis=0)
+    kern_list = kernel.kernels if isinstance(kernel, Combination) else [kernel.kern] * len(
+        feature.features)
+    Knns = tf.stack([k(Xnew, full=full_cov) for k in kern_list], axis=0)
+    Knns = tf.transpose(Knns)[:, :, None] if len(Knns.shape) == 2 else Knns # [P, N, 1]
     fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
-    q_sqrts = tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
+    q_sqrts = tf.transpose(q_sqrt)[:, :, None] if len(q_sqrt.shape) == 2 else q_sqrt[:, None, :, :]
 
-    def single_gp_conditional(t):
-        Kmm, Kmn, Knn, f, q_sqrt = t
+    def single_gp_conditional(Kmm, Kmn, Knn, f, q_sqrt):
         return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     dtypes = (Kmms.dtype, Kmms.dtype)
-    rmu, rvar = tf.map_fn(single_gp_conditional, (Kmms, Kmns, Knns, fs, q_sqrts), dtypes)  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
-
+    # rmu, rvar = tf.map_fn(lambda x: single_gp_conditional(x[0], x[1], x[2], x[3], x[4]),
+    #                       (Kmms, Kmns, Knns,fs, q_sqrts), dtype=dtypes)
+    for i in range(Knns.shape[0]):
+        single_gp_conditional(Kmms[i, :, :], Kmns[i, :, :], Knns[i, :], fs[i, :, :], q_sqrts[i,
+                                                                                      :, :])
+    # [P,
+    # N, 1], [P, 1, N, N] or [P, N, 1]
     fmu = tf.linalg.transpose(rmu[:, :, 0])  # [N, P]
 
     if full_cov:
@@ -113,8 +122,10 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     return fmu, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
-@conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+@conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok,
+                      object)
+def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
+                 white=False):
     """
     Interdomain conditional with independent latents.
     In this case the number of latent GPs (L) will be different than the number of outputs (P)
@@ -138,12 +149,14 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     Knn = kernel(Xnew, full_output_cov=full_output_cov) if full_cov \
         else kernel(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
-    return independent_interdomain_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, full_output_cov=full_output_cov,
+    return independent_interdomain_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov,
+                                               full_output_cov=full_output_cov,
                                                q_sqrt=q_sqrt, white=white)
 
 
 @conditional.register(object, InducingPoints, Mok, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
+                 white=False):
     """
     Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
@@ -171,24 +184,27 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     Knn = kernel(Xnew, full_output_cov=full_output_cov) if full_cov \
         else kernel(Xnew, full_output_cov=full_output_cov)  # N x P(x N)x P  or  N x P(x P)
 
-    M, L, N, K = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
+    M, L, N, K = [Kmn.shape[i] for i in range(len(Kmn.shape))]
     Kmm = tf.reshape(Kmm, (M * L, M * L))
 
     if full_cov == full_output_cov:
         Kmn = tf.reshape(Kmn, (M * L, N * K))
         Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
-        fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # NK x 1, 1 x NK(x NK)
+        fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt,
+                                       white=white)  # NK x 1, 1 x NK(x NK)
         fmean = tf.reshape(fmean, (N, K))
         fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
     else:
         Kmn = tf.reshape(Kmn, (M * L, N, K))
         fmean, fvar = fully_correlated_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov,
-                                                   full_output_cov=full_output_cov, q_sqrt=q_sqrt, white=white)
+                                                   full_output_cov=full_output_cov, q_sqrt=q_sqrt,
+                                                   white=white)
     return fmean, fvar
 
 
 @conditional.register(object, MixedKernelSharedMof, SeparateMixedMok, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
+                 white=False):
     """
     Most efficient routine to project L independent latent gps through a mixing matrix W.
     The mixing matrix is a member of the `SeparateMixedMok` and has shape P x L.
@@ -206,7 +222,8 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
 
     """
     logger.debug("conditional: MixedKernelSharedMof, SeparateMixedMok")
-    independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+    independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok,
+                                            object)
     gmu, gvar = independent_cond(Xnew, feature, kernel, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                  full_output_cov=False, white=white)  # N x L, [L, N, N] or N x L
 
