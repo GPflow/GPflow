@@ -92,7 +92,10 @@ class Parameter(tf.Module):
         return self._unconstrained.initial_value
 
     def assign(self, value, use_locking=False, name=None, read_value=True):
+        # TODO(sergio.pasc): Find proper solution for casting / Discuss solution
+        value = _verified_value(value, self.dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
+
         self._unconstrained.assign(unconstrained_value,
             read_value=read_value,
             use_locking=use_locking)

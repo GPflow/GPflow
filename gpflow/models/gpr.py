@@ -66,7 +66,7 @@ class GPR(GPModel):
         logpdf = multivariate_normal(self.Y, m, L)  # (R,) log-likelihoods for each independent dimension of Y
         return tf.reduce_sum(logpdf)
 
-    def predict_f(self, Xnew, full_cov=False):
+    def predict_f(self, Xnew, full_cov=False, full_output_cov=False):
         """
         Xnew is a data matrix, point at which we want to predict
 
