@@ -196,6 +196,9 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     M, L, N, K = [tf.shape(Kmn)[i] for i in range(Kmn.shape.ndims)]
     Kmm = tf.reshape(Kmm, (M * L, M * L))
 
+    print("full_cov", full_cov)
+    print("full_output_cov", full_output_cov)
+
     if full_cov == full_output_cov:
         Kmn = tf.reshape(Kmn, (M * L, N * K))
         Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))

@@ -165,6 +165,22 @@ class GPModel(Model):
         """
         return self._build_predict(Xnew, full_cov=True)
 
+    @autoflow((settings.float_type, [None, None]))
+    def predict_f_full_output_cov(self, Xnew):
+        """
+        Compute the mean and covariance matrix of the latent function(s) at the
+        points Xnew.
+        """
+        return self._build_predict(Xnew, full_output_cov=True)
+
+    @autoflow((settings.float_type, [None, None]))
+    def predict_f_full_cov_full_output_cov(self, Xnew):
+        """
+        Compute the mean and covariance matrix of the latent function(s) at the
+        points Xnew.
+        """
+        return self._build_predict(Xnew, full_cov=True, full_output_cov=True)
+
     @autoflow((settings.float_type, [None, None]), (tf.int32, []))
     def predict_f_samples(self, Xnew, num_samples):
         """

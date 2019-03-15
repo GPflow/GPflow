@@ -86,7 +86,7 @@ def debug_kuf(feat, kern):
 @dispatch(InducingPoints, Mok, object)
 def Kuf(feat, kern, Xnew):
     debug_kuf(feat, kern)
-    return kern.K(feat.Z, Xnew, full_output_cov=True)  #  M x P x N x P
+    return kern.K(feat.Z, Xnew, full_output_cov=True)  # M x P x N x P
 
 
 @dispatch(SharedIndependentMof, SharedIndependentMok, object)
