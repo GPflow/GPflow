@@ -65,12 +65,6 @@ def _E(p, mean, _, kern, feat, nghp=None):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    # TODO(@awav):
-    # with tf.control_dependencies([tf.assert_equal(
-    #         Xmu.shape[1], tf.constant(kern.input_dim, settings.tf_int),
-    #         message="Currently cannot handle slicing in exKxz.")]):
-    #     Xmu = tf.identity(Xmu)
-
     D = Xmu.shape[1]
 
     lengthscales = kern.lengthscales
@@ -85,7 +79,7 @@ def _E(p, mean, _, kern, feat, nghp=None):
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
     exponent_mahalanobis = tf.linalg.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
-    non_exponent_term = tf.matmul(Xcov, exponent_mahalanobis, transpose_a=True)
+    non_exponent_term = tf.linalg.matmul(Xcov, exponent_mahalanobis, transpose_a=True)
     non_exponent_term = tf.expand_dims(Xmu, 2) + non_exponent_term  # NxDxM
 
     exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
@@ -106,12 +100,6 @@ def _E(p, mean, _, kern, feat, nghp=None):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    # TODO(@awav):
-    # with tf.control_dependencies([tf.assert_equal(
-    #         Xmu.shape[1], tf.constant(kern.input_dim, settings.tf_int),
-    #         message="Currently cannot handle slicing in exKxz.")]):
-    #     Xmu = tf.identity(Xmu)
-
     D = Xmu.shape[1]
     lengthscales = kern.lengthscales
     if not kern.ard:
@@ -125,7 +113,7 @@ def _E(p, mean, _, kern, feat, nghp=None):
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
     exponent_mahalanobis = tf.linalg.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
-    non_exponent_term = tf.matmul(Xcov[1, :-1], exponent_mahalanobis, transpose_a=True)
+    non_exponent_term = tf.linalg.matmul(Xcov[1, :-1], exponent_mahalanobis, transpose_a=True)
     non_exponent_term = tf.expand_dims(Xmu[1:], 2) + non_exponent_term  # NxDxM
 
     exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
@@ -179,8 +167,8 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
                                             lower=True)  # NxDxM
     mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
     z_CC_inv_z = tf.reduce_sum(tf.square(C_inv_z), 1)  # NxM
-    zm_CC_inv_zn = tf.matmul(C_inv_z, C_inv_z, transpose_a=True)  # NxMxM
-    two_z_CC_inv_mu = 2 * tf.matmul(C_inv_z, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM
+    zm_CC_inv_zn = tf.linalg.matmul(C_inv_z, C_inv_z, transpose_a=True)  # NxMxM
+    two_z_CC_inv_mu = 2 * tf.linalg.matmul(C_inv_z, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM
 
     exponent_mahalanobis = mu_CC_inv_mu + tf.expand_dims(z_CC_inv_z, 1) + \
                             tf.expand_dims(z_CC_inv_z, 2) + 2 * zm_CC_inv_zn - \

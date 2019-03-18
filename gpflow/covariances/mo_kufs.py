@@ -2,8 +2,9 @@ from typing import Union
 
 import tensorflow as tf
 
-from ..features import (InducingPoints, MixedKernelSharedMof,
-                        SeparateIndependentMof, SharedIndependentMof)
+from ..features import (InducingPoints, MixedKernelSeparateMof,
+                        MixedKernelSharedMof, SeparateIndependentMof,
+                        SharedIndependentMof)
 from ..kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
                        SharedIndependentMok)
 from ..util import create_logger
@@ -75,3 +76,9 @@ def _Kuf(feat: MixedKernelSharedMof,
          Xnew: tf.Tensor):
     debug_kuf(feat, kern)
     return tf.stack([Kuf(feat.feat, k, Xnew) for k in kern.kernels], axis=0)  # [L, M, N]
+
+
+@Kuf.register(MixedKernelSeparateMof, SeparateMixedMok, object)
+def Kuf(feat, kern, Xnew):
+    debug_kuf(feat, kern)
+    return tf.stack([Kuf(f, k, Xnew) for f, k in zip(feat.feat_list, kern.kernels)], axis=0)  # [L, M, N]

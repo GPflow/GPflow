@@ -39,7 +39,7 @@ class GPLVM(GPR):
 
         :param Y: data matrix, size N (number of points) x D (dimensions)
         :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions)
-        :param X_mean: latent positions (N x Q), for the initialisation of the latent space.
+        :param X_mean: latent positions ([N, Q]), for the initialisation of the latent space.
         :param kern: kernel specification, by default RBF
         :param mean_function: mean function, by default None.
         """
@@ -65,7 +65,7 @@ class BayesianGPLVM(GPModel):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
         :param X_mean: initial latent positions, size N (number of points) x Q (latent dimensions).
-        :param X_var: variance of latent positions (N x Q), for the initialisation of the latent space.
+        :param X_var: variance of latent positions ([N, Q]), for the initialisation of the latent space.
         :param Y: data matrix, size N (number of points) x D (dimensions)
         :param kern: kernel specification, by default RBF
         :param M: number of inducing points
@@ -127,7 +127,7 @@ class BayesianGPLVM(GPModel):
         psi0 = tf.reduce_sum(expectation(pX, self.kern))
         psi1 = expectation(pX, (self.kern, self.feature))
         psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
-        cov_uu = Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)
+        cov_uu = Kuu(self.feature, self.kern, jitter=default_jitter())
         L = tf.linalg.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -139,7 +139,7 @@ class BayesianGPLVM(GPModel):
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
         log_det_B = 2. * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
-        c = tf.linalg.triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
         dX_var = self.X_var() if len(self.X_var().get_shape()) == 2 else tf.linalg.diag_part(self.X_var())
@@ -174,7 +174,7 @@ class BayesianGPLVM(GPModel):
         num_inducing = len(self.feature)
         psi1 = expectation(pX, (self.kern, self.feature))
         psi2 = tf.reduce_sum(expectation(pX, (self.kern, self.feature), (self.kern, self.feature)), axis=0)
-        jitter = settings.numerics.jitter_level
+        jitter = default_jitter()
         Kus = Kuf(self.feature, self.kern, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -185,13 +185,13 @@ class BayesianGPLVM(GPModel):
         AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
-        c = tf.linalg.triangular_solve(LB, tf.matmul(A, self.Y), lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, self.Y), lower=True) / sigma
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
-        mean = tf.matmul(tmp2, c, transpose_a=True)
+        mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kern(Xnew) + tf.matmul(tmp2, tmp2, transpose_a=True) \
-                  - tf.matmul(tmp1, tmp1, transpose_a=True)
+            var = self.kern(Xnew) + tf.linalg.matmul(tmp2, tmp2, transpose_a=True) \
+                  - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
             shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
@@ -208,7 +208,7 @@ def PCA_reduce(X, Q):
     to Q.
     :param X: data array of size N (number of points) x D (dimensions)
     :param Q: Number of latent dimensions, Q < D
-    :return: PCA projection array of size N x Q.
+    :return: PCA projection array of size [N, Q].
     """
     assert Q <= X.shape[1], 'Cannot have more latent dimensions than observed'
     evals, evecs = np.linalg.eigh(np.cov(X.T))

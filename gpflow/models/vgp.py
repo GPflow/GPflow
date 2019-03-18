@@ -100,16 +100,16 @@ class VGP(GPModel):
 
         # Get conditionals
         K = self.kern(self.X) + tf.eye(self.num_data, dtype=default_float()) * \
-            settings.numerics.jitter_level
+            default_jitter()
         L = tf.linalg.cholesky(K)
 
-        fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
+        fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
 
-        q_sqrt_dnn = tf.matrix_band_part(self.q_sqrt(), -1, 0)  # [D, N, N]
+        q_sqrt_dnn = tf.linalg.band_part(self.q_sqrt(), -1, 0)  # [D, N, N]
 
         L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent, 1, 1]))
 
-        LTA = tf.matmul(L_tiled, q_sqrt_dnn)  # [D, N, N]
+        LTA = tf.linalg.matmul(L_tiled, q_sqrt_dnn)  # [D, N, N]
         fvar = tf.reduce_sum(tf.square(LTA), 2)
 
         fvar = tf.transpose(fvar)
@@ -200,7 +200,7 @@ class VGP_opper_archambeau(GPModel):
             q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
         """
         K = self.kern(self.X)
-        K_alpha = tf.matmul(K, self.q_alpha)
+        K_alpha = tf.linalg.matmul(K, self.q_alpha)
         f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
@@ -239,7 +239,7 @@ class VGP_opper_archambeau(GPModel):
         K = self.kern(self.X)
 
         # predictive mean
-        f_mean = tf.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)
+        f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)
 
         # predictive var
         A = K + tf.linalg.diag(tf.transpose(1. / tf.square(self.q_lambda)))
@@ -247,7 +247,7 @@ class VGP_opper_archambeau(GPModel):
         Kx_tiled = tf.tile(tf.expand_dims(Kx, 0), [self.num_latent, 1, 1])
         LiKx = tf.linalg.triangular_solve(L, Kx_tiled)
         if full_cov:
-            f_var = self.kern(Xnew) - tf.matmul(LiKx, LiKx, transpose_a=True)
+            f_var = self.kern(Xnew) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
         else:
             f_var = self.kern(Xnew) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)

@@ -119,7 +119,7 @@ class Kernel(tf.Module):
     def K_diag(self, X, presliced=False):
         pass
 
-    def __call__(self, X, Y=None, presliced=False, full=True):
+    def __call__(self, X, Y=None, full=True, presliced=False):
         if not full and Y is not None:
             raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:

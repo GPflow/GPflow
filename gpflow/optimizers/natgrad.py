@@ -347,8 +347,8 @@ def swap_dimensions(method):
 def natural_to_meanvarsqrt(nat_1, nat_2):
     var_sqrt_inv = tf.linalg.cholesky(-2 * nat_2)
     var_sqrt = _inverse_lower_triangular(var_sqrt_inv)
-    S = tf.matmul(var_sqrt, var_sqrt, transpose_a=True)
-    mu = tf.matmul(S, nat_1)
+    S = tf.linalg.matmul(var_sqrt, var_sqrt, transpose_a=True)
+    mu = tf.linalg.matmul(S, nat_1)
     # We need the decomposition of S as L L^T, not as L^T L,
     # hence we need another cholesky.
     return mu, tf.linalg.cholesky(S)
@@ -357,8 +357,8 @@ def natural_to_meanvarsqrt(nat_1, nat_2):
 @swap_dimensions
 def meanvarsqrt_to_natural(mu, s_sqrt):
     s_sqrt_inv = _inverse_lower_triangular(s_sqrt)
-    s_inv = tf.matmul(s_sqrt_inv, s_sqrt_inv, transpose_a=True)
-    return tf.matmul(s_inv, mu), -0.5 * s_inv
+    s_inv = tf.linalg.matmul(s_sqrt_inv, s_sqrt_inv, transpose_a=True)
+    return tf.linalg.matmul(s_inv, mu), -0.5 * s_inv
 
 
 @swap_dimensions
@@ -373,14 +373,14 @@ def expectation_to_natural(eta_1, eta_2):
 
 @swap_dimensions
 def expectation_to_meanvarsqrt(eta_1, eta_2):
-    var = eta_2 - tf.matmul(eta_1, eta_1, transpose_b=True)
+    var = eta_2 - tf.linalg.matmul(eta_1, eta_1, transpose_b=True)
     return eta_1, tf.linalg.cholesky(var)
 
 
 @swap_dimensions
 def meanvarsqrt_to_expectation(m, v_sqrt):
-    v = tf.matmul(v_sqrt, v_sqrt, transpose_b=True)
-    return m, v + tf.matmul(m, m, transpose_b=True)
+    v = tf.linalg.matmul(v_sqrt, v_sqrt, transpose_b=True)
+    return m, v + tf.linalg.matmul(m, m, transpose_b=True)
 
 def _inverse_lower_triangular(M):
     """

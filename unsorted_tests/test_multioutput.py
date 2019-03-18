@@ -87,7 +87,7 @@ def check_equality_predictions(models, decimal=4):
     var_tt = vars_tt[0]  # [N, P, N, P]
     var_tf = vars_tf[0]  # [P, N, c]
     var_ft = vars_ft[0]  # [N, P, P]
-    var_ff = vars_ff[0]  # N x P
+    var_ff = vars_ff[0]  # [N, P]
 
     np.testing.assert_almost_equal(np.diagonal(var_tt, axis1=1, axis2=3),
                                    np.transpose(var_tf, [1, 2, 0]), decimal=decimal)
@@ -100,17 +100,17 @@ def check_equality_predictions(models, decimal=4):
 def expand_cov(q_sqrt, W):
     """
     :param G: cholesky of covariance matrices, [L, M, M]
-    :param W: mixing matrix (square),  L x L
+    :param W: mixing matrix (square),  [L, L]
     :return: cholesky of [1, LM, LM] covariance matrix
     """
     q_cov = np.matmul(q_sqrt, q_sqrt.transpose(0, 2, 1))  # [L, M, M]
-    q_cov_expanded = scipy.linalg.block_diag(*q_cov)  # LM x LM
-    q_sqrt_expanded = np.linalg.cholesky(q_cov_expanded)  # LM x LM
+    q_cov_expanded = scipy.linalg.block_diag(*q_cov)  # [M, M]
+    q_sqrt_expanded = np.linalg.cholesky(q_cov_expanded)  # [M, M]
     return q_sqrt_expanded[None, ...]
 
 
 def create_q_sqrt(M, L):
-    """ returns an array of L lower triangular matrices of size M x M """
+    """ returns an array of L lower triangular matrices of size [M, M] """
     return np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])  # [L, M, M]
 
 
@@ -128,7 +128,7 @@ class Data:
 
     X = np.random.rand(N)[:, None] * 10 - 5
     G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))
-    Ptrue = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # L x P
+    Ptrue = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # [L, P]
     Y = np.matmul(G, Ptrue)
     Y += np.random.randn(*Y.shape) * [0.2, 0.2, 0.2]
     Xs = np.linspace(-6, 6, Ntest)[:, None]
@@ -141,12 +141,12 @@ class DataMixedKernelWithEye(Data):
 
     G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
                    3.0 * np.cos(Data.X) - Data.X,
-                   1.0 + Data.X])  # N x P
+                   1.0 + Data.X])  # [N, P]
 
-    mu_data = np.random.randn(M, L)  # M x L
+    mu_data = np.random.randn(M, L)  # [M, L]
     sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
 
-    mu_data_full = (mu_data @ W).reshape(-1, 1)  # ML x 1
+    mu_data_full = (mu_data @ W).reshape(-1, 1)  # [L, 1]
     sqrt_data_full = expand_cov(sqrt_data, W)  # [1, LM, LM]
 
     Y = np.matmul(G, W)
@@ -159,9 +159,9 @@ class DataMixedKernel(Data):
     P = 3
     W = np.random.randn(P, L)
     G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
-                   3.0 * np.cos(Data.X) - Data.X])  # N x L
+                   3.0 * np.cos(Data.X) - Data.X])  # [N, L]
 
-    mu_data = np.random.randn(M, L)  # M x L
+    mu_data = np.random.randn(M, L)  # [M, L]
     sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
 
     Y = np.matmul(G, W.T)
@@ -287,7 +287,7 @@ def test_shared_independent_mok():
     """
     optimizer = tf.optimizers.Adam()
     # Model 1
-    q_mu_1 = np.random.randn(Data.M * Data.P, 1)  # MP x 1
+    q_mu_1 = np.random.randn(Data.M * Data.P, 1)  # [P, 1]
     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # [1, MP, MP]
     kernel_1 = mk.SharedIndependentMok(RBF(variance=0.5, lengthscales=1.2), Data.P)
     feature_1 = InducingPoints(Data.X[:Data.M, ...].copy())
@@ -308,6 +308,8 @@ def test_shared_independent_mok():
     q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
     q_sqrt_2 = np.array(
         [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # [P, M, M]
+    q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # [M, P]
+    q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # [P, M, M]
     kernel_2 = RBF(Data.D, variance=0.5, lengthscales=1.2)
     feature_2 = InducingPoints(Data.X[:Data.M, ...].copy())
     m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
@@ -316,9 +318,8 @@ def test_shared_independent_mok():
     gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
     # Model 3
-    q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
-    q_sqrt_3 = np.array(
-        [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # [P, M, M]
+    q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # [M, P]
+    q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # [P, M, M]
     kernel_3 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
     feature_3 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
     m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
