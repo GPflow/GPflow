@@ -168,7 +168,7 @@ class VGPTest(GPflowTestCase):
             m_vgp_oa.q_alpha = q_alpha
             m_vgp_oa.q_lambda = q_lambda
 
-            K = kern.compute_K_symm(X) + np.eye(N) * gpflow.settings.jitter
+            K = kern.compute_K_symm(X) + np.eye(N) * gpflow.util.default_jitter()
             L = np.linalg.cholesky(K)
             L_inv = np.linalg.inv(L)
             K_inv = np.linalg.inv(K)

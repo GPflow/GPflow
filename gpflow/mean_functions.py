@@ -51,7 +51,7 @@ class Linear(MeanFunction):
         constant.
 
         If X has N rows and D columns, and Y is intended to have Q columns,
-        then A must be D x Q, b must be a vector of length Q.
+        then A must be [D, Q], b must be a vector of length Q.
         """
         MeanFunction.__init__(self)
         A = np.ones((1, 1), dtype=default_float()) if A is None else A

@@ -27,9 +27,9 @@ class Linear(Kernel):
             X, X2 = self.slice(X, X2)
 
         if X2 is None:
-            return tf.matmul(X * self.variance, X, transpose_b=True)
+            return tf.linalg.matmul(X * self.variance, X, transpose_b=True)
 
-        return tf.matmul(X * self.variance, X2, transpose_b=True)
+        return tf.linalg.matmul(X * self.variance, X2, transpose_b=True)
 
     def K_diag(self, X, presliced=False):
         if not presliced:

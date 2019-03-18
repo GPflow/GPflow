@@ -45,13 +45,13 @@ class Stationary(Kernel):
         Xs = tf.reduce_sum(tf.square(X), axis=1)
 
         if X2 is None:
-            dist = -2 * tf.matmul(X, X, transpose_b=True)
+            dist = -2 * tf.linalg.matmul(X, X, transpose_b=True)
             dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
             return dist
 
         X2 = X2 / self.lengthscales
         X2s = tf.reduce_sum(tf.square(X2), axis=1)
-        dist = -2 * tf.matmul(X, X2, transpose_b=True)
+        dist = -2 * tf.linalg.matmul(X, X2, transpose_b=True)
         dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
         return dist
 

@@ -57,7 +57,7 @@ class ArcCosine(Kernel):
     def _weighted_product(self, X, X2=None):
         if X2 is None:
             return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
-        return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
+        return tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
 
     def _J(self, theta):
         """
@@ -89,8 +89,8 @@ class ArcCosine(Kernel):
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
         return self.variance * (1. / np.pi) * self._J(theta) * \
-               X_denominator[:, None] ** self.order * \
-               X2_denominator[None, :] ** self.order
+            X_denominator[:, None] ** self.order * \
+            X2_denominator[None, :] ** self.order
 
     def K_diag(self, X, presliced=False):
         if not presliced:
@@ -188,7 +188,7 @@ class Coregion(Kernel):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
+        B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X, presliced=False):

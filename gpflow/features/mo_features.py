@@ -13,15 +13,13 @@
 # limitations under the License.
 
 
-import abc
-
 from ..util import create_logger
 from .features import InducingFeature
 
 logger = create_logger()
 
 
-class Mof(metaclass=abc.ABCMeta):
+class Mof(InducingFeature):
     """
     Class used to indicate that we are dealing with
     features that are used for multiple outputs.
@@ -29,7 +27,7 @@ class Mof(metaclass=abc.ABCMeta):
     pass
 
 
-class SharedIndependentMof(InducingFeature, Mof):
+class SharedIndependentMof(Mof):
     """
     Same feature is used for each output.
     """
@@ -41,20 +39,27 @@ class SharedIndependentMof(InducingFeature, Mof):
         return len(self.feat)
 
 
-class SeparateIndependentMof(InducingFeature, Mof):
+class SeparateIndependentMof(Mof):
     """
     A different feature is used for each output.
     Note: each feature should have the same number of points, M.
     """
-    def __init__(self, feat_list):
+    def __init__(self, features):
         Mof.__init__(self)
-        self.features = feat_list
+        self.features = features
 
     def __len__(self):
         return len(self.features[0])
 
 
 class MixedKernelSharedMof(SharedIndependentMof):
+    """
+    This Mof is used in combination with the `SeparateMixedMok`.
+    Using this feature with the `SeparateMixedMok` leads to the most efficient code.
+    """
+    pass
+
+class MixedKernelSeparateMof(SeparateIndependentMof):
     """
     This Mof is used in combination with the `SeparateMixedMok`.
     Using this feature with the `SeparateMixedMok` leads to the most efficient code.

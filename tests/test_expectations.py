@@ -199,8 +199,8 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     kern.variance <<= 2.
 
     p = gpflow.probability_distributions.Gaussian(
-        tf.constant([[10]], dtype=gpflow.settings.tf_float),
-        tf.constant([[[0.1]]], dtype=gpflow.settings.tf_float))
+        tf.constant([[10]], dtype=gpflow.util.default_float()),
+        tf.constant([[[0.1]]], dtype=gpflow.util.default_float()))
     z = gpflow.features.InducingPoints([[-10.], [10.]])
 
     with tf.GradientTape() as tape:

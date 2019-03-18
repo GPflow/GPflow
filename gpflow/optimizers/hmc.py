@@ -151,7 +151,7 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
     def body(i, xs_copy, logprob_prev, grads_prev):
         ps_init = _init_ps(xs_copy)
         ps = _update_ps(ps_init, grads_prev, epsilon, coeff=+0.5)
-        max_iters = tf.random_uniform((), minval=lmin, maxval=lmax, dtype=tf.int32)
+        max_iters = tf.random.uniform((), minval=lmin, maxval=lmax, dtype=tf.int32)
 
         dep_list = _flat([max_iters], ps, ps_init)
         with tf.control_dependencies(dep_list):
@@ -207,7 +207,7 @@ def _reject_accept_proposal(xs, xs_prev,
 
     with tf.control_dependencies(ps_upd):
         log_accept_ratio = logprob - 0.5 * dot(ps_upd) - logprob_prev + 0.5 * dot(ps_prev)
-        logu = tf.math.log(tf.random_uniform(shape=tf.shape(log_accept_ratio), dtype=logprob.dtype))
+        logu = tf.math.log(tf.random.uniform(shape=log_accept_ratio.shape, dtype=logprob.dtype))
 
         def accept():
             with tf.control_dependencies([logu, log_accept_ratio]):
