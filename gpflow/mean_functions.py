@@ -31,6 +31,7 @@ class MeanFunction(tf.Module):
     MeanFunction classes can have parameters, see the Linear class for an
     example.
     """
+
     def __call__(self, X):
         raise NotImplementedError("Implement the __call__ method for this mean function")
 
@@ -45,6 +46,7 @@ class Linear(MeanFunction):
     """
     y_i = A x_i + b
     """
+
     def __init__(self, A=None, b=None):
         """
         A is a matrix which maps each element of X to Y, b is an additive
@@ -59,7 +61,7 @@ class Linear(MeanFunction):
         self.A = Parameter(np.atleast_2d(A))
         self.b = Parameter(b)
 
-    def __call__(self, X):
+    def __call__(self, X: tf.Tensor):
         return X @ self.A + self.b
 
 
@@ -67,6 +69,7 @@ class Identity(Linear):
     """
     y_i = x_i
     """
+
     def __init__(self, input_dim=None):
         Linear.__init__(self)
         self.input_dim = input_dim
@@ -102,6 +105,7 @@ class Constant(MeanFunction):
     """
     y_i = c,,
     """
+
     def __init__(self, c=None):
         super().__init__()
         c = np.zeros(1) if c is None else c
@@ -127,6 +131,7 @@ class SwitchedMeanFunction(MeanFunction):
     to the data 'label'.
     We assume the 'label' is stored in the extra column of X.
     """
+
     def __init__(self, meanfunction_list):
         super().__init__()
         for m in meanfunction_list:
@@ -134,9 +139,9 @@ class SwitchedMeanFunction(MeanFunction):
         self.meanfunctions = meanfunction_list
 
     def __call__(self, X):
-        ind = tf.gather(tf.transpose(X), X.shape[1]-1)  # ind = X[:,-1]
+        ind = tf.gather(tf.transpose(X), X.shape[1] - 1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
-        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, X.shape[1]-1)))  # X = X[:,:-1]
+        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, X.shape[1] - 1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, len(self.meanfunctions))

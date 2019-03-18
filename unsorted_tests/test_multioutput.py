@@ -222,12 +222,12 @@ def test_sample_conditional(whiten):
 
 
 def test_sample_conditional_mixedkernel():
-    Xs = np.ones((int(1e3), Data.D), dtype=float_type)
-    Z = Data.X[:Data.M, ...]  # M x D
+    q_mu = np.random.randn(Data.M , Data.L)  # M x L
+    q_sqrt = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.L)])  # L x M x M
+    Z = Data.X[:Data.M,...]  # M x D
+    N = int(10e5)
+    Xs = np.ones((N, Data.D), dtype=float_type)
 
-    q_mu = np.random.randn(Data.M, Data.P)  # M x P
-    q_sqrt = np.array(
-        [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # [P, M, M]
 
     # Path 1: mixed kernel: most efficient route
     W = np.random.randn(Data.P, Data.L)
@@ -236,7 +236,7 @@ def test_sample_conditional_mixedkernel():
     sample = sample_conditional(Xs, mixed_feature, mixed_kernel, q_mu, q_sqrt=q_sqrt, white=True)
 
     # Path 2: independent kernels, mixed later
-    separate_kernel = mk.SeparateIndependentMok([RBF(Data.D) for _ in range(Data.L)])
+    separate_kernel = mk.SeparateIndependentMok([RBF() for _ in range(Data.L)])
     shared_feature = mf.SharedIndependentMof(InducingPoints(Z.copy()))
     sample2 = sample_conditional(Xs, shared_feature, separate_kernel, q_mu, q_sqrt=q_sqrt,
                                  white=True)
@@ -254,11 +254,11 @@ def test_sample_conditional_mixedkernel():
 
 def test_MixedMok_Kgg():
     data = DataMixedKernel
-    kern_list = [RBF(data.D) for _ in range(data.L)]
-    kern = mk.SeparateMixedMok(kern_list, W=data.W)
+    kernel_list = [RBF() for _ in range(data.L)]
+    kernel = mk.SeparateMixedMok(kernel_list, W=data.W)
 
-    Kgg = kern.compute_Kgg(Data.X, Data.X)  # [L, N, N]
-    Kff = kern.compute_K(Data.X, Data.X)  # [N, P, N, P]
+    Kgg = kernel.Kgg(Data.X, Data.X)  # [L, N, N]
+    Kff = kernel(Data.X)  # [N, P, N, P]
 
     # Kff = W @ Kgg @ W^T
     Kff_infered = np.einsum("lnm,pl,ql->npmq", Kgg, data.W, data.W)
@@ -285,15 +285,24 @@ def test_shared_independent_mok():
         3) the old way, efficient way: using Kernel and InducingPoints
         Model 2) and 3) follow more or less the same code path.
     """
+    optimizer = tf.optimizers.Adam()
     # Model 1
     q_mu_1 = np.random.randn(Data.M * Data.P, 1)  # MP x 1
     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # [1, MP, MP]
-    kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+    kernel_1 = mk.SharedIndependentMok(RBF(variance=0.5, lengthscales=1.2), Data.P)
     feature_1 = InducingPoints(Data.X[:Data.M, ...].copy())
-    m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
-    m1.set_trainable(False)
-    m1.q_sqrt.set_trainable(True)
-    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
+    model1 = SVGP(kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
+
+    def training_loop(model, optimizer, maxiter=Data.MAXITER):
+        for _ in range(maxiter):
+            with tf.GradientTape() as tape:
+                tape.watch(model.q_sqrt)
+                log_lik = model.log_likelihood(Data.X, Data.Y)
+            grads = tape.gradient(log_lik, model.trainable_variables)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
+
+    training_loop(model1, optimizer)
+    # gpflow.training.ScipyOptimizer().minimize(model1, maxiter=Data.MAXITER)
 
     # Model 2
     q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
@@ -317,7 +326,7 @@ def test_shared_independent_mok():
     m3.q_sqrt.set_trainable(True)
     gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
 
-    check_equality_predictions([m1, m2, m3])
+    check_equality_predictions([model1, m2, m3])
 
 
 def test_separate_independent_mok():

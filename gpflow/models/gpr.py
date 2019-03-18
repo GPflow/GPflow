@@ -60,7 +60,7 @@ class GPR(GPModel):
 
         """
         K = self.kernel(self.X)
-        S = tf.eye(self.X.shape[0], dtype=X.dtype) * self.likelihood.variance
+        S = tf.eye(self.X.shape[0], dtype=self.X.dtype) * self.likelihood.variance
         L = tf.linalg.cholesky(K + S)
         m = self.mean_function(self.X)
         logpdf = multivariate_normal(self.Y, m, L)  # (R,) log-likelihoods for each independent dimension of Y

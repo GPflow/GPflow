@@ -25,5 +25,5 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=No
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
                                    full_output_cov=False, full_cov=False)  # [N, L], [N, L]
     g_sample = sample_mvn(g_mu, g_var, "diag")  # [N, L]
-    f_sample = tf.einsum("pl, nl -> np", kern.W(), g_sample)
+    f_sample = tf.einsum("pl, nl -> np", kern.W, g_sample)
     return f_sample
