@@ -130,6 +130,9 @@ class Parameter(tf.Module):
             return self.transform.forward_event_shape(self._unconstrained.shape)
         return self._unconstrained.shape
 
+    def numpy(self):
+        return self.read_value().numpy()
+
     def get_shape(self):
         return self.shape
 
