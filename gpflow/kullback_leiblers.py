@@ -30,38 +30,38 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     We assume N multiple independent distributions, given by the columns of
     q_mu and the last dimension of q_sqrt. Returns the sum of the divergences.
 
-    q_mu is a matrix (M x L), each column contains a mean.
+    q_mu is a matrix ([M, L]), each column contains a mean.
 
     q_sqrt can be a 3D tensor ([L, M, M]), each matrix within is a lower
         triangular square-root matrix of the covariance of q.
-    q_sqrt can be a matrix (M x L), each column represents the diagonal of a
+    q_sqrt can be a matrix ([M, L]), each column represents the diagonal of a
         square-root matrix of the covariance of q.
 
     K is the covariance of p.
-    It is a positive definite matrix (M x M) or a tensor of stacked such matrices ([L, M, M])
+    It is a positive definite matrix ([M, M]) or a tensor of stacked such matrices ([L, M, M])
     If K is None, compute the KL divergence to p(x) = N(0, I) instead.
     """
 
     white = K is None
-    diag = q_sqrt.get_shape().ndims == 2
+    diag = q_sqrt.shape.ndims == 2
 
-    M, B = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
+    M, B = q_mu.shape[0], q_mu.shape[1]
 
     if white:
-        alpha = q_mu  # M x B
+        alpha = q_mu  # [M, B]
     else:
-        batch = K.get_shape().ndims == 3
+        batch = K.shape.ndims == 3
 
-        Lp = tf.linalg.cholesky(K)  # [B, M, M] or M x M
-        q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # [B, M, 1] or M x B
-        alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # [B, M, 1] or M x B
+        Lp = tf.linalg.cholesky(K)  # [B, M, M] or [M, M]
+        q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # [B, M, 1] or [M, B]
+        alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # [B, M, 1] or [M, B]
 
     if diag:
         Lq = Lq_diag = q_sqrt
         Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # [B, M, M]
     else:
         Lq = Lq_full = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [B, M, M]
-        Lq_diag = tf.linalg.diag_part(Lq)  # M x B
+        Lq_diag = tf.linalg.diag_part(Lq)  # [M, B]
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
     mahalanobis = tf.reduce_sum(tf.square(alpha))
@@ -77,10 +77,10 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         trace = tf.reduce_sum(tf.square(Lq))
     else:
         if diag and not batch:
-            # K is M x M and q_sqrt is M x B: fast specialisation
-            LpT = tf.transpose(Lp)  # M x M
-            Lp_inv = tf.linalg.triangular_solve(Lp, tf.eye(M, dtype=default_float()),lower=True)  # M x M
-            K_inv = tf.linalg.diag_part(tf.linalg.triangular_solve(LpT, Lp_inv, lower=False))[:, None]  # M x M -> M x 1
+            # K is [M, M] and q_sqrt is [M, B]: fast specialisation
+            LpT = tf.transpose(Lp)  # [M, M]
+            Lp_inv = tf.linalg.triangular_solve(Lp, tf.eye(M, dtype=default_float()),lower=True)  # [M, M]
+            K_inv = tf.linalg.diag_part(tf.linalg.triangular_solve(LpT, Lp_inv, lower=False))[:, None]  # [M, M] -> [M, 1]
             trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
         else:
             # TODO: broadcast instead of tile when tf allows (not implemented in tf <= 1.6.0)

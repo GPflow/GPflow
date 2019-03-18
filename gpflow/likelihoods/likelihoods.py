@@ -486,7 +486,7 @@ class Ordinal(Likelihood):
     def conditional_mean(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
-        return tf.reshape(tf.matmul(phi, Ys), F.shape)
+        return tf.reshape(tf.linalg.matmul(phi, Ys), F.shape)
 
     def conditional_variance(self, F):
         phi = self._make_phi(F)
@@ -531,7 +531,7 @@ class MonteCarloLikelihood(Likelihood):
         E_y, E_y2 = self._mc_quadrature([self.conditional_mean, integrand2],
                                         Fmu, Fvar, epsilon=epsilon)
         V_y = E_y2 - tf.square(E_y)
-        return E_y, V_y  # N x D
+        return E_y, V_y  # [N, D]
 
     def predict_density(self, Fmu, Fvar, Y, epsilon=None):
         """
@@ -559,11 +559,11 @@ class MonteCarloLikelihood(Likelihood):
         distribution for the function values.
 
         if
-            q(f) = N(Fmu, Fvar)  - Fmu: N x D  Fvar: N x D
+            q(f) = N(Fmu, Fvar)  - Fmu: [N, D]  Fvar: [N, D]
 
         and this object represents
 
-            p(y|f)  - Y: N x 1
+            p(y|f)  - Y: [N, 1]
 
         then this method computes
 

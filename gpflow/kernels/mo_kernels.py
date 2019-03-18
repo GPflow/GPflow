@@ -21,87 +21,131 @@ from ..base import Parameter
 from .base import Combination, Kernel
 
 
-class Mok(metaclass=abc.ABCMeta):
-    pass
+class Mok(Kernel):
+    """
+    Multi Output Kernel class.
+    This kernel can represent correlation between outputs of different datapoints.
+    Therefore, subclasses of Mok should implement `K` which returns:
+    - [N, P, N, P] if full_output_cov = True
+    - [P, N, N] if full_output_cov = False
+    and `K_diag` returns:
+    - [N, P, P] if full_output_cov = True
+    - [N, P] if full_output_cov = False
+    The `full_output_cov` argument holds whether the kernel should calculate
+    the covariance between the outputs. In case there is no correlation but
+    `full_output_cov` is set to True the covariance matrix will be filled with zeros
+    until the appropriate size is reached.
+    """
+
+    @abc.abstractmethod
+    def K(self, X, Y=None, full_output_cov=True):
+        """
+        Returns the correlation of f(X1) and f(Y), where f(.) can be multi-dimensional.
+        :param X: data matrix, [1, D]
+        :param Y: data matrix, [2, D]
+        :param full_output_cov: calculate correlation between outputs.
+        :return: cov[f(X1), f(Y)] with shape
+        - [1, P, 2, P] if `full_output_cov` = True
+        - [P, 1, 2] if `full_output_cov` = False
+        """
+        pass
+
+    @abc.abstractmethod
+    def K_diag(self, X, full_output_cov=True):
+        """
+        Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
+        :param X: data matrix, [N, D]
+        :param full_output_cov: calculate correlation between outputs.
+        :return: var[f(X)] with shape
+        - [N, P, N, P] if `full_output_cov` = True
+        - [N, P] if `full_output_cov` = False
+        """
+        pass
+
+    def __call__(self, X, Y=None, full=False, full_output_cov=True, presliced=False):
+        if not full and Y is not None:
+            raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
+        if not full:
+            return self.K_diag(X, full_output_cov=full_output_cov, presliced=presliced)
+        return self.K(X, Y, full_output_cov=full_output_cov, presliced=presliced)
 
 
-class SharedIndependentMok(Kernel, Mok):
+class SharedIndependentMok(Mok):
     """
     - Shared: we use the same kernel for each latent GP
     - Independent: Latents are uncorrelated a priori.
-
     Note: this class is created only for testing and comparison purposes.
     Use `gpflow.kernels` instead for more efficient code.
     """
-    def __init__(self, kern: Kernel, output_dimensionality, name=None):
-        super().__init__(name)
+    def __init__(self, kern: Kernel, output_dimensionality: int):
+        super().__init__()
         self.kern = kern
         self.P = output_dimensionality
 
-    def K(self, X, X2=None, full_output_cov=True):
-        K = self.kern(X, X2)  # N x N2
+    def K(self, X, Y=None, full_output_cov=True):
+        K = self.kern.K(X, Y)  # [N, 2]
         if full_output_cov:
-            Ks = tf.tile(K[..., None], [1, 1, self.P])  # [N, N2, P]
-            return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # [N, P, N]2 x P
+            Ks = tf.tile(K[..., None], [1, 1, self.P])  # [N, 2, P]
+            return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # [N, P, 2, P]
         else:
-            return tf.tile(K[None, ...], [self.P, 1, 1])  # [P, N, N]2
+            return tf.tile(K[None, ...], [self.P, 1, 1])  # [P, N, 2]
 
-    def Kdiag(self, X, full_output_cov=True):
-        K = self.kern(X)  # N
-        Ks = tf.tile(K[:, None], [1, self.P])  # N x P
-        return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or N x P
+    def K_diag(self, X, full_output_cov=True):
+        K = self.kern.K_diag(X)  # N
+        Ks = tf.tile(K[:, None], [1, self.P])  # [N, P]
+        return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
 
 
-class SeparateIndependentMok(Combination, Mok):
+class SeparateIndependentMok(Mok, Combination):
     """
     - Separate: we use different kernel for each output latent
     - Independent: Latents are uncorrelated a priori.
     """
     def __init__(self, kernels, name=None):
-        super().__init__(kernels, name)
+        Combination.__init__(self, kernels, name)
 
-    def K(self, X, X2=None, full_output_cov=True):
+    def K(self, X, Y=None, full_output_cov=True):
         if full_output_cov:
-            Kxxs = tf.stack([k(X, X2) for k in self.kernels], axis=2)  # [N, N2, P]
-            return tf.transpose(tf.linalg.diag(Kxxs), [0, 2, 1, 3])  # [N, P, N]2 x P
+            Kxxs = tf.stack([k.K(X, Y) for k in self.kernels], axis=2)  # [N, 2, P]
+            return tf.transpose(tf.linalg.diag(Kxxs), [0, 2, 1, 3])  # [N, P, 2, P]
         else:
-            return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # [P, N, N]2
+            return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [P, N, 2]
 
-    def Kdiag(self, X, full_output_cov=False):
-        stacked = tf.stack([k(X) for k in self.kernels], axis=1)  # N x P
-        return tf.linalg.diag(stacked) if full_output_cov else stacked  # [N, P, P]  or  N x P
+    def K_diag(self, X, full_output_cov=False):
+        stacked = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, P]
+        return tf.linalg.diag(stacked) if full_output_cov else stacked  # [N, P, P]  or  [N, P]
 
 
-class SeparateMixedMok(Combination, Mok):
+class SeparateMixedMok(Mok, Combination):
     """
     Linear mixing of the latent GPs to form the output
     """
 
     def __init__(self, kernels, W, name=None):
-        super().__init__(kernels, name)
-        self.W = Parameter(W)  # P x L
+        Combination.__init__(self, kernels, name)
+        self.W = Parameter(W)  # [P, L]
 
-    def Kgg(self, X, X2):
-        return tf.stack([k(X, X2) for k in self.kernels], axis=0)  # [L, N, N]2
+    def Kgg(self, X, Y):
+        return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [L, N, 2]
 
-    def K(self, X, X2=None, full_output_cov=True):
-        Kxx = self.Kgg(X, X2)  # [L, N, N]2
-        KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # [P, L, N, N]2
+    def K(self, X, Y=None, full_output_cov=True):
+        Kxx = self.Kgg(X, Y)  # [L, N, 2]
+        KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # [P, L, N, 2]
         if full_output_cov:
             # return tf.einsum('lnm,kl,ql->nkmq', Kxx, self.W, self.W)
-            WKxxW = tf.tensordot(self.W, KxxW, [[1], [1]])  # [P, P, N, N]2
-            return tf.transpose(WKxxW, [2, 0, 3, 1])  # [N, P, N]2 x P
+            WKxxW = tf.tensordot(self.W, KxxW, [[1], [1]])  # [P, P, N, 2]
+            return tf.transpose(WKxxW, [2, 0, 3, 1])  # [N, P, 2, P]
         else:
             # return tf.einsum('lnm,kl,kl->knm', Kxx, self.W, self.W)
-            return tf.reduce_sum(self.W[:, :, None, None] * KxxW, [1])  # [P, N, N]2
+            return tf.reduce_sum(self.W[:, :, None, None] * KxxW, [1])  # [P, N, 2]
 
-    def Kdiag(self, X, full_output_cov=True):
-        K = tf.stack([k(X) for k in self.kernels], axis=1)  # N x L
+    def K_diag(self, X, full_output_cov=True):
+        K = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, L]
         if full_output_cov:
             # Can currently not use einsum due to unknown shape from `tf.stack()`
             # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # [N, P, P]
-            Wt = tf.transpose(self.W)  # L x P
+            Wt = tf.transpose(self.W)  # [L, P]
             return tf.reduce_sum(K[:, :, None, None] * Wt[None, :, :, None] * Wt[None, :, None, :], axis=1)  # [N, P, P]
         else:
-            # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # N x P
-            return tf.matmul(K, self.W ** 2.0, transpose_b=True)  # N x L  *  L x P  ->  N x P
+            # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # [N, P]
+            return tf.linalg.matmul(K, self.W ** 2.0, transpose_b=True)  # [N, L]  *  [L, P]  ->  [N, P]

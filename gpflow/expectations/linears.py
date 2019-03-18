@@ -38,7 +38,7 @@ def _E(p, kern, feat, _, __, nghp=None):
     # use only active dimensions
     Z, Xmu = kern.slice(feat.Z, p.mu)
 
-    return tf.matmul(Xmu, Z * kern.variance, transpose_b=True)
+    return tf.linalg.matmul(Xmu, Z * kern.variance, transpose_b=True)
 
 
 @dispatch.expectation.register(
@@ -53,16 +53,10 @@ def _E(p, kern, feat, mean, _, nghp=None):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    # TODO(@awav):
-    # with tf.control_dependencies([tf.assert_equal(
-    #         tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
-    #         message="Currently cannot handle slicing in exKxz.")]):
-    #     Xmu = tf.identity(Xmu)
-
-    N = tf.shape(Xmu)[0]
+    N = Xmu.shape[0]
     var_Z = kern.variance * feat.Z  # MxD
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
-    return tf.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
+    return tf.linalg.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
 
 
 @dispatch.expectation.register(
@@ -78,17 +72,11 @@ def _E(p, kern, feat, mean, _, nghp=None):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    # TODO(@awav):
-    # with tf.control_dependencies([tf.assert_equal(
-    #         tf.shape(Xmu)[1], tf.constant(kern.input_dim, settings.tf_int),
-    #         message="Currently cannot handle slicing in exKxz.")]):
-    #     Xmu = tf.identity(Xmu)
-
-    N = tf.shape(Xmu)[0] - 1
+    N = Xmu.shape[0] - 1
     var_Z = kern.variance * feat.Z  # MxD
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     eXX = Xcov[1, :-1] + (Xmu[:-1][..., None] * Xmu[1:][:, None, :])  # NxDxD
-    return tf.matmul(tiled_Z, eXX)
+    return tf.linalg.matmul(tiled_Z, eXX)
 
 
 @dispatch.expectation.register(
@@ -121,8 +109,8 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     Xcov = kern.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
     Z, Xmu = kern.slice(feat.Z, p.mu)
 
-    N = tf.shape(Xmu)[0]
+    N = Xmu.shape[0]
     var_Z = kern.variance * Z
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     XX = Xcov + tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2)  # NxDxD
-    return tf.matmul(tf.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)
+    return tf.linalg.matmul(tf.linalg.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)

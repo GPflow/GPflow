@@ -9,6 +9,7 @@ from ..util import create_logger, default_jitter, default_jitter_eye
 from .dispatch import conditional
 from .util import base_conditional, expand_independent_outputs
 
+
 logger = create_logger()
 
 
@@ -50,6 +51,7 @@ def _conditional(Xnew: tf.Tensor,
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     logger.debug("Conditional: Inducing Feature - Kernel")
+
     Kmm = Kuu(feature, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(feature, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, full=full_cov)
@@ -74,7 +76,7 @@ def _conditional(
 
     Additionally, the GP may have been centered (whitened) so that
         p(v) = 𝒩(𝟎, 𝐈)
-        f = L v
+        f = 𝐋v
     thus
         p(f) = 𝒩(𝟎, 𝐋𝐋ᵀ) = 𝒩(𝟎, 𝐊).
     In this case `f` represents the values taken by v.
@@ -99,7 +101,7 @@ def _conditional(
         - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
     """
     logger.debug("Conditional: Kernel")
-    Kmm = kernel(X) + default_jitter_eye(X.shape[0])
+    Kmm = kernel(X) + default_jitter_eye(X.shape[-2])
     Kmn = kernel(X, Xnew)
     Knn = kernel(Xnew, full=full_cov)
     mean, var = base_conditional(Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
