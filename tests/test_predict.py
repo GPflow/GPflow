@@ -23,6 +23,45 @@ from gpflow.kernels import Matern32
 rng = np.random.RandomState(0)
 
 
+class ModelSetup:
+    def __init__(self, model_class, kernel=Matern32(), likelihood=gpflow.likelihoods.Gaussian(),
+                 whiten=None, q_diag=None, requires_Z_as_input=True):
+        self.model_class = model_class
+        self.kernel = kernel
+        self.likelihood = likelihood
+        self.whiten = whiten
+        self.q_diag = q_diag
+        self.requires_Z_as_input = requires_Z_as_input
+
+    def get_model(self, Z):
+        if self.whiten is not None and self.q_diag is not None:
+            return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood,
+                                    whiten=self.whiten, q_diag=self.q_diag)
+        else:
+            return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood)
+
+    def __repr__(self):
+        return f"ModelSetup({self.model_class.__name__}, {self.whiten}, {self.q_diag})"
+
+
+model_setups = [
+    ModelSetup(model_class=gpflow.models.SVGP,
+               whiten=False, q_diag=True),
+    ModelSetup(model_class=gpflow.models.SVGP,
+               whiten=True, q_diag=False),
+    ModelSetup(model_class=gpflow.models.SVGP,
+               whiten=True, q_diag=True),
+    ModelSetup(model_class=gpflow.models.SVGP,
+               whiten=False, q_diag=False),
+    #     ModelSetup(model_class=gpflow.models.SGPR),
+    #     ModelSetup(model_class=gpflow.models.GPRF),
+    #     ModelSetup(model_class=gpflow.models.VGP, requires_Z_as_input = False),
+    #     ModelSetup(model_class=gpflow.models.GPMC, requires_Z_as_input = False ),
+    #     ModelSetup(model_class=gpflow.models.SGPMC)
+]
+
+
+
 @pytest.mark.parametrize('Ntrain, Ntest, D', [[100, 10, 2]])
 def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
     X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
@@ -88,41 +127,6 @@ def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_sampl
 
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape
-
-
-class ModelSetup:
-    def __init__(self, model_class, kernel=Matern32(), likelihood=gpflow.likelihoods.Gaussian(),
-                 whiten=None, q_diag=None, requires_Z_as_input=True):
-        self.model_class = model_class
-        self.kernel = kernel
-        self.likelihood = likelihood
-        self.whiten = whiten
-        self.q_diag = q_diag
-        self.requires_Z_as_input = requires_Z_as_input
-
-    def get_model(self, Z):
-        if self.whiten is not None and self.q_diag is not None:
-            return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood,
-                                    whiten=self.whiten, q_diag=self.q_diag)
-        else:
-            return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood)
-
-
-model_setups = [
-    ModelSetup(model_class=gpflow.models.SVGP,
-               whiten=False, q_diag=True),
-    ModelSetup(model_class=gpflow.models.SVGP,
-               whiten=True, q_diag=False),
-    ModelSetup(model_class=gpflow.models.SVGP,
-               whiten=True, q_diag=True),
-    ModelSetup(model_class=gpflow.models.SVGP,
-               whiten=False, q_diag=False),
-    #     ModelSetup(model_class=gpflow.models.SGPR),
-    #     ModelSetup(model_class=gpflow.models.GPRF),
-    #     ModelSetup(model_class=gpflow.models.VGP, requires_Z_as_input = False),
-    #     ModelSetup(model_class=gpflow.models.GPMC, requires_Z_as_input = False ),
-    #     ModelSetup(model_class=gpflow.models.SGPMC)
-]
 
 
 @pytest.mark.parametrize('model_setup', model_setups)

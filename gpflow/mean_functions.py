@@ -60,7 +60,7 @@ class Linear(MeanFunction):
         self.b = Parameter(b)
 
     def __call__(self, X):
-        return X @ self.A + self.b
+        return tf.tensordot(X, self.A, [[-1], [0]]) + self.b
 
 
 class Identity(Linear):
