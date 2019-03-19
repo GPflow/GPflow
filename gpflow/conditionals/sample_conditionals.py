@@ -37,8 +37,7 @@ def _sample_conditional(Xnew: tf.Tensor,
 
     mean, cov = conditional(Xnew, feature, kernel, function,
                             q_sqrt=q_sqrt, white=white,
-                            full_cov=full_cov,
-                            full_output_cov=full_output_cov)
+                            full_cov=full_cov, full_output_cov=full_output_cov)
     if full_cov:
         # mean: [..., N, P]
         # cov: [..., P, N, N]

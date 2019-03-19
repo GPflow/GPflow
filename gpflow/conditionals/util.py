@@ -75,7 +75,7 @@ def base_conditional(
         q_sqrt_dims = len(q_sqrt.shape)
         if q_sqrt_dims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
-        elif q_sqrt.shape.ndims == 3:
+        elif q_sqrt_dims == 3:
             L = q_sqrt
             L = tf.broadcast_to(L, tf.concat([leading_dims, L.shape], 0))
 
@@ -114,13 +114,13 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
 
     if cov_structure == "diag":
         # mean: [..., N, D] and cov [..., N, D]
-        assert tf.rank(mean) == tf.rank(cov)
+        tf.assert_equal(tf.rank(mean), tf.rank(cov))
         eps_shape = tf.concat([leading_dims, [S], mean_shape[-2:]], 0)
         eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., S, N, D]
         samples = mean[..., None, :, :] + tf.sqrt(cov)[..., None, :, :] * eps  # [..., S, N, D]
     elif cov_structure == "full":
         # mean: [..., N, D] and cov [..., N, D, D]
-        assert (tf.rank(mean) + 1) == tf.rank(cov)
+        tf.assert_equal(tf.rank(mean) + 1, tf.rank(cov))
         jittermat = (
             tf.eye(D, batch_shape=mean_shape[:-1], dtype=default_float()) * default_jitter()
         )  # [..., N, D, D]

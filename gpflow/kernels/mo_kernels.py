@@ -66,8 +66,8 @@ class Mok(Kernel):
         if not full and Y is not None:
             raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:
-            return self.K_diag(X, full_output_cov=full_output_cov, presliced=presliced)
-        return self.K(X, Y, full_output_cov=full_output_cov, presliced=presliced)
+            return self.K_diag(X, full_output_cov=full_output_cov)
+        return self.K(X, Y, full_output_cov=full_output_cov)
 
 
 class SharedIndependentMok(Mok):

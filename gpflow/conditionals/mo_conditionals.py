@@ -54,7 +54,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
     Kmm = covariances.Kuu(feat, kern, jitter=default_jitter())  # [M, M]
     Kmn = covariances.Kuf(feat, kern, Xnew)  # [M, N]
-    Knn = kern(Xnew, full=full_cov, full_output=False)
+    Knn = kern(Xnew, full=full_cov, full_output_cov=False)
     Knn = Knn[0, ...] if full_cov else Knn[..., 0]  # [N, N] or [N]
 
     fmean, fvar = base_conditional(
