@@ -90,7 +90,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Knns = tf.stack([k(Xnew, full=full_cov) for k in kernels], axis=0)
     fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
-    q_sqrts = tf.transpose(q_sqrt)[:, :, None] if len(q_sqrt.shape) == 2 else q_sqrt[:, None, :, :]
+    q_sqrts = tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
 
     def single_gp_conditional(t):
         Kmm, Kmn, Knn, f, q_sqrt = t

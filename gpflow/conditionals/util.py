@@ -72,7 +72,7 @@ def base_conditional(
     fmean = tf.linalg.matmul(A, f, transpose_a=True)  # [..., N, R]
 
     if q_sqrt is not None:
-        q_sqrt_dims = len(q_sqrt.shape)
+        q_sqrt_dims = q_sqrt.shape.ndims
         if q_sqrt_dims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
         elif q_sqrt_dims == 3:

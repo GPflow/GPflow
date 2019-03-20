@@ -134,9 +134,7 @@ class SVGP(GPModel):
             K = Kuu(self.feature, self.kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
-    def log_likelihood(self,
-                       X: Union[tf.Tensor, np.ndarray],
-                       Y: Union[tf.Tensor, np.ndarray]) -> tf.Tensor:
+    def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
         This gives a variational bound on the model likelihood.
         """
@@ -154,8 +152,7 @@ class SVGP(GPModel):
     def elbo(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         return self.neg_log_marginal_likelihood(X, Y)
 
-    def predict_f(self, Xnew: Union[tf.Tensor, np.ndarray],
-                  full_cov=False, full_output_cov=False) -> tf.Tensor:
+    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(Xnew, self.feature, self.kernel, q_mu, q_sqrt=q_sqrt,

@@ -109,4 +109,4 @@ def _conditional(
                                  full_cov=full_cov,
                                  q_sqrt=q_sqrt, white=white)
 
-    return mean, expand_independent_outputs(var, full_cov, full_output_cov) # [N, R], [N, R] or [R, N, N]
+    return mean, var  # [N, R], [N, R] or [R, N, N]

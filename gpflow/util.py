@@ -72,11 +72,12 @@ def set_trainable(model: tf.Module, flag: bool = False):
 def training_loop(closure: Callable[..., tf.Tensor],
                   optimizer=tf.optimizers.Adam(),
                   var_list: List[tf.Variable] = None,
-                  apply_jit=True,
+                  jit=True,
                   maxiter=1e3):
     """
-    Simple generic training loop in TF-2.0. At each iteration uses a GradientTape to compute
+    Simple generic training loop. At each iteration uses a GradientTape to compute
     the gradients of a loss function with respect to a set of variables.
+
     :param closure: Callable that constructs a loss function based on data and model being trained
     :param optimizer: tf.optimizers or tf.keras.optimizers that updates variables by applying the
     corresponding loss gradients
@@ -91,7 +92,7 @@ def training_loop(closure: Callable[..., tf.Tensor],
             grads = tape.gradient(loss, var_list)
         optimizer.apply_gradients(zip(grads, var_list))
 
-    if apply_jit:
+    if jit:
         optimization_step = tf.function(optimization_step)
 
     for _ in range(int(maxiter)):
