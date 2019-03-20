@@ -34,6 +34,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     - See `gpflow.conditionals._conditional` for a detailed explanation of
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
+
     Parameters
     ----------
     :param Xnew: data matrix, size [N, D].
