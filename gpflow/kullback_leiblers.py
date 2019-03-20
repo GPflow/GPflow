@@ -43,7 +43,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     """
 
     white = K is None
-    diag = len(q_sqrt.shape) == 2
+    diag = q_sqrt.shape.ndims == 2
 
     M, B = q_mu.shape[0], q_mu.shape[1]
 

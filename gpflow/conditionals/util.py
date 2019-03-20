@@ -72,7 +72,7 @@ def base_conditional(
     fmean = tf.linalg.matmul(A, f, transpose_a=True)  # [..., N, R]
 
     if q_sqrt is not None:
-        q_sqrt_dims = len(q_sqrt.shape)
+        q_sqrt_dims = q_sqrt.shape.ndims
         if q_sqrt_dims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
         elif q_sqrt_dims == 3:
@@ -210,7 +210,7 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     fmean = tf.tensordot(Ar, f, [[1, 0], [0, 1]])  # [N, P]
 
     if q_sqrt is not None:
-        if len(q_sqrt.shape) == 3:
+        if q_sqrt.shape.ndims == 3:
             Lf = tf.linalg.band_part(q_sqrt, -1, 0)  # [L, M, M]
             LTA = tf.linalg.matmul(Lf, A, transpose_a=True)  # [L, M, M]  *  [L, M, P]  ->  [L, M, P]
         else:  # q_sqrt [M, L]
@@ -311,13 +311,13 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
     if q_sqrt is not None:
         Lf = tf.linalg.band_part(q_sqrt, -1, 0)  # [R, M, M]
-        if len(q_sqrt.shape) == 3:
+        if q_sqrt.shape.ndims == 3:
             A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # [R, M, K]
             LTA = tf.linalg.matmul(Lf, A_tiled, transpose_a=True)  # [R, M, K]
-        elif len(q_sqrt.shape) == 2:  # pragma: no cover
+        elif q_sqrt.shape.ndims == 2:  # pragma: no cover
             raise NotImplementedError("Does not support diagonal q_sqrt yet...")
         else:  # pragma: no cover
-            raise ValueError(f"Bad dimension for q_sqrt: {len(q_sqrt.shape)}")
+            raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt.shape.ndims}")
 
         if full_cov and full_output_cov:
             addvar = tf.linalg.matmul(LTA, LTA, transpose_a=True)  # [R, K, K]

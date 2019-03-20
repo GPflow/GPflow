@@ -14,7 +14,7 @@ from gpflow.features import InducingPoints
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
-from gpflow.util import default_jitter, training_loop, set_trainable
+from gpflow.util import default_jitter, training_loop, set_trainable, default_float
 
 float_type = gpflow.util.default_float()
 rng = np.random.RandomState(99201)
@@ -207,6 +207,7 @@ def test_sample_conditional(whiten, full_cov, full_output_cov):
     q_mu = np.random.randn(Data.M, Data.P)  # M x P
     q_sqrt = np.array(
         [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+    q_sqrt = tf.convert_to_tensor(q_sqrt, dtype=default_float())
     Z = Data.X[:Data.M, ...]  # M x D
     Xs = np.ones((Data.N, Data.D), dtype=float_type)
 
@@ -243,6 +244,7 @@ def test_sample_conditional_mixedkernel():
     q_mu = np.random.randn(Data.M, Data.L)  # M x L
     q_sqrt = np.array(
         [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.L)])  # L x M x M
+    q_sqrt = tf.convert_to_tensor(q_sqrt, dtype=default_float())
     Z = Data.X[:Data.M, ...]  # M x D
     N = int(10e5)
     Xs = np.ones((N, Data.D), dtype=float_type)
