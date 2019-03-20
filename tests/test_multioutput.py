@@ -115,7 +115,7 @@ def expand_cov(q_sqrt, W):
 
 def create_q_sqrt(M, L):
     """ returns an array of L lower triangular matrices of size M x M """
-    return np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])  # [L, M, M]
+    return np.array([np.tril(rng.randn(M, M)) for _ in range(L)])  # [L, M, M]
 
 
 # ------------------------------------------
@@ -167,7 +167,7 @@ class DataMixedKernel(Data):
     M = 5
     L = 2
     P = 3
-    W = np.random.randn(P, L)
+    W = rng.randn(P, L)
     G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
                    3.0 * np.cos(Data.X) - Data.X])  # [N, L]
 
