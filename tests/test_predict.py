@@ -33,12 +33,14 @@ class ModelSetup:
         self.q_diag = q_diag
         self.requires_Z_as_input = requires_Z_as_input
 
-    def get_model(self, Z):
+    def get_model(self, Z, num_latent):
         if self.whiten is not None and self.q_diag is not None:
             return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood,
+                                    num_latent=num_latent,
                                     whiten=self.whiten, q_diag=self.q_diag)
         else:
-            return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood)
+            return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood,
+                                    num_latent=num_latent)
 
     def __repr__(self):
         return f"ModelSetup({self.model_class.__name__}, {self.whiten}, {self.q_diag})"
@@ -59,7 +61,6 @@ model_setups = [
     #     ModelSetup(model_class=gpflow.models.GPMC, requires_Z_as_input = False ),
     #     ModelSetup(model_class=gpflow.models.SGPMC)
 ]
-
 
 
 @pytest.mark.parametrize('Ntrain, Ntest, D', [[100, 10, 2]])
@@ -141,7 +142,7 @@ def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest, M):
     # X, Y = rng.randn(N, input_dim), rng.randn(N, output_dim)
     Z = InducingPoints(rng.randn(M, input_dim))
     Xtest = rng.randn(Ntest, input_dim)
-    model_gp = model_setup.get_model(Z)
+    model_gp = model_setup.get_model(Z, num_latent=output_dim)
 
     mu1, var = model_gp.predict_f(Xtest, full_cov=False)
     mu2, covar = model_gp.predict_f(Xtest, full_cov=True)
@@ -167,7 +168,7 @@ def test_other_models_full_cov_samples(model_setup, input_dim, output_dim, N, Nt
     # X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     _, _, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
-    model_gp = model_setup.get_model(Z)
+    model_gp = model_setup.get_model(Z, num_latent=output_dim)
 
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape
