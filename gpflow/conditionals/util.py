@@ -181,7 +181,7 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         - variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]
     """
     logger.debug("independent_interdomain_conditional")
-    M, L, N, P = [Kmn.shape[i] for i in range(len(Kmn.shape))]
+    M, L, N, P = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
 
     Lm = tf.linalg.cholesky(Kmm)  # [L, M, M]
 
@@ -275,7 +275,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
     """
     logger.debug("fully correlated conditional")
     R = f.shape[1]
-    M, N, K = [Kmn.shape[i] for i in range(len(Kmn.shape))]
+    M, N, K = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
     Lm = tf.linalg.cholesky(Kmm)
 
     # Compute the projection matrix A

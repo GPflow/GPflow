@@ -164,7 +164,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Kmn = covariances.Kuf(feat, kern, Xnew)  # [M, L, N, P]
     Knn = kern(Xnew, full=full_cov, full_output_cov=full_output_cov)  # [N, P](x N)x P  or  [N, P](x P)
 
-    M, L, N, K = [Kmn.shape[i] for i in range(len(Kmn.shape))]
+    M, L, N, K = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
     Kmm = tf.reshape(Kmm, (M * L, M * L))
 
     if full_cov == full_output_cov:

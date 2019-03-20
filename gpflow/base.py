@@ -73,7 +73,7 @@ class Parameter(tf.Module):
         if self.prior is not None:
             log_prob = self.prior.log_prob(x)
         if self.transform is not None:
-            log_det_jacobian = bijector.forward_log_det_jacobian(y, len(y.shape))
+            log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
         return log_prob + log_det_jacobian
 
     @property
