@@ -101,9 +101,9 @@ class MultiDatum:
 
 def test_refrence_implementation_consistency():
     q_mean = rng.rand(1, 1)
-    q_cov = np.exp(rng.rand(1, 1))
+    q_cov = rng.rand(1, 1)
     p_mean = rng.rand(1, 1)
-    p_cov = np.exp(rng.rand(1, 1))
+    p_cov = rng.rand(1, 1)
 
     multivariate_KL = multivariate_prior_KL(q_mean, p_mean, q_cov, p_cov)
     univariate_KL = univariate_prior_KL(q_mean.reshape(-1), p_mean.reshape(-1),
