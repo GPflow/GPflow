@@ -37,7 +37,7 @@ class BayesianModel(tf.Module):
     """ Bayesian model. """
 
     def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return - tf.add(self.log_likelihood(*args, **kwargs), self.log_prior())
+        return - self.log_likelihood(*args, **kwargs)
 
     def log_prior(self) -> tf.Tensor:
         if len(self.variables) == 0:
