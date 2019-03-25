@@ -97,3 +97,4 @@ def training_loop(closure: Callable[..., tf.Tensor],
 
     for _ in range(int(maxiter)):
         optimization_step()
+
