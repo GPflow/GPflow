@@ -41,7 +41,8 @@ def _E(p, kern, feat, mean, _, nghp=None):
     return tf.linalg.transpose(expectation(p, mean, (kern, feat), nghp=nghp))
 
 
-@dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, kernels.Kernel, InducingPoints)
+@dispatch.expectation.register(Gaussian, (mfn.Constant, mfn.Zero),
+                               NoneType, kernels.Kernel, InducingPoints)
 def _E(p, constant_mean, _, kern, feat, nghp=None):
     """
     Compute the expectation:
@@ -71,7 +72,8 @@ def _E(p, linear_mean, _, kern, feat, nghp=None):
     D = p.mu.shape[1]
     exKxz = expectation(p, mfn.Identity(D), (kern, feat), nghp=nghp)
     eKxz = expectation(p, (kern, feat), nghp=nghp)
-    eAxKxz = tf.linalg.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)), exKxz, transpose_a=True)
+    eAxKxz = tf.linalg.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)), exKxz,
+                              transpose_a=True)
     ebKxz = linear_mean.b[None, :, None] * eKxz[:, None, :]
     return eAxKxz + ebKxz
 

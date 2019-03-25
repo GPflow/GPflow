@@ -112,10 +112,11 @@ class Constant(MeanFunction):
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
 
 
-class Zero(MeanFunction):
+class Zero(Constant):
     def __init__(self, output_dim=1):
-        super().__init__()
+        Constant.__init__(self)
         self.output_dim = output_dim
+        del self.c
 
     def __call__(self, X):
         return tf.zeros((X.shape[0], self.output_dim), dtype=X.dtype)

@@ -61,7 +61,7 @@ class Kernel(tf.Module):
 
         this_dims = tf.reshape(self.active_dims, (-1, 1))
         other_dims = tf.reshape(other.active_dims, (1, -1))
-        return not np.any(this_dims == other_dims)
+        return not np.any(tf.equal(this_dims, other_dims))
 
     def slice(self, X: tf.Tensor, Y: Optional[tf.Tensor] = None):
         """
