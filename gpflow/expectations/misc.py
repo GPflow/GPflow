@@ -41,8 +41,7 @@ def _E(p, kern, feat, mean, _, nghp=None):
     return tf.linalg.transpose(expectation(p, mean, (kern, feat), nghp=nghp))
 
 
-@dispatch.expectation.register(Gaussian, (mfn.Constant, mfn.Zero),
-                               NoneType, kernels.Kernel, InducingPoints)
+@dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, kernels.Kernel, InducingPoints)
 def _E(p, constant_mean, _, kern, feat, nghp=None):
     """
     Compute the expectation:
