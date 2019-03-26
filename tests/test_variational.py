@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
-from tests.reference import referenceRbfKernel
+from tests.reference import ref_rbf_kernel
 
 rng = np.random.RandomState(1)
 
@@ -166,7 +166,7 @@ def test_variational_univariate_conditionals(diag, whiten):
 def test_variational_multivariate_prior_KL_full_q(whiten):
     cov_q = MultiDatum.q_sqrt_full @ MultiDatum.q_sqrt_full.T
     mean_prior = np.zeros((MultiDatum.dim, 1))
-    cov_prior = np.eye(MultiDatum.dim) if whiten else referenceRbfKernel(
+    cov_prior = np.eye(MultiDatum.dim) if whiten else ref_rbf_kernel(
         MultiDatum.X, MultiDatum.ls, MultiDatum.signal_var)
     reference_kl = multivariate_prior_KL(MultiDatum.q_mean, cov_q, mean_prior, cov_prior)
 
