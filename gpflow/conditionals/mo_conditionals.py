@@ -10,7 +10,7 @@ from ..features import (InducingPoints, MixedKernelSharedMof, MixedKernelSeparat
                         SeparateIndependentMof, SharedIndependentMof)
 from ..kernels import (Combination, Mok, SeparateIndependentMok,
                        SeparateMixedMok, SharedIndependentMok)
-from ..util import create_logger, default_float, default_jitter
+from ..util import create_logger, default_float, default_jitter, default_float, default_jitter_eye
 from .dispatch import conditional
 from .util import (base_conditional, expand_independent_outputs,
                    fully_correlated_conditional,
@@ -54,7 +54,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
     Kmm = covariances.Kuu(feat, kern, jitter=default_jitter())  # [M, M]
     Kmn = covariances.Kuf(feat, kern, Xnew)  # [M, N]
-    Knn = kern(Xnew, full=full_cov, full_output=False)
+    Knn = kern(Xnew, full=full_cov, full_output_cov=False)
     Knn = Knn[0, ...] if full_cov else Knn[..., 0]  # [N, N] or [N]
 
     fmean, fvar = base_conditional(

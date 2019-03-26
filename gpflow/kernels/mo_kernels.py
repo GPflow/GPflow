@@ -38,7 +38,7 @@ class Mok(Kernel):
     """
 
     @abc.abstractmethod
-    def K(self, X, Y=None, full_output_cov=True):
+    def K(self, X, Y=None, full_output_cov=True, presliced=False):
         """
         Returns the correlation of f(X1) and f(Y), where f(.) can be multi-dimensional.
         :param X: data matrix, [1, D]
@@ -51,7 +51,7 @@ class Mok(Kernel):
         pass
 
     @abc.abstractmethod
-    def K_diag(self, X, full_output_cov=True):
+    def K_diag(self, X, full_output_cov=True, presliced=False):
         """
         Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
         :param X: data matrix, [N, D]
@@ -66,8 +66,8 @@ class Mok(Kernel):
         if not full and Y is not None:
             raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:
-            return self.K_diag(X, full_output_cov=full_output_cov, presliced=presliced)
-        return self.K(X, Y, full_output_cov=full_output_cov, presliced=presliced)
+            return self.K_diag(X, full_output_cov=full_output_cov)
+        return self.K(X, Y, full_output_cov=full_output_cov)
 
 
 class SharedIndependentMok(Mok):
@@ -82,7 +82,7 @@ class SharedIndependentMok(Mok):
         self.kern = kern
         self.P = output_dimensionality
 
-    def K(self, X, Y=None, full_output_cov=True):
+    def K(self, X, Y=None, full_output_cov=True, presliced=False):
         K = self.kern.K(X, Y)  # [N, 2]
         if full_output_cov:
             Ks = tf.tile(K[..., None], [1, 1, self.P])  # [N, 2, P]
@@ -90,7 +90,7 @@ class SharedIndependentMok(Mok):
         else:
             return tf.tile(K[None, ...], [self.P, 1, 1])  # [P, N, 2]
 
-    def K_diag(self, X, full_output_cov=True):
+    def K_diag(self, X, full_output_cov=True, presliced=False):
         K = self.kern.K_diag(X)  # N
         Ks = tf.tile(K[:, None], [1, self.P])  # [N, P]
         return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
@@ -104,14 +104,14 @@ class SeparateIndependentMok(Mok, Combination):
     def __init__(self, kernels, name=None):
         Combination.__init__(self, kernels, name)
 
-    def K(self, X, Y=None, full_output_cov=True):
+    def K(self, X, Y=None, full_output_cov=True, presliced=False):
         if full_output_cov:
             Kxxs = tf.stack([k.K(X, Y) for k in self.kernels], axis=2)  # [N, 2, P]
             return tf.transpose(tf.linalg.diag(Kxxs), [0, 2, 1, 3])  # [N, P, 2, P]
         else:
             return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [P, N, 2]
 
-    def K_diag(self, X, full_output_cov=False):
+    def K_diag(self, X, full_output_cov=False, presliced=False):
         stacked = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, P]
         return tf.linalg.diag(stacked) if full_output_cov else stacked  # [N, P, P]  or  [N, P]
 
@@ -128,7 +128,7 @@ class SeparateMixedMok(Mok, Combination):
     def Kgg(self, X, Y):
         return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [L, N, 2]
 
-    def K(self, X, Y=None, full_output_cov=True):
+    def K(self, X, Y=None, full_output_cov=True, presliced=False):
         Kxx = self.Kgg(X, Y)  # [L, N, 2]
         KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # [P, L, N, 2]
         if full_output_cov:
@@ -139,7 +139,7 @@ class SeparateMixedMok(Mok, Combination):
             # return tf.einsum('lnm,kl,kl->knm', Kxx, self.W, self.W)
             return tf.reduce_sum(self.W[:, :, None, None] * KxxW, [1])  # [P, N, 2]
 
-    def K_diag(self, X, full_output_cov=True):
+    def K_diag(self, X, full_output_cov=True, presliced=False):
         K = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, L]
         if full_output_cov:
             # Can currently not use einsum due to unknown shape from `tf.stack()`

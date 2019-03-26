@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import List, Union
+from typing import List, Union, Callable, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -60,5 +60,41 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]]) -> t
     perm_tf = perm % rank
 
     leading_dims = tf.range(rank - len(perm) + 1)
-    perm = tf.concat([perm_tf[:idx], leading_dims, perm_tf[idx+1:]], 0)
+    perm = tf.concat([perm_tf[:idx], leading_dims, perm_tf[idx + 1:]], 0)
     return tf.transpose(tensor, perm)
+
+
+def set_trainable(model: tf.Module, flag: bool = False):
+    for variable in model.trainable_variables:
+        variable._trainable = flag
+
+
+def training_loop(closure: Callable[..., tf.Tensor],
+                  optimizer=tf.optimizers.Adam(),
+                  var_list: List[tf.Variable] = None,
+                  jit=True,
+                  maxiter=1e3):
+    """
+    Simple generic training loop. At each iteration uses a GradientTape to compute
+    the gradients of a loss function with respect to a set of variables.
+
+    :param closure: Callable that constructs a loss function based on data and model being trained
+    :param optimizer: tf.optimizers or tf.keras.optimizers that updates variables by applying the
+    corresponding loss gradients
+    :param var_list: List of model variables to be learnt during training
+    :param maxiter: Maximum number of
+    :return:
+    """
+    def optimization_step():
+        with tf.GradientTape() as tape:
+            tape.watch(var_list)
+            loss = closure()
+            grads = tape.gradient(loss, var_list)
+        optimizer.apply_gradients(zip(grads, var_list))
+
+    if jit:
+        optimization_step = tf.function(optimization_step)
+
+    for _ in range(int(maxiter)):
+        optimization_step()
+

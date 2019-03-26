@@ -144,8 +144,8 @@ class Combination(Kernel):
 
     _reduction = None
 
-    def __init__(self, kernels):
-        super().__init__()
+    def __init__(self, kernels, name=None):
+        super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError("can only combine Kernel instances")  # pragma: no cover
