@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from typing import Union
 
 import numpy as np
 import tensorflow as tf
@@ -113,7 +113,8 @@ class SVGP(GPModel):
                 ones = np.ones((num_inducing, self.num_latent), dtype=default_float())
                 self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
             else:
-                q_sqrt = [np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)]
+                q_sqrt = [np.eye(num_inducing, dtype=default_float()) for _ in
+                          range(self.num_latent)]
                 q_sqrt = np.array(q_sqrt)
                 self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [P, M, M]
         else:
@@ -138,7 +139,7 @@ class SVGP(GPModel):
         This gives a variational bound on the model likelihood.
         """
         kl = self.prior_kl()
-        f_mean, f_var = self.predict_f(X)
+        f_mean, f_var = self.predict_f(X, full_cov=False, full_output_cov=False)
         var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
@@ -151,7 +152,7 @@ class SVGP(GPModel):
     def elbo(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         return self.neg_log_marginal_likelihood(X, Y)
 
-    def predict_f(self, Xnew, full_cov=False, full_output_cov=False) -> tf.Tensor:
+    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(Xnew, self.feature, self.kernel, q_mu, q_sqrt=q_sqrt,

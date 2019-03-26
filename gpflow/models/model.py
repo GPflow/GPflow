@@ -17,11 +17,11 @@ from typing import Optional, Tuple
 
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Module
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
-from ..util import default_jitter, default_float
+from ..util import default_float, default_jitter
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
@@ -33,16 +33,16 @@ MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 #     full_output = 3
 
 
-class BayesianModel(tf.Module):
+class BayesianModel(Module):
     """ Bayesian model. """
 
     def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return - self.log_likelihood(*args, **kwargs)
+        return -(self.log_likelihood(*args, **kwargs) + self.log_prior())
 
     def log_prior(self) -> tf.Tensor:
         if len(self.variables) == 0:
             return tf.convert_to_tensor(0., dtype=default_float())
-        return tf.add_n([p.log_prior() for p in self.variables if isinstance(p, Parameter)])
+        return tf.add_n([p.log_prior() for p in self.trainable_parameters])
 
     @abc.abstractmethod
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
@@ -99,12 +99,11 @@ class GPModel(BayesianModel):
     def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         pass
 
-    def predict_f_samples(self, X, num_samples, jitter=None):
+    def predict_f_samples(self, X, num_samples):
         """
         Produce samples from the posterior latent function(s) at the points
         Xnew.
         """
-        jitter = default_jitter() if jitter is None else jitter
         mu, var = self.predict_f(X, full_cov=True)  # [P, N, N]
         jitter = tf.eye(tf.shape(mu)[0], dtype=default_float()) * default_jitter()
         samples = [None] * self.num_latent

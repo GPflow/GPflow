@@ -19,6 +19,20 @@ positive = tfp.bijectors.Softplus
 triangular = tfp.bijectors.FillTriangular
 
 
+_IS_PARAMETER = lambda o: isinstance(o, Parameter)
+_IS_TRAINABLE_PARAMETER = lambda o: (_IS_PARAMETER(o) and o.trainable)
+
+
+class Module(tf.Module):
+    @property
+    def parameters(self):
+        return self._flatten(predicate=_IS_PARAMETER)
+
+    @property
+    def trainable_parameters(self):
+        return self._flatten(predicate=_IS_TRAINABLE_PARAMETER)
+
+
 class Parameter(tf.Module):
     def __init__(self,
                  value, *,

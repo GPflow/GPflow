@@ -77,4 +77,4 @@ def _compute_loss_and_gradients(loss_cb: LossClosure, variables: Variables):
     with tf.GradientTape() as tape:
         loss = loss_cb()
         grads = tape.gradient(loss, variables)
-        return loss, grads
+    return loss, grads
