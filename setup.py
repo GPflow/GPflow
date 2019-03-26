@@ -23,12 +23,14 @@ requirements = [
     'pytest>=3.5.0',
     'h5py>=2.7.0',
     'matplotlib>=2.2.2',
-    'tensorflow-probability'
+    'tfp-nightly'
 ]
 
-min_tf_version = '1.11.0'
-tf_cpu = 'tensorflow>={}'.format(min_tf_version)
-tf_gpu = 'tensorflow-gpu>={}'.format(min_tf_version)
+min_tf_version = '2.0.0'
+# tf_cpu = 'tf-nightly-2.0-preview>={}'.format(min_tf_version)
+# tf_gpu = 'tf-nightly-gpu-2.0-preview>={}'.format(min_tf_version)
+tf_cpu = 'tf-nightly-2.0-preview'
+tf_gpu = 'tf-nightly-gpu-2.0-preview'
 
 # Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu
@@ -37,7 +39,7 @@ tf_gpu = 'tensorflow-gpu>={}'.format(min_tf_version)
 try:
     # If tf not installed, import raises ImportError
     import tensorflow as tf
-    if parse_version(tf.VERSION) < parse_version(min_tf_version):
+    if parse_version(tf.__version__) < parse_version(min_tf_version):
         # TF pre-installed, but below the minimum required version
         raise DeprecationWarning("TensorFlow version below minimum requirement")
 except (ImportError, DeprecationWarning) as e:
