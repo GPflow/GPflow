@@ -35,10 +35,10 @@ num_ind = 4
 D_in = 2
 D_out = 2
 
-Xmu = rng.randn(num_data, D_in)
-Xmu_markov = rng.randn(num_data + 1, D_in)  # (N+1)xD
+Xmu = ctt(rng.randn(num_data, D_in))
+Xmu_markov = ctt(rng.randn(num_data + 1, D_in))  # (N+1)xD
 Xcov = rng.randn(num_data, D_in, D_in)
-Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
+Xcov = ctt(Xcov @ np.transpose(Xcov, (0, 2, 1)))
 Z = rng.randn(num_ind, D_in)
 
 
@@ -48,7 +48,7 @@ def markov_gauss():
     Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
     Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # (N+1)xDxD
     Xcov = np.stack([Xcov, Xcross])  # 2x(N+1)xDxD
-    return MarkovGaussian(ctt(Xmu_markov), ctt(Xcov))
+    return MarkovGaussian(Xmu_markov, ctt(Xcov))
 
 
 _means = {
@@ -60,12 +60,12 @@ _means = {
 
 
 _distrs = {
-    'gauss': Gaussian(ctt(Xmu), ctt(Xcov)),
-    'dirac_gauss': Gaussian(ctt(Xmu), ctt(np.zeros((num_data, D_in, D_in)))),
-    'gauss_diag': DiagonalGaussian(ctt(Xmu), ctt(rng.rand(num_data, D_in))),
-    'dirac_diag': DiagonalGaussian(ctt(Xmu), ctt(np.zeros((num_data, D_in)))),
-    'dirac_markov_gauss': MarkovGaussian(ctt(Xmu_markov),
-                                         ctt(np.zeros((2, num_data + 1, D_in, D_in)))),
+    'gauss': Gaussian(Xmu, Xcov),
+    'dirac_gauss': Gaussian(Xmu, np.zeros((num_data, D_in, D_in))),
+    'gauss_diag': DiagonalGaussian(Xmu, rng.rand(num_data, D_in)),
+    'dirac_diag': DiagonalGaussian(Xmu, np.zeros((num_data, D_in))),
+    'dirac_markov_gauss': MarkovGaussian(Xmu_markov,
+                                         np.zeros((2, num_data + 1, D_in, D_in))),
     'markov_gauss': markov_gauss()
 }
 
