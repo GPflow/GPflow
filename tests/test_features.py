@@ -28,7 +28,7 @@ def test_inducing_points_feature_len(N, D):
 
 
 _kernel_setups = [
-    gpflow.kernels.RBF(variance=0.46, lengthscales=np.random.uniform(0.5, 3., 5), ard=True),
+    gpflow.kernels.RBF(variance=0.46, lengthscale=np.random.uniform(0.5, 3., 5), ard=True),
     gpflow.kernels.Periodic(period=0.4, variance=1.8)
 ]
 
@@ -46,7 +46,7 @@ def test_inducing_equivalence(N, kernel):
 def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
     # Multiscale must be equivalent to inducing points when variance is zero
     Xnew, Z = np.random.randn(N, D), np.random.randn(M, D)
-    rbf = gpflow.kernels.RBF(1.3441, lengthscales=np.random.uniform(0.5, 3., D))
+    rbf = gpflow.kernels.RBF(1.3441, lengthscale=np.random.uniform(0.5, 3., D))
     feature_zero_lengthscale = Multiscale(Z, scales=np.zeros(Z.shape))
     feature_inducing_point = InducingPoints(Z)
 
@@ -67,11 +67,11 @@ def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
 
 _features_and_kernels = [
     [InducingPoints(np.random.randn(71, 2)),
-     gpflow.kernels.RBF(variance=1.84, lengthscales=np.random.uniform(0.5, 3., 2))],
+     gpflow.kernels.RBF(variance=1.84, lengthscale=np.random.uniform(0.5, 3., 2))],
     [InducingPoints(np.random.randn(71, 2)),
-     gpflow.kernels.Matern12(variance=1.84, lengthscales=np.random.uniform(0.5, 3., 2))],
+     gpflow.kernels.Matern12(variance=1.84, lengthscale=np.random.uniform(0.5, 3., 2))],
     [Multiscale(np.random.randn(71, 2), np.random.uniform(0.5, 3, size=(71, 2))),
-     gpflow.kernels.RBF(variance=1.84, lengthscales=np.random.uniform(0.5, 3., 2))]
+     gpflow.kernels.RBF(variance=1.84, lengthscale=np.random.uniform(0.5, 3., 2))]
 ]
 
 

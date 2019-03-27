@@ -172,7 +172,7 @@ def test_variational_multivariate_prior_KL_full_q(whiten):
 
     q_sqrt = MultiDatum.q_sqrt_full[None, :, :]
     model = gpflow.models.SVGP(kernel=RBF(variance=MultiDatum.signal_var,
-                                          lengthscales=MultiDatum.ls),
+                                          lengthscale=MultiDatum.ls),
                                likelihood=Gaussian(MultiDatum.noise_var),
                                feature=MultiDatum.Z, num_latent=MultiDatum.num_latent, q_diag=False,
                                whiten=whiten, q_mu=MultiDatum.q_mean, q_sqrt=q_sqrt)

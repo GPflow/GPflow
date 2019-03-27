@@ -43,9 +43,9 @@ def _E(p, rbf_kern, feat1, lin_kern, feat2, nghp=None):
         return value
 
     lin_kern_variances = take_with_ard(lin_kern.variance)
-    rbf_kern_lengthscales = take_with_ard(rbf_kern.lengthscales)
+    rbf_kern_lengthscale = take_with_ard(rbf_kern.lengthscale)
 
-    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(rbf_kern_lengthscales ** 2) + Xcov)  # NxDxD
+    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(rbf_kern_lengthscale ** 2) + Xcov)  # NxDxD
 
     Z_transpose = tf.transpose(Z)
     all_diffs = Z_transpose - tf.expand_dims(Xmu, 2)  # NxDxM
@@ -53,16 +53,16 @@ def _E(p, rbf_kern, feat1, lin_kern, feat2, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    sqrt_det_L = tf.reduce_prod(rbf_kern_lengthscales)
+    sqrt_det_L = tf.reduce_prod(rbf_kern_lengthscale)
     sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
     eKxz_rbf = rbf_kern.variance * (determinants[:, None] * exponent_mahalanobis)  ## NxM <- End RBF eKxz code
 
     tiled_Z = tf.tile(tf.expand_dims(Z_transpose, 0), (N, 1, 1))  # NxDxM
-    z_L_inv_Xcov = tf.linalg.matmul(tiled_Z, Xcov / rbf_kern_lengthscales[:, None] ** 2., transpose_a=True)  # NxMxD
+    z_L_inv_Xcov = tf.linalg.matmul(tiled_Z, Xcov / rbf_kern_lengthscale[:, None] ** 2., transpose_a=True)  # NxMxD
 
     cross_eKzxKxz = tf.linalg.cholesky_solve(
-        chol_L_plus_Xcov, (lin_kern_variances * rbf_kern_lengthscales ** 2.)[..., None] * tiled_Z)  # NxDxM
+        chol_L_plus_Xcov, (lin_kern_variances * rbf_kern_lengthscale ** 2.)[..., None] * tiled_Z)  # NxDxM
 
     cross_eKzxKxz = tf.linalg.matmul((z_L_inv_Xcov + Xmu[:, None, :]) * eKxz_rbf[..., None], cross_eKzxKxz)  # NxMxM
     return cross_eKzxKxz

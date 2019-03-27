@@ -117,11 +117,11 @@ class Periodic(Kernel):
     """
 
     def __init__(self, period=1.0, variance=1.0,
-                 lengthscales=1.0, active_dims=None):
+                 lengthscale=1.0, active_dims=None):
         # No ard support for lengthscale or period yet
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
-        self.lengthscales = Parameter(lengthscales, transform=positive())
+        self.lengthscale = Parameter(lengthscale, transform=positive())
         self.ard = False
         self.period = Parameter(period, transform=positive())
 
@@ -139,7 +139,7 @@ class Periodic(Kernel):
         f2 = tf.expand_dims(X2, 0)  # now [1, M, D]
 
         r = np.pi * (f - f2) / self.period
-        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), 2)
+        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscale), 2)
 
         return self.variance * tf.exp(-0.5 * r)
 

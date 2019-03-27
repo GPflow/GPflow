@@ -84,8 +84,7 @@ class GPModel(BayesianModel):
                  kernel: Kernel,
                  likelihood: Likelihood,
                  mean_function: Optional[MeanFunction] = None,
-                 num_latent: int = 1,
-                 seed: Optional[int] = None):
+                 num_latent: int = 1):
         super().__init__()
         self.num_latent = num_latent
         #TODO(@awav): Why is this here when MeanFunction does not have a __len__ method

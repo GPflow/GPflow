@@ -81,7 +81,7 @@ def _ref_periodic(X, lengthScale, signal_variance, period):
 @pytest.mark.parametrize('variance, lengthscale', [[2.3, 1.4]])
 def test_rbf_1d(variance, lengthscale):
     X = rng.randn(3, 1)
-    kernel = gpflow.kernels.RBF(lengthscales=lengthscale, variance=variance)
+    kernel = gpflow.kernels.RBF(lengthscale=lengthscale, variance=variance)
 
     gram_matrix = kernel(X)
     reference_gram_matrix = _ref_rbf(X, lengthscale, variance)
@@ -91,8 +91,8 @@ def test_rbf_1d(variance, lengthscale):
 
 @pytest.mark.parametrize('variance, lengthscale', [[2.3, 1.4]])
 def test_rq_1d(variance, lengthscale):
-    kSE = gpflow.kernels.RBF(lengthscales=lengthscale, variance=variance)
-    kRQ = gpflow.kernels.RationalQuadratic(lengthscales=lengthscale, variance=variance, alpha=1e8)
+    kSE = gpflow.kernels.RBF(lengthscale=lengthscale, variance=variance)
+    kRQ = gpflow.kernels.RationalQuadratic(lengthscale=lengthscale, variance=variance, alpha=1e8)
     rng = np.random.RandomState(1)
     X = rng.randn(6, 1).astype(default_float())
 
@@ -152,7 +152,7 @@ def test_arccosine_nan_gradient(D, N):
 
 
 def _assert_periodic_kern_err(lengthscale, variance, period, X):
-    kernel = gpflow.kernels.Periodic(period=period, variance=variance, lengthscales=lengthscale)
+    kernel = gpflow.kernels.Periodic(period=period, variance=variance, lengthscale=lengthscale)
     gram_matrix = kernel(X)
     reference_gram_matrix = _ref_periodic(X, lengthscale, variance, period)
 
@@ -318,8 +318,8 @@ def test_slice_asymmetric(kernel_triple, N, M, D):
 
 _kernel_setups_prod = [
     gpflow.kernels.Matern32(),
-    gpflow.kernels.Matern52(lengthscales=0.3),
-    gpflow.kernels.Matern32() * gpflow.kernels.Matern52(lengthscales=0.3)
+    gpflow.kernels.Matern52(lengthscale=0.3),
+    gpflow.kernels.Matern32() * gpflow.kernels.Matern52(lengthscale=0.3)
 ]
 
 
@@ -337,7 +337,7 @@ def test_active_product(N, D):
     dims, rand_idx, ls = list(range(D)), int(rng.randint(0, D)), rng.uniform(1., 7., D)
     active_dims_list = [dims[:rand_idx] + dims[rand_idx+1:], [rand_idx], dims]
     lengthscale_list = [np.hstack([ls[:rand_idx], ls[rand_idx+1:]]), ls[rand_idx], ls]
-    kernels = [gpflow.kernels.RBF(lengthscales=lengthscale, active_dims=dims, ard=True)
+    kernels = [gpflow.kernels.RBF(lengthscale=lengthscale, active_dims=dims, ard=True)
                for dims, lengthscale in zip(active_dims_list, lengthscale_list)]
     kernel_prod = kernels[0] * kernels[1]
 
@@ -351,12 +351,12 @@ def test_active_product(N, D):
 def test_ard_init_scalar(D):
     """
     For ard kernels, make sure that kernels can be instantiated with a single
-    lengthscale or a suitable array of lengthscales
+    lengthscale or a suitable array of lengthscale
     """
-    kernel_1 = gpflow.kernels.RBF(lengthscales=2.3)
-    kernel_2 = gpflow.kernels.RBF(lengthscales=np.ones(D) * 2.3, ard=True)
-    lengthscale_1 = kernel_1.lengthscales.read_value()
-    lengthscale_2 = kernel_2.lengthscales.read_value()
+    kernel_1 = gpflow.kernels.RBF(lengthscale=2.3)
+    kernel_2 = gpflow.kernels.RBF(lengthscale=np.ones(D) * 2.3, ard=True)
+    lengthscale_1 = kernel_1.lengthscale.read_value()
+    lengthscale_2 = kernel_2.lengthscale.read_value()
     assert np.allclose(lengthscale_1, lengthscale_2, atol=1e-10)
 
 
@@ -364,10 +364,10 @@ def test_ard_init_scalar(D):
 @pytest.mark.parametrize('ard', [True, False, None])
 def test_ard_init_shapes(N, ard):
     with pytest.raises(tf.errors.InvalidArgumentError):
-        k1 = gpflow.kernels.RBF(lengthscales=np.ones(2), ard=ard)
+        k1 = gpflow.kernels.RBF(lengthscale=np.ones(2), ard=ard)
         k1(rng.randn(N, 4))
     with pytest.raises(tf.errors.InvalidArgumentError):
-        k2 = gpflow.kernels.RBF(lengthscales=np.ones(3), ard=ard)
+        k2 = gpflow.kernels.RBF(lengthscale=np.ones(3), ard=ard)
         k2(rng.randn(N, 2))
 
 
@@ -375,7 +375,7 @@ def test_ard_init_shapes(N, ard):
 def test_ard_init_MLP(D):
     """
     For ard kernels, make sure that kernels can be instantiated with a single
-    lengthscale or a suitable array of lengthscales
+    lengthscale or a suitable array of lengthscale
     """
     kernel_1 = gpflow.kernels.ArcCosine(weight_variances=1.23, ard=True)
     kernel_2 = gpflow.kernels.ArcCosine(weight_variances=np.ones(3) * 1.23, ard=True)

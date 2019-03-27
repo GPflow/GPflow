@@ -90,17 +90,17 @@ class TestEquivalence(GPflowTestCase):
                 neg_obj = tf.negative(m.objective)
                 likelihoods.append(session.run(neg_obj).squeeze())
             assert_allclose(likelihoods, likelihoods[0], rtol=1e-6)
-            variances, lengthscales = [], []
+            variances, lengthscale = [], []
             for m in models:
                 if hasattr(m.kern, 'rbf'):
                     variances.append(m.kern.rbf.variance.read_value())
-                    lengthscales.append(m.kern.rbf.lengthscales.read_value())
+                    lengthscale.append(m.kern.rbf.lengthscale.read_value())
                 else:
                     variances.append(m.kern.variance.read_value())
-                    lengthscales.append(m.kern.lengthscales.read_value())
-            variances, lengthscales = np.array(variances), np.array(lengthscales)
+                    lengthscale.append(m.kern.lengthscale.read_value())
+            variances, lengthscale = np.array(variances), np.array(lengthscale)
             assert_allclose(variances, variances[0], 1e-5)
-            assert_allclose(lengthscales, lengthscales.mean(), 1e-4)
+            assert_allclose(lengthscale, lengthscale.mean(), 1e-4)
             mu0, var0 = models[0].predict_y(self.Xtest)
             for i, m in enumerate(models[1:]):
                 mu, var = m.predict_y(self.Xtest)
@@ -244,7 +244,7 @@ class TestUpperBound(GPflowTestCase):
             opt.minimize(vfe)
 
             full = gpflow.models.GPR(self.X, self.Y, gpflow.kernels.RBF(1))
-            full.kern.lengthscales = vfe.kern.lengthscales.read_value()
+            full.kern.lengthscale = vfe.kern.lengthscale.read_value()
             full.kern.variance = vfe.kern.variance.read_value()
             full.likelihood.variance = vfe.likelihood.variance.read_value()
 
