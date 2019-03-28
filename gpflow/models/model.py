@@ -137,6 +137,12 @@ class GPModel(Model):
                  num_latent=None, name=None):
         super(GPModel, self).__init__(name=name)
         if num_latent is None:
+            # Note: It's not nice for `Model` to need to be aware of specific
+            # likelihoods as here. However, `num_latent` is a bit more broken
+            # in general, specifically regarding multioutput kernels. We
+            # should fix this in the future.
+            # It also has slightly problematic assumptions re the output
+            # dimensions of mean_function.
             num_latent = Y.shape[1]
             if isinstance(likelihood, SwitchedLikelihood):
                 # the SwitchedLikelihood partitions/stitches based on the last
