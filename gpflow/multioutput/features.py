@@ -58,14 +58,14 @@ class SeparateIndependentMof(Mof):
         return len(self.feat_list[0])
 
 
-class MixedKernelSharedMof(SharedIndependentMof):
+class SlowMixedKernelSharedMof(SharedIndependentMof):
     """
     This Mof is used in combination with the `SeparateMixedMok`.
     Using this feature with the `SeparateMixedMok` leads to the most efficient code.
     """
     pass
 
-class MixedKernelSeparateMof(SeparateIndependentMof):
+class SlowMixedKernelSeparateMof(SeparateIndependentMof):
     """
     This Mof is used in combination with the `SeparateMixedMok`.
     Using this feature with the `SeparateMixedMok` leads to the most efficient code.

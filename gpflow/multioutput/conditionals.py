@@ -133,7 +133,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmu, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
-@conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
+@conditional.register(object, (SlowMixedKernelSharedMof, SlowMixedKernelSeparateMof), SeparateMixedMok, object)
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
@@ -209,7 +209,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, fvar
 
 
-@conditional.register(object, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, object)
+@conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
