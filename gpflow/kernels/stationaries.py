@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+
+from gpflow.util import default_float
 from ..base import Parameter, positive
 from .base import Kernel
 
@@ -33,7 +35,6 @@ class Stationary(Kernel):
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
 
-
     def scaled_square_dist(self, X, X2):
         """
         Returns ((X - X2ᵀ)/lengthscale)².
@@ -55,7 +56,6 @@ class Stationary(Kernel):
         dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
         return dist
 
-
     def scaled_euclid_dist(self, X, X2):
         """
         Returns |(X - X2ᵀ)/lengthscale| (L2-norm).
@@ -64,9 +64,9 @@ class Stationary(Kernel):
         # Clipping around the (single) float precision which is ~1e-45.
         return tf.sqrt(tf.maximum(r2, 1e-40))
 
-
     def K_diag(self, X, presliced=False):
-        return tf.fill(tf.stack([X.shape[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.stack([X.shape[0]]),
+                       tf.cast(tf.squeeze(self.variance), tf.float64))
 
 
 class RBF(Stationary):
@@ -94,13 +94,15 @@ class RationalQuadratic(Stationary):
     """
 
     def __init__(self, variance=1.0, lengthscale=1.0, alpha=1.0, active_dims=None, ard=None):
-        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims, ard=ard)
+        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims,
+                         ard=ard)
         self.alpha = Parameter(alpha, transform=positive())
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
-        return self.variance * (1 + self.scaled_square_dist(X, X2) / (2 * self.alpha)) ** (-self.alpha)
+        return self.variance * (1 + self.scaled_square_dist(X, X2) / (2 * self.alpha)) ** (
+            -self.alpha)
 
 
 class Exponential(Stationary):
@@ -148,7 +150,8 @@ class Matern52(Stationary):
         if not presliced:
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-        return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) * tf.exp(-np.sqrt(5.) * r)
+        return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) * tf.exp(
+            -np.sqrt(5.) * r)
 
 
 class Cosine(Stationary):
@@ -161,4 +164,3 @@ class Cosine(Stationary):
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
         return self.variance * tf.cos(r)
-
