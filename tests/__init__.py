@@ -1,3 +1,3 @@
 import tensorflow as tf
 
-tf.logging.set_verbosity('CRITICAL')
+tf.logging.set_verbosity('FATAL')

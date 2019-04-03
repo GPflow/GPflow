@@ -17,7 +17,9 @@ import tensorflow as tf
 import numpy as np
 
 from . import settings
-from .misc import assert_tensor_ndim
+
+
+logger = settings.logger()
 
 
 def gaussian(x, mu, var):
@@ -83,16 +85,17 @@ def multivariate_normal(x, mu, L):
     p[n] = log pdf of:
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
+    mu_ndims = mu.shape.ndims
+    x_ndims = x.shape.ndims
+    if x_ndims is not None and x_ndims != 2:
+        raise ValueError('Shape of x must be 2D.')
+    if mu_ndims is not None and mu_ndims != 2:
+        raise ValueError('Shape of mu must be 2D.')
 
-    with tf.control_dependencies([
-            assert_tensor_ndim(x, 2, 'multivariate_normal requires the shape of x to be (N, D)'),
-            assert_tensor_ndim(mu, 2, 'multivariate_normal requires the shape of mu to be (N, D)'),
-            tf.assert_equal(tf.shape(L), [tf.shape(x)[0], tf.shape(x)[0]]),
-            ]):
-        d = x - mu
-        alpha = tf.matrix_triangular_solve(L, d, lower=True)
-        num_dims = tf.cast(tf.shape(d)[0], L.dtype)
-        p = - 0.5 * tf.reduce_sum(tf.square(alpha), 0)
-        p -= 0.5 * num_dims * np.log(2 * np.pi)
-        p -= tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
-        return p
+    d = x - mu
+    alpha = tf.matrix_triangular_solve(L, d, lower=True)
+    num_dims = tf.cast(tf.shape(d)[0], L.dtype)
+    p = - 0.5 * tf.reduce_sum(tf.square(alpha), 0)
+    p -= 0.5 * num_dims * np.log(2 * np.pi)
+    p -= tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
+    return p

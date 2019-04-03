@@ -285,21 +285,5 @@ def _get_tensor_safe(name, index, graph):
     except KeyError:
         return None
 
-
-def tensor_ndim_equal(tensor: tf.Tensor, ndim: int):
-    """
-    Returns a scalar bool tensor that is True if the rank of `tensor` is equal to `ndim`.
-    """
-    tensor_shape = tf.shape(tensor)
-    tensor_ndim = tf.shape(tensor_shape)
-    # The return value of tf.equal() is a 1-vector; turn it into a scalar using tf.reduce_all():
-    return tf.reduce_all(tf.equal(tensor_ndim, ndim))
-
-def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: str):
-    if tensor.shape.ndims is not None:
-        assert tensor.shape.ndims == ndim, message
-    return tf.Assert(tensor_ndim_equal(tensor, ndim), [message])
-
-
 def version():
     return __version__
