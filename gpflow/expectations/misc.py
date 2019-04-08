@@ -71,7 +71,8 @@ def _E(p, linear_mean, _, kern, feat, nghp=None):
     D = p.mu.shape[1]
     exKxz = expectation(p, mfn.Identity(D), (kern, feat), nghp=nghp)
     eKxz = expectation(p, (kern, feat), nghp=nghp)
-    eAxKxz = tf.linalg.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)), exKxz, transpose_a=True)
+    eAxKxz = tf.linalg.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)), exKxz,
+                              transpose_a=True)
     ebKxz = linear_mean.b[None, :, None] * eKxz[:, None, :]
     return eAxKxz + ebKxz
 

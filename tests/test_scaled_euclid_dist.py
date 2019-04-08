@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
 import numpy as np
+import pytest
 import tensorflow as tf
-import gpflow.kernels as kernels
-from gpflow.test_util import session_tf
-from gpflow import settings
 
+import gpflow.kernels as kernels
 
 rng = np.random.RandomState(0)
 
@@ -29,20 +27,25 @@ class Datum:
     X = rng.rand(num_data, D) * 100
 
 
-@pytest.mark.parametrize('kernel', [kernels.Matern12, kernels.Matern32, kernels.Matern52, kernels.Exponential, kernels.Cosine])
-def test_kernel_euclidean_distance(session_tf, kernel):
+kernel_list = [kernels.Matern12(), kernels.Matern32(), kernels.Matern52(),
+               kernels.Exponential(), kernels.Cosine()]
+
+
+@pytest.mark.parametrize('kernel', kernel_list)
+def test_kernel_euclidean_distance(kernel):
     '''
     Tests output & gradients of kernels that are a function of the (scaled) euclidean distance
     of the points. We test on a high dimensional space, which can generate very small distances
     causing the scaled_square_dist to generate some negative values.
     '''
-    
-    k = kernel(Datum.D)
-    K = k.compute_K_symm(Datum.X)
-    assert not np.isnan(K).any(), 'There are NaNs in the output of the ' + kernel.__name__ + ' kernel.'
-    assert np.isfinite(K).all(), 'There are Infs in the output of the ' + kernel.__name__ + ' kernel.'
+    K = kernel(Datum.X)
+    assert not np.isnan(K).any(), 'NaNs in the output of the ' + kernel.__name__ + 'kernel.'
+    assert np.isfinite(K).all(), 'Infs in the output of the ' + kernel.__name__ + ' kernel.'
 
-    X = tf.placeholder(default_float())
-    dK = session_tf.run(tf.gradients(k(X, X), X)[0], feed_dict={X: Datum.X})
-    assert not np.isnan(dK).any(), 'There are NaNs in the gradient of the ' + kernel.__name__ + ' kernel.'
-    assert np.isfinite(dK).all(), 'There are Infs in the output of the ' + kernel.__name__ + ' kernel.'
+    X_as_param = tf.Variable(Datum.X)
+    with tf.GradientTape() as tape:
+        K_value = kernel(X_as_param, X_as_param)
+        dK = tape.gradient(K_value, X_as_param)[0]
+
+    assert not np.isnan(dK).any(), 'NaNs in the gradient of the ' + kernel.__name__ + ' kernel.'
+    assert np.isfinite(dK).all(), 'Infs in the output of the ' + kernel.__name__ + ' kernel.'
