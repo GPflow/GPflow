@@ -22,4 +22,4 @@ from . import (conditionals, expectations, features, kernels, likelihoods,
 from ._settings import SETTINGS as settings
 from ._version import __version__
 from .base import Parameter, positive, triangular
-from .util import default_float, default_jitter
+# from .util import default_float, default_jitter

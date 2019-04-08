@@ -13,18 +13,18 @@
 # limitations under the License.
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 import numpy as np
 
-from .. import settings
-from .. import transforms
-
+import gpflow
+from ..base import Parameter, default_float
 from ..mean_functions import Zero
 from ..conditionals import conditional
 from ..kullback_leiblers import gauss_kl
-from ..models.model import GPModel
+from ..models.model import GPModel, GPModelOLD
 
 
-class VGP(GPModel):
+class VGP(GPModelOLD):
     """
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
@@ -53,19 +53,16 @@ class VGP(GPModel):
         kern, likelihood, mean_function are appropriate GPflow objects
 
         """
-
-        X = DataHolder(X)
-        Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
+        GPModelOLD.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
         self.num_data = X.shape[0]
 
         self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
         q_sqrt = np.array([np.eye(self.num_data)
                            for _ in range(self.num_latent)])
-        transform = transforms.LowerTriangular(self.num_data, self.num_latent)
+        transform = tfp.bijectors.FillTriangular()
         self.q_sqrt = Parameter(q_sqrt, transform=transform)
 
-    def compile(self, session=None):
+    def _init_variational_parameters(self):
         """
         Before calling the standard compile function, check to see if the size
         of the data has changed and add variational parameters appropriately.
@@ -79,10 +76,7 @@ class VGP(GPModel):
             self.q_sqrt = Parameter(np.eye(self.num_data)[:, :, None] *
                                     np.ones((1, 1, self.num_latent)))
 
-        return super(VGP, self).compile(session=session)
-
-
-    def _build_likelihood(self):
+    def log_likelihood(self):
         """
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -96,16 +90,15 @@ class VGP(GPModel):
         """
 
         # Get prior KL.
-        KL = gauss_kl(self.q_mu, self.q_sqrt())
+        KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kern(self.X) + tf.eye(self.num_data, dtype=default_float()) * \
-            default_jitter()
+        K = self.kernel(self.X) + tf.eye(self.num_data, dtype=default_float) * gpflow.default_jitter
         L = tf.linalg.cholesky(K)
 
         fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
 
-        q_sqrt_dnn = tf.linalg.band_part(self.q_sqrt(), -1, 0)  # [D, N, N]
+        q_sqrt_dnn = tf.linalg.band_part(self.q_sqrt, -1, 0)  # [D, N, N]
 
         L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent, 1, 1]))
 
@@ -120,9 +113,9 @@ class VGP(GPModel):
         return tf.reduce_sum(var_exp) - KL
 
 
-    def _build_predict(self, Xnew, full_cov=False):
-        mu, var = conditional(Xnew, self.X, self.kern, self.q_mu,
-                              q_sqrt=self.q_sqrt(), full_cov=full_cov, white=True)
+    def predict_f(self, Xnew,  full_cov=False, full_output_cov=False):
+        mu, var = conditional(Xnew, self.X, self.kernel, self.q_mu,
+                              q_sqrt=self.q_sqrt, full_cov=full_cov, white=True)
         return mu + self.mean_function(Xnew), var
 
 
@@ -186,7 +179,7 @@ class VGP_opper_archambeau(GPModel):
             self.num_data = self.X.shape[0]
             self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
-                                      transforms.positive)
+                                      gpflow.positive)
         return super(VGP_opper_archambeau, self).compile(session=session)
 
 
@@ -199,7 +192,7 @@ class VGP_opper_archambeau(GPModel):
         with
             q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
         """
-        K = self.kern(self.X)
+        K = self.kernel(self.X)
         K_alpha = tf.linalg.matmul(K, self.q_alpha)
         f_mean = K_alpha + self.mean_function(self.X)
 
@@ -235,8 +228,8 @@ class VGP_opper_archambeau(GPModel):
         """
 
         # compute kernel things
-        Kx = self.kern(self.X, Xnew)
-        K = self.kern(self.X)
+        Kx = self.kernel(self.X, Xnew)
+        K = self.kernel(self.X)
 
         # predictive mean
         f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)
@@ -247,7 +240,7 @@ class VGP_opper_archambeau(GPModel):
         Kx_tiled = tf.tile(tf.expand_dims(Kx, 0), [self.num_latent, 1, 1])
         LiKx = tf.linalg.triangular_solve(L, Kx_tiled)
         if full_cov:
-            f_var = self.kern(Xnew) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
+            f_var = self.kernel(Xnew) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
         else:
-            f_var = self.kern(Xnew) - tf.reduce_sum(tf.square(LiKx), 1)
+            f_var = self.kernel(Xnew) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)
