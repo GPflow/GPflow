@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import List, Union, Callable, Tuple
+from typing import Callable, List, Union
 
 import numpy as np
 import tensorflow as tf

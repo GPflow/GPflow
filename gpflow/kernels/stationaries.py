@@ -15,33 +15,33 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, variance=1.0, lengthscales=1.0, active_dims=None, ard=None):
+    def __init__(self, variance=1.0, lengthscale=1.0, active_dims=None, ard=None):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter
-        - lengthscales is the initial value for the lengthscales parameter
+        - lengthscale is the initial value for the lengthscale parameter
           defaults to 1.0 (ard=False) or np.ones(input_dim) (ard=True).
         - active_dims is a list of length input_dim which controls which
           columns of X are used.
         - if ard is not None, it specifies whether the kernel has one
           lengthscale per dimension (ard=True) or a single lengthscale
-          (ard=False). Otherwise, inferred from shape of lengthscales.
+          (ard=False). Otherwise, inferred from shape of lengthscale.
         """
         super().__init__(active_dims)
         self.ard = ard
-        # lengthscales, self.ard = self._validate_ard_shape("lengthscales", lengthscales, ard)
+        # lengthscale, self.ard = self._validate_ard_shape("lengthscale", lengthscale, ard)
         self.variance = Parameter(variance, transform=positive())
-        self.lengthscales = Parameter(lengthscales, transform=positive())
+        self.lengthscale = Parameter(lengthscale, transform=positive())
 
 
     def scaled_square_dist(self, X, X2):
         """
-        Returns ((X - X2ᵀ)/lengthscales)².
+        Returns ((X - X2ᵀ)/lengthscale)².
         Due to the implementation and floating-point imprecision, the
         result may actually be very slightly negative for entries very
         close to each other.
         """
-        X = X / self.lengthscales
+        X = X / self.lengthscale
         Xs = tf.reduce_sum(tf.square(X), axis=1)
 
         if X2 is None:
@@ -49,7 +49,7 @@ class Stationary(Kernel):
             dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(Xs, (1, -1))
             return dist
 
-        X2 = X2 / self.lengthscales
+        X2 = X2 / self.lengthscale
         X2s = tf.reduce_sum(tf.square(X2), axis=1)
         dist = -2 * tf.linalg.matmul(X, X2, transpose_b=True)
         dist += tf.reshape(Xs, (-1, 1)) + tf.reshape(X2s, (1, -1))
@@ -58,7 +58,7 @@ class Stationary(Kernel):
 
     def scaled_euclid_dist(self, X, X2):
         """
-        Returns |(X - X2ᵀ)/lengthscales| (L2-norm).
+        Returns |(X - X2ᵀ)/lengthscale| (L2-norm).
         """
         r2 = self.scaled_square_dist(X, X2)
         # Clipping around the (single) float precision which is ~1e-45.
@@ -87,14 +87,14 @@ class RationalQuadratic(Stationary):
     k(r) = σ² (1 + r² / 2αℓ²)^(-α)
 
     σ² : variance
-    ℓ  : lengthscales
+    ℓ  : lengthscale
     α  : alpha, determines relative weighting of small-scale and large-scale fluctuations
 
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
-    def __init__(self, variance=1.0, lengthscales=1.0, alpha=1.0, active_dims=None, ard=None):
-        super().__init__(variance=variance, lengthscales=lengthscales, active_dims=active_dims, ard=ard)
+    def __init__(self, variance=1.0, lengthscale=1.0, alpha=1.0, active_dims=None, ard=None):
+        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims, ard=ard)
         self.alpha = Parameter(alpha, transform=positive())
 
     def K(self, X, X2=None, presliced=False):

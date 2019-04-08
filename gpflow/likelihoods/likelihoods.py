@@ -24,11 +24,9 @@ from ..util import default_float, default_int
 from .robustmax import RobustMax
 
 
-
 def inv_probit(x):
     jitter = 1e-3  # ensures output is strictly between 0 and 1
     return 0.5 * (1.0 + tf.math.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
-
 
 
 class Likelihood(tf.Module):
@@ -87,7 +85,7 @@ class Likelihood(tf.Module):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        integrand = self.logp
+        integrand = self.log_prob
         nghp = self.num_gauss_hermite_points
         return ndiagquad(integrand, nghp, Fmu, Fvar, logspace=True, Y=Y)
 
@@ -111,7 +109,7 @@ class Likelihood(tf.Module):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
-        integrand = self.logp
+        integrand = self.log_prob
         nghp = self.num_gauss_hermite_points
         return ndiagquad(integrand, nghp, Fmu, Fvar, Y=Y)
 
@@ -121,7 +119,7 @@ class Gaussian(Likelihood):
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive())
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         return logdensities.gaussian(Y, F, self.variance)
 
     def conditional_mean(self, F):  # pylint: disable=R0201
@@ -160,7 +158,7 @@ class Poisson(Likelihood):
         self.invlink = invlink
         self.binsize = np.array(binsize, dtype=default_float())
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         return logdensities.poisson(Y, self.invlink(F) * self.binsize)
 
     def conditional_variance(self, F):
@@ -181,7 +179,7 @@ class Exponential(Likelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         return logdensities.exponential(Y, self.invlink(F))
 
     def conditional_mean(self, F):
@@ -206,7 +204,7 @@ class StudentT(Likelihood):
         self.df = df
         self.scale = Parameter(scale, transform=positive(), dtype=default_float())
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         return logdensities.student_t(Y, F, self.scale, self.df)
 
     def conditional_mean(self, F):
@@ -222,7 +220,7 @@ class Bernoulli(Likelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         return logdensities.bernoulli(Y, self.invlink(F))
 
     def predict_mean_and_var(self, Fmu, Fvar):
@@ -255,7 +253,7 @@ class Gamma(Likelihood):
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=positive())
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         return logdensities.gamma(Y, self.shape, self.invlink(F))
 
     def conditional_mean(self, F):
@@ -295,7 +293,7 @@ class Beta(Likelihood):
         self.scale = Parameter(scale, transform=positive())
         self.invlink = invlink
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
@@ -327,7 +325,7 @@ class MultiClass(Likelihood):
 
         self.invlink = invlink
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
         yes = tf.ones(Y.shape, dtype=default_float()) - self.invlink.epsilon
         no = tf.zeros(Y.shape, dtype=default_float()) + self.invlink.eps_k1
@@ -404,8 +402,8 @@ class SwitchedLikelihood(Likelihood):
 
         return results
 
-    def logp(self, F, Y):
-        return self._partition_and_stitch([F, Y], 'logp')
+    def log_prob(self, F, Y):
+        return self._partition_and_stitch([F, Y], 'log_prob')
 
     def predict_density(self, Fmu, Fvar, Y):
         return self._partition_and_stitch([Fmu, Fvar, Y], 'predict_density')
@@ -460,7 +458,7 @@ class Ordinal(Likelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Parameter(1.0, transform=positive())
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         Y = tf.cast(Y, default_int())
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
@@ -551,7 +549,7 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        return self._mc_quadrature(self.logp, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon)
+        return self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon)
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         """
@@ -572,7 +570,7 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo quadrature routine.
         """
-        return self._mc_quadrature(self.logp, Fmu, Fvar, Y=Y, epsilon=epsilon)
+        return self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, epsilon=epsilon)
 
 
 class GaussianMC(MonteCarloLikelihood, Gaussian):
@@ -591,7 +589,7 @@ class Softmax(MonteCarloLikelihood):
         super().__init__(**kwargs)
         self.num_classes = num_classes
 
-    def logp(self, F, Y):
+    def log_prob(self, F, Y):
         with tf.control_dependencies([tf.assert_equal(Y.shape[1], 1),
                                       tf.assert_equal(F.shape[1], self.num_classes)]):
             return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]

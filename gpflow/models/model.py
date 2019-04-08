@@ -17,7 +17,7 @@ from typing import Optional, Tuple
 
 import tensorflow as tf
 
-from ..base import Module, Parameter
+from ..base import Module
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
@@ -37,7 +37,7 @@ class BayesianModel(Module):
     """ Bayesian model. """
 
     def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return - (self.log_likelihood(*args, **kwargs) + self.log_prior())
+        return -(self.log_likelihood(*args, **kwargs) + self.log_prior())
 
     def log_prior(self) -> tf.Tensor:
         if len(self.variables) == 0:
@@ -84,8 +84,7 @@ class GPModel(BayesianModel):
                  kernel: Kernel,
                  likelihood: Likelihood,
                  mean_function: Optional[MeanFunction] = None,
-                 num_latent: int = 1,
-                 seed: Optional[int] = None):
+                 num_latent: int = 1):
         super().__init__()
         self.num_latent = num_latent
         #TODO(@awav): Why is this here when MeanFunction does not have a __len__ method

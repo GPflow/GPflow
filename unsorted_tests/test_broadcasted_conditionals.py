@@ -58,17 +58,17 @@ def test_conditional_broadcasting(session_tf, full_cov, white, conditional_type)
 
     if conditional_type == "Z":
         feat = Data.Z
-        kern = gpflow.kernels.Matern52(Data.Dx, lengthscales=0.5)
+        kern = gpflow.kernels.Matern52(Data.Dx, lengthscale=0.5)
     elif conditional_type == "inducing_points":
         feat = gpflow.features.InducingPoints(Data.Z)
-        kern = gpflow.kernels.Matern52(Data.Dx, lengthscales=0.5)
+        kern = gpflow.kernels.Matern52(Data.Dx, lengthscale=0.5)
     elif conditional_type == "mixing":
         # variational params have different output dim in this case
         q_mu = np.random.randn(Data.M, Data.L)
         q_sqrt = np.tril(np.random.randn(Data.L, Data.M, Data.M), -1)
         feat = mf.MixedKernelSharedMof(gpflow.features.InducingPoints(Data.Z))
         kern = mk.SeparateMixedMok(
-            kernels=[gpflow.kernels.Matern52(Data.Dx, lengthscales=0.5) for _ in range(Data.L)],
+            kernels=[gpflow.kernels.Matern52(Data.Dx, lengthscale=0.5) for _ in range(Data.L)],
             W=Data.W
         )
 

@@ -13,7 +13,8 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
                           Xnew_var: tf.Tensor,
                           feature: InducingFeature,
                           kernel: Kernel,
-                          q_mu, q_sqrt,
+                          q_mu,
+                          q_sqrt,
                           *,
                           mean_function=None,
                           full_output_cov=False,
@@ -90,9 +91,10 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
 
     if full_output_cov:
         fvar = (
-                tf.linalg.diag(tf.tile((eKff - tf.trace(Li_eKuffu_Lit))[:, None], [1, num_func])) +
+                tf.linalg.diag(tf.tile((eKff - tf.linalg.trace(Li_eKuffu_Lit))[:, None], [1,
+                                                                                       num_func])) +
                 tf.linalg.diag(tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov)) +
-                # tf.linalg.diag(tf.trace(tf.linalg.matmul(Li_eKuffu_Lit, cov))) +
+                # tf.linalg.diag(tf.linalg.trace(tf.linalg.matmul(Li_eKuffu_Lit, cov))) +
                 tf.einsum("ig,nij,jh->ngh", q_mu, Li_eKuffu_Lit, q_mu) -
                 # tf.linalg.matmul(q_mu, tf.linalg.matmul(Li_eKuffu_Lit, q_mu), transpose_a=True) -
                 fmean[:, :, None] * fmean[:, None, :] +
@@ -100,7 +102,7 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
         )
     else:
         fvar = (
-                (eKff - tf.trace(Li_eKuffu_Lit))[:, None] +
+                (eKff - tf.linalg.trace(Li_eKuffu_Lit))[:, None] +
                 tf.einsum("nij,dji->nd", Li_eKuffu_Lit, cov) +
                 tf.einsum("ig,nij,jg->ng", q_mu, Li_eKuffu_Lit, q_mu) -
                 fmean ** 2 +

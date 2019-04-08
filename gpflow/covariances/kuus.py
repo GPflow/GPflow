@@ -15,10 +15,10 @@ def _Kuu(feat: InducingPoints, kern: Kernel, *, jitter=0.0):
 @Kuu.register(Multiscale, RBF)
 def _Kuu(feat: Multiscale, kern: RBF, *, jitter=0.0):
     Zmu, Zlen = kern.slice(feat.Z, feat.scales)
-    idlengthscales2 = tf.square(kern.lengthscales + Zlen)
-    sc = tf.sqrt(idlengthscales2[None, ...] + idlengthscales2[:, None, ...]
-                 - kern.lengthscales ** 2)
+    idlengthscale2 = tf.square(kern.lengthscale + Zlen)
+    sc = tf.sqrt(idlengthscale2[None, ...] + idlengthscale2[:, None, ...]
+                 - kern.lengthscale ** 2)
     d = feat._cust_square_dist(Zmu, Zmu, sc)
-    Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
+    Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscale / sc, 2)
     Kzz += jitter * tf.eye(len(feat), dtype=Kzz.dtype)
     return Kzz

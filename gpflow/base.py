@@ -33,7 +33,6 @@ class Module(tf.Module):
         return self._flatten(predicate=_IS_TRAINABLE_PARAMETER)
 
 
-
 class Parameter(tf.Module):
     def __init__(self,
                  value, *,

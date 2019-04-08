@@ -14,13 +14,13 @@ feature = Xtrain[idx, ...]
 kernel = gpflow.kernels.RBF()
 
 # 2. Assigned value (10.0) here is constrained.
-kernel.lengthscales <<= 10.0
+kernel.lengthscale <<= 10.0
 kernel.variance.trainable = False
 likelihood = gpflow.likelihoods.Bernoulli()
 
 # 3. Constrained vs unconstrained values.
-print(f"Unconstrained parameter value of `kernel.lengthscales` = {kernel.lengthscales}")
-print(f"Constrained parameter value of `kernel.lengthscales` = {kernel.lengthscales}")
+print(f"Unconstrained parameter value of `kernel.lengthscale` = {kernel.lengthscale}")
+print(f"Constrained parameter value of `kernel.lengthscale` = {kernel.lengthscale}")
 
 # 4. X's and Y's are no longer part of the model.
 m = gpflow.models.SVGP(kernel=kernel, feature=feature, likelihood=likelihood)

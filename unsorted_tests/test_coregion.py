@@ -40,13 +40,13 @@ class TestEquivalence(GPflowTestCase):
         # 1. Two independent VGPs for two sets of data
 
         k0 = gpflow.kernels.RBF(2)
-        k0.lengthscales.trainable = False
+        k0.lengthscale.trainable = False
         vgp0 = gpflow.models.VGP(
             X[0], Y[0], kern=k0,
             mean_function=gpflow.mean_functions.Constant(),
             likelihood=gpflow.likelihoods.Gaussian())
         k1 = gpflow.kernels.RBF(2)
-        k1.lengthscales.trainable = False
+        k1.lengthscale.trainable = False
         vgp1 = gpflow.models.VGP(
             X[1], Y[1], kern=k1,
             mean_function=gpflow.mean_functions.Constant(),

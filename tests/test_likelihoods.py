@@ -98,7 +98,7 @@ def test_variational_expectations(likelihood_setup):
     likelihood = likelihood_setup.likelihood
     F = Datum.F
     Y = likelihood_setup.Y
-    r1 = likelihood.logp(F, Y)
+    r1 = likelihood.log_prob(F, Y)
     r2 = likelihood.variational_expectations(F, tf.zeros_like(F), Y)
     assert_allclose(r1, r2, atol=likelihood_setup.atol, rtol=likelihood_setup.rtol)
 
@@ -112,7 +112,7 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     """
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
     F1 = likelihood.variational_expectations(mu, var, y)
-    F2 = ndiagquad(likelihood.logp, likelihood.num_gauss_hermite_points, mu, var, Y=y)
+    F2 = ndiagquad(likelihood.log_prob, likelihood.num_gauss_hermite_points, mu, var, Y=y)
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
@@ -193,7 +193,7 @@ def test_softmax_y_shape_assert(num, dimF, dimY):
     Y = tf.convert_to_tensor(dY, dtype=default_int())
     likelihood = Softmax(dimF)
     try:
-        likelihood.logp(F, Y)
+        likelihood.log_prob(F, Y)
     except tf.errors.InvalidArgumentError as e:
         assert "Condition x == y did not hold." in e.message
 
@@ -223,8 +223,8 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
         bernoulli_likelihood.conditional_variance(F[:, :1]))
 
     assert_allclose(
-        softmax_likelihood.logp(F, Ylabel),
-        bernoulli_likelihood.logp(F[:, :1], Y.numpy()))
+        softmax_likelihood.log_prob(F, Ylabel),
+        bernoulli_likelihood.log_prob(F[:, :1], Y.numpy()))
 
     mean1, var1 = softmax_likelihood.predict_mean_and_var(F, Fvar)
     mean2, var2 = bernoulli_likelihood.predict_mean_and_var(F[:, :1], Fvar[:, :1])
@@ -329,8 +329,8 @@ def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
         lik.variance = np.exp(np.random.randn(1)).squeeze().astype(np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
-    switched_results = switched_likelihood.logp(F_sw, Y_sw)
-    results = [lik.logp(f, y) for lik, y, f in zip(likelihoods, Y_list, F_list)]
+    switched_results = switched_likelihood.log_prob(F_sw, Y_sw)
+    results = [lik.log_prob(f, y) for lik, y, f in zip(likelihoods, Y_list, F_list)]
 
     assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
 

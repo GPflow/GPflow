@@ -13,8 +13,8 @@ def _Kuf(feat: InducingPoints, kern: Kernel, Xnew: tf.Tensor):
 def _Kuf(feat: Multiscale, kern: RBF, Xnew):
     Xnew, _ = kern.slice(Xnew, None)
     Zmu, Zlen = kern.slice(feat.Z, feat.scales)
-    idlengthscales = kern.lengthscales + Zlen
-    d = feat._cust_square_dist(Xnew, Zmu, idlengthscales)
-    lengthscales = tf.reduce_prod(kern.lengthscales / idlengthscales, 1)
-    lengthscales = tf.reshape(lengthscales, (1, -1))
-    return tf.transpose(kern.variance * tf.exp(-d / 2) * lengthscales)
+    idlengthscale = kern.lengthscale + Zlen
+    d = feat._cust_square_dist(Xnew, Zmu, idlengthscale)
+    lengthscale = tf.reduce_prod(kern.lengthscale / idlengthscale, 1)
+    lengthscale = tf.reshape(lengthscale, (1, -1))
+    return tf.transpose(kern.variance * tf.exp(-d / 2) * lengthscale)

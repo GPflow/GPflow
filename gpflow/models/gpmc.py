@@ -82,7 +82,7 @@ class GPMC(GPModel):
             K + tf.eye(tf.shape(self.X)[0], dtype=default_float()) * default_jitter())
         F = tf.linalg.matmul(L, self.V) + self.mean_function(self.X)
 
-        return tf.reduce_sum(self.likelihood.logp(F, self.Y))
+        return tf.reduce_sum(self.likelihood.log_prob(F, self.Y))
 
 
     def _build_predict(self, Xnew, full_cov=False):

@@ -16,16 +16,19 @@ def base_conditional(
         *, full_cov=False, q_sqrt=None, white=False):
     r"""
     Given a g1 and g2, and distribution p and q such that
-      p(g2) = N(g2;0,Kmm)
-      p(g1) = N(g1;0,Knn)
-      p(g1|g2) = N(g1;0,Knm)
+      p(g2) = N(g2; 0, Kmm)
+      p(g1) = N(g1; 0, Knn)
+      p(g1 | g2) = N(g1;0,Knm)
+
     And
       q(g2) = N(g2; f, q_sqrt * q_sqrt^T)
+
     This method computes the mean and (co)variance of
       q(g1) = \int q(g2) p(g1|g2)
-    :param Kmn: M x [...] x N
+
+    :param Kmn: [M, ..., N]
     :param Kmm: [M, M]
-    :param Knn: [...][, N, N]  or  N
+    :param Knn: [..., N, N]  or  N
     :param f: [M, R]
     :param full_cov: bool
     :param q_sqrt: None or [R, M, M] (lower triangular)
@@ -40,11 +43,7 @@ def base_conditional(
 
     # get the leadings dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
-    K = tf.rank(Kmn)
-    perm = tf.concat([tf.reshape(tf.range(1, K-1), [K-2]),  # leading dims (...)
-                      tf.reshape(0, [1]),  # [M]
-                      tf.reshape(K-1, [1])], 0)  # [N]
-    Kmn = tf.transpose(Kmn, perm)  # ...[, M, N]
+    Kmn = leading_transpose(Kmn, [..., 0, -1])  # [..., M, N]
 
     leading_dims = Kmn.shape[:-2]
     Lm = tf.linalg.cholesky(Kmm)  # [M, M]
@@ -52,6 +51,7 @@ def base_conditional(
     # Compute the projection matrix A
     Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, Lm.shape], 0))  # [..., M, M]
     A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
+
     # compute the covariance due to the conditioning
     if full_cov:
         fvar = Knn - tf.linalg.matmul(A, A, transpose_a=True)  # [..., N, N]
@@ -84,6 +84,7 @@ def base_conditional(
             LTA = tf.linalg.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.shape.ndims))
+
         if full_cov:
             fvar = fvar + tf.linalg.matmul(LTA, LTA, transpose_a=True)  # [R, N, N]
         else:
@@ -298,7 +299,8 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         fvar = Knn - tf.linalg.matmul(At, At, transpose_a=True)  # [N, K, K]
     elif not full_cov and not full_output_cov:
         # Knn: [N, K]
-        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (N, K))  # Can also do this with a matmul
+        # Can also do this with a matmul
+        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (N, K))
 
     # another backsubstitution in the unwhitened case
     if not white:
