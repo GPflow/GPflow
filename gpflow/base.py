@@ -19,8 +19,12 @@ positive = tfp.bijectors.Softplus
 triangular = tfp.bijectors.FillTriangular
 
 
-_IS_PARAMETER = lambda o: isinstance(o, Parameter)
-_IS_TRAINABLE_PARAMETER = lambda o: (_IS_PARAMETER(o) and o.trainable)
+def _IS_PARAMETER(o):
+    return isinstance(o, Parameter)
+
+
+def _IS_TRAINABLE_PARAMETER(o):
+    return (_IS_PARAMETER(o) and o.trainable)
 
 
 class Module(tf.Module):
@@ -111,8 +115,8 @@ class Parameter(tf.Module):
         unconstrained_value = _to_unconstrained(value, self.transform)
 
         self._unconstrained.assign(unconstrained_value,
-            read_value=read_value,
-            use_locking=use_locking)
+                                   read_value=read_value,
+                                   use_locking=use_locking)
 
     @property
     def name(self):

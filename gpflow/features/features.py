@@ -38,7 +38,7 @@ class InducingFeature(tf.Module):
         pass
 
 
-class InducingPointsBase(InducingFeature):
+class InducingPoints(InducingFeature):
     """
     Real-space inducing points
     """
@@ -54,11 +54,7 @@ class InducingPointsBase(InducingFeature):
         return self.Z.shape[0]
 
 
-class InducingPoints(InducingPointsBase):
-    pass
-
-
-class Multiscale(InducingPointsBase):
+class Multiscale(InducingPoints):
     """
     Multi-scale inducing features
     Originally proposed in

@@ -214,14 +214,14 @@ def test_quadrature(white, mean):
     def conditional_fn(X):
         return conditional(X, features, kernel, DataQuad.q_mu, q_sqrt=DataQuad.q_sqrt, white=white)
 
-    mean_fn = lambda X: conditional_fn(X)[0] + effective_mean(X)
-    var_fn = lambda X: conditional_fn(X)[1]
+    def mean_fn(X): return conditional_fn(X)[0] + effective_mean(X)
+    def var_fn(X): return conditional_fn(X)[1]
 
     quad_args = DataQuad.Xmu, DataQuad.Xvar, DataQuad.H, DataQuad.D_in, (DataQuad.D_out,)
     mean_quad = mvnquad(mean_fn, *quad_args)
     var_quad = mvnquad(var_fn, *quad_args)
 
-    mean_sq_fn = lambda X: mean_fn(X) ** 2
+    def mean_sq_fn(X): return mean_fn(X) ** 2
     mean_sq_quad = mvnquad(mean_sq_fn, *quad_args)
     var_quad = var_quad + (mean_sq_quad - mean_quad ** 2)
 

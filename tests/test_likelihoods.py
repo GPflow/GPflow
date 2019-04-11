@@ -18,7 +18,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.features import InducingPointsBase, InducingPoints
+from gpflow.features import InducingPoints
 from gpflow.likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian,
                                 GaussianMC, Likelihood, MultiClass, Ordinal,
                                 Poisson, RobustMax, Softmax, StudentT,
@@ -63,7 +63,8 @@ likelihood_setups = [
     LikelihoodSetup(Gaussian()),
     LikelihoodSetup(StudentT()),
     LikelihoodSetup(Beta()),
-    LikelihoodSetup(MultiClass(2), Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1), rtol=1e-3, atol=1e-3),
+    LikelihoodSetup(MultiClass(2), Y=tf.argmax(
+        Datum.Y, 1).numpy().reshape(-1, 1), rtol=1e-3, atol=1e-3),
     LikelihoodSetup(Ordinal(np.array([-1, 1])), Y=np.random.randint(0, 3, Datum.Yshape)),
     LikelihoodSetup(Poisson(invlink=Datum.square)),
     LikelihoodSetup(Exponential(invlink=Datum.square)),
@@ -257,7 +258,8 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
     pred = likelihood.predict_density(F, F, Y)
     variational_expectations = likelihood.variational_expectations(F, F, Y)
 
-    expected_mu = (p * (1. - epsilon) + (1. - p) * epsilon / (num_classes - 1)) * np.ones((num_points, 1))
+    expected_mu = (p * (1. - epsilon) + (1. - p) * epsilon /
+                   (num_classes - 1)) * np.ones((num_points, 1))
     expected_log_density = np.log(expected_mu)
 
     # assert_allclose() would complain about shape mismatch
@@ -265,14 +267,14 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
     assert (np.allclose(pred, expected_log_density, 1e-3, 1e-3))
 
     validation_variational_expectation = (p * np.log(1. - epsilon) +
-                                         (1. - p) * np.log(epsilon / (num_classes - 1)))
+                                          (1. - p) * np.log(epsilon / (num_classes - 1)))
     assert_allclose(variational_expectations,
                     np.ones((num_points, 1)) * validation_variational_expectation,
                     tol, tol)
 
 
 @pytest.mark.parametrize('num_classes, num_points', [[5, 100]])
-@pytest.mark.parametrize('mock_prob, expected_prediction, tol, epsilon',[
+@pytest.mark.parametrize('mock_prob, expected_prediction, tol, epsilon', [
     [0.73, -0.5499780059, 1e-4, 0.231]
     # Expected prediction evaluated on calculator:
     # log((1 - ε) * 0.73 + (1-0.73) * ε / (num_classes -1))
@@ -313,7 +315,7 @@ def test_robust_max_multiclass_eps_k1_changes(num_classes, initial_epsilon, new_
 @pytest.mark.parametrize('Y_list', [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize('F_list', [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize('Fvar_list', [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
-@pytest.mark.parametrize('Y_label', [[tf.ones((i, 2)) * (i - 3.)  for i in range(3, 6)]])
+@pytest.mark.parametrize('Y_label', [[tf.ones((i, 2)) * (i - 3.) for i in range(3, 6)]])
 def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
     """
     SwitchedLikelihood is separately tested here.
