@@ -87,7 +87,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Kmms = covariances.Kuu(feat, kern, jitter=default_jitter())  # [P, M, M]
     Kmns = covariances.Kuf(feat, kern, Xnew)  # [P, M, N]
     kernels = kern.kernels if isinstance(kern, Combination) else [kern.kern] * len(feat.features)
-    Knns = tf.stack([k(Xnew, full=full_cov) for k in kernels], axis=0)
+    Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)
     fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
     q_sqrts = tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]

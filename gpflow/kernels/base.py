@@ -152,7 +152,7 @@ class Combination(Kernel):
         # add kernels to a list, flattening out instances of this class therein
         kernels_list = []
         for k in kernels:
-            if isinstance(k, Combination):
+            if isinstance(k, self.__class__):
                 kernels_list.extend(k.kernels)
             else:
                 kernels_list.append(k)
