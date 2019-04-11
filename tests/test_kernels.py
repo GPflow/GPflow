@@ -169,7 +169,7 @@ def test_periodic_1d_and_2d(D, N, lengthscale, variance, period):
     _assert_periodic_kern_err(lengthscale, variance, period, X)
 
 
-kernel_setups = [kern() for kern in gpflow.kernels.Stationary.__subclasses__()] + [
+kernel_setups = [kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()] + [
     gpflow.kernels.Constant(),
     gpflow.kernels.Linear(),
     gpflow.kernels.Polynomial(),
@@ -282,7 +282,7 @@ def test_white(N, D):
     assert not np.allclose(Kff_sym, Kff_asym)
 
 
-_kernel_classes_slice = [kern for kern in gpflow.kernels.Stationary.__subclasses__()] + \
+_kernel_classes_slice = [kernel for kernel in gpflow.kernels.Stationary.__subclasses__()] + \
     [gpflow.kernels.Constant,
      gpflow.kernels.Linear,
      gpflow.kernels.Polynomial]

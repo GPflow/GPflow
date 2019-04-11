@@ -44,7 +44,7 @@ class GPR(GPModel):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
-        # kern, mean_function are appropriate GPflow objects
+        # kernel, mean_function are appropriate GPflow objects
         """
         likelihood = likelihoods.Gaussian()
 

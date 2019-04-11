@@ -90,7 +90,7 @@ def _conditional(
 
     :param Xnew: data matrix, size [N, D]. Evaluate the GP at these new points
     :param X: data points, size [M, D].
-    :param kern: GPflow kernel.
+    :param kernel: GPflow kernel.
     :param f: data matrix, [M, R], representing the function values at X,
         for K functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,

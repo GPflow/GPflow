@@ -34,7 +34,7 @@ class Datum:
     Z = rng.randn(10, 2)
     Xs = rng.randn(10, 2)
     lik = gpflow.likelihoods.Gaussian()
-    kern = gpflow.kernels.Matern32()
+    kernel = gpflow.kernels.Matern32()
 
 
 class DatumSVGP:
@@ -60,16 +60,16 @@ def _check_models_close(m1, m2, tolerance=1e-2):
 
 
 _gp_models = [
-    gpflow.models.VGP(Datum.X, Datum.Y, Datum.kern, Datum.lik),
-    gpflow.models.GPMC(Datum.X, Datum.Y, Datum.kern, Datum.lik),
-    gpflow.models.SGPMC(Datum.X, Datum.Y, Datum.kern, Datum.lik, features=Datum.Z),
-    gpflow.models.SGPR(Datum.X, Datum.Y, Datum.kern, features=Datum.Z),
-    gpflow.models.GPR(Datum.X, Datum.Y, Datum.kern),
-    gpflow.models.GPRFITC(Datum.X, Datum.Y, Datum.kern, features=Datum.Z)
+    gpflow.models.VGP(Datum.X, Datum.Y, Datum.kernel, Datum.lik),
+    gpflow.models.GPMC(Datum.X, Datum.Y, Datum.kernel, Datum.lik),
+    gpflow.models.SGPMC(Datum.X, Datum.Y, Datum.kernel, Datum.lik, features=Datum.Z),
+    gpflow.models.SGPR(Datum.X, Datum.Y, Datum.kernel, features=Datum.Z),
+    gpflow.models.GPR(Datum.X, Datum.Y, Datum.kernel),
+    gpflow.models.GPRFITC(Datum.X, Datum.Y, Datum.kernel, features=Datum.Z)
 ]
 
 _state_less_gp_models = [
-    gpflow.models.SVGP(Datum.kern, Datum.lik, feature=Datum.Z)
+    gpflow.models.SVGP(Datum.kernel, Datum.lik, feature=Datum.Z)
 ]
 
 

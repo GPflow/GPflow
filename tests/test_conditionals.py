@@ -29,7 +29,7 @@ Mn = 50
 
 
 @pytest.fixture(scope='module')
-def kern():
+def kernel():
     k = gpflow.kernels.Matern32() + gpflow.kernels.White()
     k.kernels[1].variance <<= 0.01
     return k
@@ -61,9 +61,9 @@ def chol(sqrt):
 
 
 @pytest.mark.parametrize('white', [True, False])
-def test_diag(Xdata, Xnew, kern, mu, sqrt, chol, white):
-    Fstar_mean_1, Fstar_var_1 = conditional(Xnew, Xdata, kern, mu, q_sqrt=sqrt, white=white)
-    Fstar_mean_2, Fstar_var_2 = conditional(Xnew, Xdata, kern, mu, q_sqrt=chol, white=white)
+def test_diag(Xdata, Xnew, kernel, mu, sqrt, chol, white):
+    Fstar_mean_1, Fstar_var_1 = conditional(Xnew, Xdata, kernel, mu, q_sqrt=sqrt, white=white)
+    Fstar_mean_2, Fstar_var_2 = conditional(Xnew, Xdata, kernel, mu, q_sqrt=chol, white=white)
 
     mean_diff = Fstar_mean_1 - Fstar_mean_2
     var_diff = Fstar_var_1 - Fstar_var_2
@@ -72,30 +72,30 @@ def test_diag(Xdata, Xnew, kern, mu, sqrt, chol, white):
     assert_allclose(var_diff, 0)
 
 
-def test_whiten(Xdata, Xnew, kern, mu, sqrt):
+def test_whiten(Xdata, Xnew, kernel, mu, sqrt):
     """
     Make sure that predicting using the whitened representation is the
     sameas the non-whitened one.
     """
 
-    K = kern(Xdata) + tf.eye(Nn, dtype=default_float()) * 1e-6
+    K = kernel(Xdata) + tf.eye(Nn, dtype=default_float()) * 1e-6
     L = tf.linalg.cholesky(K)
     V = tf.linalg.triangular_solve(L, mu, lower=True)
-    mean1, var1 = conditional(Xnew, Xdata, kern, mu)
-    mean2, var2 = conditional(Xnew, Xdata, kern, V, white=True)
+    mean1, var1 = conditional(Xnew, Xdata, kernel, mu)
+    mean2, var2 = conditional(Xnew, Xdata, kernel, V, white=True)
 
     assert_allclose(mean1, mean2)
     assert_allclose(var1, var2)
 
 
-def test_gaussian_whiten(Xdata, Xnew, kern, mu, sqrt):
+def test_gaussian_whiten(Xdata, Xnew, kernel, mu, sqrt):
     """
     Make sure that predicting using the whitened representation is the
     same as the non-whitened one.
     """
     F_sqrt = tf.convert_to_tensor(rng.rand(Nn, Ln))
 
-    K = kern(Xdata)
+    K = kernel(Xdata)
     L = tf.linalg.cholesky(K)
     V = tf.linalg.triangular_solve(L, mu, lower=True)
     V_prime = tf.linalg.diag(tf.transpose(F_sqrt))
@@ -103,8 +103,8 @@ def test_gaussian_whiten(Xdata, Xnew, kern, mu, sqrt):
     L = tf.broadcast_to(L, common_shape)
     V_sqrt = tf.linalg.triangular_solve(L, tf.linalg.diag(tf.transpose(F_sqrt)), lower=True)
 
-    Fstar_mean, Fstar_var = conditional(Xnew, Xdata, kern, mu, q_sqrt=F_sqrt)
-    Fstar_w_mean, Fstar_w_var = conditional(Xnew, Xdata, kern, V, q_sqrt=V_sqrt, white=True)
+    Fstar_mean, Fstar_var = conditional(Xnew, Xdata, kernel, mu, q_sqrt=F_sqrt)
+    Fstar_w_mean, Fstar_w_var = conditional(Xnew, Xdata, kernel, V, q_sqrt=V_sqrt, white=True)
 
     mean_diff = Fstar_w_mean - Fstar_mean
     var_diff = Fstar_w_var - Fstar_var

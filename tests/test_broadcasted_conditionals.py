@@ -59,17 +59,17 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
     q_sqrt = np.tril(np.random.randn(Data.Dy, Data.M, Data.M), -1)
 
     if conditional_type == "Z":
-        feat = Data.Z
-        kern = gpflow.kernels.Matern52(lengthscale=0.5)
+        feature = Data.Z
+        kernel = gpflow.kernels.Matern52(lengthscale=0.5)
     elif conditional_type == "inducing_points":
-        feat = gpflow.features.InducingPoints(Data.Z)
-        kern = gpflow.kernels.Matern52(lengthscale=0.5)
+        feature = gpflow.features.InducingPoints(Data.Z)
+        kernel = gpflow.kernels.Matern52(lengthscale=0.5)
     elif conditional_type == "mixing":
         # variational params have different output dim in this case
         q_mu = np.random.randn(Data.M, Data.L)
         q_sqrt = np.tril(np.random.randn(Data.L, Data.M, Data.M), -1)
-        feat = mf.MixedKernelSharedMof(gpflow.features.InducingPoints(Data.Z))
-        kern = mk.SeparateMixedMok(
+        feature = mf.MixedKernelSharedMof(gpflow.features.InducingPoints(Data.Z))
+        kernel = mk.SeparateMixedMok(
             kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
             W=Data.W
         )
@@ -80,7 +80,7 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
         pytest.skip("combination is not implemented")
 
     num_samples = 5
-    sample_conditional_fn = lambda X: sample_conditional(X, feat, kern, tf.convert_to_tensor(q_mu),
+    sample_conditional_fn = lambda X: sample_conditional(X, feature, kernel, tf.convert_to_tensor(q_mu),
                                                          q_sqrt=tf.convert_to_tensor(q_sqrt),
                                                          white=white, full_cov=full_cov,
                                                          num_samples=num_samples
@@ -91,14 +91,14 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
     variables = np.array([sample_conditional_fn(X)[2] for X in Data.SX])
 
     samples_S12, means_S12, vars_S12 = \
-        sample_conditional(Data.SX, feat, kern,
+        sample_conditional(Data.SX, feature, kernel,
                            tf.convert_to_tensor(q_mu),
                            q_sqrt=tf.convert_to_tensor(q_sqrt),
                            white=white, full_cov=full_cov,
                            num_samples=num_samples)
 
     samples_S1_S2, means_S1_S2, vars_S1_S2 = \
-        sample_conditional(Data.S1_S2_X, feat, kern,
+        sample_conditional(Data.S1_S2_X, feature, kernel,
                            tf.convert_to_tensor(q_mu),
                            q_sqrt=tf.convert_to_tensor(q_sqrt),
                            white=white, full_cov=full_cov,

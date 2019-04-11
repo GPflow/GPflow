@@ -13,73 +13,73 @@ from .dispatch import Kuf
 logger = create_logger()
 
 
-def debug_kuf(feat, kern):
-    msg = "Dispatch to Kuf(feat: {}, kern: {})"
+def debug_kuf(feature, kernel):
+    msg = "Dispatch to Kuf(feature: {}, kernel: {})"
     logger.debug(msg.format(
-        feat.__class__.__name__,
-        kern.__class__.__name__))
+        feature.__class__.__name__,
+        kernel.__class__.__name__))
 
 @Kuf.register(InducingPoints, Mok, object)
-def _Kuf(feat: InducingPoints,
-         kern: Mok,
+def _Kuf(feature: InducingPoints,
+         kernel: Mok,
          Xnew: tf.Tensor):
-    debug_kuf(feat, kern)
-    return kern(feat.Z, Xnew, full=True, full_output_cov=True)  # [M, P, N, P]
+    debug_kuf(feature, kernel)
+    return kernel(feature.Z, Xnew, full=True, full_output_cov=True)  # [M, P, N, P]
 
 
 @Kuf.register(SharedIndependentMof, SharedIndependentMok, object)
-def _Kuf(feat: SharedIndependentMof,
-         kern: SharedIndependentMok,
+def _Kuf(feature: SharedIndependentMof,
+         kernel: SharedIndependentMok,
          Xnew: tf.Tensor):
-    debug_kuf(feat, kern)
-    return Kuf(feat.feat, kern.kern, Xnew)  # [M, N]
+    debug_kuf(feature, kernel)
+    return Kuf(feature.feature, kernel.kernel, Xnew)  # [M, N]
 
 
 @Kuf.register(SeparateIndependentMof, SharedIndependentMok, object)
-def _Kuf(feat: SeparateIndependentMof,
-         kern: SharedIndependentMok,
+def _Kuf(feature: SeparateIndependentMof,
+         kernel: SharedIndependentMok,
          Xnew: tf.Tensor):
-    debug_kuf(feat, kern)
-    return tf.stack([Kuf(f, kern.kern, Xnew) for f in feat.features], axis=0)  # [L, M, N]
+    debug_kuf(feature, kernel)
+    return tf.stack([Kuf(f, kernel.kernel, Xnew) for f in feature.features], axis=0)  # [L, M, N]
 
 
 @Kuf.register(SharedIndependentMof, SeparateIndependentMok, object)
-def _Kuf(feat: SharedIndependentMof,
-         kern: SeparateIndependentMok,
+def _Kuf(feature: SharedIndependentMof,
+         kernel: SeparateIndependentMok,
          Xnew: tf.Tensor):
-    debug_kuf(feat, kern)
-    return tf.stack([Kuf(feat.feat, k, Xnew) for k in kern.kernels], axis=0)  # [L, M, N]
+    debug_kuf(feature, kernel)
+    return tf.stack([Kuf(feature.feature, k, Xnew) for k in kernel.kernels], axis=0)  # [L, M, N]
 
 
 @Kuf.register(SeparateIndependentMof, SeparateIndependentMok, object)
-def _Kuf(feat: SeparateIndependentMof,
-         kern: SeparateIndependentMok,
+def _Kuf(feature: SeparateIndependentMof,
+         kernel: SeparateIndependentMok,
          Xnew: tf.Tensor):
-    debug_kuf(feat, kern)
-    Kufs = [Kuf(f, k, Xnew) for f, k in zip(feat.features, kern.kernels)]
+    debug_kuf(feature, kernel)
+    Kufs = [Kuf(f, k, Xnew) for f, k in zip(feature.features, kernel.kernels)]
     return tf.stack(Kufs, axis=0)  # [L, M, N]
 
 
 @Kuf.register((SeparateIndependentMof, SharedIndependentMof), SeparateMixedMok, object)
-def _Kuf(feat: Union[SeparateIndependentMof, SharedIndependentMof],
-         kern: SeparateMixedMok,
+def _Kuf(feature: Union[SeparateIndependentMof, SharedIndependentMof],
+         kernel: SeparateMixedMok,
          Xnew: tf.Tensor):
-    debug_kuf(feat, kern)
-    kuf_impl = Kuf.dispatch(type(feat), SeparateIndependentMok, object)
-    K = tf.transpose(kuf_impl(feat, kern, Xnew), [1, 0, 2])  # [M, L, N]
-    return K[:, :, :, None] * tf.transpose(kern.W)[None, :, None, :]  # [M, L, N, P]
+    debug_kuf(feature, kernel)
+    kuf_impl = Kuf.dispatch(type(feature), SeparateIndependentMok, object)
+    K = tf.transpose(kuf_impl(feature, kernel, Xnew), [1, 0, 2])  # [M, L, N]
+    return K[:, :, :, None] * tf.transpose(kernel.W)[None, :, None, :]  # [M, L, N, P]
 
 
 @Kuf.register(MixedKernelSharedMof, SeparateMixedMok, object)
-def _Kuf(feat: MixedKernelSharedMof,
-         kern: SeparateIndependentMok,
+def _Kuf(feature: MixedKernelSharedMof,
+         kernel: SeparateIndependentMok,
          Xnew: tf.Tensor):
-    debug_kuf(feat, kern)
-    return tf.stack([Kuf(feat.feat, k, Xnew) for k in kern.kernels], axis=0)  # [L, M, N]
+    debug_kuf(feature, kernel)
+    return tf.stack([Kuf(feature.feature, k, Xnew) for k in kernel.kernels], axis=0)  # [L, M, N]
 
 
 @Kuf.register(MixedKernelSeparateMof, SeparateMixedMok, object)
-def _Kuf(feat, kern, Xnew):
-    debug_kuf(feat, kern)
-    return tf.stack([Kuf(f, k, Xnew) for f, k in zip(feat.features, kern.kernels)], axis=0)  # [
+def _Kuf(feature, kernel, Xnew):
+    debug_kuf(feature, kernel)
+    return tf.stack([Kuf(f, k, Xnew) for f, k in zip(feature.features, kernel.kernels)], axis=0)  # [
     # L, M, N]

@@ -65,7 +65,7 @@ class SGPMC(GPModelOLD):
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
         Z is a data matrix, of inducing inputs, size [M, D]
-        kern, likelihood, mean_function are appropriate GPflow objects
+        kernel, likelihood, mean_function are appropriate GPflow objects
         """
         GPModelOLD.__init__(self, X, Y, kernel, likelihood, mean_function, num_latent=num_latent,
                             **kwargs)

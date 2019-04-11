@@ -67,8 +67,8 @@ model_setups = [
 def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
     X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, _ = rng.randn(Ntest, D), rng.randn(Ntest, 1)
-    kern = Matern32() + gpflow.kernels.White()
-    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+    kernel = Matern32() + gpflow.kernels.White()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
 
     mu_f, var_f = model_gp.predict_f(Xtest)
     mu_y, var_y = model_gp.predict_y(Xtest)
@@ -81,8 +81,8 @@ def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
 def test_gaussian_log_density(Ntrain, Ntest, D):
     X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
-    kern = Matern32() + gpflow.kernels.White()
-    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+    kernel = Matern32() + gpflow.kernels.White()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
 
     mu_y, var_y = model_gp.predict_y(Xtest)
     log_density = model_gp.predict_log_density(Xtest, Ytest)
@@ -100,8 +100,8 @@ def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
     covar_shape = (output_dim, Ntest, Ntest)
     X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
-    kern = Matern32()
-    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+    kernel = Matern32()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
 
     mu1, var = model_gp.predict_f(Xtest, full_cov=False)
     mu2, covar = model_gp.predict_f(Xtest, full_cov=True)
@@ -123,8 +123,8 @@ def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_sampl
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
-    kern = Matern32()
-    model_gp = gpflow.models.GPR(X, Y, kernel=kern)
+    kernel = Matern32()
+    model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
 
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape

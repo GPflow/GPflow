@@ -11,7 +11,7 @@ from .expectations import expectation
 
 
 @dispatch.expectation.register(Gaussian, kernels.RBF, NoneType, NoneType, NoneType)
-def _E(p, kern, _, __, ___, nghp=None):
+def _E(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
     <diag(K_{X, X})>_p(X)
@@ -19,11 +19,11 @@ def _E(p, kern, _, __, ___, nghp=None):
 
     :return: N
     """
-    return kern(p.mu, full=False)
+    return kernel(p.mu, full=False)
 
 
 @dispatch.expectation.register(Gaussian, kernels.RBF, InducingPoints, NoneType, NoneType)
-def _E(p, kern, feat, _, __, nghp=None):
+def _E(p, kernel, feature, _, __, nghp=None):
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
@@ -32,13 +32,13 @@ def _E(p, kern, feat, _, __, nghp=None):
     :return: NxM
     """
     # use only active dimensions
-    Xcov = kern.slice_cov(p.cov)
-    Z, Xmu = kern.slice(feat.Z, p.mu)
+    Xcov = kernel.slice_cov(p.cov)
+    Z, Xmu = kernel.slice(feature.Z, p.mu)
     D = Xmu.shape[1]
 
-    lengthscale = kern.lengthscale
-    if not kern.ard:
-        lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + kern.lengthscale
+    lengthscale = kernel.lengthscale
+    if not kernel.ard:
+        lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + kernel.lengthscale
 
     chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
 
@@ -53,11 +53,11 @@ def _E(p, kern, feat, _, __, nghp=None):
         tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
-    return kern.variance * (determinants[:, None] * exponent_mahalanobis)
+    return kernel.variance * (determinants[:, None] * exponent_mahalanobis)
 
 
 @dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
-def _E(p, mean, _, kern, feat, nghp=None):
+def _E(p, mean, _, kernel, feature, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
@@ -69,12 +69,12 @@ def _E(p, mean, _, kern, feat, nghp=None):
 
     D = Xmu.shape[1]
 
-    lengthscale = kern.lengthscale
-    if not kern.ard:
+    lengthscale = kernel.lengthscale
+    if not kernel.ard:
         lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + lengthscale
 
     chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
-    all_diffs = tf.transpose(feat.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
+    all_diffs = tf.transpose(feature.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
     sqrt_det_L_plus_Xcov = tf.exp(
@@ -88,12 +88,12 @@ def _E(p, mean, _, kern, feat, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    return kern.variance * (determinants[:, None] *
+    return kernel.variance * (determinants[:, None] *
                             exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
 @dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
-def _E(p, mean, _, kern, feat, nghp=None):
+def _E(p, mean, _, kernel, feature, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1})
@@ -105,12 +105,12 @@ def _E(p, mean, _, kern, feat, nghp=None):
     Xmu, Xcov = p.mu, p.cov
 
     D = Xmu.shape[1]
-    lengthscale = kern.lengthscale
-    if not kern.ard:
+    lengthscale = kernel.lengthscale
+    if not kernel.ard:
         lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + lengthscale
 
     chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov[0, :-1])  # NxDxD
-    all_diffs = tf.transpose(feat.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
+    all_diffs = tf.transpose(feature.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
     sqrt_det_L_plus_Xcov = tf.exp(
@@ -124,7 +124,7 @@ def _E(p, mean, _, kern, feat, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    return kern.variance * (determinants[:, None] *
+    return kernel.variance * (determinants[:, None] *
                             exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
@@ -150,18 +150,18 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
         raise NotImplementedError("The expectation over two kernels has only an "
                                   "analytical implementation if both kernels are equal.")
 
-    kern = kern1
-    feat = feat1
+    kernel = kern1
+    feature = feat1
 
     # use only active dimensions
-    Xcov = kern.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
-    Z, Xmu = kern.slice(feat.Z, p.mu)
+    Xcov = kernel.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
+    Z, Xmu = kernel.slice(feature.Z, p.mu)
 
     N = Xmu.shape[0]
     D = Xmu.shape[1]
 
-    squared_lengthscale = kern.lengthscale ** 2
-    if not kern.ard:
+    squared_lengthscale = kernel.lengthscale ** 2
+    if not kernel.ard:
         zero_lengthscale = tf.zeros((D,), dtype=squared_lengthscale.dtype)
         squared_lengthscale = squared_lengthscale + zero_lengthscale
 
@@ -186,5 +186,5 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     # Compute sqrt(self(Z)) explicitly to prevent automatic gradient from
     # being NaN sometimes, see pull request #615
-    kernel_sqrt = tf.exp(-0.25 * kern.scaled_square_dist(Z, None))
-    return kern.variance ** 2 * kernel_sqrt * tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis
+    kernel_sqrt = tf.exp(-0.25 * kernel.scaled_square_dist(Z, None))
+    return kernel.variance ** 2 * kernel_sqrt * tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis

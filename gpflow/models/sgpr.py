@@ -65,7 +65,7 @@ class SGPRUpperMixin(object):
         Linvkuf = tf.linalg.triangular_solve(L, kuf, lower=True)
         # Using the Trace bound, from Titsias' presentation
         c = tf.reduce_sum(Kdiag) - tf.reduce_sum(Linvkuf ** 2.0)
-        # Kff = self.kern(self.X)
+        # Kff = self.kernel(self.X)
         # Qff = tf.linalg.matmul(kuf, Linvkuf, transpose_a=True)
 
         # Alternative bound on max eigenval:
@@ -111,7 +111,7 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
         Z is a matrix of pseudo inputs, size [M, D]
-        kern, mean_function are appropriate GPflow objects
+        kernel, mean_function are appropriate GPflow objects
 
         This method only works with a Gaussian likelihood.
         """

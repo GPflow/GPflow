@@ -11,7 +11,7 @@ from .expectations import expectation
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, NoneType, NoneType, NoneType)
-def _E(p, kern, _, __, ___, nghp=None):
+def _E(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
     <diag(K_{X, X})>_p(X)
@@ -20,14 +20,14 @@ def _E(p, kern, _, __, ___, nghp=None):
     :return: N
     """
     # use only active dimensions
-    Xmu, _ = kern.slice(p.mu, None)
-    Xcov = kern.slice_cov(p.cov)
+    Xmu, _ = kernel.slice(p.mu, None)
+    Xcov = kernel.slice_cov(p.cov)
 
-    return tf.reduce_sum(kern.variance * (tf.linalg.diag_part(Xcov) + Xmu ** 2), 1)
+    return tf.reduce_sum(kernel.variance * (tf.linalg.diag_part(Xcov) + Xmu ** 2), 1)
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, NoneType, NoneType)
-def _E(p, kern, feat, _, __, nghp=None):
+def _E(p, kernel, feature, _, __, nghp=None):
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
@@ -36,14 +36,14 @@ def _E(p, kern, feat, _, __, nghp=None):
     :return: NxM
     """
     # use only active dimensions
-    Z, Xmu = kern.slice(feat.Z, p.mu)
+    Z, Xmu = kernel.slice(feature.Z, p.mu)
 
-    return tf.linalg.matmul(Xmu, Z * kern.variance, transpose_b=True)
+    return tf.linalg.matmul(Xmu, Z * kernel.variance, transpose_b=True)
 
 
 @dispatch.expectation.register(
         Gaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
-def _E(p, kern, feat, mean, _, nghp=None):
+def _E(p, kernel, feature, mean, _, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} x_n^T>_p(x_n)
@@ -54,14 +54,14 @@ def _E(p, kern, feat, mean, _, nghp=None):
     Xmu, Xcov = p.mu, p.cov
 
     N = Xmu.shape[0]
-    var_Z = kern.variance * feat.Z  # MxD
+    var_Z = kernel.variance * feature.Z  # MxD
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     return tf.linalg.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
 
 
 @dispatch.expectation.register(
         MarkovGaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
-def _E(p, kern, feat, mean, _, nghp=None):
+def _E(p, kernel, feature, mean, _, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} x_{n+1}^T>_p(x_{n:n+1})
@@ -73,7 +73,7 @@ def _E(p, kern, feat, mean, _, nghp=None):
     Xmu, Xcov = p.mu, p.cov
 
     N = Xmu.shape[0] - 1
-    var_Z = kern.variance * feat.Z  # MxD
+    var_Z = kernel.variance * feature.Z  # MxD
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     eXX = Xcov[1, :-1] + (Xmu[:-1][..., None] * Xmu[1:][:, None, :])  # NxDxD
     return tf.linalg.matmul(tiled_Z, eXX)
@@ -102,15 +102,15 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
         raise NotImplementedError("The expectation over two kernels has only an "
                                   "analytical implementation if both kernels are equal.")
 
-    kern = kern1
-    feat = feat1
+    kernel = kern1
+    feature = feat1
 
     # use only active dimensions
-    Xcov = kern.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
-    Z, Xmu = kern.slice(feat.Z, p.mu)
+    Xcov = kernel.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
+    Z, Xmu = kernel.slice(feature.Z, p.mu)
 
     N = Xmu.shape[0]
-    var_Z = kern.variance * Z
+    var_Z = kernel.variance * Z
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     XX = Xcov + tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2)  # NxDxD
     return tf.linalg.matmul(tf.linalg.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)

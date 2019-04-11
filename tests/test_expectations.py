@@ -196,8 +196,8 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     Ensure that <K_{Z, x} K_{x, Z}>_p(x) is not NaN and correct, when
     K_{Z, Z} is zero with finite precision. See pull request #595.
     """
-    kern = gpflow.kernels.RBF(1, lengthscale=0.1)
-    kern.variance <<= 2.
+    kernel = gpflow.kernels.RBF(1, lengthscale=0.1)
+    kernel.variance <<= 2.
 
     p = gpflow.probability_distributions.Gaussian(
         tf.constant([[10]], dtype=gpflow.util.default_float()),
@@ -205,8 +205,8 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     z = gpflow.features.InducingPoints([[-10.], [10.]])
 
     with tf.GradientTape() as tape:
-        ekz = expectation(p, (kern, z), (kern, z))
-        grad = tape.gradient(ekz, kern.lengthscale)
+        ekz = expectation(p, (kernel, z), (kernel, z))
+        grad = tape.gradient(ekz, kernel.lengthscale)
         assert grad is not None and not np.isnan(grad)
 
 

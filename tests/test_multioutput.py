@@ -316,10 +316,10 @@ def test_fully_correlated_conditional_repeat_shapes(func, R):
 def test_MixedMok_Kgg():
     data = DataMixedKernel
     kern_list = [RBF() for _ in range(data.L)]
-    kern = mk.SeparateMixedMok(kern_list, W=data.W)
+    kernel = mk.SeparateMixedMok(kern_list, W=data.W)
 
-    Kgg = kern.Kgg(Data.X, Data.X)  # L x N x N
-    Kff = kern.K(Data.X, Data.X)  # N x P x N x P
+    Kgg = kernel.Kgg(Data.X, Data.X)  # L x N x N
+    Kff = kernel.K(Data.X, Data.X)  # N x P x N x P
 
     # Kff = W @ Kgg @ W^T
     Kff_infered = np.einsum("lnm,pl,ql->npmq", Kgg, data.W, data.W)

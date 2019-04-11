@@ -43,17 +43,17 @@ class VGP(GPModelOLD):
 
     """
 
-    def __init__(self, X, Y, kern, likelihood,
+    def __init__(self, X, Y, kernel, likelihood,
                  mean_function=None,
                  num_latent=None,
                  **kwargs):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
-        kern, likelihood, mean_function are appropriate GPflow objects
+        kernel, likelihood, mean_function are appropriate GPflow objects
 
         """
-        GPModelOLD.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
+        GPModelOLD.__init__(self, X, Y, kernel, likelihood, mean_function, num_latent, **kwargs)
         self.num_data = X.shape[0]
 
         self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
@@ -146,21 +146,21 @@ class VGP_opper_archambeau(GPModel):
 
     """
 
-    def __init__(self, X, Y, kern, likelihood,
+    def __init__(self, X, Y, kernel, likelihood,
                  mean_function=None,
                  num_latent=None,
                  **kwargs):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
-        kern, likelihood, mean_function are appropriate GPflow objects
+        kernel, likelihood, mean_function are appropriate GPflow objects
         """
 
         mean_function = Zero() if mean_function is None else mean_function
 
         X = DataHolder(X)
         Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
+        GPModel.__init__(self, X, Y, kernel, likelihood, mean_function, **kwargs)
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))

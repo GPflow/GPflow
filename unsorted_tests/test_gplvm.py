@@ -71,7 +71,7 @@ class TestBayesianGPLVM(GPflowTestCase):
                 X_mean=np.zeros((self.N, Q)),
                 X_var=np.ones((self.N, Q)),
                 Y=self.Y,
-                kern=k,
+                kernel=k,
                 M=self.M,
                 Z=Z)
             linit = m.compute_log_likelihood()
@@ -89,7 +89,7 @@ class TestBayesianGPLVM(GPflowTestCase):
                 X_mean=X_mean,
                 X_var=np.ones((self.N, Q)),
                 Y=self.Y,
-                kern=k,
+                kernel=k,
                 M=self.M)
             linit = m.compute_log_likelihood()
             opt = gpflow.train.ScipyOptimizer()

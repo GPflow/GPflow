@@ -31,12 +31,12 @@ class SharedIndependentMof(Mof):
     """
     Same feature is used for each output.
     """
-    def __init__(self, feat):
+    def __init__(self, feature):
         Mof.__init__(self)
-        self.feat = feat
+        self.feature = feature
 
     def __len__(self):
-        return len(self.feat)
+        return len(self.feature)
 
 
 class SeparateIndependentMof(Mof):

@@ -197,10 +197,10 @@ _model_classes = [
     # gpflow.models.SGPR,
     # gpflow.models.GPRFITC,
     gpflow.models.SVGP,
-    # gpflow.models.VGP(X, Y, mean_function=mf(), kern=k(), likelihood=lik()),
-    # gpflow.models.VGP(X, Y, mean_function=mf(), kern=k(), likelihood=lik()),
-    # gpflow.models.GPMC(X, Y, mean_function=mf(), kern=k(), likelihood=lik()),
-    # gpflow.models.SGPMC(X, Y, mean_function=mf(), kern=k(), likelihood=lik(), Z=Z)
+    # gpflow.models.VGP(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
+    # gpflow.models.VGP(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
+    # gpflow.models.GPMC(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
+    # gpflow.models.SGPMC(X, Y, mean_function=mf(), kernel=k(), likelihood=lik(), Z=Z)
 ]
 
 
