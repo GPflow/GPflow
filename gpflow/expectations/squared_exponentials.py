@@ -36,9 +36,7 @@ def _E(p, kernel, feature, _, __, nghp=None):
     Z, Xmu = kernel.slice(feature.Z, p.mu)
     D = Xmu.shape[1]
 
-    lengthscale = kernel.lengthscale
-    if not kernel.ard:
-        lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + kernel.lengthscale
+    lengthscale = tf.zeros((D,), dtype=kernel.lengthscale.dtype) + kernel.lengthscale
 
     chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
 
@@ -69,9 +67,7 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
     D = Xmu.shape[1]
 
-    lengthscale = kernel.lengthscale
-    if not kernel.ard:
-        lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + lengthscale
+    lengthscale = tf.zeros((D,), dtype=kernel.lengthscale.dtype) + kernel.lengthscale
 
     chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
     all_diffs = tf.transpose(feature.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
@@ -160,10 +156,8 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     N = Xmu.shape[0]
     D = Xmu.shape[1]
 
-    squared_lengthscale = kernel.lengthscale ** 2
-    if not kernel.ard:
-        zero_lengthscale = tf.zeros((D,), dtype=squared_lengthscale.dtype)
-        squared_lengthscale = squared_lengthscale + zero_lengthscale
+    zero_lengthscale = tf.zeros((D,), dtype=kernel.lengthscale.dtype)
+    squared_lengthscale = kernel.lengthscale ** 2 + zero_lengthscale
 
     sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscale) ** 0.5
     C = tf.linalg.cholesky(0.5 * tf.linalg.diag(squared_lengthscale) + Xcov)  # NxDxD
