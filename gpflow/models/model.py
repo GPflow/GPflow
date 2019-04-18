@@ -51,7 +51,7 @@ class BayesianModel(Module):
 
 class GPModel(BayesianModel):
     """
-    A base class for Gaussian process models, that is, those of the form
+    A stateless base class for Gaussian process models, that is, those of the form
 
     .. math::
        :nowrap:
@@ -64,20 +64,16 @@ class GPModel(BayesianModel):
        \\end{align}
 
     This class mostly adds functionality to compile predictions. To use it,
-    inheriting classes must define a build_predict function, which computes
-    the means and variances of the latent function. This gets compiled
-    similarly to build_likelihood in the Model class.
+    inheriting classes must define a predict_f function, which computes
+    the means and variances of the latent function. Its usage is similar to log_likelihood in the
+    Model class.
 
     These predictions are then pushed through the likelihood to obtain means
     and variances of held out data, self.predict_y.
 
     The predictions can also be used to compute the (log) density of held-out
-    data via self.predict_density.
+    data via self.predict_log_density.
 
-    For handling another data (Xnew, Ynew), set the new value to self.X and self.Y
-
-    >>> m.X = Xnew
-    >>> m.Y = Ynew
     """
 
     def __init__(self,

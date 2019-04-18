@@ -150,7 +150,10 @@ class SVGP(GPModel):
         return tf.reduce_sum(var_exp) * scale - kl
 
     def elbo(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
-        return self.neg_log_marginal_likelihood(X, Y)
+        """
+        This returns the evidence lower bound (ELBO) of the log marginal likelihood.
+        """
+        return - self.neg_log_marginal_likelihood(X, Y)
 
     def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu

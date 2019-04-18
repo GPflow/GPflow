@@ -71,7 +71,15 @@ class Stationary(Kernel):
 
 class RBF(Stationary):
     """
-    The radial basis function (RBF) or squared exponential kernel
+    The radial basis function (RBF) or squared exponential kernel,
+
+        k(r) = σ² exp{-½ r²}
+
+    where:
+    r   is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ²  is the variance parameter
+
+    Functions drawn from a GP with this kernel are infinitely differentiable!
     """
 
     def K(self, X, X2=None, presliced=False):
@@ -107,7 +115,7 @@ class RationalQuadratic(Stationary):
 
 class Exponential(Stationary):
     """
-    The Exponential kernel
+    The Exponential kernel. It is equivalent to a Matern12 kernel with doubled lengthscales.
     """
 
     def K(self, X, X2=None, presliced=False):
@@ -119,7 +127,14 @@ class Exponential(Stationary):
 
 class Matern12(Stationary):
     """
-    The Matern 1/2 kernel
+    The Matern 1/2 kernel. Functions drawn from a GP with this kernel are not
+    differentiable anywhere. The kernel equation is
+
+    k(r) = σ² exp{-r}
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ² is the variance parameter
     """
 
     def K(self, X, X2=None, presliced=False):
@@ -131,7 +146,14 @@ class Matern12(Stationary):
 
 class Matern32(Stationary):
     """
-    The Matern 3/2 kernel
+    The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once
+    differentiable. The kernel equation is
+
+    k(r) =  σ² (1 + √3r) exp{-√3 r}
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     def K(self, X, X2=None, presliced=False):
@@ -143,20 +165,34 @@ class Matern32(Stationary):
 
 class Matern52(Stationary):
     """
-    The Matern 5/2 kernel
+    The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice
+    differentiable. The kernel equation is
+
+    k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-        return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) *\
-            tf.exp(-np.sqrt(5.) * r)
+        return self.variance * (1.0 + np.sqrt(5.) * r + 5. / 3. * tf.square(r)) * \
+               tf.exp(-np.sqrt(5.) * r)
 
 
 class Cosine(Stationary):
     """
-    The Cosine kernel
+    The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids
+    (with a random phase). The kernel equation is
+
+        k(r) =  σ² cos{r}
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     def K(self, X, X2=None, presliced=False):

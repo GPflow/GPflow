@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from collections import OrderedDict
 
+from .util import default_float
 from . import settings
 from ._version import __version__
 
@@ -44,15 +45,6 @@ def normalize_num_type(num_type):
         raise ValueError('Unknown dtype "{0}" passed to normalizer.'.format(num_type))
 
     return num_type
-
-
-def get_attribute(obj, name, allow_fail=False, default=None):
-    try:
-        return object.__getattribute__(obj, name)
-    except AttributeError as error:
-        if allow_fail:
-            return default
-        raise error
 
 
 def version():

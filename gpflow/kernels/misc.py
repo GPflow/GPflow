@@ -110,9 +110,16 @@ class Periodic(Kernel):
     Derived using an RBF kernel once mapped the original inputs through
     the mapping u=(cos(x), sin(x)).
 
-    The resulting kernel can be expressed as:
-    k_per(x, x') = variance * exp( -0.5 Sum_i sin^2((x_i-x'_i) * pi /period)/ell^2)
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into ell
+    The resulting periodic kernel can be expressed as:
+        k(r) =  σ² exp{ -0.5 sin²(π r / γ) / ℓ²}
+
+    where:
+    r  is the Euclidean distance between the input points
+    ℓ is the lengthscale parameter,
+    σ² is the variance parameter,
+    γ is the period parameter.
+
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
     hyperparameter).
     """
 
@@ -126,7 +133,7 @@ class Periodic(Kernel):
         self.period = Parameter(period, transform=positive())
 
     def K_diag(self, X, presliced=False):
-        return tf.fill(tf.stack([X.shape[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -171,7 +178,6 @@ class Coregion(Kernel):
         """
 
         # assert input_dim == 1, "Coregion kernel in 1D only"
-
         super().__init__(active_dims)
 
         self.output_dim = output_dim

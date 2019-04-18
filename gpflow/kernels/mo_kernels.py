@@ -118,7 +118,7 @@ class SeparateIndependentMok(Mok, Combination):
 
 class SeparateMixedMok(Mok, Combination):
     """
-    Linear mixing of the latent GPs to form the output
+    Linear mixing of the latent GPs to form the output.
     """
 
     def __init__(self, kernels, W, name=None):

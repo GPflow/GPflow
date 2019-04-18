@@ -12,7 +12,45 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Likelihoods are another core component of GPflow. This describes how likely the
+data is under the assumptions made about the underlying latent functions
+p(Y|F). Different likelihoods make different
+assumptions about the distribution of the data, as such different data-types
+(continuous, binary, ordinal, count) are better modelled with different
+likelihood assumptions.
 
+Use of any likelihood other than Gaussian typically introduces the need to use
+an approximation to perform inference, if one isn't already needed. A
+variational inference and MCMC models are included in GPflow and allow
+approximate inference with non-Gaussian likelihoods. An introduction to these
+models can be found :ref:`here <implemented_models>`. Specific notebooks
+illustrating non-Gaussian likelihood regressions are available for
+`classification <notebooks/classification.html>`_ (binary data), `ordinal
+<notebooks/ordinal.html>`_ and `multiclass <notebooks/multiclass.html>`_.
+
+Creating new likelihoods
+----------
+Likelihoods are defined by their
+log-likelihood. When creating new likelihoods, the
+:func:`logp <gpflow.likelihoods.Likelihood.logp>` method (log p(Y|F)), the
+:func:`conditional_mean <gpflow.likelihoods.Likelihood.conditional_mean>`,
+:func:`conditional_variance
+<gpflow.likelihoods.Likelihood.conditional_variance>`.
+
+In order to perform variational inference with non-Gaussian likelihoods a term
+called ``variational expectations``, ∫ q(F) log p(Y|F) dF, needs to
+be computed under a Gaussian distribution q(F) ~ N(μ, Σ).
+
+The :func:`variational_expectations <gpflow.likelihoods.Likelihood.variational_expectations>`
+method can be overriden if this can be computed in closed form, otherwise; if
+the new likelihood inherits
+:class:`Likelihood <gpflow.likelihoods.Likelihood>` the default will use
+Gauss-Hermite numerical integration (works well when F is 1D
+or 2D), if the new likelihood inherits from
+:class:`MonteCarloLikelihood <gpflow.likelihoods.MonteCarloLikelihood>` the
+integration is done by sampling (can be more suitable when F is higher dimensional).
+"""
 
 import numpy as np
 import tensorflow as tf
@@ -57,6 +95,7 @@ class Likelihood(tf.Module):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
         """
+
         def integrand(*X):
             return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
 
@@ -136,7 +175,7 @@ class Gaussian(Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         return -0.5 * np.log(2 * np.pi) - 0.5 * tf.math.log(self.variance) \
-            - 0.5 * ((Y - Fmu) ** 2 + Fvar) / self.variance
+               - 0.5 * ((Y - Fmu) ** 2 + Fvar) / self.variance
 
 
 class Poisson(Likelihood):
@@ -336,11 +375,13 @@ class MultiClass(Likelihood):
     def variational_expectations(self, Fmu, Fvar, Y):
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
-        ve = p * tf.math.log(1. - self.invlink.epsilon) + (1. - p) * tf.math.log(self.invlink.eps_k1)
+        ve = p * tf.math.log(1. - self.invlink.epsilon) + (1. - p) * tf.math.log(
+            self.invlink.eps_k1)
         return ve
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        possible_outputs = [tf.fill(tf.stack([Fmu.shape[0], 1]), np.array(i, dtype=np.int64)) for i in
+        possible_outputs = [tf.fill(tf.stack([Fmu.shape[0], 1]), np.array(i, dtype=np.int64)) for i
+                            in
                             range(self.num_classes)]
         ps = [self._predict_non_logged_density(Fmu, Fvar, po) for po in possible_outputs]
         ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
@@ -467,7 +508,7 @@ class Ordinal(Likelihood):
         selected_bins_right = tf.gather(scaled_bins_right, Y)
 
         return tf.math.log(inv_probit(selected_bins_left - F / self.sigma) -
-                      inv_probit(selected_bins_right - F / self.sigma) + 1e-6)
+                           inv_probit(selected_bins_right - F / self.sigma) + 1e-6)
 
     def _make_phi(self, F):
         """
@@ -593,7 +634,7 @@ class Softmax(MonteCarloLikelihood):
     def log_prob(self, F, Y):
         with tf.control_dependencies([tf.assert_equal(Y.shape[1], 1),
                                       tf.assert_equal(F.shape[1], self.num_classes)]):
-            return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]
+            return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:,None]
 
     def conditional_mean(self, F):
         return tf.nn.softmax(F)

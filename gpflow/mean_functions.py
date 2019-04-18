@@ -11,7 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Throughout GPflow, by default, latent functions being modelled with Gaussian
+processes are assumed to have zero mean, f ~ GP(0, k(x,x')).
 
+In some cases we may wish to model only the deviation from a fixed function
+with a Gaussian process.  For flexibility this fixed function could be both
+input dependent and parameterised function, μ(x; θ),
+with some unknown parameters θ, resulting in f ~ GP(μ(x;θ), k(x,x')).
+
+The GPflow :class:`MeanFunction <gpflow.mean_functions.MeanFunction>` class
+allows this to be done whilst additionally learning parameters of the
+parametric function.
+"""
 
 import numpy as np
 import tensorflow as tf
@@ -31,6 +43,7 @@ class MeanFunction(tf.Module):
     MeanFunction classes can have parameters, see the Linear class for an
     example.
     """
+
     def __call__(self, X):
         raise NotImplementedError("Implement the __call__ method for this mean function")
 
@@ -45,6 +58,7 @@ class Linear(MeanFunction):
     """
     y_i = A x_i + b
     """
+
     def __init__(self, A=None, b=None):
         """
         A is a matrix which maps each element of X to Y, b is an additive
@@ -67,6 +81,7 @@ class Identity(Linear):
     """
     y_i = x_i
     """
+
     def __init__(self, input_dim=None):
         Linear.__init__(self)
         self.input_dim = input_dim
@@ -99,9 +114,6 @@ class Identity(Linear):
 
 
 class Constant(MeanFunction):
-    """
-    y_i = c,,
-    """
     def __init__(self, c=None):
         super().__init__()
         c = np.zeros(1) if c is None else c
@@ -128,6 +140,7 @@ class SwitchedMeanFunction(MeanFunction):
     to the data 'label'.
     We assume the 'label' is stored in the extra column of X.
     """
+
     def __init__(self, meanfunction_list):
         super().__init__()
         for m in meanfunction_list:
@@ -135,9 +148,9 @@ class SwitchedMeanFunction(MeanFunction):
         self.meanfunctions = meanfunction_list
 
     def __call__(self, X):
-        ind = tf.gather(tf.transpose(X), X.shape[1]-1)  # ind = X[:,-1]
+        ind = tf.gather(tf.transpose(X), X.shape[1] - 1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
-        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, X.shape[1]-1)))  # X = X[:,:-1]
+        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, X.shape[1] - 1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, len(self.meanfunctions))

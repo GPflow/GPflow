@@ -5,9 +5,13 @@ from .base import Kernel
 
 class Linear(Kernel):
     """
-    The linear kernel
-    """
+    The linear kernel.  Functions drawn from a GP with this kernel are linear, i.e. f(x) = cx.
+    The kernel equation is
 
+        k(x, y) = σ²xy
+
+    where σ²  is the variance parameter.
+    """
     def __init__(self, variance=1.0, active_dims=None, ard=None):
         """
         - input_dim is the dimension of the input to the kernel
@@ -39,7 +43,15 @@ class Linear(Kernel):
 
 class Polynomial(Linear):
     """
-    The Polynomial kernel. Samples are polynomials of degree `d`.
+    The Polynomial kernel. Functions drawn from a GP with this kernel are
+    polynomials of degree `d`. The kernel equation is
+
+        k(x, y) = (σ²xy + γ)ᵈ
+
+    where:
+    σ² is the variance parameter,
+    γ is the offset parameter,
+    d is the degree parameter.
     """
 
     def __init__(self,
@@ -54,7 +66,7 @@ class Polynomial(Linear):
                          if ard=True, there is one variance per input
         :param degree: the degree of the polynomial
         :param active_dims: a list of length input_dim which controls
-          which columns of X are used.
+                            which columns of X are used.
         :param ard: use variance as described
         """
         super().__init__(variance, active_dims, ard)

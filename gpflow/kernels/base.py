@@ -11,6 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""
+Kernels form a core component of GPflow models and allow prior information to
+be encoded about a latent function of interest. The effect of choosing
+different kernels, and how it is possible to combine multiple kernels is shown
+in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
+"""
+
 
 import abc
 from functools import partial, reduce
@@ -18,8 +25,6 @@ from typing import Optional
 
 import numpy as np
 import tensorflow as tf
-
-from ..base import Parameter, positive
 
 
 class Kernel(tf.Module):
@@ -29,6 +34,7 @@ class Kernel(tf.Module):
 
     def __init__(self, active_dims: slice = None, name: str = None):
         """
+        :param active_dims: active dimensions, has the slice type.
         """
         super().__init__(name)
         if isinstance(active_dims, list):
@@ -87,8 +93,9 @@ class Kernel(tf.Module):
         `self.active_dims` for covariance matrices. This requires slicing the
         rows *and* columns. This will also turn flattened diagonal
         matrices into a tensor of full diagonal matrices.
-            :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
-            :return: [N, I, I].
+
+        :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
+        :return: [N, I, I].
         """
         if cov.ndim == 2:
             cov = tf.linalg.diag(cov)
@@ -164,6 +171,7 @@ class Combination(Kernel):
         Checks whether the kernels in the combination act on disjoint subsets
         of dimensions. Currently, it is hard to asses whether two slice objects
         will overlap, so this will always return False.
+
         :return: Boolean indicator.
         """
         if np.any([isinstance(k.active_dims, slice) for k in self.kernels]):
