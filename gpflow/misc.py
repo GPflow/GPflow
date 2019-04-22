@@ -199,7 +199,11 @@ def vec_to_tri(vectors, N):
 def initialize_variables(variables=None, session=None, force=False, **run_kwargs):
     session = tf.get_default_session() if session is None else session
     if variables is None:
-        initializer = tf.global_variables_initializer()
+        if(tf.__version__.startswith("0.") and int(tf.__version__.split(".")[1])<12): # For tf version <0.12.0
+            initializer = tf.initialize_all_variables()
+        else: # For tf version >= 0.12.0
+            initializer = tf.global_variables_initializer()
+
     else:
         if force:
             vars_for_init = list(_initializable_tensors(variables))
@@ -207,7 +211,11 @@ def initialize_variables(variables=None, session=None, force=False, **run_kwargs
             vars_for_init = list(_find_initializable_tensors(variables, session))
         if not vars_for_init:
             return
-        initializer = tf.variables_initializer(vars_for_init)
+        if(tf.__version__.startswith("0.") and int(tf.__version__.split(".")[1])<12): # For tf version <0.12.0                
+            initializer = tf.initialize_variables(vars_for_init)
+        else: # For tf version >= 0.12.0 
+            initializer = tf.variables_initializer(vars_for_init)
+
     session.run(initializer, **run_kwargs)
 
 
