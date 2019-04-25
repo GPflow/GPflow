@@ -68,7 +68,7 @@ def base_conditional(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.linalg.triangular_solve(tf.linalg.transpose(Lm), A, lower=False)
+        A = tf.linalg.triangular_solve(tf.linalg.adjoint(Lm), A, lower=False)
 
     # construct the conditional mean
     f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [..., M, R]
@@ -95,7 +95,7 @@ def base_conditional(
             fvar = fvar + tf.reduce_sum(tf.square(LTA), -2)  # [R, N]
 
     if not full_cov:
-        fvar = tf.linalg.transpose(fvar)  # [N, R]
+        fvar = tf.linalg.adjoint(fvar)  # [N, R]
 
     return fmean, fvar  # [N, R], [R, N, N] or [N, R]
 
@@ -308,7 +308,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
     # another backsubstitution in the unwhitened case
     if not white:
-        # A = tf.linalg.triangular_solve(tf.linalg.transpose(Lm), A, lower=False)  # [M, K]
+        # A = tf.linalg.triangular_solve(tf.linalg.adjoint(Lm), A, lower=False)  # [M, K]
         raise NotImplementedError("Need to verify this.")  # pragma: no cover
 
     # f: [M, R]

@@ -47,7 +47,7 @@ class Stationary(Kernel):
         if X2 is None:
             Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
             dist = -2 * tf.matmul(X, X, transpose_b=True)
-            dist += Xs + tf.linalg.transpose(Xs)
+            dist += Xs + tf.linalg.adjoint(Xs)
             return dist
 
         Xs = tf.reduce_sum(tf.square(X), axis=-1)

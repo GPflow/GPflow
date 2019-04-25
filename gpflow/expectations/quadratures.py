@@ -112,7 +112,7 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
 
         mu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
         cov_top = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
-        cov_bottom = tf.concat((tf.linalg.transpose(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
+        cov_bottom = tf.concat((tf.linalg.adjoint(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
         cov = tf.concat((cov_top, cov_bottom), 1)  # Nx2Dx2D
 
     return mvnquad(eval_func, mu, cov, nghp)

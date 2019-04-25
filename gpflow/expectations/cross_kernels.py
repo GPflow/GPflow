@@ -80,4 +80,4 @@ def _E(p, lin_kern, feat1, rbf_kern, feat2, nghp=None):
 
     :return: NxM1xM2
     """
-    return tf.linalg.transpose(expectation(p, (rbf_kern, feat2), (lin_kern, feat1)))
+    return tf.linalg.adjoint(expectation(p, (rbf_kern, feat2), (lin_kern, feat1)))

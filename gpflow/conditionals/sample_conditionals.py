@@ -41,9 +41,9 @@ def _sample_conditional(Xnew: tf.Tensor,
     if full_cov:
         # mean: [..., N, P]
         # cov: [..., P, N, N]
-        mean_for_sample = tf.linalg.transpose(mean)  # [..., P, N]
+        mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
         samples = sample_mvn(mean_for_sample, cov, 'full', num_samples=num_samples)  # [..., (S), P, N]
-        samples = tf.linalg.transpose(samples)  # [..., (S), P, N]
+        samples = tf.linalg.adjoint(samples)  # [..., (S), P, N]
     else:
         # mean: [..., N, P]
         # cov: [..., N, P] or [..., N, P, P]

@@ -70,7 +70,7 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
     eKuffu = expectation(pXnew, (kernel, feature), (kernel, feature))  # [N, M, M] (psi2)
     Luu_tiled = tf.tile(Luu[None, :, :], [num_data, 1, 1])  # remove this line, once issue 216 is fixed
     Li_eKuffu = tf.linalg.triangular_solve(Luu_tiled, eKuffu, lower=True)
-    Li_eKuffu_Lit = tf.linalg.triangular_solve(Luu_tiled, tf.linalg.transpose(Li_eKuffu), lower=True)  # [N, M, M]
+    Li_eKuffu_Lit = tf.linalg.triangular_solve(Luu_tiled, tf.linalg.adjoint(Li_eKuffu), lower=True)  # [N, M, M]
     cov = tf.linalg.matmul(q_sqrt_r, q_sqrt_r, transpose_b=True)  # [D, M, M]
 
     if mean_function is None or isinstance(mean_function, mean_functions.Zero):
@@ -87,7 +87,7 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
         # einsum isn't able to infer the rank of e_mean_Kuf, hence we explicitly set the rank of the tensor:
         e_mean_Kuf = tf.reshape(e_mean_Kuf, [num_data, num_func, num_ind])
         e_fmean_mean = tf.einsum("nqm,mz->nqz", e_mean_Kuf, Lit_q_mu)  # [N, D, D]
-        e_related_to_mean = e_fmean_mean + tf.linalg.transpose(e_fmean_mean) + e_mean_mean
+        e_related_to_mean = e_fmean_mean + tf.linalg.adjoint(e_fmean_mean) + e_mean_mean
 
     if full_output_cov:
         fvar = (

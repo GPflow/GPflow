@@ -24,7 +24,7 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
     :return: NxDxM
     """
-    return tf.linalg.transpose(expectation(p, (kernel, feature), mean))
+    return tf.linalg.adjoint(expectation(p, (kernel, feature), mean))
 
 
 @dispatch.expectation.register((Gaussian, MarkovGaussian),
@@ -38,7 +38,7 @@ def _E(p, kernel, feature, mean, _, nghp=None):
 
     :return: NxMxQ
     """
-    return tf.linalg.transpose(expectation(p, mean, (kernel, feature), nghp=nghp))
+    return tf.linalg.adjoint(expectation(p, mean, (kernel, feature), nghp=nghp))
 
 
 @dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, kernels.Kernel, InducingPoints)
