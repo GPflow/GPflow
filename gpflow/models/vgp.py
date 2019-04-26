@@ -93,7 +93,7 @@ class VGP(GPModelOLD):
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kernel(self.X) + tf.eye(self.num_data, dtype=default_float) * gpflow.default_jitter
+        K = self.kernel(self.X) + tf.eye(self.num_data, dtype=default_float()) * gpflow.default_jitter
         L = tf.linalg.cholesky(K)
 
         fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
