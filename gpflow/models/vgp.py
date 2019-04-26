@@ -17,7 +17,8 @@ import tensorflow_probability as tfp
 import numpy as np
 
 import gpflow
-from ..base import Parameter, default_float, default_jitter
+from ..base import Parameter
+from ..util import default_float, default_jitter
 from ..mean_functions import Zero
 from ..conditionals import conditional
 from ..kullback_leiblers import gauss_kl
