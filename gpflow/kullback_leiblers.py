@@ -14,7 +14,6 @@
 
 # -*- coding: utf-8 -*-
 
-
 import tensorflow as tf
 from .util import default_float
 
@@ -53,21 +52,25 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         batch = K.shape.ndims == 3
 
         Lp = tf.linalg.cholesky(K)  # [B, M, M] or [M, M]
-        q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # [B, M, 1] or [M, B]
-        alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # [B, M, 1] or [M, B]
+        q_mu = tf.transpose(
+            q_mu)[:, :, None] if batch else q_mu  # [B, M, 1] or [M, B]
+        alpha = tf.linalg.triangular_solve(Lp, q_mu,
+                                           lower=True)  # [B, M, 1] or [M, B]
 
     if diag:
         Lq = Lq_diag = q_sqrt
         Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # [B, M, M]
     else:
-        Lq = Lq_full = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [B, M, M]
+        Lq = Lq_full = tf.linalg.band_part(
+            q_sqrt, -1, 0)  # force lower triangle # [B, M, M]
         Lq_diag = tf.linalg.diag_part(Lq)  # [M, B]
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - B * M
-    constant = - tf.cast(tf.size(q_mu, out_type=tf.int64), dtype=default_float())
+    constant = -tf.cast(tf.size(q_mu, out_type=tf.int64),
+                        dtype=default_float())
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.math.log(tf.square(Lq_diag)))
@@ -79,12 +82,18 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         if diag and not batch:
             # K is [M, M] and q_sqrt is [M, B]: fast specialisation
             LpT = tf.transpose(Lp)  # [M, M]
-            Lp_inv = tf.linalg.triangular_solve(Lp, tf.eye(M, dtype=default_float()),lower=True)  # [M, M]
-            K_inv = tf.linalg.diag_part(tf.linalg.triangular_solve(LpT, Lp_inv, lower=False))[:, None]  # [M, M] -> [M, 1]
+            Lp_inv = tf.linalg.triangular_solve(Lp,
+                                                tf.eye(M,
+                                                       dtype=default_float()),
+                                                lower=True)  # [M, M]
+            K_inv = tf.linalg.diag_part(
+                tf.linalg.triangular_solve(
+                    LpT, Lp_inv, lower=False))[:, None]  # [M, M] -> [M, 1]
             trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
         else:
             # TODO: broadcast instead of tile when tf allows (not implemented in tf <= 1.6.0)
-            Lp_full = Lp if batch else tf.tile(tf.expand_dims(Lp, 0), [B, 1, 1])
+            Lp_full = Lp if batch else tf.tile(tf.expand_dims(Lp, 0),
+                                               [B, 1, 1])
             LpiLq = tf.linalg.triangular_solve(Lp_full, Lq_full, lower=True)
             trace = tf.reduce_sum(tf.square(LpiLq))
 

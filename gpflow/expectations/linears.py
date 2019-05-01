@@ -10,7 +10,8 @@ from ..util import NoneType
 from .expectations import expectation
 
 
-@dispatch.expectation.register(Gaussian, kernels.Linear, NoneType, NoneType, NoneType)
+@dispatch.expectation.register(Gaussian, kernels.Linear, NoneType, NoneType,
+                               NoneType)
 def _E(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
@@ -23,10 +24,12 @@ def _E(p, kernel, _, __, ___, nghp=None):
     Xmu, _ = kernel.slice(p.mu, None)
     Xcov = kernel.slice_cov(p.cov)
 
-    return tf.reduce_sum(kernel.variance * (tf.linalg.diag_part(Xcov) + Xmu ** 2), 1)
+    return tf.reduce_sum(
+        kernel.variance * (tf.linalg.diag_part(Xcov) + Xmu**2), 1)
 
 
-@dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, NoneType, NoneType)
+@dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints,
+                               NoneType, NoneType)
 def _E(p, kernel, feature, _, __, nghp=None):
     """
     Compute the expectation:
@@ -41,8 +44,8 @@ def _E(p, kernel, feature, _, __, nghp=None):
     return tf.linalg.matmul(Xmu, Z * kernel.variance, transpose_b=True)
 
 
-@dispatch.expectation.register(
-        Gaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
+@dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints,
+                               mfn.Identity, NoneType)
 def _E(p, kernel, feature, mean, _, nghp=None):
     """
     Compute the expectation:
@@ -59,8 +62,8 @@ def _E(p, kernel, feature, mean, _, nghp=None):
     return tf.linalg.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
 
 
-@dispatch.expectation.register(
-        MarkovGaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
+@dispatch.expectation.register(MarkovGaussian, kernels.Linear, InducingPoints,
+                               mfn.Identity, NoneType)
 def _E(p, kernel, feature, mean, _, nghp=None):
     """
     Compute the expectation:
@@ -79,9 +82,8 @@ def _E(p, kernel, feature, mean, _, nghp=None):
     return tf.linalg.matmul(tiled_Z, eXX)
 
 
-@dispatch.expectation.register(
-        (Gaussian, DiagonalGaussian),
-        kernels.Linear, InducingPoints, kernels.Linear, InducingPoints)
+@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.Linear,
+                               InducingPoints, kernels.Linear, InducingPoints)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:
@@ -93,24 +95,29 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     :return: NxMxM
     """
-    if kern1.on_separate_dims(kern2) and isinstance(p, DiagonalGaussian):  # no joint expectations required
+    if kern1.on_separate_dims(kern2) and isinstance(
+            p, DiagonalGaussian):  # no joint expectations required
         eKxz1 = expectation(p, (kern1, feat1))
         eKxz2 = expectation(p, (kern2, feat2))
         return eKxz1[:, :, None] * eKxz2[:, None, :]
 
     if kern1 != kern2 or feat1 != feat2:
-        raise NotImplementedError("The expectation over two kernels has only an "
-                                  "analytical implementation if both kernels are equal.")
+        raise NotImplementedError(
+            "The expectation over two kernels has only an "
+            "analytical implementation if both kernels are equal.")
 
     kernel = kern1
     feature = feat1
 
     # use only active dimensions
-    Xcov = kernel.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
+    Xcov = kernel.slice_cov(
+        tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
     Z, Xmu = kernel.slice(feature.Z, p.mu)
 
     N = Xmu.shape[0]
     var_Z = kernel.variance * Z
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     XX = Xcov + tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2)  # NxDxD
-    return tf.linalg.matmul(tf.linalg.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)
+    return tf.linalg.matmul(tf.linalg.matmul(tiled_Z, XX),
+                            tiled_Z,
+                            transpose_b=True)

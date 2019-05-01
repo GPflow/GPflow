@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # pragma: no cover
 # pylint: skip-file
 
-
-import functools
 import contextlib
-import tensorflow as tf
-import pytest
+import functools
 import os
+
+import pytest
+import tensorflow as tf
 
 
 def is_continuous_integration():

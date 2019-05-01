@@ -17,7 +17,11 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, active_dims=None, ard=None):
+    def __init__(self,
+                 variance=1.0,
+                 lengthscale=1.0,
+                 active_dims=None,
+                 ard=None):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter
@@ -101,8 +105,15 @@ class RationalQuadratic(Stationary):
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, alpha=1.0, active_dims=None, ard=None):
-        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims,
+    def __init__(self,
+                 variance=1.0,
+                 lengthscale=1.0,
+                 alpha=1.0,
+                 active_dims=None,
+                 ard=None):
+        super().__init__(variance=variance,
+                         lengthscale=lengthscale,
+                         active_dims=active_dims,
                          ard=ard)
         self.alpha = Parameter(alpha, transform=positive())
 
@@ -110,7 +121,8 @@ class RationalQuadratic(Stationary):
         if not presliced:
             X, X2 = self.slice(X, X2)
         distance_2 = self.scaled_square_dist(X, X2)
-        return self.variance * (1 + distance_2 / (2 * self.alpha)) ** (-self.alpha)
+        return self.variance * (1 + distance_2 /
+                                (2 * self.alpha))**(-self.alpha)
 
 
 class Exponential(Stationary):
@@ -160,7 +172,8 @@ class Matern32(Stationary):
         if not presliced:
             X, X2 = self.slice(X, X2)
         r = self.scaled_euclid_dist(X, X2)
-        return self.variance * (1. + np.sqrt(3.) * r) * tf.exp(-np.sqrt(3.) * r)
+        return self.variance * (1. + np.sqrt(3.) * r) * tf.exp(
+            -np.sqrt(3.) * r)
 
 
 class Matern52(Stationary):

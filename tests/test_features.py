@@ -28,7 +28,9 @@ def test_inducing_points_feature_len(N, D):
 
 
 _kernel_setups = [
-    gpflow.kernels.RBF(variance=0.46, lengthscale=np.random.uniform(0.5, 3., 5), ard=True),
+    gpflow.kernels.RBF(variance=0.46,
+                       lengthscale=np.random.uniform(0.5, 3., 5),
+                       ard=True),
     gpflow.kernels.Periodic(period=0.4, variance=1.8)
 ]
 
@@ -53,25 +55,37 @@ def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
     multi_scale_Kuf = Kuf(feature_zero_lengthscale, rbf, Xnew)
     inducing_point_Kuf = Kuf(feature_inducing_point, rbf, Xnew)
 
-    deviation_percent_Kuf = np.max(np.abs(multi_scale_Kuf - inducing_point_Kuf) /
-                                   inducing_point_Kuf * 100)
+    deviation_percent_Kuf = np.max(
+        np.abs(multi_scale_Kuf - inducing_point_Kuf) / inducing_point_Kuf *
+        100)
     assert deviation_percent_Kuf < 0.1
 
     multi_scale_Kuu = Kuu(feature_zero_lengthscale, rbf)
     inducing_point_Kuu = Kuu(feature_inducing_point, rbf)
 
-    deviation_percent_Kuu = np.max(np.abs(multi_scale_Kuu - inducing_point_Kuu) /
-                                   inducing_point_Kuu * 100)
+    deviation_percent_Kuu = np.max(
+        np.abs(multi_scale_Kuu - inducing_point_Kuu) / inducing_point_Kuu *
+        100)
     assert deviation_percent_Kuu < 0.1
 
 
 _features_and_kernels = [
-    [InducingPoints(np.random.randn(71, 2)),
-     gpflow.kernels.RBF(variance=1.84, lengthscale=np.random.uniform(0.5, 3., 2))],
-    [InducingPoints(np.random.randn(71, 2)),
-     gpflow.kernels.Matern12(variance=1.84, lengthscale=np.random.uniform(0.5, 3., 2))],
-    [Multiscale(np.random.randn(71, 2), np.random.uniform(0.5, 3, size=(71, 2))),
-     gpflow.kernels.RBF(variance=1.84, lengthscale=np.random.uniform(0.5, 3., 2))]
+    [
+        InducingPoints(np.random.randn(71, 2)),
+        gpflow.kernels.RBF(variance=1.84,
+                           lengthscale=np.random.uniform(0.5, 3., 2))
+    ],
+    [
+        InducingPoints(np.random.randn(71, 2)),
+        gpflow.kernels.Matern12(variance=1.84,
+                                lengthscale=np.random.uniform(0.5, 3., 2))
+    ],
+    [
+        Multiscale(np.random.randn(71, 2),
+                   np.random.uniform(0.5, 3, size=(71, 2))),
+        gpflow.kernels.RBF(variance=1.84,
+                           lengthscale=np.random.uniform(0.5, 3., 2))
+    ]
 ]
 
 

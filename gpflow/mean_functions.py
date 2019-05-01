@@ -45,7 +45,8 @@ class MeanFunction(tf.Module):
     """
 
     def __call__(self, X):
-        raise NotImplementedError("Implement the __call__ method for this mean function")
+        raise NotImplementedError(
+            "Implement the __call__ method for this mean function")
 
     def __add__(self, other):
         return Additive(self, other)
@@ -92,15 +93,17 @@ class Identity(Linear):
     @property
     def A(self):
         if self.input_dim is None:
-            raise ValueError("An input_dim needs to be specified when using the "
-                             "`Identity` mean function in combination with expectations.")
+            raise ValueError(
+                "An input_dim needs to be specified when using the "
+                "`Identity` mean function in combination with expectations.")
         return tf.eye(self.input_dim, dtype=default_float())
 
     @property
     def b(self):
         if self.input_dim is None:
-            raise ValueError("An input_dim needs to be specified when using the "
-                             "`Identity` mean function in combination with expectations.")
+            raise ValueError(
+                "An input_dim needs to be specified when using the "
+                "`Identity` mean function in combination with expectations.")
 
         return tf.zeros(self.input_dim, dtype=default_float())
 
@@ -150,14 +153,17 @@ class SwitchedMeanFunction(MeanFunction):
     def __call__(self, X):
         ind = tf.gather(tf.transpose(X), X.shape[1] - 1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
-        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, X.shape[1] - 1)))  # X = X[:,:-1]
+        X = tf.transpose(
+            tf.gather(tf.transpose(X),
+                      tf.range(0, X.shape[1] - 1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, len(self.meanfunctions))
         # apply the likelihood-function to each section of the data
         results = [m(x) for x, m in zip(x_list, self.meanfunctions)]
         # stitch the results back together
-        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, len(self.meanfunctions))
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind,
+                                          len(self.meanfunctions))
         return tf.dynamic_stitch(partitions, results)
 
 

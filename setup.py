@@ -27,8 +27,6 @@ requirements = [
 ]
 
 min_tf_version = '2.0.0'
-# tf_cpu = 'tf-nightly-2.0-preview>={}'.format(min_tf_version)
-# tf_gpu = 'tf-nightly-gpu-2.0-preview>={}'.format(min_tf_version)
 tf_cpu = 'tf-nightly-2.0-preview'
 tf_gpu = 'tf-nightly-gpu-2.0-preview'
 

@@ -24,9 +24,8 @@ from ._version import __version__
 
 
 def pretty_pandas_table(row_names, column_names, column_values):
-    return pd.DataFrame(
-        OrderedDict(zip(column_names, column_values)),
-        index=row_names)
+    return pd.DataFrame(OrderedDict(zip(column_names, column_values)),
+                        index=row_names)
 
 
 def normalize_num_type(num_type):
@@ -42,7 +41,8 @@ def normalize_num_type(num_type):
     elif num_type in [np.int16, np.int32, np.int64]:
         num_type = settings.int_type
     else:
-        raise ValueError('Unknown dtype "{0}" passed to normalizer.'.format(num_type))
+        raise ValueError(
+            'Unknown dtype "{0}" passed to normalizer.'.format(num_type))
 
     return num_type
 

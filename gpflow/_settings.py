@@ -12,7 +12,6 @@ import numpy as np
 import tensorflow as tf
 
 
-
 class _SettingsContextManager(object):
     def __init__(self, manager, tmp_settings):
         self._manager = manager
@@ -57,26 +56,30 @@ class _SettingsManager(object):
 
     @property
     def tf_float(self):
-        warnings.warn('tf_float is deprecated and will be removed at GPflow '
-                      'version 1.2.0. Use float_type.', DeprecationWarning)
+        warnings.warn(
+            'tf_float is deprecated and will be removed at GPflow '
+            'version 1.2.0. Use float_type.', DeprecationWarning)
         return self.float_type
 
     @property
     def tf_int(self):
-        warnings.warn('tf_int is deprecated and will be removed at GPflow '
-                      'version 1.2.0. Use int_type.', DeprecationWarning)
+        warnings.warn(
+            'tf_int is deprecated and will be removed at GPflow '
+            'version 1.2.0. Use int_type.', DeprecationWarning)
         return self.int_type
 
     @property
     def np_float(self):
-        warnings.warn('np_float is deprecated and will be removed at GPflow '
-                      'version 1.2.0. Use float_type.', DeprecationWarning)
+        warnings.warn(
+            'np_float is deprecated and will be removed at GPflow '
+            'version 1.2.0. Use float_type.', DeprecationWarning)
         return self.float_type
 
     @property
     def np_int(self):
-        warnings.warn('np_int is deprecated and will be removed at GPflow '
-                      'version 1.2.0. Use int_type.', DeprecationWarning)
+        warnings.warn(
+            'np_int is deprecated and will be removed at GPflow '
+            'version 1.2.0. Use int_type.', DeprecationWarning)
         return self.int_type
 
     @property
@@ -107,6 +110,7 @@ class _MutableNamedTuple(OrderedDict):
     A class that doubles as a mutable named tuple, to allow settings
     to be re-set during
     """
+
     def __init__(self, *args, **kwargs):
         super(_MutableNamedTuple, self).__init__(*args, **kwargs)
         self._settings_stack = []
@@ -131,14 +135,15 @@ def _parse(string):
     Very simple config values parser.
     """
     if not isinstance(string, str):
-        raise ValueError('Config value "{0}" expected to be string.'
-                         .format(string))
+        raise ValueError(
+            'Config value "{0}" expected to be string.'.format(string))
     if string in ['true', 'True']:
         return True
     elif string in ['false', 'False']:
         return False
-    elif string in ['float64', 'float32', 'float16',
-                    'int64', 'int32', 'int16']:
+    elif string in [
+            'float64', 'float32', 'float16', 'int64', 'int32', 'int16'
+    ]:
         return getattr(np, string)
     else:
         try:
@@ -180,8 +185,11 @@ def _read_config_file(path=None):
     cfg = configparser.ConfigParser()
 
     if path is None:  # pragma: no cover
-        dirs = [os.curdir, os.path.expanduser('~'),
-                os.path.dirname(os.path.realpath(__file__))]
+        dirs = [
+            os.curdir,
+            os.path.expanduser('~'),
+            os.path.dirname(os.path.realpath(__file__))
+        ]
         locations = map(os.path.abspath, dirs)
         for loc in locations:
             if cfg.read(os.path.join(loc, 'gpflowrc')):
@@ -197,4 +205,4 @@ def _read_config_file(path=None):
 __CONFIG = _read_config_file()
 __LOADED_SETTINGS = _namedtuplify(__CONFIG._sections)
 
-SETTINGS = _SettingsManager(__LOADED_SETTINGS) # pylint: disable=C0103
+SETTINGS = _SettingsManager(__LOADED_SETTINGS)  # pylint: disable=C0103

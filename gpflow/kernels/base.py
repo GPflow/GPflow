@@ -18,7 +18,6 @@ different kernels, and how it is possible to combine multiple kernels is shown
 in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 """
 
-
 import abc
 from functools import partial, reduce
 from typing import Optional
@@ -58,7 +57,8 @@ class Kernel(tf.Module):
         Checks if the dimensions, over which the kernels are specified, overlap.
         Returns True if they are defined on different/separate dimensions and False otherwise.
         """
-        if isinstance(self.active_dims, slice) or isinstance(other.active_dims, slice):
+        if isinstance(self.active_dims, slice) or isinstance(
+                other.active_dims, slice):
             # Be very conservative for kernels defined over slices of dimensions
             return False
 
@@ -127,7 +127,8 @@ class Kernel(tf.Module):
 
     def __call__(self, X, Y=None, full=True, presliced=False):
         if not full and Y is not None:
-            raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
+            raise ValueError(
+                "Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:
             return self.K_diag(X, presliced=presliced)
         return self.K(X, Y, presliced=presliced)
@@ -154,7 +155,8 @@ class Combination(Kernel):
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
-            raise TypeError("can only combine Kernel instances")  # pragma: no cover
+            raise TypeError(
+                "can only combine Kernel instances")  # pragma: no cover
 
         # add kernels to a list, flattening out instances of this class therein
         kernels_list = []

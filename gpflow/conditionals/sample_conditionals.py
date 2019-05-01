@@ -14,7 +14,8 @@ logger = create_logger()
 def _sample_conditional(Xnew: tf.Tensor,
                         feature: InducingFeature,
                         kernel: Kernel,
-                        function: tf.Tensor, *,
+                        function: tf.Tensor,
+                        *,
                         full_cov=False,
                         full_output_cov=False,
                         q_sqrt=None,
@@ -35,19 +36,28 @@ def _sample_conditional(Xnew: tf.Tensor,
         msg = "The combination of both `full_cov` and `full_output_cov` is not permitted."
         raise NotImplementedError(msg)
 
-    mean, cov = conditional(Xnew, feature, kernel, function,
-                            q_sqrt=q_sqrt, white=white,
-                            full_cov=full_cov, full_output_cov=full_output_cov)
+    mean, cov = conditional(Xnew,
+                            feature,
+                            kernel,
+                            function,
+                            q_sqrt=q_sqrt,
+                            white=white,
+                            full_cov=full_cov,
+                            full_output_cov=full_output_cov)
     if full_cov:
         # mean: [..., N, P]
         # cov: [..., P, N, N]
         mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
-        samples = sample_mvn(mean_for_sample, cov, 'full', num_samples=num_samples)  # [..., (S), P, N]
+        samples = sample_mvn(mean_for_sample,
+                             cov,
+                             'full',
+                             num_samples=num_samples)  # [..., (S), P, N]
         samples = tf.linalg.adjoint(samples)  # [..., (S), P, N]
     else:
         # mean: [..., N, P]
         # cov: [..., N, P] or [..., N, P, P]
         cov_structure = "full" if full_output_cov else "diag"
-        samples = sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [..., (S), P, N]
+        samples = sample_mvn(mean, cov, cov_structure,
+                             num_samples=num_samples)  # [..., (S), P, N]
 
     return samples, mean, cov

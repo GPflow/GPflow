@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import tensorflow as tf
 import numpy as np
 from .util import create_logger, default_float
-
 
 logger = create_logger()
 
 
 def gaussian(x, mu, var):
-    return -0.5 * (np.log(2 * np.pi) + tf.math.log(var) + tf.square(mu-x) / var)
+    return -0.5 * (np.log(2 * np.pi) + tf.math.log(var) +
+                   tf.square(mu - x) / var)
 
 
 def lognormal(x, mu, var):
@@ -31,7 +30,7 @@ def lognormal(x, mu, var):
 
 
 def bernoulli(x, p):
-    return tf.math.log(tf.where(tf.equal(x, 1), p, 1-p))
+    return tf.math.log(tf.where(tf.equal(x, 1), p, 1 - p))
 
 
 def poisson(x, lam):
@@ -39,7 +38,7 @@ def poisson(x, lam):
 
 
 def exponential(x, scale):
-    return - x/scale - tf.math.log(scale)
+    return -x / scale - tf.math.log(scale)
 
 
 def gamma(x, shape, scale):
@@ -58,7 +57,7 @@ def student_t(x, mean, scale, df):
 
 def beta(x, alpha, beta):
     # need to clip x, since log of 0 is nan...
-    x = tf.clip_by_value(x, 1e-6, 1-1e-6)
+    x = tf.clip_by_value(x, 1e-6, 1 - 1e-6)
     return (alpha - 1.) * tf.math.log(x) + (beta - 1.) * tf.math.log(1. - x) \
         + tf.math.lgamma(alpha + beta)\
         - tf.math.lgamma(alpha)\
@@ -66,7 +65,7 @@ def beta(x, alpha, beta):
 
 
 def laplace(x, mu, sigma):
-    return - tf.abs(mu - x) / sigma - tf.math.log(2. * sigma)
+    return -tf.abs(mu - x) / sigma - tf.math.log(2. * sigma)
 
 
 def multivariate_normal(x, mu, L):
@@ -88,7 +87,7 @@ def multivariate_normal(x, mu, L):
     d = x - mu
     alpha = tf.linalg.triangular_solve(L, d, lower=True)
     num_dims = tf.cast(d.shape[0], L.dtype)
-    p = - 0.5 * tf.reduce_sum(tf.square(alpha), 0)
+    p = -0.5 * tf.reduce_sum(tf.square(alpha), 0)
     p -= 0.5 * num_dims * np.log(2 * np.pi)
     p -= tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
     return p

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from ..util import create_logger
 from .features import InducingFeature
 
@@ -31,6 +30,7 @@ class SharedIndependentMof(Mof):
     """
     Same feature is used for each output.
     """
+
     def __init__(self, feature):
         Mof.__init__(self)
         self.feature = feature
@@ -44,6 +44,7 @@ class SeparateIndependentMof(Mof):
     A different feature is used for each output.
     Note: each feature should have the same number of points, M.
     """
+
     def __init__(self, features):
         Mof.__init__(self)
         self.features = features
@@ -58,6 +59,7 @@ class MixedKernelSharedMof(SharedIndependentMof):
     Using this feature with the `SeparateMixedMok` leads to the most efficient code.
     """
     pass
+
 
 class MixedKernelSeparateMof(SeparateIndependentMof):
     """

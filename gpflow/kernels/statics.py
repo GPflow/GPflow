@@ -14,7 +14,7 @@ class Static(Kernel):
         self.variance = Parameter(variance, transform=positive())
 
     def K_diag(self, X, presliced=False):
-        return tf.fill((X.shape[0],), tf.squeeze(self.variance))
+        return tf.fill((X.shape[0], ), tf.squeeze(self.variance))
 
 
 class White(Static):
@@ -30,7 +30,7 @@ class White(Static):
 
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            d = tf.fill((X.shape[0],), tf.squeeze(self.variance))
+            d = tf.fill((X.shape[0], ), tf.squeeze(self.variance))
             return tf.linalg.diag(d)
         else:
             shape = [X.shape[0], X2.shape[0]]

@@ -33,7 +33,13 @@ class GPLVM(GPR):
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
 
-    def __init__(self, Y, latent_dim, X_mean=None, kernel=None, mean_function=None, **kwargs):
+    def __init__(self,
+                 Y,
+                 latent_dim,
+                 X_mean=None,
+                 kernel=None,
+                 mean_function=None,
+                 **kwargs):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
 
@@ -55,13 +61,26 @@ class GPLVM(GPR):
             raise ValueError(msg.format(latent_dim, num_latent))
         if Y.shape[1] < num_latent:
             raise ValueError('More latent dimensions than observed.')
-        GPR.__init__(self, X_mean, Y, kernel, mean_function=mean_function, **kwargs)
+        GPR.__init__(self,
+                     X_mean,
+                     Y,
+                     kernel,
+                     mean_function=mean_function,
+                     **kwargs)
         del self.X  # in GPLVM this is a Param
         self.X = Parameter(X_mean)
 
 
 class BayesianGPLVM(GPModel):
-    def __init__(self, X_mean, X_var, Y, kernel, M, Z=None, X_prior_mean=None, X_prior_var=None):
+    def __init__(self,
+                 X_mean,
+                 X_var,
+                 Y,
+                 kernel,
+                 M,
+                 Z=None,
+                 X_prior_mean=None,
+                 X_prior_var=None):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
         :param X_mean: initial latent positions, size N (number of points) x Q (latent dimensions).
@@ -74,7 +93,10 @@ class BayesianGPLVM(GPModel):
         :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as X_mean.
         :param X_prior_var: pripor variance used in KL term of bound. By default 1.
         """
-        GPModel.__init__(self, X_mean, Y, kernel,
+        GPModel.__init__(self,
+                         X_mean,
+                         Y,
+                         kernel,
                          likelihood=likelihoods.Gaussian(),
                          mean_function=Zero())
         del self.X  # in GPLVM this is a Param
@@ -108,8 +130,10 @@ class BayesianGPLVM(GPModel):
         if X_prior_var is None:
             X_prior_var = np.ones((self.num_data, self.num_latent))
 
-        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=default_float())
-        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=default_float())
+        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean),
+                                       dtype=default_float())
+        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var),
+                                      dtype=default_float())
 
         assert self.X_prior_mean.shape[0] == self.num_data
         assert self.X_prior_mean.shape[1] == self.num_latent
@@ -126,23 +150,30 @@ class BayesianGPLVM(GPModel):
         num_inducing = len(self.feature)
         psi0 = tf.reduce_sum(expectation(pX, self.kernel))
         psi1 = expectation(pX, (self.kernel, self.feature))
-        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.feature), (self.kernel, self.feature)), axis=0)
+        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.feature),
+                                         (self.kernel, self.feature)),
+                             axis=0)
         cov_uu = Kuu(self.feature, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
 
         # Compute intermediate matrices
-        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, tf.transpose(psi1),
+                                       lower=True) / sigma
         tmp = tf.linalg.triangular_solve(L, psi2, lower=True)
-        AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
+        AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp),
+                                         lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
         log_det_B = 2. * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
-        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, self.Y), lower=True) / sigma
+        c = tf.linalg.triangular_solve(
+            LB, tf.linalg.matmul(A, self.Y), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        dX_var = self.X_var() if len(self.X_var().get_shape()) == 2 else tf.linalg.diag_part(self.X_var())
+        dX_var = self.X_var() if len(
+            self.X_var().get_shape()) == 2 else tf.linalg.diag_part(
+                self.X_var())
         NQ = tf.cast(tf.size(self.X_mean()), default_float())
         D = tf.cast(tf.shape(self.Y)[1], default_float())
         KL = -0.5 * tf.reduce_sum(tf.math.log(dX_var)) \
@@ -161,7 +192,6 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-
     def _build_predict(self, Xnew, full_cov=False):
         """
         Compute the mean and variance of the latent function at some new points.
@@ -173,19 +203,24 @@ class BayesianGPLVM(GPModel):
 
         num_inducing = len(self.feature)
         psi1 = expectation(pX, (self.kernel, self.feature))
-        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.feature), (self.kernel, self.feature)), axis=0)
+        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.feature),
+                                         (self.kernel, self.feature)),
+                             axis=0)
         jitter = default_jitter()
         Kus = Kuf(self.feature, self.kernel, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
         L = tf.linalg.cholesky(Kuu(self.feature, self.kernel, jitter=jitter))
 
-        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, tf.transpose(psi1),
+                                       lower=True) / sigma
         tmp = tf.linalg.triangular_solve(L, psi2, lower=True)
-        AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
+        AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp),
+                                         lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
-        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, self.Y), lower=True) / sigma
+        c = tf.linalg.triangular_solve(
+            LB, tf.linalg.matmul(A, self.Y), lower=True) / sigma
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)

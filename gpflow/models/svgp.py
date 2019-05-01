@@ -105,33 +105,41 @@ class SVGP(GPModel):
             `q_sqrt` is two dimensional and only holds the square root of the
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
-        q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
+        q_mu = np.zeros(
+            (num_inducing, self.num_latent)) if q_mu is None else q_mu
         self.q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
 
         if q_sqrt is None:
             if self.q_diag:
-                ones = np.ones((num_inducing, self.num_latent), dtype=default_float())
+                ones = np.ones((num_inducing, self.num_latent),
+                               dtype=default_float())
                 self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
             else:
-                q_sqrt = [np.eye(num_inducing, dtype=default_float()) for _ in
-                          range(self.num_latent)]
+                q_sqrt = [
+                    np.eye(num_inducing, dtype=default_float())
+                    for _ in range(self.num_latent)
+                ]
                 q_sqrt = np.array(q_sqrt)
-                self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [P, M, M]
+                self.q_sqrt = Parameter(q_sqrt,
+                                        transform=triangular())  # [P, M, M]
         else:
             if q_diag:
                 assert q_sqrt.ndim == 2
                 self.num_latent = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=positive())  # [M, L|P]
+                self.q_sqrt = Parameter(q_sqrt,
+                                        transform=positive())  # [M, L|P]
             else:
                 assert q_sqrt.ndim == 3
                 self.num_latent = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L|P, M, M]
+                self.q_sqrt = Parameter(q_sqrt,
+                                        transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
         K = None
         if not self.whiten:
-            K = Kuu(self.feature, self.kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
+            K = Kuu(self.feature, self.kernel,
+                    jitter=default_jitter())  # [P, M, M] or [M, M]
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
     def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
@@ -139,7 +147,9 @@ class SVGP(GPModel):
         This gives a variational bound on the model likelihood.
         """
         kl = self.prior_kl()
-        f_mean, f_var = self.predict_f(X, full_cov=False, full_output_cov=False)
+        f_mean, f_var = self.predict_f(X,
+                                       full_cov=False,
+                                       full_output_cov=False)
         var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
@@ -153,12 +163,18 @@ class SVGP(GPModel):
         """
         This returns the evidence lower bound (ELBO) of the log marginal likelihood.
         """
-        return - self.neg_log_marginal_likelihood(X, Y)
+        return -self.neg_log_marginal_likelihood(X, Y)
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
+    def predict_f(self, Xnew: tf.Tensor, full_cov=False,
+                  full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
-        mu, var = conditional(Xnew, self.feature, self.kernel, q_mu, q_sqrt=q_sqrt,
-                              full_cov=full_cov, white=self.whiten,
+        mu, var = conditional(Xnew,
+                              self.feature,
+                              self.kernel,
+                              q_mu,
+                              q_sqrt=q_sqrt,
+                              full_cov=full_cov,
+                              white=self.whiten,
                               full_output_cov=full_output_cov)
         return mu + self.mean_function(Xnew), var

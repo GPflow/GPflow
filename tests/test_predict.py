@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import numpy as np
 import pytest
 
@@ -24,8 +23,13 @@ rng = np.random.RandomState(0)
 
 
 class ModelSetup:
-    def __init__(self, model_class, kernel=Matern32(), likelihood=gpflow.likelihoods.Gaussian(),
-                 whiten=None, q_diag=None, requires_Z_as_input=True):
+    def __init__(self,
+                 model_class,
+                 kernel=Matern32(),
+                 likelihood=gpflow.likelihoods.Gaussian(),
+                 whiten=None,
+                 q_diag=None,
+                 requires_Z_as_input=True):
         self.model_class = model_class
         self.kernel = kernel
         self.likelihood = likelihood
@@ -35,11 +39,16 @@ class ModelSetup:
 
     def get_model(self, Z, num_latent):
         if self.whiten is not None and self.q_diag is not None:
-            return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood,
+            return self.model_class(feature=Z,
+                                    kernel=self.kernel,
+                                    likelihood=self.likelihood,
                                     num_latent=num_latent,
-                                    whiten=self.whiten, q_diag=self.q_diag)
+                                    whiten=self.whiten,
+                                    q_diag=self.q_diag)
         else:
-            return self.model_class(feature=Z, kernel=self.kernel, likelihood=self.likelihood,
+            return self.model_class(feature=Z,
+                                    kernel=self.kernel,
+                                    likelihood=self.likelihood,
                                     num_latent=num_latent)
 
     def __repr__(self):
@@ -47,14 +56,10 @@ class ModelSetup:
 
 
 model_setups = [
-    ModelSetup(model_class=gpflow.models.SVGP,
-               whiten=False, q_diag=True),
-    ModelSetup(model_class=gpflow.models.SVGP,
-               whiten=True, q_diag=False),
-    ModelSetup(model_class=gpflow.models.SVGP,
-               whiten=True, q_diag=True),
-    ModelSetup(model_class=gpflow.models.SVGP,
-               whiten=False, q_diag=False),
+    ModelSetup(model_class=gpflow.models.SVGP, whiten=False, q_diag=True),
+    ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=False),
+    ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=True),
+    ModelSetup(model_class=gpflow.models.SVGP, whiten=False, q_diag=False),
     #     ModelSetup(model_class=gpflow.models.SGPR),
     #     ModelSetup(model_class=gpflow.models.GPRF),
     #     ModelSetup(model_class=gpflow.models.VGP, requires_Z_as_input = False),
@@ -86,19 +91,18 @@ def test_gaussian_log_density(Ntrain, Ntest, D):
 
     mu_y, var_y = model_gp.predict_y(Xtest)
     log_density = model_gp.predict_log_density(Xtest, Ytest)
-    log_density_hand = (-0.5 * np.log(2 * np.pi) -
-                        0.5 * np.log(var_y) -
+    log_density_hand = (-0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) -
                         0.5 * np.square(mu_y - Ytest) / var_y)
 
     assert np.allclose(log_density_hand, log_density)
 
 
-@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M', [
-    [3, 2, 20, 30, 5]
-])
+@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M',
+                         [[3, 2, 20, 30, 5]])
 def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
     covar_shape = (output_dim, Ntest, Ntest)
-    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(
+        M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     kernel = Matern32()
     model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
@@ -115,13 +119,15 @@ def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
 
 # TODO(@sergio.pasc) As model classes are updated to TF2.0, prepare all tests bellow accordingly
 
+
 @pytest.mark.skip(reason='GPR model is not ready')
-@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M, num_samples', [
-    [3, 2, 20, 30, 5, 5]
-])
-def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_samples):
+@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M, num_samples',
+                         [[3, 2, 20, 30, 5, 5]])
+def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M,
+                                   num_samples):
     samples_shape = (num_samples, Ntest, output_dim)
-    X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(
+        M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     kernel = Matern32()
     model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
@@ -136,7 +142,8 @@ def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_sampl
 @pytest.mark.parametrize('N', [20])
 @pytest.mark.parametrize('Ntest', [30])
 @pytest.mark.parametrize('M', [5])
-def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest, M):
+def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest,
+                               M):
     covar_shape = (output_dim, Ntest, Ntest)
     # TODO(@awav): may need them for other models
     # X, Y = rng.randn(N, input_dim), rng.randn(N, output_dim)
@@ -161,12 +168,13 @@ def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest, M):
 @pytest.mark.parametrize('Ntest', [30])
 @pytest.mark.parametrize('M', [5])
 @pytest.mark.parametrize('num_samples', [5])
-def test_other_models_full_cov_samples(model_setup, input_dim, output_dim, N, Ntest, M,
-                                       num_samples):
+def test_other_models_full_cov_samples(model_setup, input_dim, output_dim, N,
+                                       Ntest, M, num_samples):
     samples_shape = (num_samples, Ntest, output_dim)
     # TODO(@awav): may need them for other models
     # X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
-    _, _, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    _, _, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(
+        M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     model_gp = model_setup.get_model(Z, num_latent=output_dim)
 

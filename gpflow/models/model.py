@@ -25,7 +25,6 @@ from ..util import default_float, default_jitter
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
-
 # class covstruct(Enum):
 #     none = 0
 #     diag = 1
@@ -91,7 +90,8 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @abc.abstractmethod
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, full_cov=False,
+                  full_output_cov=False) -> MeanAndVariance:
         pass
 
     def predict_f_samples(self, X, num_samples):
@@ -100,13 +100,14 @@ class GPModel(BayesianModel):
         Xnew.
         """
         mu, var = self.predict_f(X, full_cov=True)  # [P, N, N]
-        jitter = tf.eye(tf.shape(mu)[0], dtype=default_float()) * default_jitter()
+        jitter = tf.eye(tf.shape(mu)[0],
+                        dtype=default_float()) * default_jitter()
         samples = [None] * self.num_latent
         for i in range(self.num_latent):
             L = tf.linalg.cholesky(var[i, ...] + jitter)
             shape = tf.stack([L.shape[0], num_samples])
             V = tf.random.normal(shape, dtype=L.dtype)
-            samples[i] = mu[:, i:(i+1)] + L @ V
+            samples[i] = mu[:, i:(i + 1)] + L @ V
         return tf.transpose(tf.stack(samples))
 
     def predict_y(self, X):
@@ -179,7 +180,8 @@ class GPModelOLD(BayesianModel):
         self.likelihood = likelihood
 
     @abc.abstractmethod
-    def predict_f(self, X: tf.Tensor, full=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, full=False,
+                  full_output_cov=False) -> MeanAndVariance:
         pass
 
     def predict_f_samples(self, X, num_samples):
@@ -188,13 +190,14 @@ class GPModelOLD(BayesianModel):
         Xnew.
         """
         mu, var = self.predict_f(X, full=True)  # [P, N, N]
-        jitter = tf.eye(tf.shape(mu)[0], dtype=default_float()) * default_jitter()
+        jitter = tf.eye(tf.shape(mu)[0],
+                        dtype=default_float()) * default_jitter()
         samples = [None] * self.num_latent
         for i in range(self.num_latent):
             L = tf.linalg.cholesky(var[i, ...] + jitter)
             shape = tf.stack([L.shape[0], num_samples])
             V = tf.random.normal(shape, dtype=L.dtype)
-            samples[i] = mu[:, i:(i+1)] + L @ V
+            samples[i] = mu[:, i:(i + 1)] + L @ V
         return tf.transpose(tf.stack(samples))
 
     def predict_y(self, X):

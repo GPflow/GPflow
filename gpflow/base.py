@@ -14,7 +14,6 @@ VariableData = Union[List, Tuple, np.ndarray, int, float]
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
-
 positive = tfp.bijectors.Softplus
 triangular = tfp.bijectors.FillTriangular
 
@@ -39,7 +38,8 @@ class Module(tf.Module):
 
 class Parameter(tf.Module):
     def __init__(self,
-                 value, *,
+                 value,
+                 *,
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
                  trainable: bool = True,
@@ -59,7 +59,10 @@ class Parameter(tf.Module):
             self._unconstrained = value
         else:
             value = _to_unconstrained(value, transform)
-            self._unconstrained = tf.Variable(value, dtype=dtype, name=name, trainable=trainable)
+            self._unconstrained = tf.Variable(value,
+                                              dtype=dtype,
+                                              name=name,
+                                              trainable=trainable)
 
         self.prior = prior
         self._transform = transform
@@ -76,7 +79,8 @@ class Parameter(tf.Module):
         if self.prior is not None:
             log_prob = self.prior.log_prob(x)
         if self.transform is not None:
-            log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
+            log_det_jacobian = bijector.forward_log_det_jacobian(
+                y, y.shape.ndims)
         return log_prob + log_det_jacobian
 
     @property
@@ -87,7 +91,8 @@ class Parameter(tf.Module):
         return _to_constrained(self._unconstrained.value(), self.transform)
 
     def read_value(self):
-        return _to_constrained(self._unconstrained.read_value(), self.transform)
+        return _to_constrained(self._unconstrained.read_value(),
+                               self.transform)
 
     @property
     def unconstrained_variable(self):
@@ -145,7 +150,8 @@ class Parameter(tf.Module):
     @property
     def shape(self):
         if self.transform is not None:
-            return self.transform.forward_event_shape(self._unconstrained.shape)
+            return self.transform.forward_event_shape(
+                self._unconstrained.shape)
         return self._unconstrained.shape
 
     def numpy(self):
@@ -206,10 +212,12 @@ class Parameter(tf.Module):
 
 
 Parameter._OverloadAllOperators()
-tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
+tf.register_tensor_conversion_function(
+    Parameter, lambda x, *args, **kwds: x.read_value())
 
 
-def _verified_value(value: VariableData, dtype: Optional[DType] = None) -> np.ndarray:
+def _verified_value(value: VariableData,
+                    dtype: Optional[DType] = None) -> np.ndarray:
     if isinstance(value, tf.Variable):
         return value
     if dtype is None:

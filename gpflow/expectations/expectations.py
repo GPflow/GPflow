@@ -58,7 +58,12 @@ def expectation(p, obj1, obj2=None, nghp=None):
         return dispatch.expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
     except NotImplementedError as error:
         logger.debug(error)
-        return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
+        return dispatch.quadrature_expectation(p,
+                                               obj1,
+                                               feat1,
+                                               obj2,
+                                               feat2,
+                                               nghp=nghp)
 
 
 def quadrature_expectation(p, obj1, obj2=None, nghp=None):
@@ -75,7 +80,12 @@ def quadrature_expectation(p, obj1, obj2=None, nghp=None):
     """
     print(f"2. p={p}, obj1={obj1}, obj2={obj2}")
     p, obj1, feat1, obj2, feat2 = _init_expectation(p, obj1, obj2)
-    return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
+    return dispatch.quadrature_expectation(p,
+                                           obj1,
+                                           feat1,
+                                           obj2,
+                                           feat2,
+                                           nghp=nghp)
 
 
 def _init_expectation(p, obj1, obj2):

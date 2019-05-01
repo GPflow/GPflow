@@ -9,7 +9,6 @@ from ..util import create_logger, default_jitter, default_jitter_eye
 from .dispatch import conditional
 from .util import base_conditional, expand_independent_outputs
 
-
 logger = create_logger()
 
 
@@ -18,7 +17,11 @@ def _conditional(Xnew: tf.Tensor,
                  feature: InducingFeature,
                  kernel: Kernel,
                  function: tf.Tensor,
-                 *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+                 *,
+                 full_cov=False,
+                 full_output_cov=False,
+                 q_sqrt=None,
+                 white=False):
     """
     Single-output GP conditional.
 
@@ -55,18 +58,26 @@ def _conditional(Xnew: tf.Tensor,
     Kmm = Kuu(feature, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(feature, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, full=full_cov)
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # [N, R],  [R, N, N] or [N, R]
+    fmean, fvar = base_conditional(Kmn,
+                                   Kmm,
+                                   Knn,
+                                   function,
+                                   full_cov=full_cov,
+                                   q_sqrt=q_sqrt,
+                                   white=white)  # [N, R],  [R, N, N] or [N, R]
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
 @conditional.register(object, object, Kernel, object)
-def _conditional(
-        Xnew: tf.Tensor,
-        X: tf.Tensor,
-        kernel: Kernel,
-        function: tf.Tensor,
-        *, full_cov=False, full_output_cov=False,
-        q_sqrt=None, white=False):
+def _conditional(Xnew: tf.Tensor,
+                 X: tf.Tensor,
+                 kernel: Kernel,
+                 function: tf.Tensor,
+                 *,
+                 full_cov=False,
+                 full_output_cov=False,
+                 q_sqrt=None,
+                 white=False):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -105,8 +116,12 @@ def _conditional(
     Kmm = kernel(X) + default_jitter_eye(X.shape[-2])
     Kmn = kernel(X, Xnew)
     Knn = kernel(Xnew, full=full_cov)
-    mean, var = base_conditional(Kmn, Kmm, Knn, function,
+    mean, var = base_conditional(Kmn,
+                                 Kmm,
+                                 Knn,
+                                 function,
                                  full_cov=full_cov,
-                                 q_sqrt=q_sqrt, white=white)
+                                 q_sqrt=q_sqrt,
+                                 white=white)
 
     return mean, var  # [N, R], [N, R] or [R, N, N]

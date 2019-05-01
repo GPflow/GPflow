@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -56,7 +55,11 @@ class SGPMC(GPModelOLD):
 
     """
 
-    def __init__(self, X, Y, kernel, likelihood,
+    def __init__(self,
+                 X,
+                 Y,
+                 kernel,
+                 likelihood,
                  mean_function=None,
                  num_latent=None,
                  features=None,
@@ -67,7 +70,13 @@ class SGPMC(GPModelOLD):
         Z is a data matrix, of inducing inputs, size [M, D]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
-        GPModelOLD.__init__(self, X, Y, kernel, likelihood, mean_function, num_latent=num_latent,
+        GPModelOLD.__init__(self,
+                            X,
+                            Y,
+                            kernel,
+                            likelihood,
+                            mean_function,
+                            num_latent=num_latent,
                             **kwargs)
         self.num_data = X.shape[0]
         self.feature = InducingPoints(features)
@@ -80,9 +89,11 @@ class SGPMC(GPModelOLD):
         """
         # get the (marginals of) q(f): exactly predicting!
         fmean, fvar = self.predict_f(self.X, full_cov=False)
-        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y))
+        return tf.reduce_sum(
+            self.likelihood.variational_expectations(fmean, fvar, self.Y))
 
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, full_cov=False,
+                  full_output_cov=False) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -93,6 +104,12 @@ class SGPMC(GPModelOLD):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z,
 
         """
-        mu, var = conditional(X, self.feature, self.kernel, self.V, full_cov=full_cov, q_sqrt=None,
-                              white=True, full_output_cov=full_output_cov)
+        mu, var = conditional(X,
+                              self.feature,
+                              self.kernel,
+                              self.V,
+                              full_cov=full_cov,
+                              q_sqrt=None,
+                              white=True,
+                              full_output_cov=full_output_cov)
         return mu + self.mean_function(X), var

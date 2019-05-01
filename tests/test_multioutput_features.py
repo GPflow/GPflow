@@ -7,13 +7,12 @@ import gpflow.features.mo_features as mf
 import gpflow.kernels.mo_kernels as mk
 from gpflow.covariances import mo_kufs, mo_kuus
 
-
 rng = np.random.RandomState(9911)
-
 
 # ------------------------------------------
 # Helpers
 # ------------------------------------------
+
 
 def make_kernel():
     return gpflow.kernels.RBF()

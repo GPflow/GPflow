@@ -29,25 +29,30 @@ from gpflow.util import training_loop, default_float
 
 rng = np.random.RandomState(1)
 
-
 # ------------------------------------------
 # Helpers
 # ------------------------------------------
 
-class MomentMatchingSVGP(gpflow.models.SVGP):
 
+class MomentMatchingSVGP(gpflow.models.SVGP):
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
-        return uncertain_conditional(
-            Xmu, Xcov, self.feature, self.kernel, self.q_mu, self.q_sqrt,
-            mean_function=self.mean_function, white=self.whiten,
-            full_output_cov=self.full_output_cov)
+        return uncertain_conditional(Xmu,
+                                     Xcov,
+                                     self.feature,
+                                     self.kernel,
+                                     self.q_mu,
+                                     self.q_sqrt,
+                                     mean_function=self.mean_function,
+                                     white=self.whiten,
+                                     full_output_cov=self.full_output_cov)
 
     def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=int(1e6)):
         D_in = Xchol.shape[0]
         X_samples = Xmu + np.reshape(
-            Xchol[None, :, :] @ rng.randn(mc_iter, D_in)[:, :, None], [mc_iter, D_in])
+            Xchol[None, :, :] @ rng.randn(mc_iter, D_in)[:, :, None],
+            [mc_iter, D_in])
         F_mu, F_var = self.predict_f(X_samples)
-        F_samples = (F_mu + rng.randn(*F_var.shape) * (F_var ** 0.5)).numpy()
+        F_samples = (F_mu + rng.randn(*F_var.shape) * (F_var**0.5)).numpy()
         mean = np.mean(F_samples, axis=0)
         covar = np.cov(F_samples.T)
         return mean, covar
@@ -58,7 +63,8 @@ def gen_L(n, *shape):
 
 
 def gen_q_sqrt(D_out, *shape):
-    return tf.convert_to_tensor(np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)]),
+    return tf.convert_to_tensor(np.array(
+        [np.tril(rng.randn(*shape)) for _ in range(D_out)]),
                                 dtype=default_float())
 
 
@@ -77,19 +83,20 @@ def mean_function_factory(mean_function_name, D_in, D_out):
 # Data classes: storing constants
 # ------------------------------------------
 
+
 class Data:
     N = 7
     N_new = 2
     D_out = 3
     D_in = 1
     X = np.linspace(-5, 5, N)[:, None] + rng.randn(N, 1)
-    Y = np.hstack([np.sin(X), np.cos(X), X ** 2])
+    Y = np.hstack([np.sin(X), np.cos(X), X**2])
     Xnew_mu = rng.randn(N_new, 1)
     Xnew_covar = np.zeros((N_new, 1, 1))
 
 
 class DataMC1(Data):
-    Y = np.hstack([np.sin(Data.X), np.sin(Data.X) * 2, Data.X ** 2])
+    Y = np.hstack([np.sin(Data.X), np.sin(Data.X) * 2, Data.X**2])
 
 
 class DataMC2(Data):
@@ -110,11 +117,14 @@ class DataQuad:
     D_in = 2
     D_out = 3
     H = 150
-    Xmu = tf.convert_to_tensor(rng.randn(num_data, D_in), dtype=default_float())
+    Xmu = tf.convert_to_tensor(rng.randn(num_data, D_in),
+                               dtype=default_float())
     L = gen_L(num_data, D_in, D_in)
-    Xvar = tf.convert_to_tensor(np.array([l @ l.T for l in L]), dtype=default_float())
+    Xvar = tf.convert_to_tensor(np.array([l @ l.T for l in L]),
+                                dtype=default_float())
     Z = rng.randn(num_ind, D_in)
-    q_mu = tf.convert_to_tensor(rng.randn(num_ind, D_out), dtype=default_float())
+    q_mu = tf.convert_to_tensor(rng.randn(num_ind, D_out),
+                                dtype=default_float())
     q_sqrt = gen_q_sqrt(D_out, num_ind, num_ind)
 
 
@@ -126,21 +136,26 @@ MEANS = ["Constant", "Linear", "Zero", None]
 def test_no_uncertainty(white, mean):
     mean_function = mean_function_factory(mean, Data.D_in, Data.D_out)
     kernel = gpflow.kernels.RBF(variance=rng.rand())
-    model = MomentMatchingSVGP(kernel, gpflow.likelihoods.Gaussian(), num_latent=Data.D_out,
-                               mean_function=mean_function, feature=Data.X.copy(), whiten=white)
+    model = MomentMatchingSVGP(kernel,
+                               gpflow.likelihoods.Gaussian(),
+                               num_latent=Data.D_out,
+                               mean_function=mean_function,
+                               feature=Data.X.copy(),
+                               whiten=white)
     model.full_output_cov = False
 
     @tf.function
     def closure():
         return model.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    training_loop(closure, optimizer=tf.optimizers.Adam(),
-                  var_list=model.trainable_variables, maxiter=100)
+    training_loop(closure,
+                  optimizer=tf.optimizers.Adam(),
+                  var_list=model.trainable_variables,
+                  maxiter=100)
 
     mean1, var1 = model.predict_f(Data.Xnew_mu)
     mean2, var2 = model.uncertain_predict_f_moment_matching(
-        *map(tf.convert_to_tensor, [Data.Xnew_mu, Data.Xnew_covar])
-    )
+        *map(tf.convert_to_tensor, [Data.Xnew_mu, Data.Xnew_covar]))
 
     assert_allclose(mean1, mean2)
     for n in range(Data.N_new):
@@ -152,24 +167,29 @@ def test_no_uncertainty(white, mean):
 def test_monte_carlo_1_din(white, mean):
     kernel = gpflow.kernels.RBF(variance=rng.rand())
     mean_function = mean_function_factory(mean, DataMC1.D_in, DataMC1.D_out)
-    model = MomentMatchingSVGP(kernel, gpflow.likelihoods.Gaussian(), num_latent=DataMC1.D_out,
-                               mean_function=mean_function, feature=DataMC1.X.copy(), whiten=white)
+    model = MomentMatchingSVGP(kernel,
+                               gpflow.likelihoods.Gaussian(),
+                               num_latent=DataMC1.D_out,
+                               mean_function=mean_function,
+                               feature=DataMC1.X.copy(),
+                               whiten=white)
     model.full_output_cov = True
 
     @tf.function
     def closure():
         return model.neg_log_marginal_likelihood(DataMC1.X, DataMC1.Y)
 
-    training_loop(closure, optimizer=tf.optimizers.Adam(),
-                  var_list=model.trainable_variables, maxiter=200)
+    training_loop(closure,
+                  optimizer=tf.optimizers.Adam(),
+                  var_list=model.trainable_variables,
+                  maxiter=200)
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
-        *map(tf.convert_to_tensor, [DataMC1.Xnew_mu, DataMC1.Xnew_covar])
-    )
+        *map(tf.convert_to_tensor, [DataMC1.Xnew_mu, DataMC1.Xnew_covar]))
 
     for n in range(DataMC1.N_new):
-        mean2, var2 = model.uncertain_predict_f_monte_carlo(DataMC1.Xnew_mu[n, ...],
-                                                            DataMC1.Xnew_covar[n, ...] ** 0.5)
+        mean2, var2 = model.uncertain_predict_f_monte_carlo(
+            DataMC1.Xnew_mu[n, ...], DataMC1.Xnew_covar[n, ...]**0.5)
         assert_allclose(mean1[n, ...], mean2, atol=1e-3, rtol=1e-1)
         assert_allclose(var1[n, ...], var2, atol=1e-2, rtol=1e-1)
 
@@ -179,8 +199,11 @@ def test_monte_carlo_1_din(white, mean):
 def test_monte_carlo_2_din(white, mean):
     kernel = gpflow.kernels.RBF(variance=rng.rand())
     mean_function = mean_function_factory(mean, DataMC2.D_in, DataMC2.D_out)
-    model = MomentMatchingSVGP(kernel, gpflow.likelihoods.Gaussian(), num_latent=DataMC2.D_out,
-                               mean_function=mean_function, feature=DataMC2.X.copy(),
+    model = MomentMatchingSVGP(kernel,
+                               gpflow.likelihoods.Gaussian(),
+                               num_latent=DataMC2.D_out,
+                               mean_function=mean_function,
+                               feature=DataMC2.X.copy(),
                                whiten=white)
     model.full_output_cov = True
 
@@ -188,16 +211,17 @@ def test_monte_carlo_2_din(white, mean):
     def closure():
         return model.neg_log_marginal_likelihood(DataMC2.X, DataMC2.Y)
 
-    training_loop(closure, optimizer=tf.optimizers.Adam(),
-                  var_list=model.trainable_variables, maxiter=100)
+    training_loop(closure,
+                  optimizer=tf.optimizers.Adam(),
+                  var_list=model.trainable_variables,
+                  maxiter=100)
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
-        *map(tf.convert_to_tensor, [DataMC2.Xnew_mu, DataMC2.Xnew_covar])
-    )
+        *map(tf.convert_to_tensor, [DataMC2.Xnew_mu, DataMC2.Xnew_covar]))
 
     for n in range(DataMC2.N_new):
-        mean2, var2 = model.uncertain_predict_f_monte_carlo(DataMC2.Xnew_mu[n, ...],
-                                                            DataMC2.L[n, ...])
+        mean2, var2 = model.uncertain_predict_f_monte_carlo(
+            DataMC2.Xnew_mu[n, ...], DataMC2.L[n, ...])
         assert_allclose(mean1[n, ...], mean2, atol=1e-2)
         assert_allclose(var1[n, ...], var2, atol=1e-2)
 
@@ -212,24 +236,40 @@ def test_quadrature(white, mean):
     effective_mean = mean_function or (lambda X: 0.0)
 
     def conditional_fn(X):
-        return conditional(X, features, kernel, DataQuad.q_mu, q_sqrt=DataQuad.q_sqrt, white=white)
+        return conditional(X,
+                           features,
+                           kernel,
+                           DataQuad.q_mu,
+                           q_sqrt=DataQuad.q_sqrt,
+                           white=white)
 
-    def mean_fn(X): return conditional_fn(X)[0] + effective_mean(X)
-    def var_fn(X): return conditional_fn(X)[1]
+    def mean_fn(X):
+        return conditional_fn(X)[0] + effective_mean(X)
 
-    quad_args = DataQuad.Xmu, DataQuad.Xvar, DataQuad.H, DataQuad.D_in, (DataQuad.D_out,)
+    def var_fn(X):
+        return conditional_fn(X)[1]
+
+    quad_args = DataQuad.Xmu, DataQuad.Xvar, DataQuad.H, DataQuad.D_in, (
+        DataQuad.D_out, )
     mean_quad = mvnquad(mean_fn, *quad_args)
     var_quad = mvnquad(var_fn, *quad_args)
 
-    def mean_sq_fn(X): return mean_fn(X) ** 2
-    mean_sq_quad = mvnquad(mean_sq_fn, *quad_args)
-    var_quad = var_quad + (mean_sq_quad - mean_quad ** 2)
+    def mean_sq_fn(X):
+        return mean_fn(X)**2
 
-    mean_analytic, var_analytic = uncertain_conditional(DataQuad.Xmu, DataQuad.Xvar,
-                                                        features, kernel, DataQuad.q_mu,
-                                                        DataQuad.q_sqrt,
-                                                        mean_function=mean_function,
-                                                        full_output_cov=False, white=white)
+    mean_sq_quad = mvnquad(mean_sq_fn, *quad_args)
+    var_quad = var_quad + (mean_sq_quad - mean_quad**2)
+
+    mean_analytic, var_analytic = uncertain_conditional(
+        DataQuad.Xmu,
+        DataQuad.Xvar,
+        features,
+        kernel,
+        DataQuad.q_mu,
+        DataQuad.q_sqrt,
+        mean_function=mean_function,
+        full_output_cov=False,
+        white=white)
 
     assert_allclose(mean_quad, mean_analytic, rtol=1e-6)
     assert_allclose(var_quad, var_analytic, rtol=1e-6)

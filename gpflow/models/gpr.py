@@ -36,6 +36,7 @@ class GPR(GPModel):
 
        \\log p(\\mathbf y \\,|\\, \\mathbf f) = \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
+
     def __init__(self,
                  X: tf.Tensor,
                  Y: tf.Tensor,
@@ -60,10 +61,13 @@ class GPR(GPModel):
 
         """
         K = self.kernel(self.X)
-        S = tf.eye(self.X.shape[0], dtype=self.X.dtype) * self.likelihood.variance
+        S = tf.eye(self.X.shape[0],
+                   dtype=self.X.dtype) * self.likelihood.variance
         L = tf.linalg.cholesky(K + S)
         m = self.mean_function(self.X)
-        logpdf = multivariate_normal(self.Y, m, L)  # (R,) log-likelihoods for each independent dimension of Y
+        logpdf = multivariate_normal(
+            self.Y, m,
+            L)  # (R,) log-likelihoods for each independent dimension of Y
         return tf.reduce_sum(logpdf)
 
     def predict_f(self, Xnew, full_cov=False, full_output_cov=False):
@@ -82,5 +86,7 @@ class GPR(GPModel):
         S = tf.eye(X.shape[0], dtype=X.dtype) * self.likelihood.variance
         Kmm = self.kernel(X)
         Knn = self.kernel(Xnew, full=full_cov)
-        f_mean, f_var = base_conditional(Kmn, Kmm + S, Knn, y, full_cov=full_cov, white=False)  # [N, P], [N, P] or [P, N, N]
+        f_mean, f_var = base_conditional(
+            Kmn, Kmm + S, Knn, y, full_cov=full_cov,
+            white=False)  # [N, P], [N, P] or [P, N, N]
         return f_mean + self.mean_function(Xnew), f_var

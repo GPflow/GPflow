@@ -25,8 +25,10 @@ def get_eval_func(obj, feature, slice=None):
     slice = ... if slice is None else slice
     if feature is not None:
         # kernel + feature combination
-        if not isinstance(feature, InducingFeature) or not isinstance(obj, kernels.Kernel):
-            raise TypeError("If `feature` is supplied, `obj` must be a kernel.")
+        if not isinstance(feature, InducingFeature) or not isinstance(
+                obj, kernels.Kernel):
+            raise TypeError(
+                "If `feature` is supplied, `obj` must be a kernel.")
         return lambda x: tf.transpose(Kuf(feature, obj, x))[slice]
     elif isinstance(obj, mfn.MeanFunction):
         return lambda x: obj(x)[slice]
@@ -36,10 +38,9 @@ def get_eval_func(obj, feature, slice=None):
     raise NotImplementedError()
 
 
-@dispatch.quadrature_expectation.register(
-    (Gaussian, DiagonalGaussian),
-    object, (InducingFeature, NoneType),
-    object, (InducingFeature, NoneType))
+@dispatch.quadrature_expectation.register((Gaussian, DiagonalGaussian), object,
+                                          (InducingFeature, NoneType), object,
+                                          (InducingFeature, NoneType))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
@@ -47,8 +48,10 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     nghp = 100 if nghp is None else nghp
 
-    logger.warning("Quadrature is used to calculate the expectation. This means that "
-                   "an analytical implementations is not available for the given combination.")
+    logger.warning(
+        "Quadrature is used to calculate the expectation. This means that "
+        "an analytical implementations is not available for the given combination."
+    )
 
     if obj1 is None:
         raise NotImplementedError("First object cannot be None.")
@@ -58,17 +61,20 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     else:
         iskern1 = isinstance(obj1, kernels.Kernel)
         iskern2 = isinstance(obj2, kernels.Kernel)
-        if iskern1 and iskern2 and obj1.on_separate_dims(obj2):  # no joint expectations required
+        if iskern1 and iskern2 and obj1.on_separate_dims(
+                obj2):  # no joint expectations required
             eKxz1 = quadrature_expectation(p, (obj1, feature1), nghp=nghp)
             eKxz2 = quadrature_expectation(p, (obj2, feature2), nghp=nghp)
             return eKxz1[:, :, None] * eKxz2[:, None, :]
         cov = tf.linalg.diag(p.cov)
 
     if obj2 is None:
+
         def eval_func(x):
             fn = get_eval_func(obj1, feature1)
             return fn(x)
     else:
+
         def eval_func(x):
             fn1 = get_eval_func(obj1, feature1, np.s_[:, :, None])
             fn2 = get_eval_func(obj2, feature2, np.s_[:, None, :])
@@ -77,10 +83,9 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     return mvnquad(eval_func, p.mu, cov, nghp)
 
 
-@dispatch.quadrature_expectation.register(
-    MarkovGaussian,
-    object, (InducingFeature, NoneType),
-    object, (InducingFeature, NoneType))
+@dispatch.quadrature_expectation.register(MarkovGaussian, object,
+                                          (InducingFeature, NoneType), object,
+                                          (InducingFeature, NoneType))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     Handling of quadrature expectations for Markov Gaussians (useful for time series)
@@ -91,18 +96,25 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     nghp = 40 if nghp is None else nghp
 
-    logger.warning("Quadrature is used to calculate the expectation. This means that "
-                   "an analytical implementations is not available for the given combination.")
+    logger.warning(
+        "Quadrature is used to calculate the expectation. This means that "
+        "an analytical implementations is not available for the given combination."
+    )
 
     if obj2 is None:
+
         def eval_func(x):
             return get_eval_func(obj1, feature1)(x)
+
         mu, cov = p.mu[:-1], p.cov[0, :-1]  # cross covariances are not needed
     elif obj1 is None:
+
         def eval_func(x):
             return get_eval_func(obj2, feature2)(x)
+
         mu, cov = p.mu[1:], p.cov[0, 1:]  # cross covariances are not needed
     else:
+
         def eval_func(x):
             x1 = tf.split(x, 2, 1)[0]
             x2 = tf.split(x, 2, 1)[1]
@@ -111,8 +123,10 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
             return res1 * res2
 
         mu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
-        cov_top = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
-        cov_bottom = tf.concat((tf.linalg.adjoint(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
+        cov_top = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]),
+                            2)  # NxDx2D
+        cov_bottom = tf.concat(
+            (tf.linalg.adjoint(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
         cov = tf.concat((cov_top, cov_bottom), 1)  # Nx2Dx2D
 
     return mvnquad(eval_func, mu, cov, nghp)

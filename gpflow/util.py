@@ -12,11 +12,14 @@ def create_logger(name=None):
     return logging.getLogger('Temporary Logger Solution')
 
 
-def default_jitter_eye(num_rows: int, num_columns: int = None, value: float = None) -> float:
+def default_jitter_eye(num_rows: int,
+                       num_columns: int = None,
+                       value: float = None) -> float:
     value = default_jitter() if value is None else value
     num_rows = int(num_rows)
     num_columns = int(num_columns) if num_columns is not None else num_columns
-    return tf.eye(num_rows, num_columns=num_columns, dtype=default_float()) * value
+    return tf.eye(num_rows, num_columns=num_columns,
+                  dtype=default_float()) * value
 
 
 def default_jitter() -> float:
@@ -31,7 +34,8 @@ def default_int() -> int:
     return np.int32
 
 
-def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]],
+def leading_transpose(tensor: tf.Tensor,
+                      perm: List[Union[int, type(...)]],
                       leading_dim: int = 0) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions. Leading dimensions in
@@ -93,6 +97,7 @@ def training_loop(closure: Callable[..., tf.Tensor],
     :param maxiter: Maximum number of
     :return:
     """
+
     def optimization_step():
         with tf.GradientTape() as tape:
             tape.watch(var_list)

@@ -18,8 +18,8 @@ import tensorflow as tf
 from numpy.testing import assert_allclose, assert_almost_equal
 
 import gpflow
-from gpflow.util import default_float
 from gpflow.conditionals import conditional
+from gpflow.util import default_float
 
 rng = np.random.RandomState(123)
 
@@ -62,8 +62,18 @@ def chol(sqrt):
 
 @pytest.mark.parametrize('white', [True, False])
 def test_diag(Xdata, Xnew, kernel, mu, sqrt, chol, white):
-    Fstar_mean_1, Fstar_var_1 = conditional(Xnew, Xdata, kernel, mu, q_sqrt=sqrt, white=white)
-    Fstar_mean_2, Fstar_var_2 = conditional(Xnew, Xdata, kernel, mu, q_sqrt=chol, white=white)
+    Fstar_mean_1, Fstar_var_1 = conditional(Xnew,
+                                            Xdata,
+                                            kernel,
+                                            mu,
+                                            q_sqrt=sqrt,
+                                            white=white)
+    Fstar_mean_2, Fstar_var_2 = conditional(Xnew,
+                                            Xdata,
+                                            kernel,
+                                            mu,
+                                            q_sqrt=chol,
+                                            white=white)
 
     mean_diff = Fstar_mean_1 - Fstar_mean_2
     var_diff = Fstar_var_1 - Fstar_var_2
@@ -101,10 +111,17 @@ def test_gaussian_whiten(Xdata, Xnew, kernel, mu, sqrt):
     V_prime = tf.linalg.diag(tf.transpose(F_sqrt))
     common_shape = tf.broadcast_static_shape(V_prime.shape, L.shape)
     L = tf.broadcast_to(L, common_shape)
-    V_sqrt = tf.linalg.triangular_solve(L, tf.linalg.diag(tf.transpose(F_sqrt)), lower=True)
+    V_sqrt = tf.linalg.triangular_solve(L,
+                                        tf.linalg.diag(tf.transpose(F_sqrt)),
+                                        lower=True)
 
     Fstar_mean, Fstar_var = conditional(Xnew, Xdata, kernel, mu, q_sqrt=F_sqrt)
-    Fstar_w_mean, Fstar_w_var = conditional(Xnew, Xdata, kernel, V, q_sqrt=V_sqrt, white=True)
+    Fstar_w_mean, Fstar_w_var = conditional(Xnew,
+                                            Xdata,
+                                            kernel,
+                                            V,
+                                            q_sqrt=V_sqrt,
+                                            white=True)
 
     mean_diff = Fstar_w_mean - Fstar_mean
     var_diff = Fstar_w_var - Fstar_var
