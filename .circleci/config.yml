@@ -1,0 +1,40 @@
+version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.2
+
+runtest: &runtest
+  steps:
+    - checkout
+    - run:
+        name: Install GPflow
+        command: |
+          pip install -U tfp-nightly-2.0-preview tfp-nightly
+          python setup.py install
+    - run:
+        name: Run tests
+        command: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
+    - run:
+        name: Upload coverage report
+        command: bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
+
+jobs:
+  unit-test:
+    <<: *runtest
+    docker:
+      - image: awav/tensorflow:2.0-nightly-preview
+        environment:
+          PYTEST_FILTER: not notebooks
+
+  # notebook-test:
+  #   <<: *runtest
+  #   docker:
+  #     - image: awav/tensorflow:1.12.1
+  #       environment:
+  #         PYTEST_FILTER: notebooks
+
+workflows:
+  version: 2.1
+  build_and_test:
+    jobs:
+      - unit-test
+      # - notebook-test
