@@ -166,7 +166,7 @@ class SVGP(GPModel):
         scale = tf.cast(self.num_data, settings.float_type) / tf.cast(tf.shape(self.X)[0], settings.float_type)
 
         likelihood = tf.reduce_sum(var_exp) * scale - KL
-        return tf.check_numerics(likelihood, "Likelihood fails numerics test.")
+        return likelihood
 
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):
