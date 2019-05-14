@@ -298,7 +298,7 @@ class Stationary(Kernel):
         X2s = tf.reduce_sum(tf.square(X2), axis=-1)
         dist = -2 * tf.tensordot(X, X2, [[-1], [-1]])
         dist += _broadcasting_elementwise_op(tf.add, Xs, X2s)
-        return tf.check_numerics(dist, "_scaled_square_dist numerics")
+        return dist
 
     @staticmethod
     def _clipped_sqrt(r2):
