@@ -1,6 +1,6 @@
 import copy
 import logging
-from typing import Callable, List, Union
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -82,21 +82,23 @@ def set_trainable(model: tf.Module, flag: bool = False):
 
 
 def training_loop(closure: Callable[..., tf.Tensor],
-                  optimizer=tf.optimizers.Adam(),
+                  optimizer: Optional[tf.optimizers.Optimizer] = None,
                   var_list: List[tf.Variable] = None,
-                  jit=True,
-                  maxiter=1e3):
+                  maxiter=1e3,
+                  jit=False):
     """
     Simple generic training loop. At each iteration uses a GradientTape to compute
     the gradients of a loss function with respect to a set of variables.
 
     :param closure: Callable that constructs a loss function based on data and model being trained
     :param optimizer: tf.optimizers or tf.keras.optimizers that updates variables by applying the
-    corresponding loss gradients
+        corresponding loss gradients. Adam is a default optimizer with default settings.
     :param var_list: List of model variables to be learnt during training
     :param maxiter: Maximum number of
     :return:
     """
+
+    optimizer = tf.optimizers.Adam() if optimizer is None else optimizer
 
     def optimization_step():
         with tf.GradientTape() as tape:
