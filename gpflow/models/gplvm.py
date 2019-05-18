@@ -15,7 +15,6 @@
 import tensorflow as tf
 import numpy as np
 
-from .. import settings
 from .. import likelihoods
 from .. import kernels
 from .. import features

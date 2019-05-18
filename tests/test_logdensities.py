@@ -14,10 +14,8 @@
 
 import numpy as np
 from numpy.random import randn
-import tensorflow as tf
 import pytest
-import gpflow
-from gpflow import logdensities, settings
+from gpflow import logdensities
 from scipy.stats import multivariate_normal as mvn
 from numpy.testing import assert_allclose
 

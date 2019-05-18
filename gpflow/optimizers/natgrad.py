@@ -18,7 +18,6 @@ import functools
 import tensorflow as tf
 
 from . import optimizer
-from .. import settings
 from ..models import Model
 
 
