@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ..util import create_logger
 from .features import InducingFeature
-
-logger = create_logger()
 
 
 class Mof(InducingFeature):

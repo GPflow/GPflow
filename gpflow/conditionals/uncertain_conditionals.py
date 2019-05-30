@@ -6,7 +6,7 @@ from ..expectations import expectation
 from ..features import InducingFeature, InducingPoints
 from ..kernels import Kernel
 from ..probability_distributions import Gaussian
-from ..util import default_float, default_jitter
+from ..utilities.defaults import default_float, default_jitter
 
 
 def uncertain_conditional(Xnew_mu: tf.Tensor,

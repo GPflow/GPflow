@@ -15,11 +15,11 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from numpy.testing import assert_allclose, assert_almost_equal
+from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.conditionals import conditional
-from gpflow.util import default_float
+from gpflow.utilities.defaults import default_float
 
 rng = np.random.RandomState(123)
 

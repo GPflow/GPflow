@@ -2,16 +2,16 @@ from functools import reduce
 
 import tensorflow as tf
 
-from . import dispatch
 from .. import kernels
 from ..features import InducingPoints
 from ..probability_distributions import DiagonalGaussian
-from ..util import NoneType
+from . import dispatch
 from .expectations import expectation
 
+NoneType = type(None)
 
-@dispatch.expectation.register(DiagonalGaussian, kernels.Product, NoneType,
-                               NoneType, NoneType)
+
+@dispatch.expectation.register(DiagonalGaussian, kernels.Product, NoneType, NoneType, NoneType)
 def _E(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
@@ -22,16 +22,13 @@ def _E(p, kernel, _, __, ___, nghp=None):
     :return: N
     """
     if not kernel.on_separate_dimensions:
-        raise NotImplementedError(
-            "Product currently needs to be defined on separate dimensions."
-        )  # pragma: no cover
+        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
     exps = [expectation(p, k, nghp=nghp) for k in kernel.kernels]
     return reduce(tf.multiply, exps)
 
 
-@dispatch.expectation.register(DiagonalGaussian, kernels.Product,
-                               InducingPoints, NoneType, NoneType)
+@dispatch.expectation.register(DiagonalGaussian, kernels.Product, InducingPoints, NoneType, NoneType)
 def _E(p, kernel, feature, __, ___, nghp=None):
     """
     Compute the expectation:
@@ -42,16 +39,13 @@ def _E(p, kernel, feature, __, ___, nghp=None):
     :return: NxM
     """
     if not kernel.on_separate_dimensions:
-        raise NotImplementedError(
-            "Product currently needs to be defined on separate dimensions."
-        )  # pragma: no cover
+        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
     exps = [expectation(p, (k, feature), nghp=nghp) for k in kernel.kernels]
     return reduce(tf.multiply, exps)
 
 
-@dispatch.expectation.register(DiagonalGaussian, kernels.Product,
-                               InducingPoints, kernels.Product, InducingPoints)
+@dispatch.expectation.register(DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:
@@ -67,20 +61,14 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     if feat1 != feat2:
         raise NotImplementedError("Different features are not supported.")
     if kern1 != kern2:
-        raise NotImplementedError(
-            "Calculating the expectation over two "
-            "different Product kernels is not supported.")
+        raise NotImplementedError("Calculating the expectation over two "
+                                  "different Product kernels is not supported.")
 
     kernel = kern1
     feature = feat1
 
     if not kernel.on_separate_dimensions:
-        raise NotImplementedError(
-            "Product currently needs to be defined on separate dimensions."
-        )  # pragma: no cover
+        raise NotImplementedError("Product currently needs to be defined on separate dimensions.")  # pragma: no cover
 
-    exps = [
-        expectation(p, (k, feature), (k, feature), nghp=nghp)
-        for k in kernel.kernels
-    ]
+    exps = [expectation(p, (k, feature), (k, feature), nghp=nghp) for k in kernel.kernels]
     return reduce(tf.multiply, exps)

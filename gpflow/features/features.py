@@ -16,12 +16,8 @@ import abc
 
 import tensorflow as tf
 
-from gpflow.covariances import Kuu
-from gpflow.kernels import Kernel
 from ..base import Parameter, positive
-from ..util import create_logger, default_float
-
-logger = create_logger()
+from ..utilities.defaults import default_float
 
 
 class InducingFeature(tf.Module):

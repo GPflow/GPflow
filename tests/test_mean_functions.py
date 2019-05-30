@@ -18,8 +18,8 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.features import InducingPoints
-from gpflow.mean_functions import Zero, Linear, Constant, SwitchedMeanFunction, Additive, Product
-from gpflow.util import default_int
+from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
+from gpflow.utilities.defaults import default_int
 
 rng = np.random.RandomState(99021)
 
@@ -31,8 +31,7 @@ class Datum:
 
 _mean_functions = [
     Zero(),
-    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim),
-           b=rng.randn(Datum.output_dim, 1).reshape(-1)),
+    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim), b=rng.randn(Datum.output_dim, 1).reshape(-1)),
     Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1))
 ]
 
@@ -40,8 +39,7 @@ _mean_functions = [
 @pytest.mark.parametrize('mean_function_1', _mean_functions)
 @pytest.mark.parametrize('mean_function_2', _mean_functions)
 @pytest.mark.parametrize('operation', ['+', 'x'])
-def test_mean_functions_output_shape(mean_function_1, mean_function_2,
-                                     operation):
+def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation):
     """
     Test the output shape for basic and compositional mean functions, also
     check that the combination of mean functions returns the correct class
@@ -66,8 +64,7 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2,
 @pytest.mark.parametrize('mean_function_1', _mean_functions)
 @pytest.mark.parametrize('mean_function_2', _mean_functions)
 @pytest.mark.parametrize('operation', ['+', 'x'])
-def test_mean_functions_composite_type(mean_function_1, mean_function_2,
-                                       operation):
+def test_mean_functions_composite_type(mean_function_1, mean_function_2, operation):
     if operation == '+':
         mean_composed = mean_function_1 + mean_function_2
         assert isinstance(mean_composed, Additive)
@@ -79,37 +76,29 @@ def test_mean_functions_composite_type(mean_function_1, mean_function_2,
 
 
 _linear_functions = [
-    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim),
-           b=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)
+    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim), b=rng.randn(Datum.output_dim, 1).reshape(-1))
+    for _ in range(3)
 ]
 
 # Append inverse of first Linear mean function in _linear_functions
-_linear_functions.append(
-    Linear(A=-1. * _linear_functions[0].A, b=-1. * _linear_functions[0].b))
+_linear_functions.append(Linear(A=-1. * _linear_functions[0].A, b=-1. * _linear_functions[0].b))
 
-_constant_functions = [
-    Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)
-]
+_constant_functions = [Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)]
 # Append inverse of first Constant mean function in _constant_functions
 _constant_functions.append(Constant(c=-1. * _constant_functions[0].c))
 
 
 def _create_GPR_model_with_bias(X, Y, mean_function):
-    return gpflow.models.GPR(X,
-                             Y,
-                             mean_function=mean_function,
-                             kernel=gpflow.kernels.Bias(Datum.input_dim))
+    return gpflow.models.GPR(X, Y, mean_function=mean_function, kernel=gpflow.kernels.Bias(Datum.input_dim))
 
 
-@pytest.mark.parametrize('mean_functions',
-                         [_linear_functions, _constant_functions])
+@pytest.mark.parametrize('mean_functions', [_linear_functions, _constant_functions])
 def test_mean_functions_distributive_property(mean_functions):
     """
     Tests that distributive property of addition and multiplication holds for mean functions
     (both Constant and Linear): A * (B + C) = A * B + A * C
     """
-    X, Y = rng.randn(Datum.N,
-                     Datum.input_dim), rng.randn(Datum.N, Datum.output_dim)
+    X, Y = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, Datum.output_dim)
     Xtest = rng.randn(30, Datum.input_dim)
     A, B, C = mean_functions[0], mean_functions[1], mean_functions[2]
     lhs = Product(A, Additive(B, C))  # A * (B + C)
@@ -125,15 +114,13 @@ def test_mean_functions_distributive_property(mean_functions):
     assert_allclose(var_lhs, var_rhs)
 
 
-@pytest.mark.parametrize('mean_functions',
-                         [_linear_functions, _constant_functions])
+@pytest.mark.parametrize('mean_functions', [_linear_functions, _constant_functions])
 def test_mean_functions_A_minus_A_equals_zero(mean_functions):
     """
     Tests that the addition the inverse of a mean function to itself is equivalent to having a
     Zero mean function: A + (-A) = 0
     """
-    X, Y = rng.randn(Datum.N,
-                     Datum.input_dim), rng.randn(Datum.N, Datum.output_dim)
+    X, Y = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, Datum.output_dim)
     Xtest = rng.randn(30, Datum.input_dim)
     A, A_inverse = mean_functions[0], mean_functions[-1]
     lhs = Additive(A, A_inverse)  # A + (-A)
@@ -155,8 +142,7 @@ def test_linear_mean_functions_associative_property(mean_functions):
     Tests that associative property of addition holds for linear mean functions:
     A + (B + (-A)) = B = (A + B) + (-A)
     """
-    X, Y = rng.randn(Datum.N,
-                     Datum.input_dim), rng.randn(Datum.N, Datum.output_dim)
+    X, Y = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, Datum.output_dim)
     Xtest = rng.randn(30, Datum.input_dim)
     A, B, A_inverse = mean_functions[0], mean_functions[1], mean_functions[-1]
 
@@ -235,19 +221,10 @@ def test_models_with_mean_functions_changes(model_class):
     non_zero_mean = Constant(c=np.ones(1) * 10)
 
     if model_class in [gpflow.models.GPR]:
-        model_zero_mean = model_class(X,
-                                      Y,
-                                      kernel=kernel,
-                                      mean_function=zero_mean)
-        model_non_zero_mean = model_class(X,
-                                          Y,
-                                          kernel=kernel,
-                                          mean_function=non_zero_mean)
+        model_zero_mean = model_class(X, Y, kernel=kernel, mean_function=zero_mean)
+        model_non_zero_mean = model_class(X, Y, kernel=kernel, mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SVGP]:
-        model_zero_mean = model_class(kernel=kernel,
-                                      likelihood=likelihood,
-                                      feature=features,
-                                      mean_function=zero_mean)
+        model_zero_mean = model_class(kernel=kernel, likelihood=likelihood, feature=features, mean_function=zero_mean)
         model_non_zero_mean = model_class(kernel=kernel,
                                           likelihood=likelihood,
                                           feature=features,

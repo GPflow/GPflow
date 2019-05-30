@@ -17,7 +17,7 @@ import tensorflow as tf
 
 from gpflow.features import InducingPoints
 from gpflow.covariances.dispatch import Kuf, Kuu
-from gpflow.util import default_float, default_jitter
+from gpflow.utilities.defaults import default_float, default_jitter
 
 from .model import GPModel, GPModelOLD, MeanAndVariance
 from .. import features

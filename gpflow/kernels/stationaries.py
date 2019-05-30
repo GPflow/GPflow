@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow.util import broadcasting_elementwise
+from gpflow.utilities.ops import broadcasting_elementwise
 from ..base import Parameter, positive
 from .base import Kernel
 

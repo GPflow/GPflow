@@ -19,7 +19,7 @@ import tensorflow as tf
 
 from numpy.testing import assert_array_equal, assert_array_less, assert_allclose
 
-from gpflow.util import default_float
+from gpflow.utilities.defaults import default_float
 
 rng = np.random.RandomState(0)
 

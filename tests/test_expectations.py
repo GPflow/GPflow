@@ -21,6 +21,7 @@ from tensorflow import convert_to_tensor as ctt
 import gpflow
 from gpflow import features, kernels
 from gpflow import mean_functions as mf
+from gpflow.utilities.defaults import default_float
 from gpflow.expectations import expectation, quadrature_expectation
 from gpflow.probability_distributions import (DiagonalGaussian, Gaussian,
                                               MarkovGaussian)
@@ -221,8 +222,8 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     kernel.variance <<= 2.
 
     p = gpflow.probability_distributions.Gaussian(
-        tf.constant([[10]], dtype=gpflow.util.default_float()),
-        tf.constant([[[0.1]]], dtype=gpflow.util.default_float()))
+        tf.constant([[10]], dtype=default_float()),
+        tf.constant([[[0.1]]], dtype=default_float()))
     z = gpflow.features.InducingPoints([[-10.], [10.]])
 
     with tf.GradientTape() as tape:

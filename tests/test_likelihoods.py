@@ -24,7 +24,7 @@ from gpflow.likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian,
                                 Poisson, RobustMax, Softmax, StudentT,
                                 SwitchedLikelihood)
 from gpflow.quadrature import ndiagquad
-from gpflow.util import default_float, default_int
+from gpflow.utilities.defaults import default_float, default_int
 
 tf.random.set_seed(99012)
 

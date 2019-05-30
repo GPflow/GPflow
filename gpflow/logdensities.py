@@ -14,9 +14,7 @@
 
 import tensorflow as tf
 import numpy as np
-from .util import create_logger, default_float
-
-logger = create_logger()
+from .utilities.defaults import default_float
 
 
 def gaussian(x, mu, var):

@@ -1,19 +1,19 @@
 import numpy as np
 import tensorflow as tf
 
-from . import dispatch
 from .. import kernels
 from .. import mean_functions as mfn
 from ..covariances import Kuf
 from ..features import InducingFeature
-from ..probability_distributions import (DiagonalGaussian, Gaussian,
-                                         MarkovGaussian)
+from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from ..quadrature import mvnquad
-from ..util import NoneType, create_logger
+from . import dispatch
 from .expectations import quadrature_expectation
 
-logger = create_logger()
 register = dispatch.quadrature_expectation.register
+
+
+NoneType = type(None)
 
 
 def get_eval_func(obj, feature, slice=None):
@@ -48,10 +48,10 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     nghp = 100 if nghp is None else nghp
 
-    logger.warning(
-        "Quadrature is used to calculate the expectation. This means that "
-        "an analytical implementations is not available for the given combination."
-    )
+    # logger.warning(
+    #     "Quadrature is used to calculate the expectation. This means that "
+    #     "an analytical implementations is not available for the given combination."
+    # )
 
     if obj1 is None:
         raise NotImplementedError("First object cannot be None.")
@@ -96,10 +96,10 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     nghp = 40 if nghp is None else nghp
 
-    logger.warning(
-        "Quadrature is used to calculate the expectation. This means that "
-        "an analytical implementations is not available for the given combination."
-    )
+    # logger.warning(
+    #     "Quadrature is used to calculate the expectation. This means that "
+    #     "an analytical implementations is not available for the given combination."
+    # )
 
     if obj2 is None:
 

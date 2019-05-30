@@ -17,9 +17,10 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.base import Parameter
-from gpflow.util import default_float, default_jitter
-from .model import GPModelOLD, MeanAndVariance
+from gpflow.utilities.defaults import default_float, default_jitter
+
 from ..conditionals import conditional
+from .model import GPModelOLD, MeanAndVariance
 
 
 class GPMC(GPModelOLD):

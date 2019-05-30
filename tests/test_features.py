@@ -18,6 +18,7 @@ import pytest
 import gpflow
 from gpflow.features import InducingPoints, Multiscale
 from gpflow.covariances import Kuu, Kuf
+from gpflow.utilities.defaults import default_jitter
 
 
 @pytest.mark.parametrize('N, D', [[17, 3], [10, 7]])
@@ -94,7 +95,7 @@ def test_features_psd_schur(feature, kernel):
     # Conditional variance must be PSD.
     X = np.random.randn(5, 2)
     Kuf_values = Kuf(feature, kernel, X)
-    Kuu_values = Kuu(feature, kernel, jitter=gpflow.util.default_jitter())
+    Kuu_values = Kuu(feature, kernel, jitter=default_jitter())
     Kff_values = kernel(X)
     Qff_values = Kuf_values.numpy().T @ np.linalg.solve(Kuu_values, Kuf_values)
     assert np.all(np.linalg.eig(Kff_values - Qff_values)[0] > 0.0)

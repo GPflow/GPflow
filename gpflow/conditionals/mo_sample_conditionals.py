@@ -2,11 +2,8 @@ import tensorflow as tf
 
 from ..features import MixedKernelSharedMof, SeparateIndependentMof
 from ..kernels import SeparateIndependentMok, SeparateMixedMok
-from ..util import create_logger
 from .dispatch import conditional, sample_conditional
 from .util import sample_mvn, mix_latent_gp
-
-logger = create_logger()
 
 
 @sample_conditional.register(object, MixedKernelSharedMof, SeparateMixedMok,
@@ -29,8 +26,6 @@ def _sample_conditional(Xnew,
     The dispatcher will make sure that we use the most efficent one.
     :return: [N, P] (full_output_cov = False) or [N, P, P] (full_output_cov = True)
     """
-    logger.debug(
-        "(MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
     if full_cov:
         raise NotImplementedError("full_cov not yet implemented")
     if full_output_cov:

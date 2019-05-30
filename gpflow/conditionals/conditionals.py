@@ -5,11 +5,10 @@ import tensorflow as tf
 from ..covariances import Kuf, Kuu
 from ..features import InducingFeature
 from ..kernels import Kernel
-from ..util import create_logger, default_jitter, default_jitter_eye
+from ..utilities.ops import eye
+from ..utilities.defaults import default_jitter
 from .dispatch import conditional
 from .util import base_conditional, expand_independent_outputs
-
-logger = create_logger()
 
 
 @conditional.register(object, InducingFeature, Kernel, object)
@@ -53,8 +52,6 @@ def _conditional(Xnew: tf.Tensor,
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    logger.debug("Conditional: Inducing Feature - Kernel")
-
     Kmm = Kuu(feature, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(feature, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, full=full_cov)
@@ -112,8 +109,7 @@ def _conditional(Xnew: tf.Tensor,
         - mean:     [N, R]
         - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
     """
-    logger.debug("Conditional: Kernel")
-    Kmm = kernel(X) + default_jitter_eye(X.shape[-2])
+    Kmm = kernel(X) + eye(X.shape[-2], value=default_jitter(), dtype=X.dtype)
     Kmn = kernel(X, Xnew)
     Knn = kernel(Xnew, full=full_cov)
     mean, var = base_conditional(Kmn,

@@ -29,7 +29,7 @@ import numpy as np
 import tensorflow as tf
 
 from .base import Parameter
-from .util import default_float
+from .utilities.defaults import default_float
 
 
 class MeanFunction(tf.Module):

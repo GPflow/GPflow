@@ -3,18 +3,17 @@ from functools import reduce
 
 import tensorflow as tf
 
-from . import dispatch
 from .. import kernels
 from .. import mean_functions as mfn
 from ..features import InducingPoints
-from ..probability_distributions import (DiagonalGaussian, Gaussian,
-                                         MarkovGaussian)
-from ..util import NoneType
+from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
+from . import dispatch
 from .expectations import expectation
 
+NoneType = type(None)
 
-@dispatch.expectation.register(Gaussian, kernels.Sum, NoneType, NoneType,
-                               NoneType)
+
+@dispatch.expectation.register(Gaussian, kernels.Sum, NoneType, NoneType, NoneType)
 def _E(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
@@ -27,8 +26,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
     return reduce(tf.add, exps)
 
 
-@dispatch.expectation.register(Gaussian, kernels.Sum, InducingPoints, NoneType,
-                               NoneType)
+@dispatch.expectation.register(Gaussian, kernels.Sum, InducingPoints, NoneType, NoneType)
 def _E(p, kernel, feature, _, __, nghp=None):
     """
     Compute the expectation:
@@ -41,9 +39,8 @@ def _E(p, kernel, feature, _, __, nghp=None):
     return reduce(tf.add, exps)
 
 
-@dispatch.expectation.register(Gaussian,
-                               (mfn.Linear, mfn.Identity, mfn.Constant),
-                               NoneType, kernels.Sum, InducingPoints)
+@dispatch.expectation.register(Gaussian, (mfn.Linear, mfn.Identity, mfn.Constant), NoneType, kernels.Sum,
+                               InducingPoints)
 def _E(p, mean, _, kernel, feature, nghp=None):
     """
     Compute the expectation:
@@ -52,14 +49,11 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
     :return: NxQxM
     """
-    exps = [
-        expectation(p, mean, (k, feature), nghp=nghp) for k in kernel.kernels
-    ]
+    exps = [expectation(p, mean, (k, feature), nghp=nghp) for k in kernel.kernels]
     return reduce(tf.add, exps)
 
 
-@dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType,
-                               kernels.Sum, InducingPoints)
+@dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.Sum, InducingPoints)
 def _E(p, mean, _, kernel, feature, nghp=None):
     """
     Compute the expectation:
@@ -68,14 +62,11 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
     :return: NxDxM
     """
-    exps = [
-        expectation(p, mean, (k, feature), nghp=nghp) for k in kernel.kernels
-    ]
+    exps = [expectation(p, mean, (k, feature), nghp=nghp) for k in kernel.kernels]
     return reduce(tf.add, exps)
 
 
-@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.Sum,
-                               InducingPoints, kernels.Sum, InducingPoints)
+@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:
@@ -88,8 +79,7 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     if kern1 == kern2 and feat1 == feat2:  # avoid duplicate computation by using transposes
         for i, k1 in enumerate(kern1.kernels):
-            crossexps.append(
-                expectation(p, (k1, feat1), (k1, feat1), nghp=nghp))
+            crossexps.append(expectation(p, (k1, feat1), (k1, feat1), nghp=nghp))
 
             for k2 in kern1.kernels[:i]:
                 eKK = expectation(p, (k1, feat1), (k2, feat2), nghp=nghp)
@@ -97,7 +87,6 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
                 crossexps.append(eKK)
     else:
         for k1, k2 in itertools.product(kern1.kernels, kern2.kernels):
-            crossexps.append(
-                expectation(p, (k1, feat1), (k2, feat2), nghp=nghp))
+            crossexps.append(expectation(p, (k1, feat1), (k2, feat2), nghp=nghp))
 
     return reduce(tf.add, crossexps)

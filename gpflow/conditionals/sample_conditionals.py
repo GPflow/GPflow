@@ -2,11 +2,8 @@ import tensorflow as tf
 
 from ..features import InducingFeature
 from ..kernels import Kernel
-from ..util import create_logger
 from .dispatch import conditional, sample_conditional
 from .util import sample_mvn
-
-logger = create_logger()
 
 
 @sample_conditional.register(object, object, Kernel, object)

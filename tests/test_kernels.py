@@ -20,7 +20,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.util import default_float, default_int
+from gpflow.utilities.defaults import default_float, default_int
 from gpflow.kernels import (RBF, ArcCosine, Constant, Linear, Periodic,
                             Polynomial, Stationary)
 
