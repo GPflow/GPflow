@@ -4,6 +4,7 @@ from .. import kernels
 from .. import mean_functions as mfn
 from ..features import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
+from ..utilities.ops import square_distance
 from . import dispatch
 from .expectations import expectation
 
@@ -163,7 +164,7 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(C)), axis=1))  # N
 
     C_inv_mu = tf.linalg.triangular_solve(C, tf.expand_dims(Xmu, 2), lower=True)  # NxDx1
-    C_inv_z = tf.linalg.triangular_solve(C, tf.tile(tf.expand_dims(tf.transpose(Z) / 2., 0), [N, 1, 1]),
+    C_inv_z = tf.linalg.triangular_solve(C, tf.tile(tf.expand_dims(0.5 * tf.transpose(Z), 0), [N, 1, 1]),
                                          lower=True)  # NxDxM
     mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
     z_CC_inv_z = tf.reduce_sum(tf.square(C_inv_z), 1)  # NxM
@@ -177,5 +178,5 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     # Compute sqrt(self(Z)) explicitly to prevent automatic gradient from
     # being NaN sometimes, see pull request #615
-    kernel_sqrt = tf.exp(-0.25 * kernel.scaled_square_dist(Z, None))
+    kernel_sqrt = tf.exp(-0.25 * square_distance(Z / kernel.lengthscale, None))
     return kernel.variance**2 * kernel_sqrt * tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis

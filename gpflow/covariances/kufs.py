@@ -17,4 +17,4 @@ def _Kuf(feature: Multiscale, kernel: RBF, Xnew):
     d = feature._cust_square_dist(Xnew, Zmu, idlengthscale)
     lengthscale = tf.reduce_prod(kernel.lengthscale / idlengthscale, 1)
     lengthscale = tf.reshape(lengthscale, (1, -1))
-    return tf.transpose(kernel.variance * tf.exp(-d / 2) * lengthscale)
+    return tf.transpose(kernel.variance * tf.exp(-0.5 * d) * lengthscale)

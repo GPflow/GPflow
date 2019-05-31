@@ -61,3 +61,22 @@ def broadcasting_elementwise(op, a, b):
     """
     flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
     return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
+
+
+def square_distance(X, X2):
+    """
+    Returns (X - X2ᵀ)²
+    Due to the implementation and floating-point imprecision, the
+    result may actually be very slightly negative for entries very
+    close to each other.
+    """
+    if X2 is None:
+        Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
+        dist = -2 * tf.matmul(X, X, transpose_b=True)
+        dist += Xs + tf.linalg.adjoint(Xs)
+        return dist
+    Xs = tf.reduce_sum(tf.square(X), axis=-1)
+    X2s = tf.reduce_sum(tf.square(X2), axis=-1)
+    dist = -2 * tf.tensordot(X, X2, [[-1], [-1]])
+    dist += broadcasting_elementwise(tf.add, Xs, X2s)
+    return dist

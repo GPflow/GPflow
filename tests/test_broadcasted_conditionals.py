@@ -27,6 +27,7 @@ import gpflow.kernels.mo_kernels as mk
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import mix_latent_gp, rollaxis_left, rollaxis_right
 
+
 # ------------------------------------------
 # Data classes: storing constants
 # ------------------------------------------
@@ -66,8 +67,10 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
         q_mu = np.random.randn(Data.M, Data.L)
         q_sqrt = np.tril(np.random.randn(Data.L, Data.M, Data.M), -1)
         feature = mf.MixedKernelSharedMof(gpflow.features.InducingPoints(Data.Z))
-        kernel = mk.SeparateMixedMok(kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
-                                     W=Data.W)
+        kernel = mk.SeparateMixedMok(
+            kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
+            W=Data.W
+        )
     else:
         raise (NotImplementedError)
 
@@ -121,7 +124,6 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
 # Test utility functions used in conditionals
 # -------------------------------------------
 
-
 # _mix_latent_gps
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [True, False])
@@ -151,8 +153,13 @@ def test_broadcasting_mix_latent_gps(full_cov, full_output_cov):
         g_var_diag = np.transpose(g_var_diag, [2, 0, 1])  # [S, N, L]
 
     # run gpflow's implementation
-    f_mu, f_var = mix_latent_gp(tf.convert_to_tensor(W), tf.convert_to_tensor(g_mu), tf.convert_to_tensor(g_var_diag),
-                                full_cov, full_output_cov)
+    f_mu, f_var = mix_latent_gp(
+        tf.convert_to_tensor(W),
+        tf.convert_to_tensor(g_mu),
+        tf.convert_to_tensor(g_var_diag),
+        full_cov,
+        full_output_cov
+    )
 
     # we strip down f_var_ref to the elements we need
     if not full_output_cov and not full_cov:
