@@ -19,7 +19,7 @@ def _Kuu(feature: Multiscale, kernel: RBF, *, jitter=0.0):
     sc = tf.sqrt(idlengthscale2[None, ...] + idlengthscale2[:, None, ...] -
                  kernel.lengthscale**2)
     d = feature._cust_square_dist(Zmu, Zmu, sc)
-    Kzz = kernel.variance * tf.exp(-d / 2) * tf.reduce_prod(
+    Kzz = kernel.variance * tf.exp(-0.5 * d) * tf.reduce_prod(
         kernel.lengthscale / sc, 2)
     Kzz += jitter * tf.eye(len(feature), dtype=Kzz.dtype)
     return Kzz

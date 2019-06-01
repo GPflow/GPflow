@@ -1,4 +1,5 @@
 import tensorflow as tf
+from numpy import newaxis
 
 from .. import kernels
 from .. import mean_functions as mfn
@@ -6,7 +7,6 @@ from ..features import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from . import dispatch
 from .expectations import expectation
-
 
 NoneType = type(None)
 
@@ -55,8 +55,8 @@ def _E(p, kernel, feature, mean, _, nghp=None):
 
     N = Xmu.shape[0]
     var_Z = kernel.variance * feature.Z  # MxD
-    tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
-    return tf.linalg.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
+    tiled_Z = tf.tile(var_Z[newaxis, ...], (N, 1, 1))  # NxMxD
+    return tf.linalg.matmul(tiled_Z, Xcov + (Xmu[..., newaxis] * Xmu[:, newaxis, :]))
 
 
 @dispatch.expectation.register(MarkovGaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
@@ -73,8 +73,8 @@ def _E(p, kernel, feature, mean, _, nghp=None):
 
     N = Xmu.shape[0] - 1
     var_Z = kernel.variance * feature.Z  # MxD
-    tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
-    eXX = Xcov[1, :-1] + (Xmu[:-1][..., None] * Xmu[1:][:, None, :])  # NxDxD
+    tiled_Z = tf.tile(var_Z[newaxis, ...], (N, 1, 1))  # NxMxD
+    eXX = Xcov[1, :-1] + (Xmu[:-1][..., newaxis] * Xmu[1:][:, newaxis, :])  # NxDxD
     return tf.linalg.matmul(tiled_Z, eXX)
 
 
@@ -94,7 +94,7 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     if kern1.on_separate_dims(kern2) and isinstance(p, DiagonalGaussian):  # no joint expectations required
         eKxz1 = expectation(p, (kern1, feat1))
         eKxz2 = expectation(p, (kern2, feat2))
-        return eKxz1[:, :, None] * eKxz2[:, None, :]
+        return eKxz1[:, :, newaxis] * eKxz2[:, newaxis, :]
 
     if kern1 != kern2 or feat1 != feat2:
         raise NotImplementedError("The expectation over two kernels has only an "
@@ -109,6 +109,6 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     N = Xmu.shape[0]
     var_Z = kernel.variance * Z
-    tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
+    tiled_Z = tf.tile(var_Z[newaxis, ...], (N, 1, 1))  # NxMxD
     XX = Xcov + tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2)  # NxDxD
     return tf.linalg.matmul(tf.linalg.matmul(tiled_Z, XX), tiled_Z, transpose_b=True)

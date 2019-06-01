@@ -42,7 +42,7 @@ Z = rng.randn(num_ind, D_in)
 
 
 def markov_gauss():
-    cov_params = rng.randn(num_data + 1, D_in, 2 * D_in) / 2.  # (N+1)xDx2D
+    cov_params = 0.5 * rng.randn(num_data + 1, D_in, 2 * D_in)  # (N+1)xDx2D
     Xcov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
     Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
     Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))),

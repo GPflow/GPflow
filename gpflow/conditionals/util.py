@@ -332,8 +332,7 @@ def fully_correlated_conditional_repeat(Kmn,
     if q_sqrt is not None:
         Lf = tf.linalg.band_part(q_sqrt, -1, 0)  # [R, M, M]
         if q_sqrt.shape.ndims == 3:
-            A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # [R, M, K]
-            LTA = tf.linalg.matmul(Lf, A_tiled, transpose_a=True)  # [R, M, K]
+            LTA = tf.linalg.matmul(Lf, A, transpose_a=True)  # [R, M, K]
         elif q_sqrt.shape.ndims == 2:  # pragma: no cover
             raise NotImplementedError("Does not support diagonal q_sqrt yet...")
         else:  # pragma: no cover

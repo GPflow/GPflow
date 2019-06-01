@@ -65,7 +65,7 @@ def broadcasting_elementwise(op, a, b):
 
 def square_distance(X, X2):
     """
-    Returns (X - X2ᵀ)²
+    Returns (X - Yᵀ)²
     Due to the implementation and floating-point imprecision, the
     result may actually be very slightly negative for entries very
     close to each other.
