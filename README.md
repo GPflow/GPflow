@@ -112,6 +112,8 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 | [orth_decoupled_var_gps](https://github.com/hughsalimbeni/orth_decoupled_var_gps) | Variationally sparse GPs with orthogonally decoupled bases.|
 | [kernel_learning](https://github.com/frgsimpson/kernel_learning) | Implementation of "Differentiable Compositional Kernel Learning for Gaussian Processes".|
 | [VBPP](https://github.com/st--/vbpp) | Implementation of "Variational Bayes for Point Processes".|
+| [DGPs_with_IWVI](https://github.com/hughsalimbeni/DGPs_with_IWVI) | Deep Gaussian Processes with Importance-Weighted Variational Inference|
+
 
 
 Let us know if you would like your project listed here.
