@@ -59,10 +59,7 @@ class Parameter(tf.Module):
             self._unconstrained = value
         else:
             value = _to_unconstrained(value, transform)
-            self._unconstrained = tf.Variable(value,
-                                              dtype=dtype,
-                                              name=name,
-                                              trainable=trainable)
+            self._unconstrained = tf.Variable(value, dtype=dtype, name=name, trainable=trainable)
 
         self.prior = prior
         self._transform = transform
@@ -72,16 +69,15 @@ class Parameter(tf.Module):
         y = self._unconstrained
         dtype = x.dtype
 
-        log_prob = tf.convert_to_tensor(0., dtype=dtype)
-        log_det_jacobian = tf.convert_to_tensor(0., dtype=dtype)
+        out = tf.convert_to_tensor(0., dtype=dtype)
 
         bijector = self.transform
         if self.prior is not None:
-            log_prob = self.prior.log_prob(x)
+            out += tf.reduce_sum(self.prior.log_prob(x))
         if self.transform is not None:
-            log_det_jacobian = bijector.forward_log_det_jacobian(
-                y, y.shape.ndims)
-        return log_prob + log_det_jacobian
+            log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
+            out += tf.reduce_sum(log_det_jacobian)
+        return out
 
     @property
     def handle(self):
@@ -91,8 +87,7 @@ class Parameter(tf.Module):
         return _to_constrained(self._unconstrained.value(), self.transform)
 
     def read_value(self):
-        return _to_constrained(self._unconstrained.read_value(),
-                               self.transform)
+        return _to_constrained(self._unconstrained.read_value(), self.transform)
 
     @property
     def unconstrained_variable(self):
@@ -119,9 +114,7 @@ class Parameter(tf.Module):
         value = _verified_value(value, self.dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
 
-        self._unconstrained.assign(unconstrained_value,
-                                   read_value=read_value,
-                                   use_locking=use_locking)
+        self._unconstrained.assign(unconstrained_value, read_value=read_value, use_locking=use_locking)
 
     @property
     def name(self):
@@ -140,18 +133,13 @@ class Parameter(tf.Module):
         return self._unconstrained.dtype
 
     @property
-    def graph(self):
-        return self._unconstrained.graph
-
-    @property
     def op(self):
         return self._unconstrained.op
 
     @property
     def shape(self):
         if self.transform is not None:
-            return self.transform.forward_event_shape(
-                self._unconstrained.shape)
+            return self.transform.forward_event_shape(self._unconstrained.shape)
         return self._unconstrained.shape
 
     def numpy(self):
@@ -212,12 +200,10 @@ class Parameter(tf.Module):
 
 
 Parameter._OverloadAllOperators()
-tf.register_tensor_conversion_function(
-    Parameter, lambda x, *args, **kwds: x.read_value())
+tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
 
-def _verified_value(value: VariableData,
-                    dtype: Optional[DType] = None) -> np.ndarray:
+def _verified_value(value: VariableData, dtype: Optional[DType] = None) -> np.ndarray:
     if isinstance(value, tf.Variable):
         return value
     if dtype is None:

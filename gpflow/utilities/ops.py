@@ -22,14 +22,15 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]], lead
     indices start from 1 up to the tensor rank, viewing leading dimensions `...` as zero
     index.
     Example:
-        a = tf.random.normal((1, 2, 3, 4, 5, 6))  # [..., A, B, C],
-                                                  # where A is 1st element,
-                                                  # B is 2nd element and
-                                                  # C is 3rd element in
-                                                  # permutation list,
-                                                  # leading dimentions are [1, 2, 3]
-                                                  # which are 0th element in permutation
-                                                  # list
+        a = tf.random.normal((1, 2, 3, 4, 5, 6))
+            # [..., A, B, C],
+            # where A is 1st element,
+            # B is 2nd element and
+            # C is 3rd element in
+            # permutation list,
+            # leading dimentions are [1, 2, 3]
+            # which are 0th element in permutation
+            # list
         b = leading_transpose(a, [3, -3, ..., -2])  # [C, A, ..., B]
         sess.run(b).shape
         output> (6, 4, 1, 2, 3, 5)

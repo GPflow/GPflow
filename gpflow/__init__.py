@@ -18,6 +18,7 @@ from . import (conditionals, expectations, features, kernels, likelihoods, logde
                probability_distributions, utilities)
 from .base import Parameter, positive, triangular
 from .utilities.defaults import default_float, default_jitter
+from .versions import __version__
 
 
-__version__ = "1.9.999"
+__all__ = [export for export in dir()]

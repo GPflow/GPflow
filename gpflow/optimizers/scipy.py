@@ -10,7 +10,7 @@ __all__ = ['Scipy']
 Loss = tf.Tensor
 Variables = List[tf.Variable]
 Gradients = List[tf.Tensor]
-StepCallback = Callable[[Loss, Variables, Gradients], None]
+StepCallback = Callable[[int, Loss, Variables, Gradients], None]
 LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]
 
 
@@ -35,25 +35,23 @@ class Scipy:
             raise ValueError('Callable object expected.')
         initial_params = self.initial_parameters(variables)
         func = self.eval_func(closure, variables, step_callback)
-        return scipy.optimize.minimize(func,
-                                       initial_params,
-                                       jac=True,
-                                       **scipy_kwargs)
+        return scipy.optimize.minimize(func, initial_params, jac=True, **scipy_kwargs)
 
     @classmethod
     def initial_parameters(cls, variables):
         return cls.pack_tensors(variables)
 
     @classmethod
-    def eval_func(cls,
-                  closure: LossClosure,
-                  variables: Variables,
-                  step_callback: Optional[StepCallback] = None):
+    def eval_func(cls, closure: LossClosure, variables: Variables, step_callback: Optional[StepCallback] = None):
+        step = 0  # type: int
+
         def _eval(x):
+            nonlocal step
             cls.unpack_tensors(variables, x)
             loss, grads = _compute_loss_and_gradients(closure, variables)
             if callable(step_callback):
-                step_callback(loss, variables, grads)
+                step_callback(step=step, loss=loss, variables=variables, gradients=grads)
+            step += 1
             return loss.numpy(), cls.pack_tensors(grads)
 
         return _eval
@@ -65,8 +63,7 @@ class Scipy:
         return tensors_vector.numpy()
 
     @staticmethod
-    def unpack_tensors(to_tensors: Iterator[tf.Tensor],
-                       from_vector: np.ndarray):
+    def unpack_tensors(to_tensors: Iterator[tf.Tensor], from_vector: np.ndarray):
         s = 0
         for tensor in to_tensors:
             shape = tensor.shape

@@ -3,16 +3,11 @@
 
 # pylint: skip-file
 
-from setuptools import setup
-from setuptools import find_packages
-
-import re
 import os
-import sys
-from pkg_resources import parse_version
+from pathlib import Path
 
-# load version form _version.py
-exec(open("gpflow/_version.py").read())
+from pkg_resources import parse_version
+from setuptools import find_packages, setup
 
 # Dependencies of GPflow
 requirements = [
@@ -40,26 +35,27 @@ try:
     if parse_version(tf.__version__) < parse_version(min_tf_version):
         # TF pre-installed, but below the minimum required version
         raise DeprecationWarning("TensorFlow version below minimum requirement")
-except (ImportError, DeprecationWarning) as e:
+except (ImportError, DeprecationWarning):
     # Add TensorFlow to dependencies to trigger installation/update
     requirements.append(tf_cpu)
 
-packages = find_packages('.')
-package_data={'gpflow': ['gpflow/gpflowrc']}
+
+with open(str(Path(".", "VERSION").absolute())) as version_file:
+    version = version_file.read().strip()
+
+packages = find_packages('.', exclude=["tests"])
 
 setup(name='gpflow',
-      version=__version__,
+      version=version,
       author="James Hensman, Alex Matthews",
       author_email="james.hensman@gmail.com",
-      description=("Gaussian process methods in tensorflow"),
+      description=("Gaussian process methods in TensorFlow"),
       license="Apache License 2.0",
       keywords="machine-learning gaussian-processes kernels tensorflow",
       url="http://github.com/GPflow/GPflow",
       packages=packages,
       install_requires=requirements,
-      package_data=package_data,
       include_package_data=True,
-      test_suite='tests',
       extras_require={'Tensorflow with GPU': [tf_gpu]},
       classifiers=[
           'License :: OSI Approved :: Apache Software License',
