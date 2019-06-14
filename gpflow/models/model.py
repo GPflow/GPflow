@@ -21,7 +21,7 @@ from ..base import Module
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
-from ..utilities.defaults import default_float, default_jitter
+from ..config import default_float, default_jitter
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 

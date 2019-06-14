@@ -21,7 +21,7 @@ from ..conditionals import conditional
 from ..covariances import Kuu
 from ..models.model import GPModel
 from ..base import Parameter, positive, triangular
-from ..utilities.defaults import default_float, default_jitter
+from ..config import default_float, default_jitter
 from .util import inducingpoint_wrapper
 
 

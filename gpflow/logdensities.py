@@ -14,7 +14,7 @@
 
 import tensorflow as tf
 import numpy as np
-from .utilities.defaults import default_float
+from .config import default_float
 
 
 def gaussian(x, mu, var):

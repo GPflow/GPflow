@@ -15,7 +15,7 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
-from .utilities.defaults import default_float
+from .config import default_float
 
 
 def gauss_kl(q_mu, q_sqrt, K=None):

@@ -6,7 +6,7 @@ from ..covariances import Kuf, Kuu
 from ..features import InducingFeature
 from ..kernels import Kernel
 from ..utilities.ops import eye
-from ..utilities.defaults import default_jitter
+from ..config import default_jitter
 from .dispatch import conditional
 from .util import base_conditional, expand_independent_outputs
 

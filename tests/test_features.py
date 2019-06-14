@@ -18,7 +18,7 @@ import pytest
 import gpflow
 from gpflow.features import InducingPoints, Multiscale
 from gpflow.covariances import Kuu, Kuf
-from gpflow.utilities.defaults import default_jitter
+from gpflow.config import default_jitter
 
 
 @pytest.mark.parametrize('N, D', [[17, 3], [10, 7]])

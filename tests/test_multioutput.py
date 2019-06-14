@@ -13,7 +13,7 @@ from gpflow.features import InducingPoints
 from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
-from gpflow.utilities.defaults import default_jitter, default_float
+from gpflow.config import default_jitter, default_float
 from gpflow.utilities.training import set_trainable
 
 float_type = default_float()

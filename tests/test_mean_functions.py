@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.features import InducingPoints
 from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
-from gpflow.utilities.defaults import default_int
+from gpflow.config import default_int
 
 rng = np.random.RandomState(99021)
 

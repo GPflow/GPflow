@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.conditionals import conditional
-from gpflow.utilities.defaults import default_float
+from gpflow.config import default_float
 
 rng = np.random.RandomState(123)
 

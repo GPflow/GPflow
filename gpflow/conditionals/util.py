@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from ..utilities.defaults import default_float, default_jitter
+from ..config import default_float, default_jitter
 from ..utilities.ops import leading_transpose
 
 

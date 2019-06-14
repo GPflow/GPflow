@@ -18,7 +18,7 @@ from collections import Iterable
 import numpy as np
 import tensorflow as tf
 
-from .utilities.defaults import default_float
+from .config import default_float
 
 
 def hermgauss(n: int):

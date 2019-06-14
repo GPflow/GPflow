@@ -18,7 +18,7 @@ import numpy as np
 
 import gpflow
 from ..base import Parameter
-from ..utilities.defaults import default_float, default_jitter
+from ..config import default_float, default_jitter
 from ..mean_functions import Zero
 from ..conditionals import conditional
 from ..kullback_leiblers import gauss_kl

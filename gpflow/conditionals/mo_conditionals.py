@@ -9,7 +9,7 @@ from .. import covariances
 from ..features import (InducingPoints, MixedKernelSeparateMof, MixedKernelSharedMof, SeparateIndependentMof,
                         SharedIndependentMof)
 from ..kernels import Combination, Mok, SeparateIndependentMok, SeparateMixedMok, SharedIndependentMok
-from ..utilities.defaults import default_float, default_jitter
+from ..config import default_float, default_jitter
 from .dispatch import conditional
 from .util import (base_conditional, expand_independent_outputs, fully_correlated_conditional,
                    independent_interdomain_conditional, mix_latent_gp, rollaxis_left)

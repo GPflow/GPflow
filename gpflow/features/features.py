@@ -17,7 +17,7 @@ import abc
 import tensorflow as tf
 
 from ..base import Parameter, positive
-from ..utilities.defaults import default_float
+from ..config import default_float
 
 
 class InducingFeature(tf.Module):

@@ -21,7 +21,7 @@ from tensorflow import convert_to_tensor as ctt
 import gpflow
 from gpflow import features, kernels
 from gpflow import mean_functions as mf
-from gpflow.utilities.defaults import default_float
+from gpflow.config import default_float
 from gpflow.expectations import expectation, quadrature_expectation
 from gpflow.probability_distributions import (DiagonalGaussian, Gaussian,
                                               MarkovGaussian)

@@ -25,7 +25,7 @@ from gpflow.conditionals import conditional
 from gpflow.conditionals import uncertain_conditional
 from gpflow.optimizers import Scipy
 from gpflow.quadrature import mvnquad
-from gpflow.utilities.defaults import default_float
+from gpflow.config import default_float
 from gpflow.utilities.training import training_loop
 
 rng = np.random.RandomState(1)

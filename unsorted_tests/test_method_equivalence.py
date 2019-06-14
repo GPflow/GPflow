@@ -16,7 +16,7 @@ import tensorflow as tf
 
 import numpy as np
 from numpy.testing import assert_allclose
-from gpflow.utilities.defaults import default_jitter
+from gpflow.config import default_jitter
 
 import gpflow
 from gpflow.test_util import GPflowTestCase
