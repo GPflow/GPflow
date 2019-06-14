@@ -14,11 +14,10 @@
 
 # flake8: noqa
 
-from . import (conditionals, expectations, features, kernels, likelihoods, logdensities, models, optimizers,
+from . import (conditionals, config, expectations, features, kernels, likelihoods, logdensities, models, optimizers,
                probability_distributions, utilities)
 from .base import Parameter, positive, triangular
 from .utilities.defaults import default_float, default_jitter
 from .versions import __version__
-
 
 __all__ = [export for export in dir()]
