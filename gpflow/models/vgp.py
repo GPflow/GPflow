@@ -29,7 +29,7 @@ from ..models.model import GPModel
 
 
 class VGP(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
     The idea is that the posterior over the function-value vector F is
@@ -43,7 +43,7 @@ class VGP(GPModel):
 
     .. math::
 
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+       q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
 
@@ -69,9 +69,15 @@ class VGP(GPModel):
         transform = transforms.LowerTriangular(self.num_data, self.num_latent)
         self.q_sqrt = Parameter(q_sqrt, transform=transform)
 
-    def compile(self, session=None):
+    def _copy_parameter_options(self, param):
+        transform = param.transform
+        if isinstance(transform, transforms.LowerTriangular):
+            transform = transforms.LowerTriangular(self.num_data, self.num_latent)
+        return dict(prior=param.prior, transform=transform, trainable=param.trainable, dtype=param.dtype)
+
+    def _build(self):
         """
-        Before calling the standard compile function, check to see if the size
+        Before calling the standard _build function, check to see if the size
         of the data has changed and add variational parameters appropriately.
 
         This is necessary because the shape of the parameters depends on the
@@ -79,15 +85,15 @@ class VGP(GPModel):
         """
         if not self.num_data == self.X.shape[0]:
             self.num_data = self.X.shape[0]
-            self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
-            self.q_sqrt = Parameter(np.eye(self.num_data)[:, :, None] *
-                                    np.ones((1, 1, self.num_latent)))
-
-        return super(VGP, self).compile(session=session)
+            self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)),
+                                  **self._copy_parameter_options(self.q_mu))
+            self.q_sqrt = Parameter(np.array([np.eye(self.num_data) for _ in range(self.num_latent)]),
+                                    **self._copy_parameter_options(self.q_sqrt))
+        return super()._build()
 
     @params_as_tensors
     def _build_likelihood(self):
-        """
+        r"""
         This method computes the variational lower bound on the likelihood,
         which is:
 
@@ -95,7 +101,7 @@ class VGP(GPModel):
 
         with
 
-            q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+            q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
         """
 
@@ -131,7 +137,7 @@ class VGP(GPModel):
 
 
 class VGP_opper_archambeau(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:
     ::
@@ -149,8 +155,8 @@ class VGP_opper_archambeau(GPModel):
     only the diagonal elements of the precision need be adjusted.
     The posterior approximation is
     .. math::
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\mathbf K \\boldsymbol \\alpha,
-                         [\\mathbf K^{-1} + \\textrm{diag}(\\boldsymbol \\lambda))^2]^{-1})
+       q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,
+                         [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})
 
     This approach has only 2ND parameters, rather than the N + N^2 of vgp,
     but the optimization is non-convex and in practice may cause difficulty.
@@ -178,9 +184,9 @@ class VGP_opper_archambeau(GPModel):
         self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
                                   transforms.positive)
 
-    def compile(self, session=None):
+    def _build(self):
         """
-        Before calling the standard compile function, check to see if the size
+        Before calling the standard _build function, check to see if the size
         of the data has changed and add variational parameters appropriately.
 
         This is necessary because the shape of the parameters depends on the
@@ -191,11 +197,11 @@ class VGP_opper_archambeau(GPModel):
             self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
             self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
                                       transforms.positive)
-        return super(VGP_opper_archambeau, self).compile(session=session)
+        return super()._build()
 
     @params_as_tensors
     def _build_likelihood(self):
-        """
+        r"""
         q_alpha, q_lambda are variational parameters, size N x R
         This method computes the variational lower bound on the likelihood,
         which is:

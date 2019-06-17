@@ -56,30 +56,6 @@ class _SettingsManager(object):
         return self.numerics.jitter_level
 
     @property
-    def tf_float(self):
-        warnings.warn('tf_float is deprecated and will be removed at GPflow '
-                      'version 1.2.0. Use float_type.', DeprecationWarning)
-        return self.float_type
-
-    @property
-    def tf_int(self):
-        warnings.warn('tf_int is deprecated and will be removed at GPflow '
-                      'version 1.2.0. Use int_type.', DeprecationWarning)
-        return self.int_type
-
-    @property
-    def np_float(self):
-        warnings.warn('np_float is deprecated and will be removed at GPflow '
-                      'version 1.2.0. Use float_type.', DeprecationWarning)
-        return self.float_type
-
-    @property
-    def np_int(self):
-        warnings.warn('np_int is deprecated and will be removed at GPflow '
-                      'version 1.2.0. Use int_type.', DeprecationWarning)
-        return self.int_type
-
-    @property
     def float_type(self):
         return self.dtypes.float_type
 
