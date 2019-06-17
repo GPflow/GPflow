@@ -203,6 +203,22 @@ Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
 
+class TensorFunctor(tf.Module):
+    def __init__(self, function: Callable[[], tf.Tensor], shape: Optional[tf.Shape] = None):
+        super().__init__()
+        if not callable(function):
+            raise ValueError("Expected callable object")
+        self._function = function
+        self._shape
+
+    def read_value(self):
+        return self._function()
+
+    @property
+    def shape(self):
+        return self._shape
+
+
 def _verified_value(value: VariableData, dtype: Optional[DType] = None) -> np.ndarray:
     if isinstance(value, tf.Variable):
         return value
