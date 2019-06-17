@@ -98,7 +98,7 @@ class Parameterized(Node):
 
     @property
     def params(self):
-        for key, param in self.__dict__.items():
+        for key, param in sorted(self.__dict__.items()):
             if not key.startswith('_') and Parameterized._is_param_like(param):
                 yield param
 
@@ -196,8 +196,7 @@ class Parameterized(Node):
 
     @trainable.setter
     def trainable(self, value):
-        for param in self.params:
-            param.trainable = value
+        self.set_trainable(value)
 
     def fix_shape(self, parameters=True, data_holders=True):
         if parameters:
@@ -362,6 +361,9 @@ class Parameterized(Node):
     
     def __str__(self):
         return str(self.as_pandas_table())
+
+    def _repr_html_(self):
+        return self.as_pandas_table()._repr_html_()
 
     @property
     def fixed(self):

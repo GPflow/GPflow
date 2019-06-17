@@ -22,7 +22,7 @@ requirements = [
     'multipledispatch>=0.4.9',
     'pytest>=3.5.0',
     'h5py>=2.7.0',
-    'matplotlib>=2.0.2'
+    'matplotlib>=2.2.2'
 ]
 
 min_tf_version = '1.5.0'
