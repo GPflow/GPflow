@@ -61,7 +61,7 @@ jobs:
 
 workflows:
   version: 2.1
-  build_test_and_deploy:
+  build_and_test:
     jobs:
       - unit-test
       - notebook-test
@@ -69,6 +69,20 @@ workflows:
           requires:
             - unit-test
             - notebook-test
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
+  build_and_deploy:
+    jobs:
+      - unit-test:
+          filters:
+            tags:
+              only: /.*/
+      - deploy:
+          requires:
+            - unit-test
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
