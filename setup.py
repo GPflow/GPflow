@@ -3,16 +3,18 @@
 
 # pylint: skip-file
 
-from setuptools import setup
-from setuptools import find_packages
-
-import re
 import os
+import re
 import sys
+from pathlib import Path
+
 from pkg_resources import parse_version
+from setuptools import find_packages, setup
 
 # load version form _version.py
-exec(open("gpflow/_version.py").read())
+
+with open(str(Path(".", "VERSION").absolute())) as version_file:
+    version = version_file.read().strip()
 
 # Dependencies of GPflow
 requirements = [
@@ -44,11 +46,13 @@ except (ImportError, DeprecationWarning) as e:
     # Add TensorFlow to dependencies to trigger installation/update
     requirements.append(tf_cpu)
 
+
 packages = find_packages('.')
-package_data={'gpflow': ['gpflow/gpflowrc']}
+package_data = {'gpflow': ['gpflow/gpflowrc']}
+
 
 setup(name='gpflow',
-      version=__version__,
+      version=version,
       author="James Hensman, Alex Matthews",
       author_email="james.hensman@gmail.com",
       description=("Gaussian process methods in tensorflow"),
