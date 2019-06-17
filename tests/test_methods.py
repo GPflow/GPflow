@@ -315,5 +315,59 @@ class TestSparseMCMC(GPflowTestCase):
             # self.assertTrue(np.allclose(g1, g2, 1e-4))
 
 
+class TestVGP(GPflowTestCase):
+    """
+    This test assures updating X and Y DataHolders changes q_mu/q_sqrt Parameters accordingly.
+    """
+
+    def get_model(self):
+        X = np.random.rand(10, 1)
+        Y = np.random.rand(10, 1)
+        return gpflow.models.VGP(X, Y, gpflow.kernels.RBF(1), gpflow.likelihoods.Gaussian())
+
+    def test_data_update(self):
+        with self.test_context():
+            m = self.get_model()
+            opt = gpflow.train.ScipyOptimizer()
+            opt.minimize(m, maxiter=5)
+
+            m.X = np.random.rand(11, 1)
+            m.Y = np.random.rand(11, 1)
+            m.clear()
+            m.compile()
+            self.assertTupleEqual(m.q_mu.shape, (11, 1))
+            self.assertTupleEqual(m.q_sqrt.shape, (1, 11, 11))
+            opt.minimize(m, maxiter=5)
+
+    def test_nested_data_update(self):
+        with self.test_context():
+            p = gpflow.Parameterized()
+            p.m = self.get_model()
+            p.m.X = np.random.rand(11, 2)
+            p.m.Y = np.random.rand(11, 1)
+            p.clear()
+            p.compile()
+            self.assertTupleEqual(p.m.q_mu.shape, (11, 1))
+            self.assertTupleEqual(p.m.q_sqrt.shape, (1, 11, 11))
+
+    def test_keep_custom_parameters(self):
+        for t in [gpflow.transforms.Log1pe, gpflow.transforms.Identity,
+                  gpflow.transforms.Exp, gpflow.transforms.Logistic]:
+            with self.test_context():
+                with gpflow.defer_build():
+                    m = self.get_model()
+                    m.q_mu.prior = gpflow.priors.Gamma(3., 1./3.)
+                    m.q_sqrt.transform = t()
+                m.compile()
+                m.X = np.random.rand(11, 1)
+                m.Y = np.random.rand(11, 1)
+                m.clear()
+                m.compile()
+                self.assertIsInstance(m.q_mu.prior, gpflow.priors.Gamma)
+                self.assertIsInstance(m.q_sqrt.transform, t)
+                self.assertTupleEqual(m.q_mu.shape, (11, 1))
+                self.assertTupleEqual(m.q_sqrt.shape, (1, 11, 11))
+
+
 if __name__ == "__main__":
     tf.test.main()
