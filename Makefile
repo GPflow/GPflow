@@ -18,7 +18,7 @@ install:
 	pip install .
 
 package:
-	python setup.py bdist
+	python setup.py bdist sdist
 
 test:
 	pytest -n auto tests/

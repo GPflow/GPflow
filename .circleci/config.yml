@@ -57,7 +57,7 @@ jobs:
       - run:
           name: Create pip package
           command: |
-            python setup.py bdist
+            python setup.py bdist sdist
       - run:
           name: Upload to PyPI
           command: |
@@ -65,15 +65,22 @@ jobs:
 
 workflows:
   version: 2.1
-  build_and_deploy:
+  build_test_and_deploy:
     jobs:
-      - deploy:
+      - unit-test:
           filters:
             tags:
-              only: /^v.*/
+              only: /^v[0-9]+(\.[0-9]+)*/
+      - notebook-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+      - deploy:
+          requires:
+            - unit-test
+            - notebook-test
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
             branches:
               ignore: /.*/
-  build_and_test:
-    jobs:
-      - unit-test
-      - notebook-test
