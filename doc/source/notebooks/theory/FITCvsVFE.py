@@ -1,11 +1,7 @@
-from __future__ import print_function
 import gpflow
 from gpflow.test_util import notebook_niter
 import tensorflow as tf
-import os
 import numpy as np
-import cProfile
-import csv
 
 nRepeats = notebook_niter(50)
 
@@ -15,34 +11,29 @@ hold_out_limits = [0.20, 0.60]
 optimization_limits = [18., 25.]
 
 def readCsvFile(fileName):
-    reader = csv.reader(open(fileName,'r'))
-    dataList = []
-    for row in reader:
-        dataList.append([float(elem) for elem in row])
-
-    return np.array(dataList)
+    return np.loadtxt(fileName).reshape(-1, 1)
 
 def getTrainingTestData():
-    overallX = readCsvFile('data/snelson_train_inputs')
-    overallY = readCsvFile('data/snelson_train_outputs')
+    overallX = readCsvFile('data/snelson_train_inputs.dat')
+    overallY = readCsvFile('data/snelson_train_outputs.dat')
 
-    trainIndeces = []
-    testIndeces = []
+    trainIndices = []
+    testIndices = []
 
     nPoints = overallX.shape[0]
 
     for index in range(nPoints):
         if index % 4 == 0:
-            trainIndeces.append(index)
+            trainIndices.append(index)
         else:
-            testIndeces.append(index)
+            testIndices.append(index)
 
-    xtrain = overallX[trainIndeces,:]
-    xtest = overallX[testIndeces, :]
-    ytrain = overallY[trainIndeces, :]
-    ytest  = overallY[testIndeces, :]
+    xtrain = overallX[trainIndices,:]
+    xtest  = overallX[testIndices, :]
+    ytrain = overallY[trainIndices, :]
+    ytest  = overallY[testIndices, :]
 
-    return xtrain,ytrain,xtest,ytest
+    return xtrain, ytrain, xtest, ytest
 
 def getLogPredictiveDensities(targetValues, means, variances):
     assert(targetValues.flatten().shape == targetValues.shape)
@@ -58,47 +49,50 @@ def getLogPredictiveDensities(targetValues, means, variances):
     return mahalanobisTerms + normalizationTerms
 
 def getKernel():
-    return gpflow.kernels.RBF(1)
+    return gpflow.kernels.SquaredExponential(1)
 
-def getRegressionModel(X,Y):
+def getRegressionModel(X, Y):
     m = gpflow.models.GPR(X, Y, kern=getKernel())
     m.likelihood.variance = 1.
     m.kern.lengthscales = 1.
     m.kern.variance = 1.
     return m
 
-def getSparseModel(X,Y,isFITC=False):
-    if not(isFITC):
-        m = gpflow.models.SGPR(X, Y, kern=getKernel(),  Z=X.copy())
-    else:
+def getSparseModel(X, Y, isFITC=False):
+    if isFITC:
         m = gpflow.models.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy())
+    else:
+        m = gpflow.models.SGPR(X, Y, kern=getKernel(),  Z=X.copy())
     return m
 
 def printModelParameters(model):
-    print("Likelihood variance ", model.likelihood.variance.value, "\n")
-    print("Kernel variance ", model.kern.variance.value, "\n")
-    print("Kernel lengthscale ", model.kern.lengthscales.value, "\n")
+    print("  Likelihood variance = {:.5g}".format(model.likelihood.variance.value))
+    print("  Kernel variance     = {:.5g}".format(model.kern.variance.value))
+    print("  Kernel lengthscale  = {:.5g}".format(model.kern.lengthscales.value))
 
-def plotPredictions(ax, model, color, label):
-    xtest = np.sort(readCsvFile('data/snelson_test_inputs'))
+def plotPredictions(ax, model, color, label=None):
+    xtest = np.sort(readCsvFile('data/snelson_test_inputs.dat'))
     predMean, predVar = model.predict_y(xtest)
     ax.plot(xtest, predMean, color, label=label)
-    ax.plot(xtest, predMean + 2.*np.sqrt(predVar),color)
+    ax.plot(xtest, predMean + 2.*np.sqrt(predVar), color)
     ax.plot(xtest, predMean - 2.*np.sqrt(predVar), color)
 
-def trainSparseModel(xtrain,ytrain,exact_model,isFITC, xtest, ytest):
-    sparse_model = getSparseModel(xtrain,ytrain,isFITC)
+def repeatMinimization(model, xtest, ytest):
+    callback = cb(model, xtest, ytest)
+    opt = gpflow.train.ScipyOptimizer()
+    #print("Optimising for {} repetitions".format(nRepeats))
+    for repeatIndex in range(nRepeats):
+        opt.minimize(model, disp=False, maxiter=notebook_niter(2000), step_callback=callback)
+    return callback
+
+def trainSparseModel(xtrain, ytrain, exact_model, isFITC, xtest, ytest):
+    sparse_model = getSparseModel(xtrain, ytrain, isFITC)
     sparse_model.likelihood.variance = exact_model.likelihood.variance.read_value().copy()
     sparse_model.kern.lengthscales = exact_model.kern.lengthscales.read_value().copy()
     sparse_model.kern.variance = exact_model.kern.variance.read_value().copy()
-    callback = cb(sparse_model, xtest, ytest)
-    opt = gpflow.train.ScipyOptimizer()
-    for repeatIndex in range(nRepeats):
-        print("repeatIndex ", repeatIndex)
-        opt.minimize(sparse_model, disp=False, maxiter=notebook_niter(2000), step_callback=callback)
-    return sparse_model, callback
+    return sparse_model, repeatMinimization(sparse_model, xtest, ytest)
 
-def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_inducing_points, ax_optimization, iterations, log_likelihoods,hold_out_likelihood, title):
+def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_inducing_points, ax_optimization, iterations, log_likelihoods,hold_out_likelihood, title=None):
     plotPredictions(ax_predictions, exact_model, 'g', label='Exact')
     plotPredictions(ax_predictions, sparse_model, 'b', label='Approximate')
     ax_predictions.legend(loc=9)
@@ -120,9 +114,9 @@ def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_in
     ax2.set_ylabel('Hold out negative log likelihood', color='b')
 
 class cb():
-    def __init__(self, model, xtest, ytest, holdout_inverval=100):
+    def __init__(self, model, xtest, ytest, holdout_interval=100):
         self.model = model
-        self.holdout_inverval = holdout_inverval
+        self.holdout_interval = holdout_interval
         self.xtest = xtest
         self.ytest = ytest
         self.log_likelihoods = []
@@ -131,11 +125,12 @@ class cb():
         self.counter = 0
 
     def __call__(self, info):
-        if (self.counter%self.holdout_inverval) == 0 or (self.counter <= 10):
+        if (self.counter%self.holdout_interval) == 0 or (self.counter <= 10):
             predictive_mean, predictive_variance = self.model.predict_y(self.xtest)
             self.n_iters.append(self.counter)
             self.log_likelihoods.append(self.model.compute_log_likelihood())
-            self.hold_out_likelihood.append(getLogPredictiveDensities(self.ytest.flatten() , predictive_mean.flatten(), predictive_variance.flatten()).mean())
+            test_log_likelihood = getLogPredictiveDensities(self.ytest.flatten(), predictive_mean.flatten(), predictive_variance.flatten()).mean()
+            self.hold_out_likelihood.append(test_log_likelihood)
         self.counter+=1
 
 def stretch(lenNIters, initialValues):
@@ -148,7 +143,7 @@ def snelsonDemo():
     from IPython import embed
     xtrain,ytrain,xtest,ytest = getTrainingTestData()
 
-    #run exact inference on training data.
+    # run exact inference on training data.
     exact_model = getRegressionModel(xtrain,ytrain)
     opt = gpflow.train.ScipyOptimizer()
     opt.minimize(exact_model, maxiter=notebook_niter(2000000))
@@ -160,7 +155,7 @@ def snelsonDemo():
 
     figB, axes = plt.subplots(3,2)
 
-    #run sparse model on training data intialized from exact optimal solution.
+    # run sparse model on training data initialized from exact optimal solution.
     VFEmodel, VFEcb = trainSparseModel(xtrain,ytrain,exact_model,False,xtest,ytest)
     FITCmodel, FITCcb = trainSparseModel(xtrain,ytrain,exact_model,True,xtest,ytest)
 
@@ -175,7 +170,7 @@ def snelsonDemo():
     VFElog_likelihoods = stretch(len(VFEiters), VFEcb.log_likelihoods)
     VFEhold_out_likelihood = stretch(len(VFEiters), VFEcb.hold_out_likelihood)
 
-    plotComparisonFigure(xtrain, VFEmodel, exact_model, axes[0,0], axes[1,0], axes[2,0], VFEiters, VFElog_likelihoods.tolist(), VFEhold_out_likelihood.tolist(), "VFE")
+    plotComparisonFigure(xtrain, VFEmodel, exact_model, axes[0,0], axes[1,0], axes[2,0], VFEiters, VFElog_likelihoods, VFEhold_out_likelihood, "VFE")
     plotComparisonFigure(xtrain, FITCmodel, exact_model, axes[0,1], axes[1,1], axes[2,1],FITCcb.n_iters, FITCcb.log_likelihoods, FITCcb.hold_out_likelihood , "FITC")
 
     axes[0,0].set_title('VFE', loc='center', fontdict = {'fontsize': 22})
