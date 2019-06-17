@@ -40,6 +40,8 @@ jobs:
           name: Verify git tag vs. VERSION
           command: |
             VERSION="v$(cat VERSION | tr -d '\t\r\n ')"
+            echo ">>> 1. $VERSION"
+            echo ">>> 2. $CIRCLE_TAG"
             [ "$VERSION" != "$CIRCLE_TAG" ] && { echo "The package version ($VERSION) and the latest tag version ($CIRCLE_TAG) are different"; exit 1; }
       - run:
           name: Install twine
