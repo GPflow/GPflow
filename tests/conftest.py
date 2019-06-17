@@ -1,0 +1,1 @@
+from gpflow.test_util import session_tf

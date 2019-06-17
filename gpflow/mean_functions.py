@@ -11,7 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""
+Throughout GPflow, by default, latent functions being modelled with Gaussian
+processes are assumed to have zero mean, f ~ GP(0, k(x,x')).
 
+In some cases we may wish to model only the deviation from a fixed function
+with a Gaussian process.  For flexibility this fixed function could be both
+input dependent and parameterised function, μ(x; θ),
+with some unknown parameters θ, resulting in f ~ GP(μ(x;θ), k(x,x')).
+
+The GPflow :class:`MeanFunction <gpflow.mean_functions.MeanFunction>` class
+allows this to be done whilst additionally learning parameters of the
+parametric function.
+"""
 
 import tensorflow as tf
 import numpy as np
@@ -64,7 +76,7 @@ class Linear(MeanFunction):
 
     @params_as_tensors
     def __call__(self, X):
-        return tf.matmul(X, self.A) + self.b
+        return tf.tensordot(X, self.A, [[-1], [0]]) + self.b
 
 
 class Identity(Linear):
@@ -102,6 +114,7 @@ class Identity(Linear):
     def b(self, b):
         pass
 
+
 class Constant(MeanFunction):
     """
     y_i = c,,
@@ -109,12 +122,13 @@ class Constant(MeanFunction):
     def __init__(self, c=None):
         MeanFunction.__init__(self)
         c = np.zeros(1) if c is None else c
+        c = np.reshape(c, (1, -1))
         self.c = Parameter(c)
 
     @params_as_tensors
     def __call__(self, X):
         shape = tf.stack([tf.shape(X)[0], 1])
-        return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+        return tf.tile(self.c, shape)
 
 
 class Zero(Constant):
@@ -124,7 +138,8 @@ class Zero(Constant):
         del self.c
 
     def __call__(self, X):
-        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=settings.tf_float)
+        shape = tf.concat([tf.shape(X)[:-1], [self.output_dim]], 0)
+        return tf.zeros(shape, dtype=settings.float_type)
 
 
 class SwitchedMeanFunction(MeanFunction):

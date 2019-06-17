@@ -20,12 +20,13 @@ requirements = [
     'scipy>=0.18.0',
     'pandas>=0.18.1',
     'multipledispatch>=0.4.9',
+    'decorator>=4.1',
     'pytest>=3.5.0',
     'h5py>=2.7.0',
     'matplotlib>=2.2.2'
 ]
 
-min_tf_version = '1.5.0'
+min_tf_version = '1.12.0'
 tf_cpu = 'tensorflow>={}'.format(min_tf_version)
 tf_gpu = 'tensorflow-gpu>={}'.format(min_tf_version)
 

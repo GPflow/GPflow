@@ -29,7 +29,7 @@ from ..models.model import GPModel
 
 
 class VGP(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
     The idea is that the posterior over the function-value vector F is
@@ -43,7 +43,7 @@ class VGP(GPModel):
 
     .. math::
 
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+       q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
 
@@ -93,7 +93,7 @@ class VGP(GPModel):
 
     @params_as_tensors
     def _build_likelihood(self):
-        """
+        r"""
         This method computes the variational lower bound on the likelihood,
         which is:
 
@@ -101,7 +101,7 @@ class VGP(GPModel):
 
         with
 
-            q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+            q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
         """
 
@@ -137,7 +137,7 @@ class VGP(GPModel):
 
 
 class VGP_opper_archambeau(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:
     ::
@@ -155,8 +155,8 @@ class VGP_opper_archambeau(GPModel):
     only the diagonal elements of the precision need be adjusted.
     The posterior approximation is
     .. math::
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\mathbf K \\boldsymbol \\alpha,
-                         [\\mathbf K^{-1} + \\textrm{diag}(\\boldsymbol \\lambda))^2]^{-1})
+       q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,
+                         [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})
 
     This approach has only 2ND parameters, rather than the N + N^2 of vgp,
     but the optimization is non-convex and in practice may cause difficulty.
@@ -201,7 +201,7 @@ class VGP_opper_archambeau(GPModel):
 
     @params_as_tensors
     def _build_likelihood(self):
-        """
+        r"""
         q_alpha, q_lambda are variational parameters, size N x R
         This method computes the variational lower bound on the likelihood,
         which is:
