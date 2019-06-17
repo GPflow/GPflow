@@ -22,13 +22,40 @@ jobs:
       - image: awav/tensorflow:2.0-nightly-preview
         environment:
           PYTEST_FILTER: not notebooks
-
   # notebook-test:
   #   <<: *runtest
   #   docker:
   #     - image: awav/tensorflow:1.12.1
   #       environment:
   #         PYTEST_FILTER: notebooks
+  deploy:
+    docker:
+      - image: awav/tensorflow:2.0-nightly-preview
+    steps:
+      - checkout
+      - run:
+          name: Verify git tag vs. VERSION
+          command: |
+            [ $(cat VERSION | tr -d '\t\r\n ') != "$CIRCLE_TAG" ] && { echo "The package version and the latest tag version are different"; exit 1; }
+      - run:
+          name: Install twine
+          command: |
+            pip install twine
+      - run:
+          name: Init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = artemav" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+      - run:
+          name: Create pip package
+          command: |
+            make package
+      - run:
+          name: Upload to PyPI
+          command: |
+            twine upload dist/*
+
 
 workflows:
   version: 2.1
@@ -36,3 +63,11 @@ workflows:
     jobs:
       - unit-test
       # - notebook-test
+      - deploy:
+          requires:
+            - unit-test
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
