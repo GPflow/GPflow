@@ -38,6 +38,8 @@ jobs:
       - run:
           name: Verify git tag vs. VERSION
           command: |
+            echo $(git log -2)
+            echo $(git log -2)
             VERSION="v$(cat VERSION | tr -d '\t\r\n ')"
             [ "$VERSION" != "$CIRCLE_TAG" ] && { echo "The package version ($VERSION) and the latest tag version ($CIRCLE_TAG) are different"; exit 1; }
       - run:
@@ -61,6 +63,14 @@ jobs:
 
 workflows:
   version: 2.1
+  build_and_deploy:
+    jobs:
+      - deploy:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+          # requires:
+          #   - unit-test
   # build_and_test:
   #   jobs:
   #     - unit-test
@@ -74,18 +84,4 @@ workflows:
   #             only: /v[0-9]+(\.[0-9]+)*/
   #           branches:
   #             ignore: /.*/
-  build_and_deploy:
-    jobs:
-      # - unit-test:
-      #     filters:
-      #       tags:
-      #         only: /v[0-9]+(\.[0-9]+)*/
-      - deploy:
-          # requires:
-          #   - unit-test
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            # branches:
-            #   ignore: /.*/
 
