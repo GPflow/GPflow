@@ -14,7 +14,7 @@ runtest: &runtest
         command: |
           bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
 
-version: 2.1
+version: 2
 
 jobs:
   unit-test:
@@ -62,14 +62,13 @@ jobs:
             twine upload dist/*
 
 workflows:
-  version: 2.1
+  version: 2
   build_and_deploy:
     jobs:
       - deploy:
           filters:
             tags:
-              only:
-                /.*/
+              only: /.*/
           # requires:
           #   - unit-test
   # build_and_test:
