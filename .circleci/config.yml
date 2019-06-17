@@ -39,7 +39,8 @@ jobs:
       - run:
           name: Verify git tag vs. VERSION
           command: |
-            [ "v$(cat VERSION | tr -d '\t\r\n ')" != "$CIRCLE_TAG" ] && { echo "The package version and the latest tag version are different"; exit 1; }
+            VERSION="v$(cat VERSION | tr -d '\t\r\n ')"
+            [ "$VERSION" != "$CIRCLE_TAG" ] && { echo "The package version ($VERSION) and the latest tag version ($CIRCLE_TAG) are different"; exit 1; }
       - run:
           name: Install twine
           command: |
@@ -76,13 +77,13 @@ workflows:
               ignore: /.*/
   build_and_deploy:
     jobs:
-      - unit-test:
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
+      # - unit-test:
+      #     filters:
+      #       tags:
+      #         only: /v[0-9]+(\.[0-9]+)*/
       - deploy:
-          requires:
-            - unit-test
+          # requires:
+          #   - unit-test
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*/
