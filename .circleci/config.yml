@@ -35,7 +35,6 @@ jobs:
     docker:
       - image: awav/tensorflow:1.12.1
     steps:
-      - checkout
       - run:
           name: Verify git tag vs. VERSION
           command: |
@@ -62,19 +61,19 @@ jobs:
 
 workflows:
   version: 2.1
-  build_and_test:
-    jobs:
-      - unit-test
-      - notebook-test
-      - deploy:
-          requires:
-            - unit-test
-            - notebook-test
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+  # build_and_test:
+  #   jobs:
+  #     - unit-test
+  #     - notebook-test
+  #     - deploy:
+  #         requires:
+  #           - unit-test
+  #           - notebook-test
+  #         filters:
+  #           tags:
+  #             only: /v[0-9]+(\.[0-9]+)*/
+  #           branches:
+  #             ignore: /.*/
   build_and_deploy:
     jobs:
       # - unit-test:
@@ -86,7 +85,7 @@ workflows:
           #   - unit-test
           filters:
             tags:
-              only: /v[0-9]+(\.[0-9]+)*/
+              only: /^v[0-9]+(\.[0-9]+)*/
             # branches:
             #   ignore: /.*/
 
