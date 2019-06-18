@@ -24,7 +24,7 @@ requirements = [
     'multipledispatch>=0.4.9',
     'decorator>=4.1',
     'pytest>=3.5.0',
-    'h5py>=2.7.0',
+    'h5py>=2.9.0',
     'matplotlib>=2.2.2'
 ]
 
