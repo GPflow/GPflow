@@ -71,12 +71,12 @@ def laplace(x, mu, sigma):
 def multivariate_normal(x, mu, L):
     """
     Computes the log-density of a multivariate normal.
-    :param x  : Nx1 or NxR sample(s) for which we want the density
-    :param mu : Nx1 or NxR mean(s) of the normal distribution
-    :param L  : NxN Cholesky decomposition of the covariance matrix
+    :param x  : N×1 or N×R sample(s) for which we want the density
+    :param mu : N×1 or N×R mean(s) of the normal distribution
+    :param L  : N×N Cholesky decomposition of the covariance matrix
     :return p : (1,) or (R,) vector of log densities for each of the columns of x and/or mu
 
-    x and mu are either vectors or matrices. If both are vectors (N,1):
+    x and mu are either vectors or matrices. If both are vectors (N×1):
     p[0] = log pdf(x) where x ~ N(mu, LL^T)
     If at least one is a matrix, we assume independence over the *columns*:
     the number of rows must match the size of L. Broadcasting behaviour:
