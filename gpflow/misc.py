@@ -15,7 +15,7 @@
 
 import copy
 from collections import OrderedDict
-from typing import List, Union
+from typing import List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -296,9 +296,13 @@ def tensor_ndim_equal(tensor: tf.Tensor, ndim: int):
     return tf.reduce_all(tf.equal(tensor_ndim, ndim))
 
 
-def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: str):
+def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: Optional[str]=None):
+    if message is None:
+        message = "assert_tensor_ndim: {}'s shape does not have ndim {}".format(tensor, ndim)
+
     if tensor.shape.ndims is not None:
-        assert tensor.shape.ndims == ndim, message
+        if tensor.shape.ndims != ndim:
+            raise ValueError(message)
     return tf.Assert(tensor_ndim_equal(tensor, ndim), [message])
 
 
