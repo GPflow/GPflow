@@ -40,5 +40,5 @@ class Saver:
         if context is None:
             context = SaverContext()
         if not isinstance(context, SaverContext):
-            raise ValueError('The context must be instance of "SaverContext" class.')
+            raise TypeError('The context must be instance of "SaverContext" class.')
         return context
