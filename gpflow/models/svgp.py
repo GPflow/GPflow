@@ -124,7 +124,8 @@ class SVGP(GPModel):
                                         transform=transforms.positive)  # M x P
             else:
                 q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type) for _ in range(self.num_latent)])
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # P x M x M
+                self.q_sqrt = Parameter(
+                    q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # P x M x M
         else:
             if q_diag:
                 assert q_sqrt.ndim == 2
@@ -134,7 +135,8 @@ class SVGP(GPModel):
                 assert q_sqrt.ndim == 3
                 self.num_latent = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # L/P x M x M
+                self.q_sqrt = Parameter(
+                    q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # L/P x M x M
 
     @params_as_tensors
     def build_prior_KL(self):
@@ -163,7 +165,8 @@ class SVGP(GPModel):
         # re-scale for minibatch size
         scale = tf.cast(self.num_data, settings.float_type) / tf.cast(tf.shape(self.X)[0], settings.float_type)
 
-        return tf.reduce_sum(var_exp) * scale - KL
+        likelihood = tf.reduce_sum(var_exp) * scale - KL
+        return likelihood
 
     @params_as_tensors
     def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):

@@ -15,6 +15,7 @@
 import abc
 import enum
 import inspect
+import decorator
 
 
 # TODO(@awav): Introducing global variable is not best idea for managing compilation, but
@@ -33,6 +34,66 @@ class AutoBuildStatus(enum.Enum):
     BUILD = 1
     IGNORE = 2
     FOLLOW = 3
+
+
+class AutobuildFunctionMaker(decorator.FunctionMaker):
+    """
+    This overwrites the __init__ of decorator.FunctionMaker to insert the autobuild keyword argument.
+    """
+
+    def __init__(self, func=None, name=None, signature=None,
+                 defaults=None, doc=None, module=None, funcdict=None):
+        super().__init__(func=func, name=name, signature=signature, defaults=defaults,
+                         doc=doc, module=module, funcdict=funcdict)
+
+        if not func or not inspect.isfunction(func):
+            return
+
+        # We need to add the autobuild keyword argument manually.
+        if 'autobuild' in self.kwonlyargs:
+            return
+
+        self.kwonlyargs.append('autobuild')
+        if self.kwonlydefaults is None:
+            self.kwonlydefaults = {}
+        self.kwonlydefaults['autobuild'] = True
+
+        # The following is copied from decorator.FunctionMaker.__init__,
+        # as we need to reconstruct self.signature and self.shortsignature
+        # from scratch having added the autobuild keyword argument:
+        allargs = list(self.args)
+        allshortargs = list(self.args)
+        if self.varargs:
+            allargs.append('*' + self.varargs)
+            allshortargs.append('*' + self.varargs)
+        elif self.kwonlyargs:
+            allargs.append('*')  # single star syntax
+        for a in self.kwonlyargs:
+            allargs.append('%s=None' % a)
+            allshortargs.append('%s=%s' % (a, a))
+        if self.varkw:
+            allargs.append('**' + self.varkw)
+            allshortargs.append('**' + self.varkw)
+        self.signature = ', '.join(allargs)
+        self.shortsignature = ', '.join(allshortargs)
+
+        if signature is not None:
+            self.signature = signature
+        # Everything else was set up already by the super().__init__().
+
+def autobuild_decorate(func, caller):
+    """
+    autobuild_decorate(func, caller) decorates a function using a caller.
+    Allows for an extra `autobuild` keyword arg.
+    The only difference to decorator.decorate() is to use our custom AutobuildFunctionMaker instead.
+    """
+    evaldict = dict(_call_=caller, _func_=func)
+    fun = AutobuildFunctionMaker.create(
+        func, "return _call_(_func_, %(shortsignature)s)",
+        evaldict, __wrapped__=func)
+    if hasattr(func, '__qualname__'):
+        fun.__qualname__ = func.__qualname__
+    return fun
 
 
 class AutoBuild(abc.ABCMeta):
@@ -68,8 +129,13 @@ class AutoBuild(abc.ABCMeta):
 
     def __new__(mcs, name, bases, namespace, **kwargs):
         new_cls = super(AutoBuild, mcs).__new__(mcs, name, bases, namespace, **kwargs)
-        origin_init = new_cls.__init__
-        def __init__(self, *args, **kwargs):
+        if getattr(new_cls.__init__, '_autobuild_wrapped_', False):
+            # The decorator hack to make the autobuild keyword argument work does not play nicely
+            # with recursive wrapping. If we already wrapped this __init__ (because a class does
+            # not overwrite its superclass's __init__), just let it be.
+            return new_cls
+
+        def init_wrapper(origin_init, self, *args, **kwargs):
             """
             The `kwargs` may or may not contain 'autobuild' option. This option is
             inherited implicitly by all classes.
@@ -89,7 +155,13 @@ class AutoBuild(abc.ABCMeta):
             if autobuild_on and global_autobuild_on:
                 self.build()
                 self.initialize(force=True)
-        __init__.__doc__ = origin_init.__doc__
+
+        # Keep the original __init__'s signature and documentation:
+        __init__ = autobuild_decorate(new_cls.__init__, init_wrapper)
+
+        # Track that this specific method already got wrapped:
+        __init__._autobuild_wrapped_ = True
+
         setattr(new_cls, '__init__', __init__)
         return new_cls
 
@@ -109,6 +181,11 @@ class Build(enum.Enum):
 
 
 class ICompilable(metaclass=AutoBuild):
+    def __init__(self):
+        # We need an empty __init__ so that the AutoBuild decorator magic works.
+        # Otherwise, the type of __init__ would be wrapper_descriptor, not a function.
+        pass
+
     @abc.abstractproperty
     def graph(self):
         """

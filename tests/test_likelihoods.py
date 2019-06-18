@@ -578,6 +578,21 @@ class TestSwitchedLikelihoodRegression(GPflowTestCase):
             with self.assertRaises(tf.errors.InvalidArgumentError):
                 m.compute_log_likelihood()  # should die
 
+def test_SwitchedLikelihood_withVGP(session_tf):
+    """
+    Reproduces the bug in https://github.com/GPflow/GPflow/issues/951
+    """
+    X = np.random.randn(12+15, 1)
+    Y = np.random.randn(12+15, 1)
+    idx = np.array([0]*12 + [1]*15)
+    Y_aug = np.c_[Y, idx]
+    assert Y_aug.shape == (12+15, 2)
+
+    kern = gpflow.kernels.Matern32(input_dim=1)
+    lik = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.StudentT(), gpflow.likelihoods.StudentT()])
+    m = gpflow.models.VGP(X, Y_aug, kern=kern, likelihood=lik)
+    ## optimization errors out
+    gpflow.train.ScipyOptimizer().minimize(m, maxiter=1)
 
 if __name__ == "__main__":
     tf.test.main()
