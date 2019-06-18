@@ -63,9 +63,9 @@ def test_shape_asserts(session_tf):
 
     # Dynamic shape check:
     # the following results in a segfault before PR#964
-    with pytest.raises(tf.InvalidArgumentError):
+    with pytest.raises(tf.errors.InvalidArgumentError):
         vA = tf.placeholder(tf.float64)
         vB = tf.placeholder(tf.float64)
         vL = tf.placeholder(tf.float64)
-        res = multivariate_normal(vA, vB, vL)
+        res = logdensities.multivariate_normal(vA, vB, vL)
         session_tf.run(res, {vA: A, vB: B, vL: L})
