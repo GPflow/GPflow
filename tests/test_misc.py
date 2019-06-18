@@ -168,7 +168,7 @@ def test_static_assert_tensor_ndim(session_tf):
     dims = [1, 2, 3]
     a = tf.zeros(dims)
 
-    assert_tensor_ndim(a, len(dims))
+    misc.assert_tensor_ndim(a, len(dims))
 
     with pytest.raises(ValueError):
-        assert_tensor_ndim(a, len(dims)+1)
+        misc.assert_tensor_ndim(a, len(dims)+1)
