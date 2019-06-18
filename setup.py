@@ -63,7 +63,6 @@ setup(name='gpflow',
       install_requires=requirements,
       package_data=package_data,
       include_package_data=True,
-      test_suite='tests',
       extras_require={'Tensorflow with GPU': [tf_gpu]},
       classifiers=[
           'License :: OSI Approved :: Apache Software License',
