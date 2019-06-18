@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import pytest
+from gpflow.test_util import session_tf
 import tensorflow as tf
 
 import numpy as np
@@ -158,6 +161,53 @@ class WhitenTestGaussian(WhitenTest):
 
             assert_allclose(mean_difference, 0, atol=4)
             assert_allclose(var_difference, 0, atol=4)
+
+
+@pytest.mark.parametrize("full_cov", [True, False])
+@pytest.mark.parametrize("features_inducing_points", [False, True])
+def test_base_conditional_vs_ref(session_tf, full_cov, features_inducing_points):
+    """
+    Test that conditionals agree with a slow-but-clear numpy implementation
+    """
+    Dy, N, M, Dx = 5, 4, 3, 2
+    X = np.random.randn(N, Dx)
+    Z = np.random.randn(M, Dx)
+    kern = gpflow.kernels.Matern52(Dx, lengthscales=0.5)
+
+    q_mu = np.random.randn(M, Dy)
+    q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
+
+    def numpy_conditional(X, Z, kern, q_mu, q_sqrt):
+        Kmm = kern.compute_K_symm(Z) + np.eye(M) * settings.numerics.jitter_level
+        Kmn = kern.compute_K(Z, X)
+        Knn = kern.compute_K_symm(X)
+
+        Kmm, Kmn, Knm, Knn = [np.tile(k[None, :, :], [Dy, 1, 1]) for k in [Kmm, Kmn, Kmn.T, Knn]]
+
+        S = q_sqrt @ np.transpose(q_sqrt, [0, 2, 1])
+
+        Kmm_inv = np.linalg.inv(Kmm)
+        mean = np.einsum('dmn,dmM,Md->nd', Kmn, Kmm_inv, q_mu)
+        cov = Knn + Knm @ Kmm_inv @ (S - Kmm) @ Kmm_inv @ Kmn
+        return mean, cov
+
+    mean_np, cov_np = numpy_conditional(X, Z, kern, q_mu, q_sqrt)
+
+    if features_inducing_points:
+        Z = gpflow.features.InducingPoints(Z)
+
+    mean_tf, cov_tf = gpflow.conditionals.conditional(X, Z, kern, q_mu,
+                                                      q_sqrt=tf.identity(q_sqrt),
+                                                      white=False,
+                                                      full_cov=full_cov)
+
+    mean_tf, cov_tf = session_tf.run([mean_tf, cov_tf])
+
+    if not full_cov:
+        cov_np = np.diagonal(cov_np, axis1=-1, axis2=-2).T
+
+    assert_allclose(mean_np, mean_tf)
+    assert_allclose(cov_np, cov_tf)
 
 
 if __name__ == '__main__':

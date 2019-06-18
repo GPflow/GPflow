@@ -12,7 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+r"""
+Kernels form a core component of GPflow models and allow prior information to
+be encoded about a latent function of interest. The effect of choosing
+different kernels, and how it is possible to combine multiple kernels is shown
+in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
+"""
 
 from functools import reduce
 import warnings
@@ -54,7 +59,8 @@ class Kernel(Parameterized):
         elif isinstance(active_dims, slice):
             self.active_dims = active_dims
             if active_dims.start is not None and active_dims.stop is not None and active_dims.step is not None:
-                assert len(range(active_dims.start, active_dims.stop, active_dims.step)) == input_dim  # pragma: no cover
+                assert len(
+                    range(active_dims.start, active_dims.stop, active_dims.step)) == input_dim  # pragma: no cover
         else:
             self.active_dims = np.array(active_dims, dtype=np.int32)
             assert len(active_dims) == input_dim
@@ -169,7 +175,7 @@ class Kernel(Parameterized):
 class Static(Kernel):
     """
     Kernels who don't depend on the value of the inputs are 'Static'.  The only
-    parameter is a variance.
+    parameter is a variance, σ².
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, name=None):
@@ -184,7 +190,13 @@ class Static(Kernel):
 
 class White(Static):
     """
-    The White kernel
+    The White kernel: this kernel produces 'white noise'. The kernel equation is
+
+        k(x_n, x_m) = δ(n, m) σ²
+
+    where:
+    δ(.,.) is the Kronecker delta,
+    σ²  is the variance parameter.
     """
 
     @params_as_tensors
@@ -193,24 +205,29 @@ class White(Static):
             d = tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
             return tf.matrix_diag(d)
         else:
-            shape = tf.concat([tf.shape(X)[:-2],
-                               tf.reshape(tf.shape(X)[-2], [1]),
-                               tf.reshape(tf.shape(X2)[-2], [1])], 0)
+            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], 0)
             return tf.zeros(shape, settings.float_type)
 
 
 class Constant(Static):
     """
-    The Constant (aka Bias) kernel
+    The Constant (aka Bias) kernel. Functions drawn from a GP with this kernel
+    are constant, i.e. f(x) = c, with c ~ N(0, σ^2). The kernel equation is
+
+        k(x, y) = σ²
+
+    where:
+    σ²  is the variance parameter.
     """
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
         if X2 is None:
-            X2 = X
-        shape = tf.concat([tf.shape(X)[:-2],
-                           tf.reshape(tf.shape(X)[-2], [1]),
-                           tf.reshape(tf.shape(X2)[-2], [1])], 0)
+            shape = tf.concat([tf.shape(X)[:-2],
+                               tf.reshape(tf.shape(X)[-2], [1]),
+                               tf.reshape(tf.shape(X)[-2], [1])], 0)
+        else:
+            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], 0)
         return tf.fill(shape, tf.squeeze(self.variance))
 
 
@@ -253,7 +270,6 @@ class Stationary(Kernel):
         self.lengthscales = Parameter(lengthscales, transform=transforms.positive,
                                       dtype=settings.float_type)
 
-
     @params_as_tensors
     def _scaled_square_dist(self, X, X2):
         """
@@ -261,26 +277,33 @@ class Stationary(Kernel):
         Due to the implementation and floating-point imprecision, the
         result may actually be very slightly negative for entries very
         close to each other.
+
+        This function can deal with leading dimensions in X and X2. 
+        In the sample case, where X and X2 are both 2 dimensional, 
+        for example, X is [N, D] and X2 is [M, D], then a tensor of shape 
+        [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D] 
+        then the output will be [N1, S1, N2, S2].
         """
+
         X = X / self.lengthscales
-        Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
 
         if X2 is None:
+            Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
             dist = -2 * tf.matmul(X, X, transpose_b=True)
             dist += Xs + tf.matrix_transpose(Xs)
             return dist
 
+        Xs = tf.reduce_sum(tf.square(X), axis=-1)
         X2 = X2 / self.lengthscales
-        X2s = tf.reduce_sum(tf.square(X2), axis=-1, keepdims=True)
-        dist = -2 * tf.matmul(X, X2, transpose_b=True)
-        dist += Xs + tf.matrix_transpose(X2s)
+        X2s = tf.reduce_sum(tf.square(X2), axis=-1)
+        dist = -2 * tf.tensordot(X, X2, [[-1], [-1]])
+        dist += _broadcasting_elementwise_op(tf.add, Xs, X2s)
         return dist
-
 
     @staticmethod
     def _clipped_sqrt(r2):
         # Clipping around the (single) float precision which is ~1e-45.
-        return tf.sqrt(tf.maximum(r2, 1e-40))
+        return tf.sqrt(tf.maximum(r2, 1e-36))
 
     def scaled_square_dist(self, X, X2):  # pragma: no cover
         return self._scaled_square_dist(X, X2)
@@ -295,7 +318,6 @@ class Stationary(Kernel):
                       DeprecationWarning)
         r2 = self.scaled_square_dist(X, X2)
         return self._clipped_sqrt(r2)
-
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -336,25 +358,35 @@ class Stationary(Kernel):
 
 class SquaredExponential(Stationary):
     """
-    The radial basis function (RBF) or squared exponential kernel
+    The radial basis function (RBF) or squared exponential kernel. The kernel equation is
+
+        k(r) = σ² exp{-½ r²}
+
+    where:
+    r   is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ²  is the variance parameter
+
+    Functions drawn from a GP with this kernel are infinitely differentiable!
     """
 
     @params_as_tensors
     def K_r2(self, r2):
         return self.variance * tf.exp(-r2 / 2.)
 
+
 RBF = SquaredExponential
 
 
 class RationalQuadratic(Stationary):
     """
-    Rational Quadratic kernel,
+    Rational Quadratic kernel. The kernel equation is
 
-    k(r) = σ² (1 + r² / 2αℓ²)^(-α)
+    k(r) = σ² (1 + r² / 2α)^(-α)
 
-    σ² : variance
-    ℓ  : lengthscales
-    α  : alpha, determines relative weighting of small-scale and large-scale fluctuations
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter,
+    α  determines relative weighting of small-scale and large-scale fluctuations.
 
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
@@ -372,7 +404,12 @@ class RationalQuadratic(Stationary):
 
 class Linear(Kernel):
     """
-    The linear kernel
+    The linear kernel. Functions drawn from a GP with this kernel are linear, i.e. f(x) = cx. The kernel equation is
+
+        k(x, y) = σ²xy
+
+    where:
+    σ²  is the variance parameter.
     """
 
     def __init__(self, input_dim, variance=1.0, active_dims=None, ARD=None, name=None):
@@ -396,7 +433,7 @@ class Linear(Kernel):
         if X2 is None:
             return tf.matmul(X * self.variance, X, transpose_b=True)
         else:
-            return tf.matmul(X * self.variance, X2, transpose_b=True)
+            return tf.tensordot(X * self.variance, X2, [[-1], [-1]])
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -407,7 +444,15 @@ class Linear(Kernel):
 
 class Polynomial(Linear):
     """
-    The Polynomial kernel. Samples are polynomials of degree `d`.
+    The Polynomial kernel. Functions drawn from a GP with this kernel are
+    polynomials of degree `d`. The kernel equation is
+
+        k(x, y) = (σ²xy + γ) ^ d
+
+    where:
+    σ² is the variance parameter,
+    γ is the offset parameter,
+    d is the degree parameter.
     """
 
     def __init__(self, input_dim,
@@ -442,7 +487,7 @@ class Polynomial(Linear):
 
 class Exponential(Stationary):
     """
-    The Exponential kernel
+    The Exponential kernel. It is equivalent to a Matern12 kernel with doubled lengthscales.
     """
 
     @params_as_tensors
@@ -452,7 +497,14 @@ class Exponential(Stationary):
 
 class Matern12(Stationary):
     """
-    The Matern 1/2 kernel
+    The Matern 1/2 kernel. Functions drawn from a GP with this kernel are not
+    differentiable anywhere. The kernel equation is
+
+    k(r) = σ² exp{-r}
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    σ² is the variance parameter
     """
 
     @params_as_tensors
@@ -462,7 +514,14 @@ class Matern12(Stationary):
 
 class Matern32(Stationary):
     """
-    The Matern 3/2 kernel
+    The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once
+    differentiable. The kernel equation is
+
+    k(r) =  σ² (1 + √3r) exp{-√3 r}
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     @params_as_tensors
@@ -473,7 +532,14 @@ class Matern32(Stationary):
 
 class Matern52(Stationary):
     """
-    The Matern 5/2 kernel
+    The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice
+    differentiable. The kernel equation is
+
+    k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     @params_as_tensors
@@ -484,7 +550,14 @@ class Matern52(Stationary):
 
 class Cosine(Stationary):
     """
-    The Cosine kernel
+    The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids
+    (with a random phase).  The kernel equation is
+
+        k(r) =  σ² cos{r}
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
     """
 
     @params_as_tensors
@@ -511,6 +584,7 @@ class ArcCosine(Kernel):
     """
 
     implemented_orders = {0, 1, 2}
+
     def __init__(self, input_dim,
                  order=0,
                  variance=1.0, weight_variances=1., bias_variance=1.,
@@ -606,8 +680,15 @@ class Periodic(Kernel):
     the mapping u=(cos(x), sin(x)).
 
     The resulting kernel can be expressed as:
-    k_per(x, x') = variance * exp( -0.5 Sum_i sin^2((x_i-x'_i) * pi /period)/ell^2)
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into ell
+        k(r) =  σ² exp{ -0.5 sin²(π r / γ) / ℓ²}
+
+    where:
+    r  is the Euclidean distance between the input points
+    ℓ is the lengthscale parameter,
+    σ² is the variance parameter,
+    γ is the period parameter.
+
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
     hyperparameter).
     """
 
@@ -635,8 +716,8 @@ class Periodic(Kernel):
             X2 = X
 
         # Introduce dummy dimension so we can use broadcasting
-        f = tf.expand_dims(X, -2)  #  ... x N x 1 x D
-        f2 = tf.expand_dims(X2, -3) # ... x 1 x M x D
+        f = tf.expand_dims(X, -2)  # ... x N x 1 x D
+        f2 = tf.expand_dims(X2, -3)  # ... x 1 x M x D
 
         r = np.pi * (f - f2) / self.period
         r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), -1)
@@ -761,6 +842,18 @@ class Product(Combination):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kernels])
 
 
+def _broadcasting_elementwise_op(op, a, b):
+    r"""
+    Apply binary operation `op` to every pair in tensors `a` and `b`.
+    :param op: binary operator on tensors, e.g. tf.add, tf.substract
+    :param a: tf.Tensor, shape [n_1, ..., n_a]
+    :param b: tf.Tensor, shape [m_1, ..., m_b]
+    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
+    """
+    flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
+    return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
+
+
 def make_deprecated_class(oldname, NewClass):
     """
     Returns a class that raises NotImplementedError on instantiation.
@@ -773,9 +866,11 @@ def make_deprecated_class(oldname, NewClass):
     class OldClass(NewClass):
         def __new__(cls, *args, **kwargs):
             raise NotImplementedError(msg)
+
     OldClass.__doc__ = msg
     OldClass.__qualname__ = OldClass.__name__ = oldname
     return OldClass
+
 
 Kern = make_deprecated_class("Kern", Kernel)
 Add = make_deprecated_class("Add", Sum)

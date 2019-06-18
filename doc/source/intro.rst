@@ -3,7 +3,7 @@ Introduction
 ------------
 
 GPflow is a package for building Gaussian process models in python, using `TensorFlow <http://www.tensorflow.org>`_. It was originally created and is now managed by `James Hensman <http://www.lancaster.ac.uk/staff/hensmanj/>`_ and `Alexander G. de G. Matthews <http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews>`_.
-The full list of `contributors <http://github.com/GPflow/GPflow/graphs/contributors>`_ (in alphabetical order) is Artem Artemev, Rasmus Bonnevie, Alexis Boukouvalas, Ivo Couckuyt, Keisuke Fujii, Zoubin Ghahramani, David J. Harris, James Hensman, Pablo Leon-Villagra, Daniel Marthaler, Alexander G. de G. Matthews, Tom Nickson, Valentine Svensson and Mark van der Wilk. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
+The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexander G. de G. Matthews, Alexis Boukouvalas, Artem Artemev, Daniel Marthaler, David J. Harris, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
 
 Install
 -------
@@ -21,6 +21,11 @@ We also provide a `Docker image <https://hub.docker.com/r/gpflow/gpflow/>`_ whic
 
 Code to generate the image can be found `here <https://github.com/GPflow/GPflow/blob/master/Dockerfile>`_.
 
+Getting Started
+---------------
+Get started with our `examples and tutorials <https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true>`_.
+
+
 What's the difference between GPy and GPflow?
 ---------------------------------------------
 
@@ -31,39 +36,41 @@ GPflow has origins in `GPy <http://github.com/sheffieldml/gpy>`_ by the `GPy con
  -  GPflow focusses on variational inference and MCMC  -- there is no expectation propagation or Laplace approximation.
  -  GPflow does not have any plotting functionality.
 
+.. _implemented_models:
+
 What models are implemented?
 ----------------------------
 GPflow has a slew of kernels that can be combined in a straightforward way. See the later section on `Using kernels in GPflow`. As for inference, the options are currently:
 
 Regression
-~~~~~~~~~~
+""""""""""
 For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `gpflow.models.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters  (`notebook <notebooks/regression.html>`_).
 
 It's also possible to do Sparse GP regression using the :class:`gpflow.models.SGPR` class. This is based on work by `Michalis Titsias <http://www.jmlr.org/proceedings/papers/v5/titsias09a.html>`_ [4].
 
 MCMC
-~~~~
+""""
 For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: :class:`gpflow.models.GPMC`. There's also a sparse equivalent in :class:`gpflow.models.SGPMC`, based on a `recent paper <https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes>`_ [1].
 
 Variational inference
-~~~~~~~~~~~~~~~~~~~~~
+"""""""""""""""""""""
 It's often sufficient to approximate the function values as a Gaussian, for which we follow [2] in :class:`gpflow.models.VGP`. In addition, there is a sparse version based on [3] in :class:`gpflow.models.SVGP`. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in :class:`gpflow.models.SGPR` . All of the sparse methods in GPflow are solidified in [5].
 
 The following table summarizes the model options in GPflow.
 
-+----------------------+--------------------------+----------------------------+-----------------------------+
-|                      | Gaussian                 | Non-Gaussian (variational) | Non-Gaussian                |
-|                      | Likelihood               |                            | (MCMC)                      |
-+======================+==========================+============================+=============================+
-| Full-covariance      | :class:`gpflow.models.GPR`  | :class:`gpflow.models.VGP`    | :class:`gpflow.models.GPMC`   |
-+----------------------+--------------------------+----------------------------+-----------------------------+
-| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`  | :class:`gpflow.models.SGPMC` |
-+----------------------+--------------------------+----------------------------+-----------------------------+
++----------------------+----------------------------+----------------------------+------------------------------+
+|                      | Gaussian                   | Non-Gaussian (variational) | Non-Gaussian                 |
+|                      | Likelihood                 |                            | (MCMC)                       |
++======================+============================+============================+==============================+
+| Full-covariance      | :class:`gpflow.models.GPR` | :class:`gpflow.models.VGP` | :class:`gpflow.models.GPMC`  |
++----------------------+----------------------------+----------------------------+------------------------------+
+| Sparse approximation | :class:`gpflow.models.SGPR`| :class:`gpflow.models.SVGP`| :class:`gpflow.models.SGPMC` |
++----------------------+----------------------------+----------------------------+------------------------------+
 
 A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of `Matthews <http://mlg.eng.cam.ac.uk/matthews/thesis.pdf>`_ [8].
 
 GPLVM
-~~~~~~~~~~~~~~~~~~~~~
+"""""
 For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
 in GPflow (`notebook <notebooks/GPLVM.html>`_).
 
@@ -76,18 +83,20 @@ Citing GPflow
 
 To cite GPflow, please reference the `JMLR paper <http://www.jmlr.org/papers/volume18/16-537/16-537.pdf>`_. Sample BibTeX is given below:
 
+.. code-block:: text
 
-| @ARTICLE{GPflow2017,
-| author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and Ghahramani, Zoubin and Hensman, James},
-| title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
-| journal = {Journal of Machine Learning Research},
-| year    = {2017},
-| month = {apr},
-| volume  = {18},
-| number  = {40},
-| pages   = {1-6},
-| url     = {http://jmlr.org/papers/v18/16-537.html}
-| }
+    @ARTICLE{GPflow2017,
+        author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and Ghahramani, Zoubin and Hensman, James},
+        title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
+        journal = {Journal of Machine Learning Research},
+        year    = {2017},
+        month = {apr},
+        volume  = {18},
+        number  = {40},
+        pages   = {1-6},
+        url     = {http://jmlr.org/papers/v18/16-537.html}
+    }
+
 
 References
 ----------

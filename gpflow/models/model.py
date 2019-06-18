@@ -22,6 +22,7 @@ from ..core.compilable import Build
 from ..params import Parameterized, DataHolder
 from ..decors import autoflow
 from ..mean_functions import Zero
+from ..likelihoods import SwitchedLikelihood
 
 
 class Model(Parameterized):
@@ -98,7 +99,7 @@ class Model(Parameterized):
 
     @abc.abstractmethod
     def _build_likelihood(self):
-        raise NotImplementedError('')  # TODO(@awav): write error message
+        pass
 
 
 class GPModel(Model):
@@ -135,7 +136,22 @@ class GPModel(Model):
     def __init__(self, X, Y, kern, likelihood, mean_function,
                  num_latent=None, name=None):
         super(GPModel, self).__init__(name=name)
-        self.num_latent = num_latent or Y.shape[1]
+        if num_latent is None:
+            # Note: It's not nice for `Model` to need to be aware of specific
+            # likelihoods as here. However, `num_latent` is a bit more broken
+            # in general, specifically regarding multioutput kernels. We
+            # should fix this in the future.
+            # It also has slightly problematic assumptions re the output
+            # dimensions of mean_function.
+            num_latent = Y.shape[1]
+            if isinstance(likelihood, SwitchedLikelihood):
+                # the SwitchedLikelihood partitions/stitches based on the last
+                # column in Y, but we should not add a separate latent GP for
+                # this! hence decrement by 1
+                assert num_latent >= 2
+                num_latent -= 1
+
+        self.num_latent = num_latent
         self.mean_function = mean_function or Zero(output_dim=self.num_latent)
         self.kern = kern
         self.likelihood = likelihood
@@ -203,4 +219,4 @@ class GPModel(Model):
 
     @abc.abstractmethod
     def _build_predict(self, *args, **kwargs):
-        raise NotImplementedError('') # TODO(@awav): write error message
+        pass
