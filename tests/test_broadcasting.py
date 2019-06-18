@@ -41,14 +41,14 @@ Kerns = [
 
     kernels.Linear,
     kernels.Polynomial,
-    kernels.ArcCosine,
-    kernels.Periodic,
+    # kernels.ArcCosine,
+    # kernels.Periodic,
 ]
 
 def _test_no_active_dims(Kern, sess):
     S, N, M, D = 5, 4, 3, 2
     X1 = tf.identity(np.random.randn(S, N, D))
-    X2 = tf.identity(np.random.randn(S, M, D))
+    X2 = tf.identity(np.random.randn(M, D))
     kern = Kern(D) + gpflow.kernels.White(2)
 
     compare_vs_map(X1, X2, kern, sess)
@@ -57,7 +57,7 @@ def _test_slice_active_dims(Kern, sess):
     S, N, M, D = 5, 4, 3, 4
     d = 2
     X1 = tf.identity(np.random.randn(S, N, D))
-    X2 = tf.identity(np.random.randn(S, M, D))
+    X2 = tf.identity(np.random.randn(M, D))
     kern = Kern(d, active_dims=slice(1, 1+d))
 
     compare_vs_map(X1, X2, kern, sess)
@@ -66,14 +66,14 @@ def _test_indices_active_dims(Kern, sess):
     S, N, M, D = 5, 4, 3, 4
 
     X1 = tf.identity(np.random.randn(S, N, D))
-    X2 = tf.identity(np.random.randn(S, M, D))
+    X2 = tf.identity(np.random.randn(M, D))
     kern = Kern(2, active_dims=[1, 3])
 
     compare_vs_map(X1, X2, kern, sess)
 
 
 def compare_vs_map(X1, X2, kern, sess):
-    K12_map = tf.map_fn(lambda x: kern.K(x[0], x[1]), [X1, X2], dtype=settings.float_type)
+    K12_map = tf.map_fn(lambda x: kern.K(x[0], X2), [X1], dtype=settings.float_type)
     K12_native = kern.K(X1, X2)
     assert_allclose(*sess.run([K12_map, K12_native]))
 

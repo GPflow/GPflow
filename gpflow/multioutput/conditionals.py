@@ -14,16 +14,18 @@
 
 import tensorflow as tf
 
-from .features import SeparateIndependentMof, SharedIndependentMof, MixedKernelSharedMof, MixedKernelSeparateMof
-from .features import Kuu, Kuf
-from .kernels import Mok, SharedIndependentMok, SeparateIndependentMok, SeparateMixedMok
+from .. import misc
 from .. import settings
-from ..conditionals import base_conditional, _expand_independent_outputs, _sample_mvn
+from ..conditionals import (_expand_independent_outputs, _rollaxis_left,
+                            _sample_mvn, base_conditional)
 from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
-
+from .features import (Kuf, Kuu, MixedKernelSeparateMof, MixedKernelSharedMof,
+                       SeparateIndependentMof, SharedIndependentMof)
+from .kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
+                      SharedIndependentMok)
 
 logger = settings.logger()
 
@@ -76,7 +78,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     else:
         Knn = kern.Kdiag(Xnew, full_output_cov=False)[..., 0]  # N
 
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  P x N x N or N x P
+    fmean, fvar = base_conditional(
+        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)  # N x P,  P x N x N or N x P
     return fmean, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
@@ -120,12 +123,12 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
                           (Kmms, Kmns, Knns, fs, q_sqrts),
                           (settings.float_type, settings.float_type))  # P x N x 1, P x 1 x N x N or P x N x 1
 
-    fmu = tf.matrix_transpose(rmu[:, :, 0])  # N x P
+    fmu = _rollaxis_left(rmu[..., 0], 1)  # N x P
 
     if full_cov:
-        fvar = rvar[:, 0, :, :]  # P x N x N
+        fvar = rvar[..., 0, :, :]  # P x N x N
     else:
-        fvar = tf.transpose(rvar[..., 0])  # N x P
+        fvar = _rollaxis_left(rvar[..., 0], 1)  # N x P
 
     return fmu, _expand_independent_outputs(fvar, full_cov, full_output_cov)
 
@@ -206,7 +209,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     return fmean, fvar
 
 
-@conditional.register(object, (MixedKernelSharedMof,MixedKernelSeparateMof), SeparateMixedMok, object)
+@conditional.register(object, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, object)
 @name_scope("conditional")
 def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """
@@ -226,30 +229,11 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
     """
     logger.debug("conditional: (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok")
-    independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
-    gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                 full_output_cov=False, white=white)  # N x L, L x N x N or N x L
-
-    gmu = tf.matrix_transpose(gmu)  # L x N
-    if not full_cov:
-        gvar = tf.matrix_transpose(gvar)  # L x N (x N)
-
-    Wgmu = tf.tensordot(gmu, kern.W, [[0], [1]])  # N x P
-
-    if full_output_cov:
-        Wt_expanded = tf.matrix_transpose(kern.W)[:, None, :]  # L x 1 x P
-        if full_cov:
-            Wt_expanded = tf.expand_dims(Wt_expanded, axis=-1)  # L x 1 x P x 1
-
-        gvarW = tf.expand_dims(gvar, axis=2) * Wt_expanded  # L x N x P (x N)
-        WgvarW = tf.tensordot(gvarW, kern.W, [[0], [1]])  # N x P (x N) x P
-    else:
-        if not full_cov:
-            WgvarW = tf.tensordot(gvar, kern.W ** 2, [[0], [1]])  # N x P
-        else:
-            WgvarW = tf.tensordot(kern.W ** 2, gvar, [[1], [0]])  # P x N (x N)
-
-    return Wgmu, WgvarW
+    with params_as_tensors_for(feat, kern):
+        independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
+        gmu, gvar = independent_cond(Xnew, feat, kern, f, full_cov=full_cov, q_sqrt=q_sqrt,
+                                    full_output_cov=False, white=white)  # N x L, L x N x N or N x L
+        return _mix_latent_gp(kern.W, gmu, gvar, full_cov, full_output_cov)
 
 
 # ------------------
@@ -275,17 +259,11 @@ def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=
         raise NotImplementedError("full_output_cov not yet implemented")
     independent_cond = conditional.dispatch(object, SeparateIndependentMof, SeparateIndependentMok, object)
     g_mu, g_var = independent_cond(Xnew, feat, kern, f, white=white, q_sqrt=q_sqrt,
-                                   full_output_cov=False, full_cov=False)  # N x L, N x L
-    g_sample = _sample_mvn(g_mu, g_var, "diag", num_samples=num_samples)  # N x L
+                                   full_output_cov=False, full_cov=False)  # [..., N, L], [..., N, L]
+    g_sample = _sample_mvn(g_mu, g_var, "diag", num_samples=num_samples)  # [..., (S), N, L]
     with params_as_tensors_for(kern):
-        f_sample = tf.einsum("pl,nl->np", kern.W, g_sample)
-        f_mu = tf.einsum("pl,nl->np", kern.W, g_mu)
-        # W g_var W.T
-        # [P, L] @ [L, L] @ [L, P]
-        # \sum_l,l' W_pl g_var_ll' W_p'l'
-        # \sum_l W_pl g_var_nl W_p'l
-        # -> 
-        f_var = tf.einsum("pl,nl,pl->np", kern.W, g_var, kern.W)
+        f_mu, f_var = _mix_latent_gp(kern.W, g_mu, g_var, full_cov, full_output_cov)
+        f_sample = tf.tensordot(g_sample, kern.W, [[-1], [-1]])  # [..., N, P]
     return f_sample, f_mu, f_var
 
 
@@ -427,7 +405,7 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         fvar = Knn - tf.matmul(At, At, transpose_a=True)  # N x K x K
     elif not full_cov and not full_output_cov:
         # Knn: N x K
-        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, K))  # Can also do this with a matmul
+        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (N, K))  # Can also do this with a matmul
 
     # another backsubstitution in the unwhitened case
     if not white:
@@ -462,4 +440,51 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         elif not full_cov and not full_output_cov:
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # R x N x K
             fvar = fvar[None, ...] + addvar  # R x N x K
+    else:
+        fvar = tf.broadcast_to(fvar[None], tf.shape(fmean))
     return fmean, fvar
+
+
+# -------
+# Helpers
+# -------
+
+def _mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
+    r"""
+    Takes the mean and variance of an uncorrelated L-dimensional latent GP
+    and returns the mean and the variance of the mixed GP, `f = W g`,
+    where both f and g are GPs, with W having a shape [P, L]
+
+    :param W: [P, L]
+    :param g_mu: [..., N, L]
+    :param g_var: [..., N, L] (full_cov = False) or [L, ..., N, N] (full_cov = True)
+    :return: f_mu and f_var, shape depends on `full_cov` and `full_output_cov`
+    """
+    f_mu = tf.tensordot(g_mu, W, [[-1], [-1]])  # [..., N, P]
+
+    rk = tf.rank(g_var)
+    leading_dims = (rk - 3) if full_cov else (rk - 2)
+
+    if full_cov and full_output_cov:  # g_var is [L, ..., N, N]
+        # this branch is practically never taken
+        g_var = _rollaxis_left(g_var, 1)  # [..., N, N, L]
+        g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
+        g_var_W = g_var * W  # [..., N, P, L]
+        f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, N, P, P]
+        f_var = misc.leading_transpose(f_var, [..., -4, -2, -3, -1])  # [..., N, P, N, P]
+
+    elif full_cov and not full_output_cov:  # g_var is [L, ..., N, N]
+        # this branch is practically never taken
+        f_var = tf.tensordot(g_var, W**2, [[0], [-1]])  # [..., N, N, P]
+        f_var = misc.leading_transpose(f_var, [..., -1, -3, -2])  # [..., P, N, N]
+
+    elif not full_cov and full_output_cov:  # g_var is [..., N, L]
+        g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, 1, L]
+        g_var_W = g_var * W  # [..., N, P, L]
+        f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, P, P]
+
+    elif not full_cov and not full_output_cov:  # g_var is [..., N, L]
+        W_squared = W**2  # [P, L]
+        f_var = tf.tensordot(g_var, W_squared, [[-1], [-1]])  # [..., N, P]
+
+    return f_mu, f_var

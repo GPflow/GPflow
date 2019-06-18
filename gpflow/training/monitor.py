@@ -887,7 +887,7 @@ class ModelToTensorBoardTask(BaseTensorBoardTask):
 
         # Add non-scalar parameters
         if not only_scalars:
-            all_summaries += [tf.summary.histogram(p.full_name, p.constrained_tensor)
+            all_summaries += [tf.summary.histogram(p.pathname, p.constrained_tensor)
                               for p in parameters if p.size > 1]
 
         # Add likelihood
@@ -922,7 +922,7 @@ class LmlToTensorBoardTask(BaseTensorBoardTask):
 
         super().__init__(file_writer, model)
         self._minibatch_size = minibatch_size
-        self._full_lml = tf.placeholder(settings.tf_float, shape=())
+        self._full_lml = tf.placeholder(settings.float_type, shape=())
         self._summary = tf.summary.scalar(model.name + '/full_lml', self._full_lml)
 
         self.wrapper = None  # type: Callable[[Iterator], Iterator]

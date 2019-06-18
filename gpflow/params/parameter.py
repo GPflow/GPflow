@@ -335,6 +335,7 @@ class Parameter(Node):
                 raise ValueError(msg.format(value.dtype, inner_dtype))
             cast = False
             dtype = inner_dtype
+
         if misc.is_number(value):
             value_type = np.result_type(value).type
             num_type = misc.normalize_num_type(value_type)
@@ -343,7 +344,7 @@ class Parameter(Node):
         elif misc.is_list(value):
             dtype = settings.float_type if dtype is None else dtype
             value = np.array(value, dtype=dtype)
-        elif cast:
+        elif cast and not misc.is_tensor(value):
             value = value.astype(dtype)
         if shape is not None and self.fixed_shape and is_built and shape != value.shape:
             msg = 'Value has different shape. Parameter shape {0}, value shape {1}.'
@@ -364,7 +365,9 @@ class Parameter(Node):
         constrained = self._build_constrained(unconstrained)
         prior = self._build_prior(unconstrained, constrained)
 
-        self._is_initialized_tensor = tf.is_variable_initialized(unconstrained)
+        self._is_initialized_tensor = True
+        if not isinstance(unconstrained, tf.Tensor):
+            self._is_initialized_tensor = tf.is_variable_initialized(unconstrained)
         self._unconstrained_tensor = unconstrained
         self._constrained_tensor = constrained
         self._prior_tensor = prior
