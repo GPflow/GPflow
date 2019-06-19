@@ -71,12 +71,12 @@ def laplace(x, mu, sigma):
 def multivariate_normal(x, mu, L):
     """
     Computes the log-density of a multivariate normal.
-    :param x  : N×1 or N×R sample(s) for which we want the density
-    :param mu : N×1 or N×R mean(s) of the normal distribution
-    :param L  : N×N Cholesky decomposition of the covariance matrix
+    :param x  : [N, 1] or [N, R] sample(s) for which we want the density
+    :param mu : [N, 1] or [N, R] mean(s) of the normal distribution
+    :param L  : [N, N] Cholesky decomposition of the covariance matrix
     :return p : (1,) or (R,) vector of log densities for each of the columns of x and/or mu
 
-    x and mu are either vectors or matrices. If both are vectors (N×1):
+    x and mu are either vectors or matrices. If both are vectors [N, 1]:
     p[0] = log pdf(x) where x ~ N(mu, LL^T)
     If at least one is a matrix, we assume independence over the *columns*:
     the number of rows must match the size of L. Broadcasting behaviour:
@@ -84,8 +84,8 @@ def multivariate_normal(x, mu, L):
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
     with tf.control_dependencies([
-            assert_tensor_ndim(x, 2, 'multivariate_normal requires the shape of x to be (N, R)'),
-            assert_tensor_ndim(mu, 2, 'multivariate_normal requires the shape of mu to be (N, R)'),
+            assert_tensor_ndim(x, 2, 'multivariate_normal requires the shape of x to be [N, R]'),
+            assert_tensor_ndim(mu, 2, 'multivariate_normal requires the shape of mu to be [N, R]'),
             tf.assert_equal(tf.shape(L), [tf.shape(x)[0], tf.shape(x)[0]]),
             ]):
         d = x - mu

@@ -291,14 +291,14 @@ def tensor_ndim_equal(tensor: tf.Tensor, ndim: int):
     Returns a scalar bool tensor that is True if the rank of `tensor` is equal to `ndim`.
     """
     tensor_shape = tf.shape(tensor)
-    tensor_ndim = tf.shape(tensor_shape)
+    tensor_ndim = tf.size(tensor_shape)
     # The return value of tf.equal() is a 1-vector; turn it into a scalar using tf.reduce_all():
-    return tf.reduce_all(tf.equal(tensor_ndim, ndim))
+    return tf.equal(tensor_ndim, ndim)
 
 
-def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: Optional[str]=None):
+def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: Optional[str] = None):
     if message is None:
-        message = "assert_tensor_ndim: {}'s shape does not have ndim {}".format(tensor, ndim)
+        message = "Tensor shape does not have ndim {}".format(ndim)
 
     if tensor.shape.ndims is not None:
         if tensor.shape.ndims != ndim:
