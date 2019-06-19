@@ -15,7 +15,7 @@
 
 import copy
 from collections import OrderedDict
-from typing import List, Union
+from typing import List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -284,6 +284,26 @@ def _get_tensor_safe(name, index, graph):
         return graph.get_tensor_by_name(':'.join([name, index]))
     except KeyError:
         return None
+
+
+def tensor_ndim_equal(tensor: tf.Tensor, ndim: int):
+    """
+    Returns a scalar bool tensor that is True if the rank of `tensor` is equal to `ndim`.
+    """
+    tensor_shape = tf.shape(tensor)
+    tensor_ndim = tf.size(tensor_shape)
+    return tf.equal(tensor_ndim, ndim)
+
+
+def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: Optional[str] = None):
+    if message is None:
+        message = "Tensor shape does not have ndim {}".format(ndim)
+
+    if tensor.shape.ndims is not None:
+        if tensor.shape.ndims != ndim:
+            raise ValueError(message)
+    return tf.Assert(tensor_ndim_equal(tensor, ndim), [message])
+
 
 def version():
     return __version__
