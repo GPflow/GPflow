@@ -729,6 +729,8 @@ class SoftMax(MonteCarloLikelihood):
                     tf.assert_equal(tf.cast(tf.shape(F)[1], settings.int_type),
                                     tf.cast(self.num_classes, settings.int_type))
                 ]):
+            if Y.dtype != np.int32:
+                Y = tf.cast(Y, np.int32)
             return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]
 
     def conditional_mean(self, F):

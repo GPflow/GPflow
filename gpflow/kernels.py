@@ -19,7 +19,6 @@ different kernels, and how it is possible to combine multiple kernels is shown
 in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 """
 
-
 from functools import reduce
 import warnings
 
@@ -60,7 +59,8 @@ class Kernel(Parameterized):
         elif isinstance(active_dims, slice):
             self.active_dims = active_dims
             if active_dims.start is not None and active_dims.stop is not None and active_dims.step is not None:
-                assert len(range(active_dims.start, active_dims.stop, active_dims.step)) == input_dim  # pragma: no cover
+                assert len(
+                    range(active_dims.start, active_dims.stop, active_dims.step)) == input_dim  # pragma: no cover
         else:
             self.active_dims = np.array(active_dims, dtype=np.int32)
             assert len(active_dims) == input_dim
@@ -270,7 +270,6 @@ class Stationary(Kernel):
         self.lengthscales = Parameter(lengthscales, transform=transforms.positive,
                                       dtype=settings.float_type)
 
-
     @params_as_tensors
     def _scaled_square_dist(self, X, X2):
         """
@@ -301,11 +300,10 @@ class Stationary(Kernel):
         dist += _broadcasting_elementwise_op(tf.add, Xs, X2s)
         return dist
 
-
     @staticmethod
     def _clipped_sqrt(r2):
         # Clipping around the (single) float precision which is ~1e-45.
-        return tf.sqrt(tf.maximum(r2, 1e-40))
+        return tf.sqrt(tf.maximum(r2, 1e-36))
 
     def scaled_square_dist(self, X, X2):  # pragma: no cover
         return self._scaled_square_dist(X, X2)
@@ -320,7 +318,6 @@ class Stationary(Kernel):
                       DeprecationWarning)
         r2 = self.scaled_square_dist(X, X2)
         return self._clipped_sqrt(r2)
-
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
@@ -375,6 +372,7 @@ class SquaredExponential(Stationary):
     @params_as_tensors
     def K_r2(self, r2):
         return self.variance * tf.exp(-r2 / 2.)
+
 
 RBF = SquaredExponential
 
@@ -586,6 +584,7 @@ class ArcCosine(Kernel):
     """
 
     implemented_orders = {0, 1, 2}
+
     def __init__(self, input_dim,
                  order=0,
                  variance=1.0, weight_variances=1., bias_variance=1.,
@@ -717,8 +716,8 @@ class Periodic(Kernel):
             X2 = X
 
         # Introduce dummy dimension so we can use broadcasting
-        f = tf.expand_dims(X, -2)  #  ... x N x 1 x D
-        f2 = tf.expand_dims(X2, -3) # ... x 1 x M x D
+        f = tf.expand_dims(X, -2)  # ... x N x 1 x D
+        f2 = tf.expand_dims(X2, -3)  # ... x 1 x M x D
 
         r = np.pi * (f - f2) / self.period
         r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), -1)
@@ -867,9 +866,11 @@ def make_deprecated_class(oldname, NewClass):
     class OldClass(NewClass):
         def __new__(cls, *args, **kwargs):
             raise NotImplementedError(msg)
+
     OldClass.__doc__ = msg
     OldClass.__qualname__ = OldClass.__name__ = oldname
     return OldClass
+
 
 Kern = make_deprecated_class("Kern", Kernel)
 Add = make_deprecated_class("Add", Sum)

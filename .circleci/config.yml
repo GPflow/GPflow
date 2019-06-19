@@ -3,13 +3,16 @@ runtest: &runtest
     - checkout
     - run:
         name: Install GPflow
-        command: python setup.py install
+        command: |
+          python setup.py install
     - run:
         name: Run tests
-        command: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
+        command: |
+          pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
     - run:
         name: Upload coverage report
-        command: bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
+        command: |
+          bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
 
 version: 2.1
 
@@ -28,9 +31,56 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
+  deploy:
+    docker:
+      - image: awav/tensorflow:1.12.1
+    steps:
+      - checkout
+      - run:
+          name: Verify git tag vs. VERSION
+          command: |
+            VERSION="v$(cat VERSION | tr -d '\t\r\n ')"
+            if [ "$VERSION" != "$CIRCLE_TAG" ]; then
+              echo "The package version ($VERSION) and the latest tag version ($CIRCLE_TAG) are different"
+              exit 1
+            fi
+      - run:
+          name: Install twine
+          command: |
+            pip install twine
+      - run:
+          name: Init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = artemav" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+      - run:
+          name: Create pip package
+          command: |
+            python setup.py bdist sdist
+      - run:
+          name: Upload to PyPI
+          command: |
+            twine upload dist/*
+
 workflows:
   version: 2.1
-  build_and_test:
+  build_test_and_deploy:
     jobs:
-      - unit-test
-      - notebook-test
+      - unit-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+      - notebook-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+      - deploy:
+          requires:
+            - unit-test
+            - notebook-test
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
