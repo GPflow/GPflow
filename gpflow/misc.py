@@ -292,7 +292,6 @@ def tensor_ndim_equal(tensor: tf.Tensor, ndim: int):
     """
     tensor_shape = tf.shape(tensor)
     tensor_ndim = tf.size(tensor_shape)
-    # The return value of tf.equal() is a 1-vector; turn it into a scalar using tf.reduce_all():
     return tf.equal(tensor_ndim, ndim)
 
 
