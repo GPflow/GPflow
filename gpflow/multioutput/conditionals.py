@@ -22,7 +22,7 @@ from ..decors import name_scope, params_as_tensors_for
 from ..dispatch import conditional, sample_conditional
 from ..features import InducingPoints
 from ..kernels import Combination
-from .features import (Kuf, Kuu, MixedKernelSeparateMof, MixedKernelSharedMof,
+from .features import (Kuf, Kuu, SlowMixedKernelSeparateMof, SlowMixedKernelSharedMof,
                        SeparateIndependentMof, SharedIndependentMof)
 from .kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
                       SharedIndependentMok)
@@ -240,11 +240,11 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 # Sample conditional
 # ------------------
 
-@sample_conditional.register(object, (MixedKernelSharedMof, MixedKernelSeparateMof), SeparateMixedMok, object)
+@sample_conditional.register(object, (SharedIndependentMof, SeparateIndependentMof), SeparateMixedMok, object)
 @name_scope("sample_conditional")
 def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
     """
-    `sample_conditional` will return a sample from the conditinoal distribution.
+    `sample_conditional` will return a sample from the conditional distribution.
     In most cases this means calculating the conditional mean m and variance v and then
     returning m + sqrt(v) * eps, with eps ~ N(0, 1).
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
