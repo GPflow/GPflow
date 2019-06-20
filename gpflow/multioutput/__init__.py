@@ -22,6 +22,7 @@ from .kernels import SeparateMixedMok
 from .features import Mof
 from .features import SharedIndependentMof
 from .features import SeparateIndependentMof
-from .features import MixedKernelSharedMof
+from .features import SlowMixedKernelSharedMof
+# NOTE SlowMixedKernelSeparateMof not tested
 
 from . import conditionals
