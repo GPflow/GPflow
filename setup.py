@@ -42,7 +42,7 @@ try:
         # TF pre-installed, but below the minimum required version
         raise DeprecationWarning("TensorFlow version below minimum requirement")
     if parse_version(tf.VERSION) > parse_version(max_tf_version):
-        # TF pre-installed, but below the minimum required version
+        # TF pre-installed, but above the maximum required version
         raise DeprecationWarning("TensorFlow version above maximum requirement")
 except (ImportError, DeprecationWarning) as e:
     # Add TensorFlow to dependencies to trigger installation/update
