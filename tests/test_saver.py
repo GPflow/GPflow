@@ -64,10 +64,13 @@ class Data:
         return np.random.rand(10, 2)
 
 
-@pytest.fixture
+@pytest.fixture(params=['file', 'filename'])
 def filename(request):
     with tempfile.NamedTemporaryFile() as file:
-        yield file.name
+        if request.param == 'file':
+            yield file
+        else:
+            yield file.name
 
 
 @pytest.fixture
