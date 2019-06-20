@@ -271,7 +271,7 @@ def test_sample_conditional_mixedkernel(session_tf):
     # Path 1: mixed kernel: most efficient route
     W = np.random.randn(Data.P, Data.L)
     mixed_kernel = mk.SeparateMixedMok([RBF(Data.D) for _ in range(Data.L)], W)
-    mixed_feature = mf.MixedKernelSharedMof(InducingPoints(Z.copy()))
+    mixed_feature = mf.SharedIndependentMof(InducingPoints(Z.copy()))
 
     sample = sample_conditional(placeholders["Xnew"], mixed_feature, mixed_kernel,
                                 placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
@@ -498,12 +498,12 @@ def test_compare_mixed_kernel(session_tf):
 
     kern_list = [RBF(data.D) for _ in range(data.L)]
     k1 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+    f1 = mf.SlowMixedKernelSharedMof(InducingPoints(data.X[:data.M,...].copy()))
     m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     kern_list = [RBF(data.D) for _ in range(data.L)]
     k2 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f2 = mf.MixedKernelSharedMof(InducingPoints(data.X[:data.M,...].copy()))
+    f2 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
     m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(session_tf, [m1, m2])
@@ -533,13 +533,13 @@ def test_MixedKernelSeparateMof(session_tf):
     kern_list = [RBF(data.D) for _ in range(data.L)]
     feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
     k1 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f1 = mf.SeparateIndependentMof(feat_list)
+    f1 = mf.SlowMixedKernelSeparateMof(feat_list)
     m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     kern_list = [RBF(data.D) for _ in range(data.L)]
     feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
     k2 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f2 = mf.MixedKernelSeparateMof(feat_list)
+    f2 = mf.SeparateIndependentMof(feat_list)
     m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(session_tf, [m1, m2])

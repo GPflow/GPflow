@@ -54,7 +54,10 @@ class Mofs:
         return [self.shared_independent, self.separate_independent]
 
     def mixed_shared(self):
-        return mf.MixedKernelSharedMof(make_ip())
+        return mf.SlowMixedKernelSharedMof(make_ip())
+
+    def mixed_separate(self, num=Datum.):
+        return mf.SlowMixedKernelSeparateMof(make_ips(num))
 
 
 class Moks:
@@ -88,6 +91,18 @@ def test_kuf(session_tf, feature, kernel):
 @pytest.mark.parametrize('fun', [mf.Kuu, mf.Kuf])
 def test_mixed_shared(session_tf, fun):
     f = Mofs().mixed_shared()
+    k = Moks().separate_mixed()
+    if fun is mf.Kuu:
+        t = tf.cholesky(fun(f, k, jitter=1e-9))
+    else:
+        t = fun(f, k, Datum.Xnew)
+        print(t.shape)
+    session_tf.run(t)
+
+
+@pytest.mark.parametrize('fun', [mf.Kuu, mf.Kuf])
+def test_mixed_separate(session_tf, fun):
+    f = Mofs().mixed_separate()
     k = Moks().separate_mixed()
     if fun is mf.Kuu:
         t = tf.cholesky(fun(f, k, jitter=1e-9))
