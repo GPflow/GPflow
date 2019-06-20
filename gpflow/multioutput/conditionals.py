@@ -68,7 +68,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    logger.debug("Conditional: SharedIndependentMof - SharedIndepedentMok")
+    logger.debug("Conditional: SharedIndependentMof - SharedIndependentMok")
 
 
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # M x M
@@ -153,7 +153,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     - See above for the parameters and the return value.
     """
 
-    logger.debug("Conditional: (SharedIndependentMof, SeparateIndepedentMof) - SeparateMixedMok")
+    logger.debug("Conditional: (SharedIndependentMof, SeparateIndependentMof) - SeparateMixedMok")
     Kmm = Kuu(feat, kern, jitter=settings.numerics.jitter_level)  # L x M x M
     Kmn = Kuf(feat, kern, Xnew)  # M x L x N x P
     Knn = kern.K(Xnew, full_output_cov=full_output_cov) if full_cov \
