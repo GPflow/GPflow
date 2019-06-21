@@ -1,5 +1,7 @@
 import copy
-from typing import List, Union, Optional
+import functools
+import operator
+from typing import List, Optional, Union
 
 import tensorflow as tf
 
@@ -64,20 +66,66 @@ def broadcasting_elementwise(op, a, b):
     return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
-def square_distance(X, X2):
+@tf.custom_gradient
+def square_distance2(a: tf.Tensor, b: Optional[tf.Tensor] = None) -> tf.Tensor:
     """
-    Returns (X - X2ᵀ)²
+    Returns ||a - bᵀ||²
+
     Due to the implementation and floating-point imprecision, the
     result may actually be very slightly negative for entries very
     close to each other.
     """
-    if X2 is None:
-        Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
-        dist = -2 * tf.matmul(X, X, transpose_b=True)
-        dist += Xs + tf.linalg.adjoint(Xs)
-        return dist
-    Xs = tf.reduce_sum(tf.square(X), axis=-1)
-    X2s = tf.reduce_sum(tf.square(X2), axis=-1)
-    dist = -2 * tf.tensordot(X, X2, [[-1], [-1]])
-    dist += broadcasting_elementwise(tf.add, Xs, X2s)
-    return dist
+    if b is None:
+        reduced_a2 = tf.reduce_sum(tf.square(a), axis=-1, keepdims=True)
+        distance = -2 * tf.matmul(a, a, transpose_b=True)
+        distance += reduced_a2 + tf.linalg.adjoint(reduced_a2)
+
+        def grad_fn(grad_output):
+            n = functools.reduce(operator.mul, a.shape[:-1])
+            reduced_a = tf.reduce_sum(a, axis=tf.range(a.shape.ndims - 1), keepdims=True)
+            print(grad_output)
+            grad_a = (n * a - reduced_a) * grad_output * 4.0
+            return grad_a
+
+        return distance, grad_fn
+
+    reduced_a2 = tf.reduce_sum(tf.square(a), axis=-1)
+    reduced_b2 = tf.reduce_sum(tf.square(b), axis=-1)
+
+    distance = -2 * tf.tensordot(a, b, [[-1], [-1]])
+    distance += broadcasting_elementwise(tf.add, reduced_a2, reduced_b2)
+
+    def grad_fn(grad_output):
+        n = functools.reduce(operator.mul, a.shape[:-1])
+        m = functools.reduce(operator.mul, b.shape[:-1])
+        reduced_a = tf.reduce_sum(a, axis=tf.range(a.shape.ndims - 1), keepdims=True)
+        reduced_b = tf.reduce_sum(b, axis=tf.range(b.shape.ndims - 1), keepdims=True)
+        print(grad_output)
+        grad_a = (m * a - reduced_b) * grad_output * 2.0
+        grad_b = (n * b - reduced_a) * grad_output * 2.0
+        return grad_a, grad_b
+
+    return distance, grad_fn
+
+
+def square_distance(a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+    """
+    Returns ||a - bᵀ||²
+
+    Due to the implementation and floating-point imprecision, the
+    result may actually be very slightly negative for entries very
+    close to each other.
+    """
+    if b is None:
+        reduced_a2 = tf.reduce_sum(tf.square(a), axis=-1, keepdims=True)
+        distance = -2 * tf.matmul(a, a, transpose_b=True)
+        distance += reduced_a2 + tf.linalg.adjoint(reduced_a2)
+        return distance
+
+    reduced_a2 = tf.reduce_sum(tf.square(a), axis=-1)
+    reduced_b2 = tf.reduce_sum(tf.square(b), axis=-1)
+
+    distance = -2 * tf.tensordot(a, b, [[-1], [-1]])
+    distance += broadcasting_elementwise(tf.add, reduced_a2, reduced_b2)
+
+    return distance
