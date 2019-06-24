@@ -1,11 +1,19 @@
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Dict
 
 import tensorflow as tf
+
+from .printing import get_component_variables
 
 
 def set_trainable(model: tf.Module, flag: bool = False):
     for variable in model.trainable_variables:
         variable._trainable = flag
+
+
+def multiple_assign(module: tf.Module, var_dict: Dict):
+    reference_var_dict = get_component_variables(module)
+    for path, value in var_dict.items():
+        reference_var_dict[path].assign(value)
 
 
 def training_loop(closure: Callable[..., tf.Tensor],
