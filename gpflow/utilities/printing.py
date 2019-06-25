@@ -14,7 +14,7 @@
 
 import re
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, Dict, Union
 
 import numpy as np
 import tensorflow as tf
@@ -38,6 +38,8 @@ def print_summary(module: tf.Module, fmt: str = None):
             return v.transform.__class__.__name__
         return None
 
+    merged_leaf_components = _merge_leaf_components(leaf_components(module))
+
     column_values = [[
         path,
         get_name(variable),
@@ -46,9 +48,22 @@ def print_summary(module: tf.Module, fmt: str = None):
         variable.shape,
         variable.dtype.name,
         _str_tensor_value(variable.numpy())
-    ] for path, variable in leaf_components(module).items()]
+    ] for path, variable in merged_leaf_components.items()]
 
     print(tabulate(column_values, headers=column_names, tablefmt=fmt))
+
+
+def _merge_leaf_components(
+        input: Dict[str, Union[tf.Tensor, Parameter]]) -> Dict[str, Union[tf.Tensor, Parameter]]:
+    if len(set(input.values())) == len(input):
+        return input
+    tmp_dict = dict()
+    for key, item in input.items():
+        if item in tmp_dict:
+            tmp_dict[item] = f"{tmp_dict[item]}\n{key}"
+        else:
+            tmp_dict[item] = key
+    return {key: item for item, key in tmp_dict.items()}
 
 
 def leaf_components(input: tf.Module):

@@ -16,7 +16,7 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.utilities.printing import leaf_components
+from gpflow.utilities.printing import leaf_components, _merge_leaf_components
 
 import pytest
 
@@ -119,6 +119,32 @@ example_module_list_variable_dict = {
     'B.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
 }
 
+example_dag_module = model_gp
+example_dag_module.kernel.variance = example_dag_module.kernel.lengthscale
+
+example_dag_module_param_dict = {
+    'SVGP.kernel.variance\nSVGP.kernel.lengthscale': kernel_param_dict['RBF.lengthscale'],
+    'SVGP.likelihood.variance': {
+        'value': 1.0,
+        'trainable': True,
+        'shape': ()
+    },
+    'SVGP.feature.Z': {
+        'value': Data.Z,
+        'trainable': True,
+        'shape': (Data.M, Data.D)
+    },
+    'SVGP.q_mu': {
+        'value': np.zeros((Data.M, 1)),
+        'trainable': False,
+        'shape': (Data.M, 1)
+    },
+    'SVGP.q_sqrt': {
+        'value': np.ones((Data.M, 1)),
+        'trainable': True,
+        'shape': (Data.M, 1)
+    }
+}
 
 @pytest.mark.parametrize('module', [A(), kernel, model_gp, B()])
 def test_leaf_components_only_returns_parameters_and_variables(module):
@@ -148,3 +174,14 @@ def test_leaf_components_registers_param_properties(module, expected_var_dicts):
         np.testing.assert_equal(variable.numpy(), expected_var_dicts[var_name]['value'])
         assert variable.trainable == expected_var_dicts[var_name]['trainable']
         assert variable.shape == expected_var_dicts[var_name]['shape']
+
+@pytest.mark.parametrize('module, expected_var_dicts', [
+    (example_dag_module, example_dag_module_param_dict)
+])
+def test_merge_leaf_components_assigns(module, expected_var_dicts):
+    leaf_components_dict = leaf_components(module)
+    for path, variable in _merge_leaf_components(leaf_components_dict).items():
+        assert path in expected_var_dicts
+        for sub_path in path.split('\n'):
+            assert sub_path in leaf_components_dict
+            assert leaf_components_dict[sub_path] is variable
