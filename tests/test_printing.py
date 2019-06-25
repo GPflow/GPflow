@@ -82,7 +82,8 @@ kernel_param_dict = {
     }
 }
 
-model_gp = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(), feature=Data.Z, q_diag=True)
+model_gp = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(),
+                              feature=Data.Z, q_diag=True)
 model_gp.q_mu.trainable = False
 model_gp_param_dict = {
     'kernel.lengthscale': kernel_param_dict['RBF.lengthscale'],
@@ -146,6 +147,7 @@ example_dag_module_param_dict = {
     }
 }
 
+
 @pytest.mark.parametrize('module', [A(), kernel, model_gp, B()])
 def test_leaf_components_only_returns_parameters_and_variables(module):
     for path, variable in leaf_components(module).items():
@@ -174,6 +176,7 @@ def test_leaf_components_registers_param_properties(module, expected_var_dicts):
         np.testing.assert_equal(variable.numpy(), expected_var_dicts[var_name]['value'])
         assert variable.trainable == expected_var_dicts[var_name]['trainable']
         assert variable.shape == expected_var_dicts[var_name]['shape']
+
 
 @pytest.mark.parametrize('module, expected_var_dicts', [
     (example_dag_module, example_dag_module_param_dict)
