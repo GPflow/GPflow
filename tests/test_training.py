@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 
 import gpflow
-from gpflow.utilities.printing import get_component_variables
+from gpflow.utilities.printing import leaf_components
 from gpflow.utilities.training import multiple_assign
 
 rng = np.random.RandomState(0)
@@ -73,13 +73,11 @@ model_wrong_value = [
     (model, model_param_updates)
 ])
 def test_multiple_assign_updates_correct_values(module, var_update_dict):
-    old_value_dict = get_component_variables(module).copy()
+    old_value_dict = leaf_components(module).copy()
     multiple_assign(module, var_update_dict)
-    for path, variable in get_component_variables(module).items():
+    for path, variable in leaf_components(module).items():
         if path in var_update_dict.keys():
-            np.testing.assert_almost_equal(
-                variable.value().numpy(), var_update_dict[path], decimal=7
-            )
+            np.testing.assert_almost_equal(variable.value().numpy(), var_update_dict[path], decimal=7)
         else:
             np.testing.assert_equal(variable.value().numpy(), old_value_dict[path].value().numpy())
 

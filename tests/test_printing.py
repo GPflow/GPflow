@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.utilities.printing import get_component_variables
+from gpflow.utilities.printing import leaf_components
 
 import pytest
 
@@ -56,32 +55,59 @@ class B(tf.Module):
 
 example_tf_module = A()
 example_tf_module_variable_dict = {
-    'A.var_trainable': {'value': np.zeros((2, 2, 1)), 'trainable': True, 'shape': (2, 2, 1)},
-    'A.var_fixed': {'value': np.ones((2, 2, 1)), 'trainable': False, 'shape': (2, 2, 1)},
+    'A.var_trainable': {
+        'value': np.zeros((2, 2, 1)),
+        'trainable': True,
+        'shape': (2, 2, 1)
+    },
+    'A.var_fixed': {
+        'value': np.ones((2, 2, 1)),
+        'trainable': False,
+        'shape': (2, 2, 1)
+    },
 }
 
 kernel = gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var)
 kernel.lengthscale.trainable = False
 kernel_param_dict = {
-    'RBF.lengthscale': {'value': Data.ls, 'trainable': False, 'shape': ()},
-    'RBF.variance': {'value': Data.var, 'trainable': True, 'shape': ()}
+    'RBF.lengthscale': {
+        'value': Data.ls,
+        'trainable': False,
+        'shape': ()
+    },
+    'RBF.variance': {
+        'value': Data.var,
+        'trainable': True,
+        'shape': ()
+    }
 }
 
-model_gp = gpflow.models.SVGP(
-    kernel=kernel,
-    likelihood=gpflow.likelihoods.Gaussian(),
-    feature=Data.Z,
-    q_diag=True
-)
+model_gp = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(), feature=Data.Z, q_diag=True)
 model_gp.q_mu.trainable = False
-model_gp_param_dict = {'kernel.lengthscale': kernel_param_dict['RBF.lengthscale'],
-                       'kernel.variance': kernel_param_dict['RBF.variance'],
-                       'likelihood.variance': {'value': 1.0, 'trainable': True, 'shape': ()},
-                       'feature.Z': {'value': Data.Z, 'trainable': True, 'shape': (Data.M, Data.D)},
-                       'SVGP.q_mu': {'value': np.zeros((Data.M, 1)), 'trainable': False,
-                                     'shape': (Data.M, 1)},
-                       'SVGP.q_sqrt': {'value': np.ones((Data.M, 1)), 'trainable': True,
-                                       'shape': (Data.M, 1)}}
+model_gp_param_dict = {
+    'kernel.lengthscale': kernel_param_dict['RBF.lengthscale'],
+    'kernel.variance': kernel_param_dict['RBF.variance'],
+    'likelihood.variance': {
+        'value': 1.0,
+        'trainable': True,
+        'shape': ()
+    },
+    'feature.Z': {
+        'value': Data.Z,
+        'trainable': True,
+        'shape': (Data.M, Data.D)
+    },
+    'SVGP.q_mu': {
+        'value': np.zeros((Data.M, 1)),
+        'trainable': False,
+        'shape': (Data.M, 1)
+    },
+    'SVGP.q_sqrt': {
+        'value': np.ones((Data.M, 1)),
+        'trainable': True,
+        'shape': (Data.M, 1)
+    }
+}
 
 example_module_list = B()
 example_module_list_variable_dict = {
@@ -93,33 +119,17 @@ example_module_list_variable_dict = {
     'B.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
 }
 
-model_keras = tf.keras.Sequential([
-    tf.keras.layers.Dense(Data.H0, activation='relu', kernel_initializer='ones'),
-    tf.keras.layers.Dense(Data.H1, activation='relu', kernel_initializer='ones', use_bias=False,
-                          trainable=False)
-])
-model_keras.build(input_shape=(Data.M, Data.D))
-model_keras_variable_dict = {
-    'dense.kernel': {'value': np.ones((Data.D, Data.H0)), 'trainable': True,
-                     'shape': (Data.D, Data.H0)},
-    'dense.bias': {'value': np.zeros((Data.H0,)), 'trainable': True, 'shape': (Data.H0,)},
-    'dense_1.kernel': {'value': np.ones((Data.H0, Data.H1)), 'trainable': False,
-                       'shape': (Data.H0, Data.H1)}
-}
 
-
-@pytest.mark.parametrize('module', [A(), kernel, model_gp, B(), model_keras])
-def test_get_component_variables_only_returns_parameters_and_variables(module):
-    for path, variable in get_component_variables(module).items():
+@pytest.mark.parametrize('module', [A(), kernel, model_gp, B()])
+def test_leaf_components_only_returns_parameters_and_variables(module):
+    for path, variable in leaf_components(module).items():
         assert isinstance(variable, tf.Variable) or isinstance(variable, gpflow.Parameter)
 
 
-@pytest.mark.parametrize('module, expected_param_dicts', [
-    (kernel, kernel_param_dict),
-    (model_gp, model_gp_param_dict)
-])
-def test_get_component_variables_registers_variable_properties(module, expected_param_dicts):
-    for path, variable in get_component_variables(module).items():
+@pytest.mark.parametrize('module, expected_param_dicts', [(kernel, kernel_param_dict),
+                                                          (model_gp, model_gp_param_dict)])
+def test_leaf_components_registers_variable_properties(module, expected_param_dicts):
+    for path, variable in leaf_components(module).items():
         param_name = path.split('.')[-2] + '.' + path.split('.')[-1]
         assert isinstance(variable, gpflow.Parameter)
         np.testing.assert_equal(variable.value().numpy(), expected_param_dicts[param_name]['value'])
@@ -130,10 +140,9 @@ def test_get_component_variables_registers_variable_properties(module, expected_
 @pytest.mark.parametrize('module, expected_var_dicts', [
     (example_tf_module, example_tf_module_variable_dict),
     (example_module_list, example_module_list_variable_dict),
-    (model_keras, model_keras_variable_dict),
 ])
-def test_get_component_variables_registers_param_properties(module, expected_var_dicts):
-    for path, variable in get_component_variables(module).items():
+def test_leaf_components_registers_param_properties(module, expected_var_dicts):
+    for path, variable in leaf_components(module).items():
         var_name = path.split('.')[-2] + '.' + path.split('.')[-1]
         assert isinstance(variable, tf.Variable)
         np.testing.assert_equal(variable.numpy(), expected_var_dicts[var_name]['value'])

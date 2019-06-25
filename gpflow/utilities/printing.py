@@ -34,7 +34,7 @@ def print_summary(module: tf.Module, fmt: str = None):
         return v.__class__.__name__
 
     def get_transform(v):
-        if hasattr(v, 'transform') and v.transform is not None:
+        if hasattr(v, "transform") and v.transform is not None:
             return v.transform.__class__.__name__
         return None
 
@@ -45,13 +45,17 @@ def print_summary(module: tf.Module, fmt: str = None):
         variable.trainable,
         variable.shape,
         variable.dtype.name,
-        get_str_tensor_value(variable.numpy())
-    ] for path, variable in get_component_variables(module).items()]
+        _str_tensor_value(variable.numpy())
+    ] for path, variable in leaf_components(module).items()]
 
     print(tabulate(column_values, headers=column_names, tablefmt=fmt))
 
 
-def get_component_variables(module: tf.Module, prefix: Optional[str] = None):
+def leaf_components(input: tf.Module):
+    return _get_leaf_components(input)
+
+
+def _get_leaf_components(input: tf.Module, prefix: Optional[str] = None):
     """
     Returns a list of tuples each corresponding to a gpflow.Parameter or tf.Variable in the each
     submodules of a given tf.Module. Each tuple consists of an specific Parameter (or Variable) and
@@ -62,31 +66,22 @@ def get_component_variables(module: tf.Module, prefix: Optional[str] = None):
     :param prefix: string containing the relative path to module, by default set to None.
     :return:
     """
-    prefix = module.__class__.__name__ if prefix is None else prefix
-    var_dict = {}
-    if isinstance(module, tf.keras.Model) or isinstance(module, tf.keras.layers.Layer):
-        for weight in module.weights:
-            if weight in module.non_trainable_weights:
-                weight._trainable = False
-            weight_path = '{}.{}'.format(prefix, _format_keras_weight_names(weight.name))
-            var_dict[weight_path] = weight
-    else:
-        module_dict = vars(module)
-        for key, submodule in module_dict.items():
-            if key in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
-                continue
-            elif isinstance(submodule, Parameter) or isinstance(submodule, tf.Variable):
-                var_dict['{}.{}'.format(prefix, key)] = submodule
-            elif isinstance(submodule, tf.Module):
-                submodule_var = get_component_variables(submodule,
-                                                        prefix='{}.{}'.format(prefix, key))
-                var_dict.update(submodule_var)
+    if not isinstance(input, tf.Module):
+        raise TypeError("Input object expected to have `tf.Module` type")
+
+    prefix = input.__class__.__name__ if prefix is None else prefix
+    var_dict = dict()
+
+    for key, submodule in vars(input).items():
+        if key in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
+            continue
+        elif isinstance(submodule, Parameter) or isinstance(submodule, tf.Variable):
+            var_dict[f"{prefix}.{key}"] = submodule
+        elif isinstance(submodule, tf.Module):
+            submodule_var = _get_leaf_components(submodule, prefix=f"{prefix}.{key}")
+            var_dict.update(submodule_var)
 
     return var_dict
-
-
-def _format_keras_weight_names(name: str):
-    return re.sub('/', '.', name).strip(':0')
 
 
 @lru_cache()
@@ -96,7 +91,7 @@ def _first_three_elements_regexp():
     return re.compile(pat_re)
 
 
-def get_str_tensor_value(value: np.ndarray):
+def _str_tensor_value(value: np.ndarray):
     value_str = str(value)
     if value.size <= 3:
         return value_str

@@ -2,7 +2,7 @@ from typing import Callable, List, Optional, Dict
 
 import tensorflow as tf
 
-from .printing import get_component_variables
+from .printing import leaf_components
 
 
 def set_trainable(model: tf.Module, flag: bool = False):
@@ -10,9 +10,9 @@ def set_trainable(model: tf.Module, flag: bool = False):
         variable._trainable = flag
 
 
-def multiple_assign(module: tf.Module, var_dict: Dict):
-    reference_var_dict = get_component_variables(module)
-    for path, value in var_dict.items():
+def multiple_assign(input: tf.Module, vars_dict: Dict[str, tf.Tensor]):
+    reference_var_dict = leaf_components(input)
+    for path, value in vars_dict.items():
         reference_var_dict[path].assign(value)
 
 
