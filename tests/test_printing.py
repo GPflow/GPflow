@@ -54,6 +54,21 @@ class B(tf.Module):
 
 
 example_tf_module = A()
+example_module_list = B()
+kernel = gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var)
+kernel.lengthscale.trainable = False
+model_gp = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(),
+                              feature=Data.Z, q_diag=True)
+model_gp.q_mu.trainable = False
+
+
+@pytest.fixture
+def example_dag_module():
+    model_dag = model_gp
+    model_dag.kernel.variance = model_dag.kernel.lengthscale
+    return model_dag
+
+
 example_tf_module_variable_dict = {
     'A.var_trainable': {
         'value': np.zeros((2, 2, 1)),
@@ -67,8 +82,15 @@ example_tf_module_variable_dict = {
     },
 }
 
-kernel = gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var)
-kernel.lengthscale.trainable = False
+example_module_list_variable_dict = {
+    'A_0.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
+    'A_0.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
+    'A_1.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
+    'A_1.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
+    'B.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
+    'B.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
+}
+
 kernel_param_dict = {
     'RBF.lengthscale': {
         'value': Data.ls,
@@ -82,9 +104,6 @@ kernel_param_dict = {
     }
 }
 
-model_gp = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(),
-                              feature=Data.Z, q_diag=True)
-model_gp.q_mu.trainable = False
 model_gp_param_dict = {
     'kernel.lengthscale': kernel_param_dict['RBF.lengthscale'],
     'kernel.variance': kernel_param_dict['RBF.variance'],
@@ -109,19 +128,6 @@ model_gp_param_dict = {
         'shape': (Data.M, 1)
     }
 }
-
-example_module_list = B()
-example_module_list_variable_dict = {
-    'A_0.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
-    'A_0.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
-    'A_1.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
-    'A_1.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
-    'B.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
-    'B.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
-}
-
-example_dag_module = model_gp
-example_dag_module.kernel.variance = example_dag_module.kernel.lengthscale
 
 example_dag_module_param_dict = {
     'SVGP.kernel.variance\nSVGP.kernel.lengthscale': kernel_param_dict['RBF.lengthscale'],
@@ -148,7 +154,7 @@ example_dag_module_param_dict = {
 }
 
 
-@pytest.mark.parametrize('module', [A(), kernel, model_gp, B()])
+@pytest.mark.parametrize('module', [example_tf_module, example_module_list, kernel, model_gp])
 def test_leaf_components_only_returns_parameters_and_variables(module):
     for path, variable in leaf_components(module).items():
         assert isinstance(variable, tf.Variable) or isinstance(variable, gpflow.Parameter)
@@ -178,11 +184,9 @@ def test_leaf_components_registers_param_properties(module, expected_var_dicts):
         assert variable.shape == expected_var_dicts[var_name]['shape']
 
 
-@pytest.mark.parametrize('module, expected_var_dicts', [
-    (example_dag_module, example_dag_module_param_dict)
-])
-def test_merge_leaf_components_assigns(module, expected_var_dicts):
-    leaf_components_dict = leaf_components(module)
+@pytest.mark.parametrize('expected_var_dicts', [example_dag_module_param_dict])
+def test_merge_leaf_components_merges_keys_with_same_values(example_dag_module, expected_var_dicts):
+    leaf_components_dict = leaf_components(example_dag_module)
     for path, variable in _merge_leaf_components(leaf_components_dict).items():
         assert path in expected_var_dicts
         for sub_path in path.split('\n'):

@@ -36,19 +36,29 @@ class Data:
 
 
 # ------------------------------------------
-# Helpers
+# Fixtures
 # ------------------------------------------
 
 
-kernel = gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var)
-kernel_param_updates = {'RBF.lengthscale': Data.ls_new}
+@pytest.fixture()
+def kernel():
+    return gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var)
 
-model = gpflow.models.SVGP(
-    kernel=kernel,
-    likelihood=gpflow.likelihoods.Gaussian(),
-    feature=Data.Z,
-    q_diag=True
-)
+
+@pytest.fixture
+def model(kernel):
+    return gpflow.models.SVGP(
+        kernel=kernel,
+        likelihood=gpflow.likelihoods.Gaussian(),
+        feature=Data.Z,
+        q_diag=True
+    )
+
+
+# ------------------------------------------
+# Reference
+# ------------------------------------------
+
 model_param_updates = {
     'SVGP.kernel.lengthscale': Data.ls_new,
     'SVGP.likelihood.variance': Data.var_new,
@@ -68,29 +78,25 @@ model_wrong_value = [
 ]
 
 
-@pytest.mark.parametrize('module, var_update_dict', [
-    (kernel, kernel_param_updates),
-    (model, model_param_updates)
-])
-def test_multiple_assign_updates_correct_values(module, var_update_dict):
-    old_value_dict = leaf_components(module).copy()
-    multiple_assign(module, var_update_dict)
-    for path, variable in leaf_components(module).items():
+@pytest.mark.parametrize('var_update_dict', [model_param_updates])
+def test_multiple_assign_updates_correct_values(model, var_update_dict):
+    old_value_dict = leaf_components(model).copy()
+    multiple_assign(model, var_update_dict)
+    for path, variable in leaf_components(model).items():
         if path in var_update_dict.keys():
-            np.testing.assert_almost_equal(variable.value().numpy(), var_update_dict[path], decimal=7)
+            np.testing.assert_almost_equal(variable.value().numpy(), var_update_dict[path],
+                                           decimal=7)
         else:
             np.testing.assert_equal(variable.value().numpy(), old_value_dict[path].value().numpy())
 
 
-@pytest.mark.parametrize('module', [model])
 @pytest.mark.parametrize('wrong_var_update_dict', model_wrong_path)
-def test_multiple_assign_fails_with_invalid_path(module, wrong_var_update_dict):
+def test_multiple_assign_fails_with_invalid_path(model, wrong_var_update_dict):
     with pytest.raises(KeyError):
-        multiple_assign(module, wrong_var_update_dict)
+        multiple_assign(model, wrong_var_update_dict)
 
 
-@pytest.mark.parametrize('module', [model])
 @pytest.mark.parametrize('wrong_var_update_dict', model_wrong_value)
-def test_multiple_assign_fails_with_invalid_values(module, wrong_var_update_dict):
+def test_multiple_assign_fails_with_invalid_values(model, wrong_var_update_dict):
     with pytest.raises(ValueError):
-        multiple_assign(module, wrong_var_update_dict)
+        multiple_assign(model, wrong_var_update_dict)
