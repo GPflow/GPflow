@@ -40,7 +40,7 @@ class Data:
 # ------------------------------------------
 
 @pytest.fixture
-def model(kernel):
+def model():
     return gpflow.models.SVGP(
         kernel=gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var),
         likelihood=gpflow.likelihoods.Gaussian(),
