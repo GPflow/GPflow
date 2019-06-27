@@ -53,20 +53,23 @@ class B(tf.Module):
         self.var_fixed = tf.Variable(tf.ones((2, 2, 1)), trainable=False)
 
 
-example_tf_module = A()
-example_module_list = B()
-kernel = gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var)
-kernel.lengthscale.trainable = False
-model_gp = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(),
-                              feature=Data.Z, q_diag=True)
-model_gp.q_mu.trainable = False
+def create_kernel():
+    kern = gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var)
+    kern.lengthscale.trainable = False
+    return kern
 
 
-@pytest.fixture
-def example_dag_module():
-    model_dag = model_gp
-    model_dag.kernel.variance = model_dag.kernel.lengthscale
-    return model_dag
+def create_model():
+    kernel = create_kernel()
+    model = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(),
+                               feature=Data.Z, q_diag=True)
+    model.q_mu.trainable = False
+    return model
+
+
+# ------------------------------------------
+# Reference
+# ------------------------------------------
 
 
 example_tf_module_variable_dict = {
@@ -154,15 +157,37 @@ example_dag_module_param_dict = {
 }
 
 
-@pytest.mark.parametrize('module', [example_tf_module, example_module_list, kernel, model_gp])
+# ------------------------------------------
+# Fixtures
+# ------------------------------------------
+
+@pytest.fixture(params=[A, B, create_kernel, create_model])
+def module(request):
+    return request.param()
+
+
+@pytest.fixture
+def dag_module():
+    dag = create_model()
+    dag.kernel.variance = dag.kernel.lengthscale
+    return dag
+
+
+# ------------------------------------------
+# Tests
+# ------------------------------------------
+
 def test_leaf_components_only_returns_parameters_and_variables(module):
     for path, variable in leaf_components(module).items():
         assert isinstance(variable, tf.Variable) or isinstance(variable, gpflow.Parameter)
 
 
-@pytest.mark.parametrize('module, expected_param_dicts', [(kernel, kernel_param_dict),
-                                                          (model_gp, model_gp_param_dict)])
-def test_leaf_components_registers_variable_properties(module, expected_param_dicts):
+@pytest.mark.parametrize('module_callable, expected_param_dicts', [
+    (create_kernel, kernel_param_dict),
+    (create_model, model_gp_param_dict)
+])
+def test_leaf_components_registers_variable_properties(module_callable, expected_param_dicts):
+    module = module_callable()
     for path, variable in leaf_components(module).items():
         param_name = path.split('.')[-2] + '.' + path.split('.')[-1]
         assert isinstance(variable, gpflow.Parameter)
@@ -171,11 +196,12 @@ def test_leaf_components_registers_variable_properties(module, expected_param_di
         assert variable.shape == expected_param_dicts[param_name]['shape']
 
 
-@pytest.mark.parametrize('module, expected_var_dicts', [
-    (example_tf_module, example_tf_module_variable_dict),
-    (example_module_list, example_module_list_variable_dict),
+@pytest.mark.parametrize('module_class, expected_var_dicts', [
+    (A, example_tf_module_variable_dict),
+    (B, example_module_list_variable_dict),
 ])
-def test_leaf_components_registers_param_properties(module, expected_var_dicts):
+def test_leaf_components_registers_param_properties(module_class, expected_var_dicts):
+    module = module_class()
     for path, variable in leaf_components(module).items():
         var_name = path.split('.')[-2] + '.' + path.split('.')[-1]
         assert isinstance(variable, tf.Variable)
@@ -185,8 +211,8 @@ def test_leaf_components_registers_param_properties(module, expected_var_dicts):
 
 
 @pytest.mark.parametrize('expected_var_dicts', [example_dag_module_param_dict])
-def test_merge_leaf_components_merges_keys_with_same_values(example_dag_module, expected_var_dicts):
-    leaf_components_dict = leaf_components(example_dag_module)
+def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected_var_dicts):
+    leaf_components_dict = leaf_components(dag_module)
     for path, variable in _merge_leaf_components(leaf_components_dict).items():
         assert path in expected_var_dicts
         for sub_path in path.split('\n'):
