@@ -13,10 +13,9 @@
 # limitations under the License.
 
 import abc
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import tensorflow as tf
-import numpy as np
 from ..base import Module
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
@@ -24,7 +23,6 @@ from ..mean_functions import MeanFunction, Zero
 from ..config import default_float, default_jitter
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
-
 
 
 class BayesianModel(Module):
@@ -44,7 +42,7 @@ class BayesianModel(Module):
 
 
 class GPModel(BayesianModel):
-    """
+    r"""
     A stateless base class for Gaussian process models, that is, those of the form
 
     .. math::
@@ -77,7 +75,7 @@ class GPModel(BayesianModel):
                  num_latent: int = 1):
         super().__init__()
         self.num_latent = num_latent
-        #TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
+        # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
             mean_function = Zero()
         self.mean_function = mean_function
@@ -165,7 +163,7 @@ class GPModelOLD(BayesianModel):
         self.X = X
         self.Y = Y
         self.num_latent = num_latent or Y.shape[1]
-        #TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
+        # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
             mean_function = Zero()
         self.mean_function = mean_function
