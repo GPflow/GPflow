@@ -16,7 +16,7 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.utilities.printing import leaf_components, _merge_leaf_components
+from gpflow.utilities.utilities import leaf_components, _merge_leaf_components
 
 import pytest
 

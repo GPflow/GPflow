@@ -17,8 +17,8 @@ import numpy as np
 import pytest
 
 import gpflow
-from gpflow.utilities.printing import leaf_components
-from gpflow.utilities.training import multiple_assign
+from gpflow.utilities.utilities import leaf_components
+from gpflow.utilities import multiple_assign
 
 rng = np.random.RandomState(0)
 
