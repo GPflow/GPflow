@@ -163,7 +163,7 @@ class SVGP(GPModel):
         """
         This returns the evidence lower bound (ELBO) of the log marginal likelihood.
         """
-        return -self.neg_log_marginal_likelihood(X, Y)
+        return self.neg_log_marginal_likelihood(X, Y)
 
     def predict_f(self, Xnew: tf.Tensor, full_cov=False,
                   full_output_cov=False) -> tf.Tensor:
