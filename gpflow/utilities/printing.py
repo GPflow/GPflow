@@ -14,18 +14,18 @@
 
 import re
 from functools import lru_cache
-from typing import Optional, Dict, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 import tensorflow as tf
 from tabulate import tabulate
 
-from .. import Parameter
+from ..base import Parameter
 
 
 def print_summary(module: tf.Module, fmt: str = None):
     """
-    Prints a summary of the parameters and variables contained in a tf.Module and its components.
+    Prints a summary of the parameters and variables contained in a tf.Module.
     """
     fmt = fmt if fmt is not None else "simple"
     column_names = ['name', 'class', 'transform', 'trainable', 'shape', 'dtype', 'value']
@@ -50,7 +50,12 @@ def print_summary(module: tf.Module, fmt: str = None):
         _str_tensor_value(variable.numpy())
     ] for path, variable in merged_leaf_components.items()]
 
-    print(tabulate(column_values, headers=column_names, tablefmt=fmt))
+    if fmt == "notebook":
+        from IPython.core.display import display, HTML
+        tab = tabulate(column_values, headers=column_names, tablefmt="html")
+        display(HTML(tab))
+    else:
+        print(tabulate(column_values, headers=column_names, tablefmt=fmt))
 
 
 def _merge_leaf_components(

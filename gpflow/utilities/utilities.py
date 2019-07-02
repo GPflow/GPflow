@@ -5,12 +5,29 @@ import tensorflow as tf
 from .printing import leaf_components
 
 
+__all__ = [
+    "set_trainable",
+    "multiple_assign",
+    "training_loop"
+]
+
+
 def set_trainable(model: tf.Module, flag: bool = False):
+    """
+    Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
+    """
     for variable in model.trainable_variables:
         variable._trainable = flag
 
 
 def multiple_assign(input: tf.Module, vars_dict: Dict[str, tf.Tensor]):
+    """
+    Multiple assign takes a dictionary with new values. Dictionary keys are paths to the
+    `tf.Variable`s or `gpflow.Parameters` of the input module.
+
+    :param input: `tf.Module`.
+    :param vars_dict: a dictionary with keys of the form "module.path.to.variable" and new value tensors.
+    """
     reference_var_dict = leaf_components(input)
     for path, value in vars_dict.items():
         reference_var_dict[path].assign(value)
