@@ -175,14 +175,16 @@ def test_overflow(transform):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
         y = transform.forward(np.array([-1000, -300, -10, 10, 300, 1000]))
+        print(w)
         assert len(w) == 0
     assert not np.any(np.isinf(y))
     assert not np.any(np.isnan(y))
 
-    # test backwards
+    # test backward
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter('always')
         y = transform.backward(np.array([0.0]))
+        print(w)
         assert len(w) == 0
 
     assert not np.any(np.isinf(y))
