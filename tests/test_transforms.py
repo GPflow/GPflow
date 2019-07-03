@@ -13,16 +13,16 @@
 # limitations under the License.
 
 import warnings
-import tensorflow as tf
 
 import numpy as np
+import pytest
+import tensorflow as tf
 from numpy.testing import assert_allclose, assert_equal
 
 import gpflow
-from gpflow.transforms import Chain, Identity
-from gpflow.test_util import GPflowTestCase
 from gpflow import settings
-import pytest
+from gpflow.test_util import GPflowTestCase
+from gpflow.transforms import Chain, Identity
 
 
 class TransformTests(GPflowTestCase):
