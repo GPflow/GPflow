@@ -176,7 +176,7 @@ def test_overflow(transform):
         warnings.simplefilter('always')
         y = transform.forward(np.array([-1000, -300, -10, 10, 300, 1000]))
         print(w)
-        assert len(w) == 0, w[0].message + str(w[0])
+        assert len(w) == 0, w[0].message
     assert not np.any(np.isinf(y))
     assert not np.any(np.isnan(y))
 
@@ -185,7 +185,7 @@ def test_overflow(transform):
         warnings.simplefilter('always')
         y = transform.backward(np.array([0.0]))
         print(w)
-        assert len(w) == 0, w[0].message + str(w[0])
+        assert len(w) == 0, w[0].message
 
     assert not np.any(np.isinf(y))
     assert not np.any(np.isnan(y))
