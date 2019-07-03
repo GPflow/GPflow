@@ -18,11 +18,11 @@ import tensorflow as tf
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-
 import gpflow
 from gpflow.transforms import Chain, Identity
 from gpflow.test_util import GPflowTestCase
 from gpflow import settings
+import pytest
 
 
 class TransformTests(GPflowTestCase):
@@ -165,37 +165,35 @@ class TestChainIdentity(GPflowTestCase):
                 self.assertEqualElements(logjs_tf)
 
 
-class TestOverflow(GPflowTestCase):
+@pytest.mark.parametrize('transform', [gpflow.transforms.Log1pe(), gpflow.transforms.Logistic(0.0, 1.0)])
+def test_overflow(transform):
     """
     Bug #302 identified an overflow in the standard positive transform. This is a regression test.
+    Added: test for similar issue in Logistic.
     """
+    # test forward
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        y = transform.forward(np.array([-1000, -300, -10, 10, 300, 1000]))
+        assert len(w) == 0
+    assert not np.any(np.isinf(y))
+    assert not np.any(np.isnan(y))
 
-    def setUp(self):
-        self.t = gpflow.transforms.Log1pe()
+    # test backwards
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always')
+        y = transform.backward(np.array([0.0]))
+        assert len(w) == 0
 
-    def testOverflow(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            y = self.t.forward(np.array([-1000, -300, -10, 10, 300, 1000]))
-            self.assertEqual(len(w), 0)
-
-        self.assertFalse(np.any(np.isinf(y)))
-        self.assertFalse(np.any(np.isnan(y)))
-
-    def testDivByZero(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always')
-            y = self.t.backward(np.array([self.t._lower]))
-            self.assertTrue(len(w) == 0)
-
-        self.assertFalse(np.any(np.isinf(y)))
-        self.assertFalse(np.any(np.isnan(y)))
+    assert not np.any(np.isinf(y))
+    assert not np.any(np.isnan(y))
 
 
 class TestMatrixTransforms(GPflowTestCase):
     """
     Some extra tests for the matrix transformations.
     """
+
     def test_LowerTriangular(self):
         t = gpflow.transforms.LowerTriangular(N=3, num_matrices=2)
         t.forward(np.ones((2, 6)))
@@ -231,16 +229,15 @@ class TestMatrixTransforms(GPflowTestCase):
         self.assertTrue(np.all(t1.backward(Y).shape == t2.backward(Y.squeeze()).shape))
 
         with self.test_context() as session:
-            self.assertTrue(np.all(session.run(tf.squeeze(t1.forward_tensor(X))) == 
+            self.assertTrue(np.all(session.run(tf.squeeze(t1.forward_tensor(X))) ==
                                    session.run(t2.forward_tensor(X))))
 
-            self.assertTrue(np.all(session.run(t1.backward_tensor(Y)) == 
+            self.assertTrue(np.all(session.run(t1.backward_tensor(Y)) ==
                                    session.run(t2.backward_tensor(Y.squeeze()))))
 
         # make sure we don't try to squeeze when there are more than 1 matrices.
         with self.assertRaises(ValueError):
             gpflow.transforms.LowerTriangular(N=3, num_matrices=2, squeeze=True)
-
 
     def test_DiagMatrix(self):
         t = gpflow.transforms.DiagMatrix(3)
