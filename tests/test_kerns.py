@@ -23,6 +23,7 @@ from gpflow.test_util import GPflowTestCase, session_tf
 
 from .reference import referenceRbfKernel, referenceArcCosineKernel, referencePeriodicKernel
 
+
 class TestRbf(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
@@ -505,9 +506,68 @@ class TestARDInit(GPflowTestCase):
             k2_variances = k2.weight_variances.read_value()
             self.assertTrue(np.all(k1_variances == k2_variances))
 
+
+class TestConvolutionalKernDiags(TestKernDiags):
+    def setUp(self):
+        self.test_graph = tf.Graph()
+        with self.test_context():
+            inputdim = 9
+            rng = np.random.RandomState(1)
+            self.rng = rng
+            self.dim = inputdim
+            self.kernels = []
+            self.kernels.append(gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(4), [3, 3], [2, 2]))
+            wconvk = gpflow.kernels.WeightedConvolutional(gpflow.kernels.SquaredExponential(4), [3, 3], [2, 2])
+            wconvk.weights.assign(np.random.randn(wconvk.num_patches))
+            self.kernels.append(wconvk)
+
+    def test(self):
+        super().test()
+
+
+def test_convolutional_patch_features():
+    """
+    Predictive variance of convolutional kernel must be unchanged when using inducing points, and inducing patches where
+    all patches of the inducing points are used.
+    :return:
+    """
+    settings = gpflow.settings.get_settings()
+    settings.numerics.jitter_level = 1e-14
+    with gpflow.settings.temp_settings(settings):
+        N = 5
+        M = 10
+        image_size = [4, 4]
+        patch_size = [2, 2]
+
+        X = np.random.randn(N, np.prod(image_size))
+        kern = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(4), image_size, patch_size)
+
+        # Evaluate with inducing points
+        Zpoints = np.random.randn(M, np.prod(image_size))
+        points = gpflow.features.InducingPoints(Zpoints)
+        points_var = gpflow.conditionals.conditional(Zpoints, points, kern, np.zeros((M, 1)),
+                                                     full_output_cov=True, q_sqrt=None, white=False)[1]
+
+        # Evaluate with inducing patches
+        Zpatches = kern.compute_patches(Zpoints).reshape(M * kern.num_patches, np.prod(patch_size))
+        patches = gpflow.features.InducingPatch(Zpatches)
+        patches_var = gpflow.conditionals.conditional(Zpoints, patches, kern, np.zeros((len(patches), 1)),
+                                                      full_output_cov=True, q_sqrt=None, white=False)[1]
+
+        sess = gpflow.get_default_session()
+
+        points_var_eval = sess.run(points_var)
+        patches_var_eval = sess.run(patches_var)
+        assert np.all(points_var_eval > 0.0)
+        assert np.all(points_var_eval < 1e-13)
+        assert np.all(patches_var_eval > 0.0)
+        assert np.all(patches_var_eval < 1e-13)
+
+
 def test_slice_active_dim_regression(session_tf):
     """ Check that we can instantiate a kernel with active_dims given as a slice object """
     gpflow.kernels.RBF(2, active_dims=slice(1, 3, 1))
+
 
 if __name__ == "__main__":
     tf.test.main()

@@ -21,7 +21,6 @@ from gpflow import settings
 from gpflow.test_util import GPflowTestCase
 
 
-
 class TestInducingPoints(GPflowTestCase):
     def test_feature_len(self):
         with self.test_context():
@@ -99,6 +98,45 @@ class TestFeaturesPsdSchur(GPflowTestCase):
             Qff = Kuf.T @ np.linalg.solve(Kuu, Kuf)
             self.assertTrue(np.all(np.linalg.eig(Kff - Qff)[0] > 0.0))
 
+
+def test_convolutional_patch_features():
+    """
+    Predictive variance of convolutional kernel must be unchanged when using inducing points, and inducing patches where
+    all patches of the inducing points are used.
+    :return:
+    """
+    settings = gpflow.settings.get_settings()
+    settings.numerics.jitter_level = 1e-14
+    with gpflow.settings.temp_settings(settings):
+        N = 5
+        M = 10
+        image_size = [4, 4]
+        patch_size = [2, 2]
+
+        X = np.random.randn(N, np.prod(image_size))
+        kern = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(4), image_size, patch_size)
+
+        # Evaluate with inducing points
+        Zpoints = np.random.randn(M, np.prod(image_size))
+        points = gpflow.features.InducingPoints(Zpoints)
+        points_var = gpflow.conditionals.conditional(Zpoints, points, kern, np.zeros((M, 1)),
+                                                     full_output_cov=True, q_sqrt=None, white=False)[1]
+
+        # Evaluate with inducing patches
+        Zpatches = kern.compute_patches(Zpoints).reshape(M * kern.num_patches, np.prod(patch_size))
+        patches = gpflow.features.InducingPatch(Zpatches)
+        patches_var = gpflow.conditionals.conditional(Zpoints, patches, kern, np.zeros((len(patches), 1)),
+                                                      full_output_cov=True, q_sqrt=None, white=False)[1]
+
+        sess = gpflow.get_default_session()
+
+        points_var_eval = sess.run(points_var)
+        patches_var_eval = sess.run(patches_var)
+        assert np.all(points_var_eval > 0.0)
+        assert np.all(points_var_eval < 1e-13)
+        assert np.all(patches_var_eval > 0.0)
+        assert np.all(patches_var_eval < 1e-13)
+        
 
 if __name__ == "__main__":
     tf.test.main()
