@@ -17,7 +17,6 @@ import abc
 from datetime import datetime
 
 import h5py
-import numpy as np
 
 from .. import misc
 from .context import Contexture
@@ -34,8 +33,8 @@ class BaseSerializer(Contexture, metaclass=abc.ABCMeta):
 
 
 class HDF5Serializer(BaseSerializer):
-    def dump(self, pathname, data):
-        with h5py.File(pathname) as h5file:
+    def dump(self, pathname_or_file_like, data):
+        with h5py.File(pathname_or_file_like) as h5file:
             meta = h5file.create_group('meta')
             date = datetime.now().isoformat() #TODO(@awav): py3.6 timespec='seconds'.
             version = misc.version()
@@ -43,6 +42,6 @@ class HDF5Serializer(BaseSerializer):
             meta.create_dataset(name='version', data=version)
             h5file.create_dataset(name='data', data=data)
 
-    def load(self, pathname):
-        with h5py.File(pathname) as h5file:
+    def load(self, pathname_or_file_like):
+        with h5py.File(pathname_or_file_like) as h5file:
             return h5file['data'].value
