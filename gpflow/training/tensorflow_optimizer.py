@@ -165,10 +165,10 @@ def _register_optimizer(name, optimizer_type):
 # Create GPflow optimizer classes with same names as TensorFlow optimizers
 for name in dir(tf.train):
     suffix = 'Optimizer'
-    if key != suffix and key.endswith(suffix):
+    if name != suffix and name.endswith(suffix):
         train_type = getattr(tf.train, name, None)
         if train_type is not None:
-            _register_optimizer(key, train_type)
+            _register_optimizer(name, train_type)
 
 
 __all__ = list(_REGISTERED_TENSORFLOW_OPTIMIZERS.keys())
