@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import sys
-
 import tensorflow as tf
+from pkg_resources import parse_version
 
 from . import optimizer
 from .. import misc
@@ -164,7 +164,13 @@ def _register_optimizer(name, optimizer_type):
 
 
 # Create GPflow optimizer classes with same names as TensorFlow optimizers
-for key, train_type in tf.train.__dict__.items():
+
+if parse_version(tf.VERSION) >= parse_version("1.14"):
+    train_items = tf.train._dw_wrapped_module.__dict__.items()
+else:
+    train_items = tf.train.__dict__.items()
+
+for key, train_type in train_items:
     suffix = 'Optimizer'
     if key != suffix and key.endswith(suffix):
         _register_optimizer(key, train_type)
