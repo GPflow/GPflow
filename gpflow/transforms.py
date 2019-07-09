@@ -217,6 +217,8 @@ class Logistic(Transform):
         return -tf.log((self.b - self.a) / (y - self.a) - 1.)
 
     def backward(self, y):
+        float_eps = np.finfo(settings.float_type).eps
+        y = np.clip(y, self.a + float_eps, self.b - float_eps)
         return -np.log((self.b - self.a) / (y - self.a) - 1.)
 
     def log_jacobian_tensor(self, x):
