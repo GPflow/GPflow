@@ -14,7 +14,6 @@
 
 import sys
 import tensorflow as tf
-from pkg_resources import parse_version
 
 from . import optimizer
 from .. import misc
@@ -164,18 +163,12 @@ def _register_optimizer(name, optimizer_type):
 
 
 # Create GPflow optimizer classes with same names as TensorFlow optimizers
-
-if parse_version(tf.VERSION) >= parse_version("1.14"):
-    # tensorflow 1.14 deprecated the `train` module and wraps it in a DeprecationWrapper
-    # which requires this hack to get access to the list of objects in the namespace
-    train_items = tf.train._dw_wrapped_module.__dict__.items()
-else:
-    train_items = tf.train.__dict__.items()
-
-for key, train_type in train_items:
+for name in dir(tf.train):
     suffix = 'Optimizer'
     if key != suffix and key.endswith(suffix):
-        _register_optimizer(key, train_type)
+        train_type = getattr(tf.train, name, None)
+        if train_type is not None:
+            _register_optimizer(key, train_type)
 
 
 __all__ = list(_REGISTERED_TENSORFLOW_OPTIMIZERS.keys())
