@@ -48,3 +48,24 @@ def test_multivariate_normal(session_tf, x, mu, cov_sqrt):
     else:
         sp_result = mvn.logpdf(x.T, mu.ravel(), cov)
     assert_allclose(gp_result, sp_result)
+
+def test_shape_asserts(session_tf):
+    A = np.random.randn(5)
+    B = np.random.randn(5)
+    L = np.tril(np.random.randn(5, 5))
+
+    # Static shape check:
+    with pytest.raises(ValueError):
+        tA = tf.identity(A)
+        tB = tf.identity(B)
+        tL = tf.identity(L)
+        res = logdensities.multivariate_normal(tA, tB, tL)
+
+    # Dynamic shape check:
+    # the following results in a segfault before PR#964
+    with pytest.raises(tf.errors.InvalidArgumentError):
+        vA = tf.placeholder(tf.float64)
+        vB = tf.placeholder(tf.float64)
+        vL = tf.placeholder(tf.float64)
+        res = logdensities.multivariate_normal(vA, vB, vL)
+        session_tf.run(res, {vA: A, vB: B, vL: L})
