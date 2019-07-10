@@ -24,7 +24,7 @@ RUN apt-get update --fix-missing && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip install -q tensorflow==1.12.0 numpy scipy pandas pytest nbformat \
+RUN pip install -q tensorflow==1.14.0 numpy scipy pandas pytest nbformat \
     nbconvert ipykernel jupyter_client matplotlib pytest-xdist pytest-cov \
     multipledispatch mock codecov sklearn
 
