@@ -490,7 +490,10 @@ class TestParameterized(GPflowTestCase):
                 p.anchor(None)
             new_value = 2.0
             p.a.parameter_tensor.load(new_value)
+            ops_count_before = len(session.graph.get_operations())
             p.anchor(session)
+            ops_count_after = len(session.graph.get_operations())
+            assert ops_count_before == ops_count_after, "regression test for #1001"
             assert_allclose(p.a.read_value(), new_value)
 
     def test_read_values(self):
