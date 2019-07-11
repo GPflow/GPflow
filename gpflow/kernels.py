@@ -590,6 +590,9 @@ class ArcCosine(Kernel):
             year = {2009},
             url = {http://papers.nips.cc/paper/3628-kernel-methods-for-deep-learning.pdf}
         }
+
+    Note: broadcasting over leading dimensions has not yet been implemented for
+    the ArcCosine kernel.
     """
 
     implemented_orders = {0, 1, 2}
