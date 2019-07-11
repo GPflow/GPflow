@@ -29,8 +29,9 @@ requirements = [
 ]
 
 min_tf_version = '1.12.0'
-tf_cpu = 'tensorflow>={}'.format(min_tf_version)
-tf_gpu = 'tensorflow-gpu>={}'.format(min_tf_version)
+max_tf_version = '2.0'
+tf_cpu = 'tensorflow>={},<{}'.format(min_tf_version, max_tf_version)
+tf_gpu = 'tensorflow-gpu>={},<{}'.format(min_tf_version, max_tf_version)
 
 # Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu
@@ -42,6 +43,9 @@ try:
     if parse_version(tf.VERSION) < parse_version(min_tf_version):
         # TF pre-installed, but below the minimum required version
         raise DeprecationWarning("TensorFlow version below minimum requirement")
+    if parse_version(tf.VERSION) >= parse_version(max_tf_version):
+        # TF pre-installed, but above the maximum required version
+        raise DeprecationWarning("TensorFlow version above maximum requirement")
 except (ImportError, DeprecationWarning) as e:
     # Add TensorFlow to dependencies to trigger installation/update
     requirements.append(tf_cpu)
