@@ -207,7 +207,7 @@ def initialize_variables(variables=None, session=None, force=False, **run_kwargs
             vars_for_init = list(_find_initializable_tensors(variables, session))
         if not vars_for_init:
             return
-        initializer = tf.variables_initializer(vars_for_init)
+        initializer = [v.initializer for v in vars_for_init]
     session.run(initializer, **run_kwargs)
 
 
