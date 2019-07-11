@@ -28,8 +28,9 @@ import numpy as np
 from . import transforms
 from . import settings
 
-from .params import Parameter, Parameterized, ParamList
 from .decors import params_as_tensors, autoflow
+from .misc import _broadcasting_elementwise_op
+from .params import Parameter, Parameterized, ParamList
 
 
 class Kernel(Parameterized):
@@ -840,18 +841,6 @@ class Product(Combination):
 
     def Kdiag(self, X, presliced=False):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kernels])
-
-
-def _broadcasting_elementwise_op(op, a, b):
-    r"""
-    Apply binary operation `op` to every pair in tensors `a` and `b`.
-    :param op: binary operator on tensors, e.g. tf.add, tf.substract
-    :param a: tf.Tensor, shape [n_1, ..., n_a]
-    :param b: tf.Tensor, shape [m_1, ..., m_b]
-    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
-    """
-    flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
-    return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
 def make_deprecated_class(oldname, NewClass):
