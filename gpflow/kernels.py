@@ -17,6 +17,14 @@ Kernels form a core component of GPflow models and allow prior information to
 be encoded about a latent function of interest. The effect of choosing
 different kernels, and how it is possible to combine multiple kernels is shown
 in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
+
+Broadcasting over leading dimensions:
+`kernel.K(X1, X2)` returns the kernel evaluated on every pair in X1 and X2.
+E.g. if X1 has shape [S1, N1, D] and X2 has shape [S2, N2, D], kernel.K(X1, X2)
+will return a tensor of shape [S1, N1, S2, N2]. Similarly, kernel.K(X1, X1)
+returns a tensor of shape [S1, N1, S1, N1]. In contrast, the return shape of
+kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
+kernel.K(X, None) is identical to kernel.K(X, X).)
 """
 
 from functools import reduce
@@ -28,8 +36,9 @@ import numpy as np
 from . import transforms
 from . import settings
 
-from .params import Parameter, Parameterized, ParamList
 from .decors import params_as_tensors, autoflow
+from .misc import _broadcasting_elementwise_op
+from .params import Parameter, Parameterized, ParamList
 
 
 class Kernel(Parameterized):
@@ -581,6 +590,9 @@ class ArcCosine(Kernel):
             year = {2009},
             url = {http://papers.nips.cc/paper/3628-kernel-methods-for-deep-learning.pdf}
         }
+
+    Note: broadcasting over leading dimensions has not yet been implemented for
+    the ArcCosine kernel.
     """
 
     implemented_orders = {0, 1, 2}
@@ -932,18 +944,6 @@ class Product(Combination):
 
     def Kdiag(self, X, presliced=False):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kernels])
-
-
-def _broadcasting_elementwise_op(op, a, b):
-    r"""
-    Apply binary operation `op` to every pair in tensors `a` and `b`.
-    :param op: binary operator on tensors, e.g. tf.add, tf.substract
-    :param a: tf.Tensor, shape [n_1, ..., n_a]
-    :param b: tf.Tensor, shape [m_1, ..., m_b]
-    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
-    """
-    flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
-    return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
 def make_deprecated_class(oldname, NewClass):
