@@ -305,5 +305,17 @@ def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: Optional[str] = No
     return tf.Assert(tensor_ndim_equal(tensor, ndim), [message])
 
 
+def _broadcasting_elementwise_op(op, a, b):
+    r"""
+    Apply binary operation `op` to every pair in tensors `a` and `b`.
+    :param op: binary operator on tensors, e.g. tf.add, tf.substract
+    :param a: tf.Tensor, shape [n_1, ..., n_a]
+    :param b: tf.Tensor, shape [m_1, ..., m_b]
+    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
+    """
+    flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
+    return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
+
+
 def version():
     return __version__
