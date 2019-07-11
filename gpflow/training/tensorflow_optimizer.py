@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import sys
-
 import tensorflow as tf
 
 from . import optimizer
@@ -164,10 +163,12 @@ def _register_optimizer(name, optimizer_type):
 
 
 # Create GPflow optimizer classes with same names as TensorFlow optimizers
-for key, train_type in tf.train.__dict__.items():
+for name in dir(tf.train):
     suffix = 'Optimizer'
-    if key != suffix and key.endswith(suffix):
-        _register_optimizer(key, train_type)
+    if name != suffix and name.endswith(suffix):
+        train_type = getattr(tf.train, name, None)
+        if train_type is not None:
+            _register_optimizer(name, train_type)
 
 
 __all__ = list(_REGISTERED_TENSORFLOW_OPTIMIZERS.keys())
