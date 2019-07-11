@@ -157,9 +157,7 @@ class InducingPatch(InducingPointsBase):
 def Kuf(feat, kern, Xnew):
     with params_as_tensors_for(feat, kern):
         Xp = kern.get_patches(Xnew)  # N x num_patches x patch_len
-        Xp = tf.reshape(Xp, (-1, kern.patch_len))
-        bigKzx = kern.basekern.K(feat.Z, Xp)  # M x N * num_patches
-        bigKzx = tf.reshape(bigKzx, (tf.shape(feat.Z)[0], tf.shape(Xnew)[0], kern.num_patches))
+        bigKzx = kern.basekern.K(feat.Z, Xp)  # [M, N, P] -- thanks to broadcasting of kernels
         Kzx = tf.reduce_sum(bigKzx * kern.weights if hasattr(kern, 'weights') else bigKzx, [2])
     return Kzx / kern.num_patches
 

@@ -849,18 +849,12 @@ class Convolutional(Kernel):
         :param X: (N x input_dim)
         :return: Patches (N, num_patches, patch_size)
         """
-        # castX = tf.transpose(
-        #     tf.reshape(tf.cast(X, tf.float32, name="castX"), tf.stack([tf.shape(X)[0], -1, self.colour_channels])),
-        #     [0, 2, 1])
-        # castX = tf.cast(X, tf.float32, name="castX")
-
         # Roll the colour channel to the front, so it appears to `tf.extract_image_patches()` as separate images. Then
         # extract patches and reshape to have the first axis the same as the number of images. The separate patches will
         # then be in the second axis.
         castX = tf.transpose(
-            tf.reshape(X, tf.stack([tf.shape(X)[0], -1, self.colour_channels])),
+            tf.reshape(X, [tf.shape(X)[0], -1, self.colour_channels]),
             [0, 2, 1])
-        # castX = tf.cast(castX, tf.float32, name="castX")
         patches = tf.extract_image_patches(
             tf.reshape(castX, [-1, self.img_size[0], self.img_size[1], 1], name="rX"),
             [1, self.patch_size[0], self.patch_size[1], 1],
@@ -873,25 +867,17 @@ class Convolutional(Kernel):
 
     @params_as_tensors
     def K(self, X, X2=None):
-        Xp = self.get_patches(X)
-        Xp = tf.reshape(Xp, (-1, self.patch_len))
-        Xp2 = tf.reshape(self.get_patches(X2), (-1, self.patch_len)) if X2 is not None else None
+        Xp = self.get_patches(X)  # [N, num_patches, patch_len]
+        Xp2 = self.get_patches(X2) if X2 is not None else Xp
 
-        bigK = self.basekern.K(Xp, Xp2)  # N * num_patches x N * num_patches
-        K = tf.reduce_sum(tf.reshape(bigK,
-                                     (tf.shape(X)[0], self.num_patches, -1, self.num_patches)),
-                          [1, 3])
+        bigK = self.basekern.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
+        K = tf.reduce_sum(bigK, [1, 3])
         return K / self.num_patches ** 2.0
 
     @params_as_tensors
     def Kdiag(self, X):
-        Xp = self.get_patches(X)
-
-        def sumbK(Xp):
-            return tf.reduce_sum(self.basekern.K(Xp))
-
-        return tf.map_fn(sumbK, Xp) / self.num_patches ** 2.0
-        # return tf.reduce_sum(tf.map_fn(self.basekern.K, Xp), [1, 2]) / self.num_patches ** 2.0
+        Xp = self.get_patches(X)  # [N, num_patches, patch_len]
+        return tf.reduce_sum(self.basekern.K(Xp), [1, 2]) / self.num_patches ** 2.0
 
     @property
     def patch_len(self):
@@ -915,33 +901,21 @@ class WeightedConvolutional(Convolutional):
 
     @params_as_tensors
     def K(self, X, X2=None):
-        Xp = self.get_patches(X)
-        Xp = tf.reshape(Xp, (-1, self.patch_len))
-        Xp2 = None if X2 is None else tf.reshape(self.get_patches(X2),
-                                                 (tf.shape(X2)[0] * self.num_patches,
-                                                  self.patch_len))
+        Xp = self.get_patches(X)  # [N, P, patch_len]
+        Xp2 = Xp if X2 is None else self.get_patches(X2)
 
-        bigK = self.basekern.K(Xp, Xp2)  # N * num_patches x N * num_patches
-        bigK = tf.reshape(bigK, (
-            tf.shape(X)[0], self.num_patches, -1, self.num_patches))  # N x numpatch x M x numpatch
+        bigK = self.basekern.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
 
-        W2 = tf.expand_dims(self.weights, 0) * tf.expand_dims(self.weights, 1)
-        W2 = tf.expand_dims(W2, 0)
-        W2 = tf.expand_dims(W2, 2)
-        W2bigK = bigK * W2
-        K = tf.reduce_sum(W2bigK, [1, 3]) / self.num_patches ** 2.0
-        return K
+        W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
+        W2bigK = bigK * W2[None, :, None, :]
+        return tf.reduce_sum(W2bigK, [1, 3]) / self.num_patches ** 2.0
 
     @params_as_tensors
     def Kdiag(self, X):
         Xp = self.get_patches(X)  # N x num_patches x patch_dim
-
-        W2 = tf.expand_dims(self.weights, 0) * tf.expand_dims(self.weights, 1)
-
-        def Kdiag_element(patches):
-            return tf.reduce_sum(self.basekern.K(patches) * W2)
-
-        return tf.map_fn(Kdiag_element, Xp) / self.num_patches ** 2.0
+        W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
+        bigK = self.basekern.K(Xp)  # [N, P, P]
+        return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
 
 
 class Sum(Combination):
