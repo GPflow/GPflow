@@ -21,7 +21,7 @@
 #Assumes you are running from within cloned repo.
 
 #Uses official Tensorflow docker for cpu only.
-FROM tensorflow/tensorflow:1.12.0
+FROM tensorflow/tensorflow:1.14.0
 COPY ./ /usr/local/GPflow/
 
 RUN cd /usr/local/GPflow && \
