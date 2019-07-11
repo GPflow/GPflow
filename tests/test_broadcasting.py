@@ -41,8 +41,10 @@ Kerns = [
 
     kernels.Linear,
     kernels.Polynomial,
-    # kernels.ArcCosine,
-    # kernels.Periodic,
+    pytest.param(kernels.ArcCosine, marks=pytest.mark.xfail),  # broadcasting not implemented
+    kernels.Periodic,
+    lambda input_dim: kernels.White(input_dim) + kernels.Matern12(input_dim),
+    lambda input_dim: kernels.White(input_dim) * kernels.Matern12(input_dim),
 ]
 
 @pytest.mark.parametrize("Kern", Kerns)
