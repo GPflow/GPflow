@@ -31,7 +31,7 @@ Kerns = [
     kernels.Constant,
 
     # Stationary
-    kernels.RBF,
+    kernels.SquaredExponential,
     kernels.RationalQuadratic,
     kernels.Exponential,
     kernels.Matern12,
@@ -41,35 +41,40 @@ Kerns = [
 
     kernels.Linear,
     kernels.Polynomial,
-    # kernels.ArcCosine,
-    # kernels.Periodic,
+    pytest.param(kernels.ArcCosine, marks=pytest.mark.xfail),  # broadcasting not implemented
+    kernels.Periodic,
+    lambda input_dim: kernels.White(input_dim) + kernels.Matern12(input_dim),
+    lambda input_dim: kernels.White(input_dim) * kernels.Matern12(input_dim),
 ]
 
-def _test_no_active_dims(Kern, sess):
+@pytest.mark.parametrize("Kern", Kerns)
+def test_broadcast_no_active_dims(Kern, session_tf):
     S, N, M, D = 5, 4, 3, 2
     X1 = tf.identity(np.random.randn(S, N, D))
     X2 = tf.identity(np.random.randn(M, D))
     kern = Kern(D) + gpflow.kernels.White(2)
 
-    compare_vs_map(X1, X2, kern, sess)
+    compare_vs_map(X1, X2, kern, session_tf)
 
-def _test_slice_active_dims(Kern, sess):
+@pytest.mark.parametrize("Kern", [gpflow.kernels.SquaredExponential])
+def test_broadcast_slice_active_dims(Kern, session_tf):
     S, N, M, D = 5, 4, 3, 4
     d = 2
     X1 = tf.identity(np.random.randn(S, N, D))
     X2 = tf.identity(np.random.randn(M, D))
     kern = Kern(d, active_dims=slice(1, 1+d))
 
-    compare_vs_map(X1, X2, kern, sess)
+    compare_vs_map(X1, X2, kern, session_tf)
 
-def _test_indices_active_dims(Kern, sess):
+@pytest.mark.parametrize("Kern", [gpflow.kernels.SquaredExponential])
+def test_broadcast_indices_active_dims(Kern, session_tf):
     S, N, M, D = 5, 4, 3, 4
 
     X1 = tf.identity(np.random.randn(S, N, D))
     X2 = tf.identity(np.random.randn(M, D))
     kern = Kern(2, active_dims=[1, 3])
 
-    compare_vs_map(X1, X2, kern, sess)
+    compare_vs_map(X1, X2, kern, session_tf)
 
 
 def compare_vs_map(X1, X2, kern, sess):
@@ -84,17 +89,3 @@ def compare_vs_map(X1, X2, kern, sess):
     Kdiag_map = tf.map_fn(kern.Kdiag, X1, dtype=settings.float_type)
     Kdiag_native = kern.Kdiag(X1)
     assert_allclose(*sess.run([Kdiag_map, Kdiag_native]))
-
-def test_rbf_no_active_dims(session_tf):
-    _test_no_active_dims(gpflow.kernels.RBF, session_tf)
-
-def test_rbf_slice_active_dims(session_tf):
-    _test_slice_active_dims(gpflow.kernels.RBF, session_tf)
-
-def test_rbf_indices_active_dims(session_tf):
-    _test_indices_active_dims(gpflow.kernels.RBF, session_tf)
-
-@pytest.mark.parametrize("Kern", Kerns)
-def test_all_no_active_dims(session_tf, Kern):
-    _test_no_active_dims(Kern, session_tf)
-

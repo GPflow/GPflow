@@ -17,6 +17,14 @@ Kernels form a core component of GPflow models and allow prior information to
 be encoded about a latent function of interest. The effect of choosing
 different kernels, and how it is possible to combine multiple kernels is shown
 in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
+
+Broadcasting over leading dimensions:
+`kernel.K(X1, X2)` returns the kernel evaluated on every pair in X1 and X2.
+E.g. if X1 has shape [S1, N1, D] and X2 has shape [S2, N2, D], kernel.K(X1, X2)
+will return a tensor of shape [S1, N1, S2, N2]. Similarly, kernel.K(X1, X1)
+returns a tensor of shape [S1, N1, S1, N1]. In contrast, the return shape of
+kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
+kernel.K(X, None) is identical to kernel.K(X, X).)
 """
 
 from functools import reduce
@@ -28,8 +36,9 @@ import numpy as np
 from . import transforms
 from . import settings
 
-from .params import Parameter, Parameterized, ParamList
 from .decors import params_as_tensors, autoflow
+from .misc import _broadcasting_elementwise_op
+from .params import Parameter, Parameterized, ParamList
 
 
 class Kernel(Parameterized):
@@ -581,6 +590,9 @@ class ArcCosine(Kernel):
             year = {2009},
             url = {http://papers.nips.cc/paper/3628-kernel-methods-for-deep-learning.pdf}
         }
+
+    Note: broadcasting over leading dimensions has not yet been implemented for
+    the ArcCosine kernel.
     """
 
     implemented_orders = {0, 1, 2}
@@ -826,6 +838,98 @@ class Combination(Kernel):
             return not overlapping
 
 
+class Convolutional(Kernel):
+    """
+    Conv
+    Plain convolutional kernel.
+    """
+
+    def __init__(self, basekern, img_size, patch_size, colour_channels=1):
+        Kernel.__init__(self, np.prod(img_size))
+        self.img_size = img_size
+        self.patch_size = patch_size
+        self.basekern = basekern
+        self.colour_channels = colour_channels
+
+        if self.basekern.input_dim != np.prod(patch_size):
+            raise ValueError("Basekern input dimensions must be consistent with patch size.")
+
+    @params_as_tensors
+    def get_patches(self, X):
+        """
+        Extracts patches from the images X. Patches are extracted separately for each of the colour channels.
+        :param X: (N x input_dim)
+        :return: Patches (N, num_patches, patch_size)
+        """
+        # Roll the colour channel to the front, so it appears to `tf.extract_image_patches()` as separate images. Then
+        # extract patches and reshape to have the first axis the same as the number of images. The separate patches will
+        # then be in the second axis.
+        castX = tf.transpose(
+            tf.reshape(X, [tf.shape(X)[0], -1, self.colour_channels]),
+            [0, 2, 1])
+        patches = tf.extract_image_patches(
+            tf.reshape(castX, [-1, self.img_size[0], self.img_size[1], 1], name="rX"),
+            [1, self.patch_size[0], self.patch_size[1], 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1], "VALID")
+        shp = tf.shape(patches)  # img x out_rows x out_cols
+        return tf.cast(tf.reshape(patches,
+                                  [tf.shape(X)[0], self.colour_channels * shp[1] * shp[2], shp[3]]),
+                       settings.float_type)
+
+    @params_as_tensors
+    def K(self, X, X2=None):
+        Xp = self.get_patches(X)  # [N, num_patches, patch_len]
+        Xp2 = self.get_patches(X2) if X2 is not None else Xp
+
+        bigK = self.basekern.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
+        K = tf.reduce_sum(bigK, [1, 3])
+        return K / self.num_patches ** 2.0
+
+    @params_as_tensors
+    def Kdiag(self, X):
+        Xp = self.get_patches(X)  # [N, num_patches, patch_len]
+        return tf.reduce_sum(self.basekern.K(Xp), [1, 2]) / self.num_patches ** 2.0
+
+    @property
+    def patch_len(self):
+        return np.prod(self.patch_size)
+
+    @property
+    def num_patches(self):
+        return (self.img_size[0] - self.patch_size[0] + 1) * (
+                self.img_size[1] - self.patch_size[1] + 1) * self.colour_channels
+
+    @autoflow((settings.float_type,))
+    def compute_patches(self, X):
+        return self.get_patches(X)
+
+
+class WeightedConvolutional(Convolutional):
+    def __init__(self, basekern, img_size, patch_size, weights=None, colour_channels=1):
+        Convolutional.__init__(self, basekern, img_size, patch_size, colour_channels)
+        self.weights = Parameter(np.ones(self.num_patches, dtype=settings.float_type) if weights is None
+                                 else weights)
+
+    @params_as_tensors
+    def K(self, X, X2=None):
+        Xp = self.get_patches(X)  # [N, P, patch_len]
+        Xp2 = Xp if X2 is None else self.get_patches(X2)
+
+        bigK = self.basekern.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
+
+        W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
+        W2bigK = bigK * W2[None, :, None, :]
+        return tf.reduce_sum(W2bigK, [1, 3]) / self.num_patches ** 2.0
+
+    @params_as_tensors
+    def Kdiag(self, X):
+        Xp = self.get_patches(X)  # N x num_patches x patch_dim
+        W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
+        bigK = self.basekern.K(Xp)  # [N, P, P]
+        return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
+
+
 class Sum(Combination):
     def K(self, X, X2=None, presliced=False):
         return reduce(tf.add, [k.K(X, X2) for k in self.kernels])
@@ -840,18 +944,6 @@ class Product(Combination):
 
     def Kdiag(self, X, presliced=False):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kernels])
-
-
-def _broadcasting_elementwise_op(op, a, b):
-    r"""
-    Apply binary operation `op` to every pair in tensors `a` and `b`.
-    :param op: binary operator on tensors, e.g. tf.add, tf.substract
-    :param a: tf.Tensor, shape [n_1, ..., n_a]
-    :param b: tf.Tensor, shape [m_1, ..., m_b]
-    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
-    """
-    flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
-    return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
 def make_deprecated_class(oldname, NewClass):
