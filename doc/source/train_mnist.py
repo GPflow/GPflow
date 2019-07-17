@@ -98,7 +98,8 @@ def config():
 
     lr_cfg = {
         "decay": "custom",
-        "lr": 1e-4
+        "decay_steps": 5000,
+        "lr": 1e-3
     }
 
     date = datetime.datetime.now().strftime('%b%d_%H:%M')
@@ -299,7 +300,7 @@ def convgp_monitor_tasks(train_data, model, optimizer, hz, basepath, dataset):
 def convgp_setup_optimizer(model, global_step, lr_cfg):
     if lr_cfg['decay'] == "custom":
         print("Custom decaying lr")
-        lr = lr_cfg['lr'] * 1.0 / (1 + global_step // 5000 / 3)
+        lr = lr_cfg['lr'] * 1.0 / (1 + global_step // lr_cfg['decay_steps'] / 3)
     else:
         lr = lr_cfg['lr']
     return gpflow.train.AdamOptimizer(lr)
