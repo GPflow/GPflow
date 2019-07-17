@@ -118,6 +118,7 @@ from gpflow import params_as_tensors_for
 from gpflow import settings
 from gpflow.models import Model
 from gpflow.params import Parameter
+from gpflow.training.scipy_optimizer import ScipyOptimizer
 
 
 def get_hr_time() -> float:
@@ -163,6 +164,37 @@ def get_default_saver(max_to_keep: int=3) -> tf.train.Saver:
     return tf.train.Saver(max_to_keep=max_to_keep)
 
 
+def update_optimiser(context, *args, **kwargs) -> None:
+    """
+    Writes optimiser state into corresponding TensorFlow variables. This may need to be done
+    for optimisers like ScipyOptimiser that work with their own copies of the variables.
+    Normally the source variables would be updated only when the optimiser has finished the
+    minimisation. This function may be called from the callback in order to get the TensorFlow
+    variables up-to-date so that they can be written into TensorBoard for example.
+
+    The expected state parameters and the procedure of writing them into variables is specific
+    to each optimiser. Currently it is implemented only for ScipyOptimiser.
+
+    After the state is updated a flag is set to the context to prevent multiple updates in
+    the same callback.
+
+    :param context: Monitor context
+    :param args: Optimiser's state passed to the callback
+    :param kwargs: Optimiser's state passed to the callback
+    """
+
+    if context.optimiser is None or context.optimiser_updated:
+        return
+
+    if isinstance(context.optimiser, ScipyOptimizer) and len(args) > 0:
+
+        optimizer = context.optimiser.optimizer  # get access to ExternalOptimizerInterface
+        var_vals = [args[0][packing_slice] for packing_slice in optimizer._packing_slices]
+        context.session.run(optimizer._var_updates,
+                            feed_dict=dict(zip(optimizer._update_placeholders, var_vals)))
+        context.optimiser_updated = True
+
+
 class MonitorContext(object):
     """
     This is a property bag that will be passed to all monitoring tasks. New attributes can
@@ -184,6 +216,11 @@ class MonitorContext(object):
 
     - init_global_step: Initial value of the global step. This will be checked at the start of
         monitoring. The value may be greater than zero if the graph was restored from a checkpoint.
+
+    - optimiser: Optimiser running under the monitor
+
+    - optimiser_updated: Flag indicating that the optimiser's state has already been written to
+        the correspondent variables in the current step.
     """
     def __init__(self) -> None:
 
@@ -194,6 +231,8 @@ class MonitorContext(object):
         self.session = None          # type: tf.Session
         self.global_step_tensor = None  # type: tf.Variable
         self.init_global_step = 0
+        self.optimiser = None   # type: Any
+        self.optimiser_updated = False
 
     @property
     def global_step(self) -> int:
@@ -202,7 +241,7 @@ class MonitorContext(object):
         current iteration number.
         """
         if self.session is None or self.global_step_tensor is None:
-            return self.iteration_no
+            return self.iteration_no + self.init_global_step
         else:
             return self.session.run(self.global_step_tensor)
 
@@ -225,13 +264,18 @@ class MonitorTask(metaclass=abc.ABCMeta):
     after the optimisation is done. The flag can be set using `with_exit_condition` function.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, need_optimiser_update: Optional[bool]=False) -> None:
+        """
+        :param need_optimiser_update: Need to make sure the optimiser's state is written into
+        corresponding TensorFlow variables every time the task is fired.
+        """
 
         self._condition = lambda context: True
         self._exit_condition = False
         self._task_name = self.__class__.__name__
         self._total_time = 0.0
         self._last_call_time = 0.0
+        self._need_optimiser_update = need_optimiser_update
 
     def with_condition(self, condition: Callable[[MonitorContext], bool]) -> 'MonitorTask':
         """
@@ -292,6 +336,8 @@ class MonitorTask(metaclass=abc.ABCMeta):
             fire_task = self._exit_condition if context.optimisation_finished else \
                 self._condition(context)
             if fire_task:
+                if self._need_optimiser_update:
+                    update_optimiser(context, *args, **kwargs)
                 self.run(context, *args, **kwargs)
         finally:
             # Remember the time of the last execution and update the accumulated time.
@@ -313,7 +359,8 @@ class Monitor(object):
 
     def __init__(self, monitor_tasks: Iterator[MonitorTask], session: Optional[tf.Session]=None,
                  global_step_tensor: Optional[tf.Variable]=None,
-                 print_summary: Optional[bool]=False) -> None:
+                 print_summary: Optional[bool]=False,
+                 optimiser: Optional[Any]=None, context: Optional[MonitorContext]=None) -> None:
         """
         :param monitor_tasks: A collection of monitoring tasks to run. The tasks will be called in
         the same order they are specified here.
@@ -321,12 +368,19 @@ class Monitor(object):
         :param global_step_tensor: the Tensorflow 'global_step' variable
         (see notes in MonitorContext.global_step_tensor)
         :param print_summary: Prints tasks' timing summary after the monitoring is stopped.
+        :param optimiser: Optimiser object that is going to run under this monitor.
+        :param context: MonitorContext object, if not provided a new one will be created.
         """
 
         self._monitor_tasks = list(monitor_tasks)
-        self._context = MonitorContext()
-        self._context.session = session
-        self._context.global_step_tensor = global_step_tensor
+        self._context = context or MonitorContext()
+        self._context.optimisation_finished = False
+        if session is not None:
+            self._context.session = session
+        if global_step_tensor is not None:
+            self._context.global_step_tensor = global_step_tensor
+        if optimiser is not None:
+            self._context.optimiser = optimiser
         self._print_summary = print_summary
 
         self._start_timestamp = get_hr_time()
@@ -398,6 +452,7 @@ class Monitor(object):
         current_timestamp = get_hr_time()
         self._context.optimisation_time += current_timestamp - self._last_timestamp
         self._context.total_time = current_timestamp - self._start_timestamp
+        self._context.optimiser_updated = False
         if not self._context.optimisation_finished:
             self._context.iteration_no += 1
 
@@ -744,7 +799,7 @@ class BaseTensorBoardTask(MonitorTask):
         :param file_writer: Event file writer object.
         :param model: Model object
         """
-        super().__init__()
+        super().__init__(need_optimiser_update=True)
         if not isinstance(file_writer, LogdirWriter):
             raise RuntimeError('The event file writer object provided to a TensorBoard task must '
                                'be of the type LogdirWriter or a descendant type.')
@@ -832,7 +887,7 @@ class ModelToTensorBoardTask(BaseTensorBoardTask):
 
         # Add non-scalar parameters
         if not only_scalars:
-            all_summaries += [tf.summary.histogram(p.full_name, p.constrained_tensor)
+            all_summaries += [tf.summary.histogram(p.pathname, p.constrained_tensor)
                               for p in parameters if p.size > 1]
 
         # Add likelihood
@@ -867,7 +922,7 @@ class LmlToTensorBoardTask(BaseTensorBoardTask):
 
         super().__init__(file_writer, model)
         self._minibatch_size = minibatch_size
-        self._full_lml = tf.placeholder(settings.tf_float, shape=())
+        self._full_lml = tf.placeholder(settings.float_type, shape=())
         self._summary = tf.summary.scalar(model.name + '/full_lml', self._full_lml)
 
         self.wrapper = None  # type: Callable[[Iterator], Iterator]

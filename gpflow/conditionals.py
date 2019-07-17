@@ -15,21 +15,20 @@
 
 import tensorflow as tf
 
-from . import settings, mean_functions
+from . import features, mean_functions, settings, misc
 from .decors import name_scope
 from .dispatch import conditional, sample_conditional
 from .expectations import expectation
-from .features import Kuu, Kuf, InducingPoints, InducingFeature
-from .kernels import Kernel, Combination
+from .features import InducingFeature, InducingPoints, Kuf, Kuu
+from .kernels import Kernel
 from .probability_distributions import Gaussian
-
 
 logger = settings.logger()
 
 
-# ----------------------------------------------------------------------------
-############################### CONDITIONAL ##################################
-# ----------------------------------------------------------------------------
+# -----------
+# CONDITIONAL
+# -----------
 
 @conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("conditional")
@@ -51,6 +50,8 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
     Parameters
     ----------
     :param Xnew: data matrix, size N x D.
+    :param feat: gpflow.InducingFeature object
+    :param kern: gpflow kernel object.
     :param f: data matrix, M x R
     :param full_cov: return the covariance between the datapoints
     :param full_output_cov: return the covariance between the outputs.
@@ -76,7 +77,7 @@ def _conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, 
 
 @conditional.register(object, object, Kernel, object)
 @name_scope("conditional")
-def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False, full_output_cov=None):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -102,7 +103,7 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
     :param X: data points, size M x D.
     :param kern: GPflow kernel.
     :param f: data matrix, M x R, representing the function values at X,
-        for K functions.
+        for R functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size M x R or R x M x M.
     :param white: boolean of whether to use the whitened representation as
@@ -112,13 +113,15 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
         - variance: N x R (full_cov = False), R x N x N (full_cov = True)
     """
     logger.debug("Conditional: Kernel")
-    num_data = tf.shape(X)[0]  # M
-    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level
-    Kmn = kern.K(X, Xnew)
+    num_data = tf.shape(X)[-2]  # M
+    Kmm = kern.K(X) + tf.eye(num_data, dtype=settings.float_type) * settings.numerics.jitter_level  #  [..., M, M]
+    Kmn = kern.K(X, Xnew)  # [M, ..., N]
+
     if full_cov:
-        Knn = kern.K(Xnew)
+        Knn = kern.K(Xnew)  # [...,N,N]
     else:
-        Knn = kern.Kdiag(Xnew)
+        Knn = kern.Kdiag(Xnew)  # [...,N]
+
     mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     return mean, var  # N x R, N x R or R x N x N
@@ -129,40 +132,52 @@ def _conditional(Xnew, X, kern, f, *, full_cov=False, q_sqrt=None, white=False):
 # ----------------------------------------------------------------------------
 
 
+@sample_conditional.register(object, object, Kernel, object)
 @sample_conditional.register(object, InducingFeature, Kernel, object)
 @name_scope("sample_conditional")
-def _sample_conditional(Xnew, feat, kern, f, *, full_output_cov=False, q_sqrt=None, white=False):
+def _sample_conditional(Xnew, feat, kern, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, num_samples=None):
     """
-    `sample_conditional` will return a sample from the conditinoal distribution.
+    `sample_conditional` will return a sample from the conditional distribution.
     In most cases this means calculating the conditional mean m and variance v and then
     returning m + sqrt(v) * eps, with eps ~ N(0, 1).
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
-    The dispatcher will make sure that we use the most efficent one.
+    The dispatcher will make sure that we use the most efficient one.
 
-    :return: N x P (full_output_cov = False) or N x P x P (full_output_cov = True)
+    :return: samples, mean, cov
+        samples has shape [num_samples, N, P] or [N, P] if num_samples is None
+        mean and cov as for conditional()
     """
+    if full_cov and full_output_cov:
+        raise NotImplementedError("The combination of both full_cov and full_output_cov is not "
+                                  "implemented for sample_conditional.")
+
     logger.debug("sample conditional: InducingFeature Kernel")
-    mean, var = conditional(Xnew, feat, kern, f, full_cov=False, full_output_cov=full_output_cov,
-                            q_sqrt=q_sqrt, white=white)  # N x P, N x P (x P)
-    cov_structure = "full" if full_output_cov else "diag"
-    return _sample_mvn(mean, var, cov_structure)
+    mean, cov = conditional(Xnew, feat, kern, f, q_sqrt=q_sqrt, white=white,
+                            full_cov=full_cov, full_output_cov=full_output_cov)
+    if full_cov:
+        # mean: [..., N, P]
+        # cov: [..., P, N, N]
+        mean_PN = tf.matrix_transpose(mean)  # [..., P, N]
+        samples = _sample_mvn(mean_PN, cov, 'full', num_samples=num_samples)  # [..., (S), P, N]
+        samples = tf.matrix_transpose(samples)  # [..., (S), P, N]
+
+    else:
+        # mean: [..., N, P]
+        # cov: [..., N, P] or [..., N, P, P]
+        cov_structure = "full" if full_output_cov else "diag"
+        samples = _sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [..., (S), P, N]
+
+    return samples, mean, cov
 
 
-@sample_conditional.register(object, object, Kernel, object)
-@name_scope("sample_conditional")
-def _sample_conditional(Xnew, X, kern, f, *, q_sqrt=None, white=False):
-    logger.debug("sample conditional: Kernel")
-    mean, var = conditional(Xnew, X, kern, f, q_sqrt=q_sqrt, white=white, full_cov=False)  # N x P, N x P
-    return _sample_mvn(mean, var, "diag")  # N x P
+# -----------------
+# CONDITIONAL MATHS
+# -----------------
 
-
-# ----------------------------------------------------------------------------
-############################# CONDITIONAL MATHS ##############################
-# ----------------------------------------------------------------------------
 
 @name_scope()
 def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=False):
-    """
+    r"""
     Given a g1 and g2, and distribution p and q such that
       p(g2) = N(g2;0,Kmm)
       p(g1) = N(g1;0,Knn)
@@ -171,9 +186,9 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
       q(g2) = N(g2;f,q_sqrt*q_sqrt^T)
     This method computes the mean and (co)variance of
       q(g1) = \int q(g2) p(g1|g2)
-    :param Kmn: M x N
+    :param Kmn: M x [...] x N
     :param Kmm: M x M
-    :param Knn: N x N  or  N
+    :param Knn: [...] x N x N  or  N
     :param f: M x R
     :param full_cov: bool
     :param q_sqrt: None or R x M x M (lower triangular)
@@ -182,33 +197,52 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
     """
     logger.debug("base conditional")
     # compute kernel stuff
-    num_func = tf.shape(f)[1]  # R
-    Lm = tf.cholesky(Kmm)
+    num_func = tf.shape(f)[-1]  # R
+    N = tf.shape(Kmn)[-1]
+    M = tf.shape(f)[-2]
+
+    # get the leadings dims in Kmn to the front of the tensor
+    # if Kmn has rank two, i.e. [M, N], this is the identity op.
+    K = tf.rank(Kmn)
+    perm = tf.concat([tf.reshape(tf.range(1, K-1), [K-2]), # leading dims (...)
+                      tf.reshape(0, [1]),  # [M]
+                      tf.reshape(K-1, [1])], 0)  # [N]
+    Kmn = tf.transpose(Kmn, perm)  # ... x M x N
+
+    leading_dims = tf.shape(Kmn)[:-2]
+    Lm = tf.cholesky(Kmm)  # [M,M]
 
     # Compute the projection matrix A
-    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)
-
+    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [...,M,M]
+    A = tf.matrix_triangular_solve(Lm, Kmn, lower=True)  # [...,M,N]
     # compute the covariance due to the conditioning
     if full_cov:
-        fvar = Knn - tf.matmul(A, A, transpose_a=True)
-        fvar = tf.tile(fvar[None, :, :], [num_func, 1, 1])  # R x N x N
+        fvar = Knn - tf.matmul(A, A, transpose_a=True)  # [...,N,N]
+        cov_shape = tf.concat([leading_dims, [num_func, N, N]], 0)
+        fvar = tf.broadcast_to(tf.expand_dims(fvar, -3), cov_shape)  # [...,R,N,N]
     else:
-        fvar = Knn - tf.reduce_sum(tf.square(A), 0)
-        fvar = tf.tile(fvar[None, :], [num_func, 1])  # R x N
+        fvar = Knn - tf.reduce_sum(tf.square(A), -2)  # [...,N]
+        cov_shape = tf.concat([leading_dims, [num_func, N]], 0) # [...,R,N]
+        fvar = tf.broadcast_to(tf.expand_dims(fvar, -2), cov_shape)  # [...,R,N]
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.matrix_triangular_solve(tf.transpose(Lm), A, lower=False)
+        A = tf.matrix_triangular_solve(tf.matrix_transpose(Lm), A, lower=False)
 
     # construct the conditional mean
-    fmean = tf.matmul(A, f, transpose_a=True)
+    f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [...,M,R]
+    f = tf.broadcast_to(f, f_shape)  # [...,M,R]
+    fmean = tf.matmul(A, f, transpose_a=True)  # [...,N,R]
 
     if q_sqrt is not None:
         if q_sqrt.get_shape().ndims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # R x M x N
         elif q_sqrt.get_shape().ndims == 3:
-            L = tf.matrix_band_part(q_sqrt, -1, 0)  # R x M x M
-            A_tiled = tf.tile(tf.expand_dims(A, 0), tf.stack([num_func, 1, 1]))
+            L = q_sqrt
+            L = tf.broadcast_to(L, tf.concat([leading_dims, tf.shape(L)], 0))
+
+            shape = tf.concat([leading_dims, [num_func, M, N]], 0)
+            A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
             LTA = tf.matmul(L, A_tiled, transpose_a=True)  # R x M x N
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" %
@@ -216,13 +250,12 @@ def base_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, q_sqrt=None, white=Fal
         if full_cov:
             fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # R x N x N
         else:
-            fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # R x N
+            fvar = fvar + tf.reduce_sum(tf.square(LTA), -2)  # R x N
 
     if not full_cov:
-        fvar = tf.transpose(fvar)  # N x R
+        fvar = tf.matrix_transpose(fvar)  # N x R
 
     return fmean, fvar  # N x R, R x N x N or N x R
-
 
 # ----------------------------------------------------------------------------
 ############################ UNCERTAIN CONDITIONAL ###########################
@@ -238,7 +271,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     :param Xnew_mu: mean of the inputs, size N x Din
     :param Xnew_var: covariance matrix of the inputs, size N x Din x Din
     :param feat: gpflow.InducingFeature object, only InducingPoints is supported
-    :param kern: gpflow kernel or ekernel object.
+    :param kern: gpflow kernel object.
     :param q_mu: mean inducing points, size M x Dout
     :param q_sqrt: cholesky of the covariance matrix of the inducing points, size Dout x M x M
     :param full_output_cov: boolean wheter to compute covariance between output dimension.
@@ -274,7 +307,7 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
     q_sqrt_r = tf.matrix_band_part(q_sqrt, -1, 0)  # D x M x M
 
     eKuf = tf.transpose(expectation(pXnew, (kern, feat)))  # M x N (psi1)
-    Kuu = feat.Kuu(kern, jitter=settings.numerics.jitter_level)  # M x M
+    Kuu = features.Kuu(feat, kern, jitter=settings.jitter)  # M x M
     Luu = tf.cholesky(Kuu)  # M x M
 
     if not white:
@@ -334,27 +367,47 @@ def uncertain_conditional(Xnew_mu, Xnew_var, feat, kern, q_mu, q_sqrt, *,
 ########################## HELPERS ##############################
 # ---------------------------------------------------------------
 
-def _sample_mvn(mean, cov, cov_structure):
+def _sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution
-    :param mean: N x D
-    :param cov: N x D or N x D x D
+    :param mean: [..., N, D]
+    :param cov: [..., N, D] or [..., N, D, D]
     :param cov_structure: "diag" or "full"
     - "diag": cov holds the diagonal elements of the covariance matrix
     - "full": cov holds the full covariance matrix (without jitter)
-    :return: sample from the MVN of shape N x D
+    :return: sample from the MVN of shape [..., (S), N, D], S = num_samples
     """
-    eps = tf.random_normal(tf.shape(mean), dtype=settings.float_type)  # N x P
+    mean_shape = tf.shape(mean)
+    S = num_samples if num_samples is not None else 1
+    D = mean_shape[-1]
+    leading_dims = mean_shape[:-2]
+    num_leading_dims = tf.size(leading_dims)
+
     if cov_structure == "diag":
-        sample = mean + tf.sqrt(cov) * eps  # N x P
+        # mean: [..., N, D] and cov [..., N, D]
+        with tf.control_dependencies([tf.assert_equal(tf.rank(mean), tf.rank(cov))]):
+            eps_shape = tf.concat([leading_dims, [S], mean_shape[-2:]], 0)
+            eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [..., S, N, D]
+            samples = mean[..., None, :, :] + tf.sqrt(cov)[..., None, :, :] * eps  # [..., S, N, D]
     elif cov_structure == "full":
-        cov = cov + (tf.eye(tf.shape(mean)[1], dtype=settings.float_type) * settings.numerics.jitter_level)[None, ...]  # N x P x P
-        chol = tf.cholesky(cov)  # N x P x P
-        return mean + (tf.matmul(chol, eps[..., None])[..., 0])  # N x P
+        # mean: [..., N, D] and cov [..., N, D, D]
+        with tf.control_dependencies([tf.assert_equal(tf.rank(mean) + 1, tf.rank(cov))]):
+            jittermat = (
+                tf.eye(D, batch_shape=mean_shape[:-1], dtype=settings.float_type)
+                * settings.jitter
+            )  # [..., N, D, D]
+            eps_shape = tf.concat([mean_shape, [S]], 0)
+            eps = tf.random_normal(eps_shape, dtype=settings.float_type)  # [..., N, D, S]
+            chol = tf.cholesky(cov + jittermat)  # [..., N, D, D]
+            samples = mean[..., None] + tf.matmul(chol, eps)  # [..., N, D, S]
+            samples = misc.leading_transpose(samples, [..., -1, -3, -2])  # [..., S, N, D]
     else:
         raise NotImplementedError  # pragma: no cover
 
-    return sample  # N x P
+    if num_samples is None:
+        return samples[..., 0, :, :]  # [..., N, D]
+    return samples  # [..., S, N, D]
+
 
 def _expand_independent_outputs(fvar, full_cov, full_output_cov):
     """
@@ -383,3 +436,18 @@ def _expand_independent_outputs(fvar, full_cov, full_output_cov):
 
     return fvar
 
+
+def _rollaxis_left(A, num_rolls):
+    """ Roll the tensor `A` backwards `num_rolls` times """
+    assert num_rolls > 0
+    rank = tf.rank(A)
+    perm = tf.concat([num_rolls + tf.range(rank - num_rolls), tf.range(num_rolls)], 0)
+    return tf.transpose(A, perm)
+
+
+def _rollaxis_right(A, num_rolls):
+    """ Roll the tensor `A` forward `num_rolls` times """
+    assert num_rolls > 0
+    rank = tf.rank(A)
+    perm = tf.concat([rank - num_rolls + tf.range(num_rolls), tf.range(rank - num_rolls)], 0)
+    return tf.transpose(A, perm)

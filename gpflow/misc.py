@@ -13,14 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
+import copy
+from collections import OrderedDict
+from typing import List, Union, Optional
+
 import numpy as np
 import pandas as pd
-from collections import OrderedDict
+import tensorflow as tf
 
 from . import settings
 from ._version import __version__
-
 
 __TRAINABLES = tf.GraphKeys.TRAINABLE_VARIABLES
 __GLOBAL_VARIABLES = tf.GraphKeys.GLOBAL_VARIABLES
@@ -82,6 +84,43 @@ def is_valid_param_value(value):
             or is_tensor(value))
 
 
+def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]]) -> tf.Tensor:
+    """
+    Transposes tensors with leading dimensions. Leading dimensions in
+    permutation list represented via ellipsis `...`.
+
+    When leading dimensions are found, `transpose` method
+    considers them as a single grouped element indexed by 0 in `perm` list. So, passing
+    `perm=[-2, ..., -1]`, you assume that your input tensor has [..., A, B] shape,
+    and you want to move leading dims between A and B dimensions.
+    Dimension indices in permutation list can be negative or positive. Valid positive
+    indices start from 1 up to the tensor rank, viewing leading dimensions `...` as zero
+    index.
+
+    Example:
+        a = tf.random.normal((1, 2, 3, 4, 5, 6))
+        b = leading_transpose(a, [5, -3, ..., -2])
+        sess.run(b).shape
+        output> (6, 4, 1, 2, 3, 5)
+
+    :param tensor: TensorFlow tensor.
+    :param perm: List of permutation indices.
+
+    :returns: TensorFlow tensor.
+    :raises: ValueError when `...` cannot be found.
+    """
+    perm = copy.copy(perm)
+    idx = perm.index(...)
+    perm[idx] = 0
+
+    rank = tf.rank(tensor)
+    perm_tf = perm % rank
+
+    leading_dims = tf.range(rank - len(perm) + 1)
+    perm = tf.concat([perm_tf[:idx], leading_dims, perm_tf[idx+1:]], 0)
+    return tf.transpose(tensor, perm)
+
+
 def is_tensor_trainable(tensor):
     return tensor in tensor.graph.get_collection(__TRAINABLES)
 
@@ -121,11 +160,6 @@ def normalize_num_type(num_type):
         raise ValueError('Unknown dtype "{0}" passed to normalizer.'.format(num_type))
 
     return num_type
-
-
-# def types_array(tensor, shape=None):
-#     shape = shape if shape is not None else tensor.shape.as_list()
-#     return np.full(shape, tensor.dtype).tolist()
 
 
 def get_attribute(obj, name, allow_fail=False, default=None):
@@ -250,6 +284,26 @@ def _get_tensor_safe(name, index, graph):
         return graph.get_tensor_by_name(':'.join([name, index]))
     except KeyError:
         return None
+
+
+def tensor_ndim_equal(tensor: tf.Tensor, ndim: int):
+    """
+    Returns a scalar bool tensor that is True if the rank of `tensor` is equal to `ndim`.
+    """
+    tensor_shape = tf.shape(tensor)
+    tensor_ndim = tf.size(tensor_shape)
+    return tf.equal(tensor_ndim, ndim)
+
+
+def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: Optional[str] = None):
+    if message is None:
+        message = "Tensor shape does not have ndim {}".format(ndim)
+
+    if tensor.shape.ndims is not None:
+        if tensor.shape.ndims != ndim:
+            raise ValueError(message)
+    return tf.Assert(tensor_ndim_equal(tensor, ndim), [message])
+
 
 def version():
     return __version__

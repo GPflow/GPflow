@@ -246,6 +246,14 @@ class Parameter(Node):
             return Build.NO
         return Build.YES
 
+    @property
+    def trainable(self):
+        return self._trainable
+
+    @trainable.setter
+    def trainable(self, value):
+        self.set_trainable(value)
+
     def set_trainable(self, value):
         if not isinstance(value, bool):
             raise ValueError('Fixed property value must be boolean.')
@@ -263,7 +271,7 @@ class Parameter(Node):
             else:
                 misc.remove_from_trainables(self.parameter_tensor, graph)
 
-        object.__setattr__(self, 'trainable', value)
+        self._trainable = value
 
     def assign(self, value, session=None, dtype=None, force=True):
         if self._externally_defined:
@@ -327,6 +335,7 @@ class Parameter(Node):
                 raise ValueError(msg.format(value.dtype, inner_dtype))
             cast = False
             dtype = inner_dtype
+
         if misc.is_number(value):
             value_type = np.result_type(value).type
             num_type = misc.normalize_num_type(value_type)
@@ -335,7 +344,7 @@ class Parameter(Node):
         elif misc.is_list(value):
             dtype = settings.float_type if dtype is None else dtype
             value = np.array(value, dtype=dtype)
-        elif cast:
+        elif cast and not misc.is_tensor(value):
             value = value.astype(dtype)
         if shape is not None and self.fixed_shape and is_built and shape != value.shape:
             msg = 'Value has different shape. Parameter shape {0}, value shape {1}.'
@@ -356,7 +365,9 @@ class Parameter(Node):
         constrained = self._build_constrained(unconstrained)
         prior = self._build_prior(unconstrained, constrained)
 
-        self._is_initialized_tensor = tf.is_variable_initialized(unconstrained)
+        self._is_initialized_tensor = True
+        if not isinstance(unconstrained, tf.Tensor):
+            self._is_initialized_tensor = tf.is_variable_initialized(unconstrained)
         self._unconstrained_tensor = unconstrained
         self._constrained_tensor = constrained
         self._prior_tensor = prior
@@ -481,6 +492,9 @@ class Parameter(Node):
 
     def __str__(self):
         return str(self.as_pandas_table())
+
+    def _repr_html_(self):
+        return self.as_pandas_table()._repr_html_()
 
     @property
     def fixed(self):

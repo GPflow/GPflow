@@ -1,3 +1,19 @@
+# Release 1.3.0
+
+- Fix bug in ndiag_mc for multi-dimensional kwargs. (#813)
+- Fix parameter.trainable to be a property. (#814)
+- Remove references to six module. (#816)
+- Fix `tf.control_dependencies` in likelihoods. (#821)
+- Fix `active_dims` for slice type. (#840)
+
+- Cleaning up stationary kernel implementations: now defined in terms of `K_r` or `K_r2`. (#827)
+- Support broadcasting over arbitrarily many leading dimensions for kernels and `conditional`. (#829)
+- Analytic expectation of the cross-covariance between different RBF kernels. (#754)
+- New MixedKernelSeparateMof feature class for multi-output GPs. (#830)
+- The `sample_conditional` returns mean and var as well as samples, and can generate more than one sample. (#836)
+- Support monitoring with `ScipyOptimizer`. (#856)
+
+
 # Release 1.2.0
 
 - Added `SoftMax` likelihood (#799)

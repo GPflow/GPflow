@@ -12,7 +12,45 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""
+Likelihoods are another core component of GPflow. This describes how likely the
+data is under the assumptions made about the underlying latent functions
+p(Y|F). Different likelihoods make different
+assumptions about the distribution of the data, as such different data-types
+(continuous, binary, ordinal, count) are better modelled with different
+likelihood assumptions.
 
+Use of any likelihood other than Gaussian typically introduces the need to use
+an approximation to perform inference, if one isn't already needed. A
+variational inference and MCMC models are included in GPflow and allow
+approximate inference with non-Gaussian likelihoods. An introduction to these
+models can be found :ref:`here <implemented_models>`. Specific notebooks
+illustrating non-Gaussian likelihood regressions are available for
+`classification <notebooks/classification.html>`_ (binary data), `ordinal
+<notebooks/ordinal.html>`_ and `multiclass <notebooks/multiclass.html>`_.
+
+Creating new likelihoods
+----------
+Likelihoods are defined by their
+log-likelihood. When creating new likelihoods, the
+:func:`logp <gpflow.likelihoods.Likelihood.logp>` method (log p(Y|F)), the
+:func:`conditional_mean <gpflow.likelihoods.Likelihood.conditional_mean>`,
+:func:`conditional_variance
+<gpflow.likelihoods.Likelihood.conditional_variance>`.
+
+In order to perform variational inference with non-Gaussian likelihoods a term
+called ``variational expectations``, ∫ q(F) log p(Y|F) dF, needs to
+be computed under a Gaussian distribution q(F) ~ N(μ, Σ).
+
+The :func:`variational_expectations <gpflow.likelihoods.Likelihood.variational_expectations>`
+method can be overriden if this can be computed in closed form, otherwise; if
+the new likelihood inherits
+:class:`Likelihood <gpflow.likelihoods.Likelihood>` the default will use
+Gauss-Hermite numerical integration (works well when F is 1D
+or 2D), if the new likelihood inherits from
+:class:`MonteCarloLikelihood <gpflow.likelihoods.MonteCarloLikelihood>` the
+integration is done by sampling (can be more suitable when F is higher dimensional).
+"""
 
 import numpy as np
 import tensorflow as tf
@@ -53,7 +91,7 @@ class Likelihood(Parameterized):
 
         and the predictive variance
 
-           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
+           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y p(y|f)q(f) df dy ]^2
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
@@ -616,7 +654,7 @@ class MonteCarloLikelihood(Likelihood):
 
         and the predictive variance
 
-           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
+           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y p(y|f)q(f) df dy ]^2
 
         Here, we implement a default Monte Carlo routine.
         """
@@ -685,8 +723,14 @@ class SoftMax(MonteCarloLikelihood):
         self.num_classes = num_classes
 
     def logp(self, F, Y):
-        with tf.control_dependencies([tf.assert_equal(tf.shape(Y)[1], 1),
-                                      tf.assert_equal(tf.shape(F)[1], self.num_classes)]):
+        with tf.control_dependencies(
+                [
+                    tf.assert_equal(tf.shape(Y)[1], 1),
+                    tf.assert_equal(tf.cast(tf.shape(F)[1], settings.int_type),
+                                    tf.cast(self.num_classes, settings.int_type))
+                ]):
+            if Y.dtype != np.int32:
+                Y = tf.cast(Y, np.int32)
             return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[:, None]
 
     def conditional_mean(self, F):

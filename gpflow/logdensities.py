@@ -15,13 +15,9 @@
 
 import tensorflow as tf
 import numpy as np
-import warnings
-
 
 from . import settings
-
-
-logger = settings.logger()
+from .misc import assert_tensor_ndim
 
 
 def gaussian(x, mu, var):
@@ -75,31 +71,27 @@ def laplace(x, mu, sigma):
 def multivariate_normal(x, mu, L):
     """
     Computes the log-density of a multivariate normal.
-    :param x  : Dx1 or DxN sample(s) for which we want the density
-    :param mu : Dx1 or DxN mean(s) of the normal distribution
-    :param L  : DxD Cholesky decomposition of the covariance matrix
-    :return p : (1,) or (N,) vector of log densities for each of the N x's and/or mu's
+    :param x  : [N, 1] or [N, R] sample(s) for which we want the density
+    :param mu : [N, 1] or [N, R] mean(s) of the normal distribution
+    :param L  : [N, N] Cholesky decomposition of the covariance matrix
+    :return p : (1,) or (R,) vector of log densities for each of the columns of x and/or mu
 
-    x and mu are either vectors or matrices. If both are vectors (N,1):
+    x and mu are either vectors or matrices. If both are vectors [N, 1]:
     p[0] = log pdf(x) where x ~ N(mu, LL^T)
     If at least one is a matrix, we assume independence over the *columns*:
     the number of rows must match the size of L. Broadcasting behaviour:
     p[n] = log pdf of:
     x[n] ~ N(mu, LL^T) or x ~ N(mu[n], LL^T) or x[n] ~ N(mu[n], LL^T)
     """
-    if x.shape.ndims is None:
-        logger.warn('Shape of x must be 2D at computation.')
-    elif x.shape.ndims != 2:
-        raise ValueError('Shape of x must be 2D.')
-    if mu.shape.ndims is None:
-        logger.warn('Shape of mu may be unknown or not 2D.')
-    elif mu.shape.ndims != 2:
-        raise ValueError('Shape of mu must be 2D.')
-
-    d = x - mu
-    alpha = tf.matrix_triangular_solve(L, d, lower=True)
-    num_dims = tf.cast(tf.shape(d)[0], L.dtype)
-    p = - 0.5 * tf.reduce_sum(tf.square(alpha), 0)
-    p -= 0.5 * num_dims * np.log(2 * np.pi)
-    p -= tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
-    return p
+    with tf.control_dependencies([
+            assert_tensor_ndim(x, 2, 'multivariate_normal requires the shape of x to be [N, R]'),
+            assert_tensor_ndim(mu, 2, 'multivariate_normal requires the shape of mu to be [N, R]'),
+            tf.assert_equal(tf.shape(L), [tf.shape(x)[0], tf.shape(x)[0]]),
+            ]):
+        d = x - mu
+        alpha = tf.matrix_triangular_solve(L, d, lower=True)
+        num_dims = tf.cast(tf.shape(d)[0], L.dtype)  # N
+        p = - 0.5 * tf.reduce_sum(tf.square(alpha), axis=0)
+        p -= 0.5 * num_dims * np.log(2 * np.pi)
+        p -= tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
+        return p

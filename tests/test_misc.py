@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
+import pytest
 import numpy as np
+import tensorflow as tf
 
 import gpflow
-from gpflow.test_util import GPflowTestCase
+from gpflow import misc
+from gpflow.test_util import GPflowTestCase, session_tf
 
 
 class TestPublicMethods(GPflowTestCase):
@@ -137,3 +139,36 @@ class TestPublicMethods(GPflowTestCase):
 
             with self.assertRaises(ValueError):
                 gpflow.misc.remove_from_trainables(var2)
+
+
+def test_leading_transpose(session_tf):
+    dims = [1, 2, 3, 4]
+    a = tf.zeros(dims)
+    b = misc.leading_transpose(a, [..., -1, -2])
+    c = misc.leading_transpose(a, [-1, ..., -2])
+    d = misc.leading_transpose(a, [-1, -2, ...])
+    e = misc.leading_transpose(a, [3, 2, ...])
+    f = misc.leading_transpose(a, [3, -2, ...])
+
+    assert len(a.shape) == len(b.shape) == len(c.shape) == len(d.shape)
+    assert len(a.shape) == len(e.shape) == len(f.shape)
+    assert b.shape[-2:] == [4, 3]
+    assert c.shape[0] == 4 and c.shape[-1] == 3
+    assert d.shape[:2] == [4, 3]
+    assert d.shape == e.shape == f.shape
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_leading_transpose_fail(session_tf):
+    dims = [1, 2, 3, 4]
+    a = tf.zeros(dims)
+    misc.leading_transpose(a, [-1, -2])
+
+def test_static_assert_tensor_ndim(session_tf):
+    dims = [1, 2, 3]
+    a = tf.zeros(dims)
+
+    misc.assert_tensor_ndim(a, len(dims))
+
+    with pytest.raises(ValueError):
+        misc.assert_tensor_ndim(a, len(dims)+1)
