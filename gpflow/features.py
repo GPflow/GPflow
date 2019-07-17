@@ -150,6 +150,18 @@ def Kuu(feat, kern, *, jitter=0.0):
 
 
 class InducingPatch(InducingPointsBase):
+    """
+    InducingPatch
+    Class for interdomain inducing patches, for use with Convolutional kernels.
+
+    @incollection{vdw2017convgp,
+      title = {Convolutional Gaussian Processes},
+      author = {van der Wilk, Mark and Rasmussen, Carl Edward and Hensman, James},
+      booktitle = {Advances in Neural Information Processing Systems 30},
+      year = {2017},
+      url = {http://papers.nips.cc/paper/6877-convolutional-gaussian-processes.pdf}
+    }
+    """
     pass
 
 
@@ -157,7 +169,7 @@ class InducingPatch(InducingPointsBase):
 def Kuf(feat, kern, Xnew):
     with params_as_tensors_for(feat, kern):
         Xp = kern.get_patches(Xnew)  # N x num_patches x patch_len
-        bigKzx = kern.basekern.K(feat.Z, Xp)  # [M, N, P] -- thanks to broadcasting of kernels
+        bigKzx = kern.basekern.K(feat.Z, Xp)  # [M, N, P]
         Kzx = tf.reduce_sum(bigKzx * kern.weights if hasattr(kern, 'weights') else bigKzx, [2])
     return Kzx / kern.num_patches
 

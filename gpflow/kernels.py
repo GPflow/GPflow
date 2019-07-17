@@ -27,7 +27,7 @@ kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
 kernel.K(X, None) is identical to kernel.K(X, X).)
 """
 
-from functools import reduce
+from functools import reduce, lru_cache
 import warnings
 
 import tensorflow as tf
@@ -841,7 +841,19 @@ class Combination(Kernel):
 class Convolutional(Kernel):
     """
     Conv
-    Plain convolutional kernel.
+    Plain convolutional kernel as described in \citet{vdw2017convgp}. Defines
+    a GP f( ) that is constructed from a sum of responses of individual patches
+    in an image:
+      f(x) = \sum_p x^{[p]}
+    where x^{[p]} is the pth patch in the image.
+
+    @incollection{vdw2017convgp,
+      title = {Convolutional Gaussian Processes},
+      author = {van der Wilk, Mark and Rasmussen, Carl Edward and Hensman, James},
+      booktitle = {Advances in Neural Information Processing Systems 30},
+      year = {2017},
+      url = {http://papers.nips.cc/paper/6877-convolutional-gaussian-processes.pdf}
+    }
     """
 
     def __init__(self, basekern, img_size, patch_size, colour_channels=1):
@@ -854,6 +866,7 @@ class Convolutional(Kernel):
         if self.basekern.input_dim != np.prod(patch_size):
             raise ValueError("Basekern input dimensions must be consistent with patch size.")
 
+    @lru_cache()
     @params_as_tensors
     def get_patches(self, X):
         """
@@ -906,6 +919,19 @@ class Convolutional(Kernel):
 
 
 class WeightedConvolutional(Convolutional):
+    """
+    WeightedConvolutional
+    Similar to `Convolutional`, but with different weights for each patch:
+      f(x) = \sum_p x^{[p]}
+
+     @incollection{vdw2017convgp,
+      title = {Convolutional Gaussian Processes},
+      author = {van der Wilk, Mark and Rasmussen, Carl Edward and Hensman, James},
+      booktitle = {Advances in Neural Information Processing Systems 30},
+      year = {2017},
+      url = {http://papers.nips.cc/paper/6877-convolutional-gaussian-processes.pdf}
+    }
+    """
     def __init__(self, basekern, img_size, patch_size, weights=None, colour_channels=1):
         Convolutional.__init__(self, basekern, img_size, patch_size, colour_channels)
         self.weights = Parameter(np.ones(self.num_patches, dtype=settings.float_type) if weights is None
