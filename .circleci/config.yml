@@ -32,6 +32,13 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
+  example-test:
+    <<: *runtest
+    docker:
+      - image: awav/tensorflow:1.14.0
+        environment:
+          PYTEST_FILTER: examples
+
   deploy:
     docker:
       - image: awav/tensorflow:1.14.0
@@ -73,6 +80,10 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
       - notebook-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+      - example-test:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/

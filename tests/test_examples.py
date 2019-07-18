@@ -1,11 +1,12 @@
 import sys
+import pytest
 
 sys.path.append('./examples')
 
 
 # from train_mnist import ex
 
-
+@pytest.mark.examples
 def test_train_mnist():
     """
     Just check whether the train_mist script still runs...
