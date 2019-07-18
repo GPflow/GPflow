@@ -19,6 +19,8 @@ sent to TensorBoard in the ./mnist/ directory.
 Usage examples (for using float64 and float32 respectively):
 `python train_mnist.py`
 `python train_mnist.py with float_type=float32 jitter_level=1e-4`
+
+The latter should reach around 1.23% error.
 """
 import datetime
 import tensorflow as tf
@@ -82,11 +84,15 @@ def save_gpflow_model(filename, model) -> None:
 
 
 def get_dataset(dataset: str):  # dataset = [mnist, mnist01, cifar]
-    assert dataset == "mnist"
+    assert dataset == "mnist" or dataset == "mnist-small-subset-for-test"
     (X, Y), (Xs, Ys) = tf.keras.datasets.mnist.load_data()
     X, Xs = [x.reshape(-1, 784) / 255.0 for x in [X, Xs]]
     Y, Ys = [y.astype(int) for y in [Y, Ys]]
     Y, Ys = [y.reshape(-1, 1) for y in [Y, Ys]]
+
+    if dataset == "mnist-small-subset-for-test":
+        X, Xs, Y, Ys = [x[:300, :] for x in [X, Xs, Y, Ys]]
+
     return (X, Y), (Xs, Ys)
 
 
@@ -98,13 +104,13 @@ def config():
 
     lr_cfg = {
         "decay": "custom",
-        "decay_steps": 5000,
+        "decay_steps": 30000,
         "lr": 1e-3
     }
 
     date = datetime.datetime.now().strftime('%b%d_%H:%M')
 
-    iterations = 50000
+    iterations = 120000
     patch_shape = [5, 5]
     batch_size = 128
     # path to save results

@@ -840,7 +840,6 @@ class Combination(Kernel):
 
 class Convolutional(Kernel):
     """
-    Conv
     Plain convolutional kernel as described in \citet{vdw2017convgp}. Defines
     a GP f( ) that is constructed from a sum of responses of individual patches
     in an image:
@@ -920,7 +919,6 @@ class Convolutional(Kernel):
 
 class WeightedConvolutional(Convolutional):
     """
-    WeightedConvolutional
     Similar to `Convolutional`, but with different weights for each patch:
       f(x) = \sum_p x^{[p]}
 

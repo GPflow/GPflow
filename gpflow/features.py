@@ -151,7 +151,6 @@ def Kuu(feat, kern, *, jitter=0.0):
 
 class InducingPatch(InducingPointsBase):
     """
-    InducingPatch
     Class for interdomain inducing patches, for use with Convolutional kernels.
 
     @incollection{vdw2017convgp,
