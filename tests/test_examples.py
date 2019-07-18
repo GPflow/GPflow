@@ -2,7 +2,8 @@ import sys
 
 sys.path.append('./examples')
 
-from train_mnist import ex
+
+# from train_mnist import ex
 
 
 def test_train_mnist():
