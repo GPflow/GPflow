@@ -93,17 +93,28 @@ class ScipyOptimizer(optimizer.Optimizer):
             raise ValueError("Optimizer has already been set up for another model. "
                              "Create new optimizer or reset existing.")
 
-        if self._optimizer is None:
+        existing_optimizer = self._optimizer is not None
+        if not existing_optimizer:
             self._optimizer = self.make_optimize_tensor(model, session, var_list=var_list, maxiter=maxiter, disp=disp)
 
         if self._model is None or initialize_model:
             model.initialize(session=session)
 
-        if self._optimizer is None or initialize_optimizer:
-            session = model.enquire_session(session)
+        feed_dict = self._gen_feed_dict(self._model, feed_dict)
+        session = self._model.enquire_session(session)
 
-        feed_dict = self._gen_feed_dict(model, feed_dict)
-        self._optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback, **kwargs)
+        if existing_optimizer and not initialize_optimizer:
+            try:
+                options = dict(options=dict(maxiter=maxiter, disp=disp))
+                self._optimizer.optimizer_kwargs.update(options)
+                self._optimizer.optimize(session=session, feed_dict=feed_dict, step_callback=step_callback)
+            except Exception as error:
+                msg = "Unknown error has occured at reusage of the scipy optimizer. Make sure that you use the same session"
+                msg = f"{msg}. Original error message: \n{error}"
+                error.args = msg
+                raise error
+        else:
+            self._optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback, **kwargs)
 
         if anchor:
             model.anchor(session)
