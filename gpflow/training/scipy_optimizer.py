@@ -47,7 +47,6 @@ class ScipyOptimizer(optimizer.Optimizer):
             optimizer_kwargs.update(dict(options=options))
             objective = model.objective
             optimizer = external_optimizer.ScipyOptimizerInterface(objective, var_list=var_list, **optimizer_kwargs)
-            model.initialize(session=session)
             return optimizer
 
     def minimize(self,
@@ -57,7 +56,8 @@ class ScipyOptimizer(optimizer.Optimizer):
                  feed_dict=None,
                  maxiter=1000,
                  disp=False,
-                 initialize=False,
+                 initialize_model=False,
+                 initialize_optimizer=False,
                  anchor=True,
                  step_callback=None,
                  **kwargs):
@@ -71,7 +71,9 @@ class ScipyOptimizer(optimizer.Optimizer):
         :param maxiter: Number of run interation. Note: scipy optimizer can do early stopping
             if model converged.
         :param disp: ScipyOptimizer option. Set to True to print convergence messages.
-        :param initialize: If `True` model parameters will be re-initialized even if they were
+        :param initialize_model: If `True` model parameters will be re-initialized even if they were
+            initialized before for gotten session.
+        :param initialize_optimizer: If `True` model parameters will be re-initialized even if they were
             initialized before for gotten session.
         :param anchor: If `True` trained parameters computed during optimization at
             particular session will be synchronized with internal parameter values.
@@ -87,12 +89,22 @@ class ScipyOptimizer(optimizer.Optimizer):
         if model.is_built_coherence() is Build.NO:
             raise GPflowError('Model is not built.')
 
-        session = model.enquire_session(session)
-        self._model = model
-        optimizer = self.make_optimize_tensor(model, session, var_list=var_list, maxiter=maxiter, disp=disp)
-        self._optimizer = optimizer
+        if self._model is not None and self._model is not model:
+            raise ValueError("Optimizer has already been set up for another model. "
+                             "Create new optimizer or reset existing.")
+
+        if self._optimizer is None:
+            self._optimizer = self.make_optimize_tensor(model, session, var_list=var_list, maxiter=maxiter, disp=disp)
+
+        if self._model is None or initialize_model:
+            model.initialize(session=session)
+
+        if self._optimizer is None or initialize_optimizer:
+            session = model.enquire_session(session)
+
         feed_dict = self._gen_feed_dict(model, feed_dict)
-        optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback, **kwargs)
+        self._optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback, **kwargs)
+
         if anchor:
             model.anchor(session)
 
