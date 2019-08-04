@@ -55,7 +55,7 @@ class Foo:
         :return: Result depends on which value was passed to
             the method. It can be either a scalar or NumPy array.
         """
-        default_name = self.__class__.__name__
+        default_name = cls.__name__
         name = op_name if op_name is not None else default_name
         session = gpflow.get_default_session()
         with tf.name_scope(name):
