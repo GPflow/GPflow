@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from . import external_optimizer, optimizer
 from ..core.compilable import Build
 from ..core.errors import GPflowError
 from ..models.model import Model
+from . import external_optimizer, optimizer
+from tensorflow.python.framework.errors_impl import InvalidArgumentError
 
 
 class ScipyOptimizer(optimizer.Optimizer):
@@ -46,13 +47,21 @@ class ScipyOptimizer(optimizer.Optimizer):
             options.update(kwargs)
             optimizer_kwargs.update(dict(options=options))
             objective = model.objective
-            optimizer = external_optimizer.ScipyOptimizerInterface(
-                objective, var_list=var_list, **optimizer_kwargs)
-            model.initialize(session=session)
+            optimizer = external_optimizer.ScipyOptimizerInterface(objective, var_list=var_list, **optimizer_kwargs)
             return optimizer
 
-    def minimize(self, model, session=None, var_list=None, feed_dict=None, maxiter=1000,
-                 disp=False, initialize=False, anchor=True, step_callback=None, **kwargs):
+    def minimize(self,
+                 model,
+                 session=None,
+                 var_list=None,
+                 feed_dict=None,
+                 maxiter=1000,
+                 disp=False,
+                 initialize=False,
+                 initialize_optimizer=False,
+                 anchor=True,
+                 step_callback=None,
+                 **kwargs):
         """
         Minimizes objective function of the model.
 
@@ -64,6 +73,8 @@ class ScipyOptimizer(optimizer.Optimizer):
             if model converged.
         :param disp: ScipyOptimizer option. Set to True to print convergence messages.
         :param initialize: If `True` model parameters will be re-initialized even if they were
+            initialized before for gotten session.
+        :param initialize_optimizer: If `True` model parameters will be re-initialized even if they were
             initialized before for gotten session.
         :param anchor: If `True` trained parameters computed during optimization at
             particular session will be synchronized with internal parameter values.
@@ -79,14 +90,39 @@ class ScipyOptimizer(optimizer.Optimizer):
         if model.is_built_coherence() is Build.NO:
             raise GPflowError('Model is not built.')
 
-        session = model.enquire_session(session)
-        self._model = model
-        optimizer = self.make_optimize_tensor(model, session,
-            var_list=var_list, maxiter=maxiter, disp=disp)
-        self._optimizer = optimizer
+        if self._model is not None and self._model is not model:
+            raise ValueError("Optimizer used with another model. Create new optimizer or reset existing.")
+
+        existing_optimizer = self._optimizer is not None
+        if not existing_optimizer:
+            self._optimizer = self.make_optimize_tensor(model, session, var_list=var_list, maxiter=maxiter, disp=disp)
+
+        if self._model is None or initialize:
+            model.initialize(session=session)
+
+        if self._model is None:
+            self._model = model
+
         feed_dict = self._gen_feed_dict(model, feed_dict)
-        optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback,
-                           **kwargs)
+        session = model.enquire_session(session)
+
+        if existing_optimizer and not initialize_optimizer:
+            try:
+                options = dict(options=dict(maxiter=maxiter, disp=disp))
+                self._optimizer.optimizer_kwargs.update(options)
+                self._optimizer.optimize(session=session, feed_dict=feed_dict, step_callback=step_callback)
+            except InvalidArgumentError as error:
+                msg = ("This error might occur because the internal state (for example, variables shape or dtype) of the model is changed. "
+                       "In this case, you have to use a new optimiser")
+                msg = f"Original error message: \n\t{error}\nOptimiser message: {msg}."
+                raise RuntimeError(msg)
+            except Exception as error:
+                msg = "Unknown error has occured at reusage of the scipy optimizer. Make sure that you use the same session"
+                msg = f"Original error message: \n\t{error}\nOptimiser message: {msg}."
+                raise RuntimeError(msg)
+        else:
+            self._optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback, **kwargs)
+
         if anchor:
             model.anchor(session)
 

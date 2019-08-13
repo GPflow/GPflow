@@ -15,7 +15,7 @@
 
 import copy
 from collections import OrderedDict
-from typing import List, Union
+from typing import List, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -207,7 +207,7 @@ def initialize_variables(variables=None, session=None, force=False, **run_kwargs
             vars_for_init = list(_find_initializable_tensors(variables, session))
         if not vars_for_init:
             return
-        initializer = tf.variables_initializer(vars_for_init)
+        initializer = [v.initializer for v in vars_for_init]
     session.run(initializer, **run_kwargs)
 
 
@@ -284,6 +284,38 @@ def _get_tensor_safe(name, index, graph):
         return graph.get_tensor_by_name(':'.join([name, index]))
     except KeyError:
         return None
+
+
+def tensor_ndim_equal(tensor: tf.Tensor, ndim: int):
+    """
+    Returns a scalar bool tensor that is True if the rank of `tensor` is equal to `ndim`.
+    """
+    tensor_shape = tf.shape(tensor)
+    tensor_ndim = tf.size(tensor_shape)
+    return tf.equal(tensor_ndim, ndim)
+
+
+def assert_tensor_ndim(tensor: tf.Tensor, ndim: int, message: Optional[str] = None):
+    if message is None:
+        message = "Tensor shape does not have ndim {}".format(ndim)
+
+    if tensor.shape.ndims is not None:
+        if tensor.shape.ndims != ndim:
+            raise ValueError(message)
+    return tf.Assert(tensor_ndim_equal(tensor, ndim), [message])
+
+
+def _broadcasting_elementwise_op(op, a, b):
+    r"""
+    Apply binary operation `op` to every pair in tensors `a` and `b`.
+    :param op: binary operator on tensors, e.g. tf.add, tf.substract
+    :param a: tf.Tensor, shape [n_1, ..., n_a]
+    :param b: tf.Tensor, shape [m_1, ..., m_b]
+    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
+    """
+    flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
+    return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
+
 
 def version():
     return __version__

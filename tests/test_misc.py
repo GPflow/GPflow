@@ -163,3 +163,12 @@ def test_leading_transpose_fail(session_tf):
     dims = [1, 2, 3, 4]
     a = tf.zeros(dims)
     misc.leading_transpose(a, [-1, -2])
+
+def test_static_assert_tensor_ndim(session_tf):
+    dims = [1, 2, 3]
+    a = tf.zeros(dims)
+
+    misc.assert_tensor_ndim(a, len(dims))
+
+    with pytest.raises(ValueError):
+        misc.assert_tensor_ndim(a, len(dims)+1)
