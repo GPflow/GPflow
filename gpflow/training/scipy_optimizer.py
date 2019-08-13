@@ -90,8 +90,7 @@ class ScipyOptimizer(optimizer.Optimizer):
             raise GPflowError('Model is not built.')
 
         if self._model is not None and self._model is not model:
-            raise ValueError("Optimizer has already been set up for another model. "
-                             "Create new optimizer or reset existing.")
+            raise ValueError("Optimizer used with another model. Create new optimizer or reset existing.")
 
         existing_optimizer = self._optimizer is not None
         if not existing_optimizer:
@@ -100,8 +99,11 @@ class ScipyOptimizer(optimizer.Optimizer):
         if self._model is None or initialize_model:
             model.initialize(session=session)
 
-        feed_dict = self._gen_feed_dict(self._model, feed_dict)
-        session = self._model.enquire_session(session)
+        if self._model is None:
+            self._model = model
+
+        feed_dict = self._gen_feed_dict(model, feed_dict)
+        session = model.enquire_session(session)
 
         if existing_optimizer and not initialize_optimizer:
             try:
