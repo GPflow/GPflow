@@ -681,6 +681,148 @@ class ArcCosine(Kernel):
         return self.variance * (1. / np.pi) * self._J(theta) * X_product ** self.order
 
 
+class DeepArcCosine(Kernel):
+    """
+    The deep Arc-cosine family of kernels which mimics the computation in deep neural
+    networks. The order parameter specifies the assumed activation function.
+    The Multi Layer Perceptron (MLP) kernel is closely related to the ArcCosine
+    kernel of order 0. The key reference is
+    ::
+        @incollection{NIPS2009_3628,
+            title = {Kernel Methods for Deep Learning},
+            author = {Youngmin Cho and Lawrence K. Saul},
+            booktitle = {Advances in Neural Information Processing Systems 22},
+            year = {2009},
+            url = {http://papers.nips.cc/paper/3628-kernel-methods-for-deep-learning.pdf}
+        }
+    Note: broadcasting over leading dimensions has not yet been implemented for
+    the ArcCosine kernel.
+    """
+
+    implemented_orders = {0, 1, 2}
+
+    def __init__(self, input_dim,
+                 order=0,
+                 depth=1,
+                 variance=1.0, weight_variances=1., bias_variance=1.,
+                 active_dims=None, ARD=None, name=None):
+        """
+        - input_dim is the dimension of the input to the kernel
+        - order specifies the activation function of the neural network
+          the function is a rectified monomial of the chosen order.
+        - depth specifies the number of layers
+        - variance is the initial value for the variance parameter
+        - weight_variances is the initial value for the weight_variances parameter
+          defaults to 1.0 (ARD=False) or np.ones(input_dim) (ARD=True).
+        - bias_variance is the initial value for the bias_variance parameter
+          defaults to 1.0.
+        - active_dims is a list of length input_dim which controls which
+          columns of X are used.
+        - ARD specifies whether the kernel has one weight_variance per dimension
+          (ARD=True) or a single weight_variance (ARD=False).
+        """
+        super().__init__(input_dim, active_dims, name=name)
+
+        if order not in self.implemented_orders:
+            raise ValueError('Requested kernel order is not implemented.')
+
+        if depth < 1 or int(depth) != depth:
+            raise ValueError('Invalid depth. Must be positive integer \ge 1')
+
+        self.order = order
+        self.depth = depth
+
+        self.variance = Parameter(variance, transform=transforms.positive,
+                                  dtype=settings.float_type)
+        self.bias_variance = Parameter(bias_variance, transform=transforms.positive,
+                                       dtype=settings.float_type)
+        weight_variances, self.ARD = self._validate_ard_shape("weight_variances", weight_variances, ARD)
+        self.weight_variances = Parameter(weight_variances, transform=transforms.positive,
+                                          dtype=settings.float_type)
+
+    @params_as_tensors
+    def _weighted_product(self, X, X2=None):
+        if X2 is None:
+            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=-1) + self.bias_variance
+        return tf.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
+
+    def _J(self, cos_theta):
+        """
+        Implements the order dependent family of functions defined in equations
+        4 to 7 in the reference paper.
+        """
+        jitter = 1e-6  # 1e-15 breaks for mnist
+        theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
+        sin_theta = tf.sin(theta)  # or maybe (1 - cos_theta**2)**0.5 is better
+
+        if self.order == 0:
+            return np.pi - theta
+        elif self.order == 1:
+            return sin_theta + (np.pi - theta) * cos_theta
+        elif self.order == 2:
+            return 3. * sin_theta * cos_theta + \
+                   (np.pi - theta) * (1. + 2. * cos_theta ** 2)
+
+    @params_as_tensors
+    def K(self, X, X2=None, presliced=False):
+        if not presliced:
+            X, X2 = self._slice(X, X2)
+
+        X_denominator = tf.sqrt(self._weighted_product(X))
+        if X2 is None:
+            X2 = X
+            X2_denominator = X_denominator
+        else:
+            X2_denominator = tf.sqrt(self._weighted_product(X2))
+
+        numerator = self._weighted_product(X, X2)
+        X_denominator = tf.expand_dims(X_denominator, -1)
+        X2_denominator = tf.matrix_transpose(tf.expand_dims(X2_denominator, -1))
+
+        cos_theta = numerator / X_denominator / X2_denominator
+
+        J = self._J(cos_theta)
+        J0 = self._J(tf.cast(1., dtype=settings.float_type))
+
+        if self.depth == 1:
+            return self.variance * (1. / np.pi) * J * \
+                   X_denominator ** self.order * \
+                   X2_denominator ** self.order
+
+        else:
+
+            K11 = (1. / np.pi) * J0 * X_denominator ** (2*self.order)
+            K22 = (1. / np.pi) * J0 * X2_denominator ** (2*self.order)
+            K12 = (1. / np.pi) * J * X_denominator ** self.order * X2_denominator ** self.order
+
+            for _ in range(self.depth - 1):
+                cos_theta = K12 / tf.sqrt(K11 * K22)
+                J = self._J(cos_theta)
+
+                K12 = (1. / np.pi) * J * (K11 * K22) ** (0.5 * self.order)
+
+                K11 = (1. / np.pi) * J0 * K11 ** self.order
+                K22 = (1. / np.pi) * J0 * K22 ** self.order
+
+            return self.variance * K12
+
+    @params_as_tensors
+    def Kdiag(self, X, presliced=False):
+        if not presliced:
+            X, _ = self._slice(X, None)
+
+        X_product = self._weighted_product(X)
+
+        J0_over_pi = self._J(tf.cast(1., dtype=settings.float_type)) / np.pi
+
+        Kdiag = J0_over_pi * X_product ** self.order
+
+        for _ in range(self.depth - 1):
+            Kdiag = J0_over_pi * Kdiag ** self.order
+
+        return self.variance * Kdiag
+
+
 class Periodic(Kernel):
     """
     The periodic kernel. Defined in  Equation (47) of
