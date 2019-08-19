@@ -1,13 +1,12 @@
 import tensorflow as tf
 
-from ..features import MixedKernelSharedMof, SeparateIndependentMof
+from ..features import SeparateIndependentInducingVariables, SharedIndependentInducingVariables
 from ..kernels import SeparateIndependentMok, SeparateMixedMok
 from .dispatch import conditional, sample_conditional
 from .util import sample_mvn, mix_latent_gp
 
 
-@sample_conditional.register(object, MixedKernelSharedMof, SeparateMixedMok,
-                             object)
+@sample_conditional.register(object, SharedIndependentInducingVariables, SeparateMixedMok, object)
 def _sample_conditional(Xnew,
                         feature,
                         kernel,
@@ -31,7 +30,7 @@ def _sample_conditional(Xnew,
     if full_output_cov:
         raise NotImplementedError("full_output_cov not yet implemented")
 
-    ind_conditional = conditional.dispatch(object, SeparateIndependentMof,
+    ind_conditional = conditional.dispatch(object, SeparateIndependentInducingVariables,
                                            SeparateIndependentMok, object)
     g_mu, g_var = ind_conditional(Xnew,
                                   feature,

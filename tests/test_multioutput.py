@@ -279,7 +279,7 @@ def test_sample_conditional_mixedkernel():
 
     # Path 2: independent kernels, mixed later
     separate_kernel = mk.SeparateIndependentMok([RBF() for _ in range(Data.L)])
-    shared_feature = mf.SharedIndependentMof(InducingPoints(Z))
+    shared_feature = mf.SharedIndependentInducingVariables(InducingPoints(Z))
 
     value2, mean2, var2 = sample_conditional(Xs, shared_feature, separate_kernel, q_mu, q_sqrt=q_sqrt, white=True)
     value2 = np.matmul(value2, W.T)
@@ -378,7 +378,7 @@ def test_shared_independent_mok():
     q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
     q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
     kernel_3 = mk.SharedIndependentMok(RBF(variance=0.5, lengthscale=1.2), Data.P)
-    feature_3 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...]))
+    feature_3 = mf.SharedIndependentInducingVariables(InducingPoints(Data.X[:Data.M, ...]))
     model_3 = SVGP(kernel_3, Gaussian(), feature_3, num_latent=Data.P, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
     set_trainable(model_3, False)
     model_3.q_sqrt.trainable = True
@@ -424,7 +424,7 @@ def test_separate_independent_mok():
     q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
     kern_list_2 = [RBF(variance=0.5, lengthscale=1.2) for _ in range(Data.P)]
     kernel_2 = mk.SeparateIndependentMok(kern_list_2)
-    feature_2 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...]))
+    feature_2 = mf.SharedIndependentInducingVariables(InducingPoints(Data.X[:Data.M, ...]))
     model_2 = SVGP(kernel_2, Gaussian(), feature_2, num_latent=Data.P, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
     set_trainable(model_2, False)
     model_2.q_sqrt.trainable = True
@@ -468,7 +468,7 @@ def test_separate_independent_mof():
     q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
     kernel_2 = mk.SharedIndependentMok(RBF(variance=0.5, lengthscale=1.2), Data.P)
     feat_list_2 = [InducingPoints(Data.X[:Data.M, ...]) for _ in range(Data.P)]
-    feature_2 = mf.SeparateIndependentMof(feat_list_2)
+    feature_2 = mf.SeparateIndependentInducingVariables(feat_list_2)
     model_2 = SVGP(kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
     set_trainable(model_2, False)
     model_2.q_sqrt.trainable = True
@@ -487,7 +487,7 @@ def test_separate_independent_mof():
     kern_list = [RBF(variance=0.5, lengthscale=1.2) for _ in range(Data.P)]
     kernel_3 = mk.SeparateIndependentMok(kern_list)
     feat_list_3 = [InducingPoints(Data.X[:Data.M, ...]) for _ in range(Data.P)]
-    feature_3 = mf.SeparateIndependentMof(feat_list_3)
+    feature_3 = mf.SeparateIndependentInducingVariables(feat_list_3)
     model_3 = SVGP(kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
     set_trainable(model_3, False)
     model_3.q_sqrt.trainable = True
@@ -539,7 +539,7 @@ def test_compare_mixed_kernel():
 
     kern_list = [RBF() for _ in range(data.L)]
     k1 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M, ...]))
+    f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
     model_1 = SVGP(k1, Gaussian(), feature=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     kern_list = [RBF() for _ in range(data.L)]
@@ -558,12 +558,12 @@ def test_multioutput_with_diag_q_sqrt():
 
     kern_list = [RBF() for _ in range(data.L)]
     k1 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M, ...]))
+    f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
     model_1 = SVGP(k1, Gaussian(), feature=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
 
     kern_list = [RBF() for _ in range(data.L)]
     k2 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f2 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M, ...]))
+    f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
     model_2 = SVGP(k2, Gaussian(), feature=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
@@ -575,7 +575,7 @@ def test_MixedKernelSeparateMof():
     kern_list = [RBF() for _ in range(data.L)]
     feat_list = [InducingPoints(data.X[:data.M, ...]) for _ in range(data.L)]
     k1 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f1 = mf.SeparateIndependentMof(feat_list)
+    f1 = mf.SeparateIndependentInducingVariables(feat_list)
     model_1 = SVGP(k1, Gaussian(), feature=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     kern_list = [RBF() for _ in range(data.L)]

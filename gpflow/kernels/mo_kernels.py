@@ -130,7 +130,18 @@ class SeparateIndependentMok(Mok, Combination):
             stacked) if full_output_cov else stacked  # [N, P, P]  or  [N, P]
 
 
-class SeparateMixedMok(Mok, Combination):
+class IndependentLatentBase(Mok, metaclass=abc.ABCMeta):
+    """
+    Base class for multioutput kernels that are constructed from independent
+    latent Gaussian processes.
+    """
+
+    @abc.abstractmethod
+    def Kgg(self, X, Y):
+        pass
+
+
+class SeparateMixedMok(IndependentLatentBase, Combination):
     """
     Linear mixing of the latent GPs to form the output.
     """
@@ -166,5 +177,5 @@ class SeparateMixedMok(Mok, Combination):
         else:
             # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # [N, P]
             return tf.linalg.matmul(
-                K, self.W**2.0,
+                K, self.W ** 2.0,
                 transpose_b=True)  # [N, L]  *  [L, P]  ->  [N, P]

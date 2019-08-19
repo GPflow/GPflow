@@ -48,8 +48,8 @@ class Datum:
 
 
 multioutput_feature_list = [
-    mf.SharedIndependentMof(make_ip()),
-    mf.SeparateIndependentMof(make_ips(Datum.P))
+    mf.SharedIndependentInducingVariables(make_ip()),
+    mf.SeparateIndependentInducingVariables(make_ips(Datum.P))
 ]
 
 multioutput_kernel_list = [

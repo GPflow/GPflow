@@ -13,19 +13,47 @@
 # limitations under the License.
 
 from .features import InducingFeature
+from abc import ABCMeta
 
 
-class Mof(InducingFeature):
+class Mof(InducingFeature, metaclass=ABCMeta):
     """
-    Class used to indicate that we are dealing with
-    features that are used for multiple outputs.
+    MultiOutputFeature
+    Base class for methods which define a collection of inducing variables which
+    in some way can be grouped. The main example is where the inducing variables
+    consist of outputs of various independent GPs. This can be because our model
+    uses multiple independent GPs (SharedIndependentMok, SeparateIndependentMok)
+    or because it is constructed from independent GPs (eg IndependentLatentBase,
+    SeparateMixedMok).
     """
     pass
 
 
-class SharedIndependentMof(Mof):
+class SharedIndependentInducingVariablesBase(Mof):
     """
-    Same feature is used for each output.
+    This class is designated to be used to
+     - provide a general a general interface for multioutput kernels
+       constructed from independent latent processes,
+     - only require the specification of Kuu and Kuf.
+    All multioutput kernels constructed from independent latent processes allow
+    the inducing variables to be specified in the latent processes, and a
+    reasonably efficient method (i.e. one that takes advantage of the
+    independence in the latent processes) can be specified quite generally by
+    only requiring the following covariances:
+     - Kuu: [L, M, M],
+     - Kuf: [L, M, N, P].
+    In `mo_conditionals.py` we define a conditional() implementation for this
+    combination. We specify this code path for all kernels which inherit from
+    `IndependentLatentBase`. This set-up allows inference with any such kernel
+    to be implemented by specifying only `Kuu()` and `Kuf()`.
+
+    We call this the base class, since many multioutput GPs that are constructed
+    from independent latent processes acutally allow even more efficient
+    approximations. However, we include this code path, as it does not require
+    specifying a new `conditional()` implementation.
+
+    Here, we share the definition of inducing variables between all latent
+    processes.
     """
 
     def __init__(self, feature):
@@ -36,10 +64,31 @@ class SharedIndependentMof(Mof):
         return len(self.feature)
 
 
-class SeparateIndependentMof(Mof):
+class SeparateIndependentInducingVariablesBase(Mof):
     """
-    A different feature is used for each output.
-    Note: each feature should have the same number of points, M.
+    This class is designated to be used to
+     - provide a general a general interface for multioutput kernels
+       constructed from independent latent processes,
+     - only require the specification of Kuu and Kuf.
+    All multioutput kernels constructed from independent latent processes allow
+    the inducing variables to be specified in the latent processes, and a
+    reasonably efficient method (i.e. one that takes advantage of the
+    independence in the latent processes) can be specified quite generally by
+    only requiring the following covariances:
+     - Kuu: [L, M, M],
+     - Kuf: [L, M, N, P].
+    In `mo_conditionals.py` we define a conditional() implementation for this
+    combination. We specify this code path for all kernels which inherit from
+    `IndependentLatentBase`. This set-up allows inference with any such kernel
+    to be implemented by specifying only `Kuu()` and `Kuf()`.
+
+    We call this the base class, since many multioutput GPs that are constructed
+    from independent latent processes acutally allow even more efficient
+    approximations. However, we include this code path, as it does not require
+    specifying a new `conditional()` implementation.
+
+    We use a different definition of inducing variables for each latent process.
+    Note: each feature should have the same number of inducing variables, M.
     """
 
     def __init__(self, features):
@@ -50,17 +99,21 @@ class SeparateIndependentMof(Mof):
         return len(self.features[0])
 
 
-class MixedKernelSharedMof(SharedIndependentMof):
+class SharedIndependentInducingVariables(SharedIndependentInducingVariablesBase):
     """
-    This Mof is used in combination with the `SeparateMixedMok`.
-    Using this feature with the `SeparateMixedMok` leads to the most efficient code.
+    Here, we define the same inducing variables as in the base class. However,
+    this class is intended to be used without the constrains on the shapes that
+    `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide
+    the most efficient implementation.
     """
     pass
 
 
-class MixedKernelSeparateMof(SeparateIndependentMof):
+class SeparateIndependentInducingVariables(SeparateIndependentInducingVariablesBase):
     """
-    This Mof is used in combination with the `SeparateMixedMok`.
-    Using this feature with the `SeparateMixedMok` leads to the most efficient code.
+    Here, we define the same inducing variables as in the base class. However,
+    this class is intended to be used without the constrains on the shapes that
+    `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide
+    the most efficient implementation.
     """
     pass

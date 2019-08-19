@@ -2,8 +2,8 @@ from typing import Union
 
 import tensorflow as tf
 
-from ..features import (InducingPoints, MixedKernelSharedMof,
-                        SeparateIndependentMof, SharedIndependentMof)
+from ..features import (InducingPoints, SharedIndependentInducingVariablesBase,
+                        SeparateIndependentInducingVariablesBase)
 from ..kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
                        SharedIndependentMok)
 from .dispatch import Kuu
@@ -17,8 +17,8 @@ def _Kuu(feature: InducingPoints, kernel: Mok, *, jitter=0.0):
     return Kmm + jittermat
 
 
-@Kuu.register(SharedIndependentMof, SharedIndependentMok)
-def _Kuu(feature: SharedIndependentMof,
+@Kuu.register(SharedIndependentInducingVariablesBase, SharedIndependentMok)
+def _Kuu(feature: SharedIndependentInducingVariablesBase,
          kernel: SharedIndependentMok,
          *,
          jitter=0.0):
@@ -27,8 +27,8 @@ def _Kuu(feature: SharedIndependentMof,
     return Kmm + jittermat
 
 
-@Kuu.register(SharedIndependentMof, (SeparateIndependentMok, SeparateMixedMok))
-def _Kuu(feature: SharedIndependentMof,
+@Kuu.register(SharedIndependentInducingVariablesBase, (SeparateIndependentMok, SeparateMixedMok))
+def _Kuu(feature: SharedIndependentInducingVariablesBase,
          kernel: Union[SeparateIndependentMok, SeparateMixedMok],
          *,
          jitter=0.0):
@@ -38,8 +38,8 @@ def _Kuu(feature: SharedIndependentMof,
     return Kmm + jittermat
 
 
-@Kuu.register(SeparateIndependentMof, SharedIndependentMok)
-def _Kuu(feature: SeparateIndependentMof,
+@Kuu.register(SeparateIndependentInducingVariablesBase, SharedIndependentMok)
+def _Kuu(feature: SeparateIndependentInducingVariablesBase,
          kernel: SharedIndependentMok,
          *,
          jitter=0.0):
@@ -49,9 +49,9 @@ def _Kuu(feature: SeparateIndependentMof,
     return Kmm + jittermat
 
 
-@Kuu.register(SeparateIndependentMof,
+@Kuu.register(SeparateIndependentInducingVariablesBase,
               (SeparateIndependentMok, SeparateMixedMok))
-def _Kuu(feature: SeparateIndependentMof,
+def _Kuu(feature: SeparateIndependentInducingVariablesBase,
          kernel: Union[SeparateIndependentMok, SeparateMixedMok],
          *,
          jitter=0.0):
@@ -60,13 +60,12 @@ def _Kuu(feature: SeparateIndependentMof,
     jittermat = tf.eye(len(feature), dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat
 
-
-@Kuu.register(MixedKernelSharedMof, SeparateMixedMok)
-def _Kuu(feature: MixedKernelSharedMof,
-         kernel: SeparateMixedMok,
-         *,
-         jitter=0.0):
-    Kmm = tf.stack([Kuu(feature.feature, k) for k in kernel.kernels],
-                   axis=0)  # [L, M, M]
-    jittermat = tf.eye(len(feature), dtype=Kmm.dtype)[None, :, :] * jitter
-    return Kmm + jittermat
+# @Kuu.register(MixedKernelSharedMof, SeparateMixedMok)
+# def _Kuu(feature: MixedKernelSharedMof,
+#          kernel: SeparateMixedMok,
+#          *,
+#          jitter=0.0):
+#     Kmm = tf.stack([Kuu(feature.feature, k) for k in kernel.kernels],
+#                    axis=0)  # [L, M, M]
+#     jittermat = tf.eye(len(feature), dtype=Kmm.dtype)[None, :, :] * jitter
+#     return Kmm + jittermat
