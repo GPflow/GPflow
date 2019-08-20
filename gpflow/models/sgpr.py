@@ -114,7 +114,7 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
                  Y,
                  kernel,
                  mean_function=None,
-                 features=None,
+                 inducing_variable=None,
                  **kwargs):
         """
         X is a data matrix, size [N, D]
@@ -127,7 +127,7 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
         likelihood = likelihoods.Gaussian()
         GPModelOLD.__init__(self, X, Y, kernel, likelihood, mean_function,
                             **kwargs)
-        self.feature = InducingPoints(features)
+        self.inducing_variable = InducingPoints(inducing_variable)
         self.num_data = X.shape[0]
 
     def log_likelihood(self):
@@ -137,14 +137,14 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
         SGPR notebook.
         """
 
-        num_inducing = len(self.feature)
+        num_inducing = len(self.inducing_variable)
         num_data = tf.cast(tf.shape(self.Y)[0], default_float())
         output_dim = tf.cast(tf.shape(self.Y)[1], default_float())
 
         err = self.Y - self.mean_function(self.X)
         Kdiag = self.kernel(self.X)
-        kuf = Kuf(self.feature, self.kernel, self.X)
-        kuu = Kuu(self.feature, self.kernel, jitter=default_jitter())
+        kuf = Kuf(self.inducing_variable, self.kernel, self.X)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -178,11 +178,11 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
-        num_inducing = len(self.feature)
+        num_inducing = len(self.inducing_variable)
         err = self.Y - self.mean_function(self.X)
-        kuf = Kuf(self.feature, self.kernel, self.X)
-        kuu = Kuu(self.feature, self.kernel, jitter=default_jitter())
-        Kus = Kuf(self.feature, self.kernel, X)
+        kuf = Kuf(self.inducing_variable, self.kernel, self.X)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        Kus = Kuf(self.inducing_variable, self.kernel, X)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma

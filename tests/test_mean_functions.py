@@ -214,7 +214,7 @@ def test_models_with_mean_functions_changes(model_class):
     """
     X, Y = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, 1)
     Xtest = rng.randn(Datum.Ntest, Datum.input_dim)
-    features = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
+    inducing_variable = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
     zero_mean = Zero()
@@ -224,10 +224,11 @@ def test_models_with_mean_functions_changes(model_class):
         model_zero_mean = model_class(X, Y, kernel=kernel, mean_function=zero_mean)
         model_non_zero_mean = model_class(X, Y, kernel=kernel, mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SVGP]:
-        model_zero_mean = model_class(kernel=kernel, likelihood=likelihood, feature=features, mean_function=zero_mean)
+        model_zero_mean = model_class(kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable,
+                                      mean_function=zero_mean)
         model_non_zero_mean = model_class(kernel=kernel,
                                           likelihood=likelihood,
-                                          feature=features,
+                                          inducing_variable=inducing_variable,
                                           mean_function=non_zero_mean)
     else:
         raise (NotImplementedError)

@@ -540,12 +540,12 @@ def test_compare_mixed_kernel():
     kern_list = [RBF() for _ in range(data.L)]
     k1 = mk.LinearCoregionalisation(kern_list, W=data.W)
     f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_1 = SVGP(k1, Gaussian(), feature=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_1 = SVGP(k1, Gaussian(), inducing_variable=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     kern_list = [RBF() for _ in range(data.L)]
     k2 = mk.LinearCoregionalisation(kern_list, W=data.W)
     f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_2 = SVGP(k2, Gaussian(), feature=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
 
@@ -559,12 +559,12 @@ def test_multioutput_with_diag_q_sqrt():
     kern_list = [RBF() for _ in range(data.L)]
     k1 = mk.LinearCoregionalisation(kern_list, W=data.W)
     f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_1 = SVGP(k1, Gaussian(), feature=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
+    model_1 = SVGP(k1, Gaussian(), inducing_variable=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
 
     kern_list = [RBF() for _ in range(data.L)]
     k2 = mk.LinearCoregionalisation(kern_list, W=data.W)
     f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_2 = SVGP(k2, Gaussian(), feature=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
+    model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
 
@@ -576,12 +576,12 @@ def test_MixedKernelSeparateMof():
     feat_list = [InducingPoints(data.X[:data.M, ...]) for _ in range(data.L)]
     k1 = mk.LinearCoregionalisation(kern_list, W=data.W)
     f1 = mf.SeparateIndependentInducingVariables(feat_list)
-    model_1 = SVGP(k1, Gaussian(), feature=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_1 = SVGP(k1, Gaussian(), inducing_variable=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     kern_list = [RBF() for _ in range(data.L)]
     feat_list = [InducingPoints(data.X[:data.M, ...]) for _ in range(data.L)]
     k2 = mk.LinearCoregionalisation(kern_list, W=data.W)
     f2 = mf.SeparateIndependentInducingVariables(feat_list)
-    model_2 = SVGP(k2, Gaussian(), feature=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])

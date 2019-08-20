@@ -62,7 +62,7 @@ def create_kernel():
 def create_model():
     kernel = create_kernel()
     model = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(),
-                               feature=Data.Z, q_diag=True)
+                               inducing_variable=Data.Z, q_diag=True)
     model.q_mu.trainable = False
     return model
 
@@ -115,7 +115,7 @@ model_gp_param_dict = {
         'trainable': True,
         'shape': ()
     },
-    'feature.Z': {
+    'inducing_variable.Z': {
         'value': Data.Z,
         'trainable': True,
         'shape': (Data.M, Data.D)
@@ -139,7 +139,7 @@ example_dag_module_param_dict = {
         'trainable': True,
         'shape': ()
     },
-    'SVGP.feature.Z': {
+    'SVGP.inducing_variable.Z': {
         'value': Data.Z,
         'trainable': True,
         'shape': (Data.M, Data.D)

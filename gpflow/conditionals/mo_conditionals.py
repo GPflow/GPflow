@@ -18,7 +18,7 @@ from .util import (base_conditional, expand_independent_outputs, fully_correlate
 
 
 @conditional.register(object, SharedIndependentInducingVariables, SharedIndependent, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Multioutput conditional for an independent kernel and shared inducing inducing.
     Same behaviour as conditional with non-multioutput kernels.
     The covariance matrices used to calculate the conditional have the following shape:
@@ -47,8 +47,8 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    Kmm = covariances.Kuu(feature, kernel, jitter=default_jitter())  # [M, M]
-    Kmn = covariances.Kuf(feature, kernel, Xnew)  # [M, N]
+    Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
+    Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, full=full_cov, full_output_cov=False)
     Knn = Knn[0, ...] if full_cov else Knn[..., 0]  # [N, N] or [N]
 
@@ -60,7 +60,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
 @conditional.register(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
 @conditional.register(object, SharedIndependentInducingVariables, SeparateIndependent, object)
 @conditional.register(object, SeparateIndependentInducingVariables, SharedIndependent, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P).
     The covariance matrices used to calculate the conditional have the following shape:
@@ -76,9 +76,12 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     - See above for the parameters and the return value.
     """
     # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
-    Kmms = covariances.Kuu(feature, kernel, jitter=default_jitter())  # [P, M, M]
-    Kmns = covariances.Kuf(feature, kernel, Xnew)  # [P, M, N]
-    kernels = kernel.kernels if isinstance(kernel, Combination) else [kernel.kernel] * len(feature.features)
+    Kmms = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [P, M, M]
+    Kmns = covariances.Kuf(inducing_variable, kernel, Xnew)  # [P, M, N]
+    if isinstance(kernel, Combination):
+        kernels = kernel.kernels
+    else:
+        kernels = [kernel.kernel] * len(inducing_variable.inducing_variable_list)
     Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)
     fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
@@ -103,7 +106,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
 
 @conditional.register(object, (FallbackSharedIndependentInducingVariables, FallbackSeparateIndependentInducingVariables),
                       IndependentLatent, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Interdomain conditional with independent latents.
     In this case the number of latent GPs (L) will be different than the number of outputs (P)
     The covariance matrices used to calculate the conditional have the following shape:
@@ -118,8 +121,8 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     - See the multiouput notebook for more information about the multiouput framework.
     - See above for the parameters and the return value.
     """
-    Kmm = covariances.Kuu(feature, kernel, jitter=default_jitter())  # [L, M, M]
-    Kmn = covariances.Kuf(feature, kernel, Xnew)  # [M, L, N, P]
+    Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [L, M, M]
+    Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, L, N, P]
     Knn = kernel(Xnew, full=full_cov, full_output_cov=full_output_cov)  # [N, P](x N)x P  or  [N, P](x P)
 
     return independent_interdomain_conditional(Kmn,
@@ -133,7 +136,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
 
 
 @conditional.register(object, InducingPoints, MultioutputKernel, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
     inducing point scheme for multi-output kernels.
@@ -153,8 +156,8 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     :param f: variational mean, [L, 1]
     :param q_sqrt: standard-deviations or cholesky, [L, 1]  or  [1, L, L]
     """
-    Kmm = covariances.Kuu(feature, kernel, jitter=default_jitter())  # [M, L, M, L]
-    Kmn = covariances.Kuf(feature, kernel, Xnew)  # [M, L, N, P]
+    Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, L, M, L]
+    Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, L, N, P]
     Knn = kernel(Xnew, full=full_cov, full_output_cov=full_output_cov)  # [N, P](x N)x P  or  [N, P](x P)
 
     M, L, N, K = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
@@ -182,7 +185,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
 
 @conditional.register(object, (SharedIndependentInducingVariables, SeparateIndependentInducingVariables),
                       LinearCoregionalisation, object)
-def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Most efficient routine to project L independent latent gps through a mixing matrix W.
     The mixing matrix is a member of the `SeparateMixedMok` and has shape [P, L].
     The covariance matrices used to calculate the conditional have the following shape:
@@ -198,7 +201,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     """
     ind_conditional = conditional.dispatch(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
     gmu, gvar = ind_conditional(Xnew,
-                                feature,
+                                inducing_variable,
                                 kernel,
                                 f,
                                 full_cov=full_cov,
