@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 import gpflow
-from gpflow.features import InducingPoints
+from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Matern32
 
 rng = np.random.RandomState(0)

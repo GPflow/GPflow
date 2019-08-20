@@ -1,12 +1,12 @@
 import tensorflow as tf
 
-from ..features import SeparateIndependentInducingVariables, SharedIndependentInducingVariables
-from ..kernels import SeparateIndependentMok, SeparateMixedMok
+from ..inducing_variables import SeparateIndependentInducingVariables, SharedIndependentInducingVariables
+from ..kernels import SeparateIndependent, LinearCoregionalisation
 from .dispatch import conditional, sample_conditional
 from .util import sample_mvn, mix_latent_gp
 
 
-@sample_conditional.register(object, SharedIndependentInducingVariables, SeparateMixedMok, object)
+@sample_conditional.register(object, SharedIndependentInducingVariables, LinearCoregionalisation, object)
 def _sample_conditional(Xnew,
                         feature,
                         kernel,
@@ -31,7 +31,7 @@ def _sample_conditional(Xnew,
         raise NotImplementedError("full_output_cov not yet implemented")
 
     ind_conditional = conditional.dispatch(object, SeparateIndependentInducingVariables,
-                                           SeparateIndependentMok, object)
+                                           SeparateIndependent, object)
     g_mu, g_var = ind_conditional(Xnew,
                                   feature,
                                   kernel,

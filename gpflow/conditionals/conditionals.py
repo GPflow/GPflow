@@ -3,7 +3,7 @@
 import tensorflow as tf
 
 from ..covariances import Kuf, Kuu
-from ..features import InducingFeature
+from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..utilities.ops import eye
 from ..config import default_jitter
@@ -11,9 +11,9 @@ from .dispatch import conditional
 from .util import base_conditional, expand_independent_outputs
 
 
-@conditional.register(object, InducingFeature, Kernel, object)
+@conditional.register(object, InducingVariables, Kernel, object)
 def _conditional(Xnew: tf.Tensor,
-                 feature: InducingFeature,
+                 feature: InducingVariables,
                  kernel: Kernel,
                  function: tf.Tensor,
                  *,

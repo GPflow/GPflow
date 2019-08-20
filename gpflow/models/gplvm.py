@@ -17,7 +17,7 @@ import numpy as np
 
 from .. import likelihoods
 from .. import kernels
-from .. import features
+from .. import inducing_variables
 
 from ..mean_functions import Zero
 from ..expectations import expectation
@@ -118,7 +118,7 @@ class BayesianGPLVM(GPModel):
             # By default we initialize by subset of initial latent points
             Z = np.random.permutation(X_mean.copy())[:M]
 
-        self.feature = features.InducingPoints(Z)
+        self.feature = inducing_variables.InducingPoints(Z)
 
         assert len(self.feature) == M
         assert X_mean.shape[1] == self.num_latent

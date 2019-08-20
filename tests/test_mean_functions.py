@@ -17,7 +17,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.features import InducingPoints
+from gpflow.inducing_variables import InducingPoints
 from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
 from gpflow.config import default_int
 

@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from . import dispatch
 from .. import kernels
-from ..features import InducingPoints
+from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian
 from .expectations import expectation
 

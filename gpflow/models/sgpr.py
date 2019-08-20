@@ -15,12 +15,12 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow.features import InducingPoints
+from gpflow.inducing_variables import InducingPoints
 from gpflow.covariances.dispatch import Kuf, Kuu
 from gpflow.config import default_float, default_jitter
 
 from .model import GPModel, GPModelOLD, MeanAndVariance
-from .. import features
+from .. import inducing_variables
 from .. import likelihoods
 from ..mean_functions import Zero
 

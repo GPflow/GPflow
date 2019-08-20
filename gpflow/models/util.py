@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..features import InducingPoints
+from ..inducing_variables import InducingPoints
 
 
 def inducingpoint_wrapper(feature):

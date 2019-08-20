@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 from tensorflow import convert_to_tensor as ctt
 
 import gpflow
-from gpflow import features, kernels
+from gpflow import inducing_variables, kernels
 from gpflow import mean_functions as mf
 from gpflow.config import default_float
 from gpflow.expectations import expectation, quadrature_expectation
@@ -128,7 +128,7 @@ def means(*args):
 
 @pytest.fixture
 def feature():
-    return features.InducingPoints(Z)
+    return inducing_variables.InducingPoints(Z)
 
 
 def _check(params):
@@ -224,7 +224,7 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     p = gpflow.probability_distributions.Gaussian(
         tf.constant([[10]], dtype=default_float()),
         tf.constant([[[0.1]]], dtype=default_float()))
-    z = gpflow.features.InducingPoints([[-10.], [10.]])
+    z = gpflow.inducing_variables.InducingPoints([[-10.], [10.]])
 
     with tf.GradientTape() as tape:
         ekz = expectation(p, (kernel, z), (kernel, z))

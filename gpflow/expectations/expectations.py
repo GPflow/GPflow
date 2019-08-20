@@ -23,8 +23,8 @@ def expectation(p, obj1, obj2=None, nghp=None):
     if one is available. If not, it falls back to quadrature.
 
     :type p: (mu, cov) tuple or a `ProbabilityDistribution` object
-    :type obj1: kernel, mean function, (kernel, features), or None
-    :type obj2: kernel, mean function, (kernel, features), or None
+    :type obj1: kernel, mean function, (kernel, inducing), or None
+    :type obj2: kernel, mean function, (kernel, inducing), or None
     :param int nghp: passed to `_quadrature_expectation` to set the number
                      of Gauss-Hermite points used: `num_gauss_hermite_points`
     :return: a 1-D, 2-D, or 3-D tensor containing the expectation
@@ -62,8 +62,8 @@ def quadrature_expectation(p, obj1, obj2=None, nghp=None):
     Uses Gauss-Hermite quadrature for approximate integration.
 
     :type p: (mu, cov) tuple or a `ProbabilityDistribution` object
-    :type obj1: kernel, mean function, (kernel, features), or None
-    :type obj2: kernel, mean function, (kernel, features), or None
+    :type obj1: kernel, mean function, (kernel, inducing), or None
+    :type obj2: kernel, mean function, (kernel, inducing), or None
     :param int num_gauss_hermite_points: passed to `_quadrature_expectation` to set
                                          the number of Gauss-Hermite points used
     :return: a 1-D, 2-D, or 3-D tensor containing the expectation

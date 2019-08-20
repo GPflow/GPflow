@@ -20,7 +20,7 @@ from ..base import Parameter
 from .base import Combination, Kernel
 
 
-class Mok(Kernel):
+class MultioutputKernel(Kernel):
     """
     Multi Output Kernel class.
     This kernel can represent correlation between outputs of different datapoints.
@@ -75,7 +75,7 @@ class Mok(Kernel):
         return self.K(X, Y, full_output_cov=full_output_cov)
 
 
-class SharedIndependentMok(Mok):
+class SharedIndependent(MultioutputKernel):
     """
     - Shared: we use the same kernel for each latent GP
     - Independent: Latents are uncorrelated a priori.
@@ -104,7 +104,7 @@ class SharedIndependentMok(Mok):
             Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
 
 
-class SeparateIndependentMok(Mok, Combination):
+class SeparateIndependent(MultioutputKernel, Combination):
     """
     - Separate: we use different kernel for each output latent
     - Independent: Latents are uncorrelated a priori.
@@ -130,7 +130,7 @@ class SeparateIndependentMok(Mok, Combination):
             stacked) if full_output_cov else stacked  # [N, P, P]  or  [N, P]
 
 
-class IndependentLatentBase(Mok, metaclass=abc.ABCMeta):
+class IndependentLatent(MultioutputKernel):
     """
     Base class for multioutput kernels that are constructed from independent
     latent Gaussian processes.
@@ -141,7 +141,7 @@ class IndependentLatentBase(Mok, metaclass=abc.ABCMeta):
         pass
 
 
-class SeparateMixedMok(IndependentLatentBase, Combination):
+class LinearCoregionalisation(IndependentLatent, Combination):
     """
     Linear mixing of the latent GPs to form the output.
     """

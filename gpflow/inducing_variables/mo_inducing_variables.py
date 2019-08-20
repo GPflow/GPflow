@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .features import InducingFeature
-from abc import ABCMeta
+from .inducing_variables import InducingVariables
 
 
-class Mof(InducingFeature, metaclass=ABCMeta):
+class MultioutputInducingVariables(InducingVariables):
     """
-    MultiOutputFeature
+    Multioutput Inducing Variables
     Base class for methods which define a collection of inducing variables which
     in some way can be grouped. The main example is where the inducing variables
     consist of outputs of various independent GPs. This can be because our model
@@ -29,7 +28,7 @@ class Mof(InducingFeature, metaclass=ABCMeta):
     pass
 
 
-class SharedIndependentInducingVariablesBase(Mof):
+class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     """
     This class is designated to be used to
      - provide a general a general interface for multioutput kernels
@@ -40,7 +39,7 @@ class SharedIndependentInducingVariablesBase(Mof):
     reasonably efficient method (i.e. one that takes advantage of the
     independence in the latent processes) can be specified quite generally by
     only requiring the following covariances:
-     - Kuu: [L, M, M],
+     - Kuu: [L1, M, M]    (L can be 1, the conditional can broadcast),
      - Kuf: [L, M, N, P].
     In `mo_conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
@@ -56,15 +55,15 @@ class SharedIndependentInducingVariablesBase(Mof):
     processes.
     """
 
-    def __init__(self, feature):
-        Mof.__init__(self)
-        self.feature = feature
+    def __init__(self, inducing_variable):
+        MultioutputInducingVariables.__init__(self)
+        self.inducing_variable = inducing_variable
 
     def __len__(self):
-        return len(self.feature)
+        return len(self.inducing_variable)
 
 
-class SeparateIndependentInducingVariablesBase(Mof):
+class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
     """
     This class is designated to be used to
      - provide a general a general interface for multioutput kernels
@@ -88,18 +87,18 @@ class SeparateIndependentInducingVariablesBase(Mof):
     specifying a new `conditional()` implementation.
 
     We use a different definition of inducing variables for each latent process.
-    Note: each feature should have the same number of inducing variables, M.
+    Note: each object should have the same number of inducing variables, M.
     """
 
-    def __init__(self, features):
-        Mof.__init__(self)
-        self.features = features
+    def __init__(self, inducing_variable_list):
+        MultioutputInducingVariables.__init__(self)
+        self.inducing_variable_list = inducing_variable_list
 
     def __len__(self):
-        return len(self.features[0])
+        return len(self.inducing_variable_list[0])
 
 
-class SharedIndependentInducingVariables(SharedIndependentInducingVariablesBase):
+class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariables):
     """
     Here, we define the same inducing variables as in the base class. However,
     this class is intended to be used without the constrains on the shapes that
@@ -109,7 +108,7 @@ class SharedIndependentInducingVariables(SharedIndependentInducingVariablesBase)
     pass
 
 
-class SeparateIndependentInducingVariables(SeparateIndependentInducingVariablesBase):
+class SeparateIndependentInducingVariables(FallbackSeparateIndependentInducingVariables):
     """
     Here, we define the same inducing variables as in the base class. However,
     this class is intended to be used without the constrains on the shapes that

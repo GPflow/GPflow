@@ -17,7 +17,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from gpflow.base import Parameter
-from gpflow.features import InducingPoints
+from gpflow.inducing_variables import InducingPoints
 from ..conditionals import conditional
 from ..models.model import GPModelOLD, MeanAndVariance
 

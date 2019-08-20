@@ -16,7 +16,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 import gpflow
-from gpflow.features import InducingPoints, Multiscale
+from gpflow.inducing_variables import InducingPoints, Multiscale
 from gpflow.covariances import Kuu, Kuf
 from gpflow.config import default_jitter
 
@@ -39,7 +39,7 @@ _kernel_setups = [
 @pytest.mark.parametrize('N', [10, 101])
 @pytest.mark.parametrize('kernel', _kernel_setups)
 def test_inducing_equivalence(N, kernel):
-    # Inducing features must be the same as the kernel evaluations
+    # Inducing inducing must be the same as the kernel evaluations
     Z = np.random.randn(N, 5)
     features = InducingPoints(Z)
     assert_allclose(Kuu(features, kernel), kernel(Z))

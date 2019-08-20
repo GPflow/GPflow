@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import mean_functions as mfn
-from ..features import InducingFeature, InducingPoints
+from ..inducing_variables import InducingVariables, InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from . import dispatch
 from .expectations import expectation
@@ -26,7 +26,7 @@ def _E(p, mean, _, kernel, feature, nghp=None):
     return tf.linalg.adjoint(expectation(p, (kernel, feature), mean))
 
 
-@dispatch.expectation.register((Gaussian, MarkovGaussian), kernels.Kernel, InducingFeature, mfn.MeanFunction, NoneType)
+@dispatch.expectation.register((Gaussian, MarkovGaussian), kernels.Kernel, InducingVariables, mfn.MeanFunction, NoneType)
 def _E(p, kernel, feature, mean, _, nghp=None):
     """
     Compute the expectation:
@@ -90,8 +90,8 @@ def _E(p, identity_mean, _, kernel, feature, nghp=None):
 # Catching missing DiagonalGaussian implementations by converting to full Gaussian:
 
 
-@dispatch.expectation.register(DiagonalGaussian, object, (InducingFeature, NoneType), object,
-                               (InducingFeature, NoneType))
+@dispatch.expectation.register(DiagonalGaussian, object, (InducingVariables, NoneType), object,
+                               (InducingVariables, NoneType))
 def _E(p, obj1, feat1, obj2, feat2, nghp=None):
     gaussian = Gaussian(p.mu, tf.linalg.diag(p.cov))
     return expectation(gaussian, (obj1, feat1), (obj2, feat2), nghp=nghp)
@@ -100,8 +100,8 @@ def _E(p, obj1, feat1, obj2, feat2, nghp=None):
 # Catching missing MarkovGaussian implementations by converting to Gaussian (when indifferent):
 
 
-@dispatch.expectation.register(MarkovGaussian, object, (InducingFeature, NoneType), object,
-                               (InducingFeature, NoneType))
+@dispatch.expectation.register(MarkovGaussian, object, (InducingVariables, NoneType), object,
+                               (InducingVariables, NoneType))
 def _E(p, obj1, feat1, obj2, feat2, nghp=None):
     """
     Nota Bene: if only one object is passed, obj1 is

@@ -3,7 +3,7 @@ import tensorflow as tf
 from .. import mean_functions
 from .. import covariances
 from ..expectations import expectation
-from ..features import InducingFeature, InducingPoints
+from ..inducing_variables import InducingVariables, InducingPoints
 from ..kernels import Kernel
 from ..probability_distributions import Gaussian
 from ..config import default_float, default_jitter
@@ -11,7 +11,7 @@ from ..config import default_float, default_jitter
 
 def uncertain_conditional(Xnew_mu: tf.Tensor,
                           Xnew_var: tf.Tensor,
-                          feature: InducingFeature,
+                          feature: InducingVariables,
                           kernel: Kernel,
                           q_mu,
                           q_sqrt,

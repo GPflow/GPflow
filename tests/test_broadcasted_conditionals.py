@@ -22,7 +22,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-import gpflow.features.mo_features as mf
+import gpflow.inducing_variables.mo_inducing_variables as mf
 import gpflow.kernels.mo_kernels as mk
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import mix_latent_gp, rollaxis_left, rollaxis_right
@@ -60,14 +60,14 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
         feature = Data.Z
         kernel = gpflow.kernels.Matern52(lengthscale=0.5)
     elif conditional_type == "inducing_points":
-        feature = gpflow.features.InducingPoints(Data.Z)
+        feature = gpflow.inducing_variables.InducingPoints(Data.Z)
         kernel = gpflow.kernels.Matern52(lengthscale=0.5)
     elif conditional_type == "mixing":
         # variational params have different output dim in this case
         q_mu = np.random.randn(Data.M, Data.L)
         q_sqrt = np.tril(np.random.randn(Data.L, Data.M, Data.M), -1)
-        feature = mf.SharedIndependentInducingVariables(gpflow.features.InducingPoints(Data.Z))
-        kernel = mk.SeparateMixedMok(
+        feature = mf.SharedIndependentInducingVariables(gpflow.inducing_variables.InducingPoints(Data.Z))
+        kernel = mk.LinearCoregionalisation(
             kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
             W=Data.W
         )

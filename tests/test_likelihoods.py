@@ -18,7 +18,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.features import InducingPoints
+from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian,
                                 GaussianMC, Likelihood, MultiClass, Ordinal,
                                 Poisson, RobustMax, Softmax, StudentT,

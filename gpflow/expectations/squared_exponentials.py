@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import mean_functions as mfn
-from ..features import InducingPoints
+from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from ..utilities.ops import square_distance
 from . import dispatch

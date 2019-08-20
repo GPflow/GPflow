@@ -6,20 +6,20 @@
 import tensorflow as tf
 
 from .. import covariances
-from ..features import (InducingPoints, SharedIndependentInducingVariablesBase,
-                        SeparateIndependentInducingVariablesBase, SharedIndependentInducingVariables,
-                        SeparateIndependentInducingVariables)
-from ..kernels import (Combination, Mok, SeparateIndependentMok, SharedIndependentMok, IndependentLatentBase,
-                       SeparateMixedMok)
+from ..inducing_variables import (InducingPoints, FallbackSharedIndependentInducingVariables,
+                                  FallbackSeparateIndependentInducingVariables, SharedIndependentInducingVariables,
+                                  SeparateIndependentInducingVariables)
+from ..kernels import (Combination, MultioutputKernel, SeparateIndependent, SharedIndependent, IndependentLatent,
+                       LinearCoregionalisation)
 from ..config import default_float, default_jitter
 from .dispatch import conditional
 from .util import (base_conditional, expand_independent_outputs, fully_correlated_conditional,
                    independent_interdomain_conditional, mix_latent_gp, rollaxis_left)
 
 
-@conditional.register(object, SharedIndependentInducingVariables, SharedIndependentMok, object)
+@conditional.register(object, SharedIndependentInducingVariables, SharedIndependent, object)
 def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
-    """Multioutput conditional for an independent kernel and shared inducing features.
+    """Multioutput conditional for an independent kernel and shared inducing inducing.
     Same behaviour as conditional with non-multioutput kernels.
     The covariance matrices used to calculate the conditional have the following shape:
     - Kuu: [M, M]
@@ -57,9 +57,9 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
-@conditional.register(object, SeparateIndependentInducingVariables, SeparateIndependentMok, object)
-@conditional.register(object, SharedIndependentInducingVariables, SeparateIndependentMok, object)
-@conditional.register(object, SeparateIndependentInducingVariables, SharedIndependentMok, object)
+@conditional.register(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
+@conditional.register(object, SharedIndependentInducingVariables, SeparateIndependent, object)
+@conditional.register(object, SeparateIndependentInducingVariables, SharedIndependent, object)
 def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P).
@@ -101,8 +101,8 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
     return fmu, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
-@conditional.register(object, (SharedIndependentInducingVariablesBase, SeparateIndependentInducingVariablesBase),
-                      IndependentLatentBase, object)
+@conditional.register(object, (FallbackSharedIndependentInducingVariables, FallbackSeparateIndependentInducingVariables),
+                      IndependentLatent, object)
 def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Interdomain conditional with independent latents.
     In this case the number of latent GPs (L) will be different than the number of outputs (P)
@@ -132,7 +132,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
                                                white=white)
 
 
-@conditional.register(object, InducingPoints, Mok, object)
+@conditional.register(object, InducingPoints, MultioutputKernel, object)
 def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
@@ -181,7 +181,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
 
 
 @conditional.register(object, (SharedIndependentInducingVariables, SeparateIndependentInducingVariables),
-                      SeparateMixedMok, object)
+                      LinearCoregionalisation, object)
 def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Most efficient routine to project L independent latent gps through a mixing matrix W.
     The mixing matrix is a member of the `SeparateMixedMok` and has shape [P, L].
@@ -196,7 +196,7 @@ def _conditional(Xnew, feature, kernel, f, *, full_cov=False, full_output_cov=Fa
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
     """
-    ind_conditional = conditional.dispatch(object, SeparateIndependentInducingVariables, SeparateIndependentMok, object)
+    ind_conditional = conditional.dispatch(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
     gmu, gvar = ind_conditional(Xnew,
                                 feature,
                                 kernel,

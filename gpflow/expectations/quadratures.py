@@ -4,7 +4,7 @@ import tensorflow as tf
 from .. import kernels
 from .. import mean_functions as mfn
 from ..covariances import Kuf
-from ..features import InducingFeature
+from ..inducing_variables import InducingVariables
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from ..quadrature import mvnquad
 from . import dispatch
@@ -19,13 +19,13 @@ NoneType = type(None)
 def get_eval_func(obj, feature, slice=None):
     """
     Return the function of interest (kernel or mean) for the expectation
-    depending on the type of :obj: and whether any features are given
+    depending on the type of :obj: and whether any inducing are given
     """
 
     slice = ... if slice is None else slice
     if feature is not None:
         # kernel + feature combination
-        if not isinstance(feature, InducingFeature) or not isinstance(
+        if not isinstance(feature, InducingVariables) or not isinstance(
                 obj, kernels.Kernel):
             raise TypeError(
                 "If `feature` is supplied, `obj` must be a kernel.")
@@ -39,8 +39,8 @@ def get_eval_func(obj, feature, slice=None):
 
 
 @dispatch.quadrature_expectation.register((Gaussian, DiagonalGaussian), object,
-                                          (InducingFeature, NoneType), object,
-                                          (InducingFeature, NoneType))
+                                          (InducingVariables, NoneType), object,
+                                          (InducingVariables, NoneType))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
@@ -84,8 +84,8 @@ def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
 
 
 @dispatch.quadrature_expectation.register(MarkovGaussian, object,
-                                          (InducingFeature, NoneType), object,
-                                          (InducingFeature, NoneType))
+                                          (InducingVariables, NoneType), object,
+                                          (InducingVariables, NoneType))
 def _quadrature_expectation(p, obj1, feature1, obj2, feature2, nghp=None):
     """
     Handling of quadrature expectations for Markov Gaussians (useful for time series)

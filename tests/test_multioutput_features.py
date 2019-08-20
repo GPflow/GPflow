@@ -3,7 +3,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-import gpflow.features.mo_features as mf
+import gpflow.inducing_variables.mo_inducing_variables as mf
 import gpflow.kernels.mo_kernels as mk
 from gpflow.covariances import mo_kufs, mo_kuus
 
@@ -24,7 +24,7 @@ def make_kernels(num):
 
 def make_ip():
     x = rng.permutation(Datum.X)
-    return gpflow.features.InducingPoints(x[:Datum.M, ...])
+    return gpflow.inducing_variables.InducingPoints(x[:Datum.M, ...])
 
 
 def make_ips(num):
@@ -53,9 +53,9 @@ multioutput_feature_list = [
 ]
 
 multioutput_kernel_list = [
-    mk.SharedIndependentMok(make_kernel(), Datum.P),
-    mk.SeparateIndependentMok(make_kernels(Datum.L)),
-    mk.SeparateMixedMok(make_kernels(Datum.L), Datum.W)
+    mk.SharedIndependent(make_kernel(), Datum.P),
+    mk.SeparateIndependent(make_kernels(Datum.L)),
+    mk.LinearCoregionalisation(make_kernels(Datum.L), Datum.W)
 ]
 
 
@@ -75,7 +75,7 @@ def test_kuf(feature, kernel):
 @pytest.mark.parametrize('fun', [mo_kuus.Kuu, mo_kufs.Kuf])
 def test_mixed_shared(fun):
     features = mf.SharedIndependentInducingVariables(make_ip())
-    kernel = mk.SeparateMixedMok(make_kernels(Datum.L), Datum.W)
+    kernel = mk.LinearCoregionalisation(make_kernels(Datum.L), Datum.W)
     if fun is mo_kuus.Kuu:
         t = tf.linalg.cholesky(fun(features, kernel, jitter=1e-9))
     else:

@@ -231,7 +231,7 @@ def test_monte_carlo_2_din(white, mean):
 @pytest.mark.parametrize('white', [True, False])
 def test_quadrature(white, mean):
     kernel = gpflow.kernels.RBF()
-    features = gpflow.features.InducingPoints(DataQuad.Z)
+    features = gpflow.inducing_variables.InducingPoints(DataQuad.Z)
     mean_function = mean_function_factory(mean, DataQuad.D_in, DataQuad.D_out)
 
     effective_mean = mean_function or (lambda X: 0.0)

@@ -3,7 +3,7 @@ from functools import reduce
 import tensorflow as tf
 
 from .. import kernels
-from ..features import InducingPoints
+from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian
 from . import dispatch
 from .expectations import expectation
@@ -59,7 +59,7 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     :return: NxMxM
     """
     if feat1 != feat2:
-        raise NotImplementedError("Different features are not supported.")
+        raise NotImplementedError("Different inducing are not supported.")
     if kern1 != kern2:
         raise NotImplementedError("Calculating the expectation over two "
                                   "different Product kernels is not supported.")

@@ -1,15 +1,15 @@
 import tensorflow as tf
 
-from ..features import InducingFeature
+from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from .dispatch import conditional, sample_conditional
 from .util import sample_mvn
 
 
 @sample_conditional.register(object, object, Kernel, object)
-@sample_conditional.register(object, InducingFeature, Kernel, object)
+@sample_conditional.register(object, InducingVariables, Kernel, object)
 def _sample_conditional(Xnew: tf.Tensor,
-                        feature: InducingFeature,
+                        feature: InducingVariables,
                         kernel: Kernel,
                         function: tf.Tensor,
                         *,

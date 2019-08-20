@@ -1,5 +1,5 @@
 import tensorflow as tf
-from ..features import InducingPoints, Multiscale
+from ..inducing_variables import InducingPoints, Multiscale
 from ..kernels import Kernel, RBF
 from .dispatch import Kuf
 
