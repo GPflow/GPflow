@@ -273,7 +273,7 @@ def test_sample_conditional_mixedkernel():
     # Path 1: mixed kernel: most efficient route
     W = np.random.randn(Data.P, Data.L)
     mixed_kernel = mk.SeparateMixedMok([RBF() for _ in range(Data.L)], W)
-    mixed_feature = mf.MixedKernelSharedMof(InducingPoints(Z))
+    mixed_feature = mf.SharedIndependentInducingVariables(InducingPoints(Z))
 
     value, mean, var = sample_conditional(Xs, mixed_feature, mixed_kernel, q_mu, q_sqrt=q_sqrt, white=True)
 
@@ -544,7 +544,7 @@ def test_compare_mixed_kernel():
 
     kern_list = [RBF() for _ in range(data.L)]
     k2 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f2 = mf.MixedKernelSharedMof(InducingPoints(data.X[:data.M, ...]))
+    f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
     model_2 = SVGP(k2, Gaussian(), feature=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
@@ -581,7 +581,7 @@ def test_MixedKernelSeparateMof():
     kern_list = [RBF() for _ in range(data.L)]
     feat_list = [InducingPoints(data.X[:data.M, ...]) for _ in range(data.L)]
     k2 = mk.SeparateMixedMok(kern_list, W=data.W)
-    f2 = mf.MixedKernelSeparateMof(feat_list)
+    f2 = mf.SeparateIndependentInducingVariables(feat_list)
     model_2 = SVGP(k2, Gaussian(), feature=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])

@@ -74,7 +74,7 @@ def test_kuf(feature, kernel):
 
 @pytest.mark.parametrize('fun', [mo_kuus.Kuu, mo_kufs.Kuf])
 def test_mixed_shared(fun):
-    features = mf.MixedKernelSharedMof(make_ip())
+    features = mf.SharedIndependentInducingVariables(make_ip())
     kernel = mk.SeparateMixedMok(make_kernels(Datum.L), Datum.W)
     if fun is mo_kuus.Kuu:
         t = tf.linalg.cholesky(fun(features, kernel, jitter=1e-9))
