@@ -187,7 +187,7 @@ def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_out
                       LinearCoregionalisation, object)
 def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Most efficient routine to project L independent latent gps through a mixing matrix W.
-    The mixing matrix is a member of the `SeparateMixedMok` and has shape [P, L].
+    The mixing matrix is a member of the `LinearCoregionalisation` and has shape [P, L].
     The covariance matrices used to calculate the conditional have the following shape:
     - Kuu: [L, M, M]
     - Kuf: [L, M, N]

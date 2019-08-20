@@ -28,7 +28,7 @@ def _E(p, rbf_kern, feat1, lin_kern, feat2, nghp=None):
 
     if feat1 != feat2:
         raise NotImplementedError(
-            "Features have to be the same for both kernels.")
+            "inducing_variables have to be the same for both kernels.")
 
     if rbf_kern.active_dims != lin_kern.active_dims:
         raise NotImplementedError(

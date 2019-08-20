@@ -67,7 +67,7 @@ class Multiscale(InducingPoints):
 
     def __init__(self, Z, scales):
         super().__init__(Z)
-        # Multi-scale feature widths (std. dev. of Gaussian)
+        # Multi-scale inducing_variable widths (std. dev. of Gaussian)
         self.scales = Parameter(scales, transform=positive())
         if self.Z.shape != scales.shape:
             raise ValueError(

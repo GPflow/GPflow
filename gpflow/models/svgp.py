@@ -43,7 +43,7 @@ class SVGP(GPModel):
     def __init__(self,
                  kernel,
                  likelihood,
-                 inducing_variable=None,
+                 inducing_variables=None,
                  mean_function=None,
                  num_latent=1,
                  q_diag=False,
@@ -71,10 +71,10 @@ class SVGP(GPModel):
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
-        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+        self.inducing_variables = inducingpoint_wrapper(inducing_variables)
 
         # init variational parameters
-        num_inducing = len(self.inducing_variable)
+        num_inducing = len(self.inducing_variables)
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
@@ -138,7 +138,7 @@ class SVGP(GPModel):
     def prior_kl(self):
         K = None
         if not self.whiten:
-            K = Kuu(self.inducing_variable, self.kernel,
+            K = Kuu(self.inducing_variables, self.kernel,
                     jitter=default_jitter())  # [P, M, M] or [M, M]
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
@@ -170,7 +170,7 @@ class SVGP(GPModel):
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(Xnew,
-                              self.inducing_variable,
+                              self.inducing_variables,
                               self.kernel,
                               q_mu,
                               q_sqrt=q_sqrt,

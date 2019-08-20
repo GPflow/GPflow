@@ -16,7 +16,7 @@ def _Kuf(inducing_variable: InducingPoints, kernel: MultioutputKernel, Xnew: tf.
 
 @Kuf.register(SharedIndependentInducingVariables, SharedIndependent, object)
 def _Kuf(inducing_variable: SharedIndependentInducingVariables, kernel: SharedIndependent, Xnew: tf.Tensor):
-    return Kuf(inducing_variable.inducing_variable, kernel.kernel, Xnew)  # [M, N]
+    return Kuf(inducing_variable.inducing_variable_shared, kernel.kernel, Xnew)  # [M, N]
 
 
 @Kuf.register(SeparateIndependentInducingVariables, SharedIndependent, object)
@@ -27,7 +27,7 @@ def _Kuf(inducing_variable: SeparateIndependentInducingVariables, kernel: Shared
 
 @Kuf.register(SharedIndependentInducingVariables, SeparateIndependent, object)
 def _Kuf(inducing_variable: SharedIndependentInducingVariables, kernel: SeparateIndependent, Xnew: tf.Tensor):
-    return tf.stack([Kuf(inducing_variable.inducing_variable, k, Xnew) for k in kernel.kernels], axis=0)  # [L, M, N]
+    return tf.stack([Kuf(inducing_variable.inducing_variable_shared, k, Xnew) for k in kernel.kernels], axis=0)  # [L, M, N]
 
 
 @Kuf.register(SeparateIndependentInducingVariables, SeparateIndependent, object)
@@ -48,7 +48,7 @@ def _Kuf(inducing_variable: Union[SeparateIndependentInducingVariables, SharedIn
 
 @Kuf.register(SharedIndependentInducingVariables, LinearCoregionalisation, object)
 def _Kuf(inducing_variable: SharedIndependentInducingVariables, kernel: SeparateIndependent, Xnew: tf.Tensor):
-    return tf.stack([Kuf(inducing_variable.inducing_variable, k, Xnew) for k in kernel.kernels], axis=0)  # [L, M, N]
+    return tf.stack([Kuf(inducing_variable.inducing_variable_shared, k, Xnew) for k in kernel.kernels], axis=0)  # [L, M, N]
 
 
 @Kuf.register(SeparateIndependentInducingVariables, LinearCoregionalisation, object)

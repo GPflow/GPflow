@@ -9,7 +9,7 @@ from .util import sample_mvn
 @sample_conditional.register(object, object, Kernel, object)
 @sample_conditional.register(object, InducingVariables, Kernel, object)
 def _sample_conditional(Xnew: tf.Tensor,
-                        feature: InducingVariables,
+                        inducing_variable: InducingVariables,
                         kernel: Kernel,
                         function: tf.Tensor,
                         *,
@@ -34,7 +34,7 @@ def _sample_conditional(Xnew: tf.Tensor,
         raise NotImplementedError(msg)
 
     mean, cov = conditional(Xnew,
-                            feature,
+                            inducing_variable,
                             kernel,
                             function,
                             q_sqrt=q_sqrt,

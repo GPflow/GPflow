@@ -27,7 +27,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
 
 
 @dispatch.expectation.register(Gaussian, kernels.Sum, InducingPoints, NoneType, NoneType)
-def _E(p, kernel, feature, _, __, nghp=None):
+def _E(p, kernel, inducing_variable, _, __, nghp=None):
     """
     Compute the expectation:
     <\Sum_i Ki_{X, Z}>_p(X)
@@ -35,13 +35,13 @@ def _E(p, kernel, feature, _, __, nghp=None):
 
     :return: NxM
     """
-    exps = [expectation(p, (k, feature), nghp=nghp) for k in kernel.kernels]
+    exps = [expectation(p, (k, inducing_variable), nghp=nghp) for k in kernel.kernels]
     return reduce(tf.add, exps)
 
 
 @dispatch.expectation.register(Gaussian, (mfn.Linear, mfn.Identity, mfn.Constant), NoneType, kernels.Sum,
                                InducingPoints)
-def _E(p, mean, _, kernel, feature, nghp=None):
+def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <m(x_n)^T (\Sum_i Ki_{x_n, Z})>_p(x_n)
@@ -49,12 +49,12 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
     :return: NxQxM
     """
-    exps = [expectation(p, mean, (k, feature), nghp=nghp) for k in kernel.kernels]
+    exps = [expectation(p, mean, (k, inducing_variable), nghp=nghp) for k in kernel.kernels]
     return reduce(tf.add, exps)
 
 
 @dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.Sum, InducingPoints)
-def _E(p, mean, _, kernel, feature, nghp=None):
+def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_{n+1} (\Sum_i Ki_{x_n, Z})>_p(x_{n:n+1})
@@ -62,7 +62,7 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
     :return: NxDxM
     """
-    exps = [expectation(p, mean, (k, feature), nghp=nghp) for k in kernel.kernels]
+    exps = [expectation(p, mean, (k, inducing_variable), nghp=nghp) for k in kernel.kernels]
     return reduce(tf.add, exps)
 
 

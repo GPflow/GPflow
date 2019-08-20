@@ -8,7 +8,7 @@ from .util import sample_mvn, mix_latent_gp
 
 @sample_conditional.register(object, SharedIndependentInducingVariables, LinearCoregionalisation, object)
 def _sample_conditional(Xnew,
-                        feature,
+                        inducing_variable,
                         kernel,
                         f,
                         *,
@@ -33,7 +33,7 @@ def _sample_conditional(Xnew,
     ind_conditional = conditional.dispatch(object, SeparateIndependentInducingVariables,
                                            SeparateIndependent, object)
     g_mu, g_var = ind_conditional(Xnew,
-                                  feature,
+                                  inducing_variable,
                                   kernel,
                                   f,
                                   white=white,

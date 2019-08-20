@@ -127,7 +127,7 @@ def means(*args):
 
 
 @pytest.fixture
-def feature():
+def inducing_variable():
     return inducing_variables.InducingPoints(Z)
 
 
@@ -162,8 +162,8 @@ def test_mean_function_only_expectations(distribution, mean1, mean2,
     lambda p, k, f: (p, k), lambda p, k, f: (p, (k, f)), lambda p, k, f:
     (p, (k, f), (k, f))
 ])
-def test_kernel_only_expectations(distribution, kernel, feature, arg_filter):
-    params = arg_filter(distribution, kernel, feature)
+def test_kernel_only_expectations(distribution, kernel, inducing_variable, arg_filter):
+    params = arg_filter(distribution, kernel, inducing_variable)
     _check(params)
 
 
@@ -174,9 +174,9 @@ def test_kernel_only_expectations(distribution, kernel, feature, arg_filter):
 @pytest.mark.parametrize(
     "arg_filter",
     [lambda p, k, f, m: (p, (k, f), m), lambda p, k, f, m: (p, m, (k, f))])
-def test_kernel_mean_function_expectations(distribution, kernel, feature, mean,
+def test_kernel_mean_function_expectations(distribution, kernel, inducing_variable, mean,
                                            arg_filter):
-    params = arg_filter(distribution, kernel, feature, mean)
+    params = arg_filter(distribution, kernel, inducing_variable, mean)
     _check(params)
 
 
@@ -188,16 +188,16 @@ def test_eKdiag_no_uncertainty(kernel):
 
 
 @pytest.mark.parametrize("kernel", kern_args1)
-def test_eKxz_no_uncertainty(kernel, feature):
-    eKxz = expectation(_distrs['dirac_diag'], (kernel, feature))
+def test_eKxz_no_uncertainty(kernel, inducing_variable):
+    eKxz = expectation(_distrs['dirac_diag'], (kernel, inducing_variable))
     Kxz = kernel(Xmu, Z)
     assert_allclose(eKxz, Kxz, rtol=RTOL)
 
 
 @pytest.mark.parametrize("kernel", kern_args2)
 @pytest.mark.parametrize("mean", mean_args)
-def test_eMxKxz_no_uncertainty(kernel, feature, mean):
-    exKxz = expectation(_distrs['dirac_diag'], mean, (kernel, feature))
+def test_eMxKxz_no_uncertainty(kernel, inducing_variable, mean):
+    exKxz = expectation(_distrs['dirac_diag'], mean, (kernel, inducing_variable))
     Kxz = kernel(Xmu, Z)
     xKxz = expectation(_distrs['dirac_gauss'],
                        mean)[:, :, None] * Kxz[:, None, :]
@@ -205,9 +205,9 @@ def test_eMxKxz_no_uncertainty(kernel, feature, mean):
 
 
 @pytest.mark.parametrize("kernel", kern_args1)
-def test_eKzxKxz_no_uncertainty(kernel, feature):
-    eKzxKxz = expectation(_distrs['dirac_diag'], (kernel, feature),
-                          (kernel, feature))
+def test_eKzxKxz_no_uncertainty(kernel, inducing_variable):
+    eKzxKxz = expectation(_distrs['dirac_diag'], (kernel, inducing_variable),
+                          (kernel, inducing_variable))
     Kxz = kernel(Xmu, Z)
     KzxKxz = Kxz[:, :, None] * Kxz[:, None, :]
     assert_allclose(eKzxKxz, KzxKxz, rtol=RTOL)
@@ -236,41 +236,41 @@ def test_RBF_eKzxKxz_gradient_notNaN():
 @pytest.mark.parametrize("kern1", kerns("rbf_act_dim_0", "lin_act_dim_0"))
 @pytest.mark.parametrize("kern2", kerns("rbf_act_dim_1", "lin_act_dim_1"))
 def test_eKzxKxz_separate_dims_simplification(distribution, kern1, kern2,
-                                              feature):
-    _check((distribution, (kern1, feature), (kern2, feature)))
+                                              inducing_variable):
+    _check((distribution, (kern1, inducing_variable), (kern2, inducing_variable)))
 
 
 @pytest.mark.parametrize("distribution", distr_args1)
 @pytest.mark.parametrize("kern1", kerns("rbf_lin_sum"))
 @pytest.mark.parametrize("kern2", kerns("rbf_lin_sum2"))
-def test_eKzxKxz_different_sum_kernels(distribution, kern1, kern2, feature):
-    _check((distribution, (kern1, feature), (kern2, feature)))
+def test_eKzxKxz_different_sum_kernels(distribution, kern1, kern2, inducing_variable):
+    _check((distribution, (kern1, inducing_variable), (kern2, inducing_variable)))
 
 
 @pytest.mark.parametrize("distribution", distr_args1)
 @pytest.mark.parametrize("kern1", kerns("rbf_lin_sum2"))
 @pytest.mark.parametrize("kern2", kerns("rbf_lin_sum2"))
 def test_eKzxKxz_same_vs_different_sum_kernels(distribution, kern1, kern2,
-                                               feature):
+                                               inducing_variable):
     # check the result is the same if we pass different objects with the same value
-    same = expectation(*(distribution, (kern1, feature), (kern1, feature)))
-    different = expectation(*(distribution, (kern1, feature),
-                              (kern2, feature)))
+    same = expectation(*(distribution, (kern1, inducing_variable), (kern1, inducing_variable)))
+    different = expectation(*(distribution, (kern1, inducing_variable),
+                              (kern2, inducing_variable)))
     assert_allclose(same, different, rtol=RTOL)
 
 
 @pytest.mark.parametrize("distribution", distrs("markov_gauss"))
 @pytest.mark.parametrize("kernel", kern_args2)
 @pytest.mark.parametrize("mean", means("identity"))
-def test_exKxz_markov(distribution, kernel, mean, feature):
-    _check((distribution, (kernel, feature), mean))
+def test_exKxz_markov(distribution, kernel, mean, inducing_variable):
+    _check((distribution, (kernel, inducing_variable), mean))
 
 
 @pytest.mark.parametrize("distribution", distrs("dirac_markov_gauss"))
 @pytest.mark.parametrize("kernel", kern_args2)
 @pytest.mark.parametrize("mean", means("identity"))
-def test_exKxz_markov_no_uncertainty(distribution, kernel, mean, feature):
-    exKxz = expectation(distribution, (kernel, feature), mean)
+def test_exKxz_markov_no_uncertainty(distribution, kernel, mean, inducing_variable):
+    exKxz = expectation(distribution, (kernel, inducing_variable), mean)
     Kzx = kernel(Xmu_markov[:-1, :], Z)  # NxM
     xKxz = Kzx[..., None] * Xmu_markov[1:, None, :]  # NxMxD
     assert_allclose(exKxz, xKxz, rtol=RTOL)
@@ -279,8 +279,8 @@ def test_exKxz_markov_no_uncertainty(distribution, kernel, mean, feature):
 @pytest.mark.parametrize("kernel", kerns("rbf"))
 @pytest.mark.parametrize("distribution",
                          distrs("gauss", "gauss_diag", "markov_gauss"))
-def test_cov_shape_inference(distribution, kernel, feature):
+def test_cov_shape_inference(distribution, kernel, inducing_variable):
     gauss_tuple = (distribution.mu, distribution.cov)
-    _check((gauss_tuple, (kernel, feature)))
+    _check((gauss_tuple, (kernel, inducing_variable)))
     if isinstance(distribution, MarkovGaussian):
-        _check((gauss_tuple, None, (kernel, feature)))
+        _check((gauss_tuple, None, (kernel, inducing_variable)))

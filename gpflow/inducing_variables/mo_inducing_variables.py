@@ -21,9 +21,9 @@ class MultioutputInducingVariables(InducingVariables):
     Base class for methods which define a collection of inducing variables which
     in some way can be grouped. The main example is where the inducing variables
     consist of outputs of various independent GPs. This can be because our model
-    uses multiple independent GPs (SharedIndependentMok, SeparateIndependentMok)
-    or because it is constructed from independent GPs (eg IndependentLatentBase,
-    SeparateMixedMok).
+    uses multiple independent GPs (SharedIndependent, SeparateIndependent) or
+    because it is constructed from independent GPs (eg IndependentLatent,
+    LinearCoregionalisation).
     """
     pass
 
@@ -56,11 +56,11 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     """
 
     def __init__(self, inducing_variable):
-        MultioutputInducingVariables.__init__(self)
-        self.inducing_variable = inducing_variable
+        super().__init__()
+        self.inducing_variable_shared = inducing_variable
 
     def __len__(self):
-        return len(self.inducing_variable)
+        return len(self.inducing_variable_shared)
 
 
 class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
@@ -91,7 +91,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     """
 
     def __init__(self, inducing_variable_list):
-        MultioutputInducingVariables.__init__(self)
+        super().__init__()
         self.inducing_variable_list = inducing_variable_list
 
     def __len__(self):
@@ -101,7 +101,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
 class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariables):
     """
     Here, we define the same inducing variables as in the base class. However,
-    this class is intended to be used without the constrains on the shapes that
+    this class is intended to be used without the constraints on the shapes that
     `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide
     the most efficient implementation.
     """
@@ -111,7 +111,7 @@ class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariab
 class SeparateIndependentInducingVariables(FallbackSeparateIndependentInducingVariables):
     """
     Here, we define the same inducing variables as in the base class. However,
-    this class is intended to be used without the constrains on the shapes that
+    this class is intended to be used without the constraints on the shapes that
     `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide
     the most efficient implementation.
     """

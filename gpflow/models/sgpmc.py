@@ -62,7 +62,7 @@ class SGPMC(GPModelOLD):
                  likelihood,
                  mean_function=None,
                  num_latent=None,
-                 features=None,
+                 inducing_variable=None,
                  **kwargs):
         """
         X is a data matrix, size [N, D]
@@ -79,8 +79,8 @@ class SGPMC(GPModelOLD):
                             num_latent=num_latent,
                             **kwargs)
         self.num_data = X.shape[0]
-        self.feature = InducingPoints(features)
-        self.V = Parameter(np.zeros((len(self.feature), self.num_latent)))
+        self.inducing_variable = InducingPoints(inducing_variable)
+        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
         self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
@@ -105,7 +105,7 @@ class SGPMC(GPModelOLD):
 
         """
         mu, var = conditional(X,
-                              self.feature,
+                              self.inducing_variable,
                               self.kernel,
                               self.V,
                               full_cov=full_cov,
