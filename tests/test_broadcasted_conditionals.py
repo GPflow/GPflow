@@ -66,7 +66,7 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
         # variational params have different output dim in this case
         q_mu = np.random.randn(Data.M, Data.L)
         q_sqrt = np.tril(np.random.randn(Data.L, Data.M, Data.M), -1)
-        feature = mf.MixedKernelSharedMof(gpflow.features.InducingPoints(Data.Z))
+        feature = mf.SharedIndependentInducingVariables(gpflow.features.InducingPoints(Data.Z))
         kernel = mk.SeparateMixedMok(
             kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
             W=Data.W
