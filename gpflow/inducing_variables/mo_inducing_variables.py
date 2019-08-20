@@ -31,7 +31,7 @@ class MultioutputInducingVariables(InducingVariables):
 class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     """
     This class is designated to be used to
-     - provide a general a general interface for multioutput kernels
+     - provide a general interface for multioutput kernels
        constructed from independent latent processes,
      - only require the specification of Kuu and Kuf.
     All multioutput kernels constructed from independent latent processes allow
@@ -39,7 +39,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     reasonably efficient method (i.e. one that takes advantage of the
     independence in the latent processes) can be specified quite generally by
     only requiring the following covariances:
-     - Kuu: [L1, M, M]    (L can be 1, the conditional can broadcast),
+     - Kuu: [L, M, M],
      - Kuf: [L, M, N, P].
     In `mo_conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
@@ -66,7 +66,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
 class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
     """
     This class is designated to be used to
-     - provide a general a general interface for multioutput kernels
+     - provide a general interface for multioutput kernels
        constructed from independent latent processes,
      - only require the specification of Kuu and Kuf.
     All multioutput kernels constructed from independent latent processes allow

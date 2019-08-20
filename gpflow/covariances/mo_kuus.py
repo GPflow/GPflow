@@ -3,9 +3,9 @@ from typing import Union
 import tensorflow as tf
 
 from ..inducing_variables import (InducingPoints, FallbackSharedIndependentInducingVariables,
-                                  FallbackSeparateIndependentInducingVariables)
+                                  FallbackSeparateIndependentInducingVariables, SharedIndependentInducingVariables)
 from ..kernels import (MultioutputKernel, SeparateIndependent, LinearCoregionalisation,
-                       SharedIndependent)
+                       SharedIndependent, IndependentLatent)
 from .dispatch import Kuu
 
 
@@ -27,9 +27,9 @@ def _Kuu(inducing_variable: FallbackSharedIndependentInducingVariables,
     return Kmm + jittermat
 
 
-@Kuu.register(FallbackSharedIndependentInducingVariables, (SeparateIndependent, LinearCoregionalisation))
+@Kuu.register(FallbackSharedIndependentInducingVariables, (SeparateIndependent, IndependentLatent))
 def _Kuu(inducing_variable: FallbackSharedIndependentInducingVariables,
-         kernel: Union[SeparateIndependent, LinearCoregionalisation],
+         kernel: Union[SeparateIndependent, IndependentLatent],
          *,
          jitter=0.0):
     Kmm = tf.stack([Kuu(inducing_variable.inducing_variable_shared, k) for k in kernel.kernels],
