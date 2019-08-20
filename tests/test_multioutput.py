@@ -452,7 +452,7 @@ def test_separate_independent_mof():
     q_mu_1 = np.random.randn(Data.M * Data.P, 1)
     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
 
-    kernel_1 = mk.SharedIndependent(RBF(variance=0.5, lengthscale=1.2), Data.P)
+    kernel_1 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscale=1.2), Data.P)
     inducing_variable_1 = InducingPoints(Data.X[:Data.M, ...])
     model_1 = SVGP(kernel_1, Gaussian(), inducing_variable_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
     set_trainable(model_1, False)
