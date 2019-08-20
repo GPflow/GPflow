@@ -30,6 +30,8 @@ class MultioutputInducingVariables(InducingVariables):
 
 class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     """
+    Shared definition of inducing variables for each independent latent process.
+
     This class is designated to be used to
      - provide a general interface for multioutput kernels
        constructed from independent latent processes,
@@ -65,6 +67,8 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
 
 class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
     """
+    Separate set of inducing variables for each independent latent process.
+
     This class is designated to be used to
      - provide a general interface for multioutput kernels
        constructed from independent latent processes,
