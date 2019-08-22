@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 
 import gpflow
-from gpflow.features import InducingPoints
+from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Matern32
 
 rng = np.random.RandomState(0)
@@ -39,14 +39,14 @@ class ModelSetup:
 
     def get_model(self, Z, num_latent):
         if self.whiten is not None and self.q_diag is not None:
-            return self.model_class(feature=Z,
+            return self.model_class(inducing_variables=Z,
                                     kernel=self.kernel,
                                     likelihood=self.likelihood,
                                     num_latent=num_latent,
                                     whiten=self.whiten,
                                     q_diag=self.q_diag)
         else:
-            return self.model_class(feature=Z,
+            return self.model_class(inducing_variables=Z,
                                     kernel=self.kernel,
                                     likelihood=self.likelihood,
                                     num_latent=num_latent)

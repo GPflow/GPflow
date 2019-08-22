@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import mean_functions as mfn
-from ..features import InducingFeature, InducingPoints
+from ..inducing_variables import InducingVariables, InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from . import dispatch
 from .expectations import expectation
@@ -14,7 +14,7 @@ NoneType = type(None)
 
 
 @dispatch.expectation.register((Gaussian, MarkovGaussian), mfn.Identity, NoneType, kernels.Linear, InducingPoints)
-def _E(p, mean, _, kernel, feature, nghp=None):
+def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
@@ -23,11 +23,11 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
     :return: NxDxM
     """
-    return tf.linalg.adjoint(expectation(p, (kernel, feature), mean))
+    return tf.linalg.adjoint(expectation(p, (kernel, inducing_variable), mean))
 
 
-@dispatch.expectation.register((Gaussian, MarkovGaussian), kernels.Kernel, InducingFeature, mfn.MeanFunction, NoneType)
-def _E(p, kernel, feature, mean, _, nghp=None):
+@dispatch.expectation.register((Gaussian, MarkovGaussian), kernels.Kernel, InducingVariables, mfn.MeanFunction, NoneType)
+def _E(p, kernel, inducing_variable, mean, _, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n)
@@ -35,11 +35,11 @@ def _E(p, kernel, feature, mean, _, nghp=None):
 
     :return: NxMxQ
     """
-    return tf.linalg.adjoint(expectation(p, mean, (kernel, feature), nghp=nghp))
+    return tf.linalg.adjoint(expectation(p, mean, (kernel, inducing_variable), nghp=nghp))
 
 
 @dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, kernels.Kernel, InducingPoints)
-def _E(p, constant_mean, _, kernel, feature, nghp=None):
+def _E(p, constant_mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
@@ -49,13 +49,13 @@ def _E(p, constant_mean, _, kernel, feature, nghp=None):
     :return: NxQxM
     """
     c = constant_mean(p.mu)  # NxQ
-    eKxz = expectation(p, (kernel, feature), nghp=nghp)  # NxM
+    eKxz = expectation(p, (kernel, inducing_variable), nghp=nghp)  # NxM
 
     return c[..., None] * eKxz[:, None, :]
 
 
 @dispatch.expectation.register(Gaussian, mfn.Linear, NoneType, kernels.Kernel, InducingPoints)
-def _E(p, linear_mean, _, kernel, feature, nghp=None):
+def _E(p, linear_mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
@@ -66,21 +66,21 @@ def _E(p, linear_mean, _, kernel, feature, nghp=None):
     """
     N = p.mu.shape[0]
     D = p.mu.shape[1]
-    exKxz = expectation(p, mfn.Identity(D), (kernel, feature), nghp=nghp)
-    eKxz = expectation(p, (kernel, feature), nghp=nghp)
+    exKxz = expectation(p, mfn.Identity(D), (kernel, inducing_variable), nghp=nghp)
+    eKxz = expectation(p, (kernel, inducing_variable), nghp=nghp)
     eAxKxz = tf.linalg.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)), exKxz, transpose_a=True)
     ebKxz = linear_mean.b[None, :, None] * eKxz[:, None, :]
     return eAxKxz + ebKxz
 
 
 @dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.Kernel, InducingPoints)
-def _E(p, identity_mean, _, kernel, feature, nghp=None):
+def _E(p, identity_mean, _, kernel, inducing_variable, nghp=None):
     """
     This prevents infinite recursion for kernels that don't have specific
-    implementations of _expectation(p, identity_mean, None, kernel, feature).
+    implementations of _expectation(p, identity_mean, None, kernel, inducing_variable).
     Recursion can arise because Identity is a subclass of Linear mean function
-    so _expectation(p, linear_mean, none, kernel, feature) would call itself.
-    More specific signatures (e.g. (p, identity_mean, None, RBF, feature)) will
+    so _expectation(p, linear_mean, none, kernel, inducing_variable) would call itself.
+    More specific signatures (e.g. (p, identity_mean, None, RBF, inducing_variable)) will
     be found and used whenever available
     """
     raise NotImplementedError
@@ -90,8 +90,8 @@ def _E(p, identity_mean, _, kernel, feature, nghp=None):
 # Catching missing DiagonalGaussian implementations by converting to full Gaussian:
 
 
-@dispatch.expectation.register(DiagonalGaussian, object, (InducingFeature, NoneType), object,
-                               (InducingFeature, NoneType))
+@dispatch.expectation.register(DiagonalGaussian, object, (InducingVariables, NoneType), object,
+                               (InducingVariables, NoneType))
 def _E(p, obj1, feat1, obj2, feat2, nghp=None):
     gaussian = Gaussian(p.mu, tf.linalg.diag(p.cov))
     return expectation(gaussian, (obj1, feat1), (obj2, feat2), nghp=nghp)
@@ -100,8 +100,8 @@ def _E(p, obj1, feat1, obj2, feat2, nghp=None):
 # Catching missing MarkovGaussian implementations by converting to Gaussian (when indifferent):
 
 
-@dispatch.expectation.register(MarkovGaussian, object, (InducingFeature, NoneType), object,
-                               (InducingFeature, NoneType))
+@dispatch.expectation.register(MarkovGaussian, object, (InducingVariables, NoneType), object,
+                               (InducingVariables, NoneType))
 def _E(p, obj1, feat1, obj2, feat2, nghp=None):
     """
     Nota Bene: if only one object is passed, obj1 is

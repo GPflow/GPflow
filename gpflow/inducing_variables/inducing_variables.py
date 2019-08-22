@@ -20,21 +20,21 @@ from ..base import Parameter, positive
 from ..config import default_float
 
 
-class InducingFeature(tf.Module):
+class InducingVariables(tf.Module):
     """
-    Abstract base class for inducing features.
+    Abstract base class for inducing inducing.
     """
 
     @abc.abstractmethod
     def __len__(self) -> int:
         """
-        Returns the number of features, relevant for example to determine the
+        Returns the number of inducing, relevant for example to determine the
         size of the variational distribution.
         """
         pass
 
 
-class InducingPoints(InducingFeature):
+class InducingPoints(InducingVariables):
     """
     Real-space inducing points
     """
@@ -52,7 +52,7 @@ class InducingPoints(InducingFeature):
 
 class Multiscale(InducingPoints):
     """
-    Multi-scale inducing features
+    Multi-scale inducing inducing
     Originally proposed in
 
     ::
@@ -67,7 +67,7 @@ class Multiscale(InducingPoints):
 
     def __init__(self, Z, scales):
         super().__init__(Z)
-        # Multi-scale feature widths (std. dev. of Gaussian)
+        # Multi-scale inducing_variable widths (std. dev. of Gaussian)
         self.scales = Parameter(scales, transform=positive())
         if self.Z.shape != scales.shape:
             raise ValueError(

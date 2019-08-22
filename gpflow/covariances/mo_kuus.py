@@ -2,71 +2,60 @@ from typing import Union
 
 import tensorflow as tf
 
-from ..features import (InducingPoints, MixedKernelSharedMof,
-                        SeparateIndependentMof, SharedIndependentMof)
-from ..kernels import (Mok, SeparateIndependentMok, SeparateMixedMok,
-                       SharedIndependentMok)
+from ..inducing_variables import (InducingPoints, FallbackSharedIndependentInducingVariables,
+                                  FallbackSeparateIndependentInducingVariables, SharedIndependentInducingVariables)
+from ..kernels import (MultioutputKernel, SeparateIndependent, LinearCoregionalization,
+                       SharedIndependent, IndependentLatent)
 from .dispatch import Kuu
 
 
-@Kuu.register(InducingPoints, Mok)
-def _Kuu(feature: InducingPoints, kernel: Mok, *, jitter=0.0):
-    Kmm = kernel(feature.Z, full=True, full_output_cov=True)  # [M, P, M, P]
+@Kuu.register(InducingPoints, MultioutputKernel)
+def _Kuu(inducing_variable: InducingPoints, kernel: MultioutputKernel, *, jitter=0.0):
+    Kmm = kernel(inducing_variable.Z, full=True, full_output_cov=True)  # [M, P, M, P]
     M = Kmm.shape[0] * Kmm.shape[1]
     jittermat = jitter * tf.reshape(tf.eye(M, dtype=Kmm.dtype), Kmm.shape)
     return Kmm + jittermat
 
 
-@Kuu.register(SharedIndependentMof, SharedIndependentMok)
-def _Kuu(feature: SharedIndependentMof,
-         kernel: SharedIndependentMok,
+@Kuu.register(FallbackSharedIndependentInducingVariables, SharedIndependent)
+def _Kuu(inducing_variable: FallbackSharedIndependentInducingVariables,
+         kernel: SharedIndependent,
          *,
          jitter=0.0):
-    Kmm = Kuu(feature.feature, kernel.kernel)  # [M, M]
-    jittermat = tf.eye(len(feature), dtype=Kmm.dtype) * jitter
+    Kmm = Kuu(inducing_variable.inducing_variable_shared, kernel.kernel)  # [M, M]
+    jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype) * jitter
     return Kmm + jittermat
 
 
-@Kuu.register(SharedIndependentMof, (SeparateIndependentMok, SeparateMixedMok))
-def _Kuu(feature: SharedIndependentMof,
-         kernel: Union[SeparateIndependentMok, SeparateMixedMok],
+@Kuu.register(FallbackSharedIndependentInducingVariables, (SeparateIndependent, IndependentLatent))
+def _Kuu(inducing_variable: FallbackSharedIndependentInducingVariables,
+         kernel: Union[SeparateIndependent, IndependentLatent],
          *,
          jitter=0.0):
-    Kmm = tf.stack([Kuu(feature.feature, k) for k in kernel.kernels],
+    Kmm = tf.stack([Kuu(inducing_variable.inducing_variable_shared, k) for k in kernel.kernels],
                    axis=0)  # [L, M, M]
-    jittermat = tf.eye(len(feature), dtype=Kmm.dtype)[None, :, :] * jitter
+    jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat
 
 
-@Kuu.register(SeparateIndependentMof, SharedIndependentMok)
-def _Kuu(feature: SeparateIndependentMof,
-         kernel: SharedIndependentMok,
+@Kuu.register(FallbackSeparateIndependentInducingVariables, SharedIndependent)
+def _Kuu(inducing_variable: FallbackSeparateIndependentInducingVariables,
+         kernel: SharedIndependent,
          *,
          jitter=0.0):
-    Kmm = tf.stack([Kuu(f, kernel.kernel) for f in feature.features],
+    Kmm = tf.stack([Kuu(f, kernel.kernel) for f in inducing_variable.inducing_variable_list],
                    axis=0)  # [L, M, M]
-    jittermat = tf.eye(len(feature), dtype=Kmm.dtype)[None, :, :] * jitter
+    jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat
 
 
-@Kuu.register(SeparateIndependentMof,
-              (SeparateIndependentMok, SeparateMixedMok))
-def _Kuu(feature: SeparateIndependentMof,
-         kernel: Union[SeparateIndependentMok, SeparateMixedMok],
+@Kuu.register(FallbackSeparateIndependentInducingVariables,
+              (SeparateIndependent, LinearCoregionalization))
+def _Kuu(inducing_variable: FallbackSeparateIndependentInducingVariables,
+         kernel: Union[SeparateIndependent, LinearCoregionalization],
          *,
          jitter=0.0):
-    Kmms = [Kuu(f, k) for f, k in zip(feature.features, kernel.kernels)]
+    Kmms = [Kuu(f, k) for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)]
     Kmm = tf.stack(Kmms, axis=0)  # [L, M, M]
-    jittermat = tf.eye(len(feature), dtype=Kmm.dtype)[None, :, :] * jitter
-    return Kmm + jittermat
-
-
-@Kuu.register(MixedKernelSharedMof, SeparateMixedMok)
-def _Kuu(feature: MixedKernelSharedMof,
-         kernel: SeparateMixedMok,
-         *,
-         jitter=0.0):
-    Kmm = tf.stack([Kuu(feature.feature, k) for k in kernel.kernels],
-                   axis=0)  # [L, M, M]
-    jittermat = tf.eye(len(feature), dtype=Kmm.dtype)[None, :, :] * jitter
+    jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat

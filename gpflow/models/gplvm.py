@@ -17,7 +17,7 @@ import numpy as np
 
 from .. import likelihoods
 from .. import kernels
-from .. import features
+from .. import inducing_variables
 
 from ..mean_functions import Zero
 from ..expectations import expectation
@@ -118,9 +118,9 @@ class BayesianGPLVM(GPModel):
             # By default we initialize by subset of initial latent points
             Z = np.random.permutation(X_mean.copy())[:M]
 
-        self.feature = features.InducingPoints(Z)
+        self.inducing_variable = inducing_variables.InducingPoints(Z)
 
-        assert len(self.feature) == M
+        assert len(self.inducing_variable) == M
         assert X_mean.shape[1] == self.num_latent
 
         # deal with parameters for the prior mean variance of X
@@ -146,13 +146,13 @@ class BayesianGPLVM(GPModel):
         """
         pX = DiagonalGaussian(self.X_mean(), self.X_var())
 
-        num_inducing = len(self.feature)
+        num_inducing = len(self.inducing_variable)
         psi0 = tf.reduce_sum(expectation(pX, self.kernel))
-        psi1 = expectation(pX, (self.kernel, self.feature))
-        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.feature),
-                                         (self.kernel, self.feature)),
+        psi1 = expectation(pX, (self.kernel, self.inducing_variable))
+        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.inducing_variable),
+                                         (self.kernel, self.inducing_variable)),
                              axis=0)
-        cov_uu = Kuu(self.feature, self.kernel, jitter=default_jitter())
+        cov_uu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -200,16 +200,16 @@ class BayesianGPLVM(GPModel):
         """
         pX = DiagonalGaussian(self.X_mean(), self.X_var())
 
-        num_inducing = len(self.feature)
-        psi1 = expectation(pX, (self.kernel, self.feature))
-        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.feature),
-                                         (self.kernel, self.feature)),
+        num_inducing = len(self.inducing_variable)
+        psi1 = expectation(pX, (self.kernel, self.inducing_variable))
+        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.inducing_variable),
+                                         (self.kernel, self.inducing_variable)),
                              axis=0)
         jitter = default_jitter()
-        Kus = Kuf(self.feature, self.kernel, Xnew)
+        Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
-        L = tf.linalg.cholesky(Kuu(self.feature, self.kernel, jitter=jitter))
+        L = tf.linalg.cholesky(Kuu(self.inducing_variable, self.kernel, jitter=jitter))
 
         A = tf.linalg.triangular_solve(L, tf.transpose(psi1),
                                        lower=True) / sigma

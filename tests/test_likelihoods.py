@@ -18,7 +18,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.features import InducingPoints
+from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian,
                                 GaussianMC, Likelihood, MultiClass, Ordinal,
                                 Poisson, RobustMax, Softmax, StudentT,
@@ -472,7 +472,7 @@ def test_switched_likelihood_regression_valid_num_latent(X, Y, num_latent):
     likelihoods = [StudentT()] * 3
     switched_likelihood = SwitchedLikelihood(likelihoods)
     m = gpflow.models.SVGP(kernel=gpflow.kernels.Matern12(),
-                           feature=Z,
+                           inducing_variables=Z,
                            likelihood=switched_likelihood,
                            num_latent=num_latent)
     if num_latent == 1:

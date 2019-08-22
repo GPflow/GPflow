@@ -39,7 +39,7 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
     def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
         return uncertain_conditional(Xmu,
                                      Xcov,
-                                     self.feature,
+                                     self.inducing_variables,
                                      self.kernel,
                                      self.q_mu,
                                      self.q_sqrt,
@@ -141,7 +141,7 @@ def test_no_uncertainty(white, mean):
                                gpflow.likelihoods.Gaussian(),
                                num_latent=Data.D_out,
                                mean_function=mean_function,
-                               feature=Data.X.copy(),
+                               inducing_variables=Data.X.copy(),
                                whiten=white)
     model.full_output_cov = False
 
@@ -172,7 +172,7 @@ def test_monte_carlo_1_din(white, mean):
                                gpflow.likelihoods.Gaussian(),
                                num_latent=DataMC1.D_out,
                                mean_function=mean_function,
-                               feature=DataMC1.X.copy(),
+                               inducing_variables=DataMC1.X.copy(),
                                whiten=white)
     model.full_output_cov = True
 
@@ -204,7 +204,7 @@ def test_monte_carlo_2_din(white, mean):
                                gpflow.likelihoods.Gaussian(),
                                num_latent=DataMC2.D_out,
                                mean_function=mean_function,
-                               feature=DataMC2.X.copy(),
+                               inducing_variables=DataMC2.X.copy(),
                                whiten=white)
     model.full_output_cov = True
 
@@ -231,14 +231,14 @@ def test_monte_carlo_2_din(white, mean):
 @pytest.mark.parametrize('white', [True, False])
 def test_quadrature(white, mean):
     kernel = gpflow.kernels.RBF()
-    features = gpflow.features.InducingPoints(DataQuad.Z)
+    inducing_variables = gpflow.inducing_variables.InducingPoints(DataQuad.Z)
     mean_function = mean_function_factory(mean, DataQuad.D_in, DataQuad.D_out)
 
     effective_mean = mean_function or (lambda X: 0.0)
 
     def conditional_fn(X):
         return conditional(X,
-                           features,
+                           inducing_variables,
                            kernel,
                            DataQuad.q_mu,
                            q_sqrt=DataQuad.q_sqrt,
@@ -264,7 +264,7 @@ def test_quadrature(white, mean):
     mean_analytic, var_analytic = uncertain_conditional(
         DataQuad.Xmu,
         DataQuad.Xvar,
-        features,
+        inducing_variables,
         kernel,
         DataQuad.q_mu,
         DataQuad.q_sqrt,

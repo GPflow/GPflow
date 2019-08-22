@@ -120,7 +120,7 @@ def test_variational_univariate_prior_KL(diag, whiten):
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(kernel=RBF(variance=Datum.K),
                                likelihood=Gaussian(),
-                               feature=Datum.Z,
+                               inducing_variables=Datum.Z,
                                num_latent=Datum.num_latent,
                                q_diag=diag,
                                whiten=whiten,
@@ -142,7 +142,7 @@ def test_variational_univariate_log_likelihood(diag, whiten):
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(kernel=RBF(variance=Datum.K),
                                likelihood=Gaussian(),
-                               feature=Datum.Z,
+                               inducing_variables=Datum.Z,
                                num_latent=Datum.num_latent,
                                q_diag=diag,
                                whiten=whiten,
@@ -163,7 +163,7 @@ def test_variational_univariate_conditionals(diag, whiten):
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(kernel=RBF(variance=Datum.K),
                                likelihood=Gaussian(),
-                               feature=Datum.Z,
+                               inducing_variables=Datum.Z,
                                num_latent=Datum.num_latent,
                                q_diag=diag,
                                whiten=whiten,
@@ -196,7 +196,7 @@ def test_variational_multivariate_prior_KL_full_q(whiten):
     model = gpflow.models.SVGP(kernel=RBF(variance=MultiDatum.signal_var,
                                           lengthscale=MultiDatum.ls),
                                likelihood=Gaussian(MultiDatum.noise_var),
-                               feature=MultiDatum.Z,
+                               inducing_variables=MultiDatum.Z,
                                num_latent=MultiDatum.num_latent,
                                q_diag=False,
                                whiten=whiten,

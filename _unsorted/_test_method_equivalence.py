@@ -60,23 +60,23 @@ class TestEquivalence(GPflowTestCase):
             Z=X.copy(),
             q_diag=False,
             mean_function=gpflow.mean_functions.Constant())
-        m3.feature.trainable = False
+        m3.inducing_variables.trainable = False
         m4 = gpflow.models.SVGP(
             X, Y, gpflow.kernels.RBF(1),
             likelihood=gpflow.likelihoods.Gaussian(),
             Z=X.copy(), q_diag=False, whiten=True,
             mean_function=gpflow.mean_functions.Constant())
-        m4.feature.trainable = False
+        m4.inducing_variables.trainable = False
         m5 = gpflow.models.SGPR(
             X, Y, gpflow.kernels.RBF(1),
             Z=X.copy(),
             mean_function=gpflow.mean_functions.Constant())
 
-        m5.feature.trainable = False
+        m5.inducing_variables.trainable = False
         m6 = gpflow.models.GPRFITC(
             X, Y, gpflow.kernels.RBF(1), Z=X.copy(),
             mean_function=gpflow.mean_functions.Constant())
-        m6.feature.trainable = False
+        m6.inducing_variables.trainable = False
         return [m1, m2, m3, m4, m5, m6]
 
     def test_all(self):

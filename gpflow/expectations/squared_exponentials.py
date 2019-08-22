@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import mean_functions as mfn
-from ..features import InducingPoints
+from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from ..utilities.ops import square_distance
 from . import dispatch
@@ -24,7 +24,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
 
 
 @dispatch.expectation.register(Gaussian, kernels.RBF, InducingPoints, NoneType, NoneType)
-def _E(p, kernel, feature, _, __, nghp=None):
+def _E(p, kernel, inducing_variable, _, __, nghp=None):
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
@@ -34,7 +34,7 @@ def _E(p, kernel, feature, _, __, nghp=None):
     """
     # use only active dimensions
     Xcov = kernel.slice_cov(p.cov)
-    Z, Xmu = kernel.slice(feature.Z, p.mu)
+    Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
     D = Xmu.shape[1]
 
     lengthscale = kernel.lengthscale
@@ -56,7 +56,7 @@ def _E(p, kernel, feature, _, __, nghp=None):
 
 
 @dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
-def _E(p, mean, _, kernel, feature, nghp=None):
+def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
@@ -73,7 +73,7 @@ def _E(p, mean, _, kernel, feature, nghp=None):
         lengthscale = tf.zeros((D, ), dtype=lengthscale.dtype) + lengthscale
 
     chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale**2) + Xcov)  # NxDxD
-    all_diffs = tf.transpose(feature.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
+    all_diffs = tf.transpose(inducing_variable.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
     sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
@@ -90,7 +90,7 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
 
 @dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
-def _E(p, mean, _, kernel, feature, nghp=None):
+def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1})
@@ -107,7 +107,7 @@ def _E(p, mean, _, kernel, feature, nghp=None):
         lengthscale = tf.zeros((D, ), dtype=lengthscale.dtype) + lengthscale
 
     chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale**2) + Xcov[0, :-1])  # NxDxD
-    all_diffs = tf.transpose(feature.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
+    all_diffs = tf.transpose(inducing_variable.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
     sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
@@ -145,11 +145,11 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
                                   "analytical implementation if both kernels are equal.")
 
     kernel = kern1
-    feature = feat1
+    inducing_variable = feat1
 
     # use only active dimensions
     Xcov = kernel.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
-    Z, Xmu = kernel.slice(feature.Z, p.mu)
+    Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
 
     N = Xmu.shape[0]
     D = Xmu.shape[1]

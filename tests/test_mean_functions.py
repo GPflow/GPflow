@@ -17,7 +17,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.features import InducingPoints
+from gpflow.inducing_variables import InducingPoints
 from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
 from gpflow.config import default_int
 
@@ -214,7 +214,7 @@ def test_models_with_mean_functions_changes(model_class):
     """
     X, Y = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, 1)
     Xtest = rng.randn(Datum.Ntest, Datum.input_dim)
-    features = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
+    inducing_variables = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
     zero_mean = Zero()
@@ -224,10 +224,11 @@ def test_models_with_mean_functions_changes(model_class):
         model_zero_mean = model_class(X, Y, kernel=kernel, mean_function=zero_mean)
         model_non_zero_mean = model_class(X, Y, kernel=kernel, mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SVGP]:
-        model_zero_mean = model_class(kernel=kernel, likelihood=likelihood, feature=features, mean_function=zero_mean)
+        model_zero_mean = model_class(kernel=kernel, likelihood=likelihood, inducing_variables=inducing_variables,
+                                      mean_function=zero_mean)
         model_non_zero_mean = model_class(kernel=kernel,
                                           likelihood=likelihood,
-                                          feature=features,
+                                          inducing_variables=inducing_variables,
                                           mean_function=non_zero_mean)
     else:
         raise (NotImplementedError)

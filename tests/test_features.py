@@ -16,16 +16,16 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 import gpflow
-from gpflow.features import InducingPoints, Multiscale
+from gpflow.inducing_variables import InducingPoints, Multiscale
 from gpflow.covariances import Kuu, Kuf
 from gpflow.config import default_jitter
 
 
 @pytest.mark.parametrize('N, D', [[17, 3], [10, 7]])
-def test_inducing_points_feature_len(N, D):
+def test_inducing_points_inducing_variable_len(N, D):
     Z = np.random.randn(N, D)
-    features = InducingPoints(Z)
-    assert_equal(len(features), N)
+    inducing_variables = InducingPoints(Z)
+    assert_equal(len(inducing_variables), N)
 
 
 _kernel_setups = [
@@ -39,10 +39,10 @@ _kernel_setups = [
 @pytest.mark.parametrize('N', [10, 101])
 @pytest.mark.parametrize('kernel', _kernel_setups)
 def test_inducing_equivalence(N, kernel):
-    # Inducing features must be the same as the kernel evaluations
+    # Inducing inducing must be the same as the kernel evaluations
     Z = np.random.randn(N, 5)
-    features = InducingPoints(Z)
-    assert_allclose(Kuu(features, kernel), kernel(Z))
+    inducing_variables = InducingPoints(Z)
+    assert_allclose(Kuu(inducing_variables, kernel), kernel(Z))
 
 
 @pytest.mark.parametrize('N, M, D', [[23, 13, 3], [10, 5, 7]])
@@ -50,19 +50,19 @@ def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
     # Multiscale must be equivalent to inducing points when variance is zero
     Xnew, Z = np.random.randn(N, D), np.random.randn(M, D)
     rbf = gpflow.kernels.RBF(1.3441, lengthscale=np.random.uniform(0.5, 3., D))
-    feature_zero_lengthscale = Multiscale(Z, scales=np.zeros(Z.shape))
-    feature_inducing_point = InducingPoints(Z)
+    inducing_variable_zero_lengthscale = Multiscale(Z, scales=np.zeros(Z.shape))
+    inducing_variable_inducing_point = InducingPoints(Z)
 
-    multi_scale_Kuf = Kuf(feature_zero_lengthscale, rbf, Xnew)
-    inducing_point_Kuf = Kuf(feature_inducing_point, rbf, Xnew)
+    multi_scale_Kuf = Kuf(inducing_variable_zero_lengthscale, rbf, Xnew)
+    inducing_point_Kuf = Kuf(inducing_variable_inducing_point, rbf, Xnew)
 
     deviation_percent_Kuf = np.max(
         np.abs(multi_scale_Kuf - inducing_point_Kuf) / inducing_point_Kuf *
         100)
     assert deviation_percent_Kuf < 0.1
 
-    multi_scale_Kuu = Kuu(feature_zero_lengthscale, rbf)
-    inducing_point_Kuu = Kuu(feature_inducing_point, rbf)
+    multi_scale_Kuu = Kuu(inducing_variable_zero_lengthscale, rbf)
+    inducing_point_Kuu = Kuu(inducing_variable_inducing_point, rbf)
 
     deviation_percent_Kuu = np.max(
         np.abs(multi_scale_Kuu - inducing_point_Kuu) / inducing_point_Kuu *
@@ -70,7 +70,7 @@ def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
     assert deviation_percent_Kuu < 0.1
 
 
-_features_and_kernels = [
+_inducing_variables_and_kernels = [
     [
         InducingPoints(np.random.randn(71, 2)),
         gpflow.kernels.RBF(variance=1.84,
@@ -90,12 +90,12 @@ _features_and_kernels = [
 ]
 
 
-@pytest.mark.parametrize('feature, kernel', _features_and_kernels)
-def test_features_psd_schur(feature, kernel):
+@pytest.mark.parametrize('inducing_variable, kernel', _inducing_variables_and_kernels)
+def test_inducing_variables_psd_schur(inducing_variable, kernel):
     # Conditional variance must be PSD.
     X = np.random.randn(5, 2)
-    Kuf_values = Kuf(feature, kernel, X)
-    Kuu_values = Kuu(feature, kernel, jitter=default_jitter())
+    Kuf_values = Kuf(inducing_variable, kernel, X)
+    Kuu_values = Kuu(inducing_variable, kernel, jitter=default_jitter())
     Kff_values = kernel(X)
     Qff_values = Kuf_values.numpy().T @ np.linalg.solve(Kuu_values, Kuf_values)
     assert np.all(np.linalg.eig(Kff_values - Qff_values)[0] > 0.0)

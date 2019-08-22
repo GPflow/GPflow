@@ -3,7 +3,7 @@
 import tensorflow as tf
 
 from ..covariances import Kuf, Kuu
-from ..features import InducingFeature
+from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..utilities.ops import eye
 from ..config import default_jitter
@@ -11,9 +11,9 @@ from .dispatch import conditional
 from .util import base_conditional, expand_independent_outputs
 
 
-@conditional.register(object, InducingFeature, Kernel, object)
+@conditional.register(object, InducingVariables, Kernel, object)
 def _conditional(Xnew: tf.Tensor,
-                 feature: InducingFeature,
+                 inducing_variable: InducingVariables,
                  kernel: Kernel,
                  function: tf.Tensor,
                  *,
@@ -52,8 +52,8 @@ def _conditional(Xnew: tf.Tensor,
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    Kmm = Kuu(feature, kernel, jitter=default_jitter())  # [M, M]
-    Kmn = Kuf(feature, kernel, Xnew)  # [M, N]
+    Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
+    Kmn = Kuf(inducing_variable, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, full=full_cov)
     fmean, fvar = base_conditional(Kmn,
                                    Kmm,
