@@ -15,7 +15,7 @@ rng = np.random.RandomState(9911)
 
 
 def make_kernel():
-    return gpflow.kernels.RBF()
+    return gpflow.kernels.SquaredExponential()
 
 
 def make_kernels(num):

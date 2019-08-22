@@ -75,40 +75,40 @@ _distrs = {
 
 _kerns = {
     'rbf':
-    kernels.RBF(variance=rng.rand(), lengthscale=rng.rand() + 1.),
+    kernels.SquaredExponential(variance=rng.rand(), lengthscale=rng.rand() + 1.),
     'lin':
     kernels.Linear(variance=rng.rand()),
     'matern':
     kernels.Matern32(variance=rng.rand()),
     'rbf_act_dim_0':
-    kernels.RBF(variance=rng.rand(),
-                lengthscale=rng.rand() + 1.,
-                active_dims=[0]),
+    kernels.SquaredExponential(variance=rng.rand(),
+                               lengthscale=rng.rand() + 1.,
+                               active_dims=[0]),
     'rbf_act_dim_1':
-    kernels.RBF(variance=rng.rand(),
-                lengthscale=rng.rand() + 1.,
-                active_dims=[1]),
+    kernels.SquaredExponential(variance=rng.rand(),
+                               lengthscale=rng.rand() + 1.,
+                               active_dims=[1]),
     'lin_act_dim_0':
     kernels.Linear(variance=rng.rand(), active_dims=[0]),
     'lin_act_dim_1':
     kernels.Linear(variance=rng.rand(), active_dims=[1]),
     'rbf_lin_sum':
     kernels.Sum([
-        kernels.RBF(variance=rng.rand(), lengthscale=rng.rand() + 1.),
+        kernels.SquaredExponential(variance=rng.rand(), lengthscale=rng.rand() + 1.),
         kernels.Linear(variance=rng.rand())
     ]),
     'rbf_lin_sum2':
     kernels.Sum([
         kernels.Linear(variance=rng.rand()),
-        kernels.RBF(variance=rng.rand(), lengthscale=rng.rand() + 1.),
+        kernels.SquaredExponential(variance=rng.rand(), lengthscale=rng.rand() + 1.),
         kernels.Linear(variance=rng.rand()),
-        kernels.RBF(variance=rng.rand(), lengthscale=rng.rand() + 1.),
+        kernels.SquaredExponential(variance=rng.rand(), lengthscale=rng.rand() + 1.),
     ]),
     'rbf_lin_prod':
     kernels.Product([
-        kernels.RBF(variance=rng.rand(),
-                    lengthscale=rng.rand() + 1.,
-                    active_dims=[0]),
+        kernels.SquaredExponential(variance=rng.rand(),
+                                   lengthscale=rng.rand() + 1.,
+                                   active_dims=[0]),
         kernels.Linear(variance=rng.rand(), active_dims=[1])
     ])
 }
@@ -218,7 +218,7 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     Ensure that <K_{Z, x} K_{x, Z}>_p(x) is not NaN and correct, when
     K_{Z, Z} is zero with finite precision. See pull request #595.
     """
-    kernel = gpflow.kernels.RBF(1, lengthscale=0.1)
+    kernel = gpflow.kernels.SquaredExponential(1, lengthscale=0.1)
     kernel.variance <<= 2.
 
     p = gpflow.probability_distributions.Gaussian(

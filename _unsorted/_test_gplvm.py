@@ -64,7 +64,7 @@ class TestBayesianGPLVM(GPflowTestCase):
     def test_1d(self):
         with self.test_context():
             Q = 1  # latent dimensions
-            k = kernels.RBF(Q)
+            k = kernels.SquaredExponential(Q)
             Z = np.linspace(0, 1, self.M)
             Z = np.expand_dims(Z, Q)  # inducing points
             m = gpflow.models.BayesianGPLVM(
@@ -84,7 +84,7 @@ class TestBayesianGPLVM(GPflowTestCase):
             # test default Z on 2_D example
             Q = 2  # latent dimensions
             X_mean = gpflow.models.PCA_reduce(self.Y, Q)
-            k = kernels.RBF(Q, ARD=False)
+            k = kernels.SquaredExponential(Q, ARD=False)
             m = gpflow.models.BayesianGPLVM(
                 X_mean=X_mean,
                 X_var=np.ones((self.N, Q)),

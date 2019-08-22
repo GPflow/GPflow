@@ -21,7 +21,7 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.config import default_float, default_int
-from gpflow.kernels import (RBF, ArcCosine, Constant, Linear, Periodic,
+from gpflow.kernels import (SquaredExponential, ArcCosine, Constant, Linear, Periodic,
                             Polynomial, Stationary)
 
 rng = np.random.RandomState(1)
@@ -83,7 +83,7 @@ def _ref_periodic(X, lengthScale, signal_variance, period):
 @pytest.mark.parametrize('variance, lengthscale', [[2.3, 1.4]])
 def test_rbf_1d(variance, lengthscale):
     X = rng.randn(3, 1)
-    kernel = gpflow.kernels.RBF(lengthscale=lengthscale, variance=variance)
+    kernel = gpflow.kernels.SquaredExponential(lengthscale=lengthscale, variance=variance)
 
     gram_matrix = kernel(X)
     reference_gram_matrix = _ref_rbf(X, lengthscale, variance)
@@ -93,7 +93,7 @@ def test_rbf_1d(variance, lengthscale):
 
 @pytest.mark.parametrize('variance, lengthscale', [[2.3, 1.4]])
 def test_rq_1d(variance, lengthscale):
-    kSE = gpflow.kernels.RBF(lengthscale=lengthscale, variance=variance)
+    kSE = gpflow.kernels.SquaredExponential(lengthscale=lengthscale, variance=variance)
     kRQ = gpflow.kernels.RationalQuadratic(lengthscale=lengthscale,
                                            variance=variance,
                                            alpha=1e8)
@@ -235,7 +235,7 @@ def test_coregion_slice(N, input_dim, output_dim, rank):
                                       active_dims=[0])
     # compute another kernel with additinoal inputs,
     # make sure out kernel is still okay.
-    kernel2 = gpflow.kernels.RBF(active_dims=[1])
+    kernel2 = gpflow.kernels.SquaredExponential(active_dims=[1])
     kernel_prod = kernel1 * kernel2
     K1 = kernel_prod(X)
     K2 = kernel1(X) * kernel2(X)  # slicing happens inside kernel
@@ -244,9 +244,9 @@ def test_coregion_slice(N, input_dim, output_dim, rank):
 
 _dim = 3
 kernel_setups_extended = kernel_setups + [
-    RBF() + Linear(),
-    RBF() * Linear(),
-    RBF() + Linear(ard=True, variance=rng.rand(_dim, 1).reshape(-1))
+    SquaredExponential() + Linear(),
+    SquaredExponential() * Linear(),
+    SquaredExponential() + Linear(ard=True, variance=rng.rand(_dim, 1).reshape(-1))
 ] + [ArcCosine(order=order) for order in ArcCosine.implemented_orders]
 
 
@@ -262,8 +262,8 @@ def test_diags(kernel, N, dim):
 # Add a rbf and linear kernel, make sure the result is the same as adding the result of
 # the kernels separately.
 _kernel_setups_add = [
-    gpflow.kernels.RBF(),
-    gpflow.kernels.Linear(), (gpflow.kernels.RBF() + gpflow.kernels.Linear())
+    gpflow.kernels.SquaredExponential(),
+    gpflow.kernels.Linear(), (gpflow.kernels.SquaredExponential() + gpflow.kernels.Linear())
 ]
 
 
@@ -357,7 +357,7 @@ def test_active_product(N, D):
         np.hstack([ls[:rand_idx], ls[rand_idx + 1:]]), ls[rand_idx], ls
     ]
     kernels = [
-        gpflow.kernels.RBF(lengthscale=lengthscale, active_dims=dims, ard=True)
+        gpflow.kernels.SquaredExponential(lengthscale=lengthscale, active_dims=dims, ard=True)
         for dims, lengthscale in zip(active_dims_list, lengthscale_list)
     ]
     kernel_prod = kernels[0] * kernels[1]
@@ -374,8 +374,8 @@ def test_ard_init_scalar(D):
     For ard kernels, make sure that kernels can be instantiated with a single
     lengthscale or a suitable array of lengthscale
     """
-    kernel_1 = gpflow.kernels.RBF(lengthscale=2.3)
-    kernel_2 = gpflow.kernels.RBF(lengthscale=np.ones(D) * 2.3, ard=True)
+    kernel_1 = gpflow.kernels.SquaredExponential(lengthscale=2.3)
+    kernel_2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(D) * 2.3, ard=True)
     lengthscale_1 = kernel_1.lengthscale.read_value()
     lengthscale_2 = kernel_2.lengthscale.read_value()
     assert np.allclose(lengthscale_1, lengthscale_2, atol=1e-10)
@@ -385,10 +385,10 @@ def test_ard_init_scalar(D):
 @pytest.mark.parametrize('ard', [True, False, None])
 def test_ard_init_shapes(N, ard):
     with pytest.raises(tf.errors.InvalidArgumentError):
-        k1 = gpflow.kernels.RBF(lengthscale=np.ones(2), ard=ard)
+        k1 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), ard=ard)
         k1(rng.randn(N, 4))
     with pytest.raises(tf.errors.InvalidArgumentError):
-        k2 = gpflow.kernels.RBF(lengthscale=np.ones(3), ard=ard)
+        k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3), ard=ard)
         k2(rng.randn(N, 2))
 
 

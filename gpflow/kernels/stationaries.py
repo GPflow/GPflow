@@ -62,7 +62,7 @@ class Stationary(Kernel):
         raise NotImplementedError
 
 
-class RBF(Stationary):
+class SquaredExponential(Stationary):
     """
     The radial basis function (RBF) or squared exponential kernel. The kernel equation is
 

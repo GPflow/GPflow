@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from ..inducing_variables import InducingPoints, Multiscale
-from ..kernels import Kernel, RBF
+from ..kernels import Kernel, SquaredExponential
 from .dispatch import Kuu
 
 
@@ -12,8 +12,8 @@ def _Kuu(inducing_variable: InducingPoints, kernel: Kernel, *, jitter=0.0):
     return Kzz
 
 
-@Kuu.register(Multiscale, RBF)
-def _Kuu(inducing_variable: Multiscale, kernel: RBF, *, jitter=0.0):
+@Kuu.register(Multiscale, SquaredExponential)
+def _Kuu(inducing_variable: Multiscale, kernel: SquaredExponential, *, jitter=0.0):
     Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
     idlengthscale2 = tf.square(kernel.lengthscale + Zlen)
     sc = tf.sqrt(idlengthscale2[None, ...] + idlengthscale2[:, None, ...] -
