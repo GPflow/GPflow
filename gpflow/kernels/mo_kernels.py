@@ -141,7 +141,7 @@ class IndependentLatent(MultioutputKernel):
         pass
 
 
-class LinearCoregionalisation(IndependentLatent, Combination):
+class LinearCoregionalization(IndependentLatent, Combination):
     """
     Linear mixing of the latent GPs to form the output.
     """

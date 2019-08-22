@@ -55,7 +55,7 @@ multioutput_inducing_variable_list = [
 multioutput_kernel_list = [
     mk.SharedIndependent(make_kernel(), Datum.P),
     mk.SeparateIndependent(make_kernels(Datum.L)),
-    mk.LinearCoregionalisation(make_kernels(Datum.L), Datum.W)
+    mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
 ]
 
 
@@ -75,7 +75,7 @@ def test_kuf(inducing_variable, kernel):
 @pytest.mark.parametrize('fun', [mo_kuus.Kuu, mo_kufs.Kuf])
 def test_mixed_shared(fun):
     inducing_variables = mf.SharedIndependentInducingVariables(make_ip())
-    kernel = mk.LinearCoregionalisation(make_kernels(Datum.L), Datum.W)
+    kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
     if fun is mo_kuus.Kuu:
         t = tf.linalg.cholesky(fun(inducing_variables, kernel, jitter=1e-9))
     else:

@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from ..inducing_variables import (InducingPoints, FallbackSharedIndependentInducingVariables,
                                   FallbackSeparateIndependentInducingVariables, SharedIndependentInducingVariables)
-from ..kernels import (MultioutputKernel, SeparateIndependent, LinearCoregionalisation,
+from ..kernels import (MultioutputKernel, SeparateIndependent, LinearCoregionalization,
                        SharedIndependent, IndependentLatent)
 from .dispatch import Kuu
 
@@ -50,9 +50,9 @@ def _Kuu(inducing_variable: FallbackSeparateIndependentInducingVariables,
 
 
 @Kuu.register(FallbackSeparateIndependentInducingVariables,
-              (SeparateIndependent, LinearCoregionalisation))
+              (SeparateIndependent, LinearCoregionalization))
 def _Kuu(inducing_variable: FallbackSeparateIndependentInducingVariables,
-         kernel: Union[SeparateIndependent, LinearCoregionalisation],
+         kernel: Union[SeparateIndependent, LinearCoregionalization],
          *,
          jitter=0.0):
     Kmms = [Kuu(f, k) for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)]

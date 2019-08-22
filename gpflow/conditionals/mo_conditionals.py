@@ -10,7 +10,7 @@ from ..inducing_variables import (InducingPoints, FallbackSharedIndependentInduc
                                   FallbackSeparateIndependentInducingVariables, SharedIndependentInducingVariables,
                                   SeparateIndependentInducingVariables)
 from ..kernels import (Combination, MultioutputKernel, SeparateIndependent, SharedIndependent, IndependentLatent,
-                       LinearCoregionalisation)
+                       LinearCoregionalization)
 from ..config import default_float, default_jitter
 from .dispatch import conditional
 from .util import (base_conditional, expand_independent_outputs, fully_correlated_conditional,
@@ -190,7 +190,7 @@ def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_out
 
 
 @conditional.register(object, (SharedIndependentInducingVariables, SeparateIndependentInducingVariables),
-                      LinearCoregionalisation, object)
+                      LinearCoregionalization, object)
 def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
                  white=False):
     """Most efficient routine to project L independent latent gps through a mixing matrix W.

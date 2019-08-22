@@ -5,7 +5,7 @@ import tensorflow as tf
 from ..inducing_variables import (InducingPoints, FallbackSharedIndependentInducingVariables,
                                   FallbackSeparateIndependentInducingVariables, SharedIndependentInducingVariables,
                                   SeparateIndependentInducingVariables)
-from ..kernels import (MultioutputKernel, SeparateIndependent, LinearCoregionalisation, SharedIndependent)
+from ..kernels import (MultioutputKernel, SeparateIndependent, LinearCoregionalization, SharedIndependent)
 from .dispatch import Kuf
 
 
@@ -37,21 +37,21 @@ def _Kuf(inducing_variable: SeparateIndependentInducingVariables, kernel: Separa
 
 
 @Kuf.register((FallbackSeparateIndependentInducingVariables, FallbackSharedIndependentInducingVariables),
-              LinearCoregionalisation,
+              LinearCoregionalization,
               object)
 def _Kuf(inducing_variable: Union[SeparateIndependentInducingVariables, SharedIndependentInducingVariables],
-         kernel: LinearCoregionalisation, Xnew: tf.Tensor):
+         kernel: LinearCoregionalization, Xnew: tf.Tensor):
     kuf_impl = Kuf.dispatch(type(inducing_variable), SeparateIndependent, object)
     K = tf.transpose(kuf_impl(inducing_variable, kernel, Xnew), [1, 0, 2])  # [M, L, N]
     return K[:, :, :, None] * tf.transpose(kernel.W)[None, :, None, :]  # [M, L, N, P]
 
 
-@Kuf.register(SharedIndependentInducingVariables, LinearCoregionalisation, object)
+@Kuf.register(SharedIndependentInducingVariables, LinearCoregionalization, object)
 def _Kuf(inducing_variable: SharedIndependentInducingVariables, kernel: SeparateIndependent, Xnew: tf.Tensor):
     return tf.stack([Kuf(inducing_variable.inducing_variable_shared, k, Xnew) for k in kernel.kernels], axis=0)  # [L, M, N]
 
 
-@Kuf.register(SeparateIndependentInducingVariables, LinearCoregionalisation, object)
+@Kuf.register(SeparateIndependentInducingVariables, LinearCoregionalization, object)
 def _Kuf(inducing_variable, kernel, Xnew):
     return tf.stack([Kuf(f, k, Xnew)
                      for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)], axis=0)  # [L, M, N]

@@ -67,7 +67,7 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
         q_mu = np.random.randn(Data.M, Data.L)
         q_sqrt = np.tril(np.random.randn(Data.L, Data.M, Data.M), -1)
         inducing_variable = mf.SharedIndependentInducingVariables(gpflow.inducing_variables.InducingPoints(Data.Z))
-        kernel = mk.LinearCoregionalisation(
+        kernel = mk.LinearCoregionalization(
             kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
             W=Data.W
         )

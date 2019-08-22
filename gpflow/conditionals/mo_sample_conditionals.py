@@ -1,12 +1,12 @@
 import tensorflow as tf
 
 from ..inducing_variables import SeparateIndependentInducingVariables, SharedIndependentInducingVariables
-from ..kernels import SeparateIndependent, LinearCoregionalisation
+from ..kernels import SeparateIndependent, LinearCoregionalization
 from .dispatch import conditional, sample_conditional
 from .util import sample_mvn, mix_latent_gp
 
 
-@sample_conditional.register(object, SharedIndependentInducingVariables, LinearCoregionalisation, object)
+@sample_conditional.register(object, SharedIndependentInducingVariables, LinearCoregionalization, object)
 def _sample_conditional(Xnew,
                         inducing_variable,
                         kernel,
