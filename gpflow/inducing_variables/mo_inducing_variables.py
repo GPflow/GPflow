@@ -23,7 +23,7 @@ class MultioutputInducingVariables(InducingVariables):
     consist of outputs of various independent GPs. This can be because our model
     uses multiple independent GPs (SharedIndependent, SeparateIndependent) or
     because it is constructed from independent GPs (eg IndependentLatent,
-    LinearCoregionalisation).
+    LinearCoregionalization).
     """
     pass
 
