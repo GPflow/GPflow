@@ -11,7 +11,7 @@ from .expectations import expectation
 NoneType = type(None)
 
 
-@dispatch.expectation.register(Gaussian, kernels.RBF, NoneType, NoneType, NoneType)
+@dispatch.expectation.register(Gaussian, kernels.SquaredExponential, NoneType, NoneType, NoneType)
 def _E(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
@@ -23,7 +23,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
     return kernel(p.mu, full=False)
 
 
-@dispatch.expectation.register(Gaussian, kernels.RBF, InducingPoints, NoneType, NoneType)
+@dispatch.expectation.register(Gaussian, kernels.SquaredExponential, InducingPoints, NoneType, NoneType)
 def _E(p, kernel, inducing_variable, _, __, nghp=None):
     """
     Compute the expectation:
@@ -55,7 +55,7 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
     return kernel.variance * (determinants[:, None] * exponent_mahalanobis)
 
 
-@dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
+@dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints)
 def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
@@ -89,7 +89,7 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     return kernel.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
-@dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
+@dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints)
 def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
@@ -123,7 +123,7 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     return kernel.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
-@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
+@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.SquaredExponential, InducingPoints, kernels.SquaredExponential, InducingPoints)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:

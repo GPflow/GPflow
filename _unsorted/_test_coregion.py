@@ -39,13 +39,13 @@ class TestEquivalence(GPflowTestCase):
 
         # 1. Two independent VGPs for two sets of data
 
-        k0 = gpflow.kernels.RBF(2)
+        k0 = gpflow.kernels.SquaredExponential(2)
         k0.lengthscale.trainable = False
         vgp0 = gpflow.models.VGP(
             X[0], Y[0], kernel=k0,
             mean_function=gpflow.mean_functions.Constant(),
             likelihood=gpflow.likelihoods.Gaussian())
-        k1 = gpflow.kernels.RBF(2)
+        k1 = gpflow.kernels.SquaredExponential(2)
         k1.lengthscale.trainable = False
         vgp1 = gpflow.models.VGP(
             X[1], Y[1], kernel=k1,
@@ -57,7 +57,7 @@ class TestEquivalence(GPflowTestCase):
         lik = gpflow.likelihoods.SwitchedLikelihood(
             [gpflow.likelihoods.Gaussian(), gpflow.likelihoods.Gaussian()])
 
-        kc = gpflow.kernels.RBF(2)
+        kc = gpflow.kernels.SquaredExponential(2)
         kc.trainable = False  # lengthscale and variance is fixed.
         coreg = gpflow.kernels.Coregion(1, output_dim=2, rank=1, active_dims=[2])
         coreg.W.trainable = False

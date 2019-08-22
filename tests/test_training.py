@@ -42,7 +42,7 @@ class Data:
 @pytest.fixture
 def model():
     return gpflow.models.SVGP(
-        kernel=gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var),
+        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
         likelihood=gpflow.likelihoods.Gaussian(),
         inducing_variables=Data.Z,
         q_diag=True

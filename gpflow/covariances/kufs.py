@@ -1,6 +1,6 @@
 import tensorflow as tf
 from ..inducing_variables import InducingPoints, Multiscale
-from ..kernels import Kernel, RBF
+from ..kernels import Kernel, SquaredExponential
 from .dispatch import Kuf
 
 
@@ -9,8 +9,8 @@ def _Kuf(inducing_variable: InducingPoints, kernel: Kernel, Xnew: tf.Tensor):
     return kernel(inducing_variable.Z, Xnew)
 
 
-@Kuf.register(Multiscale, RBF, object)
-def _Kuf(inducing_variable: Multiscale, kernel: RBF, Xnew):
+@Kuf.register(Multiscale, SquaredExponential, object)
+def _Kuf(inducing_variable: Multiscale, kernel: SquaredExponential, Xnew):
     Xnew, _ = kernel.slice(Xnew, None)
     Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
     idlengthscale = kernel.lengthscale + Zlen

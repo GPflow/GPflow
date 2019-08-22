@@ -136,7 +136,7 @@ MEANS = ["Constant", "Linear", "Zero", None]
 @pytest.mark.parametrize('mean', MEANS)
 def test_no_uncertainty(white, mean):
     mean_function = mean_function_factory(mean, Data.D_in, Data.D_out)
-    kernel = gpflow.kernels.RBF(variance=rng.rand())
+    kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     model = MomentMatchingSVGP(kernel,
                                gpflow.likelihoods.Gaussian(),
                                num_latent=Data.D_out,
@@ -166,7 +166,7 @@ def test_no_uncertainty(white, mean):
 @pytest.mark.parametrize('white', [True, False])
 @pytest.mark.parametrize('mean', MEANS)
 def test_monte_carlo_1_din(white, mean):
-    kernel = gpflow.kernels.RBF(variance=rng.rand())
+    kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     mean_function = mean_function_factory(mean, DataMC1.D_in, DataMC1.D_out)
     model = MomentMatchingSVGP(kernel,
                                gpflow.likelihoods.Gaussian(),
@@ -198,7 +198,7 @@ def test_monte_carlo_1_din(white, mean):
 @pytest.mark.parametrize('white', [True, False])
 @pytest.mark.parametrize('mean', MEANS)
 def test_monte_carlo_2_din(white, mean):
-    kernel = gpflow.kernels.RBF(variance=rng.rand())
+    kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     mean_function = mean_function_factory(mean, DataMC2.D_in, DataMC2.D_out)
     model = MomentMatchingSVGP(kernel,
                                gpflow.likelihoods.Gaussian(),
@@ -230,7 +230,7 @@ def test_monte_carlo_2_din(white, mean):
 @pytest.mark.parametrize('mean', MEANS)
 @pytest.mark.parametrize('white', [True, False])
 def test_quadrature(white, mean):
-    kernel = gpflow.kernels.RBF()
+    kernel = gpflow.kernels.SquaredExponential()
     inducing_variables = gpflow.inducing_variables.InducingPoints(DataQuad.Z)
     mean_function = mean_function_factory(mean, DataQuad.D_in, DataQuad.D_out)
 

@@ -17,7 +17,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.kernels import RBF
+from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
 from tests.reference import ref_rbf_kernel
 
@@ -118,7 +118,7 @@ def test_variational_univariate_prior_KL(diag, whiten):
     ones = np.ones((1, Datum.num_latent)) if diag else np.ones(
         (1, 1, Datum.num_latent))
     q_sqrt = ones * Datum.posterior_std
-    model = gpflow.models.SVGP(kernel=RBF(variance=Datum.K),
+    model = gpflow.models.SVGP(kernel=SquaredExponential(variance=Datum.K),
                                likelihood=Gaussian(),
                                inducing_variables=Datum.Z,
                                num_latent=Datum.num_latent,
@@ -140,7 +140,7 @@ def test_variational_univariate_log_likelihood(diag, whiten):
     ones = np.ones((1, Datum.num_latent)) if diag else np.ones(
         (1, 1, Datum.num_latent))
     q_sqrt = ones * Datum.posterior_std
-    model = gpflow.models.SVGP(kernel=RBF(variance=Datum.K),
+    model = gpflow.models.SVGP(kernel=SquaredExponential(variance=Datum.K),
                                likelihood=Gaussian(),
                                inducing_variables=Datum.Z,
                                num_latent=Datum.num_latent,
@@ -161,7 +161,7 @@ def test_variational_univariate_conditionals(diag, whiten):
     ones = np.ones((1, Datum.num_latent)) if diag else np.ones(
         (1, 1, Datum.num_latent))
     q_sqrt = ones * Datum.posterior_std
-    model = gpflow.models.SVGP(kernel=RBF(variance=Datum.K),
+    model = gpflow.models.SVGP(kernel=SquaredExponential(variance=Datum.K),
                                likelihood=Gaussian(),
                                inducing_variables=Datum.Z,
                                num_latent=Datum.num_latent,
@@ -193,8 +193,8 @@ def test_variational_multivariate_prior_KL_full_q(whiten):
                                          cov_prior)
 
     q_sqrt = MultiDatum.q_sqrt_full[None, :, :]
-    model = gpflow.models.SVGP(kernel=RBF(variance=MultiDatum.signal_var,
-                                          lengthscale=MultiDatum.ls),
+    model = gpflow.models.SVGP(kernel=SquaredExponential(variance=MultiDatum.signal_var,
+                                                         lengthscale=MultiDatum.ls),
                                likelihood=Gaussian(MultiDatum.noise_var),
                                inducing_variables=MultiDatum.Z,
                                num_latent=MultiDatum.num_latent,

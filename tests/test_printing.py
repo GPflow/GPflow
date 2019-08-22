@@ -54,7 +54,7 @@ class B(tf.Module):
 
 
 def create_kernel():
-    kern = gpflow.kernels.RBF(lengthscale=Data.ls, variance=Data.var)
+    kern = gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var)
     kern.lengthscale.trainable = False
     return kern
 
@@ -95,12 +95,12 @@ example_module_list_variable_dict = {
 }
 
 kernel_param_dict = {
-    'RBF.lengthscale': {
+    'SquaredExponential.lengthscale': {
         'value': Data.ls,
         'trainable': False,
         'shape': ()
     },
-    'RBF.variance': {
+    'SquaredExponential.variance': {
         'value': Data.var,
         'trainable': True,
         'shape': ()
@@ -108,8 +108,8 @@ kernel_param_dict = {
 }
 
 model_gp_param_dict = {
-    'kernel.lengthscale': kernel_param_dict['RBF.lengthscale'],
-    'kernel.variance': kernel_param_dict['RBF.variance'],
+    'kernel.lengthscale': kernel_param_dict['SquaredExponential.lengthscale'],
+    'kernel.variance': kernel_param_dict['SquaredExponential.variance'],
     'likelihood.variance': {
         'value': 1.0,
         'trainable': True,
@@ -133,7 +133,7 @@ model_gp_param_dict = {
 }
 
 example_dag_module_param_dict = {
-    'SVGP.kernel.variance\nSVGP.kernel.lengthscale': kernel_param_dict['RBF.lengthscale'],
+    'SVGP.kernel.variance\nSVGP.kernel.lengthscale': kernel_param_dict['SquaredExponential.lengthscale'],
     'SVGP.likelihood.variance': {
         'value': 1.0,
         'trainable': True,

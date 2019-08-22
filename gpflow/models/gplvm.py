@@ -45,13 +45,13 @@ class GPLVM(GPR):
         :param Y: data matrix, size N (number of points) x D (dimensions)
         :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions)
         :param X_mean: latent positions ([N, Q]), for the initialisation of the latent space.
-        :param kernel: kernel specification, by default RBF
+        :param kernel: kernel specification, by default Squared Exponential
         :param mean_function: mean function, by default None.
         """
         if mean_function is None:
             mean_function = Zero()
         if kernel is None:
-            kernel = kernels.RBF(latent_dim, ARD=True)
+            kernel = kernels.SquaredExponential(latent_dim, ARD=True)
         if X_mean is None:
             X_mean = PCA_reduce(Y, latent_dim)
         num_latent = X_mean.shape[1]
@@ -85,7 +85,7 @@ class BayesianGPLVM(GPModel):
         :param X_mean: initial latent positions, size N (number of points) x Q (latent dimensions).
         :param X_var: variance of latent positions ([N, Q]), for the initialisation of the latent space.
         :param Y: data matrix, size N (number of points) x D (dimensions)
-        :param kernel: kernel specification, by default RBF
+        :param kernel: kernel specification, by default Squared Exponential
         :param M: number of inducing points
         :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions). By default
         random permutation of X_mean.
