@@ -16,15 +16,32 @@
 
 import tensorflow as tf
 from .config import default_float
+from multipledispatch import Dispatcher
+from .inducing_variables import InducingVariables
+from .kernels import Kernel
+from .covariances.kuus import Kuu
+from .config import default_jitter
+
+prior_kl = Dispatcher('prior_kl')
 
 
-def gauss_kl(q_mu, q_sqrt, K=None):
+@prior_kl.register(InducingVariables, Kernel)
+def prior_kl(inducing_variables, kernel, q_mu, q_sqrt, whiten=False):
+    if whiten:
+        return full_cov_gauss_kl(q_mu, q_sqrt, None)
+    else:
+        K = Kuu(inducing_variables, kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
+        return full_cov_gauss_kl(q_mu, q_sqrt, K)
+
+
+def full_cov_gauss_kl(q_mu, q_sqrt, K=None):
     """
     Compute the KL divergence KL[q || p] between
 
           q(x) = N(q_mu, q_sqrt^2)
     and
-          p(x) = N(0, K)
+          p(x) = N(0, K)    if K is not None
+          p(x) = N(0, I)    if K is None
 
     We assume N multiple independent distributions, given by the columns of
     q_mu and the last dimension of q_sqrt. Returns the sum of the divergences.

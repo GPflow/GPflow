@@ -17,7 +17,7 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow.kullback_leiblers import gauss_kl
+from gpflow.kullback_leiblers import full_cov_gauss_kl
 from numpy.testing import assert_almost_equal
 import pytest
 
@@ -84,8 +84,8 @@ def test_diags(session_tf, white, mu, sqrt_diag, K):
     # the chols are diagonal matrices, with the same entries as the diag representation.
     chol_from_diag = tf.stack([tf.linalg.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # [N, M, M]
     # run
-    kl_diag = gauss_kl(mu, sqrt_diag, K if white else None)
-    kl_dense = gauss_kl(mu, chol_from_diag, K if white else None)
+    kl_diag = full_cov_gauss_kl(mu, sqrt_diag, K if white else None)
+    kl_dense = full_cov_gauss_kl(mu, chol_from_diag, K if white else None)
 
     np.testing.assert_allclose(kl_diag.eval(), kl_dense.eval())
 
@@ -98,8 +98,8 @@ def test_whitened(session_tf, diag, mu, sqrt_diag, I):
     chol_from_diag = tf.stack([tf.linalg.diag(sqrt_diag[:, i]) for i in range(Datum.N)]) # [N, M, M]
     s = sqrt_diag if diag else chol_from_diag
 
-    kl_white = gauss_kl(mu, s)
-    kl_nonwhite = gauss_kl(mu, s, I)
+    kl_white = full_cov_gauss_kl(mu, s)
+    kl_nonwhite = full_cov_gauss_kl(mu, s, I)
 
     np.testing.assert_allclose(kl_white.eval(), kl_nonwhite.eval())
 
@@ -118,12 +118,12 @@ def test_sumkl_equals_batchkl(session_tf, shared_k, diag, mu,
     p(x_i) has covariance [M, M]
     """
     s = sqrt_diag if diag else sqrt
-    kl_batch = gauss_kl(mu,s,K if shared_k else K_batch)
+    kl_batch = full_cov_gauss_kl(mu, s, K if shared_k else K_batch)
     kl_sum = []
     for n in range(Datum.N):
-        kl_sum.append(gauss_kl(mu[:, n][:,None], # [M, 1]
-            sqrt_diag[:, n][:, None] if diag else sqrt[n, :, :][None, :, :], # [1, M, M] or [M, 1]
-            K if shared_k else K_batch[n, :, :][None,:,:])) # [1, M, M] or [M, M]
+        kl_sum.append(full_cov_gauss_kl(mu[:, n][:, None],  # [M, 1]
+            sqrt_diag[:, n][:, None] if diag else sqrt[n, :, :][None, :, :],  # [1, M, M] or [M, 1]
+                                        K if shared_k else K_batch[n, :, :][None,:,:])) # [1, M, M] or [M, M]
     kl_sum =tf.reduce_sum(kl_sum)
     assert_almost_equal(kl_sum.eval(), kl_batch.eval())
 
@@ -145,7 +145,7 @@ def test_oned(session_tf, white, mu, sqrt, K_batch):
     s1d = sqrt[:,m,m][:,None,None] # [N, 1, 1]
     K1d = K_batch[:,m,m][:,None,None] # [N, 1, 1]
 
-    kl = gauss_kl(mu1d,s1d,K1d if not white else None)
+    kl = full_cov_gauss_kl(mu1d, s1d, K1d if not white else None)
     kl_tf = tf_kl_1d(tf.reshape(mu1d,(-1,)), # N
                    tf.reshape(s1d,(-1,)), # N
                    None if white else tf.reshape(K1d,(-1,))) # N
@@ -164,8 +164,8 @@ def test_unknown_size_inputs(session_tf):
     sqrt = np.ones([4, 1, 1], dtype=default_float())
 
     feed_dict = {mu_ph: mu, sqrt_ph: sqrt}
-    known_shape_tf = gauss_kl(*map(tf.constant, [mu, sqrt]))
-    unknown_shape_tf = gauss_kl(mu_ph, sqrt_ph)
+    known_shape_tf = full_cov_gauss_kl(*map(tf.constant, [mu, sqrt]))
+    unknown_shape_tf = full_cov_gauss_kl(mu_ph, sqrt_ph)
 
     known_shape = session_tf.run(known_shape_tf)
     unknown_shape = session_tf.run(unknown_shape_tf, feed_dict=feed_dict)

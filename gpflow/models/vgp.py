@@ -21,7 +21,7 @@ from ..base import Parameter
 from ..config import default_float, default_jitter
 from ..mean_functions import Zero
 from ..conditionals import conditional
-from ..kullback_leiblers import gauss_kl
+from ..kullback_leiblers import full_cov_gauss_kl
 from ..models.model import GPModel, GPModelOLD
 
 
@@ -97,7 +97,7 @@ class VGP(GPModelOLD):
         """
 
         # Get prior KL.
-        KL = gauss_kl(self.q_mu, self.q_sqrt)
+        KL = full_cov_gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
         K = self.kernel(self.X) + tf.eye(

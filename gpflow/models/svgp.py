@@ -136,11 +136,7 @@ class SVGP(GPModel):
                                         transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
-        K = None
-        if not self.whiten:
-            K = Kuu(self.inducing_variables, self.kernel,
-                    jitter=default_jitter())  # [P, M, M] or [M, M]
-        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
+        return kullback_leiblers.prior_kl(self.inducing_variables, self.kernel, self.q_mu, self.q_sqrt, self.whiten)
 
     def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
