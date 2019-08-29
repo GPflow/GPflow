@@ -337,6 +337,7 @@ class TestVGP(GPflowTestCase):
             m.compile()
             self.assertTupleEqual(m.q_mu.shape, (11, 1))
             self.assertTupleEqual(m.q_sqrt.shape, (1, 11, 11))
+            opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m, maxiter=5)
 
     def test_nested_data_update(self):

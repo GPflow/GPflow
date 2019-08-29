@@ -21,10 +21,8 @@ import gpflow
 from gpflow.actions import Loop
 from gpflow.test_util import GPflowTestCase, session_tf
 from gpflow.training import GradientDescentOptimizer
-from gpflow.training.natgrad_optimizer import (NatGradOptimizer, XiSqrtMeanVar,
-                                               expectation_to_meanvarsqrt,
-                                               meanvarsqrt_to_expectation,
-                                               natural_to_expectation)
+from gpflow.training.natgrad_optimizer import (NatGradOptimizer, XiSqrtMeanVar, expectation_to_meanvarsqrt,
+                                               meanvarsqrt_to_expectation, natural_to_expectation)
 from gpflow.training.optimizer import Optimizer
 from gpflow.training.tensorflow_optimizer import _TensorFlowOptimizer
 
@@ -87,12 +85,12 @@ class OptimizerCase:
             self.assertFalse(session1 == session2)
             gpflow.reset_default_session()
             opt = self.optimizer()
-            opt.minimize(demo, maxiter=1, initialize=True)
+            opt.minimize(demo, maxiter=1)
 
         # Mild initialization requirement: pass session case.
         with self.test_context() as session3:
             opt = self.optimizer()
-            opt.minimize(demo, maxiter=1, session=session3, initialize=True)
+            opt.minimize(demo, maxiter=1, session=session3)
 
     def test_optimizer_with_var_list(self):
         with self.test_context():
@@ -119,7 +117,9 @@ class OptimizerCase:
             opt.minimize(demo,
                          var_list=[var1],
                          feed_dict={placeholder: [1., 2]},
-                         maxiter=5, initialize=False, anchor=False)
+                         maxiter=5,
+                         initialize=False,
+                         anchor=False)
 
             # Var list variable is not trainable
             session.run(var2.initializer)
@@ -129,8 +129,12 @@ class OptimizerCase:
             # are not present in objective.
             demo._objective += var3
             with self.assertRaises(tf.errors.FailedPreconditionError):
-                opt.minimize(demo, session=session, var_list=[var3], maxiter=1,
-                             initialize=False, anchor=False)
+                self.optimizer().minimize(demo,
+                                          session=session,
+                                          var_list=[var3],
+                                          maxiter=1,
+                                          initialize=False,
+                                          anchor=False)
 
     def test_optimizer_tensors(self):
         with self.test_context():
@@ -151,7 +155,6 @@ class OptimizerCase:
             with self.assertRaises(ValueError):
                 opt.minimize(None, maxiter=0)
 
-
     def test_external_variables_in_model(self):
         with self.test_context():
             dfloat = gpflow.settings.float_type
@@ -164,26 +167,23 @@ class OptimizerCase:
             var2 = tf.get_variable('var2', initializer=var2_init, dtype=dfloat)
             var3 = tf.get_variable('var3', initializer=var3_init, trainable=False, dtype=dfloat)
 
-            opt = self.optimizer()
-
         # Just initialize variable, but do not use it in training
         with self.test_context() as session:
             gpflow.reset_default_session()
             demo1 = Demo(add_to_inits=[var1], add_to_trainables=[], name="demo1")
-            opt.minimize(demo1, maxiter=10)
+            self.optimizer().minimize(demo1, maxiter=10)
             self.assertEqual(session.run(var1), var1_init)
 
         with self.test_context() as session:
             gpflow.reset_default_session()
             with self.assertRaises(tf.errors.FailedPreconditionError):
                 demo2 = Demo(add_to_inits=[], add_to_trainables=[var2], name="demo2")
-                opt.minimize(demo2, maxiter=10)
+                self.optimizer().minimize(demo2, maxiter=10)
 
         with self.test_context() as session:
             gpflow.reset_default_session()
-            demo3 = Demo(add_to_inits=[var1, var2, var3],
-                         add_to_trainables=[var2, var3], name="demo3")
-            opt.minimize(demo3, maxiter=10)
+            demo3 = Demo(add_to_inits=[var1, var2, var3], add_to_trainables=[var2, var3], name="demo3")
+            self.optimizer().minimize(demo3, maxiter=10)
 
             self.assertEqual(session.run(var1), var1_init)
             self.assertFalse(session.run(var3) == var3_init)
@@ -217,6 +217,7 @@ class TestRMSPropOptimizer(GPflowTestCase, OptimizerCase):
 class TestFtrlOptimizer(GPflowTestCase, OptimizerCase):
     optimizer = lambda _self: gpflow.train.FtrlOptimizer(0.1)
 
+
 # class TestProximalAdagradOptimizer(GPflowTestCase, OptimizerCase):
 #     optimizer = lambda _self: gpflow.train.ProximalAdagradOptimizer(0.1)
 #
@@ -227,7 +228,6 @@ class TestFtrlOptimizer(GPflowTestCase, OptimizerCase):
 # E               TypeError: Input 'lr' of 'ApplyProximalAdagrad' Op has type float32 that does not match type float64 of argument 'var'.
 #
 # ../../anaconda3/lib/python3.6/site-packages/tensorflow/python/framework/op_def_library.py:546: TypeError
-
 
 
 def test_scipy_optimizer_options(session_tf):
@@ -244,6 +244,7 @@ def test_scipy_optimizer_options(session_tf):
     assert gtol in o1.optimizer.optimizer_kwargs['options']
     assert o1.optimizer.optimizer_kwargs['options'][gtol] == gtol_value
     assert gtol not in o2.optimizer.optimizer_kwargs['options']
+
 
 def test_small_q_sqrt_handeled_correctly(session_tf):
     """
@@ -268,8 +269,8 @@ def test_small_q_sqrt_handeled_correctly(session_tf):
     m_vgp.q_sqrt = np.eye(N)[None, :, :] * 1e-3
     NatGradOptimizer(1.).minimize(m_vgp, [(m_vgp.q_mu, m_vgp.q_sqrt)], maxiter=1)
 
-    assert_allclose(m_gpr.compute_log_likelihood(),
-                    m_vgp.compute_log_likelihood(), atol=1e-4)
+    assert_allclose(m_gpr.compute_log_likelihood(), m_vgp.compute_log_likelihood(), atol=1e-4)
+
 
 def test_VGP_vs_GPR(session_tf):
     """
@@ -293,8 +294,7 @@ def test_VGP_vs_GPR(session_tf):
     m_vgp.q_sqrt.set_trainable(True)
     NatGradOptimizer(1.).minimize(m_vgp, [(m_vgp.q_mu, m_vgp.q_sqrt)], maxiter=1)
 
-    assert_allclose(m_gpr.compute_log_likelihood(),
-                    m_vgp.compute_log_likelihood(), atol=1e-4)
+    assert_allclose(m_gpr.compute_log_likelihood(), m_vgp.compute_log_likelihood(), atol=1e-4)
 
 
 def test_other_XiTransform_VGP_vs_GPR(session_tf, xi_transform=XiSqrtMeanVar()):
@@ -319,8 +319,7 @@ def test_other_XiTransform_VGP_vs_GPR(session_tf, xi_transform=XiSqrtMeanVar()):
     m_vgp.q_sqrt.set_trainable(True)
     NatGradOptimizer(0.01).minimize(m_vgp, [[m_vgp.q_mu, m_vgp.q_sqrt, xi_transform]], maxiter=500)
 
-    assert_allclose(m_gpr.compute_log_likelihood(),
-                    m_vgp.compute_log_likelihood(), atol=1e-4)
+    assert_allclose(m_gpr.compute_log_likelihood(), m_vgp.compute_log_likelihood(), atol=1e-4)
 
 
 def test_XiEtas_VGP_vs_GPR(session_tf):
@@ -360,14 +359,14 @@ def test_SVGP_vs_SGPR(session_tf):
     m_svgp.q_sqrt.set_trainable(True)
     NatGradOptimizer(1.).minimize(m_svgp, [[m_svgp.q_mu, m_svgp.q_sqrt]], maxiter=1)
 
-    assert_allclose(m_sgpr.compute_log_likelihood(),
-                    m_svgp.compute_log_likelihood(), atol=1e-5)
+    assert_allclose(m_sgpr.compute_log_likelihood(), m_svgp.compute_log_likelihood(), atol=1e-5)
 
 
 class CombinationOptimizer(Optimizer):
     """
     A class that applies one step of each of multiple optimizers in a loop.
     """
+
     def __init__(self, optimizers_with_kwargs):
         self.name = None
         super().__init__()
