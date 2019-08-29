@@ -5,9 +5,10 @@ from typing import Callable, Dict, List, Optional, Union
 import numpy as np
 import tensorflow as tf
 from tabulate import tabulate
+from tensorflow.python.training.tracking.data_structures import ListWrapper, _DictWrapper
 
-from ..config import summary_fmt
 from ..base import Parameter
+from ..config import summary_fmt
 
 __all__ = [
     "set_trainable",
@@ -149,7 +150,18 @@ def _get_leaf_components(input: tf.Module, prefix: Optional[str] = None):
         elif isinstance(submodule, tf.Module):
             submodule_var = _get_leaf_components(submodule, prefix=f"{prefix}.{key}")
             var_dict.update(submodule_var)
-
+        elif isinstance(submodule, ListWrapper):
+            submodule_name = input.__class__.__name__.lower()
+            for term_idx, subterm in enumerate(submodule):
+                subterm_key = f"{submodule_name}[{term_idx}]"
+                subterm_var = _get_leaf_components(subterm, prefix=f"{prefix}.{subterm_key}")
+                var_dict.update(subterm_var)
+        elif isinstance(submodule, _DictWrapper):
+            submodule_name = input.__class__.__name__.lower()
+            for term_key, subterm in submodule.items():
+                subterm_key = f"{submodule_name}[{term_key}]"
+                subterm_var = _get_leaf_components(subterm, prefix=f"{prefix}.{subterm_key}")
+                var_dict.update(subterm_var)
     return var_dict
 
 
