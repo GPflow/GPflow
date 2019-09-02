@@ -20,7 +20,7 @@ Usage examples (for using float64 and float32 respectively):
 `python train_mnist.py`
 `python train_mnist.py with float_type=float32 jitter_level=1e-4`
 
-The latter should reach around 1.23% error.
+The latter should reach around 1.23% error after 120k iterations.
 """
 import datetime
 import tensorflow as tf
@@ -183,7 +183,7 @@ def experiment_path(basepath, dataset):
 
 # Currently not used, but useful to have around.
 @ex.capture
-def restore_session(session, restore, basepath):
+def restore_session(session, restore):
     model_path = experiment_path()
     if restore and os.path.isdir(model_path):
         mon.restore_session(session, model_path)
@@ -238,7 +238,7 @@ def convgp_setup_model(train_data, batch_size,
 
 
 @ex.capture
-def convgp_monitor_tasks(train_data, model, optimizer, hz, basepath, dataset):
+def convgp_monitor_tasks(train_data, model, optimizer, hz, dataset):
     Xs, Ys = train_data
     path = experiment_path()
     fw = mon.LogdirWriter(path)
@@ -323,9 +323,16 @@ def convgp_fit(train_data, test_data, iterations, float_type, jitter_level):
     step = mon.create_global_step(session)
     model = convgp_setup_model(train_data)
     model.compile()
+
     optimizer = convgp_setup_optimizer(model, step)
+    optimizer.minimize(model, maxiter=0)
+
     monitor_tasks = convgp_monitor_tasks(train_data, model, optimizer)
     monitor = mon.Monitor(monitor_tasks, session, step, print_summary=True)
+    restore_session(session)
+
+    print(session.run(optimizer.optimizer.variables()[:3]))
+
     with monitor:
         optimizer.minimize(model,
                            step_callback=monitor,
