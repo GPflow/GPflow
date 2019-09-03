@@ -60,8 +60,9 @@ class Parameter(tf.Module):
             value = _to_unconstrained(value, transform)
             self._unconstrained = tf.Variable(value, dtype=dtype, name=name, trainable=trainable)
 
+
         self.prior = prior
-        self._transform = transform
+        self._transform_class = transform.__class__
 
     def log_prior(self):
         x = self.read_value()
@@ -70,11 +71,10 @@ class Parameter(tf.Module):
 
         out = tf.convert_to_tensor(0., dtype=dtype)
 
-        bijector = self.transform
         if self.prior is not None:
             out += tf.reduce_sum(self.prior.log_prob(x))
         if self.transform is not None:
-            log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
+            log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
             out += tf.reduce_sum(log_det_jacobian)
         return out
 
@@ -94,7 +94,9 @@ class Parameter(tf.Module):
 
     @property
     def transform(self):
-        return self._transform
+        if self._transform_class is None:
+            return None
+        return self._transform_class()
 
     @property
     def trainable(self):
