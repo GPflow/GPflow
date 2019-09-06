@@ -1050,8 +1050,15 @@ class ImageToTensorBoardTask(BaseTensorBoardTask):
 
         super().__init__(file_writer)
         self.func = func
-        self.placeholder = tf.placeholder(tf.float64, [1, None, None, None])
-        self._summary = tf.summary.image(func_name, self.placeholder)
+
+        self.buf_placeholder = tf.placeholder(tf.string)
+        # Create TF image and load its content from the buffer.
+        image_tensor = tf.image.decode_png(self.buf_placeholder)
+        # Add the image number as a new dimension:
+        self.image_tensor = tf.expand_dims(image_tensor, 0) 
+        self.image_placeholder = tf.placeholder(tf.float64, [1, None, None, None])
+
+        self._summary = tf.summary.image(func_name, self.image_placeholder)
 
     def run(self, context: MonitorContext, *args, **kwargs) -> None:
 
@@ -1061,10 +1068,8 @@ class ImageToTensorBoardTask(BaseTensorBoardTask):
         fig.savefig(buf, format='png', bbox_inches='tight')
         plt.close(fig)
 
-        # Create TF image and load its content from the buffer.
         buf.seek(0)
-        image = tf.image.decode_png(buf.getvalue())
-        # Add the image number as a new dimension
-        image = context.session.run(tf.expand_dims(image, 0))
+        feed_dict = {self.buf_placeholder: buf.getvalue()}
+        image = context.session.run(self.image_tensor, feed_dict=feed_dict)
 
-        self._eval_summary(context, {self.placeholder: image})
+        self._eval_summary(context, {self.image_placeholder: image})
