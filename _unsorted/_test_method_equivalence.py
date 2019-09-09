@@ -14,10 +14,9 @@
 
 import tensorflow as tf
 
-
-
 import numpy as np
 from numpy.testing import assert_allclose
+from gpflow.config import default_jitter
 
 import gpflow
 from gpflow.test_util import GPflowTestCase
@@ -50,34 +49,34 @@ class TestEquivalence(GPflowTestCase):
         self.Xtest = rng.rand(10, 1) * 10
 
         m1 = gpflow.models.GPR(
-            X, Y, kernel=gpflow.kernels.RBF(1),
+            X, Y, kernel=gpflow.kernels.SquaredExponential(1),
             mean_function=gpflow.mean_functions.Constant())
         m2 = gpflow.models.VGP(
-            X, Y, gpflow.kernels.RBF(1), likelihood=gpflow.likelihoods.Gaussian(),
+            X, Y, gpflow.kernels.SquaredExponential(1), likelihood=gpflow.likelihoods.Gaussian(),
             mean_function=gpflow.mean_functions.Constant())
         m3 = gpflow.models.SVGP(
-            X, Y, gpflow.kernels.RBF(1),
+            X, Y, gpflow.kernels.SquaredExponential(1),
             likelihood=gpflow.likelihoods.Gaussian(),
             Z=X.copy(),
             q_diag=False,
             mean_function=gpflow.mean_functions.Constant())
-        m3.feature.trainable = False
+        m3.inducing_variables.trainable = False
         m4 = gpflow.models.SVGP(
-            X, Y, gpflow.kernels.RBF(1),
+            X, Y, gpflow.kernels.SquaredExponential(1),
             likelihood=gpflow.likelihoods.Gaussian(),
             Z=X.copy(), q_diag=False, whiten=True,
             mean_function=gpflow.mean_functions.Constant())
-        m4.feature.trainable = False
+        m4.inducing_variables.trainable = False
         m5 = gpflow.models.SGPR(
-            X, Y, gpflow.kernels.RBF(1),
+            X, Y, gpflow.kernels.SquaredExponential(1),
             Z=X.copy(),
             mean_function=gpflow.mean_functions.Constant())
 
-        m5.feature.trainable = False
+        m5.inducing_variables.trainable = False
         m6 = gpflow.models.GPRFITC(
-            X, Y, gpflow.kernels.RBF(1), Z=X.copy(),
+            X, Y, gpflow.kernels.SquaredExponential(1), Z=X.copy(),
             mean_function=gpflow.mean_functions.Constant())
-        m6.feature.trainable = False
+        m6.inducing_variables.trainable = False
         return [m1, m2, m3, m4, m5, m6]
 
     def test_all(self):
@@ -168,7 +167,7 @@ class VGPTest(GPflowTestCase):
             m_vgp_oa.q_alpha = q_alpha
             m_vgp_oa.q_lambda = q_lambda
 
-            K = kernel.compute_K_symm(X) + np.eye(N) * gpflow.util.default_jitter()
+            K = kernel.compute_K_symm(X) + np.eye(N) * default_jitter()
             L = np.linalg.cholesky(K)
             L_inv = np.linalg.inv(L)
             K_inv = np.linalg.inv(K)
@@ -239,11 +238,11 @@ class TestUpperBound(GPflowTestCase):
 
     def test_few_inducing_points(self):
         with self.test_context() as session:
-            vfe = gpflow.models.SGPR(self.X, self.Y, gpflow.kernels.RBF(1), self.X[:10, :].copy())
+            vfe = gpflow.models.SGPR(self.X, self.Y, gpflow.kernels.SquaredExponential(1), self.X[:10, :].copy())
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(vfe)
 
-            full = gpflow.models.GPR(self.X, self.Y, gpflow.kernels.RBF(1))
+            full = gpflow.models.GPR(self.X, self.Y, gpflow.kernels.SquaredExponential(1))
             full.kernel.lengthscale = vfe.kernel.lengthscale.read_value()
             full.kernel.variance = vfe.kernel.variance.read_value()
             full.likelihood.variance = vfe.likelihood.variance.read_value()

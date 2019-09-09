@@ -1,4 +1,4 @@
-# Copyright 2017 GPflow 
+# Copyright 2017 GPflow
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,29 +16,25 @@ import abc
 
 import tensorflow as tf
 
-from gpflow.covariances import Kuu
-from gpflow.kernels import Kernel
 from ..base import Parameter, positive
-from ..util import create_logger, default_float
-
-logger = create_logger()
+from ..config import default_float
 
 
-class InducingFeature(tf.Module):
+class InducingVariables(tf.Module):
     """
-    Abstract base class for inducing features.
+    Abstract base class for inducing inducing.
     """
 
     @abc.abstractmethod
     def __len__(self) -> int:
         """
-        Returns the number of features, relevant for example to determine the
+        Returns the number of inducing, relevant for example to determine the
         size of the variational distribution.
         """
         pass
 
 
-class InducingPoints(InducingFeature):
+class InducingPoints(InducingVariables):
     """
     Real-space inducing points
     """
@@ -56,7 +52,7 @@ class InducingPoints(InducingFeature):
 
 class Multiscale(InducingPoints):
     """
-    Multi-scale inducing features
+    Multi-scale inducing inducing
     Originally proposed in
 
     ::
@@ -68,12 +64,15 @@ class Multiscale(InducingPoints):
         year = {2009},
       }
     """
+
     def __init__(self, Z, scales):
         super().__init__(Z)
-        # Multi-scale feature widths (std. dev. of Gaussian)
+        # Multi-scale inducing_variable widths (std. dev. of Gaussian)
         self.scales = Parameter(scales, transform=positive())
         if self.Z.shape != scales.shape:
-            raise ValueError("Input locations `Z` and `scales` must have the same shape.")  # pragma: no cover
+            raise ValueError(
+                "Input locations `Z` and `scales` must have the same shape."
+            )  # pragma: no cover
 
     @staticmethod
     def _cust_square_dist(A, B, sc):
@@ -81,4 +80,5 @@ class Multiscale(InducingPoints):
         Custom version of _square_dist that allows sc to provide per-datapoint length
         scales. sc: [N, M, D].
         """
-        return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
+        return tf.reduce_sum(
+            tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)

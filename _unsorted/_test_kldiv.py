@@ -17,12 +17,9 @@
 import numpy as np
 import tensorflow as tf
 
-import gpflow
 from gpflow.kullback_leiblers import gauss_kl
 from numpy.testing import assert_almost_equal
 import pytest
-from gpflow import settings
-from gpflow.test_util import session_tf
 
 def squareT(A):
     """

@@ -1,0 +1,73 @@
+version: 2.1
+
+runtest: &runtest
+  steps:
+    - checkout
+    - run:
+        name: Install GPflow
+        command: |
+          pip install -U -q tf-nightly-2.0-preview tfp-nightly
+          python setup.py install
+    - run:
+        name: Run tests
+        command: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
+    - run:
+        name: Upload coverage report
+        command: bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
+
+jobs:
+  unit-test:
+    <<: *runtest
+    docker:
+      - image: awav/tensorflow:2.0-nightly-preview
+        environment:
+          PYTEST_FILTER: not notebooks
+  # notebook-test:
+  #   <<: *runtest
+  #   docker:
+  #     - image: awav/tensorflow:1.12.1
+  #       environment:
+  #         PYTEST_FILTER: notebooks
+  deploy:
+    docker:
+      - image: awav/tensorflow:2.0-nightly-preview
+    steps:
+      - checkout
+      - run:
+          name: Verify git tag vs. VERSION
+          command: |
+            [ $(cat VERSION | tr -d '\t\r\n ') != "$CIRCLE_TAG" ] && { echo "The package version and the latest tag version are different"; exit 1; }
+      - run:
+          name: Install twine
+          command: |
+            pip install twine
+      - run:
+          name: Init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+            echo -e "username = artemav" >> ~/.pypirc
+            echo -e "password = $PYPI_PASSWORD" >> ~/.pypirc
+      - run:
+          name: Create pip package
+          command: |
+            make package
+      - run:
+          name: Upload to PyPI
+          command: |
+            twine upload dist/*
+
+
+workflows:
+  version: 2.1
+  build_and_test:
+    jobs:
+      - unit-test
+      # - notebook-test
+      - deploy:
+          requires:
+            - unit-test
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/

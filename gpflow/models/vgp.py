@@ -17,11 +17,15 @@ import tensorflow_probability as tfp
 import numpy as np
 
 import gpflow
-from ..base import Parameter, default_float
+from ..base import Parameter
+from ..config import default_float, default_jitter
 from ..mean_functions import Zero
 from ..conditionals import conditional
 from ..kullback_leiblers import gauss_kl
-from ..models.model import GPModel, GPModelOLD
+from ..models.model import GPModel
+
+# ERROR: Modify this
+GPModelOLD = GPModel
 
 
 class VGP(GPModelOLD):
@@ -43,10 +47,7 @@ class VGP(GPModelOLD):
 
     """
 
-    def __init__(self, X, Y, kernel, likelihood,
-                 mean_function=None,
-                 num_latent=None,
-                 **kwargs):
+    def __init__(self, X, Y, kernel, likelihood, mean_function=None, num_latent=None, **kwargs):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
@@ -57,8 +58,7 @@ class VGP(GPModelOLD):
         self.num_data = X.shape[0]
 
         self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
-        q_sqrt = np.array([np.eye(self.num_data)
-                           for _ in range(self.num_latent)])
+        q_sqrt = np.array([np.eye(self.num_data) for _ in range(self.num_latent)])
         transform = tfp.bijectors.FillTriangular()
         self.q_sqrt = Parameter(q_sqrt, transform=transform)
 
@@ -73,8 +73,7 @@ class VGP(GPModelOLD):
         if not self.num_data == self.X.shape[0]:
             self.num_data = self.X.shape[0]
             self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
-            self.q_sqrt = Parameter(np.eye(self.num_data)[:, :, None] *
-                                    np.ones((1, 1, self.num_latent)))
+            self.q_sqrt = Parameter(np.eye(self.num_data)[:, :, None] * np.ones((1, 1, self.num_latent)))
 
     def log_likelihood(self):
         """
@@ -93,7 +92,7 @@ class VGP(GPModelOLD):
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kernel(self.X) + tf.eye(self.num_data, dtype=default_float) * gpflow.default_jitter
+        K = self.kernel(self.X) + tf.eye(self.num_data, dtype=default_float()) * default_jitter()
         L = tf.linalg.cholesky(K)
 
         fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
@@ -112,10 +111,8 @@ class VGP(GPModelOLD):
 
         return tf.reduce_sum(var_exp) - KL
 
-
-    def predict_f(self, Xnew,  full_cov=False, full_output_cov=False):
-        mu, var = conditional(Xnew, self.X, self.kernel, self.q_mu,
-                              q_sqrt=self.q_sqrt, full_cov=full_cov, white=True)
+    def predict_f(self, Xnew, full_cov=False, full_output_cov=False):
+        mu, var = conditional(Xnew, self.X, self.kernel, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov, white=True)
         return mu + self.mean_function(Xnew), var
 
 
@@ -146,10 +143,7 @@ class VGP_opper_archambeau(GPModel):
 
     """
 
-    def __init__(self, X, Y, kernel, likelihood,
-                 mean_function=None,
-                 num_latent=None,
-                 **kwargs):
+    def __init__(self, X, Y, kernel, likelihood, mean_function=None, num_latent=None, **kwargs):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
@@ -164,8 +158,7 @@ class VGP_opper_archambeau(GPModel):
         self.num_data = X.shape[0]
         self.num_latent = num_latent or Y.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
-                                  transforms.positive)
+        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transforms.positive)
 
     def compile(self, session=None):
         """
@@ -178,10 +171,8 @@ class VGP_opper_archambeau(GPModel):
         if not self.num_data == self.X.shape[0]:
             self.num_data = self.X.shape[0]
             self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
-            self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
-                                      gpflow.positive)
+            self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), gpflow.positive)
         return super(VGP_opper_archambeau, self).compile(session=session)
-
 
     def _build_likelihood(self):
         """
@@ -197,8 +188,7 @@ class VGP_opper_archambeau(GPModel):
         f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=default_float()), 0),
-                    [self.num_latent, 1, 1])
+        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=default_float()), 0), [self.num_latent, 1, 1])
         A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
             tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
         L = tf.linalg.cholesky(A)
@@ -210,12 +200,10 @@ class VGP_opper_archambeau(GPModel):
         A_logdet = 2.0 * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
         trAi = tf.reduce_sum(tf.square(Li))
 
-        KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent +
-                    tf.reduce_sum(K_alpha * self.q_alpha))
+        KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent + tf.reduce_sum(K_alpha * self.q_alpha))
 
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         return tf.reduce_sum(v_exp) - KL
-
 
     def _build_predict(self, Xnew, full_cov=False):
         """

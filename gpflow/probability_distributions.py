@@ -46,6 +46,7 @@ class MarkovGaussian(ProbabilityDistribution):
     Var[x_t] = cov[x_t, :, :] * cov[x_t, :, :].T
     Cov[x_t, x_{t+1}] = cov[t, :, :] * cov[t+1, :, :]
     """
+
     def __init__(self, mu, cov):
         self.mu = mu  # N+[1, D]
         self.cov = cov  # 2 x (N+1)[, D, D]

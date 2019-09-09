@@ -11,6 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+r"""
+Kernels form a core component of GPflow models and allow prior information to
+be encoded about a latent function of interest. The effect of choosing
+different kernels, and how it is possible to combine multiple kernels is shown
+in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
+"""
 
 import abc
 from functools import partial, reduce
@@ -18,8 +24,6 @@ from typing import Optional
 
 import numpy as np
 import tensorflow as tf
-
-from ..base import Parameter, positive
 
 
 class Kernel(tf.Module):
@@ -29,6 +33,7 @@ class Kernel(tf.Module):
 
     def __init__(self, active_dims: slice = None, name: str = None):
         """
+        :param active_dims: active dimensions, has the slice type.
         """
         super().__init__(name)
         if isinstance(active_dims, list):
@@ -52,7 +57,8 @@ class Kernel(tf.Module):
         Checks if the dimensions, over which the kernels are specified, overlap.
         Returns True if they are defined on different/separate dimensions and False otherwise.
         """
-        if isinstance(self.active_dims, slice) or isinstance(other.active_dims, slice):
+        if isinstance(self.active_dims, slice) or isinstance(
+                other.active_dims, slice):
             # Be very conservative for kernels defined over slices of dimensions
             return False
 
@@ -87,8 +93,9 @@ class Kernel(tf.Module):
         `self.active_dims` for covariance matrices. This requires slicing the
         rows *and* columns. This will also turn flattened diagonal
         matrices into a tensor of full diagonal matrices.
-            :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
-            :return: [N, I, I].
+
+        :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
+        :return: [N, I, I].
         """
         if tf.rank(cov)  == 2:
             cov = tf.linalg.diag(cov)
@@ -120,7 +127,8 @@ class Kernel(tf.Module):
 
     def __call__(self, X, Y=None, full=True, presliced=False):
         if not full and Y is not None:
-            raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
+            raise ValueError(
+                "Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:
             return self.K_diag(X, presliced=presliced)
         return self.K(X, Y, presliced=presliced)
@@ -147,7 +155,8 @@ class Combination(Kernel):
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
-            raise TypeError("can only combine Kernel instances")  # pragma: no cover
+            raise TypeError(
+                "can only combine Kernel instances")  # pragma: no cover
 
         # add kernels to a list, flattening out instances of this class therein
         kernels_list = []
@@ -164,6 +173,7 @@ class Combination(Kernel):
         Checks whether the kernels in the combination act on disjoint subsets
         of dimensions. Currently, it is hard to asses whether two slice objects
         will overlap, so this will always return False.
+
         :return: Boolean indicator.
         """
         if np.any([isinstance(k.active_dims, slice) for k in self.kernels]):

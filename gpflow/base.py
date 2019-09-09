@@ -1,5 +1,4 @@
 import functools
-import abc
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -7,13 +6,12 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.python.ops import array_ops
 
-from .util import default_float
+from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
-
 
 positive = tfp.bijectors.Softplus
 triangular = tfp.bijectors.FillTriangular
@@ -39,12 +37,13 @@ class Module(tf.Module):
 
 class Parameter(tf.Module):
     def __init__(self,
-                 value, *,
+                 value,
+                 *,
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
                  trainable: bool = True,
-                 dtype: DType = None,
-                 name: str = None):
+                 dtype: Optional[DType] = None,
+                 name: Optional[str] = None):
         """
         Unconstrained parameter representation.
         According to standart terminology `y` is always transformed representation or,
@@ -69,15 +68,15 @@ class Parameter(tf.Module):
         y = self._unconstrained
         dtype = x.dtype
 
-        log_prob = tf.convert_to_tensor(0., dtype=dtype)
-        log_det_jacobian = tf.convert_to_tensor(0., dtype=dtype)
+        out = tf.convert_to_tensor(0., dtype=dtype)
 
         bijector = self.transform
         if self.prior is not None:
-            log_prob = self.prior.log_prob(x)
+            out += tf.reduce_sum(self.prior.log_prob(x))
         if self.transform is not None:
             log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
-        return log_prob + log_det_jacobian
+            out += tf.reduce_sum(log_det_jacobian)
+        return out
 
     @property
     def handle(self):
@@ -114,9 +113,7 @@ class Parameter(tf.Module):
         value = _verified_value(value, self.dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
 
-        self._unconstrained.assign(unconstrained_value,
-                                   read_value=read_value,
-                                   use_locking=use_locking)
+        self._unconstrained.assign(unconstrained_value, read_value=read_value, use_locking=use_locking)
 
     @property
     def name(self):
@@ -133,10 +130,6 @@ class Parameter(tf.Module):
     @property
     def dtype(self):
         return self._unconstrained.dtype
-
-    @property
-    def graph(self):
-        return self._unconstrained.graph
 
     @property
     def op(self):

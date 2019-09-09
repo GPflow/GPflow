@@ -3,20 +3,19 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-import gpflow.features.mo_features as mf
+import gpflow.inducing_variables.mo_inducing_variables as mf
 import gpflow.kernels.mo_kernels as mk
 from gpflow.covariances import mo_kufs, mo_kuus
 
-
 rng = np.random.RandomState(9911)
-
 
 # ------------------------------------------
 # Helpers
 # ------------------------------------------
 
+
 def make_kernel():
-    return gpflow.kernels.RBF()
+    return gpflow.kernels.SquaredExponential()
 
 
 def make_kernels(num):
@@ -25,7 +24,7 @@ def make_kernels(num):
 
 def make_ip():
     x = rng.permutation(Datum.X)
-    return gpflow.features.InducingPoints(x[:Datum.M, ...])
+    return gpflow.inducing_variables.InducingPoints(x[:Datum.M, ...])
 
 
 def make_ips(num):
@@ -48,37 +47,37 @@ class Datum:
     Xnew = rng.randn(N)[:, None]
 
 
-multioutput_feature_list = [
-    mf.SharedIndependentMof(make_ip()),
-    mf.SeparateIndependentMof(make_ips(Datum.P))
+multioutput_inducing_variable_list = [
+    mf.SharedIndependentInducingVariables(make_ip()),
+    mf.SeparateIndependentInducingVariables(make_ips(Datum.P))
 ]
 
 multioutput_kernel_list = [
-    mk.SharedIndependentMok(make_kernel(), Datum.P),
-    mk.SeparateIndependentMok(make_kernels(Datum.L)),
-    mk.SeparateMixedMok(make_kernels(Datum.L), Datum.W)
+    mk.SharedIndependent(make_kernel(), Datum.P),
+    mk.SeparateIndependent(make_kernels(Datum.L)),
+    mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
 ]
 
 
-@pytest.mark.parametrize('feature', multioutput_feature_list)
+@pytest.mark.parametrize('inducing_variable', multioutput_inducing_variable_list)
 @pytest.mark.parametrize('kernel', multioutput_kernel_list)
-def test_kuu(feature, kernel):
-    Kuu = mo_kuus.Kuu(feature, kernel, jitter=1e-9)
+def test_kuu(inducing_variable, kernel):
+    Kuu = mo_kuus.Kuu(inducing_variable, kernel, jitter=1e-9)
     tf.linalg.cholesky(Kuu)
 
 
-@pytest.mark.parametrize('feature', multioutput_feature_list)
+@pytest.mark.parametrize('inducing_variable', multioutput_inducing_variable_list)
 @pytest.mark.parametrize('kernel', multioutput_kernel_list)
-def test_kuf(feature, kernel):
-    Kuf = mo_kufs.Kuf(feature, kernel, Datum.Xnew)
+def test_kuf(inducing_variable, kernel):
+    Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
 
 
 @pytest.mark.parametrize('fun', [mo_kuus.Kuu, mo_kufs.Kuf])
 def test_mixed_shared(fun):
-    features = mf.MixedKernelSharedMof(make_ip())
-    kernel = mk.SeparateMixedMok(make_kernels(Datum.L), Datum.W)
+    inducing_variables = mf.SharedIndependentInducingVariables(make_ip())
+    kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
     if fun is mo_kuus.Kuu:
-        t = tf.linalg.cholesky(fun(features, kernel, jitter=1e-9))
+        t = tf.linalg.cholesky(fun(inducing_variables, kernel, jitter=1e-9))
     else:
-        t = fun(features, kernel, Datum.Xnew)
+        t = fun(inducing_variables, kernel, Datum.Xnew)
         print(t.shape)

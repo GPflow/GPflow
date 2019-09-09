@@ -17,9 +17,9 @@ import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.features import InducingPoints
-from gpflow.mean_functions import Zero, Linear, Constant, SwitchedMeanFunction, Additive, Product
-from gpflow.util import default_int
+from gpflow.inducing_variables import InducingPoints
+from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
+from gpflow.config import default_int
 
 rng = np.random.RandomState(99021)
 
@@ -31,8 +31,7 @@ class Datum:
 
 _mean_functions = [
     Zero(),
-    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim),
-           b=rng.randn(Datum.output_dim, 1).reshape(-1)),
+    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim), b=rng.randn(Datum.output_dim, 1).reshape(-1)),
     Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1))
 ]
 
@@ -56,7 +55,7 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation
     elif operation == 'x':
         mean_composed = mean_function_1 * mean_function_2
     else:
-        raise(NotImplementedError)
+        raise (NotImplementedError)
 
     Y_composed = mean_composed(X)
     assert Y_composed.shape in [(Datum.N, Datum.output_dim), (Datum.N, 1)]
@@ -73,16 +72,16 @@ def test_mean_functions_composite_type(mean_function_1, mean_function_2, operati
         mean_composed = mean_function_1 * mean_function_2
         assert isinstance(mean_composed, Product)
     else:
-        raise(NotImplementedError)
+        raise (NotImplementedError)
 
 
 _linear_functions = [
-    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim),
-           b=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)]
+    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim), b=rng.randn(Datum.output_dim, 1).reshape(-1))
+    for _ in range(3)
+]
 
 # Append inverse of first Linear mean function in _linear_functions
-_linear_functions.append(Linear(A=-1. * _linear_functions[0].A,
-                                b=-1. * _linear_functions[0].b))
+_linear_functions.append(Linear(A=-1. * _linear_functions[0].A, b=-1. * _linear_functions[0].b))
 
 _constant_functions = [Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)]
 # Append inverse of first Constant mean function in _constant_functions
@@ -90,8 +89,7 @@ _constant_functions.append(Constant(c=-1. * _constant_functions[0].c))
 
 
 def _create_GPR_model_with_bias(X, Y, mean_function):
-    return gpflow.models.GPR(X, Y, mean_function=mean_function,
-                             kernel=gpflow.kernels.Bias(Datum.input_dim))
+    return gpflow.models.GPR((X, Y), mean_function=mean_function, kernel=gpflow.kernels.Bias(Datum.input_dim))
 
 
 @pytest.mark.parametrize('mean_functions', [_linear_functions, _constant_functions])
@@ -216,22 +214,24 @@ def test_models_with_mean_functions_changes(model_class):
     """
     X, Y = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, 1)
     Xtest = rng.randn(Datum.Ntest, Datum.input_dim)
-    features = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
+    inducing_variables = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
     zero_mean = Zero()
     non_zero_mean = Constant(c=np.ones(1) * 10)
 
     if model_class in [gpflow.models.GPR]:
-        model_zero_mean = model_class(X, Y, kernel=kernel, mean_function=zero_mean)
-        model_non_zero_mean = model_class(X, Y, kernel=kernel, mean_function=non_zero_mean)
+        model_zero_mean = model_class((X, Y), kernel=kernel, mean_function=zero_mean)
+        model_non_zero_mean = model_class((X, Y), kernel=kernel, mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SVGP]:
-        model_zero_mean = model_class(kernel=kernel, likelihood=likelihood,
-                                      feature=features, mean_function=zero_mean)
-        model_non_zero_mean = model_class(kernel=kernel, likelihood=likelihood,
-                                          feature=features, mean_function=non_zero_mean)
+        model_zero_mean = model_class(kernel=kernel, likelihood=likelihood, inducing_variables=inducing_variables,
+                                      mean_function=zero_mean)
+        model_non_zero_mean = model_class(kernel=kernel,
+                                          likelihood=likelihood,
+                                          inducing_variables=inducing_variables,
+                                          mean_function=non_zero_mean)
     else:
-        raise(NotImplementedError)
+        raise (NotImplementedError)
 
     mu_zero, var_zero = model_zero_mean.predict_f(Xtest)
     mu_non_zero, var_non_zero = model_non_zero_mean.predict_f(Xtest)

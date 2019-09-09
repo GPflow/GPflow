@@ -1,16 +1,17 @@
 import tensorflow as tf
 
-from . import dispatch
 from .. import kernels
 from .. import mean_functions as mfn
-from ..features import InducingPoints
-from ..probability_distributions import (DiagonalGaussian, Gaussian,
-                                         MarkovGaussian)
-from ..util import NoneType, default_float
+from ..inducing_variables import InducingPoints
+from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
+from ..utilities.ops import square_distance
+from . import dispatch
 from .expectations import expectation
 
+NoneType = type(None)
 
-@dispatch.expectation.register(Gaussian, kernels.RBF, NoneType, NoneType, NoneType)
+
+@dispatch.expectation.register(Gaussian, kernels.SquaredExponential, NoneType, NoneType, NoneType)
 def _E(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
@@ -22,8 +23,8 @@ def _E(p, kernel, _, __, ___, nghp=None):
     return kernel(p.mu, full=False)
 
 
-@dispatch.expectation.register(Gaussian, kernels.RBF, InducingPoints, NoneType, NoneType)
-def _E(p, kernel, feature, _, __, nghp=None):
+@dispatch.expectation.register(Gaussian, kernels.SquaredExponential, InducingPoints, NoneType, NoneType)
+def _E(p, kernel, inducing_variable, _, __, nghp=None):
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
@@ -33,29 +34,29 @@ def _E(p, kernel, feature, _, __, nghp=None):
     """
     # use only active dimensions
     Xcov = kernel.slice_cov(p.cov)
-    Z, Xmu = kernel.slice(feature.Z, p.mu)
+    Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
     D = Xmu.shape[1]
 
-    lengthscale = tf.zeros((D,), dtype=kernel.lengthscale.dtype) + kernel.lengthscale
+    lengthscale = kernel.lengthscale
+    if not kernel.ard:
+        lengthscale = tf.zeros((D, ), dtype=lengthscale.dtype) + kernel.lengthscale
 
-    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
+    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale**2) + Xcov)  # NxDxD
 
     all_diffs = tf.transpose(Z) - tf.expand_dims(Xmu, 2)  # NxDxM
-    exponent_mahalanobis = tf.linalg.triangular_solve(chol_L_plus_Xcov, all_diffs,
-                                                      lower=True)  # NxDxM
+    exponent_mahalanobis = tf.linalg.triangular_solve(chol_L_plus_Xcov, all_diffs, lower=True)  # NxDxM
     exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
-    sqrt_det_L_plus_Xcov = tf.exp(
-        tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
+    sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
     return kernel.variance * (determinants[:, None] * exponent_mahalanobis)
 
 
-@dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
-def _E(p, mean, _, kernel, feature, nghp=None):
+@dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints)
+def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
@@ -67,14 +68,15 @@ def _E(p, mean, _, kernel, feature, nghp=None):
 
     D = Xmu.shape[1]
 
-    lengthscale = tf.zeros((D,), dtype=kernel.lengthscale.dtype) + kernel.lengthscale
+    lengthscale = kernel.lengthscale
+    if not kernel.ard:
+        lengthscale = tf.zeros((D, ), dtype=lengthscale.dtype) + lengthscale
 
-    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
-    all_diffs = tf.transpose(feature.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
+    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale**2) + Xcov)  # NxDxD
+    all_diffs = tf.transpose(inducing_variable.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
-    sqrt_det_L_plus_Xcov = tf.exp(
-        tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
+    sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
     exponent_mahalanobis = tf.linalg.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
@@ -84,12 +86,11 @@ def _E(p, mean, _, kernel, feature, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    return kernel.variance * (determinants[:, None] *
-                            exponent_mahalanobis)[:, None, :] * non_exponent_term
+    return kernel.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
-@dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
-def _E(p, mean, _, kernel, feature, nghp=None):
+@dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints)
+def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1})
@@ -103,14 +104,13 @@ def _E(p, mean, _, kernel, feature, nghp=None):
     D = Xmu.shape[1]
     lengthscale = kernel.lengthscale
     if not kernel.ard:
-        lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + lengthscale
+        lengthscale = tf.zeros((D, ), dtype=lengthscale.dtype) + lengthscale
 
-    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov[0, :-1])  # NxDxD
-    all_diffs = tf.transpose(feature.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
+    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale**2) + Xcov[0, :-1])  # NxDxD
+    all_diffs = tf.transpose(inducing_variable.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
-    sqrt_det_L_plus_Xcov = tf.exp(
-        tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
+    sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
     exponent_mahalanobis = tf.linalg.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
@@ -120,12 +120,10 @@ def _E(p, mean, _, kernel, feature, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    return kernel.variance * (determinants[:, None] *
-                            exponent_mahalanobis)[:, None, :] * non_exponent_term
+    return kernel.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
-@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.RBF, InducingPoints,
-                               kernels.RBF, InducingPoints)
+@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.SquaredExponential, InducingPoints, kernels.SquaredExponential, InducingPoints)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:
@@ -147,27 +145,27 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
                                   "analytical implementation if both kernels are equal.")
 
     kernel = kern1
-    feature = feat1
+    inducing_variable = feat1
 
     # use only active dimensions
     Xcov = kernel.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
-    Z, Xmu = kernel.slice(feature.Z, p.mu)
+    Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
 
     N = Xmu.shape[0]
     D = Xmu.shape[1]
 
-    zero_lengthscale = tf.zeros((D,), dtype=kernel.lengthscale.dtype)
-    squared_lengthscale = kernel.lengthscale ** 2 + zero_lengthscale
+    squared_lengthscale = kernel.lengthscale**2
+    if not kernel.ard:
+        zero_lengthscale = tf.zeros((D, ), dtype=squared_lengthscale.dtype)
+        squared_lengthscale = squared_lengthscale + zero_lengthscale
 
-    sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscale) ** 0.5
+    sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscale)**0.5
     C = tf.linalg.cholesky(0.5 * tf.linalg.diag(squared_lengthscale) + Xcov)  # NxDxD
     dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(C)), axis=1))  # N
 
     C_inv_mu = tf.linalg.triangular_solve(C, tf.expand_dims(Xmu, 2), lower=True)  # NxDx1
-    C_inv_z = tf.linalg.triangular_solve(
-        C,
-        tf.tile(tf.expand_dims(tf.transpose(Z) / 2., 0), [N, 1, 1]),
-        lower=True)  # NxDxM
+    C_inv_z = tf.linalg.triangular_solve(C, tf.tile(tf.expand_dims(0.5 * tf.transpose(Z), 0), [N, 1, 1]),
+                                         lower=True)  # NxDxM
     mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
     z_CC_inv_z = tf.reduce_sum(tf.square(C_inv_z), 1)  # NxM
     zm_CC_inv_zn = tf.linalg.matmul(C_inv_z, C_inv_z, transpose_a=True)  # NxMxM
@@ -180,5 +178,5 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     # Compute sqrt(self(Z)) explicitly to prevent automatic gradient from
     # being NaN sometimes, see pull request #615
-    kernel_sqrt = tf.exp(-0.25 * kernel.scaled_square_dist(Z, None))
-    return kernel.variance ** 2 * kernel_sqrt * tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis
+    kernel_sqrt = tf.exp(-0.25 * square_distance(Z / kernel.lengthscale, None))
+    return kernel.variance**2 * kernel_sqrt * tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis

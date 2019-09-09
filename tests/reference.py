@@ -25,8 +25,10 @@ def ref_arccosine_kernel(X, order, weightVariances, biasVariance, signal_var):
 
             numerator = (weightVariances * x).dot(y) + biasVariance
 
-            x_denominator = np.sqrt((weightVariances * x).dot(x) + biasVariance)
-            y_denominator = np.sqrt((weightVariances * y).dot(y) + biasVariance)
+            x_denominator = np.sqrt((weightVariances * x).dot(x) +
+                                    biasVariance)
+            y_denominator = np.sqrt((weightVariances * y).dot(y) +
+                                    biasVariance)
             denominator = x_denominator * y_denominator
 
             theta = np.arccos(np.clip(numerator / denominator, -1., 1.))
@@ -36,7 +38,7 @@ def ref_arccosine_kernel(X, order, weightVariances, biasVariance, signal_var):
                 J = np.sin(theta) + (np.pi - theta) * np.cos(theta)
             elif order == 2:
                 J = 3. * np.sin(theta) * np.cos(theta)
-                J += (np.pi - theta) * (1. + 2. * np.cos(theta) ** 2)
+                J += (np.pi - theta) * (1. + 2. * np.cos(theta)**2)
 
             kernel[row, col] = signal_var * (1. / np.pi) * J * \
                 x_denominator ** order * \
@@ -47,5 +49,6 @@ def ref_arccosine_kernel(X, order, weightVariances, biasVariance, signal_var):
 def ref_periodic_kernel(X, lengthscale, signal_var, period):
     # Based on the GPy implementation of standard_period kernel
     base = np.pi * (X[:, None, :] - X[None, :, :]) / period
-    exp_dist = np.exp(-0.5 * np.sum(np.square(np.sin(base) / lengthscale), axis=-1))
+    exp_dist = np.exp(-0.5 *
+                      np.sum(np.square(np.sin(base) / lengthscale), axis=-1))
     return signal_var * exp_dist

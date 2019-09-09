@@ -1,4 +1,3 @@
-
 import numpy as np
 import tensorflow as tf
 from ..base import Parameter, positive
@@ -24,10 +23,14 @@ class ArcCosine(Kernel):
     """
 
     implemented_orders = {0, 1, 2}
+
     def __init__(self,
                  order=0,
-                 variance=1.0, weight_variances=1., bias_variance=1.,
-                 active_dims=None, ard=None):
+                 variance=1.0,
+                 weight_variances=1.,
+                 bias_variance=1.,
+                 active_dims=None,
+                 ard=None):
         """
         - input_dim is the dimension of the input to the kernel
         - order specifies the activation function of the neural network
@@ -52,12 +55,16 @@ class ArcCosine(Kernel):
         self.bias_variance = Parameter(bias_variance, transform=positive())
         # weight_variances, self.ard = self._validate_ard_shape("weight_variances", weight_variances, ard)
         self.ard = ard
-        self.weight_variances = Parameter(weight_variances, transform=positive())
+        self.weight_variances = Parameter(weight_variances,
+                                          transform=positive())
 
     def _weighted_product(self, X, X2=None):
         if X2 is None:
-            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
-        return tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
+            return tf.reduce_sum(self.weight_variances * tf.square(X),
+                                 axis=1) + self.bias_variance
+        return tf.linalg.matmul(
+            (self.weight_variances * X), X2,
+            transpose_b=True) + self.bias_variance
 
     def _J(self, theta):
         """
@@ -97,7 +104,8 @@ class ArcCosine(Kernel):
             X, _ = self.slice(X, None)
 
         X_product = self._weighted_product(X)
-        return self.variance * (1. / np.pi) * self._J(0.) * X_product ** self.order
+        return self.variance * (1. /
+                                np.pi) * self._J(0.) * X_product**self.order
 
 
 class Periodic(Kernel):
@@ -110,14 +118,24 @@ class Periodic(Kernel):
     Derived using an RBF kernel once mapped the original inputs through
     the mapping u=(cos(x), sin(x)).
 
-    The resulting kernel can be expressed as:
-    k_per(x, x') = variance * exp( -0.5 Sum_i sin^2((x_i-x'_i) * pi /period)/ell^2)
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into ell
+    The resulting periodic kernel can be expressed as:
+        k(r) =  σ² exp{ -0.5 sin²(π r / γ) / ℓ²}
+
+    where:
+    r  is the Euclidean distance between the input points
+    ℓ is the lengthscale parameter,
+    σ² is the variance parameter,
+    γ is the period parameter.
+
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
     hyperparameter).
     """
 
-    def __init__(self, period=1.0, variance=1.0,
-                 lengthscale=1.0, active_dims=None):
+    def __init__(self,
+                 period=1.0,
+                 variance=1.0,
+                 lengthscale=1.0,
+                 active_dims=None):
         # No ard support for lengthscale or period yet
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
@@ -126,7 +144,7 @@ class Periodic(Kernel):
         self.period = Parameter(period, transform=positive())
 
     def K_diag(self, X, presliced=False):
-        return tf.fill(tf.stack([X.shape[0]]), tf.squeeze(self.variance))
+        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -171,7 +189,6 @@ class Coregion(Kernel):
         """
 
         # assert input_dim == 1, "Coregion kernel in 1D only"
-
         super().__init__(active_dims)
 
         self.output_dim = output_dim
@@ -188,7 +205,8 @@ class Coregion(Kernel):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
+        B = tf.linalg.matmul(self.W, self.W,
+                             transpose_b=True) + tf.linalg.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X, presliced=False):

@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 """
 This test suite will check if the conditionals broadcast correctly
 when the input tensors have leading dimensions.
@@ -24,7 +22,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-import gpflow.features.mo_features as mf
+import gpflow.inducing_variables.mo_inducing_variables as mf
 import gpflow.kernels.mo_kernels as mk
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import mix_latent_gp, rollaxis_left, rollaxis_right
@@ -59,17 +57,17 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
     q_sqrt = np.tril(np.random.randn(Data.Dy, Data.M, Data.M), -1)
 
     if conditional_type == "Z":
-        feature = Data.Z
+        inducing_variable = Data.Z
         kernel = gpflow.kernels.Matern52(lengthscale=0.5)
     elif conditional_type == "inducing_points":
-        feature = gpflow.features.InducingPoints(Data.Z)
+        inducing_variable = gpflow.inducing_variables.InducingPoints(Data.Z)
         kernel = gpflow.kernels.Matern52(lengthscale=0.5)
     elif conditional_type == "mixing":
         # variational params have different output dim in this case
         q_mu = np.random.randn(Data.M, Data.L)
         q_sqrt = np.tril(np.random.randn(Data.L, Data.M, Data.M), -1)
-        feature = mf.MixedKernelSharedMof(gpflow.features.InducingPoints(Data.Z))
-        kernel = mk.SeparateMixedMok(
+        inducing_variable = mf.SharedIndependentInducingVariables(gpflow.inducing_variables.InducingPoints(Data.Z))
+        kernel = mk.LinearCoregionalization(
             kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
             W=Data.W
         )
@@ -80,25 +78,30 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
         pytest.skip("combination is not implemented")
 
     num_samples = 5
-    sample_conditional_fn = lambda X: sample_conditional(X, feature, kernel, tf.convert_to_tensor(q_mu),
-                                                         q_sqrt=tf.convert_to_tensor(q_sqrt),
-                                                         white=white, full_cov=full_cov,
-                                                         num_samples=num_samples
-                                                         )
+
+    def sample_conditional_fn(X):
+        return sample_conditional(X,
+                                  inducing_variable,
+                                  kernel,
+                                  tf.convert_to_tensor(q_mu),
+                                  q_sqrt=tf.convert_to_tensor(q_sqrt),
+                                  white=white,
+                                  full_cov=full_cov,
+                                  num_samples=num_samples)
 
     samples = np.array([sample_conditional_fn(X)[0] for X in Data.SX])
     means = np.array([sample_conditional_fn(X)[1] for X in Data.SX])
     variables = np.array([sample_conditional_fn(X)[2] for X in Data.SX])
 
     samples_S12, means_S12, vars_S12 = \
-        sample_conditional(Data.SX, feature, kernel,
+        sample_conditional(Data.SX, inducing_variable, kernel,
                            tf.convert_to_tensor(q_mu),
                            q_sqrt=tf.convert_to_tensor(q_sqrt),
                            white=white, full_cov=full_cov,
                            num_samples=num_samples)
 
     samples_S1_S2, means_S1_S2, vars_S1_S2 = \
-        sample_conditional(Data.S1_S2_X, feature, kernel,
+        sample_conditional(Data.S1_S2_X, inducing_variable, kernel,
                            tf.convert_to_tensor(q_mu),
                            q_sqrt=tf.convert_to_tensor(q_sqrt),
                            white=white, full_cov=full_cov,
