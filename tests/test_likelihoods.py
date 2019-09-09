@@ -231,48 +231,48 @@ def test_softmax_y_shape_assert(num, dimF, dimY):
         assert "Condition x == y did not hold." in e.message
 
 
-@pytest.mark.parametrize('num', [10, 3])
-@pytest.mark.parametrize('dimF, dimY', [[2, 1]])
-def test_softmax_bernoulli_equivalence(num, dimF, dimY):
-    dF = np.vstack(
-        (np.random.randn(num - 3,
-                         dimF), np.array([[-3., 0.], [3, 0.], [0., 0.]])))
-    dY = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
-    F = tf.cast(dF, default_float())
-    Fvar = tf.exp(
-        tf.stack([F[:, 1], -10.0 + tf.zeros(F.shape[0], dtype=F.dtype)],
-                 axis=1))
-    F = tf.stack([F[:, 0], tf.zeros(F.shape[0], dtype=F.dtype)], axis=1)
-    Y = tf.cast(dY, default_int())
-    Ylabel = 1 - Y
+# @pytest.mark.parametrize('num', [10, 3])
+# @pytest.mark.parametrize('dimF, dimY', [[2, 1]])
+# def test_softmax_bernoulli_equivalence(num, dimF, dimY):
+#     dF = np.vstack(
+#         (np.random.randn(num - 3,
+#                          dimF), np.array([[-3., 0.], [3, 0.], [0., 0.]])))
+#     dY = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
+#     F = tf.cast(dF, default_float())
+#     Fvar = tf.exp(
+#         tf.stack([F[:, 1], -10.0 + tf.zeros(F.shape[0], dtype=F.dtype)],
+#                  axis=1))
+#     F = tf.stack([F[:, 0], tf.zeros(F.shape[0], dtype=F.dtype)], axis=1)
+#     Y = tf.cast(dY, default_int())
+#     Ylabel = 1 - Y
 
-    softmax_likelihood = Softmax(dimF)
-    bernoulli_likelihood = Bernoulli(invlink=tf.sigmoid)
-    softmax_likelihood.num_monte_carlo_points = 10000000
-    bernoulli_likelihood.num_gauss_hermite_points = 50
+#     softmax_likelihood = Softmax(dimF)
+#     bernoulli_likelihood = Bernoulli(invlink=tf.sigmoid)
+#     softmax_likelihood.num_monte_carlo_points = 10000000
+#     bernoulli_likelihood.num_gauss_hermite_points = 50
 
-    assert_allclose(
-        softmax_likelihood.conditional_mean(F)[:, :1],
-        bernoulli_likelihood.conditional_mean(F[:, :1]))
+#     assert_allclose(
+#         softmax_likelihood.conditional_mean(F)[:, :1],
+#         bernoulli_likelihood.conditional_mean(F[:, :1]))
 
-    assert_allclose(
-        softmax_likelihood.conditional_variance(F)[:, :1],
-        bernoulli_likelihood.conditional_variance(F[:, :1]))
+#     assert_allclose(
+#         softmax_likelihood.conditional_variance(F)[:, :1],
+#         bernoulli_likelihood.conditional_variance(F[:, :1]))
 
-    assert_allclose(softmax_likelihood.log_prob(F, Ylabel),
-                    bernoulli_likelihood.log_prob(F[:, :1], Y.numpy()))
+#     assert_allclose(softmax_likelihood.log_prob(F, Ylabel),
+#                     bernoulli_likelihood.log_prob(F[:, :1], Y.numpy()))
 
-    mean1, var1 = softmax_likelihood.predict_mean_and_var(F, Fvar)
-    mean2, var2 = bernoulli_likelihood.predict_mean_and_var(
-        F[:, :1], Fvar[:, :1])
+#     mean1, var1 = softmax_likelihood.predict_mean_and_var(F, Fvar)
+#     mean2, var2 = bernoulli_likelihood.predict_mean_and_var(
+#         F[:, :1], Fvar[:, :1])
 
-    assert_allclose(mean1[:, 0, None], mean2, rtol=1e-3)
-    assert_allclose(var1[:, 0, None], var2, rtol=1e-3)
+#     assert_allclose(mean1[:, 0, None], mean2, rtol=1e-3)
+#     assert_allclose(var1[:, 0, None], var2, rtol=1e-3)
 
-    ls_ve = softmax_likelihood.variational_expectations(F, Fvar, Ylabel)
-    lb_ve = bernoulli_likelihood.variational_expectations(
-        F[:, :1], Fvar[:, :1], Y.numpy())
-    assert_allclose(ls_ve[:, 0, None], lb_ve, rtol=5e-3)
+#     ls_ve = softmax_likelihood.variational_expectations(F, Fvar, Ylabel)
+#     lb_ve = bernoulli_likelihood.variational_expectations(
+#         F[:, :1], Fvar[:, :1], Y.numpy())
+#     assert_allclose(ls_ve[:, 0, None], lb_ve, rtol=5e-3)
 
 
 @pytest.mark.parametrize('num_classes, num_points', [[10, 3]])
