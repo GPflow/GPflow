@@ -20,7 +20,7 @@ _ENV_FLOAT = "GPFLOW_FLOAT"
 _ENV_INT = "GPFLOW_INT"
 
 _JITTER_VALUE = 1e-6
-_FLOAT_VALUE = np.float32
+_FLOAT_VALUE = np.float64
 _INT_VALUE = np.int32
 
 

@@ -17,9 +17,9 @@ import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
+from gpflow.config import default_int
 from gpflow.inducing_variables import InducingPoints
 from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
-from gpflow.config import default_int
 
 rng = np.random.RandomState(99021)
 
@@ -192,8 +192,8 @@ def test_bug_277_regression():
 # TODO: (@sergio.pasc) finish tests below once GP models are ready for TF2.0
 _model_classes = [
     gpflow.models.GPR,
-    # gpflow.models.SGPR,
-    # gpflow.models.GPRFITC,
+    gpflow.models.SGPR,
+    gpflow.models.GPRFITC,
     gpflow.models.SVGP,
     # gpflow.models.VGP(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
     # gpflow.models.VGP(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
@@ -228,6 +228,15 @@ def test_models_with_mean_functions_changes(model_class):
                                       mean_function=zero_mean)
         model_non_zero_mean = model_class(kernel=kernel,
                                           likelihood=likelihood,
+                                          inducing_variables=inducing_variables,
+                                          mean_function=non_zero_mean)
+    elif model_class in [gpflow.models.SGPR, gpflow.models.GPRFITC]:
+        model_zero_mean = model_class((X, Y),
+                                      kernel=kernel,
+                                      inducing_variables=inducing_variables,
+                                      mean_function=zero_mean)
+        model_non_zero_mean = model_class((X, Y),
+                                          kernel=kernel,
                                           inducing_variables=inducing_variables,
                                           mean_function=non_zero_mean)
     else:
