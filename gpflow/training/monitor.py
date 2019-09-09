@@ -1053,9 +1053,9 @@ class ImageToTensorBoardTask(BaseTensorBoardTask):
 
         self.buf_placeholder = tf.placeholder(tf.string)
         # Create TF image and load its content from the buffer:
-        self.image_tensor = tf.image.decode_png(self.buf_placeholder)[None, ...]
+        image_tensor = tf.image.decode_png(self.buf_placeholder)[None, ...]
         # needs to have shape [batch_size=1, height, width, channels]
-        self._summary = tf.summary.image(func_name, self.image_tensor)
+        self._summary = tf.summary.image(func_name, image_tensor)
 
     def run(self, context: MonitorContext, *args, **kwargs) -> None:
         # Get the image and write it into a buffer in the PNG format:
