@@ -195,7 +195,6 @@ def test_softmax_y_shape_assert(num, dimF, dimY):
         assert "Condition x == y did not hold." in e.message
 
 
-# @pytest.mark.skipif(os.environ.get("CI", None) is not None, reason="Requires to much memory to run on CircleCI.")
 @pytest.mark.parametrize('num', [10, 3])
 @pytest.mark.parametrize('dimF, dimY', [[2, 1]])
 def test_softmax_bernoulli_equivalence(num, dimF, dimY):
@@ -209,7 +208,7 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
 
     softmax_likelihood = Softmax(dimF)
     bernoulli_likelihood = Bernoulli(invlink=tf.sigmoid)
-    softmax_likelihood.num_monte_carlo_points = int(0.3e7)
+    softmax_likelihood.num_monte_carlo_points = int(0.3e7)  # Minimum number of point which work on CircleCI
     bernoulli_likelihood.num_gauss_hermite_points = 50
 
     assert_allclose(softmax_likelihood.conditional_mean(F)[:, :1], bernoulli_likelihood.conditional_mean(F[:, :1]))
