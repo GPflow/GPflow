@@ -1,42 +1,57 @@
-version: 2.1
-
 runtest: &runtest
   steps:
     - checkout
     - run:
         name: Install GPflow
         command: |
-          pip install -U -q tf-nightly-2.0-preview tfp-nightly
-          python setup.py install
+          pip install -q tf-nightly-2.0-preview==2.0.0.dev20190903
+          pip install -q gast==0.2.2 tfp-nightly
+          pip install -e .
     - run:
         name: Run tests
-        command: pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
+        command: |
+          pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
     - run:
         name: Upload coverage report
-        command: bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
+        command: |
+          bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
+version: 2.1
 
 jobs:
   unit-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.0-nightly-preview
+      - image: awav/tensorflow:2.0-preview
         environment:
           PYTEST_FILTER: not notebooks
-  # notebook-test:
-  #   <<: *runtest
-  #   docker:
-  #     - image: awav/tensorflow:1.12.1
-  #       environment:
-  #         PYTEST_FILTER: notebooks
+
+  notebook-test:
+    <<: *runtest
+    docker:
+      - image: awav/tensorflow:2.0-preview
+        environment:
+          PYTEST_FILTER: notebooks
+
+  example-test:
+    <<: *runtest
+    docker:
+      - image: awav/tensorflow:2.0-preview
+        environment:
+          PYTEST_FILTER: examples
+
   deploy:
     docker:
-      - image: awav/tensorflow:2.0-nightly-preview
+      - image: awav/tensorflow:2.0-preview
     steps:
       - checkout
       - run:
           name: Verify git tag vs. VERSION
           command: |
-            [ $(cat VERSION | tr -d '\t\r\n ') != "$CIRCLE_TAG" ] && { echo "The package version and the latest tag version are different"; exit 1; }
+            VERSION="v$(cat VERSION | tr -d '\t\r\n ')"
+            if [ "$VERSION" != "$CIRCLE_TAG" ]; then
+              echo "The package version ($VERSION) and the latest tag version ($CIRCLE_TAG) are different"
+              exit 1
+            fi
       - run:
           name: Install twine
           command: |
@@ -50,24 +65,35 @@ jobs:
       - run:
           name: Create pip package
           command: |
-            make package
+            python setup.py bdist_wheel sdist
       - run:
           name: Upload to PyPI
           command: |
             twine upload dist/*
 
-
 workflows:
   version: 2.1
-  build_and_test:
+  build_test_and_deploy:
     jobs:
-      - unit-test
-      # - notebook-test
-      - deploy:
-          requires:
-            - unit-test
+      - unit-test:
           filters:
             tags:
-              only: /v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+              only: /^v[0-9]+(\.[0-9]+)*/
+      # # TODO: uncomment it when gpflow-2.0 is ready
+      # - notebook-test:
+      #     filters:
+      #       tags:
+      #         only: /^v[0-9]+(\.[0-9]+)*/
+      # - example-test:
+      #     filters:
+      #       tags:
+      #         only: /^v[0-9]+(\.[0-9]+)*/
+      # - deploy:
+      #     requires:
+      #       - unit-test
+      #       - notebook-test
+      #     filters:
+      #       tags:
+      #         only: /^v[0-9]+(\.[0-9]+)*/
+      #       branches:
+      #         ignore: /.*/

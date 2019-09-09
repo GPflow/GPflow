@@ -11,6 +11,7 @@ from setuptools import find_packages, setup
 
 # Dependencies of GPflow
 requirements = [
+    'gast==0.2.2',
     'numpy>=1.10.0',
     'scipy>=0.18.0',
     'pandas>=0.18.1',
@@ -18,6 +19,7 @@ requirements = [
     'pytest>=3.5.0',
     'h5py>=2.7.0',
     'matplotlib>=2.2.2',
+    'tabulate',
     'tfp-nightly'
 ]
 
