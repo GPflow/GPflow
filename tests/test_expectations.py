@@ -35,10 +35,10 @@ num_ind = 4
 D_in = 2
 D_out = 2
 
-Xmu = rng.randn(num_data, D_in)
-Xmu_markov = rng.randn(num_data + 1, D_in)  # (N+1)xD
+Xmu = ctt(rng.randn(num_data, D_in))
+Xmu_markov = ctt(rng.randn(num_data + 1, D_in))  # (N+1)xD
 Xcov = rng.randn(num_data, D_in, D_in)
-Xcov = Xcov @ np.transpose(Xcov, (0, 2, 1))
+Xcov = ctt(Xcov @ np.transpose(Xcov, (0, 2, 1)))
 Z = rng.randn(num_ind, D_in)
 
 
@@ -48,7 +48,7 @@ def markov_gauss():
     Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
     Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # (N+1)xDxD
     Xcov = np.stack([Xcov, Xcross])  # 2x(N+1)xDxD
-    return MarkovGaussian(ctt(Xmu_markov), ctt(Xcov))
+    return MarkovGaussian(Xmu_markov, ctt(Xcov))
 
 
 _means = {
@@ -60,14 +60,14 @@ _means = {
 
 
 _distrs = {
-    'gauss': Gaussian(ctt(Xmu), ctt(Xcov)),
-    'dirac_gauss': Gaussian(ctt(Xmu), ctt(np.zeros((num_data, D_in, D_in)))),
-    'gauss_diag': DiagonalGaussian(ctt(Xmu), ctt(rng.rand(num_data, D_in))),
-    'dirac_diag': DiagonalGaussian(ctt(Xmu), ctt(np.zeros((num_data, D_in)))),
-    'dirac_markov_gauss': MarkovGaussian(ctt(Xmu_markov), ctt(np.zeros((2, num_data + 1, D_in, D_in)))),
+    'gauss': Gaussian(Xmu, Xcov),
+    'dirac_gauss': Gaussian(Xmu, np.zeros((num_data, D_in, D_in))),
+    'gauss_diag': DiagonalGaussian(Xmu, rng.rand(num_data, D_in)),
+    'dirac_diag': DiagonalGaussian(Xmu, np.zeros((num_data, D_in))),
+    'dirac_markov_gauss': MarkovGaussian(Xmu_markov,
+                                         np.zeros((2, num_data + 1, D_in, D_in))),
     'markov_gauss': markov_gauss()
 }
-
 
 _kerns = {
     'rbf': kernels.RBF(variance=rng.rand(), lengthscale=rng.rand() + 1.),
@@ -141,7 +141,8 @@ def test_mean_function_only_expectations(distribution, mean1, mean2, arg_filter)
 @pytest.mark.parametrize("arg_filter",
                          [lambda p, k, f: (p, k),
                           lambda p, k, f: (p, (k, f)),
-                          lambda p, k, f: (p, (k, f), (k, f))])
+                          lambda p, k, f: (p, (k, f), (k, f))
+                          ])
 def test_kernel_only_expectations(distribution, kernel, feature, arg_filter):
     params = arg_filter(distribution, kernel, feature)
     _check(params)
@@ -257,9 +258,3 @@ def test_cov_shape_inference(distribution, kernel, feature):
     _check((gauss_tuple, (kernel, feature)))
     if isinstance(distribution, MarkovGaussian):
         _check((gauss_tuple, None, (kernel, feature)))
-
-
-# if __name__ == "__main__":
-    # pytest.main()
-# test_cov_shape_inference(_distrs['gauss_diag'], _kerns['rbf'], features.InducingPoints(Z))
-# test_kernel_only_expectations(_distrs['gauss'], _kerns['lin'], features.InducingPoints(Z), lambda p, k, f: (p, k))

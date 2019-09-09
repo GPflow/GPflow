@@ -6,7 +6,7 @@ from .. import mean_functions as mfn
 from ..features import InducingPoints
 from ..probability_distributions import (DiagonalGaussian, Gaussian,
                                          MarkovGaussian)
-from ..util import NoneType
+from ..util import NoneType, default_float
 from .expectations import expectation
 
 
@@ -43,12 +43,14 @@ def _E(p, kern, feat, _, __, nghp=None):
     chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
 
     all_diffs = tf.transpose(Z) - tf.expand_dims(Xmu, 2)  # NxDxM
-    exponent_mahalanobis = tf.linalg.triangular_solve(chol_L_plus_Xcov, all_diffs, lower=True)  # NxDxM
+    exponent_mahalanobis = tf.linalg.triangular_solve(chol_L_plus_Xcov, all_diffs,
+                                                      lower=True)  # NxDxM
     exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
-    sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
+    sqrt_det_L_plus_Xcov = tf.exp(
+        tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
     return kern.variance * (determinants[:, None] * exponent_mahalanobis)
@@ -75,7 +77,8 @@ def _E(p, mean, _, kern, feat, nghp=None):
     all_diffs = tf.transpose(feat.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
-    sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
+    sqrt_det_L_plus_Xcov = tf.exp(
+        tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
     exponent_mahalanobis = tf.linalg.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
@@ -85,7 +88,8 @@ def _E(p, mean, _, kern, feat, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
+    return kern.variance * (determinants[:, None] *
+                            exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
 @dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.RBF, InducingPoints)
@@ -109,7 +113,8 @@ def _E(p, mean, _, kern, feat, nghp=None):
     all_diffs = tf.transpose(feat.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
 
     sqrt_det_L = tf.reduce_prod(lengthscale)
-    sqrt_det_L_plus_Xcov = tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
+    sqrt_det_L_plus_Xcov = tf.exp(
+        tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1))
     determinants = sqrt_det_L / sqrt_det_L_plus_Xcov  # N
 
     exponent_mahalanobis = tf.linalg.cholesky_solve(chol_L_plus_Xcov, all_diffs)  # NxDxM
@@ -119,10 +124,12 @@ def _E(p, mean, _, kern, feat, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(all_diffs * exponent_mahalanobis, 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    return kern.variance * (determinants[:, None] * exponent_mahalanobis)[:, None, :] * non_exponent_term
+    return kern.variance * (determinants[:, None] *
+                            exponent_mahalanobis)[:, None, :] * non_exponent_term
 
 
-@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.RBF, InducingPoints, kernels.RBF, InducingPoints)
+@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.RBF, InducingPoints,
+                               kernels.RBF, InducingPoints)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:
@@ -155,24 +162,26 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     squared_lengthscale = kern.lengthscale ** 2
     if not kern.ard:
-        squared_lengthscale = tf.zeros((D,), dtype=squared_lengthscale.dtype) + squared_lengthscale
+        zero_lengthscale = tf.zeros((D,), dtype=squared_lengthscale.dtype)
+        squared_lengthscale = squared_lengthscale + zero_lengthscale
 
     sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscale) ** 0.5
     C = tf.linalg.cholesky(0.5 * tf.linalg.diag(squared_lengthscale) + Xcov)  # NxDxD
     dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(C)), axis=1))  # N
 
     C_inv_mu = tf.linalg.triangular_solve(C, tf.expand_dims(Xmu, 2), lower=True)  # NxDx1
-    C_inv_z = tf.linalg.triangular_solve(C,
-                                            tf.tile(tf.expand_dims(tf.transpose(Z) / 2., 0), [N, 1, 1]),
-                                            lower=True)  # NxDxM
+    C_inv_z = tf.linalg.triangular_solve(
+        C,
+        tf.tile(tf.expand_dims(tf.transpose(Z) / 2., 0), [N, 1, 1]),
+        lower=True)  # NxDxM
     mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
     z_CC_inv_z = tf.reduce_sum(tf.square(C_inv_z), 1)  # NxM
     zm_CC_inv_zn = tf.linalg.matmul(C_inv_z, C_inv_z, transpose_a=True)  # NxMxM
     two_z_CC_inv_mu = 2 * tf.linalg.matmul(C_inv_z, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM
-
+    # NxMxM
     exponent_mahalanobis = mu_CC_inv_mu + tf.expand_dims(z_CC_inv_z, 1) + \
-                            tf.expand_dims(z_CC_inv_z, 2) + 2 * zm_CC_inv_zn - \
-                            tf.expand_dims(two_z_CC_inv_mu, 2) - tf.expand_dims(two_z_CC_inv_mu, 1)  # NxMxM
+        tf.expand_dims(z_CC_inv_z, 2) + 2 * zm_CC_inv_zn - \
+        tf.expand_dims(two_z_CC_inv_mu, 2) - tf.expand_dims(two_z_CC_inv_mu, 1)
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxMxM
 
     # Compute sqrt(self(Z)) explicitly to prevent automatic gradient from
