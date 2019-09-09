@@ -55,17 +55,33 @@ class _SettingsManager(object):
     def jitter(self):
         return self.numerics.jitter_level
 
+    @jitter.setter
+    def jitter(self, value):
+        self.numerics.jitter_level = value
+
     @property
     def float_type(self):
         return self.dtypes.float_type
+
+    @float_type.setter
+    def float_type(self, value):
+        self.dtypes.float_type = value
 
     @property
     def int_type(self):
         return self.dtypes.int_type
 
+    @int_type.setter
+    def int_type(self, value):
+        self.dtypes.int_type = value
+
     @property
     def logging_level(self):
         return self.logging.level
+
+    @logging_level.setter
+    def logging_level(self, value):
+        self.logging.level = value
 
     def logger(self):
         frame = inspect.currentframe().f_back
