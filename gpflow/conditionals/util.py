@@ -34,9 +34,9 @@ def base_conditional(Kmn: tf.Tensor,
     :return: [N, R]  or [R, N, N]
     """
     # compute kernel stuff
-    num_func = function.shape[-1]  # R
-    N = Kmn.shape[-1]
-    M = function.shape[-2]
+    num_func = tf.shape(function)[-1]  # R
+    N = tf.shape(Kmn)[-1]
+    M = tf.shape(function)[-2]
 
     # get the leadings dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
@@ -82,9 +82,10 @@ def base_conditional(Kmn: tf.Tensor,
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
         elif q_sqrt_dims == 3:
             L = q_sqrt
-            L = tf.broadcast_to(L, tf.concat([leading_dims, L.shape], 0))
+            L_shape = tf.shape(L)
+            L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
 
-            shape = tf.concat([leading_dims, [num_func, M, N]], 0)
+            shape = [*leading_dims, num_func, M, N]
             A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
             LTA = tf.linalg.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover

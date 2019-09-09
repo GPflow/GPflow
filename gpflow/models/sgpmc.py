@@ -19,7 +19,10 @@ import tensorflow_probability as tfp
 from gpflow.base import Parameter
 from gpflow.inducing_variables import InducingPoints
 from ..conditionals import conditional
-from ..models.model import GPModelOLD, MeanAndVariance
+from ..models.model import GPModel, MeanAndVariance
+
+# ERROR: Modify this
+GPModelOLD = GPModel
 
 
 class SGPMC(GPModelOLD):

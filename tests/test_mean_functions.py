@@ -89,7 +89,7 @@ _constant_functions.append(Constant(c=-1. * _constant_functions[0].c))
 
 
 def _create_GPR_model_with_bias(X, Y, mean_function):
-    return gpflow.models.GPR(X, Y, mean_function=mean_function, kernel=gpflow.kernels.Bias(Datum.input_dim))
+    return gpflow.models.GPR((X, Y), mean_function=mean_function, kernel=gpflow.kernels.Bias(Datum.input_dim))
 
 
 @pytest.mark.parametrize('mean_functions', [_linear_functions, _constant_functions])
@@ -221,8 +221,8 @@ def test_models_with_mean_functions_changes(model_class):
     non_zero_mean = Constant(c=np.ones(1) * 10)
 
     if model_class in [gpflow.models.GPR]:
-        model_zero_mean = model_class(X, Y, kernel=kernel, mean_function=zero_mean)
-        model_non_zero_mean = model_class(X, Y, kernel=kernel, mean_function=non_zero_mean)
+        model_zero_mean = model_class((X, Y), kernel=kernel, mean_function=zero_mean)
+        model_non_zero_mean = model_class((X, Y), kernel=kernel, mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SVGP]:
         model_zero_mean = model_class(kernel=kernel, likelihood=likelihood, inducing_variables=inducing_variables,
                                       mean_function=zero_mean)

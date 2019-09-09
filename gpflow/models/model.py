@@ -13,15 +13,20 @@
 # limitations under the License.
 
 import abc
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TypeVar
 
+import numpy as np
 import tensorflow as tf
+
 from ..base import Module
+from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
-from ..config import default_float, default_jitter
+from ..utilities import ops
 
+Data = TypeVar('Data', Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
+DataPoint = tf.Tensor
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
@@ -83,126 +88,40 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @abc.abstractmethod
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
+                  full_output_cov: bool = False) -> MeanAndVariance:
         pass
 
-    def predict_f_samples(self, X, num_samples):
+    def predict_f_samples(self,
+                          predict_at: DataPoint,
+                          num_samples: int = 1,
+                          full_cov: bool = True,
+                          full_output_cov: bool = False) -> tf.Tensor:
         """
-        Produce samples from the posterior latent function(s) at the points
-        Xnew.
+        Produce samples from the posterior latent function(s) at the input points.
         """
-        mu, var = self.predict_f(X, full_cov=True)  # [P, N, N]
-        jitter = tf.eye(tf.shape(mu)[0], dtype=default_float()) * default_jitter()
-        samples = [None] * self.num_latent
-        for i in range(self.num_latent):
-            L = tf.linalg.cholesky(var[i, ...] + jitter)
-            shape = tf.stack([L.shape[0], num_samples])
-            V = tf.random.normal(shape, dtype=L.dtype)
-            samples[i] = mu[:, i:(i + 1)] + L @ V
-        return tf.transpose(tf.stack(samples))
+        mu, var = self.predict_f(predict_at, full_cov=full_cov)  # [N, P], [P, N, N]
+        num_latent = var.shape[0]
+        num_elems = var.shape[1]
+        var_jitter = ops.add_to_diagonal(var, default_jitter())
+        L = tf.linalg.cholesky(var_jitter)  # [P, N, N]
+        V = tf.random.normal([num_latent, num_elems, num_samples], dtype=mu.dtype)  # [P, N, S]
+        LV = L @ V  # [P, N, S]
+        mu_t = tf.linalg.adjoint(mu)  # [P, N]
+        return tf.transpose(mu_t[..., np.newaxis] + LV)  # [S, N, P]
 
-    def predict_y(self, X):
+    def predict_y(self, predict_at: DataPoint, full_cov: bool = False,
+                  full_output_cov: bool = False) -> MeanAndVariance:
         """
-        Compute the mean and variance of held-out data at the points X
+        Compute the mean and variance of the held-out data at the input points.
         """
-        f_mean, f_var = self.predict_f(X)
+        f_mean, f_var = self.predict_f(predict_at, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
-    def predict_log_density(self, X, Y):
+    def predict_log_density(self, data: Data, full_cov: bool = False, full_output_cov: bool = False):
         """
-        Compute the (log) density of the data Ynew at the points Xnew
-
-        Note that this computes the log density of the data individually,
-        ignoring correlations between them. The result is a matrix the same
-        shape as Ynew containing the log densities.
+        Compute the log density of the data at the new data points.
         """
-        f_mean, f_var = self.predict_f(X)
-        return self.likelihood.predict_density(f_mean, f_var, Y)
-
-
-class GPModelOLD(BayesianModel):
-    """
-    A base class for Gaussian process models, that is, those of the form
-
-    .. math::
-       :nowrap:
-
-       \\begin{align}
-       \\theta & \sim p(\\theta) \\\\
-       f       & \sim \\mathcal{GP}(m(x), k(x, x'; \\theta)) \\\\
-       f_i       & = f(x_i) \\\\
-       y_i\,|\,f_i     & \sim p(y_i|f_i)
-       \\end{align}
-
-    This class mostly adds functionality to compile predictions. To use it,
-    inheriting classes must define a build_predict function, which computes
-    the means and variances of the latent function. This gets compiled
-    similarly to build_likelihood in the Model class.
-
-    These predictions are then pushed through the likelihood to obtain means
-    and variances of held out data, self.predict_y.
-
-    The predictions can also be used to compute the (log) density of held-out
-    data via self.predict_density.
-
-    For handling another data (Xnew, Ynew), set the new value to self.X and self.Y
-
-    >>> m.X = Xnew
-    >>> m.Y = Ynew
-    """
-
-    def __init__(self,
-                 X: object,
-                 Y: object,
-                 kernel: object,
-                 likelihood: object,
-                 mean_function: object = None,
-                 num_latent: object = 1,
-                 seed: object = None) -> object:
-        super().__init__()
-        self.X = X
-        self.Y = Y
-        self.num_latent = num_latent or Y.shape[1]
-        # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
-        if mean_function is None:
-            mean_function = Zero()
-        self.mean_function = mean_function
-        self.kernel = kernel
-        self.likelihood = likelihood
-
-    @abc.abstractmethod
-    def predict_f(self, X: tf.Tensor, full=False, full_output_cov=False) -> MeanAndVariance:
-        pass
-
-    def predict_f_samples(self, X, num_samples):
-        """
-        Produce samples from the posterior latent function(s) at the points
-        Xnew.
-        """
-        mu, var = self.predict_f(X, full=True)  # [P, N, N]
-        jitter = tf.eye(tf.shape(mu)[0], dtype=default_float()) * default_jitter()
-        samples = [None] * self.num_latent
-        for i in range(self.num_latent):
-            L = tf.linalg.cholesky(var[i, ...] + jitter)
-            shape = tf.stack([L.shape[0], num_samples])
-            V = tf.random.normal(shape, dtype=L.dtype)
-            samples[i] = mu[:, i:(i + 1)] + L @ V
-        return tf.transpose(tf.stack(samples))
-
-    def predict_y(self, X):
-        """
-        Compute the mean and variance of held-out data at the points X
-        """
-        f_mean, f_var = self.predict_f(X)
-        return self.likelihood.predict_mean_and_var(f_mean, f_var)
-
-    def predict_log_density(self, X, Y):
-        """
-        Compute the (log) density of the data Ynew at the points Xnew
-
-        Note that this computes the log density of the data individually,
-        ignoring correlations between them. The result is a matrix the same
-        shape as Ynew containing the log densities.
-        """
-        f_mean, f_var = self.predict_f(X)
-        return self.likelihood.predict_density(f_mean, f_var, Y)
+        x, y = data
+        f_mean, f_var = self.predict_f(x, full_cov=full_cov, full_output_cov=full_output_cov)
+        return self.likelihood.predict_density(f_mean, f_var, y)

@@ -19,10 +19,14 @@ from gpflow.inducing_variables import InducingPoints
 from gpflow.covariances.dispatch import Kuf, Kuu
 from gpflow.config import default_float, default_jitter
 
-from .model import GPModel, GPModelOLD, MeanAndVariance
+from .model import GPModel, GPModel, MeanAndVariance
 from .. import inducing_variables
 from .. import likelihoods
 from ..mean_functions import Zero
+
+
+# ERROR: Modify this
+GPModelOLD = GPModel
 
 
 class SGPRUpperMixin(object):

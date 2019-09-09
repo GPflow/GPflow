@@ -10,6 +10,12 @@ def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tens
     return tf.linalg.diag(tf.fill([num], value))
 
 
+def add_to_diagonal(to_tensor: tf.Tensor, value: tf.Tensor):
+    diag = tf.linalg.diag_part(to_tensor)
+    new_diag = diag + value
+    return tf.linalg.set_diag(to_tensor, new_diag)
+
+
 def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]], leading_dim: int = 0) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions. Leading dimensions in

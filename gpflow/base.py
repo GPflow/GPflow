@@ -42,8 +42,8 @@ class Parameter(tf.Module):
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
                  trainable: bool = True,
-                 dtype: DType = None,
-                 name: str = None):
+                 dtype: Optional[DType] = None,
+                 name: Optional[str] = None):
         """
         Unconstrained parameter representation.
         According to standart terminology `y` is always transformed representation or,

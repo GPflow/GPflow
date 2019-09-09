@@ -132,7 +132,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
         Fmu, Fvar = map(unify, [Fmu, Fvar])  # both [N, 1, Din]
     else:
         Din = 1
-        shape = Fmu.shape
+        shape = tf.shape(Fmu)
         Fmu, Fvar = [tf.reshape(f, (-1, 1, 1)) for f in [Fmu, Fvar]]
 
     xn, wn = mvhermgauss(H, Din)

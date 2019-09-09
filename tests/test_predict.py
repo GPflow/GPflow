@@ -70,10 +70,10 @@ model_setups = [
 
 @pytest.mark.parametrize('Ntrain, Ntest, D', [[100, 10, 2]])
 def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
-    X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
+    data = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, _ = rng.randn(Ntest, D), rng.randn(Ntest, 1)
     kernel = Matern32() + gpflow.kernels.White()
-    model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
+    model_gp = gpflow.models.GPR(data, kernel=kernel)
 
     mu_f, var_f = model_gp.predict_f(Xtest)
     mu_y, var_y = model_gp.predict_y(Xtest)
@@ -84,28 +84,26 @@ def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
 
 @pytest.mark.parametrize('Ntrain, Ntest, D', [[100, 10, 2]])
 def test_gaussian_log_density(Ntrain, Ntest, D):
-    X, Y = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
+    data = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
     kernel = Matern32() + gpflow.kernels.White()
-    model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
+    model_gp = gpflow.models.GPR(data, kernel=kernel)
 
     mu_y, var_y = model_gp.predict_y(Xtest)
-    log_density = model_gp.predict_log_density(Xtest, Ytest)
-    log_density_hand = (-0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) -
-                        0.5 * np.square(mu_y - Ytest) / var_y)
+    data = Xtest, Ytest
+    log_density = model_gp.predict_log_density(data)
+    log_density_hand = (-0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) - 0.5 * np.square(mu_y - Ytest) / var_y)
 
     assert np.allclose(log_density_hand, log_density)
 
 
-@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M',
-                         [[3, 2, 20, 30, 5]])
+@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M', [[3, 2, 20, 30, 5]])
 def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
     covar_shape = (output_dim, Ntest, Ntest)
-    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(
-        M, input_dim)
+    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     kernel = Matern32()
-    model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
+    model_gp = gpflow.models.GPR([X, Y], kernel=kernel)
 
     mu1, var = model_gp.predict_f(Xtest, full_cov=False)
     mu2, covar = model_gp.predict_f(Xtest, full_cov=True)
@@ -121,16 +119,13 @@ def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
 
 
 @pytest.mark.skip(reason='GPR model is not ready')
-@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M, num_samples',
-                         [[3, 2, 20, 30, 5, 5]])
-def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M,
-                                   num_samples):
+@pytest.mark.parametrize('input_dim, output_dim, N, Ntest, M, num_samples', [[3, 2, 20, 30, 5, 5]])
+def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_samples):
     samples_shape = (num_samples, Ntest, output_dim)
-    X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(
-        M, input_dim)
+    X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     kernel = Matern32()
-    model_gp = gpflow.models.GPR(X, Y, kernel=kernel)
+    model_gp = gpflow.models.GPR([X, Y], kernel=kernel)
 
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape
@@ -142,8 +137,7 @@ def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M,
 @pytest.mark.parametrize('N', [20])
 @pytest.mark.parametrize('Ntest', [30])
 @pytest.mark.parametrize('M', [5])
-def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest,
-                               M):
+def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest, M):
     covar_shape = (output_dim, Ntest, Ntest)
     # TODO(@awav): may need them for other models
     # X, Y = rng.randn(N, input_dim), rng.randn(N, output_dim)
@@ -168,13 +162,11 @@ def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest,
 @pytest.mark.parametrize('Ntest', [30])
 @pytest.mark.parametrize('M', [5])
 @pytest.mark.parametrize('num_samples', [5])
-def test_other_models_full_cov_samples(model_setup, input_dim, output_dim, N,
-                                       Ntest, M, num_samples):
+def test_other_models_full_cov_samples(model_setup, input_dim, output_dim, N, Ntest, M, num_samples):
     samples_shape = (num_samples, Ntest, output_dim)
     # TODO(@awav): may need them for other models
     # X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
-    _, _, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(
-        M, input_dim)
+    _, _, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     model_gp = model_setup.get_model(Z, num_latent=output_dim)
 
