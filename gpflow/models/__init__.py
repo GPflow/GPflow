@@ -28,4 +28,4 @@ from .sgpr import SGPR
 from .svgp import SVGP
 # from .svgp import SVGP
 from .vgp import VGP
-# from .vgp import VGP_opper_archambeau
+# from .vgp import VGPOpperArchambeau

@@ -195,8 +195,7 @@ _model_classes = [
     gpflow.models.SGPR,
     gpflow.models.GPRFITC,
     gpflow.models.SVGP,
-    # gpflow.models.VGP(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
-    # gpflow.models.VGP(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
+    gpflow.models.VGP,
     # gpflow.models.GPMC(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
     # gpflow.models.SGPMC(X, Y, mean_function=mf(), kernel=k(), likelihood=lik(), Z=Z)
 ]
@@ -212,8 +211,8 @@ def test_models_with_mean_functions_changes(model_class):
     a constant results in a higher prediction, whereas addition of zero/
     mutliplication with one does not.
     """
-    X, Y = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, 1)
-    Xtest = rng.randn(Datum.Ntest, Datum.input_dim)
+    data = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, 1)
+    predict_at = rng.randn(Datum.Ntest, Datum.input_dim)
     inducing_variables = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
@@ -221,29 +220,34 @@ def test_models_with_mean_functions_changes(model_class):
     non_zero_mean = Constant(c=np.ones(1) * 10)
 
     if model_class in [gpflow.models.GPR]:
-        model_zero_mean = model_class((X, Y), kernel=kernel, mean_function=zero_mean)
-        model_non_zero_mean = model_class((X, Y), kernel=kernel, mean_function=non_zero_mean)
+        model_zero_mean = model_class(data, kernel=kernel, mean_function=zero_mean)
+        model_non_zero_mean = model_class(data, kernel=kernel, mean_function=non_zero_mean)
+    elif model_class in [gpflow.models.VGP]:
+        model_zero_mean = model_class(data, likelihood=likelihood, kernel=kernel, mean_function=zero_mean)
+        model_non_zero_mean = model_class(data, likelihood=likelihood, kernel=kernel, mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SVGP]:
-        model_zero_mean = model_class(kernel=kernel, likelihood=likelihood, inducing_variables=inducing_variables,
+        model_zero_mean = model_class(kernel=kernel,
+                                      likelihood=likelihood,
+                                      inducing_variables=inducing_variables,
                                       mean_function=zero_mean)
         model_non_zero_mean = model_class(kernel=kernel,
                                           likelihood=likelihood,
                                           inducing_variables=inducing_variables,
                                           mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SGPR, gpflow.models.GPRFITC]:
-        model_zero_mean = model_class((X, Y),
+        model_zero_mean = model_class(data,
                                       kernel=kernel,
                                       inducing_variables=inducing_variables,
                                       mean_function=zero_mean)
-        model_non_zero_mean = model_class((X, Y),
+        model_non_zero_mean = model_class(data,
                                           kernel=kernel,
                                           inducing_variables=inducing_variables,
                                           mean_function=non_zero_mean)
     else:
         raise (NotImplementedError)
 
-    mu_zero, var_zero = model_zero_mean.predict_f(Xtest)
-    mu_non_zero, var_non_zero = model_non_zero_mean.predict_f(Xtest)
+    mu_zero, var_zero = model_zero_mean.predict_f(predict_at)
+    mu_non_zero, var_non_zero = model_non_zero_mean.predict_f(predict_at)
     # predictive variance remains unchanged after modifying mean function
     assert np.all(var_zero.numpy() == var_non_zero.numpy())
     # predictive mean changes after modifying mean function
