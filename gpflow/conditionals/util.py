@@ -1,50 +1,54 @@
-from typing import Callable
-
 import tensorflow as tf
 
-from ..util import (create_logger, default_float, default_jitter,
-                    leading_transpose)
-
-logger = create_logger()
+from ..config import default_float, default_jitter
+from ..utilities.ops import leading_transpose
 
 
-def base_conditional(
-        Kmn: tf.Tensor,
-        Kmm: tf.Tensor,
-        Knn: tf.Tensor,
-        function: tf.Tensor,
-        *, full_cov=False, q_sqrt=None, white=False):
-    r"""
+def base_conditional(Kmn: tf.Tensor,
+                     Kmm: tf.Tensor,
+                     Knn: tf.Tensor,
+                     function: tf.Tensor,
+                     *,
+                     full_cov=False,
+                     q_sqrt=None,
+                     white=False):
+    """
     Given a g1 and g2, and distribution p and q such that
-      p(g2) = N(g2;0,Kmm)
-      p(g1) = N(g1;0,Knn)
-      p(g1|g2) = N(g1;0,Knm)
+      p(g2) = N(g2; 0, Kmm)
+      p(g1) = N(g1; 0, Knn)
+      p(g1 | g2) = N(g1;0,Knm)
+
     And
       q(g2) = N(g2; f, q_sqrt * q_sqrt^T)
+
     This method computes the mean and (co)variance of
       q(g1) = \int q(g2) p(g1|g2)
-    :param Kmn: M x [...] x N
+
+    :param Kmn: [M, ..., N]
     :param Kmm: [M, M]
-    :param Knn: [...][, N, N]  or  N
+    :param Knn: [..., N, N]  or  N
     :param f: [M, R]
     :param full_cov: bool
     :param q_sqrt: None or [R, M, M] (lower triangular)
     :param white: bool
     :return: [N, R]  or [R, N, N]
     """
-    logger.debug("base conditional")
     # compute kernel stuff
-    num_func = function.shape[-1]  # R
-    N = Kmn.shape[-1]
-    M = function.shape[-2]
+    num_func = tf.shape(function)[-1]  # R
+    N = tf.shape(Kmn)[-1]
+    M = tf.shape(function)[-2]
 
     # get the leadings dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
     K = tf.rank(Kmn)
-    perm = tf.concat([tf.reshape(tf.range(1, K-1), [K-2]),  # leading dims (...)
-                      tf.reshape(0, [1]),  # [M]
-                      tf.reshape(K-1, [1])], 0)  # [N]
-    Kmn = tf.transpose(Kmn, perm)  # ...[, M, N]
+    perm = tf.concat(
+        [
+            tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
+            tf.reshape(0, [1]),  # [M]
+            tf.reshape(K - 1, [1])
+        ],
+        0)  # [N]
+    Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
 
     leading_dims = Kmn.shape[:-2]
     Lm = tf.linalg.cholesky(Kmm)  # [M, M]
@@ -52,6 +56,7 @@ def base_conditional(
     # Compute the projection matrix A
     Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, Lm.shape], 0))  # [..., M, M]
     A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
+
     # compute the covariance due to the conditioning
     if full_cov:
         fvar = Knn - tf.linalg.matmul(A, A, transpose_a=True)  # [..., N, N]
@@ -64,7 +69,7 @@ def base_conditional(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.linalg.triangular_solve(tf.linalg.transpose(Lm), A, lower=False)
+        A = tf.linalg.triangular_solve(tf.linalg.adjoint(Lm), A, lower=False)
 
     # construct the conditional mean
     f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [..., M, R]
@@ -72,24 +77,27 @@ def base_conditional(
     fmean = tf.linalg.matmul(A, f, transpose_a=True)  # [..., N, R]
 
     if q_sqrt is not None:
-        if q_sqrt.shape.ndims == 2:
+        q_sqrt_dims = q_sqrt.shape.ndims
+        if q_sqrt_dims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
-        elif q_sqrt.shape.ndims == 3:
+        elif q_sqrt_dims == 3:
             L = q_sqrt
-            L = tf.broadcast_to(L, tf.concat([leading_dims, L.shape], 0))
+            L_shape = tf.shape(L)
+            L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
 
-            shape = tf.concat([leading_dims, [num_func, M, N]], 0)
+            shape = [*leading_dims, num_func, M, N]
             A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
             LTA = tf.linalg.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.shape.ndims))
+
         if full_cov:
             fvar = fvar + tf.linalg.matmul(LTA, LTA, transpose_a=True)  # [R, N, N]
         else:
             fvar = fvar + tf.reduce_sum(tf.square(LTA), -2)  # [R, N]
 
     if not full_cov:
-        fvar = tf.linalg.transpose(fvar)  # [N, R]
+        fvar = tf.linalg.adjoint(fvar)  # [N, R]
 
     return fmean, fvar  # [N, R], [R, N, N] or [N, R]
 
@@ -113,16 +121,15 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
 
     if cov_structure == "diag":
         # mean: [..., N, D] and cov [..., N, D]
-        assert tf.rank(mean) == tf.rank(cov)
+        tf.assert_equal(tf.rank(mean), tf.rank(cov))
         eps_shape = tf.concat([leading_dims, [S], mean_shape[-2:]], 0)
         eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., S, N, D]
         samples = mean[..., None, :, :] + tf.sqrt(cov)[..., None, :, :] * eps  # [..., S, N, D]
     elif cov_structure == "full":
         # mean: [..., N, D] and cov [..., N, D, D]
-        assert (tf.rank(mean) + 1) == tf.rank(cov)
-        jittermat = (
-            tf.eye(D, batch_shape=mean_shape[:-1], dtype=default_float()) * default_jitter()
-        )  # [..., N, D, D]
+        tf.assert_equal(tf.rank(mean) + 1, tf.rank(cov))
+        jittermat = (tf.eye(D, batch_shape=mean_shape[:-1], dtype=default_float()) * default_jitter()
+                     )  # [..., N, D, D]
         eps_shape = tf.concat([mean_shape, [S]], 0)
         eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., N, D, S]
         chol = tf.linalg.cholesky(cov + jittermat)  # [..., N, D, D]
@@ -150,10 +157,10 @@ def expand_independent_outputs(fvar, full_cov, full_output_cov):
        fvar [N, P]
     """
     if full_cov and full_output_cov:
-        fvar = tf.linalg.diag(tf.transpose(fvar))   # [N, N, P, P]
+        fvar = tf.linalg.diag(tf.transpose(fvar))  # [N, N, P, P]
         fvar = tf.transpose(fvar, [0, 2, 1, 3])  # [N, P, N, P]
     if not full_cov and full_output_cov:
-        fvar = tf.linalg.diag(fvar)   # [N, P, P]
+        fvar = tf.linalg.diag(fvar)  # [N, P, P]
     if full_cov and not full_output_cov:
         pass  # [P, N, N]
     if not full_cov and not full_output_cov:
@@ -162,8 +169,15 @@ def expand_independent_outputs(fvar, full_cov, full_output_cov):
     return fvar
 
 
-def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False,
-                                        q_sqrt=None, white=False):
+def independent_interdomain_conditional(Kmn,
+                                        Kmm,
+                                        Knn,
+                                        f,
+                                        *,
+                                        full_cov=False,
+                                        full_output_cov=False,
+                                        q_sqrt=None,
+                                        white=False):
     """
     The inducing outputs live in the g-space (R^L).
     Interdomain conditional calculation.
@@ -179,7 +193,6 @@ def independent_interdomain_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         - mean: [N, P]
         - variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]
     """
-    logger.debug("independent_interdomain_conditional")
     M, L, N, P = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
 
     Lm = tf.linalg.cholesky(Kmm)  # [L, M, M]
@@ -245,16 +258,25 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_outpu
         - mean: [N, P]
         - variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]
     """
-    m, v = fully_correlated_conditional_repeat(
-        Kmn, Kmm, Knn, f,
-        full_cov=full_cov,
-        full_output_cov=full_output_cov,
-        q_sqrt=q_sqrt,
-        white=white)
+    m, v = fully_correlated_conditional_repeat(Kmn,
+                                               Kmm,
+                                               Knn,
+                                               f,
+                                               full_cov=full_cov,
+                                               full_output_cov=full_output_cov,
+                                               q_sqrt=q_sqrt,
+                                               white=white)
     return m[0, ...], v[0, ...]
 
 
-def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
+def fully_correlated_conditional_repeat(Kmn,
+                                        Kmm,
+                                        Knn,
+                                        f,
+                                        *,
+                                        full_cov=False,
+                                        full_output_cov=False,
+                                        q_sqrt=None,
                                         white=False):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
@@ -272,7 +294,6 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         - mean: [R, N, P]
         - variance: [R, N, P], [R, N, P, P], [R, P, N, N], [R, N, P, N, P]
     """
-    logger.debug("fully correlated conditional")
     R = f.shape[1]
     M, N, K = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
     Lm = tf.linalg.cholesky(Kmm)
@@ -297,11 +318,12 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
         fvar = Knn - tf.linalg.matmul(At, At, transpose_a=True)  # [N, K, K]
     elif not full_cov and not full_output_cov:
         # Knn: [N, K]
-        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (N, K))  # Can also do this with a matmul
+        # Can also do this with a matmul
+        fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (N, K))
 
     # another backsubstitution in the unwhitened case
     if not white:
-        # A = tf.linalg.triangular_solve(tf.linalg.transpose(Lm), A, lower=False)  # [M, K]
+        # A = tf.linalg.triangular_solve(tf.linalg.adjoint(Lm), A, lower=False)  # [M, K]
         raise NotImplementedError("Need to verify this.")  # pragma: no cover
 
     # f: [M, R]
@@ -310,14 +332,13 @@ def fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, *, full_cov=False, ful
 
     if q_sqrt is not None:
         Lf = tf.linalg.band_part(q_sqrt, -1, 0)  # [R, M, M]
-        if q_sqrt.get_shape().ndims == 3:
+        if q_sqrt.shape.ndims == 3:
             A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # [R, M, K]
             LTA = tf.linalg.matmul(Lf, A_tiled, transpose_a=True)  # [R, M, K]
-        elif q_sqrt.get_shape().ndims == 2:  # pragma: no cover
+        elif q_sqrt.shape.ndims == 2:  # pragma: no cover
             raise NotImplementedError("Does not support diagonal q_sqrt yet...")
         else:  # pragma: no cover
-            raise ValueError("Bad dimension for q_sqrt: %s" %
-                             str(q_sqrt.get_shape().ndims))
+            raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt.shape.ndims}")
 
         if full_cov and full_output_cov:
             addvar = tf.linalg.matmul(LTA, LTA, transpose_a=True)  # [R, K, K]

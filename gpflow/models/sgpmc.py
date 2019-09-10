@@ -12,17 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
-from ..models.model import GPModel
+from gpflow.base import Parameter
+from gpflow.inducing_variables import InducingPoints
 from ..conditionals import conditional
-from ..features import inducingpoint_wrapper
-from ..priors import Gaussian
+from ..models.model import GPModel, MeanAndVariance
+
+# ERROR: Modify this
+GPModelOLD = GPModel
 
 
-class SGPMC(GPModel):
+class SGPMC(GPModelOLD):
     """
     This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
 
@@ -54,37 +57,46 @@ class SGPMC(GPModel):
 
 
     """
-    def __init__(self, X, Y, kern, likelihood, feat=None,
+
+    def __init__(self,
+                 X,
+                 Y,
+                 kernel,
+                 likelihood,
                  mean_function=None,
                  num_latent=None,
-                 Z=None,
+                 inducing_variable=None,
                  **kwargs):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
         Z is a data matrix, of inducing inputs, size [M, D]
-        kern, likelihood, mean_function are appropriate GPflow objects
-
+        kernel, likelihood, mean_function are appropriate GPflow objects
         """
-        X = DataHolder(X)
-        Y = DataHolder(Y)
-        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent=num_latent, **kwargs)
+        GPModelOLD.__init__(self,
+                            X,
+                            Y,
+                            kernel,
+                            likelihood,
+                            mean_function,
+                            num_latent=num_latent,
+                            **kwargs)
         self.num_data = X.shape[0]
-        self.feature = inducingpoint_wrapper(feat, Z)
-        self.V = Parameter(np.zeros((len(self.feature), self.num_latent)))
-        self.V.prior = Gaussian(0., 1.)
+        self.inducing_variable = InducingPoints(inducing_variable)
+        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
+        self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
 
-
-    def _build_likelihood(self):
+    def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         """
         This function computes the optimal density for v, q*(v), up to a constant
         """
         # get the (marginals of) q(f): exactly predicting!
-        fmean, fvar = self._build_predict(self.X, full_cov=False)
-        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, self.Y))
+        fmean, fvar = self.predict_f(self.X, full_cov=False)
+        return tf.reduce_sum(
+            self.likelihood.variational_expectations(fmean, fvar, self.Y))
 
-
-    def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):
+    def predict_f(self, X: tf.Tensor, full_cov=False,
+                  full_output_cov=False) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -95,6 +107,12 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z,
 
         """
-        mu, var = conditional(Xnew, self.feature, self.kern, self.V, full_cov=full_cov, q_sqrt=None,
-                              white=True, full_output_cov=full_output_cov)
-        return mu + self.mean_function(Xnew), var
+        mu, var = conditional(X,
+                              self.inducing_variable,
+                              self.kernel,
+                              self.V,
+                              full_cov=full_cov,
+                              q_sqrt=None,
+                              white=True,
+                              full_output_cov=full_output_cov)
+        return mu + self.mean_function(X), var

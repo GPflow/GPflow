@@ -1,20 +1,18 @@
 import tensorflow as tf
 
-from ..features import InducingFeature
+from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
-from ..util import create_logger
 from .dispatch import conditional, sample_conditional
 from .util import sample_mvn
 
-logger = create_logger()
-
 
 @sample_conditional.register(object, object, Kernel, object)
-@sample_conditional.register(object, InducingFeature, Kernel, object)
+@sample_conditional.register(object, InducingVariables, Kernel, object)
 def _sample_conditional(Xnew: tf.Tensor,
-                        feature: InducingFeature,
+                        inducing_variable: InducingVariables,
                         kernel: Kernel,
-                        function: tf.Tensor, *,
+                        function: tf.Tensor,
+                        *,
                         full_cov=False,
                         full_output_cov=False,
                         q_sqrt=None,
@@ -35,20 +33,28 @@ def _sample_conditional(Xnew: tf.Tensor,
         msg = "The combination of both `full_cov` and `full_output_cov` is not permitted."
         raise NotImplementedError(msg)
 
-    mean, cov = conditional(Xnew, feature, kernel, function,
-                            q_sqrt=q_sqrt, white=white,
+    mean, cov = conditional(Xnew,
+                            inducing_variable,
+                            kernel,
+                            function,
+                            q_sqrt=q_sqrt,
+                            white=white,
                             full_cov=full_cov,
                             full_output_cov=full_output_cov)
     if full_cov:
         # mean: [..., N, P]
         # cov: [..., P, N, N]
-        mean = tf.linalg.transpose(mean)  # [..., P, N]
-        samples = sample_mvn(mean, cov, 'full', num_samples=num_samples)  # [..., (S), P, N]
-        samples = tf.linalg.transpose(samples)  # [..., (S), P, N]
+        mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
+        samples = sample_mvn(mean_for_sample,
+                             cov,
+                             'full',
+                             num_samples=num_samples)  # [..., (S), P, N]
+        samples = tf.linalg.adjoint(samples)  # [..., (S), P, N]
     else:
         # mean: [..., N, P]
         # cov: [..., N, P] or [..., N, P, P]
         cov_structure = "full" if full_output_cov else "diag"
-        samples = sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [..., (S), P, N]
+        samples = sample_mvn(mean, cov, cov_structure,
+                             num_samples=num_samples)  # [..., (S), P, N]
 
     return samples, mean, cov

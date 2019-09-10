@@ -20,7 +20,7 @@ import tensorflow as tf
 from numpy.testing import assert_almost_equal
 
 from gpflow.kullback_leiblers import gauss_kl
-from gpflow.util import default_float, default_jitter
+from gpflow import default_float, default_jitter
 
 rng = np.random.RandomState(0)
 

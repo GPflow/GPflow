@@ -11,13 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Throughout GPflow, by default, latent functions being modelled with Gaussian
+processes are assumed to have zero mean, f ~ GP(0, k(x,x')).
 
+In some cases we may wish to model only the deviation from a fixed function
+with a Gaussian process.  For flexibility this fixed function could be both
+input dependent and parameterised function, μ(x; θ),
+with some unknown parameters θ, resulting in f ~ GP(μ(x;θ), k(x,x')).
+
+The GPflow :class:`MeanFunction <gpflow.mean_functions.MeanFunction>` class
+allows this to be done whilst additionally learning parameters of the
+parametric function.
+"""
 
 import numpy as np
 import tensorflow as tf
 
 from .base import Parameter
-from .util import default_float
+from .config import default_float
 
 
 class MeanFunction(tf.Module):
@@ -31,8 +43,10 @@ class MeanFunction(tf.Module):
     MeanFunction classes can have parameters, see the Linear class for an
     example.
     """
+
     def __call__(self, X):
-        raise NotImplementedError("Implement the __call__ method for this mean function")
+        raise NotImplementedError(
+            "Implement the __call__ method for this mean function")
 
     def __add__(self, other):
         return Additive(self, other)
@@ -45,6 +59,7 @@ class Linear(MeanFunction):
     """
     y_i = A x_i + b
     """
+
     def __init__(self, A=None, b=None):
         """
         A is a matrix which maps each element of X to Y, b is an additive
@@ -67,6 +82,7 @@ class Identity(Linear):
     """
     y_i = x_i
     """
+
     def __init__(self, input_dim=None):
         Linear.__init__(self)
         self.input_dim = input_dim
@@ -77,15 +93,17 @@ class Identity(Linear):
     @property
     def A(self):
         if self.input_dim is None:
-            raise ValueError("An input_dim needs to be specified when using the "
-                             "`Identity` mean function in combination with expectations.")
+            raise ValueError(
+                "An input_dim needs to be specified when using the "
+                "`Identity` mean function in combination with expectations.")
         return tf.eye(self.input_dim, dtype=default_float())
 
     @property
     def b(self):
         if self.input_dim is None:
-            raise ValueError("An input_dim needs to be specified when using the "
-                             "`Identity` mean function in combination with expectations.")
+            raise ValueError(
+                "An input_dim needs to be specified when using the "
+                "`Identity` mean function in combination with expectations.")
 
         return tf.zeros(self.input_dim, dtype=default_float())
 
@@ -99,9 +117,6 @@ class Identity(Linear):
 
 
 class Constant(MeanFunction):
-    """
-    y_i = c,,
-    """
     def __init__(self, c=None):
         super().__init__()
         c = np.zeros(1) if c is None else c
@@ -112,10 +127,11 @@ class Constant(MeanFunction):
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
 
 
-class Zero(MeanFunction):
+class Zero(Constant):
     def __init__(self, output_dim=1):
-        super().__init__()
+        Constant.__init__(self)
         self.output_dim = output_dim
+        del self.c
 
     def __call__(self, X):
         return tf.zeros((X.shape[0], self.output_dim), dtype=X.dtype)
@@ -127,6 +143,7 @@ class SwitchedMeanFunction(MeanFunction):
     to the data 'label'.
     We assume the 'label' is stored in the extra column of X.
     """
+
     def __init__(self, meanfunction_list):
         super().__init__()
         for m in meanfunction_list:
@@ -134,16 +151,19 @@ class SwitchedMeanFunction(MeanFunction):
         self.meanfunctions = meanfunction_list
 
     def __call__(self, X):
-        ind = tf.gather(tf.transpose(X), X.shape[1]-1)  # ind = X[:,-1]
+        ind = tf.gather(tf.transpose(X), X.shape[1] - 1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
-        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, X.shape[1]-1)))  # X = X[:,:-1]
+        X = tf.transpose(
+            tf.gather(tf.transpose(X),
+                      tf.range(0, X.shape[1] - 1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, len(self.meanfunctions))
         # apply the likelihood-function to each section of the data
         results = [m(x) for x, m in zip(x_list, self.meanfunctions)]
         # stitch the results back together
-        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, len(self.meanfunctions))
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind,
+                                          len(self.meanfunctions))
         return tf.dynamic_stitch(partitions, results)
 
 

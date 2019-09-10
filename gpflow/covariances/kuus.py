@@ -1,24 +1,25 @@
 import tensorflow as tf
 
-from ..features import InducingPoints, Multiscale
-from ..kernels import Kernel, RBF
+from ..inducing_variables import InducingPoints, Multiscale
+from ..kernels import Kernel, SquaredExponential
 from .dispatch import Kuu
 
 
 @Kuu.register(InducingPoints, Kernel)
-def _Kuu(feat: InducingPoints, kern: Kernel, *, jitter=0.0):
-    Kzz = kern(feat.Z)
-    Kzz += jitter * tf.eye(len(feat), dtype=Kzz.dtype)
+def _Kuu(inducing_variable: InducingPoints, kernel: Kernel, *, jitter=0.0):
+    Kzz = kernel(inducing_variable.Z)
+    Kzz += jitter * tf.eye(len(inducing_variable), dtype=Kzz.dtype)
     return Kzz
 
 
-@Kuu.register(Multiscale, RBF)
-def _Kuu(feat: Multiscale, kern: RBF, *, jitter=0.0):
-    Zmu, Zlen = kern.slice(feat.Z, feat.scales)
-    idlengthscales2 = tf.square(kern.lengthscales + Zlen)
-    sc = tf.sqrt(idlengthscales2[None, ...] + idlengthscales2[:, None, ...]
-                 - kern.lengthscales ** 2)
-    d = feat._cust_square_dist(Zmu, Zmu, sc)
-    Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
-    Kzz += jitter * tf.eye(len(feat), dtype=Kzz.dtype)
+@Kuu.register(Multiscale, SquaredExponential)
+def _Kuu(inducing_variable: Multiscale, kernel: SquaredExponential, *, jitter=0.0):
+    Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
+    idlengthscale2 = tf.square(kernel.lengthscale + Zlen)
+    sc = tf.sqrt(idlengthscale2[None, ...] + idlengthscale2[:, None, ...] -
+                 kernel.lengthscale**2)
+    d = inducing_variable._cust_square_dist(Zmu, Zmu, sc)
+    Kzz = kernel.variance * tf.exp(-d / 2) * tf.reduce_prod(
+        kernel.lengthscale / sc, 2)
+    Kzz += jitter * tf.eye(len(inducing_variable), dtype=Kzz.dtype)
     return Kzz

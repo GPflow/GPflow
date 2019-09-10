@@ -39,16 +39,16 @@ class TestEquivalence(GPflowTestCase):
 
         # 1. Two independent VGPs for two sets of data
 
-        k0 = gpflow.kernels.RBF(2)
-        k0.lengthscales.trainable = False
+        k0 = gpflow.kernels.SquaredExponential(2)
+        k0.lengthscale.trainable = False
         vgp0 = gpflow.models.VGP(
-            X[0], Y[0], kern=k0,
+            X[0], Y[0], kernel=k0,
             mean_function=gpflow.mean_functions.Constant(),
             likelihood=gpflow.likelihoods.Gaussian())
-        k1 = gpflow.kernels.RBF(2)
-        k1.lengthscales.trainable = False
+        k1 = gpflow.kernels.SquaredExponential(2)
+        k1.lengthscale.trainable = False
         vgp1 = gpflow.models.VGP(
-            X[1], Y[1], kern=k1,
+            X[1], Y[1], kernel=k1,
             mean_function=gpflow.mean_functions.Constant(),
             likelihood=gpflow.likelihoods.Gaussian())
 
@@ -57,7 +57,7 @@ class TestEquivalence(GPflowTestCase):
         lik = gpflow.likelihoods.SwitchedLikelihood(
             [gpflow.likelihoods.Gaussian(), gpflow.likelihoods.Gaussian()])
 
-        kc = gpflow.kernels.RBF(2)
+        kc = gpflow.kernels.SquaredExponential(2)
         kc.trainable = False  # lengthscale and variance is fixed.
         coreg = gpflow.kernels.Coregion(1, output_dim=2, rank=1, active_dims=[2])
         coreg.W.trainable = False
@@ -66,7 +66,7 @@ class TestEquivalence(GPflowTestCase):
             [gpflow.mean_functions.Constant(), gpflow.mean_functions.Constant()])
         cvgp = gpflow.models.VGP(
             X_augumented, Y_augumented,
-            kern=kc * coreg,
+            kernel=kc * coreg,
             mean_function=mean_c,
             likelihood=lik,
             num_latent=2)
@@ -98,11 +98,11 @@ class TestEquivalence(GPflowTestCase):
     def test_kernel_variance(self):
         with self.test_context():
             self.setup()
-            assert_allclose(self.vgp0.kern.variance.read_value(),
-                            self.cvgp.kern.kernels[1].kappa.read_value()[0],
+            assert_allclose(self.vgp0.kernel.variance.read_value(),
+                            self.cvgp.kernel.kernels[1].kappa.read_value()[0],
                             atol=1.0e-2)
-            assert_allclose(self.vgp1.kern.variance.read_value(),
-                            self.cvgp.kern.kernels[1].kappa.read_value()[1],
+            assert_allclose(self.vgp1.kernel.variance.read_value(),
+                            self.cvgp.kernel.kernels[1].kappa.read_value()[1],
                             atol=1.0e-2)
 
     def test_mean_values(self):
