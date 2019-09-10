@@ -64,7 +64,7 @@ class VGP(GPModel):
         x_data, y_data = data
         num_data = x_data.shape[0]
         self.num_data = num_data
-        self.num_latent = num_latent or x_data.shape[1]
+        self.num_latent = num_latent or y_data.shape[1]
         self.data = data
 
         self.q_mu = Parameter(np.zeros((num_data, self.num_latent)))
@@ -163,7 +163,7 @@ class VGPOpperArchambeau(GPModel):
         x_data, y_data = data
         self.data = data
         self.num_data = x_data.shape[0]
-        self.num_latent = num_latent or x_data.shape[1]
+        self.num_latent = num_latent or y_data.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), gpflow.positive())
 

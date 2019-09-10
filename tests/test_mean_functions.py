@@ -196,8 +196,8 @@ _model_classes = [
     gpflow.models.GPRFITC,
     gpflow.models.SVGP,
     gpflow.models.VGP,
-    # gpflow.models.GPMC(X, Y, mean_function=mf(), kernel=k(), likelihood=lik()),
-    # gpflow.models.SGPMC(X, Y, mean_function=mf(), kernel=k(), likelihood=lik(), Z=Z)
+    gpflow.models.GPMC,
+    gpflow.models.SGPMC
 ]
 
 
@@ -242,6 +242,26 @@ def test_models_with_mean_functions_changes(model_class):
         model_non_zero_mean = model_class(data,
                                           kernel=kernel,
                                           inducing_variables=inducing_variables,
+                                          mean_function=non_zero_mean)
+    elif model_class in [gpflow.models.SGPMC]:
+        model_zero_mean = model_class(data,
+                                      kernel=kernel,
+                                      likelihood=likelihood,
+                                      inducing_variables=inducing_variables,
+                                      mean_function=zero_mean)
+        model_non_zero_mean = model_class(data,
+                                          kernel=kernel,
+                                          likelihood=likelihood,
+                                          inducing_variables=inducing_variables,
+                                          mean_function=non_zero_mean)
+    elif model_class in [gpflow.models.GPMC]:
+        model_zero_mean = model_class(data,
+                                      kernel=kernel,
+                                      likelihood=likelihood,
+                                      mean_function=zero_mean)
+        model_non_zero_mean = model_class(data,
+                                          kernel=kernel,
+                                          likelihood=likelihood,
                                           mean_function=non_zero_mean)
     else:
         raise (NotImplementedError)
