@@ -47,14 +47,14 @@ def _prepare_models():
     k0.lengthscale.trainable = False
     k1 = gpflow.kernels.SquaredExponential()
     k1.lengthscale.trainable = False
-    vgp0 = gpflow.models.VGP(
-        Datum.X[0], Datum.Y[0], kernel=k0,
-        mean_function=Constant(),
-        likelihood=gpflow.likelihoods.Gaussian())
-    vgp1 = gpflow.models.VGP(
-        Datum.X[1], Datum.Y[1], kernel=k1,
-        mean_function=Constant(),
-        likelihood=gpflow.likelihoods.Gaussian())
+    vgp0 = gpflow.models.VGP((Datum.X[0], Datum.Y[0]),
+                             kernel=k0,
+                             mean_function=Constant(),
+                             likelihood=gpflow.likelihoods.Gaussian())
+    vgp1 = gpflow.models.VGP((Datum.X[1], Datum.Y[1]),
+                             kernel=k1,
+                             mean_function=Constant(),
+                             likelihood=gpflow.likelihoods.Gaussian())
     # 2. Coregionalized GPR
     kc = gpflow.kernels.SquaredExponential()
     kc.trainable = False  # lengthscale and variance is fixed.
@@ -65,7 +65,7 @@ def _prepare_models():
                                                 )
     mean_c = gpflow.mean_functions.SwitchedMeanFunction(
         [gpflow.mean_functions.Constant(), gpflow.mean_functions.Constant()])
-    cvgp = gpflow.models.VGP(Datum.X_augumented, Datum.Y_augumented,
+    cvgp = gpflow.models.VGP((Datum.X_augumented, Datum.Y_augumented),
                              kernel=kc * coreg,
                              mean_function=mean_c,
                              likelihood=lik,
@@ -85,9 +85,9 @@ def _prepare_models():
     def cvgp_closure():
         return - cvgp.log_likelihood()
 
-    opt.minimize(vgp0_closure, variables=vgp0.trainable_variables, maxiter=50)
-    opt.minimize(vgp1_closure, variables=vgp1.trainable_variables, maxiter=50)
-    opt.minimize(cvgp_closure, variables=cvgp.trainable_variables, maxiter=50)
+    opt.minimize(vgp0_closure, variables=vgp0.trainable_variables, options=dict(maxiter=1000))
+    opt.minimize(vgp1_closure, variables=vgp1.trainable_variables, options=dict(maxiter=1000))
+    opt.minimize(cvgp_closure, variables=cvgp.trainable_variables, options=dict(maxiter=1000))
 
     return vgp0, vgp1, cvgp
 
