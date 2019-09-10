@@ -23,7 +23,7 @@ from .model import GPModel
 # from .gplvm import PCA_reduce
 from .sgpmc import SGPMC
 from .sgpr import GPRFITC
-# from .sgpr import SGPRUpperMixin
+from .sgpr import SGPRUpperMixin
 from .sgpr import SGPR
 from .svgp import SVGP
 # from .svgp import SVGP
