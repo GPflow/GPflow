@@ -49,10 +49,22 @@ class ModelSetup:
                                     whiten=self.whiten,
                                     q_diag=self.q_diag)
         elif self.requires_data_as_input:
-            return self.model_class(data,
-                                    inducing_variables=Z,
-                                    kernel=self.kernel,
-                                    num_latent=num_latent)
+            if self.model_class in [gpflow.models.SGPR]:
+                return self.model_class(data,
+                                        inducing_variables=Z,
+                                        kernel=self.kernel,
+                                        num_latent=num_latent)
+            elif self.model_class in [gpflow.models.SGPMC]:
+                return self.model_class(data,
+                                        inducing_variables=Z,
+                                        kernel=self.kernel,
+                                        likelihood=self.likelihood,
+                                        num_latent=num_latent)
+            elif self.model_class in [gpflow.models.GPMC]:
+                return self.model_class(data,
+                                        kernel=self.kernel,
+                                        likelihood=self.likelihood,
+                                        num_latent=num_latent)
         else:
             return self.model_class(inducing_variables=Z,
                                     kernel=self.kernel,
@@ -71,8 +83,8 @@ model_setups = [
     ModelSetup(model_class=gpflow.models.SGPR, requires_data_as_input=True),
     #     ModelSetup(model_class=gpflow.models.GPRF),
     #     ModelSetup(model_class=gpflow.models.VGP, requires_Z_as_input = False),
-    #     ModelSetup(model_class=gpflow.models.GPMC, requires_Z_as_input = False ),
-    #     ModelSetup(model_class=gpflow.models.SGPMC)
+    ModelSetup(model_class=gpflow.models.GPMC, requires_data_as_input=True),
+    ModelSetup(model_class=gpflow.models.SGPMC, requires_data_as_input=True)
 ]
 
 

@@ -11,21 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from gpflow.base import Parameter
-from gpflow.inducing_variables import InducingPoints
+from ..likelihoods import Likelihood
+from ..mean_functions import MeanFunction
+from ..base import Parameter
 from ..conditionals import conditional
-from ..models.model import GPModel, MeanAndVariance
+from ..inducing_variables import InducingPoints
+from ..kernels import Kernel
+from ..models.model import GPModel, MeanAndVariance, Data
 
-# ERROR: Modify this
-GPModelOLD = GPModel
 
-
-class SGPMC(GPModelOLD):
+class SGPMC(GPModel):
     """
     This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
 
@@ -59,31 +60,27 @@ class SGPMC(GPModelOLD):
     """
 
     def __init__(self,
-                 X,
-                 Y,
-                 kernel,
-                 likelihood,
-                 mean_function=None,
-                 num_latent=None,
-                 inducing_variable=None,
-                 **kwargs):
+                 data: Data,
+                 kernel: Kernel,
+                 likelihood: Likelihood,
+                 mean_function: Optional[MeanFunction] = None,
+                 num_latent: int = 1,
+                 inducing_variables: Optional[InducingPoints] = None):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
+        data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]
         Z is a data matrix, of inducing inputs, size [M, D]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
-        GPModelOLD.__init__(self,
-                            X,
-                            Y,
-                            kernel,
-                            likelihood,
-                            mean_function,
-                            num_latent=num_latent,
-                            **kwargs)
-        self.num_data = X.shape[0]
-        self.inducing_variable = InducingPoints(inducing_variable)
-        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
+        super().__init__(kernel,
+                         likelihood,
+                         mean_function,
+                         num_latent=num_latent)
+        self.data = data
+        self.num_data = data[0].shape[0]
+        if not isinstance(inducing_variables, InducingPoints):
+            inducing_variables = InducingPoints(inducing_variables)
+        self.inducing_variables = inducing_variables
+        self.V = Parameter(np.zeros((len(self.inducing_variables), self.num_latent)))
         self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
@@ -91,9 +88,10 @@ class SGPMC(GPModelOLD):
         This function computes the optimal density for v, q*(v), up to a constant
         """
         # get the (marginals of) q(f): exactly predicting!
-        fmean, fvar = self.predict_f(self.X, full_cov=False)
+        x_data, y_data = self.data
+        fmean, fvar = self.predict_f(x_data, full_cov=False)
         return tf.reduce_sum(
-            self.likelihood.variational_expectations(fmean, fvar, self.Y))
+            self.likelihood.variational_expectations(fmean, fvar, y_data))
 
     def predict_f(self, X: tf.Tensor, full_cov=False,
                   full_output_cov=False) -> MeanAndVariance:
@@ -108,7 +106,7 @@ class SGPMC(GPModelOLD):
 
         """
         mu, var = conditional(X,
-                              self.inducing_variable,
+                              self.inducing_variables,
                               self.kernel,
                               self.V,
                               full_cov=full_cov,
