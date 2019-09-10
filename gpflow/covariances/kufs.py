@@ -1,20 +1,20 @@
 import tensorflow as tf
-from ..features import InducingPoints, Multiscale
-from ..kernels import Kernel, RBF
+from ..inducing_variables import InducingPoints, Multiscale
+from ..kernels import Kernel, SquaredExponential
 from .dispatch import Kuf
 
 
 @Kuf.register(InducingPoints, Kernel, object)
-def _Kuf(feat: InducingPoints, kern: Kernel, Xnew: tf.Tensor):
-    return kern(feat.Z, Xnew)
+def _Kuf(inducing_variable: InducingPoints, kernel: Kernel, Xnew: tf.Tensor):
+    return kernel(inducing_variable.Z, Xnew)
 
 
-@Kuf.register(Multiscale, RBF, object)
-def _Kuf(feat: Multiscale, kern: RBF, Xnew):
-    Xnew, _ = kern.slice(Xnew, None)
-    Zmu, Zlen = kern.slice(feat.Z, feat.scales)
-    idlengthscales = kern.lengthscales + Zlen
-    d = feat._cust_square_dist(Xnew, Zmu, idlengthscales)
-    lengthscales = tf.reduce_prod(kern.lengthscales / idlengthscales, 1)
-    lengthscales = tf.reshape(lengthscales, (1, -1))
-    return tf.transpose(kern.variance * tf.exp(-d / 2) * lengthscales)
+@Kuf.register(Multiscale, SquaredExponential, object)
+def _Kuf(inducing_variable: Multiscale, kernel: SquaredExponential, Xnew):
+    Xnew, _ = kernel.slice(Xnew, None)
+    Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
+    idlengthscale = kernel.lengthscale + Zlen
+    d = inducing_variable._cust_square_dist(Xnew, Zmu, idlengthscale)
+    lengthscale = tf.reduce_prod(kernel.lengthscale / idlengthscale, 1)
+    lengthscale = tf.reshape(lengthscale, (1, -1))
+    return tf.transpose(kernel.variance * tf.exp(-0.5 * d) * lengthscale)

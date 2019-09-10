@@ -14,13 +14,10 @@
 
 import numpy as np
 from numpy.random import randn
-import tensorflow as tf
 import pytest
-import gpflow
-from gpflow import logdensities, settings
+from gpflow import logdensities
 from scipy.stats import multivariate_normal as mvn
 from numpy.testing import assert_allclose
-
 
 rng = np.random.RandomState(1)
 
@@ -36,9 +33,14 @@ def test_multivariate_normal(x, mu, cov_sqrt):
 
     if mu.shape[1] > 1:
         if x.shape[1] > 1:
-            sp_result = [mvn.logpdf(x[:, i], mu[:, i], cov) for i in range(mu.shape[1])]
+            sp_result = [
+                mvn.logpdf(x[:, i], mu[:, i], cov) for i in range(mu.shape[1])
+            ]
         else:
-            sp_result = [mvn.logpdf(x.ravel(), mu[:, i], cov) for i in range(mu.shape[1])]
+            sp_result = [
+                mvn.logpdf(x.ravel(), mu[:, i], cov)
+                for i in range(mu.shape[1])
+            ]
     else:
         sp_result = mvn.logpdf(x.T, mu.ravel(), cov)
     assert_allclose(gp_result, sp_result)

@@ -20,10 +20,19 @@ import pandas as pd
 from .optimizer import Optimizer
 from ..decors import name_scope
 
+
 class HMC(Optimizer):
-    def sample(self, model, num_samples, epsilon,
-               lmin=1, lmax=1, thin=1, burn=0,
-               session=None, initialize=True, anchor=True,
+    def sample(self,
+               model,
+               num_samples,
+               epsilon,
+               lmin=1,
+               lmax=1,
+               thin=1,
+               burn=0,
+               session=None,
+               initialize=True,
+               anchor=True,
                logprobs=True):
         """
         A straight-forward HMC implementation. The mass matrix is assumed to be the
@@ -69,11 +78,13 @@ class HMC(Optimizer):
         """
 
         if lmax <= 0 or lmin <= 0:
-            raise ValueError('The lmin and lmax parameters must be greater zero.')
+            raise ValueError(
+                'The lmin and lmax parameters must be greater zero.')
         if thin <= 0:
             raise ValueError('The thin parameter must be greater zero.')
         if burn < 0:
-            raise ValueError('The burn parameter must be equal or greater zero.')
+            raise ValueError(
+                'The burn parameter must be equal or greater zero.')
 
         lmax += 1
         session = model.enquire_session(session)
@@ -104,12 +115,18 @@ class HMC(Optimizer):
                 xs_sample, logprob_sample = _thinning(*thin_args)
                 return _flat(xs_sample, [logprob_sample])
 
-            hmc_output = tf.map_fn(map_body, indices, dtype=dtypes,
-                                   back_prop=False, parallel_iterations=1)
+            hmc_output = tf.map_fn(map_body,
+                                   indices,
+                                   dtype=dtypes,
+                                   back_prop=False,
+                                   parallel_iterations=1)
             with tf.control_dependencies(hmc_output):
-                unconstrained_trace, logprob_trace = hmc_output[:-1], hmc_output[-1]
-                constrained_trace = _map(lambda x, param: param.transform.forward_tensor(x),
-                                         unconstrained_trace, params)
+                unconstrained_trace, logprob_trace = hmc_output[:
+                                                                -1], hmc_output[
+                                                                    -1]
+                constrained_trace = _map(
+                    lambda x, param: param.transform.forward_tensor(x),
+                    unconstrained_trace, params)
                 hmc_output = constrained_trace + [logprob_trace]
 
         names = [param.pathname for param in params]
@@ -123,11 +140,17 @@ class HMC(Optimizer):
             traces.update({'logprobs': raw_traces[-1]})
         return pd.DataFrame(traces)
 
-    def make_optimize_tensor(self, model, session=None, var_list=None, **kwargs):
-        raise NotImplementedError('HMC does not provide make_optimize_tensor method')
+    def make_optimize_tensor(self,
+                             model,
+                             session=None,
+                             var_list=None,
+                             **kwargs):
+        raise NotImplementedError(
+            'HMC does not provide make_optimize_tensor method')
 
     def minimize(self, model, **kwargs):
-        raise NotImplementedError('HMC does not provide minimize method, use `sample` instead.')
+        raise NotImplementedError(
+            'HMC does not provide minimize method, use `sample` instead.')
 
 
 @name_scope("burning")
@@ -151,25 +174,29 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
     def body(i, xs_copy, logprob_prev, grads_prev):
         ps_init = _init_ps(xs_copy)
         ps = _update_ps(ps_init, grads_prev, epsilon, coeff=+0.5)
-        max_iters = tf.random.uniform((), minval=lmin, maxval=lmax, dtype=tf.int32)
+        max_iters = tf.random.uniform((),
+                                      minval=lmin,
+                                      maxval=lmax,
+                                      dtype=tf.int32)
 
         dep_list = _flat([max_iters], ps, ps_init)
         with tf.control_dependencies(dep_list):
-            leapfrog_result = _leapfrog_step(xs, ps, epsilon, max_iters, logprob_grads_fn)
+            leapfrog_result = _leapfrog_step(xs, ps, epsilon, max_iters,
+                                             logprob_grads_fn)
             proceed, xs_new, ps_new, logprob_new, grads_new = leapfrog_result
-            dep_list = _flat([proceed], [logprob_new], xs_new, ps_new, grads_new)
+            dep_list = _flat([proceed], [logprob_new], xs_new, ps_new,
+                             grads_new)
 
             def standard_proposal():
                 with tf.control_dependencies(dep_list):
-                    return _reject_accept_proposal(
-                        xs_new, xs_copy, ps_new, ps_init,
-                        logprob_new, logprob_prev,
-                        grads_new, grads_prev, epsilon)
+                    return _reject_accept_proposal(xs_new, xs_copy, ps_new,
+                                                   ps_init, logprob_new,
+                                                   logprob_prev, grads_new,
+                                                   grads_prev, epsilon)
 
             def premature_reject():
                 with tf.control_dependencies(dep_list):
-                    return _premature_reject(
-                        xs_copy, logprob_prev, grads_prev)
+                    return _premature_reject(xs_copy, logprob_prev, grads_prev)
 
             xs_out, logprob_out, grads_out = tf.cond(proceed,
                                                      standard_proposal,
@@ -185,7 +212,8 @@ def _thinning(logprob_grads_fn, xs, thin, epsilon, lmin, lmax):
     xs_in = _copy_variables(xs)
     logprob, grads = logprob_grads_fn()
     with tf.control_dependencies(_flat([logprob], xs_in, grads)):
-        _, xs_res, logprob_res, _grads = _while_loop(cond, body, [0, xs_in, logprob, grads])
+        _, xs_res, logprob_res, _grads = _while_loop(
+            cond, body, [0, xs_in, logprob, grads])
         return xs_res, logprob_res
 
 
@@ -195,19 +223,20 @@ def _premature_reject(xs, logprob_prev, grads_prev):
 
 
 @name_scope("reject_accept_proposal")
-def _reject_accept_proposal(xs, xs_prev,
-                            ps, ps_prev,
-                            logprob, logprob_prev,
-                            grads, grads_prev,
-                            epsilon):
+def _reject_accept_proposal(xs, xs_prev, ps, ps_prev, logprob, logprob_prev,
+                            grads, grads_prev, epsilon):
     def dot(ps_values):
-        return tf.reduce_sum(_map(lambda p: tf.reduce_sum(tf.square(p)), ps_values))
+        return tf.reduce_sum(
+            _map(lambda p: tf.reduce_sum(tf.square(p)), ps_values))
 
     ps_upd = _update_ps(ps, grads, epsilon, coeff=-0.5)
 
     with tf.control_dependencies(ps_upd):
-        log_accept_ratio = logprob - 0.5 * dot(ps_upd) - logprob_prev + 0.5 * dot(ps_prev)
-        logu = tf.math.log(tf.random.uniform(shape=log_accept_ratio.shape, dtype=logprob.dtype))
+        log_accept_ratio = logprob - 0.5 * dot(
+            ps_upd) - logprob_prev + 0.5 * dot(ps_prev)
+        logu = tf.math.log(
+            tf.random.uniform(shape=log_accept_ratio.shape,
+                              dtype=logprob.dtype))
 
         def accept():
             with tf.control_dependencies([logu, log_accept_ratio]):
@@ -238,9 +267,11 @@ def _leapfrog_step(xs, ps, epsilon, max_iterations, logprob_grads_fn):
         with tf.control_dependencies(xs_new):
             _, grads = logprob_grads_fn()
             proceed = whether_proceed(grads)
+
             def ps_step():
                 with tf.control_dependencies(grads):
                     return _update_ps(ps, grads, epsilon)
+
             def ps_no_step():
                 with tf.control_dependencies(grads):
                     return ps
@@ -269,7 +300,8 @@ def _copy_variables(variables):
 
 
 def _init_ps(xs):
-    return _map(lambda x: tf.random.normal(x.shape, dtype=x.dtype.as_numpy_dtype), xs)
+    return _map(
+        lambda x: tf.random.normal(x.shape, dtype=x.dtype.as_numpy_dtype), xs)
 
 
 def _update_ps(ps, grads, epsilon, coeff=1):
@@ -277,11 +309,16 @@ def _update_ps(ps, grads, epsilon, coeff=1):
 
 
 def _while_loop(cond, body, args):
-    return tf.while_loop(cond, body, args, parallel_iterations=1, back_prop=False)
+    return tf.while_loop(cond,
+                         body,
+                         args,
+                         parallel_iterations=1,
+                         back_prop=False)
 
 
 def _map(func, *args, **kwargs):
     return [func(*a, **kwargs) for a in zip(*args)]
+
 
 def _flat(*elems):
     return list(itertools.chain.from_iterable(elems))

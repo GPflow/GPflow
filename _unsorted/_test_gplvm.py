@@ -64,14 +64,14 @@ class TestBayesianGPLVM(GPflowTestCase):
     def test_1d(self):
         with self.test_context():
             Q = 1  # latent dimensions
-            k = kernels.RBF(Q)
+            k = kernels.SquaredExponential(Q)
             Z = np.linspace(0, 1, self.M)
             Z = np.expand_dims(Z, Q)  # inducing points
             m = gpflow.models.BayesianGPLVM(
                 X_mean=np.zeros((self.N, Q)),
                 X_var=np.ones((self.N, Q)),
                 Y=self.Y,
-                kern=k,
+                kernel=k,
                 M=self.M,
                 Z=Z)
             linit = m.compute_log_likelihood()
@@ -84,12 +84,12 @@ class TestBayesianGPLVM(GPflowTestCase):
             # test default Z on 2_D example
             Q = 2  # latent dimensions
             X_mean = gpflow.models.PCA_reduce(self.Y, Q)
-            k = kernels.RBF(Q, ARD=False)
+            k = kernels.SquaredExponential(Q, ARD=False)
             m = gpflow.models.BayesianGPLVM(
                 X_mean=X_mean,
                 X_var=np.ones((self.N, Q)),
                 Y=self.Y,
-                kern=k,
+                kernel=k,
                 M=self.M)
             linit = m.compute_log_likelihood()
             opt = gpflow.train.ScipyOptimizer()
@@ -99,7 +99,7 @@ class TestBayesianGPLVM(GPflowTestCase):
             # test prediction
             Xtest = self.rng.randn(10, Q)
             mu_f, var_f = m.predict_f(Xtest)
-            mu_fFull, var_fFull = m.predict_f_full_cov(Xtest)
+            mu_fFull, var_fFull = m.predict_f(Xtest, full_cov=True)
             self.assertTrue(np.allclose(mu_fFull, mu_f))
             # check full covariance diagonal
             for i in range(self.D):
