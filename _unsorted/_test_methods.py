@@ -61,11 +61,11 @@ def _check_models_close(m1, m2, tolerance=1e-2):
 
 _gp_models = [
     gpflow.models.VGP((Datum.X, Datum.Y), Datum.kernel, Datum.lik),
-    # gpflow.models.GPMC((Datum.X, Datum.Y), Datum.kernel, Datum.lik),
-    # gpflow.models.SGPMC((Datum.X, Datum.Y), Datum.kernel, Datum.lik, inducing_variables=Datum.Z),
-    # gpflow.models.SGPR((Datum.X, Datum.Y), Datum.kernel, inducing_variables=Datum.Z),
-    # gpflow.models.GPR((Datum.X, Datum.Y), Datum.kernel),
-    # gpflow.models.GPRFITC((Datum.X, Datum.Y), Datum.kernel, inducing_variables=Datum.Z)
+    gpflow.models.GPMC((Datum.X, Datum.Y), Datum.kernel, Datum.lik),
+    gpflow.models.SGPMC((Datum.X, Datum.Y), Datum.kernel, Datum.lik, inducing_variables=Datum.Z),
+    gpflow.models.SGPR((Datum.X, Datum.Y), Datum.kernel, inducing_variables=Datum.Z),
+    gpflow.models.GPR((Datum.X, Datum.Y), Datum.kernel),
+    gpflow.models.GPRFITC((Datum.X, Datum.Y), Datum.kernel, inducing_variables=Datum.Z)
 ]
 
 _state_less_gp_models = [
