@@ -157,7 +157,7 @@ class VGPTest(GPflowTestCase):
             likelihood = gpflow.likelihoods.StudentT()
 
             m_vgp = gpflow.models.VGP(X, Y, kernel, likelihood)
-            m_vgp_oa = gpflow.models.VGP_opper_archambeau(X, Y, kernel, likelihood)
+            m_vgp_oa = gpflow.models.VGPOpperArchambeau(X, Y, kernel, likelihood)
             m_vgp.compile()
             m_vgp_oa.compile()
 
@@ -217,7 +217,7 @@ class VGPTest(GPflowTestCase):
     #        kernel = gpflow.kernels.Matern52(DX)
     #        likelihood = gpflow.likelihoods.StudentT()
     #        m_vgp = gpflow.models.VGP(X, Y, kernel, likelihood)
-    #        m_vgp_oa = gpflow.models.VGP_opper_archambeau(X, Y, kernel, likelihood)
+    #        m_vgp_oa = gpflow.models.VGPOpperArchambeau(X, Y, kernel, likelihood)
     #        for m in [m_vgp, m_vgp_oa]:
     #            m.compile()
     #            opt = gpflow.train.ScipyOptimizer()

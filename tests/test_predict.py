@@ -29,47 +29,34 @@ class ModelSetup:
                  likelihood=gpflow.likelihoods.Gaussian(),
                  whiten=None,
                  q_diag=None,
-                 requires_Z_as_input=True,
-                 requires_data_as_input=False
-                 ):
+                 requires_inducing_variables=True,
+                 requires_data=False,
+                 requires_likelihood=True):
         self.model_class = model_class
         self.kernel = kernel
         self.likelihood = likelihood
         self.whiten = whiten
         self.q_diag = q_diag
-        self.requires_Z_as_input = requires_Z_as_input
-        self.requires_data_as_input = requires_data_as_input
+        self.requires_inducing_variables = requires_inducing_variables
+        self.requires_data = requires_data
+        self.requires_likelihood = requires_likelihood
 
     def get_model(self, Z, num_latent, data=None):
+        params = dict(kernel=self.kernel, num_latent=num_latent)
+
         if self.whiten is not None and self.q_diag is not None:
-            return self.model_class(inducing_variables=Z,
-                                    kernel=self.kernel,
-                                    likelihood=self.likelihood,
-                                    num_latent=num_latent,
-                                    whiten=self.whiten,
-                                    q_diag=self.q_diag)
-        elif self.requires_data_as_input:
-            if self.model_class in [gpflow.models.SGPR]:
-                return self.model_class(data,
-                                        inducing_variables=Z,
-                                        kernel=self.kernel,
-                                        num_latent=num_latent)
-            elif self.model_class in [gpflow.models.SGPMC]:
-                return self.model_class(data,
-                                        inducing_variables=Z,
-                                        kernel=self.kernel,
-                                        likelihood=self.likelihood,
-                                        num_latent=num_latent)
-            elif self.model_class in [gpflow.models.GPMC]:
-                return self.model_class(data,
-                                        kernel=self.kernel,
-                                        likelihood=self.likelihood,
-                                        num_latent=num_latent)
-        else:
-            return self.model_class(inducing_variables=Z,
-                                    kernel=self.kernel,
-                                    likelihood=self.likelihood,
-                                    num_latent=num_latent)
+            params.update(inducing_variables=Z, whiten=self.whiten, q_diag=self.q_diag)
+
+        if self.requires_inducing_variables:
+            params.update(dict(inducing_variables=Z))
+
+        if self.requires_data:
+            params.update(dict(data=data))
+
+        if self.requires_likelihood:
+            params.update(dict(likelihood=self.likelihood))
+
+        return self.model_class(**params)
 
     def __repr__(self):
         return f"ModelSetup({self.model_class.__name__}, {self.whiten}, {self.q_diag})"
@@ -80,11 +67,11 @@ model_setups = [
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=False),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=True),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=False, q_diag=False),
-    ModelSetup(model_class=gpflow.models.SGPR, requires_data_as_input=True),
+    ModelSetup(model_class=gpflow.models.SGPR, requires_data=True, requires_likelihood=False),
+    ModelSetup(model_class=gpflow.models.VGP, requires_inducing_variables=False, requires_data=True),
     #     ModelSetup(model_class=gpflow.models.GPRF),
-    #     ModelSetup(model_class=gpflow.models.VGP, requires_Z_as_input = False),
-    ModelSetup(model_class=gpflow.models.GPMC, requires_data_as_input=True),
-    ModelSetup(model_class=gpflow.models.SGPMC, requires_data_as_input=True)
+    ModelSetup(model_class=gpflow.models.GPMC, requires_data=True, requires_inducing_variables=False),
+    ModelSetup(model_class=gpflow.models.SGPMC, requires_data=True, requires_inducing_variables=True)
 ]
 
 
