@@ -24,7 +24,6 @@ from gpflow.util import default_float, default_jitter
 
 rng = np.random.RandomState(0)
 
-
 # ------------------------------------------
 # Helpers
 # ------------------------------------------
@@ -51,6 +50,7 @@ def compute_kl_1d(q_mu, q_sigma, p_var=1.0):
 # Data classes: storing constants
 # ------------------------------------------
 
+
 class Datum:
     M, N = 5, 4
 
@@ -70,9 +70,8 @@ def test_diags(white):
     Here we make sure the behaviours overlap.
     """
     # the chols are diagonal matrices, with the same entries as the diag representation.
-    chol_from_diag = tf.stack(
-        [tf.linalg.diag(Datum.sqrt_diag[:, i]) for i in range(Datum.N)]  # [N, M, M]
-    )
+    chol_from_diag = tf.stack([tf.linalg.diag(Datum.sqrt_diag[:, i]) for i in range(Datum.N)]  # [N, M, M]
+                              )
     kl_diag = gauss_kl(Datum.mu, Datum.sqrt_diag, Datum.K if white else None)
     kl_dense = gauss_kl(Datum.mu, chol_from_diag, Datum.K if white else None)
 
@@ -84,9 +83,8 @@ def test_whitened(diag):
     """
     Check that K=Identity and K=None give same answer
     """
-    chol_from_diag = tf.stack(
-        [tf.linalg.diag(Datum.sqrt_diag[:, i]) for i in range(Datum.N)]  # [N, M, M]
-    )
+    chol_from_diag = tf.stack([tf.linalg.diag(Datum.sqrt_diag[:, i]) for i in range(Datum.N)]  # [N, M, M]
+                              )
     s = Datum.sqrt_diag if diag else chol_from_diag
 
     kl_white = gauss_kl(Datum.mu, s)
@@ -112,8 +110,7 @@ def test_sumkl_equals_batchkl(shared_k, diag):
     kl_sum = []
     for n in range(Datum.N):
         q_mu_n = Datum.mu[:, n][:, None]  # [M, 1]
-        q_sqrt_n = Datum.sqrt_diag[:, n][:, None] if diag else Datum.sqrt[n, :, :][None, :,
-                                                               :]  # [1, M, M] or [M, 1]
+        q_sqrt_n = Datum.sqrt_diag[:, n][:, None] if diag else Datum.sqrt[n, :, :][None, :, :]  # [1, M, M] or [M, 1]
         K_n = Datum.K if shared_k else Datum.K_batch[n, :, :][None, :, :]  # [1, M, M] or [M, M]
         kl_n = gauss_kl(q_mu_n, q_sqrt_n, K=K_n)
         kl_sum.append(kl_n)
@@ -133,9 +130,10 @@ def test_oned(white, dim):
     K1d = Datum.K_batch[:, dim, dim][:, None, None]  # [N, 1, 1]
 
     kl = gauss_kl(mu1d, s1d, K1d if not white else None)
-    kl_1d = compute_kl_1d(tf.reshape(mu1d, (-1,)),  # N
-                          tf.reshape(s1d, (-1,)),  # N
-                          None if white else tf.reshape(K1d, (-1,)))  # N
+    kl_1d = compute_kl_1d(
+        tf.reshape(mu1d, (-1, )),  # N
+        tf.reshape(s1d, (-1, )),  # N
+        None if white else tf.reshape(K1d, (-1, )))  # N
     np.testing.assert_allclose(kl, kl_1d)
 
 
