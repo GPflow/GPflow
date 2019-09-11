@@ -14,13 +14,13 @@
 
 from typing import Optional, Tuple
 
-import gpflow
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+import gpflow
+from .model import GPModel
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction
-from .model import GPModel
 
 Data = Tuple[tf.Tensor, tf.Tensor]
 
@@ -42,7 +42,9 @@ class GPR(GPModel):
 
     def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None):
         likelihood = gpflow.likelihoods.Gaussian()
-        super().__init__(kernel, likelihood, mean_function)
+        _, y_data = data
+        num_latent = y_data.shape[1]
+        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
 
         self.data = data
 
