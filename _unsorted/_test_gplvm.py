@@ -44,7 +44,7 @@ class TestGPLVM(GPflowTestCase):
         with self.test_context():
             k = kernels.Periodic(self.Q)
             XInit = self.rng.rand(self.N, self.Q)
-            m = gpflow.models.GPLVM(self.Y, self.Q, XInit, k)
+            m = gpflow.models.GPLVM(self.Y, self.Q, kernel=k, x_data_mean=XInit)
             linit = m.compute_log_likelihood()
             opt = gpflow.train.ScipyOptimizer()
             opt.minimize(m, maxiter=2)
@@ -68,7 +68,7 @@ class TestBayesianGPLVM(GPflowTestCase):
             Z = np.linspace(0, 1, self.M)
             Z = np.expand_dims(Z, Q)  # inducing points
             m = gpflow.models.BayesianGPLVM(
-                X_mean=np.zeros((self.N, Q)),
+                x_data_mean=np.zeros((self.N, Q)),
                 X_var=np.ones((self.N, Q)),
                 Y=self.Y,
                 kernel=k,
@@ -83,10 +83,10 @@ class TestBayesianGPLVM(GPflowTestCase):
         with self.test_context():
             # test default Z on 2_D example
             Q = 2  # latent dimensions
-            X_mean = gpflow.models.PCA_reduce(self.Y, Q)
+            x_data_mean = gpflow.models.PCA_reduce(self.Y, Q)
             k = kernels.SquaredExponential(Q, ARD=False)
             m = gpflow.models.BayesianGPLVM(
-                X_mean=X_mean,
+                x_data_mean=x_data_mean,
                 X_var=np.ones((self.N, Q)),
                 Y=self.Y,
                 kernel=k,
