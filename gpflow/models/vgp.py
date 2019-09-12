@@ -165,7 +165,7 @@ class VGPOpperArchambeau(GPModel):
         self.num_data = x_data.shape[0]
         self.num_latent = num_latent or y_data.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), gpflow.positive())
+        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.positive())
 
     def log_likelihood(self):
         """
@@ -177,7 +177,7 @@ class VGPOpperArchambeau(GPModel):
             q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
         """
         x_data, y_data = self.data
-        K = self.kernel()
+        K = self.kernel(x_data)
         K_alpha = tf.linalg.matmul(K, self.q_alpha)
         f_mean = K_alpha + self.mean_function(x_data)
 
@@ -195,7 +195,7 @@ class VGPOpperArchambeau(GPModel):
 
         KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent + tf.reduce_sum(K_alpha * self.q_alpha))
 
-        v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
+        v_exp = self.likelihood.variational_expectations(f_mean, f_var, y_data)
         return tf.reduce_sum(v_exp) - KL
 
     def predict_f(self, predict_at: DataPoint, full_cov: bool = False):
@@ -224,5 +224,5 @@ class VGPOpperArchambeau(GPModel):
         if full_cov:
             f_var = self.kernel(predict_at) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
         else:
-            f_var = self.kernel(predict_at) - tf.reduce_sum(tf.square(LiKx), 1)
+            f_var = self.kernel(predict_at, full=False) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)

@@ -84,23 +84,24 @@ def _create_approximate_models():
                                  gpflow.likelihoods.Gaussian(),
                                  inducing_variables=Datum.X.copy(),
                                  q_diag=False,
-                                 mean_function=gpflow.mean_functions.Constant())
+                                 mean_function=gpflow.mean_functions.Constant(),
+                                 num_latent=Datum.Y.shape[1])
     gpflow.utilities.set_trainable(model_2.inducing_variables, False)
     model_3 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
                                  likelihood=gpflow.likelihoods.Gaussian(),
                                  inducing_variables=Datum.X.copy(), q_diag=False, whiten=True,
-                                 mean_function=gpflow.mean_functions.Constant())
-    model_3.inducing_variables.trainable = False
-    model_4 = gpflow.models.SGPR((Datum.X, Datum.Y), gpflow.kernels.SquaredExponential(),
-                                 inducing_variables=Datum.X.copy(),
-                                 mean_function=Constant())
-
-    model_4.inducing_variables.trainable = False
-    model_5 = gpflow.models.GPRFITC((Datum.X, Datum.Y),
+                                 mean_function=gpflow.mean_functions.Constant(),
+                                 num_latent=Datum.Y.shape[1])
+    gpflow.utilities.set_trainable(model_3.inducing_variables, False)
+    model_4 = gpflow.models.GPRFITC((Datum.X, Datum.Y),
                                     kernel=gpflow.kernels.SquaredExponential(),
                                     inducing_variables=Datum.X.copy(),
                                     mean_function=Constant())
-    model_5.inducing_variables.trainable = False
+    gpflow.utilities.set_trainable(model_4.inducing_variables, False)
+    model_5 = gpflow.models.SGPR((Datum.X, Datum.Y), gpflow.kernels.SquaredExponential(),
+                                 inducing_variables=Datum.X.copy(),
+                                 mean_function=Constant())
+    gpflow.utilities.set_trainable(model_5.inducing_variables, False)
 
     # Train models
 
@@ -119,13 +120,13 @@ def _create_approximate_models():
         return model_4.neg_log_marginal_likelihood()
 
     def model_5_closure():
-        return model_5.neg_log_marginal_likelihood()
+        return - model_5.log_likelihood()
 
     opt.minimize(model_1_closure, variables=model_1.trainable_variables, options=dict(maxiter=300))
-    opt.minimize(model_2_closure, variables=model_2.trainable_variables, options=dict(maxiter=1000))
+    opt.minimize(model_2_closure, variables=model_2.trainable_variables, options=dict(maxiter=300))
     opt.minimize(model_3_closure, variables=model_3.trainable_variables, options=dict(maxiter=300))
     opt.minimize(model_4_closure, variables=model_4.trainable_variables, options=dict(maxiter=300))
-    opt.minimize(model_5_closure, variables=model_5.trainable_variables, options=dict(maxiter=300))
+    # opt.minimize(model_5_closure, variables=model_5.trainable_variables, options=dict(maxiter=300))
 
     return model_1, model_2, model_3, model_4, model_5
 
@@ -139,20 +140,21 @@ def _create_vgp_model(kernel, likelihood, q_mu=None, q_sqrt=None):
 
 
 def _create_vgpao_model(kernel, likelihood, q_alpha, q_lambda):
-    model_vgpoa = gpflow.models.VGPOpperArchambeau((DatumVGP.X, DatumVGP.Y), kernel, likelihood)
+    model_vgpoa = gpflow.models.VGPOpperArchambeau((DatumVGP.X, DatumVGP.Y), kernel, likelihood, num_latent=DatumVGP.DY)
     model_vgpoa.q_alpha.assign(q_alpha)
     model_vgpoa.q_lambda.assign(q_lambda)
     return model_vgpoa
 
 
 def _create_svgp_model(kernel, likelihood, q_mu, q_sqrt, whiten):
-    model_svgp = gpflow.models.SVGP(kernel, likelihood, DatumVGP.X.copy(), whiten=whiten, q_diag=False)
+    model_svgp = gpflow.models.SVGP(kernel, likelihood, DatumVGP.X.copy(), whiten=whiten, q_diag=False,
+                                    num_latent=DatumVGP.DY)
     model_svgp.q_mu.assign(q_mu)
     model_svgp.q_sqrt.assign(q_sqrt)
     return model_svgp
 
 
-@pytest.mark.parametrize('approximate_model', [_create_approximate_models()[0]])
+@pytest.mark.parametrize('approximate_model', _create_approximate_models()[:-1])
 def test_equivalence(approximate_model):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
@@ -166,7 +168,7 @@ def test_equivalence(approximate_model):
     else:
         approximate_likelihood = - approximate_model.log_likelihood()
 
-    assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-6)
+    assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-4)
 
     gpr_kernel_ls = gpr_model.kernel.lengthscale.read_value()
     gpr_kernel_var = gpr_model.kernel.variance.read_value()
@@ -189,20 +191,20 @@ def test_equivalence_vgp_and_svgp():
     likelihood = gpflow.likelihoods.StudentT()
 
     svgp_model = _create_svgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt, whiten=True)
-    vgp_model = _create_vgp_model(kernel, likelihood, Datum.q_mu, Datum.q_sqrt)
+    vgp_model = _create_vgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt)
 
     likelihood_svgp = svgp_model.log_likelihood(DatumVGP.X, DatumVGP.Y)
     likelihood_vgp = vgp_model.log_likelihood()
     assert_allclose(likelihood_svgp, likelihood_vgp, rtol=1e-2)
 
-    svgp_mu, svgp_var = svgp_model.predict_f(Datum.Xtest)
-    vgp_mu, vgp_var = vgp_model.predict_f(Datum.Xtest)
+    svgp_mu, svgp_var = svgp_model.predict_f(DatumVGP.Xs)
+    vgp_mu, vgp_var = vgp_model.predict_f(DatumVGP.Xs)
 
     assert_allclose(svgp_mu, vgp_mu)
     assert_allclose(svgp_var, vgp_var)
 
 
-def test_equivalence_vgp_and_opper_archambeau(self):
+def test_equivalence_vgp_and_opper_archambeau():
     kernel = gpflow.kernels.Matern52()
     likelihood = gpflow.likelihoods.StudentT()
 
@@ -213,7 +215,7 @@ def test_equivalence_vgp_and_opper_archambeau(self):
     L_inv = np.linalg.inv(L)
     K_inv = np.linalg.inv(K)
 
-    mean = K.dot(DatumVGP.q_alpha)
+    mean = K @ DatumVGP.q_alpha
 
     prec_dnn = K_inv[None, :, :] + np.array([np.diag(l ** 2) for l in DatumVGP.q_lambda.T])
     var_dnn = np.linalg.inv(prec_dnn)
@@ -233,9 +235,9 @@ def test_equivalence_vgp_and_opper_archambeau(self):
     assert_allclose(likelihood_vgp, likelihood_vgp_oa, rtol=1e-2)
     assert_allclose(likelihood_vgp, likelihood_svgp_unwhitened, rtol=1e-2)
 
-    vgp_oa_mu, vgp_oa_var = vgp_oa_model.predict_f(Datum.Xtest)
-    svgp_unwhitened_mu, svgp_unwhitened_var = svgp_model_unwhitened.predict_f(Datum.Xtest)
-    vgp_mu, vgp_var = vgp_model.predict_f(Datum.Xtest)
+    vgp_oa_mu, vgp_oa_var = vgp_oa_model.predict_f(DatumVGP.Xs)
+    svgp_unwhitened_mu, svgp_unwhitened_var = svgp_model_unwhitened.predict_f(DatumVGP.Xs)
+    vgp_mu, vgp_var = vgp_model.predict_f(DatumVGP.Xs)
 
     assert_allclose(vgp_oa_mu, vgp_mu)
     assert_allclose(vgp_oa_var, vgp_var, rtol=1e-4)  # jitter?
@@ -250,7 +252,6 @@ def test_upper_bound_few_inducing_points():
     model_vfe = gpflow.models.SGPR((DatumUpper.X, DatumUpper.Y), gpflow.kernels.SquaredExponential(),
                                    inducing_variables=DatumUpper.X[:10, :].copy(),
                                    mean_function=Constant())
-
     opt = gpflow.optimizers.Scipy()
 
     def model_vfe_closure():
@@ -258,17 +259,17 @@ def test_upper_bound_few_inducing_points():
 
     opt.minimize(model_vfe_closure, variables=model_vfe.trainable_variables, options=dict(maxiter=500))
 
-    full_gp = gpflow.models.GPR((Datum.X, Datum.Y),
+    full_gp = gpflow.models.GPR((DatumUpper.X, DatumUpper.Y),
                                 kernel=gpflow.kernels.SquaredExponential()
                                 )
     full_gp.kernel.lengthscale.assign(model_vfe.kernel.lengthscale.read_value())
     full_gp.kernel.variance.assign(model_vfe.kernel.variance.read_value())
     full_gp.likelihood.variance.assign(model_vfe.likelihood.variance.read_value())
 
-    lml_upper = model_vfe.upper_bound()
+    lml_upper = - model_vfe.upper_bound()
     lml_vfe = - model_vfe.log_likelihood()
     lml_full_gp = - full_gp.log_likelihood()
 
-    assert lml_upper > lml_full_gp > lml_vfe
-
-
+    assert lml_full_gp > lml_vfe
+    assert lml_upper > lml_vfe
+    assert_allclose(lml_full_gp, lml_upper)

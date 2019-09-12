@@ -64,12 +64,12 @@ class SGPRUpperMixin(GPModel):
 
         Linvkuf = tf.linalg.triangular_solve(L, kuf, lower=True)
         # Using the Trace bound, from Titsias' presentation
-        c = tf.reduce_sum(Kdiag) - tf.reduce_sum(Linvkuf ** 2.0)
-        # Kff = self.kernel(x_data)
-        # Qff = tf.linalg.matmul(kuf, Linvkuf, transpose_a=True)
+        # c = tf.reduce_sum(Kdiag) - tf.reduce_sum(Linvkuf ** 2.0)
+        Kff = self.kernel(x_data)
+        Qff = tf.linalg.matmul(kuf, Linvkuf, transpose_a=True)
 
         # Alternative bound on max eigenval:
-        # c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
+        c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
         corrected_noise = self.likelihood.variance + c
 
         const = -0.5 * num_data * tf.math.log(
@@ -114,8 +114,8 @@ class SGPR(SGPRUpperMixin):
                  data: Data,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
-                 inducing_variables: Optional[InducingPoints] = None,
-                 **kwargs):
+                 inducing_variables: Optional[InducingPoints] = None
+                 ):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
@@ -125,14 +125,15 @@ class SGPR(SGPRUpperMixin):
         This method only works with a Gaussian likelihood.
         """
         likelihood = likelihoods.Gaussian()
-        GPModel.__init__(self, kernel, likelihood, mean_function, **kwargs)
+        x_data, y_data = data
+        num_latent = y_data.shape[-1]
+        super().__init__(kernel, likelihood, mean_function, num_latent)
         self.data = data
-        self.num_data = data[0].shape[0]
+        self.num_data = x_data.shape[0]
 
         if not isinstance(inducing_variables, InducingPoints):
             inducing_variables = InducingPoints(inducing_variables)
         self.inducing_variables = inducing_variables
-
 
     def log_likelihood(self):
         """
@@ -215,8 +216,8 @@ class GPRFITC(SGPRUpperMixin):
                  data: Data,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
-                 inducing_variables: Optional[InducingPoints] = None,
-                 **kwargs):
+                 inducing_variables: Optional[InducingPoints] = None
+                 ):
         """
         This implements GP regression with the FITC approximation.
         The key reference is
@@ -245,10 +246,12 @@ class GPRFITC(SGPRUpperMixin):
         mean_function = Zero() if mean_function is None else mean_function
 
         likelihood = likelihoods.Gaussian()
-        GPModel.__init__(self, kernel, likelihood, mean_function, **kwargs)
+        x_data, y_data = data
+        num_latent = y_data.shape[-1]
+        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
+
         self.data = data
-        self.num_data = data[0].shape[0]
-        self.num_latent = data[1].shape[1]
+        self.num_data = x_data.shape[0]
 
         if not isinstance(inducing_variables, InducingPoints):
             inducing_variables = InducingPoints(inducing_variables)
@@ -356,9 +359,9 @@ class GPRFITC(SGPRUpperMixin):
     @property
     def Z(self):
         raise NotImplementedError(
-            "Inducing points are now in `model.inducing_variable.Z()`.")
+            "Inducing points are now in `model.inducing_variables.Z()`.")
 
     @Z.setter
     def Z(self, _):
         raise NotImplementedError(
-            "Inducing points are now in `model.inducing_variable.Z()`.")
+            "Inducing points are now in `model.inducing_variables.Z()`.")

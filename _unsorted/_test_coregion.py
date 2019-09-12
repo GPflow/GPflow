@@ -50,11 +50,11 @@ def _prepare_models():
     vgp0 = gpflow.models.VGP((Datum.X[0], Datum.Y[0]),
                              kernel=k0,
                              mean_function=Constant(),
-                             likelihood=gpflow.likelihoods.Gaussian())
+                             likelihood=gpflow.likelihoods.Gaussian(), num_latent=2)
     vgp1 = gpflow.models.VGP((Datum.X[1], Datum.Y[1]),
                              kernel=k1,
                              mean_function=Constant(),
-                             likelihood=gpflow.likelihoods.Gaussian())
+                             likelihood=gpflow.likelihoods.Gaussian(), num_latent=2)
     # 2. Coregionalized GPR
     kc = gpflow.kernels.SquaredExponential()
     kc.trainable = False  # lengthscale and variance is fixed.
@@ -77,13 +77,13 @@ def _prepare_models():
     opt = gpflow.optimizers.Scipy()
 
     def vgp0_closure():
-        return - vgp0.log_likelihood()
+        return vgp0.neg_log_marginal_likelihood()
 
     def vgp1_closure():
-        return - vgp1.log_likelihood()
+        return vgp1.neg_log_marginal_likelihood()
 
     def cvgp_closure():
-        return - cvgp.log_likelihood()
+        return cvgp.neg_log_marginal_likelihood()
 
     opt.minimize(vgp0_closure, variables=vgp0.trainable_variables, options=dict(maxiter=1000))
     opt.minimize(vgp1_closure, variables=vgp1.trainable_variables, options=dict(maxiter=1000))
