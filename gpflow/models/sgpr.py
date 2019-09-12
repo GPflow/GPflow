@@ -114,7 +114,8 @@ class SGPR(SGPRUpperMixin):
                  data: Data,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
-                 inducing_variables: Optional[InducingPoints] = None
+                 inducing_variables: Optional[InducingPoints] = None,
+                 num_latent: Optional[int] = None
                  ):
         """
         X is a data matrix, size [N, D]
@@ -126,7 +127,7 @@ class SGPR(SGPRUpperMixin):
         """
         likelihood = likelihoods.Gaussian()
         x_data, y_data = data
-        num_latent = y_data.shape[-1]
+        num_latent = y_data.shape[-1] if num_latent is None else num_latent
         super().__init__(kernel, likelihood, mean_function, num_latent)
         self.data = data
         self.num_data = x_data.shape[0]
