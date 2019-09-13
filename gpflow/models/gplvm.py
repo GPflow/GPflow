@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
+from typing import Optional
+
 import numpy as np
+import tensorflow as tf
 
-from .. import likelihoods
-from .. import kernels
-from .. import inducing_variables
-
-from ..mean_functions import Zero
+from .. import covariances, inducing_variables, kernels, likelihoods
+from ..base import Parameter, positive
+from ..config import default_float, default_jitter
 from ..expectations import expectation
+from ..kernels import Kernel
+from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
-
-from ..base import Parameter
-from .model import GPModel
+from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from ..config import default_jitter
+from .model import GPModel
 
 
 class GPLVM(GPR):
@@ -34,7 +34,12 @@ class GPLVM(GPR):
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
 
-    def __init__(self, data, latent_dim, x_data_mean=None, kernel=None, mean_function=None, **kwargs):
+    def __init__(self,
+                 data: tf.Tensor,
+                 latent_dim: int,
+                 x_data_mean: Optional[tf.Tensor] = None,
+                 kernel: Optional[Kernel] = None,
+                 mean_function: Optional[MeanFunction] = None):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
 
@@ -45,7 +50,7 @@ class GPLVM(GPR):
         :param mean_function: mean function, by default None.
         """
         if x_data_mean is None:
-            x_data_mean = PCA_reduce(data, latent_dim)
+            x_data_mean = pca_reduce(data, latent_dim)
 
         num_latent = x_data_mean.shape[1]
         if num_latent != latent_dim:
@@ -56,19 +61,25 @@ class GPLVM(GPR):
             mean_function = Zero()
 
         if kernel is None:
-            kernel = kernels.SquaredExponential(latent_dim, ARD=True)
+            kernel = kernels.SquaredExponential(lengthscale=tf.ones((latent_dim, )), ard=True)
 
         if data.shape[1] < num_latent:
             raise ValueError('More latent dimensions than observed.')
 
-        data = (x_data_mean, data)
-        super().__init__(self, data, kernel, mean_function=mean_function, **kwargs)
-        x_parameter = Parameter(x_data_mean)
-        self.data = (x_parameter, data)
+        gpr_data = (Parameter(x_data_mean), data)
+        super().__init__(gpr_data, kernel, mean_function=mean_function)
 
 
 class BayesianGPLVM(GPModel):
-    def __init__(self, data, x_data_mean, x_data_var, kernel, M, Z=None, X_prior_mean=None, X_prior_var=None):
+    def __init__(self,
+                 data: tf.Tensor,
+                 x_data_mean: tf.Tensor,
+                 x_data_var: tf.Tensor,
+                 kernel: Kernel,
+                 num_inducing_variables: int,
+                 inducing_variable=None,
+                 x_prior_mean=None,
+                 x_prior_var=None):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
         :param data: data matrix, size N (number of points) x D (dimensions)
@@ -79,61 +90,61 @@ class BayesianGPLVM(GPModel):
         :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions). By default
         random permutation of x_data_mean.
         :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as x_data_mean.
-        :param X_prior_var: pripor variance used in KL term of bound. By default 1.
+        :param x_prior_var: pripor variance used in KL term of bound. By default 1.
         """
-        super().__init__(self, data, x_data_mean=x_data_mean, kernel=kernel, likelihood=likelihoods.Gaussian(), mean_function=Zero())
-        self.x_data_mean = Parameter(x_data_mean)
-        # diag_transform = transforms.DiagMatrix(x_data_var.shape[1])
-        # self.x_data_var() = Parameter(diag_transform.forward(transforms.positive.backward(x_data_var)) if x_data_var.ndim == 2 else x_data_var,
-        #                    diag_transform)
+        super().__init__(kernel, likelihoods.Gaussian())
+        self.data = data
         assert x_data_var.ndim == 2
-        self.x_data_var = Parameter(x_data_var, transform=transforms.positive)
+
+        self.x_data_mean = Parameter(x_data_mean)
+        self.x_data_var = Parameter(x_data_var, transform=positive())
 
         self.num_data, self.num_latent = x_data_mean.shape
-        self.output_dim = Y.shape[1]
+        self.output_dim = data.shape[-1]
 
         assert np.all(x_data_mean.shape == x_data_var.shape)
-        assert x_data_mean.shape[0] == Y.shape[0], 'X mean and Y must be same size.'
-        assert x_data_var.shape[0] == Y.shape[0], 'X var and Y must be same size.'
+        assert x_data_mean.shape[0] == data.shape[0], 'X mean and Y must be same size.'
+        assert x_data_var.shape[0] == data.shape[0], 'X var and Y must be same size.'
 
         # inducing points
-        if Z is None:
+        if inducing_variable is None:
             # By default we initialize by subset of initial latent points
-            Z = np.random.permutation(x_data_mean.copy())[:M]
+            inducing_variable = np.random.permutation(x_data_mean.copy())[:num_inducing_variables]
 
-        self.inducing_variable = inducing_variables.InducingPoints(Z)
+        self.inducing_variable = inducing_variables.InducingPoints(inducing_variable)
 
-        assert len(self.inducing_variable) == M
+        assert len(self.inducing_variable) == num_inducing_variables
         assert x_data_mean.shape[1] == self.num_latent
 
         # deal with parameters for the prior mean variance of X
-        if X_prior_mean is None:
-            X_prior_mean = np.zeros((self.num_data, self.num_latent))
-        if X_prior_var is None:
-            X_prior_var = np.ones((self.num_data, self.num_latent))
+        if x_prior_mean is None:
+            x_prior_mean = tf.zeros((self.num_data, self.num_latent), dtype=default_float())
+        if x_prior_var is None:
+            x_prior_var = tf.ones((self.num_data, self.num_latent))
 
-        self.X_prior_mean = np.asarray(np.atleast_1d(X_prior_mean), dtype=default_float())
-        self.X_prior_var = np.asarray(np.atleast_1d(X_prior_var), dtype=default_float())
+        self.x_prior_mean = tf.convert_to_tensor(np.atleast_1d(x_prior_mean), dtype=default_float())
+        self.x_prior_var = tf.convert_to_tensor(np.atleast_1d(x_prior_var), dtype=default_float())
 
-        assert self.X_prior_mean.shape[0] == self.num_data
-        assert self.X_prior_mean.shape[1] == self.num_latent
-        assert self.X_prior_var.shape[0] == self.num_data
-        assert self.X_prior_var.shape[1] == self.num_latent
+        assert self.x_prior_mean.shape[0] == self.num_data
+        assert self.x_prior_mean.shape[1] == self.num_latent
+        assert self.x_prior_var.shape[0] == self.num_data
+        assert self.x_prior_var.shape[1] == self.num_latent
 
-    def _build_likelihood(self):
+    def log_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
         """
-        pX = DiagonalGaussian(self.x_data_mean(), self.x_data_var())
+        pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
 
+        y_data = self.data
         num_inducing = len(self.inducing_variable)
         psi0 = tf.reduce_sum(expectation(pX, self.kernel))
         psi1 = expectation(pX, (self.kernel, self.inducing_variable))
         psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.inducing_variable),
                                          (self.kernel, self.inducing_variable)),
                              axis=0)
-        cov_uu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        cov_uu = covariances.Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
@@ -145,78 +156,65 @@ class BayesianGPLVM(GPModel):
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
         log_det_B = 2. * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
-        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, self.Y), lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, y_data), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        dx_data_var = self.x_data_var() if len(self.x_data_var().get_shape()) == 2 else tf.linalg.diag_part(self.x_data_var())
-        NQ = tf.cast(tf.size(self.x_data_mean()), default_float())
-        D = tf.cast(tf.shape(self.Y)[1], default_float())
-        KL = -0.5 * tf.reduce_sum(tf.math.log(dx_data_var)) \
-             + 0.5 * tf.reduce_sum(tf.math.log(self.X_prior_var)) \
-             - 0.5 * NQ \
-             + 0.5 * tf.reduce_sum((tf.square(self.x_data_mean() - self.X_prior_mean) + dx_data_var) / self.X_prior_var)
+        dx_data_var = self.x_data_var if self.x_data_var.shape.ndims == 2 else tf.linalg.diag_part(self.x_data_var)
+        NQ = tf.cast(tf.size(self.x_data_mean), default_float())
+        D = tf.cast(tf.shape(y_data)[1], default_float())
+        KL = -0.5 * tf.reduce_sum(tf.math.log(dx_data_var))
+        KL += 0.5 * tf.reduce_sum(tf.math.log(self.x_prior_var))
+        KL -= 0.5 * NQ
+        KL += 0.5 * tf.reduce_sum((tf.square(self.x_data_mean - self.x_prior_mean) + dx_data_var) / self.x_prior_var)
 
         # compute log marginal bound
-        ND = tf.cast(tf.size(self.Y), default_float())
+        ND = tf.cast(tf.size(y_data), default_float())
         bound = -0.5 * ND * tf.math.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
-        bound += -0.5 * tf.reduce_sum(tf.square(self.Y)) / sigma2
+        bound += -0.5 * tf.reduce_sum(tf.square(y_data)) / sigma2
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 - tf.reduce_sum(tf.linalg.diag_part(AAT)))
         bound -= KL
         return bound
 
-    def _build_predict(self, Xnew, full_cov=False):
+    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False):
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
         there are notes in the SGPR notebook.
-        :param Xnew: Point to predict at.
+        :param predict_at: Point to predict at.
         """
-        pX = DiagonalGaussian(self.x_data_mean(), self.x_data_var())
+        pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
 
+        y_data = self.data
         num_inducing = len(self.inducing_variable)
         psi1 = expectation(pX, (self.kernel, self.inducing_variable))
         psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.inducing_variable),
                                          (self.kernel, self.inducing_variable)),
                              axis=0)
         jitter = default_jitter()
-        Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
+        Kus = covariances.Kuf(self.inducing_variable, self.kernel, predict_at)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
-        L = tf.linalg.cholesky(Kuu(self.inducing_variable, self.kernel, jitter=jitter))
+        L = tf.linalg.cholesky(covariances.Kuu(self.inducing_variable, self.kernel, jitter=jitter))
 
         A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
         tmp = tf.linalg.triangular_solve(L, psi2, lower=True)
         AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
-        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, self.Y), lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, y_data), lower=True) / sigma
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kernel(Xnew) + tf.linalg.matmul(tmp2, tmp2, transpose_a=True) \
+            var = self.kernel(predict_at) + tf.linalg.matmul(tmp2, tmp2, transpose_a=True) \
                   - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
-            shape = tf.stack([1, 1, tf.shape(self.Y)[1]])
+            shape = tf.stack([1, 1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
-            var = self.kernel(Xnew) + tf.reduce_sum(tf.square(tmp2), 0) \
-                  - tf.reduce_sum(tf.square(tmp1), 0)
-            shape = tf.stack([1, tf.shape(self.Y)[1]])
+            var = self.kernel(predict_at, full=False) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(
+                tf.square(tmp1), 0)
+            shape = tf.stack([1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
-        return mean + self.mean_function(Xnew), var
-
-
-def PCA_reduce(X, Q):
-    """
-    A helpful function for linearly reducing the dimensionality of the data X
-    to Q.
-    :param X: data array of size N (number of points) x D (dimensions)
-    :param Q: Number of latent dimensions, Q < D
-    :return: PCA projection array of size [N, Q].
-    """
-    assert Q <= X.shape[1], 'Cannot have more latent dimensions than observed'
-    evals, evecs = tf.linalg.eigh(np.cov(X.T))
-    W = evecs[:, -Q:]
-    return (X - X.mean(0)) @ W
+        return mean + self.mean_function(predict_at), var
