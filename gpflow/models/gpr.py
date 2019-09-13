@@ -14,13 +14,13 @@
 
 from typing import Optional, Tuple
 
-import gpflow
 import tensorflow as tf
-import tensorflow_probability as tfp
 
-from ..kernels import Kernel
-from ..mean_functions import MeanFunction
+import gpflow
 from .model import GPModel
+from ..kernels import Kernel
+from ..logdensities import multivariate_normal
+from ..mean_functions import MeanFunction
 
 Data = Tuple[tf.Tensor, tf.Tensor]
 
@@ -42,7 +42,9 @@ class GPR(GPModel):
 
     def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None):
         likelihood = gpflow.likelihoods.Gaussian()
-        super().__init__(kernel, likelihood, mean_function)
+        _, y_data = data
+        num_latent = y_data.shape[1]
+        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
 
         self.data = data
 
@@ -64,8 +66,7 @@ class GPR(GPModel):
         m = self.mean_function(x)
 
         # [R,] log-likelihoods for each independent dimension of Y
-        distr = tfp.distributions.MultivariateNormalTriL(loc=m, scale_tril=L)
-        log_prob = distr.log_prob(tf.linalg.adjoint(y))
+        log_prob = multivariate_normal(y, m, L)
         return tf.reduce_sum(log_prob)
 
     def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
