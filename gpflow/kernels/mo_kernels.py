@@ -39,13 +39,13 @@ class MultioutputKernel(Kernel):
     @abc.abstractmethod
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         """
-        Returns the correlation of f(X1) and f(Y), where f(.) can be multi-dimensional.
-        :param X: data matrix, [1, D]
-        :param Y: data matrix, [2, D]
+        Returns the correlation of f(X) and f(Y), where f(.) can be multi-dimensional.
+        :param X: data matrix, [N1, D]
+        :param Y: data matrix, [N2, D]
         :param full_output_cov: calculate correlation between outputs.
-        :return: cov[f(X1), f(Y)] with shape
-        - [1, P, 2, P] if `full_output_cov` = True
-        - [P, 1, 2] if `full_output_cov` = False
+        :return: cov[f(X), f(Y)] with shape
+        - [N1, P, N2, P] if `full_output_cov` = True
+        - [P, N1, N2] if `full_output_cov` = False
         """
         pass
 
