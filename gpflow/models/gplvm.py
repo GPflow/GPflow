@@ -26,6 +26,7 @@ from ..probability_distributions import DiagonalGaussian
 from ..base import Parameter
 from .model import GPModel
 from .gpr import GPR
+from ..config import default_jitter
 
 
 class GPLVM(GPR):
@@ -218,4 +219,4 @@ def PCA_reduce(X, Q):
     assert Q <= X.shape[1], 'Cannot have more latent dimensions than observed'
     evals, evecs = tf.linalg.eigh(np.cov(X.T))
     W = evecs[:, -Q:]
-    return (X - X.mean(0)).dot(W)
+    return (X - X.mean(0)) @ W
