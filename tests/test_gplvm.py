@@ -24,9 +24,9 @@ from gpflow.utilities.ops import pca_reduce
 
 @dataclass
 class Data:
+    rng = np.random.RandomState(999)
     N = 20
     D = 5
-    rng = np.random.RandomState(999)
     Y = rng.randn(N, D)
     Q = 2
     M = 10
@@ -74,16 +74,11 @@ def test_bayesian_gplvm_1d():
 
 
 def test_bayesian_gplvm_2d():
-    # test default Z on 2_D example
     Q = 2  # latent dimensions
     x_data_mean = pca_reduce(Data.Y, Q)
     kernel = gpflow.kernels.SquaredExponential()
 
-    m = gpflow.models.BayesianGPLVM(Data.Y,
-                                    x_data_mean,
-                                    np.ones((Data.N, Q)),
-                                    kernel,
-                                    num_inducing_variables=Data.M)
+    m = gpflow.models.BayesianGPLVM(Data.Y, x_data_mean, np.ones((Data.N, Q)), kernel, num_inducing_variables=Data.M)
 
     log_likelihood_initial = m.log_likelihood()
     opt = gpflow.optimizers.Scipy()

@@ -20,7 +20,8 @@ requirements = [
     'h5py>=2.7.0',
     'matplotlib>=2.2.2',
     'tabulate',
-    'tfp-nightly'
+    'tfp-nightly',
+    'dataclasses'
 ]
 
 min_tf_version = '2.0.0'
