@@ -20,16 +20,12 @@ import os
 import pytest
 import nbformat
 
-from gpflow.test_util import session_context
-
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-NOTEBOOK_FILES = [
-]
+NOTEBOOK_FILES = []
 
-BLACKLISTED_NOTEBOOKS = [
-]
+BLACKLISTED_NOTEBOOKS = []
 
 
 @pytest.mark.parametrize('notebook_file', NOTEBOOK_FILES)
@@ -51,8 +47,7 @@ def _nbpath():
 
 def _preproc():
     pythonkernel = 'python' + str(sys.version_info[0])
-    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel,
-                               interrupt_on_timeout=True)
+    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True)
 
 
 def _exec_notebook(notebook_filename):
@@ -68,8 +63,4 @@ def _exec_notebook(notebook_filename):
 
 
 def _exec_notebook_ts(notebook_filename):
-    with session_context():
-        ts = time.time()
-        _exec_notebook(notebook_filename)
-        elapsed = time.time() - ts
-        print(notebook_filename, 'took {0} seconds.'.format(elapsed))
+    _exec_notebook(notebook_filename)
