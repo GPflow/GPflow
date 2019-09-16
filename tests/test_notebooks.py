@@ -23,7 +23,9 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-NOTEBOOK_FILES = []
+NOTEBOOK_FILES = [
+    "gps_for_big_data.ipynb"
+]
 
 BLACKLISTED_NOTEBOOKS = []
 
