@@ -20,36 +20,12 @@ import os
 import pytest
 import nbformat
 
-from gpflow.test_util import session_context
-
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-NOTEBOOK_FILES = [
-    "advanced_usage.ipynb",
-    "classification.ipynb",
-    "coreg_demo.ipynb",
-    "FITCvsVFE.ipynb",
-    "GPLVM.ipynb",
-    "kernels.ipynb",
-    "mcmc.ipynb",
-    "models.ipynb",
-    "monitor-tensorboard.ipynb",
-    "multiclass.ipynb",
-    "multioutput.ipynb",
-    "natural_gradients.ipynb",
-    "ordinal.ipynb",
-    "regression.ipynb",
-    "Sanity_check.ipynb",
-    "settings.ipynb",
-    "SGPR_notes.ipynb",
-    "svi_test.ipynb",
-    "upper_bound.ipynb",
-    "vgp_notes.ipynb",
-]
+NOTEBOOK_FILES = []
 
-BLACKLISTED_NOTEBOOKS = [
-]
+BLACKLISTED_NOTEBOOKS = []
 
 
 @pytest.mark.parametrize('notebook_file', NOTEBOOK_FILES)
@@ -66,13 +42,12 @@ def test_no_notebook_missing():
 
 def _nbpath():
     this_dir = os.path.dirname(__file__)
-    return os.path.join(this_dir, '../doc/source/notebooks/')
+    return os.path.join(this_dir, '../doc/source/notebooks2/')
 
 
 def _preproc():
     pythonkernel = 'python' + str(sys.version_info[0])
-    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel,
-                               interrupt_on_timeout=True)
+    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True)
 
 
 def _exec_notebook(notebook_filename):
@@ -88,8 +63,4 @@ def _exec_notebook(notebook_filename):
 
 
 def _exec_notebook_ts(notebook_filename):
-    with session_context():
-        ts = time.time()
-        _exec_notebook(notebook_filename)
-        elapsed = time.time() - ts
-        print(notebook_filename, 'took {0} seconds.'.format(elapsed))
+    _exec_notebook(notebook_filename)
