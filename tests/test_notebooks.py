@@ -23,7 +23,9 @@ import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-NOTEBOOK_FILES = []
+NOTEBOOK_FILES = [
+    "kernels.ipynb"
+]
 
 BLACKLISTED_NOTEBOOKS = []
 
