@@ -35,18 +35,12 @@ The GPLVM which adds latent variables is also included
 (`notebook <notebooks/GPLVM.html>`_).
 """
 
+from .gplvm import GPLVM, BayesianGPLVM
 from .gpmc import GPMC
 from .gpr import GPR
-from .model import BayesianModel
-from .model import GPModel
-# from .gplvm import GPLVM
-# from .gplvm import BayesianGPLVM
+from .model import BayesianModel, GPModel
 # from .gplvm import PCA_reduce
 from .sgpmc import SGPMC
-from .sgpr import GPRFITC
-from .sgpr import SGPRUpperMixin
-from .sgpr import SGPR
+from .sgpr import GPRFITC, SGPR, SGPRUpperMixin
 from .svgp import SVGP
-# from .svgp import SVGP
-from .vgp import VGP
-# from .vgp import VGPOpperArchambeau
+from .vgp import VGP, VGPOpperArchambeau
