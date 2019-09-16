@@ -43,9 +43,7 @@ class GPR(GPModel):
     def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None):
         likelihood = gpflow.likelihoods.Gaussian()
         _, y_data = data
-        num_latent = y_data.shape[1]
-        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
-
+        super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
         self.data = data
 
     def log_likelihood(self):
