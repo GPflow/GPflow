@@ -15,15 +15,12 @@
 import glob
 import os
 import sys
-import time
 import traceback
 
 import nbformat
 import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
-
-from gpflow.test_util import session_context
 
 # blacklisted notebooks should have a unique basename
 BLACKLISTED_NOTEBOOKS = []
@@ -67,11 +64,7 @@ def _exec_notebook(notebook_filename):
 
 
 def _exec_notebook_ts(notebook_filename):
-    with session_context():
-        ts = time.time()
-        _exec_notebook(notebook_filename)
-        elapsed = time.time() - ts
-        print(notebook_filename, 'took {0} seconds.'.format(elapsed))
+    _exec_notebook(notebook_filename)
 
 
 @pytest.mark.notebooks
