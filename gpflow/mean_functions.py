@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
+r"""
 Throughout GPflow, by default, latent functions being modelled with Gaussian
 processes are assumed to have zero mean, f ~ GP(0, k(x,x')).
 
@@ -25,14 +25,17 @@ allows this to be done whilst additionally learning parameters of the
 parametric function.
 """
 
-import numpy as np
 import tensorflow as tf
+import numpy as np
 
-from .base import Parameter
-from .config import default_float
+from . import settings
+from .params import Parameter
+from .params import Parameterized
+from .params import ParamList
+from .decors import params_as_tensors
 
 
-class MeanFunction(tf.Module):
+class MeanFunction(Parameterized):
     """
     The base mean function class.
     To implement a mean function, write the __call__ method. This takes a
@@ -43,10 +46,8 @@ class MeanFunction(tf.Module):
     MeanFunction classes can have parameters, see the Linear class for an
     example.
     """
-
     def __call__(self, X):
-        raise NotImplementedError(
-            "Implement the __call__ method for this mean function")
+        raise NotImplementedError("Implement the __call__ method for this mean function")
 
     def __add__(self, other):
         return Additive(self, other)
@@ -59,21 +60,21 @@ class Linear(MeanFunction):
     """
     y_i = A x_i + b
     """
-
     def __init__(self, A=None, b=None):
         """
         A is a matrix which maps each element of X to Y, b is an additive
         constant.
 
         If X has N rows and D columns, and Y is intended to have Q columns,
-        then A must be [D, Q], b must be a vector of length Q.
+        then A must be D x Q, b must be a vector of length Q.
         """
+        A = np.ones((1, 1)) if A is None else A
+        b = np.zeros(1) if b is None else b
         MeanFunction.__init__(self)
-        A = np.ones((1, 1), dtype=default_float()) if A is None else A
-        b = np.zeros(1, dtype=default_float()) if b is None else b
-        self.A = Parameter(np.atleast_2d(A))
-        self.b = Parameter(b)
+        self.A = Parameter(np.atleast_2d(A), dtype=settings.float_type)
+        self.b = Parameter(b, dtype=settings.float_type)
 
+    @params_as_tensors
     def __call__(self, X):
         return tf.tensordot(X, self.A, [[-1], [0]]) + self.b
 
@@ -82,7 +83,6 @@ class Identity(Linear):
     """
     y_i = x_i
     """
-
     def __init__(self, input_dim=None):
         Linear.__init__(self)
         self.input_dim = input_dim
@@ -93,19 +93,18 @@ class Identity(Linear):
     @property
     def A(self):
         if self.input_dim is None:
-            raise ValueError(
-                "An input_dim needs to be specified when using the "
-                "`Identity` mean function in combination with expectations.")
-        return tf.eye(self.input_dim, dtype=default_float())
+            raise ValueError("An input_dim needs to be specified when using the "
+                             "`Identity` mean function in combination with expectations.")
+
+        return tf.eye(self.input_dim, dtype=settings.float_type)
 
     @property
     def b(self):
         if self.input_dim is None:
-            raise ValueError(
-                "An input_dim needs to be specified when using the "
-                "`Identity` mean function in combination with expectations.")
+            raise ValueError("An input_dim needs to be specified when using the "
+                             "`Identity` mean function in combination with expectations.")
 
-        return tf.zeros(self.input_dim, dtype=default_float())
+        return tf.zeros(self.input_dim, dtype=settings.float_type)
 
     @A.setter
     def A(self, A):
@@ -117,14 +116,19 @@ class Identity(Linear):
 
 
 class Constant(MeanFunction):
+    """
+    y_i = c,,
+    """
     def __init__(self, c=None):
-        super().__init__()
+        MeanFunction.__init__(self)
         c = np.zeros(1) if c is None else c
+        c = np.reshape(c, (1, -1))
         self.c = Parameter(c)
 
+    @params_as_tensors
     def __call__(self, X):
-        shape = tf.stack([X.shape[0], 1])
-        return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+        shape = tf.stack([tf.shape(X)[0], 1])
+        return tf.tile(self.c, shape)
 
 
 class Zero(Constant):
@@ -134,7 +138,8 @@ class Zero(Constant):
         del self.c
 
     def __call__(self, X):
-        return tf.zeros((X.shape[0], self.output_dim), dtype=X.dtype)
+        shape = tf.concat([tf.shape(X)[:-1], [self.output_dim]], 0)
+        return tf.zeros(shape, dtype=settings.float_type)
 
 
 class SwitchedMeanFunction(MeanFunction):
@@ -143,27 +148,24 @@ class SwitchedMeanFunction(MeanFunction):
     to the data 'label'.
     We assume the 'label' is stored in the extra column of X.
     """
-
     def __init__(self, meanfunction_list):
-        super().__init__()
+        MeanFunction.__init__(self)
         for m in meanfunction_list:
             assert isinstance(m, MeanFunction)
-        self.meanfunctions = meanfunction_list
+        self.meanfunction_list = ParamList(meanfunction_list)
 
+    @params_as_tensors
     def __call__(self, X):
-        ind = tf.gather(tf.transpose(X), X.shape[1] - 1)  # ind = X[:,-1]
+        ind = tf.gather(tf.transpose(X), tf.shape(X)[1]-1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
-        X = tf.transpose(
-            tf.gather(tf.transpose(X),
-                      tf.range(0, X.shape[1] - 1)))  # X = X[:,:-1]
+        X = tf.transpose(tf.gather(tf.transpose(X), tf.range(0, tf.shape(X)[1]-1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
-        x_list = tf.dynamic_partition(X, ind, len(self.meanfunctions))
+        x_list = tf.dynamic_partition(X, ind, len(self.meanfunction_list))
         # apply the likelihood-function to each section of the data
-        results = [m(x) for x, m in zip(x_list, self.meanfunctions)]
+        results = [m(x) for x, m in zip(x_list, self.meanfunction_list)]
         # stitch the results back together
-        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind,
-                                          len(self.meanfunctions))
+        partitions = tf.dynamic_partition(tf.range(0, tf.size(ind)), ind, len(self.meanfunction_list))
         return tf.dynamic_stitch(partitions, results)
 
 

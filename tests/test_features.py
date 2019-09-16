@@ -13,89 +13,128 @@
 # limitations under the License.
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
-import pytest
+import tensorflow as tf
+
 import gpflow
-from gpflow.inducing_variables import InducingPoints, Multiscale
-from gpflow.covariances import Kuu, Kuf
-from gpflow.config import default_jitter
+from gpflow import features
+from gpflow import settings
+from gpflow.test_util import GPflowTestCase
 
 
-@pytest.mark.parametrize('N, D', [[17, 3], [10, 7]])
-def test_inducing_points_inducing_variable_len(N, D):
-    Z = np.random.randn(N, D)
-    inducing_variables = InducingPoints(Z)
-    assert_equal(len(inducing_variables), N)
+class TestInducingPoints(GPflowTestCase):
+    def test_feature_len(self):
+        with self.test_context():
+            N, D = 17, 3
+            Z = np.random.randn(N, D)
+            f = gpflow.features.InducingPoints(Z)
+
+            self.assertTrue(len(f), N)
+            with gpflow.params_as_tensors_for(f):
+                self.assertTrue(len(f), N)
+                # GPflow does not support re-assignment with different shapes at the moment
+
+    def test_inducing_points_equivalence(self):
+        # Inducing features must be the same as the kernel evaluations
+        with self.test_context() as session:
+            Z = np.random.randn(101, 3)
+            f = features.InducingPoints(Z)
+
+            kernels = [
+                gpflow.kernels.RBF(3, 0.46, lengthscales=np.array([0.143, 1.84, 2.0]), ARD=True),
+                gpflow.kernels.Periodic(3, 0.4, 1.8)
+            ]
+
+            for k in kernels:
+                self.assertTrue(np.allclose(session.run(features.Kuu(f, k)), k.compute_K_symm(Z)))
 
 
-_kernel_setups = [
-    gpflow.kernels.SquaredExponential(variance=0.46,
-                                      lengthscale=np.random.uniform(0.5, 3., 5),
-                                      ard=True),
-    gpflow.kernels.Periodic(period=0.4, variance=1.8)
-]
+class TestMultiScaleInducing(GPflowTestCase):
+    def prepare(self):
+        rbf = gpflow.kernels.RBF(2, 1.3441, lengthscales=np.array([0.3414, 1.234]))
+        Z = np.random.randn(23, 3)
+        feature_0lengthscale = gpflow.features.Multiscale(Z, np.zeros(Z.shape))
+        feature_inducingpoint = gpflow.features.InducingPoints(Z)
+        return rbf, feature_0lengthscale, feature_inducingpoint
+
+    def test_equivalence_inducing_points(self):
+        # Multiscale must be equivalent to inducing points when variance is zero
+        with self.test_context() as session:
+            rbf, feature_0lengthscale, feature_inducingpoint = self.prepare()
+            Xnew = np.random.randn(13, 3)
+
+            ms, point = session.run([features.Kuf(feature_0lengthscale, rbf, Xnew),
+                                     features.Kuf(feature_inducingpoint, rbf, Xnew)])
+            pd = np.max(np.abs(ms - point) / point * 100)
+            self.assertTrue(pd < 0.1)
+
+            ms, point = session.run([features.Kuu(feature_0lengthscale, rbf),
+                                     features.Kuu(feature_inducingpoint, rbf)])
+            pd = np.max(np.abs(ms - point) / point * 100)
+            self.assertTrue(pd < 0.1)
 
 
-@pytest.mark.parametrize('N', [10, 101])
-@pytest.mark.parametrize('kernel', _kernel_setups)
-def test_inducing_equivalence(N, kernel):
-    # Inducing inducing must be the same as the kernel evaluations
-    Z = np.random.randn(N, 5)
-    inducing_variables = InducingPoints(Z)
-    assert_allclose(Kuu(inducing_variables, kernel), kernel(Z))
+class TestFeaturesPsdSchur(GPflowTestCase):
+    def test_matrix_psd(self):
+        # Conditional variance must be PSD.
+        X = np.random.randn(13, 2)
+
+        def init_feat(feature):
+            if feature is gpflow.features.InducingPoints:
+                return feature(np.random.randn(71, 2))
+            elif feature is gpflow.features.Multiscale:
+                return feature(np.random.randn(71, 2), np.random.rand(71, 2))
+
+        featkerns = [(gpflow.features.InducingPoints, gpflow.kernels.RBF),
+                     (gpflow.features.InducingPoints, gpflow.kernels.Matern12),
+                     (gpflow.features.Multiscale, gpflow.kernels.RBF)]
+        for feat_class, kern_class in featkerns:
+            with self.test_context() as session:
+                # rbf, feature, feature_0lengthscale, feature_inducingpoint = self.prepare()
+                kern = kern_class(2, 1.84, lengthscales=[0.143, 1.53])
+                feature = init_feat(feat_class)
+                Kuf, Kuu = session.run([features.Kuf(feature, kern, X),
+                                        features.Kuu(feature, kern, jitter=settings.jitter)])
+                Kff = kern.compute_K_symm(X)
+            Qff = Kuf.T @ np.linalg.solve(Kuu, Kuf)
+            self.assertTrue(np.all(np.linalg.eig(Kff - Qff)[0] > 0.0))
 
 
-@pytest.mark.parametrize('N, M, D', [[23, 13, 3], [10, 5, 7]])
-def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
-    # Multiscale must be equivalent to inducing points when variance is zero
-    Xnew, Z = np.random.randn(N, D), np.random.randn(M, D)
-    rbf = gpflow.kernels.SquaredExponential(1.3441, lengthscale=np.random.uniform(0.5, 3., D))
-    inducing_variable_zero_lengthscale = Multiscale(Z, scales=np.zeros(Z.shape))
-    inducing_variable_inducing_point = InducingPoints(Z)
+def test_convolutional_patch_features():
+    """
+    Predictive variance of convolutional kernel must be unchanged when using inducing points, and inducing patches where
+    all patches of the inducing points are used.
+    :return:
+    """
+    settings = gpflow.settings.get_settings()
+    settings.numerics.jitter_level = 1e-14
+    with gpflow.settings.temp_settings(settings):
+        M = 10
+        image_size = [4, 4]
+        patch_size = [2, 2]
 
-    multi_scale_Kuf = Kuf(inducing_variable_zero_lengthscale, rbf, Xnew)
-    inducing_point_Kuf = Kuf(inducing_variable_inducing_point, rbf, Xnew)
+        kern = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(4), image_size, patch_size)
 
-    deviation_percent_Kuf = np.max(
-        np.abs(multi_scale_Kuf - inducing_point_Kuf) / inducing_point_Kuf *
-        100)
-    assert deviation_percent_Kuf < 0.1
+        # Evaluate with inducing points
+        Zpoints = np.random.randn(M, np.prod(image_size))
+        points = gpflow.features.InducingPoints(Zpoints)
+        points_var = gpflow.conditionals.conditional(tf.identity(Zpoints), points, kern, np.zeros((M, 1)),
+                                                     full_output_cov=True, q_sqrt=None, white=False)[1]
 
-    multi_scale_Kuu = Kuu(inducing_variable_zero_lengthscale, rbf)
-    inducing_point_Kuu = Kuu(inducing_variable_inducing_point, rbf)
+        # Evaluate with inducing patches
+        Zpatches = kern.compute_patches(Zpoints).reshape(M * kern.num_patches, np.prod(patch_size))
+        patches = gpflow.features.InducingPatch(Zpatches)
+        patches_var = gpflow.conditionals.conditional(tf.identity(Zpoints), patches, kern, np.zeros((len(patches), 1)),
+                                                      full_output_cov=True, q_sqrt=None, white=False)[1]
 
-    deviation_percent_Kuu = np.max(
-        np.abs(multi_scale_Kuu - inducing_point_Kuu) / inducing_point_Kuu *
-        100)
-    assert deviation_percent_Kuu < 0.1
+        sess = gpflow.get_default_session()
 
-
-_inducing_variables_and_kernels = [
-    [
-        InducingPoints(np.random.randn(71, 2)),
-        gpflow.kernels.SquaredExponential(variance=1.84,
-                                          lengthscale=np.random.uniform(0.5, 3., 2))
-    ],
-    [
-        InducingPoints(np.random.randn(71, 2)),
-        gpflow.kernels.Matern12(variance=1.84,
-                                lengthscale=np.random.uniform(0.5, 3., 2))
-    ],
-    [
-        Multiscale(np.random.randn(71, 2),
-                   np.random.uniform(0.5, 3, size=(71, 2))),
-        gpflow.kernels.SquaredExponential(variance=1.84,
-                                          lengthscale=np.random.uniform(0.5, 3., 2))
-    ]
-]
+        points_var_eval = sess.run(points_var)
+        patches_var_eval = sess.run(patches_var)
+        assert np.all(points_var_eval > 0.0)
+        assert np.all(points_var_eval < 1e-13)
+        assert np.all(patches_var_eval > 0.0)
+        assert np.all(patches_var_eval < 1e-13)
 
 
-@pytest.mark.parametrize('inducing_variable, kernel', _inducing_variables_and_kernels)
-def test_inducing_variables_psd_schur(inducing_variable, kernel):
-    # Conditional variance must be PSD.
-    X = np.random.randn(5, 2)
-    Kuf_values = Kuf(inducing_variable, kernel, X)
-    Kuu_values = Kuu(inducing_variable, kernel, jitter=default_jitter())
-    Kff_values = kernel(X)
-    Qff_values = Kuf_values.numpy().T @ np.linalg.solve(Kuu_values, Kuf_values)
-    assert np.all(np.linalg.eig(Kff_values - Qff_values)[0] > 0.0)
+if __name__ == "__main__":
+    tf.test.main()

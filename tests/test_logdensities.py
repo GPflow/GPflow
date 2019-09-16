@@ -14,33 +14,58 @@
 
 import numpy as np
 from numpy.random import randn
+import tensorflow as tf
 import pytest
-from gpflow import logdensities
+import gpflow
+from gpflow import logdensities, settings
+from gpflow.test_util import session_tf
 from scipy.stats import multivariate_normal as mvn
 from numpy.testing import assert_allclose
+
 
 rng = np.random.RandomState(1)
 
 
-@pytest.mark.parametrize("x", [randn(4, 10), randn(4, 1)])
-@pytest.mark.parametrize("mu", [randn(4, 10), randn(4, 1)])
-@pytest.mark.parametrize("cov_sqrt", [randn(4, 4), np.eye(4)])
-def test_multivariate_normal(x, mu, cov_sqrt):
+@pytest.mark.parametrize("x", [randn(4,10), randn(4,1)])
+@pytest.mark.parametrize("mu", [randn(4,10), randn(4,1)])
+@pytest.mark.parametrize("cov_sqrt", [randn(4,4), np.eye(4)])
+def test_multivariate_normal(session_tf, x, mu, cov_sqrt):
     cov = np.dot(cov_sqrt, cov_sqrt.T)
     L = np.linalg.cholesky(cov)
 
-    gp_result = logdensities.multivariate_normal(x, mu, L)
+    x_tf = tf.placeholder(settings.float_type)
+    mu_tf = tf.placeholder(settings.float_type)
+    gp_result = logdensities.multivariate_normal(
+        x_tf, mu_tf, tf.convert_to_tensor(L))
+
+    gp_result = session_tf.run(gp_result, feed_dict={x_tf: x, mu_tf: mu})
 
     if mu.shape[1] > 1:
         if x.shape[1] > 1:
-            sp_result = [
-                mvn.logpdf(x[:, i], mu[:, i], cov) for i in range(mu.shape[1])
-            ]
+            sp_result = [mvn.logpdf(x[:,i], mu[:,i], cov) for i in range(mu.shape[1])]
         else:
-            sp_result = [
-                mvn.logpdf(x.ravel(), mu[:, i], cov)
-                for i in range(mu.shape[1])
-            ]
+            sp_result = [mvn.logpdf(x.ravel(), mu[:, i], cov) for i in range(mu.shape[1])]
     else:
         sp_result = mvn.logpdf(x.T, mu.ravel(), cov)
     assert_allclose(gp_result, sp_result)
+
+def test_shape_asserts(session_tf):
+    A = np.random.randn(5)
+    B = np.random.randn(5)
+    L = np.tril(np.random.randn(5, 5))
+
+    # Static shape check:
+    with pytest.raises(ValueError):
+        tA = tf.identity(A)
+        tB = tf.identity(B)
+        tL = tf.identity(L)
+        res = logdensities.multivariate_normal(tA, tB, tL)
+
+    # Dynamic shape check:
+    # the following results in a segfault before PR#964
+    with pytest.raises(tf.errors.InvalidArgumentError):
+        vA = tf.placeholder(tf.float64)
+        vB = tf.placeholder(tf.float64)
+        vL = tf.placeholder(tf.float64)
+        res = logdensities.multivariate_normal(vA, vB, vL)
+        session_tf.run(res, {vA: A, vB: B, vL: L})

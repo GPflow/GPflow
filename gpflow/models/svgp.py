@@ -11,18 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Union
+
 
 import numpy as np
 import tensorflow as tf
 
-from .. import kullback_leiblers
-from ..conditionals import conditional
-from ..covariances import Kuu
+from .. import kullback_leiblers, features
+from .. import settings
+from .. import transforms
+from ..conditionals import conditional, Kuu
+from ..decors import params_as_tensors
 from ..models.model import GPModel
-from ..base import Parameter, positive, triangular
-from ..config import default_float, default_jitter
-from .util import inducingpoint_wrapper
+from ..params import DataHolder
+from ..params import Minibatch
+from ..params import Parameter
 
 
 class SVGP(GPModel):
@@ -33,29 +35,30 @@ class SVGP(GPModel):
 
       @inproceedings{hensman2014scalable,
         title={Scalable Variational Gaussian Process Classification},
-        author={Hensman, James and Matthews, Alexander G. de G. and Ghahramani, Zoubin},
+        author={Hensman, James and Matthews,
+                Alexander G. de G. and Ghahramani, Zoubin},
         booktitle={Proceedings of AISTATS},
         year={2015}
       }
 
     """
 
-    def __init__(self,
-                 kernel,
-                 likelihood,
-                 inducing_variables=None,
+    def __init__(self, X, Y, kern, likelihood, feat=None,
                  mean_function=None,
-                 num_latent=1,
+                 num_latent=None,
                  q_diag=False,
+                 whiten=True,
+                 minibatch_size=None,
+                 Z=None,
+                 num_data=None,
                  q_mu=None,
                  q_sqrt=None,
-                 whiten=True,
-                 num_data=None):
+                 **kwargs):
         """
-        - X is a data matrix, size [N, D]
-        - Y is a data matrix, size [N, P]
-        - kernel, likelihood, mean_function are appropriate GPflow objects
-        - Z is a matrix of pseudo inputs, size [M, D]
+        - X is a data matrix, size N x D
+        - Y is a data matrix, size N x P
+        - kern, likelihood, mean_function are appropriate GPflow objects
+        - Z is a matrix of pseudo inputs, size M x D
         - num_latent is the number of latent process to use, default to
           Y.shape[1]
         - q_diag is a boolean. If True, the covariance is approximated by a
@@ -66,15 +69,22 @@ class SVGP(GPModel):
         - num_data is the total number of observations, default to X.shape[0]
           (relevant when feeding in external minibatches)
         """
+        # sort out the X, Y into MiniBatch objects if required.
+        if minibatch_size is None:
+            X = DataHolder(X)
+            Y = DataHolder(Y)
+        else:
+            X = Minibatch(X, batch_size=minibatch_size, seed=0)
+            Y = Minibatch(Y, batch_size=minibatch_size, seed=0)
+
         # init the super class, accept args
-        super().__init__(kernel, likelihood, mean_function, num_latent)
-        self.num_data = num_data
-        self.q_diag = q_diag
-        self.whiten = whiten
-        self.inducing_variables = inducingpoint_wrapper(inducing_variables)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
+        self.num_data = num_data or X.shape[0]
+        self.q_diag, self.whiten = q_diag, whiten
+        self.feature = features.inducingpoint_wrapper(feat, Z)
 
         # init variational parameters
-        num_inducing = len(self.inducing_variables)
+        num_inducing = len(self.feature)
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
@@ -105,76 +115,61 @@ class SVGP(GPModel):
             `q_sqrt` is two dimensional and only holds the square root of the
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
-        q_mu = np.zeros(
-            (num_inducing, self.num_latent)) if q_mu is None else q_mu
-        self.q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
+        q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
+        self.q_mu = Parameter(q_mu, dtype=settings.float_type)  # M x P
 
         if q_sqrt is None:
             if self.q_diag:
-                ones = np.ones((num_inducing, self.num_latent),
-                               dtype=default_float())
-                self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
+                self.q_sqrt = Parameter(np.ones((num_inducing, self.num_latent), dtype=settings.float_type),
+                                        transform=transforms.positive)  # M x P
             else:
-                q_sqrt = [
-                    np.eye(num_inducing, dtype=default_float())
-                    for _ in range(self.num_latent)
-                ]
-                q_sqrt = np.array(q_sqrt)
-                self.q_sqrt = Parameter(q_sqrt,
-                                        transform=triangular())  # [P, M, M]
+                q_sqrt = np.array([np.eye(num_inducing, dtype=settings.float_type) for _ in range(self.num_latent)])
+                self.q_sqrt = Parameter(
+                    q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # P x M x M
         else:
             if q_diag:
                 assert q_sqrt.ndim == 2
                 self.num_latent = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt,
-                                        transform=positive())  # [M, L|P]
+                self.q_sqrt = Parameter(q_sqrt, transform=transforms.positive)  # M x L/P
             else:
                 assert q_sqrt.ndim == 3
                 self.num_latent = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt,
-                                        transform=triangular())  # [L|P, M, M]
+                self.q_sqrt = Parameter(
+                    q_sqrt, transform=transforms.LowerTriangular(num_inducing, self.num_latent))  # L/P x M x M
 
-    def prior_kl(self):
-        K = None
-        if not self.whiten:
-            K = Kuu(self.inducing_variables, self.kernel,
-                    jitter=default_jitter())  # [P, M, M] or [M, M]
+    @params_as_tensors
+    def build_prior_KL(self):
+        if self.whiten:
+            K = None
+        else:
+            K = Kuu(self.feature, self.kern, jitter=settings.numerics.jitter_level)  # (P x) x M x M
+
         return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
 
-    def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
+    @params_as_tensors
+    def _build_likelihood(self):
         """
         This gives a variational bound on the model likelihood.
         """
-        kl = self.prior_kl()
-        f_mean, f_var = self.predict_f(X,
-                                       full_cov=False,
-                                       full_output_cov=False)
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
-        if self.num_data is not None:
-            num_data = tf.cast(self.num_data, kl.dtype)
-            minibatch_size = tf.cast(X.shape[0], kl.dtype)
-            scale = num_data / minibatch_size
-        else:
-            scale = tf.cast(1.0, kl.dtype)
-        return tf.reduce_sum(var_exp) * scale - kl
 
-    def elbo(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
-        """
-        This returns the evidence lower bound (ELBO) of the log marginal likelihood.
-        """
-        return self.neg_log_marginal_likelihood(X, Y)
+        # Get prior KL.
+        KL = self.build_prior_KL()
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False,
-                  full_output_cov=False) -> tf.Tensor:
-        q_mu = self.q_mu
-        q_sqrt = self.q_sqrt
-        mu, var = conditional(Xnew,
-                              self.inducing_variables,
-                              self.kernel,
-                              q_mu,
-                              q_sqrt=q_sqrt,
-                              full_cov=full_cov,
-                              white=self.whiten,
-                              full_output_cov=full_output_cov)
+        # Get conditionals
+        fmean, fvar = self._build_predict(self.X, full_cov=False, full_output_cov=False)
+
+        # Get variational expectations.
+        var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
+
+        # re-scale for minibatch size
+        scale = tf.cast(self.num_data, settings.float_type) / tf.cast(tf.shape(self.X)[0], settings.float_type)
+
+        likelihood = tf.reduce_sum(var_exp) * scale - KL
+        return likelihood
+
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False, full_output_cov=False):
+        mu, var = conditional(Xnew, self.feature, self.kern, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov,
+                              white=self.whiten, full_output_cov=full_output_cov)
         return mu + self.mean_function(Xnew), var

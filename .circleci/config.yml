@@ -4,9 +4,8 @@ runtest: &runtest
     - run:
         name: Install GPflow
         command: |
-          pip install -U pip
-          pip install -q gast==0.2.2 tf-nightly-2.0-preview==2.0.0.dev20190903 tfp-nightly pytest-random-order
-          pip install -e .
+          pip install -r requirements_tests.txt
+          python setup.py install
     - run:
         name: Run tests
         command: |
@@ -22,27 +21,27 @@ jobs:
   unit-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:1.14.0
         environment:
           PYTEST_FILTER: not notebooks
 
   notebook-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:1.14.0
         environment:
           PYTEST_FILTER: notebooks
 
   example-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:1.14.0
         environment:
           PYTEST_FILTER: examples
 
   deploy:
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:1.14.0
     steps:
       - checkout
       - run:
@@ -66,7 +65,7 @@ jobs:
       - run:
           name: Create pip package
           command: |
-            python setup.py bdist_wheel sdist
+            python setup.py bdist sdist
       - run:
           name: Upload to PyPI
           command: |
@@ -80,21 +79,20 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
-      # # TODO: uncomment it when gpflow-2.0 is ready
-      # - notebook-test:
-      #     filters:
-      #       tags:
-      #         only: /^v[0-9]+(\.[0-9]+)*/
-      # - example-test:
-      #     filters:
-      #       tags:
-      #         only: /^v[0-9]+(\.[0-9]+)*/
-      # - deploy:
-      #     requires:
-      #       - unit-test
-      #       - notebook-test
-      #     filters:
-      #       tags:
-      #         only: /^v[0-9]+(\.[0-9]+)*/
-      #       branches:
-      #         ignore: /.*/
+      - notebook-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+      - example-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+      - deploy:
+          requires:
+            - unit-test
+            - notebook-test
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/

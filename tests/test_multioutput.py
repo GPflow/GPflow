@@ -1,42 +1,41 @@
+import gpflow
 import numpy as np
 import pytest
 import scipy
 import tensorflow as tf
 
-import gpflow
-import gpflow.inducing_variables.mo_inducing_variables as mf
-import gpflow.kernels.mo_kernels as mk
-# from gpflow.test_util import
-from gpflow.conditionals import sample_conditional
-from gpflow.conditionals.util import fully_correlated_conditional, fully_correlated_conditional_repeat, sample_mvn
-from gpflow.inducing_variables import InducingPoints
-from gpflow.kernels import SquaredExponential
+import gpflow.multioutput.features as mf
+import gpflow.multioutput.kernels as mk
+
+from gpflow.features import InducingPoints
+from gpflow.kernels import RBF
 from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
-from gpflow.config import default_jitter, default_float
-from gpflow.utilities import set_trainable
+from gpflow.multioutput.conditionals import fully_correlated_conditional_repeat, \
+    fully_correlated_conditional, independent_interdomain_conditional
+from gpflow.test_util import session_tf
+from gpflow.training import ScipyOptimizer
+from gpflow.conditionals import _sample_mvn, sample_conditional
 
-float_type = default_float()
-rng = np.random.RandomState(99201)
-
+float_type = gpflow.settings.float_type
+np.random.seed(1)
 
 # ------------------------------------------
 # Helpers
 # ------------------------------------------
 
+def predict(sess, model, Xnew, full_cov, full_output_cov):
+    m, v = model._build_predict(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return sess.run([m, v])
 
-def predict(model, Xnew, full_cov, full_output_cov):
-    m, v = model.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-    return [m, v]
 
-
-def predict_all(models, Xnew, full_cov, full_output_cov):
+def predict_all(sess, models, Xnew, full_cov, full_output_cov):
     """
     Returns the mean and variance of f(Xnew) for each model in `models`.
     """
     ms, vs = [], []
     for model in models:
-        m, v = predict(model, Xnew, full_cov, full_output_cov)
+        m, v = predict(sess, model, Xnew, full_cov, full_output_cov)
         ms.append(m)
         vs.append(v)
     return ms, vs
@@ -47,10 +46,10 @@ def assert_all_array_elements_almost_equal(arr, decimal):
     Check if consecutive elements of `arr` are almost equal.
     """
     for i in range(len(arr) - 1):
-        np.testing.assert_allclose(arr[i], arr[i + 1], atol=1e-5)
+        np.testing.assert_almost_equal(arr[i], arr[i+1], decimal=decimal)
 
 
-def check_equality_predictions(X, Y, models, decimal=3):
+def check_equality_predictions(sess, models, decimal=3):
     """
     Executes a couple of checks to compare the equality of predictions
     of different models. The models should be configured with the same
@@ -64,19 +63,19 @@ def check_equality_predictions(X, Y, models, decimal=3):
       matrices should overlap, and this is tested.
     """
 
-    log_likelihoods = [m.log_likelihood(X, Y) for m in models]
+    log_likelihoods = [m.compute_log_likelihood() for m in models]
 
     # Check equality of log likelihood
     assert_all_array_elements_almost_equal(log_likelihoods, decimal=5)
 
     # Predict: full_cov = True and full_output_cov = True
-    means_tt, vars_tt = predict_all(models, Data.Xs, full_cov=True, full_output_cov=True)
+    means_tt, vars_tt = predict_all(sess, models, Data.Xs, full_cov=True, full_output_cov=True)
     # Predict: full_cov = True and full_output_cov = False
-    means_tf, vars_tf = predict_all(models, Data.Xs, full_cov=True, full_output_cov=False)
+    means_tf, vars_tf = predict_all(sess, models, Data.Xs, full_cov=True, full_output_cov=False)
     # Predict: full_cov = False and full_output_cov = True
-    means_ft, vars_ft = predict_all(models, Data.Xs, full_cov=False, full_output_cov=True)
+    means_ft, vars_ft = predict_all(sess, models, Data.Xs, full_cov=False, full_output_cov=True)
     # Predict: full_cov = False and full_output_cov = False
-    means_ff, vars_ff = predict_all(models, Data.Xs, full_cov=False, full_output_cov=False)
+    means_ff, vars_ff = predict_all(sess, models, Data.Xs, full_cov=False, full_output_cov=False)
 
     # check equality of all the means
     all_means = means_tt + means_tf + means_ft + means_ff
@@ -95,12 +94,11 @@ def check_equality_predictions(X, Y, models, decimal=3):
     var_ff = vars_ff[0]  # N x P
 
     np.testing.assert_almost_equal(np.diagonal(var_tt, axis1=1, axis2=3),
-                                   np.transpose(var_tf, [1, 2, 0]),
-                                   decimal=decimal)
+                                   np.transpose(var_tf, [1, 2, 0]), decimal=decimal)
     np.testing.assert_almost_equal(np.diagonal(var_tt, axis1=0, axis2=2),
-                                   np.transpose(var_ft, [1, 2, 0]),
-                                   decimal=decimal)
-    np.testing.assert_almost_equal(np.diagonal(np.diagonal(var_tt, axis1=0, axis2=2)), var_ff, decimal=decimal)
+                                   np.transpose(var_ft, [1, 2, 0]), decimal=decimal)
+    np.testing.assert_almost_equal(np.diagonal(np.diagonal(var_tt, axis1=0, axis2=2)),
+                                   var_ff, decimal=decimal)
 
 
 def expand_cov(q_sqrt, W):
@@ -109,21 +107,20 @@ def expand_cov(q_sqrt, W):
     :param W: mixing matrix (square),  L x L
     :return: cholesky of 1 x LM x LM covariance matrix
     """
-    q_cov = np.matmul(q_sqrt, q_sqrt.transpose([0, 2, 1]))  # [L, M, M]
-    q_cov_expanded = scipy.linalg.block_diag(*q_cov)  # [LM, LM]
-    q_sqrt_expanded = np.linalg.cholesky(q_cov_expanded)  # [LM, LM]
+    q_cov = np.matmul(q_sqrt, q_sqrt.transpose(0, 2, 1))  # L x M x M
+    q_cov_expanded = scipy.linalg.block_diag(*q_cov)  # LM x LM
+    q_sqrt_expanded = np.linalg.cholesky(q_cov_expanded)  # LM x LM
     return q_sqrt_expanded[None, ...]
 
 
 def create_q_sqrt(M, L):
     """ returns an array of L lower triangular matrices of size M x M """
-    return np.array([np.tril(rng.randn(M, M)) for _ in range(L)])  # [L, M, M]
+    return np.array([np.tril(np.random.randn(M, M)) for _ in range(L)])  # L x M x M
 
 
 # ------------------------------------------
 # Data classes: storing constants
 # ------------------------------------------
-
 
 class Data:
     N, Ntest = 20, 5
@@ -132,15 +129,13 @@ class Data:
     L = 2  # latent gps
     P = 3  # output dimension
     MAXITER = int(15e2)
-    X = tf.random.normal((N,), dtype=tf.float64)[:, None] * 10 - 5
-    G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))
-    Ptrue = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # [L, P]
 
-    Y = tf.convert_to_tensor(G @ Ptrue)
-    G = tf.convert_to_tensor(np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X)))
-    Ptrue = tf.convert_to_tensor(np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]]))  # [L, P]
-    Y += tf.random.normal(Y.shape, dtype=tf.float64) * [0.2, 0.2, 0.2]
-    Xs = tf.convert_to_tensor(np.linspace(-6, 6, Ntest)[:, None])
+    X = np.random.rand(N)[:, None] * 10 - 5
+    G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))
+    Ptrue = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # L x P
+    Y = np.matmul(G, Ptrue)
+    Y += np.random.randn(*Y.shape) * [0.2, 0.2, 0.2]
+    Xs = np.linspace(-6, 6, Ntest)[:, None]
 
 
 class DataMixedKernelWithEye(Data):
@@ -148,38 +143,33 @@ class DataMixedKernelWithEye(Data):
     M, L = 4, 3
     W = np.eye(L)
 
-    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X, 1.0 + Data.X])  # [N, P]
+    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
+                   3.0 * np.cos(Data.X) - Data.X,
+                   1.0 + Data.X])  # N x P
 
-    mu_data = tf.random.uniform((M, L), dtype=tf.float64)  # [M, L]
-    sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
+    mu_data = np.random.randn(M, L)  # M x L
+    sqrt_data = create_q_sqrt(M, L)  # L x M x M
 
-    mu_data_full = tf.reshape(mu_data @ W, [-1, 1])  # [L, 1]
-    sqrt_data_full = expand_cov(sqrt_data, W)  # [1, LM, LM]
+    mu_data_full = (mu_data @ W).reshape(-1, 1)  # ML x 1
+    sqrt_data_full = expand_cov(sqrt_data, W)  # 1 x LM x LM
 
-    Y = tf.convert_to_tensor(G @ W)
-    G = tf.convert_to_tensor(G)
-    W = tf.convert_to_tensor(W)
-    sqrt_data = tf.convert_to_tensor(sqrt_data)
-    sqrt_data_full = tf.convert_to_tensor(sqrt_data_full)
-    Y += tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((L,), dtype=tf.float64) * 0.2
+    Y = np.matmul(G, W)
+    Y += np.random.randn(*Y.shape) * np.ones((L,)) * 0.2
 
 
 class DataMixedKernel(Data):
     M = 5
     L = 2
     P = 3
-    W = rng.randn(P, L)
-    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X])  # [N, L]
+    W = np.random.randn(P, L)
+    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X,
+                   3.0 * np.cos(Data.X) - Data.X])  # N x L
 
-    mu_data = tf.random.normal((M, L), dtype=tf.float64)  # [M, L]
-    sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
+    mu_data = np.random.randn(M, L)  # M x L
+    sqrt_data = create_q_sqrt(M, L)  # L x M x M
 
-    Y = tf.convert_to_tensor(G @ W.T)
-    G = tf.convert_to_tensor(G)
-    W = tf.convert_to_tensor(W)
-    sqrt_data = tf.convert_to_tensor(sqrt_data)
-    Y += tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((P,), dtype=tf.float64) * 0.1
-
+    Y = np.matmul(G, W.T)
+    Y += np.random.randn(*Y.shape) * np.ones((P,)) * 0.1
 
 # ------------------------------------------
 # Test sample conditional
@@ -187,122 +177,139 @@ class DataMixedKernel(Data):
 
 
 @pytest.mark.parametrize("cov_structure", ["full", "diag"])
-def test_sample_mvn(cov_structure):
+@pytest.mark.parametrize("num_samples", [None, 1, 10])
+def test_sample_mvn(session_tf, cov_structure, num_samples):
     """
     Draws 10,000 samples from a distribution
     with known mean and covariance. The test checks
     if the mean and covariance of the samples is
     close to the true mean and covariance.
     """
+
     N, D = 10000, 2
     means = tf.ones((N, D), dtype=float_type)
     if cov_structure == "full":
         covs = tf.eye(D, batch_shape=[N], dtype=float_type)
     elif cov_structure == "diag":
         covs = tf.ones((N, D), dtype=float_type)
+
+    samples = _sample_mvn(means, covs, cov_structure, num_samples=num_samples)
+    value = session_tf.run(samples)
+
+    if num_samples is None:
+        assert value.shape == (N, D)
     else:
-        raise (NotImplementedError)
+        assert value.shape == (num_samples, N, D)
+        value = value.reshape(-1, D)
 
-    samples = sample_mvn(means, covs, cov_structure)
-    samples_mean = np.mean(samples, axis=0)
-    samples_cov = np.cov(samples, rowvar=False)
-
+    samples_mean = np.mean(value, axis=0)
+    samples_cov = np.cov(value, rowvar=False)
     np.testing.assert_array_almost_equal(samples_mean, [1., 1.], decimal=1)
     np.testing.assert_array_almost_equal(samples_cov, [[1., 0.], [0., 1.]], decimal=1)
 
 
+def _create_placeholder_dict(values):
+    return {name: tf.placeholder(float_type, shape=arr.shape) for name, arr in values.items()}
+
+def _create_feed_dict(placeholders_dict, value_dict):
+    return {placeholder: value_dict[name] for name, placeholder in placeholders_dict.items()}
+
+
 @pytest.mark.parametrize("whiten", [True, False])
-@pytest.mark.parametrize("full_cov", [True, False])
-@pytest.mark.parametrize("full_output_cov", [True, False])
-def test_sample_conditional(whiten, full_cov, full_output_cov):
-    if full_cov and full_output_cov:
-        return
-
-    q_mu = tf.random.uniform((Data.M, Data.P), dtype=tf.float64)  # [M, P]
-    q_sqrt = tf.convert_to_tensor(
-        [np.tril(tf.random.uniform((Data.M, Data.M), dtype=tf.float64)) for _ in range(Data.P)])  # [P, M, M]
-
-    Z = Data.X[:Data.M, ...]  # [M, D]
+@pytest.mark.parametrize("full_cov,full_output_cov", [(False, False), (False, True), (True, False)])
+def test_sample_conditional(session_tf, whiten, full_cov, full_output_cov):
+    q_mu = np.random.randn(Data.M , Data.P)  # M x P
+    q_sqrt = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
+    Z = Data.X[:Data.M, ...]  # M x D
     Xs = np.ones((Data.N, Data.D), dtype=float_type)
 
-    inducing_variables = InducingPoints(Z)
-    kernel = SquaredExponential()
+    feature = InducingPoints(Z.copy())
+    kernel = RBF(Data.D)
+
+    values = {"Z": Z, "Xnew": Xs, "q_mu": q_mu, "q_sqrt": q_sqrt}
+    placeholders = _create_placeholder_dict(values)
+    feed_dict = _create_feed_dict(placeholders, values)
 
     # Path 1
-    value_f, mean_f, var_f = sample_conditional(Xs,
-                                                inducing_variables,
-                                                kernel,
-                                                q_mu,
-                                                q_sqrt=q_sqrt,
-                                                white=whiten,
-                                                full_cov=full_cov,
-                                                full_output_cov=full_output_cov,
-                                                num_samples=int(1e5))
-    value_f = value_f.numpy().reshape((-1,) + value_f.numpy().shape[2:])
+    sample_f = sample_conditional(placeholders["Xnew"], feature, kernel,
+                                  placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten,
+                                  full_cov=full_cov, full_output_cov=full_output_cov, num_samples=int(1e5))
+    value_f, mean_f, var_f = session_tf.run(sample_f, feed_dict=feed_dict)
+    value_f = value_f.reshape((-1,) + value_f.shape[2:])
 
     # Path 2
     if full_output_cov:
-        pytest.skip("sample_conditional with X instead of inducing_variable does not support full_output_cov")
+        pytest.skip("sample_conditional with X instead of feature does not support full_output_cov")
 
-    value_x, mean_x, var_x = sample_conditional(Xs,
-                                                Z,
-                                                kernel,
-                                                q_mu,
-                                                q_sqrt=q_sqrt,
-                                                white=whiten,
-                                                full_cov=full_cov,
-                                                full_output_cov=full_output_cov,
-                                                num_samples=int(1e5))
-    value_x = value_x.numpy().reshape((-1,) + value_x.numpy().shape[2:])
+    sample_x = sample_conditional(placeholders["Xnew"], placeholders["Z"], kernel,
+                                  placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=whiten,
+                                  full_cov=full_cov, full_output_cov=full_output_cov, num_samples=int(1e5))
+    value_x, mean_x, var_x = session_tf.run(sample_x, feed_dict=feed_dict)
+    value_x = value_x.reshape((-1,) + value_x.shape[2:])
 
     # check if mean and covariance of samples are similar
-    np.testing.assert_array_almost_equal(np.mean(value_x, axis=0), np.mean(value_f, axis=0), decimal=1)
-    np.testing.assert_array_almost_equal(np.cov(value_x, rowvar=False), np.cov(value_f, rowvar=False), decimal=1)
+    np.testing.assert_array_almost_equal(np.mean(value_x, axis=0),
+                                         np.mean(value_f, axis=0), decimal=1)
+    np.testing.assert_array_almost_equal(np.cov(value_x, rowvar=False),
+                                         np.cov(value_f, rowvar=False), decimal=1)
     np.testing.assert_allclose(mean_x, mean_f)
     np.testing.assert_allclose(var_x, var_f)
 
 
-def test_sample_conditional_mixedkernel():
-    q_mu = tf.random.uniform((Data.M, Data.L), dtype=tf.float64)  # M x L
-    q_sqrt = tf.convert_to_tensor(
-        [np.tril(tf.random.uniform((Data.M, Data.M), dtype=tf.float64)) for _ in range(Data.L)])  # L x M x M
-
-    Z = Data.X[:Data.M, ...]  # M x D
+def test_sample_conditional_mixedkernel(session_tf):
+    q_mu = np.random.randn(Data.M , Data.L)  # M x L
+    q_sqrt = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.L)])  # L x M x M
+    Z = Data.X[:Data.M,...]  # M x D
     N = int(10e5)
     Xs = np.ones((N, Data.D), dtype=float_type)
 
+
+    values = {"Xnew": Xs, "q_mu": q_mu, "q_sqrt": q_sqrt}
+    placeholders = _create_placeholder_dict(values)
+    feed_dict = _create_feed_dict(placeholders, values)
+
     # Path 1: mixed kernel: most efficient route
     W = np.random.randn(Data.P, Data.L)
-    mixed_kernel = mk.LinearCoregionalization([SquaredExponential() for _ in range(Data.L)], W)
-    optimal_inducing_variable = mf.SharedIndependentInducingVariables(InducingPoints(Z))
+    mixed_kernel = mk.SeparateMixedMok([RBF(Data.D) for _ in range(Data.L)], W)
+    mixed_feature = mf.MixedKernelSharedMof(InducingPoints(Z.copy()))
 
-    value, mean, var = sample_conditional(Xs, optimal_inducing_variable, mixed_kernel, q_mu, q_sqrt=q_sqrt, white=True)
+    sample = sample_conditional(placeholders["Xnew"], mixed_feature, mixed_kernel,
+                                placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
+    value, mean, var = session_tf.run(sample, feed_dict=feed_dict)
+
 
     # Path 2: independent kernels, mixed later
-    separate_kernel = mk.SeparateIndependent([SquaredExponential() for _ in range(Data.L)])
-    fallback_inducing_variable = mf.SharedIndependentInducingVariables(InducingPoints(Z))
-
-    value2, mean2, var2 = sample_conditional(Xs, fallback_inducing_variable, separate_kernel, q_mu, q_sqrt=q_sqrt,
-                                             white=True)
+    separate_kernel = mk.SeparateIndependentMok([RBF(Data.D) for _ in range(Data.L)])
+    shared_feature = mf.SharedIndependentMof(InducingPoints(Z.copy()))
+    sample2 = sample_conditional(placeholders["Xnew"], shared_feature, separate_kernel,
+                                 placeholders["q_mu"], q_sqrt=placeholders["q_sqrt"], white=True)
+    value2, mean2, var2 = session_tf.run(sample2, feed_dict=feed_dict)
     value2 = np.matmul(value2, W.T)
     # check if mean and covariance of samples are similar
-    np.testing.assert_array_almost_equal(np.mean(value, axis=0), np.mean(value2, axis=0), decimal=1)
-    np.testing.assert_array_almost_equal(np.cov(value, rowvar=False), np.cov(value2, rowvar=False), decimal=1)
+    np.testing.assert_array_almost_equal(np.mean(value, axis=0),
+                                         np.mean(value2, axis=0), decimal=1)
+    np.testing.assert_array_almost_equal(np.cov(value, rowvar=False),
+                                         np.cov(value2, rowvar=False), decimal=1)
 
 
 @pytest.mark.parametrize('R', [1, 5])
-@pytest.mark.parametrize("func", [fully_correlated_conditional_repeat, fully_correlated_conditional])
+@pytest.mark.parametrize("func", [fully_correlated_conditional_repeat,
+                                  fully_correlated_conditional])
 def test_fully_correlated_conditional_repeat_shapes(func, R):
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
-    Kmm = tf.ones((L * M, L * M)) + default_jitter() * tf.eye(L * M)
+    Kmm = tf.ones((L * M, L * M))
     Kmn = tf.ones((L * M, N, P))
     Knn = tf.ones((N, P))
     f = tf.ones((L * M, R))
     q_sqrt = None
     white = True
 
-    m, v = func(Kmn, Kmm, Knn, f, full_cov=False, full_output_cov=False, q_sqrt=q_sqrt, white=white)
+    m, v = func(Kmn, Kmm, Knn, f,
+                full_cov=False,
+                full_output_cov=False,
+                q_sqrt=q_sqrt,
+                white=white)
 
     assert v.shape.as_list() == m.shape.as_list()
 
@@ -311,14 +318,13 @@ def test_fully_correlated_conditional_repeat_shapes(func, R):
 # Test Mixed Mok Kgg
 # ------------------------------------------
 
-
-def test_MixedMok_Kgg():
+def test_MixedMok_Kgg(session_tf):
     data = DataMixedKernel
-    kern_list = [SquaredExponential() for _ in range(data.L)]
-    kernel = mk.LinearCoregionalization(kern_list, W=data.W)
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    kern = mk.SeparateMixedMok(kern_list, W=data.W)
 
-    Kgg = kernel.Kgg(Data.X, Data.X)  # L x N x N
-    Kff = kernel.K(Data.X, Data.X)  # N x P x N x P
+    Kgg = kern.compute_Kgg(Data.X, Data.X)  # L x N x N
+    Kff = kern.compute_K(Data.X, Data.X)  # N x P x N x P
 
     # Kff = W @ Kgg @ W^T
     Kff_infered = np.einsum("lnm,pl,ql->npmq", Kgg, data.W, data.W)
@@ -326,14 +332,15 @@ def test_MixedMok_Kgg():
     np.testing.assert_array_almost_equal(Kff, Kff_infered, decimal=5)
 
 
+
 # ------------------------------------------
 # Integration tests
 # ------------------------------------------
 
 
-def test_shared_independent_mok():
+def test_shared_independent_mok(session_tf):
     """
-    In this test we use the same kernel and the same inducing inducing
+    In this test we use the same kernel and the same inducing features
     for each of the outputs. The outputs are considered to be uncorrelated.
     This is how GPflow handled multiple outputs before the multioutput framework was added.
     We compare three models here:
@@ -345,56 +352,41 @@ def test_shared_independent_mok():
         3) the old way, efficient way: using Kernel and InducingPoints
         Model 2) and 3) follow more or less the same code path.
     """
-    np.random.seed(0)
     # Model 1
     q_mu_1 = np.random.randn(Data.M * Data.P, 1)  # MP x 1
     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
-    kernel_1 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscale=1.2), Data.P)
-    inducing_variable = InducingPoints(Data.X[:Data.M, ...])
-    model_1 = SVGP(kernel_1, Gaussian(), inducing_variable, q_mu=q_mu_1, q_sqrt=q_sqrt_1, num_latent=Data.Y.shape[-1])
-    set_trainable(model_1, False)
-    model_1.q_sqrt.trainable = True
-
-    @tf.function
-    def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+    feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
+    m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
+    m1.set_trainable(False)
+    m1.q_sqrt.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
 
     # Model 2
     q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
     q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kernel_2 = SquaredExponential(variance=0.5, lengthscale=1.2)
-    inducing_variable_2 = InducingPoints(Data.X[:Data.M, ...])
-    model_2 = SVGP(kernel_2, Gaussian(), inducing_variable_2, num_latent=Data.P, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
-    set_trainable(model_2, False)
-    model_2.q_sqrt.trainable = True
-
-    @tf.function
-    def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    kernel_2 = RBF(Data.D, variance=0.5, lengthscales=1.2)
+    feature_2 = InducingPoints(Data.X[:Data.M, ...].copy())
+    m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
+    m2.set_trainable(False)
+    m2.q_sqrt.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
     # Model 3
     q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
     q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kernel_3 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscale=1.2), Data.P)
-    inducing_variable_3 = mf.SharedIndependentInducingVariables(InducingPoints(Data.X[:Data.M, ...]))
-    model_3 = SVGP(kernel_3, Gaussian(), inducing_variable_3, num_latent=Data.P, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
-    set_trainable(model_3, False)
-    model_3.q_sqrt.trainable = True
+    kernel_3 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+    feature_3 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
+    m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
+    m3.set_trainable(False)
+    m3.q_sqrt.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
 
-    @tf.function
-    def closure3():
-        return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables)
-
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2, model_3])
+    check_equality_predictions(session_tf, [m1, m2, m3])
 
 
-def test_separate_independent_mok():
+
+def test_separate_independent_mok(session_tf):
     """
     We use different independent kernels for each of the output dimensions.
     We can achieve this in two ways:
@@ -403,47 +395,36 @@ def test_separate_independent_mok():
     However, both methods should return the same conditional,
     and after optimization return the same log likelihood.
     """
-    # Model 1 (Inefficient)
+    # Model 1 (INefficient)
     q_mu_1 = np.random.randn(Data.M * Data.P, 1)
     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
-
-    kern_list_1 = [SquaredExponential(variance=0.5, lengthscale=1.2) for _ in range(Data.P)]
-    kernel_1 = mk.SeparateIndependent(kern_list_1)
-    inducing_variable_1 = InducingPoints(Data.X[:Data.M, ...])
-    model_1 = SVGP(kernel_1, Gaussian(), inducing_variable_1, num_latent=1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
-    set_trainable(model_1, False)
-    model_1.q_sqrt.trainable = True
-    model_1.q_mu.trainable = True
-
-    @tf.function
-    def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    kern_list_1 = [RBF(Data.D, variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
+    kernel_1 = mk.SeparateIndependentMok(kern_list_1)
+    feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
+    m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
+    m1.set_trainable(False)
+    m1.q_sqrt.set_trainable(True)
+    m1.q_mu.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
 
     # Model 2 (efficient)
     q_mu_2 = np.random.randn(Data.M, Data.P)
     q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kern_list_2 = [SquaredExponential(variance=0.5, lengthscale=1.2) for _ in range(Data.P)]
-    kernel_2 = mk.SeparateIndependent(kern_list_2)
-    inducing_variable_2 = mf.SharedIndependentInducingVariables(InducingPoints(Data.X[:Data.M, ...]))
-    model_2 = SVGP(kernel_2, Gaussian(), inducing_variable_2, num_latent=Data.P, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
-    set_trainable(model_2, False)
-    model_2.q_sqrt.trainable = True
-    model_2.q_mu.trainable = True
+    kern_list_2 = [RBF(Data.D, variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
+    kernel_2 = mk.SeparateIndependentMok(kern_list_2)
+    feature_2 = mf.SharedIndependentMof(InducingPoints(Data.X[:Data.M, ...].copy()))
+    m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
+    m2.set_trainable(False)
+    m2.q_sqrt.set_trainable(True)
+    m2.q_mu.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
-    @tf.function
-    def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
-
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(session_tf, [m1, m2])
 
 
-def test_separate_independent_mof():
+def test_separate_independent_mof(session_tf):
     """
-    Same test as above but we use different (i.e. separate) inducing inducing
+    Same test as above but we use different (i.e. separate) inducing features
     for each of the output dimensions.
     """
     np.random.seed(0)
@@ -451,139 +432,115 @@ def test_separate_independent_mof():
     # Model 1 (INefficient)
     q_mu_1 = np.random.randn(Data.M * Data.P, 1)
     q_sqrt_1 = np.tril(np.random.randn(Data.M * Data.P, Data.M * Data.P))[None, ...]  # 1 x MP x MP
-
-    kernel_1 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscale=1.2), Data.P)
-    inducing_variable_1 = InducingPoints(Data.X[:Data.M, ...])
-    model_1 = SVGP(kernel_1, Gaussian(), inducing_variable_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
-    set_trainable(model_1, False)
-    model_1.q_sqrt.trainable = True
-    model_1.q_mu.trainable = True
-
-    @tf.function
-    def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    kernel_1 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+    feature_1 = InducingPoints(Data.X[:Data.M,...].copy())
+    m1 = SVGP(Data.X, Data.Y, kernel_1, Gaussian(), feature_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
+    m1.set_trainable(False)
+    m1.q_sqrt.set_trainable(True)
+    m1.q_mu.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=Data.MAXITER)
 
     # Model 2 (efficient)
     q_mu_2 = np.random.randn(Data.M, Data.P)
     q_sqrt_2 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kernel_2 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscale=1.2), Data.P)
-    inducing_variable_list_2 = [InducingPoints(Data.X[:Data.M, ...]) for _ in range(Data.P)]
-    inducing_variable_2 = mf.SeparateIndependentInducingVariables(inducing_variable_list_2)
-    model_2 = SVGP(kernel_2, Gaussian(), inducing_variable_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
-    set_trainable(model_2, False)
-    model_2.q_sqrt.trainable = True
-    model_2.q_mu.trainable = True
+    kernel_2 = mk.SharedIndependentMok(RBF(Data.D, variance=0.5, lengthscales=1.2), Data.P)
+    feat_list_2 = [InducingPoints(Data.X[:Data.M, ...].copy()) for _ in range(Data.P)]
+    feature_2 = mf.SeparateIndependentMof(feat_list_2)
+    m2 = SVGP(Data.X, Data.Y, kernel_2, Gaussian(), feature_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
+    m2.set_trainable(False)
+    m2.q_sqrt.set_trainable(True)
+    m2.q_mu.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=Data.MAXITER)
 
-    @tf.function
-    def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
-
-    # Model 3 (Inefficient): an idenitical inducing variable is used P times,
-    # and treated as a separate one.
+    # Model 3 (Inefficient): an idenitical feature is used P times,
+    # and treated as a separate feature.
     q_mu_3 = np.random.randn(Data.M, Data.P)
     q_sqrt_3 = np.array([np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)])  # P x M x M
-    kern_list = [SquaredExponential(variance=0.5, lengthscale=1.2) for _ in range(Data.P)]
-    kernel_3 = mk.SeparateIndependent(kern_list)
-    inducing_variable_list_3 = [InducingPoints(Data.X[:Data.M, ...]) for _ in range(Data.P)]
-    inducing_variable_3 = mf.SeparateIndependentInducingVariables(inducing_variable_list_3)
-    model_3 = SVGP(kernel_3, Gaussian(), inducing_variable_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
-    set_trainable(model_3, False)
-    model_3.q_sqrt.trainable = True
-    model_3.q_mu.trainable = True
+    kern_list = [RBF(Data.D, variance=0.5, lengthscales=1.2)  for _ in range(Data.P)]
+    kernel_3 = mk.SeparateIndependentMok(kern_list)
+    feat_list_3 = [InducingPoints(Data.X[:Data.M, ...].copy()) for _ in range(Data.P)]
+    feature_3 = mf.SeparateIndependentMof(feat_list_3)
+    m3 = SVGP(Data.X, Data.Y, kernel_3, Gaussian(), feature_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
+    m3.set_trainable(False)
+    m3.q_sqrt.set_trainable(True)
+    m3.q_mu.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m3, maxiter=Data.MAXITER)
 
-    @tf.function
-    def closure3():
-        return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables)
-
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2, model_3])
+    check_equality_predictions(session_tf, [m1, m2, m3])
 
 
-def test_mixed_mok_with_Id_vs_independent_mok():
+def test_mixed_mok_with_Id_vs_independent_mok(session_tf):
     data = DataMixedKernelWithEye
     # Independent model
-    k1 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscale=1.2), data.L)
-    f1 = InducingPoints(data.X[:data.M, ...])
-    model_1 = SVGP(k1, Gaussian(), f1, q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
-    set_trainable(model_1, False)
-    model_1.q_sqrt.trainable = True
-
-    @tf.function
-    def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    k1 = mk.SharedIndependentMok(RBF(data.D, variance=0.5, lengthscales=1.2), data.L)
+    f1 = InducingPoints(data.X[:data.M, ...].copy())
+    m1 = SVGP(data.X, data.Y, k1, Gaussian(), f1,
+              q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
+    m1.set_trainable(False)
+    m1.q_sqrt.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m1, maxiter=data.MAXITER)
 
     # Mixed Model
-    kern_list = [SquaredExponential(variance=0.5, lengthscale=1.2) for _ in range(data.L)]
-    k2 = mk.LinearCoregionalization(kern_list, data.W)
-    f2 = InducingPoints(data.X[:data.M, ...])
-    model_2 = SVGP(k2, Gaussian(), f2, q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
-    set_trainable(model_2, False)
-    model_2.q_sqrt.trainable = True
+    kern_list = [RBF(data.D, variance=0.5, lengthscales=1.2) for _ in range(data.L)]
+    k2 = mk.SeparateMixedMok(kern_list, data.W)
+    f2 = InducingPoints(data.X[:data.M, ...].copy())
+    m2 = SVGP(data.X, data.Y, k2, Gaussian(), f2,
+              q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
+    m2.set_trainable(False)
+    m2.q_sqrt.set_trainable(True)
+    gpflow.training.ScipyOptimizer().minimize(m2, maxiter=data.MAXITER)
 
-    @tf.function
-    def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
-
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
-
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(session_tf, [m1, m2])
 
 
-def test_compare_mixed_kernel():
+def test_compare_mixed_kernel(session_tf):
     data = DataMixedKernel
 
-    kern_list = [SquaredExponential() for _ in range(data.L)]
-    k1 = mk.LinearCoregionalization(kern_list, W=data.W)
-    f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_1 = SVGP(k1, Gaussian(), inducing_variables=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
-    kern_list = [SquaredExponential() for _ in range(data.L)]
-    k2 = mk.LinearCoregionalization(kern_list, W=data.W)
-    f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_2 = SVGP(k2, Gaussian(), inducing_variables=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f2 = mf.MixedKernelSharedMof(InducingPoints(data.X[:data.M,...].copy()))
+    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(session_tf, [m1, m2])
 
 
-def test_multioutput_with_diag_q_sqrt():
+def test_multioutput_with_diag_q_sqrt(session_tf):
     data = DataMixedKernel
 
     q_sqrt_diag = np.ones((data.M, data.L)) * 2
-    q_sqrt = np.repeat(np.eye(data.M)[None, ...], data.L, axis=0) * 2  # L x M x M
+    q_sqrt = np.repeat(np.eye(data.M)[None, ...], data.L, axis=0) * 2 # L x M x M
 
-    kern_list = [SquaredExponential() for _ in range(data.L)]
-    k1 = mk.LinearCoregionalization(kern_list, W=data.W)
-    f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_1 = SVGP(k1, Gaussian(), inducing_variables=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f1 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
 
-    kern_list = [SquaredExponential() for _ in range(data.L)]
-    k2 = mk.LinearCoregionalization(kern_list, W=data.W)
-    f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_2 = SVGP(k2, Gaussian(), inducing_variables=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f2 = mf.SharedIndependentMof(InducingPoints(data.X[:data.M,...].copy()))
+    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(session_tf, [m1, m2])
 
-
-def test_MixedKernelSeparateMof():
+def test_MixedKernelSeparateMof(session_tf):
     data = DataMixedKernel
 
-    kern_list = [SquaredExponential() for _ in range(data.L)]
-    inducing_variable_list = [InducingPoints(data.X[:data.M, ...]) for _ in range(data.L)]
-    k1 = mk.LinearCoregionalization(kern_list, W=data.W)
-    f1 = mf.SeparateIndependentInducingVariables(inducing_variable_list)
-    model_1 = SVGP(k1, Gaussian(), inducing_variables=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
+    k1 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f1 = mf.SeparateIndependentMof(feat_list)
+    m1 = SVGP(data.X, data.Y, k1, Gaussian(), feat=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
-    kern_list = [SquaredExponential() for _ in range(data.L)]
-    inducing_variable_list = [InducingPoints(data.X[:data.M, ...]) for _ in range(data.L)]
-    k2 = mk.LinearCoregionalization(kern_list, W=data.W)
-    f2 = mf.SeparateIndependentInducingVariables(inducing_variable_list)
-    model_2 = SVGP(k2, Gaussian(), inducing_variables=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    kern_list = [RBF(data.D) for _ in range(data.L)]
+    feat_list = [InducingPoints(data.X[:data.M, ...].copy()) for _ in range(data.L)]
+    k2 = mk.SeparateMixedMok(kern_list, W=data.W)
+    f2 = mf.MixedKernelSeparateMof(feat_list)
+    m2 = SVGP(data.X, data.Y, k2, Gaussian(), feat=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(session_tf, [m1, m2])
+

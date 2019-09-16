@@ -12,24 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
-import gpflow
-import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
+import numpy as np
 
-from ..base import Parameter
+from .. import settings
+from .. import transforms
+
+from ..params import Parameter
+from ..params import DataHolder
+from ..decors import params_as_tensors
+
+from ..mean_functions import Zero
 from ..conditionals import conditional
-from ..config import default_float, default_jitter
-from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
-from ..likelihoods import Likelihood
-from ..mean_functions import MeanFunction, Zero
-from ..models.model import Data, DataPoint, GPModel, MeanAndVariance
+from ..models.model import GPModel
 
 
 class VGP(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
     The idea is that the posterior over the function-value vector F is
@@ -43,37 +43,57 @@ class VGP(GPModel):
 
     .. math::
 
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+       q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
 
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None,
-                 num_latent: Optional[int] = None):
+    def __init__(self, X, Y, kern, likelihood,
+                 mean_function=None,
+                 num_latent=None,
+                 **kwargs):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
-        kernel, likelihood, mean_function are appropriate GPflow objects
+        X is a data matrix, size N x D
+        Y is a data matrix, size N x R
+        kern, likelihood, mean_function are appropriate GPflow objects
 
         """
-        super().__init__(kernel, likelihood, mean_function, num_latent)
 
-        x_data, y_data = data
-        num_data = x_data.shape[0]
-        self.num_data = num_data
-        self.num_latent = num_latent or y_data.shape[1]
-        self.data = data
+        X = DataHolder(X)
+        Y = DataHolder(Y)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, num_latent, **kwargs)
+        self.num_data = X.shape[0]
 
-        self.q_mu = Parameter(np.zeros((num_data, self.num_latent)))
-        q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent)])
-        transform = tfp.bijectors.FillTriangular()
+        self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)))
+        q_sqrt = np.array([np.eye(self.num_data)
+                           for _ in range(self.num_latent)])
+        transform = transforms.LowerTriangular(self.num_data, self.num_latent)
         self.q_sqrt = Parameter(q_sqrt, transform=transform)
 
-    def log_likelihood(self):
+    def _copy_parameter_options(self, param):
+        transform = param.transform
+        if isinstance(transform, transforms.LowerTriangular):
+            transform = transforms.LowerTriangular(self.num_data, self.num_latent)
+        return dict(prior=param.prior, transform=transform, trainable=param.trainable, dtype=param.dtype)
+
+    def _build(self):
         """
+        Before calling the standard _build function, check to see if the size
+        of the data has changed and add variational parameters appropriately.
+
+        This is necessary because the shape of the parameters depends on the
+        shape of the data.
+        """
+        if not self.num_data == self.X.shape[0]:
+            self.num_data = self.X.shape[0]
+            self.q_mu = Parameter(np.zeros((self.num_data, self.num_latent)),
+                                  **self._copy_parameter_options(self.q_mu))
+            self.q_sqrt = Parameter(np.array([np.eye(self.num_data) for _ in range(self.num_latent)]),
+                                    **self._copy_parameter_options(self.q_sqrt))
+        return super()._build()
+
+    @params_as_tensors
+    def _build_likelihood(self):
+        r"""
         This method computes the variational lower bound on the likelihood,
         which is:
 
@@ -81,45 +101,43 @@ class VGP(GPModel):
 
         with
 
-            q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+            q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
         """
 
-        x_data, y_data = self.data
         # Get prior KL.
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kernel(x_data) + tf.eye(self.num_data, dtype=default_float()) * default_jitter()
-        L = tf.linalg.cholesky(K)
-        fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(x_data)  # [NN, ND] -> ND
-        q_sqrt_dnn = tf.linalg.band_part(self.q_sqrt, -1, 0)  # [D, N, N]
+        K = self.kern.K(self.X) + tf.eye(self.num_data, dtype=settings.float_type) * \
+            settings.numerics.jitter_level
+        L = tf.cholesky(K)
+
+        fmean = tf.matmul(L, self.q_mu) + self.mean_function(self.X)  # NN,ND->ND
+
+        q_sqrt_dnn = tf.matrix_band_part(self.q_sqrt, -1, 0)  # D x N x N
+
         L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent, 1, 1]))
-        LTA = tf.linalg.matmul(L_tiled, q_sqrt_dnn)  # [D, N, N]
+
+        LTA = tf.matmul(L_tiled, q_sqrt_dnn)  # D x N x N
         fvar = tf.reduce_sum(tf.square(LTA), 2)
 
         fvar = tf.transpose(fvar)
 
         # Get variational expectations.
-        var_exp = self.likelihood.variational_expectations(fmean, fvar, y_data)
+        var_exp = self.likelihood.variational_expectations(fmean, fvar, self.Y)
 
         return tf.reduce_sum(var_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
-                  full_output_cov: bool = False) -> MeanAndVariance:
-        x_data, _y_data = self.data
-        mu, var = conditional(predict_at,
-                              x_data,
-                              self.kernel,
-                              self.q_mu,
-                              q_sqrt=self.q_sqrt,
-                              full_cov=full_cov,
-                              white=True)
-        return mu + self.mean_function(predict_at), var
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
+        mu, var = conditional(Xnew, self.X, self.kern, self.q_mu,
+                              q_sqrt=self.q_sqrt, full_cov=full_cov, white=True)
+        return mu + self.mean_function(Xnew), var
 
 
-class VGPOpperArchambeau(GPModel):
-    """
+class VGP_opper_archambeau(GPModel):
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:
     ::
@@ -137,68 +155,86 @@ class VGPOpperArchambeau(GPModel):
     only the diagonal elements of the precision need be adjusted.
     The posterior approximation is
     .. math::
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\mathbf K \\boldsymbol \\alpha,
-                         [\\mathbf K^{-1} + \\textrm{diag}(\\boldsymbol \\lambda))^2]^{-1})
+       q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,
+                         [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})
 
     This approach has only 2ND parameters, rather than the N + N^2 of vgp,
     but the optimization is non-convex and in practice may cause difficulty.
 
     """
 
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: MeanFunction = None,
-                 num_latent: Optional[int] = None):
+    def __init__(self, X, Y, kern, likelihood,
+                 mean_function=None,
+                 num_latent=None,
+                 **kwargs):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
-        kernel, likelihood, mean_function are appropriate GPflow objects
+        X is a data matrix, size N x D
+        Y is a data matrix, size N x R
+        kern, likelihood, mean_function are appropriate GPflow objects
         """
+
         mean_function = Zero() if mean_function is None else mean_function
 
-        super().__init__(kernel, likelihood, mean_function, num_latent)
-
-        x_data, y_data = data
-        self.data = data
-        self.num_data = x_data.shape[0]
-        self.num_latent = num_latent or y_data.shape[1]
+        X = DataHolder(X)
+        Y = DataHolder(Y)
+        GPModel.__init__(self, X, Y, kern, likelihood, mean_function, **kwargs)
+        self.num_data = X.shape[0]
+        self.num_latent = num_latent or Y.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), gpflow.positive())
+        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
+                                  transforms.positive)
 
-    def log_likelihood(self):
+    def _build(self):
         """
-        q_alpha, q_lambda are variational parameters, size [N, R]
+        Before calling the standard _build function, check to see if the size
+        of the data has changed and add variational parameters appropriately.
+
+        This is necessary because the shape of the parameters depends on the
+        shape of the data.
+        """
+        if not self.num_data == self.X.shape[0]:
+            self.num_data = self.X.shape[0]
+            self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
+            self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)),
+                                      transforms.positive)
+        return super()._build()
+
+    @params_as_tensors
+    def _build_likelihood(self):
+        r"""
+        q_alpha, q_lambda are variational parameters, size N x R
         This method computes the variational lower bound on the likelihood,
         which is:
             E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
         with
             q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
         """
-        x_data, y_data = self.data
-        K = self.kernel()
-        K_alpha = tf.linalg.matmul(K, self.q_alpha)
-        f_mean = K_alpha + self.mean_function(x_data)
+        K = self.kern.K(self.X)
+        K_alpha = tf.matmul(K, self.q_alpha)
+        f_mean = K_alpha + self.mean_function(self.X)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.eye(self.num_data, dtype=default_float())[None, ...], [self.num_latent, 1, 1])
-        A = I + tf.transpose(self.q_lambda)[:, None, ...] * tf.transpose(self.q_lambda)[:, :, None, ...] * K
-        L = tf.linalg.cholesky(A)
-        Li = tf.linalg.triangular_solve(L, I)
-        tmp = Li / tf.transpose(self.q_lambda)[:, None, ...]
+        I = tf.tile(tf.expand_dims(tf.eye(self.num_data, dtype=settings.float_type), 0),
+                    [self.num_latent, 1, 1])
+        A = I + tf.expand_dims(tf.transpose(self.q_lambda), 1) * \
+            tf.expand_dims(tf.transpose(self.q_lambda), 2) * K
+        L = tf.cholesky(A)
+        Li = tf.matrix_triangular_solve(L, I)
+        tmp = Li / tf.expand_dims(tf.transpose(self.q_lambda), 1)
         f_var = 1. / tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
 
         # some statistics about A are used in the KL
-        A_logdet = 2.0 * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
+        A_logdet = 2.0 * tf.reduce_sum(tf.log(tf.matrix_diag_part(L)))
         trAi = tf.reduce_sum(tf.square(Li))
 
-        KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent + tf.reduce_sum(K_alpha * self.q_alpha))
+        KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent +
+                    tf.reduce_sum(K_alpha * self.q_alpha))
 
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, self.Y)
         return tf.reduce_sum(v_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False):
+    @params_as_tensors
+    def _build_predict(self, Xnew, full_cov=False):
         """
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
@@ -208,21 +244,20 @@ class VGPOpperArchambeau(GPModel):
                                            diag(lambda**-2)]^-1 K_{f*} )
         """
 
-        x_data, _y_data = self.data
         # compute kernel things
-        Kx = self.kernel(x_data, predict_at)
-        K = self.kernel(x_data)
+        Kx = self.kern.K(self.X, Xnew)
+        K = self.kern.K(self.X)
 
         # predictive mean
-        f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(predict_at)
+        f_mean = tf.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)
 
         # predictive var
-        A = K + tf.linalg.diag(tf.transpose(1. / tf.square(self.q_lambda)))
-        L = tf.linalg.cholesky(A)
-        Kx_tiled = tf.tile(Kx[None, ...], [self.num_latent, 1, 1])
-        LiKx = tf.linalg.triangular_solve(L, Kx_tiled)
+        A = K + tf.matrix_diag(tf.transpose(1. / tf.square(self.q_lambda)))
+        L = tf.cholesky(A)
+        Kx_tiled = tf.tile(tf.expand_dims(Kx, 0), [self.num_latent, 1, 1])
+        LiKx = tf.matrix_triangular_solve(L, Kx_tiled)
         if full_cov:
-            f_var = self.kernel(predict_at) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
+            f_var = self.kern.K(Xnew) - tf.matmul(LiKx, LiKx, transpose_a=True)
         else:
-            f_var = self.kernel(predict_at) - tf.reduce_sum(tf.square(LiKx), 1)
+            f_var = self.kern.Kdiag(Xnew) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)
