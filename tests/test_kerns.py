@@ -166,20 +166,21 @@ class TestArcCosine(GPflowTestCase):
 
 
 class TestPeriodic(GPflowTestCase):
-    kernel_class = gpflow.kernels.Periodic
-    base_kernel = "RBF"
+    base_class = gpflow.kernels.RBF
 
     def setUp(self):
         self.test_graph = tf.Graph()
 
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
         with self.test_context() as session:
-            kernel = self.kernel_class(
-                D, period=period, variance=variance, lengthscales=lengthscale)
+            kernel = gpflow.kernels.Periodic(
+                D, period=period, variance=variance, lengthscales=lengthscale,
+                base_class=self.base_class)
 
             X = tf.placeholder(gpflow.settings.float_type)
             reference_gram_matrix = referencePeriodicKernel(
-                X_data, lengthscale, variance, period, baseKernel=self.base_kernel)
+                X_data, lengthscale, variance, period,
+                baseClassName=self.base_class.__name__)
             kernel.compile()
             gram_matrix = session.run(kernel.K(X), feed_dict={X: X_data})
             assert_allclose(gram_matrix, reference_gram_matrix)
@@ -205,20 +206,22 @@ class TestPeriodic(GPflowTestCase):
             X_data = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
             self.evalKernelError(D, lengthScale, variance, period, X_data)
 
+    def test_init(self):
+        msg = "the base class for Periodic must be a stationary kernel"
+        with self.assertRaisesWithLiteralMatch(TypeError, msg):
+            gpflow.kernels.Periodic(1, base_class=gpflow.kernels.Linear)
+
 
 class TestPeriodicMatern12(TestPeriodic):
-    kernel_class = gpflow.kernels.PeriodicMatern12
-    base_kernel = "Matern12"
+    base_kernel_class = gpflow.kernels.Matern12
 
 
 class TestPeriodicMatern32(TestPeriodic):
-    kernel_class = gpflow.kernels.PeriodicMatern32
-    base_kernel = "Matern32"
+    base_kernel_class = gpflow.kernels.Matern32
 
 
 class TestPeriodicMatern52(TestPeriodic):
-    kernel_class = gpflow.kernels.PeriodicMatern52
-    base_kernel = "Matern52"
+    base_kernel_class = gpflow.kernels.Matern52
 
 
 class TestCoregion(GPflowTestCase):

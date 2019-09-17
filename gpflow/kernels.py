@@ -683,15 +683,17 @@ class ArcCosine(Kernel):
 
 class Periodic(Kernel):
     """
-    The periodic kernel. Defined in  Equation (47) of
+    The periodic family of kernels. Can be used to wrap any Stationary kernel
+    to transform it into a periodic version. The canonical form (based on the
+    RBF kernel) can be found in Equation (47) of
 
     D.J.C.MacKay. Introduction to Gaussian processes. In C.M.Bishop, editor,
     Neural Networks and Machine Learning, pages 133--165. Springer, 1998.
 
-    Derived using an RBF kernel once mapped the original inputs through
-    the mapping u=(cos(x), sin(x)).
+    The derivation can be achieved by mapping the original inputs through the
+    transformation u = (cos(x), sin(x)).
 
-    The resulting kernel can be expressed as:
+    The resulting RBF-based kernel can be expressed as:
         k(r) = σ² exp{ -0.5 sin²(π r / γ) / ℓ² }
 
     where:
@@ -703,22 +705,20 @@ class Periodic(Kernel):
     (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
     hyperparameter).
     """
-
-    def __init__(self, input_dim, period=1.0, variance=1.0,
-                 lengthscales=1.0, active_dims=None, name=None):
-        # No ARD support for lengthscale or period yet
+    def __init__(self, input_dim, period=1.0, variance=1.0, lengthscales=1.0,
+                 base_class=SquaredExponential, active_dims=None, name=None, **kw):
+        if not issubclass(base_class, Stationary):
+            raise TypeError("the base class for Periodic must be a stationary kernel")
         super().__init__(input_dim, active_dims, name=name)
-        self.variance = Parameter(variance, transform=transforms.positive,
-                                  dtype=settings.float_type)
-        self.lengthscales = Parameter(lengthscales, transform=transforms.positive,
-                                      dtype=settings.float_type)
+        self.base = base_class(
+            input_dim, variance=variance, lengthscales=lengthscales, active_dims=active_dims, **kw)
+        self.period = Parameter(
+            period, transform=transforms.positive, dtype=settings.float_type)
         self.ARD = False
-        self.period = Parameter(period, transform=transforms.positive,
-                                dtype=settings.float_type)
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
+        return self.base.Kdiag(X)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -732,78 +732,14 @@ class Periodic(Kernel):
         f2 = tf.expand_dims(X2, -3)  # ... x 1 x M x D
 
         r = np.pi * (f - f2) / self.period
-        sin_r = tf.sin(r) / self.lengthscales
-        return self.variance * self._K_from_sin_r(sin_r)
-
-    def _K_from_sin_r(self, sin_r):
-        r = tf.reduce_sum(tf.square(sin_r), -1)
-        return tf.exp(-0.5 * r)
-
-
-class PeriodicMatern12(Periodic):
-    """
-    A periodic version of the Matern 1/2 kernel.
-
-    Derived using the Matern 1/2 kernel once mapped the original inputs through
-    the mapping u=(cos(x), sin(x)).
-
-    The resulting kernel can be expressed as:
-        k(r) = σ² exp{-r}
-
-    where:
-    r is the transformed Euclidean distance given by abs{ sin(πr / γ) / ℓ }
-    ℓ is the lengthscale parameter,
-    σ² is the variance parameter,
-    γ is the period parameter.
-    """
-
-    def _K_from_sin_r(self, sin_r):
-        K = tf.reduce_sum(tf.abs(sin_r), -1)
-        return tf.exp(-K)
-
-
-class PeriodicMatern32(Periodic):
-    """
-    A periodic version of the Matern 3/2 kernel.
-
-    Derived using the Matern 3/2 kernel once mapped the original inputs through
-    the mapping u=(cos(x), sin(x)).
-
-    The resulting kernel can be expressed as:
-        k(r) = σ² (1 + √3r) exp{-√3 r}
-
-    where:
-    r is the transformed Euclidean distance given by abs{ sin(πr / γ) / ℓ }
-    ℓ is the lengthscale parameter,
-    σ² is the variance parameter,
-    γ is the period parameter.
-    """
-
-    def _K_from_sin_r(self, sin_r):
-        K = np.sqrt(3) * tf.reduce_sum(tf.abs(sin_r), -1)
-        return (1 + K) * tf.exp(-K)
-
-
-class PeriodicMatern52(Periodic):
-    """
-    A periodic version of the Matern 5/2 kernel.
-
-    Derived using the Matern 5/2 kernel once mapped the original inputs through
-    the mapping u=(cos(x), sin(x)).
-
-    The resulting kernel can be expressed as:
-        k(r) = σ² (1 + √5r + 5/3r²) exp{-√5 r}
-
-    where:
-    r is the transformed Euclidean distance given by abs{ sin(π r / γ) / ℓ }
-    ℓ is the lengthscale parameter,
-    σ² is the variance parameter,
-    γ is the period parameter.
-    """
-
-    def _K_from_sin_r(self, sin_r):
-        K = np.sqrt(5) * tf.reduce_sum(tf.abs(sin_r), -1)
-        return (1 + K + tf.square(K) / 3) * tf.exp(-K)
+        scaled_sine = tf.sin(r) / self.base.lengthscales
+        try:
+            sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
+            K = self.base.K_r(sine_r)
+        except NotImplementedError:
+            sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
+            K = self.base.K_r2(sine_r2)
+        return K
 
 
 class Coregion(Kernel):
