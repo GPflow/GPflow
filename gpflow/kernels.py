@@ -526,7 +526,7 @@ class Matern32(Stationary):
     The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once
     differentiable. The kernel equation is
 
-    k(r) =  σ² (1 + √3r) exp{-√3 r}
+    k(r) = σ² (1 + √3r) exp{-√3 r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
@@ -544,7 +544,7 @@ class Matern52(Stationary):
     The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice
     differentiable. The kernel equation is
 
-    k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
+    k(r) = σ² (1 + √5r + 5/3r²) exp{-√5 r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
@@ -692,10 +692,10 @@ class Periodic(Kernel):
     the mapping u=(cos(x), sin(x)).
 
     The resulting kernel can be expressed as:
-        k(r) =  σ² exp{ -0.5 sin²(π r / γ) / ℓ²}
+        k(r) = σ² exp{ -0.5 sin²(π r / γ) / ℓ² }
 
     where:
-    r  is the Euclidean distance between the input points
+    r is the Euclidean distance between the input points
     ℓ is the lengthscale parameter,
     σ² is the variance parameter,
     γ is the period parameter.
@@ -732,9 +732,78 @@ class Periodic(Kernel):
         f2 = tf.expand_dims(X2, -3)  # ... x 1 x M x D
 
         r = np.pi * (f - f2) / self.period
-        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), -1)
+        sin_r = tf.sin(r) / self.lengthscales
+        return self.variance * self._K_from_sin_r(sin_r)
 
-        return self.variance * tf.exp(-0.5 * r)
+    def _K_from_sin_r(self, sin_r):
+        r = tf.reduce_sum(tf.square(sin_r), -1)
+        return tf.exp(-0.5 * r)
+
+
+class PeriodicMatern12(Periodic):
+    """
+    A periodic version of the Matern 1/2 kernel.
+
+    Derived using the Matern 1/2 kernel once mapped the original inputs through
+    the mapping u=(cos(x), sin(x)).
+
+    The resulting kernel can be expressed as:
+        k(r) = σ² exp{-r}
+
+    where:
+    r is the transformed Euclidean distance given by abs{ sin(πr / γ) / ℓ }
+    ℓ is the lengthscale parameter,
+    σ² is the variance parameter,
+    γ is the period parameter.
+    """
+
+    def _K_from_sin_r(self, sin_r):
+        K = tf.reduce_sum(tf.abs(sin_r), -1)
+        return tf.exp(-K)
+
+
+class PeriodicMatern32(Periodic):
+    """
+    A periodic version of the Matern 3/2 kernel.
+
+    Derived using the Matern 3/2 kernel once mapped the original inputs through
+    the mapping u=(cos(x), sin(x)).
+
+    The resulting kernel can be expressed as:
+        k(r) = σ² (1 + √3r) exp{-√3 r}
+
+    where:
+    r is the transformed Euclidean distance given by abs{ sin(πr / γ) / ℓ }
+    ℓ is the lengthscale parameter,
+    σ² is the variance parameter,
+    γ is the period parameter.
+    """
+
+    def _K_from_sin_r(self, sin_r):
+        K = np.sqrt(3) * tf.reduce_sum(tf.abs(sin_r), -1)
+        return (1 + K) * tf.exp(-K)
+
+
+class PeriodicMatern52(Periodic):
+    """
+    A periodic version of the Matern 3/2 kernel.
+
+    Derived using the Matern 3/2 kernel once mapped the original inputs through
+    the mapping u=(cos(x), sin(x)).
+
+    The resulting kernel can be expressed as:
+        k(r) = σ² (1 + √5r + 5/3r²) exp{-√5 r}
+
+    where:
+    r is the transformed Euclidean distance given by abs{ sin(π r / γ) / ℓ }
+    ℓ is the lengthscale parameter,
+    σ² is the variance parameter,
+    γ is the period parameter.
+    """
+
+    def _K_from_sin_r(self, sin_r):
+        K = np.sqrt(5) * tf.reduce_sum(tf.abs(sin_r), -1)
+        return (1 + K + tf.square(K) / 3) * tf.exp(-K)
 
 
 class Coregion(Kernel):

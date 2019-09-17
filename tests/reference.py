@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def referenceRbfKernel(X, lengthScale, signalVariance):
     nDataPoints, _ = X.shape
     kernel = np.zeros((nDataPoints, nDataPoints))
@@ -13,7 +14,7 @@ def referenceRbfKernel(X, lengthScale, signalVariance):
     return kernel
 
 
-def referenceArcCosineKernel( X, order, weightVariances, biasVariance, signalVariance ):
+def referenceArcCosineKernel(X, order, weightVariances, biasVariance, signalVariance):
     num_points = X.shape[0]
     kernel = np.empty((num_points, num_points))
     for row in range(num_points):
@@ -42,8 +43,20 @@ def referenceArcCosineKernel( X, order, weightVariances, biasVariance, signalVar
     return kernel
 
 
-def referencePeriodicKernel( X, lengthScale, signalVariance, period ):
+def referencePeriodicKernel(X, lengthScale, signalVariance, period, baseKernel="RBF"):
     # Based on the GPy implementation of standard_period kernel
     base = np.pi * (X[:, None, :] - X[None, :, :]) / period
-    exp_dist = np.exp( -0.5* np.sum( np.square(  np.sin( base ) / lengthScale ), axis = -1 ) )
-    return signalVariance * exp_dist
+    sine_base = np.sin(base) / lengthScale
+    if baseKernel == "RBF":
+        dist = 0.5 * np.sum(np.square(sine_base), axis=-1)
+        K = np.exp(-dist)
+    elif baseKernel == "Matern12":
+        dist = np.sum(np.abs(sine_base), axis=-1)
+        K = np.exp(-dist)
+    elif baseKernel == "Matern32":
+        dist = np.sqrt(3) * np.sum(np.abs(sine_base), axis=-1)
+        K = (1 + dist) * np.exp(-dist)
+    elif baseKernel == "Matern52":
+        dist = np.sqrt(5) * np.sum(np.abs(sine_base), axis=-1)
+        K = (1 + dist + dist ** 2 / 3) * np.exp(-dist)
+    return signalVariance * K

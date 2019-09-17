@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import partial
 import tensorflow as tf
 
 import numpy as np
@@ -165,17 +166,20 @@ class TestArcCosine(GPflowTestCase):
 
 
 class TestPeriodic(GPflowTestCase):
+    kernel_class = gpflow.kernels.Periodic
+    base_kernel = "RBF"
+
     def setUp(self):
         self.test_graph = tf.Graph()
 
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
         with self.test_context() as session:
-            kernel = gpflow.kernels.Periodic(
+            kernel = self.kernel_class(
                 D, period=period, variance=variance, lengthscales=lengthscale)
 
             X = tf.placeholder(gpflow.settings.float_type)
             reference_gram_matrix = referencePeriodicKernel(
-                X_data, lengthscale, variance, period)
+                X_data, lengthscale, variance, period, baseKernel=self.base_kernel)
             kernel.compile()
             gram_matrix = session.run(kernel.K(X), feed_dict={X: X_data})
             assert_allclose(gram_matrix, reference_gram_matrix)
@@ -200,6 +204,21 @@ class TestPeriodic(GPflowTestCase):
             rng = np.random.RandomState(1)
             X_data = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
             self.evalKernelError(D, lengthScale, variance, period, X_data)
+
+
+class TestPeriodicMatern12(TestPeriodic):
+    kernel_class = gpflow.kernels.PeriodicMatern12
+    base_kernel = "Matern12"
+
+
+class TestPeriodicMatern32(TestPeriodic):
+    kernel_class = gpflow.kernels.PeriodicMatern32
+    base_kernel = "Matern32"
+
+
+class TestPeriodicMatern52(TestPeriodic):
+    kernel_class = gpflow.kernels.PeriodicMatern52
+    base_kernel = "Matern52"
 
 
 class TestCoregion(GPflowTestCase):
