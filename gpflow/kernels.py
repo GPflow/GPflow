@@ -786,9 +786,9 @@ class PeriodicMatern32(Periodic):
 
 class PeriodicMatern52(Periodic):
     """
-    A periodic version of the Matern 3/2 kernel.
+    A periodic version of the Matern 5/2 kernel.
 
-    Derived using the Matern 3/2 kernel once mapped the original inputs through
+    Derived using the Matern 5/2 kernel once mapped the original inputs through
     the mapping u=(cos(x), sin(x)).
 
     The resulting kernel can be expressed as:
