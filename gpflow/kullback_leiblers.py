@@ -28,13 +28,13 @@ prior_kl = Dispatcher('prior_kl')
 @prior_kl.register(InducingVariables, Kernel)
 def prior_kl(inducing_variables, kernel, q_mu, q_sqrt, whiten=False):
     if whiten:
-        return full_cov_gauss_kl(q_mu, q_sqrt, None)
+        return gauss_kl(q_mu, q_sqrt, None)
     else:
         K = Kuu(inducing_variables, kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
-        return full_cov_gauss_kl(q_mu, q_sqrt, K)
+        return gauss_kl(q_mu, q_sqrt, K)
 
 
-def full_cov_gauss_kl(q_mu, q_sqrt, K=None):
+def gauss_kl(q_mu, q_sqrt, K=None):
     """
     Compute the KL divergence KL[q || p] between
 
@@ -59,14 +59,14 @@ def full_cov_gauss_kl(q_mu, q_sqrt, K=None):
     """
 
     white = K is None
-    diag = q_sqrt.shape.ndims == 2
+    diag = len(q_sqrt.shape) == 2
 
     M, B = q_mu.shape[0], q_mu.shape[1]
 
     if white:
         alpha = q_mu  # [M, B]
     else:
-        batch = K.shape.ndims == 3
+        batch = len(K.shape) == 3
 
         Lp = tf.linalg.cholesky(K)  # [B, M, M] or [M, M]
         q_mu = tf.transpose(

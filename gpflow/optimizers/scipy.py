@@ -66,7 +66,7 @@ class Scipy:
     def unpack_tensors(to_tensors: Iterator[tf.Tensor], from_vector: np.ndarray):
         s = 0
         for tensor in to_tensors:
-            shape = tensor.shape
+            shape = tf.shape(tensor)
             tensor_size = int(np.prod(shape))
             tensor_vector = from_vector[s:s + tensor_size]
             tensor_vector = tf.reshape(tensor_vector, shape)

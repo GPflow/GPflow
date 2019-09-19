@@ -39,13 +39,13 @@ class MultioutputKernel(Kernel):
     @abc.abstractmethod
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         """
-        Returns the correlation of f(X1) and f(Y), where f(.) can be multi-dimensional.
-        :param X: data matrix, [1, D]
-        :param Y: data matrix, [2, D]
+        Returns the correlation of f(X) and f(Y), where f(.) can be multi-dimensional.
+        :param X: data matrix, [N1, D]
+        :param Y: data matrix, [N2, D]
         :param full_output_cov: calculate correlation between outputs.
-        :return: cov[f(X1), f(Y)] with shape
-        - [1, P, 2, P] if `full_output_cov` = True
-        - [P, 1, 2] if `full_output_cov` = False
+        :return: cov[f(X), f(Y)] with shape
+        - [N1, P, N2, P] if `full_output_cov` = True
+        - [P, N1, N2] if `full_output_cov` = False
         """
         pass
 
@@ -89,13 +89,13 @@ class SharedIndependent(MultioutputKernel):
         self.P = output_dimensionality
 
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
-        K = self.kernel.K(X, Y)  # [N, 2]
+        K = self.kernel.K(X, Y)  # [N, N2]
         if full_output_cov:
-            Ks = tf.tile(K[..., None], [1, 1, self.P])  # [N, 2, P]
+            Ks = tf.tile(K[..., None], [1, 1, self.P])  # [N, N2, P]
             return tf.transpose(tf.linalg.diag(Ks),
-                                [0, 2, 1, 3])  # [N, P, 2, P]
+                                [0, 2, 1, 3])  # [N, P, N2, P]
         else:
-            return tf.tile(K[None, ...], [self.P, 1, 1])  # [P, N, 2]
+            return tf.tile(K[None, ...], [self.P, 1, 1])  # [P, N, N2]
 
     def K_diag(self, X, full_output_cov=True, presliced=False):
         K = self.kernel.K_diag(X)  # N
@@ -116,12 +116,12 @@ class SeparateIndependent(MultioutputKernel, Combination):
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         if full_output_cov:
             Kxxs = tf.stack([k.K(X, Y) for k in self.kernels],
-                            axis=2)  # [N, 2, P]
+                            axis=2)  # [N, N2, P]
             return tf.transpose(tf.linalg.diag(Kxxs),
-                                [0, 2, 1, 3])  # [N, P, 2, P]
+                                [0, 2, 1, 3])  # [N, P, N2, P]
         else:
             return tf.stack([k.K(X, Y) for k in self.kernels],
-                            axis=0)  # [P, N, 2]
+                            axis=0)  # [P, N, N2]
 
     def K_diag(self, X, full_output_cov=False, presliced=False):
         stacked = tf.stack([k.K_diag(X) for k in self.kernels],
@@ -151,19 +151,19 @@ class LinearCoregionalization(IndependentLatent, Combination):
         self.W = Parameter(W)  # [P, L]
 
     def Kgg(self, X, Y):
-        return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [L, N, 2]
+        return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [L, N, N2]
 
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
-        Kxx = self.Kgg(X, Y)  # [L, N, 2]
-        KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # [P, L, N, 2]
+        Kxx = self.Kgg(X, Y)  # [L, N, N2]
+        KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # [P, L, N, N2]
         if full_output_cov:
             # return tf.einsum('lnm,kl,ql->nkmq', Kxx, self.W, self.W)
-            WKxxW = tf.tensordot(self.W, KxxW, [[1], [1]])  # [P, P, N, 2]
-            return tf.transpose(WKxxW, [2, 0, 3, 1])  # [N, P, 2, P]
+            WKxxW = tf.tensordot(self.W, KxxW, [[1], [1]])  # [P, P, N, N2]
+            return tf.transpose(WKxxW, [2, 0, 3, 1])  # [N, P, N2, P]
         else:
             # return tf.einsum('lnm,kl,kl->knm', Kxx, self.W, self.W)
             return tf.reduce_sum(self.W[:, :, None, None] * KxxW,
-                                 [1])  # [P, N, 2]
+                                 [1])  # [P, N, N2]
 
     def K_diag(self, X, full_output_cov=True, presliced=False):
         K = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, L]

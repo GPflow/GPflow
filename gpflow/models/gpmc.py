@@ -11,30 +11,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from gpflow.base import Parameter
-from gpflow.config import default_float, default_jitter
-
+from ..kernels import Kernel
+from ..likelihoods import Likelihood
+from ..mean_functions import MeanFunction
+from .model import GPModel, MeanAndVariance, Data
+from ..base import Parameter
 from ..conditionals import conditional
-from .model import GPModelOLD, MeanAndVariance
+from ..config import default_float, default_jitter
 
 
-class GPMC(GPModelOLD):
+class GPMC(GPModel):
     def __init__(self,
-                 X,
-                 Y,
-                 kernel,
-                 likelihood,
-                 mean_function=None,
-                 num_latent=None,
-                 **kwargs):
+                 data: Data,
+                 kernel: Kernel,
+                 likelihood: Likelihood,
+                 mean_function: Optional[MeanFunction] = None,
+                 num_latent: int = 1):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
+        data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]
         kernel, likelihood, mean_function are appropriate GPflow objects
 
         This is a vanilla implementation of a GP with a non-Gaussian
@@ -49,9 +49,9 @@ class GPMC(GPModelOLD):
             L L^T = K
 
         """
-        GPModelOLD.__init__(self, X, Y, kernel, likelihood, mean_function,
-                            num_latent, **kwargs)
-        self.num_data = X.shape[0]
+        super().__init__(kernel, likelihood, mean_function, num_latent)
+        self.data = data
+        self.num_data = data[0].shape[0]
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
 
@@ -63,16 +63,14 @@ class GPMC(GPModelOLD):
             \log p(Y, V | theta).
 
         """
-        K = self.kernel(self.X)
-        L = tf.linalg.cholesky(
-            K + tf.eye(tf.shape(self.X)[0], dtype=default_float()) *
-            default_jitter())
-        F = tf.linalg.matmul(L, self.V) + self.mean_function(self.X)
+        x_data, y_data = self.data
+        K = self.kernel(x_data)
+        L = tf.linalg.cholesky(K + tf.eye(tf.shape(x_data)[0], dtype=default_float()) * default_jitter())
+        F = tf.linalg.matmul(L, self.V) + self.mean_function(x_data)
 
-        return tf.reduce_sum(self.likelihood.log_prob(F, self.Y))
+        return tf.reduce_sum(self.likelihood.log_prob(F, y_data))
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False,
-                  full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -83,11 +81,6 @@ class GPMC(GPModelOLD):
         where F* are points on the GP at Xnew, F=LV are points on the GP at X.
 
         """
-        mu, var = conditional(Xnew,
-                              self.X,
-                              self.kernel,
-                              self.V,
-                              full_cov=full_cov,
-                              q_sqrt=None,
-                              white=True)
+        x_data, y_data = self.data
+        mu, var = conditional(Xnew, x_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True)
         return mu + self.mean_function(Xnew), var
