@@ -60,12 +60,12 @@ def _check_models_close(m1, m2, tolerance=1e-2):
 
 
 _gp_models = [
-    gpflow.models.VGP(Datum.X, Datum.Y, Datum.kernel, Datum.lik),
-    gpflow.models.GPMC(Datum.X, Datum.Y, Datum.kernel, Datum.lik),
-    gpflow.models.SGPMC(Datum.X, Datum.Y, Datum.kernel, Datum.lik, inducing_variable=Datum.Z),
-    gpflow.models.SGPR(Datum.X, Datum.Y, Datum.kernel, inducing_variables=Datum.Z),
-    gpflow.models.GPR(Datum.X, Datum.Y, Datum.kernel),
-    gpflow.models.GPRFITC(Datum.X, Datum.Y, Datum.kernel, inducing_variables=Datum.Z)
+    gpflow.models.VGP((Datum.X, Datum.Y), Datum.kernel, Datum.lik),
+    gpflow.models.GPMC((Datum.X, Datum.Y), Datum.kernel, Datum.lik),
+    gpflow.models.SGPMC((Datum.X, Datum.Y), Datum.kernel, Datum.lik, inducing_variables=Datum.Z),
+    gpflow.models.SGPR((Datum.X, Datum.Y), Datum.kernel, inducing_variables=Datum.Z),
+    gpflow.models.GPR((Datum.X, Datum.Y), Datum.kernel),
+    gpflow.models.GPRFITC((Datum.X, Datum.Y), Datum.kernel, inducing_variables=Datum.Z)
 ]
 
 _state_less_gp_models = [
@@ -92,16 +92,16 @@ def test_methods_predict_y(model):
 @pytest.mark.parametrize('model', _state_less_gp_models + _gp_models)
 def test_methods_predict_log_density(model):
     Ys = rng.randn(10, 1)
-    d = model.predict_log_density(Datum.Xs, Ys)
+    d = model.predict_log_density((Datum.Xs, Ys))
     assert_array_equal(d.shape, (10, 1))
 
 
 def test_sgpr_qu():
-    X, Z = rng.randn(100, 2), rng.randn(20, 2)
-    Y = np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * np.random.randn(len(X), 1)
-    model = gpflow.models.SGPR(X, Y, gpflow.kernels.SquaredExponential(), inducing_variables=Z)
+    X, Z = tf.cast(rng.randn(100, 2), default_float()), tf.cast(rng.randn(20, 2), default_float())
+    Y = tf.cast(np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * np.random.randn(len(X), 1), default_float())
+    model = gpflow.models.SGPR((X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variables=Z)
 
-    # @tf.function
+    @tf.function
     def closure():
         return - model.log_likelihood()
 
@@ -220,15 +220,15 @@ def test_sparse_mcmc_likelihoods_and_gradients():
     v_vals = rng.randn(10, 1)
 
     likelihood = gpflow.likelihoods.StudentT()
-    model_1 = gpflow.models.GPMC(X=X, Y=Y, kernel=gpflow.kernels.Exponential(),
+    model_1 = gpflow.models.GPMC(data=(X,Y), kernel=gpflow.kernels.Exponential(),
                                  likelihood=likelihood)
-    model_2 = gpflow.models.SGPMC(X=X, Y=Y, kernel=gpflow.kernels.Exponential(), inducing_variable=X.copy(),
+    model_2 = gpflow.models.SGPMC(data=(X, Y), kernel=gpflow.kernels.Exponential(), inducing_variables=X.copy(),
                                   likelihood=likelihood)
     model_1.V = tf.convert_to_tensor(v_vals, dtype=default_float())
     model_2.V = tf.convert_to_tensor(v_vals, dtype=default_float())
-    model_1.kernel.lengthscale = .8
-    model_2.kernel.lengthscale = .8
-    model_1.kernel.variance = 4.2
-    model_2.kernel.variance = 4.2
+    model_1.kernel.lengthscale.assign(0.8)
+    model_2.kernel.lengthscale.assign(0.8)
+    model_1.kernel.variance.assign(4.2)
+    model_2.kernel.variance.assign(4.2)
 
     assert_allclose(model_1.log_likelihood(), model_2.log_likelihood(), rtol=1e-5, atol=1e-5)

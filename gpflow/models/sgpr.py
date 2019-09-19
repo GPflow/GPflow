@@ -11,21 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
 
-from gpflow.inducing_variables import InducingPoints
-from gpflow.covariances.dispatch import Kuf, Kuu
-from gpflow.config import default_float, default_jitter
-
-from .model import GPModel, GPModelOLD, MeanAndVariance
-from .. import inducing_variables
+from gpflow.kernels import Kernel
+from .model import MeanAndVariance, GPModel, Data
 from .. import likelihoods
-from ..mean_functions import Zero
+from ..config import default_float, default_jitter
+from ..covariances.dispatch import Kuf, Kuu
+from ..inducing_variables import InducingPoints
+from ..mean_functions import Zero, MeanFunction
 
 
-class SGPRUpperMixin(object):
+class SGPRUpperMixin(GPModel):
     """
     Upper bound for the GP regression marginal likelihood.
     It is implemented here as a Mixin class which works with SGPR and GPRFITC.
@@ -51,45 +51,46 @@ class SGPRUpperMixin(object):
     """
 
     def upper_bound(self):
-        num_data = tf.cast(tf.shape(self.Y)[0], default_float())
+        x_data, y_data = self.data
+        num_data = tf.cast(tf.shape(y_data)[0], default_float())
 
-        Kdiag = self.kernel(self.X)
+        Kdiag = self.kernel(x_data)
         kuu = Kuu(self.inducing_variables, self.kernel, jitter=default_jitter())
-        kuf = Kuf(self.inducing_variables, self.kernel, self.X)
+        kuf = Kuf(self.inducing_variables, self.kernel, x_data)
 
         L = tf.linalg.cholesky(kuu)
-        LB = tf.linalg.cholesky(kuu + self.likelihood.variance**-1.0 *
+        LB = tf.linalg.cholesky(kuu + self.likelihood.variance ** -1.0 *
                                 tf.linalg.matmul(kuf, kuf, transpose_b=True))
 
         Linvkuf = tf.linalg.triangular_solve(L, kuf, lower=True)
         # Using the Trace bound, from Titsias' presentation
-        c = tf.reduce_sum(Kdiag) - tf.reduce_sum(Linvkuf**2.0)
-        # Kff = self.kernel(self.X)
-        # Qff = tf.linalg.matmul(kuf, Linvkuf, transpose_a=True)
+        # c = tf.reduce_sum(Kdiag) - tf.reduce_sum(Linvkuf ** 2.0)
+        Kff = self.kernel(x_data)
+        Qff = tf.linalg.matmul(kuf, Linvkuf, transpose_a=True)
 
         # Alternative bound on max eigenval:
-        # c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
+        c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
         corrected_noise = self.likelihood.variance + c
 
         const = -0.5 * num_data * tf.math.log(
             2 * np.pi * self.likelihood.variance)
         logdet = tf.reduce_sum(tf.math.log(
             tf.linalg.diag_part(L))) - tf.reduce_sum(
-                tf.math.log(tf.linalg.diag_part(LB)))
+            tf.math.log(tf.linalg.diag_part(LB)))
 
-        LC = tf.linalg.cholesky(kuu + corrected_noise**-1.0 *
+        LC = tf.linalg.cholesky(kuu + corrected_noise ** -1.0 *
                                 tf.linalg.matmul(kuf, kuf, transpose_b=True))
         v = tf.linalg.triangular_solve(LC,
-                                       corrected_noise**-1.0 *
-                                       tf.linalg.matmul(kuf, self.Y),
+                                       corrected_noise ** -1.0 *
+                                       tf.linalg.matmul(kuf, y_data),
                                        lower=True)
-        quad = -0.5 * corrected_noise**-1.0 * tf.reduce_sum(
-            self.Y**2.0) + 0.5 * tf.reduce_sum(v**2.0)
+        quad = -0.5 * corrected_noise ** -1.0 * tf.reduce_sum(
+            y_data ** 2.0) + 0.5 * tf.reduce_sum(v ** 2.0)
 
         return const + logdet + quad
 
 
-class SGPR(GPModelOLD, SGPRUpperMixin):
+class SGPR(SGPRUpperMixin):
     """
     Sparse Variational GP regression. The key reference is
 
@@ -110,12 +111,12 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
     """
 
     def __init__(self,
-                 X,
-                 Y,
-                 kernel,
-                 mean_function=None,
-                 inducing_variables=None,
-                 **kwargs):
+                 data: Data,
+                 kernel: Kernel,
+                 mean_function: Optional[MeanFunction] = None,
+                 inducing_variables: Optional[InducingPoints] = None,
+                 num_latent: Optional[int] = None
+                 ):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
@@ -125,10 +126,15 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
         This method only works with a Gaussian likelihood.
         """
         likelihood = likelihoods.Gaussian()
-        GPModelOLD.__init__(self, X, Y, kernel, likelihood, mean_function,
-                            **kwargs)
-        self.inducing_variables = InducingPoints(inducing_variables)
-        self.num_data = X.shape[0]
+        x_data, y_data = data
+        num_latent = y_data.shape[-1] if num_latent is None else num_latent
+        super().__init__(kernel, likelihood, mean_function, num_latent)
+        self.data = data
+        self.num_data = x_data.shape[0]
+
+        if not isinstance(inducing_variables, InducingPoints):
+            inducing_variables = InducingPoints(inducing_variables)
+        self.inducing_variables = inducing_variables
 
     def log_likelihood(self):
         """
@@ -136,14 +142,14 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
-
+        x_data, y_data = self.data
         num_inducing = len(self.inducing_variables)
-        num_data = tf.cast(tf.shape(self.Y)[0], default_float())
-        output_dim = tf.cast(tf.shape(self.Y)[1], default_float())
+        num_data = tf.cast(tf.shape(y_data)[0], default_float())
+        output_dim = tf.cast(tf.shape(y_data)[1], default_float())
 
-        err = self.Y - self.mean_function(self.X)
-        Kdiag = self.kernel(self.X)
-        kuf = Kuf(self.inducing_variables, self.kernel, self.X)
+        err = y_data - self.mean_function(x_data)
+        Kdiag = self.kernel(x_data)
+        kuf = Kuf(self.inducing_variables, self.kernel, x_data)
         kuu = Kuu(self.inducing_variables, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
         sigma = tf.sqrt(self.likelihood.variance)
@@ -178,9 +184,10 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
+        x_data, y_data = self.data
         num_inducing = len(self.inducing_variables)
-        err = self.Y - self.mean_function(self.X)
-        kuf = Kuf(self.inducing_variables, self.kernel, self.X)
+        err = y_data - self.mean_function(x_data)
+        kuf = Kuf(self.inducing_variables, self.kernel, x_data)
         kuu = Kuu(self.inducing_variables, self.kernel, jitter=default_jitter())
         Kus = Kuf(self.inducing_variables, self.kernel, X)
         sigma = tf.sqrt(self.likelihood.variance)
@@ -205,14 +212,13 @@ class SGPR(GPModelOLD, SGPRUpperMixin):
         return mean + self.mean_function(X), var
 
 
-class GPRFITC(GPModelOLD, SGPRUpperMixin):
+class GPRFITC(SGPRUpperMixin):
     def __init__(self,
-                 X,
-                 Y,
-                 kernel,
-                 mean_function=None,
-                 inducing_variables=None,
-                 **kwargs):
+                 data: Data,
+                 kernel: Kernel,
+                 mean_function: Optional[MeanFunction] = None,
+                 inducing_variables: Optional[InducingPoints] = None
+                 ):
         """
         This implements GP regression with the FITC approximation.
         The key reference is
@@ -241,17 +247,23 @@ class GPRFITC(GPModelOLD, SGPRUpperMixin):
         mean_function = Zero() if mean_function is None else mean_function
 
         likelihood = likelihoods.Gaussian()
-        GPModelOLD.__init__(self, X, Y, kernel, likelihood, mean_function,
-                            **kwargs)
-        self.inducing_variables = InducingPoints(inducing_variables)
-        self.num_data = X.shape[0]
-        self.num_latent = Y.shape[1]
+        x_data, y_data = data
+        num_latent = y_data.shape[-1]
+        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
+
+        self.data = data
+        self.num_data = x_data.shape[0]
+
+        if not isinstance(inducing_variables, InducingPoints):
+            inducing_variables = InducingPoints(inducing_variables)
+        self.inducing_variables = inducing_variables
 
     def common_terms(self):
+        x_data, y_data = self.data
         num_inducing = len(self.inducing_variables)
-        err = self.Y - self.mean_function(self.X)  # size [N, R]
-        Kdiag = self.kernel(self.X, full=False)
-        kuf = Kuf(self.inducing_variables, self.kernel, self.X)
+        err = y_data - self.mean_function(x_data)  # size [N, R]
+        Kdiag = self.kernel(x_data, full=False)
+        kuf = Kuf(self.inducing_variables, self.kernel, x_data)
         kuu = Kuu(self.inducing_variables, self.kernel, jitter=default_jitter())
 
         Luu = tf.linalg.cholesky(kuu)  # => Luu Luu^T = kuu
@@ -313,7 +325,7 @@ class GPRFITC(GPModelOLD, SGPRUpperMixin):
             tf.constant(2. * np.pi, default_float()))
         logDeterminantTerm = -0.5 * tf.reduce_sum(
             tf.math.log(nu)) - tf.reduce_sum(
-                tf.math.log(tf.linalg.diag_part(L)))
+            tf.math.log(tf.linalg.diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
@@ -348,9 +360,9 @@ class GPRFITC(GPModelOLD, SGPRUpperMixin):
     @property
     def Z(self):
         raise NotImplementedError(
-            "Inducing points are now in `model.inducing_variable.Z()`.")
+            "Inducing points are now in `model.inducing_variables.Z()`.")
 
     @Z.setter
     def Z(self, _):
         raise NotImplementedError(
-            "Inducing points are now in `model.inducing_variable.Z()`.")
+            "Inducing points are now in `model.inducing_variables.Z()`.")

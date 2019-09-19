@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
-import tensorflow as tf
-
 import gpflow
-from gpflow.utilities.utilities import leaf_components, _merge_leaf_components
-
+import numpy as np
 import pytest
+import tensorflow as tf
+from gpflow.utilities.utilities import leaf_components, _merge_leaf_components
 
 rng = np.random.RandomState(0)
 
@@ -49,6 +47,7 @@ class B(tf.Module):
     def __init__(self, name=None):
         super().__init__(name)
         self.submodule_list = [A(), A()]
+        self.submodule_dict = dict(a=A(), b=A())
         self.var_trainable = tf.Variable(tf.zeros((2, 2, 1)), trainable=True)
         self.var_fixed = tf.Variable(tf.ones((2, 2, 1)), trainable=False)
 
@@ -57,6 +56,14 @@ def create_kernel():
     kern = gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var)
     kern.lengthscale.trainable = False
     return kern
+
+
+def create_compose_kernel():
+    kernel = gpflow.kernels.Product([
+        gpflow.kernels.Sum([create_kernel(), create_kernel()]),
+        gpflow.kernels.Sum([create_kernel(), create_kernel()])]
+    )
+    return kernel
 
 
 def create_model():
@@ -86,10 +93,14 @@ example_tf_module_variable_dict = {
 }
 
 example_module_list_variable_dict = {
-    'A_0.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
-    'A_0.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
-    'A_1.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
-    'A_1.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
+    'B_submodule_list[0].var_trainable': example_tf_module_variable_dict['A.var_trainable'],
+    'B_submodule_list[0].var_fixed': example_tf_module_variable_dict['A.var_fixed'],
+    'B_submodule_list[1].var_trainable': example_tf_module_variable_dict['A.var_trainable'],
+    'B_submodule_list[1].var_fixed': example_tf_module_variable_dict['A.var_fixed'],
+    'B_submodule_dict[a].var_trainable': example_tf_module_variable_dict['A.var_trainable'],
+    'B_submodule_dict[a].var_fixed': example_tf_module_variable_dict['A.var_fixed'],
+    'B_submodule_dict[b].var_trainable': example_tf_module_variable_dict['A.var_trainable'],
+    'B_submodule_dict[b].var_fixed': example_tf_module_variable_dict['A.var_fixed'],
     'B.var_trainable': example_tf_module_variable_dict['A.var_trainable'],
     'B.var_fixed': example_tf_module_variable_dict['A.var_fixed'],
 }
@@ -105,6 +116,17 @@ kernel_param_dict = {
         'trainable': True,
         'shape': ()
     }
+}
+
+compose_kernel_param_dict = {
+    'Product_kernels[0].Sum_kernels[0].variance': kernel_param_dict['SquaredExponential.variance'],
+    'Product_kernels[0].Sum_kernels[0].lengthscale': kernel_param_dict['SquaredExponential.lengthscale'],
+    'Product_kernels[0].Sum_kernels[1].variance': kernel_param_dict['SquaredExponential.variance'],
+    'Product_kernels[0].Sum_kernels[1].lengthscale': kernel_param_dict['SquaredExponential.lengthscale'],
+    'Product_kernels[1].Sum_kernels[0].variance': kernel_param_dict['SquaredExponential.variance'],
+    'Product_kernels[1].Sum_kernels[0].lengthscale': kernel_param_dict['SquaredExponential.lengthscale'],
+    'Product_kernels[1].Sum_kernels[1].variance': kernel_param_dict['SquaredExponential.variance'],
+    'Product_kernels[1].Sum_kernels[1].lengthscale': kernel_param_dict['SquaredExponential.lengthscale']
 }
 
 model_gp_param_dict = {
@@ -190,6 +212,19 @@ def test_leaf_components_registers_variable_properties(module_callable, expected
     module = module_callable()
     for path, variable in leaf_components(module).items():
         param_name = path.split('.')[-2] + '.' + path.split('.')[-1]
+        assert isinstance(variable, gpflow.Parameter)
+        np.testing.assert_equal(variable.value().numpy(), expected_param_dicts[param_name]['value'])
+        assert variable.trainable == expected_param_dicts[param_name]['trainable']
+        assert variable.shape == expected_param_dicts[param_name]['shape']
+
+
+@pytest.mark.parametrize('module_callable, expected_param_dicts', [
+    (create_compose_kernel, compose_kernel_param_dict),
+])
+def test_leaf_components_registers_compose_kernel_variable_properties(module_callable, expected_param_dicts):
+    module = module_callable()
+    for path, variable in leaf_components(module).items():
+        param_name = path.split('.')[-3] + '.' + path.split('.')[-2] + '.' + path.split('.')[-1]
         assert isinstance(variable, gpflow.Parameter)
         np.testing.assert_equal(variable.value().numpy(), expected_param_dicts[param_name]['value'])
         assert variable.trainable == expected_param_dicts[param_name]['trainable']

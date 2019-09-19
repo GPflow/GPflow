@@ -24,6 +24,7 @@ RUN apt-get update --fix-missing && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN pip install -U pip
 RUN pip install -q numpy scipy pandas pytest nbformat \
     nbconvert ipykernel jupyter_client matplotlib pytest-xdist pytest-cov \
     multipledispatch mock codecov sklearn
