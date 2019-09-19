@@ -100,7 +100,7 @@ class WeightedConvolutional(Convolutional):
 
     def __init__(self, basekern, img_size, patch_size, weights=None, colour_channels=1):
         Convolutional.__init__(self, basekern, img_size, patch_size, colour_channels)
-        self.weights = Parameter(np.ones(self.num_patches, dtype=settings.float_type) if weights is None
+        self.weights = Parameter(np.ones(self.num_patches, dtype=default_float()) if weights is None
                                  else weights)
 
     def K(self, X, X2=None):
