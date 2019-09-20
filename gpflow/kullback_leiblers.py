@@ -25,7 +25,7 @@ from .config import default_jitter
 prior_kl = Dispatcher('prior_kl')
 
 
-@prior_kl.register(InducingVariables, Kernel)
+@prior_kl.register(InducingVariables, Kernel, object, object)
 def _(inducing_variables, kernel, q_mu, q_sqrt, whiten=False):
     if whiten:
         return gauss_kl(q_mu, q_sqrt, None)

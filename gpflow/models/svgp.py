@@ -136,7 +136,7 @@ class SVGP(GPModel):
                                         transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
-        return kullback_leiblers.prior_kl(self.inducing_variables, self.kernel, self.q_mu, self.q_sqrt, self.whiten)
+        return kullback_leiblers.prior_kl(self.inducing_variables, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten)
 
     def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
