@@ -37,9 +37,11 @@ class BayesianModel(Module):
         return -(self.log_likelihood(*args, **kwargs) + self.log_prior())
 
     def log_prior(self) -> tf.Tensor:
-        if len(self.variables) == 0:
+        log_priors = [p.log_prior() for p in self.trainable_parameters]
+        if log_priors:
+            return tf.add_n(log_priors)
+        else:
             return tf.convert_to_tensor(0., dtype=default_float())
-        return tf.add_n([p.log_prior() for p in self.trainable_parameters])
 
     @abc.abstractmethod
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
