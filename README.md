@@ -34,6 +34,7 @@ pip install -U gast==0.2.2 dataclasses tf-nightly-2.0-preview tfp-nightly
 pip install -e .
 ```
 
+
 ## Getting Started
 
 You can find the converted to GPflow 2.0 notebooks in the `notebooks` folder.
