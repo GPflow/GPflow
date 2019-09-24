@@ -253,9 +253,9 @@ def test_diags(kernel, N, dim):
     # TODO: Fix this test
     # This test does not call K_diag. It just compares whether tensorflow diag_part works as the numpy equivalent...
     X = np.random.randn(N, dim)
-    kernel1 = kernel(X)
-    kernel2 = tf.linalg.diag_part(kernel(X))
-    assert np.allclose(np.diagonal(kernel1), kernel2)
+    kernel1 = tf.linalg.diag_part(kernel(X, full=True))
+    kernel2 = kernel(X, full=False)
+    assert np.allclose(kernel1, kernel2)
 
 
 def test_conv_diag():
