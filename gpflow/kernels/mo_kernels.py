@@ -134,6 +134,14 @@ class IndependentLatent(MultioutputKernel):
     """
     Base class for multioutput kernels that are constructed from independent
     latent Gaussian processes.
+
+    It should always be possible to specify inducing variables for such kernels
+    that give a block-diagonal Kuu, which can be represented as a [L, M, M]
+    tensor. A reasonable (but not optimal) inference procedure can be specified
+    by placing the inducing points in the latent processes and simply computing
+    Kuu [L, M, M] and Kuf [N, P, M, L] and using `fallback_independent_latent_
+    conditional()`. This can be specified by using `Fallback{Separate|Shared}
+    IndependentInducingVariables`.
     """
 
     @abc.abstractmethod

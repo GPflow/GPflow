@@ -97,7 +97,7 @@ class Kernel(tf.Module):
         :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
         :return: [N, I, I].
         """
-        if cov.ndim == 2:
+        if tf.shape(cov).ndim == 2:
             cov = tf.linalg.diag(cov)
 
         dims = self.active_dims
