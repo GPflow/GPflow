@@ -65,7 +65,7 @@ class Convolutional(Kernel):
         W2bigK = bigK * W2[None, :, None, :]
         return tf.reduce_sum(W2bigK, [1, 3]) / self.num_patches ** 2.0
 
-    def Kdiag(self, X):
+    def K_diag(self, X):
         Xp = self.get_patches(X)  # N x num_patches x patch_dim
         W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
         bigK = self.basekern.K(Xp)  # [N, P, P]
