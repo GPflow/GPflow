@@ -221,8 +221,8 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
     mean1, var1 = softmax_likelihood.predict_mean_and_var(F, Fvar)
     mean2, var2 = bernoulli_likelihood.predict_mean_and_var(F[:, :1], Fvar[:, :1])
 
-    assert_allclose(mean1[:, 0, None], mean2, rtol=1e-3)
-    assert_allclose(var1[:, 0, None], var2, rtol=1e-3)
+    assert_allclose(mean1[:, 0, None], mean2, rtol=2e-3)
+    assert_allclose(var1[:, 0, None], var2, rtol=2e-3)
 
     ls_ve = softmax_likelihood.variational_expectations(F, Fvar, Ylabel)
     lb_ve = bernoulli_likelihood.variational_expectations(F[:, :1], Fvar[:, :1], Y.numpy())
