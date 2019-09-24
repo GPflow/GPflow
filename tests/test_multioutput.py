@@ -6,7 +6,6 @@ import tensorflow as tf
 import gpflow
 import gpflow.inducing_variables.mo_inducing_variables as mf
 import gpflow.kernels.mo_kernels as mk
-# from gpflow.test_util import
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import fully_correlated_conditional, fully_correlated_conditional_repeat, sample_mvn
 from gpflow.inducing_variables import InducingPoints
