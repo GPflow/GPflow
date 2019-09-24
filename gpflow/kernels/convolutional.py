@@ -1,9 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter, positive
-from ..utilities.ops import square_distance
 from .base import Kernel
+from ..base import Parameter
 from ..config import default_float
 
 
@@ -24,16 +23,14 @@ class Convolutional(Kernel):
     }
     """
 
-    def __init__(self, basekern, img_size, patch_size, colour_channels=1):
+    def __init__(self, basekern, img_size, patch_size, weights=None, colour_channels=1):
         super().__init__()
         self.img_size = img_size
         self.patch_size = patch_size
         self.basekern = basekern
         self.colour_channels = colour_channels
-
-        # NOTE: basekern now is input-dim independent, so no longer need to check this?
-        # if self.basekern.input_dim != np.prod(patch_size):
-        #     raise ValueError("Basekern input dimensions must be consistent with patch size.")
+        self.weights = Parameter(np.ones(self.num_patches, dtype=default_float()) if weights is None
+                                 else weights)
 
     # @lru_cache() -- Can we do some kind of memoizing with TF2?
     def get_patches(self, X):
@@ -59,51 +56,6 @@ class Convolutional(Kernel):
                        default_float())
 
     def K(self, X, X2=None):
-        Xp = self.get_patches(X)  # [N, num_patches, patch_len]
-        Xp2 = self.get_patches(X2) if X2 is not None else Xp
-
-        bigK = self.basekern.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
-        K = tf.reduce_sum(bigK, [1, 3])
-        return K / self.num_patches ** 2.0
-
-    def K_diag(self, X):
-        Xp = self.get_patches(X)  # [N, num_patches, patch_len]
-        return tf.reduce_sum(self.basekern.K(Xp), [1, 2]) / self.num_patches ** 2.0
-
-    @property
-    def patch_len(self):
-        return np.prod(self.patch_size)
-
-    @property
-    def num_patches(self):
-        return (self.img_size[0] - self.patch_size[0] + 1) * (
-                self.img_size[1] - self.patch_size[1] + 1) * self.colour_channels
-
-    # @autoflow((settings.float_type,))
-    # def compute_patches(self, X):
-    #     return self.get_patches(X)
-
-
-class WeightedConvolutional(Convolutional):
-    """
-    Similar to `Convolutional`, but with different weights for each patch:
-      f(x) = \sum_p x^{[p]}
-
-     @incollection{vdw2017convgp,
-      title = {Convolutional Gaussian Processes},
-      author = {van der Wilk, Mark and Rasmussen, Carl Edward and Hensman, James},
-      booktitle = {Advances in Neural Information Processing Systems 30},
-      year = {2017},
-      url = {http://papers.nips.cc/paper/6877-convolutional-gaussian-processes.pdf}
-    }
-    """
-
-    def __init__(self, basekern, img_size, patch_size, weights=None, colour_channels=1):
-        Convolutional.__init__(self, basekern, img_size, patch_size, colour_channels)
-        self.weights = Parameter(np.ones(self.num_patches, dtype=default_float()) if weights is None
-                                 else weights)
-
-    def K(self, X, X2=None):
         Xp = self.get_patches(X)  # [N, P, patch_len]
         Xp2 = Xp if X2 is None else self.get_patches(X2)
 
@@ -118,3 +70,12 @@ class WeightedConvolutional(Convolutional):
         W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
         bigK = self.basekern.K(Xp)  # [N, P, P]
         return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
+
+    @property
+    def patch_len(self):
+        return np.prod(self.patch_size)
+
+    @property
+    def num_patches(self):
+        return (self.img_size[0] - self.patch_size[0] + 1) * (
+                self.img_size[1] - self.patch_size[1] + 1) * self.colour_channels
