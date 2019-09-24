@@ -13,7 +13,7 @@ VariableData = Union[List, Tuple, np.ndarray, int, float]
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
-positive = tfp.bijectors.Softplus
+positive = lambda: tfp.bijectors.AffineScalar(shift=1e-6)(tfp.bijectors.Softplus())
 triangular = tfp.bijectors.FillTriangular
 
 

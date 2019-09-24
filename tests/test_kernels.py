@@ -250,8 +250,6 @@ kernel_setups_extended = kernel_setups + [
 @pytest.mark.parametrize('kernel', kernel_setups_extended)
 @pytest.mark.parametrize('N, dim', [[30, _dim]])
 def test_diags(kernel, N, dim):
-    # TODO: Fix this test
-    # This test does not call K_diag. It just compares whether tensorflow diag_part works as the numpy equivalent...
     X = np.random.randn(N, dim)
     kernel1 = tf.linalg.diag_part(kernel(X, full=True))
     kernel2 = kernel(X, full=False)
