@@ -209,7 +209,7 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
     softmax_likelihood = Softmax(dimF)
     bernoulli_likelihood = Bernoulli(invlink=tf.sigmoid)
     softmax_likelihood.num_monte_carlo_points = int(0.3e7)  # Minimum number of points to pass the test on CircleCI
-    bernoulli_likelihood.num_gauss_hermite_points = 50
+    bernoulli_likelihood.num_gauss_hermite_points = 40
 
     assert_allclose(softmax_likelihood.conditional_mean(F)[:, :1], bernoulli_likelihood.conditional_mean(F[:, :1]))
 
