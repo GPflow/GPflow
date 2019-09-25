@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-def set_trainable(model: tf.Module, flag: bool = True):
+def set_trainable(model: tf.Module, flag: bool):
     """
     Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
     """
