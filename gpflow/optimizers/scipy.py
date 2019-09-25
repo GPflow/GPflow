@@ -52,7 +52,7 @@ class Scipy:
             if callable(step_callback):
                 step_callback(step=step, loss=loss, variables=variables, gradients=grads)
             step += 1
-            return loss.numpy(), cls.pack_tensors(grads)
+            return loss.numpy().astype(np.float64), cls.pack_tensors(grads).astype(np.float64)
 
         return _eval
 
@@ -68,7 +68,7 @@ class Scipy:
         for tensor in to_tensors:
             shape = tf.shape(tensor)
             tensor_size = int(np.prod(shape))
-            tensor_vector = from_vector[s:s + tensor_size]
+            tensor_vector = from_vector[s:s + tensor_size].astype(tensor.dtype.as_numpy_dtype())
             tensor_vector = tf.reshape(tensor_vector, shape)
             tensor.assign(tensor_vector)
             s += tensor_size
