@@ -173,4 +173,5 @@ class SVGP(GPModel):
                               full_cov=full_cov,
                               white=self.whiten,
                               full_output_cov=full_output_cov)
+        tf.debugging.assert_positive(var)
         return mu + self.mean_function(Xnew), var

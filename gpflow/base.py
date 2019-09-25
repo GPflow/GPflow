@@ -13,7 +13,8 @@ VariableData = Union[List, Tuple, np.ndarray, int, float]
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
-positive = lambda: tfp.bijectors.AffineScalar(shift=1e-6)(tfp.bijectors.Softplus())
+positive_min_val = np.array([1e-4], dtype=default_float())
+positive = lambda: tfp.bijectors.AffineScalar(shift=positive_min_val)(tfp.bijectors.Softplus())
 triangular = tfp.bijectors.FillTriangular
 
 
