@@ -154,8 +154,9 @@ def _get_leaf_components(input: tf.Module, prefix: Optional[str] = None):
             submodule_name = input.__class__.__name__
             for term_idx, subterm in enumerate(submodule):
                 subterm_key = f"{submodule_name}_{key}[{term_idx}]"
-                subterm_var = _get_leaf_components(subterm, prefix=f"{prefix}.{subterm_key}")
-                var_dict.update(subterm_var)
+                if isinstance(subterm, Parameter):
+                    subterm_var = _get_leaf_components(subterm, prefix=f"{prefix}.{subterm_key}")
+                    var_dict.update(subterm_var)
         elif isinstance(submodule, _DictWrapper):
             submodule_name = input.__class__.__name__
             for term_key, subterm in submodule.items():

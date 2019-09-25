@@ -12,17 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-
 import numpy as np
 import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.config import default_float, default_int
-from gpflow.kernels import (SquaredExponential, ArcCosine, Constant, Linear, Periodic,
-                            Polynomial, Stationary)
+from gpflow.config import default_float
+from gpflow.kernels import (SquaredExponential, ArcCosine, Linear)
 
 rng = np.random.RandomState(1)
 
@@ -37,7 +34,7 @@ def _ref_rbf(X, lengthscale, signal_variance):
             delta = vecA - vecB
             distance_squared = np.dot(delta.T, delta)
             kernel[row_index, column_index] = signal_variance * \
-                np.exp(-0.5 * distance_squared / lengthscale ** 2)
+                                              np.exp(-0.5 * distance_squared / lengthscale ** 2)
     return kernel
 
 
@@ -64,11 +61,11 @@ def _ref_arccosine(X, order, weight_variances, bias_variance, signal_variance):
                 J = np.sin(theta) + (np.pi - theta) * np.cos(theta)
             elif order == 2:
                 J = 3. * np.sin(theta) * np.cos(theta)
-                J += (np.pi - theta) * (1. + 2. * np.cos(theta)**2)
+                J += (np.pi - theta) * (1. + 2. * np.cos(theta) ** 2)
 
             kernel[row, col] = signal_variance * (1. / np.pi) * J * \
-                x_denominator ** order * \
-                y_denominator ** order
+                               x_denominator ** order * \
+                               y_denominator ** order
     return kernel
 
 
@@ -181,13 +178,13 @@ def test_periodic_1d_and_2d(D, N, lengthscale, variance, period):
 
 
 kernel_setups = [
-    kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()
-] + [
-    gpflow.kernels.Constant(),
-    gpflow.kernels.Linear(),
-    gpflow.kernels.Polynomial(),
-    gpflow.kernels.ArcCosine()
-]
+                    kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()
+                ] + [
+                    gpflow.kernels.Constant(),
+                    gpflow.kernels.Linear(),
+                    gpflow.kernels.Polynomial(),
+                    gpflow.kernels.ArcCosine()
+                ]
 
 
 @pytest.mark.parametrize('D', [1, 5])
@@ -254,9 +251,17 @@ kernel_setups_extended = kernel_setups + [
 @pytest.mark.parametrize('N, dim', [[30, _dim]])
 def test_diags(kernel, N, dim):
     X = np.random.randn(N, dim)
-    kernel1 = kernel(X)
-    kernel2 = tf.linalg.diag_part(kernel(X))
-    assert np.allclose(np.diagonal(kernel1), kernel2)
+    kernel1 = tf.linalg.diag_part(kernel(X, full=True))
+    kernel2 = kernel(X, full=False)
+    assert np.allclose(kernel1, kernel2)
+
+
+def test_conv_diag():
+    kernel = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), [3, 3], [2, 2])
+    X = np.random.randn(3, 9)
+    kernel_full = np.diagonal(kernel(X, full=True))
+    kernel_diag = kernel(X, full=False)
+    assert np.allclose(kernel_full, kernel_diag)
 
 
 # Add a rbf and linear kernel, make sure the result is the same as adding the result of
@@ -298,9 +303,9 @@ def test_white(N, D):
 
 
 _kernel_classes_slice = [kernel for kernel in gpflow.kernels.Stationary.__subclasses__()] + \
-    [gpflow.kernels.Constant,
-     gpflow.kernels.Linear,
-     gpflow.kernels.Polynomial]
+                        [gpflow.kernels.Constant,
+                         gpflow.kernels.Linear,
+                         gpflow.kernels.Polynomial]
 
 _kernel_triples_slice = [
     (k1(active_dims=[0]), k2(active_dims=[1]), k3(active_dims=slice(0, 1)))
