@@ -61,8 +61,8 @@ def test_bayesian_gplvm_1d():
                                     np.zeros((Data.N, Q)),
                                     np.ones((Data.N, Q)),
                                     kernel,
-                                    num_inducing_variables=Data.M,
                                     inducing_variable=inducing_variable)
+    assert len(m.inducing_variable) == Data.M
     log_likelihood_initial = m.log_likelihood()
     opt = gpflow.optimizers.Scipy()
 

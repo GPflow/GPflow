@@ -43,7 +43,7 @@ class SVGP(GPModel):
     def __init__(self,
                  kernel,
                  likelihood,
-                 inducing_variables=None,
+                 inducing_variable=None,
                  mean_function=None,
                  num_latent=1,
                  q_diag=False,
@@ -71,10 +71,10 @@ class SVGP(GPModel):
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
-        self.inducing_variables = inducingpoint_wrapper(inducing_variables)
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
         # init variational parameters
-        num_inducing = len(self.inducing_variables)
+        num_inducing = len(self.inducing_variable)
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
@@ -136,7 +136,7 @@ class SVGP(GPModel):
                                         transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
-        return kullback_leiblers.prior_kl(self.inducing_variables, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten)
+        return kullback_leiblers.prior_kl(self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten)
 
     def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
@@ -166,7 +166,7 @@ class SVGP(GPModel):
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(Xnew,
-                              self.inducing_variables,
+                              self.inducing_variable,
                               self.kernel,
                               q_mu,
                               q_sqrt=q_sqrt,
