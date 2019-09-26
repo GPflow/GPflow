@@ -18,8 +18,8 @@ from .util import (base_conditional, expand_independent_outputs, fully_correlate
 
 
 @conditional.register(object, SharedIndependentInducingVariables, SharedIndependent, object)
-def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
-                 white=False):
+def shared_independent_conditional(
+        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Multioutput conditional for an independent kernel and shared inducing inducing.
     Same behaviour as conditional with non-multioutput kernels.
     The covariance matrices used to calculate the conditional have the following shape:
@@ -61,8 +61,8 @@ def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_out
 @conditional.register(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
 @conditional.register(object, SharedIndependentInducingVariables, SeparateIndependent, object)
 @conditional.register(object, SeparateIndependentInducingVariables, SharedIndependent, object)
-def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
-                 white=False):
+def separate_independent_conditional(
+        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P).
     The covariance matrices used to calculate the conditional have the following shape:
@@ -110,8 +110,8 @@ def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_out
                       (FallbackSharedIndependentInducingVariables, FallbackSeparateIndependentInducingVariables),
                       IndependentLatent,
                       object)
-def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
-                 white=False):
+def fallback_independent_latent_conditional(
+        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Interdomain conditional with independent latents.
     In this case the number of latent GPs (L) will be different than the number of outputs (P)
     The covariance matrices used to calculate the conditional have the following shape:
@@ -141,8 +141,8 @@ def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_out
 
 
 @conditional.register(object, InducingPoints, MultioutputKernel, object)
-def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
-                 white=False):
+def inducing_point_conditional(
+        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
     inducing point scheme for multi-output kernels.
@@ -191,8 +191,8 @@ def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_out
 
 @conditional.register(object, (SharedIndependentInducingVariables, SeparateIndependentInducingVariables),
                       LinearCoregionalization, object)
-def _conditional(Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None,
-                 white=False):
+def coregionalization_conditional(
+        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
     """Most efficient routine to project L independent latent gps through a mixing matrix W.
     The mixing matrix is a member of the `LinearCoregionalization` and has shape [P, L].
     The covariance matrices used to calculate the conditional have the following shape:

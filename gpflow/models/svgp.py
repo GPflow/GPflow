@@ -133,11 +133,7 @@ class SVGP(GPModel):
                                         transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
-        K = None
-        if not self.whiten:
-            K = Kuu(self.inducing_variable, self.kernel,
-                    jitter=default_jitter())  # [P, M, M] or [M, M]
-        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
+        return kullback_leiblers.prior_kl(self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten)
 
     def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
@@ -174,4 +170,5 @@ class SVGP(GPModel):
                               full_cov=full_cov,
                               white=self.whiten,
                               full_output_cov=full_output_cov)
+        # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
         return mu + self.mean_function(Xnew), var

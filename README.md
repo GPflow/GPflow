@@ -11,78 +11,33 @@
 [Tips & Tricks](doc/source/notebooks/tips_and_tricks.ipynb)
 
 GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
-The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexander G. de G. Matthews, Alexis Boukouvalas, Artem Artemev, Daniel Marthaler, David J. Harris, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
+The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexander G. de G. Matthews, Alexis Boukouvalas, [Artem Artemev](http://github.com/awav/), Daniel Marthaler, David J. Harris, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
 
 ## What does GPflow do?
 
 GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), and the docs have further [discussion of the comparison](http://gpflow.readthedocs.io/en/develop/intro.html#what-s-the-difference-between-gpy-and-gpflow).
 
-GPflow uses [TensorFlow](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python 3.5 or above.
+GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python **3.6**.
 
-## Install
+## Install GPflow 2.0 beta version
 
-### 1) Quick install
-GPflow latest release can be installed using `pip`:
 
-```
-pip install gpflow
-```
+1. Install TensorFlow (TF) and TensorFlow Probability (TFP) nightly packages. You _might_ experience issues with TF and TFP latest versions.
 
-### 2) Alternative method
-A different option to install GPflow requires installation of TensorFlow first. Please see [instructions on the main TensorFlow webpage](https://www.tensorflow.org/install/). You will need at least version 1.10 (we aim to support the latest version). We find that for most users pip installation is the fastest way to get going. Then, for those interested in modifying the source of GPflow, we recommend
-
-```
-python setup.py develop
+```bash
+pip install -U gast==0.2.2 dataclasses tf-nightly-2.0-preview tfp-nightly
 ```
 
-but installation should work well too:
+2. Install develop GPflow 2.0 version from `awav/gpflow-2.0` branch:
 
-```
-python setup.py install
+```bash
+pip install -e .
 ```
 
-You can run the tests with `python setup.py test`.
 
 ## Getting Started
 
-Get started with our [manual (develop)](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true) with examples and tutorials.
-
-
-## Compiling documentation
-
-To compile the GPflow documentation locally:
-
-1. Install doc dependencies
-```
-pip install sphinx sphinx_rtd_theme numpydoc nbsphinx
-```
-2. Install pandoc 
-```
-pip install pandoc
-```
-If pandoc does not install via pip, or step 4 does not work, go to pandoc.org/installing.html
-
-3. Change directory to `doc`
-```
-cd doc
-```
-
-4. Compile the documentation as html
-```
-make html
-```
-
-5. Check documentation locally by opening (in a browser) doc/build/html/index.html
-
-### Docker image
-
-We also provide a [Docker image](https://hub.docker.com/r/gpflow/gpflow/) which can be run using
-
-```
-docker run -it -p 8888:8888 gpflow/gpflow
-```
-
-The image can be generated using our [Dockerfile](Dockerfile).
+You can find the converted to GPflow 2.0 notebooks in the `notebooks` folder.
 
 ## Getting help
 Please use GitHub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.

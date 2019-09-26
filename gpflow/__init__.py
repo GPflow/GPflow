@@ -14,8 +14,8 @@
 
 # flake8: noqa
 
-from . import (conditionals, config, expectations, inducing_variables, kernels, likelihoods, logdensities, models, optimizers,
-               probability_distributions, utilities, test_util)
+from . import (conditionals, config, expectations, inducing_variables, kernels, likelihoods, logdensities, models,
+               optimizers, probability_distributions, utilities)
 from .base import Parameter, positive, triangular
 from .config import default_float, default_jitter
 from .versions import __version__

@@ -16,7 +16,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 import pytest
 import gpflow
-from gpflow.inducing_variables import InducingPoints, Multiscale
+from gpflow.inducing_variables import InducingPoints, Multiscale, InducingPatches
 from gpflow.covariances import Kuu, Kuf
 from gpflow.config import default_jitter
 
@@ -72,28 +72,36 @@ def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
 
 _inducing_variables_and_kernels = [
     [
+        2,
         InducingPoints(np.random.randn(71, 2)),
         gpflow.kernels.SquaredExponential(variance=1.84,
                                           lengthscale=np.random.uniform(0.5, 3., 2))
     ],
     [
+        2,
         InducingPoints(np.random.randn(71, 2)),
         gpflow.kernels.Matern12(variance=1.84,
                                 lengthscale=np.random.uniform(0.5, 3., 2))
     ],
     [
+        2,
         Multiscale(np.random.randn(71, 2),
                    np.random.uniform(0.5, 3, size=(71, 2))),
         gpflow.kernels.SquaredExponential(variance=1.84,
                                           lengthscale=np.random.uniform(0.5, 3., 2))
+    ],
+    [
+        9,
+        InducingPatches(np.random.randn(71, 4)),
+        gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), [3, 3], [2, 2])
     ]
 ]
 
 
-@pytest.mark.parametrize('inducing_variable, kernel', _inducing_variables_and_kernels)
-def test_inducing_variables_psd_schur(inducing_variable, kernel):
+@pytest.mark.parametrize('input_dim, inducing_variable, kernel', _inducing_variables_and_kernels)
+def test_inducing_variables_psd_schur(input_dim, inducing_variable, kernel):
     # Conditional variance must be PSD.
-    X = np.random.randn(5, 2)
+    X = np.random.randn(5, input_dim)
     Kuf_values = Kuf(inducing_variable, kernel, X)
     Kuu_values = Kuu(inducing_variable, kernel, jitter=default_jitter())
     Kff_values = kernel(X)
