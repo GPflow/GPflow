@@ -180,11 +180,6 @@ class TestPeriodic(GPflowTestCase):
             gram_matrix = session.run(kernel.K(X), feed_dict={X: X_data})
             assert_allclose(gram_matrix, reference_gram_matrix)
 
-    def _init_kernel(self, D, lengthscale, variance, period):
-        # Ensure backward compatibility
-        return gpflow.kernels.Periodic(
-            D, period=period, variance=variance, lengthscales=lengthscale)
-
     def test_1d(self):
         with self.test_context():
             D = 1
@@ -221,6 +216,19 @@ class TestPeriodic(GPflowTestCase):
         msg = "Periodic requires a Stationary kernel as the base"
         with self.assertRaisesWithLiteralMatch(TypeError, msg):
             gpflow.kernels.Periodic(base=gpflow.kernels.Linear(1))
+
+    def test_ard(self):
+        k1 = gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential(1, lengthscales=1.))
+        k2 = gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential(2, lengthscales=1.))
+        k3 = gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential(2, lengthscales=[1., 1.]))
+        assert k1.ARD is False
+        assert k2.ARD is False
+        assert k3.ARD is True
+
+    def _init_kernel(self, D, lengthscale, variance, period):
+        # Ensure backward compatibility
+        return gpflow.kernels.Periodic(
+            D, period=period, variance=variance, lengthscales=lengthscale)
 
 
 class TestPeriodicMatern12(TestPeriodic):
