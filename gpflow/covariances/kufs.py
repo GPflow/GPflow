@@ -7,10 +7,6 @@ from .dispatch import Kuf
 
 @Kuf.register(InducingVariables, Kernel, TensorLike)
 def Kuf_fallback(inducing_variable, kernel, X):
-    from warnings import warn
-    warn('Kuf(inducing_variable, kernel, X) is deprecated, please use '
-         'Kuf(kernel, inducing_variable, X) instead.',
-         DeprecationWarning)
     return Kuf(kernel, inducing_variable, X)
 
 

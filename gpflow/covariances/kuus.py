@@ -8,10 +8,6 @@ from ..config import default_float
 
 @Kuu.register(InducingVariables, Kernel)
 def Kuu_fallback(inducing_variable, kernel, **kw):
-    from warnings import warn
-    warn('Kuu(inducing_variable, kernel) is deprecated, please use '
-         'Kuu(kernel, inducing_variable) instead.',
-         DeprecationWarning)
     return Kuu(kernel, inducing_variable, **kw)
 
 
