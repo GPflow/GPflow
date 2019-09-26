@@ -697,7 +697,7 @@ class Periodic(Kernel):
         k(r) = σ² exp{ -0.5 sin²(π r / γ) / ℓ² }
 
     where:
-    r is the Euclidean distance between the input points
+    r is the Euclidean distance between the input points,
     ℓ is the lengthscale parameter,
     σ² is the variance parameter,
     γ is the period parameter.
