@@ -693,7 +693,7 @@ class Periodic(Kernel):
     The derivation can be achieved by mapping the original inputs through the
     transformation u = (cos(x), sin(x)).
 
-    The resulting RBF-based kernel can be expressed as:
+    For the SquaredExponential base kernel, the result can be expressed as:
         k(r) = σ² exp{ -0.5 sin²(π r / γ) / ℓ² }
 
     where:
