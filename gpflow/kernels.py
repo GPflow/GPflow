@@ -685,7 +685,7 @@ class Periodic(Kernel):
     """
     The periodic family of kernels. Can be used to wrap any Stationary kernel
     to transform it into a periodic version. The canonical form (based on the
-    RBF kernel) can be found in Equation (47) of
+    SquaredExponential kernel) can be found in Equation (47) of
 
     D.J.C.MacKay. Introduction to Gaussian processes. In C.M.Bishop, editor,
     Neural Networks and Machine Learning, pages 133--165. Springer, 1998.
