@@ -23,8 +23,12 @@ from .decors import params_as_tensors, params_as_tensors_for
 from .params import Parameter, Parameterized
 from .dispatch import dispatch
 
-
 logger = settings.logger()
+
+
+# ---------------------
+# Basic inducing points
+# ---------------------
 
 
 class InducingFeature(Parameterized):
@@ -60,6 +64,7 @@ class InducingPointsBase(InducingFeature):
 class InducingPoints(InducingPointsBase):
     pass
 
+
 @dispatch(InducingPoints, kernels.Kernel)
 def Kuu(feat, kern, *, jitter=0.0):
     with params_as_tensors_for(feat):
@@ -67,11 +72,17 @@ def Kuu(feat, kern, *, jitter=0.0):
         Kzz += jitter * tf.eye(len(feat), dtype=settings.dtypes.float_type)
     return Kzz
 
+
 @dispatch(InducingPoints, kernels.Kernel, object)
 def Kuf(feat, kern, Xnew):
     with params_as_tensors_for(feat):
         Kzx = kern.K(feat.Z, Xnew)
     return Kzx
+
+
+# ------------------
+# Multiscale feature
+# ------------------
 
 
 class Multiscale(InducingPointsBase):
@@ -118,6 +129,7 @@ def Kuf(feat, kern, Xnew):
                                       (1, -1)))
     return Kuf
 
+
 @dispatch(Multiscale, kernels.RBF)
 def Kuu(feat, kern, *, jitter=0.0):
     with params_as_tensors_for(feat, kern):
@@ -130,6 +142,46 @@ def Kuu(feat, kern, *, jitter=0.0):
         Kzz = kern.variance * tf.exp(-d / 2) * tf.reduce_prod(kern.lengthscales / sc, 2)
         Kzz += jitter * tf.eye(len(feat), dtype=settings.float_type)
     return Kzz
+
+
+# ---------------------
+# InducingPatch feature
+# ---------------------
+
+
+class InducingPatch(InducingPointsBase):
+    """
+    Class for interdomain inducing patches, for use with Convolutional kernels.
+
+    @incollection{vdw2017convgp,
+      title = {Convolutional Gaussian Processes},
+      author = {van der Wilk, Mark and Rasmussen, Carl Edward and Hensman, James},
+      booktitle = {Advances in Neural Information Processing Systems 30},
+      year = {2017},
+      url = {http://papers.nips.cc/paper/6877-convolutional-gaussian-processes.pdf}
+    }
+    """
+    pass
+
+
+@dispatch(InducingPatch, kernels.Convolutional, object)
+def Kuf(feat, kern, Xnew):
+    with params_as_tensors_for(feat, kern):
+        Xp = kern.get_patches(Xnew)  # N x num_patches x patch_len
+        bigKzx = kern.basekern.K(feat.Z, Xp)  # [M, N, P]
+        Kzx = tf.reduce_sum(bigKzx * kern.weights if hasattr(kern, 'weights') else bigKzx, [2])
+    return Kzx / kern.num_patches
+
+
+@dispatch(InducingPatch, kernels.Convolutional)
+def Kuu(feat, kern, jitter=0.0):
+    with params_as_tensors_for(feat, kern):
+        return kern.basekern.K(feat.Z) + jitter * tf.eye(len(feat), dtype=settings.float_type)
+
+
+# -------
+# Helpers
+# -------
 
 
 def inducingpoint_wrapper(feat, Z):

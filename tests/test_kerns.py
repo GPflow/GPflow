@@ -23,6 +23,7 @@ from gpflow.test_util import GPflowTestCase, session_tf
 
 from .reference import referenceRbfKernel, referenceArcCosineKernel, referencePeriodicKernel
 
+
 class TestRbf(GPflowTestCase):
     def setUp(self):
         self.test_graph = tf.Graph()
@@ -505,9 +506,29 @@ class TestARDInit(GPflowTestCase):
             k2_variances = k2.weight_variances.read_value()
             self.assertTrue(np.all(k1_variances == k2_variances))
 
+
+class TestConvolutionalKernDiags(TestKernDiags):
+    def setUp(self):
+        self.test_graph = tf.Graph()
+        with self.test_context():
+            inputdim = 9
+            rng = np.random.RandomState(1)
+            self.rng = rng
+            self.dim = inputdim
+            self.kernels = []
+            self.kernels.append(gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(4), [3, 3], [2, 2]))
+            wconvk = gpflow.kernels.WeightedConvolutional(gpflow.kernels.SquaredExponential(4), [3, 3], [2, 2])
+            wconvk.weights.assign(np.random.randn(wconvk.num_patches))
+            self.kernels.append(wconvk)
+
+    def test(self):
+        super().test()
+
+
 def test_slice_active_dim_regression(session_tf):
     """ Check that we can instantiate a kernel with active_dims given as a slice object """
     gpflow.kernels.RBF(2, active_dims=slice(1, 3, 1))
+
 
 if __name__ == "__main__":
     tf.test.main()

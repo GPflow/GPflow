@@ -4,6 +4,7 @@ runtest: &runtest
     - run:
         name: Install GPflow
         command: |
+          pip install -r requirements_tests.txt
           python setup.py install
     - run:
         name: Run tests
@@ -31,6 +32,13 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
+  example-test:
+    <<: *runtest
+    docker:
+      - image: awav/tensorflow:1.14.0
+        environment:
+          PYTEST_FILTER: examples
+
   deploy:
     docker:
       - image: awav/tensorflow:1.14.0
@@ -57,7 +65,7 @@ jobs:
       - run:
           name: Create pip package
           command: |
-            python setup.py bdist sdist
+            python setup.py bdist_wheel sdist
       - run:
           name: Upload to PyPI
           command: |
@@ -72,6 +80,10 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
       - notebook-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+      - example-test:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
