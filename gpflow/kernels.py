@@ -708,7 +708,7 @@ class Periodic(Kernel):
     def __init__(self, input_dim, period=1.0, variance=1.0, lengthscales=1.0,
                  base_class=SquaredExponential, active_dims=None, name=None, **kw):
         if not issubclass(base_class, Stationary):
-            raise TypeError("the base class for Periodic must be a stationary kernel")
+            raise TypeError("Periodic requires a Stationary kernel as the base_class")
         super().__init__(input_dim, active_dims, name=name)
         self.base = base_class(
             input_dim, variance=variance, lengthscales=lengthscales, active_dims=active_dims, **kw)
