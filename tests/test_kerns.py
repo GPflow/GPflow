@@ -188,34 +188,34 @@ class TestPeriodic(GPflowTestCase):
     def test_1d(self):
         with self.test_context():
             D = 1
-            lengthScale = [2.0]
+            lengthscale = [2.0]
             variance = 2.3
             period = 2.
             rng = np.random.RandomState(1)
             X_data = rng.randn(3, 1)
-            self.evalKernelError(D, lengthScale, variance, period, X_data)
+            self.evalKernelError(D, lengthscale, variance, period, X_data)
 
     def test_2d(self):
         with self.test_context():
             D = 2
             N = 5
-            lengthScale = [11.5]
+            lengthscale = [11.5]
             variance = 1.3
             period = 20.
             rng = np.random.RandomState(1)
             X_data = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
-            self.evalKernelError(D, lengthScale, variance, period, X_data)
+            self.evalKernelError(D, lengthscale, variance, period, X_data)
 
     def test_2d_with_ARD(self):
         with self.test_context():
             D = 2
             N = 5
-            lengthScale = [11.5, 5.2]
+            lengthscale = [11.5, 5.2]
             variance = 1.3
             period = 20.
             rng = np.random.RandomState(1)
             X_data = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
-            self.evalKernelError(D, lengthScale, variance, period, X_data)
+            self.evalKernelError(D, lengthscale, variance, period, X_data)
 
     def test_init(self):
         msg = "Periodic requires a Stationary kernel as the base"
