@@ -45,8 +45,9 @@ def referenceArcCosineKernel(X, order, weightVariances, biasVariance, signalVari
 
 def referencePeriodicKernel(X, lengthScale, signalVariance, period, baseClassName="RBF"):
     # Based on the GPy implementation of standard_period kernel
+    lengthScale = np.array(lengthScale)
     base = np.pi * (X[:, None, :] - X[None, :, :]) / period
-    sine_base = np.sin(base) / lengthScale
+    sine_base = np.sin(base) / lengthScale[None, None, :]
     if baseClassName in {"RBF", "SquaredExponential"}:
         dist = 0.5 * np.sum(np.square(sine_base), axis=-1)
         K = np.exp(-dist)

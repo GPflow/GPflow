@@ -702,19 +702,36 @@ class Periodic(Kernel):
     σ² is the variance parameter,
     γ is the period parameter.
 
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
-    hyperparameter).
+    (note that usually we have a factor of 4 instead of 0.5 in front but this 
+    is absorbed into lengthscale hyperparameter).
     """
-    def __init__(self, input_dim, period=1.0, variance=1.0, lengthscales=1.0,
-                 base_class=SquaredExponential, active_dims=None, name=None, **kw):
-        if not issubclass(base_class, Stationary):
-            raise TypeError("Periodic requires a Stationary kernel as the base_class")
-        super().__init__(input_dim, active_dims, name=name)
-        self.base = base_class(
-            input_dim, variance=variance, lengthscales=lengthscales, active_dims=active_dims, **kw)
-        self.period = Parameter(
+    def __init__(self, input_dim=None, period=1.0, variance=1.0,
+                 lengthscales=1.0, base=None, active_dims=None, name=None):
+
+        if base is None:
+            warnings.warn(
+                'Indirect specification of the base kernel for Periodic is '
+                'deprecated, use Periodic(base=SquaredExponential({i}, variance={v}, '
+                'lengthscales={l}), period={p}) instead.'.format(
+                    i=input_dim, v=variance, l=lengthscales, p=period),
+                DeprecationWarning)
+            base = SquaredExponential(
+                input_dim,
+                variance=variance,
+                lengthscales=lengthscales,
+                active_dims=active_dims)
+
+        if not isinstance(base, Stationary):
+            raise TypeError("Periodic requires a Stationary kernel as the base")
+
+        super().__init__(base.input_dim, base.active_dims, name=name)
+        self.base = base
+        self.period = Parameter(  # No ARD support for period yet
             period, transform=transforms.positive, dtype=settings.float_type)
-        self.ARD = False
+
+    @property
+    def ARD(self):
+        return self.base.ARD
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):

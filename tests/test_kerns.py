@@ -166,29 +166,29 @@ class TestArcCosine(GPflowTestCase):
 
 
 class TestPeriodic(GPflowTestCase):
-    base_class = gpflow.kernels.RBF
-
     def setUp(self):
         self.test_graph = tf.Graph()
 
     def evalKernelError(self, D, lengthscale, variance, period, X_data):
         with self.test_context() as session:
-            kernel = gpflow.kernels.Periodic(
-                D, period=period, variance=variance, lengthscales=lengthscale,
-                base_class=self.base_class)
-
+            kernel = self._init_kernel(D, lengthscale, variance, period)
             X = tf.placeholder(gpflow.settings.float_type)
             reference_gram_matrix = referencePeriodicKernel(
                 X_data, lengthscale, variance, period,
-                baseClassName=self.base_class.__name__)
+                baseClassName=kernel.base.__class__.__name__)
             kernel.compile()
             gram_matrix = session.run(kernel.K(X), feed_dict={X: X_data})
             assert_allclose(gram_matrix, reference_gram_matrix)
 
+    def _init_kernel(self, D, lengthscale, variance, period):
+        # Ensure backward compatibility
+        return gpflow.kernels.Periodic(
+            D, period=period, variance=variance, lengthscales=lengthscale)
+
     def test_1d(self):
         with self.test_context():
             D = 1
-            lengthScale = 2.0
+            lengthScale = [2.0]
             variance = 2.3
             period = 2.
             rng = np.random.RandomState(1)
@@ -199,7 +199,18 @@ class TestPeriodic(GPflowTestCase):
         with self.test_context():
             D = 2
             N = 5
-            lengthScale = 11.5
+            lengthScale = [11.5]
+            variance = 1.3
+            period = 20.
+            rng = np.random.RandomState(1)
+            X_data = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
+            self.evalKernelError(D, lengthScale, variance, period, X_data)
+
+    def test_2d_with_ARD(self):
+        with self.test_context():
+            D = 2
+            N = 5
+            lengthScale = [11.5, 5.2]
             variance = 1.3
             period = 20.
             rng = np.random.RandomState(1)
@@ -207,21 +218,27 @@ class TestPeriodic(GPflowTestCase):
             self.evalKernelError(D, lengthScale, variance, period, X_data)
 
     def test_init(self):
-        msg = "the base class for Periodic must be a stationary kernel"
+        msg = "Periodic requires a Stationary kernel as the base"
         with self.assertRaisesWithLiteralMatch(TypeError, msg):
-            gpflow.kernels.Periodic(1, base_class=gpflow.kernels.Linear)
+            gpflow.kernels.Periodic(base=gpflow.kernels.Linear(1))
 
 
 class TestPeriodicMatern12(TestPeriodic):
-    base_kernel_class = gpflow.kernels.Matern12
+    def _init_kernel(self, D, lengthscale, variance, period):
+        base = gpflow.kernels.Matern12(D, variance=variance, lengthscales=lengthscale)
+        return gpflow.kernels.Periodic(base=base, period=period)
 
 
 class TestPeriodicMatern32(TestPeriodic):
-    base_kernel_class = gpflow.kernels.Matern32
+    def _init_kernel(self, D, lengthscale, variance, period):
+        base = gpflow.kernels.Matern32(D, variance=variance, lengthscales=lengthscale)
+        return gpflow.kernels.Periodic(base=base, period=period)
 
 
 class TestPeriodicMatern52(TestPeriodic):
-    base_kernel_class = gpflow.kernels.Matern52
+    def _init_kernel(self, D, lengthscale, variance, period):
+        base = gpflow.kernels.Matern52(D, variance=variance, lengthscales=lengthscale)
+        return gpflow.kernels.Periodic(base=base, period=period)
 
 
 class TestCoregion(GPflowTestCase):
