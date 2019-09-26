@@ -25,6 +25,7 @@ from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
 from ..utilities.ops import pca_reduce
+from .util import inducingpoint_wrapper
 from .gpr import GPR
 from .model import GPModel
 
