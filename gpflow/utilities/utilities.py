@@ -15,7 +15,6 @@ __all__ = [
     "multiple_assign",
     "training_loop",
     "print_summary",
-    "leaf_components"
 ]
 
 
@@ -128,7 +127,7 @@ def _merge_leaf_components(
 
 def _get_leaf_components(input: tf.Module, prefix: Optional[str] = None):
     """
-    Returns a list of tuples each corresponding to a gpflow.Parameter or tf.Variable in all
+    Returns a list of tuples each corresponding to a gpflow.Parameter or tf.Variable in the each
     submodules of a given tf.Module. Each tuple consists of an specific Parameter (or Variable) and
     its relative path inside the module, which is constructed recursively by adding a prefix with
     the path to the current module. Designed to be used as a helper for the method 'print_summary'.
