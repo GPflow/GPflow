@@ -27,6 +27,7 @@ kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
 kernel.K(X, None) is identical to kernel.K(X, X).)
 """
 
+from collections.abc import Iterable
 from functools import reduce, lru_cache
 import warnings
 
@@ -789,55 +790,6 @@ class Coregion(Kernel):
         return tf.gather(Bdiag, X)
 
 
-class Combination(Kernel):
-    """
-    Combine a list of kernels, e.g. by adding or multiplying (see inheriting
-    classes).
-
-    The names of the kernels to be combined are generated from their class
-    names.
-    """
-
-    def __init__(self, kernels, name=None):
-        if not all(isinstance(k, Kernel) for k in kernels):
-            raise TypeError("can only combine Kernel instances")  # pragma: no cover
-
-        input_dim = np.max([k.input_dim
-                            if type(k.active_dims) is slice else
-                            np.max(k.active_dims) + 1
-                            for k in kernels])
-        super().__init__(input_dim=input_dim, name=name)
-
-        # add kernels to a list, flattening out instances of this class therein
-        kernels_list = []
-        for k in kernels:
-            if isinstance(k, self.__class__):
-                kernels_list.extend(k.kernels)
-            else:
-                kernels_list.append(k)
-        self.kernels = ParamList(kernels_list)
-
-    @property
-    def on_separate_dimensions(self):
-        """
-        Checks whether the kernels in the combination act on disjoint subsets
-        of dimensions. Currently, it is hard to asses whether two slice objects
-        will overlap, so this will always return False.
-        :return: Boolean indicator.
-        """
-        if np.any([isinstance(k.active_dims, slice) for k in self.kernels]):
-            # Be conservative in the case of a slice object
-            return False
-        else:
-            dimlist = [k.active_dims for k in self.kernels]
-            overlapping = False
-            for i, dims_i in enumerate(dimlist):
-                for dims_j in dimlist[i + 1:]:
-                    if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
-                        overlapping = True
-            return not overlapping
-
-
 class Convolutional(Kernel):
     """
     Plain convolutional kernel as described in \citet{vdw2017convgp}. Defines
@@ -954,6 +906,55 @@ class WeightedConvolutional(Convolutional):
         return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
 
 
+class Combination(Kernel):
+    """
+    Combine a list of kernels, e.g. by adding or multiplying (see inheriting
+    classes).
+
+    The names of the kernels to be combined are generated from their class
+    names.
+    """
+
+    def __init__(self, kernels, name=None):
+        if not all(isinstance(k, Kernel) for k in kernels):
+            raise TypeError("can only combine Kernel instances")  # pragma: no cover
+
+        input_dim = np.max([k.input_dim
+                            if type(k.active_dims) is slice else
+                            np.max(k.active_dims) + 1
+                            for k in kernels])
+        super().__init__(input_dim=input_dim, name=name)
+
+        # add kernels to a list, flattening out instances of this class therein
+        kernels_list = []
+        for k in kernels:
+            if isinstance(k, self.__class__):
+                kernels_list.extend(k.kernels)
+            else:
+                kernels_list.append(k)
+        self.kernels = ParamList(kernels_list)
+
+    @property
+    def on_separate_dimensions(self):
+        """
+        Checks whether the kernels in the combination act on disjoint subsets
+        of dimensions. Currently, it is hard to asses whether two slice objects
+        will overlap, so this will always return False.
+        :return: Boolean indicator.
+        """
+        if np.any([isinstance(k.active_dims, slice) for k in self.kernels]):
+            # Be conservative in the case of a slice object
+            return False
+        else:
+            dimlist = [k.active_dims for k in self.kernels]
+            overlapping = False
+            for i, dims_i in enumerate(dimlist):
+                for dims_j in dimlist[i + 1:]:
+                    if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
+                        overlapping = True
+            return not overlapping
+
+
 class Sum(Combination):
     def K(self, X, X2=None, presliced=False):
         return reduce(tf.add, [k.K(X, X2) for k in self.kernels])
@@ -968,6 +969,72 @@ class Product(Combination):
 
     def Kdiag(self, X, presliced=False):
         return reduce(tf.multiply, [k.Kdiag(X) for k in self.kernels])
+
+
+class ChangePoints(Combination):
+    """
+    The ChangePoints kernel defines a fixed number of change-points along a 1d
+    input space where different kernels govern different parts of the space.
+    """
+    def __init__(self, kernels, locations=0.0, widths=1.0, kernels_order=None, name=None):
+        super().__init__(kernels, name=name)
+        if self.input_dim > 1:
+            raise ValueError("ChangePoints kernel only valid for 1d inputs")
+        if not isinstance(locations, Iterable):
+            locations = [locations]
+        if not isinstance(widths, Iterable):
+            widths = [widths]
+
+        self.locations = Parameter(locations, transform=None, dtype=gpflow.settings.float_type)
+        self.widths = Parameter(widths, transform=transforms.positive, dtype=gpflow.settings.float_type)
+        self.kernels_order = list(kernels_order or range(len(kernels)))
+
+        if not all(0 <= i < len(self.kernels) for i in self.kernels_order):
+            raise ValueError("ChangePoints `kernels_order` should be a list of integers specifying "
+                             "the order in which each kernel is active")
+
+        if len(self.kernels_order) != len(locations) + 1:
+            raise ValueError("Number of regimes does not match number of change-points")
+
+    @property
+    def num_changepoints(self):
+        return len(self.kernels_order) - 1
+
+    @params_as_tensors
+    def K(self, X, X2=None):
+        sig_X = self._sigmoids(X)
+        sig_X2 = self._sigmoids(X2) if X2 is not None else sig_X
+        starters = sig_X * tf.transpose(sig_X2, perm=(1, 0, 2))
+        stoppers = (1 - sig_X) * tf.transpose((1 - sig_X2), perm=(1, 0, 2))
+
+        regime_Ks = []
+        for i, ik in enumerate(self.kernels_order):
+            K = self.kernels[ik].K(X, X2)
+            if i > 0:
+                K *= starters[:, :, i-1]
+            if i < self.num_changepoints:
+                K *= stoppers[:, :, i]
+            regime_Ks.append(K)
+
+        return reduce(tf.add, regime_Ks)
+
+    @params_as_tensors
+    def Kdiag(self, X):
+        sig_X = self._sigmoid(X)
+        regime_Ks = []
+        for i, ik in enumerate(self.kernels_order):
+            K = self.kernels[ik].Kdiag(X)
+            if i > 0:
+                K *= sig_X[:, 0, i-1] ** 2
+            if i < self.num_changepoints:
+                K *= (1 - sig_X[:, 0, i-1]) ** 2
+            regime_Ks.append(K)
+        return reduce(tf.add, regime_Ks)
+
+    def _sigmoids(self, X):
+        steepness = 2 * np.log(95.0) / tf.reshape(self.widths, (1, 1, -1))
+        locations = tf.reshape(tf.sort(self.locations), (1, 1, -1))
+        return 0.5 + 0.5 * tf.tanh(0.5 * steepness * (X - locations))
 
 
 def make_deprecated_class(oldname, NewClass):
