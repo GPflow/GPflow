@@ -1001,6 +1001,7 @@ class ChangePoints(Combination):
         super().__init__(kernels, name=name)
         if self.input_dim > 1:
             raise ValueError("ChangePoints kernel only valid for 1d inputs")
+
         if not isinstance(locations, Iterable):
             locations = [locations]
         if not isinstance(widths, Iterable):
@@ -1049,18 +1050,7 @@ class ChangePoints(Combination):
 
     @params_as_tensors
     def Kdiag(self, X):
-        sig_X = self._sigmoid(X)
-
-        regime_Ks = []
-        for i, ik in enumerate(self.activation_order):
-            K = self.kernels[ik].Kdiag(X)
-            if i > 0:
-                K *= sig_X[:, 0, i-1] ** 2
-            if i < self.num_changepoints:
-                K *= (1 - sig_X[:, 0, i-1]) ** 2
-            regime_Ks.append(K)
-
-        return reduce(tf.add, regime_Ks)
+        return tf.matrix_diag_part(self.K(X))
 
     def _sigmoids(self, X):
         locations = tf.sort(self.locations)  # Ensure locations are ordered

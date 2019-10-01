@@ -559,6 +559,25 @@ class TestChangePoints(GPflowTestCase):
             ])
             self.assertTrue(np.allclose(result, expected))
 
+    def test_single_diag(self):
+        with self.test_context(graph=tf.Graph()) as session:
+            k1 = gpflow.kernels.Constant(1)
+            k2 = gpflow.kernels.Constant(1)
+            k3 = gpflow.kernels.ChangePoints([k1, k2])
+
+            X = tf.placeholder(tf.float64, [5, 1])
+            X_data = np.linspace(-3, 3, 5).reshape((-1, 1))
+            result = session.run(k3.Kdiag(X), feed_dict={X: X_data})
+
+            expected = np.array([
+                1.00000000e+00,
+                9.99997667e-01,
+                5.00000000e-01,
+                9.99997667e-01,
+                1.00000000e+00,
+            ])
+            self.assertTrue(np.allclose(result, expected))
+
 
 
 def test_slice_active_dim_regression(session_tf):
