@@ -43,27 +43,24 @@ class SVGP(GPModel):
     def __init__(self,
                  kernel,
                  likelihood,
-                 inducing_variable=None,
+                 inducing_variable,
                  mean_function=None,
-                 num_latent=1,
-                 q_diag=False,
+                 *,
+                 num_latent: int=1,
+                 q_diag: bool=False,
                  q_mu=None,
                  q_sqrt=None,
-                 whiten=True,
+                 whiten: bool=True,
                  num_data=None):
         """
-        - X is a data matrix, size [N, D]
-        - Y is a data matrix, size [N, P]
-        - kernel, likelihood, mean_function are appropriate GPflow objects
-        - Z is a matrix of pseudo inputs, size [M, D]
-        - num_latent is the number of latent process to use, default to
-          Y.shape[1]
+        - kernel, likelihood, inducing_variables, mean_function are appropriate
+          GPflow objects
+        - num_latent is the number of latent processes to use, defaults to 1
         - q_diag is a boolean. If True, the covariance is approximated by a
           diagonal matrix.
         - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
-        - minibatch_size, if not None, turns on mini-batching with that size.
-        - num_data is the total number of observations, default to X.shape[0]
+        - num_data is the total number of observations, defaults to X.shape[0]
           (relevant when feeding in external minibatches)
         """
         # init the super class, accept args
