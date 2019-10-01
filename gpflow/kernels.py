@@ -975,8 +975,29 @@ class ChangePoints(Combination):
     """
     The ChangePoints kernel defines a fixed number of change-points along a 1d
     input space where different kernels govern different parts of the space.
+
+    The kernel is by multiplication and addition of the base kernels with
+    sigmoidal functions (σ). A single change-point kernel is defined as:
+
+        K₁(x, x') * (1 - σ(x)) * (1 - σ(x')) + K₂(x, x') * σ(x) * σ(x')
+
+    where K₁ is deactivated around the change-point and K₂ is activated. The
+    single change-point version can be found in \citet{ldgtg2014}.
+
+    @incollection{ldgtg2014,
+      author = {Lloyd, James Robert and Duvenaud, David and Grosse, Roger and Tenenbaum, Joshua B. and Ghahramani, Zoubin},
+      title = {Automatic Construction and Natural-language Description of Nonparametric Regression Models},
+      booktitle = {Proceedings of the Twenty-Eighth AAAI Conference on Artificial Intelligence},
+      series = {AAAI'14},
+      year = {2014},
+      pages = {1242--1250},
+      numpages = {9},
+      url = {http://dl.acm.org/citation.cfm?id=2893873.2894066},
+      acmid = {2894066},
+      publisher = {AAAI Press},
+    }
     """
-    def __init__(self, kernels, locations=0.0, widths=1.0, kernels_order=None, name=None):
+    def __init__(self, kernels, locations=0.0, widths=1.0, activation_order=None, name=None):
         super().__init__(kernels, name=name)
         if self.input_dim > 1:
             raise ValueError("ChangePoints kernel only valid for 1d inputs")
@@ -985,20 +1006,28 @@ class ChangePoints(Combination):
         if not isinstance(widths, Iterable):
             widths = [widths]
 
-        self.locations = Parameter(locations, transform=None, dtype=gpflow.settings.float_type)
-        self.widths = Parameter(widths, transform=transforms.positive, dtype=gpflow.settings.float_type)
-        self.kernels_order = list(kernels_order or range(len(kernels)))
+        self.locations = Parameter(locations, transform=None, dtype=settings.float_type)
+        self.widths = Parameter(widths, transform=transforms.positive, dtype=settings.float_type)
+        self.activation_order = list(activation_order or range(len(kernels)))
 
-        if not all(0 <= i < len(self.kernels) for i in self.kernels_order):
-            raise ValueError("ChangePoints `kernels_order` should be a list of integers specifying "
-                             "the order in which each kernel is active")
+        if not all(0 <= i < len(self.kernels) for i in self.activation_order):
+            raise ValueError("ChangePoints `activation_order` should be a list of integers "
+                             "specifying the order in which each kernel is active")
 
-        if len(self.kernels_order) != len(locations) + 1:
-            raise ValueError("Number of regimes does not match number of change-points")
+        if len(self.activation_order) != len(locations) + 1:
+            raise ValueError("Number of active kernels ({a}) must be one more than the number of "
+                             "change-points ({cp})".format(a=len(self.activation_order), cp=len(locations)))
+
+        if len(widths) > 1 and len(widths) != len(locations):
+            raise ValueError("Number of widths ({nw}) does not match number of locations "
+                             "({nl})".format(nw=len(widths), nl=len(locations)))
 
     @property
     def num_changepoints(self):
-        return len(self.kernels_order) - 1
+        """
+        Total number of change-points defined by kernel.
+        """
+        return len(self.activation_order) - 1
 
     @params_as_tensors
     def K(self, X, X2=None):
@@ -1008,7 +1037,7 @@ class ChangePoints(Combination):
         stoppers = (1 - sig_X) * tf.transpose((1 - sig_X2), perm=(1, 0, 2))
 
         regime_Ks = []
-        for i, ik in enumerate(self.kernels_order):
+        for i, ik in enumerate(self.activation_order):
             K = self.kernels[ik].K(X, X2)
             if i > 0:
                 K *= starters[:, :, i-1]
@@ -1021,19 +1050,22 @@ class ChangePoints(Combination):
     @params_as_tensors
     def Kdiag(self, X):
         sig_X = self._sigmoid(X)
+
         regime_Ks = []
-        for i, ik in enumerate(self.kernels_order):
+        for i, ik in enumerate(self.activation_order):
             K = self.kernels[ik].Kdiag(X)
             if i > 0:
                 K *= sig_X[:, 0, i-1] ** 2
             if i < self.num_changepoints:
                 K *= (1 - sig_X[:, 0, i-1]) ** 2
             regime_Ks.append(K)
+
         return reduce(tf.add, regime_Ks)
 
     def _sigmoids(self, X):
+        locations = tf.sort(self.locations)  # Ensure locations are ordered
+        locations = tf.reshape(locations, (1, 1, -1))
         steepness = 2 * np.log(95.0) / tf.reshape(self.widths, (1, 1, -1))
-        locations = tf.reshape(tf.sort(self.locations), (1, 1, -1))
         return 0.5 + 0.5 * tf.tanh(0.5 * steepness * (X - locations))
 
 

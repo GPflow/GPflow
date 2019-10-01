@@ -525,6 +525,42 @@ class TestConvolutionalKernDiags(TestKernDiags):
         super().test()
 
 
+class TestChangePoints(GPflowTestCase):
+    def test_init(self):
+        with self.test_context():
+            with self.assertRaisesRegexp(ValueError, r"ChangePoints kernel only valid for 1d inputs"):
+                gpflow.kernels.ChangePoints([gpflow.kernels.Constant(2), gpflow.kernels.Constant(2)])
+            with self.assertRaisesRegexp(ValueError, r"ChangePoints `activation_order` should be .*"):
+                gpflow.kernels.ChangePoints([gpflow.kernels.Constant(1), gpflow.kernels.Constant(1)],
+                                            activation_order=[0, 3])
+            with self.assertRaisesRegexp(ValueError, r"Number of active kernels \(3\) must be one more .*"):
+                gpflow.kernels.ChangePoints([gpflow.kernels.Constant(1), gpflow.kernels.Constant(1)],
+                                            activation_order=[0, 1, 0])
+            with self.assertRaisesRegexp(ValueError, r"Number of widths \(2\) does not match number of locations \(1\)"):
+                gpflow.kernels.ChangePoints([gpflow.kernels.Constant(1), gpflow.kernels.Constant(1)],
+                                            locations=[1.0], widths=[0.5, 1.0])
+
+    def test_single(self):
+        with self.test_context(graph=tf.Graph()) as session:
+            k1 = gpflow.kernels.Constant(1)
+            k2 = gpflow.kernels.Constant(1)
+            k3 = gpflow.kernels.ChangePoints([k1, k2])
+
+            X = tf.placeholder(tf.float64, [5, 1])
+            X_data = np.linspace(-3, 3, 5).reshape((-1, 1))
+            result = session.run(k3.K(X), feed_dict={X: X_data})
+
+            expected = np.array([
+                [1.00000000e+00, 9.99998834e-01, 5.00000000e-01, 1.16635078e-06, 2.72071254e-12],
+                [9.99998834e-01, 9.99997667e-01, 5.00000000e-01, 2.33269612e-06, 1.16635078e-06],
+                [5.00000000e-01, 5.00000000e-01, 5.00000000e-01, 5.00000000e-01, 5.00000000e-01],
+                [1.16635078e-06, 2.33269612e-06, 5.00000000e-01, 9.99997667e-01, 9.99998834e-01],
+                [2.72071254e-12, 1.16635078e-06, 5.00000000e-01, 9.99998834e-01, 1.00000000e+00],
+            ])
+            self.assertTrue(np.allclose(result, expected))
+
+
+
 def test_slice_active_dim_regression(session_tf):
     """ Check that we can instantiate a kernel with active_dims given as a slice object """
     gpflow.kernels.RBF(2, active_dims=slice(1, 3, 1))
