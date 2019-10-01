@@ -944,14 +944,14 @@ class Combination(Kernel):
         """
         if np.any([isinstance(k.active_dims, slice) for k in self.kernels]):
             # Be conservative in the case of a slice object
-            return False
+            return False  # pragma: no cover
         else:
             dimlist = [k.active_dims for k in self.kernels]
             overlapping = False
             for i, dims_i in enumerate(dimlist):
                 for dims_j in dimlist[i + 1:]:
                     if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
-                        overlapping = True
+                        overlapping = True  # pragma: no cover
             return not overlapping
 
 
