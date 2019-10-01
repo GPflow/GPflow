@@ -175,7 +175,7 @@ class TestPeriodic(GPflowTestCase):
             X = tf.placeholder(gpflow.settings.float_type)
             reference_gram_matrix = referencePeriodicKernel(
                 X_data, lengthscale, variance, period,
-                baseClassName=kernel.base.__class__.__name__)
+                baseClassName=kernel.basekern.__class__.__name__)
             kernel.compile()
             gram_matrix = session.run(kernel.K(X), feed_dict={X: X_data})
             assert_allclose(gram_matrix, reference_gram_matrix)
@@ -213,17 +213,17 @@ class TestPeriodic(GPflowTestCase):
             self.evalKernelError(D, lengthscale, variance, period, X_data)
 
     def test_init(self):
-        msg = "Periodic requires a Stationary kernel as the base"
+        msg = "Periodic requires a Stationary kernel as the `basekern`"
         with self.assertRaisesWithLiteralMatch(TypeError, msg):
-            gpflow.kernels.Periodic(base=gpflow.kernels.Linear(1))
+            gpflow.kernels.Periodic(basekern=gpflow.kernels.Linear(1))
 
     def test_ard(self):
-        k1 = gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential(1, lengthscales=1.))
-        k2 = gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential(2, lengthscales=1.))
-        k3 = gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential(2, lengthscales=[1., 1.]))
-        assert k1.ARD is False
-        assert k2.ARD is False
-        assert k3.ARD is True
+        k1 = gpflow.kernels.Periodic(basekern=gpflow.kernels.SquaredExponential(1, lengthscales=1.))
+        k2 = gpflow.kernels.Periodic(basekern=gpflow.kernels.SquaredExponential(2, lengthscales=1.))
+        k3 = gpflow.kernels.Periodic(basekern=gpflow.kernels.SquaredExponential(2, lengthscales=[1., 1.]))
+        self.assertFalse(k1.ARD)
+        self.assertFalse(k2.ARD)
+        self.assertTrue(k3.ARD)
 
     def _init_kernel(self, D, lengthscale, variance, period):
         # Ensure backward compatibility
@@ -233,20 +233,20 @@ class TestPeriodic(GPflowTestCase):
 
 class TestPeriodicMatern12(TestPeriodic):
     def _init_kernel(self, D, lengthscale, variance, period):
-        base = gpflow.kernels.Matern12(D, variance=variance, lengthscales=lengthscale)
-        return gpflow.kernels.Periodic(base=base, period=period)
+        basekern = gpflow.kernels.Matern12(D, variance=variance, lengthscales=lengthscale)
+        return gpflow.kernels.Periodic(basekern=basekern, period=period)
 
 
 class TestPeriodicMatern32(TestPeriodic):
     def _init_kernel(self, D, lengthscale, variance, period):
-        base = gpflow.kernels.Matern32(D, variance=variance, lengthscales=lengthscale)
-        return gpflow.kernels.Periodic(base=base, period=period)
+        basekern = gpflow.kernels.Matern32(D, variance=variance, lengthscales=lengthscale)
+        return gpflow.kernels.Periodic(basekern=basekern, period=period)
 
 
 class TestPeriodicMatern52(TestPeriodic):
     def _init_kernel(self, D, lengthscale, variance, period):
-        base = gpflow.kernels.Matern52(D, variance=variance, lengthscales=lengthscale)
-        return gpflow.kernels.Periodic(base=base, period=period)
+        basekern = gpflow.kernels.Matern52(D, variance=variance, lengthscales=lengthscale)
+        return gpflow.kernels.Periodic(basekern=basekern, period=period)
 
 
 class TestCoregion(GPflowTestCase):
