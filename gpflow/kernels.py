@@ -527,7 +527,7 @@ class Matern32(Stationary):
     The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once
     differentiable. The kernel equation is
 
-    k(r) =  σ² (1 + √3r) exp{-√3 r}
+    k(r) = σ² (1 + √3r) exp{-√3 r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
@@ -545,7 +545,7 @@ class Matern52(Stationary):
     The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice
     differentiable. The kernel equation is
 
-    k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
+    k(r) = σ² (1 + √5r + 5/3r²) exp{-√5 r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
@@ -684,42 +684,72 @@ class ArcCosine(Kernel):
 
 class Periodic(Kernel):
     """
-    The periodic kernel. Defined in  Equation (47) of
+    The periodic family of kernels. Can be used to wrap any Stationary kernel
+    to transform it into a periodic version. The canonical form (based on the
+    SquaredExponential kernel) can be found in Equation (47) of
 
     D.J.C.MacKay. Introduction to Gaussian processes. In C.M.Bishop, editor,
     Neural Networks and Machine Learning, pages 133--165. Springer, 1998.
 
-    Derived using an RBF kernel once mapped the original inputs through
-    the mapping u=(cos(x), sin(x)).
+    The derivation can be achieved by mapping the original inputs through the
+    transformation u = (cos(x), sin(x)).
 
-    The resulting kernel can be expressed as:
-        k(r) =  σ² exp{ -0.5 sin²(π r / γ) / ℓ²}
+    For the SquaredExponential base kernel, the result can be expressed as:
+        k(r) = σ² exp{ -0.5 sin²(π r / γ) / ℓ² }
 
     where:
-    r  is the Euclidean distance between the input points
+    r is the Euclidean distance between the input points,
     ℓ is the lengthscale parameter,
     σ² is the variance parameter,
     γ is the period parameter.
 
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
-    hyperparameter).
+    (note that usually we have a factor of 4 instead of 0.5 in front but this
+    is absorbed into lengthscale hyperparameter).
     """
+    def __init__(self, input_dim=None, period=1.0, variance=1.0,
+                 lengthscales=1.0, base=None, active_dims=None, name=None):
+        """
+        The Periodic kernel supports the specification of any Stationary kernel
+        as the base through the "base" parameter. If this is provided then
+        input_dim, variance, lengthscales and active_dims parameters are
+        taken from there.
 
-    def __init__(self, input_dim, period=1.0, variance=1.0,
-                 lengthscales=1.0, active_dims=None, name=None):
-        # No ARD support for lengthscale or period yet
-        super().__init__(input_dim, active_dims, name=name)
-        self.variance = Parameter(variance, transform=transforms.positive,
-                                  dtype=settings.float_type)
-        self.lengthscales = Parameter(lengthscales, transform=transforms.positive,
-                                      dtype=settings.float_type)
-        self.ARD = False
-        self.period = Parameter(period, transform=transforms.positive,
-                                dtype=settings.float_type)
+        If a "base" kernel is not provided, then a SquaredExponential is
+        constructed implicitly using the input_dim, variance, lengthscales
+        and active_dims parameters.
+        """
+        if (base is not None) and (input_dim is not None):
+            raise ValueError("input_dim should be defined through the base kernel, not explicitly")
+
+        if base is None:
+            warnings.warn(
+                'Implicit specification of the base kernel for Periodic is '
+                'deprecated, use Periodic(base=SquaredExponential({i}, '
+                'variance={v}, lengthscales={l}, active_dims={a}), period={p}) '
+                'instead.'.format(i=input_dim, v=variance, l=lengthscales,
+                                  a=active_dims, p=period),
+                DeprecationWarning)
+            base = SquaredExponential(
+                input_dim,
+                variance=variance,
+                lengthscales=lengthscales,
+                active_dims=active_dims)
+
+        if not isinstance(base, Stationary):
+            raise TypeError("Periodic requires a Stationary kernel as the `base`")
+
+        super().__init__(base.input_dim, base.active_dims, name=name)
+        self.base = base
+        self.period = Parameter(  # No ARD support for period yet
+            period, transform=transforms.positive, dtype=settings.float_type)
+
+    @property
+    def ARD(self):
+        return self.base.ARD
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
-        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
+        return self.base.Kdiag(X)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -733,9 +763,14 @@ class Periodic(Kernel):
         f2 = tf.expand_dims(X2, -3)  # ... x 1 x M x D
 
         r = np.pi * (f - f2) / self.period
-        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscales), -1)
-
-        return self.variance * tf.exp(-0.5 * r)
+        scaled_sine = tf.sin(r) / self.base.lengthscales
+        try:
+            sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
+            K = self.base.K_r(sine_r)
+        except NotImplementedError:
+            sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
+            K = self.base.K_r2(sine_r2)
+        return K
 
 
 class Coregion(Kernel):
