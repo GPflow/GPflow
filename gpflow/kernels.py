@@ -706,52 +706,49 @@ class Periodic(Kernel):
     is absorbed into lengthscale hyperparameter).
     """
     def __init__(self, input_dim=None, period=1.0, variance=1.0,
-                 lengthscales=1.0, basekern=None, active_dims=None, name=None):
+                 lengthscales=1.0, base=None, active_dims=None, name=None):
         """
         The Periodic kernel supports the specification of any Stationary kernel
-        as the base through the `basekern` parameter. If this is provided then
-        `input_dim`, `variance`, `lengthscales` and `active_dims` parameters are
+        as the base through the "base" parameter. If this is provided then
+        input_dim, variance, lengthscales and active_dims parameters are
         taken from there.
 
-        If `basekern` is not provided, then a SquaredExponential is constructed
-        implicitly using the relevant arguments:
-
-            basekern = SquaredExponential(
-                input_dim,
-                period=period,
-                lengthscales=lengthscales,
-                active_dims=active_dims,
-            )
+        If a "base" kernel is not provided, then a SquaredExponential is
+        constructed implicitly using the input_dim, variance, lengthscales
+        and active_dims parameters.
         """
-        if basekern is None:
+        if (base is not None) and (input_dim is not None):
+            raise ValueError("input_dim should be defined through the base kernel, not explicitly")
+
+        if base is None:
             warnings.warn(
                 'Implicit specification of the base kernel for Periodic is '
-                'deprecated, use Periodic(basekern=SquaredExponential({i}, '
+                'deprecated, use Periodic(base=SquaredExponential({i}, '
                 'variance={v}, lengthscales={l}, active_dims={a}), period={p}) '
                 'instead.'.format(i=input_dim, v=variance, l=lengthscales,
                                   a=active_dims, p=period),
                 DeprecationWarning)
-            basekern = SquaredExponential(
+            base = SquaredExponential(
                 input_dim,
                 variance=variance,
                 lengthscales=lengthscales,
                 active_dims=active_dims)
 
-        if not isinstance(basekern, Stationary):
-            raise TypeError("Periodic requires a Stationary kernel as the `basekern`")
+        if not isinstance(base, Stationary):
+            raise TypeError("Periodic requires a Stationary kernel as the `base`")
 
-        super().__init__(basekern.input_dim, basekern.active_dims, name=name)
-        self.basekern = basekern
+        super().__init__(base.input_dim, base.active_dims, name=name)
+        self.base = base
         self.period = Parameter(  # No ARD support for period yet
             period, transform=transforms.positive, dtype=settings.float_type)
 
     @property
     def ARD(self):
-        return self.basekern.ARD
+        return self.base.ARD
 
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
-        return self.basekern.Kdiag(X)
+        return self.base.Kdiag(X)
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -765,13 +762,13 @@ class Periodic(Kernel):
         f2 = tf.expand_dims(X2, -3)  # ... x 1 x M x D
 
         r = np.pi * (f - f2) / self.period
-        scaled_sine = tf.sin(r) / self.basekern.lengthscales
+        scaled_sine = tf.sin(r) / self.base.lengthscales
         try:
             sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
-            K = self.basekern.K_r(sine_r)
+            K = self.base.K_r(sine_r)
         except NotImplementedError:
             sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
-            K = self.basekern.K_r2(sine_r2)
+            K = self.base.K_r2(sine_r2)
         return K
 
 
