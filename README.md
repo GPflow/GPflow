@@ -24,8 +24,16 @@ GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computat
 
 1. Install TensorFlow (TF) and TensorFlow Probability (TFP) nightly packages. You _might_ experience issues with TF and TFP latest versions.
 
+Python 3.6:
+
 ```bash
-pip install -U gast==0.2.2 dataclasses tf-nightly-2.0-preview tfp-nightly
+pip install -U tensorflow tfp-nightly
+```
+
+Python 3.7:
+
+```bash
+pip install -U tensorflow tfp-nightly dataclasses
 ```
 
 2. Install develop GPflow 2.0 version from `awav/gpflow-2.0` branch:
