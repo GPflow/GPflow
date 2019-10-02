@@ -23,6 +23,7 @@ from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
+from .util import inducingpoint_wrapper
 
 
 class SGPRUpperMixin(GPModel):
@@ -55,8 +56,8 @@ class SGPRUpperMixin(GPModel):
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
 
         Kdiag = self.kernel(x_data)
-        kuu = Kuu(self.inducing_variables, self.kernel, jitter=default_jitter())
-        kuf = Kuf(self.inducing_variables, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
 
         L = tf.linalg.cholesky(kuu)
         LB = tf.linalg.cholesky(kuu + self.likelihood.variance ** -1.0 *
@@ -114,7 +115,7 @@ class SGPR(SGPRUpperMixin):
                  data: Data,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
-                 inducing_variables: Optional[InducingPoints] = None,
+                 inducing_variable: Optional[InducingPoints] = None,
                  num_latent: Optional[int] = None
                  ):
         """
@@ -132,9 +133,7 @@ class SGPR(SGPRUpperMixin):
         self.data = data
         self.num_data = x_data.shape[0]
 
-        if not isinstance(inducing_variables, InducingPoints):
-            inducing_variables = InducingPoints(inducing_variables)
-        self.inducing_variables = inducing_variables
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
     def log_likelihood(self):
         """
@@ -143,14 +142,14 @@ class SGPR(SGPRUpperMixin):
         SGPR notebook.
         """
         x_data, y_data = self.data
-        num_inducing = len(self.inducing_variables)
+        num_inducing = len(self.inducing_variable)
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
         output_dim = tf.cast(tf.shape(y_data)[1], default_float())
 
         err = y_data - self.mean_function(x_data)
         Kdiag = self.kernel(x_data)
-        kuf = Kuf(self.inducing_variables, self.kernel, x_data)
-        kuu = Kuu(self.inducing_variables, self.kernel, jitter=default_jitter())
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -185,11 +184,11 @@ class SGPR(SGPRUpperMixin):
         notebook.
         """
         x_data, y_data = self.data
-        num_inducing = len(self.inducing_variables)
+        num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)
-        kuf = Kuf(self.inducing_variables, self.kernel, x_data)
-        kuu = Kuu(self.inducing_variables, self.kernel, jitter=default_jitter())
-        Kus = Kuf(self.inducing_variables, self.kernel, X)
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        Kus = Kuf(self.inducing_variable, self.kernel, X)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
@@ -217,7 +216,7 @@ class GPRFITC(SGPRUpperMixin):
                  data: Data,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
-                 inducing_variables: Optional[InducingPoints] = None
+                 inducing_variable: Optional[InducingPoints] = None
                  ):
         """
         This implements GP regression with the FITC approximation.
@@ -254,17 +253,15 @@ class GPRFITC(SGPRUpperMixin):
         self.data = data
         self.num_data = x_data.shape[0]
 
-        if not isinstance(inducing_variables, InducingPoints):
-            inducing_variables = InducingPoints(inducing_variables)
-        self.inducing_variables = inducing_variables
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
     def common_terms(self):
         x_data, y_data = self.data
-        num_inducing = len(self.inducing_variables)
+        num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)  # size [N, R]
         Kdiag = self.kernel(x_data, full=False)
-        kuf = Kuf(self.inducing_variables, self.kernel, x_data)
-        kuu = Kuu(self.inducing_variables, self.kernel, jitter=default_jitter())
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
         Luu = tf.linalg.cholesky(kuu)  # => Luu Luu^T = kuu
         V = tf.linalg.triangular_solve(
@@ -337,7 +334,7 @@ class GPRFITC(SGPRUpperMixin):
         Xnew.
         """
         _, _, Luu, L, _, _, gamma = self.common_terms()
-        Kus = Kuf(self.inducing_variables, self.kernel, X)  # size  [M, X]new
+        Kus = Kuf(self.inducing_variable, self.kernel, X)  # size  [M, X]new
 
         w = tf.linalg.triangular_solve(Luu, Kus, lower=True)  # size [M, X]new
 
@@ -356,13 +353,3 @@ class GPRFITC(SGPRUpperMixin):
             var = tf.tile(var[:, None], [1, self.num_latent])
 
         return mean, var
-
-    @property
-    def Z(self):
-        raise NotImplementedError(
-            "Inducing points are now in `model.inducing_variables.Z()`.")
-
-    @Z.setter
-    def Z(self, _):
-        raise NotImplementedError(
-            "Inducing points are now in `model.inducing_variables.Z()`.")

@@ -24,8 +24,8 @@ from gpflow.config import default_jitter
 @pytest.mark.parametrize('N, D', [[17, 3], [10, 7]])
 def test_inducing_points_inducing_variable_len(N, D):
     Z = np.random.randn(N, D)
-    inducing_variables = InducingPoints(Z)
-    assert_equal(len(inducing_variables), N)
+    inducing_variable = InducingPoints(Z)
+    assert_equal(len(inducing_variable), N)
 
 
 _kernel_setups = [
@@ -41,8 +41,8 @@ _kernel_setups = [
 def test_inducing_equivalence(N, kernel):
     # Inducing inducing must be the same as the kernel evaluations
     Z = np.random.randn(N, 5)
-    inducing_variables = InducingPoints(Z)
-    assert_allclose(Kuu(inducing_variables, kernel), kernel(Z))
+    inducing_variable = InducingPoints(Z)
+    assert_allclose(Kuu(inducing_variable, kernel), kernel(Z))
 
 
 @pytest.mark.parametrize('N, M, D', [[23, 13, 3], [10, 5, 7]])

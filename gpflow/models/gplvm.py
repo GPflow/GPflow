@@ -25,6 +25,7 @@ from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
 from ..utilities.ops import pca_reduce
+from .util import inducingpoint_wrapper
 from .gpr import GPR
 from .model import GPModel
 
@@ -76,7 +77,7 @@ class BayesianGPLVM(GPModel):
                  x_data_mean: tf.Tensor,
                  x_data_var: tf.Tensor,
                  kernel: Kernel,
-                 num_inducing_variables: int,
+                 num_inducing_variables: Optional[int]=None,
                  inducing_variable=None,
                  x_prior_mean=None,
                  x_prior_var=None):
@@ -106,14 +107,15 @@ class BayesianGPLVM(GPModel):
         assert x_data_mean.shape[0] == data.shape[0], 'X mean and Y must be same size.'
         assert x_data_var.shape[0] == data.shape[0], 'X var and Y must be same size.'
 
-        # inducing points
+        if (inducing_variable is None) == (num_inducing_variables is None):
+            raise ValueError("BayesianGPLVM needs exactly one of `inducing_variable` and `num_inducing_variables`")
+
         if inducing_variable is None:
             # By default we initialize by subset of initial latent points
             inducing_variable = np.random.permutation(x_data_mean.copy())[:num_inducing_variables]
 
-        self.inducing_variable = inducing_variables.InducingPoints(inducing_variable)
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-        assert len(self.inducing_variable) == num_inducing_variables
         assert x_data_mean.shape[1] == self.num_latent
 
         # deal with parameters for the prior mean variance of X
