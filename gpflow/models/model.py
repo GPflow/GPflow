@@ -43,7 +43,7 @@ class BayesianModel(Module):
 
     @abc.abstractmethod
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        pass
+        raise NotImplementedError
 
 
 class GPModel(BayesianModel):
@@ -90,7 +90,7 @@ class GPModel(BayesianModel):
     @abc.abstractmethod
     def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
-        pass
+        raise NotImplementedError
 
     def predict_f_samples(self,
                           predict_at: DataPoint,
