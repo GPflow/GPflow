@@ -28,7 +28,7 @@ BLACKLISTED_NOTEBOOKS = []
 
 def _nbpath():
     this_dir = os.path.dirname(__file__)
-    return os.path.join(this_dir, '../notebooks2')
+    return os.path.join(this_dir, '../doc/source/notebooks')
 
 
 def get_notebooks():
