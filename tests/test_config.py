@@ -20,8 +20,8 @@ from gpflow import config
 
 
 @pytest.mark.parametrize('getter, setter, valid_type_1, valid_type_2', [
-    (config.default_int, config.set_default_int, np.int32, tf.int64),
-    (config.default_float, config.set_default_float, np.float64, tf.float32),
+    (config.default_int, config.set_default_int, tf.int64, np.int32),
+    (config.default_float, config.set_default_float, tf.float32, np.float64),
 ])
 def test_dtype_setting(getter, setter, valid_type_1, valid_type_2):
     if valid_type_1 == valid_type_2:
