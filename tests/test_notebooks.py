@@ -42,11 +42,11 @@ BLACKLISTED_NOTEBOOKS = [
     "FITCvsVFE.ipynb",
     "mixture_density_network.ipynb",
     "monitoring.ipynb",
+    "settings.ipynb",
     # the following notebooks mostly relate to all the graph and session issues
     # in tensorflow 1 and can probably be deprecated:
     "tips_and_tricks.ipynb",
     "tf_graphs_and_sessions.ipynb",
-    "settings.ipynb",
 ]
 
 
