@@ -34,9 +34,9 @@ def test_dtype_setting(getter, setter, valid_type_1, valid_type_2):
 
 @pytest.mark.parametrize('setter, invalid_type', [
     (config.set_default_int, str),
-    (config.set_default_int, float),
+    (config.set_default_int, np.float64),
     (config.set_default_float, list),
-    (config.set_default_float, int),
+    (config.set_default_float, tf.int32),
 ])
 def test_dtype_errorcheck(setter, invalid_type):
     with pytest.raises(TypeError):
