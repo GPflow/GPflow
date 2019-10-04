@@ -26,8 +26,12 @@ from gpflow.test_util import session_tf
 class LikelihoodSetup(object):
     def __init__(self, likelihood, Y, tolerance):
         self.likelihood, self.Y, self.tolerance = likelihood, Y, tolerance
-        self.is_analytic = likelihood.predict_density is not \
-                           gpflow.likelihoods.Likelihood.predict_density
+
+    def is_analytic(self, method_name):
+        actual_method = getattr(self.likelihood, method_name)
+        quadrature_fallback = getattr(gpflow.likelihoods.Likelihood, method_name)
+        assert not isinstance(self.likelihood, gpflow.likelihoods.MonteCarloLikelihood)
+        return actual_method is not quadrature_fallback
 
 
 def getLikelihoodSetups(includeMultiClass=True, addNonStandardLinks=False):
@@ -148,7 +152,7 @@ class TestQuadrature(GPflowTestCase):
         for test_setup in self.test_setups:
             with self.test_context() as session:
                 # get all the likelihoods where variational expectations has been overwritten
-                if not test_setup.is_analytic:
+                if not test_setup.is_analytic("variational_expectations"):
                     continue
                 l = test_setup.likelihood
                 y = test_setup.Y
@@ -166,7 +170,7 @@ class TestQuadrature(GPflowTestCase):
         # get all the likelihoods where predict_density has been overwritten.
         for test_setup in self.test_setups:
             with self.test_context() as session:
-                if not test_setup.is_analytic:
+                if not test_setup.is_analytic("predict_density"):
                     continue
                 l = test_setup.likelihood
                 y = test_setup.Y
@@ -183,7 +187,7 @@ class TestQuadrature(GPflowTestCase):
         # get all the likelihoods where predict_density has been overwritten.
         for test_setup in self.test_setups:
             with self.test_context() as session:
-                if not test_setup.is_analytic:
+                if not test_setup.is_analytic("predict_mean_and_var"):
                     continue
                 l = test_setup.likelihood
                 l.compile()
