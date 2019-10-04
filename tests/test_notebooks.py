@@ -23,7 +23,22 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
 # blacklisted notebooks should have a unique basename
-BLACKLISTED_NOTEBOOKS = []
+BLACKLISTED_NOTEBOOKS = [
+    "kernel_design",  # TODO: @st--
+    "external-mean-function",  # TODO: @vdutor
+    "natural_gradients",  # TODO: @awav
+    "coregionalisation",  # TODO: @fleibfried
+    "multiclass_classification",  # TODO @jordigraumo
+    "mcmc",  # TODO: @condnsdmatters
+    "regression",
+    "mixture_density_network",
+    "monitoring",
+    # the following notebooks mostly relate to all the graph and session issues
+    # in tensorflow 1 and can probably be deprecated:
+    "tips_and_tricks",
+    "tf_graphs_and_sessions",
+    "settings",
+]
 
 
 def _nbpath():
