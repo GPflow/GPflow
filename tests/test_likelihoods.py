@@ -28,18 +28,22 @@ from gpflow.config import default_float, default_int
 tf.random.set_seed(99012)
 
 
-def is_analytic(likelihood):
-    method = likelihood.__class__.predict_density
-    return method is Likelihood.predict_density
+def filter_analytic(likelihood_setups, method_name):
+    def is_analytic(likelihood):
+        assert not isinstance(likelihood, gpflow.likelihoods.MonteCarloLikelihood)
+        quadrature_fallback = getattr(Likelihood, method_name)
+        actual_method = getattr(likelihood.__class__, method_name)
+        return actual_method is not quadrature_fallback
+    return [l for l in likelihood_setups if is_analytic(l.likelihood)]
 
 
 class Datum:
     tolerance = 1e-06
-    Yshape = (10, 2)
+    Yshape = (10, 1)
     Y = tf.random.normal(Yshape, dtype=tf.float64)
     F = tf.random.normal(Yshape, dtype=tf.float64)
     Fmu = tf.random.normal(Yshape, dtype=tf.float64)
-    Fvar = tf.random.normal(Yshape, dtype=tf.float64)
+    Fvar = 0.01 * tf.random.normal(Yshape, dtype=tf.float64) ** 2
     Fvar_zero = tf.zeros(Yshape, dtype=tf.float64)
 
     def square(x: tf.Tensor) -> tf.Tensor:
@@ -69,8 +73,6 @@ likelihood_setups = [
     LikelihoodSetup(Gamma(invlink=Datum.square)),
     LikelihoodSetup(Bernoulli(invlink=tf.sigmoid)),
 ]
-
-analytic_likelihood_setups = [l for l in likelihood_setups if is_analytic(l.likelihood)]
 
 
 @pytest.mark.parametrize('likelihood_setup', likelihood_setups)
@@ -102,8 +104,9 @@ def test_variational_expectations(likelihood_setup):
     assert_allclose(r1, r2, atol=likelihood_setup.atol, rtol=likelihood_setup.rtol)
 
 
-@pytest.mark.parametrize('likelihood_setup', analytic_likelihood_setups)
-@pytest.mark.parametrize('mu, var', [[Datum.Fmu, 0.01 * (Datum.Fvar**2)]])
+@pytest.mark.parametrize('likelihood_setup',
+        filter_analytic(likelihood_setups, "variational_expectations"))
+@pytest.mark.parametrize('mu, var', [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     """
     Where quadrature methods have been overwritten, make sure the new code
@@ -115,8 +118,9 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
-@pytest.mark.parametrize('likelihood_setup', analytic_likelihood_setups)
-@pytest.mark.parametrize('mu, var', [[Datum.Fmu, 0.01 * (Datum.Fvar**2)]])
+@pytest.mark.parametrize('likelihood_setup',
+        filter_analytic(likelihood_setups, "predict_density"))
+@pytest.mark.parametrize('mu, var', [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_predict_density(likelihood_setup, mu, var):
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
     F1 = likelihood.predict_density(mu, var, y)
@@ -124,8 +128,9 @@ def test_quadrature_predict_density(likelihood_setup, mu, var):
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
-@pytest.mark.parametrize('likelihood_setup', analytic_likelihood_setups)
-@pytest.mark.parametrize('mu, var', [[Datum.Fmu, 0.01 * (Datum.Fvar**2)]])
+@pytest.mark.parametrize('likelihood_setup',
+        filter_analytic(likelihood_setups, "predict_mean_and_var"))
+@pytest.mark.parametrize('mu, var', [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_mean_and_var(likelihood_setup, mu, var):
     likelihood = likelihood_setup.likelihood
     F1m, F1v = likelihood.predict_mean_and_var(mu, var)
