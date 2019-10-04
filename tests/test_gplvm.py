@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
@@ -22,7 +21,6 @@ import gpflow
 from gpflow.utilities.ops import pca_reduce
 
 
-@dataclass
 class Data:
     rng = np.random.RandomState(999)
     N = 20
