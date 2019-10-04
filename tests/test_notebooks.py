@@ -22,22 +22,25 @@ import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-# blacklisted notebooks should have a unique basename
+# To blacklist a notebook, add its full base name (including .ipynb extension,
+# but without any directory component). If there are several notebooks in
+# different directories with the same base name, they will all get blacklisted
+# (change the blacklisting check to something else in that case, if need be!)
 BLACKLISTED_NOTEBOOKS = [
-    "kernel_design",  # TODO: @st--
-    "external-mean-function",  # TODO: @vdutor
-    "natural_gradients",  # TODO: @awav
-    "coregionalisation",  # TODO: @fleibfried
-    "multiclass_classification",  # TODO @jordigraumo
-    "mcmc",  # TODO: @condnsdmatters
-    "regression",
-    "mixture_density_network",
-    "monitoring",
+    "kernel_design.ipynb",  # TODO: @st--
+    "external-mean-function.ipynb",  # TODO: @vdutor
+    "natural_gradients.ipynb",  # TODO: @awav
+    "coregionalisation.ipynb",  # TODO: @fleibfried
+    "multiclass_classification.ipynb",  # TODO @jordigraumo
+    "mcmc.ipynb",  # TODO: @condnsdmatters
+    "regression.ipynb",
+    "mixture_density_network.ipynb",
+    "monitoring.ipynb",
     # the following notebooks mostly relate to all the graph and session issues
     # in tensorflow 1 and can probably be deprecated:
-    "tips_and_tricks",
-    "tf_graphs_and_sessions",
-    "settings",
+    "tips_and_tricks.ipynb",
+    "tf_graphs_and_sessions.ipynb",
+    "settings.ipynb",
 ]
 
 
@@ -78,11 +81,7 @@ def _exec_notebook(notebook_filename):
             pytest.fail(msg.format(notebook_filename, str(cell_error)))
 
 
-def _exec_notebook_ts(notebook_filename):
-    _exec_notebook(notebook_filename)
-
-
 @pytest.mark.notebooks
 @pytest.mark.parametrize('notebook_file', get_notebooks())
 def test_notebook(notebook_file):
-    _exec_notebook_ts(notebook_file)
+    _exec_notebook(notebook_file)
