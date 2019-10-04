@@ -33,7 +33,13 @@ BLACKLISTED_NOTEBOOKS = [
     "coregionalisation.ipynb",  # TODO: @fleibfried
     "multiclass_classification.ipynb",  # TODO @jordigraumo
     "mcmc.ipynb",  # TODO: @condnsdmatters
-    "regression.ipynb",
+    "regression.ipynb",  # TODO: @jordigraumo
+    "varying_noise.ipynb",
+    "models.ipynb",
+    "gp_nn.ipynb",
+    "upper_bound.ipynb",
+    "Sanity_check.ipynb",
+    "FITCvsVFE.ipynb",
     "mixture_density_network.ipynb",
     "monitoring.ipynb",
     # the following notebooks mostly relate to all the graph and session issues
