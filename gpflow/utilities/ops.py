@@ -99,7 +99,7 @@ def pca_reduce(X: tf.Tensor, Q: tf.Tensor) -> tf.Tensor:
     :param Q: Number of latent dimensions, Q < D
     :return: PCA projection array of size N x Q.
     """
-    if Q > X.shape[1]:
+    if Q > X.shape[1]:  # pragma: no cover
         raise ValueError('Cannot have more latent dimensions than observed')
     if isinstance(X, tf.Tensor):
         X = X.numpy()  # TODO why not use tf.linalg.eigh?
