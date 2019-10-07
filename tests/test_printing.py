@@ -257,7 +257,7 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
 
 def test_leaf_components_combination_kernel():
     """
-    Regression test for issue #1066
+    Regression test for kernel compositions - output for printing should not be empty (issue #1066).
     """
     k = gpflow.kernels.SquaredExponential() + gpflow.kernels.SquaredExponential()
     assert leaf_components(k), "Combination kernel should have non-empty leaf components"
