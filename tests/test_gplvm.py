@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Optional
+import pytest
 
 import numpy as np
 import tensorflow as tf
@@ -28,6 +29,7 @@ class Data:
     Y = rng.randn(N, D)
     Q = 2
     M = 10
+    X = rng.randn(N, Q)
 
 
 def _run_optimize(kernel: Optional[tf.Module] = None):
@@ -95,3 +97,28 @@ def test_bayesian_gplvm_2d():
 
     for i in range(Data.D):
         np.testing.assert_allclose(var_f[:, i], np.diag(var_fFull[:, :, i]))
+
+
+def test_gplvm_constructor_checks():
+    with pytest.raises(ValueError):
+        assert Data.X.shape[1] == Data.Q
+        latents_wrong_shape = Data.X[:, :Data.Q - 1]
+        gpflow.models.GPLVM(Data.Y, Data.Q, x_data_mean=latents_wrong_shape)
+    with pytest.raises(ValueError):
+        observations_wrong_shape = Data.Y[:, :Data.Q - 1]
+        gpflow.models.GPLVM(observations_wrong_shape, Data.Q)
+    with pytest.raises(ValueError):
+        observations_wrong_shape = Data.Y[:, :Data.Q - 1]
+        gpflow.models.GPLVM(observations_wrong_shape, Data.Q, x_data_mean=Data.X)
+
+def test_bayesian_gplvm_constructor_check():
+    Q = 1
+    kernel = gpflow.kernels.SquaredExponential()
+    inducing_variable = np.linspace(0, 1, Data.M)[:, None]
+    with pytest.raises(ValueError):
+        gpflow.models.BayesianGPLVM(Data.Y,
+                                    np.zeros((Data.N, Q)),
+                                    np.ones((Data.N, Q)),
+                                    kernel,
+                                    inducing_variable=inducing_variable,
+                                    num_inducing_variables=len(inducing_variable))
