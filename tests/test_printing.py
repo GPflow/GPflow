@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
-from gpflow.utilities.utilities import leaf_components, _merge_leaf_components
+
+import gpflow
+from gpflow.utilities.utilities import leaf_components, _merge_leaf_components, tabulate_module_summary
 
 rng = np.random.RandomState(0)
 
@@ -26,7 +27,7 @@ class Data:
     H1 = 2
     M = 10
     D = 1
-    Z = rng.rand(M, 1)
+    Z = 0.5 * np.ones((M, 1))
     ls = 2.0
     var = 1.0
 
@@ -178,6 +179,54 @@ example_dag_module_param_dict = {
     }
 }
 
+compose_kernel_param_print_string = """\
+name                                                   class      transform    trainable    shape    dtype      value\n\
+-----------------------------------------------------  ---------  -----------  -----------  -------  -------  -------\n\
+Product.Product_kernels[0].Sum_kernels[0].variance     Parameter  Softplus     True         ()       float64        1\n\
+Product.Product_kernels[0].Sum_kernels[0].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
+Product.Product_kernels[0].Sum_kernels[1].variance     Parameter  Softplus     True         ()       float64        1\n\
+Product.Product_kernels[0].Sum_kernels[1].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
+Product.Product_kernels[1].Sum_kernels[0].variance     Parameter  Softplus     True         ()       float64        1\n\
+Product.Product_kernels[1].Sum_kernels[0].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
+Product.Product_kernels[1].Sum_kernels[1].variance     Parameter  Softplus     True         ()       float64        1\n\
+Product.Product_kernels[1].Sum_kernels[1].lengthscale  Parameter  Softplus     False        ()       float64        2"""
+
+kernel_param_print_string = """\
+name                            class      transform    trainable    shape    dtype      value\n\
+------------------------------  ---------  -----------  -----------  -------  -------  -------\n\
+SquaredExponential.variance     Parameter  Softplus     True         ()       float64        1\n\
+SquaredExponential.lengthscale  Parameter  Softplus     False        ()       float64        2"""
+
+model_gp_param_print_string = """\
+name                      class      transform    trainable    shape    dtype    value\n\
+------------------------  ---------  -----------  -----------  -------  -------  --------\n\
+SVGP.kernel.variance      Parameter  Softplus     True         ()       float64  1.0\n\
+SVGP.kernel.lengthscale   Parameter  Softplus     False        ()       float64  2.0\n\
+SVGP.likelihood.variance  Parameter  Softplus     True         ()       float64  1.0\n\
+SVGP.inducing_variable.Z  Parameter               True         (10, 1)  float64  [[0.5...\n\
+SVGP.q_mu                 Parameter               False        (10, 1)  float64  [[0....\n\
+SVGP.q_sqrt               Parameter  Softplus     True         (10, 1)  float64  [[1...."""
+
+example_tf_module_variable_print_string = """\
+name             class             transform    trainable    shape      dtype    value\n\
+---------------  ----------------  -----------  -----------  ---------  -------  --------\n\
+A.var_trainable  ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
+A.var_fixed      ResourceVariable               False        (2, 2, 1)  float32  [[[1...."""
+
+example_module_list_variable_print_string = """\
+name                                 class             transform    trainable    shape      dtype    value\n\
+-----------------------------------  ----------------  -----------  -----------  ---------  -------  --------\n\
+B.B_submodule_list[0].var_trainable  ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
+B.B_submodule_list[0].var_fixed      ResourceVariable               False        (2, 2, 1)  float32  [[[1....\n\
+B.B_submodule_list[1].var_trainable  ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
+B.B_submodule_list[1].var_fixed      ResourceVariable               False        (2, 2, 1)  float32  [[[1....\n\
+B.B_submodule_dict[a].var_trainable  ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
+B.B_submodule_dict[a].var_fixed      ResourceVariable               False        (2, 2, 1)  float32  [[[1....\n\
+B.B_submodule_dict[b].var_trainable  ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
+B.B_submodule_dict[b].var_fixed      ResourceVariable               False        (2, 2, 1)  float32  [[[1....\n\
+B.var_trainable                      ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
+B.var_fixed                          ResourceVariable               False        (2, 2, 1)  float32  [[[1...."""
+
 
 # ------------------------------------------
 # Fixtures
@@ -223,8 +272,11 @@ def test_leaf_components_registers_variable_properties(module_callable, expected
 ])
 def test_leaf_components_registers_compose_kernel_variable_properties(module_callable, expected_param_dicts):
     module = module_callable()
-    for path, variable in leaf_components(module).items():
-        param_name = path.split('.')[-3] + '.' + path.split('.')[-2] + '.' + path.split('.')[-1]
+    leaf_components_dict = leaf_components(module)
+    assert len(leaf_components_dict) > 0
+    for path, variable in leaf_components_dict.items():
+        path_as_list = path.split('.')
+        param_name = path_as_list[-3] + '.' + path_as_list[-2] + '.' + path_as_list[-1]
         assert isinstance(variable, gpflow.Parameter)
         np.testing.assert_equal(variable.value().numpy(), expected_param_dicts[param_name]['value'])
         assert variable.trainable == expected_param_dicts[param_name]['trainable']
@@ -253,6 +305,17 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
         for sub_path in path.split('\n'):
             assert sub_path in leaf_components_dict
             assert leaf_components_dict[sub_path] is variable
+
+
+@pytest.mark.parametrize('module_callable, expected_param_print_string', [
+    (create_compose_kernel, compose_kernel_param_print_string),
+    (create_kernel, kernel_param_print_string),
+    (create_model, model_gp_param_print_string),
+    (A, example_tf_module_variable_print_string),
+    (B, example_module_list_variable_print_string),
+])
+def test_print_summary_output_string(module_callable, expected_param_print_string):
+    assert tabulate_module_summary(module_callable()) == expected_param_print_string
 
 
 def test_leaf_components_combination_kernel():
