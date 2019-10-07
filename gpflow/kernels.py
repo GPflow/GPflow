@@ -1091,7 +1091,7 @@ class ChangePoints(Combination):
         locations = tf.sort(self.locations)  # Ensure locations are ordered
         locations = tf.reshape(locations, (1, 1, -1))
         steepness = 2 * np.log(95.0) / tf.reshape(self.widths, (1, 1, -1))
-        return 0.5 + 0.5 * tf.tanh(0.5 * steepness * (X - locations))
+        return tf.sigmoid(steepness * (X - locations))
 
 
 def make_deprecated_class(oldname, NewClass):
