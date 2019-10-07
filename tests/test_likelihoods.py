@@ -209,7 +209,7 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
     softmax_likelihood = Softmax(dimF)
     bernoulli_likelihood = Bernoulli(invlink=tf.sigmoid)
     softmax_likelihood.num_monte_carlo_points = int(0.3e7)  # Minimum number of points to pass the test on CircleCI
-    bernoulli_likelihood.num_gauss_hermite_points = 50
+    bernoulli_likelihood.num_gauss_hermite_points = 40
 
     assert_allclose(softmax_likelihood.conditional_mean(F)[:, :1], bernoulli_likelihood.conditional_mean(F[:, :1]))
 
@@ -221,8 +221,8 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
     mean1, var1 = softmax_likelihood.predict_mean_and_var(F, Fvar)
     mean2, var2 = bernoulli_likelihood.predict_mean_and_var(F[:, :1], Fvar[:, :1])
 
-    assert_allclose(mean1[:, 0, None], mean2, rtol=1e-3)
-    assert_allclose(var1[:, 0, None], var2, rtol=1e-3)
+    assert_allclose(mean1[:, 0, None], mean2, rtol=2e-3)
+    assert_allclose(var1[:, 0, None], var2, rtol=2e-3)
 
     ls_ve = softmax_likelihood.variational_expectations(F, Fvar, Ylabel)
     lb_ve = bernoulli_likelihood.variational_expectations(F[:, :1], Fvar[:, :1], Y.numpy())
@@ -386,7 +386,7 @@ def test_switched_likelihood_regression_valid_num_latent(X, Y, num_latent):
     likelihoods = [StudentT()] * 3
     switched_likelihood = SwitchedLikelihood(likelihoods)
     m = gpflow.models.SVGP(kernel=gpflow.kernels.Matern12(),
-                           inducing_variables=Z,
+                           inducing_variable=Z,
                            likelihood=switched_likelihood,
                            num_latent=num_latent)
     if num_latent == 1:

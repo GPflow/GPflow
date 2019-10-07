@@ -1,14 +1,13 @@
 import numpy as np
 
-from ..inducing_variables import InducingPoints
+from ..inducing_variables import InducingVariables, InducingPoints
 
 
 def inducingpoint_wrapper(inducing_variable):
     """
-    Models which used to take only Z can now pass `inducing_variable` and `Z` to this method. This method will
-    check for consistency and return the correct inducing_variable. This allows backwards compatibility in
-    for the methods.
+    This wrapper allows transparently passing either an InducingVariables
+    object or an array specifying InducingPoints positions.
     """
-    if isinstance(inducing_variable, np.ndarray):
+    if not isinstance(inducing_variable, InducingVariables):
         inducing_variable = InducingPoints(inducing_variable)
     return inducing_variable

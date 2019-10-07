@@ -69,7 +69,7 @@ def create_compose_kernel():
 def create_model():
     kernel = create_kernel()
     model = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(),
-                               inducing_variables=Data.Z, q_diag=True)
+                               inducing_variable=Data.Z, q_diag=True)
     model.q_mu.trainable = False
     return model
 
@@ -137,7 +137,7 @@ model_gp_param_dict = {
         'trainable': True,
         'shape': ()
     },
-    'inducing_variables.Z': {
+    'inducing_variable.Z': {
         'value': Data.Z,
         'trainable': True,
         'shape': (Data.M, Data.D)
@@ -161,7 +161,7 @@ example_dag_module_param_dict = {
         'trainable': True,
         'shape': ()
     },
-    'SVGP.inducing_variables.Z': {
+    'SVGP.inducing_variable.Z': {
         'value': Data.Z,
         'trainable': True,
         'shape': (Data.M, Data.D)
@@ -253,3 +253,11 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
         for sub_path in path.split('\n'):
             assert sub_path in leaf_components_dict
             assert leaf_components_dict[sub_path] is variable
+
+
+def test_leaf_components_combination_kernel():
+    """
+    Regression test for kernel compositions - output for printing should not be empty (issue #1066).
+    """
+    k = gpflow.kernels.SquaredExponential() + gpflow.kernels.SquaredExponential()
+    assert leaf_components(k), "Combination kernel should have non-empty leaf components"

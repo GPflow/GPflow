@@ -21,9 +21,10 @@ rng = np.random.RandomState(0)
 
 
 class Datum:
-    X = [rng.rand(10, 2) * 10, rng.rand(20, 2) * 10]
-    Y = [np.sin(x) + 0.9 * np.cos(x * 1.6) + rng.randn(*x.shape) * 0.8 for x in X]
-    label = [np.zeros((10, 1)), np.ones((20, 1))]
+    N1, N2 = 6, 12
+    X = [rng.rand(N1, 2) * 1, rng.rand(N2, 2) * 1]
+    Y = [np.sin(x[:, :1]) + 0.9 * np.cos(x[:, 1:2] * 1.6) + rng.randn(x.shape[0], 1) * 0.8 for x in X]
+    label = [np.zeros((N1, 1)), np.ones((N2, 1))]
     perm = list(range(30))
     rng.shuffle(perm)
     Xtest = rng.rand(10, 2) * 10
@@ -50,14 +51,15 @@ def _prepare_models():
     vgp0 = gpflow.models.VGP((Datum.X[0], Datum.Y[0]),
                              kernel=k0,
                              mean_function=Constant(),
-                             likelihood=gpflow.likelihoods.Gaussian(), num_latent=2)
+                             likelihood=gpflow.likelihoods.Gaussian(), num_latent=1)
     vgp1 = gpflow.models.VGP((Datum.X[1], Datum.Y[1]),
                              kernel=k1,
                              mean_function=Constant(),
-                             likelihood=gpflow.likelihoods.Gaussian(), num_latent=2)
+                             likelihood=gpflow.likelihoods.Gaussian(), num_latent=1)
     # 2. Coregionalized GPR
-    kc = gpflow.kernels.SquaredExponential()
-    kc.trainable = False  # lengthscale and variance is fixed.
+    kc = gpflow.kernels.SquaredExponential(active_dims=[0, 1])
+    kc.lengthscale.trainable = False
+    kc.variance.trainable = False  # variance is handles by the coregion kernel
     coreg = gpflow.kernels.Coregion(output_dim=2, rank=1, active_dims=[2])
     coreg.W.trainable = False
     lik = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(),
@@ -69,7 +71,7 @@ def _prepare_models():
                              kernel=kc * coreg,
                              mean_function=mean_c,
                              likelihood=lik,
-                             num_latent=2
+                             num_latent=1
                              )
 
     # Train them for a small number of iterations
@@ -137,28 +139,29 @@ def test_predict_f():
     assert_allclose(pred_f1, pred_fc1, atol=1.0e-2)
 
     # check predict_f_full_cov
-    vgp0.predict_f_full_cov(Datum.Xtest)
-    cvgp.predict_f_full_cov(Datum.X_augumented0)
-    vgp1.predict_f_full_cov(Datum.Xtest)
-    cvgp.predict_f_full_cov(Datum.X_augumented1)
+    vgp0.predict_f(Datum.Xtest, full_cov=True)
+    cvgp.predict_f(Datum.X_augumented0, full_cov=True)
+    vgp1.predict_f(Datum.Xtest, full_cov=True)
+    cvgp.predict_f(Datum.X_augumented1, full_cov=True)
 
 
 def test_predict_y():
     vgp0, vgp1, cvgp = _prepare_models()
-    pred_y0 = vgp0.predict_y(Datum.Xtest)
-    pred_yc0 = cvgp.predict_y(
+    mu1, var1 = vgp0.predict_y(Datum.Xtest)
+    c_mu1, c_var1 = cvgp.predict_y(
         np.hstack([Datum.Xtest, np.zeros((Datum.Xtest.shape[0], 1))]))
 
-    # predict_y returns results for all the likelihodds in multi_likelihood
-    assert_allclose(pred_y0[0], pred_yc0[0][:, :np.array(Datum.Ytest).shape[1]], atol=1.0e-2)
-    assert_allclose(pred_y0[1], pred_yc0[1][:, :np.array(Datum.Ytest).shape[1]], atol=1.0e-2)
-    pred_y1 = vgp1.predict_y(Datum.Xtest)
-    pred_yc1 = cvgp.predict_y(
+    # predict_y returns results for all the likelihoods in multi_likelihood
+    assert_allclose(mu1, c_mu1[:, :1], atol=1.0e-5)
+    assert_allclose(var1, c_var1[:, :1], atol=1.0e-5)
+
+    mu2, var2 = vgp1.predict_y(Datum.Xtest)
+    c_mu2, c_var2 = cvgp.predict_y(
         np.hstack([Datum.Xtest, np.ones((Datum.Xtest.shape[0], 1))]))
 
-    # predict_y returns results for all the likelihodds in multi_likelihood
-    assert_allclose(pred_y1[0], pred_yc1[0][:, np.array(Datum.Ytest).shape[1]:], atol=1.0e-2)
-    assert_allclose(pred_y1[1], pred_yc1[1][:, np.array(Datum.Ytest).shape[1]:], atol=1.0e-2)
+    # predict_y returns results for all the likelihoods in multi_likelihood
+    assert_allclose(mu2, c_mu2[:, 1:2], atol=1.0e-5)
+    assert_allclose(var2, c_var2[:, 1:2], atol=1.0e-5)
 
 
 def test_predict_log_density():
