@@ -362,7 +362,7 @@ def test_active_product(N, D):
         np.hstack([ls[:rand_idx], ls[rand_idx + 1:]]), ls[rand_idx], ls
     ]
     kernels = [
-        gpflow.kernels.SquaredExponential(lengthscale=lengthscale, active_dims=dims, ard=True)
+        gpflow.kernels.SquaredExponential(lengthscale=lengthscale, active_dims=dims)
         for dims, lengthscale in zip(active_dims_list, lengthscale_list)
     ]
     kernel_prod = kernels[0] * kernels[1]
@@ -380,7 +380,7 @@ def test_ard_init_scalar(D):
     lengthscale or a suitable array of lengthscale
     """
     kernel_1 = gpflow.kernels.SquaredExponential(lengthscale=2.3)
-    kernel_2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(D) * 2.3, ard=True)
+    kernel_2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(D) * 2.3)
     lengthscale_1 = kernel_1.lengthscale.read_value()
     lengthscale_2 = kernel_2.lengthscale.read_value()
     assert np.allclose(lengthscale_1, lengthscale_2, atol=1e-10)
@@ -389,11 +389,11 @@ def test_ard_init_scalar(D):
 @pytest.mark.parametrize('N', [4, 7])
 @pytest.mark.parametrize('ard', [True, False, None])
 def test_ard_init_shapes(N, ard):
-    with pytest.raises(tf.errors.InvalidArgumentError):
-        k1 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), ard=ard)
+    with pytest.raises(ValueError):
+        k1 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(2))
         k1(rng.randn(N, 4))
-    with pytest.raises(tf.errors.InvalidArgumentError):
-        k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3), ard=ard)
+    with pytest.raises(ValueError):
+        k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3))
         k2(rng.randn(N, 2))
 
 

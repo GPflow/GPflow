@@ -17,23 +17,28 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, active_dims=None, ard=None):
+    def __init__(self, variance=1.0, lengthscale=1.0, active_dims=None):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter
         - lengthscale is the initial value for the lengthscale parameter
-          defaults to 1.0 (ard=False) or np.ones(input_dim) (ard=True).
+          defaults to 1.0.
         - active_dims is a list of length input_dim which controls which
           columns of X are used.
-        - if ard is not None, it specifies whether the kernel has one
-          lengthscale per dimension (ard=True) or a single lengthscale
-          (ard=False). Otherwise, inferred from shape of lengthscale.
         """
         super().__init__(active_dims)
-        self.ard = ard
-        # lengthscale, self.ard = self._validate_ard_shape("lengthscale", lengthscale, ard)
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
+
+    def _validate_lengthscale(self, X):
+        if tf.rank(self.lengthscale) == 0:
+            return
+        X_shape = tf.shape(X)
+        l_shape = tf.shape(self.lengthscale)
+        if l_shape[-1] != X_shape[-1]:
+            # TODO: Maybe this should be a tf.errors.InvalidArgumentError
+            raise ValueError(
+                f"Shape of lengthscale {l_shape} does not match shape of data {X_shape}")
 
     def _scaled_squared_euclid_dist(self, X, X2):
         """
@@ -46,6 +51,7 @@ class Stationary(Kernel):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
+        self._validate_lengthscale(X)
         r2 = self._scaled_squared_euclid_dist(X, X2)
         return self.K_r2(r2)
 
@@ -95,8 +101,8 @@ class RationalQuadratic(Stationary):
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, alpha=1.0, active_dims=None, ard=None):
-        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims, ard=ard)
+    def __init__(self, variance=1.0, lengthscale=1.0, alpha=1.0, active_dims=None):
+        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims)
         self.alpha = Parameter(alpha, transform=positive())
 
     def K_r2(self, r2):
