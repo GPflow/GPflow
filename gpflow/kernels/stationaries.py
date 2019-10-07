@@ -35,30 +35,33 @@ class Stationary(Kernel):
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
 
-    def scaled_euclid_dist(self, X, X2):
+    def _scaled_squared_euclid_dist(self, X, X2):
         """
-        Returns |(X - X2ᵀ)/lengthscale| (L2-norm).
+        Returns ||(X - X2ᵀ) / ℓ||² i.e. squared L2-norm.
         """
-        X = X / self.lengthscale
-        X2 = X2 / self.lengthscale if X2 is not None else X2
-        r2 = square_distance(X, X2)
-        # Clipping around the (single) float precision which is ~1e-45.
-        return tf.sqrt(tf.maximum(r2, 1e-40))
+        X_scaled = X / self.lengthscale
+        X2_scaled = X2 / self.lengthscale if X2 is not None else X_scaled
+        return square_distance(X_scaled, X2_scaled)
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
-        r = self.scaled_euclid_dist(X, X2)
-        return self.K_r(r)
+        r2 = self._scaled_squared_euclid_dist(X, X2)
+        return self.K_r2(r2)
 
     def K_diag(self, X, presliced=False):
         return tf.fill((X.shape[:-1]), tf.squeeze(self.variance))
 
-    def K_r(self, r):
+    def K_r2(self, r2):
         """
-        Returns the kernel evaluated on `r`, which is the scaled Euclidean distance
-        Should operate element-wise on r
+        Returns the kernel evaluated on `r2`, which is the squared scaled Euclidean distance
+        Should operate element-wise on r2
         """
+        if hasattr(self, "K_r"):
+            # Clipping around the (single) float precision which is ~1e-45.
+            r = tf.sqrt(tf.maximum(r2, 1e-40))
+            return self.K_r(r)  # pylint: disable=no-member
+
         raise NotImplementedError
 
 
@@ -75,12 +78,8 @@ class SquaredExponential(Stationary):
     Functions drawn from a GP with this kernel are infinitely differentiable!
     """
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
-        X_scaled = X / self.lengthscale
-        X2_scaled = X2 / self.lengthscale if X2 is not None else X2
-        return self.variance * tf.exp(-0.5 * square_distance(X_scaled, X2_scaled))
+    def K_r2(self, r2):
+        return self.variance * tf.exp(-0.5 * r2)
 
 
 class RationalQuadratic(Stationary):
@@ -100,12 +99,8 @@ class RationalQuadratic(Stationary):
         super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims, ard=ard)
         self.alpha = Parameter(alpha, transform=positive())
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
-        X_scaled = X / self.lengthscale
-        X2_scaled = X2 / self.lengthscale if X2 is not None else X2
-        return self.variance * (1 + 0.5 * square_distance(X_scaled, X2_scaled) / self.alpha)**(-self.alpha)
+    def K_r2(self, r2):
+        return self.variance * (1 + 0.5 * r2 / self.alpha) ** (-self.alpha)
 
 
 class Exponential(Stationary):

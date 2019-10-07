@@ -178,13 +178,13 @@ def test_periodic_1d_and_2d(D, N, lengthscale, variance, period):
 
 
 kernel_setups = [
-                    kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()
-                ] + [
-                    gpflow.kernels.Constant(),
-                    gpflow.kernels.Linear(),
-                    gpflow.kernels.Polynomial(),
-                    gpflow.kernels.ArcCosine()
-                ]
+    kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()
+] + [
+    gpflow.kernels.Constant(),
+    gpflow.kernels.Linear(),
+    gpflow.kernels.Polynomial(),
+    gpflow.kernels.ArcCosine()
+]
 
 
 @pytest.mark.parametrize('D', [1, 5])

@@ -20,7 +20,7 @@ in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 
 import abc
 from functools import partial, reduce
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -31,9 +31,12 @@ class Kernel(tf.Module):
     The basic kernel class. Handles active dims.
     """
 
-    def __init__(self, active_dims: slice = None, name: str = None):
+    def __init__(self,
+                 active_dims: Optional[Union[slice, list]] = None, 
+                 name: Optional[str] = None):
         """
         :param active_dims: active dimensions, has the slice type.
+        :param name: optional kernel name.
         """
         super().__init__(name)
         if isinstance(active_dims, list):
