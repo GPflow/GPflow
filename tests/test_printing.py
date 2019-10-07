@@ -253,3 +253,11 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
         for sub_path in path.split('\n'):
             assert sub_path in leaf_components_dict
             assert leaf_components_dict[sub_path] is variable
+
+
+def test_leaf_components_combination_kernel():
+    """
+    Regression test for kernel compositions - output for printing should not be empty (issue #1066).
+    """
+    k = gpflow.kernels.SquaredExponential() + gpflow.kernels.SquaredExponential()
+    assert leaf_components(k), "Combination kernel should have non-empty leaf components"
