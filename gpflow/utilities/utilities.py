@@ -77,6 +77,15 @@ def print_summary(module: tf.Module, fmt: str = None):
     Prints a summary of the parameters and variables contained in a tf.Module.
     """
 
+    if fmt == "notebook":
+        from IPython.core.display import display, HTML
+        tab = _print_summary_output_string(module, "html")
+        display(HTML(tab))
+    else:
+        print(_print_summary_output_string(module, fmt))
+
+
+def _print_summary_output_string(module: tf.Module, fmt: str = None) -> str:
     fmt = fmt if fmt is not None else summary_fmt()
     column_names = ['name', 'class', 'transform', 'trainable', 'shape', 'dtype', 'value']
 
@@ -99,14 +108,7 @@ def print_summary(module: tf.Module, fmt: str = None):
         variable.dtype.name,
         _str_tensor_value(variable.numpy())
     ] for path, variable in merged_leaf_components.items()]
-
-
-    if fmt == "notebook":
-        from IPython.core.display import display, HTML
-        tab = tabulate(column_values, headers=column_names, tablefmt="html")
-        display(HTML(tab))
-    else:
-        print(tabulate(column_values, headers=column_names, tablefmt=fmt))
+    return tabulate(column_values, headers=column_names, tablefmt=fmt)
 
 
 def leaf_components(input: tf.Module):
@@ -115,7 +117,10 @@ def leaf_components(input: tf.Module):
 
 def _merge_leaf_components(
         input: Dict[str, Union[tf.Tensor, Parameter]]) -> Dict[str, Union[tf.Tensor, Parameter]]:
-    if len(set(input.values())) == len(input):
+    input_values = set(
+        [value.experimental_ref() if isinstance(value, tf.Variable) else value for value in input.values()]
+    )
+    if len(input_values) == len(input):
         return input
     tmp_dict = dict()
     for key, item in input.items():
