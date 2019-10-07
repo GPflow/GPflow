@@ -85,7 +85,7 @@ def print_summary(module: tf.Module, fmt: str = None):
         print(_print_summary_output_string(module, fmt))
 
 
-def _print_summary_output_string(module: tf.Module, fmt: str = None) -> str:
+def tabulate_module_summary(module: tf.Module, tablefmt: str = None) -> str:
     fmt = fmt if fmt is not None else summary_fmt()
     column_names = ['name', 'class', 'transform', 'trainable', 'shape', 'dtype', 'value']
 
