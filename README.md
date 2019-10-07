@@ -22,7 +22,7 @@ GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computat
 
 ## Install GPflow 2.0 alpha version
 
-With the release of tensorflow 2.0 and tensorflow-probability 0.8, you should
+With the release of `tensorflow` 2.0 and `tensorflow-probability` 0.8, you should
 only need to run
 
 ```bash
@@ -34,7 +34,7 @@ in a check-out of the `develop-2.0` branch of the GPflow github repository.
 
 ## Getting Started
 
-There is an "intro to gpflow 2" Jupyter notebook in `doc/source/notebooks/intro_to_gpflow2.ipynb". Not all tutorial notebooks may be running on gpflow2 already, but we are working on it!
+There is an "Intro to GPflow 2" Jupyter notebook in `doc/source/notebooks/intro_to_gpflow2.ipynb". Not all tutorial notebooks may be running on `gpflow2` already, but we are working on it!
 
 ## Getting help
 
