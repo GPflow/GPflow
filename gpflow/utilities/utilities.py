@@ -79,14 +79,14 @@ def print_summary(module: tf.Module, fmt: str = None):
 
     if fmt == "notebook":
         from IPython.core.display import display, HTML
-        tab = _print_summary_output_string(module, "html")
+        tab = tabulate_module_summary(module, "html")
         display(HTML(tab))
     else:
-        print(_print_summary_output_string(module, fmt))
+        print(tabulate_module_summary(module, fmt))
 
 
-def _print_summary_output_string(module: tf.Module, fmt: str = None) -> str:
-    fmt = fmt if fmt is not None else summary_fmt()
+def tabulate_module_summary(module: tf.Module, tablefmt: str = None) -> str:
+    tablefmt = tablefmt if tablefmt is not None else summary_fmt()
     column_names = ['name', 'class', 'transform', 'trainable', 'shape', 'dtype', 'value']
 
     def get_name(v):
@@ -108,7 +108,7 @@ def _print_summary_output_string(module: tf.Module, fmt: str = None) -> str:
         variable.dtype.name,
         _str_tensor_value(variable.numpy())
     ] for path, variable in merged_leaf_components.items()]
-    return tabulate(column_values, headers=column_names, tablefmt=fmt)
+    return tabulate(column_values, headers=column_names, tablefmt=tablefmt)
 
 
 def leaf_components(input: tf.Module):

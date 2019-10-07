@@ -17,7 +17,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-from gpflow.utilities.utilities import leaf_components, _merge_leaf_components, _print_summary_output_string
+from gpflow.utilities.utilities import leaf_components, _merge_leaf_components, tabulate_module_summary
 
 rng = np.random.RandomState(0)
 
@@ -315,7 +315,7 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
     (B, example_module_list_variable_print_string),
 ])
 def test_print_summary_output_string(module_callable, expected_param_print_string):
-    assert _print_summary_output_string(module_callable()) == expected_param_print_string
+    assert tabulate_module_summary(module_callable()) == expected_param_print_string
 
 
 def test_leaf_components_combination_kernel():
