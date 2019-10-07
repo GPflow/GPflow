@@ -36,6 +36,20 @@ class SamplingHelper:
     """
     Helper reads from variables being set with a prior and writes values back to the same variables.
 
+    Example:
+        model = <Create GPflow model>
+        hmc_helper = SamplingHelper(lambda: -model.neg_log_marginal_likelihood(), model.trainable_parameters)
+        target_fn = hmc_helper.make_posterior_log_prob_fn()
+
+        @tf.function
+        def run_chain_fn():
+            hmc = mcmc.HamiltonianMonteCarlo(target_log_prob_fn=target_fn, num_leapfrog_steps=10, step_size=0.01)
+            adaptive_hmc = mcmc.SimpleStepSizeAdaptation(hmc, num_adaptation_steps=10, target_accept_prob=0.75,
+                                                         adaptation_rate=0.1)
+            return mcmc.sample_chain(num_results=hmc_parameters.num_samples, num_burnin_steps=100,
+                                     current_state=hmc_helper.variables, kernel=adaptive_hmc)
+
+
     Args:
         target_log_prob_fn: Python callable which represents log-density under the target distribution.
         parameters: List of `Variable`'s or gpflow `Parameter`s used as a state of the Markov chain.
