@@ -30,8 +30,11 @@ class Stationary(Kernel):
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
 
-    def _validate_lengthscale(self, X):
-        if tf.rank(self.lengthscale) == 0:
+    def validate_input_shape(self, X):
+        """
+        Check that the shape of the input matches the dimension of lengthscale.
+        """
+        if X is None or tf.rank(self.lengthscale) == 0:
             return
         X_shape = tf.shape(X)
         l_shape = tf.shape(self.lengthscale)
@@ -40,7 +43,7 @@ class Stationary(Kernel):
             raise ValueError(
                 f"Shape of lengthscale {l_shape} does not match shape of data {X_shape}")
 
-    def _scaled_squared_euclid_dist(self, X, X2):
+    def scaled_squared_euclid_dist(self, X, X2=None):
         """
         Returns ||(X - X2ᵀ) / ℓ||² i.e. squared L2-norm.
         """
@@ -51,8 +54,8 @@ class Stationary(Kernel):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
-        self._validate_lengthscale(X)
-        r2 = self._scaled_squared_euclid_dist(X, X2)
+        self.validate_input_shape(X)
+        r2 = self.scaled_squared_euclid_dist(X, X2)
         return self.K_r2(r2)
 
     def K_diag(self, X, presliced=False):
@@ -60,8 +63,8 @@ class Stationary(Kernel):
 
     def K_r2(self, r2):
         """
-        Returns the kernel evaluated on `r2`, which is the squared scaled Euclidean distance
-        Should operate element-wise on r2
+        Returns the kernel evaluated on `r²`, which is the squared scaled Euclidean distance
+        Should operate element-wise on r²
         """
         if hasattr(self, "K_r"):
             # Clipping around the (single) float precision which is ~1e-45.
@@ -139,7 +142,7 @@ class Matern32(Stationary):
     The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once
     differentiable. The kernel equation is
 
-    k(r) =  σ² (1 + √3r) exp{-√3 r}
+    k(r) = σ² (1 + √3r) exp{-√3 r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
@@ -156,7 +159,7 @@ class Matern52(Stationary):
     The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice
     differentiable. The kernel equation is
 
-    k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
+    k(r) = σ² (1 + √5r + 5/3r²) exp{-√5 r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
@@ -173,7 +176,7 @@ class Cosine(Stationary):
     The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids
     (with a random phase).  The kernel equation is
 
-        k(r) =  σ² cos{r}
+        k(r) = σ² cos{r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,

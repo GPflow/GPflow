@@ -69,11 +69,22 @@ def _ref_arccosine(X, order, weight_variances, bias_variance, signal_variance):
     return kernel
 
 
-def _ref_periodic(X, lengthScale, signal_variance, period):
+def _ref_periodic(X, base_name, lengthscale, signal_variance, period):
     # Based on the GPy implementation of standard_period kernel
-    base = np.pi * (X[:, None, :] - X[None, :, :]) / period
-    exp_dist = np.exp(-0.5 *
-                      np.sum(np.square(np.sin(base) / lengthScale), axis=-1))
+    sine_arg = np.pi * (X[:, None, :] - X[None, :, :]) / period
+    sine_base = np.sin(sine_arg) / lengthscale
+    if base_name in {"RBF", "SquaredExponential"}:
+        dist = 0.5 * np.sum(np.square(sine_base), axis=-1)
+        exp_dist = np.exp(-dist)
+    elif base_name == "Matern12":
+        dist = np.sum(np.abs(sine_base), axis=-1)
+        exp_dist = np.exp(-dist)
+    elif base_name == "Matern32":
+        dist = np.sqrt(3) * np.sum(np.abs(sine_base), axis=-1)
+        exp_dist = (1 + dist) * np.exp(-dist)
+    elif base_name == "Matern52":
+        dist = np.sqrt(5) * np.sum(np.abs(sine_base), axis=-1)
+        exp_dist = (1 + dist + dist ** 2 / 3) * np.exp(-dist)
     return signal_variance * exp_dist
 
 
@@ -158,23 +169,28 @@ def test_arccosine_nan_gradient(D, N):
     assert not np.any(np.isnan(grads))
 
 
-def _assert_periodic_kern_err(lengthscale, variance, period, X):
-    kernel = gpflow.kernels.Periodic(period=period,
-                                     variance=variance,
-                                     lengthscale=lengthscale)
+def _assert_periodic_kern_err(base_class, lengthscale, variance, period, X):
+    base = base_class(lengthscale=lengthscale, variance=variance)
+    kernel = gpflow.kernels.Periodic(base, period=period)
     gram_matrix = kernel(X)
-    reference_gram_matrix = _ref_periodic(X, lengthscale, variance, period)
+    reference_gram_matrix = _ref_periodic(X, base_class.__name__, lengthscale, variance, period)
 
     assert_allclose(gram_matrix, reference_gram_matrix)
 
 
-@pytest.mark.parametrize('D', [1, 2])
-@pytest.mark.parametrize('N, lengthscale, variance, period',
-                         [[3, 2., 2.3, 2.], [5, 11.5, 1.3, 20.]])
-def test_periodic_1d_and_2d(D, N, lengthscale, variance, period):
+@pytest.mark.parametrize('base_class',
+                         [gpflow.kernels.SquaredExponential,
+                          gpflow.kernels.Matern12,
+                          gpflow.kernels.Matern32,
+                          gpflow.kernels.Matern52])
+@pytest.mark.parametrize('D, lengthscale',
+                         [[1, 2.], [2, 11.5], [2, (11.5, 12.5)]])
+@pytest.mark.parametrize('N, variance, period',
+                         [[3, 2.3, 2.], [5, 1.3, 20.]])
+def test_periodic(base_class, D, N, lengthscale, variance, period):
     X = rng.randn(N, D) if D == 1 else rng.multivariate_normal(
         np.zeros(D), np.eye(D), N)
-    _assert_periodic_kern_err(lengthscale, variance, period, X)
+    _assert_periodic_kern_err(base_class, lengthscale, variance, period, X)
 
 
 kernel_setups = [
