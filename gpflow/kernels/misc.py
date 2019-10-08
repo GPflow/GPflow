@@ -31,21 +31,18 @@ class ArcCosine(Kernel):
                  variance=1.0,
                  weight_variances=1.,
                  bias_variance=1.,
-                 active_dims=None,
-                 ard=None):
+                 active_dims=None):
         """
         - input_dim is the dimension of the input to the kernel
         - order specifies the activation function of the neural network
           the function is a rectified monomial of the chosen order.
         - variance is the initial value for the variance parameter
         - weight_variances is the initial value for the weight_variances parameter
-          defaults to 1.0 (ard=False) or np.ones(input_dim) (ard=True).
+          defaults to 1.0 but supports ARD i.e. one variance per input.
         - bias_variance is the initial value for the bias_variance parameter
           defaults to 1.0.
         - active_dims is a list of length input_dim which controls which
           columns of X are used.
-        - ard specifies whether the kernel has one weight_variance per dimension
-          (ard=True) or a single weight_variance (ard=False).
         """
         super().__init__(active_dims)
 
@@ -55,8 +52,6 @@ class ArcCosine(Kernel):
 
         self.variance = Parameter(variance, transform=positive())
         self.bias_variance = Parameter(bias_variance, transform=positive())
-        # weight_variances, self.ard = self._validate_ard_shape("weight_variances", weight_variances, ard)
-        self.ard = ard
         self.weight_variances = Parameter(weight_variances,
                                           transform=positive())
 
@@ -83,6 +78,8 @@ class ArcCosine(Kernel):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
+
+        self.validate_ard_parameter(X, self.weight_variances)
 
         X_denominator = tf.sqrt(self._weighted_product(X))
         if X2 is None:

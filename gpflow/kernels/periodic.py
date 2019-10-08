@@ -47,7 +47,8 @@ class Periodic(Kernel):
         if X2 is None:
             X2 = X
 
-        self.base.validate_input_shape(X)
+        self.validate_ard_parameter(X, self.base.lengthscale)
+        self.validate_ard_parameter(X, self.period)
 
         # Introduce dummy dimension so we can use broadcasting
         f = tf.expand_dims(X, 1)  # now [N, 1, D]

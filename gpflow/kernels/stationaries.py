@@ -30,18 +30,12 @@ class Stationary(Kernel):
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
 
-    def validate_input_shape(self, X):
+    @property
+    def ard(self):
         """
-        Check that the shape of the input matches the dimension of lengthscale.
+        Indicates if ARD behavior is on i.e. a separate lengthscale per dimension.
         """
-        if X is None or tf.rank(self.lengthscale) == 0:
-            return
-        X_shape = tf.shape(X)
-        l_shape = tf.shape(self.lengthscale)
-        if l_shape[-1] != X_shape[-1]:
-            # TODO: Maybe this should be a tf.errors.InvalidArgumentError
-            raise ValueError(
-                f"Shape of lengthscale {l_shape} does not match shape of data {X_shape}")
+        return tf.rank(self.lengthscale) > 0
 
     def scaled_squared_euclid_dist(self, X, X2=None):
         """
@@ -54,7 +48,7 @@ class Stationary(Kernel):
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
-        self.validate_input_shape(X)
+        self.validate_ard_parameter(X, self.lengthscale)
         r2 = self.scaled_squared_euclid_dist(X, X2)
         return self.K_r2(r2)
 

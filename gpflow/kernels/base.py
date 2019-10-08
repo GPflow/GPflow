@@ -120,6 +120,19 @@ class Kernel(tf.Module):
 
         return cov
 
+    def validate_ard_parameter(self, X, parameter):
+        """
+        Check that the input dimension matches the dimension of the parameter.
+        """
+        if X is None or tf.rank(parameter) == 0:
+            return
+        X_shape = tf.shape(X)
+        l_shape = tf.shape(parameter)
+        if l_shape[-1] != X_shape[-1]:
+            # TODO: Maybe this should be a tf.errors.InvalidArgumentError
+            raise ValueError(
+                f"Shape of lengthscale {l_shape} does not match shape of data {X_shape}")
+
     @abc.abstractmethod
     def K(self, X, Y=None, presliced=False):
         raise NotImplementedError

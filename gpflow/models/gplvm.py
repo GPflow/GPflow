@@ -62,7 +62,7 @@ class GPLVM(GPR):
             mean_function = Zero()
 
         if kernel is None:
-            kernel = kernels.SquaredExponential(lengthscale=tf.ones((latent_dim, )), ard=True)
+            kernel = kernels.SquaredExponential(lengthscale=tf.ones((latent_dim, )))
 
         if data.shape[1] < num_latent:
             raise ValueError('More latent dimensions than observed.')
