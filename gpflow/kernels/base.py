@@ -124,7 +124,7 @@ class Kernel(tf.Module):
         """
         Check that the input dimension matches the dimension of the parameter.
         """
-        if X is None or tf.rank(parameter) == 0:
+        if tf.rank(parameter) == 0:
             return
         X_shape = tf.shape(X)
         l_shape = tf.shape(parameter)
