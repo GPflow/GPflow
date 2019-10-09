@@ -53,30 +53,36 @@ def default_jitter():
 
 def set_default_int(value_type):
     try:
-        tf.as_dtype(value_type)  # Test input value that it is eligable type.
-        __config._int = value_type
+        tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
     except TypeError:
-        raise TypeError("Expected tf or np dtype argument")
+        raise TypeError(f"{value_type} is not a valid tf or np dtype")
+    if not tf_dtype.is_integer:
+        raise TypeError(f"{value_type} is not an integer dtype")
+    __config._int = value_type
 
 
 def set_default_float(value_type):
     try:
-        tf.as_dtype(value_type)  # Test input value that it is eligable type.
-        __config._float = value_type
+        tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
     except TypeError:
-        raise TypeError("Expected tf or np dtype argument")
+        raise TypeError(f"{value_type} is not a valid tf or np dtype")
+    if not tf_dtype.is_floating:
+        raise TypeError(f"{value_type} is not a float dtype")
+    __config._float = value_type
 
 
 def set_default_jitter(value: float):
     if not (isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0) and \
             not isinstance(value, float):
-        raise ValueError("Expected float32 or float64 scalar value")
+        raise TypeError("Expected float32 or float64 scalar value")
+    if value < 0:
+        raise ValueError("Jitter must be non-negative")
 
     __config._jitter = value
 
 
 def set_summary_fmt(fmt: str):
-    formats = tabulate.tabulate_formats + ['notebook']
+    formats = tabulate.tabulate_formats + ['notebook', None]
     if fmt not in formats:
         raise ValueError(f"Summary does not support '{fmt}' format")
 
