@@ -43,27 +43,24 @@ class SVGP(GPModel):
     def __init__(self,
                  kernel,
                  likelihood,
-                 inducing_variables=None,
+                 inducing_variable,
                  mean_function=None,
-                 num_latent=1,
-                 q_diag=False,
+                 *,
+                 num_latent: int=1,
+                 q_diag: bool=False,
                  q_mu=None,
                  q_sqrt=None,
-                 whiten=True,
+                 whiten: bool=True,
                  num_data=None):
         """
-        - X is a data matrix, size [N, D]
-        - Y is a data matrix, size [N, P]
-        - kernel, likelihood, mean_function are appropriate GPflow objects
-        - Z is a matrix of pseudo inputs, size [M, D]
-        - num_latent is the number of latent process to use, default to
-          Y.shape[1]
+        - kernel, likelihood, inducing_variables, mean_function are appropriate
+          GPflow objects
+        - num_latent is the number of latent processes to use, defaults to 1
         - q_diag is a boolean. If True, the covariance is approximated by a
           diagonal matrix.
         - whiten is a boolean. If True, we use the whitened representation of
           the inducing points.
-        - minibatch_size, if not None, turns on mini-batching with that size.
-        - num_data is the total number of observations, default to X.shape[0]
+        - num_data is the total number of observations, defaults to X.shape[0]
           (relevant when feeding in external minibatches)
         """
         # init the super class, accept args
@@ -71,10 +68,10 @@ class SVGP(GPModel):
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
-        self.inducing_variables = inducingpoint_wrapper(inducing_variables)
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
         # init variational parameters
-        num_inducing = len(self.inducing_variables)
+        num_inducing = len(self.inducing_variable)
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
@@ -136,11 +133,7 @@ class SVGP(GPModel):
                                         transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
-        K = None
-        if not self.whiten:
-            K = Kuu(self.inducing_variables, self.kernel,
-                    jitter=default_jitter())  # [P, M, M] or [M, M]
-        return kullback_leiblers.gauss_kl(self.q_mu, self.q_sqrt, K)
+        return kullback_leiblers.prior_kl(self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten)
 
     def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
         """
@@ -170,11 +163,12 @@ class SVGP(GPModel):
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(Xnew,
-                              self.inducing_variables,
+                              self.inducing_variable,
                               self.kernel,
                               q_mu,
                               q_sqrt=q_sqrt,
                               full_cov=full_cov,
                               white=self.whiten,
                               full_output_cov=full_output_cov)
+        # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
         return mu + self.mean_function(Xnew), var

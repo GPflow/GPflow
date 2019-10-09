@@ -11,21 +11,16 @@ from setuptools import find_packages, setup
 
 # Dependencies of GPflow
 requirements = [
-    'gast==0.2.2',
     'numpy>=1.10.0',
     'scipy>=0.18.0',
-    'pandas>=0.18.1',
     'multipledispatch>=0.4.9',
-    'pytest>=3.5.0',
-    'h5py>=2.7.0',
-    'matplotlib>=2.2.2',
+    'tensorflow-probability>=0.8',
     'tabulate',
-    'tfp-nightly'
 ]
 
 min_tf_version = '2.0.0'
-tf_cpu = 'tf-nightly-2.0-preview'
-tf_gpu = 'tf-nightly-gpu-2.0-preview'
+tf_cpu = 'tensorflow'
+tf_gpu = 'tensorflow-gpu'
 
 # Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu

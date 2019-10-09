@@ -6,7 +6,6 @@ import tensorflow as tf
 import gpflow
 import gpflow.inducing_variables.mo_inducing_variables as mf
 import gpflow.kernels.mo_kernels as mk
-# from gpflow.test_util import
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import fully_correlated_conditional, fully_correlated_conditional_repeat, sample_mvn
 from gpflow.inducing_variables import InducingPoints
@@ -225,12 +224,12 @@ def test_sample_conditional(whiten, full_cov, full_output_cov):
     Z = Data.X[:Data.M, ...]  # [M, D]
     Xs = np.ones((Data.N, Data.D), dtype=float_type)
 
-    inducing_variables = InducingPoints(Z)
+    inducing_variable = InducingPoints(Z)
     kernel = SquaredExponential()
 
     # Path 1
     value_f, mean_f, var_f = sample_conditional(Xs,
-                                                inducing_variables,
+                                                inducing_variable,
                                                 kernel,
                                                 q_mu,
                                                 q_sqrt=q_sqrt,
@@ -542,12 +541,12 @@ def test_compare_mixed_kernel():
     kern_list = [SquaredExponential() for _ in range(data.L)]
     k1 = mk.LinearCoregionalization(kern_list, W=data.W)
     f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_1 = SVGP(k1, Gaussian(), inducing_variables=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_1 = SVGP(k1, Gaussian(), inducing_variable=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
     k2 = mk.LinearCoregionalization(kern_list, W=data.W)
     f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_2 = SVGP(k2, Gaussian(), inducing_variables=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
 
@@ -561,12 +560,12 @@ def test_multioutput_with_diag_q_sqrt():
     kern_list = [SquaredExponential() for _ in range(data.L)]
     k1 = mk.LinearCoregionalization(kern_list, W=data.W)
     f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_1 = SVGP(k1, Gaussian(), inducing_variables=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
+    model_1 = SVGP(k1, Gaussian(), inducing_variable=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True)
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
     k2 = mk.LinearCoregionalization(kern_list, W=data.W)
     f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
-    model_2 = SVGP(k2, Gaussian(), inducing_variables=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
+    model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
 
@@ -578,12 +577,12 @@ def test_MixedKernelSeparateMof():
     inducing_variable_list = [InducingPoints(data.X[:data.M, ...]) for _ in range(data.L)]
     k1 = mk.LinearCoregionalization(kern_list, W=data.W)
     f1 = mf.SeparateIndependentInducingVariables(inducing_variable_list)
-    model_1 = SVGP(k1, Gaussian(), inducing_variables=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_1 = SVGP(k1, Gaussian(), inducing_variable=f1, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
     inducing_variable_list = [InducingPoints(data.X[:data.M, ...]) for _ in range(data.L)]
     k2 = mk.LinearCoregionalization(kern_list, W=data.W)
     f2 = mf.SeparateIndependentInducingVariables(inducing_variable_list)
-    model_2 = SVGP(k2, Gaussian(), inducing_variables=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
+    model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])

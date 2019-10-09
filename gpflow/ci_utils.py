@@ -1,4 +1,4 @@
-# Copyright 2017 Artem Artemev @awav
+# Copyright 2017-2019 GPflow
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,29 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pragma: no cover
 # pylint: skip-file
 
-import contextlib
-import functools
 import os
-
-import pytest
-import tensorflow as tf
 
 
 def is_continuous_integration():
-    ci = os.environ.get('CI', '').lower()
-    return (ci == 'true') or (ci == '1')
+    return os.environ.get('CI', None) is not None
 
 
-def notebook_niter(n, test_n=2):
+def ci_niter(n: int, test_n: int = 2):
     return test_n if is_continuous_integration() else n
 
 
-def notebook_range(n, test_n=2):
-    return range(notebook_niter(n, test_n))
+def ci_range(n: int, test_n: int = 2):
+    return range(ci_niter(n, test_n))
 
 
-def notebook_list(lst, test_n=2):
+def ci_list(lst: list, test_n=2):
     return lst[:test_n] if is_continuous_integration() else lst

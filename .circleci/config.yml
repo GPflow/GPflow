@@ -5,8 +5,8 @@ runtest: &runtest
         name: Install GPflow
         command: |
           pip install -U pip
-          pip install -q gast==0.2.2 tf-nightly-2.0-preview==2.0.0.dev20190903 tfp-nightly pytest-random-order
           pip install -e .
+          pip install -r tests_requirements.txt
     - run:
         name: Run tests
         command: |
@@ -80,11 +80,10 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
-      # # TODO: uncomment it when gpflow-2.0 is ready
-      # - notebook-test:
-      #     filters:
-      #       tags:
-      #         only: /^v[0-9]+(\.[0-9]+)*/
+      - notebook-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
       # - example-test:
       #     filters:
       #       tags:

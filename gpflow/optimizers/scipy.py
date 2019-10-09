@@ -32,7 +32,7 @@ class Scipy:
             See `OptimizeResult` for a attributes description.
         """
         if not callable(closure):
-            raise ValueError('Callable object expected.')
+            raise TypeError('Callable object expected.')  # pragma: no cover
         initial_params = self.initial_parameters(variables)
         func = self.eval_func(closure, variables, step_callback)
         return scipy.optimize.minimize(func, initial_params, jac=True, **scipy_kwargs)
@@ -49,10 +49,10 @@ class Scipy:
             nonlocal step
             cls.unpack_tensors(variables, x)
             loss, grads = _compute_loss_and_gradients(closure, variables)
-            if callable(step_callback):
+            if step_callback is not None:
                 step_callback(step=step, loss=loss, variables=variables, gradients=grads)
             step += 1
-            return loss.numpy(), cls.pack_tensors(grads)
+            return loss.numpy().astype(np.float64), cls.pack_tensors(grads).astype(np.float64)
 
         return _eval
 
@@ -68,7 +68,7 @@ class Scipy:
         for tensor in to_tensors:
             shape = tf.shape(tensor)
             tensor_size = int(np.prod(shape))
-            tensor_vector = from_vector[s:s + tensor_size]
+            tensor_vector = from_vector[s:s + tensor_size].astype(tensor.dtype.as_numpy_dtype())
             tensor_vector = tf.reshape(tensor_vector, shape)
             tensor.assign(tensor_vector)
             s += tensor_size
