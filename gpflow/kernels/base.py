@@ -158,6 +158,9 @@ class Combination(Kernel):
             raise TypeError(
                 "can only combine Kernel instances")  # pragma: no cover
 
+        self._set_kernels(kernels)
+
+    def _set_kernels(self, kernels):
         # add kernels to a list, flattening out instances of this class therein
         kernels_list = []
         for k in kernels:
