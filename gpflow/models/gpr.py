@@ -40,8 +40,9 @@ class GPR(GPModel):
             \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
     """
 
-    def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None):
-        likelihood = gpflow.likelihoods.Gaussian()
+    def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None,
+                 noise_variance: int = 1.0):
+        likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, y_data = data
         super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
         self.data = data
