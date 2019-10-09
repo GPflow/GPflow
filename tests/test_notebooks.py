@@ -22,13 +22,42 @@ import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-# blacklisted notebooks should have a unique basename
-BLACKLISTED_NOTEBOOKS = []
+# To blacklist a notebook, add its full base name (including .ipynb extension,
+# but without any directory component). If there are several notebooks in
+# different directories with the same base name, they will all get blacklisted
+# (change the blacklisting check to something else in that case, if need be!)
+BLACKLISTED_NOTEBOOKS = [
+    "kernel_design.ipynb",  # PR #1087
+    "coregionalisation.ipynb",  # PR #1072
+    "regression.ipynb",  # PR #1076
+    "varying_noise.ipynb",  # PR #1050
+    "Sanity_check.ipynb",  # PR #1078
+
+    "external-mean-function.ipynb",  # TODO: @vdutor
+    "natural_gradients.ipynb",  # TODO: @awav
+    "multiclass_classification.ipynb",  # TODO @jordigraumo
+    "mcmc.ipynb",  # TODO: @condnsdmatters
+
+    "models.ipynb",
+    "gp_nn.ipynb",
+    "mixture_density_network.ipynb",
+
+    "upper_bound.ipynb",
+    "FITCvsVFE.ipynb",
+
+    "monitoring.ipynb",  # requires re-write for new way of monitoring
+    "settings.ipynb",  # requires re-write for new config
+
+    "tips_and_tricks.ipynb",  # requires a big re-write but contains some useful
+    # sections such as saving&loading...
+
+    "tf_graphs_and_sessions.ipynb",  # to be deleted - only tf1 graph&sessions
+]
 
 
 def _nbpath():
     this_dir = os.path.dirname(__file__)
-    return os.path.join(this_dir, '../notebooks2')
+    return os.path.join(this_dir, '../doc/source/notebooks')
 
 
 def get_notebooks():
@@ -63,11 +92,7 @@ def _exec_notebook(notebook_filename):
             pytest.fail(msg.format(notebook_filename, str(cell_error)))
 
 
-def _exec_notebook_ts(notebook_filename):
-    _exec_notebook(notebook_filename)
-
-
 @pytest.mark.notebooks
 @pytest.mark.parametrize('notebook_file', get_notebooks())
 def test_notebook(notebook_file):
-    _exec_notebook_ts(notebook_file)
+    _exec_notebook(notebook_file)
