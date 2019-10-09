@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from ..base import Parameter
+from ..base import Parameter, triangular
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
@@ -69,8 +69,7 @@ class VGP(GPModel):
 
         self.q_mu = Parameter(np.zeros((num_data, self.num_latent)))
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent)])
-        transform = tfp.bijectors.FillTriangular()
-        self.q_sqrt = Parameter(q_sqrt, transform=transform)
+        self.q_sqrt = Parameter(q_sqrt, transform=triangular())
 
     def log_likelihood(self):
         """
