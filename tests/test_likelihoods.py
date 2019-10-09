@@ -39,15 +39,12 @@ def filter_analytic(likelihood_setups, method_name):
 
 class Datum:
     tolerance = 1e-06
-    Yshape = (10, 1)
+    Yshape = (10, 3)
     Y = tf.random.normal(Yshape, dtype=tf.float64)
     F = tf.random.normal(Yshape, dtype=tf.float64)
     Fmu = tf.random.normal(Yshape, dtype=tf.float64)
     Fvar = 0.01 * tf.random.normal(Yshape, dtype=tf.float64) ** 2
     Fvar_zero = tf.zeros(Yshape, dtype=tf.float64)
-
-    def square(x: tf.Tensor) -> tf.Tensor:
-        return tf.square(x)
 
 
 class LikelihoodSetup(object):
@@ -65,13 +62,22 @@ class LikelihoodSetup(object):
 likelihood_setups = [
     LikelihoodSetup(Gaussian()),
     LikelihoodSetup(StudentT()),
-    LikelihoodSetup(Beta()),
-    LikelihoodSetup(MultiClass(2), Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1), rtol=1e-3, atol=1e-3),
-    LikelihoodSetup(Ordinal(np.array([-1, 1])), Y=np.random.randint(0, 3, Datum.Yshape)),
-    LikelihoodSetup(Poisson(invlink=Datum.square)),
-    LikelihoodSetup(Exponential(invlink=Datum.square)),
-    LikelihoodSetup(Gamma(invlink=Datum.square)),
-    LikelihoodSetup(Bernoulli(invlink=tf.sigmoid)),
+    LikelihoodSetup(Beta(),
+                    Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
+    pytest.param(LikelihoodSetup(MultiClass(2),
+                                 Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1),
+                                 rtol=1e-3, atol=1e-3),
+                 marks=pytest.mark.skip),
+    LikelihoodSetup(Ordinal(np.array([-1, 1])),
+                    Y=tf.random.uniform(Datum.Yshape, 0, 3, dtype=default_int())),
+    LikelihoodSetup(Poisson(invlink=tf.square),
+                    Y=tf.random.poisson(Datum.Yshape, 1.0, dtype=default_float())),
+    LikelihoodSetup(Exponential(invlink=tf.square),
+                    Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
+    LikelihoodSetup(Gamma(invlink=tf.square),
+                    Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
+    LikelihoodSetup(Bernoulli(invlink=tf.sigmoid),
+                    Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
 ]
 
 
