@@ -959,7 +959,9 @@ class Combination(Kernel):
                             np.max(k.active_dims) + 1
                             for k in kernels])
         super().__init__(input_dim=input_dim, name=name)
+        self._set_kernels(kernels)
 
+    def _set_kernels(self, kernels):
         # add kernels to a list, flattening out instances of this class therein
         kernels_list = []
         for k in kernels:
@@ -1007,7 +1009,7 @@ class Product(Combination):
 
 
 class ChangePoints(Combination):
-    """
+    r"""
     The ChangePoints kernel defines a fixed number of change-points along a 1d
     input space where different kernels govern different parts of the space.
 
@@ -1017,19 +1019,14 @@ class ChangePoints(Combination):
         K₁(x, x') * (1 - σ(x)) * (1 - σ(x')) + K₂(x, x') * σ(x) * σ(x')
 
     where K₁ is deactivated around the change-point and K₂ is activated. The
-    single change-point version can be found in \citet{ldgtg2014}.
+    single change-point version can be found in \citet{lloyd2014}.
 
-    @incollection{ldgtg2014,
-      author = {Lloyd, James Robert and Duvenaud, David and Grosse, Roger and Tenenbaum, Joshua B. and Ghahramani, Zoubin},
+    @incollection{lloyd2014,
+      author = {Lloyd, James Robert et al},
       title = {Automatic Construction and Natural-language Description of Nonparametric Regression Models},
       booktitle = {Proceedings of the Twenty-Eighth AAAI Conference on Artificial Intelligence},
-      series = {AAAI'14},
       year = {2014},
-      pages = {1242--1250},
-      numpages = {9},
       url = {http://dl.acm.org/citation.cfm?id=2893873.2894066},
-      acmid = {2894066},
-      publisher = {AAAI Press},
     }
     """
     def __init__(self, kernels, locations=0.0, widths=1.0, activation_order=None, name=None):
@@ -1044,7 +1041,7 @@ class ChangePoints(Combination):
 
         self.locations = Parameter(locations, transform=None, dtype=settings.float_type)
         self.widths = Parameter(widths, transform=transforms.positive, dtype=settings.float_type)
-        self.activation_order = list(activation_order or range(len(kernels)))
+        self.activation_order = list(range(len(kernels)) if activation_order is None else activation_order)
 
         if not all(0 <= i < len(self.kernels) for i in self.activation_order):
             raise ValueError("ChangePoints `activation_order` should be a list of integers "
