@@ -97,7 +97,7 @@ class Kernel(tf.Module):
         :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
         :return: [N, I, I].
         """
-        if cov.ndim == 2:
+        if tf.shape(cov).ndim == 2:
             cov = tf.linalg.diag(cov)
 
         dims = self.active_dims
@@ -119,19 +119,19 @@ class Kernel(tf.Module):
 
     @abc.abstractmethod
     def K(self, X, Y=None, presliced=False):
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def K_diag(self, X, presliced=False):
-        pass
+        raise NotImplementedError
 
     def __call__(self, X, Y=None, full=True, presliced=False):
         if not full and Y is not None:
             raise ValueError(
                 "Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:
-            return self.K_diag(X, presliced=presliced)
-        return self.K(X, Y, presliced=presliced)
+            return self.K_diag(X)
+        return self.K(X, Y)
 
     def __add__(self, other):
         return Sum([self, other])

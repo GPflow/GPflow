@@ -1,7 +1,9 @@
 import numpy as np
 import tensorflow as tf
-from ..base import Parameter, positive
+
+from gpflow.config import default_float
 from .base import Kernel
+from ..base import Parameter, positive
 
 
 class ArcCosine(Kernel):
@@ -76,8 +78,7 @@ class ArcCosine(Kernel):
         elif self.order == 1:
             return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)
         elif self.order == 2:
-            return 3. * tf.sin(theta) * tf.cos(theta) + \
-                   (np.pi - theta) * (1. + 2. * tf.cos(theta) ** 2)
+            return 3. * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (1. + 2. * tf.cos(theta) ** 2)
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -96,16 +97,16 @@ class ArcCosine(Kernel):
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
         return self.variance * (1. / np.pi) * self._J(theta) * \
-            X_denominator[:, None] ** self.order * \
-            X2_denominator[None, :] ** self.order
+               X_denominator[:, None] ** self.order * \
+               X2_denominator[None, :] ** self.order
 
     def K_diag(self, X, presliced=False):
         if not presliced:
             X, _ = self.slice(X, None)
 
         X_product = self._weighted_product(X)
-        return self.variance * (1. /
-                                np.pi) * self._J(0.) * X_product**self.order
+        const = tf.cast((1. / np.pi) * self._J(0.), default_float())
+        return self.variance * const * X_product ** self.order
 
 
 class Periodic(Kernel):

@@ -44,7 +44,7 @@ def model():
     return gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
         likelihood=gpflow.likelihoods.Gaussian(),
-        inducing_variables=Data.Z,
+        inducing_variable=Data.Z,
         q_diag=True
     )
 
@@ -56,19 +56,19 @@ def model():
 model_param_updates = {
     'SVGP.kernel.lengthscale': Data.ls_new,
     'SVGP.likelihood.variance': Data.var_new,
-    'SVGP.inducing_variables.Z': np.zeros_like(Data.Z),
+    'SVGP.inducing_variable.Z': np.zeros_like(Data.Z),
     'SVGP.q_sqrt': 0.5 * np.ones((Data.M, 1))
 }
 model_wrong_path = [
     {'kernel.lengthscale': Data.ls_new},
     {'SVGP.Gaussian.variance': Data.var_new},
-    {'inducing_variables.Z': np.zeros_like(Data.Z)},
+    {'inducing_variable.Z': np.zeros_like(Data.Z)},
     {'SVGP.q_std': 0.5 * np.ones((Data.M, 1))}
 ]
 
 model_wrong_value = [
     {'SVGP.likelihood.variance': np.ones((2, 1), dtype=np.int32)},
-    {'SVGP.inducing_variables.Z': [1, 2, 3]}
+    {'SVGP.inducing_variable.Z': [1, 2, 3]}
 ]
 
 

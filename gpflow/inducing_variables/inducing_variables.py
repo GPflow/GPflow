@@ -22,23 +22,19 @@ from ..config import default_float
 
 class InducingVariables(tf.Module):
     """
-    Abstract base class for inducing inducing.
+    Abstract base class for inducing variables.
     """
 
     @abc.abstractmethod
     def __len__(self) -> int:
         """
-        Returns the number of inducing, relevant for example to determine the
-        size of the variational distribution.
+        Returns the number of inducing variables, relevant for example
+        to determine the size of the variational distribution.
         """
-        pass
+        raise NotImplementedError
 
 
-class InducingPoints(InducingVariables):
-    """
-    Real-space inducing points
-    """
-
+class InducingPointsBase(InducingVariables):
     def __init__(self, Z):
         """
         :param Z: the initial positions of the inducing points, size [M, D]
@@ -50,9 +46,16 @@ class InducingPoints(InducingVariables):
         return self.Z.shape[0]
 
 
-class Multiscale(InducingPoints):
+class InducingPoints(InducingPointsBase):
     """
-    Multi-scale inducing inducing
+    Real-space inducing points
+    """
+
+
+class Multiscale(InducingPointsBase):
+    """
+    Multi-scale inducing variables
+
     Originally proposed in
 
     ::

@@ -16,6 +16,22 @@
 
 import tensorflow as tf
 from .config import default_float
+from multipledispatch import Dispatcher
+from .inducing_variables import InducingVariables
+from .kernels import Kernel
+from .covariances.kuus import Kuu
+from .config import default_jitter
+
+prior_kl = Dispatcher('prior_kl')
+
+
+@prior_kl.register(InducingVariables, Kernel, object, object)
+def _(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
+    if whiten:
+        return gauss_kl(q_mu, q_sqrt, None)
+    else:
+        K = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
+        return gauss_kl(q_mu, q_sqrt, K)
 
 
 def gauss_kl(q_mu, q_sqrt, K=None):
@@ -24,7 +40,8 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 
           q(x) = N(q_mu, q_sqrt^2)
     and
-          p(x) = N(0, K)
+          p(x) = N(0, K)    if K is not None
+          p(x) = N(0, I)    if K is None
 
     We assume N multiple independent distributions, given by the columns of
     q_mu and the last dimension of q_sqrt. Returns the sum of the divergences.

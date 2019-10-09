@@ -82,26 +82,26 @@ def _create_approximate_models():
                                 mean_function=gpflow.mean_functions.Constant())
     model_2 = gpflow.models.SVGP(gpflow.kernels.SquaredExponential(),
                                  gpflow.likelihoods.Gaussian(),
-                                 inducing_variables=Datum.X.copy(),
+                                 inducing_variable=Datum.X.copy(),
                                  q_diag=False,
                                  mean_function=gpflow.mean_functions.Constant(),
                                  num_latent=Datum.Y.shape[1])
-    gpflow.utilities.set_trainable(model_2.inducing_variables, False)
+    gpflow.utilities.set_trainable(model_2.inducing_variable, False)
     model_3 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
                                  likelihood=gpflow.likelihoods.Gaussian(),
-                                 inducing_variables=Datum.X.copy(), q_diag=False, whiten=True,
+                                 inducing_variable=Datum.X.copy(), q_diag=False, whiten=True,
                                  mean_function=gpflow.mean_functions.Constant(),
                                  num_latent=Datum.Y.shape[1])
-    gpflow.utilities.set_trainable(model_3.inducing_variables, False)
+    gpflow.utilities.set_trainable(model_3.inducing_variable, False)
     model_4 = gpflow.models.GPRFITC((Datum.X, Datum.Y),
                                     kernel=gpflow.kernels.SquaredExponential(),
-                                    inducing_variables=Datum.X.copy(),
+                                    inducing_variable=Datum.X.copy(),
                                     mean_function=Constant())
-    gpflow.utilities.set_trainable(model_4.inducing_variables, False)
+    gpflow.utilities.set_trainable(model_4.inducing_variable, False)
     model_5 = gpflow.models.SGPR((Datum.X, Datum.Y), gpflow.kernels.SquaredExponential(),
-                                 inducing_variables=Datum.X.copy(),
+                                 inducing_variable=Datum.X.copy(),
                                  mean_function=Constant())
-    gpflow.utilities.set_trainable(model_5.inducing_variables, False)
+    gpflow.utilities.set_trainable(model_5.inducing_variable, False)
 
     # Train models
 
@@ -250,7 +250,7 @@ def test_upper_bound_few_inducing_points():
     Test for upper bound for regression marginal likelihood
     """
     model_vfe = gpflow.models.SGPR((DatumUpper.X, DatumUpper.Y), gpflow.kernels.SquaredExponential(),
-                                   inducing_variables=DatumUpper.X[:10, :].copy(),
+                                   inducing_variable=DatumUpper.X[:10, :].copy(),
                                    mean_function=Constant())
     opt = gpflow.optimizers.Scipy()
 
