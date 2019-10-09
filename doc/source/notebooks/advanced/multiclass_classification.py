@@ -8,23 +8,23 @@ import numpy as np
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
 
 
-def plot_posterior_predictions(m):
+def plot_posterior_predictions(m, X, Y):
 
     f = plt.figure(figsize=(12,6))
     a1 = f.add_axes([0.05, 0.05, 0.9, 0.6])
     a2 = f.add_axes([0.05, 0.7, 0.9, 0.1])
     a3 = f.add_axes([0.05, 0.85, 0.9, 0.1])
 
-    xx = np.linspace(m.X.read_value().min(), m.X.read_value().max(), 200).reshape(-1,1)
+    xx = np.linspace(X.min(), X.max(), 200).reshape(-1,1)
     mu, var = m.predict_f(xx)
-    mu, var = mu.copy(), var.copy()
+    # mu, var = mu.copy(), var.copy()
     p, _ = m.predict_y(xx)
     
     a3.set_xticks([])
     a3.set_yticks([])
     
     for c in range(m.likelihood.num_classes):
-        x = m.X.read_value()[m.Y.read_value().flatten()==c]
+        x = X[Y.flatten()==c]
         
         color=colors[c]
         a3.plot(x, x*0, '.', color=color)
