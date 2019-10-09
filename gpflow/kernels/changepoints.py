@@ -19,9 +19,11 @@ class ChangePoints(Combination):
 
     where K₁ is deactivated around the change-point and K₂ is activated. The
     single change-point version can be found in \citet{lloyd2014}. Each sigmoid
-    is parameterized with a location "x₀" and steepness "s" and is defined:
+    is a logistic function defined as:
 
         σ(x) = 1 / (1 + exp{-s(x - x₀)})
+
+    parameterized by location "x₀" and steepness "s".
 
     @incollection{lloyd2014,
       author = {Lloyd, James Robert et al},
