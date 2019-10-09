@@ -20,8 +20,9 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.inducing_variables import InducingPoints
-from gpflow.likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian, GaussianMC, Likelihood, MultiClass,
-                                Ordinal, Poisson, RobustMax, Softmax, StudentT, SwitchedLikelihood)
+from gpflow.likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian, GaussianMC,
+                                Likelihood, MonteCarloLikelihood, MultiClass, Ordinal, Poisson,
+                                RobustMax, Softmax, StudentT, SwitchedLikelihood)
 from gpflow.quadrature import ndiagquad
 from gpflow.config import default_float, default_int
 
@@ -34,7 +35,8 @@ def filter_analytic(likelihood_setups, method_name):
         quadrature_fallback = getattr(Likelihood, method_name)
         actual_method = getattr(likelihood.__class__, method_name)
         return actual_method is not quadrature_fallback
-    return [l for l in likelihood_setups if is_analytic(l.likelihood)]
+
+    return [l for l in likelihood_setups if is_analytic(get_likelihood(l))]
 
 
 class Datum:
@@ -79,6 +81,26 @@ likelihood_setups = [
     LikelihoodSetup(Bernoulli(invlink=tf.sigmoid),
                     Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
 ]
+
+def get_likelihood(likelihood_setup):
+    if not isinstance(likelihood_setup, LikelihoodSetup):
+        # pytest.param()
+        likelihood_setup, = likelihood_setup.values
+    return likelihood_setup.likelihood
+
+def test_no_missing_likelihoods():
+    all_likelihood_types = Likelihood.__subclasses__()
+    tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
+    for likelihood_class in all_likelihood_types:
+        if likelihood_class in tested_likelihood_types:
+            continue  # already tested
+        if likelihood_class is SwitchedLikelihood:
+            continue  # tested separately
+        if likelihood_class is MonteCarloLikelihood:
+            continue  # abstract base class
+        if issubclass(likelihood_class, MonteCarloLikelihood):
+            continue  # TODO
+        assert False, f"no test for likelihood class {likelihood_class}"
 
 
 @pytest.mark.parametrize('likelihood_setup', likelihood_setups)
