@@ -27,25 +27,30 @@ from nbconvert.preprocessors.execute import CellExecutionError
 # different directories with the same base name, they will all get blacklisted
 # (change the blacklisting check to something else in that case, if need be!)
 BLACKLISTED_NOTEBOOKS = [
+    "coregionalisation.ipynb",  # PR #1072
+    "regression.ipynb",  # PR #1076
+    "varying_noise.ipynb",  # PR #1050
+    "Sanity_check.ipynb",  # PR #1078
+
     "external-mean-function.ipynb",  # TODO: @vdutor
     "natural_gradients.ipynb",  # TODO: @awav
-    "coregionalisation.ipynb",  # TODO: @fleibfried
     "multiclass_classification.ipynb",  # TODO @jordigraumo
     "mcmc.ipynb",  # TODO: @condnsdmatters
-    "regression.ipynb",  # TODO: @jordigraumo
-    "varying_noise.ipynb",
+
     "models.ipynb",
     "gp_nn.ipynb",
-    "upper_bound.ipynb",
-    "Sanity_check.ipynb",
-    "FITCvsVFE.ipynb",
     "mixture_density_network.ipynb",
-    "monitoring.ipynb",
-    "settings.ipynb",
-    # the following notebooks mostly relate to all the graph and session issues
-    # in tensorflow 1 and can probably be deprecated:
-    "tips_and_tricks.ipynb",
-    "tf_graphs_and_sessions.ipynb",
+
+    "upper_bound.ipynb",
+    "FITCvsVFE.ipynb",
+
+    "monitoring.ipynb",  # requires re-write for new way of monitoring
+    "settings.ipynb",  # requires re-write for new config
+
+    "tips_and_tricks.ipynb",  # requires a big re-write but contains some useful
+    # sections such as saving&loading...
+
+    "tf_graphs_and_sessions.ipynb",  # to be deleted - only tf1 graph&sessions
 ]
 
 
