@@ -25,6 +25,7 @@ class RobustMax(tf.Module):
         prior = tfp.distributions.Beta(0.2, 5.)
         self.epsilon = Parameter(epsilon, transform=transform, prior=prior, trainable=False)
         self.num_classes = num_classes
+        self._squash = 1e-4
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
@@ -34,6 +35,9 @@ class RobustMax(tf.Module):
     def eps_k1(self):
         return self.epsilon / (self.num_classes - 1.)
 
+    def safe_sqrt(self, val):
+        return tf.sqrt(tf.clip_by_value(val, 1e-10, np.inf))
+
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
         Y = tf.cast(Y, default_int())
         # work out what the mean and variance is of the indicated latent function.
@@ -42,16 +46,15 @@ class RobustMax(tf.Module):
         var_selected = tf.reduce_sum(oh_on * var, 1)
 
         # generate Gauss Hermite grid
-        X = tf.reshape(mu_selected,
-                       (-1, 1)) + gh_x * tf.reshape(tf.sqrt(tf.clip_by_value(2. * var_selected, 1e-10, np.inf)),
-                                                    (-1, 1))
+        X = (tf.reshape(mu_selected, (-1, 1)) +
+             gh_x * tf.reshape(self.safe_sqrt(2. * var_selected), (-1, 1)))
 
         # compute the CDF of the Gaussian between the latent functions and the grid (including the selected function)
         dist = (tf.expand_dims(X, 1) - tf.expand_dims(mu, 2)) / tf.expand_dims(
-            tf.sqrt(tf.clip_by_value(var, 1e-10, np.inf)), 2)
+            self.safe_sqrt(var), 2)
         cdfs = 0.5 * (1.0 + tf.math.erf(dist / np.sqrt(2.0)))
 
-        cdfs = cdfs * (1 - 2e-4) + 1e-4
+        cdfs = cdfs * (1 - 2 * self._squash) + self._squash
 
         # blank out all the distances on the selected latent function
         oh_off = tf.cast(tf.one_hot(tf.reshape(Y, (-1, )), self.num_classes, 0., 1.), dtype=mu.dtype)
