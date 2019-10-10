@@ -1,9 +1,9 @@
 from collections.abc import Iterable
-from functools import reduce
+from typing import List, Union
 
 import tensorflow as tf
 
-from .base import Combination
+from .base import Combination, Kernel
 from ..base import Parameter, positive
 
 
@@ -33,17 +33,24 @@ class ChangePoints(Combination):
       url = {http://dl.acm.org/citation.cfm?id=2893873.2894066},
     }
     """
-    def __init__(self, kernels, locations, steepness=1.0, name=None):
+    def __init__(self,
+                 kernels: List[Kernel],
+                 locations: List[float],
+                 steepness: Union[float, List[float]] = 1.0,
+                 name=None):
         """
-        TODO: Describe params
+        :param kernels: list of kernels defining the different regimes
+        :param locations: list of change-point locations in the 1d input space
+        :param steepness: the steepness parameter(s) of the sigmoids, this can be
+            common between them or decoupled
         """
         if len(kernels) != len(locations) + 1:
-            raise ValueError("Number of active kernels ({a}) must be one more than the number of "
-                             "change-points ({cp})".format(a=len(kernels), cp=len(locations)))
+            raise ValueError("Number of kernels ({nk}) must be one more than the number of "
+                             "changepoint locations ({nl})".format(nk=len(kernels), nl=len(locations)))
 
         if isinstance(steepness, Iterable) and len(steepness) != len(locations):
-            raise ValueError("Dimension of steepness ({ns}) does not match number of locations "
-                             "({nl})".format(ns=len(steepness), nl=len(locations)))
+            raise ValueError("Dimension of steepness ({ns}) does not match number of changepoint "
+                             "locations ({nl})".format(ns=len(steepness), nl=len(locations)))
 
         super().__init__(kernels, name=name)
 
@@ -59,20 +66,21 @@ class ChangePoints(Combination):
         sig_X = self._sigmoids(X)
         sig_X2 = self._sigmoids(X2) if X2 is not None else sig_X
 
-        # `starters` are the sigmoids going from 0 -> 1, whilst `stoppers` go from 1 -> 0
+        # `starters` are the sigmoids going from 0 -> 1, whilst `stoppers` go 
+        # from 1 -> 0, dimensions are N x 1 x Ncp
         starters = sig_X * tf.transpose(sig_X2, perm=(1, 0, 2))
         stoppers = (1 - sig_X) * tf.transpose((1 - sig_X2), perm=(1, 0, 2))
 
-        regime_Ks = []
-        for i, k in enumerate(self.kernels):
-            K = k.K(X, X2)
-            if i > 0:
-                K *= starters[:, :, i-1]
-            if i < self.num_changepoints:
-                K *= stoppers[:, :, i]
-            regime_Ks.append(K)
+        # prepend `starters` with ones and append ones to `stoppers` since the
+        # first kernel has no start and the last kernel has no end
+        N = tf.shape(X)[0]
+        ones = tf.ones((N, N, 1), dtype=X.dtype)
+        starters = tf.concat([ones, starters], axis=2)
+        stoppers = tf.concat([stoppers, ones], axis=2)
 
-        return reduce(tf.add, regime_Ks)
+        # now combine with the underlying kernels
+        kernel_stack = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)
+        return tf.reduce_sum(kernel_stack * starters * stoppers, axis=2)
 
     def K_diag(self, X, presliced=False):
         return tf.matrix_diag_part(self.K(X))
@@ -81,4 +89,4 @@ class ChangePoints(Combination):
         locations = tf.sort(self.locations)  # ensure locations are ordered
         locations = tf.reshape(locations, (1, 1, -1))
         steepness = tf.reshape(self.steepness, (1, 1, -1))
-        return tf.sigmoid(steepness * (X - locations))
+        return tf.sigmoid(steepness * (X[:, :, None] - locations))
