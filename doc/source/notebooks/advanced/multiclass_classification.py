@@ -17,7 +17,6 @@ def plot_posterior_predictions(m, X, Y):
 
     xx = np.linspace(X.min(), X.max(), 200).reshape(-1,1)
     mu, var = m.predict_f(xx)
-    # mu, var = mu.copy(), var.copy()
     p, _ = m.predict_y(xx)
     
     a3.set_xticks([])
