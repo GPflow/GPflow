@@ -50,8 +50,6 @@ BLACKLISTED_NOTEBOOKS = [
 
     "tips_and_tricks.ipynb",  # requires a big re-write but contains some useful
     # sections such as saving&loading...
-
-    "tf_graphs_and_sessions.ipynb",  # to be deleted - only tf1 graph&sessions
 ]
 
 
