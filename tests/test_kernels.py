@@ -451,10 +451,10 @@ def test_changepoints_init_fail(locations, steepness, error_msg):
 
 def _assert_changepoints_kern_err(X, kernels, locations, steepness):
     kernel = gpflow.kernels.ChangePoints(kernels, locations, steepness=steepness)
-    gram_matrix = kernel(X)
     reference_gram_matrix = _ref_changepoints(X, kernels, locations, steepness)
 
-    assert_allclose(gram_matrix, reference_gram_matrix)
+    assert_allclose(kernel(X), reference_gram_matrix)
+    assert_allclose(kernel.K_diag(X), np.diag(reference_gram_matrix))
 
 
 @pytest.mark.parametrize('N', [2, 10])

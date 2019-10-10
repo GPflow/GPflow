@@ -63,11 +63,11 @@ class ChangePoints(Combination):
         self.kernels = list(kernels)
 
     def K(self, X, X2=None, presliced=False):
-        sig_X = self._sigmoids(X)
+        sig_X = self._sigmoids(X)  # N x 1 x Ncp
         sig_X2 = self._sigmoids(X2) if X2 is not None else sig_X
 
         # `starters` are the sigmoids going from 0 -> 1, whilst `stoppers` go 
-        # from 1 -> 0, dimensions are N x 1 x Ncp
+        # from 1 -> 0, dimensions are N x N x Ncp
         starters = sig_X * tf.transpose(sig_X2, perm=(1, 0, 2))
         stoppers = (1 - sig_X) * tf.transpose((1 - sig_X2), perm=(1, 0, 2))
 
@@ -83,7 +83,15 @@ class ChangePoints(Combination):
         return tf.reduce_sum(kernel_stack * starters * stoppers, axis=2)
 
     def K_diag(self, X, presliced=False):
-        return tf.matrix_diag_part(self.K(X))
+        N = tf.shape(X)[0]
+        sig_X = tf.reshape(self._sigmoids(X), (N, -1))  # N x Ncp
+
+        ones = tf.ones((N, 1), dtype=X.dtype)
+        starters = tf.concat([ones, sig_X * sig_X], axis=1)  # N x Ncp
+        stoppers = tf.concat([(1 - sig_X) * (1 - sig_X), ones], axis=1)
+
+        kernel_stack = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)
+        return tf.reduce_sum(kernel_stack * starters * stoppers, axis=1)
 
     def _sigmoids(self, X):
         locations = tf.sort(self.locations)  # ensure locations are ordered
