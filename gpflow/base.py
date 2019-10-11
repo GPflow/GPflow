@@ -73,9 +73,9 @@ class Parameter(tf.Module):
         bijector = self.transform
         if self.prior is not None:
             out += tf.reduce_sum(self.prior.log_prob(x))
-        if self.transform is not None:
-            log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
-            out += tf.reduce_sum(log_det_jacobian)
+            if self.transform is not None:
+                log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
+                out += tf.reduce_sum(log_det_jacobian)
         return out
 
     @property
