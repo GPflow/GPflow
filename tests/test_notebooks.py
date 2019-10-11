@@ -30,7 +30,6 @@ BLACKLISTED_NOTEBOOKS = [
     "kernel_design.ipynb",  # PR #1087
     "coregionalisation.ipynb",  # PR #1072
     "regression.ipynb",  # PR #1076
-    "varying_noise.ipynb",  # PR #1050
     "Sanity_check.ipynb",  # PR #1078
 
     "external-mean-function.ipynb",  # TODO: @vdutor
