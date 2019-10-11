@@ -53,7 +53,7 @@ class InducingPoints(InducingPointsBase):
 
 
 class Multiscale(InducingPointsBase):
-    """
+    r"""
     Multi-scale inducing variables
 
     Originally proposed in

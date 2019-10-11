@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from ..base import Parameter
+from ..base import Parameter, triangular
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
@@ -29,7 +29,7 @@ from ..models.model import Data, DataPoint, GPModel, MeanAndVariance
 
 
 class VGP(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
     The idea is that the posterior over the function-value vector F is
@@ -43,7 +43,7 @@ class VGP(GPModel):
 
     .. math::
 
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+       q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
 
@@ -69,11 +69,10 @@ class VGP(GPModel):
 
         self.q_mu = Parameter(np.zeros((num_data, self.num_latent)))
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent)])
-        transform = tfp.bijectors.FillTriangular()
-        self.q_sqrt = Parameter(q_sqrt, transform=transform)
+        self.q_sqrt = Parameter(q_sqrt, transform=triangular())
 
     def log_likelihood(self):
-        """
+        r"""
         This method computes the variational lower bound on the likelihood,
         which is:
 
@@ -81,7 +80,7 @@ class VGP(GPModel):
 
         with
 
-            q(\\mathbf f) = N(\\mathbf f \\,|\\, \\boldsymbol \\mu, \\boldsymbol \\Sigma)
+            q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
         """
 
@@ -119,7 +118,7 @@ class VGP(GPModel):
 
 
 class VGPOpperArchambeau(GPModel):
-    """
+    r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:
     ::
@@ -137,8 +136,8 @@ class VGPOpperArchambeau(GPModel):
     only the diagonal elements of the precision need be adjusted.
     The posterior approximation is
     .. math::
-       q(\\mathbf f) = N(\\mathbf f \\,|\\, \\mathbf K \\boldsymbol \\alpha,
-                         [\\mathbf K^{-1} + \\textrm{diag}(\\boldsymbol \\lambda))^2]^{-1})
+       q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,
+                         [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})
 
     This approach has only 2ND parameters, rather than the N + N^2 of vgp,
     but the optimization is non-convex and in practice may cause difficulty.
@@ -168,7 +167,7 @@ class VGPOpperArchambeau(GPModel):
         self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.positive())
 
     def log_likelihood(self):
-        """
+        r"""
         q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -199,7 +198,7 @@ class VGPOpperArchambeau(GPModel):
         return tf.reduce_sum(v_exp) - KL
 
     def predict_f(self, predict_at: DataPoint, full_cov: bool = False):
-        """
+        r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
         Here we project this to F*, the values of the GP at Xnew which is given
