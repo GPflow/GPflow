@@ -26,72 +26,7 @@ from ..mean_functions import Zero, MeanFunction
 from .util import inducingpoint_wrapper
 
 
-class SGPRUpperMixin(GPModel):
-    """
-    Upper bound for the GP regression marginal likelihood.
-    It is implemented here as a Mixin class which works with SGPR and GPRFITC.
-    Note that the same inducing points are used for calculating the upper bound,
-    as are used for computing the likelihood approximation. This may not lead to
-    the best upper bound. The upper bound can be tightened by optimising Z, just
-    as just like the lower bound. This is especially important in FITC, as FITC
-    is known to produce poor inducing point locations. An optimisable upper bound
-    can be found in https://github.com/markvdw/gp_upper.
-
-    The key reference is
-
-    ::
-
-      @misc{titsias_2014,
-        title={Variational Inference for Gaussian and Determinantal Point Processes},
-        url={http://www2.aueb.gr/users/mtitsias/papers/titsiasNipsVar14.pdf},
-        publisher={Workshop on Advances in Variational Inference (NIPS 2014)},
-        author={Titsias, Michalis K.},
-        year={2014},
-        month={Dec}
-      }
-    """
-
-    def upper_bound(self):
-        x_data, y_data = self.data
-        num_data = tf.cast(tf.shape(y_data)[0], default_float())
-
-        Kdiag = self.kernel(x_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
-
-        L = tf.linalg.cholesky(kuu)
-        LB = tf.linalg.cholesky(kuu + self.likelihood.variance ** -1.0 *
-                                tf.linalg.matmul(kuf, kuf, transpose_b=True))
-
-        Linvkuf = tf.linalg.triangular_solve(L, kuf, lower=True)
-        # Using the Trace bound, from Titsias' presentation
-        # c = tf.reduce_sum(Kdiag) - tf.reduce_sum(Linvkuf ** 2.0)
-        Kff = self.kernel(x_data)
-        Qff = tf.linalg.matmul(kuf, Linvkuf, transpose_a=True)
-
-        # Alternative bound on max eigenval:
-        c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
-        corrected_noise = self.likelihood.variance + c
-
-        const = -0.5 * num_data * tf.math.log(
-            2 * np.pi * self.likelihood.variance)
-        logdet = tf.reduce_sum(tf.math.log(
-            tf.linalg.diag_part(L))) - tf.reduce_sum(
-            tf.math.log(tf.linalg.diag_part(LB)))
-
-        LC = tf.linalg.cholesky(kuu + corrected_noise ** -1.0 *
-                                tf.linalg.matmul(kuf, kuf, transpose_b=True))
-        v = tf.linalg.triangular_solve(LC,
-                                       corrected_noise ** -1.0 *
-                                       tf.linalg.matmul(kuf, y_data),
-                                       lower=True)
-        quad = -0.5 * corrected_noise ** -1.0 * tf.reduce_sum(
-            y_data ** 2.0) + 0.5 * tf.reduce_sum(v ** 2.0)
-
-        return const + logdet + quad
-
-
-class SGPR(SGPRUpperMixin):
+class SGPR(GPModel):
     """
     Sparse Variational GP regression. The key reference is
 
@@ -106,9 +41,6 @@ class SGPR(SGPRUpperMixin):
         pages={567--574},
         year={2009}
       }
-
-
-
     """
 
     def __init__(self,
@@ -175,8 +107,10 @@ class SGPR(SGPRUpperMixin):
         return -self.elbo(data)
 
     def optimize(self):
-        opt = trainig.Scipy()
-        with tf.GradientTape(...):
+        pass
+        # opt = trainig.Scipy()
+        # with tf.GradientTape(...):
+        #     pass
             # TODO
 
     def get_posterior(self, data: Data):
@@ -241,7 +175,7 @@ class SGPR(SGPRUpperMixin):
         return mean + self.mean_function(X), var
 
 
-class GPRFITC(SGPRUpperMixin):
+class GPRFITC(GPModel):
     def __init__(self,
                  data: Data,
                  kernel: Kernel,
@@ -383,3 +317,72 @@ class GPRFITC(SGPRUpperMixin):
             var = tf.tile(var[:, None], [1, self.num_latent])
 
         return mean, var
+
+
+
+def upper_bound_for_sgpr_models(model, data: Data):
+    """
+    Upper bound for the GP regression marginal likelihood.
+    It is implemented here as a Mixin class which works with SGPR and GPRFITC.
+    Note that the same inducing points are used for calculating the upper bound,
+    as are used for computing the likelihood approximation. This may not lead to
+    the best upper bound. The upper bound can be tightened by optimising Z, just
+    as just like the lower bound. This is especially important in FITC, as FITC
+    is known to produce poor inducing point locations. An optimisable upper bound
+    can be found in https://github.com/markvdw/gp_upper.
+
+    The key reference is
+
+    ::
+
+    @misc{titsias_2014,
+        title={Variational Inference for Gaussian and Determinantal Point Processes},
+        url={http://www2.aueb.gr/users/mtitsias/papers/titsiasNipsVar14.pdf},
+        publisher={Workshop on Advances in Variational Inference (NIPS 2014)},
+        author={Titsias, Michalis K.},
+        year={2014},
+        month={Dec}
+    }
+    """
+    if not isinstance(model, (SGPR, GPRFITC)):
+        raise ValueError("The upper bound can only be computed "
+                         "for models of the type SGPR or GPRFITC")
+
+    x_data, y_data = data
+    num_data = tf.cast(tf.shape(y_data)[0], default_float())
+
+    Kdiag = model.kernel(x_data)
+    kuu = Kuu(model.inducing_variable, model.kernel, jitter=default_jitter())
+    kuf = Kuf(model.inducing_variable, model.kernel, x_data)
+
+    L = tf.linalg.cholesky(kuu)
+    LB = tf.linalg.cholesky(kuu + model.likelihood.variance ** -1.0 *
+                            tf.linalg.matmul(kuf, kuf, transpose_b=True))
+
+    Linvkuf = tf.linalg.triangular_solve(L, kuf, lower=True)
+    # Using the Trace bound, from Titsias' presentation
+    # c = tf.reduce_sum(Kdiag) - tf.reduce_sum(Linvkuf ** 2.0)
+    Kff = model.kernel(x_data)
+    Qff = tf.linalg.matmul(kuf, Linvkuf, transpose_a=True)
+
+    # Alternative bound on max eigenval:
+    c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
+    corrected_noise = model.likelihood.variance + c
+
+    const = -0.5 * num_data * tf.math.log(
+        2 * np.pi * model.likelihood.variance)
+    logdet = tf.reduce_sum(tf.math.log(
+        tf.linalg.diag_part(L))) - tf.reduce_sum(
+        tf.math.log(tf.linalg.diag_part(LB)))
+
+    LC = tf.linalg.cholesky(kuu + corrected_noise ** -1.0 *
+                            tf.linalg.matmul(kuf, kuf, transpose_b=True))
+    v = tf.linalg.triangular_solve(LC,
+                                    corrected_noise ** -1.0 *
+                                    tf.linalg.matmul(kuf, y_data),
+                                    lower=True)
+    quad = -0.5 * corrected_noise ** -1.0 * tf.reduce_sum(
+        y_data ** 2.0) + 0.5 * tf.reduce_sum(v ** 2.0)
+
+    return const + logdet + quad
+
