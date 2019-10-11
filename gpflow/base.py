@@ -46,7 +46,7 @@ class Parameter(tf.Module):
                  name: Optional[str] = None):
         """
         Unconstrained parameter representation.
-        According to standart terminology `y` is always transformed representation or,
+        According to standard terminology `y` is always transformed representation or,
         in other words, it is constrained version of the parameter. Normally, it is hard
         to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
         therefore we need positive constraint and it is natural to use constrained values.
