@@ -17,7 +17,7 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.kernels import Kernel
-from .model import MeanAndVariance, GPModel, Data
+from .model import MeanAndVariance, GPModel, Data, Posterior
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
@@ -112,36 +112,31 @@ class SGPR(SGPRUpperMixin):
     """
 
     def __init__(self,
-                 data: Data,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
                  inducing_variable: Optional[InducingPoints] = None,
-                 num_latent: Optional[int] = None
                  ):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
         Z is a matrix of pseudo inputs, size [M, D]
         kernel, mean_function are appropriate GPflow objects
 
         This method only works with a Gaussian likelihood.
         """
         likelihood = likelihoods.Gaussian()
-        x_data, y_data = data
-        num_latent = y_data.shape[-1] if num_latent is None else num_latent
-        super().__init__(kernel, likelihood, mean_function, num_latent)
-        self.data = data
-        self.num_data = x_data.shape[0]
-
+        super().__init__(kernel, likelihood, mean_function)
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-    def log_likelihood(self):
+    def elbo(self, data: Data):
         """
+        data is a tuple of X, Y with
+          X is a data matrix, size [N, D]
+          Y is a data matrix, size [N, R]
+
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
-        x_data, y_data = self.data
+        x_data, y_data = data
         num_inducing = len(self.inducing_variable)
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
         output_dim = tf.cast(tf.shape(y_data)[1], default_float())
@@ -175,6 +170,41 @@ class SGPR(SGPRUpperMixin):
         bound += 0.5 * output_dim * tf.reduce_sum(tf.linalg.diag_part(AAT))
 
         return bound
+
+    def objective(self, data: Data):
+        return -self.elbo(data)
+
+    def optimize(self):
+        opt = trainig.Scipy()
+        with tf.GradientTape(...):
+            # TODO
+
+    def get_posterior(self, data: Data):
+        # 1: compute q_mu and q_sqrt for the given data
+        x_data, y_data = self.data
+        num_inducing = len(self.inducing_variable)
+        err = y_data - self.mean_function(x_data)
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        sigma = tf.sqrt(self.likelihood.variance)
+        L = tf.linalg.cholesky(kuu)
+        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
+            num_inducing, dtype=default_float())
+        LB = tf.linalg.cholesky(B)
+        Aerr = tf.linalg.matmul(A, err)
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+
+        q_mu = tf.linalg.triangular_solve(LB, c, transpose_a=True, lower=True)
+        q_sqrt = tf.linalg.inv(LB)
+
+
+        # 2: create posterior object
+        posterior = Posterior(q_mu=q_mu.numpy(), q_sqrt=q_sqrt.numpy())
+                # TODO
+
+        return posterior
+
 
     def predict_f(self, X: tf.Tensor, full_cov=False,
                   full_output_cov=False) -> MeanAndVariance:

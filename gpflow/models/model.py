@@ -76,21 +76,22 @@ class GPModel(BayesianModel):
     def __init__(self,
                  kernel: Kernel,
                  likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None,
-                 num_latent: int = 1):
+                 mean_function: Optional[MeanFunction] = None)
         super().__init__()
-        self.num_latent = num_latent
-        # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
             mean_function = Zero()
         self.mean_function = mean_function
         self.kernel = kernel
         self.likelihood = likelihood
 
-    @abc.abstractmethod
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
+
+class Posterior(object):
+    def __init__(self, mean_function, kernel: Kernel, inducing_variable, likelihood: Likelihood, whiten: Bool, q_mu, q_sqrt)
+
+    def predict_f(self, X_new: DataPoint, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
-        raise NotImplementedError
+        mu, var = conditional(..., ...) # TODO
+        return mu + self.mean_function(X_new), var
 
     def predict_f_samples(self,
                           predict_at: DataPoint,
