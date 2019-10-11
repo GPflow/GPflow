@@ -66,10 +66,6 @@ likelihood_setups = [
     LikelihoodSetup(StudentT()),
     LikelihoodSetup(Beta(),
                     Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
-    pytest.param(LikelihoodSetup(MultiClass(2),
-                                 Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1),
-                                 rtol=1e-3, atol=1e-3),
-                 marks=pytest.mark.skip),
     LikelihoodSetup(Ordinal(np.array([-1, 1])),
                     Y=tf.random.uniform(Datum.Yshape, 0, 3, dtype=default_int())),
     LikelihoodSetup(Poisson(invlink=tf.square),
@@ -80,6 +76,11 @@ likelihood_setups = [
                     Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
     LikelihoodSetup(Bernoulli(invlink=tf.sigmoid),
                     Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
+
+    pytest.param(LikelihoodSetup(MultiClass(2),
+                                 Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1),
+                                 rtol=1e-3, atol=1e-3),
+                 marks=pytest.mark.skip),
 ]
 
 def get_likelihood(likelihood_setup):
