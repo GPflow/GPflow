@@ -117,7 +117,7 @@ class SGPR(SGPRUpperMixin):
                  mean_function: Optional[MeanFunction] = None,
                  inducing_variable: Optional[InducingPoints] = None,
                  num_latent: Optional[int] = None,
-                 noise_variance: int = 1.0,
+                 noise_variance: float = 1.0,
                  ):
         """
         X is a data matrix, size [N, D]
@@ -218,7 +218,7 @@ class GPRFITC(SGPRUpperMixin):
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
                  inducing_variable: Optional[InducingPoints] = None,
-                 noise_variance: int = 1.0,
+                 noise_variance: float = 1.0,
                  ):
         """
         This implements GP regression with the FITC approximation.
