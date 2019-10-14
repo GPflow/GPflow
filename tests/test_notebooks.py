@@ -29,8 +29,6 @@ from nbconvert.preprocessors.execute import CellExecutionError
 BLACKLISTED_NOTEBOOKS = [
     "kernel_design.ipynb",  # PR #1087
     "coregionalisation.ipynb",  # PR #1072
-    "regression.ipynb",  # PR #1076
-    "varying_noise.ipynb",  # PR #1050
     "Sanity_check.ipynb",  # PR #1078
 
     "external-mean-function.ipynb",  # TODO: @vdutor
@@ -49,8 +47,6 @@ BLACKLISTED_NOTEBOOKS = [
 
     "tips_and_tricks.ipynb",  # requires a big re-write but contains some useful
     # sections such as saving&loading...
-
-    "tf_graphs_and_sessions.ipynb",  # to be deleted - only tf1 graph&sessions
 ]
 
 
