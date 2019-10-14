@@ -17,7 +17,7 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.kernels import Kernel
-from .model import MeanAndVariance, GPModel, Data, Posterior
+from .model import MeanAndVariance, GPModel, Data, GPPosterior
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
@@ -47,14 +47,15 @@ class SGPR(GPModel):
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
                  inducing_variable: Optional[InducingPoints] = None,
-                 ):
+                 noise_variance: float = 1.0
+                 ) -> None:
         """
         Z is a matrix of pseudo inputs, size [M, D]
         kernel, mean_function are appropriate GPflow objects
 
         This method only works with a Gaussian likelihood.
         """
-        likelihood = likelihoods.Gaussian()
+        likelihood = likelihoods.Gaussian(variance=noise_variance)
         super().__init__(kernel, likelihood, mean_function)
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
@@ -135,57 +136,23 @@ class SGPR(GPModel):
 
         # TODO: make copies?
         # 2: create posterior object
-        posterior = Posterior(mean_function=self.mean_function,
-                              kernel=self.kernel,
-                              inducing_variables=self.inducing_variable,
-                              whiten=True,
-                              q_mu=q_mu.numpy(),
-                              q_sqrt=q_sqrt.numpy())
+        posterior = GPPosterior(mean_function=self.mean_function,
+                                kernel=self.kernel,
+                                likelihood=self.likelihood,
+                                inducing_variable=self.inducing_variable,
+                                whiten=True,
+                                mean=q_mu.numpy(),
+                                variance_sqrt=q_sqrt.numpy())
 
         return posterior
 
 
-    def predict_f(self, X: tf.Tensor, full_cov=False,
-                  full_output_cov=False) -> MeanAndVariance:
-        """
-        Compute the mean and variance of the latent function at some new points
-        Xnew. For a derivation of the terms in here, see the associated SGPR
-        notebook.
-        """
-        x_data, y_data = self.data
-        num_inducing = len(self.inducing_variable)
-        err = y_data - self.mean_function(x_data)
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
-        Kus = Kuf(self.inducing_variable, self.kernel, X)
-        sigma = tf.sqrt(self.likelihood.variance)
-        L = tf.linalg.cholesky(kuu)
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
-            num_inducing, dtype=default_float())
-        LB = tf.linalg.cholesky(B)
-        Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
-        tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
-        tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
-        mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
-        if full_cov:
-            var = self.kernel(X) + tf.linalg.matmul(tmp2, tmp2, transpose_a=True) \
-                  - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
-            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
-        else:
-            var = self.kernel(X, full=False) + tf.reduce_sum(tf.square(tmp2), 0) \
-                  - tf.reduce_sum(tf.square(tmp1), 0)
-            var = tf.tile(var[:, None], [1, self.num_latent])
-        return mean + self.mean_function(X), var
-
-
 class GPRFITC(GPModel):
     def __init__(self,
-                 data: Data,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
-                 inducing_variable: Optional[InducingPoints] = None
+                 inducing_variable: Optional[InducingPoints] = None,
+                 noise_variance: Optional[float] = 1.0
                  ):
         """
         This implements GP regression with the FITC approximation.
@@ -214,18 +181,13 @@ class GPRFITC(GPModel):
 
         mean_function = Zero() if mean_function is None else mean_function
 
-        likelihood = likelihoods.Gaussian()
-        x_data, y_data = data
-        num_latent = y_data.shape[-1]
-        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
-
-        self.data = data
-        self.num_data = x_data.shape[0]
+        likelihood = likelihoods.Gaussian(noise_variance)
+        super().__init__(kernel, likelihood, mean_function)
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-    def common_terms(self):
-        x_data, y_data = self.data
+    def common_terms(self, data: Data):
+        x_data, y_data = data
         num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)  # size [N, R]
         Kdiag = self.kernel(x_data, full=False)
@@ -249,7 +211,7 @@ class GPRFITC(GPModel):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def log_likelihood(self):
+    def log_likelihood(self, data: Data) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -273,7 +235,7 @@ class GPRFITC(GPModel):
         # and let \alpha = V \beta
         # then Mahalanobis term = -0.5* ( \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha ) )
 
-        err, nu, Luu, L, alpha, beta, gamma = self.common_terms()
+        err, nu, Luu, L, alpha, beta, gamma = self.common_terms(data)
 
         mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) \
                           + 0.5 * tf.reduce_sum(tf.square(gamma))
@@ -287,14 +249,19 @@ class GPRFITC(GPModel):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
-        constantTerm = -0.5 * self.num_data * tf.math.log(
+        num_data = data[0].shape[0]
+        num_latent = data[1].shape[1]
+        constantTerm = -0.5 * num_data * tf.math.log(
             tf.constant(2. * np.pi, default_float()))
         logDeterminantTerm = -0.5 * tf.reduce_sum(
             tf.math.log(nu)) - tf.reduce_sum(
             tf.math.log(tf.linalg.diag_part(L)))
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
-        return mahalanobisTerm + logNormalizingTerm * self.num_latent
+        return mahalanobisTerm + logNormalizingTerm * num_latent
+
+    def objective(self, data: Data) -> tf.Tensor:
+        return -self.log_likelihood(data)
 
     def predict_f(self, X: tf.Tensor, full_cov=False,
                   full_output_cov=False) -> MeanAndVariance:
@@ -315,11 +282,11 @@ class GPRFITC(GPModel):
         if full_cov:
             var = self.kernel(X) - tf.linalg.matmul(w, w, transpose_a=True) \
                   + tf.linalg.matmul(intermediateA, intermediateA, transpose_a=True)
-            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
+            var = tf.tile(var[None, ...], [num_latent, 1, 1])  # [P, N, N]
         else:
             var = self.kernel(X, full=False) - tf.reduce_sum(tf.square(w), 0) \
                   + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,
-            var = tf.tile(var[:, None], [1, self.num_latent])
+            var = tf.tile(var[:, None], [1, num_latent])
 
         return mean, var
 

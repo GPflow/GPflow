@@ -20,6 +20,6 @@ from .gpr import GPR
 from .model import BayesianModel, GPModel
 # from .gplvm import PCA_reduce
 from .sgpmc import SGPMC
-from .sgpr import GPRFITC, SGPR, SGPRUpperMixin
+from .sgpr import GPRFITC, SGPR
 from .svgp import SVGP
 from .vgp import VGP, VGPOpperArchambeau

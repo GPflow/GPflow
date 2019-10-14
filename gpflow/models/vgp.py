@@ -48,32 +48,34 @@ class VGP(GPModel):
     """
 
     def __init__(self,
-                 data: Data,
                  kernel: Kernel,
                  likelihood: Likelihood,
                  mean_function: Optional[MeanFunction] = None,
-                 num_latent: Optional[int] = None):
+                 num_data: Optional[int] = 10,
+                 num_latent: Optional[int] = 1):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
         kernel, likelihood, mean_function are appropriate GPflow objects
 
+        num_latent is the number of latent GP functions that are needed.
+        Usually, this is the same as the number of columns of the Y data
+        matrix. 
+
         """
-        super().__init__(kernel, likelihood, mean_function, num_latent)
+        super().__init__(kernel, likelihood, mean_function)
 
-        x_data, y_data = data
-        num_data = x_data.shape[0]
-        self.num_data = num_data
-        self.num_latent = num_latent or y_data.shape[1]
-        self.data = data
-
-        self.q_mu = Parameter(np.zeros((num_data, self.num_latent)))
-        q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent)])
+        self.num_latent = num_latent
+        self.q_mu = Parameter(tf.Variable(shape=(None, num_latent), initial_value=np.zeros((num_data, self.num_latent))))
         transform = tfp.bijectors.FillTriangular()
-        self.q_sqrt = Parameter(q_sqrt, transform=transform)
+        q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent)])
+        q_sqrt = transform.inverse(q_sqrt).numpy()
+        self.q_sqrt = Parameter(tf.Variable(shape=(num_latent, None), initial_value=q_sqrt), transform=transform)
 
-    def log_likelihood(self):
+    def elbo(self, data: Data):
         """
+        Data is a tuple (X, Y) where 
+          X is a data matrix, size [N, D]
+          Y is a data matrix, size [N, R]
+
         This method computes the variational lower bound on the likelihood,
         which is:
 
@@ -85,12 +87,13 @@ class VGP(GPModel):
 
         """
 
-        x_data, y_data = self.data
+        x_data, y_data = data
         # Get prior KL.
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kernel(x_data) + tf.eye(self.num_data, dtype=default_float()) * default_jitter()
+        num_data = x_data.shape[0]
+        K = self.kernel(x_data) + tf.eye(num_data, dtype=default_float()) * default_jitter()
         L = tf.linalg.cholesky(K)
         fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(x_data)  # [NN, ND] -> ND
         q_sqrt_dnn = tf.linalg.band_part(self.q_sqrt, -1, 0)  # [D, N, N]
@@ -104,18 +107,18 @@ class VGP(GPModel):
         var_exp = self.likelihood.variational_expectations(fmean, fvar, y_data)
 
         return tf.reduce_sum(var_exp) - KL
+    
+    def objective(self, data: Data):
+        return -self.elbo(data)
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
-                  full_output_cov: bool = False) -> MeanAndVariance:
-        x_data, _y_data = self.data
-        mu, var = conditional(predict_at,
-                              x_data,
-                              self.kernel,
-                              self.q_mu,
-                              q_sqrt=self.q_sqrt,
-                              full_cov=full_cov,
-                              white=True)
-        return mu + self.mean_function(predict_at), var
+    def get_posterior(self, data: Data):
+        return GPPosterior(mean_function=self.mean_function,
+                           kernel=self.kernel,
+                           likelihood=self.likelihood,
+                           inducing_variable=data[0],
+                           whiten=True,
+                           mean=q_mu.numpy(),
+                           variance_sqrt=q_sqrt.numpy())
 
 
 class VGPOpperArchambeau(GPModel):

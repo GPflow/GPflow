@@ -19,7 +19,7 @@ import tensorflow as tf
 from .. import kullback_leiblers
 from ..conditionals import conditional
 from ..covariances import Kuu
-from ..models.model import GPModel
+from .model import GPModel, Data, GPPosterior
 from ..base import Parameter, positive, triangular
 from ..config import default_float, default_jitter
 from .util import inducingpoint_wrapper
@@ -44,14 +44,14 @@ class SVGP(GPModel):
                  kernel,
                  likelihood,
                  inducing_variable,
-                 mean_function=None,
+                 mean_function = None,
                  *,
-                 num_latent: int=1,
-                 q_diag: bool=False,
-                 q_mu=None,
-                 q_sqrt=None,
-                 whiten: bool=True,
-                 num_data=None):
+                 num_latent: int = 1,
+                 q_diag: bool = False,
+                 q_mu = None,
+                 q_sqrt = None,
+                 whiten: bool = True,
+                 num_data = None):
         """
         - kernel, likelihood, inducing_variables, mean_function are appropriate
           GPflow objects
@@ -64,11 +64,12 @@ class SVGP(GPModel):
           (relevant when feeding in external minibatches)
         """
         # init the super class, accept args
-        super().__init__(kernel, likelihood, mean_function, num_latent)
+        super().__init__(kernel, likelihood, mean_function)
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+        self.num_latent = num_latent
 
         # init variational parameters
         num_inducing = len(self.inducing_variable)
@@ -135,14 +136,21 @@ class SVGP(GPModel):
     def prior_kl(self):
         return kullback_leiblers.prior_kl(self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten)
 
-    def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
+    def elbo(self, data: Data) -> tf.Tensor:
         """
         This gives a variational bound on the model likelihood.
         """
+        X, Y = data
         kl = self.prior_kl()
-        f_mean, f_var = self.predict_f(X,
-                                       full_cov=False,
-                                       full_output_cov=False)
+        f_mean, f_var = conditional(X,
+                                    self.inducing_variable,
+                                    self.kernel,
+                                    self.q_mu,
+                                    q_sqrt=self.q_sqrt,
+                                    full_cov=False,
+                                    white=self.whiten,
+                                    full_output_cov=False)
+        f_mean += self.mean_function(X)
         var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
@@ -152,23 +160,19 @@ class SVGP(GPModel):
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
-    def elbo(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
+    def objective(self, data: Data) -> tf.Tensor:
         """
-        This returns the evidence lower bound (ELBO) of the log marginal likelihood.
+        This returns the (negative) evidence lower bound (ELBO) on the log marginal likelihood.
         """
-        return self.neg_log_marginal_likelihood(X, Y)
+        return -self.elbo(data)
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False,
-                  full_output_cov=False) -> tf.Tensor:
-        q_mu = self.q_mu
-        q_sqrt = self.q_sqrt
-        mu, var = conditional(Xnew,
-                              self.inducing_variable,
-                              self.kernel,
-                              q_mu,
-                              q_sqrt=q_sqrt,
-                              full_cov=full_cov,
-                              white=self.whiten,
-                              full_output_cov=full_output_cov)
-        # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
-        return mu + self.mean_function(Xnew), var
+    def get_posterior(self, data: Data) -> GPPosterior:
+        """
+        """
+        return GPPosterior(mean_function=self.mean_function,
+                           kernel=self.kernel,
+                           likelihood=self.likelihood,
+                           inducing_variables=self.inducing_variables,
+                           whiten=self.whiten,
+                           mean=self.q_mu.numpy(),
+                           variance_sqrt=self.q_sqrt.numpy())

@@ -26,6 +26,7 @@ from ..inducing_variables import InducingVariables
 from ..mean_functions import MeanFunction, Zero
 from ..conditionals import conditional
 from ..utilities import ops
+from .util import inducingpoint_wrapper
 
 Data = TypeVar('Data', Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
 DataPoint = tf.Tensor
@@ -48,64 +49,30 @@ class BayesianModel(Module):
         raise NotImplementedError
 
 
-class GPModel(BayesianModel):
-    r"""
-    A stateless base class for Gaussian process models, that is, those of the form
 
-    .. math::
-       :nowrap:
+class GPPosterior(object):
+    """
 
-       \\begin{align}
-       \\theta & \sim p(\\theta) \\\\
-       f       & \sim \\mathcal{GP}(m(x), k(x, x'; \\theta)) \\\\
-       f_i       & = f(x_i) \\\\
-       y_i\,|\,f_i     & \sim p(y_i|f_i)
-       \\end{align}
-
-    This class mostly adds functionality to compile predictions. To use it,
-    inheriting classes must define a predict_f function, which computes
-    the means and variances of the latent function. Its usage is similar to log_likelihood in the
-    Model class.
+     TODO 
 
     These predictions are then pushed through the likelihood to obtain means
     and variances of held out data, self.predict_y.
 
     The predictions can also be used to compute the (log) density of held-out
     data via self.predict_log_density.
-
     """
-
-    def __init__(self,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None
-                 ) -> None:
-
-        super().__init__()
-        if mean_function is None:
-            mean_function = Zero()
-
-        self.mean_function = mean_function
-        self.kernel = kernel
-        self.likelihood = likelihood
-
-    def get_posterior(self, data: Data) -> Posterior:
-        rasie NotImplementedError
-
-
-class Posterior(object):
 
     def __init__(self,
                  mean_function: MeanFunction, 
                  kernel: Kernel, 
                  inducing_variable: InducingVariables,
                  likelihood: Likelihood, 
-                 whiten: Bool,
+                 whiten: bool,
                  mean: np.ndarray,
                  variance_sqrt: np.ndarray) -> None:
         self.mean_function = mean_function
         self.kernel = kernel
-        self.inducing_variable = inducing_variables
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
         self.likelihood = likelihood
         self.whiten = whiten
         self.mean, self.variance_sqrt = mean, variance_sqrt
@@ -114,7 +81,7 @@ class Posterior(object):
 
     def predict_f(self, X_new: DataPoint, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
-        mu, var = conditional(Xnew,
+        mu, var = conditional(X_new,
                               self.inducing_variable,
                               self.kernel,
                               self.mean,
@@ -158,3 +125,40 @@ class Posterior(object):
         x, y = data
         f_mean, f_var = self.predict_f(x, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_density(f_mean, f_var, y)
+
+
+class GPModel(BayesianModel):
+    r"""
+    A base class for Gaussian process models, that is, those of the form
+
+    .. math::
+       :nowrap:
+
+       \\begin{align}
+       \\theta & \sim p(\\theta) \\\\
+       f       & \sim \\mathcal{GP}(m(x), k(x, x'; \\theta)) \\\\
+       f_i       & = f(x_i) \\\\
+       y_i\,|\,f_i     & \sim p(y_i|f_i)
+       \\end{align}
+
+
+    """
+
+    def __init__(self,
+                 kernel: Kernel,
+                 likelihood: Likelihood,
+                 mean_function: Optional[MeanFunction] = None
+                 ) -> None:
+
+        super().__init__()
+        if mean_function is None:
+            mean_function = Zero()
+
+        self.mean_function = mean_function
+        self.kernel = kernel
+        self.likelihood = likelihood
+
+    def get_posterior(self, data: Data) -> GPPosterior:
+        raise(NotImplementedError)
+
+
