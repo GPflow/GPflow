@@ -1,9 +1,9 @@
 import gpflow
-from gpflow.test_util import notebook_niter
+from gpflow.ci_utils import ci_niter
 import tensorflow as tf
 import numpy as np
 
-nRepeats = notebook_niter(50)
+nRepeats = ci_niter(50)
 
 predict_limits = [-4., 4.]
 inducing_points_limits = [-1., 9]
@@ -36,12 +36,8 @@ def getTrainingTestData():
     return xtrain, ytrain, xtest, ytest
 
 def getLogPredictiveDensities(targetValues, means, variances):
-    assert(targetValues.flatten().shape == targetValues.shape)
-    assert(means.flatten().shape == means.shape)
-    assert(variances.flatten().shape == variances.shape)
-
-    assert(len(targetValues) == len(means))
-    assert(len(variances) == len(means))
+    assert targetValues.shape == means.shape
+    assert variances.shape == means.shape
 
     deltas = targetValues - means
     mahalanobisTerms = -0.5*deltas**2/variances
@@ -49,7 +45,7 @@ def getLogPredictiveDensities(targetValues, means, variances):
     return mahalanobisTerms + normalizationTerms
 
 def getKernel():
-    return gpflow.kernels.SquaredExponential(1)
+    return gpflow.kernels.SquaredExponential()
 
 def getRegressionModel(X, Y):
     m = gpflow.models.GPR(X, Y, kern=getKernel())
@@ -60,15 +56,15 @@ def getRegressionModel(X, Y):
 
 def getSparseModel(X, Y, isFITC=False):
     if isFITC:
-        m = gpflow.models.GPRFITC(X, Y, kern=getKernel(),  Z=X.copy())
+        m = gpflow.models.GPRFITC((X, Y), kernel=getKernel(), inducing_variable=X.copy())
     else:
-        m = gpflow.models.SGPR(X, Y, kern=getKernel(),  Z=X.copy())
+        m = gpflow.models.SGPR((X, Y), kernel=getKernel(), inducing_variable=X.copy())
     return m
 
 def printModelParameters(model):
-    print("  Likelihood variance = {:.5g}".format(model.likelihood.variance.value))
-    print("  Kernel variance     = {:.5g}".format(model.kern.variance.value))
-    print("  Kernel lengthscale  = {:.5g}".format(model.kern.lengthscales.value))
+    print("  Likelihood variance = {:.5g}".format(model.likelihood.variance.numpy()))
+    print("  Kernel variance     = {:.5g}".format(model.kernel.variance.numpy()))
+    print("  Kernel lengthscale  = {:.5g}".format(model.kernel.lengthscale.numpy()))
 
 def plotPredictions(ax, model, color, label=None):
     xtest = np.sort(readCsvFile('data/snelson_test_inputs.dat'))
@@ -78,11 +74,16 @@ def plotPredictions(ax, model, color, label=None):
     ax.plot(xtest, predMean - 2.*np.sqrt(predVar), color)
 
 def repeatMinimization(model, xtest, ytest):
-    callback = cb(model, xtest, ytest)
-    opt = gpflow.train.ScipyOptimizer()
+    callback = Callback(model, xtest, ytest)
+    @tf.function
+    def objective_closure():
+        return model.neg_log_marginal_likelihood()
+    opt = gpflow.optimizers.Scipy()
     #print("Optimising for {} repetitions".format(nRepeats))
     for repeatIndex in range(nRepeats):
-        opt.minimize(model, disp=False, maxiter=notebook_niter(2000), step_callback=callback)
+        opt.minimize(objective_closure, model.trainable_variables,
+                     options=dict(disp=False, maxiter=ci_niter(2000)),
+                     step_callback=callback)
     return callback
 
 def trainSparseModel(xtrain, ytrain, exact_model, isFITC, xtest, ytest):
@@ -113,7 +114,7 @@ def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_in
     ax2.set_ylim(hold_out_limits)
     ax2.set_ylabel('Hold out negative log likelihood', color='b')
 
-class cb():
+class Callback:
     def __init__(self, model, xtest, ytest, holdout_interval=100):
         self.model = model
         self.holdout_interval = holdout_interval
@@ -124,13 +125,15 @@ class cb():
         self.n_iters = []
         self.counter = 0
 
-    def __call__(self, info):
-        if (self.counter%self.holdout_interval) == 0 or (self.counter <= 10):
+    def __call__(self, step, loss, variables, gradients):
+        if (self.counter % self.holdout_interval) == 0 or (self.counter <= 10):
             predictive_mean, predictive_variance = self.model.predict_y(self.xtest)
             self.n_iters.append(self.counter)
-            self.log_likelihoods.append(self.model.compute_log_likelihood())
-            test_log_likelihood = getLogPredictiveDensities(self.ytest.flatten(), predictive_mean.flatten(), predictive_variance.flatten()).mean()
+            self.log_likelihoods.append(self.model.log_likelihood())
+            test_log_likelihood = tf.reduce_mean(getLogPredictiveDensities(self.ytest, predictive_mean, predictive_variance))
             self.hold_out_likelihood.append(test_log_likelihood)
+            import IPython
+            IPython.embed()
         self.counter+=1
 
 def stretch(lenNIters, initialValues):
@@ -146,7 +149,7 @@ def snelsonDemo():
     # run exact inference on training data.
     exact_model = getRegressionModel(xtrain,ytrain)
     opt = gpflow.train.ScipyOptimizer()
-    opt.minimize(exact_model, maxiter=notebook_niter(2000000))
+    opt.minimize(exact_model, maxiter=ci_niter(2000000))
 
     figA, axes = plt.subplots(1,1)
     inds = np.argsort(xtrain.flatten())
@@ -156,8 +159,8 @@ def snelsonDemo():
     figB, axes = plt.subplots(3,2)
 
     # run sparse model on training data initialized from exact optimal solution.
-    VFEmodel, VFEcb = trainSparseModel(xtrain,ytrain,exact_model,False,xtest,ytest)
-    FITCmodel, FITCcb = trainSparseModel(xtrain,ytrain,exact_model,True,xtest,ytest)
+    VFEmodel, VFEcb = trainSparseModel(xtrain, ytrain, exact_model, False, xtest, ytest)
+    FITCmodel, FITCcb = trainSparseModel(xtrain, ytrain, exact_model, True, xtest, ytest)
 
     print("Exact model parameters \n")
     printModelParameters(exact_model)
