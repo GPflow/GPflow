@@ -17,18 +17,18 @@ from typing import Callable, List, Optional, TypeVar
 
 import tensorflow as tf
 
-import gpflow
+from gpflow.base import Parameter, positive
 
 __all__ = ["positive_parameter", "SamplingHelper"]
 
 
 def positive_parameter(value: tf.Tensor):
-    if isinstance(value, (tf.Variable, gpflow.Parameter)):
+    if isinstance(value, (tf.Variable, Parameter)):
         return value
-    return gpflow.Parameter(value, transform=gpflow.positive())
+    return Parameter(value, transform=positive())
 
 
-ModelParameters = List[TypeVar("ModelParameter", tf.Variable, gpflow.Parameter)]
+ModelParameters = List[TypeVar("ModelParameter", tf.Variable, Parameter)]
 
 
 @dataclass(frozen=True)
@@ -64,7 +64,7 @@ class SamplingHelper:
         Returns the same list of parameters as `parameters` property, but replaces gpflow `Parameter`s
         with their unconstrained variables - `parameter.unconstrained_variable`.
         """
-        return [p.unconstrained_variable if isinstance(p, gpflow.Parameter) else p for p in self.parameters]
+        return [p.unconstrained_variable if isinstance(p, Parameter) else p for p in self.parameters]
 
     def assign_values(self, *values, unconstrained: Optional[bool] = True):
         """
@@ -80,13 +80,13 @@ class SamplingHelper:
     def convert_to_constrained_values(self, *unconstrained_values):
         """
         Converts list of `unconstrained_values` to constrained versions. Each value in the list correspond to the
-        parameter and in case when an object in the same position has `gpflow.Parameter` type, the `forward` method
+        parameter and in case when an object in the same position has `Parameter` type, the `forward` method
         of transform will be applied.
         """
         samples = []
         for i, values in enumerate(unconstrained_values):
             param = self.parameters[i]
-            if isinstance(param, gpflow.Parameter) and param.transform is not None:
+            if isinstance(param, Parameter) and param.transform is not None:
                 sample = param.transform.forward(values)
             else:
                 sample = values

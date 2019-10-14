@@ -28,11 +28,11 @@ def _IS_TRAINABLE_PARAMETER(o):
 class Module(tf.Module):
     @property
     def parameters(self):
-        return self._flatten(predicate=_IS_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_PARAMETER))
 
     @property
     def trainable_parameters(self):
-        return self._flatten(predicate=_IS_TRAINABLE_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
 
 class Parameter(tf.Module):
@@ -51,7 +51,7 @@ class Parameter(tf.Module):
         to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
         therefore we need positive constraint and it is natural to use constrained values.
         """
-        super().__init__()
+        super().__init__(name)
 
         value = _verified_value(value, dtype)
         if isinstance(value, tf.Variable):

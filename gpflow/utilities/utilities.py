@@ -15,6 +15,7 @@ __all__ = [
     "multiple_assign",
     "training_loop",
     "print_summary",
+    "leaf_components"
 ]
 
 
@@ -154,7 +155,7 @@ def _get_leaf_components(input: tf.Module, prefix: Optional[str] = None):
             submodule_name = input.__class__.__name__
             for term_idx, subterm in enumerate(submodule):
                 subterm_key = f"{submodule_name}_{key}[{term_idx}]"
-                if isinstance(subterm, Parameter):
+                if isinstance(subterm, tf.Module):
                     subterm_var = _get_leaf_components(subterm, prefix=f"{prefix}.{subterm_key}")
                     var_dict.update(subterm_var)
         elif isinstance(submodule, _DictWrapper):

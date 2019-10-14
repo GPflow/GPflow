@@ -50,10 +50,12 @@ class GPMC(GPModel):
 
         """
         super().__init__(kernel, likelihood, mean_function, num_latent)
+        fdtype = lambda x: np.array(x, dtype=default_float())
+
         self.data = data
         self.num_data = data[0].shape[0]
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
+        self.V.prior = tfp.distributions.Normal(loc=fdtype(0.), scale=fdtype(1.))
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         """
