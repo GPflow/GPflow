@@ -31,7 +31,7 @@ class InducingVariables(tf.Module):
         Returns the number of inducing variables, relevant for example
         to determine the size of the variational distribution.
         """
-        pass
+        raise NotImplementedError
 
 
 class InducingPointsBase(InducingVariables):
@@ -53,7 +53,7 @@ class InducingPoints(InducingPointsBase):
 
 
 class Multiscale(InducingPointsBase):
-    """
+    r"""
     Multi-scale inducing variables
 
     Originally proposed in

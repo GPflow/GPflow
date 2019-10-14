@@ -19,30 +19,29 @@ GPflow implements modern Gaussian process inference for composable kernels and l
 
 GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python **3.6**.
 
-## Install GPflow 2.0 beta version
 
+## Install GPflow 2.0 alpha version
 
-1. Install TensorFlow (TF) and TensorFlow Probability (TFP) nightly packages. You _might_ experience issues with TF and TFP latest versions.
-
-```bash
-pip install -U gast==0.2.2 dataclasses tf-nightly-2.0-preview tfp-nightly
-```
-
-2. Install develop GPflow 2.0 version from `awav/gpflow-2.0` branch:
+With the release of `tensorflow` 2.0 and `tensorflow-probability` 0.8, you should
+only need to run
 
 ```bash
 pip install -e .
 ```
 
+in a check-out of the `develop-2.0` branch of the GPflow github repository.
+
 
 ## Getting Started
 
-You can find the converted to GPflow 2.0 notebooks in the `notebooks` folder.
+There is an "Intro to GPflow 2" Jupyter notebook in `doc/source/notebooks/intro_to_gpflow2.ipynb". Not all tutorial notebooks may be running on `gpflow2` already, but we are working on it!
 
 ## Getting help
+
 Please use GitHub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.
 
 ## Contributing
+
 All constructive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
 
 ## Compatibility
