@@ -172,7 +172,7 @@ class SVGP(GPModel):
         return GPPosterior(mean_function=self.mean_function,
                            kernel=self.kernel,
                            likelihood=self.likelihood,
-                           inducing_variables=self.inducing_variables,
+                           inducing_variable=self.inducing_variable,
                            whiten=self.whiten,
                            mean=self.q_mu.numpy(),
                            variance_sqrt=self.q_sqrt.numpy())

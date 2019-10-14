@@ -116,7 +116,7 @@ class SGPR(GPModel):
 
     def get_posterior(self, data: Data):
         # 1: compute q_mu and q_sqrt for the given data
-        x_data, y_data = self.data
+        x_data, y_data = data
         num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
@@ -130,7 +130,7 @@ class SGPR(GPModel):
         Aerr = tf.linalg.matmul(A, err)
         c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
 
-        q_mu = tf.linalg.triangular_solve(LB, c, transpose_a=True, lower=True)
+        q_mu = tf.linalg.triangular_solve(tf.transpose(LB), c, lower=False)
         q_sqrt = tf.linalg.inv(LB)
 
 

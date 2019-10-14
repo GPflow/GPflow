@@ -25,7 +25,7 @@ from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
-from ..models.model import Data, DataPoint, GPModel, MeanAndVariance
+from ..models.model import Data, DataPoint, GPModel, MeanAndVariance, GPPosterior
 
 
 class VGP(GPModel):
@@ -117,8 +117,8 @@ class VGP(GPModel):
                            likelihood=self.likelihood,
                            inducing_variable=data[0],
                            whiten=True,
-                           mean=q_mu.numpy(),
-                           variance_sqrt=q_sqrt.numpy())
+                           mean=self.q_mu.numpy(),
+                           variance_sqrt=self.q_sqrt.numpy())
 
 
 class VGPOpperArchambeau(GPModel):

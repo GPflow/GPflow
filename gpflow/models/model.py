@@ -75,7 +75,8 @@ class GPPosterior(object):
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
         self.likelihood = likelihood
         self.whiten = whiten
-        self.mean, self.variance_sqrt = mean, variance_sqrt
+        self.mean = tf.constant(mean)
+        self.variance_sqrt = tf.constant(variance_sqrt)
 
         # TODO: assert shapes?
 
@@ -85,7 +86,7 @@ class GPPosterior(object):
                               self.inducing_variable,
                               self.kernel,
                               self.mean,
-                              self.variance_sqrt,
+                              q_sqrt=self.variance_sqrt,
                               white=self.whiten,
                               full_cov=full_cov,
                               full_output_cov=full_output_cov)
