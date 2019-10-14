@@ -75,7 +75,7 @@ class SGPR(GPModel):
         output_dim = tf.cast(tf.shape(y_data)[1], default_float())
 
         err = y_data - self.mean_function(x_data)
-        Kdiag = self.kernel(x_data)
+        Kdiag = self.kernel.K_diag(x_data)
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
@@ -130,21 +130,22 @@ class SGPR(GPModel):
         Aerr = tf.linalg.matmul(A, err)
         c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
 
+        # TODO: this might be able to be more effective if we could pass in
+        # chol(K) or equavalent to conditionals (see also:GPR)
         q_mu = tf.linalg.triangular_solve(tf.transpose(LB), c, lower=False)
-        q_sqrt = tf.linalg.inv(LB)
-
+        # LBi = tf.linalg.inv(LB)
+        # Bi = tf.matmul(LBi, LBi, transpose_a=True)
+        variance_sqrt = tf.linalg.cholesky(tf.linalg.inv(B) + tf.eye(num_inducing, dtype=default_float())*1e-6)
 
         # TODO: make copies?
         # 2: create posterior object
-        posterior = GPPosterior(mean_function=self.mean_function,
-                                kernel=self.kernel,
-                                likelihood=self.likelihood,
-                                inducing_variable=self.inducing_variable,
-                                whiten=True,
-                                mean=q_mu.numpy(),
-                                variance_sqrt=q_sqrt.numpy())
-
-        return posterior
+        return GPPosterior(mean_function=self.mean_function,
+                           kernel=self.kernel,
+                           likelihood=self.likelihood,
+                           inducing_variable=self.inducing_variable,
+                           whiten=True,
+                           mean=q_mu.numpy(),
+                           variance_sqrt=variance_sqrt.numpy())
 
 
 class GPRFITC(GPModel):
@@ -190,7 +191,7 @@ class GPRFITC(GPModel):
         x_data, y_data = data
         num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)  # size [N, R]
-        Kdiag = self.kernel(x_data, full=False)
+        Kdiag = self.kernel.K_diag(x_data)
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 

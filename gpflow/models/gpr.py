@@ -80,9 +80,17 @@ class GPR(GPModel):
         L = tf.linalg.cholesky(ks)
         m = self.mean_function(x_data)
 
+        # TODO: these computations are correct but not as efficient as they might be.
+        # to improve efficiency, we'd need to be able to pass chol(K) in to the conditionals code.
+        # TODO (edit) the variance appears to not be correct after all...?
+
         tmp = tf.linalg.triangular_solve(L, y_data - m, lower=True)
         tmp = tf.linalg.triangular_solve(tf.transpose(L), tmp, lower=False)
         q_mu = tf.matmul(K, tmp)
+
+        tmp = tf.linalg.triangular_solve(L, K, lower=True)
+        variance = K - tf.matmul(tmp, tmp, transpose_a=True)
+        variance_sqrt = tf.linalg.cholesky(variance).numpy()
 
         return GPPosterior(mean_function=self.mean_function,
                            kernel=self.kernel,
@@ -90,4 +98,4 @@ class GPR(GPModel):
                            inducing_variable=data[0],
                            whiten=False,
                            mean=q_mu,
-                           variance_sqrt=L)
+                           variance_sqrt=variance_sqrt)
