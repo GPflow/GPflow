@@ -66,17 +66,15 @@ class Parameter(tf.Module):
     def log_prior(self):
         x = self.read_value()
         y = self._unconstrained
-        dtype = x.dtype
 
-        out = tf.convert_to_tensor(0., dtype=dtype)
-
-        bijector = self.transform
         if self.prior is not None:
-            out += tf.reduce_sum(self.prior.log_prob(x))
+            out = tf.reduce_sum(self.prior.log_prob(x))
             if self.transform is not None:
-                log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
+                log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
                 out += tf.reduce_sum(log_det_jacobian)
-        return out
+            return out
+        else:
+            return tf.convert_to_tensor(0., dtype=self.dtype)
 
     @property
     def handle(self):
