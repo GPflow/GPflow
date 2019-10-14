@@ -22,7 +22,9 @@ from ..base import Module
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
+from ..inducing_variables import InducingVariables
 from ..mean_functions import MeanFunction, Zero
+from ..conditionals import conditional
 from ..utilities import ops
 
 Data = TypeVar('Data', Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
@@ -87,17 +89,40 @@ class GPModel(BayesianModel):
         self.kernel = kernel
         self.likelihood = likelihood
 
+    def get_posterior(self, data: Data) -> Posterior:
+        rasie NotImplementedError
 
-class Posterior:
 
-    def __init__(self, mean_function, kernel: Kernel, 
-                 inducing_variable,
+class Posterior(object):
+
+    def __init__(self,
+                 mean_function: MeanFunction, 
+                 kernel: Kernel, 
+                 inducing_variable: InducingVariables,
                  likelihood: Likelihood, 
-                 whiten: Bool, q_mu, q_sqrt)
+                 whiten: Bool,
+                 mean: np.ndarray,
+                 variance_sqrt: np.ndarray) -> None:
+        self.mean_function = mean_function
+        self.kernel = kernel
+        self.inducing_variable = inducing_variables
+        self.likelihood = likelihood
+        self.whiten = whiten
+        self.mean, self.variance_sqrt = mean, variance_sqrt
+
+        # TODO: assert shapes?
 
     def predict_f(self, X_new: DataPoint, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
-        mu, var = conditional(..., ...) # TODO
+        mu, var = conditional(Xnew,
+                              self.inducing_variable,
+                              self.kernel,
+                              self.mean,
+                              self.variance_sqrt,
+                              white=self.whiten,
+                              full_cov=full_cov,
+                              full_output_cov=full_output_cov)
+
         return mu + self.mean_function(X_new), var
 
     def predict_f_samples(self,

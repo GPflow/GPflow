@@ -133,9 +133,14 @@ class SGPR(GPModel):
         q_sqrt = tf.linalg.inv(LB)
 
 
+        # TODO: make copies?
         # 2: create posterior object
-        posterior = Posterior(q_mu=q_mu.numpy(), q_sqrt=q_sqrt.numpy())
-                # TODO
+        posterior = Posterior(mean_function=self.mean_function,
+                              kernel=self.kernel,
+                              inducing_variables=self.inducing_variable,
+                              whiten=True,
+                              q_mu=q_mu.numpy(),
+                              q_sqrt=q_sqrt.numpy())
 
         return posterior
 
