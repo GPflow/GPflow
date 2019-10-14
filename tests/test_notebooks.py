@@ -34,7 +34,6 @@ BLACKLISTED_NOTEBOOKS = [
     "external-mean-function.ipynb",  # TODO: @vdutor
     "natural_gradients.ipynb",  # TODO: @awav
     "multiclass_classification.ipynb",  # TODO @jordigraumo
-    "mcmc.ipynb",  # TODO: @condnsdmatters
 
     "models.ipynb",
     "gp_nn.ipynb",
