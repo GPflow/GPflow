@@ -45,9 +45,19 @@ class Parameter(tf.Module):
                  dtype: Optional[DType] = None,
                  name: Optional[str] = None):
         """
-        Unconstrained parameter representation.
+        [Un]constrained parameter representation.
+        The `Parameter` instance behaves as a standard `tf.Tensor`. You can pass it to
+        any `tf.*` function.
+
+        Example:
+
+        ```python
+        p = Parameter(1.0)
+        exp_of_p = tf.exp(p)
+        ```
+
         According to standart terminology `y` is always transformed representation or,
-        in other words, it is constrained version of the parameter. Normally, it is hard
+        in other words, it is unconstrained version of the parameter. Normally, it is hard
         to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
         therefore we need positive constraint and it is natural to use constrained values.
         """
@@ -64,6 +74,8 @@ class Parameter(tf.Module):
         self._transform = transform
 
     def log_prior(self):
+        """
+        """
         x = self.read_value()
         y = self._unconstrained
         dtype = x.dtype
