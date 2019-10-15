@@ -51,17 +51,13 @@ def _create_full_gp_model():
     """
     GP Regression
     """
-    full_gp_model = gpflow.models.GPR((Datum.X, Datum.Y),
-                                      kernel=gpflow.kernels.SquaredExponential(),
-                                      mean_function=gpflow.mean_functions.Constant(),
-                                      )
+    full_gp_model = gpflow.models.GPR(kernel=gpflow.kernels.SquaredExponential(),
+                                      mean_function=gpflow.mean_functions.Constant())
 
+    data = (Datum.X, Datum.Y)
     opt = gpflow.optimizers.Scipy()
 
-    def full_gp_model_closure():
-        return full_gp_model.neg_log_marginal_likelihood()
-
-    opt.minimize(full_gp_model_closure, variables=full_gp_model.trainable_variables, options=dict(maxiter=300))
+    opt.minimize(lambda: full_gp_model.objective(data), variables=full_gp_model.trainable_variables, options=dict(maxiter=300))
     return full_gp_model
 
 
@@ -76,8 +72,8 @@ def _create_approximate_models():
        variables are 'collapsed' out, as in Titsias 2009)
     5) FITC Sparse GP Regression
     """
-    model_1 = gpflow.models.VGP((Datum.X, Datum.Y),
-                                gpflow.kernels.SquaredExponential(),
+    data = (Datum.X, Datum.Y)
+    model_1 = gpflow.models.VGP(gpflow.kernels.SquaredExponential(),
                                 likelihood=gpflow.likelihoods.Gaussian(),
                                 mean_function=gpflow.mean_functions.Constant())
     model_2 = gpflow.models.SVGP(gpflow.kernels.SquaredExponential(),
@@ -98,7 +94,7 @@ def _create_approximate_models():
                                     inducing_variable=Datum.X.copy(),
                                     mean_function=Constant())
     gpflow.utilities.set_trainable(model_4.inducing_variable, False)
-    model_5 = gpflow.models.SGPR((Datum.X, Datum.Y), gpflow.kernels.SquaredExponential(),
+    model_5 = gpflow.models.SGPR(gpflow.kernels.SquaredExponential(),
                                  inducing_variable=Datum.X.copy(),
                                  mean_function=Constant())
     gpflow.utilities.set_trainable(model_5.inducing_variable, False)
@@ -107,26 +103,8 @@ def _create_approximate_models():
 
     opt = gpflow.optimizers.Scipy()
 
-    def model_1_closure():
-        return model_1.neg_log_marginal_likelihood()
-
-    def model_2_closure():
-        return model_2.elbo(Datum.X, Datum.Y)
-
-    def model_3_closure():
-        return model_3.elbo(Datum.X, Datum.Y)
-
-    def model_4_closure():
-        return model_4.neg_log_marginal_likelihood()
-
-    def model_5_closure():
-        return - model_5.log_likelihood()
-
-    opt.minimize(model_1_closure, variables=model_1.trainable_variables, options=dict(maxiter=300))
-    opt.minimize(model_2_closure, variables=model_2.trainable_variables, options=dict(maxiter=300))
-    opt.minimize(model_3_closure, variables=model_3.trainable_variables, options=dict(maxiter=300))
-    opt.minimize(model_4_closure, variables=model_4.trainable_variables, options=dict(maxiter=300))
-    # opt.minimize(model_5_closure, variables=model_5.trainable_variables, options=dict(maxiter=300))
+    for m in [model_1, model_2, model_3, model_4]: # model_5?
+        opt.minimize(lambda : m.objective(data), variables=m.trainable_variables, options=dict(maxiter=300))
 
     return model_1, model_2, model_3, model_4, model_5
 
@@ -249,19 +227,16 @@ def test_upper_bound_few_inducing_points():
     """
     Test for upper bound for regression marginal likelihood
     """
-    model_vfe = gpflow.models.SGPR((DatumUpper.X, DatumUpper.Y), gpflow.kernels.SquaredExponential(),
+    data = (DatumUpper.X, DatumUpper.Y)
+    model_vfe = gpflow.models.SGPR(gpflow.kernels.SquaredExponential(),
                                    inducing_variable=DatumUpper.X[:10, :].copy(),
                                    mean_function=Constant())
     opt = gpflow.optimizers.Scipy()
 
-    def model_vfe_closure():
-        return - model_vfe.log_likelihood()
+    opt.minimize(lambda: model_vfe.objective(data), variables=model_vfe.trainable_variables, options=dict(maxiter=500))
 
-    opt.minimize(model_vfe_closure, variables=model_vfe.trainable_variables, options=dict(maxiter=500))
+    full_gp = gpflow.models.GPR(kernel=gpflow.kernels.SquaredExponential())
 
-    full_gp = gpflow.models.GPR((DatumUpper.X, DatumUpper.Y),
-                                kernel=gpflow.kernels.SquaredExponential()
-                                )
     full_gp.kernel.lengthscale.assign(model_vfe.kernel.lengthscale.read_value())
     full_gp.kernel.variance.assign(model_vfe.kernel.variance.read_value())
     full_gp.likelihood.variance.assign(model_vfe.likelihood.variance.read_value())
