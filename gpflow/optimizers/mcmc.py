@@ -52,7 +52,7 @@ class SamplingHelper:
 
     Args:
         target_log_prob_fn: Python callable which represents log-density under the target distribution.
-        parameters: List of `Variable`'s or gpflow `Parameter`s used as a state of the Markov chain.
+        parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
     """
 
     target_log_prob_fn: Callable[[ModelParameters], tf.Tensor]
@@ -61,15 +61,15 @@ class SamplingHelper:
     @property
     def variables(self):
         """
-        Returns the same list of parameters as `parameters` property, but replaces gpflow `Parameter`s
+        Returns the same list of parameters as `self.parameters`, but replaces gpflow `Parameter`s
         with their unconstrained variables - `parameter.unconstrained_variable`.
         """
         return [p.unconstrained_variable if isinstance(p, Parameter) else p for p in self.parameters]
 
     def assign_values(self, *values, unconstrained: Optional[bool] = True):
         """
-        Assings (constrained or unconstrained) values to the parameter's variable.
-        Unconstrained values are assigned to the list of `variables` property.
+        Assigns (constrained or unconstrained) values to the parameter's variable.
+        When assigning unconstrained values, the target is `self.variables`, otherwise `self.parameters`.
         """
         trainables = self.variables if unconstrained else self.parameters
         assert len(values) == len(trainables)
@@ -79,24 +79,24 @@ class SamplingHelper:
 
     def convert_to_constrained_values(self, *unconstrained_values):
         """
-        Converts list of `unconstrained_values` to constrained versions. Each value in the list correspond to the
-        parameter and in case when an object in the same position has `Parameter` type, the `forward` method
-        of transform will be applied.
+        Converts list of `unconstrained_values` to constrained versions. Each value in the list correspond to an entry in
+        `self.parameters`; in case that object is a `gpflow.Parameter`, the `forward` method of its transform
+        will be applied first.
         """
         samples = []
-        for i, values in enumerate(unconstrained_values):
+        for i, value in enumerate(unconstrained_values):
             param = self.parameters[i]
             if isinstance(param, Parameter) and param.transform is not None:
-                sample = param.transform.forward(values)
+                sample = param.transform.forward(value)
             else:
-                sample = values
+                sample = value
             samples.append(sample.numpy())
         return samples
 
     def make_posterior_log_prob_fn(self):
         """
         Make a differentiable posterior log-probability function using helper's `target_log_prob_fn` with respect to
-        passed `parameters`.
+        `self.parameters`.
         """
 
         @tf.custom_gradient

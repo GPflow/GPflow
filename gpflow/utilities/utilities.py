@@ -15,7 +15,7 @@ __all__ = [
     "multiple_assign",
     "training_loop",
     "print_summary",
-    "leaf_components"
+    "leaf_components",
 ]
 
 
