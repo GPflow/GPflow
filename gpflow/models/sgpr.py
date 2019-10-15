@@ -180,16 +180,8 @@ class GPRFITC(GPModel):
 
         """
 
-        mean_function = Zero() if mean_function is None else mean_function
-
         likelihood = likelihoods.Gaussian(noise_variance)
-        x_data, y_data = data
-        num_latent = y_data.shape[-1]
         super().__init__(kernel, likelihood, mean_function)
-
-        self.data = data
-        self.num_data = x_data.shape[0]
-
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
     def common_terms(self, data: Data):
