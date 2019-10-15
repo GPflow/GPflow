@@ -34,8 +34,8 @@ class GPR(GPModel):
     and is given by
 
     .. math::
-       \\log p(\\mathbf y \\,|\\, \\mathbf f) =
-            \\mathcal N\\left(\\mathbf y\,|\, 0, \\mathbf K + \\sigma_n \\mathbf I\\right)
+       \log p(\mathbf y \,|\, \mathbf f) =
+            \mathcal N\left(\mathbf y\,|\, 0, \mathbf K + \sigma_n \mathbf I\right)
     """
 
     def __init__(self,
@@ -47,7 +47,7 @@ class GPR(GPModel):
         super().__init__(kernel, likelihood, mean_function)
 
     def log_marginal_likelihood(self, data: Data):
-        """
+        r"""
         Computes the log likelihood.
 
         .. math::
