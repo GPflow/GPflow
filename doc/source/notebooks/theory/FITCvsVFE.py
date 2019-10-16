@@ -75,9 +75,11 @@ def plotPredictions(ax, model, color, label=None):
 
 def repeatMinimization(model, xtest, ytest):
     callback = Callback(model, xtest, ytest)
-    @tf.function
+
+    @tf.function(autograph=False)
     def objective_closure():
         return model.neg_log_marginal_likelihood()
+
     opt = gpflow.optimizers.Scipy()
     #print("Optimising for {} repetitions".format(nRepeats))
     for repeatIndex in range(nRepeats):
@@ -97,9 +99,9 @@ def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_in
     plotPredictions(ax_predictions, exact_model, 'g', label='Exact')
     plotPredictions(ax_predictions, sparse_model, 'b', label='Approximate')
     ax_predictions.legend(loc=9)
-    ax_predictions.plot( sparse_model.feature.Z.value , -1.*np.ones( xtrain.shape ), 'ko' )
+    ax_predictions.plot( sparse_model.inducing_variable.Z.numpy() , -1.*np.ones( xtrain.shape ), 'ko' )
     ax_predictions.set_ylim( predict_limits )
-    ax_inducing_points.plot( xtrain, sparse_model.feature.Z.value, 'bo' )
+    ax_inducing_points.plot( xtrain, sparse_model.inducing_variable.Z.numpy(), 'bo' )
     xs= np.linspace( ax_inducing_points.get_xlim()[0], ax_inducing_points.get_xlim()[1], 200 )
     ax_inducing_points.plot( xs, xs, 'g' )
     ax_inducing_points.set_xlabel('Optimal inducing point position')
@@ -126,14 +128,16 @@ class Callback:
         self.counter = 0
 
     def __call__(self, step, loss, variables, gradients):
-        if (self.counter % self.holdout_interval) == 0 or (self.counter <= 10):
-            predictive_mean, predictive_variance = self.model.predict_y(self.xtest)
+        # step will reset to zero between calls to minimize(), whereas counter will keep increasing
+
+        if (self.counter <= 10) or (self.counter % self.holdout_interval) == 0:
             self.n_iters.append(self.counter)
-            self.log_likelihoods.append(self.model.log_likelihood())
+            self.log_likelihoods.append(self.model.log_likelihood().numpy())
+
+            predictive_mean, predictive_variance = self.model.predict_y(self.xtest)
             test_log_likelihood = tf.reduce_mean(getLogPredictiveDensities(self.ytest, predictive_mean, predictive_variance))
-            self.hold_out_likelihood.append(test_log_likelihood)
-            import IPython
-            IPython.embed()
+            self.hold_out_likelihood.append(test_log_likelihood.numpy())
+
         self.counter+=1
 
 def stretch(lenNIters, initialValues):
