@@ -324,3 +324,19 @@ def test_leaf_components_combination_kernel():
     """
     k = gpflow.kernels.SquaredExponential() + gpflow.kernels.SquaredExponential()
     assert leaf_components(k), "Combination kernel should have non-empty leaf components"
+
+
+def test_module_parameters_return_iterators_not_generators():
+    """
+    Regression test: Ensure that gpflow.Module parameters return iterators like in TF2, not
+    generators.
+
+    Reason:
+    param = m.params  # <generator object>
+    x = [p for p in param] # List[Parameters]
+    y = [p for p in param] # [] empty!
+    """
+    m = create_model()
+    assert isinstance(m, gpflow.base.Module)
+    assert isinstance(m.parameters, tuple)
+    assert isinstance(m.trainable_parameters, tuple)
