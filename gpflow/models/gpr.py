@@ -18,7 +18,7 @@ import tensorflow as tf
 
 from .model import GPModel, GPPosterior, Data
 from ..kernels import Kernel
-from ..likelihoods import Gaussian
+from ..likelihoods import Likelihood, Gaussian
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 
@@ -41,9 +41,12 @@ class GPR(GPModel):
     def __init__(self,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None, 
-                 noise_variance: float = 1.0
+                 likelihood: Optional[Likelihood] = None
                  ) -> None:
-        likelihood = Gaussian(variance=noise_variance)
+        if likelihood is None:
+            likelihood = Gaussian(variance=1.0)
+        elif not isinstance(likelihood, Gaussian):
+            raise ValueError("Likelihood must be Gaussian to work with GPR")
         super().__init__(kernel, likelihood, mean_function)
 
     def log_marginal_likelihood(self, data: Data):

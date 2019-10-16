@@ -18,7 +18,7 @@ import tensorflow as tf
 
 from gpflow.kernels import Kernel
 from .model import MeanAndVariance, GPModel, Data, GPPosterior
-from .. import likelihoods
+from ..likelihoods import Likelihood, Gaussian
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
@@ -45,9 +45,9 @@ class SGPR(GPModel):
 
     def __init__(self,
                  kernel: Kernel,
+                 inducing_variable: InducingPoints,
                  mean_function: Optional[MeanFunction] = None,
-                 inducing_variable: Optional[InducingPoints] = None,
-                 noise_variance: float = 1.0,
+                 likelihood: Optional[Likelihood] = None
                  ) -> None:
         """
         Z is a matrix of pseudo inputs, size [M, D]
@@ -55,9 +55,36 @@ class SGPR(GPModel):
 
         This method only works with a Gaussian likelihood.
         """
-        likelihood = likelihoods.Gaussian(variance=noise_variance)
+        if likelihood is None:
+            likelihood = Gaussian(variance=1.0)
+        elif not isinstance(likelihood, Gaussian):
+            raise ValueError("Likelihood must be Gaussian to work with SGPR")
         super().__init__(kernel, likelihood, mean_function)
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+
+    def _common_terms(self, data: Data):
+        x_data, y_data = data
+        num_inducing = len(self.inducing_variable)
+
+        err = y_data - self.mean_function(x_data)
+        Kdiag = self.kernel.K_diag(x_data)
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        Luu = tf.linalg.cholesky(kuu)
+        sigma = tf.sqrt(self.likelihood.variance)
+
+        # Compute intermediate matrices
+        A = tf.linalg.triangular_solve(Luu, kuf, lower=True) / sigma
+        AAT = tf.linalg.matmul(A, A, transpose_b=True)
+        B = AAT + tf.eye(num_inducing, dtype=default_float())
+        LB = tf.linalg.cholesky(B)
+        Aerr = tf.linalg.matmul(A, err)
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+
+        trace_term = -0.5 * tf.reduce_sum(Kdiag) / self.likelihood.variance \
+                     +0.5 * tf.reduce_sum(tf.linalg.diag_part(AAT))
+
+        return err, B, c, Luu, LB, trace_term
 
     def elbo(self, data: Data):
         """
@@ -69,38 +96,17 @@ class SGPR(GPModel):
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
-        x_data, y_data = data
-        num_inducing = len(self.inducing_variable)
-        num_data = tf.cast(tf.shape(y_data)[0], default_float())
-        output_dim = tf.cast(tf.shape(y_data)[1], default_float())
+        err, B, c, Luu, LB, trace_term = self._common_terms(data)
 
-        err = y_data - self.mean_function(x_data)
-        Kdiag = self.kernel.K_diag(x_data)
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
-        L = tf.linalg.cholesky(kuu)
-        sigma = tf.sqrt(self.likelihood.variance)
+        output_dim = tf.cast(tf.shape(data[1])[1], default_float())
+        num_data = tf.cast(tf.shape(data[0])[0], default_float())
 
-        # Compute intermediate matrices
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        AAT = tf.linalg.matmul(A, A, transpose_b=True)
-        B = AAT + tf.eye(num_inducing, dtype=default_float())
-        LB = tf.linalg.cholesky(B)
-        Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
-
-        # compute log marginal bound
         bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
-        bound += tf.negative(output_dim) * tf.reduce_sum(
-            tf.math.log(tf.linalg.diag_part(LB)))
-        bound -= 0.5 * num_data * output_dim * tf.math.log(
-            self.likelihood.variance)
-        bound += -0.5 * tf.reduce_sum(
-            tf.square(err)) / self.likelihood.variance
+        bound -= output_dim * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
+        bound -= 0.5 * num_data * output_dim * tf.math.log(self.likelihood.variance)
+        bound -= 0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
         bound += 0.5 * tf.reduce_sum(tf.square(c))
-        bound += -0.5 * output_dim * tf.reduce_sum(
-            Kdiag) / self.likelihood.variance
-        bound += 0.5 * output_dim * tf.reduce_sum(tf.linalg.diag_part(AAT))
+        bound += output_dim * trace_term
 
         return bound
 
@@ -116,26 +122,16 @@ class SGPR(GPModel):
 
     def get_posterior(self, data: Data):
         # 1: compute q_mu and q_sqrt for the given data
-        x_data, y_data = data
-        num_inducing = len(self.inducing_variable)
-        err = y_data - self.mean_function(x_data)
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
-        sigma = tf.sqrt(self.likelihood.variance)
-        L = tf.linalg.cholesky(kuu)
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
-            num_inducing, dtype=default_float())
-        LB = tf.linalg.cholesky(B)
-        Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+        _, B, c, Luu, LB, _ = self._common_terms(data)
 
         # TODO: this might be able to be more effective if we could pass in
         # chol(K) or equavalent to conditionals (see also:GPR)
         q_mu = tf.linalg.triangular_solve(tf.transpose(LB), c, lower=False)
-        # LBi = tf.linalg.inv(LB)
-        # Bi = tf.matmul(LBi, LBi, transpose_a=True)
-        variance_sqrt = tf.linalg.cholesky(tf.linalg.inv(B) + tf.eye(num_inducing, dtype=default_float())*1e-6)
+        LBi = tf.linalg.inv(LB)
+        Bi = tf.matmul(LBi, LBi, transpose_a=True)
+        num_inducing = len(self.inducing_variable)
+        # variance_sqrt = tf.linalg.cholesky(tf.linalg.inv(B) + tf.eye(num_inducing, dtype=default_float())*1e-6)
+        variance_sqrt = tf.linalg.cholesky(Bi + tf.eye(num_inducing, dtype=default_float())*1e-12)
 
         # TODO: make copies?
         # 2: create posterior object
@@ -151,9 +147,9 @@ class SGPR(GPModel):
 class GPRFITC(GPModel):
     def __init__(self,
                  kernel: Kernel,
+                 inducing_variable: InducingPoints,
                  mean_function: Optional[MeanFunction] = None,
-                 inducing_variable: Optional[InducingPoints] = None,
-                 noise_variance: float = 1.0,
+                 likelihood: Optional[Likelihood] = None
                  ):
         """
         This implements GP regression with the FITC approximation.
@@ -180,11 +176,14 @@ class GPRFITC(GPModel):
 
         """
 
-        likelihood = likelihoods.Gaussian(noise_variance)
+        if likelihood is None:
+            likelihood = Gaussian(variance=1.0)
+        elif not isinstance(likelihood, Gaussian):
+            raise ValueError("Likelihood must be Gaussian to work with FITC")
         super().__init__(kernel, likelihood, mean_function)
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-    def common_terms(self, data: Data):
+    def _common_terms(self, data: Data):
         x_data, y_data = data
         num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)  # size [N, R]
@@ -233,7 +232,7 @@ class GPRFITC(GPModel):
         # and let \alpha = V \beta
         # then Mahalanobis term = -0.5* ( \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha ) )
 
-        err, nu, Luu, L, alpha, beta, gamma = self.common_terms(data)
+        err, nu, Luu, L, alpha, beta, gamma = self._common_terms(data)
 
         mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) \
                           + 0.5 * tf.reduce_sum(tf.square(gamma))
@@ -260,6 +259,22 @@ class GPRFITC(GPModel):
 
     def objective(self, data: Data) -> tf.Tensor:
         return -self.log_likelihood(data)
+
+    def get_posterior(self, data: Data):
+        _, _, Luu, L, _, _, gamma = self._common_terms(data)
+        q_mu = tf.linalg.solve(L, gamma)
+        variance_sqrt = L
+
+        return GPPosterior(mean_function=self.mean_function,
+                           kernel=self.kernel,
+                           likelihood=self.likelihood,
+                           inducing_variable=self.inducing_variable,
+                           whiten=True,
+                           mean=q_mu.numpy(),
+                           variance_sqrt=variance_sqrt.numpy())
+
+
+
 
     def predict_f(self, X: tf.Tensor, full_cov=False,
                   full_output_cov=False) -> MeanAndVariance:
