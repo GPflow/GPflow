@@ -28,11 +28,11 @@ def _IS_TRAINABLE_PARAMETER(o):
 class Module(tf.Module):
     @property
     def parameters(self):
-        return self._flatten(predicate=_IS_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_PARAMETER))
 
     @property
     def trainable_parameters(self):
-        return self._flatten(predicate=_IS_TRAINABLE_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
 
 class Parameter(tf.Module):
