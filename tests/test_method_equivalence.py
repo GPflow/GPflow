@@ -126,7 +126,7 @@ def _create_approximate_models():
     opt.minimize(model_2_closure, variables=model_2.trainable_variables, options=dict(maxiter=300))
     opt.minimize(model_3_closure, variables=model_3.trainable_variables, options=dict(maxiter=300))
     opt.minimize(model_4_closure, variables=model_4.trainable_variables, options=dict(maxiter=300))
-    # opt.minimize(model_5_closure, variables=model_5.trainable_variables, options=dict(maxiter=300))
+    opt.minimize(model_5_closure, variables=model_5.trainable_variables, options=dict(maxiter=300))
 
     return model_1, model_2, model_3, model_4, model_5
 
@@ -154,7 +154,7 @@ def _create_svgp_model(kernel, likelihood, q_mu, q_sqrt, whiten):
     return model_svgp
 
 
-@pytest.mark.parametrize('approximate_model', _create_approximate_models()[:-1])
+@pytest.mark.parametrize('approximate_model', _create_approximate_models())
 def test_equivalence(approximate_model):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
