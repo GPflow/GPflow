@@ -55,7 +55,7 @@ class SGPRUpperMixin(GPModel):
         x_data, y_data = self.data
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
 
-        Kdiag = self.kernel(x_data)
+        Kdiag = self.kernel(x_data, full=False)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
 
@@ -148,7 +148,7 @@ class SGPR(SGPRUpperMixin):
         output_dim = tf.cast(tf.shape(y_data)[1], default_float())
 
         err = y_data - self.mean_function(x_data)
-        Kdiag = self.kernel(x_data)
+        Kdiag = self.kernel(x_data, full=False)
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
