@@ -110,7 +110,7 @@ def test_sgpr_qu():
     f_at_Z_mean, f_at_Z_cov = model.predict_f(model.inducing_variable.Z, full_cov=True)
 
     np.testing.assert_allclose(qu_m, f_atZ_m, rtol=0, atol=1e-5)
-    np.testing.assert_allclose(tf.reshape(qu_A, (1, 20, 20)), f_atZ_A, rtol=0, atol=1e-5)
+    np.testing.assert_allclose(tf.reshape(qu_A, (1, 20, 20)), f_atZ_A, rtol=0, atol=1e-6)
 
 
 def test_svgp_white():
