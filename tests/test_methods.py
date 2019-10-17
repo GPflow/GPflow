@@ -106,11 +106,13 @@ def test_sgpr_qu():
         return model.neg_log_marginal_likelihood()
 
     gpflow.optimizers.Scipy().minimize(closure, variables=model.trainable_variables)
-    [qu_m, qu_A] = model.compute_qu()
-    [f_atZ_m, f_atZ_A] = model.predict_f(model.inducing_variable.Z, full_cov=True)
 
-    np.testing.assert_allclose(qu_m, f_atZ_m, rtol=0, atol=1e-5)
-    np.testing.assert_allclose(tf.reshape(qu_A, (1, 20, 20)), f_atZ_A, rtol=0, atol=1e-5)
+    qu_mean, qu_cov = model.compute_qu()
+    f_at_Z_mean, f_at_Z_cov = model.predict_f(model.inducing_variable.Z, full_cov=True)
+
+    np.testing.assert_allclose(qu_mean, f_at_Z_mean, rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(tf.reshape(qu_cov, (1, 20, 20)), f_at_Z_cov, rtol=1e-5, atol=1e-5)
+
 
 
 def test_svgp_white():
