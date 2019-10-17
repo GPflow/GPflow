@@ -211,6 +211,31 @@ class SGPR(SGPRUpperMixin):
             var = tf.tile(var[:, None], [1, self.num_latent])
         return mean + self.mean_function(X), var
 
+    def compute_qu(self):
+        """
+        Computes the mean and variance of q(u), the variational distribution on
+        inducing outputs. SVGP with this q(u) should predict identically to
+        SGPR.
+        :return: mu, A
+        """
+        x_data, y_data = self.data
+
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+
+        sig = kuu + (self.likelihood.variance ** -1) * tf.matmul(kuf, kuf, transpose_b=True)
+        sig_sqrt = tf.linalg.cholesky(sig)
+
+        sig_sqrt_kuu = tf.linalg.triangular_solve(sig_sqrt, kuu)
+
+        A = tf.linalg.matmul(sig_sqrt_kuu, sig_sqrt_kuu, transpose_a=True)
+        err = y_data - self.mean_function(x_data)
+        mu = tf.linalg.matmul(
+            sig_sqrt_kuu, tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(kuf, err)),
+            transpose_a=True) * self.likelihood.variance ** -1.0
+
+        return mu, A
+
 
 class GPRFITC(SGPRUpperMixin):
     def __init__(self,
