@@ -81,7 +81,7 @@ def get_gpmc_model_params():
 
 
 @pytest.mark.parametrize('model_class, args', [
-    (gpflow.models.GPMC, get_GPMC_model_params()),
+    (gpflow.models.GPMC, get_gpmc_model_params()),
     #(gpflow.models.SGPMC, get_SGPMC_model_params()) # Fails due to inducing_variable=None bug
     ])
 def test_v_prior_dtypes(model_class, args):
