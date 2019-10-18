@@ -73,7 +73,7 @@ def test_map_contains_log_det_jacobian():
             "MAP objective should differ by log|Jacobian| of the transform"
 
 
-def get_GPMC_model_params():
+def get_gpmc_model_params():
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
     data = [np.arange(5), np.arange(5)]
@@ -84,7 +84,7 @@ def get_GPMC_model_params():
     (gpflow.models.GPMC, get_GPMC_model_params()),
     #(gpflow.models.SGPMC, get_SGPMC_model_params()) # Fails due to inducing_variable=None bug
     ])
-def test_V_prior_dtypes(model_class, args):
+def test_v_prior_dtypes(model_class, args):
     with config_session():
         set_default_float(np.float32)
         m = model_class(*args)
