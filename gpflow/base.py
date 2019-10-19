@@ -78,10 +78,6 @@ class Parameter(tf.Module):
             out += tf.reduce_sum(log_det_jacobian)
         return out
 
-    @property
-    def handle(self):
-        return self._unconstrained.handle
-
     def value(self):
         return _to_constrained(self._unconstrained.value(), self.transform)
 
@@ -150,12 +146,12 @@ class Parameter(tf.Module):
     def _should_act_as_resource_variable(self):
         pass
 
+    @property
+    def handle(self):
+        return self._unconstrained.handle
+
     def __repr__(self):
         return self.read_value().__repr__()
-
-    def __ilshift__(self, value: VariableData) -> 'Parameter':
-        self.assign(tf.cast(value, self.dtype))
-        return self
 
     # Below
     # TensorFlow copy-paste code to make variable-like object to work
