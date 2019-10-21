@@ -198,28 +198,25 @@ def traverse_module(m: TraverseInput,
     :param target_types: target class types
     :return:
     """
-    if not isinstance(m, (tf.Module, tf.Variable)):
-        raise TypeError("Input object expected to have `tf.Module` type")
-
     path, state = acc
+
+    new_state = state
 
     if isinstance(m, target_types):
         return update_cb(m, path, state)
 
-    new_state = state
-    for name, submodule in vars(m).items():
-        if name in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
-            continue
-
-        if isinstance(submodule, ListWrapper):
-            for term_idx, subterm in enumerate(submodule):
-                new_acc = (f"{path}.{name}[{term_idx}]", new_state)
-                new_state = traverse_module(subterm, new_acc, update_cb, target_types)
-        elif isinstance(submodule, _DictWrapper):
-            for term_name, subterm in submodule.items():
-                new_acc = (f"{path}.{name}['{term_name}']", new_state)
-                new_state = traverse_module(subterm, new_acc, update_cb, target_types)
-        elif isinstance(submodule, (tf.Module, tf.Variable)):
+    if isinstance(m, ListWrapper):
+        for term_idx, subterm in enumerate(m):
+            new_acc = (f"{path}[{term_idx}]", new_state)
+            new_state = traverse_module(subterm, new_acc, update_cb, target_types)
+    elif isinstance(m, _DictWrapper):
+        for term_idx, subterm in m.items():
+            new_acc = (f"{path}['{term_idx}']", new_state)
+            new_state = traverse_module(subterm, new_acc, update_cb, target_types)
+    elif isinstance(m, tf.Module):
+        for name, submodule in vars(m).items():
+            if name in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
+                continue
             new_acc = (f"{path}.{name}", new_state)
             new_state = traverse_module(submodule, new_acc, update_cb, target_types)
     return new_state
