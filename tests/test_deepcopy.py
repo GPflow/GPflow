@@ -9,7 +9,7 @@ from gpflow.utilities import deepcopy_components
 
 class A(tf.Module):
     def __init__(self):
-        self.var = tf.Variable(tf.random.normal((1,)))
+        self.var = tf.Variable([1.0])
         self.bijector = tfp.bijectors.Softplus()
 
     def __call__(self, x):
