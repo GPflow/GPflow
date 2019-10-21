@@ -39,3 +39,5 @@ def test_deepcopy_component_clears_bijector_cache_and_deecopy(module):
     module_copy = deepcopy_components(module)
     assert module.var == module_copy.var
     assert module.var is not module_copy.var
+    module_copy.var.assign([5.0])
+    assert module.var != module_copy.var
