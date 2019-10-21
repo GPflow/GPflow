@@ -26,10 +26,16 @@ class B(tf.Module):
 
 
 @pytest.mark.parametrize('module', [A(), B()])
-def test_deepcopy_component_works(module):
+def test_deepcopy_component_clears_bijector_cache_and_deecopy(module):
+    """
+    With each forward pass through a bijector, a cache is stored inside which prohibits the deepcopy of the bijector.
+    This is due to the fact that HashableWeakRef objects are not pickle-able, which raises a TypeError. Alternatively,
+    one can make use of `deepcopy_component` to deepcopy a module containing used bijectors.
+    """
     input = 1.
     _ = module(input)
     with pytest.raises(TypeError):
         deepcopy(module)
     module_copy = deepcopy_components(module)
     assert module.var == module_copy.var
+    assert module.var is not module_copy.var
