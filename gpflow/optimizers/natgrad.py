@@ -159,10 +159,11 @@ class NaturalGradient(tf.optimizers.Optimizer):
                     dummy_gradients = tape.gradient([xi1_nat, xi2_nat], [nat1, nat2], output_gradients=dummy_tensors)
 
         # 1) the oridinary gpflow gradient
-        dL_d_mean, dL_d_varsqrt = tape.gradient(loss, [q_mu, q_sqrt])
+        dL_dmean, dL_dvarsqrt = tape.gradient(loss, [q_mu, q_sqrt])
+        dL_dvarsqrt = q_sqrt.transform.forward(dL_dvarsqrt)
 
         # 2) the chain rule to get ∂L/∂η, where η (eta) are the expectation parameters
-        dL_deta1, dL_deta2 = tape.gradient(meanvarsqrt, [eta1, eta2], output_gradients=[dL_d_mean, dL_d_varsqrt])
+        dL_deta1, dL_deta2 = tape.gradient(meanvarsqrt, [eta1, eta2], output_gradients=[dL_dmean, dL_dvarsqrt])
 
         if not isinstance(xi_transform, XiNat):
             nat_dL_xi1, nat_dL_xi2 = forward_tape.gradient(dummy_gradients,
