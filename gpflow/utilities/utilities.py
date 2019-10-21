@@ -72,7 +72,7 @@ def training_loop(closure: Callable[..., tf.Tensor],
         with tf.GradientTape() as tape:
             tape.watch(var_list)
             loss = closure()
-            grads = tape.gradient(loss, var_list)
+        grads = tape.gradient(loss, var_list)
         optimizer.apply_gradients(zip(grads, var_list))
 
     if jit:
