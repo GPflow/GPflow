@@ -23,7 +23,7 @@ from ..mean_functions import MeanFunction
 from .model import GPModel, MeanAndVariance, Data
 from ..base import Parameter
 from ..conditionals import conditional
-from ..config import default_float, default_jitter
+from ..config import default_float, default_jitter, to_default_float
 
 
 class GPMC(GPModel):
@@ -53,7 +53,7 @@ class GPMC(GPModel):
         self.data = data
         self.num_data = data[0].shape[0]
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
+        self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         """
