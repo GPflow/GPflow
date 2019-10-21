@@ -18,7 +18,7 @@ class A(tf.Module):
 
 class B(tf.Module):
     def __init__(self):
-        self.var = tf.Variable(tf.random.normal((1,)))
+        self.var = tf.Variable([2.0])
         self.a = A()
 
     def __call__(self, x):
