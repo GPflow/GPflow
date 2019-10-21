@@ -82,7 +82,7 @@ def assert_gpr_vs_vgp(m1: tf.Module,
 
     @tf.function(autograph=False)
     def minimize_step():
-        opt.minimize(loss_cb, vars_list=[params])
+        opt.minimize(loss_cb, var_list=[params])
 
     for _ in range(maxiter):
         minimize_step()
@@ -106,7 +106,7 @@ def assert_sgpr_vs_svgp(m1: tf.Module, m2: tf.Module):
 
     params = [(m2.q_mu, m2.q_sqrt)]
     opt = NaturalGradient(1.)
-    opt.minimize(loss_cb, vars_list=params)
+    opt.minimize(loss_cb, var_list=params)
 
     m1_ll_after = m1.log_likelihood()
     m2_ll_after = m2.log_likelihood(data[0], data[1])

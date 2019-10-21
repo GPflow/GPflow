@@ -80,7 +80,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         super().__init__(name)
         self.gamma = gamma
 
-    def minimize(self, loss_fn: Callable, vars_list: List[Parameter]):
+    def minimize(self, loss_fn: Callable, var_list: List[Parameter]):
         """
         Minimizes objective function of the model.
         Natural Gradient optimizer works with variational parameters only.
@@ -112,7 +112,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
             :type step_callback: Callable[[], None]
             :param kwargs: Extra parameters passed to session run's method.
         """
-        parameters = [(v[0], v[1], v[2] if len(v) > 2 else XiNat()) for v in vars_list]
+        parameters = [(v[0], v[1], v[2] if len(v) > 2 else XiNat()) for v in var_list]
         self._natgrad_steps(loss_fn, parameters)
 
     def _natgrad_steps(self, loss_fn: Callable, parameters: List[Tuple[Parameter, Parameter, XiTransform]]):
