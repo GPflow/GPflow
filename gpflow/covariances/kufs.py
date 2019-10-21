@@ -1,13 +1,8 @@
 import tensorflow as tf
 from ..base import TensorLike
-from ..inducing_variables import InducingVariables, InducingPoints, Multiscale, InducingPatches
+from ..inducing_variables import InducingPoints, Multiscale, InducingPatches
 from ..kernels import Kernel, SquaredExponential, Convolutional
 from .dispatch import Kuf
-
-
-@Kuf.register(InducingVariables, Kernel, TensorLike)
-def Kuf_fallback(inducing_variable, kernel, X):
-    return Kuf(kernel, inducing_variable, X)
 
 
 @Kuf.register(InducingPoints, Kernel, TensorLike)

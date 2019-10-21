@@ -1,14 +1,9 @@
 import tensorflow as tf
 
-from ..inducing_variables import InducingVariables, InducingPoints, Multiscale, InducingPatches
+from ..inducing_variables import InducingPoints, Multiscale, InducingPatches
 from ..kernels import Kernel, SquaredExponential, Convolutional
 from .dispatch import Kuu
 from ..config import default_float
-
-
-@Kuu.register(InducingVariables, Kernel)
-def Kuu_fallback(inducing_variable, kernel, **kw):
-    return Kuu(kernel, inducing_variable, **kw)
 
 
 @Kuu.register(InducingPoints, Kernel)
