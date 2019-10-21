@@ -24,6 +24,14 @@ from ..base import Parameter
 Scalar = Union[float, tf.Tensor, np.ndarray]
 
 
+__all__ = [
+    "NaturalGradient",
+    "XiTransform",
+    "XiSqrtMeanVar",
+    "XiNat",
+]
+
+
 class XiTransform(metaclass=abc.ABCMeta):
     """
     XiTransform is the base class that implements three transformations necessary

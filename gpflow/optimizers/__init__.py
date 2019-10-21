@@ -1,4 +1,5 @@
 # pylint: disable=wildcard-import
 
-from .natgrad import NaturalGradient
+from . import natgrad
+from .natgrad import *
 from .scipy import Scipy
