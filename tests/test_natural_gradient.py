@@ -6,7 +6,6 @@ import gpflow
 from gpflow.config import default_float
 from gpflow.optimizers import NaturalGradient
 from gpflow.utilities import set_trainable
-from gpflow.ci_utils import ci_niter
 
 
 class Setup:
@@ -161,4 +160,4 @@ def test_xi_transform_vgp_vs_gpr(gpr_and_vgp, xi_transform):
     after a number of smaller steps.
     """
     gpr, vgp = gpr_and_vgp
-    assert_gpr_vs_vgp(gpr, vgp, gamma=0.01, xi_transform=xi_transform, maxiter=ci_niter(500))
+    assert_gpr_vs_vgp(gpr, vgp, gamma=0.01, xi_transform=xi_transform, maxiter=500)
