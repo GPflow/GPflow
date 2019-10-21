@@ -1,4 +1,5 @@
 import gpflow
+from gpflow.config import to_default_float, set_default_float, config_session
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -44,11 +45,6 @@ def test_log_prior_with_no_prior():
     assert param.log_prior().numpy() == 0.0
 
 
-
-def fix_dtype(x):
-    # TODO replace with generic function for handling tensorflow_probability ...
-    return tf.cast(x, gpflow.default_float())
-
 class DummyModel(gpflow.models.BayesianModel):
     value = 3.3
     log_scale = 0.4
@@ -56,11 +52,11 @@ class DummyModel(gpflow.models.BayesianModel):
     def __init__(self, with_transform):
         super().__init__()
 
-        prior = tfp.distributions.Normal(fix_dtype(1.0), fix_dtype(1.0))
+        prior = tfp.distributions.Normal(to_default_float(1.0), to_default_float(1.0))
 
         scale = np.exp(self.log_scale)
         if with_transform:
-            transform = tfp.bijectors.AffineScalar(scale=fix_dtype(scale))
+            transform = tfp.bijectors.AffineScalar(scale=to_default_float(scale))
         else:
             transform = None
 
@@ -75,3 +71,24 @@ def test_map_contains_log_det_jacobian():
     assert np.allclose(- m1.neg_log_marginal_likelihood().numpy(),
                        - m2.neg_log_marginal_likelihood().numpy() + m1.log_scale), \
             "MAP objective should differ by log|Jacobian| of the transform"
+
+
+def get_gpmc_model_params():
+    kernel = gpflow.kernels.Matern32()
+    likelihood = gpflow.likelihoods.Gaussian()
+    data = [np.arange(5), np.arange(5)]
+    return data, kernel, likelihood
+
+
+@pytest.mark.parametrize('model_class, args', [
+    (gpflow.models.GPMC, get_gpmc_model_params()),
+    #(gpflow.models.SGPMC, get_SGPMC_model_params()) # Fails due to inducing_variable=None bug
+    ])
+def test_v_prior_dtypes(model_class, args):
+    with config_session():
+        set_default_float(np.float32)
+        m = model_class(*args)
+        assert m.V.prior.dtype == np.float32
+        set_default_float(np.float64)
+        m = model_class(*args)
+        assert m.V.prior.dtype == np.float64

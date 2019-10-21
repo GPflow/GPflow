@@ -10,6 +10,7 @@ from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
+TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
@@ -28,11 +29,11 @@ def _IS_TRAINABLE_PARAMETER(o):
 class Module(tf.Module):
     @property
     def parameters(self):
-        return self._flatten(predicate=_IS_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_PARAMETER))
 
     @property
     def trainable_parameters(self):
-        return self._flatten(predicate=_IS_TRAINABLE_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
 
 class Parameter(tf.Module):
