@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-def set_trainable(model: tf.Module, flag: bool = False):
+def set_trainable(model: tf.Module, flag: bool):
     """
     Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
     """
@@ -77,7 +77,16 @@ def print_summary(module: tf.Module, fmt: str = None):
     Prints a summary of the parameters and variables contained in a tf.Module.
     """
 
-    fmt = fmt if fmt is not None else summary_fmt()
+    if fmt == "notebook":
+        from IPython.core.display import display, HTML
+        tab = tabulate_module_summary(module, "html")
+        display(HTML(tab))
+    else:
+        print(tabulate_module_summary(module, fmt))
+
+
+def tabulate_module_summary(module: tf.Module, tablefmt: str = None) -> str:
+    tablefmt = tablefmt if tablefmt is not None else summary_fmt()
     column_names = ['name', 'class', 'transform', 'trainable', 'shape', 'dtype', 'value']
 
     def get_name(v):
@@ -99,13 +108,7 @@ def print_summary(module: tf.Module, fmt: str = None):
         variable.dtype.name,
         _str_tensor_value(variable.numpy())
     ] for path, variable in merged_leaf_components.items()]
-
-    if fmt == "notebook":
-        from IPython.core.display import display, HTML
-        tab = tabulate(column_values, headers=column_names, tablefmt="html")
-        display(HTML(tab))
-    else:
-        print(tabulate(column_values, headers=column_names, tablefmt=fmt))
+    return tabulate(column_values, headers=column_names, tablefmt=tablefmt)
 
 
 def leaf_components(input: tf.Module):
@@ -114,7 +117,10 @@ def leaf_components(input: tf.Module):
 
 def _merge_leaf_components(
         input: Dict[str, Union[tf.Tensor, Parameter]]) -> Dict[str, Union[tf.Tensor, Parameter]]:
-    if len(set(input.values())) == len(input):
+    input_values = set(
+        [value.experimental_ref() if isinstance(value, tf.Variable) else value for value in input.values()]
+    )
+    if len(input_values) == len(input):
         return input
     tmp_dict = dict()
     for key, item in input.items():
@@ -154,7 +160,7 @@ def _get_leaf_components(input: tf.Module, prefix: Optional[str] = None):
             submodule_name = input.__class__.__name__
             for term_idx, subterm in enumerate(submodule):
                 subterm_key = f"{submodule_name}_{key}[{term_idx}]"
-                if isinstance(subterm, Parameter):
+                if isinstance(subterm, tf.Module):
                     subterm_var = _get_leaf_components(subterm, prefix=f"{prefix}.{subterm_key}")
                     var_dict.update(subterm_var)
         elif isinstance(submodule, _DictWrapper):

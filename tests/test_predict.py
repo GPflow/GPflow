@@ -45,10 +45,10 @@ class ModelSetup:
         params = dict(kernel=self.kernel, num_latent=num_latent)
 
         if self.whiten is not None and self.q_diag is not None:
-            params.update(inducing_variables=Z, whiten=self.whiten, q_diag=self.q_diag)
+            params.update(inducing_variable=Z, whiten=self.whiten, q_diag=self.q_diag)
 
         if self.requires_inducing_variables:
-            params.update(dict(inducing_variables=Z))
+            params.update(dict(inducing_variable=Z))
 
         if self.requires_data:
             params.update(dict(data=data))

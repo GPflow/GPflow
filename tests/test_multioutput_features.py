@@ -74,10 +74,10 @@ def test_kuf(inducing_variable, kernel):
 
 @pytest.mark.parametrize('fun', [mo_kuus.Kuu, mo_kufs.Kuf])
 def test_mixed_shared(fun):
-    inducing_variables = mf.SharedIndependentInducingVariables(make_ip())
+    inducing_variable = mf.SharedIndependentInducingVariables(make_ip())
     kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
     if fun is mo_kuus.Kuu:
-        t = tf.linalg.cholesky(fun(inducing_variables, kernel, jitter=1e-9))
+        t = tf.linalg.cholesky(fun(inducing_variable, kernel, jitter=1e-9))
     else:
-        t = fun(inducing_variables, kernel, Datum.Xnew)
+        t = fun(inducing_variable, kernel, Datum.Xnew)
         print(t.shape)

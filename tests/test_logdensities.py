@@ -15,11 +15,90 @@
 import numpy as np
 from numpy.random import randn
 import pytest
+import tensorflow as tf
 from gpflow import logdensities
+from gpflow import default_float
+import scipy.stats
 from scipy.stats import multivariate_normal as mvn
 from numpy.testing import assert_allclose
 
 rng = np.random.RandomState(1)
+
+
+@pytest.mark.parametrize('x, mu, var', [(0.9, 0.5, 1.3)])
+def test_gaussian(x, mu, var):
+    gpf = logdensities.gaussian(x, mu, var).numpy()
+    sps = scipy.stats.norm(loc=mu, scale=np.sqrt(var)).logpdf(x)
+    np.testing.assert_allclose(gpf, sps)
+
+
+@pytest.mark.parametrize('x, mu, var', [(0.9, 0.5, 1.3)])
+def test_lognormal(x, mu, var):
+    gpf = logdensities.lognormal(x, mu, var).numpy()
+    sps = scipy.stats.lognorm(s=np.sqrt(var), scale=np.exp(mu)).logpdf(x)
+    np.testing.assert_allclose(gpf, sps)
+
+
+@pytest.mark.parametrize('x, p', [
+    [1, 0.6],
+    [0, 0.6],
+])
+def test_bernoulli(x, p):
+    gpf = logdensities.bernoulli(x, p).numpy()
+    sps = scipy.stats.bernoulli.logpmf(k=x, p=p)
+    np.testing.assert_allclose(gpf, sps)
+
+
+@pytest.mark.parametrize('x, lam', [
+    [0, 1.3],
+    [1, 1.3],
+    [2, 1.3],
+])
+def test_poisson(x, lam):
+    gpf = logdensities.poisson(x, lam).numpy()
+    sps = scipy.stats.poisson.logpmf(k=x, mu=lam)
+    np.testing.assert_allclose(gpf, sps)
+
+
+@pytest.mark.parametrize('x, scale', [(0.9, 1.3)])
+def test_exponential(x, scale):
+    gpf = logdensities.exponential(x, scale).numpy()
+    sps = scipy.stats.expon(loc=0.0, scale=scale).logpdf(x)
+    np.testing.assert_allclose(gpf, sps)
+
+
+@pytest.mark.parametrize('x, shape, scale', [(0.9, 0.5, 1.3)])
+def test_gamma(x, shape, scale):
+    gpf = logdensities.gamma(x, shape, scale).numpy()
+    sps = scipy.stats.gamma(a=shape, loc=0.0, scale=scale).logpdf(x)
+    np.testing.assert_allclose(gpf, sps)
+
+
+@pytest.mark.parametrize('x, mean, scale, df', [
+    (0.9, 0.5, 1.3, 1),
+    (0.9, 0.5, 1.3, 2),
+    (0.9, 0.5, 1.3, 3),
+])
+def test_student_t(x, mean, scale, df):
+    def c(val):
+        return tf.cast(val, default_float())
+    gpf = logdensities.student_t(c(x), c(mean), c(scale), df).numpy()
+    sps = scipy.stats.t(df=df, loc=mean, scale=scale).logpdf(x)
+    np.testing.assert_allclose(gpf, sps)
+
+
+@pytest.mark.parametrize('x, alpha, beta', [(0.9, 0.5, 1.3)])
+def test_beta(x, alpha, beta):
+    gpf = logdensities.beta(x, alpha, beta).numpy()
+    sps = scipy.stats.beta(a=alpha, b=beta).logpdf(x)
+    np.testing.assert_allclose(gpf, sps)
+
+
+@pytest.mark.parametrize('x, mu, sigma', [(0.9, 0.5, 1.3)])
+def test_laplace(x, mu, sigma):
+    gpf = logdensities.laplace(x, mu, sigma).numpy()
+    sps = scipy.stats.laplace(loc=mu, scale=sigma).logpdf(x)
+    np.testing.assert_allclose(gpf, sps)
 
 
 @pytest.mark.parametrize("x", [randn(4, 10), randn(4, 1)])

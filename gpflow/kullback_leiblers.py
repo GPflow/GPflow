@@ -26,11 +26,11 @@ prior_kl = Dispatcher('prior_kl')
 
 
 @prior_kl.register(InducingVariables, Kernel, object, object)
-def _(inducing_variables, kernel, q_mu, q_sqrt, whiten=False):
+def _(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
     if whiten:
         return gauss_kl(q_mu, q_sqrt, None)
     else:
-        K = Kuu(inducing_variables, kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
+        K = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [P, M, M] or [M, M]
         return gauss_kl(q_mu, q_sqrt, K)
 
 

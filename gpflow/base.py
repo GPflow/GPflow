@@ -29,11 +29,11 @@ def _IS_TRAINABLE_PARAMETER(o):
 class Module(tf.Module):
     @property
     def parameters(self):
-        return self._flatten(predicate=_IS_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_PARAMETER))
 
     @property
     def trainable_parameters(self):
-        return self._flatten(predicate=_IS_TRAINABLE_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
 
 class Parameter(tf.Module):
@@ -47,7 +47,7 @@ class Parameter(tf.Module):
                  name: Optional[str] = None):
         """
         Unconstrained parameter representation.
-        According to standart terminology `y` is always transformed representation or,
+        According to standard terminology `y` is always transformed representation or,
         in other words, it is constrained version of the parameter. Normally, it is hard
         to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
         therefore we need positive constraint and it is natural to use constrained values.
@@ -67,17 +67,15 @@ class Parameter(tf.Module):
     def log_prior(self):
         x = self.read_value()
         y = self._unconstrained
-        dtype = x.dtype
 
-        out = tf.convert_to_tensor(0., dtype=dtype)
-
-        bijector = self.transform
         if self.prior is not None:
-            out += tf.reduce_sum(self.prior.log_prob(x))
-        if self.transform is not None:
-            log_det_jacobian = bijector.forward_log_det_jacobian(y, y.shape.ndims)
-            out += tf.reduce_sum(log_det_jacobian)
-        return out
+            out = tf.reduce_sum(self.prior.log_prob(x))
+            if self.transform is not None:
+                log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
+                out += tf.reduce_sum(log_det_jacobian)
+            return out
+        else:
+            return tf.convert_to_tensor(0., dtype=self.dtype)
 
     @property
     def handle(self):

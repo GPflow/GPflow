@@ -1,4 +1,5 @@
 import os
+import contextlib
 
 import numpy as np
 import tabulate
@@ -13,6 +14,9 @@ __all__ = [
     "set_default_float",
     "set_default_jitter",
     "set_default_int",
+    "to_default_float",
+    "to_default_int",
+    "config_session"
 ]
 
 _ENV_JITTER = "GPFLOW_JITTER"
@@ -51,33 +55,60 @@ def default_jitter():
     return __config._jitter
 
 
+def to_default_int(x):
+    return tf.cast(x, dtype=default_int())
+
+
+def to_default_float(x):
+    return tf.cast(x, dtype=default_float())
+
+
 def set_default_int(value_type):
     try:
-        tf.as_dtype(value_type)  # Test input value that it is eligable type.
-        __config._int = value_type
+        tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
     except TypeError:
-        raise TypeError("Expected tf or np dtype argument")
+        raise TypeError(f"{value_type} is not a valid tf or np dtype")
+    if not tf_dtype.is_integer:
+        raise TypeError(f"{value_type} is not an integer dtype")
+    __config._int = value_type
 
 
 def set_default_float(value_type):
     try:
-        tf.as_dtype(value_type)  # Test input value that it is eligable type.
-        __config._float = value_type
+        tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
     except TypeError:
-        raise TypeError("Expected tf or np dtype argument")
+        raise TypeError(f"{value_type} is not a valid tf or np dtype")
+    if not tf_dtype.is_floating:
+        raise TypeError(f"{value_type} is not a float dtype")
+    __config._float = value_type
 
 
 def set_default_jitter(value: float):
     if not (isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0) and \
             not isinstance(value, float):
-        raise ValueError("Expected float32 or float64 scalar value")
+        raise TypeError("Expected float32 or float64 scalar value")
+    if value < 0:
+        raise ValueError("Jitter must be non-negative")
 
     __config._jitter = value
 
 
 def set_summary_fmt(fmt: str):
-    formats = tabulate.tabulate_formats + ['notebook']
+    formats = tabulate.tabulate_formats + ['notebook', None]
     if fmt not in formats:
         raise ValueError(f"Summary does not support '{fmt}' format")
 
     __config._summary_fmt = fmt
+
+
+@contextlib.contextmanager
+def config_session():
+    '''Ensure that global configs defaults, with a context manager. Useful
+    for testing.'''
+    float_dtype = default_float()
+    int_dtype = default_int()
+    jitter = default_jitter()
+    yield
+    set_default_float(float_dtype)
+    set_default_int(int_dtype)
+    set_default_jitter(jitter)

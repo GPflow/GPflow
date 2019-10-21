@@ -24,6 +24,8 @@ from ..conditionals import conditional
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..models.model import GPModel, MeanAndVariance, Data
+from ..config import to_default_float
+from .util import inducingpoint_wrapper
 
 
 class SGPMC(GPModel):
@@ -65,7 +67,7 @@ class SGPMC(GPModel):
                  likelihood: Likelihood,
                  mean_function: Optional[MeanFunction] = None,
                  num_latent: int = 1,
-                 inducing_variables: Optional[InducingPoints] = None):
+                 inducing_variable: Optional[InducingPoints] = None):
         """
         data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]
         Z is a data matrix, of inducing inputs, size [M, D]
@@ -77,11 +79,9 @@ class SGPMC(GPModel):
                          num_latent=num_latent)
         self.data = data
         self.num_data = data[0].shape[0]
-        if not isinstance(inducing_variables, InducingPoints):
-            inducing_variables = InducingPoints(inducing_variables)
-        self.inducing_variables = inducing_variables
-        self.V = Parameter(np.zeros((len(self.inducing_variables), self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
+        self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         """
@@ -106,7 +106,7 @@ class SGPMC(GPModel):
 
         """
         mu, var = conditional(X,
-                              self.inducing_variables,
+                              self.inducing_variable,
                               self.kernel,
                               self.V,
                               full_cov=full_cov,

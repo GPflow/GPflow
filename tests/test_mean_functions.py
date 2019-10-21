@@ -213,7 +213,7 @@ def test_models_with_mean_functions_changes(model_class):
     """
     data = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, 1)
     predict_at = rng.randn(Datum.Ntest, Datum.input_dim)
-    inducing_variables = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
+    inducing_variable = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
     zero_mean = Zero()
@@ -228,31 +228,31 @@ def test_models_with_mean_functions_changes(model_class):
     elif model_class in [gpflow.models.SVGP]:
         model_zero_mean = model_class(kernel=kernel,
                                       likelihood=likelihood,
-                                      inducing_variables=inducing_variables,
+                                      inducing_variable=inducing_variable,
                                       mean_function=zero_mean)
         model_non_zero_mean = model_class(kernel=kernel,
                                           likelihood=likelihood,
-                                          inducing_variables=inducing_variables,
+                                          inducing_variable=inducing_variable,
                                           mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SGPR, gpflow.models.GPRFITC]:
         model_zero_mean = model_class(data,
                                       kernel=kernel,
-                                      inducing_variables=inducing_variables,
+                                      inducing_variable=inducing_variable,
                                       mean_function=zero_mean)
         model_non_zero_mean = model_class(data,
                                           kernel=kernel,
-                                          inducing_variables=inducing_variables,
+                                          inducing_variable=inducing_variable,
                                           mean_function=non_zero_mean)
     elif model_class in [gpflow.models.SGPMC]:
         model_zero_mean = model_class(data,
                                       kernel=kernel,
                                       likelihood=likelihood,
-                                      inducing_variables=inducing_variables,
+                                      inducing_variable=inducing_variable,
                                       mean_function=zero_mean)
         model_non_zero_mean = model_class(data,
                                           kernel=kernel,
                                           likelihood=likelihood,
-                                          inducing_variables=inducing_variables,
+                                          inducing_variable=inducing_variable,
                                           mean_function=non_zero_mean)
     elif model_class in [gpflow.models.GPMC]:
         model_zero_mean = model_class(data,

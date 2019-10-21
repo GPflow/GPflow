@@ -47,7 +47,7 @@ class MultioutputKernel(Kernel):
         - [N1, P, N2, P] if `full_output_cov` = True
         - [P, N1, N2] if `full_output_cov` = False
         """
-        pass
+        raise NotImplementedError
 
     @abc.abstractmethod
     def K_diag(self, X, full_output_cov=True, presliced=False):
@@ -59,7 +59,7 @@ class MultioutputKernel(Kernel):
         - [N, P, N, P] if `full_output_cov` = True
         - [N, P] if `full_output_cov` = False
         """
-        pass
+        raise NotImplementedError
 
     def __call__(self,
                  X,
@@ -146,7 +146,7 @@ class IndependentLatent(MultioutputKernel):
 
     @abc.abstractmethod
     def Kgg(self, X, Y):
-        pass
+        raise NotImplementedError
 
 
 class LinearCoregionalization(IndependentLatent, Combination):
