@@ -67,3 +67,20 @@ def test_summary_fmt_setting():
 def test_summary_fmt_errorcheck():
     with pytest.raises(ValueError):
         config.set_summary_fmt("this_format_definitely_does_not_exist")
+
+
+@pytest.mark.parametrize('setter, getter, converter, dtype, value', [
+    (config.set_default_int, config.default_int, config.to_default_int, np.int32, 3),
+    (config.set_default_int, config.default_int, config.to_default_int, tf.int32, 3),
+    (config.set_default_int, config.default_int, config.to_default_int, tf.int64, [3, 1, 4, 1, 5, 9]),
+    (config.set_default_int, config.default_int, config.to_default_int, np.int64, [3, 1, 4, 1, 5, 9]),
+    (config.set_default_float, config.default_float, config.to_default_float, np.float32, 3.14159),
+    (config.set_default_float, config.default_float, config.to_default_float, tf.float32, [3.14159, 3.14159, 3.14159]),
+    (config.set_default_float, config.default_float, config.to_default_float, np.float64, [3.14159, 3.14159, 3.14159]),
+    (config.set_default_float, config.default_float, config.to_default_float, tf.float64, [3.14159, 3.14159, 3.14159]),
+])
+def test_native_to_default_dtype(setter, getter, converter, dtype, value):
+    with config.config_session():
+        setter(dtype)
+        assert converter(value).dtype == dtype
+        assert converter(value).dtype == getter()

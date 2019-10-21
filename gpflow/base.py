@@ -10,6 +10,7 @@ from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
+TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
