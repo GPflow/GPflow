@@ -51,7 +51,7 @@ class Scipy:
             if 'callback' in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
 
-            callback = self.callback_func(closure, variables, step_callback)
+            callback = self.callback_func(variables, step_callback)
             scipy_kwargs.update(dict(callback=callback))
         return scipy.optimize.minimize(func, initial_params, jac=True, **scipy_kwargs)
 
@@ -68,7 +68,7 @@ class Scipy:
             loss, grads = _compute_loss_and_gradients(closure, variables)
             return loss.numpy().astype(np.float64), cls.pack_tensors(grads).astype(np.float64)
 
-        return _callback
+        return _eval
 
     @classmethod
     def callback_func(cls, variables: Variables, step_callback: StepCallback):
