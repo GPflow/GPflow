@@ -8,8 +8,7 @@ from scipy.optimize import OptimizeResult
 __all__ = ['Scipy']
 
 Loss = tf.Tensor
-Variables = List[tf.Variable]
-Gradients = List[tf.Tensor]
+Variables = Tuple[tf.Variable]
 StepCallback = Callable[[int, Variables, List[tf.Tensor]], None]
 LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]
 
@@ -19,17 +18,30 @@ class Scipy:
                  closure: LossClosure,
                  variables: Variables,
                  step_callback: Optional[StepCallback] = None,
-                 name: str = None,
                  **scipy_kwargs) -> OptimizeResult:
         """
-        Minimize is a proxy method for `scipy.optimize.minimize` function.
+        Minimize is a wrapper around the `scipy.optimize.minimize` function
+        handling the packing and unpacking of lists of shaped variables on the
+        TensorFlow side vs. the flat numpy array required on the Scipy side.
+
         Args:
-            closure: A closure that re-evaluates the model and returns the loss. The closure
-                should clear the gradients, compute the loss and gradients.
-            scipy_kwargs: Arguments passed to `scipy.optimize.minimize` method.
+            closure: A closure that re-evaluates the model, returning the loss
+                to be minimized.
+            variables: The list (tuple) of variables to be optimized
+                (typically `model.trainable_variables`)
+            step_callback: If not None, a callable that gets called once after
+                each optimisation step. The callabe is passed the arguments
+                `step`, `variables`, and `values`. `step` is the optimisation
+                step counter. `variables` is the list of trainable variables as
+                above, and `values` is the corresponding list of tensors of
+                matching shape that contains their value at this optimisation
+                step.
+
+            scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`
+
         Returns:
-            The optimization result represented as a scipy ``OptimizeResult`` object.
-            See `OptimizeResult` for a attributes description.
+            The optimization result represented as a scipy ``OptimizeResult``
+            object. See the Scipy documentation for description of attributes.
         """
         if not callable(closure):
             raise TypeError('Callable object expected.')  # pragma: no cover
