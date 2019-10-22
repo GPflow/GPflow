@@ -34,7 +34,13 @@ class Scipy:
         if not callable(closure):
             raise TypeError('Callable object expected.')  # pragma: no cover
         initial_params = self.initial_parameters(variables)
-        func = self.eval_func(closure, variables, step_callback)
+        func = self.eval_func(closure, variables)
+        if step_callback is not None:
+            if 'callback' in scipy_kwargs:
+                raise ValueError("Callback passed both via `step_callback` and `callback`")
+
+            callback = self.callback_func(closure, variables, step_callback)
+            scipy_kwargs.update(dict(callback=callback))
         return scipy.optimize.minimize(func, initial_params, jac=True, **scipy_kwargs)
 
     @classmethod
@@ -42,19 +48,26 @@ class Scipy:
         return cls.pack_tensors(variables)
 
     @classmethod
-    def eval_func(cls, closure: LossClosure, variables: Variables, step_callback: Optional[StepCallback] = None):
-        step = 0  # type: int
-
+    def eval_func(cls, closure: LossClosure, variables: Variables):
         def _eval(x):
-            nonlocal step
             cls.unpack_tensors(variables, x)
             loss, grads = _compute_loss_and_gradients(closure, variables)
-            if step_callback is not None:
-                step_callback(step=step, loss=loss, variables=variables, gradients=grads)
-            step += 1
             return loss.numpy().astype(np.float64), cls.pack_tensors(grads).astype(np.float64)
 
         return _eval
+
+    @classmethod
+    def callback_func(cls, closure: LossClosure, variables: Variables, step_callback: Optional[StepCallback] = None):
+        step = 0  # type: int
+
+        def _callback(x):
+            nonlocal step
+            cls.unpack_tensors(variables, x)
+            loss, grads = _compute_loss_and_gradients(closure, variables)
+            step_callback(step=step, loss=loss, variables=variables, gradients=grads)
+            step += 1
+
+        return _callback
 
     @staticmethod
     def pack_tensors(tensors: Iterator[tf.Tensor]) -> np.ndarray:
