@@ -180,7 +180,7 @@ def deepcopy_components(input: tf.Module):
         bijector._from_y.clear()
         return state
 
-    _ = traverse_module(input, accumulator, clear_bijector, target_types)
+    _ = traverse_module(input_module, accumulator, clear_bijector, target_types)
     return deepcopy(input_module)
 
 
