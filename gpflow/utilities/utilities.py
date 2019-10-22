@@ -141,7 +141,7 @@ def _merge_leaf_components(
     return {key: item for item, key in tmp_dict.items()}
 
 
-def _get_leaf_components(input: tf.Module):
+def _get_leaf_components(input_module: tf.Module):
     """
     Returns a list of tuples each corresponding to a gpflow.Parameter or tf.Variable in the each
     submodules of a given tf.Module. Each tuple consists of an specific Parameter (or Variable) and
