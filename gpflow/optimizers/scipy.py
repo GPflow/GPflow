@@ -15,6 +15,8 @@ LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]
 
 
 class Scipy:
+    _DEFAULT_METHOD = 'L-BFGS-B'
+
     def minimize(self,
                  closure: LossClosure,
                  variables: Variables,
@@ -34,8 +36,10 @@ class Scipy:
         if not callable(closure):
             raise TypeError('Callable object expected.')  # pragma: no cover
         initial_params = self.initial_parameters(variables)
-        func = self.eval_func(closure, variables, step_callback)
-        return scipy.optimize.minimize(func, initial_params, jac=True, **scipy_kwargs)
+
+        method = scipy_kwargs.pop('method', self._DEFAULT_METHOD)
+        return scipy.optimize.minimize(func, initial_params, jac=True, method=method,
+                                       **scipy_kwargs)
 
     @classmethod
     def initial_parameters(cls, variables):
