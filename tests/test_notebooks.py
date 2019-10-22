@@ -36,7 +36,6 @@ BLACKLISTED_NOTEBOOKS = [
     "mixture_density_network.ipynb",
 
     "upper_bound.ipynb",
-    "FITCvsVFE.ipynb",
 
     "monitoring.ipynb",  # requires re-write for new way of monitoring
     "settings.ipynb",  # requires re-write for new config
