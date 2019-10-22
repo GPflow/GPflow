@@ -55,7 +55,7 @@ class SGPRUpperMixin(GPModel):
         x_data, y_data = self.data
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
 
-        Kdiag = self.kernel(x_data)
+        Kdiag = self.kernel(x_data, full=False)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
 
@@ -148,7 +148,7 @@ class SGPR(SGPRUpperMixin):
         output_dim = tf.cast(tf.shape(y_data)[1], default_float())
 
         err = y_data - self.mean_function(x_data)
-        Kdiag = self.kernel(x_data)
+        Kdiag = self.kernel(x_data, full=False)
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
@@ -210,6 +210,32 @@ class SGPR(SGPRUpperMixin):
                   - tf.reduce_sum(tf.square(tmp1), 0)
             var = tf.tile(var[:, None], [1, self.num_latent])
         return mean + self.mean_function(X), var
+
+    def compute_qu(self):
+        """
+        Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on
+        inducing outputs. SVGP with this q(u) should predict identically to
+        SGPR.
+        :return: mu, cov
+        """
+        x_data, y_data = self.data
+
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+
+        sig = kuu + (self.likelihood.variance ** -1) * tf.matmul(kuf, kuf, transpose_b=True)
+        sig_sqrt = tf.linalg.cholesky(sig)
+
+        sig_sqrt_kuu = tf.linalg.triangular_solve(sig_sqrt, kuu)
+
+
+        cov = tf.linalg.matmul(sig_sqrt_kuu, sig_sqrt_kuu, transpose_a=True)
+        err = y_data - self.mean_function(x_data)
+        mu = tf.linalg.matmul(
+            sig_sqrt_kuu, tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(kuf, err)),
+            transpose_a=True) * self.likelihood.variance ** -1.0
+
+        return mu, cov
 
 
 class GPRFITC(SGPRUpperMixin):

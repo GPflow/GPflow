@@ -24,7 +24,7 @@ from ..conditionals import conditional
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..models.model import GPModel, MeanAndVariance, Data
-from ..config import default_float
+from ..config import to_default_float
 from .util import inducingpoint_wrapper
 
 
@@ -77,13 +77,12 @@ class SGPMC(GPModel):
                          likelihood,
                          mean_function,
                          num_latent=num_latent)
-        fdtype = lambda x: np.array(x, dtype=default_float())
 
         self.data = data
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
         self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=fdtype(0.), scale=fdtype(1.))
+        self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         """
