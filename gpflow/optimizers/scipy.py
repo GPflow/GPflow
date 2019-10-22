@@ -21,7 +21,7 @@ class Scipy:
                  **scipy_kwargs) -> OptimizeResult:
         """
         Minimize is a wrapper around the `scipy.optimize.minimize` function
-        handling the packing and unpacking of lists of shaped variables on the
+        handling the packing and unpacking of a list of shaped variables on the
         TensorFlow side vs. the flat numpy array required on the Scipy side.
 
         Args:
