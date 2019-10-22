@@ -8,7 +8,6 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tabulate import tabulate
 
-from tensorflow.python.training.tracking.data_structures import ListWrapper, _DictWrapper
 
 from ..base import Parameter
 from ..config import summary_fmt
@@ -215,11 +214,11 @@ def traverse_module(m: TraverseInput,
     if isinstance(m, target_types):
         return update_cb(m, path, state)
 
-    if isinstance(m, ListWrapper):
+    if isinstance(m, (list, tuple)):
         for term_idx, subterm in enumerate(m):
             new_acc = (f"{path}[{term_idx}]", new_state)
             new_state = traverse_module(subterm, new_acc, update_cb, target_types)
-    elif isinstance(m, _DictWrapper):
+    elif isinstance(m, dict):
         for term_idx, subterm in m.items():
             new_acc = (f"{path}['{term_idx}']", new_state)
             new_state = traverse_module(subterm, new_acc, update_cb, target_types)
