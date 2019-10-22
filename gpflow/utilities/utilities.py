@@ -1,11 +1,13 @@
 import re
+from copy import deepcopy
 from functools import lru_cache
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union, TypeVar, Any, Tuple
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 from tabulate import tabulate
-from tensorflow.python.training.tracking.data_structures import ListWrapper, _DictWrapper
+
 
 from ..base import Parameter
 from ..config import summary_fmt
@@ -15,7 +17,14 @@ __all__ = [
     "multiple_assign",
     "training_loop",
     "print_summary",
+    "deepcopy_components"
 ]
+
+TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
+State = Any
+Path = str
+Accumulator = Tuple[Path, State]
+TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
 
 
 def set_trainable(model: tf.Module, flag: bool):
@@ -62,7 +71,7 @@ def training_loop(closure: Callable[..., tf.Tensor],
         with tf.GradientTape() as tape:
             tape.watch(var_list)
             loss = closure()
-            grads = tape.gradient(loss, var_list)
+        grads = tape.gradient(loss, var_list)
         optimizer.apply_gradients(zip(grads, var_list))
 
     if jit:
@@ -131,45 +140,95 @@ def _merge_leaf_components(
     return {key: item for item, key in tmp_dict.items()}
 
 
-def _get_leaf_components(input: tf.Module, prefix: Optional[str] = None):
+def _get_leaf_components(input_module: tf.Module):
     """
     Returns a list of tuples each corresponding to a gpflow.Parameter or tf.Variable in the each
     submodules of a given tf.Module. Each tuple consists of an specific Parameter (or Variable) and
     its relative path inside the module, which is constructed recursively by adding a prefix with
     the path to the current module. Designed to be used as a helper for the method 'print_summary'.
 
-    :param module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
-    :param prefix: string containing the relative path to module, by default set to None.
+    :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
     """
-    if not isinstance(input, tf.Module):
-        raise TypeError("Input object expected to have `tf.Module` type")
+    target_types = (Parameter, tf.Variable)
+    input_name, state = input_module.__class__.__name__, dict()
+    accumulator = (input_name, state)
 
-    prefix = input.__class__.__name__ if prefix is None else prefix
-    var_dict = dict()
+    def update_state(parameter_or_variable, path, state):
+        state[path] = parameter_or_variable
+        return state
 
-    for key, submodule in vars(input).items():
-        if key in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
-            continue
-        elif isinstance(submodule, Parameter) or isinstance(submodule, tf.Variable):
-            var_dict[f"{prefix}.{key}"] = submodule
-        elif isinstance(submodule, tf.Module):
-            submodule_var = _get_leaf_components(submodule, prefix=f"{prefix}.{key}")
-            var_dict.update(submodule_var)
-        elif isinstance(submodule, ListWrapper):
-            submodule_name = input.__class__.__name__
-            for term_idx, subterm in enumerate(submodule):
-                subterm_key = f"{submodule_name}_{key}[{term_idx}]"
-                if isinstance(subterm, tf.Module):
-                    subterm_var = _get_leaf_components(subterm, prefix=f"{prefix}.{subterm_key}")
-                    var_dict.update(subterm_var)
-        elif isinstance(submodule, _DictWrapper):
-            submodule_name = input.__class__.__name__
-            for term_key, subterm in submodule.items():
-                subterm_key = f"{submodule_name}_{key}[{term_key}]"
-                subterm_var = _get_leaf_components(subterm, prefix=f"{prefix}.{subterm_key}")
-                var_dict.update(subterm_var)
-    return var_dict
+    state = traverse_module(input_module, accumulator, update_state, target_types)
+    return state
+
+
+def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
+    """
+    Recursively finds tfp.bijectors.Bijector-s inside the components of the tf.Module using `traverse_component`.
+    Resets the caches stored inside each tfp.bijectors.Bijector.
+
+    :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
+    :return:
+    """
+    target_types = (tfp.bijectors.Bijector,)
+    accumulator = ('', None)
+
+    def clear_bijector(bijector, _, state):
+        bijector._from_x.clear()
+        bijector._from_y.clear()
+        return state
+
+    _ = traverse_module(input_module, accumulator, clear_bijector, target_types)
+    return input_module
+
+
+def deepcopy_components(input_module: tf.Module) -> tf.Module:
+    """
+    Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
+    tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
+
+    :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
+    :return:
+    """
+    return deepcopy(reset_cache_bijectors(input_module))
+
+
+def traverse_module(m: TraverseInput,
+                    acc: Accumulator,
+                    update_cb: TraverseUpdateCallable,
+                    target_types: tuple) -> Accumulator:
+    """
+    Recursively traverses `m`, accumulating in `acc` a path and a state until it finds an object of type
+    in `target_types` to apply `update_cb` to update the accumulator `acc` and/or the object.
+
+    :param m: tf.Module, tf.Variable or gpflow.Parameter
+    :param acc: Tuple of path and state
+    :param update_cb: Callable
+    :param target_types: target class types
+    :return:
+    """
+    path, state = acc
+
+    new_state = state
+
+    if isinstance(m, target_types):
+        return update_cb(m, path, state)
+
+    if isinstance(m, (list, tuple)):
+        for term_idx, subterm in enumerate(m):
+            new_acc = (f"{path}[{term_idx}]", new_state)
+            new_state = traverse_module(subterm, new_acc, update_cb, target_types)
+    elif isinstance(m, dict):
+        for term_idx, subterm in m.items():
+            new_acc = (f"{path}['{term_idx}']", new_state)
+            new_state = traverse_module(subterm, new_acc, update_cb, target_types)
+    elif isinstance(m, tf.Module):
+        for name, submodule in vars(m).items():
+            if name in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
+                continue
+            new_acc = (f"{path}.{name}", new_state)
+            new_state = traverse_module(submodule, new_acc, update_cb, target_types)
+    return new_state
 
 
 @lru_cache()
