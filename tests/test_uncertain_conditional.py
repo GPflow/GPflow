@@ -12,21 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
-
+import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
-from numpy.testing import assert_allclose
-
-import gpflow
-from gpflow.mean_functions import Zero, Constant, Linear
 from gpflow.conditionals import conditional
 from gpflow.conditionals import uncertain_conditional
-from gpflow.optimizers import Scipy
-from gpflow.quadrature import mvnquad
 from gpflow.config import default_float
-from gpflow.utilities import training_loop
+from gpflow.mean_functions import Zero, Constant, Linear
+from gpflow.quadrature import mvnquad
+from numpy.testing import assert_allclose
 
 rng = np.random.RandomState(1)
 
@@ -149,10 +144,10 @@ def test_no_uncertainty(white, mean):
     def closure():
         return model.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    training_loop(closure,
-                  optimizer=tf.optimizers.Adam(),
-                  var_list=model.trainable_variables,
-                  maxiter=100)
+    optimizer=tf.optimizers.Adam()
+
+    for _ in range(100):
+        optimizer.minimize(closure, var_list=model.trainable_variables)
 
     mean1, var1 = model.predict_f(Data.Xnew_mu)
     mean2, var2 = model.uncertain_predict_f_moment_matching(
@@ -180,10 +175,10 @@ def test_monte_carlo_1_din(white, mean):
     def closure():
         return model.neg_log_marginal_likelihood(DataMC1.X, DataMC1.Y)
 
-    training_loop(closure,
-                  optimizer=tf.optimizers.Adam(),
-                  var_list=model.trainable_variables,
-                  maxiter=200)
+    optimizer = tf.optimizers.Adam()
+
+    for _ in range(100):
+        optimizer.minimize(closure, var_list=model.trainable_variables)
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
         *map(tf.convert_to_tensor, [DataMC1.Xnew_mu, DataMC1.Xnew_covar]))
@@ -212,10 +207,10 @@ def test_monte_carlo_2_din(white, mean):
     def closure():
         return model.neg_log_marginal_likelihood(DataMC2.X, DataMC2.Y)
 
-    training_loop(closure,
-                  optimizer=tf.optimizers.Adam(),
-                  var_list=model.trainable_variables,
-                  maxiter=100)
+    optimizer = tf.optimizers.Adam()
+
+    for _ in range(100):
+        optimizer.minimize(closure, var_list=model.trainable_variables)
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
         *map(tf.convert_to_tensor, [DataMC2.Xnew_mu, DataMC2.Xnew_covar]))
