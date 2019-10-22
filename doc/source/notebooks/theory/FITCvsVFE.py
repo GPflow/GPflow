@@ -83,7 +83,10 @@ def repeatMinimization(model, xtest, ytest):
     opt = gpflow.optimizers.Scipy()
     #print("Optimising for {} repetitions".format(nRepeats))
     for repeatIndex in range(nRepeats):
+        #print(repeatIndex)
         opt.minimize(objective_closure, model.trainable_variables,
+                     method='L-BFGS-B',
+                     tol=1e-11,
                      options=dict(disp=False, maxiter=ci_niter(2000)),
                      step_callback=callback)
     return callback
@@ -117,7 +120,7 @@ def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_in
     ax2.set_ylabel('Hold out negative log likelihood', color='b')
 
 class Callback:
-    def __init__(self, model, xtest, ytest, holdout_interval=100):
+    def __init__(self, model, xtest, ytest, holdout_interval=10):
         self.model = model
         self.holdout_interval = holdout_interval
         self.xtest = xtest
