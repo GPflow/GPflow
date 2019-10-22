@@ -169,7 +169,7 @@ def deepcopy_components(input: tf.Module):
     inside the components of the tf.Module using `traverse_component`. Resets the caches stored inside each
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
 
-    :param module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
+    :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
     """
     target_types = (tfp.bijectors.Bijector,)
