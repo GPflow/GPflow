@@ -10,7 +10,7 @@ __all__ = ['Scipy']
 Loss = tf.Tensor
 Variables = List[tf.Variable]
 Gradients = List[tf.Tensor]
-StepCallback = Callable[[int, Loss, Variables, Gradients], None]
+StepCallback = Callable[[int, Variables, tf.Tensor], None]
 LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]
 
 
@@ -59,14 +59,13 @@ class Scipy:
         return _eval
 
     @classmethod
-    def callback_func(cls, closure: LossClosure, variables: Variables, step_callback: Optional[StepCallback] = None):
+    def callback_func(cls, variables: Variables, step_callback: StepCallback):
         step = 0  # type: int
 
         def _callback(x):
             nonlocal step
-            cls.unpack_tensors(variables, x)
-            loss, grads = _compute_loss_and_gradients(closure, variables)
-            step_callback(step=step, loss=loss, variables=variables, gradients=grads)
+            values = cls.unpack_tensors(variables, x)
+            step_callback(step=step, variables=variables, values=values)
             step += 1
 
         return _callback
