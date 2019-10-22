@@ -127,10 +127,13 @@ class Callback:
         self.n_iters = []
         self.counter = 0
 
-    def __call__(self, step, loss, variables, gradients):
+    def __call__(self, step, variables, values):
         # step will reset to zero between calls to minimize(), whereas counter will keep increasing
 
         if (self.counter <= 10) or (self.counter % self.holdout_interval) == 0:
+            for var, val in zip(variables, values):
+                var.assign(val)
+
             self.n_iters.append(self.counter)
             self.log_likelihoods.append(self.model.log_likelihood().numpy())
 
