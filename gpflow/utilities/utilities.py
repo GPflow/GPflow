@@ -152,7 +152,7 @@ def _get_leaf_components(input_module: tf.Module):
     :return:
     """
     target_types = (Parameter, tf.Variable)
-    input_name, state = input_name.__class__.__name__, dict()
+    input_name, state = input_module.__class__.__name__, dict()
     accumulator = (input_name, state)
 
     def update_state(parameter_or_variable, path, state):
@@ -163,11 +163,10 @@ def _get_leaf_components(input_module: tf.Module):
     return state
 
 
-def deepcopy_components(input_module: tf.Module):
+def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     """
-    Returns a deepcopy of the input tf.Module. Recursively finds tfp.bijectors.Bijector-s
-    inside the components of the tf.Module using `traverse_component`. Resets the caches stored inside each
-    tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
+    Recursively finds tfp.bijectors.Bijector-s inside the components of the tf.Module using `traverse_component`.
+    Resets the caches stored inside each tfp.bijectors.Bijector.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
@@ -181,7 +180,18 @@ def deepcopy_components(input_module: tf.Module):
         return state
 
     _ = traverse_module(input_module, accumulator, clear_bijector, target_types)
-    return deepcopy(input_module)
+    return input_module
+
+
+def deepcopy_components(input_module: tf.Module) -> tf.Module:
+    """
+    Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
+    tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
+
+    :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
+    :return:
+    """
+    return deepcopy(reset_cache_bijectors(input_module))
 
 
 def traverse_module(m: TraverseInput,
