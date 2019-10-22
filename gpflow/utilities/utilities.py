@@ -152,7 +152,7 @@ def _get_leaf_components(input_module: tf.Module):
     :return:
     """
     target_types = (Parameter, tf.Variable)
-    input_name, state = input.__class__.__name__, dict()
+    input_name, state = input_name.__class__.__name__, dict()
     accumulator = (input_name, state)
 
     def update_state(parameter_or_variable, path, state):
