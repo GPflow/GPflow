@@ -159,7 +159,7 @@ def _get_leaf_components(input_module: tf.Module):
         state[path] = parameter_or_variable
         return state
 
-    state = traverse_module(input, accumulator, update_state, target_types)
+    state = traverse_module(input_module, accumulator, update_state, target_types)
     return state
 
 
