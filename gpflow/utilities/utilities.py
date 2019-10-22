@@ -181,7 +181,7 @@ def deepcopy_components(input: tf.Module):
         return state
 
     _ = traverse_module(input, accumulator, clear_bijector, target_types)
-    return deepcopy(input)
+    return deepcopy(input_module)
 
 
 def traverse_module(m: TraverseInput,
