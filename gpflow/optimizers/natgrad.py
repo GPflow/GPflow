@@ -153,7 +153,6 @@ class NaturalGradient(tf.optimizers.Optimizer):
 
             # the three parameterizations as functions of [q_mu, q_sqrt]
             eta1, eta2 = meanvarsqrt_to_expectation(q_mu, q_sqrt)
-            xi1, xi2 = xi_transform.meanvarsqrt_to_xi(q_mu, q_sqrt)
 
             # we need these to calculate the relevant gradients
             meanvarsqrt = expectation_to_meanvarsqrt(eta1, eta2)
@@ -180,6 +179,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         else:
             nat_dL_xi1, nat_dL_xi2 = dL_deta1, dL_deta2
 
+        xi1, xi2 = xi_transform.meanvarsqrt_to_xi(q_mu, q_sqrt)
         xi1_new = xi1 - self.gamma * nat_dL_xi1
         xi2_new = xi2 - self.gamma * nat_dL_xi2
 
