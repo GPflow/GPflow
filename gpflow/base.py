@@ -6,7 +6,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.python.ops import array_ops
 
-from .config import default_float
+from .config import default_float, to_default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
@@ -14,7 +14,12 @@ TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't wo
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
-positive = tfp.bijectors.Softplus
+def positive(lower=1e-6):
+    return tfp.bijectors.Chain([
+        tfp.bijectors.AffineScalar(shift=to_default_float(lower)),
+        tfp.bijectors.Softplus()
+        ], name='positive_lower_bounded')
+
 triangular = tfp.bijectors.FillTriangular
 
 
