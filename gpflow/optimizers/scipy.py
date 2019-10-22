@@ -50,7 +50,9 @@ class Scipy:
     @classmethod
     def eval_func(cls, closure: LossClosure, variables: Variables):
         def _eval(x):
-            cls.unpack_tensors(variables, x)
+            values = cls.unpack_tensors(variables, x)
+            cls.assign_tensors(variables, values)
+
             loss, grads = _compute_loss_and_gradients(closure, variables)
             return loss.numpy().astype(np.float64), cls.pack_tensors(grads).astype(np.float64)
 
@@ -76,15 +78,22 @@ class Scipy:
         return tensors_vector.numpy()
 
     @staticmethod
-    def unpack_tensors(to_tensors: Iterator[tf.Tensor], from_vector: np.ndarray):
+    def unpack_tensors(to_tensors: Iterator[tf.Tensor], from_vector: np.ndarray) -> List[tf.Tensor]:
         s = 0
+        values = []
         for tensor in to_tensors:
             shape = tf.shape(tensor)
             tensor_size = int(np.prod(shape))
             tensor_vector = from_vector[s:s + tensor_size].astype(tensor.dtype.as_numpy_dtype())
             tensor_vector = tf.reshape(tensor_vector, shape)
-            tensor.assign(tensor_vector)
+            values.append(tensor_vector)
             s += tensor_size
+        return values
+
+    @staticmethod
+    def assign_tensors(to_tensors: Iterator[tf.Variable], values: Iterator[tf.Tensor]):
+        for tensor, tensor_vector in zip(to_tensors, values):
+            tensor.assign(tensor_vector)
 
 
 def _compute_loss_and_gradients(loss_cb: LossClosure, variables: Variables):
