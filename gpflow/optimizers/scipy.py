@@ -10,7 +10,7 @@ __all__ = ['Scipy']
 Loss = tf.Tensor
 Variables = List[tf.Variable]
 Gradients = List[tf.Tensor]
-StepCallback = Callable[[int, Variables, tf.Tensor], None]
+StepCallback = Callable[[int, Variables, List[tf.Tensor]], None]
 LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]
 
 
