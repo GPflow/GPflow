@@ -148,7 +148,7 @@ def _get_leaf_components(input_module: tf.Module):
     its relative path inside the module, which is constructed recursively by adding a prefix with
     the path to the current module. Designed to be used as a helper for the method 'print_summary'.
 
-    :param input: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
+    :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
     """
     target_types = (Parameter, tf.Variable)
