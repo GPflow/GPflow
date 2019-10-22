@@ -163,7 +163,7 @@ def _get_leaf_components(input_module: tf.Module):
     return state
 
 
-def deepcopy_components(input: tf.Module):
+def deepcopy_components(input_module: tf.Module):
     """
     Returns a deepcopy of the input tf.Module. Recursively finds tfp.bijectors.Bijector-s
     inside the components of the tf.Module using `traverse_component`. Resets the caches stored inside each
