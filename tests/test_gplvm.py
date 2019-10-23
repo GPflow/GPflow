@@ -51,7 +51,7 @@ def test_gplvm_default_kernel():
 
 
 def test_gplvm_periodic_kernel():
-    kernel = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
+    kernel = gpflow.kernels.Periodic()
     _run_optimize(kernel)
 
 

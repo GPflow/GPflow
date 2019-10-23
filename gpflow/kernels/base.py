@@ -124,14 +124,19 @@ class Kernel(tf.Module):
         """
         Check that the input dimension matches the dimension of the parameter.
         """
-        if tf.rank(parameter) == 0:
-            return
+        def do_nothing():
+            pass
+
+        def raise_error():
+            raise ValueError("Shape of parameter does not match shape of data")
+        
         X_shape = tf.shape(X)
-        l_shape = tf.shape(parameter)
-        if l_shape[-1] != X_shape[-1]:
-            # TODO: Maybe this should be a tf.errors.InvalidArgumentError
-            raise ValueError(
-                f"Shape of lengthscale {l_shape} does not match shape of data {X_shape}")
+        p_shape = tf.shape(parameter)
+        p_rank = tf.rank(parameter)
+        
+        return tf.cond(p_rank == 0 or p_shape[-1] == X_shape[-1],
+                       true_fn=do_nothing,
+                       false_fn=raise_error)
 
     @abc.abstractmethod
     def K(self, X, Y=None, presliced=False):
