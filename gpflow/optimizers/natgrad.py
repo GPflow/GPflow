@@ -57,7 +57,7 @@ class XiTransform(metaclass=abc.ABCMeta):
         Transforms the parameter `xi_1`, `xi_2` to `mean`, `varsqrt`
 
         :param xi_1: the xi_1 parameter
-        :param xi_2: the xi_2 parameter
+        :param xi_2: the ξ₂ parameter
         :return: tuple (mean, varsqrt), the meanvarsqrt parameters
         """
         pass  # pragma: no cover
@@ -67,8 +67,8 @@ class XiTransform(metaclass=abc.ABCMeta):
         """
         Applies the transform so that `nat_1`, `nat_2` is mapped to `xi_1`, `xi_2`
 
-        :param nat_1: the nat_1 parameter
-        :param nat_2: the nat_1 parameter
+        :param nat_1: the θ₁ parameter
+        :param nat_2: the θ₂ parameter
         :return: tuple `xi_1`, `xi_2`
         """
         pass  # pragma: no cover
@@ -135,12 +135,12 @@ class NaturalGradient(tf.optimizers.Optimizer):
         In addition, for convenience with the rest of GPflow, this code computes ∂L/∂η using
         the chain rule:
 
-        ∂L/∂η = (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt])
+        ∂L/∂η = (∂L / ∂[q_μ, q_sqrt])(∂[q_μ, q_sqrt] / ∂η)
 
         In total there are three derivative calculations:
-        natgrad L w.r.t ξ  = (∂ξ / ∂nat) [ (∂[q_μ, q_sqrt] / ∂η)(∂L / ∂[q_μ, q_sqrt]) ]^T
+        natgrad L w.r.t ξ  = (∂ξ / ∂θ) [(∂L / ∂[q_μ, q_sqrt]) (∂[q_μ, q_sqrt] / ∂η)]^T
 
-        Note that if ξ = nat or [q_μ, q_sqrt] some of these calculations are the identity.
+        Note that if ξ = θ or [q_μ, q_sqrt] some of these calculations are the identity.
 
         """
 
