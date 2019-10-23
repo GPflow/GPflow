@@ -42,7 +42,7 @@ class Stationary(Kernel):
         Returns ||(X - X2ᵀ) / ℓ||² i.e. squared L2-norm.
         """
         X_scaled = X / self.lengthscale
-        X2_scaled = X2 / self.lengthscale if X2 is not None else X_scaled
+        X2_scaled = X2 / self.lengthscale if X2 is not None else X2
         return square_distance(X_scaled, X2_scaled)
 
     def K(self, X, X2=None, presliced=False):

@@ -58,9 +58,9 @@ class ArcCosine(Kernel):
     @property
     def ard(self):
         """
-        Indicates if ARD behavior is on i.e. a separate lengthscale per dimension.
+        Indicates if ARD behavior is on i.e. a separate weight variance per dimension.
         """
-        return tf.rank(self.lengthscale) > 0
+        return tf.rank(self.weight_variances) > 0
 
     def _weighted_product(self, X, X2=None):
         if X2 is None:
