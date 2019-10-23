@@ -85,7 +85,7 @@ def print_summary(module: tf.Module, fmt: str = None):
     """
     Prints a summary of the parameters and variables contained in a tf.Module.
     """
-
+    fmt = fmt if fmt is not None else summary_fmt()
     if fmt == "notebook":
         from IPython.core.display import display, HTML
         tab = tabulate_module_summary(module, "html")
@@ -94,8 +94,7 @@ def print_summary(module: tf.Module, fmt: str = None):
         print(tabulate_module_summary(module, fmt))
 
 
-def tabulate_module_summary(module: tf.Module, tablefmt: str = None) -> str:
-    tablefmt = tablefmt if tablefmt is not None else summary_fmt()
+def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -> str:
     column_names = ['name', 'class', 'transform', 'trainable', 'shape', 'dtype', 'value']
 
     def get_name(v):
