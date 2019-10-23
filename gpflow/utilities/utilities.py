@@ -94,7 +94,7 @@ def print_summary(module: tf.Module, fmt: str = None):
         print(tabulate_module_summary(module, fmt))
 
 
-def tabulate_module_summary(module: tf.Module, tablefmt: str = None) -> str:
+def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -> str:
     column_names = ['name', 'class', 'transform', 'trainable', 'shape', 'dtype', 'value']
 
     def get_name(v):
