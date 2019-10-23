@@ -24,6 +24,13 @@ class Linear(Kernel):
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
 
+    @property
+    def ard(self):
+        """
+        Indicates if ARD behavior is on i.e. a separate variance per dimension.
+        """
+        return tf.rank(self.variance) > 0
+
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
