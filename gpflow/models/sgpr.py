@@ -59,34 +59,32 @@ class SGPRUpperMixin(GPModel):
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
 
-        L = tf.linalg.cholesky(kuu)
-        LB = tf.linalg.cholesky(kuu + self.likelihood.variance ** -1.0 *
-                                tf.linalg.matmul(kuf, kuf, transpose_b=True))
+        KufKfu = tf.linalg.matmul(kuf, kuf, transpose_b=True)
 
-        Linvkuf = tf.linalg.triangular_solve(L, kuf, lower=True)
+        L = tf.linalg.cholesky(kuu)
+        LB = tf.linalg.cholesky(kuu + KufKfu / self.likelihood.variance)
+
+        LinvKuf = tf.linalg.triangular_solve(L, kuf, lower=True)
         # Using the Trace bound, from Titsias' presentation
-        # c = tf.reduce_sum(Kdiag) - tf.reduce_sum(Linvkuf ** 2.0)
-        Kff = self.kernel(x_data)
-        Qff = tf.linalg.matmul(kuf, Linvkuf, transpose_a=True)
+        c = tf.reduce_sum(Kdiag) - tf.reduce_sum(tf.square(LinvKuf))
+        # Kff = self.kernel(x_data)
+        # Qff = tf.linalg.matmul(kuf, LinvKuf, transpose_a=True)
 
         # Alternative bound on max eigenval:
-        c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), 0))
+        # c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), axis=0))
         corrected_noise = self.likelihood.variance + c
 
         const = -0.5 * num_data * tf.math.log(
             2 * np.pi * self.likelihood.variance)
-        logdet = tf.reduce_sum(tf.math.log(
-            tf.linalg.diag_part(L))) - tf.reduce_sum(
-            tf.math.log(tf.linalg.diag_part(LB)))
+        logdet = (tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
+                  - tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB))))
 
-        LC = tf.linalg.cholesky(kuu + corrected_noise ** -1.0 *
-                                tf.linalg.matmul(kuf, kuf, transpose_b=True))
+        LC = tf.linalg.cholesky(kuu + KufKfu / corrected_noise)
         v = tf.linalg.triangular_solve(LC,
-                                       corrected_noise ** -1.0 *
-                                       tf.linalg.matmul(kuf, y_data),
+                                       tf.linalg.matmul(kuf, y_data) / corrected_noise,
                                        lower=True)
-        quad = -0.5 * corrected_noise ** -1.0 * tf.reduce_sum(
-            y_data ** 2.0) + 0.5 * tf.reduce_sum(v ** 2.0)
+        quad = (-0.5 * tf.reduce_sum(tf.square(y_data)) / corrected_noise
+                + 0.5 * tf.reduce_sum(tf.square(v)))
 
         return const + logdet + quad
 
@@ -233,7 +231,7 @@ class SGPR(SGPRUpperMixin):
         err = y_data - self.mean_function(x_data)
         mu = tf.linalg.matmul(
             sig_sqrt_kuu, tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(kuf, err)),
-            transpose_a=True) * self.likelihood.variance ** -1.0
+            transpose_a=True) / self.likelihood.variance
 
         return mu, cov
 
