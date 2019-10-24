@@ -115,7 +115,7 @@ def _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
 
 
 @pytest.mark.parametrize('order', gpflow.kernels.ArcCosine.implemented_orders)
-@pytest.mark.parametrize('D, weight_variances', 
+@pytest.mark.parametrize('D, weight_variances',
                          [[1, 1.7], [3, 1.7], [3, (1.1, 1.7, 1.9)]])
 @pytest.mark.parametrize('N, bias_variance, variance',
                          [[3, 0.6, 2.3]])
@@ -130,16 +130,6 @@ def test_arccosine_1d_and_3d(order, D, N, weight_variances, bias_variance,
 def test_arccosine_non_implemented_order(order):
     with pytest.raises(ValueError):
         gpflow.kernels.ArcCosine(order=order)
-
-
-@pytest.mark.parametrize(
-    'order, D, N, weight_variances, bias_variance, variance',
-    [[0, 1, 3, 1., 1., 1.]])
-def test_arccosine_weight_initializations(order, D, N, weight_variances,
-                                          bias_variance, variance):
-    X_data = rng.randn(N, D)
-    _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
-                               order, X_data)
 
 
 @pytest.mark.parametrize('D, N', [[1, 4]])
@@ -158,6 +148,8 @@ def _assert_periodic_kern_err(lengthscale, variance, period, X):
                                      lengthscale=lengthscale)
     gram_matrix = kernel(X)
     reference_gram_matrix = _ref_periodic(X, lengthscale, variance, period)
+
+    assert_allclose(gram_matrix, reference_gram_matrix)
 
 
 @pytest.mark.parametrize('D', [1, 2])
@@ -235,7 +227,7 @@ _dim = 3
 kernel_setups_extended = kernel_setups + [
     SquaredExponential() + Linear(),
     SquaredExponential() * Linear(),
-    SquaredExponential() + Linear(variance=rng.rand(_dim, 1).reshape(-1))
+    SquaredExponential() + Linear(variance=rng.rand(_dim))
 ] + [ArcCosine(order=order) for order in ArcCosine.implemented_orders]
 
 
@@ -387,3 +379,18 @@ def test_ard_init_shapes(N, ard):
     with pytest.raises(ValueError):
         k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3))
         k2(rng.randn(N, 2))
+
+
+@pytest.mark.parametrize('kernel_class, param_name', [
+    [gpflow.kernels.SquaredExponential, "lengthscale"],
+    [gpflow.kernels.Linear, "variance"],
+    [gpflow.kernels.ArcCosine, "weight_variances"],
+])
+@pytest.mark.parametrize('param_value, ard', [
+    [1., False],
+    [[1.], True],
+    [[1., 1.], True],
+])
+def test_ard_param(kernel_class, param_name, param_value, ard):
+    kernel = kernel_class(**{param_name: param_value})
+    assert kernel.ard == ard

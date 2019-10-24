@@ -19,23 +19,16 @@ class Stationary(Kernel):
 
     def __init__(self, variance=1.0, lengthscale=1.0, active_dims=None):
         """
-        - input_dim is the dimension of the input to the kernel
-        - variance is the (initial) value for the variance parameter
-        - lengthscale is the initial value for the lengthscale parameter
-          defaults to 1.0.
-        - active_dims is a list of length input_dim which controls which
-          columns of X are used.
+        :param variance: the (initial) value for the variance parameter
+        :param lengthscale: the (initial) value for the lengthscale parameter(s),
+            to induce ARD behaviour this must be initialised as an array the same
+            length as the the number of active dimensions e.g. [1., 1., 1.]
+        :param active_dims: a slice or list specifying which columns of X are used
         """
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
-
-    @property
-    def ard(self):
-        """
-        Indicates if ARD behavior is on i.e. a separate lengthscale per dimension.
-        """
-        return tf.rank(self.lengthscale) > 0
+        self.ard = self._is_ard(lengthscale)
 
     def scaled_squared_euclid_dist(self, X, X2=None):
         """
@@ -57,7 +50,7 @@ class Stationary(Kernel):
 
     def K_r2(self, r2):
         """
-        Returns the kernel evaluated on `r²`, which is the squared scaled Euclidean distance
+        Returns the kernel evaluated on r² (`r2`), which is the squared scaled Euclidean distance
         Should operate element-wise on r²
         """
         if hasattr(self, "K_r"):

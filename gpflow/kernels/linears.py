@@ -15,21 +15,14 @@ class Linear(Kernel):
 
     def __init__(self, variance=1.0, active_dims=None):
         """
-        - input_dim is the dimension of the input to the kernel
-        - variance is the (initial) value for the variance parameter(s)
-          defaults to 1.0 but supports ARD i.e. one variance per input.
-        - active_dims is a list of length input_dim which controls
-          which columns of X are used.
+        :param variance: the (initial) value for the variance parameter(s),
+            to induce ARD behaviour this must be initialised as an array the same
+            length as the the number of active dimensions e.g. [1., 1., 1.]
+        :param active_dims: a slice or list specifying which columns of X are used
         """
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
-
-    @property
-    def ard(self):
-        """
-        Indicates if ARD behavior is on i.e. a separate variance per dimension.
-        """
-        return tf.rank(self.variance) > 0
+        self.ard = self._is_ard(variance)
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -67,12 +60,12 @@ class Polynomial(Linear):
                  offset=1.0,
                  active_dims=None):
         """
-        :param input_dim: the dimension of the input to the kernel
-        :param variance: the (initial) value for the variance parameter(s)
-                         defaults to 1.0 but supports ARD i.e. one variance per input.
         :param degree: the degree of the polynomial
-        :param active_dims: a list of length input_dim which controls
-                            which columns of X are used.
+        :param variance: the (initial) value for the variance parameter(s),
+            to induce ARD behaviour this must be initialised as an array the same
+            length as the the number of active dimensions e.g. [1., 1., 1.]
+        :param offset: the offset of the polynomial
+        :param active_dims: a slice or list specifying which columns of X are used
         """
         super().__init__(variance, active_dims)
         self.degree = degree

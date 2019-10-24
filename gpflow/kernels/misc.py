@@ -33,16 +33,15 @@ class ArcCosine(Kernel):
                  bias_variance=1.,
                  active_dims=None):
         """
-        - input_dim is the dimension of the input to the kernel
-        - order specifies the activation function of the neural network
-          the function is a rectified monomial of the chosen order.
-        - variance is the initial value for the variance parameter
-        - weight_variances is the initial value for the weight_variances parameter
-          defaults to 1.0 but supports ARD i.e. one variance per input.
-        - bias_variance is the initial value for the bias_variance parameter
-          defaults to 1.0.
-        - active_dims is a list of length input_dim which controls which
-          columns of X are used.
+        :param order: specifies the activation function of the neural network
+          the function is a rectified monomial of the chosen order
+        :param variance: the (initial) value for the variance parameter
+        :param weight_variances: the (initial) value for the weight_variances parameter,
+            to induce ARD behaviour this must be initialised as an array the same
+            length as the the number of active dimensions e.g. [1., 1., 1.]
+        :param bias_variance: the (initial) value for the bias_variance parameter
+            defaults to 1.0
+        :param active_dims: a slice or list specifying which columns of X are used
         """
         super().__init__(active_dims)
 
@@ -54,13 +53,7 @@ class ArcCosine(Kernel):
         self.bias_variance = Parameter(bias_variance, transform=positive())
         self.weight_variances = Parameter(weight_variances,
                                           transform=positive())
-
-    @property
-    def ard(self):
-        """
-        Indicates if ARD behavior is on i.e. a separate weight variance per dimension.
-        """
-        return tf.rank(self.weight_variances) > 0
+        self.ard = self._is_ard(weight_variances)
 
     def _weighted_product(self, X, X2=None):
         if X2 is None:
