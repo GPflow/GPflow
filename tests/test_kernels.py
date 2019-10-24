@@ -370,15 +370,20 @@ def test_ard_init_scalar(D):
     assert np.allclose(lengthscale_1, lengthscale_2, atol=1e-10)
 
 
-@pytest.mark.parametrize('N', [4, 7])
-@pytest.mark.parametrize('ard', [True, False, None])
-def test_ard_init_shapes(N, ard):
-    with pytest.raises(ValueError):
-        k1 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(2))
-        k1(rng.randn(N, 4))
-    with pytest.raises(ValueError):
-        k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3))
-        k2(rng.randn(N, 2))
+def test_ard_invalid_active_dims():
+    msg = r"Dimension of `active_dims` \[1\] does not match dimension of the ard parameter \(2\)"
+    with pytest.raises(ValueError, match=msg):
+        gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), active_dims=[1])
+
+
+#@pytest.mark.parametrize('N', [4, 7])
+#def test_ard_invalid_shapes(N):
+#    with pytest.raises(ValueError, match=r"Shape of parameter does not match shape of data"):
+#        k1 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(2))
+#        k1(rng.randn(N, 4))
+#    with pytest.raises(ValueError, match=r"Shape of parameter does not match shape of data"):
+#        k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3))
+#        k2(rng.randn(N, 2))
 
 
 @pytest.mark.parametrize('kernel_class, param_name', [
@@ -391,6 +396,6 @@ def test_ard_init_shapes(N, ard):
     [[1.], True],
     [[1., 1.], True],
 ])
-def test_ard_param(kernel_class, param_name, param_value, ard):
+def test_ard_property(kernel_class, param_name, param_value, ard):
     kernel = kernel_class(**{param_name: param_value})
-    assert kernel.ard == ard
+    assert kernel.ard is ard

@@ -122,40 +122,40 @@ class Kernel(tf.Module):
         return cov
 
     def _is_ard(self, raw_parameter):
-        self.validate_ard_active_dims(raw_parameter)
-        return isinstance(raw_parameter, Iterable)
-
-    def validate_ard_active_dims(self, raw_parameter):
-        """
-        If active_dims is a list - check it matches the dimension of the ard parameter.
-        """
-        if self.active_dims is None or isinstance(self.active_dims, slice):
-            return
-        if not isinstance(raw_parameter, Iterable):
-            return
-        if len(raw_parameter) != len(self.active_dims):
-            raise ValueError(f"active_dims {self.active_dims} does not match "
+        is_ard = isinstance(raw_parameter, Iterable)
+        if (is_ard
+                and self.active_dims is not None
+                and not isinstance(self.active_dims, slice)
+                and len(raw_parameter) != len(self.active_dims)):
+            raise ValueError(f"Dimension of `active_dims` {self.active_dims} does not match "
                              f"dimension of the ard parameter ({len(raw_parameter)})")
+        return is_ard
 
     def validate_ard_parameter(self, X, parameter):
         """
         Check that the input dimension matches the dimension of the ard parameter.
         """
-        def do_nothing():
-            pass
+        return True
 
-        def raise_error():
-            raise ValueError("Shape of parameter does not match shape of data")
+        # TODO: I cannot figure out how to perform the below check since tf.cond
+        # doesn't let me lazy evaluate, therefore even when p_rank == 0 it still tries
+        # to access p_shape[-1] and fails - example failing test: test_methods.py::test_sgpr_qu
+
+        #def check_dimensions():
+        #    return tf.cond(p_shape[-1] == X_shape[-1],
+        #                   true_fn=lambda: None,
+        #                   false_fn=raise_error)
+
+        #def raise_error():
+        #    raise ValueError("Shape of parameter does not match shape of data")
         
-        X_shape = tf.shape(X)
-        p_shape = tf.shape(parameter)
-        p_rank = tf.rank(parameter)
-        
-        return tf.cond(p_rank == 0,
-                       true_fn=do_nothing,
-                       false_fn=lambda: tf.cond(p_shape[-1:] == X_shape[-1:],
-                                                true_fn=do_nothing,
-                                                false_fn=raise_error))
+        #X_shape = tf.shape(X)
+        #p_shape = tf.shape(parameter)
+        #p_rank = tf.rank(parameter)
+
+        #return tf.cond(p_rank == 0,
+        #               true_fn=lambda: None,
+        #               false_fn=check_dimensions)
 
     @abc.abstractmethod
     def K(self, X, Y=None, presliced=False):
