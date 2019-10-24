@@ -8,7 +8,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# WITHOUT WARRANTIES OR CO[N, D]ITIONS OF ANY KI[N, D], either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
@@ -22,7 +22,6 @@ import tensorflow as tf
 from ..base import Parameter
 
 Scalar = Union[float, tf.Tensor, np.ndarray]
-
 
 __all__ = [
     "NaturalGradient",
@@ -43,33 +42,33 @@ class XiTransform(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def meanvarsqrt_to_xi(self, mean, varsqrt):
         """
-        Transforms the parameter `mean` and `varsqrt` to `xi_1`, `xi_2`
+        Transforms the parameter `mean` and `varsqrt` to `xi1`, `xi2`
 
         :param mean: the mean parameter (N, D)
-        :param varsqrt: the varsqrt parameter (N, N, D)
-        :return: tuple (xi_1, xi_2), the xi parameters (N, D), (N, N, D)
+        :param varsqrt: the varsqrt parameter (D, N, N)
+        :return: tuple (xi1, xi2), the xi parameters (N, D), (D, N, N)
         """
         pass  # pragma: no cover
 
     @abc.abstractmethod
-    def xi_to_meanvarsqrt(self, xi_1, xi_2):
+    def xi_to_meanvarsqrt(self, xi1, xi2):
         """
-        Transforms the parameter `xi_1`, `xi_2` to `mean`, `varsqrt`
+        Transforms the parameter `xi1`, `xi2` to `mean`, `varsqrt`
 
-        :param xi_1: the xi_1 parameter
-        :param xi_2: the ξ₂ parameter
+        :param xi1: the xi1 parameter
+        :param xi2: the ξ₂ parameter
         :return: tuple (mean, varsqrt), the meanvarsqrt parameters
         """
         pass  # pragma: no cover
 
     @abc.abstractmethod
-    def naturals_to_xi(self, nat_1, nat_2):
+    def naturals_to_xi(self, nat1, nat2):
         """
-        Applies the transform so that `nat_1`, `nat_2` is mapped to `xi_1`, `xi_2`
+        Applies the transform so that `nat1`, `nat2` is mapped to `xi1`, `xi2`
 
-        :param nat_1: the θ₁ parameter
-        :param nat_2: the θ₂ parameter
-        :return: tuple `xi_1`, `xi_2`
+        :param nat1: the θ₁ parameter
+        :param nat2: the θ₂ parameter
+        :return: tuple `xi1`, `xi2`
         """
         pass  # pragma: no cover
 
@@ -90,8 +89,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         Custom transformations are also possible, they should implement
         `XiTransform` interface.
 
-            :param model: GPflow model.
-            :param session: Tensorflow session where optimization will be run.
+            :param loss_fn: Loss function.
             :param var_list: List of pair tuples of variational parameters or
                 triplet tuple with variational parameters and ξ transformation.
                 By default, all parameters goes through XiNat() transformation.
@@ -102,15 +100,6 @@ class NaturalGradient(tf.optimizers.Optimizer):
                     (q_mu2, q_sqrt2, XiSqrtMeanVar())
                 ]
                 ```
-            :param feed_dict: Feed dictionary of tensors passed to session run method.
-            :param maxiter: Number of run interation. Default value: 1000.
-            :param anchor: Synchronize updated parameters for a session with internal
-                parameter's values.
-            :param step_callback: A callback function to execute at each optimization step.
-                The callback should accept variable argument list, where first argument is
-                optimization step number.
-            :type step_callback: Callable[[], None]
-            :param kwargs: Extra parameters passed to session run's method.
         """
         parameters = [(v[0], v[1], v[2] if len(v) > 2 else XiNat()) for v in var_list]
         self._natgrad_steps(loss_fn, parameters)
@@ -119,7 +108,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         def natural_gradient_step(q_mu, q_sqrt, xi_transform):
             self._natgrad_step(loss_fn, q_mu, q_sqrt, xi_transform)
 
-        with tf.name_scope("natural_gradient_steps"):
+        with tf.name_scope(f"{self._name}/natural_gradient_steps"):
             list(map(natural_gradient_step, *zip(*parameters)))
 
     def _natgrad_step(self, loss_fn: Callable, q_mu: Parameter, q_sqrt: Parameter, xi_transform: XiTransform):
@@ -141,19 +130,15 @@ class NaturalGradient(tf.optimizers.Optimizer):
         natgrad L w.r.t ξ  = (∂ξ / ∂θ) [(∂L / ∂[q_μ, q_sqrt]) (∂[q_μ, q_sqrt] / ∂η)]^T
 
         Note that if ξ = θ or [q_μ, q_sqrt] some of these calculations are the identity.
-
+        In the code η = eta, ξ = xi, θ = nat.
         """
 
         with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
-            tape.watch([
-                q_mu.unconstrained_variable,
-                q_sqrt.unconstrained_variable
-            ])
-            loss = loss_fn()
+            tape.watch([q_mu.unconstrained_variable, q_sqrt.unconstrained_variable])
 
+            loss = loss_fn()
             # the three parameterizations as functions of [q_mu, q_sqrt]
             eta1, eta2 = meanvarsqrt_to_expectation(q_mu, q_sqrt)
-
             # we need these to calculate the relevant gradients
             meanvarsqrt = expectation_to_meanvarsqrt(eta1, eta2)
 
@@ -213,11 +198,11 @@ class XiNat(XiTransform):
     def meanvarsqrt_to_xi(self, mean, varsqrt):
         return meanvarsqrt_to_natural(mean, varsqrt)
 
-    def xi_to_meanvarsqrt(self, xi_1, xi_2):
-        return natural_to_meanvarsqrt(xi_1, xi_2)
+    def xi_to_meanvarsqrt(self, xi1, xi2):
+        return natural_to_meanvarsqrt(xi1, xi2)
 
-    def naturals_to_xi(self, nat_1, nat_2):
-        return nat_1, nat_2
+    def naturals_to_xi(self, nat1, nat2):
+        return nat1, nat2
 
 
 class XiSqrtMeanVar(XiTransform):
@@ -229,29 +214,29 @@ class XiSqrtMeanVar(XiTransform):
     def meanvarsqrt_to_xi(self, mean, varsqrt):
         return mean, varsqrt
 
-    def xi_to_meanvarsqrt(self, xi_1, xi_2):
-        return xi_1, xi_2
+    def xi_to_meanvarsqrt(self, xi1, xi2):
+        return xi1, xi2
 
-    def naturals_to_xi(self, nat_1, nat_2):
-        return natural_to_meanvarsqrt(nat_1, nat_2)
+    def naturals_to_xi(self, nat1, nat2):
+        return natural_to_meanvarsqrt(nat1, nat2)
 
 
 #
 # Auxiliary gaussian parameter conversion functions.
 #
 # The following functions expect their first and second inputs to have shape
-# DN1 and DNN, respectively. Return values are also of shapes DN1 and DNN.
+# [D, N, 1] and [D, N, N], respectively. Return values are also of shapes [D, N, 1] and [D, N, N].
 
 
 def swap_dimensions(method):
     """
     Converts between GPflow indexing and tensorflow indexing
     `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix ops):
-        `method` inputs DN1, DNN
-        `method` outputs DN1, DNN
+        `method` inputs [D, N, 1], [D, N, N]
+        `method` outputs [D, N, 1], [D, N, N]
     :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
-        inputs: ND, DNN
-        outputs: ND, DNN
+        inputs: [N, D], [D, N, N]
+        outputs: [N, D], [D, N, N]
     """
 
     @functools.wraps(method)
@@ -270,11 +255,11 @@ def swap_dimensions(method):
 
 
 @swap_dimensions
-def natural_to_meanvarsqrt(nat_1, nat_2):
-    var_sqrt_inv = tf.linalg.cholesky(-2 * nat_2)
+def natural_to_meanvarsqrt(nat1: tf.Tensor, nat2: tf.Tensor):
+    var_sqrt_inv = tf.linalg.cholesky(-2 * nat2)
     var_sqrt = _inverse_lower_triangular(var_sqrt_inv)
     S = tf.linalg.matmul(var_sqrt, var_sqrt, transpose_a=True)
-    mu = tf.linalg.matmul(S, nat_1)
+    mu = tf.linalg.matmul(S, nat1)
     # We need the decomposition of S as L L^T, not as L^T L,
     # hence we need another cholesky.
     return mu, tf.linalg.cholesky(S)
@@ -288,19 +273,21 @@ def meanvarsqrt_to_natural(mu: tf.Tensor, s_sqrt: tf.Tensor):
 
 
 @swap_dimensions
-def natural_to_expectation(nat_1: tf.Tensor, nat_2: tf.Tensor):
-    return meanvarsqrt_to_expectation(*natural_to_meanvarsqrt(nat_1, nat_2, swap=False), swap=False)
+def natural_to_expectation(nat1: tf.Tensor, nat2: tf.Tensor):
+    args = natural_to_meanvarsqrt(nat1, nat2, swap=False)
+    return meanvarsqrt_to_expectation(*args, swap=False)
 
 
 @swap_dimensions
-def expectation_to_natural(eta_1: tf.Tensor, eta_2: tf.Tensor):
-    return meanvarsqrt_to_natural(*expectation_to_meanvarsqrt(eta_1, eta_2, swap=False), swap=False)
+def expectation_to_natural(eta1: tf.Tensor, eta2: tf.Tensor):
+    args = expectation_to_meanvarsqrt(eta1, eta2, swap=False)
+    return meanvarsqrt_to_natural(*args, swap=False)
 
 
 @swap_dimensions
-def expectation_to_meanvarsqrt(eta_1, eta_2):
-    var = eta_2 - tf.linalg.matmul(eta_1, eta_1, transpose_b=True)
-    return eta_1, tf.linalg.cholesky(var)
+def expectation_to_meanvarsqrt(eta1: tf.Tensor, eta2: tf.Tensor):
+    var = eta2 - tf.linalg.matmul(eta1, eta1, transpose_b=True)
+    return eta1, tf.linalg.cholesky(var)
 
 
 @swap_dimensions
@@ -314,11 +301,11 @@ def _inverse_lower_triangular(M):
     Take inverse of lower triangular (e.g. Cholesky) matrix. This function
     broadcasts over the first index.
 
-    :param M: Tensor with lower triangular structure of shape DxNxN
+    :param M: Tensor with lower triangular structure of shape [D, N, N]
     :return: The inverse of the Cholesky decomposition. Same shape as input.
     """
     if M.shape.ndims != 3:  # pragma: no cover
         raise ValueError("Number of dimensions for input is required to be 3.")
     D, N = M.shape[0], M.shape[1]
-    I_DNN = tf.eye(N, dtype=M.dtype)[None, :, :] * tf.ones((D, 1, 1), dtype=M.dtype)
-    return tf.linalg.triangular_solve(M, I_DNN)
+    I_dnn = tf.eye(N, dtype=M.dtype)[None, :, :] * tf.ones((D, 1, 1), dtype=M.dtype)
+    return tf.linalg.triangular_solve(M, I_dnn)

@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -62,7 +63,7 @@ def assert_gpr_vs_vgp(m1: tf.Module,
                       m2: tf.Module,
                       gamma: float = 1.0,
                       maxiter: int = 1,
-                      xi_transform: gpflow.optimizers.natgrad.XiTransform = None):
+                      xi_transform: Optional[gpflow.optimizers.natgrad.XiTransform] = None):
     assert maxiter >= 1
 
     m2_ll_before = m2.log_likelihood()
