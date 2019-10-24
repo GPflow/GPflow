@@ -3,7 +3,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..base import Parameter
-from ..config import default_int
+from ..config import default_int, to_default_float
 
 
 class RobustMax(tf.Module):
@@ -22,7 +22,7 @@ class RobustMax(tf.Module):
     def __init__(self, num_classes, epsilon=1e-3, **kwargs):
         super().__init__(**kwargs)
         transform = tfp.bijectors.Sigmoid()
-        prior = tfp.distributions.Beta(0.2, 5.)
+        prior = tfp.distributions.Beta(to_default_float(0.2), to_default_float(5.))
         self.epsilon = Parameter(epsilon, transform=transform, prior=prior, trainable=False)
         self.num_classes = num_classes
         self._squash = 1e-4
