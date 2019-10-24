@@ -56,7 +56,7 @@ class XiTransform(metaclass=abc.ABCMeta):
         """
         Transforms the parameter `xi_1`, `xi_2` to `mean`, `varsqrt`
 
-        :param xi_1: the xi_1 parameter
+        :param xi_1: the ξ₁ parameter
         :param xi_2: the ξ₂ parameter
         :return: tuple (mean, varsqrt), the meanvarsqrt parameters
         """
