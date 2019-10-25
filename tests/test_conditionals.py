@@ -31,7 +31,7 @@ Mn = 50
 @pytest.fixture(scope='module')
 def kernel():
     k = gpflow.kernels.Matern32() + gpflow.kernels.White()
-    k.kernels[1].variance <<= 0.01
+    k.kernels[1].variance.assign(0.01)
     return k
 
 
