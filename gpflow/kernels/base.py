@@ -19,9 +19,8 @@ in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 """
 
 import abc
-from collections.abc import Iterable
 from functools import partial, reduce
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -121,42 +120,6 @@ class Kernel(tf.Module):
 
         return cov
 
-    def _is_ard(self, raw_parameter):
-        is_ard = isinstance(raw_parameter, Iterable)
-        if (is_ard
-                and self.active_dims is not None
-                and not isinstance(self.active_dims, slice)
-                and len(raw_parameter) != len(self.active_dims)):
-            raise ValueError(f"Dimension of `active_dims` {self.active_dims} does not match "
-                             f"dimension of the ard parameter ({len(raw_parameter)})")
-        return is_ard
-
-    def validate_ard_parameter(self, X, parameter):
-        """
-        Check that the input dimension matches the dimension of the ard parameter.
-        """
-        return True
-
-        # TODO: I cannot figure out how to perform the below check since tf.cond
-        # doesn't let me lazy evaluate, therefore even when p_rank == 0 it still tries
-        # to access p_shape[-1] and fails - example failing test: test_methods.py::test_sgpr_qu
-
-        #def check_dimensions():
-        #    return tf.cond(p_shape[-1] == X_shape[-1],
-        #                   true_fn=lambda: None,
-        #                   false_fn=raise_error)
-
-        #def raise_error():
-        #    raise ValueError("Shape of parameter does not match shape of data")
-        
-        #X_shape = tf.shape(X)
-        #p_shape = tf.shape(parameter)
-        #p_rank = tf.rank(parameter)
-
-        #return tf.cond(p_rank == 0,
-        #               true_fn=lambda: None,
-        #               false_fn=check_dimensions)
-
     @abc.abstractmethod
     def K(self, X, Y=None, presliced=False):
         raise NotImplementedError
@@ -178,6 +141,47 @@ class Kernel(tf.Module):
 
     def __mul__(self, other):
         return Product([self, other])
+
+
+class ARDKernel(Kernel):
+    """
+    Base class for kernels which support ARD (Automatic Relevance Determination)
+    behaviour for a given set of parameters.
+
+    For stationary kernels the lengthscale parameter supports ARD which means that
+    the kernel may have one lengthscale per dimension, otherwise the kernel is
+    "isotropic" i.e. has a single common lengthscale for all dimensions.
+    """
+
+    @property
+    @abc.abstractmethod
+    def ard_parameter_names(self) -> List[str]:
+        """
+        List of names of the ard parameters.
+        """
+
+    @property
+    def ard(self) -> bool:
+        """
+        Whether ARD behaviour is active for at least one of the relevant parameters.
+        """
+        ard_parameters = [getattr(self, name) for name in self.ard_parameter_names]
+        return any(len(param.shape) > 0 for param in ard_parameters)
+
+    def validate_ard_active_dims(self):
+        """
+        Validate that ARD parameters match the number of active_dims (provided active_dims
+        has been specified as an array). To be called after parameter initialisation.
+        """
+        if self.active_dims is None or isinstance(self.active_dims, slice):
+            # Can only validate parameter if active_dims is an array
+            return
+
+        for name in self.ard_parameter_names:
+            param = getattr(self, name)
+            if param.shape.rank > 0 and param.shape[0] != len(self.active_dims):
+                raise ValueError(f"Size of `active_dims` {self.active_dims} does not match "
+                                 f"size of `{name}` ({param.shape[0]})")
 
 
 class Combination(Kernel):

@@ -1,9 +1,9 @@
 import tensorflow as tf
 from ..base import Parameter, positive
-from .base import Kernel
+from .base import ARDKernel
 
 
-class Linear(Kernel):
+class Linear(ARDKernel):
     """
     The linear kernel.  Functions drawn from a GP with this kernel are linear, i.e. f(x) = cx.
     The kernel equation is
@@ -12,6 +12,8 @@ class Linear(Kernel):
 
     where σ²  is the variance parameter.
     """
+
+    ard_parameter_names = ["variance"]
 
     def __init__(self, variance=1.0, active_dims=None):
         """
@@ -22,13 +24,11 @@ class Linear(Kernel):
         """
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
-        self.ard = self._is_ard(variance)
+        self.validate_ard_active_dims()
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
-
-        self.validate_ard_parameter(X, self.variance)
 
         if X2 is None:
             return tf.linalg.matmul(X * self.variance, X, transpose_b=True)

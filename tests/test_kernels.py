@@ -371,19 +371,9 @@ def test_ard_init_scalar(D):
 
 
 def test_ard_invalid_active_dims():
-    msg = r"Dimension of `active_dims` \[1\] does not match dimension of the ard parameter \(2\)"
+    msg = r"Size of `active_dims` \[1\] does not match size of `lengthscale` \(2\)"
     with pytest.raises(ValueError, match=msg):
         gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), active_dims=[1])
-
-
-#@pytest.mark.parametrize('N', [4, 7])
-#def test_ard_invalid_shapes(N):
-#    with pytest.raises(ValueError, match=r"Shape of parameter does not match shape of data"):
-#        k1 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(2))
-#        k1(rng.randn(N, 4))
-#    with pytest.raises(ValueError, match=r"Shape of parameter does not match shape of data"):
-#        k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3))
-#        k2(rng.randn(N, 2))
 
 
 @pytest.mark.parametrize('kernel_class, param_name', [
