@@ -16,8 +16,8 @@ LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]
 class Scipy:
     def minimize(self,
                  closure: LossClosure,
-                  variables: Variables,
-                  method: Optional[str] = "L-BFGS-B",
+                 variables: Variables,
+                 method: Optional[str] = "L-BFGS-B",
                  step_callback: Optional[StepCallback] = None,
                  **scipy_kwargs) -> OptimizeResult:
         """
