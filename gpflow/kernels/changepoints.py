@@ -37,7 +37,7 @@ class ChangePoints(Combination):
                  kernels: List[Kernel],
                  locations: List[float],
                  steepness: Union[float, List[float]] = 1.0,
-                 name=None):
+                 name: Optional[str] = None):
         """
         :param kernels: list of kernels defining the different regimes
         :param locations: list of change-point locations in the 1d input space
