@@ -54,7 +54,6 @@ class ChangePoints(Combination):
 
         super().__init__(kernels, name=name)
 
-        self.num_changepoints = len(locations)
         self.locations = Parameter(locations)
         self.steepness = Parameter(steepness, transform=positive())
 
