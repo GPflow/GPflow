@@ -14,11 +14,10 @@ LossClosure = Callable[..., Tuple[tf.Tensor, Variables]]
 
 
 class Scipy:
-    _DEFAULT_METHOD = 'L-BFGS-B'
-
     def minimize(self,
                  closure: LossClosure,
-                 variables: Variables,
+                  variables: Variables,
+                  method: Optional[str] = "L-BFGS-B",
                  step_callback: Optional[StepCallback] = None,
                  **scipy_kwargs) -> OptimizeResult:
         """
@@ -57,7 +56,6 @@ class Scipy:
             callback = self.callback_func(closure, variables, step_callback)
             scipy_kwargs.update(dict(callback=callback))
 
-        method = scipy_kwargs.pop('method', self._DEFAULT_METHOD)
         return scipy.optimize.minimize(func, initial_params, jac=True, method=method,
                                        **scipy_kwargs)
 
