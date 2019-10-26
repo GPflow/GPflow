@@ -354,7 +354,7 @@ def test_shared_independent_mok():
     set_trainable(model_1, False)
     model_1.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure1():
         return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -369,7 +369,7 @@ def test_shared_independent_mok():
     set_trainable(model_2, False)
     model_2.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure2():
         return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -384,7 +384,7 @@ def test_shared_independent_mok():
     set_trainable(model_3, False)
     model_3.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure3():
         return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -414,7 +414,7 @@ def test_separate_independent_mok():
     model_1.q_sqrt.trainable = True
     model_1.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure1():
         return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -431,7 +431,7 @@ def test_separate_independent_mok():
     model_2.q_sqrt.trainable = True
     model_2.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure2():
         return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -458,7 +458,7 @@ def test_separate_independent_mof():
     model_1.q_sqrt.trainable = True
     model_1.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure1():
         return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -475,7 +475,7 @@ def test_separate_independent_mof():
     model_2.q_sqrt.trainable = True
     model_2.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure2():
         return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -494,7 +494,7 @@ def test_separate_independent_mof():
     model_3.q_sqrt.trainable = True
     model_3.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure3():
         return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -512,7 +512,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     set_trainable(model_1, False)
     model_1.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure1():
         return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
 
@@ -526,7 +526,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     set_trainable(model_2, False)
     model_2.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure2():
         return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
 
