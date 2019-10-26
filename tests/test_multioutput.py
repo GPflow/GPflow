@@ -46,7 +46,7 @@ def assert_all_array_elements_almost_equal(arr, decimal):
     Check if consecutive elements of `arr` are almost equal.
     """
     for i in range(len(arr) - 1):
-        np.testing.assert_allclose(arr[i], arr[i + 1], atol=1e-4, rtol=1e-4)
+        np.testing.assert_allclose(arr[i], arr[i + 1], atol=1e-5)
 
 
 def check_equality_predictions(X, Y, models, decimal=3):
@@ -358,7 +358,9 @@ def test_shared_independent_mok():
     def closure1():
         return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, options=dict(maxiter=500),
+                                       method='BFGS')
+
 
     # Model 2
     q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
@@ -373,7 +375,9 @@ def test_shared_independent_mok():
     def closure2():
         return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, options=dict(maxiter=500),
+                                       method='BFGS')
+
 
     # Model 3
     q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
@@ -388,7 +392,8 @@ def test_shared_independent_mok():
     def closure3():
         return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables, options=dict(maxiter=500),
+                                       method='BFGS')
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2, model_3])
 
@@ -418,7 +423,7 @@ def test_separate_independent_mok():
     def closure1():
         return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
     # Model 2 (efficient)
     q_mu_2 = np.random.randn(Data.M, Data.P)
@@ -435,7 +440,7 @@ def test_separate_independent_mok():
     def closure2():
         return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
 
@@ -462,7 +467,7 @@ def test_separate_independent_mof():
     def closure1():
         return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
     # Model 2 (efficient)
     q_mu_2 = np.random.randn(Data.M, Data.P)
@@ -479,7 +484,7 @@ def test_separate_independent_mof():
     def closure2():
         return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
     # Model 3 (Inefficient): an idenitical inducing variable is used P times,
     # and treated as a separate one.
@@ -498,10 +503,10 @@ def test_separate_independent_mof():
     def closure3():
         return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables, method='BFGS')
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2, model_3])
-####
+
 
 def test_mixed_mok_with_Id_vs_independent_mok():
     data = DataMixedKernelWithEye
@@ -516,7 +521,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     def closure1():
         return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
     # Mixed Model
     kern_list = [SquaredExponential(variance=0.5, lengthscale=1.2) for _ in range(data.L)]
@@ -530,7 +535,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     def closure2():
         return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
 
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
 
