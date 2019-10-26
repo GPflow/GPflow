@@ -152,16 +152,16 @@ def test_predict_y():
         np.hstack([Datum.Xtest, np.zeros((Datum.Xtest.shape[0], 1))]))
 
     # predict_y returns results for all the likelihoods in multi_likelihood
-    assert_allclose(mu1, c_mu1[:, :1], atol=1.0e-5)
-    assert_allclose(var1, c_var1[:, :1], atol=1.0e-5)
+    assert_allclose(mu1, c_mu1[:, :1], atol=1.0e-3)
+    assert_allclose(var1, c_var1[:, :1], atol=1.0e-3)
 
     mu2, var2 = vgp1.predict_y(Datum.Xtest)
     c_mu2, c_var2 = cvgp.predict_y(
         np.hstack([Datum.Xtest, np.ones((Datum.Xtest.shape[0], 1))]))
 
     # predict_y returns results for all the likelihoods in multi_likelihood
-    assert_allclose(mu2, c_mu2[:, 1:2], atol=1.0e-5)
-    assert_allclose(var2, c_var2[:, 1:2], atol=1.0e-5)
+    assert_allclose(mu2, c_mu2[:, 1:2], atol=1.0e-3)
+    assert_allclose(var2, c_var2[:, 1:2], atol=1.0e-3)
 
 
 def test_predict_log_density():

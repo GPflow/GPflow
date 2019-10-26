@@ -46,7 +46,7 @@ def assert_all_array_elements_almost_equal(arr, decimal):
     Check if consecutive elements of `arr` are almost equal.
     """
     for i in range(len(arr) - 1):
-        np.testing.assert_allclose(arr[i], arr[i + 1], atol=1e-5)
+        np.testing.assert_allclose(arr[i], arr[i + 1], atol=1e-4, rtol=1e-4)
 
 
 def check_equality_predictions(X, Y, models, decimal=3):
@@ -501,7 +501,7 @@ def test_separate_independent_mof():
     gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables)
 
     check_equality_predictions(Data.X, Data.Y, [model_1, model_2, model_3])
-
+####
 
 def test_mixed_mok_with_Id_vs_independent_mok():
     data = DataMixedKernelWithEye
