@@ -168,7 +168,7 @@ def test_equivalence(approximate_model):
     else:
         approximate_likelihood = - approximate_model.log_likelihood()
 
-    assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-4)
+    assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-6)
 
     gpr_kernel_ls = gpr_model.kernel.lengthscale.read_value()
     gpr_kernel_var = gpr_model.kernel.variance.read_value()
