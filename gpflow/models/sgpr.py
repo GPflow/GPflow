@@ -67,11 +67,8 @@ class SGPRUpperMixin(GPModel):
         LinvKuf = tf.linalg.triangular_solve(L, kuf, lower=True)
         # Using the Trace bound, from Titsias' presentation
         c = tf.reduce_sum(Kdiag) - tf.reduce_sum(tf.square(LinvKuf))
-        # Kff = self.kernel(x_data)
-        # Qff = tf.linalg.matmul(kuf, LinvKuf, transpose_a=True)
 
         # Alternative bound on max eigenval:
-        # c = tf.reduce_max(tf.reduce_sum(tf.abs(Kff - Qff), axis=0))
         corrected_noise = self.likelihood.variance + c
 
         const = -0.5 * num_data * tf.math.log(
