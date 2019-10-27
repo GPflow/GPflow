@@ -91,6 +91,12 @@ class Parameter(tf.Module):
     def transform(self):
         return self._transform
 
+    @transform.setter
+    def transform(self, new_transform):
+        constrained_value = self.read_value()
+        self._transform = new_transform
+        self.assign(constrained_value)
+
     @property
     def trainable(self):
         return self._unconstrained.trainable
