@@ -31,11 +31,8 @@ BLACKLISTED_NOTEBOOKS = [
     "natural_gradients.ipynb",  # PR #1109
     "mcmc.ipynb",  # PR #1100
 
-    "models.ipynb",
     "gp_nn.ipynb",
     "mixture_density_network.ipynb",
-
-    "upper_bound.ipynb",
 
     "monitoring.ipynb",  # requires re-write for new way of monitoring
     "settings.ipynb",  # requires re-write for new config
