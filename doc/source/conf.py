@@ -47,8 +47,14 @@ extensions = [
     'sphinx.ext.viewcode',
     'numpydoc',
     'nbsphinx',
+    'sphinx_autodoc_typehints',
     'IPython.sphinxext.ipython_console_highlighting'
 ]
+
+set_type_checking_flag = True
+typehints_fully_qualified = False
+always_document_param_types = True
+# autoclass_content = 'both'
 
 # numpydoc_show_class_members = True
 numpydoc_class_members_toctree = False
@@ -102,7 +108,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = []
+exclude_patterns = ['.ipynb_checkpoints']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -146,7 +152,9 @@ todo_include_todos = True
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_css_files = [
+    'green_theme.css',
+]
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
@@ -163,14 +171,14 @@ todo_include_todos = True
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 #
-# html_logo = None
+html_logo = '_static/GPflow_Logos_White.png'
 
 # The name of an image file (relative to this directory) to use as a favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
 #
 # html_favicon = None
-
+html_theme_options = {'logo_only': True}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
