@@ -78,7 +78,7 @@ class ChangePoints(Combination):
         stoppers = tf.concat([stoppers, ones], axis=2)
 
         # now combine with the underlying kernels
-        kernel_stack = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)
+        kernel_stack = tf.stack([k(X, X2) for k in self.kernels], axis=2)
         return tf.reduce_sum(kernel_stack * starters * stoppers, axis=2)
 
     def K_diag(self, X, presliced=False):
