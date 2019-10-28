@@ -219,7 +219,7 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     K_{Z, Z} is zero with finite precision. See pull request #595.
     """
     kernel = gpflow.kernels.SquaredExponential(1, lengthscale=0.1)
-    kernel.variance <<= 2.
+    kernel.variance.assign(2.0)
 
     p = gpflow.probability_distributions.Gaussian(
         tf.constant([[10]], dtype=default_float()),
