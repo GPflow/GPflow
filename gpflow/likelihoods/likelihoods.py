@@ -74,7 +74,7 @@ class Likelihood(tf.Module):
         self.num_gauss_hermite_points = 20
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        """
+        r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
 
@@ -107,7 +107,7 @@ class Likelihood(tf.Module):
         return E_y, V_y
 
     def predict_density(self, Fmu, Fvar, Y):
-        """
+        r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the log predictive density of Y.
 
@@ -130,7 +130,7 @@ class Likelihood(tf.Module):
         return ndiagquad(integrand, nghp, Fmu, Fvar, logspace=True, Y=Y)
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        """
+        r"""
         Compute the expected log density of the data, given a Gaussian
         distribution for the function values.
 
@@ -180,7 +180,7 @@ class Gaussian(Likelihood):
 
 
 class Poisson(Likelihood):
-    """
+    r"""
     Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.
 
     let g(.) be the inverse-link function, then this likelihood represents
@@ -576,7 +576,7 @@ class MonteCarloLikelihood(Likelihood):
                         logspace, epsilon, **Ys)
 
     def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
-        """
+        r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
 
@@ -607,7 +607,7 @@ class MonteCarloLikelihood(Likelihood):
         return E_y, V_y  # [N, D]
 
     def predict_density(self, Fmu, Fvar, Y, epsilon=None):
-        """
+        r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the log predictive density of Y.
 
@@ -632,7 +632,7 @@ class MonteCarloLikelihood(Likelihood):
                                    epsilon=epsilon)
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
-        """
+        r"""
         Compute the expected log density of the data, given a Gaussian
         distribution for the function values.
 
