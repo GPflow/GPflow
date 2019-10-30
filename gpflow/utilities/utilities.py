@@ -17,7 +17,8 @@ __all__ = [
     "multiple_assign",
     "training_loop",
     "print_summary",
-    "deepcopy_components"
+    "deepcopy_components",
+    "leaf_components"
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
