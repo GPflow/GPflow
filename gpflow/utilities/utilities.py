@@ -51,7 +51,7 @@ def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
         reference_var_dict[path].assign(value)
 
 
-def read_values(module: tf.Module) -> Dict[str, Union[gpflow.Parameter, tf.Variable]]:
+def read_values(module: tf.Module) -> Dict[str, np.ndarray]:
     return {k: v.numpy() for k, v in parameter_dict(module).items()}
 
 
