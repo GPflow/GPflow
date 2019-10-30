@@ -33,7 +33,7 @@ def set_trainable(model: tf.Module, flag: bool):
     """
     Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
     """
-    for variable in model.trainable_variables:
+    for variable in model.variables:
         variable._trainable = flag
 
 
