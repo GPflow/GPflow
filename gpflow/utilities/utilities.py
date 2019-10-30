@@ -51,11 +51,11 @@ def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
         reference_var_dict[path].assign(value)
 
 
-def read_values(module: tf.Module):
+def read_values(module: tf.Module) -> Dict[str, Union[gpflow.Parameter, tf.Variable]]:
     return {k: v.numpy() for k, v in parameter_dict(module).items()}
 
 
-def parameter_dict(module: tf.Module):
+def parameter_dict(module: tf.Module) -> Dict[str, Union[gpflow.Parameter, tf.Variable]]:
     """
     Returns a dictionary of parameters (variables) for the `tf.Module` component.
     Dictionary keys are relative paths to the attributes to which parameters (variables) assigned to.
