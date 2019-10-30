@@ -18,7 +18,9 @@ __all__ = [
     "training_loop",
     "print_summary",
     "deepcopy_components",
-    "leaf_components"
+    "leaf_components",
+    "parameter_dict",
+    "read_values"
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -36,17 +38,47 @@ def set_trainable(model: tf.Module, flag: bool):
         variable._trainable = flag
 
 
-def multiple_assign(input: tf.Module, vars_dict: Dict[str, tf.Tensor]):
+def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
     """
     Multiple assign takes a dictionary with new values. Dictionary keys are paths to the
-    `tf.Variable`s or `gpflow.Parameters` of the input module.
+    `tf.Variable`s or `gpflow.Parameter` of the input module.
 
-    :param input: `tf.Module`.
-    :param vars_dict: a dictionary with keys of the form "module.path.to.variable" and new value tensors.
+    :param module: `tf.Module`.
+    :param parameters: a dictionary with keys of the form ".module.path.to.variable" and new value tensors.
     """
-    reference_var_dict = leaf_components(input)
-    for path, value in vars_dict.items():
+    reference_var_dict = parameter_dict(module)
+    for path, value in parameters.items():
         reference_var_dict[path].assign(value)
+
+
+def read_values(module: tf.Module) -> Dict[str, np.ndarray]:
+    """Returns a dictionary of numpy values of the module parameters (variables)."""
+    return {k: v.numpy() for k, v in parameter_dict(module).items()}
+
+
+def parameter_dict(module: tf.Module) -> Dict[str, Union[Parameter, tf.Variable]]:
+    """
+    Returns a dictionary of parameters (variables) for the `tf.Module` component.
+    Dictionary keys are relative paths to the attributes to which parameters (variables) assigned to.
+
+        class SubModule(tf.Module):
+            def __init__(self):
+                self.parameter = gpflow.Parameter(1.0)
+                self.variable = tf.Variable(1.0)
+
+        class Module(tf.Module):
+            def __init__(self):
+                self.submodule = SubModule()
+
+        m = Module()
+        params = parameter_dict(m)
+        # {
+        #   ".submodule.parameter": <parameter object>,
+        #   ".submodule.variable": <variable object>
+        # }
+    """
+    param_dict = leaf_components(module)
+    return {f".{key.split('.', 1)[-1]}": value for key, value in param_dict.items()}
 
 
 def training_loop(closure: Callable[..., tf.Tensor],
