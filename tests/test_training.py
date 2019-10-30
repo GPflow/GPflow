@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 
 import gpflow
-from gpflow.utilities.utilities import leaf_components
+from gpflow.utilities.utilities import leaf_components, parameter_dict
 from gpflow.utilities import multiple_assign
 
 rng = np.random.RandomState(0)
@@ -54,21 +54,21 @@ def model():
 # ------------------------------------------
 
 model_param_updates = {
-    'SVGP.kernel.lengthscale': Data.ls_new,
-    'SVGP.likelihood.variance': Data.var_new,
-    'SVGP.inducing_variable.Z': np.zeros_like(Data.Z),
-    'SVGP.q_sqrt': 0.5 * np.ones((Data.M, 1))
+    '.kernel.lengthscale': Data.ls_new,
+    '.likelihood.variance': Data.var_new,
+    '.inducing_variable.Z': np.zeros_like(Data.Z),
+    '.q_sqrt': 0.5 * np.ones((Data.M, 1))
 }
 model_wrong_path = [
     {'kernel.lengthscale': Data.ls_new},
-    {'SVGP.Gaussian.variance': Data.var_new},
+    {'.Gaussian.variance': Data.var_new},
     {'inducing_variable.Z': np.zeros_like(Data.Z)},
-    {'SVGP.q_std': 0.5 * np.ones((Data.M, 1))}
+    {'.q_std': 0.5 * np.ones((Data.M, 1))}
 ]
 
 model_wrong_value = [
-    {'SVGP.likelihood.variance': np.ones((2, 1), dtype=np.int32)},
-    {'SVGP.inducing_variable.Z': [1, 2, 3]}
+    {'.likelihood.variance': np.ones((2, 1), dtype=np.int32)},
+    {'.inducing_variable.Z': [1, 2, 3]}
 ]
 
 
