@@ -52,6 +52,7 @@ def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
 
 
 def read_values(module: tf.Module) -> Dict[str, np.ndarray]:
+    """Returns a dictionary of numpy values of the module parameters (variables)."""
     return {k: v.numpy() for k, v in parameter_dict(module).items()}
 
 
