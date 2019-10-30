@@ -13,14 +13,13 @@
 # limitations under the License.
 
 
+import gpflow
 import numpy as np
 import pytest
-
-import gpflow
-from gpflow.models import GPR
 from gpflow.utilities import set_trainable
 
 rng = np.random.RandomState(0)
+
 
 class Data:
     N = 10
@@ -38,8 +37,8 @@ class Data:
 @pytest.fixture
 def model():
     return gpflow.models.GPR((Data.X, Data.Y),
-        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
-    )
+                             kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
+                             )
 
 
 def test_non_trainable_model_objective(model):
@@ -53,3 +52,14 @@ def test_non_trainable_model_objective(model):
 
     _ = model.neg_log_marginal_likelihood()
     assert model.log_prior() == 0.0
+
+
+def test_make_trainable(model):
+    """
+    Checks whether we `set_trainable()` can make parameters which are *not*
+    trainable trainable again.
+    """
+    set_trainable(model, False)
+    assert len(model.trainable_variables) == 0
+    set_trainable(model, True)
+    assert len(model.trainable_variables) == len(model.parameters)
