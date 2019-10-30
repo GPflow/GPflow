@@ -19,7 +19,7 @@ __all__ = [
     "print_summary",
     "deepcopy_components",
     "leaf_components",
-    "parameters_dict"
+    "parameter_dict"
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -45,12 +45,12 @@ def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
     :param module: `tf.Module`.
     :param parameters: a dictionary with keys of the form ".module.path.to.variable" and new value tensors.
     """
-    reference_var_dict = parameters_dict(module)
+    reference_var_dict = parameter_dict(module)
     for path, value in parameters.items():
         reference_var_dict[path].assign(value)
 
 
-def parameters_dict(module: tf.Module):
+def parameter_dict(module: tf.Module):
     """
     Returns a dictionary of parameters (variables) for the `tf.Module` component.
     Dictionary keys are relative paths to the attributes to which parameters (variables) assigned to.
@@ -65,7 +65,7 @@ def parameters_dict(module: tf.Module):
                 self.submodule = SubModule()
 
         m = Module()
-        params = parameters_dict(m)
+        params = parameter_dict(m)
         # {
         #   ".submodule.parameter": <parameter object>,
         #   ".submodule.variable": <variable object>
