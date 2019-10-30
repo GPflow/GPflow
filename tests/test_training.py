@@ -13,12 +13,11 @@
 # limitations under the License.
 
 
+import gpflow
 import numpy as np
 import pytest
-
-import gpflow
-from gpflow.utilities.utilities import leaf_components, parameter_dict
-from gpflow.utilities import multiple_assign
+import tensorflow as tf
+from gpflow.utilities import multiple_assign, set_trainable, leaf_components, read_values
 
 rng = np.random.RandomState(0)
 
@@ -94,3 +93,42 @@ def test_multiple_assign_fails_with_invalid_path(model, wrong_var_update_dict):
 def test_multiple_assign_fails_with_invalid_values(model, wrong_var_update_dict):
     with pytest.raises(ValueError):
         multiple_assign(model, wrong_var_update_dict)
+
+
+def test_make_trainable(model):
+    """
+    Checks whether we `set_trainable()` can make parameters which are *not*
+    trainable trainable again.
+    """
+    set_trainable(model, False)
+    assert len(model.trainable_variables) == 0
+    set_trainable(model, True)
+    assert len(model.trainable_variables) == len(model.parameters)
+
+
+def test_dict_utilities(model):
+    """
+    Test both `parameter_dict()` and `read_values()`
+    """
+
+    class SubModule(tf.Module):
+        def __init__(self):
+            self.parameter = gpflow.Parameter(1.0)
+            self.variable = tf.Variable(1.0)
+
+    class Module(tf.Module):
+        def __init__(self):
+            self.submodule = SubModule()
+            self.top_parameter = gpflow.Parameter(3.0)
+
+    m = Module()
+    params = gpflow.utilities.parameter_dict(m)
+    # {
+    #   ".submodule.parameter": <parameter object>,
+    #   ".submodule.variable": <variable object>
+    # }
+    assert list(params.keys()) == [".submodule.parameter", ".submodule.variable", ".top_parameter"]
+    assert list(params.values()) == [m.submodule.parameter, m.submodule.variable, m.top_parameter]
+
+    for k, v in read_values(m).items():
+        assert params[k].numpy() == v

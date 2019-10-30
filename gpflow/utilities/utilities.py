@@ -19,7 +19,8 @@ __all__ = [
     "print_summary",
     "deepcopy_components",
     "leaf_components",
-    "parameter_dict"
+    "parameter_dict",
+    "read_values"
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -48,6 +49,10 @@ def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
     reference_var_dict = parameter_dict(module)
     for path, value in parameters.items():
         reference_var_dict[path].assign(value)
+
+
+def read_values(module: tf.Module):
+    return {k: v.numpy() for k, v in parameter_dict(module).items()}
 
 
 def parameter_dict(module: tf.Module):
