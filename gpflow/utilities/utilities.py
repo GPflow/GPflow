@@ -41,7 +41,7 @@ def set_trainable(model: tf.Module, flag: bool):
 def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
     """
     Multiple assign takes a dictionary with new values. Dictionary keys are paths to the
-    `tf.Variable`s or `gpflow.Parameters` of the input module.
+    `tf.Variable`s or `gpflow.Parameter` of the input module.
 
     :param module: `tf.Module`.
     :param parameters: a dictionary with keys of the form ".module.path.to.variable" and new value tensors.
@@ -55,7 +55,7 @@ def read_values(module: tf.Module) -> Dict[str, np.ndarray]:
     return {k: v.numpy() for k, v in parameter_dict(module).items()}
 
 
-def parameter_dict(module: tf.Module) -> Dict[str, Union[gpflow.Parameter, tf.Variable]]:
+def parameter_dict(module: tf.Module) -> Dict[str, Union[Parameter, tf.Variable]]:
     """
     Returns a dictionary of parameters (variables) for the `tf.Module` component.
     Dictionary keys are relative paths to the attributes to which parameters (variables) assigned to.
