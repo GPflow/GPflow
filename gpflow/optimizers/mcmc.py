@@ -79,7 +79,7 @@ class SamplingHelper:
         variables_list = self.current_state
 
         @tf.custom_gradient
-        def target_log_prob_fn(*variables):
+        def _target_log_prob_fn_closure(*variables):
             for v_old, v_new in zip(variables_list, variables):
                 v_old.assign(v_new)
 
