@@ -31,21 +31,26 @@ class SamplingHelper:
 
     Example:
         model = <Create GPflow model>
-        hmc_helper = SamplingHelper(lambda: -model.neg_log_marginal_likelihood(), model.trainable_parameters)
-        target_fn = hmc_helper.make_posterior_log_prob_fn()
+        hmc_helper = SamplingHelper(m.trainable_parameters, lambda: -model.neg_log_marginal_likelihood())
+
+
+        target_log_prob_fn = hmc_helper.target_log_prob_fn
+        current_state = hmc_helper.current_state
+
+        hmc = tfp.mcmc.HamiltonianMonteCarlo(target_log_prob_fn=target_log_prob_fn, ...)
+        adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(hmc, ...)
 
         @tf.function
         def run_chain_fn():
-            hmc = mcmc.HamiltonianMonteCarlo(target_log_prob_fn=target_fn, num_leapfrog_steps=10, step_size=0.01)
-            adaptive_hmc = mcmc.SimpleStepSizeAdaptation(hmc, num_adaptation_steps=10, target_accept_prob=0.75,
-                                                         adaptation_rate=0.1)
-            return mcmc.sample_chain(num_results=hmc_parameters.num_samples, num_burnin_steps=100,
-                                     current_state=hmc_helper.variables, kernel=adaptive_hmc)
+            return mcmc.sample_chain(num_samples, num_burnin_steps, current_state, kernel=adaptive_hmc)
+
+        hmc_samples = run_chain_fn()
+        parameter_samples = hmc_helper.convert_samples_to_parameter_values(hmc_samples)
 
 
     Args:
-        target_log_prob_fn: Python callable which represents log-density under the target distribution.
         parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
+        target_log_prob_fn: Python callable which represents log-density under the target distribution.
     """
 
     def __init__(self, model_parameters: ModelParameters, target_log_prob_fn: LogProbabilityFunction):
@@ -68,11 +73,13 @@ class SamplingHelper:
 
     @property
     def target_log_prob_fn(self):
-        """"""
+        """ The target log probability, adjusted to allow for optimisation to occur on the tracked
+        unconstrained underlying variables.
+        """
         variables_list = self.current_state
 
         @tf.custom_gradient
-        def _target_log_prob_fn(*variables):
+        def target_log_prob_fn(*variables):
             for v_old, v_new in zip(variables_list, variables):
                 v_old.assign(v_new)
 
@@ -86,16 +93,16 @@ class SamplingHelper:
                 return grad, [None] * len(variables)
             return log_prob, grad_fn
 
-        return _target_log_prob_fn
+        return _target_log_prob_fn_closure
 
-    def convert_current_state_to_parameter_values(self, hmc_variables):
+    def convert_samples_to_parameter_values(self, hmc_samples):
         """
         Converts list of `unconstrained_values` to constrained versions. Each value in the list correspond to an entry in
         `self.parameters`; in case that object is a `gpflow.Parameter`, the `forward` method of its transform
         will be applied first.
         """
         values = []
-        for hmc_variable, param in zip(hmc_variables, self._parameters):
+        for hmc_variable, param in zip(hmc_samples, self._parameters):
             if isinstance(param, Parameter) and param.transform is not None:
                 value = param.transform.forward(hmc_variable)
             else:
