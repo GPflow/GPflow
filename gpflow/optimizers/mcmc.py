@@ -1,4 +1,4 @@
-# Copyright 2019 Artem Artemev @awav
+# Copyright 2019 Artem Artemev @awav, Eric Hambro @condnsdmatters
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,26 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
-from typing import Callable, List, Optional, TypeVar
+from typing import Callable, Sequence, Optional, TypeVar
 
 import tensorflow as tf
 
 from gpflow.base import Parameter, positive
 
-__all__ = ["positive_parameter", "SamplingHelper"]
+__all__ = ["SamplingHelper"]
 
 
-def positive_parameter(value: tf.Tensor):
-    if isinstance(value, (tf.Variable, Parameter)):
-        return value
-    return Parameter(value, transform=positive())
+ModelParameters = Sequence[TypeVar("ModelParameter", tf.Variable, Parameter)]
+LogProbabilityFunction = Callable[[ModelParameters], tf.Tensor]
 
 
-ModelParameters = List[TypeVar("ModelParameter", tf.Variable, Parameter)]
-
-
-@dataclass(frozen=True)
 class SamplingHelper:
     """
     Helper reads from variables being set with a prior and writes values back to the same variables.
@@ -55,64 +48,57 @@ class SamplingHelper:
         parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
     """
 
-    target_log_prob_fn: Callable[[ModelParameters], tf.Tensor]
-    parameters: ModelParameters
+    def __init__(self, model_parameters: ModelParameters, target_log_prob_fn: LogProbabilityFunction):
+        assert all([isinstance(p, (Parameter, tf.Variable)) for p in model_parameters])
+
+        self._model_parameters = model_parameters
+        self._target_log_prob_fn = target_log_prob_fn
+
+        self._parameters = []
+        self._unconstrained_variables = []
+        for p in self._model_parameters:
+            self._unconstrained_variables.append(p.unconstrained_variable if isinstance(p, Parameter) else p)
+            self._parameters.append(p)
 
     @property
-    def variables(self):
-        """
-        Returns the same list of parameters as `self.parameters`, but replaces gpflow `Parameter`s
-        with their unconstrained variables - `parameter.unconstrained_variable`.
-        """
-        return [p.unconstrained_variable if isinstance(p, Parameter) else p for p in self.parameters]
+    def current_state(self):
+        """Return the current state of the unconstrained variables, used in HMC."""
 
-    def assign_values(self, *values, unconstrained: Optional[bool] = True):
-        """
-        Assigns (constrained or unconstrained) values to the parameter's variable.
-        When assigning unconstrained values, the target is `self.variables`, otherwise `self.parameters`.
-        """
-        trainables = self.variables if unconstrained else self.parameters
-        assert len(values) == len(trainables)
-        n = len(trainables)
-        for i in range(n):
-            trainables[i].assign(values[i])
+        return self._unconstrained_variables
 
-    def convert_to_constrained_values(self, *unconstrained_values):
+    @property
+    def target_log_prob_fn(self):
+        """"""
+        variables_list = self.current_state
+
+        @tf.custom_gradient
+        def _target_log_prob_fn(*variables):
+            for v_old, v_new in zip(variables_list, variables):
+                v_old.assign(v_new)
+
+            with tf.GradientTape(watch_accessed_variables=False) as tape:
+                tape.watch(variables_list)
+                log_prob = self._target_log_prob_fn()
+
+            @tf.function
+            def grad_fn(dy, variables = None):
+                grad = tape.gradient(log_prob, variables_list)
+                return grad, [None] * len(variables)
+            return log_prob, grad_fn
+
+        return _target_log_prob_fn
+
+    def convert_current_state_to_parameter_values(self, hmc_variables):
         """
         Converts list of `unconstrained_values` to constrained versions. Each value in the list correspond to an entry in
         `self.parameters`; in case that object is a `gpflow.Parameter`, the `forward` method of its transform
         will be applied first.
         """
-        samples = []
-        for i, value in enumerate(unconstrained_values):
-            param = self.parameters[i]
+        values = []
+        for hmc_variable, param in zip(hmc_variables, self._parameters):
             if isinstance(param, Parameter) and param.transform is not None:
-                sample = param.transform.forward(value)
+                value = param.transform.forward(hmc_variable)
             else:
-                sample = value
-            samples.append(sample.numpy())
-        return samples
-
-    def make_posterior_log_prob_fn(self):
-        """
-        Make a differentiable posterior log-probability function using helper's `target_log_prob_fn` with respect to
-        `self.parameters`.
-        """
-
-        @tf.custom_gradient
-        def log_prob_fn(*values):
-            self.assign_values(*values)
-
-            variables_to_watch = self.variables
-            with tf.GradientTape(watch_accessed_variables=False) as tape:
-                tape.watch(variables_to_watch)
-                log_prob = self.target_log_prob_fn()
-
-            @tf.function
-            def grad_fn(in_grad: tf.Tensor, variables: Optional[tf.Variable] = None):
-                grad = tape.gradient(log_prob, variables_to_watch)
-                return grad, [None] * len(variables)
-
-            return log_prob, grad_fn
-
-        return log_prob_fn
+                value = hmc_variable
+            values.append(value.numpy())
+        return values
