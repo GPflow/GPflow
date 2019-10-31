@@ -77,7 +77,6 @@ class SGPMC(GPModel):
                          likelihood,
                          mean_function,
                          num_latent=num_latent)
-
         self.data = data
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)

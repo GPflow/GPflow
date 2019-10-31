@@ -50,7 +50,6 @@ class GPMC(GPModel):
 
         """
         super().__init__(kernel, likelihood, mean_function, num_latent)
-
         self.data = data
         self.num_data = data[0].shape[0]
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))

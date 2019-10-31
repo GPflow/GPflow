@@ -52,7 +52,7 @@ class Parameter(tf.Module):
         to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
         therefore we need positive constraint and it is natural to use constrained values.
         """
-        super().__init__(name)
+        super().__init__()
 
         value = _verified_value(value, dtype)
         if isinstance(value, tf.Variable):
