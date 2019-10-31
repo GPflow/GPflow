@@ -17,6 +17,7 @@ class Scipy:
     def minimize(self,
                  closure: LossClosure,
                  variables: Variables,
+                 method: Optional[str] = "L-BFGS-B",
                  step_callback: Optional[StepCallback] = None,
                  **scipy_kwargs) -> OptimizeResult:
         """
@@ -46,14 +47,17 @@ class Scipy:
         if not callable(closure):
             raise TypeError('Callable object expected.')  # pragma: no cover
         initial_params = self.initial_parameters(variables)
+
         func = self.eval_func(closure, variables)
         if step_callback is not None:
             if 'callback' in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
 
-            callback = self.callback_func(closure, variables, step_callback)
+            callback = self.callback_func(variables, step_callback)
             scipy_kwargs.update(dict(callback=callback))
-        return scipy.optimize.minimize(func, initial_params, jac=True, **scipy_kwargs)
+
+        return scipy.optimize.minimize(func, initial_params, jac=True, method=method,
+                                       **scipy_kwargs)
 
     @classmethod
     def initial_parameters(cls, variables):

@@ -7,7 +7,7 @@ from ..config import default_float
 
 
 class Convolutional(Kernel):
-    """
+    r"""
     Plain convolutional kernel as described in \citet{vdw2017convgp}. Defines
     a GP f( ) that is constructed from a sum of responses of individual patches
     in an image:
