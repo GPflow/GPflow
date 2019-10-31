@@ -28,7 +28,6 @@ from nbconvert.preprocessors.execute import CellExecutionError
 # (change the blacklisting check to something else in that case, if need be!)
 BLACKLISTED_NOTEBOOKS = [
     "external-mean-function.ipynb",  # TODO: @vdutor
-    "natural_gradients.ipynb",  # PR #1109
     "mcmc.ipynb",  # PR #1100
 
     "gp_nn.ipynb",
