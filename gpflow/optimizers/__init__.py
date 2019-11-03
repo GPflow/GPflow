@@ -1,3 +1,5 @@
 # pylint: disable=wildcard-import
 
+from . import natgrad
+from .natgrad import *
 from .scipy import Scipy
