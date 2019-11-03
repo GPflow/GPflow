@@ -112,13 +112,19 @@ class ScipyOptimizer(optimizer.Optimizer):
                 self._optimizer.optimizer_kwargs.update(options)
                 self._optimizer.optimize(session=session, feed_dict=feed_dict, step_callback=step_callback)
             except InvalidArgumentError as error:
-                msg = ("This error might occur because the internal state (for example, variables shape or dtype) of the model is changed. "
+                msg = ("This error might occur because the internal state "
+                       "(for example, variables shape or dtype) of the model "
+                       "is changed. "
                        "In this case, you have to use a new optimiser")
-                msg = f"Original error message: \n\t{error}\nOptimiser message: {msg}."
+                msg = "Original error message: \n\t{error}\nOptimiser message: {msg}.".format(
+                    error=error, msg=msg)
                 raise RuntimeError(msg)
             except Exception as error:
-                msg = "Unknown error has occured at reusage of the scipy optimizer. Make sure that you use the same session"
-                msg = f"Original error message: \n\t{error}\nOptimiser message: {msg}."
+                msg = ("Unknown error has occured at reusage of the "
+                       "ScipyOptimizer. Make sure that you use the same "
+                       "TensorFlow session.")
+                msg = "Original error message: \n\t{error}\nOptimiser message: {msg}.".format(
+                    error=error, msg=msg)
                 raise RuntimeError(msg)
         else:
             self._optimizer.minimize(session=session, feed_dict=feed_dict, step_callback=step_callback, **kwargs)
