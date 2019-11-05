@@ -371,7 +371,7 @@ def test_ard_init_scalar(D):
 
 
 def test_ard_invalid_active_dims():
-    msg = r"Size of `active_dims` \[1\] does not match size of `lengthscale` \(2\)"
+    msg = r"Size of `active_dims` \[1\] does not match size of ard parameter \(2\)"
     with pytest.raises(ValueError, match=msg):
         gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), active_dims=[1])
 

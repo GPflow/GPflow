@@ -1,12 +1,12 @@
 import numpy as np
 import tensorflow as tf
 
+from .base import Kernel
 from ..base import Parameter, positive
 from ..utilities.ops import square_distance
-from .base import ARDKernel
 
 
-class Stationary(ARDKernel):
+class Stationary(Kernel):
     """
     Base class for kernels that are stationary, that is, they only depend on
 
@@ -16,8 +16,6 @@ class Stationary(ARDKernel):
     Determination'. This means that the kernel has one lengthscale per
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
-
-    ard_parameter_names = ["lengthscale"]
 
     def __init__(self, variance=1.0, lengthscale=1.0, active_dims=None):
         """
@@ -30,7 +28,14 @@ class Stationary(ARDKernel):
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
-        self.validate_ard_active_dims()
+        self._validate_ard_active_dims(self.lengthscale)
+
+    @property
+    def ard(self) -> bool:
+        """
+        Whether ARD behaviour is active.
+        """
+        return len(self.lengthscale.shape) > 0
 
     def scaled_squared_euclid_dist(self, X, X2=None):
         """

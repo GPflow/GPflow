@@ -1,12 +1,12 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow.config import default_float
-from .base import ARDKernel, Kernel
+from .base import Kernel
 from ..base import Parameter, positive
+from ..config import default_float
 
 
-class ArcCosine(ARDKernel):
+class ArcCosine(Kernel):
     """
     The Arc-cosine family of kernels which mimics the computation in neural
     networks. The order parameter specifies the assumed activation function.
@@ -24,7 +24,6 @@ class ArcCosine(ARDKernel):
         }
     """
 
-    ard_parameter_names = ["weight_variances"]
     implemented_orders = {0, 1, 2}
 
     def __init__(self,
@@ -54,7 +53,14 @@ class ArcCosine(ARDKernel):
         self.bias_variance = Parameter(bias_variance, transform=positive())
         self.weight_variances = Parameter(weight_variances,
                                           transform=positive())
-        self.validate_ard_active_dims()
+        self._validate_ard_active_dims(self.weight_variances)
+
+    @property
+    def ard(self) -> bool:
+        """
+        Whether ARD behaviour is active.
+        """
+        return len(self.weight_variances.shape) > 0
 
     def _weighted_product(self, X, X2=None):
         if X2 is None:
@@ -125,8 +131,8 @@ class Periodic(Kernel):
     σ² is the variance parameter,
     γ is the period parameter.
 
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
-    hyperparameter).
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is
+    absorbed into lengthscale hyperparameter).
     """
 
     def __init__(self,
