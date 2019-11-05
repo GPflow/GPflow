@@ -13,9 +13,9 @@
 GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
 The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexander G. de G. Matthews, Alexis Boukouvalas, [Artem Artemev](http://github.com/awav/), Daniel Marthaler, David J. Harris, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
 
-## ANNOUNCEMENT:
+## Announcement:
 
-_**The development of the GPflow 2.0 moved to the `develop` branch.**_
+_**The development of the GPflow 2.0 moved to the `develop` branch. The old GPflow 1.0 branch has been transferred to the `develop-1.0`. We stop supporting GPflow 1.0 in terms of new feature and we will accept only bug fixes into `develop-1.0` branch.**_
 
 ## What does GPflow do?
 
