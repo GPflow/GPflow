@@ -14,13 +14,11 @@ TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't wo
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
-class positive(tfp.bijectors.Chain):
-    def __init__(lower=1e-6, name='positive_lower_bounded'):
-        bijectors = [
-            tfp.bijectors.AffineScalar(shift=to_default_float(lower)),
-            tfp.bijectors.Softplus()
-        ]
-        super().__init__(bijectors, name=name)
+
+def positive(lower: float = 1e-6):
+    bijectors = [tfp.bijectors.AffineScalar(shift=to_default_float(lower)), tfp.bijectors.Softplus()]
+    return tfp.bijectors.Chain(bijectors)
+
 
 triangular = tfp.bijectors.FillTriangular
 
