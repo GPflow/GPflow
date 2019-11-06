@@ -17,13 +17,14 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from ..base import Parameter
+from ..conditionals import conditional
+from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
-from .model import GPModel, MeanAndVariance, Data
-from ..base import Parameter
-from ..conditionals import conditional
-from ..config import default_float, default_jitter, to_default_float
+from ..utilities import to_default_float
+from .model import Data, GPModel, MeanAndVariance
 
 
 class GPMC(GPModel):

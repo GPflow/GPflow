@@ -14,9 +14,7 @@ __all__ = [
     "set_default_float",
     "set_default_jitter",
     "set_default_int",
-    "to_default_float",
-    "to_default_int",
-    "config_session"
+    "context"
 ]
 
 _ENV_JITTER = "GPFLOW_JITTER"
@@ -53,14 +51,6 @@ def default_float():
 
 def default_jitter():
     return __config._jitter
-
-
-def to_default_int(x):
-    return tf.cast(x, dtype=default_int())
-
-
-def to_default_float(x):
-    return tf.cast(x, dtype=default_float())
 
 
 def set_default_int(value_type):
@@ -102,13 +92,15 @@ def set_summary_fmt(fmt: str):
 
 
 @contextlib.contextmanager
-def config_session():
+def context():
     '''Ensure that global configs defaults, with a context manager. Useful
     for testing.'''
     float_dtype = default_float()
     int_dtype = default_int()
     jitter = default_jitter()
+    fmt = summary_fmt()
     yield
     set_default_float(float_dtype)
     set_default_int(int_dtype)
     set_default_jitter(jitter)
+    set_summary_fmt(fmt)
