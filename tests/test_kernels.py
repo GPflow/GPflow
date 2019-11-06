@@ -70,7 +70,9 @@ def _ref_arccosine(X, order, weight_variances, bias_variance, signal_variance):
 
 
 def _ref_periodic(X, lengthScale, signal_variance, period):
-    # Based on the GPy implementation of standard_period kernel
+    """
+    Based on the GPy implementation of standard_period kernel
+    """
     base = np.pi * (X[:, None, :] - X[None, :, :]) / period
     exp_dist = np.exp(-0.5 *
                       np.sum(np.square(np.sin(base) / lengthScale), axis=-1))
@@ -78,9 +80,11 @@ def _ref_periodic(X, lengthScale, signal_variance, period):
 
 
 def _ref_changepoints(X, kernels, locations, steepness):
-    # Calculates K(X) for each kernel in `kernels`, then multiply by sigmoid functions
-    # in order to smoothly transition betwen them. The sigmoid transitions are defined
-    # by a location and a steepness parameter.
+    """
+    Calculates K(X) for each kernel in `kernels`, then multiply by sigmoid functions
+    in order to smoothly transition betwen them. The sigmoid transitions are defined
+    by a location and a steepness parameter.
+    """
     locations = sorted(locations)
     steepness = steepness if isinstance(steepness, list) else [steepness] * len(locations)
     locations = np.array(locations).reshape((1, 1, -1))

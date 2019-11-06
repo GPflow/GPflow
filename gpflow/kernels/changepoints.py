@@ -57,11 +57,11 @@ class ChangePoints(Combination):
         self.locations = Parameter(locations)
         self.steepness = Parameter(steepness, transform=positive())
 
-    def _set_kernels(self, kernels):
+    def _set_kernels(self, kernels: List[Kernel]):
         # it is not clear how to flatten out nested change-points
         self.kernels = list(kernels)
 
-    def K(self, X, X2=None, presliced=False):
+    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
         sig_X = self._sigmoids(X)  # N x 1 x Ncp
         sig_X2 = self._sigmoids(X2) if X2 is not None else sig_X
 
@@ -81,7 +81,7 @@ class ChangePoints(Combination):
         kernel_stack = tf.stack([k(X, X2) for k in self.kernels], axis=2)
         return tf.reduce_sum(kernel_stack * starters * stoppers, axis=2)
 
-    def K_diag(self, X, presliced=False):
+    def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
         N = tf.shape(X)[0]
         sig_X = tf.reshape(self._sigmoids(X), (N, -1))  # N x Ncp
 
@@ -92,7 +92,7 @@ class ChangePoints(Combination):
         kernel_stack = tf.stack([k(X, full=False) for k in self.kernels], axis=1)
         return tf.reduce_sum(kernel_stack * starters * stoppers, axis=1)
 
-    def _sigmoids(self, X):
+    def _sigmoids(self, X: tf.Tensor) -> tf.Tensor:
         locations = tf.sort(self.locations)  # ensure locations are ordered
         locations = tf.reshape(locations, (1, 1, -1))
         steepness = tf.reshape(self.steepness, (1, 1, -1))
