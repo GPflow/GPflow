@@ -1,4 +1,5 @@
 from .base import Combination, Kernel, Product, Sum
+from .changepoints import ChangePoints
 from .linears import Linear, Polynomial
 from .misc import ArcCosine, Coregion, Periodic
 from .mo_kernels import (MultioutputKernel, SeparateIndependent, SharedIndependent, IndependentLatent, LinearCoregionalization)
