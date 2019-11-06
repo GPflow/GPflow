@@ -16,15 +16,15 @@ import abc
 
 import tensorflow as tf
 
-from ..base import Parameter, positive
+from ..base import Parameter
 from ..config import default_float
+from ..utilities import positive
 
 
 class InducingVariables(tf.Module):
     """
     Abstract base class for inducing variables.
     """
-
     @abc.abstractmethod
     def __len__(self) -> int:
         """
@@ -67,15 +67,12 @@ class Multiscale(InducingPointsBase):
         year = {2009},
       }
     """
-
     def __init__(self, Z, scales):
         super().__init__(Z)
         # Multi-scale inducing_variable widths (std. dev. of Gaussian)
         self.scales = Parameter(scales, transform=positive())
         if self.Z.shape != scales.shape:
-            raise ValueError(
-                "Input locations `Z` and `scales` must have the same shape."
-            )  # pragma: no cover
+            raise ValueError("Input locations `Z` and `scales` must have the same shape.")  # pragma: no cover
 
     @staticmethod
     def _cust_square_dist(A, B, sc):
@@ -83,5 +80,4 @@ class Multiscale(InducingPointsBase):
         Custom version of _square_dist that allows sc to provide per-datapoint length
         scales. sc: [N, M, D].
         """
-        return tf.reduce_sum(
-            tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)
+        return tf.reduce_sum(tf.square((tf.expand_dims(A, 1) - tf.expand_dims(B, 0)) / sc), 2)

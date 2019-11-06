@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter, positive
+from ..base import Parameter
+from ..utilities import positive
 from ..utilities.ops import square_distance
 from .base import Kernel
 
