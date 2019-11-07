@@ -1,5 +1,6 @@
 from .base import Combination, Kernel, Product, Sum
 from .convolutional import Convolutional
+from .changepoints import ChangePoints
 from .linears import Linear, Polynomial
 from .misc import ArcCosine, Coregion, Periodic
 from .mo_kernels import (MultioutputKernel, SeparateIndependent, SharedIndependent,
