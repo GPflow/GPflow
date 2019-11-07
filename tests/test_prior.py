@@ -4,7 +4,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
-from gpflow.config import context, set_default_float
+from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
 
 np.random.seed(1)
@@ -89,7 +89,7 @@ def get_gpmc_model_params():
         #(gpflow.models.SGPMC, get_SGPMC_model_params()) # Fails due to inducing_variable=None bug
     ])
 def test_v_prior_dtypes(model_class, args):
-    with context():
+    with gpflow.config.as_context():
         set_default_float(np.float32)
         m = model_class(*args)
         assert m.V.prior.dtype == np.float32

@@ -1,7 +1,8 @@
 import contextlib
 import enum
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from typing import Optional
 
 import numpy as np
 import tabulate
@@ -9,16 +10,19 @@ import tensorflow as tf
 
 __all__ = [
     "summary_fmt", "default_float", "default_jitter", "default_int", "set_summary_fmt", "set_default_float",
-    "set_default_jitter", "set_default_int", "context"
+    "set_default_jitter", "set_default_int", "as_context", "config", "set_config", "positive_minimum",
+    "set_positive_minimum"
 ]
+
+__config = None
 
 
 class _Values(enum.Enum):
     INT = np.int32
     FLOAT = np.float64
-    POSITIVE_MINIMAL = 1e-6
+    POSITIVE_MINIMUM = None
     JITTER = 1e-6
-    SUMMARY_FMT = "pretty_grid"
+    SUMMARY_FMT = None
 
     @property
     def name(self):
@@ -30,35 +34,41 @@ def default(value: _Values):
 
 
 @dataclass(frozen=True)
-class _Config:
+class Config:
     int: type = field(default_factory=lambda: default(_Values.INT))
     float: type = field(default_factory=lambda: default(_Values.FLOAT))
     jitter: float = field(default_factory=lambda: default(_Values.JITTER))
-    positive_minimal: float = field(default_factory=lambda: default(_Values.POSITIVE_MINIMAL))
+    positive_minimum: float = field(default_factory=lambda: default(_Values.POSITIVE_MINIMUM))
     summary_fmt: str = _Values.SUMMARY_FMT.value
 
 
-__config = _Config()
+def config() -> Config:
+    return __config
 
 
 def summary_fmt():
-    return __config._summary_fmt
+    return config().summary_fmt
 
 
 def default_int():
-    return __config._int
+    return config().int
 
 
 def default_float():
-    return __config._float
+    return config().float
 
 
 def default_jitter():
-    return __config._jitter
+    return config().jitter
 
 
-def positive_minimum_value():
-    return __config._positive_minimum_value
+def positive_minimum():
+    return config().positive_minimum
+
+
+def set_config(new_config: Config):
+    global __config
+    __config = new_config
 
 
 def set_default_int(value_type):
@@ -66,9 +76,11 @@ def set_default_int(value_type):
         tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
     except TypeError:
         raise TypeError(f"{value_type} is not a valid tf or np dtype")
+
     if not tf_dtype.is_integer:
         raise TypeError(f"{value_type} is not an integer dtype")
-    __config._int = value_type
+
+    set_config(replace(config(), int=value_type))
 
 
 def set_default_float(value_type):
@@ -76,39 +88,55 @@ def set_default_float(value_type):
         tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
     except TypeError:
         raise TypeError(f"{value_type} is not a valid tf or np dtype")
+
     if not tf_dtype.is_floating:
         raise TypeError(f"{value_type} is not a float dtype")
-    __config._float = value_type
+
+    set_config(replace(config(), float=value_type))
 
 
 def set_default_jitter(value: float):
     if not (isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0) and \
             not isinstance(value, float):
         raise TypeError("Expected float32 or float64 scalar value")
+
     if value < 0:
         raise ValueError("Jitter must be non-negative")
 
-    __config._jitter = value
+    set_config(replace(config(), jitter=value))
 
 
-def set_summary_fmt(fmt: str):
+def set_summary_fmt(value: str):
     formats = tabulate.tabulate_formats + ['notebook', None]
-    if fmt not in formats:
-        raise ValueError(f"Summary does not support '{fmt}' format")
+    if value not in formats:
+        raise ValueError(f"Summary does not support '{value}' format")
 
-    __config._summary_fmt = fmt
+    set_config(replace(config(), summary_fmt=value))
+
+
+def set_positive_minimum(value: float):
+    if not (isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0) and \
+            not isinstance(value, float):
+        raise TypeError("Expected float32 or float64 scalar value")
+
+    if value < 0:
+        raise ValueError("Jitter must be non-negative")
+
+    set_config(replace(config(), jitter=value))
 
 
 @contextlib.contextmanager
-def context():
+def as_context(temporary_config: Optional[Config] = None):
     '''Ensure that global configs defaults, with a context manager. Useful
     for testing.'''
-    float_dtype = default_float()
-    int_dtype = default_int()
-    jitter = default_jitter()
-    fmt = summary_fmt()
-    yield
-    set_default_float(float_dtype)
-    set_default_int(int_dtype)
-    set_default_jitter(jitter)
-    set_summary_fmt(fmt)
+    current_config = config()
+    temporary_config = replace(current_config) if temporary_config is None else temporary_config
+    try:
+        set_config(temporary_config)
+        yield
+    finally:
+        set_config(current_config)
+
+
+# Set global config.
+set_config(Config())
