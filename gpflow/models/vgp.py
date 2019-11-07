@@ -13,12 +13,13 @@
 # limitations under the License.
 
 from typing import Optional
-import gpflow
+
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
 
-from ..base import Parameter, triangular
+import gpflow
+
+from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
@@ -26,6 +27,7 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..models.model import Data, DataPoint, GPModel, MeanAndVariance
+from ..utilities import triangular
 
 
 class VGP(GPModel):
@@ -46,7 +48,6 @@ class VGP(GPModel):
        q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
-
     def __init__(self,
                  data: Data,
                  kernel: Kernel,
@@ -143,7 +144,6 @@ class VGPOpperArchambeau(GPModel):
     but the optimization is non-convex and in practice may cause difficulty.
 
     """
-
     def __init__(self,
                  data: Data,
                  kernel: Kernel,
@@ -164,7 +164,7 @@ class VGPOpperArchambeau(GPModel):
         self.num_data = x_data.shape[0]
         self.num_latent = num_latent or y_data.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.positive())
+        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.utilities.positive())
 
     def log_likelihood(self):
         r"""

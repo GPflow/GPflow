@@ -8,9 +8,8 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tabulate import tabulate
 
-
 from ..base import Parameter
-from ..config import summary_fmt
+from ..config import summary_fmt, default_float, default_int
 
 __all__ = [
     "set_trainable",
@@ -20,7 +19,9 @@ __all__ = [
     "deepcopy_components",
     "leaf_components",
     "parameter_dict",
-    "read_values"
+    "read_values",
+    "to_default_float",
+    "to_default_int",
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -28,6 +29,14 @@ State = Any
 Path = str
 Accumulator = Tuple[Path, State]
 TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
+
+
+def to_default_int(x):
+    return tf.cast(x, dtype=default_int())
+
+
+def to_default_float(x):
+    return tf.cast(x, dtype=default_float())
 
 
 def set_trainable(model: tf.Module, flag: bool):
@@ -143,10 +152,7 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
     column_values = [[
         path,
         get_name(variable),
-        get_transform(variable),
-        variable.trainable,
-        variable.shape,
-        variable.dtype.name,
+        get_transform(variable), variable.trainable, variable.shape, variable.dtype.name,
         _str_tensor_value(variable.numpy())
     ] for path, variable in merged_leaf_components.items()]
     # bla
@@ -206,7 +212,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
     """
-    target_types = (tfp.bijectors.Bijector,)
+    target_types = (tfp.bijectors.Bijector, )
     accumulator = ('', None)
 
     def clear_bijector(bijector, _, state):
@@ -229,9 +235,7 @@ def deepcopy_components(input_module: tf.Module) -> tf.Module:
     return deepcopy(reset_cache_bijectors(input_module))
 
 
-def traverse_module(m: TraverseInput,
-                    acc: Accumulator,
-                    update_cb: TraverseUpdateCallable,
+def traverse_module(m: TraverseInput, acc: Accumulator, update_cb: TraverseUpdateCallable,
                     target_types: tuple) -> Accumulator:
     """
     Recursively traverses `m`, accumulating in `acc` a path and a state until it finds an object of type

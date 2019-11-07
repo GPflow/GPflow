@@ -20,7 +20,7 @@ in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 
 import abc
 from functools import partial, reduce
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -151,13 +151,16 @@ class Combination(Kernel):
 
     _reduction = None
 
-    def __init__(self, kernels, name=None):
+    def __init__(self, kernels: List[Kernel], name: Optional[str] = None):
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError(
                 "can only combine Kernel instances")  # pragma: no cover
 
+        self._set_kernels(kernels)
+
+    def _set_kernels(self, kernels: List[Kernel]):
         # add kernels to a list, flattening out instances of this class therein
         kernels_list = []
         for k in kernels:
@@ -189,11 +192,11 @@ class Combination(Kernel):
                         overlapping = True
             return not overlapping
 
-    def K(self, X, X2=None, presliced=False):
+    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
         res = [k.K(X, X2, presliced=presliced) for k in self.kernels]
         return self._reduce(res)
 
-    def K_diag(self, X, presliced=False):
+    def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
         res = [k.K_diag(X, presliced=presliced) for k in self.kernels]
         return self._reduce(res)
 

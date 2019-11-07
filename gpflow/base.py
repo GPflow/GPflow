@@ -14,9 +14,6 @@ TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't wo
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
-positive = tfp.bijectors.Softplus
-triangular = tfp.bijectors.FillTriangular
-
 
 def _IS_PARAMETER(o):
     return isinstance(o, Parameter)

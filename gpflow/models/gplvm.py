@@ -18,16 +18,17 @@ import numpy as np
 import tensorflow as tf
 
 from .. import covariances, inducing_variables, kernels, likelihoods
-from ..base import Parameter, positive
+from ..base import Parameter
 from ..config import default_float, default_jitter
 from ..expectations import expectation
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
+from ..utilities import positive
 from ..utilities.ops import pca_reduce
-from .util import inducingpoint_wrapper
 from .gpr import GPR
 from .model import GPModel
+from .util import inducingpoint_wrapper
 
 
 class GPLVM(GPR):
