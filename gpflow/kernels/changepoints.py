@@ -4,7 +4,8 @@ from typing import List, Union, Optional
 import tensorflow as tf
 
 from .base import Combination, Kernel
-from ..base import Parameter, positive
+from ..base import Parameter
+from ..utilities import positive
 
 
 class ChangePoints(Combination):
