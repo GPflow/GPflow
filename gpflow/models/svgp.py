@@ -17,11 +17,12 @@ import numpy as np
 import tensorflow as tf
 
 from .. import kullback_leiblers
+from ..base import Parameter
 from ..conditionals import conditional
+from ..config import default_float, default_jitter
 from ..covariances import Kuu
 from ..models.model import GPModel
-from ..base import Parameter, positive, triangular
-from ..config import default_float, default_jitter
+from ..utilities import positive, triangular
 from .util import inducingpoint_wrapper
 
 
