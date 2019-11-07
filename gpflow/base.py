@@ -10,7 +10,9 @@ from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
-TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
+# TensorLike should also incorporate Lists, but there's currently no way to represent
+# a list with an arbitrary number of nested lists using Python type annotations.
+TensorLike = Union[tf.Tensor, np.ndarray, tf.Variable]
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 

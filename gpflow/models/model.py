@@ -18,16 +18,12 @@ from typing import Optional, Tuple, TypeVar, Union
 import numpy as np
 import tensorflow as tf
 
-from ..base import Module
+from ..base import Module, TensorLike
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops
-
-# TensorLike should also incorporate Lists, but there's currently no way to represent
-# a list with an arbitrary number of nested lists using Python type annotations.
-TensorLike = Union[tf.Tensor, np.ndarray, int, float]
 
 Data = TypeVar('Data', Tuple[TensorLike, TensorLike], TensorLike)
 DataPoint = TensorLike
