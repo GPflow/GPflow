@@ -35,11 +35,11 @@ class InducingVariables(tf.Module):
 
 
 class InducingPointsBase(InducingVariables):
-    def __init__(self, Z):
+    def __init__(self, Z, name=None):
         """
         :param Z: the initial positions of the inducing points, size [M, D]
         """
-        super().__init__()
+        super().__init__(name=name)
         self.Z = Parameter(Z, dtype=default_float())
 
     def __len__(self):

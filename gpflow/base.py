@@ -83,6 +83,12 @@ class Parameter(tf.Module):
     def read_value(self):
         return _to_constrained(self._unconstrained.read_value(), self.transform)
 
+    def experimental_ref(self):
+        return self
+
+    def deref(self):
+        return self
+
     @property
     def unconstrained_variable(self):
         return self._unconstrained
