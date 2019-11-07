@@ -1,37 +1,41 @@
-import os
 import contextlib
+import enum
+import os
+from dataclasses import dataclass, field
 
 import numpy as np
 import tabulate
 import tensorflow as tf
 
 __all__ = [
-    "summary_fmt",
-    "default_float",
-    "default_jitter",
-    "default_int",
-    "set_summary_fmt",
-    "set_default_float",
-    "set_default_jitter",
-    "set_default_int",
-    "context"
+    "summary_fmt", "default_float", "default_jitter", "default_int", "set_summary_fmt", "set_default_float",
+    "set_default_jitter", "set_default_int", "context"
 ]
 
-_ENV_JITTER = "GPFLOW_JITTER"
-_ENV_FLOAT = "GPFLOW_FLOAT"
-_ENV_INT = "GPFLOW_INT"
 
-_JITTER_VALUE = 1e-6
-_FLOAT_VALUE = np.float64
-_INT_VALUE = np.int32
+class _Values(enum.Enum):
+    INT = np.int32
+    FLOAT = np.float64
+    POSITIVE_MINIMAL = 1e-6
+    JITTER = 1e-6
+    SUMMARY_FMT = "pretty_grid"
+
+    @property
+    def name(self):
+        return f"GPFLOW_{super().name}"
 
 
+def default(value: _Values):
+    return os.getenv(value.name, default=value.value)
+
+
+@dataclass(frozen=True)
 class _Config:
-    def __init__(self):
-        self._int = os.getenv(_ENV_INT, default=_INT_VALUE)
-        self._float = os.getenv(_ENV_FLOAT, default=_FLOAT_VALUE)
-        self._jitter = os.getenv(_ENV_JITTER, default=_JITTER_VALUE)
-        self._summary_fmt = None
+    int: type = field(default_factory=lambda: default(_Values.INT))
+    float: type = field(default_factory=lambda: default(_Values.FLOAT))
+    jitter: float = field(default_factory=lambda: default(_Values.JITTER))
+    positive_minimal: float = field(default_factory=lambda: default(_Values.POSITIVE_MINIMAL))
+    summary_fmt: str = _Values.SUMMARY_FMT.value
 
 
 __config = _Config()
@@ -51,6 +55,10 @@ def default_float():
 
 def default_jitter():
     return __config._jitter
+
+
+def positive_minimum_value():
+    return __config._positive_minimum_value
 
 
 def set_default_int(value_type):

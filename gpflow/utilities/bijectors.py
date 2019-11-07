@@ -7,7 +7,7 @@ from .utilities import to_default_float
 __all__ = ["positive", "triangular"]
 
 
-def positive(lower: Optional[float] = None):
+def positive(lower: Optional[float] = 1e-6):
     if lower is None:
         return tfp.bijectors.Softplus()
 
