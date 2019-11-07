@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Optional, Tuple, TypeVar
+from typing import Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import tensorflow as tf
@@ -25,8 +25,12 @@ from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops
 
-Data = TypeVar('Data', Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
-DataPoint = tf.Tensor
+# TensorLike should also incorporate Lists, but there's currently no way to represent
+# a list with an arbitrary number of nested lists using Python type annotations.
+TensorLike = Union[tf.Tensor, np.ndarray, int, float]
+
+Data = TypeVar('Data', Tuple[TensorLike, TensorLike], TensorLike)
+DataPoint = TensorLike
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 

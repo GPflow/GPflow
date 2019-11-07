@@ -18,11 +18,12 @@ import tensorflow as tf
 
 import gpflow
 from .model import GPModel
+from ..base import TensorLike
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 
-Data = Tuple[tf.Tensor, tf.Tensor]
+Data = Tuple[TensorLike, TensorLike]
 
 
 class GPR(GPModel):
