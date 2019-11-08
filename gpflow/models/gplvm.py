@@ -17,7 +17,7 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
-from .. import covariances, inducing_variables, kernels, likelihoods
+from .. import covariances, kernels, likelihoods
 from ..base import Parameter
 from ..config import default_float, default_jitter
 from ..expectations import expectation
@@ -35,7 +35,6 @@ class GPLVM(GPR):
     """
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
-
     def __init__(self,
                  data: tf.Tensor,
                  latent_dim: int,
@@ -78,7 +77,7 @@ class BayesianGPLVM(GPModel):
                  x_data_mean: tf.Tensor,
                  x_data_var: tf.Tensor,
                  kernel: Kernel,
-                 num_inducing_variables: Optional[int]=None,
+                 num_inducing_variables: Optional[int] = None,
                  inducing_variable=None,
                  x_prior_mean=None,
                  x_prior_var=None):
