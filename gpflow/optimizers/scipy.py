@@ -33,7 +33,7 @@ class Scipy:
             method: The type of solver to use in SciPy. Defaults to "L-BFGS-B".
             step_callback: If not None, a callable that gets called once after
                 each optimisation step. The callabe is passed the arguments
-                `step`, `variables`, and `values`. `step` is the optimisatio
+                `step`, `variables`, and `values`. `step` is the optimisation
                 step counter. `variables` is the list of trainable variables as
                 above, and `values` is the corresponding list of tensors of
                 matching shape that contains their value at this optimisation
