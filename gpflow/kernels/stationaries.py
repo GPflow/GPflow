@@ -20,7 +20,6 @@ class Stationary(Kernel):
 
     def __init__(self, variance=1.0, lengthscale=1.0, ard=None, **kwargs):
         """
-        - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter
         - lengthscale is the initial value for the lengthscale parameter
           defaults to 1.0 (ard=False) or np.ones(input_dim) (ard=True).
