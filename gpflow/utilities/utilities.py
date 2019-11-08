@@ -155,7 +155,6 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
         get_transform(variable), variable.trainable, variable.shape, variable.dtype.name,
         _str_tensor_value(variable.numpy())
     ] for path, variable in merged_leaf_components.items()]
-    # bla
     return tabulate(column_values, headers=column_names, tablefmt=tablefmt)
 
 
