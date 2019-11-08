@@ -123,7 +123,7 @@ class Constant(MeanFunction):
         self.c = Parameter(c)
 
     def __call__(self, X):
-        shape = tf.stack([X.shape[0], 1])
+        shape = [tf.shape(X)[0], 1]
         return tf.tile(tf.reshape(self.c, (1, -1)), shape)
 
 

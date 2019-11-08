@@ -32,8 +32,8 @@ def test_gpr_objective_equivalence():
     m2.kernel.lengthscale = gpflow.Parameter(l_variable, transform=None)
     assert np.allclose(m1.kernel.lengthscale.numpy(), m2.kernel.lengthscale.numpy())  # consistency check
 
-    assert np.allclose(m1.neg_log_marginal_likelihood().numpy(),
-                       m2.neg_log_marginal_likelihood().numpy()), \
+    assert np.allclose(m1.log_marginal_likelihood().numpy(),
+                       m2.log_marginal_likelihood().numpy()), \
                        "MLE objective should not depend on Parameter transform"
 
 
@@ -70,8 +70,8 @@ class DummyModel(gpflow.models.BayesianModel):
 def test_map_contains_log_det_jacobian():
     m1 = DummyModel(with_transform=True)
     m2 = DummyModel(with_transform=False)
-    assert np.allclose(- m1.neg_log_marginal_likelihood().numpy(),
-                       - m2.neg_log_marginal_likelihood().numpy() + m1.log_scale), \
+    assert np.allclose(m1.log_marginal_likelihood().numpy(),
+                       m2.log_marginal_likelihood().numpy() + m1.log_scale), \
                        "MAP objective should differ by log|Jacobian| of the transform"
 
 
