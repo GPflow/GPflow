@@ -9,7 +9,7 @@ import tensorflow_probability as tfp
 from tabulate import tabulate
 
 from ..base import Parameter
-from ..config import summary_fmt, default_float, default_int
+from ..config import default_summary_fmt, default_float, default_int
 
 __all__ = [
     "set_trainable",
@@ -127,7 +127,7 @@ def print_summary(module: tf.Module, fmt: str = None):
     """
     Prints a summary of the parameters and variables contained in a tf.Module.
     """
-    fmt = fmt if fmt is not None else summary_fmt()
+    fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
         from IPython.core.display import display, HTML
         tab = tabulate_module_summary(module, "html")

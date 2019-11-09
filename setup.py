@@ -3,11 +3,13 @@
 
 # pylint: skip-file
 
-import os
+import sys
 from pathlib import Path
 
 from pkg_resources import parse_version
 from setuptools import find_packages, setup
+
+is_py37 = sys.version_info.major == 3 and sys.version_info.minor == 7
 
 # Dependencies of GPflow
 requirements = [
@@ -16,7 +18,7 @@ requirements = [
     'multipledispatch>=0.4.9',
     'tensorflow-probability>=0.8',
     'tabulate',
-]
+] + ([] if is_py37 else ["dataclasses"])
 
 min_tf_version = '2.0.0'
 tf_cpu = 'tensorflow'
@@ -35,7 +37,6 @@ try:
 except (ImportError, DeprecationWarning):
     # Add TensorFlow to dependencies to trigger installation/update
     requirements.append(tf_cpu)
-
 
 with open(str(Path(".", "VERSION").absolute())) as version_file:
     version = version_file.read().strip()
