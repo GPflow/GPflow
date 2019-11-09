@@ -9,7 +9,7 @@ __all__ = ["positive", "triangular"]
 
 
 def positive(lower: Optional[float] = None):
-    lower_value = config.positive_minimum()
+    lower_value = config.default_positive_minimum()
     if lower_value is None:
         return tfp.bijectors.Softplus()
 
