@@ -52,6 +52,12 @@ class B(tf.Module):
         self.var_trainable = tf.Variable(tf.zeros((2, 2, 1)), trainable=True)
         self.var_fixed = tf.Variable(tf.ones((2, 2, 1)), trainable=False)
 
+class C(tf.keras.Model):
+    def __init__(self, name=None):
+        super().__init__(name)
+        self.variable = tf.Variable(tf.zeros((2, 2, 1)), trainable=True)
+        self.param = gpflow.Parameter(0.0)
+        self.dense = tf.keras.layers.Dense(5)
 
 def create_kernel():
     kern = gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var)
@@ -227,6 +233,18 @@ B.submodule_dict['b'].var_fixed      ResourceVariable               False       
 B.var_trainable                      ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
 B.var_fixed                          ResourceVariable               False        (2, 2, 1)  float32  [[[1...."""
 
+# Note: we use grid format here because we have a double reference to the same variable
+# which does not render nicely in the table formatting.
+example_tf_keras_model = """\
++-------------------------+------------------+-------------+-------------+-----------+---------+----------+\n\
+| name                    | class            | transform   | trainable   | shape     | dtype   | value    |\n\
++=========================+==================+=============+=============+===========+=========+==========+\n\
+| C._trainable_weights[0] | ResourceVariable |             | True        | (2, 2, 1) | float32 | [[[0.... |\n\
+| C.variable              |                  |             |             |           |         |          |\n\
++-------------------------+------------------+-------------+-------------+-----------+---------+----------+\n\
+| C.param                 | Parameter        |             | True        | ()        | float64 | 0.0      |\n\
++-------------------------+------------------+-------------+-------------+-----------+---------+----------+"""
+
 
 # ------------------------------------------
 # Fixtures
@@ -316,6 +334,12 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
 ])
 def test_print_summary_output_string(module_callable, expected_param_print_string):
     assert tabulate_module_summary(module_callable()) == expected_param_print_string
+
+
+def test_print_summary_for_keras_model():
+    # Note: best to use `grid` formatting for `tf.keras.Model` printing
+    # because of the duplicates in the references to the variables.
+    assert tabulate_module_summary(C(), tablefmt="grid") == example_tf_keras_model
 
 
 def test_leaf_components_combination_kernel():

@@ -15,6 +15,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 import gpflow
+import tensorflow as tf
 from gpflow.mean_functions import Constant
 
 rng = np.random.RandomState(0)
@@ -78,18 +79,24 @@ def _prepare_models():
 
     opt = gpflow.optimizers.Scipy()
 
+    @tf.function(autograph=False)
     def vgp0_closure():
-        return vgp0.neg_log_marginal_likelihood()
+        return - vgp0.log_marginal_likelihood()
 
+    @tf.function(autograph=False)
     def vgp1_closure():
-        return vgp1.neg_log_marginal_likelihood()
+        return - vgp1.log_marginal_likelihood()
 
+    @tf.function(autograph=False)
     def cvgp_closure():
-        return cvgp.neg_log_marginal_likelihood()
+        return - cvgp.log_marginal_likelihood()
 
-    opt.minimize(vgp0_closure, variables=vgp0.trainable_variables, options=dict(maxiter=1000), method='BFGS')
-    opt.minimize(vgp1_closure, variables=vgp1.trainable_variables, options=dict(maxiter=1000), method='BFGS')
-    opt.minimize(cvgp_closure, variables=cvgp.trainable_variables, options=dict(maxiter=1000), method='BFGS')
+    opt.minimize(vgp0_closure, variables=vgp0.trainable_variables,
+                 options=dict(maxiter=1000), method='BFGS')
+    opt.minimize(vgp1_closure, variables=vgp1.trainable_variables,
+                 options=dict(maxiter=1000), method='BFGS')
+    opt.minimize(cvgp_closure, variables=cvgp.trainable_variables,
+                 options=dict(maxiter=1000), method='BFGS')
 
     return vgp0, vgp1, cvgp
 
@@ -180,3 +187,4 @@ def test_predict_f_samples():
     # just check predict_f_samples(self) works
     cvgp.predict_f_samples(Datum.X_augumented0, 1)
     cvgp.predict_f_samples(Datum.X_augumented1, 1)
+

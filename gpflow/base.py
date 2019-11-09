@@ -6,21 +6,13 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.python.ops import array_ops
 
-from .config import default_float, to_default_float
+from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
 TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
-
-
-def positive(lower: float = 1e-6):
-    bijectors = [tfp.bijectors.AffineScalar(shift=to_default_float(lower)), tfp.bijectors.Softplus()]
-    return tfp.bijectors.Chain(bijectors)
-
-
-triangular = tfp.bijectors.FillTriangular
 
 
 def _IS_PARAMETER(o):
@@ -87,6 +79,12 @@ class Parameter(tf.Module):
 
     def read_value(self):
         return _to_constrained(self._unconstrained.read_value(), self.transform)
+
+    def experimental_ref(self):
+        return self
+
+    def deref(self):
+        return self
 
     @property
     def unconstrained_variable(self):

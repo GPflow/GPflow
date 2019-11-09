@@ -56,9 +56,10 @@ import numpy as np
 import tensorflow as tf
 
 from .. import logdensities
-from ..base import Parameter, positive
-from ..quadrature import hermgauss, ndiag_mc, ndiagquad
+from ..base import Parameter
 from ..config import default_float, default_int
+from ..quadrature import hermgauss, ndiag_mc, ndiagquad
+from ..utilities import positive
 from .robustmax import RobustMax
 
 
