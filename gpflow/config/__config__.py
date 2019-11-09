@@ -9,7 +9,7 @@ import tabulate
 import tensorflow as tf
 
 __all__ = [
-    "default_summary_fmt", "default_float", "default_jitter", "default_int", "set_default_summary_fmt",
+    "Config", "default_summary_fmt", "default_float", "default_jitter", "default_int", "set_default_summary_fmt",
     "set_default_float", "set_default_jitter", "set_default_int", "as_context", "config", "set_config",
     "default_positive_minimum", "set_default_positive_minimum"
 ]
@@ -84,6 +84,7 @@ def default_positive_minimum():
 
 
 def set_config(new_config: Config):
+    """Update GPflow config"""
     global __config
     __config = new_config
 
