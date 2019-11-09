@@ -34,7 +34,11 @@ class BayesianModel(Module):
     """ Bayesian model. """
 
     def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return -(self.log_likelihood(*args, **kwargs) + self.log_prior())
+        # TODO(VD): add deprecation warning
+        return - self.log_marginal_likelihood(*args, **kwargs)
+
+    def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
+        return self.log_likelihood(*args, **kwargs) + self.log_prior()
 
     def log_prior(self) -> tf.Tensor:
         log_priors = [p.log_prior() for p in self.trainable_parameters]
