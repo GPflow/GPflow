@@ -16,8 +16,9 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
-from gpflow.config import (context, default_float, default_int, default_jitter, set_default_float, set_default_int,
-                           set_default_jitter, set_summary_fmt, summary_fmt)
+import gpflow
+from gpflow.config import (default_float, default_int, default_jitter, set_default_float, set_default_int,
+                           set_default_jitter, set_default_summary_fmt, default_summary_fmt)
 from gpflow.utilities import to_default_float, to_default_int
 
 
@@ -59,16 +60,16 @@ def test_jitter_errorcheck():
         set_default_jitter(-1e-10)
 
 
-def test_summary_fmt_setting():
-    set_summary_fmt("html")
-    assert summary_fmt() == "html"
-    set_summary_fmt(None)
-    assert summary_fmt() is None
+def test_default_summary_fmt_setting():
+    set_default_summary_fmt("html")
+    assert default_summary_fmt() == "html"
+    set_default_summary_fmt(None)
+    assert default_summary_fmt() is None
 
 
-def test_summary_fmt_errorcheck():
+def test_default_summary_fmt_errorcheck():
     with pytest.raises(ValueError):
-        set_summary_fmt("this_format_definitely_does_not_exist")
+        set_default_summary_fmt("this_format_definitely_does_not_exist")
 
 
 @pytest.mark.parametrize('setter, getter, converter, dtype, value', [
@@ -82,7 +83,7 @@ def test_summary_fmt_errorcheck():
     (set_default_float, default_float, to_default_float, tf.float64, [3.14159, 3.14159, 3.14159]),
 ])
 def test_native_to_default_dtype(setter, getter, converter, dtype, value):
-    with context():
+    with gpflow.config.as_context():
         setter(dtype)
         assert converter(value).dtype == dtype
         assert converter(value).dtype == getter()
