@@ -1,8 +1,8 @@
 import tensorflow as tf
 
-from .base import Kernel
 from ..base import Parameter
 from ..utilities import positive
+from .base import Kernel
 
 
 class Linear(Kernel):
