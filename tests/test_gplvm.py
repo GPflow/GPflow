@@ -37,8 +37,9 @@ def _run_optimize(kernel: Optional[tf.Module] = None):
     log_likelihood_initial = m.log_likelihood()
     opt = gpflow.optimizers.Scipy()
 
+    @tf.function(autograph=False)
     def objective_closure():
-        return m.neg_log_marginal_likelihood()
+        return - m.log_marginal_likelihood()
 
     opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
     assert m.log_likelihood() > log_likelihood_initial
@@ -66,8 +67,9 @@ def test_bayesian_gplvm_1d():
     log_likelihood_initial = m.log_likelihood()
     opt = gpflow.optimizers.Scipy()
 
+    @tf.function(autograph=False)
     def objective_closure():
-        return m.neg_log_marginal_likelihood()
+        return - m.log_marginal_likelihood()
 
     opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
     assert m.log_likelihood() > log_likelihood_initial
@@ -83,8 +85,9 @@ def test_bayesian_gplvm_2d():
     log_likelihood_initial = m.log_likelihood()
     opt = gpflow.optimizers.Scipy()
 
+    @tf.function(autograph=False)
     def objective_closure():
-        return m.neg_log_marginal_likelihood()
+        return - m.log_marginal_likelihood()
 
     opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
     assert m.log_likelihood() > log_likelihood_initial

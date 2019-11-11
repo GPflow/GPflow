@@ -14,9 +14,6 @@ TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't wo
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
-positive = tfp.bijectors.Softplus
-triangular = tfp.bijectors.FillTriangular
-
 
 def _IS_PARAMETER(o):
     return isinstance(o, Parameter)
@@ -82,6 +79,12 @@ class Parameter(tf.Module):
 
     def read_value(self):
         return _to_constrained(self._unconstrained.read_value(), self.transform)
+
+    def experimental_ref(self):
+        return self
+
+    def deref(self):
+        return self
 
     @property
     def unconstrained_variable(self):

@@ -71,8 +71,9 @@ def assert_gpr_vs_vgp(m1: tf.Module,
 
     assert m2_ll_before != m1_ll_before
 
+    @tf.function(autograph=False)
     def loss_cb() -> tf.Tensor:
-        return m2.neg_log_marginal_likelihood()
+        return - m2.log_marginal_likelihood()
 
     params = (m2.q_mu, m2.q_sqrt)
     if xi_transform is not None:
@@ -101,8 +102,9 @@ def assert_sgpr_vs_svgp(m1: tf.Module, m2: tf.Module):
 
     assert m2_ll_before != m1_ll_before
 
+    @tf.function(autograph=False)
     def loss_cb() -> tf.Tensor:
-        return m2.neg_log_marginal_likelihood(data[0], data[1])
+        return - m2.log_marginal_likelihood(data[0], data[1])
 
     params = [(m2.q_mu, m2.q_sqrt)]
     opt = NaturalGradient(1.)

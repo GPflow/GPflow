@@ -38,7 +38,7 @@ class Kernel(tf.Module):
         :param active_dims: active dimensions, has the slice type.
         :param name: optional kernel name.
         """
-        super().__init__(name)
+        super().__init__(name=name)
         if isinstance(active_dims, list):
             active_dims = np.array(active_dims)
         self._active_dims = active_dims
@@ -100,7 +100,7 @@ class Kernel(tf.Module):
         :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
         :return: [N, I, I].
         """
-        if tf.shape(cov).ndim == 2:
+        if cov.shape.ndims == 2:
             cov = tf.linalg.diag(cov)
 
         dims = self.active_dims

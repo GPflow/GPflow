@@ -9,7 +9,7 @@ import tensorflow_probability as tfp
 from tabulate import tabulate
 
 from ..base import Parameter
-from ..config import summary_fmt, default_float, default_int
+from ..config import default_summary_fmt, default_float, default_int
 
 __all__ = [
     "set_trainable",
@@ -127,7 +127,7 @@ def print_summary(module: tf.Module, fmt: str = None):
     """
     Prints a summary of the parameters and variables contained in a tf.Module.
     """
-    fmt = fmt if fmt is not None else summary_fmt()
+    fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
         from IPython.core.display import display, HTML
         tab = tabulate_module_summary(module, "html")
@@ -162,18 +162,23 @@ def leaf_components(input: tf.Module):
     return _get_leaf_components(input)
 
 
-def _merge_leaf_components(input: Dict[str, Union[tf.Tensor, Parameter]]) -> Dict[str, Union[tf.Tensor, Parameter]]:
+def _merge_leaf_components(
+        input: Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]
+) -> Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]:
+
     input_values = set(
-        [value.experimental_ref() if isinstance(value, tf.Variable) else value for value in input.values()])
+        [value.experimental_ref() for value in input.values()]
+    )
     if len(input_values) == len(input):
         return input
-    tmp_dict = dict()
-    for key, item in input.items():
-        if item in tmp_dict:
-            tmp_dict[item] = f"{tmp_dict[item]}\n{key}"
+    tmp_dict = dict()  # Type: Dict[ref, str]
+    for key, variable in input.items():
+        ref = variable.experimental_ref()
+        if ref in tmp_dict:
+            tmp_dict[ref] = f"{tmp_dict[ref]}\n{key}"
         else:
-            tmp_dict[item] = key
-    return {key: item for item, key in tmp_dict.items()}
+            tmp_dict[ref] = key
+    return {key: ref.deref() for ref, key in tmp_dict.items()}
 
 
 def _get_leaf_components(input_module: tf.Module):

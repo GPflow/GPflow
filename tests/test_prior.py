@@ -4,7 +4,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
-from gpflow.config import context, set_default_float
+from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
 
 np.random.seed(1)
@@ -32,8 +32,8 @@ def test_gpr_objective_equivalence():
     m2.kernel.lengthscale = gpflow.Parameter(l_variable, transform=None)
     assert np.allclose(m1.kernel.lengthscale.numpy(), m2.kernel.lengthscale.numpy())  # consistency check
 
-    assert np.allclose(m1.neg_log_marginal_likelihood().numpy(),
-                       m2.neg_log_marginal_likelihood().numpy()), \
+    assert np.allclose(m1.log_marginal_likelihood().numpy(),
+                       m2.log_marginal_likelihood().numpy()), \
                        "MLE objective should not depend on Parameter transform"
 
 
@@ -42,7 +42,7 @@ def test_log_prior_with_no_prior():
     A parameter without any prior should have zero log-prior,
     even if it has a transform to constrain it.
     """
-    param = gpflow.Parameter(5.3, transform=gpflow.positive())
+    param = gpflow.Parameter(5.3, transform=gpflow.utilities.positive())
     assert param.log_prior().numpy() == 0.0
 
 
@@ -70,8 +70,8 @@ class DummyModel(gpflow.models.BayesianModel):
 def test_map_contains_log_det_jacobian():
     m1 = DummyModel(with_transform=True)
     m2 = DummyModel(with_transform=False)
-    assert np.allclose(- m1.neg_log_marginal_likelihood().numpy(),
-                       - m2.neg_log_marginal_likelihood().numpy() + m1.log_scale), \
+    assert np.allclose(m1.log_marginal_likelihood().numpy(),
+                       m2.log_marginal_likelihood().numpy() + m1.log_scale), \
                        "MAP objective should differ by log|Jacobian| of the transform"
 
 
@@ -89,7 +89,7 @@ def get_gpmc_model_params():
         #(gpflow.models.SGPMC, get_SGPMC_model_params()) # Fails due to inducing_variable=None bug
     ])
 def test_v_prior_dtypes(model_class, args):
-    with context():
+    with gpflow.config.as_context():
         set_default_float(np.float32)
         m = model_class(*args)
         assert m.V.prior.dtype == np.float32

@@ -2,7 +2,8 @@ import numpy as np
 import tensorflow as tf
 
 from .base import Kernel
-from ..base import Parameter, positive
+from ..base import Parameter
+from ..utilities import positive
 from ..utilities.ops import square_distance
 
 
@@ -17,15 +18,20 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, active_dims=None):
+    def __init__(self, variance=1.0, lengthscale=1.0, **kwargs):
         """
         :param variance: the (initial) value for the variance parameter
         :param lengthscale: the (initial) value for the lengthscale parameter(s),
             to induce ARD behaviour this must be initialised as an array the same
             length as the the number of active dimensions e.g. [1., 1., 1.]
-        :param active_dims: a slice or list specifying which columns of X are used
+        :param kwargs: accepts `name` and `active_dims`, which is a list of
+            length input_dim which controls which columns of X are used
         """
-        super().__init__(active_dims)
+        for kwarg in kwargs:
+            if kwarg not in {'name', 'active_dims'}:
+                raise TypeError('Unknown keyword argument:', kwarg)
+
+        super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
         self._validate_ard_active_dims(self.lengthscale)

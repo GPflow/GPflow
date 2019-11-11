@@ -1,10 +1,11 @@
 from collections.abc import Iterable
-from typing import List, Union, Optional
+from typing import List, Optional, Union
 
 import tensorflow as tf
 
+from ..base import Parameter
+from ..utilities import positive
 from .base import Combination, Kernel
-from ..base import Parameter, positive
 
 
 class ChangePoints(Combination):

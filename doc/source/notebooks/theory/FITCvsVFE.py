@@ -78,7 +78,7 @@ def repeatMinimization(model, xtest, ytest):
 
     @tf.function(autograph=False)
     def objective_closure():
-        return model.neg_log_marginal_likelihood()
+        return - model.log_marginal_likelihood()
 
     opt = gpflow.optimizers.Scipy()
     #print("Optimising for {} repetitions".format(nRepeats))

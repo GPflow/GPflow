@@ -1,7 +1,8 @@
 import tensorflow as tf
 
 from .base import Kernel
-from ..base import Parameter, positive
+from ..base import Parameter
+from ..utilities import positive
 
 
 class Linear(Kernel):
@@ -59,12 +60,7 @@ class Polynomial(Linear):
     γ is the offset parameter,
     d is the degree parameter.
     """
-
-    def __init__(self,
-                 degree=3.0,
-                 variance=1.0,
-                 offset=1.0,
-                 active_dims=None):
+    def __init__(self, degree=3.0, variance=1.0, offset=1.0, active_dims=None):
         """
         :param degree: the degree of the polynomial
         :param variance: the (initial) value for the variance parameter(s),
@@ -78,9 +74,7 @@ class Polynomial(Linear):
         self.offset = Parameter(offset, transform=positive())
 
     def K(self, X, X2=None, presliced=False):
-        return (super().K(X, X2, presliced=presliced) +
-                self.offset)**self.degree
+        return (super().K(X, X2, presliced=presliced) + self.offset)**self.degree
 
     def K_diag(self, X, presliced=False):
-        return (super().K_diag(X, presliced=presliced) +
-                self.offset)**self.degree
+        return (super().K_diag(X, presliced=presliced) + self.offset)**self.degree
