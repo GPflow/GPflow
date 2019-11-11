@@ -17,11 +17,12 @@ import numpy as np
 import tensorflow as tf
 
 from .. import kullback_leiblers
+from ..base import Parameter
 from ..conditionals import conditional
+from ..config import default_float, default_jitter
 from ..covariances import Kuu
 from ..models.model import GPModel
-from ..base import Parameter, positive, triangular
-from ..config import default_float, default_jitter
+from ..utilities import positive, triangular
 from .util import inducingpoint_wrapper
 
 
@@ -150,7 +151,7 @@ class SVGP(GPModel):
         """
         This returns the evidence lower bound (ELBO) of the log marginal likelihood.
         """
-        return self.neg_log_marginal_likelihood(X, Y)
+        return self.log_marginal_likelihood(X, Y)
 
     def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu

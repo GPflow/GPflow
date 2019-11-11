@@ -14,6 +14,7 @@
 
 import numpy as np
 import pytest
+import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
@@ -58,8 +59,9 @@ def _create_full_gp_model():
 
     opt = gpflow.optimizers.Scipy()
 
+    @tf.function(autograph=False)
     def full_gp_model_closure():
-        return full_gp_model.neg_log_marginal_likelihood()
+        return - full_gp_model.log_marginal_likelihood()
 
     opt.minimize(full_gp_model_closure, variables=full_gp_model.trainable_variables, options=dict(maxiter=300))
     return full_gp_model
@@ -107,20 +109,25 @@ def _create_approximate_models():
 
     opt = gpflow.optimizers.Scipy()
 
+    @tf.function(autograph=False)
     def model_1_closure():
-        return model_1.neg_log_marginal_likelihood()
+        return - model_1.log_marginal_likelihood()
 
+    @tf.function(autograph=False)
     def model_2_closure():
-        return model_2.elbo(Datum.X, Datum.Y)
+        return - model_2.elbo(Datum.X, Datum.Y)
 
+    @tf.function(autograph=False)
     def model_3_closure():
-        return model_3.elbo(Datum.X, Datum.Y)
+        return - model_3.elbo(Datum.X, Datum.Y)
 
+    @tf.function(autograph=False)
     def model_4_closure():
-        return model_4.neg_log_marginal_likelihood()
+        return - model_4.log_marginal_likelihood()
 
+    @tf.function(autograph=False)
     def model_5_closure():
-        return model_5.neg_log_marginal_likelihood()
+        return - model_5.log_marginal_likelihood()
 
     opt.minimize(model_1_closure, variables=model_1.trainable_variables, options=dict(maxiter=300))
     opt.minimize(model_2_closure, variables=model_2.trainable_variables, options=dict(maxiter=300))
@@ -254,8 +261,9 @@ def test_upper_bound_few_inducing_points():
                                    mean_function=Constant())
     opt = gpflow.optimizers.Scipy()
 
+    @tf.function(autograph=False)
     def model_vfe_closure():
-        return model_vfe.neg_log_marginal_likelihood()
+        return - model_vfe.log_marginal_likelihood()
 
     opt.minimize(model_vfe_closure, variables=model_vfe.trainable_variables, options=dict(maxiter=500))
 
@@ -267,9 +275,9 @@ def test_upper_bound_few_inducing_points():
     full_gp.likelihood.variance.assign(model_vfe.likelihood.variance)
     full_gp.mean_function.c.assign(model_vfe.mean_function.c)
 
-    lml_upper =  model_vfe.upper_bound()
-    lml_vfe = - model_vfe.neg_log_marginal_likelihood()
-    lml_full_gp = - full_gp.neg_log_marginal_likelihood()
+    lml_upper = model_vfe.upper_bound()
+    lml_vfe = model_vfe.log_marginal_likelihood()
+    lml_full_gp = full_gp.log_marginal_likelihood()
 
     assert lml_vfe < lml_full_gp
     assert lml_full_gp < lml_upper

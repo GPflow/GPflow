@@ -50,5 +50,5 @@ def test_non_trainable_model_objective(model):
     """
     set_trainable(model, False)
 
-    _ = model.neg_log_marginal_likelihood()
+    _ = model.log_marginal_likelihood()
     assert model.log_prior() == 0.0

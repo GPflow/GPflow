@@ -3,7 +3,8 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..base import Parameter
-from ..config import default_int, to_default_float
+from ..config import default_int
+from ..utilities import to_default_float
 
 
 class RobustMax(tf.Module):

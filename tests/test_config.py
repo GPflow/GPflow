@@ -12,16 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import gpflow
 import numpy as np
-import tensorflow as tf
 import pytest
-from gpflow import config
+import tensorflow as tf
+
+import gpflow
+from gpflow.config import (default_float, default_int, default_jitter, set_default_float, set_default_int,
+                           set_default_jitter, set_default_summary_fmt, default_summary_fmt)
+from gpflow.utilities import to_default_float, to_default_int
 
 
 @pytest.mark.parametrize('getter, setter, valid_type_1, valid_type_2', [
-    (config.default_int, config.set_default_int, tf.int64, np.int32),
-    (config.default_float, config.set_default_float, tf.float32, np.float64),
+    (default_int, set_default_int, tf.int64, np.int32),
+    (default_float, set_default_float, tf.float32, np.float64),
 ])
 def test_dtype_setting(getter, setter, valid_type_1, valid_type_2):
     if valid_type_1 == valid_type_2:
@@ -33,10 +36,10 @@ def test_dtype_setting(getter, setter, valid_type_1, valid_type_2):
 
 
 @pytest.mark.parametrize('setter, invalid_type', [
-    (config.set_default_int, str),
-    (config.set_default_int, np.float64),
-    (config.set_default_float, list),
-    (config.set_default_float, tf.int32),
+    (set_default_int, str),
+    (set_default_int, np.float64),
+    (set_default_float, list),
+    (set_default_float, tf.int32),
 ])
 def test_dtype_errorcheck(setter, invalid_type):
     with pytest.raises(TypeError):
@@ -44,43 +47,43 @@ def test_dtype_errorcheck(setter, invalid_type):
 
 
 def test_jitter_setting():
-    config.set_default_jitter(1e-3)
-    assert config.default_jitter() == 1e-3
-    config.set_default_jitter(1e-6)
-    assert config.default_jitter() == 1e-6
+    set_default_jitter(1e-3)
+    assert default_jitter() == 1e-3
+    set_default_jitter(1e-6)
+    assert default_jitter() == 1e-6
 
 
 def test_jitter_errorcheck():
     with pytest.raises(TypeError):
-        config.set_default_jitter("not a float")
+        set_default_jitter("not a float")
     with pytest.raises(ValueError):
-        config.set_default_jitter(-1e-10)
+        set_default_jitter(-1e-10)
 
 
-def test_summary_fmt_setting():
-    config.set_summary_fmt("html")
-    assert config.summary_fmt() == "html"
-    config.set_summary_fmt(None)
-    assert config.summary_fmt() == None
+def test_default_summary_fmt_setting():
+    set_default_summary_fmt("html")
+    assert default_summary_fmt() == "html"
+    set_default_summary_fmt(None)
+    assert default_summary_fmt() is None
 
 
-def test_summary_fmt_errorcheck():
+def test_default_summary_fmt_errorcheck():
     with pytest.raises(ValueError):
-        config.set_summary_fmt("this_format_definitely_does_not_exist")
+        set_default_summary_fmt("this_format_definitely_does_not_exist")
 
 
 @pytest.mark.parametrize('setter, getter, converter, dtype, value', [
-    (config.set_default_int, config.default_int, config.to_default_int, np.int32, 3),
-    (config.set_default_int, config.default_int, config.to_default_int, tf.int32, 3),
-    (config.set_default_int, config.default_int, config.to_default_int, tf.int64, [3, 1, 4, 1, 5, 9]),
-    (config.set_default_int, config.default_int, config.to_default_int, np.int64, [3, 1, 4, 1, 5, 9]),
-    (config.set_default_float, config.default_float, config.to_default_float, np.float32, 3.14159),
-    (config.set_default_float, config.default_float, config.to_default_float, tf.float32, [3.14159, 3.14159, 3.14159]),
-    (config.set_default_float, config.default_float, config.to_default_float, np.float64, [3.14159, 3.14159, 3.14159]),
-    (config.set_default_float, config.default_float, config.to_default_float, tf.float64, [3.14159, 3.14159, 3.14159]),
+    (set_default_int, default_int, to_default_int, np.int32, 3),
+    (set_default_int, default_int, to_default_int, tf.int32, 3),
+    (set_default_int, default_int, to_default_int, tf.int64, [3, 1, 4, 1, 5, 9]),
+    (set_default_int, default_int, to_default_int, np.int64, [3, 1, 4, 1, 5, 9]),
+    (set_default_float, default_float, to_default_float, np.float32, 3.14159),
+    (set_default_float, default_float, to_default_float, tf.float32, [3.14159, 3.14159, 3.14159]),
+    (set_default_float, default_float, to_default_float, np.float64, [3.14159, 3.14159, 3.14159]),
+    (set_default_float, default_float, to_default_float, tf.float64, [3.14159, 3.14159, 3.14159]),
 ])
 def test_native_to_default_dtype(setter, getter, converter, dtype, value):
-    with config.config_session():
+    with gpflow.config.as_context():
         setter(dtype)
         assert converter(value).dtype == dtype
         assert converter(value).dtype == getter()

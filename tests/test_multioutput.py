@@ -356,7 +356,7 @@ def test_shared_independent_mok():
 
     @tf.function(autograph=False)
     def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_1.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, options=dict(maxiter=500),
                                        method='BFGS')
@@ -373,7 +373,7 @@ def test_shared_independent_mok():
 
     @tf.function(autograph=False)
     def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_2.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, options=dict(maxiter=500),
                                        method='BFGS')
@@ -390,7 +390,7 @@ def test_shared_independent_mok():
 
     @tf.function(autograph=False)
     def closure3():
-        return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_3.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables, options=dict(maxiter=500),
                                        method='BFGS')
@@ -421,7 +421,7 @@ def test_separate_independent_mok():
 
     @tf.function(autograph=False)
     def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_1.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
@@ -438,7 +438,7 @@ def test_separate_independent_mok():
 
     @tf.function(autograph=False)
     def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_2.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
@@ -465,7 +465,7 @@ def test_separate_independent_mof():
 
     @tf.function(autograph=False)
     def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_1.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
@@ -482,7 +482,7 @@ def test_separate_independent_mof():
 
     @tf.function(autograph=False)
     def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_2.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
@@ -501,7 +501,7 @@ def test_separate_independent_mof():
 
     @tf.function(autograph=False)
     def closure3():
-        return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_3.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables, method='BFGS')
 
@@ -519,7 +519,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
 
     @tf.function(autograph=False)
     def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_1.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
@@ -533,7 +533,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
 
     @tf.function(autograph=False)
     def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_2.log_marginal_likelihood(Data.X, Data.Y)
 
     gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
