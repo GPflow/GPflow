@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import abc
+import warnings
 from typing import Optional, Tuple, TypeVar
 
 import numpy as np
@@ -34,7 +35,10 @@ class BayesianModel(Module):
     """ Bayesian model. """
 
     def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        # TODO(VD): add deprecation warning
+        msg = "`BayesianModel.neg_log_marginal_likelihood` is deprecated and " \
+              " and will be removed in a future release. Please update your code " \
+              " to use `BayesianModel.log_marginal_likelihood`."
+        warnings.warn(msg, category=DeprecationWarning)
         return - self.log_marginal_likelihood(*args, **kwargs)
 
     def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
