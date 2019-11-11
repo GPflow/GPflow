@@ -18,19 +18,23 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, active_dims=None, ard=None):
+    def __init__(self, variance=1.0, lengthscale=1.0, ard=None, **kwargs):
         """
         - input_dim is the dimension of the input to the kernel
         - variance is the (initial) value for the variance parameter
         - lengthscale is the initial value for the lengthscale parameter
           defaults to 1.0 (ard=False) or np.ones(input_dim) (ard=True).
-        - active_dims is a list of length input_dim which controls which
-          columns of X are used.
         - if ard is not None, it specifies whether the kernel has one
           lengthscale per dimension (ard=True) or a single lengthscale
           (ard=False). Otherwise, inferred from shape of lengthscale.
+        - kwargs, accepts `name` and `active_dims`, which is a list of
+          length input_dim which controls which columns of X are used.
         """
-        super().__init__(active_dims)
+        for kwarg in kwargs:
+            if kwarg not in ['name', 'active_dims']:
+                raise TypeError('Unknown keyword argument:', kwarg)
+
+        super().__init__(**kwargs)
         self.ard = ard
         # lengthscale, self.ard = self._validate_ard_shape("lengthscale", lengthscale, ard)
         self.variance = Parameter(variance, transform=positive())
