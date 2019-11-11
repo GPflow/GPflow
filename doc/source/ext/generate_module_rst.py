@@ -23,6 +23,7 @@ from types import ModuleType
 
 import gpflow
 
+RST_PATH = 'source/'
 RST_LEVEL_SYMBOLS = ['=', '-', '~', '"', "'", '^']
 
 SPHINX_CLASS_STRING = '''
@@ -30,6 +31,7 @@ SPHINX_CLASS_STRING = '''
 {level}
 
 .. autoclass:: {object_name}
+   :show-inheritance:
    :members:
 '''
 
@@ -138,9 +140,9 @@ def write_to_rst_file(node_name: str, rst_content: List[str]) -> None:
     :param node_name: name of the node to write to file
     :param rst_content: List of rst strings to write to file
     """
-    path = node_name.replace('.', '/')
+    path = f"{RST_PATH}/{node_name.replace('.', '/')}"
     if not os.path.exists(path):
-        os.mkdir(path)
+        os.makedirs(path)
 
     rst_file = SPHINX_FILE_STRING.format(
         title=node_name, content=''.join(rst_content), date=DATE_STRING)
