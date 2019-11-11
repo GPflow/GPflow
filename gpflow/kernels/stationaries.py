@@ -35,7 +35,7 @@ class Stationary(Kernel):
         """
         Whether ARD behaviour is active.
         """
-        return len(self.lengthscale.shape) > 0
+        return self.lengthscale.shape.ndims > 0
 
     def scaled_squared_euclid_dist(self, X, X2=None):
         """
