@@ -30,7 +30,7 @@ class Linear(Kernel):
         """
         Whether ARD behaviour is active.
         """
-        return len(self.variance.shape) > 0
+        return self.variance.shape.ndims > 0
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
