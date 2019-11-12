@@ -35,7 +35,7 @@ only need to run
 pip install -e .
 ```
 
-in a check-out of the `develop-2.0` branch of the GPflow github repository.
+in a check-out of the `develop` branch of the GPflow github repository.
 
 
 ## Getting Started
