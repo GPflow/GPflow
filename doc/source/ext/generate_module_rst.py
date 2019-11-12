@@ -35,6 +35,25 @@ SPHINX_CLASS_STRING = '''
    :members:
 '''
 
+SPHINX_MULTIDISPATCH_STRING = '''
+{object_name}
+{level}
+
+This function uses multiple dispatch, which will depend on the type of argument passed in:
+
+{content}
+'''
+
+SPHINX_MULTIDISPATCH_COMPONENT_STRING = '''
+.. code-block:: python
+
+    {fname}( {args} )
+    # dispatch to -> {object_name}(...)
+
+
+.. autofunction:: {object_name}
+'''
+
 SPHINX_FUNC_STRING = '''
 {object_name}
 {level}
@@ -65,10 +84,10 @@ SPHINX_FILE_STRING = '''==========
 
 
 IGNORE_MODULES = {
-    'gpflow.covariances',
-    'gpflow.conditionals',
-    'gpflow.expectations',
-    'gpflow.kullback_leiblers',
+    'gpflow.covariances.dispatch',
+    'gpflow.conditionals.dispatch',
+    'gpflow.expectations.dispatch',
+    'gpflow.kullback_leiblers.dispatch',
     'gpflow.versions',
 }
 
@@ -91,6 +110,9 @@ def is_documentable_component(m: Any) -> bool:
         return 'gpflow' in m.__module__ and m.__module__ not in IGNORE_MODULES
     elif inspect.isclass(m):
         return 'gpflow' in m.__module__ and m.__module__ not in IGNORE_MODULES
+    elif type(m).__name__ == 'Dispatcher':
+        return True
+
     return False
 
 
@@ -117,7 +139,26 @@ def get_component_rst_string(module: ModuleType, component: Callable, level: int
     elif inspect.isfunction(component):
         rst_documentation = SPHINX_FUNC_STRING.format(
             object_name=object_name, var=component.__name__, level=level_underline)
+    elif type(component).__name__ == 'Dispatcher':
+        rst_documentation = get_multidispatch_string(component, module,  level_underline)
+
     return rst_documentation
+
+def get_multidispatch_string(multidispatch_object, module, level):
+    content_list = []
+    dispatch_name = f'{module.__name__}.{multidispatch_object.name}'
+    for args, fname in multidispatch_object.funcs.items():
+
+        arg_names = ', '.join([a.__name__ for a in args])
+        alias_name = f'{fname.__module__}.{fname.__name__}'
+
+        string = SPHINX_MULTIDISPATCH_COMPONENT_STRING.format(
+            fname=dispatch_name,
+            args=arg_names,
+            object_name=alias_name)
+        content_list.append(string)
+    content = '\n'.join(content_list)
+    return SPHINX_MULTIDISPATCH_STRING.format(object_name=dispatch_name,level=level, content=content )
 
 
 def get_module_rst_string(module: ModuleType, level: int) -> str:
