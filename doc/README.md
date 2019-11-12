@@ -13,7 +13,7 @@ To compile the GPflow documentation locally:
 
 1. Install doc dependencies
 ```
-pip install sphinx sphinx_rtd_theme numpydoc nbsphinx sphinx_autodoc_typehints
+pip install sphinx sphinx_rtd_theme numpydoc nbsphinx sphinx_autodoc_typehints ipython
 ```
 2. Install pandoc
 ```
