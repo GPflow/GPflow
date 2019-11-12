@@ -19,6 +19,8 @@ import generate_module_rst
 
 def builder_inited(app):
     """This event runs as the builder is inited, and generates the RST"""
+    path = app.builder.version.project.checkout_path(app.builder.version.slug)
+    generate_module_rst.set_global_path(path)
     generate_module_rst.traverse_module_bfs([(gpflow, 0)], set([id(gpflow)]))
 
 def setup(app):

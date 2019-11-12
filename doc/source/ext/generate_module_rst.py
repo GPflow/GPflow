@@ -74,6 +74,9 @@ IGNORE_MODULES = {
 
 DATE_STRING = datetime.strftime(datetime.now(), "%d/%m/%y")
 
+def set_global_path(path):
+    global RST_PATH
+    RST_PATH = path
 
 def is_documentable_module(m: Any) -> bool:
     """Return `True` if m is module to be documented automatically, `False` otherwise.
