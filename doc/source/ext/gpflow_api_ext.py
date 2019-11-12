@@ -12,17 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Custom Extension for Sphinx to generate an documented API for sphinx"""
-import os
-
 import gpflow
 import generate_module_rst
 
 def builder_inited(app):
     """This event runs as the builder is inited, and generates the RST"""
-    on_rtd = os.environ.get('READTHEDOCS', None) == 'True' or True
-    if on_rtd:
-        path = app.srcdir
-        generate_module_rst.set_global_path(path)
+    generate_module_rst.set_global_path(app.srcdir)
     generate_module_rst.traverse_module_bfs([(gpflow, 0)], set([id(gpflow)]))
 
 def setup(app):
