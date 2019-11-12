@@ -60,8 +60,8 @@ def plot_from_samples(m, X, Y, samples, burn, thin):
     Fpred, Ypred = [], []
     num_samples = len(samples[0])
     for i in range(burn, num_samples, thin):
-        hparams = [hp[i] for hp in samples]
-        [var.assign(hp) for var, hp in zip(m.trainable_variables, hparams)]
+        for var, var_samples in zip(m.trainable_variables, samples):
+            var.assign(var_samples[i])
         Ypred.append(m.predict_y(xx)[0])
         Fpred.append(np.squeeze(m.predict_f_samples(xx, 1)))
 
