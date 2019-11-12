@@ -47,11 +47,11 @@ This function uses multiple dispatch, which will depend on the type of argument 
 SPHINX_MULTIDISPATCH_COMPONENT_STRING = '''
 .. code-block:: python
 
-    {fname}( {args} )
-    # dispatch to -> {object_name}(...)
+    {dispatch_name}( {args} )
+    # dispatch to -> {true_name}(...)
 
 
-.. autofunction:: {object_name}
+.. autofunction:: {true_name}
 '''
 
 SPHINX_FUNC_STRING = '''
@@ -144,18 +144,25 @@ def get_component_rst_string(module: ModuleType, component: Callable, level: int
 
     return rst_documentation
 
-def get_multidispatch_string(multidispatch_object, module, level):
+def get_multidispatch_string(md_component: Callable, module: ModuleType, level: int)-> str:
+    """Get the string for a multiple dispatch component. This involves iterating through the
+    possible functions and arguments and creating strings for each of these items.
+
+    :param md_component: the multidispatch component (wrapped around functions)
+    :param module: the module containing the component
+    :param level: the level in nested directory structure
+    """
     content_list = []
-    dispatch_name = f'{module.__name__}.{multidispatch_object.name}'
-    for args, fname in multidispatch_object.funcs.items():
+    dispatch_name = f'{module.__name__}.{md_component.name}'
+    for args, fname in md_component.funcs.items():
 
         arg_names = ', '.join([a.__name__ for a in args])
         alias_name = f'{fname.__module__}.{fname.__name__}'
 
         string = SPHINX_MULTIDISPATCH_COMPONENT_STRING.format(
-            fname=dispatch_name,
+            dispatch_name=dispatch_name,
             args=arg_names,
-            object_name=alias_name)
+            true_name=alias_name)
         content_list.append(string)
     content = '\n'.join(content_list)
     return SPHINX_MULTIDISPATCH_STRING.format(object_name=dispatch_name,level=level, content=content )
