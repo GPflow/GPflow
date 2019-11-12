@@ -11,6 +11,7 @@ from setuptools import find_packages, setup
 
 # Dependencies of GPflow
 requirements = [
+    'gast==0.2.2',
     'numpy>=1.10.0',
     'scipy>=0.18.0',
     'multipledispatch>=0.4.9',
