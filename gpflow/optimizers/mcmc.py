@@ -33,7 +33,6 @@ class SamplingHelper:
         model = <Create GPflow model>
         hmc_helper = SamplingHelper(m.trainable_parameters, lambda: -model.neg_log_marginal_likelihood())
 
-
         target_log_prob_fn = hmc_helper.target_log_prob_fn
         current_state = hmc_helper.current_state
 
@@ -46,7 +45,6 @@ class SamplingHelper:
 
         hmc_samples = run_chain_fn()
         parameter_samples = hmc_helper.convert_samples_to_parameter_values(hmc_samples)
-
 
     Args:
         parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
@@ -88,7 +86,7 @@ class SamplingHelper:
                 log_prob = self._target_log_prob_fn()
 
             @tf.function
-            def grad_fn(dy, variables = None):
+            def grad_fn(dy, variables: Optional[tf.Tensor] = None):
                 grad = tape.gradient(log_prob, variables_list)
                 return grad, [None] * len(variables)
             return log_prob, grad_fn
