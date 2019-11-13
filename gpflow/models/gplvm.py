@@ -45,7 +45,7 @@ class GPLVM(GPR):
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
 
         :param data: y data matrix, size N (number of points) x D (dimensions)
-        :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions)
+        :param latent_dim: the number of latent dimensions (Q)
         :param x_data_mean: latent positions ([N, Q]), for the initialisation of the latent space.
         :param kernel: kernel specification, by default Squared Exponential
         :param mean_function: mean function, by default None.
@@ -83,14 +83,15 @@ class BayesianGPLVM(GPModel):
                  x_prior_var=None):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
+
         :param data: data matrix, size N (number of points) x D (dimensions)
         :param x_data_mean: initial latent positions, size N (number of points) x Q (latent dimensions).
         :param x_data_var: variance of latent positions ([N, Q]), for the initialisation of the latent space.
         :param kernel: kernel specification, by default Squared Exponential
-        :param M: number of inducing points
-        :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions). By default
-        random permutation of x_data_mean.
-        :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as x_data_mean.
+        :param num_inducing_variables: number of inducing points, M
+        :param inducing_variable: matrix of inducing points, size M (inducing points) x Q (latent dimensions). By default
+            random permutation of x_data_mean.
+        :param x_prior_mean: prior mean used in KL term of bound. By default 0. Same size as x_data_mean.
         :param x_prior_var: pripor variance used in KL term of bound. By default 1.
         """
         super().__init__(kernel, likelihoods.Gaussian())
@@ -179,11 +180,13 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False):
+    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False,
+                  full_output_cov: bool = False):
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
         there are notes in the SGPR notebook.
+
         :param predict_at: Point to predict at.
         """
         pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
