@@ -3,6 +3,6 @@ Derivations
 
 .. toctree::
    :maxdepth: 1
-   
-   notebooks/SGPR_notes
-   notebooks/vgp_notes
+
+   notebooks/theory/SGPR_notes
+   notebooks/theory/vgp_notes
