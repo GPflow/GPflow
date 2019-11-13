@@ -33,7 +33,6 @@ class SamplingHelper:
         model = <Create GPflow model>
         hmc_helper = SamplingHelper(m.trainable_parameters, lambda: -model.neg_log_marginal_likelihood())
 
-
         target_log_prob_fn = hmc_helper.target_log_prob_fn
         current_state = hmc_helper.current_state
 
