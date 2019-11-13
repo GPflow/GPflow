@@ -58,6 +58,11 @@ def test_mcmc_helper_target_function():
 
     assert model.log_marginal_likelihood() == target_log_prob_fn()
 
+    # test the wrapped closure
+    log_prob, grad_fn = target_log_prob_fn.__original_wrapped__()
+    grad, nones =  grad_fn(1, [None] * len(model.trainable_parameters))
+    assert len(grad) == len(model.trainable_parameters)
+    assert nones == [None] * len(model.trainable_parameters)
 
 def test_mcmc_sampler_integration():
     data = build_data()
