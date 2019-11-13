@@ -19,7 +19,7 @@ def make_grid(xx, yy):
 def plot(model, X, Y, axes, cmap, N_plot=100):
     xx = np.linspace(X.min() - 1, X.max() + 1, N_plot)[:, None]
     yy = np.linspace(Y.min() - 1, Y.max() + 1, N_plot)
-    pis, mus, sigmas = [v.numpy() for v in model.eval_network(xx)]
+    pis, mus, sigmas = model.eval_network(xx)
 
     probs = norm.pdf(yy[:, None, None], loc=mus[None, :, :], scale=sigmas[None, :, :])
     probs = np.sum(probs * pis[None, :, :], axis=-1)
