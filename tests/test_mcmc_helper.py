@@ -69,24 +69,24 @@ def test_mcmc_sampler_integration():
 
     hmc = tfp.mcmc.HamiltonianMonteCarlo(
         target_log_prob_fn=hmc_helper.target_log_prob_fn,
-        num_leapfrog_steps=10,
+        num_leapfrog_steps=2,
         step_size=0.01
     )
 
     adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
         hmc,
-        num_adaptation_steps=10,
+        num_adaptation_steps=2,
         target_accept_prob=gpflow.utilities.to_default_float(0.75),
         adaptation_rate=0.1
     )
 
-    num_samples = 10
+    num_samples = 5
 
     @tf.function
     def run_chain_fn():
         return tfp.mcmc.sample_chain(
             num_results=num_samples,
-            num_burnin_steps=30,
+            num_burnin_steps=2,
             current_state=hmc_helper.current_state,
             kernel=adaptive_hmc,
             trace_fn=lambda _, pkr: pkr.inner_results.is_accepted
