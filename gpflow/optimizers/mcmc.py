@@ -46,7 +46,6 @@ class SamplingHelper:
         hmc_samples = run_chain_fn()
         parameter_samples = hmc_helper.convert_samples_to_parameter_values(hmc_samples)
 
-
     Args:
         parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
         target_log_prob_fn: Python callable which represents log-density under the target distribution.
