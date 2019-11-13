@@ -88,7 +88,7 @@ class SamplingHelper:
                 log_prob = self._target_log_prob_fn()
 
             @tf.function
-            def grad_fn(dy, variables = None):
+            def grad_fn(dy, variables: Optional[tf.Tensor] = None):
                 grad = tape.gradient(log_prob, variables_list)
                 return grad, [None] * len(variables)
             return log_prob, grad_fn
