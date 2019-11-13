@@ -4,9 +4,8 @@ runtest: &runtest
     - run:
         name: Install GPflow
         command: |
-          pip install -U pip
-          pip install -e .
-          pip install -r tests_requirements.txt
+          pip install -r requirements_tests.txt
+          python setup.py install
     - run:
         name: Run tests
         command: |
@@ -33,16 +32,10 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
-  example-test:
-    <<: *runtest
-    docker:
-      - image: awav/tensorflow:2.0-preview
-        environment:
-          PYTEST_FILTER: examples
 
   deploy:
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:1.14.0
     steps:
       - checkout
       - run:
@@ -72,6 +65,7 @@ jobs:
           command: |
             twine upload dist/*
 
+
 workflows:
   version: 2.1
   build_test_and_deploy:
@@ -84,16 +78,12 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
-      # - example-test:
-      #     filters:
-      #       tags:
-      #         only: /^v[0-9]+(\.[0-9]+)*/
-      # - deploy:
-      #     requires:
-      #       - unit-test
-      #       - notebook-test
-      #     filters:
-      #       tags:
-      #         only: /^v[0-9]+(\.[0-9]+)*/
-      #       branches:
-      #         ignore: /.*/
+      - deploy:
+          requires:
+            - unit-test
+            - notebook-test
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
