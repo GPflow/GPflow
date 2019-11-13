@@ -2,8 +2,10 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.config import default_float
+
+from ..base import Parameter
+from ..utilities import positive
 from .base import Kernel
-from ..base import Parameter, positive
 
 
 class ArcCosine(Kernel):
@@ -26,13 +28,7 @@ class ArcCosine(Kernel):
 
     implemented_orders = {0, 1, 2}
 
-    def __init__(self,
-                 order=0,
-                 variance=1.0,
-                 weight_variances=1.,
-                 bias_variance=1.,
-                 active_dims=None,
-                 ard=None):
+    def __init__(self, order=0, variance=1.0, weight_variances=1., bias_variance=1., active_dims=None, ard=None):
         """
         - input_dim is the dimension of the input to the kernel
         - order specifies the activation function of the neural network
@@ -57,16 +53,12 @@ class ArcCosine(Kernel):
         self.bias_variance = Parameter(bias_variance, transform=positive())
         # weight_variances, self.ard = self._validate_ard_shape("weight_variances", weight_variances, ard)
         self.ard = ard
-        self.weight_variances = Parameter(weight_variances,
-                                          transform=positive())
+        self.weight_variances = Parameter(weight_variances, transform=positive())
 
     def _weighted_product(self, X, X2=None):
         if X2 is None:
-            return tf.reduce_sum(self.weight_variances * tf.square(X),
-                                 axis=1) + self.bias_variance
-        return tf.linalg.matmul(
-            (self.weight_variances * X), X2,
-            transpose_b=True) + self.bias_variance
+            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+        return tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
 
     def _J(self, theta):
         """
@@ -78,7 +70,7 @@ class ArcCosine(Kernel):
         elif self.order == 1:
             return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)
         elif self.order == 2:
-            return 3. * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (1. + 2. * tf.cos(theta) ** 2)
+            return 3. * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (1. + 2. * tf.cos(theta)**2)
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -106,7 +98,7 @@ class ArcCosine(Kernel):
 
         X_product = self._weighted_product(X)
         const = tf.cast((1. / np.pi) * self._J(0.), default_float())
-        return self.variance * const * X_product ** self.order
+        return self.variance * const * X_product**self.order
 
 
 class Periodic(Kernel):
@@ -131,12 +123,7 @@ class Periodic(Kernel):
     (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
     hyperparameter).
     """
-
-    def __init__(self,
-                 period=1.0,
-                 variance=1.0,
-                 lengthscale=1.0,
-                 active_dims=None):
+    def __init__(self, period=1.0, variance=1.0, lengthscale=1.0, active_dims=None):
         # No ard support for lengthscale or period yet
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
@@ -206,8 +193,7 @@ class Coregion(Kernel):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.linalg.matmul(self.W, self.W,
-                             transpose_b=True) + tf.linalg.diag(self.kappa)
+        B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X, presliced=False):

@@ -8,9 +8,8 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tabulate import tabulate
 
-
 from ..base import Parameter
-from ..config import summary_fmt
+from ..config import default_summary_fmt, default_float, default_int
 
 __all__ = [
     "set_trainable",
@@ -20,7 +19,9 @@ __all__ = [
     "deepcopy_components",
     "leaf_components",
     "parameter_dict",
-    "read_values"
+    "read_values",
+    "to_default_float",
+    "to_default_int",
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -28,6 +29,14 @@ State = Any
 Path = str
 Accumulator = Tuple[Path, State]
 TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
+
+
+def to_default_int(x):
+    return tf.cast(x, dtype=default_int())
+
+
+def to_default_float(x):
+    return tf.cast(x, dtype=default_float())
 
 
 def set_trainable(model: tf.Module, flag: bool):
@@ -118,7 +127,7 @@ def print_summary(module: tf.Module, fmt: str = None):
     """
     Prints a summary of the parameters and variables contained in a tf.Module.
     """
-    fmt = fmt if fmt is not None else summary_fmt()
+    fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
         from IPython.core.display import display, HTML
         tab = tabulate_module_summary(module, "html")
@@ -143,10 +152,7 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
     column_values = [[
         path,
         get_name(variable),
-        get_transform(variable),
-        variable.trainable,
-        variable.shape,
-        variable.dtype.name,
+        get_transform(variable), variable.trainable, variable.shape, variable.dtype.name,
         _str_tensor_value(variable.numpy())
     ] for path, variable in merged_leaf_components.items()]
     return tabulate(column_values, headers=column_names, tablefmt=tablefmt)
@@ -157,19 +163,22 @@ def leaf_components(input: tf.Module):
 
 
 def _merge_leaf_components(
-        input: Dict[str, Union[tf.Tensor, Parameter]]) -> Dict[str, Union[tf.Tensor, Parameter]]:
+        input: Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]
+) -> Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]:
+
     input_values = set(
-        [value.experimental_ref() if isinstance(value, tf.Variable) else value for value in input.values()]
+        [value.experimental_ref() for value in input.values()]
     )
     if len(input_values) == len(input):
         return input
-    tmp_dict = dict()
-    for key, item in input.items():
-        if item in tmp_dict:
-            tmp_dict[item] = f"{tmp_dict[item]}\n{key}"
+    tmp_dict = dict()  # Type: Dict[ref, str]
+    for key, variable in input.items():
+        ref = variable.experimental_ref()
+        if ref in tmp_dict:
+            tmp_dict[ref] = f"{tmp_dict[ref]}\n{key}"
         else:
-            tmp_dict[item] = key
-    return {key: item for item, key in tmp_dict.items()}
+            tmp_dict[ref] = key
+    return {key: ref.deref() for ref, key in tmp_dict.items()}
 
 
 def _get_leaf_components(input_module: tf.Module):
@@ -202,7 +211,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
     """
-    target_types = (tfp.bijectors.Bijector,)
+    target_types = (tfp.bijectors.Bijector, )
     accumulator = ('', None)
 
     def clear_bijector(bijector, _, state):
@@ -225,9 +234,7 @@ def deepcopy_components(input_module: tf.Module) -> tf.Module:
     return deepcopy(reset_cache_bijectors(input_module))
 
 
-def traverse_module(m: TraverseInput,
-                    acc: Accumulator,
-                    update_cb: TraverseUpdateCallable,
+def traverse_module(m: TraverseInput, acc: Accumulator, update_cb: TraverseUpdateCallable,
                     target_types: tuple) -> Accumulator:
     """
     Recursively traverses `m`, accumulating in `acc` a path and a state until it finds an object of type
