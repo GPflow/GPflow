@@ -180,15 +180,17 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False,
-                  full_output_cov: bool = False):
+    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
         there are notes in the SGPR notebook.
 
+        Note: This model does not allow full output covariances.
+
         :param predict_at: Point to predict at.
         """
+        assert full_output_cov == False
         pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
 
         y_data = self.data
