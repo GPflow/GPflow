@@ -1,8 +1,6 @@
-<!-- <div style="text-align:center"> -->
-<p align="center">
+<div style="text-align:center">
 <img width="500" height="200" src="./gpflow_logo.svg">
-</p>
-<!-- </div> -->
+</div>
 
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
