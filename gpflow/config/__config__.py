@@ -139,16 +139,15 @@ def set_default_jitter(value: float):
     set_config(replace(config(), jitter=value))
 
 
-_VALID_POSITIVE_BIJECTORS = {"exp", "softplus"}
-
-
 def set_default_positive_bijector(value: str):
     if not isinstance(value, str):
         raise TypeError(f"Expected a string, but got a {type(value)}")
 
+    valid_bijectors = {"exp", "softplus"}
+
     value = value.lower()
-    if value not in _VALID_POSITIVE_BIJECTORS:
-        raise ValueError(f"'{value}' not found in {sorted(_VALID_POSITIVE_BIJECTORS)}")
+    if value not in valid_bijectors:
+        raise ValueError(f"'{value}' not found in {sorted(valid_bijectors)}")
 
     set_config(replace(config(), positive_bijector=value))
 
