@@ -8,9 +8,24 @@ GPflow Documentation
 
 .. toctree::
    :maxdepth: 2
+   :caption: Intro:
 
    intro
-   Examples and tutorials <https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true>
-   Tips and Tricks <https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/tips_and_tricks.ipynb>
-   apiAndArchitecture
+   notebooks/intro
+   notebooks/tips_and_tricks
+   notebooks/intro_to_gpflow2
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Examples:
+   :glob:
+
+   notebooks_file
    derivations
+
+.. toctree::
+   :maxdepth: 3
+   :glob:
+   :caption: API:
+
+   gpflow/index

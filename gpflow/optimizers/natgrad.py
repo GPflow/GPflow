@@ -164,6 +164,8 @@ class NaturalGradient(tf.optimizers.Optimizer):
         else:
             nat_dL_xi1, nat_dL_xi2 = dL_deta1, dL_deta2
 
+        del tape  # Remove "persitent" tape
+
         xi1, xi2 = xi_transform.meanvarsqrt_to_xi(q_mu, q_sqrt)
         xi1_new = xi1 - self.gamma * nat_dL_xi1
         xi2_new = xi2 - self.gamma * nat_dL_xi2
