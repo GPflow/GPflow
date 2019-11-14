@@ -41,10 +41,10 @@ def positive(lower: Optional[float] = None,
     return bijector
 
 
-def _get_base_positive_bijector(bijector_name: Optional[str] = None):
-    if bijector_name is None:
-        bijector_name = config.default_positive_bijector()
-    return _POSITIVE_BIJECTOR_MAP[bijector_name]()
+def _get_base_positive_bijector(name: Optional[str] = None) -> tfp.bijectors.Bijector:
+    if name is None:
+        name = config.default_positive_bijector()
+    return _POSITIVE_BIJECTOR_MAP[name]()
 
 
 def triangular() -> tfp.bijectors.Bijector:
