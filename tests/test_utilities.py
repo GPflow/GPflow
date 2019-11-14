@@ -16,7 +16,7 @@ def test_positive_lower(env_lower, override_lower):
     with as_context(Config(positive_bijector="softplus", positive_minimum=env_lower)):
         bijector = positive(lower=override_lower)
         assert isinstance(bijector, tfp.bijectors.Chain)
-        assert np.isclose(bijector.bijectors[0].shift, expected_lower)
+        assert np.isclose(bijector.bijectors[1].shift, expected_lower)
 
 
 @pytest.mark.parametrize("env_bijector, override_bijector, expected_class", [

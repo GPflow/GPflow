@@ -24,16 +24,14 @@ def positive(lower: Optional[float] = None,
     :param bijector: bijector method override (defaults to config.default_positive_bijector())
     :returns: a bijector instance
     """
+    bijector = _get_base_positive_bijector(bijector)
     if lower is None:
         lower = config.default_positive_minimum()
-    if lower is None:
-        return _get_base_positive_bijector(bijector)
-
-    shift = to_default_float(lower)
-    return tfp.bijectors.Chain([
-        tfp.bijectors.AffineScalar(shift=shift),
-        _get_base_positive_bijector(bijector),
-    ])
+    if lower is not None:
+        # Apply lower bound shift after applying base positive bijector
+        shift = tfp.bijectors.AffineScalar(shift=to_default_float(lower))
+        bijector = tfp.bijectors.Chain([bijector, shift])
+    return bijector
 
 
 def _get_base_positive_bijector(bijector_name: Optional[str] = None):
