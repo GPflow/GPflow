@@ -1,5 +1,5 @@
 <div style="text-align:center">
-<img align="center" width="500" height="200" src="./gpflow_logo.svg">
+<img width="500" height="200" src="./gpflow_logo.png">
 </div>
 
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
