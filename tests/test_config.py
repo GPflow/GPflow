@@ -17,9 +17,10 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-from gpflow.config import (default_float, default_int, default_jitter, set_default_float, set_default_int,
-                           set_default_jitter, set_default_summary_fmt, default_summary_fmt,
-                           set_default_positive_bijector, default_positive_bijector)
+from gpflow.config import (default_float, default_int, default_jitter, set_default_float,
+                           set_default_int, set_default_jitter, set_default_summary_fmt,
+                           default_summary_fmt, set_default_positive_bijector,
+                           default_positive_bijector)
 from gpflow.utilities import to_default_float, to_default_int
 
 
