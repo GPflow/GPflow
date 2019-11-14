@@ -18,7 +18,8 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.config import (default_float, default_int, default_jitter, set_default_float, set_default_int,
-                           set_default_jitter, set_default_summary_fmt, default_summary_fmt)
+                           set_default_jitter, set_default_summary_fmt, default_summary_fmt,
+                           set_default_positive_bijector, default_positive_bijector)
 from gpflow.utilities import to_default_float, to_default_int
 
 
@@ -58,6 +59,21 @@ def test_jitter_errorcheck():
         set_default_jitter("not a float")
     with pytest.raises(ValueError):
         set_default_jitter(-1e-10)
+
+
+@pytest.mark.parametrize("error_type, error_msg, value", [
+    (TypeError, r"Expected a string, but got a <class 'float'>", 1.0),
+    (ValueError, r"'unknown' not found in \['exp', 'softplus'\]", 'unknown'),
+])
+def test_positive_bijector_errors(error_type, error_msg, value):
+    with pytest.raises(error_type, match=error_msg):
+        set_default_positive_bijector(value)
+
+
+@pytest.mark.parametrize("value", ["exp", "softplus"])
+def test_positive_bijector_setting(value):
+    set_default_positive_bijector(value)
+    assert default_positive_bijector() == value
 
 
 def test_default_summary_fmt_setting():

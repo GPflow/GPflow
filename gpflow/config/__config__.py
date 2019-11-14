@@ -144,11 +144,11 @@ _VALID_POSITIVE_BIJECTORS = {"exp", "softplus"}
 
 def set_default_positive_bijector(value: str):
     if not isinstance(value, str):
-        TypeError(f"Expected a string, but got a {type(value)}")
+        raise TypeError(f"Expected a string, but got a {type(value)}")
 
     value = value.lower()
     if value not in _VALID_POSITIVE_BIJECTORS:
-        ValueError(f"Value '{value}' not in {sorted(_VALID_POSITIVE_BIJECTORS)}")
+        raise ValueError(f"'{value}' not found in {sorted(_VALID_POSITIVE_BIJECTORS)}")
 
     set_config(replace(config(), positive_bijector=value))
 
