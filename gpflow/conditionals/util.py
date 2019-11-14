@@ -15,8 +15,10 @@ def base_conditional(Kmn: tf.Tensor,
     """
     Given a g1 and g2, and distribution p and q such that
       p(g2) = N(g2; 0, Kmm)
+
       p(g1) = N(g1; 0, Knn)
-      p(g1 | g2) = N(g1;0,Knm)
+
+      p(g1 | g2) = N(g1; Knm(Kmm^-1)g2, Knn - Knm(Kmm^-1)Kmn)
 
     And
       q(g2) = N(g2; f, q_sqrt * q_sqrt^T)
