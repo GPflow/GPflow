@@ -33,12 +33,6 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
-  example-test:
-    <<: *runtest
-    docker:
-      - image: awav/tensorflow:2.0-preview
-        environment:
-          PYTEST_FILTER: examples
 
   deploy:
     docker:
@@ -72,6 +66,7 @@ jobs:
           command: |
             twine upload dist/*
 
+
 workflows:
   version: 2.1
   build_test_and_deploy:
@@ -84,16 +79,12 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
-      # - example-test:
-      #     filters:
-      #       tags:
-      #         only: /^v[0-9]+(\.[0-9]+)*/
-      # - deploy:
-      #     requires:
-      #       - unit-test
-      #       - notebook-test
-      #     filters:
-      #       tags:
-      #         only: /^v[0-9]+(\.[0-9]+)*/
-      #       branches:
-      #         ignore: /.*/
+      - deploy:
+          requires:
+            - unit-test
+            - notebook-test
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
