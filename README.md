@@ -18,26 +18,34 @@ The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contribut
   Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
 
 
-## What does GPflow do?
+## What does GPflow 2.0 do?
 
-GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), and the docs have further [discussion of the comparison](http://gpflow.readthedocs.io/en/develop/intro.html#what-s-the-difference-between-gpy-and-gpflow).
+GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
 
 GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python **3.6**.
 
 
-## Install GPflow 2.0 alpha version
+## Install GPflow 2.0
 
-With the release of `tensorflow` 2.0 and `tensorflow-probability` 0.8, you should
-only need to run
+- From source
 
-```bash
-pip install -e .
-```
+  With the release of _TensorFlow 2.0_ and _Tensorflow Probability_ 0.8, you should
+  only need to run
 
-in a check-out of the `develop` branch of the GPflow github repository.
+  ```bash
+  pip install -e .
+  ```
+
+  in a check-out of the `develop` branch of the GPflow github repository.
+
+- Using `pip`
+
+  ```bash
+  pip install gpflow
+  ```
 
 
-## Getting Started
+## Getting Started with GPflow 2.0
 
 There is an "Intro to GPflow 2" Jupyter notebook in `doc/source/notebooks/intro_to_gpflow2.ipynb". Not all tutorial notebooks may be running on `gpflow2` already, but we are working on it!
 
