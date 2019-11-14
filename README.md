@@ -1,7 +1,7 @@
 # GPflow
 
 
-![](./gpflow_logo.png)
+<img src="./gpflow_logo.svg">
 
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
