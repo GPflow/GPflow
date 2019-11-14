@@ -42,4 +42,8 @@ def _get_base_positive_bijector(bijector_name: Optional[str] = None):
     return _POSITIVE_BIJECTOR_MAP[bijector_name]()
 
 
-triangular = tfp.bijectors.FillTriangular
+def triangular():
+    """
+    Returns instance of a triangular bijector.
+    """
+    return tfp.bijectors.FillTriangular()
