@@ -29,8 +29,6 @@ from nbconvert.preprocessors.execute import CellExecutionError
 BLACKLISTED_NOTEBOOKS = [
     "mcmc.ipynb",  # PR #1100
 
-    "gp_nn.ipynb",
-  
     "tips_and_tricks.ipynb",  # requires a big re-write but contains some useful
     # sections such as saving&loading...
 ]
