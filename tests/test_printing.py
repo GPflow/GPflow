@@ -333,7 +333,6 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
     (B, example_module_list_variable_print_string),
 ])
 def test_print_summary_output_string(module_callable, expected_param_print_string):
-    
     assert tabulate_module_summary(module_callable()) == expected_param_print_string
 
 
