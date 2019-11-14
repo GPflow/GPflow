@@ -51,7 +51,7 @@ There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develo
 
 - **GPflow 1.0**
 
-  *We stop the support for GPflow based on TensorFlow 1.0. We accept bug fixes only to GPflow   1.0 in **develop-1.0** branch. Latest available release is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1).*
+  *We have stopped development and support for GPflow based on TensorFlow 1.0. We now accept only bug fixes to GPflow 1.0 in the **develop-1.0** branch. The latest available release is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1).*
 
 
 ## Getting help
