@@ -31,7 +31,7 @@ class _Values(enum.Enum):
     INT = np.int32
     FLOAT = np.float64
     POSITIVE_BIJECTOR = "softplus"
-    POSITIVE_MINIMUM = None
+    POSITIVE_MINIMUM = 1e-10
     SUMMARY_FMT = None
     JITTER = 1e-6
 

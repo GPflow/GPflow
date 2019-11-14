@@ -186,32 +186,32 @@ example_dag_module_param_dict = {
 }
 
 compose_kernel_param_print_string = """\
-name                                       class      transform    trainable    shape    dtype      value\n\
------------------------------------------  ---------  -----------  -----------  -------  -------  -------\n\
-Product.kernels[0].kernels[0].variance     Parameter  Softplus     True         ()       float64        1\n\
-Product.kernels[0].kernels[0].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
-Product.kernels[0].kernels[1].variance     Parameter  Softplus     True         ()       float64        1\n\
-Product.kernels[0].kernels[1].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
-Product.kernels[1].kernels[0].variance     Parameter  Softplus     True         ()       float64        1\n\
-Product.kernels[1].kernels[0].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
-Product.kernels[1].kernels[1].variance     Parameter  Softplus     True         ()       float64        1\n\
-Product.kernels[1].kernels[1].lengthscale  Parameter  Softplus     False        ()       float64        2"""
+name                                       class      transform         trainable    shape    dtype      value\n\
+-----------------------------------------  ---------  ----------------  -----------  -------  -------  -------\n\
+Product.kernels[0].kernels[0].variance     Parameter  Softplus + Shift  True         ()       float64        1\n\
+Product.kernels[0].kernels[0].lengthscale  Parameter  Softplus + Shift  False        ()       float64        2\n\
+Product.kernels[0].kernels[1].variance     Parameter  Softplus + Shift  True         ()       float64        1\n\
+Product.kernels[0].kernels[1].lengthscale  Parameter  Softplus + Shift  False        ()       float64        2\n\
+Product.kernels[1].kernels[0].variance     Parameter  Softplus + Shift  True         ()       float64        1\n\
+Product.kernels[1].kernels[0].lengthscale  Parameter  Softplus + Shift  False        ()       float64        2\n\
+Product.kernels[1].kernels[1].variance     Parameter  Softplus + Shift  True         ()       float64        1\n\
+Product.kernels[1].kernels[1].lengthscale  Parameter  Softplus + Shift  False        ()       float64        2"""
 
 kernel_param_print_string = """\
-name                            class      transform    trainable    shape    dtype      value\n\
-------------------------------  ---------  -----------  -----------  -------  -------  -------\n\
-SquaredExponential.variance     Parameter  Softplus     True         ()       float64        1\n\
-SquaredExponential.lengthscale  Parameter  Softplus     False        ()       float64        2"""
+name                            class      transform         trainable    shape    dtype      value\n\
+------------------------------  ---------  ----------------  -----------  -------  -------  -------\n\
+SquaredExponential.variance     Parameter  Softplus + Shift  True         ()       float64        1\n\
+SquaredExponential.lengthscale  Parameter  Softplus + Shift  False        ()       float64        2"""
 
 model_gp_param_print_string = """\
-name                      class      transform    trainable    shape    dtype    value\n\
-------------------------  ---------  -----------  -----------  -------  -------  --------\n\
-SVGP.kernel.variance      Parameter  Softplus     True         ()       float64  1.0\n\
-SVGP.kernel.lengthscale   Parameter  Softplus     False        ()       float64  2.0\n\
-SVGP.likelihood.variance  Parameter  Softplus     True         ()       float64  1.0\n\
-SVGP.inducing_variable.Z  Parameter               True         (10, 1)  float64  [[0.5...\n\
-SVGP.q_mu                 Parameter               False        (10, 1)  float64  [[0....\n\
-SVGP.q_sqrt               Parameter  Softplus     True         (10, 1)  float64  [[1...."""
+name                      class      transform         trainable    shape    dtype    value\n\
+------------------------  ---------  ----------------  -----------  -------  -------  --------\n\
+SVGP.kernel.variance      Parameter  Softplus + Shift  True         ()       float64  1.0\n\
+SVGP.kernel.lengthscale   Parameter  Softplus + Shift  False        ()       float64  2.0\n\
+SVGP.likelihood.variance  Parameter  Softplus + Shift  True         ()       float64  1.0\n\
+SVGP.inducing_variable.Z  Parameter                    True         (10, 1)  float64  [[0.5...\n\
+SVGP.q_mu                 Parameter                    False        (10, 1)  float64  [[0....\n\
+SVGP.q_sqrt               Parameter  Softplus + Shift  True         (10, 1)  float64  [[1...."""
 
 example_tf_module_variable_print_string = """\
 name             class             transform    trainable    shape      dtype    value\n\
@@ -333,6 +333,7 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
     (B, example_module_list_variable_print_string),
 ])
 def test_print_summary_output_string(module_callable, expected_param_print_string):
+    
     assert tabulate_module_summary(module_callable()) == expected_param_print_string
 
 
