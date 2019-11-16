@@ -18,52 +18,58 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, ard=None, **kwargs):
+    def __init__(self, variance=1.0, lengthscale=1.0, **kwargs):
         """
-        - input_dim is the dimension of the input to the kernel
-        - variance is the (initial) value for the variance parameter
-        - lengthscale is the initial value for the lengthscale parameter
-          defaults to 1.0 (ard=False) or np.ones(input_dim) (ard=True).
-        - if ard is not None, it specifies whether the kernel has one
-          lengthscale per dimension (ard=True) or a single lengthscale
-          (ard=False). Otherwise, inferred from shape of lengthscale.
-        - kwargs, accepts `name` and `active_dims`, which is a list of
-          length input_dim which controls which columns of X are used.
+        :param variance: the (initial) value for the variance parameter
+        :param lengthscale: the (initial) value for the lengthscale parameter(s),
+            to induce ARD behaviour this must be initialised as an array the same
+            length as the the number of active dimensions e.g. [1., 1., 1.]
+        :param kwargs: accepts `name` and `active_dims`, which is a list of
+            length input_dim which controls which columns of X are used
         """
         for kwarg in kwargs:
-            if kwarg not in ['name', 'active_dims']:
+            if kwarg not in {'name', 'active_dims'}:
                 raise TypeError('Unknown keyword argument:', kwarg)
 
         super().__init__(**kwargs)
-        self.ard = ard
-        # lengthscale, self.ard = self._validate_ard_shape("lengthscale", lengthscale, ard)
         self.variance = Parameter(variance, transform=positive())
         self.lengthscale = Parameter(lengthscale, transform=positive())
+        self._validate_ard_active_dims(self.lengthscale)
 
-    def scaled_euclid_dist(self, X, X2):
+    @property
+    def ard(self) -> bool:
         """
-        Returns |(X - X2ᵀ)/lengthscale| (L2-norm).
+        Whether ARD behaviour is active.
         """
-        X = X / self.lengthscale
-        X2 = X2 / self.lengthscale if X2 is not None else X2
-        r2 = square_distance(X, X2)
-        # Clipping around the (single) float precision which is ~1e-45.
-        return tf.sqrt(tf.maximum(r2, 1e-40))
+        return self.lengthscale.shape.ndims > 0
+
+    def scaled_squared_euclid_dist(self, X, X2=None):
+        """
+        Returns ||(X - X2ᵀ) / ℓ||² i.e. squared L2-norm.
+        """
+        X_scaled = X / self.lengthscale
+        X2_scaled = X2 / self.lengthscale if X2 is not None else X2
+        return square_distance(X_scaled, X2_scaled)
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
             X, X2 = self.slice(X, X2)
-        r = self.scaled_euclid_dist(X, X2)
-        return self.K_r(r)
+        r2 = self.scaled_squared_euclid_dist(X, X2)
+        return self.K_r2(r2)
 
     def K_diag(self, X, presliced=False):
         return tf.fill((X.shape[:-1]), tf.squeeze(self.variance))
 
-    def K_r(self, r):
+    def K_r2(self, r2):
         """
-        Returns the kernel evaluated on `r`, which is the scaled Euclidean distance
-        Should operate element-wise on r
+        Returns the kernel evaluated on r² (`r2`), which is the squared scaled Euclidean distance
+        Should operate element-wise on r²
         """
+        if hasattr(self, "K_r"):
+            # Clipping around the (single) float precision which is ~1e-45.
+            r = tf.sqrt(tf.maximum(r2, 1e-40))
+            return self.K_r(r)  # pylint: disable=no-member
+
         raise NotImplementedError
 
 
@@ -80,12 +86,8 @@ class SquaredExponential(Stationary):
     Functions drawn from a GP with this kernel are infinitely differentiable!
     """
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
-        X_scaled = X / self.lengthscale
-        X2_scaled = X2 / self.lengthscale if X2 is not None else X2
-        return self.variance * tf.exp(-0.5 * square_distance(X_scaled, X2_scaled))
+    def K_r2(self, r2):
+        return self.variance * tf.exp(-0.5 * r2)
 
 
 class RationalQuadratic(Stationary):
@@ -101,16 +103,12 @@ class RationalQuadratic(Stationary):
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, alpha=1.0, active_dims=None, ard=None):
-        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims, ard=ard)
+    def __init__(self, variance=1.0, lengthscale=1.0, alpha=1.0, active_dims=None):
+        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims)
         self.alpha = Parameter(alpha, transform=positive())
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
-        X_scaled = X / self.lengthscale
-        X2_scaled = X2 / self.lengthscale if X2 is not None else X2
-        return self.variance * (1 + 0.5 * square_distance(X_scaled, X2_scaled) / self.alpha)**(-self.alpha)
+    def K_r2(self, r2):
+        return self.variance * (1 + 0.5 * r2 / self.alpha) ** (-self.alpha)
 
 
 class Exponential(Stationary):
@@ -143,7 +141,7 @@ class Matern32(Stationary):
     The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once
     differentiable. The kernel equation is
 
-    k(r) =  σ² (1 + √3r) exp{-√3 r}
+    k(r) = σ² (1 + √3r) exp{-√3 r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
@@ -160,7 +158,7 @@ class Matern52(Stationary):
     The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice
     differentiable. The kernel equation is
 
-    k(r) =  σ² (1 + √5r + 5/3r²) exp{-√5 r}
+    k(r) = σ² (1 + √5r + 5/3r²) exp{-√5 r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
@@ -177,7 +175,7 @@ class Cosine(Stationary):
     The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids
     (with a random phase).  The kernel equation is
 
-        k(r) =  σ² cos{r}
+        k(r) = σ² cos{r}
 
     where:
     r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,

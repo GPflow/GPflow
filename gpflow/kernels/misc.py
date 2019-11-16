@@ -1,9 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow.config import default_float
-
 from ..base import Parameter
+from ..config import default_float
 from ..utilities import positive
 from .base import Kernel
 
@@ -28,20 +27,17 @@ class ArcCosine(Kernel):
 
     implemented_orders = {0, 1, 2}
 
-    def __init__(self, order=0, variance=1.0, weight_variances=1., bias_variance=1., active_dims=None, ard=None):
+    def __init__(self, order=0, variance=1.0, weight_variances=1., bias_variance=1., active_dims=None):
         """
-        - input_dim is the dimension of the input to the kernel
-        - order specifies the activation function of the neural network
-          the function is a rectified monomial of the chosen order.
-        - variance is the initial value for the variance parameter
-        - weight_variances is the initial value for the weight_variances parameter
-          defaults to 1.0 (ard=False) or np.ones(input_dim) (ard=True).
-        - bias_variance is the initial value for the bias_variance parameter
-          defaults to 1.0.
-        - active_dims is a list of length input_dim which controls which
-          columns of X are used.
-        - ard specifies whether the kernel has one weight_variance per dimension
-          (ard=True) or a single weight_variance (ard=False).
+        :param order: specifies the activation function of the neural network
+          the function is a rectified monomial of the chosen order
+        :param variance: the (initial) value for the variance parameter
+        :param weight_variances: the (initial) value for the weight_variances parameter,
+            to induce ARD behaviour this must be initialised as an array the same
+            length as the the number of active dimensions e.g. [1., 1., 1.]
+        :param bias_variance: the (initial) value for the bias_variance parameter
+            defaults to 1.0
+        :param active_dims: a slice or list specifying which columns of X are used
         """
         super().__init__(active_dims)
 
@@ -51,9 +47,15 @@ class ArcCosine(Kernel):
 
         self.variance = Parameter(variance, transform=positive())
         self.bias_variance = Parameter(bias_variance, transform=positive())
-        # weight_variances, self.ard = self._validate_ard_shape("weight_variances", weight_variances, ard)
-        self.ard = ard
         self.weight_variances = Parameter(weight_variances, transform=positive())
+        self._validate_ard_active_dims(self.weight_variances)
+
+    @property
+    def ard(self) -> bool:
+        """
+        Whether ARD behaviour is active.
+        """
+        return self.weight_variances.shape.ndims > 0
 
     def _weighted_product(self, X, X2=None):
         if X2 is None:
@@ -112,6 +114,7 @@ class Periodic(Kernel):
     the mapping u=(cos(x), sin(x)).
 
     The resulting periodic kernel can be expressed as:
+
         k(r) =  σ² exp{ -0.5 sin²(π r / γ) / ℓ²}
 
     where:
@@ -120,8 +123,8 @@ class Periodic(Kernel):
     σ² is the variance parameter,
     γ is the period parameter.
 
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
-    hyperparameter).
+    (note that usually we have a factor of 4 instead of 0.5 in front but this is
+    absorbed into lengthscale hyperparameter).
     """
     def __init__(self, period=1.0, variance=1.0, lengthscale=1.0, active_dims=None):
         # No ard support for lengthscale or period yet

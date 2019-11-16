@@ -20,7 +20,7 @@ in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 
 import abc
 from functools import partial, reduce
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -31,9 +31,12 @@ class Kernel(tf.Module):
     The basic kernel class. Handles active dims.
     """
 
-    def __init__(self, active_dims: slice = None, name: str = None):
+    def __init__(self,
+                 active_dims: Optional[Union[slice, list]] = None, 
+                 name: Optional[str] = None):
         """
         :param active_dims: active dimensions, has the slice type.
+        :param name: optional kernel name.
         """
         super().__init__(name=name)
         if isinstance(active_dims, list):
@@ -116,6 +119,19 @@ class Kernel(tf.Module):
                              tf.concat([cov_shape[:-2], [ndims, ndims]], 0))
 
         return cov
+
+    def _validate_ard_active_dims(self, ard_parameter):
+        """
+        Validate that ARD parameter matches the number of active_dims (provided active_dims
+        has been specified as an array).
+        """
+        if self.active_dims is None or isinstance(self.active_dims, slice):
+            # Can only validate parameter if active_dims is an array
+            return
+
+        if ard_parameter.shape.rank > 0 and ard_parameter.shape[0] != len(self.active_dims):
+            raise ValueError(f"Size of `active_dims` {self.active_dims} does not match "
+                             f"size of ard parameter ({ard_parameter.shape[0]})")
 
     @abc.abstractmethod
     def K(self, X, Y=None, presliced=False):

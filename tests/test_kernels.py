@@ -19,7 +19,8 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.config import default_float
-from gpflow.kernels import (SquaredExponential, ArcCosine, Linear)
+from gpflow.kernels import SquaredExponential, ArcCosine, Linear
+
 
 rng = np.random.RandomState(1)
 
@@ -129,16 +130,11 @@ def test_rq_1d(variance, lengthscale):
 
 
 def _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
-                               order, ard, X):
+                               order, X):
     kernel = gpflow.kernels.ArcCosine(order=order,
                                       variance=variance,
                                       weight_variances=weight_variances,
-                                      bias_variance=bias_variance,
-                                      ard=ard)
-
-    if weight_variances is None:
-        weight_variances = 1.
-
+                                      bias_variance=bias_variance)
     gram_matrix = kernel(X)
     reference_gram_matrix = _ref_arccosine(X, order, weight_variances,
                                            bias_variance, variance)
@@ -146,32 +142,21 @@ def _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
 
 
 @pytest.mark.parametrize('order', gpflow.kernels.ArcCosine.implemented_orders)
-@pytest.mark.parametrize('D', [1, 3])
-@pytest.mark.parametrize('N, weight_variances, bias_variance, variance',
-                         [[3, 1.7, 0.6, 2.3]])
+@pytest.mark.parametrize('D, weight_variances',
+                         [[1, 1.7], [3, 1.7], [3, (1.1, 1.7, 1.9)]])
+@pytest.mark.parametrize('N, bias_variance, variance',
+                         [[3, 0.6, 2.3]])
 def test_arccosine_1d_and_3d(order, D, N, weight_variances, bias_variance,
                              variance):
-    ard = False if D == 1 else True
     X_data = rng.randn(N, D)
     _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
-                               order, ard, X_data)
+                               order, X_data)
 
 
 @pytest.mark.parametrize('order', [42])
 def test_arccosine_non_implemented_order(order):
     with pytest.raises(ValueError):
         gpflow.kernels.ArcCosine(order=order)
-
-
-@pytest.mark.parametrize('ard', [True, False])
-@pytest.mark.parametrize(
-    'order, D, N, weight_variances, bias_variance, variance',
-    [[0, 1, 3, 1., 1., 1.]])
-def test_arccosine_weight_initializations(ard, order, D, N, weight_variances,
-                                          bias_variance, variance):
-    X_data = rng.randn(N, D)
-    _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
-                               order, ard, X_data)
 
 
 @pytest.mark.parametrize('D, N', [[1, 4]])
@@ -269,7 +254,7 @@ _dim = 3
 kernel_setups_extended = kernel_setups + [
     SquaredExponential() + Linear(),
     SquaredExponential() * Linear(),
-    SquaredExponential() + Linear(ard=True, variance=rng.rand(_dim, 1).reshape(-1))
+    SquaredExponential() + Linear(variance=rng.rand(_dim))
 ] + [ArcCosine(order=order) for order in ArcCosine.implemented_orders]
 
 
@@ -388,7 +373,7 @@ def test_active_product(N, D):
         np.hstack([ls[:rand_idx], ls[rand_idx + 1:]]), ls[rand_idx], ls
     ]
     kernels = [
-        gpflow.kernels.SquaredExponential(lengthscale=lengthscale, active_dims=dims, ard=True)
+        gpflow.kernels.SquaredExponential(lengthscale=lengthscale, active_dims=dims)
         for dims, lengthscale in zip(active_dims_list, lengthscale_list)
     ]
     kernel_prod = kernels[0] * kernels[1]
@@ -406,35 +391,31 @@ def test_ard_init_scalar(D):
     lengthscale or a suitable array of lengthscale
     """
     kernel_1 = gpflow.kernels.SquaredExponential(lengthscale=2.3)
-    kernel_2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(D) * 2.3, ard=True)
+    kernel_2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(D) * 2.3)
     lengthscale_1 = kernel_1.lengthscale.read_value()
     lengthscale_2 = kernel_2.lengthscale.read_value()
     assert np.allclose(lengthscale_1, lengthscale_2, atol=1e-10)
 
 
-@pytest.mark.parametrize('N', [4, 7])
-@pytest.mark.parametrize('ard', [True, False, None])
-def test_ard_init_shapes(N, ard):
-    with pytest.raises(tf.errors.InvalidArgumentError):
-        k1 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), ard=ard)
-        k1(rng.randn(N, 4))
-    with pytest.raises(tf.errors.InvalidArgumentError):
-        k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3), ard=ard)
-        k2(rng.randn(N, 2))
+def test_ard_invalid_active_dims():
+    msg = r"Size of `active_dims` \[1\] does not match size of ard parameter \(2\)"
+    with pytest.raises(ValueError, match=msg):
+        gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), active_dims=[1])
 
 
-@pytest.mark.parametrize('D', [4, 7])
-def test_ard_init_MLP(D):
-    """
-    For ard kernels, make sure that kernels can be instantiated with a single
-    lengthscale or a suitable array of lengthscale
-    """
-    kernel_1 = gpflow.kernels.ArcCosine(weight_variances=1.23, ard=True)
-    kernel_2 = gpflow.kernels.ArcCosine(weight_variances=np.ones(3) * 1.23,
-                                        ard=True)
-    variances_1 = kernel_1.weight_variances.read_value()
-    variances_2 = kernel_2.weight_variances.read_value()
-    assert np.allclose(variances_1, variances_2, atol=1e-10)
+@pytest.mark.parametrize('kernel_class, param_name', [
+    [gpflow.kernels.SquaredExponential, "lengthscale"],
+    [gpflow.kernels.Linear, "variance"],
+    [gpflow.kernels.ArcCosine, "weight_variances"],
+])
+@pytest.mark.parametrize('param_value, ard', [
+    [1., False],
+    [[1.], True],
+    [[1., 1.], True],
+])
+def test_ard_property(kernel_class, param_name, param_value, ard):
+    kernel = kernel_class(**{param_name: param_value})
+    assert kernel.ard is ard
 
 
 @pytest.mark.parametrize('locations, steepness, error_msg', [
