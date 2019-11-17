@@ -15,13 +15,6 @@ _POSITIVE_BIJECTOR_MAP = {
 }
 
 
-class Shift(tfp.bijectors.AffineScalar):
-    """Simple subclass so printed name is cleaner."""
-
-    def __init__(self, shift=None, validate_args=False, name='shift'):
-        super().__init__(shift=shift, validate_args=validate_args, name=name)
-
-
 def positive(lower: Optional[float] = None,
              bijector: Optional[str] = None) -> tfp.bijectors.Bijector:
     """
@@ -36,7 +29,7 @@ def positive(lower: Optional[float] = None,
         lower = config.default_positive_minimum()
     if lower is not None:
         # Apply lower bound shift after applying base positive bijector
-        shift = Shift(shift=to_default_float(lower))
+        shift = tfp.bijectors.AffineScalar(shift=to_default_float(lower))
         bijector = tfp.bijectors.Chain([bijector, shift])
     return bijector
 
