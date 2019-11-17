@@ -32,7 +32,7 @@ class Kernel(tf.Module):
     """
 
     def __init__(self,
-                 active_dims: Optional[Union[slice, list]] = None, 
+                 active_dims: Optional[Union[slice, list]] = None,
                  name: Optional[str] = None):
         """
         :param active_dims: active dimensions, has the slice type.
@@ -134,7 +134,7 @@ class Kernel(tf.Module):
                              f"size of ard parameter ({ard_parameter.shape[0]})")
 
     @abc.abstractmethod
-    def K(self, X, Y=None, presliced=False):
+    def K(self, X, X2=None, presliced=False):
         raise NotImplementedError
 
     @abc.abstractmethod
