@@ -212,6 +212,19 @@ def test_periodic(base_class, D, N, lengthscale, variance, period):
     _assert_periodic_kern_err(base_class, lengthscale, variance, period, X)
 
 
+def test_periodic_non_stationary_base():
+    error_msg = r"Periodic requires a Stationary kernel as the `base`"
+    with pytest.raises(TypeError, match=error_msg):
+        gpflow.kernels.Periodic(gpflow.kernels.Linear())
+
+
+def test_periodic_bad_ard_period():
+    error_msg = r"Size of `active_dims` \[1 2\] does not match size of ard parameter \(3\)"
+    base = gpflow.kernels.RBF(active_dims=[1, 2])
+    with pytest.raises(ValueError, match=error_msg):
+        gpflow.kernels.Periodic(base, period=[1., 1., 1.])
+
+
 kernel_setups = [
     kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()
 ] + [
