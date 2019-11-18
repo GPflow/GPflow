@@ -18,12 +18,12 @@ import tensorflow as tf
 
 from gpflow.kernels import Kernel
 from .model import MeanAndVariance, GPModel, Data
+from .util import inducingpoint_wrapper
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
-from .util import inducingpoint_wrapper
 
 
 class SGPRUpperMixin(GPModel):
@@ -49,6 +49,11 @@ class SGPRUpperMixin(GPModel):
         year={2014},
         month={Dec}
       }
+
+    The key quantity, the trace term, can be computed with
+            # To compute each individual element of the trace term, use...
+    v = conditionals.conditional(X, r.model.inducing_variable.Z.numpy(), r.model.kernel,
+                                 np.zeros((len(r.model.inducing_variable), 1)))[1].numpy()
     """
 
     def upper_bound(self):
@@ -63,12 +68,12 @@ class SGPRUpperMixin(GPModel):
 
         L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True)
-        B = I + tf.linalg.matmul(A, A, transpose_b=True) / self.likelihood.variance
+        AAT = tf.linalg.matmul(A, A, transpose_b=True)
+        B = I + AAT / self.likelihood.variance
         LB = tf.linalg.cholesky(B)
 
-        LinvKuf = tf.linalg.triangular_solve(L, kuf, lower=True)
         # Using the Trace bound, from Titsias' presentation
-        c = tf.reduce_sum(Kdiag) - tf.reduce_sum(tf.square(LinvKuf))
+        c = tf.reduce_sum(Kdiag) - tf.reduce_sum(tf.square(A))
 
         # Alternative bound on max eigenval:
         corrected_noise = self.likelihood.variance + c
@@ -77,7 +82,7 @@ class SGPRUpperMixin(GPModel):
             2 * np.pi * self.likelihood.variance)
         logdet = - tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
-        LC = tf.linalg.cholesky(I + tf.linalg.matmul(A, A, transpose_b=True) / corrected_noise)
+        LC = tf.linalg.cholesky(I + AAT / corrected_noise)
         v = tf.linalg.triangular_solve(LC,
                                        tf.linalg.matmul(A, y_data) / corrected_noise,
                                        lower=True)
@@ -223,7 +228,6 @@ class SGPR(SGPRUpperMixin):
         sig_sqrt = tf.linalg.cholesky(sig)
 
         sig_sqrt_kuu = tf.linalg.triangular_solve(sig_sqrt, kuu)
-
 
         cov = tf.linalg.matmul(sig_sqrt_kuu, sig_sqrt_kuu, transpose_a=True)
         err = y_data - self.mean_function(x_data)
