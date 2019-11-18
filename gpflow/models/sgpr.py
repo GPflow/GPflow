@@ -59,10 +59,12 @@ class SGPRUpperMixin(GPModel):
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
 
-        KufKfu = tf.linalg.matmul(kuf, kuf, transpose_b=True)
+        I = tf.eye(tf.shape(kuu)[0], dtype=default_float())
 
         L = tf.linalg.cholesky(kuu)
-        LB = tf.linalg.cholesky(kuu + KufKfu / self.likelihood.variance)
+        A = tf.linalg.triangular_solve(L, kuf, lower=True)
+        B = I + tf.linalg.matmul(A, A, transpose_b=True) / self.likelihood.variance
+        LB = tf.linalg.cholesky(B)
 
         LinvKuf = tf.linalg.triangular_solve(L, kuf, lower=True)
         # Using the Trace bound, from Titsias' presentation
@@ -73,12 +75,11 @@ class SGPRUpperMixin(GPModel):
 
         const = -0.5 * num_data * tf.math.log(
             2 * np.pi * self.likelihood.variance)
-        logdet = (tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
-                  - tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB))))
+        logdet = - tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
-        LC = tf.linalg.cholesky(kuu + KufKfu / corrected_noise)
+        LC = tf.linalg.cholesky(I + tf.linalg.matmul(A, A, transpose_b=True) / corrected_noise)
         v = tf.linalg.triangular_solve(LC,
-                                       tf.linalg.matmul(kuf, y_data) / corrected_noise,
+                                       tf.linalg.matmul(A, y_data) / corrected_noise,
                                        lower=True)
         quad = (-0.5 * tf.reduce_sum(tf.square(y_data)) / corrected_noise
                 + 0.5 * tf.reduce_sum(tf.square(v)))
