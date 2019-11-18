@@ -212,6 +212,18 @@ def test_periodic(base_class, D, N, lengthscale, variance, period):
     _assert_periodic_kern_err(base_class, lengthscale, variance, period, X)
 
 
+@pytest.mark.parametrize('base_class', [
+    gpflow.kernels.SquaredExponential,
+    gpflow.kernels.Matern12,
+])
+def test_periodic_diag(base_class):
+    N, D = 5, 3
+    X = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
+    base = base_class(lengthscale=2., variance=1.)
+    kernel = gpflow.kernels.Periodic(base, period=6.)
+    assert_allclose(base(X, full=False), kernel(X, full=False))
+
+
 def test_periodic_non_stationary_base():
     error_msg = r"Periodic requires a Stationary kernel as the `base`"
     with pytest.raises(TypeError, match=error_msg):
