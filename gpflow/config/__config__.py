@@ -2,11 +2,12 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import tabulate
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 
 __all__ = [
@@ -45,6 +46,18 @@ def default(value: _Values):
     return os.getenv(value.name, default=value.value)
 
 
+def _to_bijector(value: str) -> tfp.bijectors.Bijector:
+    bijector_map = {
+        "exp": tfp.bijectors.Exp,
+        "softplus": tfp.bijectors.Softplus,
+    }
+    if isinstance(value, str):
+        value = value.lower()
+    if value not in bijector_map:
+        raise ValueError(f"`{value}` not in set of valid bijectors: {sorted(bijector_map)}")
+    return bijector_map[value]()
+
+
 @dataclass(frozen=True)
 class Config:
     """
@@ -64,7 +77,8 @@ class Config:
     int: type = field(default_factory=lambda: default(_Values.INT))
     float: type = field(default_factory=lambda: default(_Values.FLOAT))
     jitter: float = field(default_factory=lambda: default(_Values.JITTER))
-    positive_bijector: str = field(default_factory=lambda: default(_Values.POSITIVE_BIJECTOR))
+    positive_bijector: tfp.bijectors.Bijector = field(
+        default_factory=lambda: _to_bijector(default(_Values.POSITIVE_BIJECTOR)))
     positive_minimum: float = field(default_factory=lambda: default(_Values.POSITIVE_MINIMUM))
     summary_fmt: str = field(default_factory=lambda: default(_Values.SUMMARY_FMT))
 
@@ -139,15 +153,11 @@ def set_default_jitter(value: float):
     set_config(replace(config(), jitter=value))
 
 
-def set_default_positive_bijector(value: str):
-    if not isinstance(value, str):
-        raise TypeError(f"Expected a string, but got a {type(value)}")
-
-    valid_bijectors = {"exp", "softplus"}
-
-    value = value.lower()
-    if value not in valid_bijectors:
-        raise ValueError(f"'{value}' not found in {sorted(valid_bijectors)}")
+def set_default_positive_bijector(value: Union[str, tfp.bijectors.Bijector]):
+    if isinstance(value, str):
+        value = _to_bijector(value)
+    elif not isinstance(value, tfp.bijectors.Bijector):
+        raise TypeError(f"Expected a Bijector, but got a {type(value)}")
 
     set_config(replace(config(), positive_bijector=value))
 

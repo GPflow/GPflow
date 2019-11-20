@@ -15,6 +15,7 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 import gpflow
 from gpflow.config import (default_float, default_int, default_jitter, set_default_float,
@@ -63,18 +64,23 @@ def test_jitter_errorcheck():
 
 
 @pytest.mark.parametrize("error_type, error_msg, value", [
-    (TypeError, r"Expected a string, but got a <class 'float'>", 1.0),
-    (ValueError, r"'unknown' not found in \['exp', 'softplus'\]", 'unknown'),
+    (ValueError, r"`unknown` not in set of valid bijectors: \['exp', 'softplus'\]", 'Unknown'),
+    (TypeError, r"Expected a Bijector, but got a <class 'float'>", 1.0),
 ])
 def test_positive_bijector_errors(error_type, error_msg, value):
     with pytest.raises(error_type, match=error_msg):
         set_default_positive_bijector(value)
 
 
-@pytest.mark.parametrize("value", ["exp", "softplus"])
-def test_positive_bijector_setting(value):
+@pytest.mark.parametrize("value, expected", [
+    ("exp", tfp.bijectors.Exp),
+    ("softplus", tfp.bijectors.Softplus),
+    (tfp.bijectors.Exp(), tfp.bijectors.Exp),
+    (tfp.bijectors.Softplus(hinge_softness=2.0), tfp.bijectors.Softplus),
+])
+def test_positive_bijector_setting(value, expected):
     set_default_positive_bijector(value)
-    assert default_positive_bijector() == value
+    assert isinstance(default_positive_bijector(), expected)
 
 
 def test_default_summary_fmt_setting():
