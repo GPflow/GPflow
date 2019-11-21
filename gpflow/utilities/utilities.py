@@ -145,7 +145,7 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
     def get_transform(v):
         if hasattr(v, "transform") and v.transform is not None:
             if isinstance(v.transform, tfp.bijectors.Chain):
-                return " + ".join(b.__class__.__name__ for b in v.transform.bijectors)
+                return " + ".join(b.__class__.__name__ for b in v.transform.bijectors[::-1])
             return v.transform.__class__.__name__
         return None
 
