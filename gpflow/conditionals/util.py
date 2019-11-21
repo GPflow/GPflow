@@ -18,7 +18,7 @@ def base_conditional(Kmn: tf.Tensor,
 
       p(g1) = N(g1; 0, Knn)
 
-      p(g1 | g2) = N(g1; Knm(Kmm^-1)g2, Knn - Knm(Kmm^-1)Kmn)
+      p(g1 | g2) = N(g1; Knm (Kmm⁻¹) g2, Knn - Knm (Kmm⁻¹) Kmn)
 
     And
       q(g2) = N(g2; f, q_sqrt * q_sqrt^T)
