@@ -17,6 +17,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.config import Config, as_context
 from gpflow.utilities.utilities import leaf_components, _merge_leaf_components, tabulate_module_summary
 
 rng = np.random.RandomState(0)
@@ -203,6 +204,12 @@ name                            class      transform    trainable    shape    dt
 SquaredExponential.variance     Parameter  Softplus     True         ()       float64        1\n\
 SquaredExponential.lengthscale  Parameter  Softplus     False        ()       float64        2"""
 
+kernel_param_print_string_with_shift = """\
+name                            class      transform                trainable    shape    dtype      value\n\
+------------------------------  ---------  -----------------------  -----------  -------  -------  -------\n\
+SquaredExponential.variance     Parameter  Softplus + AffineScalar  True         ()       float64        1\n\
+SquaredExponential.lengthscale  Parameter  Softplus + AffineScalar  False        ()       float64        2"""
+
 model_gp_param_print_string = """\
 name                      class      transform    trainable    shape    dtype    value\n\
 ------------------------  ---------  -----------  -----------  -------  -------  --------\n\
@@ -333,7 +340,13 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
     (B, example_module_list_variable_print_string),
 ])
 def test_print_summary_output_string(module_callable, expected_param_print_string):
-    assert tabulate_module_summary(module_callable()) == expected_param_print_string
+    with as_context(Config(positive_minimum=None)):
+        assert tabulate_module_summary(module_callable()) == expected_param_print_string
+
+
+def test_print_summary_output_string_with_positive_minimum():
+    with as_context(Config(positive_minimum=1e-6)):
+        assert tabulate_module_summary(create_kernel()) == kernel_param_print_string_with_shift
 
 
 def test_print_summary_for_keras_model():
