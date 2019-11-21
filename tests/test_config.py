@@ -63,24 +63,19 @@ def test_jitter_errorcheck():
         set_default_jitter(-1e-10)
 
 
-@pytest.mark.parametrize("error_type, error_msg, value", [
-    (ValueError, r"`unknown` not in set of valid bijectors: \['exp', 'softplus'\]", 'Unknown'),
-    (TypeError, r"Expected a Bijector, but got a <class 'float'>", 1.0),
+@pytest.mark.parametrize("value, error_msg", [
+    ("Unknown", r"`unknown` not in set of valid bijectors: \['exp', 'softplus'\]"),
+    (1.0, r"`1.0` not in set of valid bijectors: \['exp', 'softplus'\]"),
 ])
-def test_positive_bijector_errors(error_type, error_msg, value):
-    with pytest.raises(error_type, match=error_msg):
+def test_positive_bijector_error(value, error_msg):
+    with pytest.raises(ValueError, match=error_msg):
         set_default_positive_bijector(value)
 
 
-@pytest.mark.parametrize("value, expected", [
-    ("exp", tfp.bijectors.Exp),
-    ("softplus", tfp.bijectors.Softplus),
-    (tfp.bijectors.Exp(), tfp.bijectors.Exp),
-    (tfp.bijectors.Softplus(hinge_softness=2.0), tfp.bijectors.Softplus),
-])
-def test_positive_bijector_setting(value, expected):
+@pytest.mark.parametrize("value", ["exp", "SoftPlus"])
+def test_positive_bijector_setting(value):
     set_default_positive_bijector(value)
-    assert isinstance(default_positive_bijector(), expected)
+    assert default_positive_bijector() == value.lower()
 
 
 def test_default_summary_fmt_setting():

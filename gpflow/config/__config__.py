@@ -2,7 +2,7 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 import tabulate
@@ -11,14 +11,14 @@ import tensorflow_probability as tfp
 
 
 __all__ = [
-    "Config", "as_context",
-    "config", "set_config",
+    "Config", "as_context", "config", "set_config",
     "default_float", "set_default_float",
     "default_int", "set_default_int",
     "default_jitter", "set_default_jitter",
     "default_positive_bijector", "set_default_positive_bijector",
     "default_positive_minimum", "set_default_positive_minimum",
     "default_summary_fmt", "set_default_summary_fmt",
+    "positive_bijector_type_map"
 ]
 
 
@@ -46,18 +46,6 @@ def default(value: _Values):
     return os.getenv(value.name, default=value.value)
 
 
-def _to_bijector(value: str) -> tfp.bijectors.Bijector:
-    bijector_map = {
-        "exp": tfp.bijectors.Exp,
-        "softplus": tfp.bijectors.Softplus,
-    }
-    if isinstance(value, str):
-        value = value.lower()
-    if value not in bijector_map:
-        raise ValueError(f"`{value}` not in set of valid bijectors: {sorted(bijector_map)}")
-    return bijector_map[value]()
-
-
 @dataclass(frozen=True)
 class Config:
     """
@@ -77,8 +65,7 @@ class Config:
     int: type = field(default_factory=lambda: default(_Values.INT))
     float: type = field(default_factory=lambda: default(_Values.FLOAT))
     jitter: float = field(default_factory=lambda: default(_Values.JITTER))
-    positive_bijector: tfp.bijectors.Bijector = field(
-        default_factory=lambda: _to_bijector(default(_Values.POSITIVE_BIJECTOR)))
+    positive_bijector: str = field(default_factory=lambda: default(_Values.POSITIVE_BIJECTOR))
     positive_minimum: float = field(default_factory=lambda: default(_Values.POSITIVE_MINIMUM))
     summary_fmt: str = field(default_factory=lambda: default(_Values.SUMMARY_FMT))
 
@@ -153,11 +140,12 @@ def set_default_jitter(value: float):
     set_config(replace(config(), jitter=value))
 
 
-def set_default_positive_bijector(value: Union[str, tfp.bijectors.Bijector]):
+def set_default_positive_bijector(value: str):
+    type_map = positive_bijector_type_map()
     if isinstance(value, str):
-        value = _to_bijector(value)
-    elif not isinstance(value, tfp.bijectors.Bijector):
-        raise TypeError(f"Expected a Bijector, but got a {type(value)}")
+        value = value.lower()
+    if value not in type_map:
+        raise ValueError(f"`{value}` not in set of valid bijectors: {sorted(type_map)}")
 
     set_config(replace(config(), positive_bijector=value))
 
@@ -179,6 +167,13 @@ def set_default_summary_fmt(value: str):
         raise ValueError(f"Summary does not support '{value}' format")
 
     set_config(replace(config(), summary_fmt=value))
+
+
+def positive_bijector_type_map() -> Dict[str, type]:
+    return {
+        "exp": tfp.bijectors.Exp,
+        "softplus": tfp.bijectors.Softplus,
+    }
 
 
 @contextlib.contextmanager

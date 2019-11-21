@@ -13,22 +13,30 @@ from gpflow.utilities import positive, triangular
 ])
 def test_positive_lower(env_lower, override_lower):
     expected_lower = override_lower or env_lower
-    with as_context(Config(positive_bijector=tfp.bijectors.Softplus(), positive_minimum=env_lower)):
+    with as_context(Config(positive_bijector="softplus", positive_minimum=env_lower)):
         bijector = positive(lower=override_lower)
         assert isinstance(bijector, tfp.bijectors.Chain)
-        assert np.isclose(bijector.bijectors[1].shift, expected_lower)
+        assert np.isclose(bijector.bijectors[0].shift, expected_lower)
 
 
 @pytest.mark.parametrize("env_bijector, override_bijector, expected_class", [
-    (tfp.bijectors.Softplus(), None, tfp.bijectors.Softplus),
-    (tfp.bijectors.Softplus(), tfp.bijectors.Exp(), tfp.bijectors.Exp),
-    (tfp.bijectors.Exp(), None, tfp.bijectors.Exp),
-    (tfp.bijectors.Exp(), tfp.bijectors.Softplus(hinge_softness=2.0), tfp.bijectors.Softplus),
+    ("softplus", None, tfp.bijectors.Softplus),
+    ("softplus", "Exp", tfp.bijectors.Exp),
+    ("exp", None, tfp.bijectors.Exp),
+    ("exp", "Softplus", tfp.bijectors.Softplus),
 ])
 def test_positive_bijector(env_bijector, override_bijector, expected_class):
     with as_context(Config(positive_bijector=env_bijector, positive_minimum=None)):
         bijector = positive(base=override_bijector)
         assert isinstance(bijector, expected_class)
+
+
+def test_positive_calculation_order():
+    value, lower = -10.0, 10.0
+    expected = np.exp(value) + lower
+    with as_context(Config(positive_bijector="exp", positive_minimum=lower)):
+        result = positive()(value).numpy()
+    assert np.isclose(result, expected)
 
 
 def test_triangular():
