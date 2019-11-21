@@ -37,6 +37,7 @@ def test_positive_calculation_order():
     with as_context(Config(positive_bijector="exp", positive_minimum=lower)):
         result = positive()(value).numpy()
     assert np.isclose(result, expected)
+    assert result >= lower
 
 
 def test_triangular():
