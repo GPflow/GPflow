@@ -15,10 +15,13 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 import gpflow
-from gpflow.config import (default_float, default_int, default_jitter, set_default_float, set_default_int,
-                           set_default_jitter, set_default_summary_fmt, default_summary_fmt)
+from gpflow.config import (default_float, default_int, default_jitter, set_default_float,
+                           set_default_int, set_default_jitter, set_default_summary_fmt,
+                           default_summary_fmt, set_default_positive_bijector,
+                           default_positive_bijector)
 from gpflow.utilities import to_default_float, to_default_int
 
 
@@ -58,6 +61,21 @@ def test_jitter_errorcheck():
         set_default_jitter("not a float")
     with pytest.raises(ValueError):
         set_default_jitter(-1e-10)
+
+
+@pytest.mark.parametrize("value, error_msg", [
+    ("Unknown", r"`unknown` not in set of valid bijectors: \['exp', 'softplus'\]"),
+    (1.0, r"`1.0` not in set of valid bijectors: \['exp', 'softplus'\]"),
+])
+def test_positive_bijector_error(value, error_msg):
+    with pytest.raises(ValueError, match=error_msg):
+        set_default_positive_bijector(value)
+
+
+@pytest.mark.parametrize("value", ["exp", "SoftPlus"])
+def test_positive_bijector_setting(value):
+    set_default_positive_bijector(value)
+    assert default_positive_bijector() == value.lower()
 
 
 def test_default_summary_fmt_setting():
