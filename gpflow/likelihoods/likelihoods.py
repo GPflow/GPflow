@@ -158,7 +158,7 @@ class Likelihood(tf.Module):
 class Gaussian(Likelihood):
     def __init__(self, variance=1.0, **kwargs):
         super().__init__(**kwargs)
-        self.variance = Parameter(variance, transform=positive())
+        self.variance = Parameter(variance, transform=positive(lower=1e-6))
 
     def log_prob(self, F, Y):
         return logdensities.gaussian(Y, F, self.variance)
