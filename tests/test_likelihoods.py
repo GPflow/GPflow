@@ -20,9 +20,9 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.inducing_variables import InducingPoints
-from gpflow.likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian, GaussianMC,
-                                Likelihood, MonteCarloLikelihood, MultiClass, Ordinal, Poisson,
-                                RobustMax, Softmax, StudentT, SwitchedLikelihood)
+from gpflow.likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian, GaussianMC, Likelihood,
+                                MonteCarloLikelihood, MultiClass, Ordinal, Poisson, RobustMax, Softmax, StudentT,
+                                SwitchedLikelihood)
 from gpflow.quadrature import ndiagquad
 from gpflow.config import default_float, default_int
 
@@ -45,7 +45,7 @@ class Datum:
     Y = tf.random.normal(Yshape, dtype=tf.float64)
     F = tf.random.normal(Yshape, dtype=tf.float64)
     Fmu = tf.random.normal(Yshape, dtype=tf.float64)
-    Fvar = 0.01 * tf.random.normal(Yshape, dtype=tf.float64) ** 2
+    Fvar = 0.01 * tf.random.normal(Yshape, dtype=tf.float64)**2
     Fvar_zero = tf.zeros(Yshape, dtype=tf.float64)
 
 
@@ -64,30 +64,23 @@ class LikelihoodSetup(object):
 likelihood_setups = [
     LikelihoodSetup(Gaussian()),
     LikelihoodSetup(StudentT()),
-    LikelihoodSetup(Beta(),
-                    Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
-    LikelihoodSetup(Ordinal(np.array([-1, 1])),
-                    Y=tf.random.uniform(Datum.Yshape, 0, 3, dtype=default_int())),
-    LikelihoodSetup(Poisson(invlink=tf.square),
-                    Y=tf.random.poisson(Datum.Yshape, 1.0, dtype=default_float())),
-    LikelihoodSetup(Exponential(invlink=tf.square),
-                    Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
-    LikelihoodSetup(Gamma(invlink=tf.square),
-                    Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
-    LikelihoodSetup(Bernoulli(invlink=tf.sigmoid),
-                    Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
-
-    pytest.param(LikelihoodSetup(MultiClass(2),
-                                 Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1),
-                                 rtol=1e-3, atol=1e-3),
+    LikelihoodSetup(Beta(), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
+    LikelihoodSetup(Ordinal(np.array([-1, 1])), Y=tf.random.uniform(Datum.Yshape, 0, 3, dtype=default_int())),
+    LikelihoodSetup(Poisson(invlink=tf.square), Y=tf.random.poisson(Datum.Yshape, 1.0, dtype=default_float())),
+    LikelihoodSetup(Exponential(invlink=tf.square), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
+    LikelihoodSetup(Gamma(invlink=tf.square), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
+    LikelihoodSetup(Bernoulli(invlink=tf.sigmoid), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
+    pytest.param(LikelihoodSetup(MultiClass(2), Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1), rtol=1e-3, atol=1e-3),
                  marks=pytest.mark.skip),
 ]
+
 
 def get_likelihood(likelihood_setup):
     if not isinstance(likelihood_setup, LikelihoodSetup):
         # pytest.param()
         likelihood_setup, = likelihood_setup.values
     return likelihood_setup.likelihood
+
 
 def test_no_missing_likelihoods():
     all_likelihood_types = Likelihood.__subclasses__()
@@ -133,8 +126,7 @@ def test_variational_expectations(likelihood_setup):
     assert_allclose(r1, r2, atol=likelihood_setup.atol, rtol=likelihood_setup.rtol)
 
 
-@pytest.mark.parametrize('likelihood_setup',
-        filter_analytic(likelihood_setups, "variational_expectations"))
+@pytest.mark.parametrize('likelihood_setup', filter_analytic(likelihood_setups, "variational_expectations"))
 @pytest.mark.parametrize('mu, var', [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     """
@@ -147,8 +139,7 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
-@pytest.mark.parametrize('likelihood_setup',
-        filter_analytic(likelihood_setups, "predict_density"))
+@pytest.mark.parametrize('likelihood_setup', filter_analytic(likelihood_setups, "predict_density"))
 @pytest.mark.parametrize('mu, var', [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_predict_density(likelihood_setup, mu, var):
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
@@ -157,8 +148,7 @@ def test_quadrature_predict_density(likelihood_setup, mu, var):
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
-@pytest.mark.parametrize('likelihood_setup',
-        filter_analytic(likelihood_setups, "predict_mean_and_var"))
+@pytest.mark.parametrize('likelihood_setup', filter_analytic(likelihood_setups, "predict_mean_and_var"))
 @pytest.mark.parametrize('mu, var', [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_mean_and_var(likelihood_setup, mu, var):
     likelihood = likelihood_setup.likelihood
@@ -405,16 +395,16 @@ def test__switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list
 
 
 @pytest.mark.parametrize('num_latent', [1, 2])
-@pytest.mark.parametrize(
-    'X, Y', [[np.random.randn(100, 1),
-              np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))]])
-def test_switched_likelihood_regression_valid_num_latent(X, Y, num_latent):
+def test_switched_likelihood_regression_valid_num_latent(num_latent):
     """
     A Regression test when using Switched likelihood: the number of latent
     functions in a GP model must be equal to the number of columns in Y minus
     one. The final column of Y is used to index the switch. If the number of
     latent functions does not match, an exception will be raised.
     """
+    x = np.random.randn(100, 1)
+    y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
+    data = x, y
 
     Z = InducingPoints(np.random.randn(num_latent, 1))
     likelihoods = [StudentT()] * 3
@@ -424,7 +414,7 @@ def test_switched_likelihood_regression_valid_num_latent(X, Y, num_latent):
                            likelihood=switched_likelihood,
                            num_latent=num_latent)
     if num_latent == 1:
-        m.log_likelihood(X, Y)
+        m.log_likelihood(data)
     else:
         with pytest.raises(tf.errors.InvalidArgumentError):
-            m.log_likelihood(X, Y)
+            m.log_likelihood(data)

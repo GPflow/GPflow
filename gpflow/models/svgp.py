@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Union
+from typing import Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -19,8 +19,7 @@ import tensorflow as tf
 from .. import kullback_leiblers
 from ..base import Parameter
 from ..conditionals import conditional
-from ..config import default_float, default_jitter
-from ..covariances import Kuu
+from ..config import default_float
 from ..models.model import GPModel
 from ..utilities import positive, triangular
 from .util import inducingpoint_wrapper
@@ -132,26 +131,27 @@ class SVGP(GPModel):
                                           self.q_sqrt,
                                           whiten=self.whiten)
 
-    def log_likelihood(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
+    def log_likelihood(self, data: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
         """
         This gives a variational bound on the model likelihood.
         """
+        x, y = data
         kl = self.prior_kl()
-        f_mean, f_var = self.predict_f(X, full_cov=False, full_output_cov=False)
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+        f_mean, f_var = self.predict_f(x, full_cov=False, full_output_cov=False)
+        var_exp = self.likelihood.variational_expectations(f_mean, f_var, y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
-            minibatch_size = tf.cast(X.shape[0], kl.dtype)
+            minibatch_size = tf.cast(x.shape[0], kl.dtype)
             scale = num_data / minibatch_size
         else:
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
-    def elbo(self, X: tf.Tensor, Y: tf.Tensor) -> tf.Tensor:
+    def elbo(self, data: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
         """
         This returns the evidence lower bound (ELBO) of the log marginal likelihood.
         """
-        return self.log_marginal_likelihood(X, Y)
+        return self.log_marginal_likelihood(data)
 
     def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu

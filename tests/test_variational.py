@@ -80,6 +80,7 @@ class Datum:
                                                          K=K,
                                                          noise_var=noise_var)
     posterior_std = np.sqrt(posterior_var)
+    data = (X, Y)
 
 
 class MultiDatum:
@@ -148,7 +149,7 @@ def test_variational_univariate_log_likelihood(diag, whiten):
                                whiten=whiten,
                                q_mu=q_mu,
                                q_sqrt=q_sqrt)
-    model_likelihood = model.log_likelihood(X=Datum.X, Y=Datum.Y).numpy()
+    model_likelihood = model.log_likelihood(Datum.data).numpy()
     assert_allclose(model_likelihood - reference_log_marginal_likelihood,
                     0,
                     atol=4)

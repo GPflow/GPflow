@@ -29,6 +29,7 @@ class Datum:
     Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
     Y = np.tile(Y, 2)  # two identical columns
     Xtest = rng.rand(10, 1) * 10
+    data = X, Y
 
 
 class DatumVGP:
@@ -41,11 +42,13 @@ class DatumVGP:
     q_sqrt = np.random.randn(DY, N, N)
     q_alpha = np.random.randn(N, DX)
     q_lambda = np.random.randn(N, DX) ** 2
+    data = (X, Y)
 
 
 class DatumUpper:
     X = np.random.rand(100, 1)
     Y = np.sin(1.5 * 2 * np.pi * X) + np.random.randn(*X.shape) * 0.1
+    data = (X, Y)
 
 
 def _create_full_gp_model():
@@ -115,11 +118,11 @@ def _create_approximate_models():
 
     @tf.function(autograph=False)
     def model_2_closure():
-        return - model_2.elbo(Datum.X, Datum.Y)
+        return - model_2.elbo(Datum.data)
 
     @tf.function(autograph=False)
     def model_3_closure():
-        return - model_3.elbo(Datum.X, Datum.Y)
+        return - model_3.elbo(Datum.data)
 
     @tf.function(autograph=False)
     def model_4_closure():
@@ -171,7 +174,7 @@ def test_equivalence(approximate_model):
     gpr_model = _create_full_gp_model()
     gpr_likelihood = - gpr_model.log_likelihood()
     if isinstance(approximate_model, gpflow.models.SVGP):
-        approximate_likelihood = - approximate_model.log_likelihood(Datum.X, Datum.Y)
+        approximate_likelihood = - approximate_model.log_likelihood(Datum.data)
     else:
         approximate_likelihood = - approximate_model.log_likelihood()
 
@@ -200,7 +203,7 @@ def test_equivalence_vgp_and_svgp():
     svgp_model = _create_svgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt, whiten=True)
     vgp_model = _create_vgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt)
 
-    likelihood_svgp = svgp_model.log_likelihood(DatumVGP.X, DatumVGP.Y)
+    likelihood_svgp = svgp_model.log_likelihood(DatumVGP.data)
     likelihood_vgp = vgp_model.log_likelihood()
     assert_allclose(likelihood_svgp, likelihood_vgp, rtol=1e-2)
 
@@ -237,7 +240,7 @@ def test_equivalence_vgp_and_opper_archambeau():
 
     likelihood_vgp = vgp_model.log_likelihood()
     likelihood_vgp_oa = vgp_oa_model.log_likelihood()
-    likelihood_svgp_unwhitened = svgp_model_unwhitened.log_likelihood(DatumVGP.X, DatumVGP.Y)
+    likelihood_svgp_unwhitened = svgp_model_unwhitened.log_likelihood(DatumVGP.data)
 
     assert_allclose(likelihood_vgp, likelihood_vgp_oa, rtol=1e-2)
     assert_allclose(likelihood_vgp, likelihood_svgp_unwhitened, rtol=1e-2)
