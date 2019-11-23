@@ -11,40 +11,47 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from dataclasses import dataclass
+
+import numpy as np
 import pytest
+import tensorflow as tf
+from numpy.testing import assert_allclose, assert_array_equal, assert_array_less
 
 import gpflow
-import numpy as np
-import tensorflow as tf
-
-from numpy.testing import assert_array_equal, assert_array_less, assert_allclose
-
 from gpflow.config import default_float
 
-rng = np.random.RandomState(0)
 
 # ------------------------------------------
 # Data classes: storing constants
 # ------------------------------------------
 
 
+@dataclass(frozen=True)
 class Datum:
-    X = rng.randn(100, 2)
-    Y = rng.randn(100, 1)
-    Z = rng.randn(10, 2)
-    Xs = rng.randn(10, 2)
+    rng: np.random.RandomState = np.random.RandomState(0)
+    X: np.ndarray = rng.randn(100, 2)
+    Y: np.ndarray = rng.randn(100, 1)
+    Z: np.ndarray = rng.randn(10, 2)
+    Xs: np.ndarray = rng.randn(10, 2)
     lik = gpflow.likelihoods.Gaussian()
     kernel = gpflow.kernels.Matern32()
 
 
+@dataclass(frozen=True)
 class DatumSVGP:
+    rng: np.random.RandomState = np.random.RandomState(0)
     X = rng.randn(20, 1)
     Y = rng.randn(20, 2)**2
     Z = rng.randn(3, 1)
-    qsqrt, qmean = rng.randn(2, 3, 2)
-    qsqrt = (qsqrt**2) * 0.01
+    qsqrt = (rng.randn(3, 2)**2) * 0.01
+    qmean = rng.randn(3, 2)
     lik = gpflow.likelihoods.Exponential()
     data = (X, Y)
+
+
+default_datum = Datum()
+default_datum_svgp = DatumSVGP()
 
 
 def _check_models_close(m1, m2, tolerance=1e-2):
@@ -61,20 +68,23 @@ def _check_models_close(m1, m2, tolerance=1e-2):
 
 
 _gp_models = [
-    gpflow.models.VGP((Datum.X, Datum.Y), Datum.kernel, Datum.lik),
-    gpflow.models.GPMC((Datum.X, Datum.Y), Datum.kernel, Datum.lik),
-    gpflow.models.SGPMC((Datum.X, Datum.Y), Datum.kernel, Datum.lik, inducing_variable=Datum.Z),
-    gpflow.models.SGPR((Datum.X, Datum.Y), Datum.kernel, inducing_variable=Datum.Z),
-    gpflow.models.GPR((Datum.X, Datum.Y), Datum.kernel),
-    gpflow.models.GPRFITC((Datum.X, Datum.Y), Datum.kernel, inducing_variable=Datum.Z)
+    gpflow.models.VGP((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
+    gpflow.models.GPMC((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
+    gpflow.models.SGPMC((default_datum.X, default_datum.Y),
+                        default_datum.kernel,
+                        default_datum.lik,
+                        inducing_variable=default_datum.Z),
+    gpflow.models.SGPR((default_datum.X, default_datum.Y), default_datum.kernel, inducing_variable=default_datum.Z),
+    gpflow.models.GPR((default_datum.X, default_datum.Y), default_datum.kernel),
+    gpflow.models.GPRFITC((default_datum.X, default_datum.Y), default_datum.kernel, inducing_variable=default_datum.Z)
 ]
 
-_state_less_gp_models = [gpflow.models.SVGP(Datum.kernel, Datum.lik, inducing_variable=Datum.Z)]
+_state_less_gp_models = [gpflow.models.SVGP(default_datum.kernel, default_datum.lik, inducing_variable=default_datum.Z)]
 
 
 @pytest.mark.parametrize('model', _state_less_gp_models + _gp_models)
 def test_methods_predict_f(model):
-    mf, vf = model.predict_f(Datum.Xs)
+    mf, vf = model.predict_f(default_datum.Xs)
     assert_array_equal(mf.shape, vf.shape)
     assert_array_equal(mf.shape, (10, 1))
     assert_array_less(np.full_like(vf, -1e-6), vf)
@@ -82,7 +92,7 @@ def test_methods_predict_f(model):
 
 @pytest.mark.parametrize('model', _state_less_gp_models + _gp_models)
 def test_methods_predict_y(model):
-    mf, vf = model.predict_y(Datum.Xs)
+    mf, vf = model.predict_y(default_datum.Xs)
     assert_array_equal(mf.shape, vf.shape)
     assert_array_equal(mf.shape, (10, 1))
     assert_array_less(np.full_like(vf, -1e-6), vf)
@@ -90,12 +100,14 @@ def test_methods_predict_y(model):
 
 @pytest.mark.parametrize('model', _state_less_gp_models + _gp_models)
 def test_methods_predict_log_density(model):
+    rng = Datum().rng
     Ys = rng.randn(10, 1)
-    d = model.predict_log_density((Datum.Xs, Ys))
+    d = model.predict_log_density((default_datum.Xs, Ys))
     assert_array_equal(d.shape, (10, 1))
 
 
 def test_sgpr_qu():
+    rng = Datum().rng
     X, Z = tf.cast(rng.randn(100, 2), default_float()), tf.cast(rng.randn(20, 2), default_float())
     Y = tf.cast(np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * np.random.randn(len(X), 1), default_float())
     model = gpflow.models.SGPR((X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variable=Z)
@@ -118,24 +130,24 @@ def test_svgp_white():
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening.
     """
-    num_latent = DatumSVGP.Y.shape[1]
+    num_latent = default_datum_svgp.Y.shape[1]
     model_1 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=DatumSVGP.lik,
+                                 likelihood=default_datum_svgp.lik,
                                  q_diag=True,
                                  num_latent=num_latent,
-                                 inducing_variable=DatumSVGP.Z,
+                                 inducing_variable=default_datum_svgp.Z,
                                  whiten=True)
     model_2 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=DatumSVGP.lik,
+                                 likelihood=default_datum_svgp.lik,
                                  q_diag=False,
                                  num_latent=num_latent,
-                                 inducing_variable=DatumSVGP.Z,
+                                 inducing_variable=default_datum_svgp.Z,
                                  whiten=True)
-    model_1.q_sqrt.assign(DatumSVGP.qsqrt)
-    model_1.q_mu.assign(DatumSVGP.qmean)
-    model_2.q_sqrt.assign(np.array([np.diag(DatumSVGP.qsqrt[:, 0]), np.diag(DatumSVGP.qsqrt[:, 1])]))
-    model_2.q_mu.assign(DatumSVGP.qmean)
-    assert_allclose(model_1.log_likelihood(DatumSVGP.data), model_2.log_likelihood(DatumSVGP.data))
+    model_1.q_sqrt.assign(default_datum_svgp.qsqrt)
+    model_1.q_mu.assign(default_datum_svgp.qmean)
+    model_2.q_sqrt.assign(np.array([np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1])]))
+    model_2.q_mu.assign(default_datum_svgp.qmean)
+    assert_allclose(model_1.log_likelihood(default_datum_svgp.data), model_2.log_likelihood(default_datum_svgp.data))
 
 
 def test_svgp_non_white():
@@ -143,36 +155,36 @@ def test_svgp_non_white():
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening is not used.
     """
-    num_latent = DatumSVGP.Y.shape[1]
+    num_latent = default_datum_svgp.Y.shape[1]
     model_1 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=DatumSVGP.lik,
+                                 likelihood=default_datum_svgp.lik,
                                  q_diag=True,
                                  num_latent=num_latent,
-                                 inducing_variable=DatumSVGP.Z,
+                                 inducing_variable=default_datum_svgp.Z,
                                  whiten=False)
     model_2 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=DatumSVGP.lik,
+                                 likelihood=default_datum_svgp.lik,
                                  q_diag=False,
                                  num_latent=num_latent,
-                                 inducing_variable=DatumSVGP.Z,
+                                 inducing_variable=default_datum_svgp.Z,
                                  whiten=False)
-    model_1.q_sqrt.assign(DatumSVGP.qsqrt)
-    model_1.q_mu.assign(DatumSVGP.qmean)
-    model_2.q_sqrt.assign(np.array([np.diag(DatumSVGP.qsqrt[:, 0]), np.diag(DatumSVGP.qsqrt[:, 1])]))
-    model_2.q_mu.assign(DatumSVGP.qmean)
-    assert_allclose(model_1.log_likelihood(DatumSVGP.data), model_2.log_likelihood(DatumSVGP.data))
+    model_1.q_sqrt.assign(default_datum_svgp.qsqrt)
+    model_1.q_mu.assign(default_datum_svgp.qmean)
+    model_2.q_sqrt.assign(np.array([np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1])]))
+    model_2.q_mu.assign(default_datum_svgp.qmean)
+    assert_allclose(model_1.log_likelihood(default_datum_svgp.data), model_2.log_likelihood(default_datum_svgp.data))
 
 
 def test_svgp_fixing_q_sqrt():
     """
     In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
     """
-    num_latent = DatumSVGP.Y.shape[1]
+    num_latent = default_datum_svgp.Y.shape[1]
     model = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                               likelihood=DatumSVGP.lik,
+                               likelihood=default_datum_svgp.lik,
                                q_diag=True,
                                num_latent=num_latent,
-                               inducing_variable=DatumSVGP.Z,
+                               inducing_variable=default_datum_svgp.Z,
                                whiten=False)
     default_num_trainable_variables = len(model.trainable_variables)
     model.q_sqrt.trainable = False
@@ -228,6 +240,7 @@ def test_sparse_mcmc_likelihoods_and_gradients():
     This test makes sure that when the inducing points are the same as the data
     points, the sparse mcmc is the same as full mcmc
     """
+    rng = Datum().rng
     X, Y = rng.randn(10, 1), rng.randn(10, 1)
     v_vals = rng.randn(10, 1)
 
