@@ -114,7 +114,7 @@ def set_default_int(value_type):
     if not tf_dtype.is_integer:
         raise TypeError(f"{value_type} is not an integer dtype")
 
-    set_config(replace(config(), int=value_type))
+    set_config(replace(config(), int=tf_dtype.as_numpy_dtype))
 
 
 def set_default_float(value_type):
@@ -126,7 +126,7 @@ def set_default_float(value_type):
     if not tf_dtype.is_floating:
         raise TypeError(f"{value_type} is not a float dtype")
 
-    set_config(replace(config(), float=value_type))
+    set_config(replace(config(), float=tf_dtype.as_numpy_dtype))
 
 
 def set_default_jitter(value: float):
