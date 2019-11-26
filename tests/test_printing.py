@@ -53,12 +53,14 @@ class B(tf.Module):
         self.var_trainable = tf.Variable(tf.zeros((2, 2, 1)), trainable=True)
         self.var_fixed = tf.Variable(tf.ones((2, 2, 1)), trainable=False)
 
+
 class C(tf.keras.Model):
     def __init__(self, name=None):
         super().__init__(name)
         self.variable = tf.Variable(tf.zeros((2, 2, 1)), trainable=True)
         self.param = gpflow.Parameter(0.0)
         self.dense = tf.keras.layers.Dense(5)
+
 
 def create_kernel():
     kern = gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var)
@@ -69,15 +71,17 @@ def create_kernel():
 def create_compose_kernel():
     kernel = gpflow.kernels.Product([
         gpflow.kernels.Sum([create_kernel(), create_kernel()]),
-        gpflow.kernels.Sum([create_kernel(), create_kernel()])]
-    )
+        gpflow.kernels.Sum([create_kernel(), create_kernel()])
+    ])
     return kernel
 
 
 def create_model():
     kernel = create_kernel()
-    model = gpflow.models.SVGP(kernel=kernel, likelihood=gpflow.likelihoods.Gaussian(),
-                               inducing_variable=Data.Z, q_diag=True)
+    model = gpflow.models.SVGP(kernel=kernel,
+                               likelihood=gpflow.likelihoods.Gaussian(variance_lower_bound=None),
+                               inducing_variable=Data.Z,
+                               q_diag=True)
     model.q_mu.trainable = False
     return model
 
@@ -85,7 +89,6 @@ def create_model():
 # ------------------------------------------
 # Reference
 # ------------------------------------------
-
 
 example_tf_module_variable_dict = {
     'A.var_trainable': {
@@ -252,10 +255,10 @@ example_tf_keras_model = """\
 | C.param                 | Parameter        |             | True        | ()        | float64 | 0.0      |\n\
 +-------------------------+------------------+-------------+-------------+-----------+---------+----------+"""
 
-
 # ------------------------------------------
 # Fixtures
 # ------------------------------------------
+
 
 @pytest.fixture(params=[A, B, create_kernel, create_model])
 def module(request):
@@ -273,15 +276,14 @@ def dag_module():
 # Tests
 # ------------------------------------------
 
+
 def test_leaf_components_only_returns_parameters_and_variables(module):
     for path, variable in leaf_components(module).items():
         assert isinstance(variable, tf.Variable) or isinstance(variable, gpflow.Parameter)
 
 
-@pytest.mark.parametrize('module_callable, expected_param_dicts', [
-    (create_kernel, kernel_param_dict),
-    (create_model, model_gp_param_dict)
-])
+@pytest.mark.parametrize('module_callable, expected_param_dicts', [(create_kernel, kernel_param_dict),
+                                                                   (create_model, model_gp_param_dict)])
 def test_leaf_components_registers_variable_properties(module_callable, expected_param_dicts):
     module = module_callable()
     for path, variable in leaf_components(module).items():
