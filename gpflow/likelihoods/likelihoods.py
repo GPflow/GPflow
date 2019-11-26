@@ -164,9 +164,9 @@ class Gaussian(Likelihood):
     optimization process. A lower bound of 1e-6 is therefore imposed on the likelihood variance
     by default.
     """
-    def __init__(self, variance=1.0, **kwargs):
+    def __init__(self, variance=1.0, variance_lower_bound=1e-6, **kwargs):
         super().__init__(**kwargs)
-        self.variance = Parameter(variance, transform=positive(lower=1e-6))
+        self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
     def log_prob(self, F, Y):
         return logdensities.gaussian(Y, F, self.variance)
