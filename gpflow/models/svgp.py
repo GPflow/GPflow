@@ -135,13 +135,13 @@ class SVGP(GPModel):
         """
         This gives a variational bound on the model likelihood.
         """
-        x, y = data
+        X, Y = data
         kl = self.prior_kl()
-        f_mean, f_var = self.predict_f(x, full_cov=False, full_output_cov=False)
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, y)
+        f_mean, f_var = self.predict_f(X, full_cov=False, full_output_cov=False)
+        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
-            minibatch_size = tf.cast(x.shape[0], kl.dtype)
+            minibatch_size = tf.cast(X.shape[0], kl.dtype)
             scale = num_data / minibatch_size
         else:
             scale = tf.cast(1.0, kl.dtype)
