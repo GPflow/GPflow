@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import gpflow
 import numpy as np
 import pytest
@@ -34,11 +33,13 @@ class Data:
 # Fixtures
 # ------------------------------------------
 
+
 @pytest.fixture
 def model():
-    return gpflow.models.GPR((Data.X, Data.Y),
-                             kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
-                             )
+    return gpflow.models.GPR(
+        (Data.X, Data.Y),
+        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
+    )
 
 
 def test_non_trainable_model_objective(model):
