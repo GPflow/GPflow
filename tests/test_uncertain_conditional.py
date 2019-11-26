@@ -145,7 +145,7 @@ def test_no_uncertainty(white, mean):
 
     @tf.function
     def closure():
-        return -model.log_marginal_likelihood(Data.data)
+        return - model.log_marginal_likelihood(Data.data)
 
     training_loop(closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=100)
 
@@ -173,7 +173,7 @@ def test_monte_carlo_1_din(white, mean):
 
     @tf.function
     def closure():
-        return -model.log_marginal_likelihood(DataMC1.data)
+        return - model.log_marginal_likelihood(DataMC1.data)
 
     training_loop(closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=200)
 
@@ -201,7 +201,7 @@ def test_monte_carlo_2_din(white, mean):
 
     @tf.function
     def closure():
-        return -model.log_marginal_likelihood(DataMC2.data)
+        return - model.log_marginal_likelihood(DataMC2.data)
 
     training_loop(closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=100)
 
