@@ -98,20 +98,20 @@ def assert_sgpr_vs_svgp(m1: tf.Module, m2: tf.Module):
     data = m1.data
 
     m1_ll_before = m1.log_likelihood()
-    m2_ll_before = m2.log_likelihood(data[0], data[1])
+    m2_ll_before = m2.log_likelihood(data)
 
     assert m2_ll_before != m1_ll_before
 
     @tf.function(autograph=False)
     def loss_cb() -> tf.Tensor:
-        return - m2.log_marginal_likelihood(data[0], data[1])
+        return - m2.log_marginal_likelihood(data)
 
     params = [(m2.q_mu, m2.q_sqrt)]
     opt = NaturalGradient(1.)
     opt.minimize(loss_cb, var_list=params)
 
     m1_ll_after = m1.log_likelihood()
-    m2_ll_after = m2.log_likelihood(data[0], data[1])
+    m2_ll_after = m2.log_likelihood(data)
 
     np.testing.assert_allclose(m1_ll_after, m2_ll_after, atol=1e-4)
 
