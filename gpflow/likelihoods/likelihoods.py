@@ -156,9 +156,17 @@ class Likelihood(tf.Module):
 
 
 class Gaussian(Likelihood):
-    def __init__(self, variance=1.0, **kwargs):
+    r"""
+    The Gaussian likelihood is appropriate where uncertainties associated with the data are
+    believed to follow a normal distribution, with constant variance.
+
+    Very small uncertainties can lead to numerical instability during the
+    optimization process. A lower bound of 1e-6 is therefore imposed on the likelihood variance
+    by default.
+    """
+    def __init__(self, variance=1.0, variance_lower_bound=1e-6, **kwargs):
         super().__init__(**kwargs)
-        self.variance = Parameter(variance, transform=positive())
+        self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
     def log_prob(self, F, Y):
         return logdensities.gaussian(Y, F, self.variance)
