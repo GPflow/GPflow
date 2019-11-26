@@ -114,7 +114,7 @@ def test_sgpr_qu():
 
     @tf.function
     def closure():
-        return -model.log_marginal_likelihood()
+        return - model.log_marginal_likelihood()
 
     gpflow.optimizers.Scipy().minimize(closure, variables=model.trainable_variables)
 

@@ -62,7 +62,9 @@ def gen_L(n, *shape):
 
 
 def gen_q_sqrt(D_out, *shape):
-    return tf.convert_to_tensor(np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)]), dtype=default_float())
+    return tf.convert_to_tensor(np.array(
+        [np.tril(rng.randn(*shape)) for _ in range(D_out)]
+        ), dtype=default_float())
 
 
 def mean_function_factory(mean_function_name, D_in, D_out):
@@ -143,7 +145,7 @@ def test_no_uncertainty(white, mean):
 
     @tf.function
     def closure():
-        return -model.log_marginal_likelihood(Data.data)
+        return - model.log_marginal_likelihood(Data.data)
 
     training_loop(closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=100)
 
@@ -171,7 +173,7 @@ def test_monte_carlo_1_din(white, mean):
 
     @tf.function
     def closure():
-        return -model.log_marginal_likelihood(DataMC1.data)
+        return - model.log_marginal_likelihood(DataMC1.data)
 
     training_loop(closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=200)
 
@@ -199,7 +201,7 @@ def test_monte_carlo_2_din(white, mean):
 
     @tf.function
     def closure():
-        return -model.log_marginal_likelihood(DataMC2.data)
+        return - model.log_marginal_likelihood(DataMC2.data)
 
     training_loop(closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=100)
 
@@ -230,7 +232,7 @@ def test_quadrature(white, mean):
     def var_fn(X):
         return conditional_fn(X)[1]
 
-    quad_args = DataQuad.Xmu, DataQuad.Xvar, DataQuad.H, DataQuad.D_in, (DataQuad.D_out, )
+    quad_args = DataQuad.Xmu, DataQuad.Xvar, DataQuad.H, DataQuad.D_in, (DataQuad.D_out,)
     mean_quad = mvnquad(mean_fn, *quad_args)
     var_quad = mvnquad(var_fn, *quad_args)
 
