@@ -35,6 +35,12 @@ class MultioutputKernel(Kernel):
     `full_output_cov` is set to True the covariance matrix will be filled with zeros
     until the appropriate size is reached.
     """
+
+    @property
+    @abc.abstractmethod
+    def num_output_dims(self):
+        raise NotImplementedError
+
     @abc.abstractmethod
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         """
@@ -80,6 +86,10 @@ class SharedIndependent(MultioutputKernel):
         self.kernel = kernel
         self.P = output_dimensionality
 
+    @property
+    def num_output_dims(self):
+        return self.P
+
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         K = self.kernel.K(X, Y)  # [N, N2]
         if full_output_cov:
@@ -101,6 +111,10 @@ class SeparateIndependent(MultioutputKernel, Combination):
     """
     def __init__(self, kernels, name=None):
         Combination.__init__(self, kernels, name)
+
+    @property
+    def num_output_dims(self):
+        return len(self.kernels)
 
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         if full_output_cov:
@@ -139,6 +153,10 @@ class LinearCoregionalization(IndependentLatent, Combination):
     def __init__(self, kernels, W, name=None):
         Combination.__init__(self, kernels, name)
         self.W = Parameter(W)  # [P, L]
+
+    @property
+    def num_output_dims(self):
+        return len(self.kernels)
 
     def Kgg(self, X, Y):
         return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [L, N, N2]
