@@ -167,8 +167,8 @@ class Combination(Kernel):
 
     _reduction = None
 
-    def __init__(self, kernels: List[Kernel], name: Optional[str] = None):
-        super().__init__(name=name)
+    def __init__(self, kernels: List[Kernel], name: Optional[str] = None, **kwargs):
+        super().__init__(name=name, **kwargs)
 
         if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError(

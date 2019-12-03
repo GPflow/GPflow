@@ -36,9 +36,12 @@ class MultioutputKernel(Kernel):
     until the appropriate size is reached.
     """
 
+    def __init__(self, output_dim: int, **kwargs):
+        self._output_dim = output_dim
+        super().__init__(**kwargs)
+
     @property
-    @abc.abstractmethod
-    def num_output_dims(self):
+    def output_dim(self):
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -82,13 +85,10 @@ class SharedIndependent(MultioutputKernel):
     Use `gpflow.kernels` instead for more efficient code.
     """
     def __init__(self, kernel: Kernel, output_dimensionality: int):
-        super().__init__()
+        super().__init__(output_dim=output_dimensionality)
         self.kernel = kernel
         self.P = output_dimensionality
 
-    @property
-    def num_output_dims(self):
-        return self.P
 
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         K = self.kernel.K(X, Y)  # [N, N2]
@@ -110,11 +110,8 @@ class SeparateIndependent(MultioutputKernel, Combination):
     - Independent: Latents are uncorrelated a priori.
     """
     def __init__(self, kernels, name=None):
-        Combination.__init__(self, kernels, name)
+        super().__init__(output_dim=len(kernels), kernels=kernels, name=name)
 
-    @property
-    def num_output_dims(self):
-        return len(self.kernels)
 
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         if full_output_cov:
@@ -151,12 +148,8 @@ class LinearCoregionalization(IndependentLatent, Combination):
     Linear mixing of the latent GPs to form the output.
     """
     def __init__(self, kernels, W, name=None):
-        Combination.__init__(self, kernels, name)
+        super().__init__(output_dim=len(kernels), kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
-
-    @property
-    def num_output_dims(self):
-        return len(self.kernels)
 
     def Kgg(self, X, Y):
         return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [L, N, N2]
