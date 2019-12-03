@@ -317,14 +317,14 @@ def test_shapes_of_mok():
     kern_list = [SquaredExponential() for _ in range(data.L)]
 
     k1 = mk.LinearCoregionalization(kern_list, W=data.W)
-    assert k1.num_output_dims == data.L
+    assert k1.output_dims == data.L
 
     k2 = mk.SeparateIndependent(kern_list)
-    assert k2.num_output_dims == data.L
+    assert k2.output_dims == data.L
 
     dims = 5
     k3 = mk.SharedIndependent(SquaredExponential(), dims)
-    assert k3.num_output_dims == dims
+    assert k3.output_dims == dims
 
 
 # ------------------------------------------
