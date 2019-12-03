@@ -84,8 +84,8 @@ class SharedIndependent(MultioutputKernel):
     Note: this class is created only for testing and comparison purposes.
     Use `gpflow.kernels` instead for more efficient code.
     """
-    def __init__(self, kernel: Kernel, output_dimensionality: int):
-        super().__init__(output_dim=output_dimensionality)
+    def __init__(self, kernel: Kernel, output_dim: int):
+        super().__init__(output_dim=output_dim)
         self.kernel = kernel
 
 
