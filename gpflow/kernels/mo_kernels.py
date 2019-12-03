@@ -87,20 +87,19 @@ class SharedIndependent(MultioutputKernel):
     def __init__(self, kernel: Kernel, output_dimensionality: int):
         super().__init__(output_dim=output_dimensionality)
         self.kernel = kernel
-        self.P = output_dimensionality
 
 
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
         K = self.kernel.K(X, Y)  # [N, N2]
         if full_output_cov:
-            Ks = tf.tile(K[..., None], [1, 1, self.P])  # [N, N2, P]
+            Ks = tf.tile(K[..., None], [1, 1, self.output_dim])  # [N, N2, P]
             return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # [N, P, N2, P]
         else:
-            return tf.tile(K[None, ...], [self.P, 1, 1])  # [P, N, N2]
+            return tf.tile(K[None, ...], [self.output_dim, 1, 1])  # [P, N, N2]
 
     def K_diag(self, X, full_output_cov=True, presliced=False):
         K = self.kernel.K_diag(X)  # N
-        Ks = tf.tile(K[:, None], [1, self.P])  # [N, P]
+        Ks = tf.tile(K[:, None], [1, self.output_dim])  # [N, P]
         return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
 
 
