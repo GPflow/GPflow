@@ -190,70 +190,70 @@ example_dag_module_param_dict = {
 }
 
 compose_kernel_param_print_string = """\
-name                                       class      transform    trainable    shape    dtype      value\n\
------------------------------------------  ---------  -----------  -----------  -------  -------  -------\n\
-Product.kernels[0].kernels[0].variance     Parameter  Softplus     True         ()       float64        1\n\
-Product.kernels[0].kernels[0].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
-Product.kernels[0].kernels[1].variance     Parameter  Softplus     True         ()       float64        1\n\
-Product.kernels[0].kernels[1].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
-Product.kernels[1].kernels[0].variance     Parameter  Softplus     True         ()       float64        1\n\
-Product.kernels[1].kernels[0].lengthscale  Parameter  Softplus     False        ()       float64        2\n\
-Product.kernels[1].kernels[1].variance     Parameter  Softplus     True         ()       float64        1\n\
-Product.kernels[1].kernels[1].lengthscale  Parameter  Softplus     False        ()       float64        2"""
+name                                       class      transform    prior    trainable    shape    dtype      value\n\
+-----------------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
+Product.kernels[0].kernels[0].variance     Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[0].kernels[0].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[0].kernels[1].variance     Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[0].kernels[1].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[1].kernels[0].variance     Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[1].kernels[0].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[1].kernels[1].variance     Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[1].kernels[1].lengthscale  Parameter  Softplus              False        ()       float64        2"""
 
 kernel_param_print_string = """\
-name                            class      transform    trainable    shape    dtype      value\n\
-------------------------------  ---------  -----------  -----------  -------  -------  -------\n\
-SquaredExponential.variance     Parameter  Softplus     True         ()       float64        1\n\
-SquaredExponential.lengthscale  Parameter  Softplus     False        ()       float64        2"""
+name                            class      transform    prior    trainable    shape    dtype      value\n\
+------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
+SquaredExponential.variance     Parameter  Softplus              True         ()       float64        1\n\
+SquaredExponential.lengthscale  Parameter  Softplus              False        ()       float64        2"""
 
 kernel_param_print_string_with_shift = """\
-name                            class      transform                trainable    shape    dtype      value\n\
-------------------------------  ---------  -----------------------  -----------  -------  -------  -------\n\
-SquaredExponential.variance     Parameter  Softplus + AffineScalar  True         ()       float64        1\n\
-SquaredExponential.lengthscale  Parameter  Softplus + AffineScalar  False        ()       float64        2"""
+name                            class      transform                prior    trainable    shape    dtype      value\n\
+------------------------------  ---------  -----------------------  -------  -----------  -------  -------  -------\n\
+SquaredExponential.variance     Parameter  Softplus + AffineScalar           True         ()       float64        1\n\
+SquaredExponential.lengthscale  Parameter  Softplus + AffineScalar           False        ()       float64        2"""
 
 model_gp_param_print_string = """\
-name                      class      transform    trainable    shape    dtype    value\n\
-------------------------  ---------  -----------  -----------  -------  -------  --------\n\
-SVGP.kernel.variance      Parameter  Softplus     True         ()       float64  1.0\n\
-SVGP.kernel.lengthscale   Parameter  Softplus     False        ()       float64  2.0\n\
-SVGP.likelihood.variance  Parameter  Softplus     True         ()       float64  1.0\n\
-SVGP.inducing_variable.Z  Parameter               True         (10, 1)  float64  [[0.5...\n\
-SVGP.q_mu                 Parameter               False        (10, 1)  float64  [[0....\n\
-SVGP.q_sqrt               Parameter  Softplus     True         (10, 1)  float64  [[1...."""
+name                      class      transform    prior    trainable    shape    dtype    value\n\
+------------------------  ---------  -----------  -------  -----------  -------  -------  --------\n\
+SVGP.kernel.variance      Parameter  Softplus              True         ()       float64  1.0\n\
+SVGP.kernel.lengthscale   Parameter  Softplus              False        ()       float64  2.0\n\
+SVGP.likelihood.variance  Parameter  Softplus              True         ()       float64  1.0\n\
+SVGP.inducing_variable.Z  Parameter                        True         (10, 1)  float64  [[0.5...\n\
+SVGP.q_mu                 Parameter                        False        (10, 1)  float64  [[0....\n\
+SVGP.q_sqrt               Parameter  Softplus              True         (10, 1)  float64  [[1...."""
 
 example_tf_module_variable_print_string = """\
-name             class             transform    trainable    shape      dtype    value\n\
----------------  ----------------  -----------  -----------  ---------  -------  --------\n\
-A.var_trainable  ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
-A.var_fixed      ResourceVariable               False        (2, 2, 1)  float32  [[[1...."""
+name             class             transform    prior    trainable    shape      dtype    value\n\
+---------------  ----------------  -----------  -------  -----------  ---------  -------  --------\n\
+A.var_trainable  ResourceVariable                        True         (2, 2, 1)  float32  [[[0....\n\
+A.var_fixed      ResourceVariable                        False        (2, 2, 1)  float32  [[[1...."""
 
 example_module_list_variable_print_string = """\
-name                                 class             transform    trainable    shape      dtype    value\n\
------------------------------------  ----------------  -----------  -----------  ---------  -------  --------\n\
-B.submodule_list[0].var_trainable    ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
-B.submodule_list[0].var_fixed        ResourceVariable               False        (2, 2, 1)  float32  [[[1....\n\
-B.submodule_list[1].var_trainable    ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
-B.submodule_list[1].var_fixed        ResourceVariable               False        (2, 2, 1)  float32  [[[1....\n\
-B.submodule_dict['a'].var_trainable  ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
-B.submodule_dict['a'].var_fixed      ResourceVariable               False        (2, 2, 1)  float32  [[[1....\n\
-B.submodule_dict['b'].var_trainable  ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
-B.submodule_dict['b'].var_fixed      ResourceVariable               False        (2, 2, 1)  float32  [[[1....\n\
-B.var_trainable                      ResourceVariable               True         (2, 2, 1)  float32  [[[0....\n\
-B.var_fixed                          ResourceVariable               False        (2, 2, 1)  float32  [[[1...."""
+name                                 class             transform    prior    trainable    shape      dtype    value\n\
+-----------------------------------  ----------------  -----------  -------  -----------  ---------  -------  --------\n\
+B.submodule_list[0].var_trainable    ResourceVariable                        True         (2, 2, 1)  float32  [[[0....\n\
+B.submodule_list[0].var_fixed        ResourceVariable                        False        (2, 2, 1)  float32  [[[1....\n\
+B.submodule_list[1].var_trainable    ResourceVariable                        True         (2, 2, 1)  float32  [[[0....\n\
+B.submodule_list[1].var_fixed        ResourceVariable                        False        (2, 2, 1)  float32  [[[1....\n\
+B.submodule_dict['a'].var_trainable  ResourceVariable                        True         (2, 2, 1)  float32  [[[0....\n\
+B.submodule_dict['a'].var_fixed      ResourceVariable                        False        (2, 2, 1)  float32  [[[1....\n\
+B.submodule_dict['b'].var_trainable  ResourceVariable                        True         (2, 2, 1)  float32  [[[0....\n\
+B.submodule_dict['b'].var_fixed      ResourceVariable                        False        (2, 2, 1)  float32  [[[1....\n\
+B.var_trainable                      ResourceVariable                        True         (2, 2, 1)  float32  [[[0....\n\
+B.var_fixed                          ResourceVariable                        False        (2, 2, 1)  float32  [[[1...."""
 
 # Note: we use grid format here because we have a double reference to the same variable
 # which does not render nicely in the table formatting.
 example_tf_keras_model = """\
-+-------------------------+------------------+-------------+-------------+-----------+---------+----------+\n\
-| name                    | class            | transform   | trainable   | shape     | dtype   | value    |\n\
-+=========================+==================+=============+=============+===========+=========+==========+\n\
-| C._trainable_weights[0] | ResourceVariable |             | True        | (2, 2, 1) | float32 | [[[0.... |\n\
-| C.variable              |                  |             |             |           |         |          |\n\
-+-------------------------+------------------+-------------+-------------+-----------+---------+----------+\n\
-| C.param                 | Parameter        |             | True        | ()        | float64 | 0.0      |\n\
-+-------------------------+------------------+-------------+-------------+-----------+---------+----------+"""
++-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| name                    | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
++=========================+==================+=============+=========+=============+===========+=========+==========+\n\
+| C._trainable_weights[0] | ResourceVariable |             |         | True        | (2, 2, 1) | float32 | [[[0.... |\n\
+| C.variable              |                  |             |         |             |           |         |          |\n\
++-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| C.param                 | Parameter        |             |         | True        | ()        | float64 | 0.0      |\n\
++-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
 
 # ------------------------------------------
 # Fixtures
