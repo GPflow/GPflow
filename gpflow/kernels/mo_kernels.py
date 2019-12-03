@@ -42,7 +42,7 @@ class MultioutputKernel(Kernel):
 
     @property
     def output_dim(self):
-        raise NotImplementedError
+        raise self._output_dim
 
     @abc.abstractmethod
     def K(self, X, Y=None, full_output_cov=True, presliced=False):
