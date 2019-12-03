@@ -26,7 +26,7 @@ import numpy as np
 import tensorflow as tf
 
 
-class Kernel(tf.Module):
+class Kernel(tf.Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.
     """
