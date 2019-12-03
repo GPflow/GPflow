@@ -144,10 +144,16 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
             return var.transform.__class__.__name__
         return None
 
+    def get_prior(var):
+        if hasattr(var, 'prior') and var.prior is not None:
+            return var.prior.name
+        return None
+
     # list of (column_name: str, column_getter: Callable[[tf.Variable], str]) tuples:
     column_definition = [
         ("class", lambda var: var.__class__.__name__),
         ("transform", get_transform),
+        ("prior", get_prior),
         ("trainable", lambda var: var.trainable),
         ("shape", lambda var: var.shape),
         ("dtype", lambda var: var.dtype.name),
