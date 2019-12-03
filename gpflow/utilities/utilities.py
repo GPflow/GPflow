@@ -137,34 +137,35 @@ def print_summary(module: tf.Module, fmt: str = None):
 
 
 def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -> str:
-    def get_transform(var):
+    def get_transform(path, var):
         if hasattr(var, 'transform') and var.transform is not None:
             if isinstance(var.transform, tfp.bijectors.Chain):
                 return " + ".join(b.__class__.__name__ for b in var.transform.bijectors[::-1])
             return var.transform.__class__.__name__
         return None
 
-    def get_prior(var):
+    def get_prior(path, var):
         if hasattr(var, 'prior') and var.prior is not None:
             return var.prior.name
         return None
 
     # list of (column_name: str, column_getter: Callable[[tf.Variable], str]) tuples:
     column_definition = [
-        ("class", lambda var: var.__class__.__name__),
+        ("name", lambda path, var: path),
+        ("class", lambda path, var: var.__class__.__name__),
         ("transform", get_transform),
         ("prior", get_prior),
-        ("trainable", lambda var: var.trainable),
-        ("shape", lambda var: var.shape),
-        ("dtype", lambda var: var.dtype.name),
-        ("value", lambda var: _str_tensor_value(var.numpy())),
+        ("trainable", lambda path, var: var.trainable),
+        ("shape", lambda path, var: var.shape),
+        ("dtype", lambda path, var: var.dtype.name),
+        ("value", lambda path, var: _str_tensor_value(var.numpy())),
         ]
     column_names, column_getters = zip(*column_definition)
 
     merged_leaf_components = _merge_leaf_components(leaf_components(module))
 
     column_values = [
-        [path] + [getter(variable) for getter in column_getters]
+        [getter(path, variable) for getter in column_getters]
         for path, variable in merged_leaf_components.items()
     ]
     return tabulate(column_values, headers=column_names, tablefmt=tablefmt)
