@@ -26,7 +26,7 @@ import numpy as np
 import tensorflow as tf
 
 
-class Kernel(tf.Module):
+class Kernel(tf.Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.
     """
@@ -72,23 +72,23 @@ class Kernel(tf.Module):
         other_dims = tf.reshape(other.active_dims, (1, -1))
         return not np.any(tf.equal(this_dims, other_dims))
 
-    def slice(self, X: tf.Tensor, Y: Optional[tf.Tensor] = None):
+    def slice(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None):
         """
         Slice the correct dimensions for use in the kernel, as indicated by `self.active_dims`.
 
         :param X: Input 1 [N, D].
-        :param Y: Input 2 [M, D], can be None.
-        :return: Sliced X, Y, [N, I], I - input dimension.
+        :param X2: Input 2 [M, D], can be None.
+        :return: Sliced X, X2, [N, I], I - input dimension.
         """
         dims = self.active_dims
         if isinstance(dims, slice):
             X = X[..., dims]
-            Y = Y[..., dims] if Y is not None else X
+            X2 = X2[..., dims] if X2 is not None else X
         elif dims is not None:
             # TODO(@awav): Convert when TF2.0 whill support proper slicing.
             X = tf.gather(X, dims, axis=-1)
-            Y = tf.gather(Y, dims, axis=-1) if Y is not None else X
-        return X, Y
+            X2 = tf.gather(X2, dims, axis=-1) if X2 is not None else X
+        return X, X2
 
     def slice_cov(self, cov: tf.Tensor) -> tf.Tensor:
         """
@@ -141,13 +141,13 @@ class Kernel(tf.Module):
     def K_diag(self, X, presliced=False):
         raise NotImplementedError
 
-    def __call__(self, X, Y=None, full=True, presliced=False):
-        if not full and Y is not None:
+    def __call__(self, X, X2=None, full=True, presliced=False):
+        if not full and X2 is not None:
             raise ValueError(
                 "Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:
             return self.K_diag(X)
-        return self.K(X, Y)
+        return self.K(X, X2)
 
     def __add__(self, other):
         return Sum([self, other])
