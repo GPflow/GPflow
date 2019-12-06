@@ -45,8 +45,8 @@ class Parameter(tf.Module):
                  name: Optional[str] = None):
         """
         Representation of a constrained parameter.
-        According to standard terminology `x` denotes the transformed representation or,
-        in other words, it is the constrained version of the parameter. It is often challenging
+        Here `x` denotes the transformed representation or,
+        in other words, the constrained version of the parameter. It is often challenging
         to operate with unconstrained parameters. For example a variance cannot be negative,
         therefore we need a positive constraint and it is natural to use constrained values.
         A prior can be imposed either on the constrained or unconstrained
@@ -64,7 +64,7 @@ class Parameter(tf.Module):
         self.prior_on_x = prior_on_x
         self._transform = transform
 
-    def log_prior(self, evaluate_on_x: bool = False):
+    def log_prior(self, evaluate_on_x: bool = True):
         """ Prior probability density.
         This can be evaluated either on the constrained or unconstrained variable. """
         x = self.read_value()
@@ -81,7 +81,7 @@ class Parameter(tf.Module):
                 if evaluate_on_x and not self.prior_on_x:
                     log_det_jacobian = self.transform.inverse_log_det_jacobian(x, x.shape.ndims)
                     out += tf.reduce_sum(log_det_jacobian)
-                if not evaluate_on_x and self.prior_on_x:  # Original definition
+                if not evaluate_on_x and self.prior_on_x:  # Original gpflow definition
                     log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
                     out += tf.reduce_sum(log_det_jacobian)
             return out
