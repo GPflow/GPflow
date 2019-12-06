@@ -39,15 +39,17 @@ class Parameter(tf.Module):
                  *,
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
+                 prior_on_x: bool = True,
                  trainable: bool = True,
                  dtype: Optional[DType] = None,
                  name: Optional[str] = None):
         """
-        Unconstrained parameter representation.
-        According to standard terminology `y` is always transformed representation or,
-        in other words, it is constrained version of the parameter. Normally, it is hard
-        to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
-        therefore we need positive constraint and it is natural to use constrained values.
+        Representation of a constrained parameter.
+        According to standard terminology `x` denotes the transformed representation or,
+        in other words, it is the constrained version of the parameter. It is often challenging
+        to operate with unconstrained parameters. For example a variance cannot be negative,
+        therefore we need a positive constraint and it is natural to use constrained values.
+        A prior can be imposed either on the constrained or unconstrained
         """
         super().__init__()
 
@@ -59,17 +61,29 @@ class Parameter(tf.Module):
             self._unconstrained = tf.Variable(value, dtype=dtype, name=name, trainable=trainable)
 
         self.prior = prior
+        self.prior_on_x = prior_on_x
         self._transform = transform
 
-    def log_prior(self):
+    def log_prior(self, evaluate_on_x: bool = False):
+        """ Prior probability density.
+        This can be evaluated either on the constrained or unconstrained variable. """
         x = self.read_value()
         y = self._unconstrained
 
         if self.prior is not None:
-            out = tf.reduce_sum(self.prior.log_prob(x))
+            z = x if self.prior_on_x else y
+            out = tf.reduce_sum(self.prior.log_prob(z))
+
             if self.transform is not None:
-                log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
-                out += tf.reduce_sum(log_det_jacobian)
+                # If the requested prior probability density does not match the
+                # variable on which the prior is defined, we need to make use of the
+                # Jacobian to compensate.
+                if evaluate_on_x and not self.prior_on_x:
+                    log_det_jacobian = self.transform.inverse_log_det_jacobian(x, x.shape.ndims)
+                    out += tf.reduce_sum(log_det_jacobian)
+                if not evaluate_on_x and self.prior_on_x:  # Original definition
+                    log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
+                    out += tf.reduce_sum(log_det_jacobian)
             return out
         else:
             return tf.convert_to_tensor(0., dtype=self.dtype)
