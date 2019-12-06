@@ -58,7 +58,7 @@ class Stationary(Kernel):
         return self.K_r2(r2)
 
     def K_diag(self, X, presliced=False):
-        return tf.fill((X.shape[:-1]), tf.squeeze(self.variance))
+        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
     def K_r2(self, r2):
         """
