@@ -39,9 +39,7 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
         :param name: optional kernel name.
         """
         super().__init__(name=name)
-        if isinstance(active_dims, list):
-            active_dims = np.array(active_dims)
-        self._active_dims = active_dims
+        self.active_dims = active_dims
 
     @property
     def active_dims(self):
