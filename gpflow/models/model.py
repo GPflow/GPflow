@@ -44,8 +44,12 @@ class BayesianModel(Module):
     def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
         return self.log_likelihood(*args, **kwargs) + self.log_prior()
 
-    def log_prior(self) -> tf.Tensor:
-        log_priors = [p.log_prior() for p in self.trainable_parameters]
+    def log_marginal_likelihood_on_unconstrained(self, *args, **kwargs) -> tf.Tensor:
+        return self.log_likelihood(*args, **kwargs) + self.log_prior(evaluate_on_constrained=False)
+
+    def log_prior(self, evaluate_on_constrained=True) -> tf.Tensor:
+        log_priors = [p.log_prior(evaluate_on_constrained=evaluate_on_constrained)
+                      for p in self.trainable_parameters]
         if log_priors:
             return tf.add_n(log_priors)
         else:

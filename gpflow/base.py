@@ -39,17 +39,16 @@ class Parameter(tf.Module):
                  *,
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
-                 prior_on_x: bool = True,
+                 prior_on_constrained: bool = True,
                  trainable: bool = True,
                  dtype: Optional[DType] = None,
                  name: Optional[str] = None):
         """
-        Representation of a constrained parameter.
-        Here `x` denotes the transformed representation or,
-        in other words, the constrained version of the parameter. It is often challenging
-        to operate with unconstrained parameters. For example a variance cannot be negative,
+        A parameter retains both constrained and unconstrained
+        representations, If no transforms is provided, these two values will be the same.
+        It is often challenging to operate with unconstrained parameters. For example a variance cannot be negative,
         therefore we need a positive constraint and it is natural to use constrained values.
-        A prior can be imposed either on the constrained or unconstrained
+        A prior can be imposed either on the constrained or unconstrained version of the parameter.
         """
         super().__init__()
 
@@ -61,28 +60,34 @@ class Parameter(tf.Module):
             self._unconstrained = tf.Variable(value, dtype=dtype, name=name, trainable=trainable)
 
         self.prior = prior
-        self.prior_on_x = prior_on_x
+        self.prior_on_constrained = prior_on_constrained
         self._transform = transform
 
-    def log_prior(self, evaluate_on_x: bool = True):
+    def log_prior(self, evaluate_on_constrained: bool = True):
         """ Prior probability density.
-        This can be evaluated either on the constrained or unconstrained variable. """
-        x = self.read_value()
-        y = self._unconstrained
+        This can be evaluated either on the constrained or unconstrained variable.
+        For example if transform = Exp(), prior = Uniform(), then log_prior will either be
+        uniform (when evaluate_on_constrained is True), or scale as 1/value when
+        evaluate_on_constrained is set to False.
+        """
+
+        x = self._unconstrained
+        y = self.read_value()
 
         if self.prior is not None:
-            z = x if self.prior_on_x else y
+            z = y if self.prior_on_constrained else x
             out = tf.reduce_sum(self.prior.log_prob(z))
 
             if self.transform is not None:
                 # If the requested prior probability density does not match the
                 # variable on which the prior is defined, we need to make use of the
                 # Jacobian to compensate.
-                if evaluate_on_x and not self.prior_on_x:
-                    log_det_jacobian = self.transform.inverse_log_det_jacobian(x, x.shape.ndims)
+                if evaluate_on_constrained and not self.prior_on_constrained:
+                    log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
                     out += tf.reduce_sum(log_det_jacobian)
-                if not evaluate_on_x and self.prior_on_x:  # Original gpflow definition
-                    log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
+                if not evaluate_on_constrained and self.prior_on_constrained:
+                    # This is the original definition used by gpflow
+                    log_det_jacobian = self.transform.forward_log_det_jacobian(x, x.shape.ndims)
                     out += tf.reduce_sum(log_det_jacobian)
             return out
         else:
