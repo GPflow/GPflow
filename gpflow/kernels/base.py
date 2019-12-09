@@ -65,12 +65,12 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
             # Be very conservative for kernels defined over slices of dimensions
             return False
 
-        if self.active_dims is None or other.active_dims:
+        if self.active_dims is None or other.active_dims is None:
             return False
 
-        this_dims = tf.reshape(self.active_dims, (-1, 1))
-        other_dims = tf.reshape(other.active_dims, (1, -1))
-        return not np.any(tf.equal(this_dims, other_dims))
+        this_dims = self.active_dims.reshape(-1, 1)
+        other_dims = other.active_dims.reshape(1, -1)
+        return not np.any(this_dims == other_dims)
 
     def slice(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None):
         """
@@ -85,7 +85,7 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
             X = X[..., dims]
             X2 = X2[..., dims] if X2 is not None else X
         elif dims is not None:
-            # TODO(@awav): Convert when TF2.0 whill support proper slicing.
+            # TODO(@awav): Convert when TF2.0 will support proper slicing.
             X = tf.gather(X, dims, axis=-1)
             X2 = tf.gather(X2, dims, axis=-1) if X2 is not None else X
         return X, X2
