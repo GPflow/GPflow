@@ -516,3 +516,19 @@ def _assert_changepoints_kern_err(X, kernels, locations, steepness):
 def test_changepoints(N, kernels, locations, steepness):
     X_data = rng.randn(N, 1)
     _assert_changepoints_kern_err(X_data, kernels, locations, steepness)
+
+
+@pytest.mark.parametrize('active_dims_1, active_dims_2, is_separate', [
+    [[1, 2, 3], None, False],
+    [None, [1, 2, 3], False],
+    [None, None, False],
+    [[1, 2, 3], [3, 4, 5], False],
+    [[1, 2, 3], [4, 5, 6], True],
+    ])
+def test_on_separate_dims(active_dims_1, active_dims_2, is_separate):
+    kernel_1 = gpflow.kernels.Linear(active_dims=active_dims_1)
+    kernel_2 = gpflow.kernels.SquaredExponential(active_dims=active_dims_2)
+    assert kernel_1.on_separate_dims(kernel_2) == is_separate
+    assert kernel_2.on_separate_dims(kernel_1) == is_separate
+    assert kernel_1.on_separate_dims(kernel_1) is False
+    assert kernel_2.on_separate_dims(kernel_2) is False
