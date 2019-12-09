@@ -115,7 +115,7 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     """
     assert cov_structure == "diag" or cov_structure == "full"
 
-    mean_shape = mean.shape
+    mean_shape = tf.shape(mean)
     S = num_samples if num_samples is not None else 1
     D = mean_shape[-1]
     leading_dims = mean_shape[:-2]
