@@ -107,8 +107,8 @@ class DummyModel(gpflow.models.BayesianModel):
 def test_map_on_unconstrained_space():
     m1 = DummyModel(with_transform=True)
     m2 = DummyModel(with_transform=False)
-    assert np.allclose(m1.log_marginal_likelihood_on_unconstrained().numpy(),
-                       m2.log_marginal_likelihood_on_unconstrained().numpy()
+    assert np.allclose(m1.log_marginal_likelihood(evaluate_on_constrained=False).numpy(),
+                       m2.log_marginal_likelihood(evaluate_on_constrained=False).numpy()
                        + m1.log_scale), \
                        "Unconstrained MAP objective should differ by log|Jacobian| of the transform"
 

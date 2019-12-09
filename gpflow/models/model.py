@@ -41,11 +41,8 @@ class BayesianModel(Module):
         warnings.warn(msg, category=DeprecationWarning)
         return - self.log_marginal_likelihood(*args, **kwargs)
 
-    def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return self.log_likelihood(*args, **kwargs) + self.log_prior()
-
-    def log_marginal_likelihood_on_unconstrained(self, *args, **kwargs) -> tf.Tensor:
-        return self.log_likelihood(*args, **kwargs) + self.log_prior(evaluate_on_constrained=False)
+    def log_marginal_likelihood(self, *args, evaluate_on_constrained=True, **kwargs) -> tf.Tensor:
+        return self.log_likelihood(*args, **kwargs) + self.log_prior(evaluate_on_constrained)
 
     def log_prior(self, evaluate_on_constrained=True) -> tf.Tensor:
         log_priors = [p.log_prior(evaluate_on_constrained=evaluate_on_constrained)
