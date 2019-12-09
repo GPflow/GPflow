@@ -66,9 +66,9 @@ class Parameter(tf.Module):
     def log_prior(self, evaluate_on_constrained: bool = True):
         """ Prior probability density.
         This can be evaluated either on the constrained or unconstrained variable.
-        For example if transform = Exp(), prior = Uniform(), then log_prior will either be
-        uniform (when evaluate_on_constrained is True), or scale as 1/value when
-        evaluate_on_constrained is set to False.
+        For example if we set transform = Exp(), prior = Uniform(), prior_on_constrained=True
+        Then log_prior will either be uniform (when evaluate_on_constrained is True),
+        or log_prior scales as 1/value when evaluate_on_constrained is set to False.
         """
 
         x = self._unconstrained
