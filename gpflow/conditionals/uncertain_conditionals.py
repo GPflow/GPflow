@@ -48,7 +48,7 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
 
     pXnew = Gaussian(Xnew_mu, Xnew_var)
 
-    num_data = Xnew_mu.shape[0]  # number of new inputs (N)
+    num_data = tf.shape(Xnew_mu)[0]  # number of new inputs (N)
     num_ind = q_mu.shape[0]  # number of inducing points (M)
     num_func = q_mu.shape[1]  # output dimension (D)
 
