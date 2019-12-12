@@ -86,7 +86,7 @@ def base_conditional(Kmn: tf.Tensor,
             L_shape = tf.shape(L)
             L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
 
-            shape = tf.concat([leading_dims, [num_func, M, N]], 0)
+            shape = tf.concat([leading_dims, [num_func, M, N]], axis=0)
             A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
             LTA = tf.linalg.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover
