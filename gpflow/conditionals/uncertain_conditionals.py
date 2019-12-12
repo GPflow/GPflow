@@ -49,9 +49,7 @@ def uncertain_conditional(Xnew_mu: tf.Tensor,
     pXnew = Gaussian(Xnew_mu, Xnew_var)
 
     num_data = tf.shape(Xnew_mu)[0]  # number of new inputs (N)
-    num_ind = q_mu.shape[0]  # number of inducing points (M)
-    num_func = q_mu.shape[1]  # output dimension (D)
-
+    num_ind, num_func = tf.unstack(tf.shape(q_mu), num=2, axis=0) . # number of inducing points (M), output dimension (D)
     q_sqrt_r = tf.linalg.band_part(q_sqrt, -1, 0)  # [D, M, M]
 
     eKuf = tf.transpose(expectation(pXnew, (kernel, inducing_variable)))  # [M, N] (psi1)
