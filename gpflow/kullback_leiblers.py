@@ -61,7 +61,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     white = K is None
     diag = len(q_sqrt.shape) == 2
 
-    M, B = q_mu.shape[0], q_mu.shape[1]
+    M, B = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
     if white:
         alpha = q_mu  # [M, B]

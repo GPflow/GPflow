@@ -308,6 +308,6 @@ def _inverse_lower_triangular(M):
     """
     if M.shape.ndims != 3:  # pragma: no cover
         raise ValueError("Number of dimensions for input is required to be 3.")
-    D, N = M.shape[0], M.shape[1]
+    D, N = tf.shape(M)[0], tf.shape(M)[1]
     I_dnn = tf.eye(N, dtype=M.dtype)[None, :, :] * tf.ones((D, 1, 1), dtype=M.dtype)
     return tf.linalg.triangular_solve(M, I_dnn)

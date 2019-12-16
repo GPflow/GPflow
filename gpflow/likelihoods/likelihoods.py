@@ -175,7 +175,7 @@ class Gaussian(Likelihood):
         return tf.identity(F)
 
     def conditional_variance(self, F):
-        return tf.fill(F.shape, tf.squeeze(self.variance))
+        return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
@@ -264,7 +264,7 @@ class StudentT(Likelihood):
 
     def conditional_variance(self, F):
         var = (self.scale**2) * (self.df / (self.df - 2.0))
-        return tf.fill(F.shape, tf.squeeze(var))
+        return tf.fill(tf.shape(F), tf.squeeze(var))
 
 
 class Bernoulli(Likelihood):
@@ -381,8 +381,8 @@ class MultiClass(Likelihood):
     def log_prob(self, F, Y):
         hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1),
                         tf.cast(Y, tf.int64))
-        yes = tf.ones(Y.shape, dtype=default_float()) - self.invlink.epsilon
-        no = tf.zeros(Y.shape, dtype=default_float()) + self.invlink.eps_k1
+        yes = tf.ones(tf.shape(Y), dtype=default_float()) - self.invlink.epsilon
+        no = tf.zeros(tf.shape(Y), dtype=default_float()) + self.invlink.eps_k1
         p = tf.where(hits, yes, no)
         return tf.math.log(p)
 
@@ -395,7 +395,7 @@ class MultiClass(Likelihood):
 
     def predict_mean_and_var(self, Fmu, Fvar):
         possible_outputs = [
-            tf.fill(tf.stack([Fmu.shape[0], 1]), np.array(i, dtype=np.int64))
+            tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64))
             for i in range(self.num_classes)
         ]
         ps = [
@@ -557,7 +557,7 @@ class Ordinal(Likelihood):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()),
                         (-1, 1))
-        return tf.reshape(tf.linalg.matmul(phi, Ys), F.shape)
+        return tf.reshape(tf.linalg.matmul(phi, Ys), tf.shape(F))
 
     def conditional_variance(self, F):
         phi = self._make_phi(F)
@@ -565,7 +565,7 @@ class Ordinal(Likelihood):
                         (-1, 1))
         E_y = phi @ Ys
         E_y2 = phi @ (Ys**2)
-        return tf.reshape(E_y2 - E_y**2, F.shape)
+        return tf.reshape(E_y2 - E_y**2, tf.shape(F))
 
 
 class MonteCarloLikelihood(Likelihood):
