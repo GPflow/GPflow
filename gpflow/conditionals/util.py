@@ -86,7 +86,7 @@ def base_conditional(Kmn: tf.Tensor,
             L_shape = tf.shape(L)
             L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
 
-            shape = tf.concat([leading_dims, [num_func, M, N]], 0)
+            shape = tf.concat([leading_dims, [num_func, M, N]], axis=0)
             A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
             LTA = tf.linalg.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover
@@ -194,7 +194,7 @@ def independent_interdomain_conditional(Kmn,
         - mean: [N, P]
         - variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]
     """
-    M, L, N, P = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
+    M, L, N, P = tf.unstack(tf.shape(Kmn), num=Kmn.shape.ndims, axis=0)
 
     Lm = tf.linalg.cholesky(Kmm)  # [L, M, M]
 
@@ -295,8 +295,8 @@ def fully_correlated_conditional_repeat(Kmn,
         - mean: [R, N, P]
         - variance: [R, N, P], [R, N, P, P], [R, P, N, N], [R, N, P, N, P]
     """
-    R = f.shape[1]
-    M, N, K = [Kmn.shape[i] for i in range(Kmn.shape.ndims)]
+    R = tf.shape(f)[1]
+    M, N, K = tf.unstack(tf.shape(Kmn), num=Kmn.shape.ndims, axis=0)
     Lm = tf.linalg.cholesky(Kmm)
 
     # Compute the projection matrix A
@@ -355,7 +355,7 @@ def fully_correlated_conditional_repeat(Kmn,
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, K))  # [R, N, K]
             fvar = fvar[None, ...] + addvar  # [R, N, K]
     else:
-        fvar = tf.broadcast_to(fvar[None], fmean.shape)
+        fvar = tf.broadcast_to(fvar[None], tf.shape(fmean))
     return fmean, fvar
 
 

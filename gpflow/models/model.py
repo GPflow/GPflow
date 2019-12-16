@@ -112,7 +112,7 @@ class GPModel(BayesianModel):
         """
         mu, var = self.predict_f(predict_at, full_cov=full_cov)  # [N, P], [P, N, N]
         num_latent = var.shape[0]
-        num_elems = var.shape[1]
+        num_elems = tf.shape(var)[1]
         var_jitter = ops.add_to_diagonal(var, default_jitter())
         L = tf.linalg.cholesky(var_jitter)  # [P, N, N]
         V = tf.random.normal([num_latent, num_elems, num_samples], dtype=mu.dtype)  # [P, N, S]

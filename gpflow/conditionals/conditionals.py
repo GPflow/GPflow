@@ -109,7 +109,7 @@ def _conditional(Xnew: tf.Tensor,
         - mean:     [N, R]
         - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
     """
-    Kmm = kernel(X) + eye(X.shape[-2], value=default_jitter(), dtype=X.dtype)
+    Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)
     Kmn = kernel(X, Xnew)
     Knn = kernel(Xnew, full=full_cov)
     mean, var = base_conditional(Kmn,
