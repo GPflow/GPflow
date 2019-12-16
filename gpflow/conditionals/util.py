@@ -51,11 +51,11 @@ def base_conditional(Kmn: tf.Tensor,
         0)  # [N]
     Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
 
-    leading_dims = Kmn.shape[:-2]
+    leading_dims = tf.shape(Kmn)[:-2]
     Lm = tf.linalg.cholesky(Kmm)  # [M, M]
 
     # Compute the projection matrix A
-    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, Lm.shape], 0))  # [..., M, M]
+    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
     A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
 
     # compute the covariance due to the conditioning
@@ -86,7 +86,7 @@ def base_conditional(Kmn: tf.Tensor,
             L_shape = tf.shape(L)
             L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
 
-            shape = [*leading_dims, num_func, M, N]
+            shape = tf.concat([leading_dims, [num_func, M, N]], 0)
             A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
             LTA = tf.linalg.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover
