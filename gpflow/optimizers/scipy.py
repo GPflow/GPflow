@@ -38,6 +38,9 @@ class Scipy:
                 above, and `values` is the corresponding list of tensors of
                 matching shape that contains their value at this optimisation
                 step.
+            jit: If True, wraps the evaluation function (the passed `closure` as
+                well as its gradient computation) inside a `tf.function()`,
+                which will improve optimization speed in most cases.
 
             scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`
 
