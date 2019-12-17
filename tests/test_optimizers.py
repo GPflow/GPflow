@@ -52,7 +52,8 @@ def test_scipy_jit():
     def closure1():
         return - m1.log_marginal_likelihood()
 
-    def closure2(autograph=False):
+    @tf.function(autograph=False)
+    def closure2():
         return - m2.log_marginal_likelihood()
 
     opt1.minimize(closure1, variables=m1.trainable_variables, options=dict(maxiter=50), jit=False)
