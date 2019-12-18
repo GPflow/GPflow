@@ -46,8 +46,7 @@ def test_svgp(whiten, q_diag):
     )
     gpflow.utilities.set_trainable(model.inducing_variable, False)
 
-    opt = gpflow.optimizers.Scipy()
-
+    # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
     elbo = tf.function(
         model.elbo,
@@ -59,4 +58,7 @@ def test_svgp(whiten, q_diag):
     def model_closure():
         return - elbo(Datum.data)
 
-    opt.minimize(model_closure, variables=model.trainable_variables, options=dict(maxiter=300))
+    opt = gpflow.optimizers.Scipy()
+
+    # simply test whether it runs without erroring...:
+    opt.minimize(model_closure, variables=model.trainable_variables, options=dict(maxiter=3), jit=True)
