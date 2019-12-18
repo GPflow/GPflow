@@ -31,6 +31,10 @@ class Datum:
     Xtest = rng.rand(10, 1) * 10
     data = (X, Y)
 
+    # for classification:
+    Yc = Y[:, :1]
+    cdata = (X, Yc)
+
 
 @pytest.mark.parametrize('whiten', [True, False])
 @pytest.mark.parametrize('q_diag', [True, False])
@@ -57,6 +61,34 @@ def test_svgp(whiten, q_diag):
     @tf.function(autograph=False)
     def model_closure():
         return - elbo(Datum.data)
+
+    opt = gpflow.optimizers.Scipy()
+
+    # simply test whether it runs without erroring...:
+    opt.minimize(model_closure, variables=model.trainable_variables, options=dict(maxiter=3), jit=True)
+
+
+def test_multiclass():
+    num_classes = 3
+    model = gpflow.models.SVGP(
+        gpflow.kernels.SquaredExponential(),
+        gpflow.likelihoods.MultiClass(num_classes=num_classes),
+        inducing_variable=Datum.X.copy(),
+        num_latent=num_classes,
+    )
+    gpflow.utilities.set_trainable(model.inducing_variable, False)
+
+    # test with explicitly unknown shapes:
+    tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
+    elbo = tf.function(
+        model.elbo,
+        autograph=False,
+        input_signature=[(tensor_spec, tensor_spec)],
+    )
+
+    @tf.function(autograph=False)
+    def model_closure():
+        return - elbo(Datum.cdata)
 
     opt = gpflow.optimizers.Scipy()
 
