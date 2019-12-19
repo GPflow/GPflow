@@ -55,7 +55,7 @@ class SamplingHelper:
         assert all([isinstance(p, (Parameter, tf.Variable)) for p in model_parameters])
 
         self._model_parameters = model_parameters
-        self._target_log_prob_fn = target_log_prob_fn
+        self._target_log_prob_fn = lambda: target_log_prob_fn(evaluate_on_constrained=False)
 
         self._parameters = []
         self._unconstrained_variables = []
