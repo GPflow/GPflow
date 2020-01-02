@@ -114,11 +114,20 @@ class Parameter(tf.Module):
 
     def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True):
         """
-        Assigns constrained `value` to the unconstrained parameter's variable
-        It passes constrained value through transform first.
+        Assigns constrained `value` to the unconstrained parameter's variable.
+        It passes constrained value through parameter's transform first.
+
+        Example:
+            ```
+            a = Parameter(2.0, transform=tfp.bijectors.Softplus())
+            b = Parameter(3.0)
+
+            a.assign(4.0)               # `a` parameter to `2.0` value.
+            a.assign(tf.constant(5.0))  # `a` parameter to `2.0` value.
+            a.assign(b)                 # `a` parameter to constrained value of `b`.
+            ```
 
         :param value: Constrained tensor-like value.
-        :param use_locking: Boolean value
         :param use_locking: If `True`, use locking during the assignment.
         :param name: The name of the operation to be created.
         :param read_value: if True, will return something which evaluates to the new
