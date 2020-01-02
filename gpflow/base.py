@@ -123,7 +123,7 @@ class Parameter(tf.Module):
             b = Parameter(3.0)
 
             a.assign(4.0)               # `a` parameter to `2.0` value.
-            a.assign(tf.constant(5.0))  # `a` parameter to `2.0` value.
+            a.assign(tf.constant(5.0))  # `a` parameter to `5.0` value.
             a.assign(b)                 # `a` parameter to constrained value of `b`.
             ```
 
