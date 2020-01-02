@@ -112,8 +112,18 @@ class Parameter(tf.Module):
     def initial_value(self):
         return self._unconstrained.initial_value
 
-    def assign(self, value, use_locking=False, name=None, read_value=True):
-        # TODO(sergio.pasc): Find proper solution for casting / Discuss solution
+    def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True):
+        """
+        Assigns constrained `value` to the unconstrained parameter's variable
+        It passes constrained value through transform first.
+
+        :param value: Constrained tensor-like value.
+        :param use_locking: Boolean value
+        :param use_locking: If `True`, use locking during the assignment.
+        :param name: The name of the operation to be created.
+        :param read_value: if True, will return something which evaluates to the new
+            value of the variable; if False will return the assign op.
+        """
         value = _verified_value(value, self.dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
 
