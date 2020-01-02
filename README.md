@@ -7,7 +7,8 @@
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=master)](http://gpflow.readthedocs.io/en/master/?badge=master)
 
 [Website](https://gpflow.org) |
-[Documentation](https://gpflow.readthedocs.io/en/develop/) |
+[Documentation (develop/v2.0)](https://gpflow.readthedocs.io/en/develop/) |
+[Documentation (v1.5)](https://gpflow.readthedocs.io/en/v1.5.1-docs/) |
 [Glossary](GLOSSARY.md)
 
 GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
@@ -51,7 +52,7 @@ There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develo
 
 - **GPflow 1.0**
 
-  *We have stopped development and support for GPflow based on TensorFlow 1.0. We now accept only bug fixes to GPflow 1.0 in the **develop-1.0** branch. The latest available release is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1).*
+  *We have stopped development and support for GPflow based on TensorFlow 1.0. We now accept only bug fixes to GPflow 1.0 in the **develop-1.0** branch. The latest available release is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1). [Documentation](https://gpflow.readthedocs.io/en/v1.5.1-docs/) and [tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb) will remain available.*
 
 
 ## Getting help

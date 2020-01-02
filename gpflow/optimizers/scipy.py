@@ -19,6 +19,7 @@ class Scipy:
                  variables: Variables,
                  method: Optional[str] = "L-BFGS-B",
                  step_callback: Optional[StepCallback] = None,
+                 jit: bool = True,
                  **scipy_kwargs) -> OptimizeResult:
         """
         Minimize is a wrapper around the `scipy.optimize.minimize` function
@@ -37,6 +38,9 @@ class Scipy:
                 above, and `values` is the corresponding list of tensors of
                 matching shape that contains their value at this optimisation
                 step.
+            jit: If True, wraps the evaluation function (the passed `closure` as
+                well as its gradient computation) inside a `tf.function()`,
+                which will improve optimization speed in most cases.
 
             scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`
 
@@ -48,7 +52,7 @@ class Scipy:
             raise TypeError('Callable object expected.')  # pragma: no cover
         initial_params = self.initial_parameters(variables)
 
-        func = self.eval_func(closure, variables)
+        func = self.eval_func(closure, variables, jit=jit)
         if step_callback is not None:
             if 'callback' in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
@@ -64,13 +68,20 @@ class Scipy:
         return cls.pack_tensors(variables)
 
     @classmethod
-    def eval_func(cls, closure: LossClosure, variables: Variables):
-        def _eval(x):
+    def eval_func(cls, closure: LossClosure, variables: Variables, jit: bool = True):
+        def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             values = cls.unpack_tensors(variables, x)
             cls.assign_tensors(variables, values)
 
             loss, grads = _compute_loss_and_gradients(closure, variables)
-            return loss.numpy().astype(np.float64), cls.pack_tensors(grads).astype(np.float64)
+            return loss, cls.pack_tensors(grads)
+
+        if jit:
+            _tf_eval = tf.function(_tf_eval)
+
+        def _eval(x):
+            loss, grad = _tf_eval(tf.convert_to_tensor(x))
+            return loss.numpy().astype(np.float64), grad.numpy().astype(np.float64)
 
         return _eval
 
@@ -87,19 +98,19 @@ class Scipy:
         return _callback
 
     @staticmethod
-    def pack_tensors(tensors: Iterator[tf.Tensor]) -> np.ndarray:
+    def pack_tensors(tensors: Iterator[tf.Tensor]) -> tf.Tensor:
         flats = [tf.reshape(tensor, (-1, )) for tensor in tensors]
         tensors_vector = tf.concat(flats, axis=0)
-        return tensors_vector.numpy()
+        return tensors_vector
 
     @staticmethod
-    def unpack_tensors(to_tensors: Iterator[tf.Tensor], from_vector: np.ndarray) -> List[tf.Tensor]:
+    def unpack_tensors(to_tensors: Iterator[tf.Tensor], from_vector: tf.Tensor) -> List[tf.Tensor]:
         s = 0
         values = []
         for tensor in to_tensors:
             shape = tf.shape(tensor)
-            tensor_size = int(np.prod(shape))
-            tensor_vector = from_vector[s:s + tensor_size].astype(tensor.dtype.as_numpy_dtype())
+            tensor_size = tf.reduce_prod(shape)
+            tensor_vector = tf.cast(from_vector[s:s + tensor_size], tensor.dtype)
             tensor_vector = tf.reshape(tensor_vector, shape)
             values.append(tensor_vector)
             s += tensor_size
