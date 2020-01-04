@@ -1,40 +1,59 @@
-# GPflow
+<div style="text-align:center">
+<img width="500" height="200" src="./doc/source/_static/gpflow_logo.svg">
+</div>
 
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=master)](http://gpflow.readthedocs.io/en/master/?badge=master)
 
 [Website](https://gpflow.org) |
-[Documentation](https://gpflow.readthedocs.io/en/master/) |
-[Manual](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true) |
-[Glossary](GLOSSARY.md) |
-[Tips & Tricks](doc/source/notebooks/tips_and_tricks.ipynb)
+[Documentation (develop/v2.0)](https://gpflow.readthedocs.io/en/develop/) |
+[Documentation (v1.5)](https://gpflow.readthedocs.io/en/v1.5.1-docs/) |
+[Glossary](GLOSSARY.md)
 
 GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
-The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is Alexander G. de G. Matthews, Alexis Boukouvalas, [Artem Artemev](http://github.com/awav/), Daniel Marthaler, David J. Harris, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
+The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is
+ Alexander G. de G. Matthews, Alexis Boukouvalas, [Artem Artemev](http://github.com/awav/), Daniel Marthaler, David J
+ . Harris, Eric Hambro, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon
+ -Villagra, Rasmus Bonnevie, Sergio Pascual-Diaz, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin
+  Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.
+
 
 ## What does GPflow do?
 
-GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details. The interface follows on from [GPy](http://github.com/sheffieldml/gpy), and the docs have further [discussion of the comparison](http://gpflow.readthedocs.io/en/develop/intro.html#what-s-the-difference-between-gpy-and-gpflow).
+GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
 
-GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python **3.6**.
-
-
-## Install GPflow 2.0 alpha version
-
-With the release of `tensorflow` 2.0 and `tensorflow-probability` 0.8, you should
-only need to run
-
-```bash
-pip install -e .
-```
-
-in a check-out of the `develop-2.0` branch of the GPflow github repository.
+GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python ≥ 3.6.
 
 
-## Getting Started
+## Install GPflow
 
-There is an "Intro to GPflow 2" Jupyter notebook in `doc/source/notebooks/intro_to_gpflow2.ipynb". Not all tutorial notebooks may be running on `gpflow2` already, but we are working on it!
+- From source
+
+  With the release of _TensorFlow 2.0_ and _Tensorflow Probability_ 0.8, you should
+  only need to run
+
+  ```bash
+  pip install -e .
+  ```
+
+  in a check-out of the `develop` branch of the GPflow github repository.
+
+- Using `pip`
+
+  ```bash
+  pip install gpflow
+  ```
+
+
+## Getting Started with GPflow 2.0
+
+There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/intro_to_gpflow2.ipynb) Jupyter notebook. Check it out for details.
+
+- **GPflow 1.0**
+
+  *We have stopped development and support for GPflow based on TensorFlow 1.0. We now accept only bug fixes to GPflow 1.0 in the **develop-1.0** branch. The latest available release is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1). [Documentation](https://gpflow.readthedocs.io/en/v1.5.1-docs/) and [tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb) will remain available.*
+
 
 ## Getting help
 

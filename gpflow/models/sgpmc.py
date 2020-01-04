@@ -17,13 +17,14 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from ..likelihoods import Likelihood
-from ..mean_functions import MeanFunction
 from ..base import Parameter
 from ..conditionals import conditional
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
-from ..models.model import GPModel, MeanAndVariance, Data
+from ..likelihoods import Likelihood
+from ..mean_functions import MeanFunction
+from ..models.model import Data, GPModel, MeanAndVariance
+from ..utilities import to_default_float
 from .util import inducingpoint_wrapper
 
 
@@ -59,7 +60,6 @@ class SGPMC(GPModel):
 
 
     """
-
     def __init__(self,
                  data: Data,
                  kernel: Kernel,
@@ -72,15 +72,12 @@ class SGPMC(GPModel):
         Z is a data matrix, of inducing inputs, size [M, D]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
-        super().__init__(kernel,
-                         likelihood,
-                         mean_function,
-                         num_latent=num_latent)
+        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
         self.data = data
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
         self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
+        self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         """
@@ -89,11 +86,9 @@ class SGPMC(GPModel):
         # get the (marginals of) q(f): exactly predicting!
         x_data, y_data = self.data
         fmean, fvar = self.predict_f(x_data, full_cov=False)
-        return tf.reduce_sum(
-            self.likelihood.variational_expectations(fmean, fvar, y_data))
+        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, y_data))
 
-    def predict_f(self, X: tf.Tensor, full_cov=False,
-                  full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 

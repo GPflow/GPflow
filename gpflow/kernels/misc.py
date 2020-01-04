@@ -1,9 +1,10 @@
 import numpy as np
 import tensorflow as tf
 
-from gpflow.config import default_float
+from ..base import Parameter
+from ..config import default_float
+from ..utilities import positive
 from .base import Kernel
-from ..base import Parameter, positive
 
 
 class ArcCosine(Kernel):
@@ -26,26 +27,17 @@ class ArcCosine(Kernel):
 
     implemented_orders = {0, 1, 2}
 
-    def __init__(self,
-                 order=0,
-                 variance=1.0,
-                 weight_variances=1.,
-                 bias_variance=1.,
-                 active_dims=None,
-                 ard=None):
+    def __init__(self, order=0, variance=1.0, weight_variances=1., bias_variance=1., active_dims=None):
         """
-        - input_dim is the dimension of the input to the kernel
-        - order specifies the activation function of the neural network
-          the function is a rectified monomial of the chosen order.
-        - variance is the initial value for the variance parameter
-        - weight_variances is the initial value for the weight_variances parameter
-          defaults to 1.0 (ard=False) or np.ones(input_dim) (ard=True).
-        - bias_variance is the initial value for the bias_variance parameter
-          defaults to 1.0.
-        - active_dims is a list of length input_dim which controls which
-          columns of X are used.
-        - ard specifies whether the kernel has one weight_variance per dimension
-          (ard=True) or a single weight_variance (ard=False).
+        :param order: specifies the activation function of the neural network
+          the function is a rectified monomial of the chosen order
+        :param variance: the (initial) value for the variance parameter
+        :param weight_variances: the (initial) value for the weight_variances parameter,
+            to induce ARD behaviour this must be initialised as an array the same
+            length as the the number of active dimensions e.g. [1., 1., 1.]
+        :param bias_variance: the (initial) value for the bias_variance parameter
+            defaults to 1.0
+        :param active_dims: a slice or list specifying which columns of X are used
         """
         super().__init__(active_dims)
 
@@ -55,18 +47,20 @@ class ArcCosine(Kernel):
 
         self.variance = Parameter(variance, transform=positive())
         self.bias_variance = Parameter(bias_variance, transform=positive())
-        # weight_variances, self.ard = self._validate_ard_shape("weight_variances", weight_variances, ard)
-        self.ard = ard
-        self.weight_variances = Parameter(weight_variances,
-                                          transform=positive())
+        self.weight_variances = Parameter(weight_variances, transform=positive())
+        self._validate_ard_active_dims(self.weight_variances)
+
+    @property
+    def ard(self) -> bool:
+        """
+        Whether ARD behaviour is active.
+        """
+        return self.weight_variances.shape.ndims > 0
 
     def _weighted_product(self, X, X2=None):
         if X2 is None:
-            return tf.reduce_sum(self.weight_variances * tf.square(X),
-                                 axis=1) + self.bias_variance
-        return tf.linalg.matmul(
-            (self.weight_variances * X), X2,
-            transpose_b=True) + self.bias_variance
+            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+        return tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
 
     def _J(self, theta):
         """
@@ -78,7 +72,7 @@ class ArcCosine(Kernel):
         elif self.order == 1:
             return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)
         elif self.order == 2:
-            return 3. * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (1. + 2. * tf.cos(theta) ** 2)
+            return 3. * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (1. + 2. * tf.cos(theta)**2)
 
     def K(self, X, X2=None, presliced=False):
         if not presliced:
@@ -106,61 +100,7 @@ class ArcCosine(Kernel):
 
         X_product = self._weighted_product(X)
         const = tf.cast((1. / np.pi) * self._J(0.), default_float())
-        return self.variance * const * X_product ** self.order
-
-
-class Periodic(Kernel):
-    """
-    The periodic kernel. Defined in  Equation (47) of
-
-    D.J.C.MacKay. Introduction to Gaussian processes. In C.M.Bishop, editor,
-    Neural Networks and Machine Learning, pages 133--165. Springer, 1998.
-
-    Derived using an RBF kernel once mapped the original inputs through
-    the mapping u=(cos(x), sin(x)).
-
-    The resulting periodic kernel can be expressed as:
-        k(r) =  σ² exp{ -0.5 sin²(π r / γ) / ℓ²}
-
-    where:
-    r  is the Euclidean distance between the input points
-    ℓ is the lengthscale parameter,
-    σ² is the variance parameter,
-    γ is the period parameter.
-
-    (note that usually we have a factor of 4 instead of 0.5 in front but this is absorbed into lengthscale
-    hyperparameter).
-    """
-
-    def __init__(self,
-                 period=1.0,
-                 variance=1.0,
-                 lengthscale=1.0,
-                 active_dims=None):
-        # No ard support for lengthscale or period yet
-        super().__init__(active_dims)
-        self.variance = Parameter(variance, transform=positive())
-        self.lengthscale = Parameter(lengthscale, transform=positive())
-        self.ard = False
-        self.period = Parameter(period, transform=positive())
-
-    def K_diag(self, X, presliced=False):
-        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
-
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
-        if X2 is None:
-            X2 = X
-
-        # Introduce dummy dimension so we can use broadcasting
-        f = tf.expand_dims(X, 1)  # now [N, 1, D]
-        f2 = tf.expand_dims(X2, 0)  # now [1, M, D]
-
-        r = np.pi * (f - f2) / self.period
-        r = tf.reduce_sum(tf.square(tf.sin(r) / self.lengthscale), 2)
-
-        return self.variance * tf.exp(-0.5 * r)
+        return self.variance * const * X_product**self.order
 
 
 class Coregion(Kernel):
@@ -206,8 +146,7 @@ class Coregion(Kernel):
             X2 = X
         else:
             X2 = tf.cast(X2[:, 0], tf.int32)
-        B = tf.linalg.matmul(self.W, self.W,
-                             transpose_b=True) + tf.linalg.diag(self.kappa)
+        B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X, presliced=False):

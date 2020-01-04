@@ -17,24 +17,24 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
-from .. import covariances, inducing_variables, kernels, likelihoods
-from ..base import Parameter, positive
+from .. import covariances, kernels, likelihoods
+from ..base import Parameter
 from ..config import default_float, default_jitter
 from ..expectations import expectation
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
+from ..utilities import positive
 from ..utilities.ops import pca_reduce
-from .util import inducingpoint_wrapper
 from .gpr import GPR
 from .model import GPModel
+from .util import inducingpoint_wrapper
 
 
 class GPLVM(GPR):
     """
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
-
     def __init__(self,
                  data: tf.Tensor,
                  latent_dim: int,
@@ -45,7 +45,7 @@ class GPLVM(GPR):
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
 
         :param data: y data matrix, size N (number of points) x D (dimensions)
-        :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions)
+        :param latent_dim: the number of latent dimensions (Q)
         :param x_data_mean: latent positions ([N, Q]), for the initialisation of the latent space.
         :param kernel: kernel specification, by default Squared Exponential
         :param mean_function: mean function, by default None.
@@ -62,7 +62,7 @@ class GPLVM(GPR):
             mean_function = Zero()
 
         if kernel is None:
-            kernel = kernels.SquaredExponential(lengthscale=tf.ones((latent_dim, )), ard=True)
+            kernel = kernels.SquaredExponential(lengthscale=tf.ones((latent_dim, )))
 
         if data.shape[1] < num_latent:
             raise ValueError('More latent dimensions than observed.')
@@ -77,20 +77,21 @@ class BayesianGPLVM(GPModel):
                  x_data_mean: tf.Tensor,
                  x_data_var: tf.Tensor,
                  kernel: Kernel,
-                 num_inducing_variables: Optional[int]=None,
+                 num_inducing_variables: Optional[int] = None,
                  inducing_variable=None,
                  x_prior_mean=None,
                  x_prior_var=None):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
+
         :param data: data matrix, size N (number of points) x D (dimensions)
         :param x_data_mean: initial latent positions, size N (number of points) x Q (latent dimensions).
         :param x_data_var: variance of latent positions ([N, Q]), for the initialisation of the latent space.
         :param kernel: kernel specification, by default Squared Exponential
-        :param M: number of inducing points
-        :param Z: matrix of inducing points, size M (inducing points) x Q (latent dimensions). By default
-        random permutation of x_data_mean.
-        :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as x_data_mean.
+        :param num_inducing_variables: number of inducing points, M
+        :param inducing_variable: matrix of inducing points, size M (inducing points) x Q (latent dimensions). By default
+            random permutation of x_data_mean.
+        :param x_prior_mean: prior mean used in KL term of bound. By default 0. Same size as x_data_mean.
         :param x_prior_var: pripor variance used in KL term of bound. By default 1.
         """
         super().__init__(kernel, likelihoods.Gaussian())
@@ -179,13 +180,17 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False):
+    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
         there are notes in the SGPR notebook.
+
+        Note: This model does not allow full output covariances.
+
         :param predict_at: Point to predict at.
         """
+        assert full_output_cov == False
         pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
 
         y_data = self.data

@@ -10,11 +10,9 @@ from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
+TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
-
-positive = tfp.bijectors.Softplus
-triangular = tfp.bijectors.FillTriangular
 
 
 def _IS_PARAMETER(o):
@@ -28,11 +26,11 @@ def _IS_TRAINABLE_PARAMETER(o):
 class Module(tf.Module):
     @property
     def parameters(self):
-        return self._flatten(predicate=_IS_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_PARAMETER))
 
     @property
     def trainable_parameters(self):
-        return self._flatten(predicate=_IS_TRAINABLE_PARAMETER)
+        return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
 
 class Parameter(tf.Module):
@@ -76,15 +74,17 @@ class Parameter(tf.Module):
         else:
             return tf.convert_to_tensor(0., dtype=self.dtype)
 
-    @property
-    def handle(self):
-        return self._unconstrained.handle
-
     def value(self):
         return _to_constrained(self._unconstrained.value(), self.transform)
 
     def read_value(self):
         return _to_constrained(self._unconstrained.read_value(), self.transform)
+
+    def experimental_ref(self):
+        return self
+
+    def deref(self):
+        return self
 
     @property
     def unconstrained_variable(self):
@@ -93,6 +93,12 @@ class Parameter(tf.Module):
     @property
     def transform(self):
         return self._transform
+
+    @transform.setter
+    def transform(self, new_transform):
+        constrained_value = self.read_value()
+        self._transform = new_transform
+        self.assign(constrained_value)
 
     @property
     def trainable(self):
@@ -148,12 +154,12 @@ class Parameter(tf.Module):
     def _should_act_as_resource_variable(self):
         pass
 
+    @property
+    def handle(self):
+        return self._unconstrained.handle
+
     def __repr__(self):
         return self.read_value().__repr__()
-
-    def __ilshift__(self, value: VariableData) -> 'Parameter':
-        self.assign(tf.cast(value, self.dtype))
-        return self
 
     # Below
     # TensorFlow copy-paste code to make variable-like object to work

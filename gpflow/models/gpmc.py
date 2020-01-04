@@ -17,13 +17,14 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from ..kernels import Kernel
-from ..likelihoods import Likelihood
-from ..mean_functions import MeanFunction
-from .model import GPModel, MeanAndVariance, Data
 from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
+from ..kernels import Kernel
+from ..likelihoods import Likelihood
+from ..mean_functions import MeanFunction
+from ..utilities import to_default_float
+from .model import Data, GPModel, MeanAndVariance
 
 
 class GPMC(GPModel):
@@ -53,10 +54,10 @@ class GPMC(GPModel):
         self.data = data
         self.num_data = data[0].shape[0]
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=0., scale=1.)
+        self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        """
+        r"""
         Construct a tf function to compute the likelihood of a general GP
         model.
 

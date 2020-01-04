@@ -15,7 +15,7 @@ NoneType = type(None)
 
 @dispatch.expectation.register(Gaussian, kernels.Sum, NoneType, NoneType, NoneType)
 def _E(p, kernel, _, __, ___, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\Sum_i diag(Ki_{X, X})>_p(X)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -28,7 +28,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
 
 @dispatch.expectation.register(Gaussian, kernels.Sum, InducingPoints, NoneType, NoneType)
 def _E(p, kernel, inducing_variable, _, __, nghp=None):
-    """
+    r"""
     Compute the expectation:
     <\Sum_i Ki_{X, Z}>_p(X)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -42,7 +42,7 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
 @dispatch.expectation.register(Gaussian, (mfn.Linear, mfn.Identity, mfn.Constant), NoneType, kernels.Sum,
                                InducingPoints)
 def _E(p, mean, _, kernel, inducing_variable, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <m(x_n)^T (\Sum_i Ki_{x_n, Z})>_p(x_n)
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -55,7 +55,7 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
 
 @dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.Sum, InducingPoints)
 def _E(p, mean, _, kernel, inducing_variable, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <x_{n+1} (\Sum_i Ki_{x_n, Z})>_p(x_{n:n+1})
         - \Sum_i Ki_{.,.} :: Sum kernel
@@ -68,7 +68,7 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
 
 @dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
-    """
+    r"""
     Compute the expectation:
     expectation[n] = <(\Sum_i K1_i_{Z1, x_n}) (\Sum_j K2_j_{x_n, Z2})>_p(x_n)
         - \Sum_i K1_i_{.,.}, \Sum_j K2_j_{.,.} :: Sum kernels

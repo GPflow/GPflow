@@ -14,6 +14,7 @@
 
 import numpy as np
 import pytest
+import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
@@ -28,6 +29,7 @@ class Datum:
     Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
     Y = np.tile(Y, 2)  # two identical columns
     Xtest = rng.rand(10, 1) * 10
+    data = (X, Y)
 
 
 class DatumVGP:
@@ -40,11 +42,13 @@ class DatumVGP:
     q_sqrt = np.random.randn(DY, N, N)
     q_alpha = np.random.randn(N, DX)
     q_lambda = np.random.randn(N, DX) ** 2
+    data = (X, Y)
 
 
 class DatumUpper:
     X = np.random.rand(100, 1)
     Y = np.sin(1.5 * 2 * np.pi * X) + np.random.randn(*X.shape) * 0.1
+    data = (X, Y)
 
 
 def _create_full_gp_model():
@@ -103,7 +107,7 @@ def _create_approximate_models():
 
     opt = gpflow.optimizers.Scipy()
 
-    for m in [model_1, model_2, model_3, model_4]: # model_5?
+    for m in [model_1, model_2, model_3, model_4, model_5]:
         opt.minimize(lambda : m.objective(data), variables=m.trainable_variables, options=dict(maxiter=300))
 
     return model_1, model_2, model_3, model_4, model_5
@@ -132,7 +136,7 @@ def _create_svgp_model(kernel, likelihood, q_mu, q_sqrt, whiten):
     return model_svgp
 
 
-@pytest.mark.parametrize('approximate_model', _create_approximate_models()[:-1])
+@pytest.mark.parametrize('approximate_model', _create_approximate_models())
 def test_equivalence(approximate_model):
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
@@ -142,11 +146,11 @@ def test_equivalence(approximate_model):
     gpr_model = _create_full_gp_model()
     gpr_likelihood = - gpr_model.log_likelihood()
     if isinstance(approximate_model, gpflow.models.SVGP):
-        approximate_likelihood = - approximate_model.log_likelihood(Datum.X, Datum.Y)
+        approximate_likelihood = - approximate_model.log_likelihood(Datum.data)
     else:
         approximate_likelihood = - approximate_model.log_likelihood()
 
-    assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-4)
+    assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-6)
 
     gpr_kernel_ls = gpr_model.kernel.lengthscale.read_value()
     gpr_kernel_var = gpr_model.kernel.variance.read_value()
@@ -171,7 +175,7 @@ def test_equivalence_vgp_and_svgp():
     svgp_model = _create_svgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt, whiten=True)
     vgp_model = _create_vgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt)
 
-    likelihood_svgp = svgp_model.log_likelihood(DatumVGP.X, DatumVGP.Y)
+    likelihood_svgp = svgp_model.log_likelihood(DatumVGP.data)
     likelihood_vgp = vgp_model.log_likelihood()
     assert_allclose(likelihood_svgp, likelihood_vgp, rtol=1e-2)
 
@@ -208,7 +212,7 @@ def test_equivalence_vgp_and_opper_archambeau():
 
     likelihood_vgp = vgp_model.log_likelihood()
     likelihood_vgp_oa = vgp_oa_model.log_likelihood()
-    likelihood_svgp_unwhitened = svgp_model_unwhitened.log_likelihood(DatumVGP.X, DatumVGP.Y)
+    likelihood_svgp_unwhitened = svgp_model_unwhitened.log_likelihood(DatumVGP.data)
 
     assert_allclose(likelihood_vgp, likelihood_vgp_oa, rtol=1e-2)
     assert_allclose(likelihood_vgp, likelihood_svgp_unwhitened, rtol=1e-2)
@@ -240,11 +244,12 @@ def test_upper_bound_few_inducing_points():
     full_gp.kernel.lengthscale.assign(model_vfe.kernel.lengthscale.read_value())
     full_gp.kernel.variance.assign(model_vfe.kernel.variance.read_value())
     full_gp.likelihood.variance.assign(model_vfe.likelihood.variance.read_value())
+    full_gp.mean_function.c.assign(model_vfe.mean_function.c.read_value())
 
-    lml_upper = - model_vfe.upper_bound()
-    lml_vfe = - model_vfe.log_likelihood()
-    lml_full_gp = - full_gp.log_likelihood()
+    lml_upper = model_vfe.upper_bound()
+    lml_vfe = model_vfe.log_likelihood()
+    lml_full_gp = full_gp.log_likelihood()
 
     assert lml_full_gp > lml_vfe
-    assert lml_upper > lml_vfe
+    assert lml_upper > lml_full_gp
     assert_allclose(lml_full_gp, lml_upper)

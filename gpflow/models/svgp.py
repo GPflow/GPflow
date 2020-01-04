@@ -11,17 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Union
+from typing import Tuple
 
 import numpy as np
 import tensorflow as tf
 
 from .. import kullback_leiblers
+from ..base import Parameter
 from ..conditionals import conditional
 from ..covariances import Kuu
 from .model import GPModel, Data, GPPosterior
-from ..base import Parameter, positive, triangular
+from ..base import Parameter
 from ..config import default_float, default_jitter
+from ..utilities import positive, triangular
 from .util import inducingpoint_wrapper
 
 
@@ -44,14 +46,14 @@ class SVGP(GPModel):
                  kernel,
                  likelihood,
                  inducing_variable,
-                 mean_function = None,
                  *,
+                 mean_function=None,
                  num_latent: int = 1,
                  q_diag: bool = False,
-                 q_mu = None,
-                 q_sqrt = None,
+                 q_mu=None,
+                 q_sqrt=None,
                  whiten: bool = True,
-                 num_data = None):
+                 num_data=None):
         """
         - kernel, likelihood, inducing_variables, mean_function are appropriate
           GPflow objects
@@ -103,38 +105,34 @@ class SVGP(GPModel):
             `q_sqrt` is two dimensional and only holds the square root of the
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
-        q_mu = np.zeros(
-            (num_inducing, self.num_latent)) if q_mu is None else q_mu
+        q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
         self.q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
 
         if q_sqrt is None:
             if self.q_diag:
-                ones = np.ones((num_inducing, self.num_latent),
-                               dtype=default_float())
+                ones = np.ones((num_inducing, self.num_latent), dtype=default_float())
                 self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
             else:
-                q_sqrt = [
-                    np.eye(num_inducing, dtype=default_float())
-                    for _ in range(self.num_latent)
-                ]
+                q_sqrt = [np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)]
                 q_sqrt = np.array(q_sqrt)
-                self.q_sqrt = Parameter(q_sqrt,
-                                        transform=triangular())  # [P, M, M]
+                self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [P, M, M]
         else:
             if q_diag:
                 assert q_sqrt.ndim == 2
                 self.num_latent = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt,
-                                        transform=positive())  # [M, L|P]
+                self.q_sqrt = Parameter(q_sqrt, transform=positive())  # [M, L|P]
             else:
                 assert q_sqrt.ndim == 3
                 self.num_latent = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
-                self.q_sqrt = Parameter(q_sqrt,
-                                        transform=triangular())  # [L|P, M, M]
+                self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
-        return kullback_leiblers.prior_kl(self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten)
+        return kullback_leiblers.prior_kl(self.inducing_variable,
+                                          self.kernel,
+                                          self.q_mu,
+                                          self.q_sqrt,
+                                          whiten=self.whiten)
 
     def elbo(self, data: Data) -> tf.Tensor:
         """
@@ -162,7 +160,8 @@ class SVGP(GPModel):
 
     def objective(self, data: Data) -> tf.Tensor:
         """
-        This returns the (negative) evidence lower bound (ELBO) on the log marginal likelihood.
+        This returns the negative of the evidence lower bound (ELBO) on the
+        log marginal likelihood.
         """
         return -self.elbo(data)
 

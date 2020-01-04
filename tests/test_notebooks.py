@@ -27,23 +27,6 @@ from nbconvert.preprocessors.execute import CellExecutionError
 # different directories with the same base name, they will all get blacklisted
 # (change the blacklisting check to something else in that case, if need be!)
 BLACKLISTED_NOTEBOOKS = [
-    "coregionalisation.ipynb",  # PR #1072
-    "Sanity_check.ipynb",  # PR #1078
-
-    "external-mean-function.ipynb",  # TODO: @vdutor
-    "natural_gradients.ipynb",  # TODO: @awav
-    "mcmc.ipynb",  # TODO: @condnsdmatters
-
-    "models.ipynb",
-    "gp_nn.ipynb",
-    "mixture_density_network.ipynb",
-
-    "upper_bound.ipynb",
-    "FITCvsVFE.ipynb",
-
-    "monitoring.ipynb",  # requires re-write for new way of monitoring
-    "settings.ipynb",  # requires re-write for new config
-
     "tips_and_tricks.ipynb",  # requires a big re-write but contains some useful
     # sections such as saving&loading...
 ]

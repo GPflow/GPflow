@@ -19,7 +19,8 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.config import default_float
-from gpflow.kernels import (SquaredExponential, ArcCosine, Linear)
+from gpflow.kernels import SquaredExponential, ArcCosine, Linear
+
 
 rng = np.random.RandomState(1)
 
@@ -69,12 +70,49 @@ def _ref_arccosine(X, order, weight_variances, bias_variance, signal_variance):
     return kernel
 
 
-def _ref_periodic(X, lengthScale, signal_variance, period):
-    # Based on the GPy implementation of standard_period kernel
-    base = np.pi * (X[:, None, :] - X[None, :, :]) / period
-    exp_dist = np.exp(-0.5 *
-                      np.sum(np.square(np.sin(base) / lengthScale), axis=-1))
+def _ref_periodic(X, base_name, lengthscale, signal_variance, period):
+    """
+    Calculates K(X) for the periodic kernel based on various base kernels.
+    """
+    sine_arg = np.pi * (X[:, None, :] - X[None, :, :]) / period
+    sine_base = np.sin(sine_arg) / lengthscale
+    if base_name in {"RBF", "SquaredExponential"}:
+        dist = 0.5 * np.sum(np.square(sine_base), axis=-1)
+        exp_dist = np.exp(-dist)
+    elif base_name == "Matern12":
+        dist = np.sum(np.abs(sine_base), axis=-1)
+        exp_dist = np.exp(-dist)
+    elif base_name == "Matern32":
+        dist = np.sqrt(3) * np.sum(np.abs(sine_base), axis=-1)
+        exp_dist = (1 + dist) * np.exp(-dist)
+    elif base_name == "Matern52":
+        dist = np.sqrt(5) * np.sum(np.abs(sine_base), axis=-1)
+        exp_dist = (1 + dist + dist ** 2 / 3) * np.exp(-dist)
     return signal_variance * exp_dist
+
+
+def _ref_changepoints(X, kernels, locations, steepness):
+    """
+    Calculates K(X) for each kernel in `kernels`, then multiply by sigmoid functions
+    in order to smoothly transition betwen them. The sigmoid transitions are defined
+    by a location and a steepness parameter.
+    """
+    locations = sorted(locations)
+    steepness = steepness if isinstance(steepness, list) else [steepness] * len(locations)
+    locations = np.array(locations).reshape((1, 1, -1))
+    steepness = np.array(steepness).reshape((1, 1, -1))
+
+    sig_X = 1. / (1. + np.exp(-steepness * (X[:, :, None] - locations)))
+
+    starters = sig_X * np.transpose(sig_X, axes=(1, 0, 2))
+    stoppers = (1 - sig_X) * np.transpose((1 - sig_X), axes=(1, 0, 2))
+
+    ones = np.ones((X.shape[0], X.shape[0], 1))
+    starters = np.concatenate([ones, starters], axis=2)
+    stoppers = np.concatenate([stoppers, ones], axis=2)
+
+    kernel_stack = np.stack([k(X) for k in kernels], axis=2)
+    return (kernel_stack * starters * stoppers).sum(axis=2)
 
 
 @pytest.mark.parametrize('variance, lengthscale', [[2.3, 1.4]])
@@ -103,16 +141,11 @@ def test_rq_1d(variance, lengthscale):
 
 
 def _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
-                               order, ard, X):
+                               order, X):
     kernel = gpflow.kernels.ArcCosine(order=order,
                                       variance=variance,
                                       weight_variances=weight_variances,
-                                      bias_variance=bias_variance,
-                                      ard=ard)
-
-    if weight_variances is None:
-        weight_variances = 1.
-
+                                      bias_variance=bias_variance)
     gram_matrix = kernel(X)
     reference_gram_matrix = _ref_arccosine(X, order, weight_variances,
                                            bias_variance, variance)
@@ -120,32 +153,21 @@ def _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
 
 
 @pytest.mark.parametrize('order', gpflow.kernels.ArcCosine.implemented_orders)
-@pytest.mark.parametrize('D', [1, 3])
-@pytest.mark.parametrize('N, weight_variances, bias_variance, variance',
-                         [[3, 1.7, 0.6, 2.3]])
+@pytest.mark.parametrize('D, weight_variances',
+                         [[1, 1.7], [3, 1.7], [3, (1.1, 1.7, 1.9)]])
+@pytest.mark.parametrize('N, bias_variance, variance',
+                         [[3, 0.6, 2.3]])
 def test_arccosine_1d_and_3d(order, D, N, weight_variances, bias_variance,
                              variance):
-    ard = False if D == 1 else True
     X_data = rng.randn(N, D)
     _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
-                               order, ard, X_data)
+                               order, X_data)
 
 
 @pytest.mark.parametrize('order', [42])
 def test_arccosine_non_implemented_order(order):
     with pytest.raises(ValueError):
         gpflow.kernels.ArcCosine(order=order)
-
-
-@pytest.mark.parametrize('ard', [True, False])
-@pytest.mark.parametrize(
-    'order, D, N, weight_variances, bias_variance, variance',
-    [[0, 1, 3, 1., 1., 1.]])
-def test_arccosine_weight_initializations(ard, order, D, N, weight_variances,
-                                          bias_variance, variance):
-    X_data = rng.randn(N, D)
-    _assert_arccosine_kern_err(variance, weight_variances, bias_variance,
-                               order, ard, X_data)
 
 
 @pytest.mark.parametrize('D, N', [[1, 4]])
@@ -158,33 +180,71 @@ def test_arccosine_nan_gradient(D, N):
     assert not np.any(np.isnan(grads))
 
 
-def _assert_periodic_kern_err(lengthscale, variance, period, X):
-    kernel = gpflow.kernels.Periodic(period=period,
-                                     variance=variance,
-                                     lengthscale=lengthscale)
+def _assert_periodic_kern_err(base_class, lengthscale, variance, period, X):
+    base = base_class(lengthscale=lengthscale, variance=variance)
+    kernel = gpflow.kernels.Periodic(base, period=period)
     gram_matrix = kernel(X)
-    reference_gram_matrix = _ref_periodic(X, lengthscale, variance, period)
+    reference_gram_matrix = _ref_periodic(X, base_class.__name__, lengthscale, variance, period)
 
     assert_allclose(gram_matrix, reference_gram_matrix)
 
 
-@pytest.mark.parametrize('D', [1, 2])
-@pytest.mark.parametrize('N, lengthscale, variance, period',
-                         [[3, 2., 2.3, 2.], [5, 11.5, 1.3, 20.]])
-def test_periodic_1d_and_2d(D, N, lengthscale, variance, period):
+@pytest.mark.parametrize('base_class', [
+    gpflow.kernels.SquaredExponential,
+    gpflow.kernels.Matern12,
+    gpflow.kernels.Matern32,
+    gpflow.kernels.Matern52,
+])
+@pytest.mark.parametrize('D, lengthscale, period', [
+    [1, 2., 3.],                  # 1d, single lengthscale, single period
+    [2, 11.5, 3.],                # 2d, single lengthscale, single period
+    [2, 11.5, (3., 6.)],          # 2d, single lengthscale, ard period
+    [2, (11.5, 12.5), 3.],        # 2d, ard lengthscale, single period
+    [2, (11.5, 12.5), (3., 6.)],  # 2d, ard lengthscale, ard period
+])
+@pytest.mark.parametrize('N, variance', [
+    [3, 2.3],
+    [5, 1.3],
+])
+def test_periodic(base_class, D, N, lengthscale, variance, period):
     X = rng.randn(N, D) if D == 1 else rng.multivariate_normal(
         np.zeros(D), np.eye(D), N)
-    _assert_periodic_kern_err(lengthscale, variance, period, X)
+    _assert_periodic_kern_err(base_class, lengthscale, variance, period, X)
+
+
+@pytest.mark.parametrize('base_class', [
+    gpflow.kernels.SquaredExponential,
+    gpflow.kernels.Matern12,
+])
+def test_periodic_diag(base_class):
+    N, D = 5, 3
+    X = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
+    base = base_class(lengthscale=2., variance=1.)
+    kernel = gpflow.kernels.Periodic(base, period=6.)
+    assert_allclose(base(X, full=False), kernel(X, full=False))
+
+
+def test_periodic_non_stationary_base():
+    error_msg = r"Periodic requires a Stationary kernel as the `base`"
+    with pytest.raises(TypeError, match=error_msg):
+        gpflow.kernels.Periodic(gpflow.kernels.Linear())
+
+
+def test_periodic_bad_ard_period():
+    error_msg = r"Size of `active_dims` \[1 2\] does not match size of ard parameter \(3\)"
+    base = gpflow.kernels.RBF(active_dims=[1, 2])
+    with pytest.raises(ValueError, match=error_msg):
+        gpflow.kernels.Periodic(base, period=[1., 1., 1.])
 
 
 kernel_setups = [
-                    kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()
-                ] + [
-                    gpflow.kernels.Constant(),
-                    gpflow.kernels.Linear(),
-                    gpflow.kernels.Polynomial(),
-                    gpflow.kernels.ArcCosine()
-                ]
+    kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()
+] + [
+    gpflow.kernels.Constant(),
+    gpflow.kernels.Linear(),
+    gpflow.kernels.Polynomial(),
+    gpflow.kernels.ArcCosine()
+]
 
 
 @pytest.mark.parametrize('D', [1, 5])
@@ -243,7 +303,7 @@ _dim = 3
 kernel_setups_extended = kernel_setups + [
     SquaredExponential() + Linear(),
     SquaredExponential() * Linear(),
-    SquaredExponential() + Linear(ard=True, variance=rng.rand(_dim, 1).reshape(-1))
+    SquaredExponential() + Linear(variance=rng.rand(_dim))
 ] + [ArcCosine(order=order) for order in ArcCosine.implemented_orders]
 
 
@@ -362,7 +422,7 @@ def test_active_product(N, D):
         np.hstack([ls[:rand_idx], ls[rand_idx + 1:]]), ls[rand_idx], ls
     ]
     kernels = [
-        gpflow.kernels.SquaredExponential(lengthscale=lengthscale, active_dims=dims, ard=True)
+        gpflow.kernels.SquaredExponential(lengthscale=lengthscale, active_dims=dims)
         for dims, lengthscale in zip(active_dims_list, lengthscale_list)
     ]
     kernel_prod = kernels[0] * kernels[1]
@@ -380,32 +440,95 @@ def test_ard_init_scalar(D):
     lengthscale or a suitable array of lengthscale
     """
     kernel_1 = gpflow.kernels.SquaredExponential(lengthscale=2.3)
-    kernel_2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(D) * 2.3, ard=True)
+    kernel_2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(D) * 2.3)
     lengthscale_1 = kernel_1.lengthscale.read_value()
     lengthscale_2 = kernel_2.lengthscale.read_value()
     assert np.allclose(lengthscale_1, lengthscale_2, atol=1e-10)
 
 
-@pytest.mark.parametrize('N', [4, 7])
-@pytest.mark.parametrize('ard', [True, False, None])
-def test_ard_init_shapes(N, ard):
-    with pytest.raises(tf.errors.InvalidArgumentError):
-        k1 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), ard=ard)
-        k1(rng.randn(N, 4))
-    with pytest.raises(tf.errors.InvalidArgumentError):
-        k2 = gpflow.kernels.SquaredExponential(lengthscale=np.ones(3), ard=ard)
-        k2(rng.randn(N, 2))
+def test_ard_invalid_active_dims():
+    msg = r"Size of `active_dims` \[1\] does not match size of ard parameter \(2\)"
+    with pytest.raises(ValueError, match=msg):
+        gpflow.kernels.SquaredExponential(lengthscale=np.ones(2), active_dims=[1])
 
 
-@pytest.mark.parametrize('D', [4, 7])
-def test_ard_init_MLP(D):
-    """
-    For ard kernels, make sure that kernels can be instantiated with a single
-    lengthscale or a suitable array of lengthscale
-    """
-    kernel_1 = gpflow.kernels.ArcCosine(weight_variances=1.23, ard=True)
-    kernel_2 = gpflow.kernels.ArcCosine(weight_variances=np.ones(3) * 1.23,
-                                        ard=True)
-    variances_1 = kernel_1.weight_variances.read_value()
-    variances_2 = kernel_2.weight_variances.read_value()
-    assert np.allclose(variances_1, variances_2, atol=1e-10)
+@pytest.mark.parametrize('kernel_class, param_name', [
+    [gpflow.kernels.SquaredExponential, "lengthscale"],
+    [gpflow.kernels.Linear, "variance"],
+    [gpflow.kernels.ArcCosine, "weight_variances"],
+])
+@pytest.mark.parametrize('param_value, ard', [
+    [1., False],
+    [[1.], True],
+    [[1., 1.], True],
+])
+def test_ard_property(kernel_class, param_name, param_value, ard):
+    kernel = kernel_class(**{param_name: param_value})
+    assert kernel.ard is ard
+
+
+@pytest.mark.parametrize('locations, steepness, error_msg', [
+    # 1. Kernels locations dimension mismatch
+    [[1.], 1.,
+     r"Number of kernels \(3\) must be one more than the number of changepoint locations \(1\)"],
+
+     # 2. Locations steepness dimension mismatch
+    [[1., 2.], [1.],
+     r"Dimension of steepness \(1\) does not match number of changepoint locations \(2\)"],
+])
+def test_changepoints_init_fail(locations, steepness, error_msg):
+    kernels = [
+        gpflow.kernels.Matern12(),
+        gpflow.kernels.Linear(),
+        gpflow.kernels.Matern32(),
+    ]
+    with pytest.raises(ValueError, match=error_msg):
+        gpflow.kernels.ChangePoints(kernels, locations, steepness)
+
+
+def _assert_changepoints_kern_err(X, kernels, locations, steepness):
+    kernel = gpflow.kernels.ChangePoints(kernels, locations, steepness=steepness)
+    reference_gram_matrix = _ref_changepoints(X, kernels, locations, steepness)
+
+    assert_allclose(kernel(X), reference_gram_matrix)
+    assert_allclose(kernel.K_diag(X), np.diag(reference_gram_matrix))
+
+
+@pytest.mark.parametrize('N', [2, 10])
+@pytest.mark.parametrize('kernels, locations, steepness', [
+    # 1. Single changepoint
+    [[gpflow.kernels.Constant(),
+      gpflow.kernels.Constant()], [2.], 5.],
+    # 2. Two changepoints
+    [[gpflow.kernels.Constant(),
+      gpflow.kernels.Constant(),
+      gpflow.kernels.Constant()], [1., 2.], 5.],
+    # 3. Multiple steepness
+    [[gpflow.kernels.Constant(),
+      gpflow.kernels.Constant(),
+      gpflow.kernels.Constant()], [1., 2.], [5., 10.]],
+    # 4. Variety of kernels
+    [[gpflow.kernels.Matern12(),
+      gpflow.kernels.Linear(),
+      gpflow.kernels.SquaredExponential(),
+      gpflow.kernels.Constant()], [1., 2., 3.], 5.],
+])
+def test_changepoints(N, kernels, locations, steepness):
+    X_data = rng.randn(N, 1)
+    _assert_changepoints_kern_err(X_data, kernels, locations, steepness)
+
+
+@pytest.mark.parametrize('active_dims_1, active_dims_2, is_separate', [
+    [[1, 2, 3], None, False],
+    [None, [1, 2, 3], False],
+    [None, None, False],
+    [[1, 2, 3], [3, 4, 5], False],
+    [[1, 2, 3], [4, 5, 6], True],
+    ])
+def test_on_separate_dims(active_dims_1, active_dims_2, is_separate):
+    kernel_1 = gpflow.kernels.Linear(active_dims=active_dims_1)
+    kernel_2 = gpflow.kernels.SquaredExponential(active_dims=active_dims_2)
+    assert kernel_1.on_separate_dims(kernel_2) == is_separate
+    assert kernel_2.on_separate_dims(kernel_1) == is_separate
+    assert kernel_1.on_separate_dims(kernel_1) is False
+    assert kernel_2.on_separate_dims(kernel_2) is False

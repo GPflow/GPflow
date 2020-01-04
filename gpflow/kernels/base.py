@@ -20,22 +20,25 @@ in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 
 import abc
 from functools import partial, reduce
-from typing import Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
 
 
-class Kernel(tf.Module):
+class Kernel(tf.Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.
     """
 
-    def __init__(self, active_dims: slice = None, name: str = None):
+    def __init__(self,
+                 active_dims: Optional[Union[slice, list]] = None,
+                 name: Optional[str] = None):
         """
         :param active_dims: active dimensions, has the slice type.
+        :param name: optional kernel name.
         """
-        super().__init__(name)
+        super().__init__(name=name)
         if isinstance(active_dims, list):
             active_dims = np.array(active_dims)
         self._active_dims = active_dims
@@ -62,30 +65,30 @@ class Kernel(tf.Module):
             # Be very conservative for kernels defined over slices of dimensions
             return False
 
-        if self.active_dims is None or other.active_dims:
+        if self.active_dims is None or other.active_dims is None:
             return False
 
-        this_dims = tf.reshape(self.active_dims, (-1, 1))
-        other_dims = tf.reshape(other.active_dims, (1, -1))
-        return not np.any(tf.equal(this_dims, other_dims))
+        this_dims = self.active_dims.reshape(-1, 1)
+        other_dims = other.active_dims.reshape(1, -1)
+        return not np.any(this_dims == other_dims)
 
-    def slice(self, X: tf.Tensor, Y: Optional[tf.Tensor] = None):
+    def slice(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None):
         """
         Slice the correct dimensions for use in the kernel, as indicated by `self.active_dims`.
 
         :param X: Input 1 [N, D].
-        :param Y: Input 2 [M, D], can be None.
-        :return: Sliced X, Y, [N, I], I - input dimension.
+        :param X2: Input 2 [M, D], can be None.
+        :return: Sliced X, X2, [N, I], I - input dimension.
         """
         dims = self.active_dims
         if isinstance(dims, slice):
             X = X[..., dims]
-            Y = Y[..., dims] if Y is not None else X
+            X2 = X2[..., dims] if X2 is not None else X
         elif dims is not None:
-            # TODO(@awav): Convert when TF2.0 whill support proper slicing.
+            # TODO(@awav): Convert when TF2.0 will support proper slicing.
             X = tf.gather(X, dims, axis=-1)
-            Y = tf.gather(Y, dims, axis=-1) if Y is not None else X
-        return X, Y
+            X2 = tf.gather(X2, dims, axis=-1) if X2 is not None else X
+        return X, X2
 
     def slice_cov(self, cov: tf.Tensor) -> tf.Tensor:
         """
@@ -97,7 +100,7 @@ class Kernel(tf.Module):
         :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
         :return: [N, I, I].
         """
-        if tf.shape(cov).ndim == 2:
+        if cov.shape.ndims == 2:
             cov = tf.linalg.diag(cov)
 
         dims = self.active_dims
@@ -117,21 +120,34 @@ class Kernel(tf.Module):
 
         return cov
 
+    def _validate_ard_active_dims(self, ard_parameter):
+        """
+        Validate that ARD parameter matches the number of active_dims (provided active_dims
+        has been specified as an array).
+        """
+        if self.active_dims is None or isinstance(self.active_dims, slice):
+            # Can only validate parameter if active_dims is an array
+            return
+
+        if ard_parameter.shape.rank > 0 and ard_parameter.shape[0] != len(self.active_dims):
+            raise ValueError(f"Size of `active_dims` {self.active_dims} does not match "
+                             f"size of ard parameter ({ard_parameter.shape[0]})")
+
     @abc.abstractmethod
-    def K(self, X, Y=None, presliced=False):
+    def K(self, X, X2=None, presliced=False):
         raise NotImplementedError
 
     @abc.abstractmethod
     def K_diag(self, X, presliced=False):
         raise NotImplementedError
 
-    def __call__(self, X, Y=None, full=True, presliced=False):
-        if not full and Y is not None:
+    def __call__(self, X, X2=None, full=True, presliced=False):
+        if not full and X2 is not None:
             raise ValueError(
                 "Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:
             return self.K_diag(X)
-        return self.K(X, Y)
+        return self.K(X, X2)
 
     def __add__(self, other):
         return Sum([self, other])
@@ -151,13 +167,16 @@ class Combination(Kernel):
 
     _reduction = None
 
-    def __init__(self, kernels, name=None):
+    def __init__(self, kernels: List[Kernel], name: Optional[str] = None):
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError(
                 "can only combine Kernel instances")  # pragma: no cover
 
+        self._set_kernels(kernels)
+
+    def _set_kernels(self, kernels: List[Kernel]):
         # add kernels to a list, flattening out instances of this class therein
         kernels_list = []
         for k in kernels:
@@ -189,11 +208,11 @@ class Combination(Kernel):
                         overlapping = True
             return not overlapping
 
-    def K(self, X, X2=None, presliced=False):
+    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
         res = [k.K(X, X2, presliced=presliced) for k in self.kernels]
         return self._reduce(res)
 
-    def K_diag(self, X, presliced=False):
+    def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
         res = [k.K_diag(X, presliced=presliced) for k in self.kernels]
         return self._reduce(res)
 

@@ -13,12 +13,13 @@
 # limitations under the License.
 
 from typing import Optional
-import gpflow
+
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
 
-from ..base import Parameter, triangular
+import gpflow
+
+from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
@@ -26,6 +27,7 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..models.model import Data, DataPoint, GPModel, MeanAndVariance, GPPosterior
+from ..utilities import triangular
 
 
 class VGP(GPModel):
@@ -46,7 +48,6 @@ class VGP(GPModel):
        q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
-
     def __init__(self,
                  kernel: Kernel,
                  likelihood: Likelihood,
@@ -65,7 +66,7 @@ class VGP(GPModel):
 
         self.num_latent = num_latent
         self.q_mu = Parameter(tf.Variable(shape=(None, num_latent), initial_value=np.zeros((num_data, self.num_latent))))
-        transform = tfp.bijectors.FillTriangular()
+        transform = triangular()
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent)])
         q_sqrt = transform.inverse(q_sqrt).numpy()
         self.q_sqrt = Parameter(tf.Variable(shape=(num_latent, None), initial_value=q_sqrt), transform=transform)
@@ -147,7 +148,6 @@ class VGPOpperArchambeau(GPModel):
     but the optimization is non-convex and in practice may cause difficulty.
 
     """
-
     def __init__(self,
                  data: Data,
                  kernel: Kernel,
@@ -168,7 +168,7 @@ class VGPOpperArchambeau(GPModel):
         self.num_data = x_data.shape[0]
         self.num_latent = num_latent or y_data.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.positive())
+        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.utilities.positive())
 
     def log_likelihood(self):
         r"""
@@ -201,7 +201,7 @@ class VGPOpperArchambeau(GPModel):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, y_data)
         return tf.reduce_sum(v_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False):
+    def predict_f(self, predict_at: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
         r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
@@ -209,7 +209,10 @@ class VGPOpperArchambeau(GPModel):
         by
            q(F*) = N ( F* | K_{*F} alpha + mean, K_{**} - K_{*f}[K_{ff} +
                                            diag(lambda**-2)]^-1 K_{f*} )
+
+        Note: This model cuurently does not allow full output covariances
         """
+        assert full_output_cov == False
 
         x_data, _y_data = self.data
         # compute kernel things

@@ -15,11 +15,6 @@ As GPflow is a pure python library for now, you could just add it to your path (
 
 Version history is documented `here <https://github.com/GPflow/GPflow/blob/master/RELEASE.md>`_.
 
-We also provide a `Docker image <https://hub.docker.com/r/gpflow/gpflow/>`_ which can be run using
-
-``docker run -it -p 8888:8888 gpflow/gpflow``
-
-Code to generate the image can be found `here <https://github.com/GPflow/GPflow/blob/master/Dockerfile>`_.
 
 Getting Started
 ---------------

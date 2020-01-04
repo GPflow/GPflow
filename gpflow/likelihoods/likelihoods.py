@@ -56,9 +56,10 @@ import numpy as np
 import tensorflow as tf
 
 from .. import logdensities
-from ..base import Parameter, positive
-from ..quadrature import hermgauss, ndiag_mc, ndiagquad
+from ..base import Parameter
 from ..config import default_float, default_int
+from ..quadrature import hermgauss, ndiag_mc, ndiagquad
+from ..utilities import positive
 from .robustmax import RobustMax
 
 
@@ -74,7 +75,7 @@ class Likelihood(tf.Module):
         self.num_gauss_hermite_points = 20
 
     def predict_mean_and_var(self, Fmu, Fvar):
-        """
+        r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
 
@@ -107,7 +108,7 @@ class Likelihood(tf.Module):
         return E_y, V_y
 
     def predict_density(self, Fmu, Fvar, Y):
-        """
+        r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the log predictive density of Y.
 
@@ -130,7 +131,7 @@ class Likelihood(tf.Module):
         return ndiagquad(integrand, nghp, Fmu, Fvar, logspace=True, Y=Y)
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        """
+        r"""
         Compute the expected log density of the data, given a Gaussian
         distribution for the function values.
 
@@ -155,9 +156,17 @@ class Likelihood(tf.Module):
 
 
 class Gaussian(Likelihood):
-    def __init__(self, variance=1.0, **kwargs):
+    r"""
+    The Gaussian likelihood is appropriate where uncertainties associated with the data are
+    believed to follow a normal distribution, with constant variance.
+
+    Very small uncertainties can lead to numerical instability during the
+    optimization process. A lower bound of 1e-6 is therefore imposed on the likelihood variance
+    by default.
+    """
+    def __init__(self, variance=1.0, variance_lower_bound=1e-6, **kwargs):
         super().__init__(**kwargs)
-        self.variance = Parameter(variance, transform=positive())
+        self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
     def log_prob(self, F, Y):
         return logdensities.gaussian(Y, F, self.variance)
@@ -180,7 +189,7 @@ class Gaussian(Likelihood):
 
 
 class Poisson(Likelihood):
-    """
+    r"""
     Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.
 
     let g(.) be the inverse-link function, then this likelihood represents
@@ -576,7 +585,7 @@ class MonteCarloLikelihood(Likelihood):
                         logspace, epsilon, **Ys)
 
     def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
-        """
+        r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
 
@@ -607,7 +616,7 @@ class MonteCarloLikelihood(Likelihood):
         return E_y, V_y  # [N, D]
 
     def predict_density(self, Fmu, Fvar, Y, epsilon=None):
-        """
+        r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the log predictive density of Y.
 
@@ -632,7 +641,7 @@ class MonteCarloLikelihood(Likelihood):
                                    epsilon=epsilon)
 
     def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
-        """
+        r"""
         Compute the expected log density of the data, given a Gaussian
         distribution for the function values.
 

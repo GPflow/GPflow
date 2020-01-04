@@ -15,6 +15,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 import gpflow
+import tensorflow as tf
 from gpflow.mean_functions import Constant
 
 rng = np.random.RandomState(0)
@@ -78,18 +79,24 @@ def _prepare_models():
 
     opt = gpflow.optimizers.Scipy()
 
+    @tf.function(autograph=False)
     def vgp0_closure():
-        return vgp0.neg_log_marginal_likelihood()
+        return - vgp0.log_marginal_likelihood()
 
+    @tf.function(autograph=False)
     def vgp1_closure():
-        return vgp1.neg_log_marginal_likelihood()
+        return - vgp1.log_marginal_likelihood()
 
+    @tf.function(autograph=False)
     def cvgp_closure():
-        return cvgp.neg_log_marginal_likelihood()
+        return - cvgp.log_marginal_likelihood()
 
-    opt.minimize(vgp0_closure, variables=vgp0.trainable_variables, options=dict(maxiter=1000))
-    opt.minimize(vgp1_closure, variables=vgp1.trainable_variables, options=dict(maxiter=1000))
-    opt.minimize(cvgp_closure, variables=cvgp.trainable_variables, options=dict(maxiter=1000))
+    opt.minimize(vgp0_closure, variables=vgp0.trainable_variables,
+                 options=dict(maxiter=1000), method='BFGS')
+    opt.minimize(vgp1_closure, variables=vgp1.trainable_variables,
+                 options=dict(maxiter=1000), method='BFGS')
+    opt.minimize(cvgp_closure, variables=cvgp.trainable_variables,
+                 options=dict(maxiter=1000), method='BFGS')
 
     return vgp0, vgp1, cvgp
 
@@ -112,20 +119,20 @@ def test_kernel_variance():
     vgp0, vgp1, cvgp = _prepare_models()
     assert_allclose(vgp0.kernel.variance.read_value(),
                     cvgp.kernel.kernels[1].kappa.read_value()[0],
-                    atol=1.0e-2)
+                    atol=1.0e-4)
     assert_allclose(vgp1.kernel.variance.read_value(),
                     cvgp.kernel.kernels[1].kappa.read_value()[1],
-                    atol=1.0e-2)
+                    atol=1.0e-4)
 
 
 def test_mean_values():
     vgp0, vgp1, cvgp = _prepare_models()
     assert_allclose(vgp0.mean_function.c.read_value(),
                     cvgp.mean_function.meanfunctions[0].c.read_value(),
-                    atol=1.0e-2)
+                    atol=1.0e-4)
     assert_allclose(vgp1.mean_function.c.read_value(),
                     cvgp.mean_function.meanfunctions[1].c.read_value(),
-                    atol=1.0e-2)
+                    atol=1.0e-4)
 
 
 def test_predict_f():
@@ -133,10 +140,10 @@ def test_predict_f():
 
     pred_f0 = vgp0.predict_f(Datum.Xtest)
     pred_fc0 = cvgp.predict_f(Datum.X_augumented0)
-    assert_allclose(pred_f0, pred_fc0, atol=1.0e-2)
+    assert_allclose(pred_f0, pred_fc0, atol=1.0e-4)
     pred_f1 = vgp1.predict_f(Datum.Xtest)
     pred_fc1 = cvgp.predict_f(Datum.X_augumented1)
-    assert_allclose(pred_f1, pred_fc1, atol=1.0e-2)
+    assert_allclose(pred_f1, pred_fc1, atol=1.0e-4)
 
     # check predict_f_full_cov
     vgp0.predict_f(Datum.Xtest, full_cov=True)
@@ -152,16 +159,16 @@ def test_predict_y():
         np.hstack([Datum.Xtest, np.zeros((Datum.Xtest.shape[0], 1))]))
 
     # predict_y returns results for all the likelihoods in multi_likelihood
-    assert_allclose(mu1, c_mu1[:, :1], atol=1.0e-5)
-    assert_allclose(var1, c_var1[:, :1], atol=1.0e-5)
+    assert_allclose(mu1, c_mu1[:, :1], atol=1.0e-4)
+    assert_allclose(var1, c_var1[:, :1], atol=1.0e-4)
 
     mu2, var2 = vgp1.predict_y(Datum.Xtest)
     c_mu2, c_var2 = cvgp.predict_y(
         np.hstack([Datum.Xtest, np.ones((Datum.Xtest.shape[0], 1))]))
 
     # predict_y returns results for all the likelihoods in multi_likelihood
-    assert_allclose(mu2, c_mu2[:, 1:2], atol=1.0e-5)
-    assert_allclose(var2, c_var2[:, 1:2], atol=1.0e-5)
+    assert_allclose(mu2, c_mu2[:, 1:2], atol=1.0e-4)
+    assert_allclose(var2, c_var2[:, 1:2], atol=1.0e-4)
 
 
 def test_predict_log_density():
@@ -180,3 +187,4 @@ def test_predict_f_samples():
     # just check predict_f_samples(self) works
     cvgp.predict_f_samples(Datum.X_augumented0, 1)
     cvgp.predict_f_samples(Datum.X_augumented1, 1)
+

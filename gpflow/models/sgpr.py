@@ -19,11 +19,11 @@ import tensorflow as tf
 from gpflow.kernels import Kernel
 from .model import MeanAndVariance, GPModel, Data, GPPosterior
 from ..likelihoods import Likelihood, Gaussian
+from .util import inducingpoint_wrapper
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
-from .util import inducingpoint_wrapper
 
 
 class SGPR(GPModel):
@@ -67,7 +67,7 @@ class SGPR(GPModel):
         num_inducing = len(self.inducing_variable)
 
         err = y_data - self.mean_function(x_data)
-        Kdiag = self.kernel.K_diag(x_data)
+        Kdiag = self.kernel(x_data, full=False)
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         Luu = tf.linalg.cholesky(kuu)
@@ -142,6 +142,31 @@ class SGPR(GPModel):
                            whiten=True,
                            mean=q_mu.numpy(),
                            variance_sqrt=variance_sqrt.numpy())
+
+    def compute_qu(self):
+        """
+        Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on
+        inducing outputs. SVGP with this q(u) should predict identically to
+        SGPR.
+        :return: mu, cov
+        """
+        x_data, y_data = self.data
+
+        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+
+        sig = kuu + (self.likelihood.variance ** -1) * tf.matmul(kuf, kuf, transpose_b=True)
+        sig_sqrt = tf.linalg.cholesky(sig)
+
+        sig_sqrt_kuu = tf.linalg.triangular_solve(sig_sqrt, kuu)
+
+        cov = tf.linalg.matmul(sig_sqrt_kuu, sig_sqrt_kuu, transpose_a=True)
+        err = y_data - self.mean_function(x_data)
+        mu = tf.linalg.matmul(
+            sig_sqrt_kuu, tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(kuf, err)),
+            transpose_a=True) / self.likelihood.variance
+
+        return mu, cov
 
 
 class GPRFITC(GPModel):

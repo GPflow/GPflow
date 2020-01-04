@@ -49,7 +49,7 @@ def assert_all_array_elements_almost_equal(arr, decimal):
         np.testing.assert_allclose(arr[i], arr[i + 1], atol=1e-5)
 
 
-def check_equality_predictions(X, Y, models, decimal=3):
+def check_equality_predictions(data, models, decimal=3):
     """
     Executes a couple of checks to compare the equality of predictions
     of different models. The models should be configured with the same
@@ -63,7 +63,7 @@ def check_equality_predictions(X, Y, models, decimal=3):
       matrices should overlap, and this is tested.
     """
 
-    log_likelihoods = [m.log_likelihood(X, Y) for m in models]
+    log_likelihoods = [m.log_likelihood(data) for m in models]
 
     # Check equality of log likelihood
     assert_all_array_elements_almost_equal(log_likelihoods, decimal=5)
@@ -140,6 +140,7 @@ class Data:
     Ptrue = tf.convert_to_tensor(np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]]))  # [L, P]
     Y += tf.random.normal(Y.shape, dtype=tf.float64) * [0.2, 0.2, 0.2]
     Xs = tf.convert_to_tensor(np.linspace(-6, 6, Ntest)[:, None])
+    data = (X, Y)
 
 
 class DataMixedKernelWithEye(Data):
@@ -161,6 +162,7 @@ class DataMixedKernelWithEye(Data):
     sqrt_data = tf.convert_to_tensor(sqrt_data)
     sqrt_data_full = tf.convert_to_tensor(sqrt_data_full)
     Y += tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((L,), dtype=tf.float64) * 0.2
+    data = (Data.X, Y)
 
 
 class DataMixedKernel(Data):
@@ -178,7 +180,7 @@ class DataMixedKernel(Data):
     W = tf.convert_to_tensor(W)
     sqrt_data = tf.convert_to_tensor(sqrt_data)
     Y += tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((P,), dtype=tf.float64) * 0.1
-
+    data = (Data.X, Y)
 
 # ------------------------------------------
 # Test sample conditional
@@ -354,11 +356,13 @@ def test_shared_independent_mok():
     set_trainable(model_1, False)
     model_1.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_1.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, options=dict(maxiter=500),
+                                       method='BFGS')
+
 
     # Model 2
     q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
@@ -369,11 +373,13 @@ def test_shared_independent_mok():
     set_trainable(model_2, False)
     model_2.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_2.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, options=dict(maxiter=500),
+                                       method='BFGS')
+
 
     # Model 3
     q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
@@ -384,13 +390,14 @@ def test_shared_independent_mok():
     set_trainable(model_3, False)
     model_3.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure3():
-        return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_3.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables, options=dict(maxiter=500),
+                                       method='BFGS')
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2, model_3])
+    check_equality_predictions(Data.data, [model_1, model_2, model_3])
 
 
 def test_separate_independent_mok():
@@ -414,11 +421,11 @@ def test_separate_independent_mok():
     model_1.q_sqrt.trainable = True
     model_1.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_1.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
     # Model 2 (efficient)
     q_mu_2 = np.random.randn(Data.M, Data.P)
@@ -431,13 +438,13 @@ def test_separate_independent_mok():
     model_2.q_sqrt.trainable = True
     model_2.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_2.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2])
 
 
 def test_separate_independent_mof():
@@ -458,11 +465,11 @@ def test_separate_independent_mof():
     model_1.q_sqrt.trainable = True
     model_1.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_1.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
     # Model 2 (efficient)
     q_mu_2 = np.random.randn(Data.M, Data.P)
@@ -475,11 +482,11 @@ def test_separate_independent_mof():
     model_2.q_sqrt.trainable = True
     model_2.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_2.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
     # Model 3 (Inefficient): an idenitical inducing variable is used P times,
     # and treated as a separate one.
@@ -494,13 +501,13 @@ def test_separate_independent_mof():
     model_3.q_sqrt.trainable = True
     model_3.q_mu.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure3():
-        return model_3.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_3.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure3, variables=model_3.trainable_variables, method='BFGS')
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2, model_3])
+    check_equality_predictions(Data.data, [model_1, model_2, model_3])
 
 
 def test_mixed_mok_with_Id_vs_independent_mok():
@@ -512,11 +519,11 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     set_trainable(model_1, False)
     model_1.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure1():
-        return model_1.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_1.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure1, variables=model_1.trainable_variables, method='BFGS')
 
     # Mixed Model
     kern_list = [SquaredExponential(variance=0.5, lengthscale=1.2) for _ in range(data.L)]
@@ -526,13 +533,13 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     set_trainable(model_2, False)
     model_2.q_sqrt.trainable = True
 
-    @tf.function
+    @tf.function(autograph=False)
     def closure2():
-        return model_2.neg_log_marginal_likelihood(Data.X, Data.Y)
+        return - model_2.log_marginal_likelihood(Data.data)
 
-    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(closure2, variables=model_2.trainable_variables, method='BFGS')
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2])
 
 
 def test_compare_mixed_kernel():
@@ -548,7 +555,7 @@ def test_compare_mixed_kernel():
     f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
     model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2])
 
 
 def test_multioutput_with_diag_q_sqrt():
@@ -567,7 +574,7 @@ def test_multioutput_with_diag_q_sqrt():
     f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[:data.M, ...]))
     model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False)
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2])
 
 
 def test_MixedKernelSeparateMof():
@@ -585,4 +592,4 @@ def test_MixedKernelSeparateMof():
     f2 = mf.SeparateIndependentInducingVariables(inducing_variable_list)
     model_2 = SVGP(k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=data.sqrt_data)
 
-    check_equality_predictions(Data.X, Data.Y, [model_1, model_2])
+    check_equality_predictions(Data.data, [model_1, model_2])

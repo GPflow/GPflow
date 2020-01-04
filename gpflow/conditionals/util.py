@@ -12,17 +12,18 @@ def base_conditional(Kmn: tf.Tensor,
                      full_cov=False,
                      q_sqrt=None,
                      white=False):
-    """
+    r"""
     Given a g1 and g2, and distribution p and q such that
       p(g2) = N(g2; 0, Kmm)
+
       p(g1) = N(g1; 0, Knn)
-      p(g1 | g2) = N(g1;0,Knm)
+      p(g1 | g2) = N(g1; Knm (Kmm⁻¹) g2, Knn - Knm (Kmm⁻¹) Kmn)
 
     And
-      q(g2) = N(g2; f, q_sqrt * q_sqrt^T)
+      q(g2) = N(g2; f, q_sqrt q_sqrtᵀ)
 
     This method computes the mean and (co)variance of
-      q(g1) = \int q(g2) p(g1|g2)
+      q(g1) = ∫ q(g2) p(g1 | g2)
 
     :param Kmn: [M, ..., N]
     :param Kmm: [M, M]
