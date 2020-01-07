@@ -112,7 +112,7 @@ class Parameter(tf.Module):
     def initial_value(self):
         return self._unconstrained.initial_value
 
-    def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True):
+    def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True) -> tf.Variable:
         """
         Assigns constrained `value` to the unconstrained parameter's variable.
         It passes constrained value through parameter's transform first.
@@ -136,7 +136,7 @@ class Parameter(tf.Module):
         value = _verified_value(value, self.dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
 
-        self._unconstrained.assign(unconstrained_value, read_value=read_value, use_locking=use_locking)
+        return self._unconstrained.assign(unconstrained_value, read_value=read_value, use_locking=use_locking)
 
     @property
     def name(self):
