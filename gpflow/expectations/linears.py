@@ -53,7 +53,7 @@ def _E(p, kernel, inducing_variable, mean, _, nghp=None):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    N = Xmu.shape[0]
+    N = tf.shape(Xmu)[0]
     var_Z = kernel.variance * inducing_variable.Z  # MxD
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     return tf.linalg.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
@@ -71,7 +71,7 @@ def _E(p, kernel, inducing_variable, mean, _, nghp=None):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    N = Xmu.shape[0] - 1
+    N = tf.shape(Xmu)[0] - 1
     var_Z = kernel.variance * inducing_variable.Z  # MxD
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     eXX = Xcov[1, :-1] + (Xmu[:-1][..., None] * Xmu[1:][:, None, :])  # NxDxD
@@ -107,7 +107,7 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     Xcov = kernel.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
     Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
 
-    N = Xmu.shape[0]
+    N = tf.shape(Xmu)[0]
     var_Z = kernel.variance * Z
     tiled_Z = tf.tile(tf.expand_dims(var_Z, 0), (N, 1, 1))  # NxMxD
     XX = Xcov + tf.expand_dims(Xmu, 1) * tf.expand_dims(Xmu, 2)  # NxDxD

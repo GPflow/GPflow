@@ -134,7 +134,7 @@ class Zero(Constant):
         del self.c
 
     def __call__(self, X):
-        return tf.zeros((X.shape[0], self.output_dim), dtype=X.dtype)
+        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=X.dtype)
 
 
 class SwitchedMeanFunction(MeanFunction):
@@ -151,11 +151,11 @@ class SwitchedMeanFunction(MeanFunction):
         self.meanfunctions = meanfunction_list
 
     def __call__(self, X):
-        ind = tf.gather(tf.transpose(X), X.shape[1] - 1)  # ind = X[:,-1]
+        ind = tf.gather(tf.transpose(X), tf.shape(X)[1] - 1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
         X = tf.transpose(
             tf.gather(tf.transpose(X),
-                      tf.range(0, X.shape[1] - 1)))  # X = X[:,:-1]
+                      tf.range(0, tf.shape(X)[1] - 1)))  # X = X[:,:-1]
 
         # split up X into chunks corresponding to the relevant likelihoods
         x_list = tf.dynamic_partition(X, ind, len(self.meanfunctions))

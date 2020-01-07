@@ -39,8 +39,8 @@ def _E(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
         tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
     Z, Xmu = sqexp_kern.slice(feat1.Z, p.mu)
 
-    N = Xmu.shape[0]
-    D = Xmu.shape[1]
+    N = tf.shape(Xmu)[0]
+    D = tf.shape(Xmu)[1]
 
     def take_with_ard(value):
         if not sqexp_kern.ard:
