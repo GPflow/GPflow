@@ -56,7 +56,7 @@ class Parameter(tf.Module):
         if isinstance(value, tf.Variable):
             self._unconstrained = value
         else:
-            unconstrained_value = self.verified_unconstrained_value(value, dtype)
+            unconstrained_value = self.validate_unconstrained_value(value, dtype)
             self._unconstrained = tf.Variable(unconstrained_value,
                                               dtype=dtype, name=name, trainable=trainable)
 
@@ -113,11 +113,11 @@ class Parameter(tf.Module):
     def initial_value(self):
         return self._unconstrained.initial_value
 
-    def verified_unconstrained_value(self, value: tf.Tensor, dtype: DType) -> tf.Tensor:
+    def validate_unconstrained_value(self, value: tf.Tensor, dtype: DType) -> tf.Tensor:
         value = _cast_to_dtype(value, dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
         return tf.debugging.assert_all_finite(unconstrained_value,
-                message=f"gpflow.Parameter.verified_unconstrained_value")
+                message=f"gpflow.Parameter.validate_unconstrained_value")
 
 
     def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True) -> tf.Variable:
@@ -141,7 +141,7 @@ class Parameter(tf.Module):
         :param read_value: if True, will return something which evaluates to the new
             value of the variable; if False will return the assign op.
         """
-        unconstrained_value = self.verified_unconstrained_value(value, self.dtype)
+        unconstrained_value = self.validate_unconstrained_value(value, self.dtype)
         return self._unconstrained.assign(unconstrained_value,
                 use_locking=use_locking, name=name, read_value=read_value)
 
