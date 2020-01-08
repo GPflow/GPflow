@@ -51,12 +51,12 @@ class Parameter(tf.Module):
         """
         super().__init__()
 
-        value = _verified_value(value, dtype)
         if isinstance(value, tf.Variable):
             self._unconstrained = value
         else:
-            value = _to_unconstrained(value, transform)
-            self._unconstrained = tf.Variable(value, dtype=dtype, name=name, trainable=trainable)
+            unconstrained_value = self.verified_unconstrained_value(value)
+            self._unconstrained = tf.Variable(unconstrained_value,
+                                              dtype=dtype, name=name, trainable=trainable)
 
         self.prior = prior
         self._transform = transform
@@ -112,6 +112,13 @@ class Parameter(tf.Module):
     def initial_value(self):
         return self._unconstrained.initial_value
 
+    def verified_unconstrained_value(self, value: tf.Tensor) -> tf.Tensor:
+        value = _cast_to_dtype(value, self.dtype)
+        unconstrained_value = _to_unconstrained(value, self.transform)
+        return tf.debugging.assert_all_finite(unconstrained_value,
+                message=f"{self.name}: unconstrained_variable")
+
+
     def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True) -> tf.Variable:
         """
         Assigns constrained `value` to the unconstrained parameter's variable.
@@ -133,10 +140,9 @@ class Parameter(tf.Module):
         :param read_value: if True, will return something which evaluates to the new
             value of the variable; if False will return the assign op.
         """
-        value = _verified_value(value, self.dtype)
-        unconstrained_value = _to_unconstrained(value, self.transform)
-
-        return self._unconstrained.assign(unconstrained_value, read_value=read_value, use_locking=use_locking)
+        unconstrained_value = self.verified_unconstrained_value(value)
+        return self._unconstrained.assign(unconstrained_value,
+                use_locking=use_locking, name=name, read_value=read_value)
 
     @property
     def name(self):
@@ -225,9 +231,7 @@ Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
 
-def _verified_value(value: VariableData, dtype: Optional[DType] = None) -> np.ndarray:
-    if isinstance(value, tf.Variable):
-        return value
+def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:
     if dtype is None:
         dtype = default_float()
     return tf.cast(value, dtype)
