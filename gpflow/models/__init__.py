@@ -22,4 +22,5 @@ from .model import BayesianModel, GPModel
 from .sgpmc import SGPMC
 from .sgpr import GPRFITC, SGPR, SGPRUpperMixin
 from .svgp import SVGP
+from .svgps import SVGPs
 from .vgp import VGP, VGPOpperArchambeau
