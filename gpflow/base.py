@@ -188,9 +188,15 @@ class Parameter(tf.Module):
         return self._unconstrained.handle
 
     def __repr__(self):
-        return "<gpflow.Parameter " \
-               f"unconstrained_variable={self._unconstrained!r} " \
-               f"constrained_tensor={self.read_value()!r}>"
+        unconstrained = self.unconstrained_variable
+        constrained = self.read_value()
+        info = f"dtype={self.dtype.name} " \
+               f"unconstrained shape={unconstrained.shape} " \
+               f"unconstrained numpy={unconstrained.numpy()} " \
+               f"constrained shape={constrained.shape} " \
+               f"constrained numpy={constrained.numpy()}"
+
+        return f"<gpflow.Parameter {self.name!r} {info}>"
 
     # Below
     # TensorFlow copy-paste code to make variable-like object to work
