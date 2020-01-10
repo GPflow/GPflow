@@ -178,9 +178,6 @@ class Parameter(tf.Module):
     def get_shape(self):
         return self.shape
 
-    def _should_act_as_resource_variable(self):
-        pass
-
     @property
     def handle(self):
         return self._unconstrained.handle
