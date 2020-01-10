@@ -139,6 +139,14 @@ class Parameter(tf.Module):
         return self._unconstrained.assign(unconstrained_value, read_value=read_value, use_locking=use_locking)
 
     @property
+    def is_tensor_like(self):
+        """
+        This method means that TensorFlow's `tensor_util.is_tensor` function
+        will return `True`
+        """
+        return True
+
+    @property
     def name(self):
         return self._unconstrained.name
 
