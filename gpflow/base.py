@@ -179,12 +179,9 @@ class Parameter(tf.Module):
         return self.shape
 
     def _should_act_as_resource_variable(self):
-        """
-        This is needed for compatibility with TensorFlow 2.0.
-        In TensorFlow 2.1, this got superseded by the is_tensor_like property.
-        """
-        pass  # TensorFlow's is_resource_variable() in resource_variable_ops.py
-              # only checks with hasattr()
+        # needed so that Parameters are correctly identified by TensorFlow's
+        # is_resource_variable() in resource_variable_ops.py
+        pass  # only checked by TensorFlow using hasattr()
 
     @property
     def handle(self):
