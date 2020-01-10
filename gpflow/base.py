@@ -191,10 +191,10 @@ class Parameter(tf.Module):
         unconstrained = self.unconstrained_variable
         constrained = self.read_value()
         info = f"dtype={self.dtype.name} " \
-               f"unconstrained shape={unconstrained.shape} " \
-               f"unconstrained numpy={unconstrained.numpy()} " \
-               f"constrained shape={constrained.shape} " \
-               f"constrained numpy={constrained.numpy()}"
+               f"unconstrained-shape={unconstrained.shape} " \
+               f"unconstrained-numpy={unconstrained.numpy()} " \
+               f"constrained-shape={constrained.shape} " \
+               f"constrained-numpy={constrained.numpy()}"
 
         return f"<gpflow.Parameter {self.name!r} {info}>"
 
