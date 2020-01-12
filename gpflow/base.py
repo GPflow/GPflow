@@ -116,8 +116,9 @@ class Parameter(tf.Module):
     def validate_unconstrained_value(self, value: tf.Tensor, dtype: DType) -> tf.Tensor:
         value = _cast_to_dtype(value, dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
-        return tf.debugging.assert_all_finite(unconstrained_value,
-                message=f"gpflow.Parameter.validate_unconstrained_value")
+        message = "gpflow.Parameter: unconstrained value of passed value " \
+                  "has NaN or Inf and cannot be assigned."
+        return tf.debugging.assert_all_finite(unconstrained_value, message=message)
 
 
     def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True) -> tf.Variable:
