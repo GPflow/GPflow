@@ -147,6 +147,14 @@ class Parameter(tf.Module):
                 use_locking=use_locking, name=name, read_value=read_value)
 
     @property
+    def is_tensor_like(self):
+        """
+        This method means that TensorFlow's `tensor_util.is_tensor` function
+        will return `True`
+        """
+        return True
+
+    @property
     def name(self):
         return self._unconstrained.name
 
@@ -179,14 +187,24 @@ class Parameter(tf.Module):
         return self.shape
 
     def _should_act_as_resource_variable(self):
-        pass
+        # needed so that Parameters are correctly identified by TensorFlow's
+        # is_resource_variable() in resource_variable_ops.py
+        pass  # only checked by TensorFlow using hasattr()
 
     @property
     def handle(self):
         return self._unconstrained.handle
 
     def __repr__(self):
-        return self.read_value().__repr__()
+        unconstrained = self.unconstrained_variable
+        constrained = self.read_value()
+        info = f"dtype={self.dtype.name} " \
+               f"unconstrained-shape={unconstrained.shape} " \
+               f"unconstrained-numpy={unconstrained.numpy()} " \
+               f"constrained-shape={constrained.shape} " \
+               f"constrained-numpy={constrained.numpy()}"
+
+        return f"<gpflow.Parameter {self.name!r} {info}>"
 
     # Below
     # TensorFlow copy-paste code to make variable-like object to work
