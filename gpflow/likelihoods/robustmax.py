@@ -26,7 +26,7 @@ class RobustMax(tf.Module):
         prior = tfp.distributions.Beta(to_default_float(0.2), to_default_float(5.))
         self.epsilon = Parameter(epsilon, transform=transform, prior=prior, trainable=False)
         self.num_classes = num_classes
-        self._squash = 1e-4
+        self._squash = 1e-6
 
     def __call__(self, F):
         i = tf.argmax(F, 1)
