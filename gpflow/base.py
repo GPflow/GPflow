@@ -120,7 +120,6 @@ class Parameter(tf.Module):
                   "has NaN or Inf and cannot be assigned."
         return tf.debugging.assert_all_finite(unconstrained_value, message=message)
 
-
     def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True) -> tf.Variable:
         """
         Assigns constrained `value` to the unconstrained parameter's variable.
