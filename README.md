@@ -48,7 +48,7 @@ GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computat
 
 ## Getting Started with GPflow 2.0
 
-There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/intro_to_gpflow2.ipynb) Jupyter notebook. Check it out for details.
+There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/intro_to_gpflow2.ipynb) Jupyter notebook; check it out for details. To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/gpflow_2_upgrade/gpflow2_upgrade_guide.ipynb).
 
 - **GPflow 1.0**
 
