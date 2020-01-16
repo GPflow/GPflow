@@ -253,7 +253,10 @@ tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.rea
 def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:
     if dtype is None:
         dtype = default_float()
-    return tf.cast(value, dtype)
+    if tf.is_tensor(value):
+        return tf.cast(value, dtype)
+    else:
+        return tf.convert_to_tensor(value, dtype)
 
 
 def _to_constrained(value: VariableData, transform: Transform) -> tf.Tensor:
