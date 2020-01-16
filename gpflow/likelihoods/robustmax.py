@@ -4,7 +4,7 @@ import tensorflow_probability as tfp
 
 from ..base import Parameter
 from ..config import default_int
-from ..utilities import to_default_float
+from ..utilities import to_default_float, to_default_int
 
 
 class RobustMax(tf.Module):
@@ -40,7 +40,7 @@ class RobustMax(tf.Module):
         return tf.sqrt(tf.clip_by_value(val, 1e-10, np.inf))
 
     def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
-        Y = tf.cast(Y, default_int())
+        Y = to_default_int(Y)
         # work out what the mean and variance is of the indicated latent function.
         oh_on = tf.cast(tf.one_hot(tf.reshape(Y, (-1, )), self.num_classes, 1., 0.), dtype=mu.dtype)
         mu_selected = tf.reduce_sum(oh_on * mu, 1)

@@ -4,6 +4,7 @@ import tensorflow as tf
 from .base import Kernel
 from ..base import Parameter
 from ..config import default_float
+from ..utilities import to_default_float
 
 
 class Convolutional(Kernel):
@@ -39,11 +40,13 @@ class Convolutional(Kernel):
         :param X: (N x input_dim)
         :return: Patches (N, num_patches, patch_size)
         """
-        # Roll the colour channel to the front, so it appears to `tf.extract_image_patches()` as separate images. Then
-        # extract patches and reshape to have the first axis the same as the number of images. The separate patches will
-        # then be in the second axis.
+        # Roll the colour channel to the front, so it appears to
+        # `tf.extract_image_patches()` as separate images. Then extract patches
+        # and reshape to have the first axis the same as the number of images.
+        # The separate patches will then be in the second axis.
+        num_data = tf.shape(X)[0]
         castX = tf.transpose(
-            tf.reshape(X, [tf.shape(X)[0], -1, self.colour_channels]),
+            tf.reshape(X, [num_data, -1, self.colour_channels]),
             [0, 2, 1])
         patches = tf.image.extract_patches(
             tf.reshape(castX, [-1, self.img_size[0], self.img_size[1], 1], name="rX"),
@@ -51,9 +54,8 @@ class Convolutional(Kernel):
             [1, 1, 1, 1],
             [1, 1, 1, 1], "VALID")
         shp = tf.shape(patches)  # img x out_rows x out_cols
-        return tf.cast(tf.reshape(patches,
-                                  [tf.shape(X)[0], self.colour_channels * shp[1] * shp[2], shp[3]]),
-                       default_float())
+        reshaped_patches = tf.reshape(patches, [num_data, self.colour_channels * shp[1] * shp[2], shp[3]])
+        return to_default_float(reshaped_patches)
 
     def K(self, X, X2=None):
         Xp = self.get_patches(X)  # [N, P, patch_len]
@@ -77,5 +79,6 @@ class Convolutional(Kernel):
 
     @property
     def num_patches(self):
-        return (self.img_size[0] - self.patch_size[0] + 1) * (
-                self.img_size[1] - self.patch_size[1] + 1) * self.colour_channels
+        return ((self.img_size[0] - self.patch_size[0] + 1)
+                * (self.img_size[1] - self.patch_size[1] + 1)
+                * self.colour_channels)

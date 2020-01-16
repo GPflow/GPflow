@@ -2,8 +2,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import Parameter
-from ..config import default_float
-from ..utilities import positive
+from ..utilities import positive, to_default_float
 from .base import Kernel
 
 
@@ -90,16 +89,16 @@ class ArcCosine(Kernel):
         jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
-        return self.variance * (1. / np.pi) * self._J(theta) * \
-               X_denominator[:, None] ** self.order * \
-               X2_denominator[None, :] ** self.order
+        return (self.variance * (1. / np.pi) * self._J(theta)
+                * X_denominator[:, None] ** self.order
+                * X2_denominator[None, :] ** self.order)
 
     def K_diag(self, X, presliced=False):
         if not presliced:
             X, _ = self.slice(X, None)
 
         X_product = self._weighted_product(X)
-        const = tf.cast((1. / np.pi) * self._J(0.), default_float())
+        const = (1. / np.pi) * self._J(to_default_float(0.))
         return self.variance * const * X_product**self.order
 
 

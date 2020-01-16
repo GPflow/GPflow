@@ -57,9 +57,9 @@ import tensorflow as tf
 
 from .. import logdensities
 from ..base import Parameter
-from ..config import default_float, default_int
+from ..config import default_float
 from ..quadrature import hermgauss, ndiag_mc, ndiagquad
-from ..utilities import positive
+from ..utilities import positive, to_default_int
 from .robustmax import RobustMax
 
 
@@ -252,9 +252,7 @@ class StudentT(Likelihood):
         """
         super().__init__(**kwargs)
         self.df = df
-        self.scale = Parameter(scale,
-                               transform=positive(),
-                               dtype=default_float())
+        self.scale = Parameter(scale, transform=positive())
 
     def log_prob(self, F, Y):
         return logdensities.student_t(Y, F, self.scale, self.df)
@@ -524,7 +522,7 @@ class Ordinal(Likelihood):
         self.sigma = Parameter(1.0, transform=positive())
 
     def log_prob(self, F, Y):
-        Y = tf.cast(Y, default_int())
+        Y = to_default_int(Y)
         scaled_bins_left = tf.concat(
             [self.bin_edges / self.sigma,
              np.array([np.inf])], 0)

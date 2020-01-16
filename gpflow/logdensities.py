@@ -15,6 +15,7 @@
 import tensorflow as tf
 import numpy as np
 from .config import default_float
+from .utilities import to_default_float
 
 
 def gaussian(x, mu, var):
@@ -45,10 +46,9 @@ def gamma(x, shape, scale):
 
 
 def student_t(x, mean, scale, df):
-    df = tf.cast(df, default_float())
+    df = to_default_float(df)
     const = tf.math.lgamma((df + 1.) * 0.5) - tf.math.lgamma(df * 0.5) \
         - 0.5 * (tf.math.log(tf.square(scale)) + tf.math.log(df) + np.log(np.pi))
-    const = tf.cast(const, default_float())
     return const - 0.5 * (df + 1.) * \
         tf.math.log(1. + (1. / df) * (tf.square((x - mean) / scale)))
 

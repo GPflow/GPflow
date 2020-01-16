@@ -24,6 +24,7 @@ from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
+from ..utilities import to_default_float
 
 
 class SGPRUpperMixin(GPModel):
@@ -58,7 +59,7 @@ class SGPRUpperMixin(GPModel):
 
     def upper_bound(self):
         x_data, y_data = self.data
-        num_data = tf.cast(tf.shape(y_data)[0], default_float())
+        num_data = to_default_float(tf.shape(y_data)[0])
 
         Kdiag = self.kernel(x_data, full=False)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
@@ -145,8 +146,8 @@ class SGPR(SGPRUpperMixin):
         """
         x_data, y_data = self.data
         num_inducing = len(self.inducing_variable)
-        num_data = tf.cast(tf.shape(y_data)[0], default_float())
-        output_dim = tf.cast(tf.shape(y_data)[1], default_float())
+        num_data = to_default_float(tf.shape(y_data)[0])
+        output_dim = to_default_float(tf.shape(y_data)[1])
 
         err = y_data - self.mean_function(x_data)
         Kdiag = self.kernel(x_data, full=False)

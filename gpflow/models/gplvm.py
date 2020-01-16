@@ -24,7 +24,7 @@ from ..expectations import expectation
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
-from ..utilities import positive
+from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
 from .model import GPModel
@@ -163,15 +163,15 @@ class BayesianGPLVM(GPModel):
 
         # KL[q(x) || p(x)]
         dx_data_var = self.x_data_var if self.x_data_var.shape.ndims == 2 else tf.linalg.diag_part(self.x_data_var)
-        NQ = tf.cast(tf.size(self.x_data_mean), default_float())
-        D = tf.cast(tf.shape(y_data)[1], default_float())
+        NQ = to_default_float(tf.size(self.x_data_mean))
+        D = to_default_float(tf.shape(y_data)[1])
         KL = -0.5 * tf.reduce_sum(tf.math.log(dx_data_var))
         KL += 0.5 * tf.reduce_sum(tf.math.log(self.x_prior_var))
         KL -= 0.5 * NQ
         KL += 0.5 * tf.reduce_sum((tf.square(self.x_data_mean - self.x_prior_mean) + dx_data_var) / self.x_prior_var)
 
         # compute log marginal bound
-        ND = tf.cast(tf.size(y_data), default_float())
+        ND = to_default_float(tf.size(y_data))
         bound = -0.5 * ND * tf.math.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
         bound += -0.5 * tf.reduce_sum(tf.square(y_data)) / sigma2
