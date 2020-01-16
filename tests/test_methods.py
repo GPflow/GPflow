@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose, assert_array_equal, assert_array_less
 
 import gpflow
 from gpflow.config import default_float
+from gpflow.utilities import to_default_float
 
 
 # ------------------------------------------
@@ -108,8 +109,9 @@ def test_methods_predict_log_density(model):
 
 def test_sgpr_qu():
     rng = Datum().rng
-    X, Z = tf.cast(rng.randn(100, 2), default_float()), tf.cast(rng.randn(20, 2), default_float())
-    Y = tf.cast(np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * np.random.randn(len(X), 1), default_float())
+    X = to_default_float(rng.randn(100, 2))
+    Z = to_default_float(rng.randn(20, 2))
+    Y = to_default_float(np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * rng.randn(len(X), 1))
     model = gpflow.models.SGPR((X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variable=Z)
 
     @tf.function
