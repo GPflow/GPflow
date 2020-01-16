@@ -4,11 +4,12 @@ from typing import List, Optional, Union
 import tensorflow as tf
 import tensorflow_probability as tfp
 import numpy as np
+from ..base import cast
 
 
 def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tensor:
     if dtype is not None:
-        value = tf.cast(value, dtype)
+        value = cast(value, dtype)
     return tf.linalg.diag(tf.fill([num], value))
 
 
