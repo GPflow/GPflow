@@ -19,11 +19,11 @@ class Conditioned(Kernel):
        mc(.)   = k(.,Xc)k(Xc, Xc)⁻¹Yc
     """
 
-    def __init__(self, base: Kernel, x_c: tf.Tensor, y_c: tf.Tensor):
+    def __init__(self, base: Kernel, xc: tf.Tensor, yc: tf.Tensor):
         """
         :param base: the base kernel to make conditioned; must inherit from Kernel
-        :param x_c: conditioning input
-        :param y_c: conditioning output
+        :param xc: conditioning input
+        :param yc: conditioning output
         """
 
         if not isinstance(base, Kernel):
@@ -31,34 +31,34 @@ class Conditioned(Kernel):
 
         super().__init__()
         self.base = base
-        self.x_c = x_c
-        self.y_c = y_c
-        self.num_c = x_c.shape[0]
+        self.xc = xc
+        self.yc = yc
+        self.num_c = xc.shape[0]
 
     @property
-    def L_c(self):
+    def Lc(self):
         """
         The Cholesky factor of the Covariance at the conditioning inputs K(Xc, Xc)
         """
-        K_c = self.base.K(self.x_c) + \
+        Kc = self.base.K(self.xc) + \
             tf.eye(self.num_c, dtype=default_float()) * default_jitter()
-        return tf.linalg.cholesky(K_c)
+        return tf.linalg.cholesky(Kc)
 
     def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
-        K_Xc = self.base.K(self.x_c, X)
+        Kcx = self.base.K(self.xc, X)
         return self.base.K_diag(X) - \
-               tf.reduce_sum(tf.square(tf.linalg.triangular_solve(self.L_c, K_Xc)), axis=-2)
+               tf.reduce_sum(tf.square(tf.linalg.triangular_solve(self.Lc, Kcx)), axis=-2)
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
-        K_Xc = self.base.K(self.x_c, X)
-        U = tf.linalg.triangular_solve(self.L_c, K_Xc)
+        Kcx = self.base.K(self.xc, X)
+        U = tf.linalg.triangular_solve(self.Lc, Kcx)
         if X2 is None:
             return self.base.K(X) - tf.matmul(U, U, transpose_a=True)
         else:
-            K_X2c = self.base.K(self.x_c, X2)
-            U2 = tf.linalg.triangular_solve(self.L_c, K_X2c)
+            Kcx2 = self.base.K(self.xc, X2)
+            U2 = tf.linalg.triangular_solve(self.Lc, Kcx2)
             return self.base.K(X) - tf.matmul(U, U2, transpose_a=True)
 
     def conditional_mean(self, X: tf.Tensor):
-        K_Xc = self.base.K(X, self.x_c)
-        return K_Xc @ tf.linalg.cholesky_solve(self.L_c, self.y_c)
+        Kxc = self.base.K(X, self.xc)
+        return Kxc @ tf.linalg.cholesky_solve(self.Lc, self.yc)
