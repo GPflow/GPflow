@@ -8,35 +8,76 @@ from gpflow.utilities import print_summary
 
 plt.style.use('ggplot')
 
-xmin, xmax = 0, 5
-N = 500
-X1 = np.random.uniform(low=xmin, high=xmax, size=(N,1))
-X2 = np.random.uniform(low=xmin, high=xmax, size=(N,1))
-X = np.hstack([X1, X2])
 
-F1 = np.cos(X1 * 4)
-F2 = np.sin(X2 * 3)
-F = np.hstack([F1, F2])
-Y = np.sum(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.1
-Y = np.prod(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.1
+
+
+
+#=================================================================================================
+
+
+# rho ~ f1(x1)f2(x2) + f3(x3)
+
+# paradigm parameters
+n = 2000; # number of observations
+observations = 'binomial';
+xrange1 =[0, 5];
+f1 = lambda x: -x + np.exp(x / 2);
+xrange2 = [0, 2*np.pi];
+f2 = lambda x: 2 * np.cos(x + np.pi / 6)** 2;
+xrange3 =[0, 5];
+f3 = lambda x: -np.sin(x);
+fs = [f1, f2, f3]
+xranges = [xrange1, xrange2, xrange3]
+# generate input variables (from uniform distribution in defined range)
+
+C = len(fs)
+X = np.zeros((n, C))
+for c in range(3):
+    X[:, c] = xranges[c][0] + np.random.rand(n,) * np.diff(xranges[0])
+
+# generate response
+
+rho = (f1(X[:, 0]) * f2(X[:, 1]) + f3(X[:, 2]))[..., None]; # predictor
+F = np.vstack([fs[c](X[:, c]) for c in range(C)]).T
+
+
+phi = lambda x:1. / (1 + np.exp(-x))
+if observations == 'binomial':
+    pval = phi(rho); # pass through sigmoid
+    Y = (pval > np.random.rand(n, 1)).astype(float); # generate response from Bernoulli distribution
+
+N, C = X.shape
 data = (X, Y)
+print(X.shape, Y.shape, pval.shape)
+#=================================================================================================
+
+#
+# xmin, xmax = 0, 5
+# N = 500
+# X1 = np.random.uniform(low=xmin, high=xmax, size=(N,1))
+# X2 = np.random.uniform(low=xmin, high=xmax, size=(N,1))
+# X = np.hstack([X1, X2])
+#
+# F1 = np.cos(X1 * 4)
+# F2 = np.sin(X2 * 3)
+# F = np.hstack([F1, F2])
+# Y = np.sum(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.1
+# Y = np.prod(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.1
+#data = (X, Y)
 
 cols = 'rgb'
-C = 2
+#C = 2
 
 # ## Building the model
 
-kernels = [
-    gpflow.kernels.SquaredExponential(),
-    gpflow.kernels.SquaredExponential()
-]
+kernels = [gpflow.kernels.SquaredExponential() for c in range(C)]
 
-indices = [slice(0,1), slice(1,2)]
+indices = [slice(c,c+1) for c in range(C)]
 
-Zs = [X1[::10].copy(), X2[::10].copy()]
+Zs = [X[::10, c][..., None].copy() for c in range(C)]
 
 
-m = gpflow.models.MultiplicativeSVGPs(kernels, gpflow.likelihoods.Gaussian(), Zs, indices, num_data=N,
+m = gpflow.models.Custom(kernels, gpflow.likelihoods.Bernoulli(), Zs, indices, num_data=N,
                                 deterministic_optimisation=False)
 
 log_likelihood = tf.function(autograph=False)(m.log_likelihood)
@@ -64,7 +105,7 @@ def run_adam(model, iterations):
     """
     # Create an Adam Optimizer action
     logf = []
-    adam = tf.optimizers.Adam(learning_rate=1e-3)
+    adam = tf.optimizers.Adam(learning_rate=1e-2)
     for step in range(iterations):
         elbo = - optimization_step(adam, model, data)
         if step % 10 == 0:
@@ -72,7 +113,7 @@ def run_adam(model, iterations):
             print(step, elbo.numpy())
     return logf
 
-maxiter = 10000
+maxiter = 1000
 
 logf = run_adam(m, maxiter)
 
@@ -80,24 +121,29 @@ logf = run_adam(m, maxiter)
 f_means, f_vars = m.predict_fs(X)
 p_mean, _ = m.predict_predictor(X)
 
-fig, axarr = plt.subplots(1,3)
-ax = axarr[0]
+fig, axarr = plt.subplots(2,2)
+ax = axarr[0,0]
 ax.plot(np.arange(maxiter)[::10], logf)
 ax.set_xlabel('iteration')
 ax.set_ylabel('ELBO');
 
-ax = axarr[1]
+ax = axarr[0,1]
 for c in range(C):
     o = np.argsort(X[:, c])
     ax.plot(X[o, c], F[o, c], '-', color=cols[c], mew=2);
     ax.plot(X[:, c], f_means[:, c], '.', color=cols[c], mew=2);
 
-ax = axarr[2]
+ax = axarr[1,0]
 ax.plot(p_mean, Y, 'b*')
 ax.plot(Y, Y, 'k-', alpha=.1)
-ax.set_ylabel('data')
+ax.set_ylabel('data y')
 ax.set_xlabel('prediction');
 
+ax = axarr[1,1]
+ax.plot(p_mean, rho, 'b*')
+ax.plot(rho, rho, 'k-', alpha=.1)
+ax.set_ylabel('data rho')
+ax.set_xlabel('prediction');
 plt.show()
 #
 # opt = gpflow.optimizers.Scipy()

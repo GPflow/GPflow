@@ -228,6 +228,11 @@ class MultiplicativeSVGPs(SVGPs):
         return tf.reduce_prod(F, axis=-1, keepdims=True)
 
 
+class Custom(SVGPs):
+
+    def predictor(self, F: tf.Tensor):
+        return (F[..., 0]*F[..., 1] + F[...,2])[..., None]
+
 
 
 class CNY(SVGPs):
