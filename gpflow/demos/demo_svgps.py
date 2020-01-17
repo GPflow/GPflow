@@ -9,7 +9,7 @@ from gpflow.utilities import print_summary
 plt.style.use('ggplot')
 
 xmin, xmax = 0, 5
-N = 2000
+N = 500
 X1 = np.random.uniform(low=xmin, high=xmax, size=(N,1))
 X2 = np.random.uniform(low=xmin, high=xmax, size=(N,1))
 X = np.hstack([X1, X2])
@@ -17,7 +17,8 @@ X = np.hstack([X1, X2])
 F1 = np.cos(X1 * 4)
 F2 = np.sin(X2 * 3)
 F = np.hstack([F1, F2])
-Y = np.sum(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.5
+Y = np.sum(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.1
+Y = np.prod(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.1
 data = (X, Y)
 
 cols = 'rgb'
@@ -30,46 +31,102 @@ kernels = [
     gpflow.kernels.SquaredExponential()
 ]
 
-Zs = [X1[::50].copy(), X2[::50].copy()]
+indices = [slice(0,1), slice(1,2)]
 
-m = gpflow.models.SVGPs(kernels, gpflow.likelihoods.Gaussian(), Zs, num_data=N)
+Zs = [X1[::10].copy(), X2[::10].copy()]
+
+
+m = gpflow.models.MultiplicativeSVGPs(kernels, gpflow.likelihoods.Gaussian(), Zs, indices, num_data=N,
+                                deterministic_optimisation=False)
 
 log_likelihood = tf.function(autograph=False)(m.log_likelihood)
 
-opt = gpflow.optimizers.Scipy()
+# We turn off training for inducing point locations
+gpflow.utilities.set_trainable(m.inducing_variables, False)
 
-def objective_closure():
-    return - m.elbo(data)
 
-mus, vars = m.predict_fs(X)
+@tf.function(autograph=False)
+def optimization_step(optimizer, model, batch):
+    with tf.GradientTape(watch_accessed_variables=False) as tape:
+        tape.watch(model.trainable_variables)
+        objective = - m.elbo(batch)
+        grads = tape.gradient(objective, m.trainable_variables)
+    optimizer.apply_gradients(zip(grads, m.trainable_variables))
+    return objective
 
-print(m.elbo(data))
-print(m.num_components)
-print(m.predict_fs(X)[0].shape)
-print(m.predict_fs(X)[1].shape)
 
-with tf.GradientTape() as tape:
-    tape.watch(m.trainable_variables)
-    res = m.elbo(data)
-grads = tape.gradient(res, m.trainable_variables)
-for v, g in zip(m.trainable_variables, grads):
-    if g is None:
-        print(v, g)
+def run_adam(model, iterations):
+    """
+    Utility function running the Adam optimizer
 
-opt_logs = opt.minimize(objective_closure,
-                        m.trainable_variables,
-                        options=dict(maxiter=1000))
+    :param model: GPflow model
+    :param interations: number of iterations
+    """
+    # Create an Adam Optimizer action
+    logf = []
+    adam = tf.optimizers.Adam(learning_rate=1e-3)
+    for step in range(iterations):
+        elbo = - optimization_step(adam, model, data)
+        if step % 10 == 0:
+            logf.append(elbo.numpy())
+            print(step, elbo.numpy())
+    return logf
+
+maxiter = 10000
+
+logf = run_adam(m, maxiter)
+
+
+f_means, f_vars = m.predict_fs(X)
+p_mean, _ = m.predict_predictor(X)
+
+fig, axarr = plt.subplots(1,3)
+ax = axarr[0]
+ax.plot(np.arange(maxiter)[::10], logf)
+ax.set_xlabel('iteration')
+ax.set_ylabel('ELBO');
+
+ax = axarr[1]
+for c in range(C):
+    o = np.argsort(X[:, c])
+    ax.plot(X[o, c], F[o, c], '-', color=cols[c], mew=2);
+    ax.plot(X[:, c], f_means[:, c], '.', color=cols[c], mew=2);
+
+ax = axarr[2]
+ax.plot(p_mean, Y, 'b*')
+ax.plot(Y, Y, 'k-', alpha=.1)
+ax.set_ylabel('data')
+ax.set_xlabel('prediction');
+
+plt.show()
+#
+# opt = gpflow.optimizers.Scipy()
+#
+# def objective_closure():
+#     return - m.elbo(data)
+#
+# mus, vars = m.predict_fs(X)
+#
+# print(m.elbo(data))
+# print(m.num_components)
+# print(m.predict_fs(X)[0].shape)
+# print(m.predict_fs(X)[1].shape)
+#
+# with tf.GradientTape() as tape:
+#     tape.watch(m.trainable_variables)
+#     res = m.elbo(data)
+# grads = tape.gradient(res, m.trainable_variables)
+# for v, g in zip(m.trainable_variables, grads):
+#     if g is None:
+#         print(v, g)
+#
+# opt_logs = opt.minimize(objective_closure,
+#                         m.trainable_variables,
+#                         options=dict(maxiter=1000))
 
 print_summary(m)
 
-f_means, f_vars = m.predict_fs(X)
-print(f_means.shape)
-for c in range(C):
-    o = np.argsort(X[:, c])
-    plt.plot(X[o, c], F[o, c], '-', color=cols[c], mew=2);
-    plt.plot(X[:, c], f_means[:, c], '.', color=cols[c], mew=2);
 
-plt.show()
 
 
 # ## generate test points for prediction

@@ -20,12 +20,13 @@ DataPoint = tf.Tensor
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
-class SVGPs(BayesianModel):
+class SVGPs(BayesianModel, metaclass=abc.ABCMeta):
 
     def __init__(self,
                  kernels,
                  likelihood,
                  inducing_variables,
+                 indices,
                  *,
                  mean_functions=None,
                  num_latent: int = 1,
@@ -33,7 +34,9 @@ class SVGPs(BayesianModel):
                  q_mus=None,
                  q_sqrts=None,
                  whiten: bool = True,
-                 num_data=None):
+                 num_data=None,
+                 deterministic_optimisation=False,
+                 num_samples=10):
         """
         - kernels, inducing_variables, mean_functions are appropriate
           lists of GPflow objects
@@ -59,12 +62,16 @@ class SVGPs(BayesianModel):
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
+        self.indices = indices
         self.inducing_variables = \
             [inducingpoint_wrapper(inducing_variable) for inducing_variable in inducing_variables]
 
         # init variational parameters
         num_inducings = \
             [len(inducing_variable) for inducing_variable in inducing_variables]
+
+        self.deterministic_optimisation = deterministic_optimisation
+        self.num_samples = num_samples
 
         self._init_variational_parameters(num_inducings, q_mus, q_sqrts, q_diag)
 
@@ -149,15 +156,14 @@ class SVGPs(BayesianModel):
         """
         X, Y = data
         kl = self.prior_kl()
-        f_means, f_vars = self.predict_fs(X, full_cov=False, full_output_cov=False)
-
-        # hard coded additive model
-        f_mean = tf.reduce_sum(f_means, axis=-1)[..., None]
-        f_var = tf.reduce_sum(f_vars, axis=-1)[..., None]
-
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
-
+        if self.deterministic_optimisation:
+            p_mean, p_var = self.predict_predictor(X)
+            var_exp = self.likelihood.variational_expectations(p_mean, p_var, Y)
+        else:
+            p_sample = self.sample_predictor(X, self.num_samples)
+            var_exp = self.likelihood.log_prob(p_sample, Y) / self.num_samples
         return tf.reduce_sum(var_exp) - kl
+
 
     def elbo(self, data: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
         """
@@ -169,7 +175,7 @@ class SVGPs(BayesianModel):
         mus, vars = [], []
         for c in range(self.num_components):
             # hard coding ordering
-            Xnew_c = Xnew[:, c:c+1]
+            Xnew_c = Xnew[:, self.indices[c]]
             mu, var = conditional(Xnew_c,
                                   self.inducing_variables[c],
                                   self.kernels[c],
@@ -184,6 +190,44 @@ class SVGPs(BayesianModel):
             vars.append(var)
 
         return tf.concat(mus, axis=-1), tf.concat(vars, axis=-1)
+
+    def sample_predictor(self, Xnew: tf.Tensor, num_samples=1):
+        fmeans, fvars = self.predict_fs(Xnew)
+        eps = tf.random.normal([num_samples] + fmeans.shape, dtype=fmeans.dtype)
+        fs_sample = eps * tf.sqrt(fvars) + fmeans
+        return self.predictor(fs_sample)
+
+
+    @abc.abstractmethod
+    def predictor(self, F: tf.Tensor):
+        raise NotImplementedError()
+
+    def predict_predictor(self, Xnew: tf.Tensor):
+        p_samp = self.sample_predictor(Xnew, num_samples=self.num_samples)
+        p_mean = tf.reduce_mean(p_samp, axis=0)
+        return p_mean, tf.reduce_mean(tf.square(p_mean-p_samp), axis=0)
+
+
+
+
+class AdditiveSVGPs(SVGPs):
+
+    def predictor(self, F: tf.Tensor):
+        return tf.reduce_sum(F, axis=-1, keepdims=True)
+
+    def predict_predictor(self, Xnew: tf.Tensor):
+        f_means, f_vars = self.predict_fs(Xnew, full_cov=False, full_output_cov=False)
+        p_mean = tf.reduce_sum(f_means, axis=-1, keepdims=True)
+        p_var = tf.reduce_sum(f_vars, axis=-1, keepdims=True)
+        return p_mean, p_var
+
+
+class MultiplicativeSVGPs(SVGPs):
+
+    def predictor(self, F: tf.Tensor):
+        return tf.reduce_prod(F, axis=-1, keepdims=True)
+
+
 
 
 class CNY(SVGPs):
