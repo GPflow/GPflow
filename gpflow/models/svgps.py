@@ -230,8 +230,38 @@ class MultiplicativeSVGPs(SVGPs):
 
 class Custom(SVGPs):
 
+    def __init__(self,
+                 kernels,
+                 likelihood,
+                 inducing_variables,
+                 indices,
+                 *,
+                 mean_functions=None,
+                 num_latent: int = 1,
+                 q_diag: bool = False,
+                 q_mus=None,
+                 q_sqrts=None,
+                 whiten: bool = True,
+                 num_data=None,
+                 deterministic_optimisation=False,
+                 num_samples=10):
+
+        super().__init__(kernels,  likelihood, inducing_variables, indices,
+                         mean_functions=mean_functions,
+                         num_latent=num_latent,
+                         q_diag=q_diag,
+                         q_mus=q_mus,
+                         q_sqrts=q_sqrts,
+                         whiten=whiten,
+                         num_data=num_data,
+                         deterministic_optimisation=deterministic_optimisation,
+                         num_samples=num_samples)
+
+        self.offsets = Parameter(np.ones((2,)), name="offsets")
+
     def predictor(self, F: tf.Tensor):
-        return (F[..., 0]*F[..., 1] + F[...,2])[..., None]
+        o = self.offsets
+        return ( o[0] + F[..., 0] + (F[..., 1] + o[1]) * (F[...,2]))[..., None]
 
 
 
