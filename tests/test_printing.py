@@ -208,10 +208,10 @@ SquaredExponential.variance     Parameter  Softplus              True         ()
 SquaredExponential.lengthscale  Parameter  Softplus              False        ()       float64        2"""
 
 kernel_param_print_string_with_shift = """\
-name                            class      transform                prior    trainable    shape    dtype      value\n\
-------------------------------  ---------  -----------------------  -------  -----------  -------  -------  -------\n\
-SquaredExponential.variance     Parameter  Softplus + AffineScalar           True         ()       float64        1\n\
-SquaredExponential.lengthscale  Parameter  Softplus + AffineScalar           False        ()       float64        2"""
+name                            class      transform         prior    trainable    shape    dtype      value\n\
+------------------------------  ---------  ----------------  -------  -----------  -------  -------  -------\n\
+SquaredExponential.variance     Parameter  Softplus + Shift           True         ()       float64        1\n\
+SquaredExponential.lengthscale  Parameter  Softplus + Shift           False        ()       float64        2"""
 
 model_gp_param_print_string = """\
 name                      class      transform    prior    trainable    shape    dtype    value\n\
