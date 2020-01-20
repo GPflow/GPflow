@@ -1,6 +1,7 @@
 from typing import Optional, Tuple
 import tensorflow as tf
 from .base import Kernel
+from ..base import Parameter
 from ..config import default_float, default_jitter
 
 
@@ -32,7 +33,9 @@ class ConditionedKernel(Kernel):
         super().__init__()
         self.base = base
         self.data_cond = data_cond
-        self.X_cond, self.Y_cond = data_cond
+        self.X_cond = data_cond[0]
+        self.Y_cond = Parameter(data_cond[1])
+
         self.num_cond = self.X_cond.shape[0]
 
     @property
