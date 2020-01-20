@@ -112,9 +112,9 @@ def base_conditional(Kmn: tf.Tensor,
 
     shape_constraints = [
         (Kmn, [..., 'M', 'N']),  # for N
-        (f, ['M', 'R']),  # for R
-        (fmean, ['N', 'R']),
-        (fvar, ['R', 'N', 'N'] if full_cov else ['N', 'R']),
+        (f, [..., 'M', 'R']),  # for R
+        (fmean, [..., 'N', 'R']),
+        (fvar, [..., 'R', 'N', 'N'] if full_cov else [..., 'N', 'R']),
     ]
     tf.debugging.assert_shapes(shape_constraints)
 
