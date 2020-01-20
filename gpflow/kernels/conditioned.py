@@ -57,7 +57,7 @@ class Conditioned(Kernel):
         else:
             K_condx2 = self.base.K(self.X_cond, X2)
             U_condx2 = tf.linalg.triangular_solve(self.chol_K_cond, K_condx2)
-            return self.base.K(X) - tf.matmul(U_condx, U_condx2, transpose_a=True)
+            return self.base.K(X, X2) - tf.matmul(U_condx, U_condx2, transpose_a=True)
 
     def conditional_mean(self, X: tf.Tensor):
         K_xcond = self.base.K(X, self.X_cond)

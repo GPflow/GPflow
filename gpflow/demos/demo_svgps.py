@@ -18,13 +18,17 @@ plt.style.use('ggplot')
 # rho ~ f1(x1)f2(x2) + f3(x3)
 
 # paradigm parameters
-n = 2000; # number of observations
-observations = 'binomial';
-xrange1 =[0, 5];
-f1 = lambda x: -x + np.exp(x / 2);
-xrange2 = [0, 2*np.pi];
-f2 = lambda x: 2 * np.cos(x + np.pi / 6)** 2;
-xrange3 =[0, 5];
+n = 500; # number of observations
+observations = 'poisson';  #'binomial';
+xrange1 =[0, 2];
+f1_ = lambda x: np.exp(x / 2);
+xrange2 = [0, 2];
+f2_ = lambda x: 1 + np.cos(x + np.pi / 6)** 2;
+xrange3 =[0, 2];
+
+f1 = lambda x: f1_(x)/f1_(0)
+f2 = lambda x: f2_(x)/f2_(0)
+
 f3 = lambda x: -np.sin(x);
 fs = [f1, f2, f3]
 xranges = [xrange1, xrange2, xrange3]
@@ -45,40 +49,52 @@ phi = lambda x:1. / (1 + np.exp(-x))
 if observations == 'binomial':
     pval = phi(rho); # pass through sigmoid
     Y = (pval > np.random.rand(n, 1)).astype(float); # generate response from Bernoulli distribution
+elif observations == 'poisson':
+    Y = np.random.poisson(np.exp(rho)).astype(float)
 
 N, C = X.shape
 data = (X, Y)
-print(X.shape, Y.shape, pval.shape)
+print(X.shape, Y.shape)
 #=================================================================================================
 
-#
-# xmin, xmax = 0, 5
-# N = 500
-# X1 = np.random.uniform(low=xmin, high=xmax, size=(N,1))
-# X2 = np.random.uniform(low=xmin, high=xmax, size=(N,1))
-# X = np.hstack([X1, X2])
-#
-# F1 = np.cos(X1 * 4)
-# F2 = np.sin(X2 * 3)
-# F = np.hstack([F1, F2])
-# Y = np.sum(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.1
-# Y = np.prod(F, axis=-1, keepdims=True) + np.random.randn(N, 1)*.1
-#data = (X, Y)
 
 cols = 'rgb'
 #C = 2
 
 # ## Building the model
 
-kernels = [gpflow.kernels.SquaredExponential() for c in range(C)]
+from gpflow.kernels import SquaredExponential, Conditioned
+kernels = [
+    Conditioned(SquaredExponential(), [np.zeros((1, 1)), np.ones((1, 1))]),
+    Conditioned(SquaredExponential(), [np.zeros((1, 1)), np.ones((1, 1))]),
+    SquaredExponential()
+]
+
+from gpflow.mean_functions import ConditionedMeanFunction, Zero
+mean_functions = [
+    ConditionedMeanFunction(kernels[0]),
+    ConditionedMeanFunction(kernels[1]),
+    Zero()
+]
 
 indices = [slice(c,c+1) for c in range(C)]
 
-Zs = [X[::10, c][..., None].copy() for c in range(C)]
+Zs = [X[::5, c][..., None].copy() for c in range(C)]
 
+q_mus = [
+np.ones((len(Zs[0]), 1)),
+np.ones((len(Zs[1]), 1)),
+np.zeros((len(Zs[2]), 1)),
+]
 
-m = gpflow.models.Custom(kernels, gpflow.likelihoods.Bernoulli(), Zs, indices, num_data=N,
-                                deterministic_optimisation=False)
+if observations == 'binomial':
+    likelihood = gpflow.likelihoods.Bernoulli()
+elif observations == 'poisson':
+    likelihood = gpflow.likelihoods.Poisson()
+
+m = gpflow.models.Custom(kernels, likelihood, Zs, indices, num_data=N,
+                        deterministic_optimisation=False,
+                         mean_functions=mean_functions)
 
 log_likelihood = tf.function(autograph=False)(m.log_likelihood)
 
@@ -105,7 +121,7 @@ def run_adam(model, iterations):
     """
     # Create an Adam Optimizer action
     logf = []
-    adam = tf.optimizers.Adam(learning_rate=1e-2)
+    adam = tf.optimizers.Adam(learning_rate=5e-3)
     for step in range(iterations):
         elbo = - optimization_step(adam, model, data)
         if step % 10 == 0:
@@ -113,7 +129,7 @@ def run_adam(model, iterations):
             print(step, elbo.numpy())
     return logf
 
-maxiter = 1000
+maxiter = 2000
 
 logf = run_adam(m, maxiter)
 
