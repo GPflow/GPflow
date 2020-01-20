@@ -29,6 +29,7 @@ import numpy as np
 import tensorflow as tf
 
 from .base import Parameter
+from .kernels.conditioned import Conditioned
 from .config import default_float
 
 
@@ -186,3 +187,18 @@ class Product(MeanFunction):
 
     def __call__(self, X):
         return tf.multiply(self.prod_1(X), self.prod_2(X))
+
+
+class ConditionedMeanFunction(MeanFunction):
+    """
+    Wraps the condtional mean derived from a Conditioned kernel into a MeanFunction
+    """
+    def __init__(self, kernel: Conditioned):
+        """
+        :param kernel: a conditioned kernel
+        """
+        MeanFunction.__init__(self)
+        self.kernel = kernel
+
+    def __call__(self, X):
+        return self.kernel.conditional_mean(X)
