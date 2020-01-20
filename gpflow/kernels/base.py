@@ -108,10 +108,10 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
         if isinstance(dims, slice):
             return cov[..., dims, dims]
         elif dims is not None:
-            nlast = cov.shape[-1]
+            nlast = tf.shape(cov)[-1]
             ndims = len(dims)
 
-            cov_shape = cov.shape
+            cov_shape = tf.shape(cov)
             cov_reshaped = tf.reshape(cov, [-1, nlast, nlast])
             gather1 = tf.gather(tf.transpose(cov_reshaped, [2, 1, 0]), dims)
             gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), dims)

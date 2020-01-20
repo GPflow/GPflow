@@ -18,7 +18,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.config import default_float
+from gpflow.config import default_float, default_jitter
 from gpflow.kernels import SquaredExponential, ArcCosine, Linear
 
 
@@ -189,6 +189,20 @@ def _assert_periodic_kern_err(base_class, lengthscale, variance, period, X):
     assert_allclose(gram_matrix, reference_gram_matrix)
 
 
+def _assert_conditioned_kern_err(base_class, data_cond):
+    """ Evaluated conditioned kernel on conditioning input """
+    base = base_class(lengthscale=1., variance=1.)
+    kernel = gpflow.kernels.Conditioned(base, data_cond)
+    X_cond, Y_cond = data_cond
+    # using the conditioning class
+    K_cond = kernel.K_diag(X_cond)
+    m_cond = kernel.conditional_mean(X_cond)
+    # conditional var should be zero
+    assert_allclose(K_cond, np.zeros_like(K_cond), rtol=3, atol=3)
+    # conditional mean should match the conditioned output
+    assert_allclose(m_cond, Y_cond, rtol=3, atol=3)
+
+
 @pytest.mark.parametrize('base_class', [
     gpflow.kernels.SquaredExponential,
     gpflow.kernels.Matern12,
@@ -211,6 +225,20 @@ def test_periodic(base_class, D, N, lengthscale, variance, period):
         np.zeros(D), np.eye(D), N)
     _assert_periodic_kern_err(base_class, lengthscale, variance, period, X)
 
+
+@pytest.mark.parametrize('base_class', [
+    gpflow.kernels.SquaredExponential,
+    gpflow.kernels.Matern32,
+])
+@pytest.mark.parametrize('D', [1, 2])
+@pytest.mark.parametrize('N, N_cond', [[3, 4], [4, 30]])
+def test_conditioned(base_class, D, N, N_cond):
+    # creating conditioning input/output pair
+    X_cond = rng.randn(N_cond, D) if D == 1 else \
+        rng.multivariate_normal(np.zeros(D), np.eye(D), N_cond)
+    Y_cond = rng.randn(N_cond, 1)
+    data_cond = (X_cond, Y_cond)
+    _assert_conditioned_kern_err(base_class, data_cond)
 
 @pytest.mark.parametrize('base_class', [
     gpflow.kernels.SquaredExponential,
