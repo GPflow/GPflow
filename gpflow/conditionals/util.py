@@ -30,7 +30,7 @@ def base_conditional(Kmn: tf.Tensor,
     :param Knn: [..., N, N]  or  N
     :param f: [M, R]
     :param full_cov: bool
-    :param q_sqrt: None or [R, M, M] (lower triangular)
+    :param q_sqrt: None or [R, M, M] (lower triangular) or [M, R] (diagonal)
     :param white: bool
     :return: [N, R]  or [R, N, N]
     """
@@ -58,7 +58,10 @@ def base_conditional(Kmn: tf.Tensor,
         (f, ['M', 'R']),
     ]
     if q_sqrt is not None:
-        shape_constraints.append((q_sqrt, ['R', 'M', 'M']))
+        if q_sqrt.shape.ndims == 2:
+            shape_constraints.append((q_sqrt, ['M', 'R']))
+        else:
+            shape_constraints.append((q_sqrt, ['R', 'M', 'M']))
     tf.debugging.assert_shapes(shape_constraints)
 
     leading_dims = tf.shape(Kmn)[:-2]
@@ -131,7 +134,14 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     - "full": cov holds the full covariance matrix (without jitter)
     :return: sample from the MVN of shape [..., (S), N, D], S = num_samples
     """
-    assert cov_structure == "diag" or cov_structure == "full"
+    if cov_structure not in ("diag", "full"):
+        raise ValueError("cov_structure must be 'diag' or 'full'")
+
+    shape_constraints = [
+        (mean, [..., 'N', 'D']),
+        (cov, [..., 'N', 'D'] if cov_structure == 'diag' else [..., 'N', 'D', 'D']),
+    ]
+    tf.debugging.assert_shapes(shape_constraints)
 
     mean_shape = tf.shape(mean)
     S = num_samples if num_samples is not None else 1
@@ -155,8 +165,14 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         samples = mean[..., None] + tf.linalg.matmul(chol, eps)  # [..., N, D, S]
         samples = leading_transpose(samples, [..., -1, -3, -2])  # [..., S, N, D]
 
+    shape_constraints = [
+        (mean, [..., 'N', 'D']),
+        (samples, [..., 'S', 'N', 'D']),
+    ]
+    tf.debugging.assert_shapes(shape_constraints)
+
     if num_samples is None:
-        return samples[..., 0, :, :]  # [..., N, D]
+        return tf.squeeze(samples, axis=-3)  # [..., N, D]
     return samples  # [..., S, N, D]
 
 
