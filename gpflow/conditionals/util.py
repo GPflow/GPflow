@@ -7,7 +7,7 @@ from ..utilities.ops import leading_transpose
 def base_conditional(Kmn: tf.Tensor,
                      Kmm: tf.Tensor,
                      Knn: tf.Tensor,
-                     function: tf.Tensor,
+                     f: tf.Tensor,
                      *,
                      full_cov=False,
                      q_sqrt=None,
@@ -35,9 +35,9 @@ def base_conditional(Kmn: tf.Tensor,
     :return: [N, R]  or [R, N, N]
     """
     # compute kernel stuff
-    num_func = tf.shape(function)[-1]  # R
+    num_func = tf.shape(f)[-1]  # R
     N = tf.shape(Kmn)[-1]
-    M = tf.shape(function)[-2]
+    M = tf.shape(f)[-2]
 
     # get the leadings dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
@@ -50,6 +50,16 @@ def base_conditional(Kmn: tf.Tensor,
         ],
         0)  # [N]
     Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
+
+    shape_constraints = [
+        (Kmn, [..., 'M', 'N']),
+        (Kmm, ['M', 'M']),
+        (Knn, [..., 'N', 'N'] if full_cov else [..., 'N']),
+        (f, ['M', 'R']),
+    ]
+    if q_sqrt is not None:
+        shape_constraints.append((q_sqrt, ['R', 'M', 'M']))
+    tf.debugging.assert_shapes(shape_constraints)
 
     leading_dims = tf.shape(Kmn)[:-2]
     Lm = tf.linalg.cholesky(Kmm)  # [M, M]
@@ -74,7 +84,7 @@ def base_conditional(Kmn: tf.Tensor,
 
     # construct the conditional mean
     f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [..., M, R]
-    f = tf.broadcast_to(function, f_shape)  # [..., M, R]
+    f = tf.broadcast_to(f, f_shape)  # [..., M, R]
     fmean = tf.linalg.matmul(A, f, transpose_a=True)  # [..., N, R]
 
     if q_sqrt is not None:
@@ -100,7 +110,15 @@ def base_conditional(Kmn: tf.Tensor,
     if not full_cov:
         fvar = tf.linalg.adjoint(fvar)  # [N, R]
 
-    return fmean, fvar  # [N, R], [R, N, N] or [N, R]
+    shape_constraints = [
+        (Kmn, [..., 'M', 'N']),  # for N
+        (f, ['M', 'R']),  # for R
+        (fmean, ['N', 'R']),
+        (fvar, ['R', 'N', 'N'] if full_cov else ['N', 'R']),
+    ]
+    tf.debugging.assert_shapes(shape_constraints)
+
+    return fmean, fvar
 
 
 def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
