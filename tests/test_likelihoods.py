@@ -70,14 +70,12 @@ likelihood_setups = [
     LikelihoodSetup(Exponential(invlink=tf.square), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
     LikelihoodSetup(Gamma(invlink=tf.square), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
     LikelihoodSetup(Bernoulli(invlink=tf.sigmoid), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
-    pytest.param(LikelihoodSetup(MultiClass(2), Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1), rtol=1e-3, atol=1e-3),
-                 marks=pytest.mark.skip),
+    LikelihoodSetup(MultiClass(3), Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1), rtol=1e-3, atol=1e-3),
 ]
 
 
 def get_likelihood(likelihood_setup):
-    if not isinstance(likelihood_setup, LikelihoodSetup):
-        # pytest.param()
+    if isinstance(likelihood_setup, type(pytest.param())):
         likelihood_setup, = likelihood_setup.values
     return likelihood_setup.likelihood
 
@@ -134,6 +132,8 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     does something close to the quadrature.
     """
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
+    if isinstance(likelihood, MultiClass):
+        pytest.skip("Test fails due to issue with ndiagquad (github issue #1091)")
     F1 = likelihood.variational_expectations(mu, var, y)
     F2 = ndiagquad(likelihood.log_prob, likelihood.num_gauss_hermite_points, mu, var, Y=y)
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
@@ -143,6 +143,8 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
 @pytest.mark.parametrize('mu, var', [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_predict_density(likelihood_setup, mu, var):
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
+    if isinstance(likelihood, MultiClass):
+        pytest.skip("Test fails due to issue with ndiagquad (github issue #1091)")
     F1 = likelihood.predict_density(mu, var, y)
     F2 = Likelihood.predict_density(likelihood, mu, var, y)
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
@@ -152,6 +154,8 @@ def test_quadrature_predict_density(likelihood_setup, mu, var):
 @pytest.mark.parametrize('mu, var', [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_mean_and_var(likelihood_setup, mu, var):
     likelihood = likelihood_setup.likelihood
+    if isinstance(likelihood, MultiClass):
+        pytest.skip("Test fails due to issue with ndiagquad (github issue #1091)")
     F1m, F1v = likelihood.predict_mean_and_var(mu, var)
     F2m, F2v = Likelihood.predict_mean_and_var(likelihood, mu, var)
     assert_allclose(F1m, F2m, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
