@@ -4,7 +4,7 @@ from .base import Kernel
 from ..config import default_float, default_jitter
 
 
-class Conditioned(Kernel):
+class ConditionedKernel(Kernel):
     """
     Conditioned kernel. Can be used to wrap any kernel
     to transform it into a its conditioned version.

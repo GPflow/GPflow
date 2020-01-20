@@ -19,7 +19,9 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_int
 from gpflow.inducing_variables import InducingPoints
-from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
+from gpflow.mean_functions import (
+    Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero, ConditionedMean
+)
 
 rng = np.random.RandomState(99021)
 
@@ -272,3 +274,25 @@ def test_models_with_mean_functions_changes(model_class):
     assert np.all(var_zero.numpy() == var_non_zero.numpy())
     # predictive mean changes after modifying mean function
     assert not np.all(mu_zero.numpy() == mu_non_zero.numpy())
+
+
+@pytest.mark.parametrize('base_class', [
+    gpflow.kernels.SquaredExponential,
+    gpflow.kernels.Matern32,
+])
+@pytest.mark.parametrize('D', [1, 2])
+@pytest.mark.parametrize('N, N_cond', [[3, 4], [4, 30]])
+def test_conditioned_mean_function(base_class, D, N, N_cond):
+    """ Testing the conditional mean built from the conditioned kernel """
+    # creating conditioning input/output pair
+    X_cond = rng.randn(N_cond, D) if D == 1 else \
+        rng.multivariate_normal(np.zeros(D), np.eye(D), N_cond)
+    Y_cond = rng.randn(N_cond, 1)
+    data_cond = (X_cond, Y_cond)
+    # test conditional_mean(conditioning_input) = 0
+    base = base_class(lengthscale=1., variance=1.)
+    kernel = gpflow.kernels.ConditionedKernel(base, data_cond)
+    # using the conditioning class
+    m_cond = ConditionedMean(kernel)
+    # conditional mean should match the conditioned output
+    assert_allclose(m_cond(X_cond), Y_cond, rtol=3, atol=3)
