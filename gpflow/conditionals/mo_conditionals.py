@@ -51,7 +51,7 @@ def shared_independent_conditional(
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, full=full_cov, full_output_cov=False)
-    Knn = Knn[0, ...] if full_cov else Knn[..., 0]  # [N, N] or [N]
+    Knn = tf.squeeze(Knn, axis=(0 if full_cov else -1))  # [N, N] or [N]
 
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                    white=white)  # [N, P],  [P, N, N] or [N, P]
@@ -96,12 +96,12 @@ def separate_independent_conditional(
     rmu, rvar = tf.map_fn(single_gp_conditional, (Kmms, Kmns, Knns, fs, q_sqrts),
                           (default_float(), default_float()))  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
 
-    fmu = rollaxis_left(rmu[..., 0], 1)  # [N, P]
+    fmu = rollaxis_left(tf.squeeze(rmu, axis=-1), 1)  # [N, P]
 
     if full_cov:
-        fvar = rvar[..., 0, :, :]  # [P, N, N]
+        fvar = tf.squeeze(rvar, axis=-3)  # [..., 0, :, :]  # [P, N, N]
     else:
-        fvar = rollaxis_left(rvar[..., 0], 1)  # [N, P]
+        fvar = rollaxis_left(tf.squeeze(rvar, axis=-1), 1)  # [N, P]
 
     return fmu, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
