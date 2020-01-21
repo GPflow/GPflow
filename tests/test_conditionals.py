@@ -18,6 +18,8 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
+from gpflow import Parameter
+from gpflow.utilities.bijectors import triangular
 from gpflow.conditionals import conditional
 from gpflow.config import default_float
 
@@ -128,3 +130,40 @@ def test_gaussian_whiten(Xdata, Xnew, kernel, mu, sqrt):
 
     assert_allclose(mean_diff, 0, atol=4)
     assert_allclose(var_diff, 0, atol=4)
+
+@pytest.mark.parametrize('white', [True, False])
+def test_q_sqrt_constraints(Xdata, Xnew, kernel, mu, white):
+    """ Test that sending in an unconstrained q_sqrt returns the same conditional
+    evaluation and gradients. This is important to match the behaviour of the KL, which
+    enforces q_sqrt is triangular.
+    """
+
+    tril = np.tril(rng.randn(Ln, Nn, Nn))
+
+    q_sqrt_constrained = Parameter(tril, transform=triangular())
+    q_sqrt_unconstrained = Parameter(tril)
+
+    diff_before_gradient_step = (q_sqrt_constrained - q_sqrt_unconstrained).numpy()
+    assert_allclose(diff_before_gradient_step, 0)
+
+    Fstars = []
+    for q_sqrt in [q_sqrt_constrained, q_sqrt_unconstrained]:
+
+        with tf.GradientTape() as g:
+            _, Fstar_var = conditional(Xnew,
+                                       Xdata,
+                                       kernel,
+                                       mu,
+                                       q_sqrt=q_sqrt,
+                                       white=white)
+
+        grad = g.gradient(Fstar_var, q_sqrt.unconstrained_variable)
+        q_sqrt.unconstrained_variable.assign_sub(grad)
+        Fstars.append(Fstar_var)
+
+
+    diff_Fstar_before_gradient_step = Fstars[0] - Fstars[1]
+    assert_allclose(diff_Fstar_before_gradient_step, 0)
+
+    diff_after_gradient_step = (q_sqrt_constrained - q_sqrt_unconstrained).numpy()
+    assert_allclose(diff_after_gradient_step, 0)
