@@ -185,6 +185,11 @@ class Parameter(tf.Module):
     def get_shape(self):
         return self.shape
 
+    def _should_act_as_resource_variable(self):
+        # needed so that Parameters are correctly identified by TensorFlow's
+        # is_resource_variable() in resource_variable_ops.py
+        pass  # only checked by TensorFlow using hasattr()
+
     @property
     def handle(self):
         return self._unconstrained.handle
