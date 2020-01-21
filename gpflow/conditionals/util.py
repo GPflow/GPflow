@@ -314,15 +314,13 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_outpu
         - mean: [N, P]
         - variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]
     """
-    m, v = fully_correlated_conditional_repeat(Kmn,
-                                               Kmm,
-                                               Knn,
-                                               f,
-                                               full_cov=full_cov,
-                                               full_output_cov=full_output_cov,
-                                               q_sqrt=q_sqrt,
-                                               white=white)
-    return tf.squeeze(m, axis=0), tf.squeeze(v, axis=0)
+    mean, var = fully_correlated_conditional_repeat(
+        Kmn, Kmm, Knn, f,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+        q_sqrt=q_sqrt,
+        white=white)
+    return tf.squeeze(mean, axis=0), tf.squeeze(var, axis=0)
 
 
 def fully_correlated_conditional_repeat(Kmn,
@@ -362,7 +360,6 @@ def fully_correlated_conditional_repeat(Kmn,
         shape_constraints.append(
             (q_sqrt, "MR" if q_sqrt.shape.ndims == 2 else "RMM")
         )
-
 
     Lm = tf.linalg.cholesky(Kmm)
 
@@ -454,38 +451,61 @@ def rollaxis_right(A, num_rolls):
     return tf.transpose(A, perm)
 
 
-def mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
+def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
     r"""Takes the mean and variance of an uncorrelated L-dimensional latent GP
     and returns the mean and the variance of the mixed GP, `f = W g`,
     where both f and g are GPs, with W having a shape [P, L]
 
     :param W: [P, L]
-    :param g_mu: [..., N, L]
+    :param g_mean: [..., N, L]
     :param g_var: [..., N, L] (full_cov = False) or [L, ..., N, N] (full_cov = True)
-    :return: f_mu and f_var, shape depends on `full_cov` and `full_output_cov`
+    :return: f_mean and f_var, shape depends on `full_cov` and `full_output_cov`
     """
-    f_mu = tf.tensordot(g_mu, W, [[-1], [-1]])  # [..., N, P]
+    shape_constraints = [
+        (W, "PL"),
+        (g_mean, "*NL"),
+    ]
+    if not full_cov:
+        shape_constraints.append(
+            (g_var, "*NL")
+        )
+
+    f_mean = tf.tensordot(g_mean, W, [[-1], [-1]])  # [..., N, P]
 
     if full_cov and full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
         g_var = rollaxis_left(g_var, 1)  # [..., N, N, L]
+        shape_constraints.append(
+            (g_var, "*NNL")
+        )
+
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, N, P, P]
         f_var = leading_transpose(f_var, [..., -4, -2, -3, -1])  # [..., N, P, N, P]
+        cov_shape = "NPNP"
 
     elif full_cov and not full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
         f_var = tf.tensordot(g_var, W**2, [[0], [-1]])  # [..., N, N, P]
         f_var = leading_transpose(f_var, [..., -1, -3, -2])  # [..., P, N, N]
+        cov_shape = "PNN"
 
     elif not full_cov and full_output_cov:  # g_var is [..., N, L]
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, P, P]
+        cov_shape = "NPP"
 
     elif not full_cov and not full_output_cov:  # g_var is [..., N, L]
         W_squared = W**2  # [P, L]
         f_var = tf.tensordot(g_var, W_squared, [[-1], [-1]])  # [..., N, P]
+        cov_shape = "NP"
 
-    return f_mu, f_var
+    shape_constraints.extend([
+        (f_mean, "*NP"),
+        (f_var, "*"+cov_shape),
+    ])
+    tf.debugging.assert_shapes(shape_constraints)
+
+    return f_mean, f_var
