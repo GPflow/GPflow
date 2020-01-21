@@ -100,7 +100,7 @@ def _conditional(Xnew: tf.Tensor,
     :param X: data points, size [M, D].
     :param kernel: GPflow kernel.
     :param f: data matrix, [M, R], representing the function values at X,
-        for K functions.
+        for R functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size [M, R] or [R, M, M].
     :param white: boolean of whether to use the whitened representation as
