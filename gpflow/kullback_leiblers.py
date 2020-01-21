@@ -59,7 +59,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     """
 
     white = K is None
-    diag = q_sqrt.shape.ndims == 2
+    diag = len(q_sqrt.shape) == 2
 
     shape_constraints = [
         (q_mu, ['M', 'L']),
@@ -67,7 +67,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     ]
     if not white:
         shape_constraints.append(
-            (K, (['L', 'M', 'M'] if K.shape.ndims == 3 else ['M', 'M']))
+            (K, (['L', 'M', 'M'] if len(K.shape) == 3 else ['M', 'M']))
         )
     tf.debugging.assert_shapes(shape_constraints)
 
@@ -76,7 +76,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     if white:
         alpha = q_mu  # [M, L]
     else:
-        batch = K.shape.ndims == 3
+        batch = len(K.shape) == 3
 
         Lp = tf.linalg.cholesky(K)  # [L, M, M] or [M, M]
         q_mu = tf.transpose(
