@@ -59,7 +59,7 @@ def base_conditional(Kmn: tf.Tensor,
     ]
     if q_sqrt is not None:
         shape_constraints.append(
-            (q_sqrt, (['M', 'R'] if q_sqrt.shape.ndims == 2 else ['R', 'M', 'M'])
+            (q_sqrt, (['M', 'R'] if q_sqrt.shape.ndims == 2 else ['R', 'M', 'M']))
         )
     tf.debugging.assert_shapes(shape_constraints)
 
@@ -465,9 +465,7 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
         (g_mean, "*NL"),
     ]
     if not full_cov:
-        shape_constraints.append(
-            (g_var, "*NL")
-        )
+        shape_constraints.append((g_var, "*NL"))
 
     f_mean = tf.tensordot(g_mean, W, [[-1], [-1]])  # [..., N, P]
 
