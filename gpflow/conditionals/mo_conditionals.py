@@ -50,8 +50,7 @@ def shared_independent_conditional(
     """
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, N]
-    Knn = kernel(Xnew, full=full_cov, full_output_cov=False)
-    Knn = tf.squeeze(Knn, axis=(0 if full_cov else -1))  # [N, N] or [N]
+    Knn = kernel.kernel(Xnew, full=full_cov)
 
     fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt,
                                    white=white)  # [N, P],  [P, N, N] or [N, P]
