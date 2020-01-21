@@ -59,7 +59,14 @@ class Optimizer:
     @staticmethod
     def _gen_var_list(model, var_list):
         var_list = var_list or []
-        all_vars = list(set(model.trainable_tensors).union(var_list))
+
+        # start change by felix
+        if var_list == []:
+            all_vars = list(set(model.trainable_tensors).union(var_list))
+        else:
+            all_vars = var_list
+        # end change by felix
+
         return sorted(all_vars, key=lambda x: x.name)
 
     @staticmethod
