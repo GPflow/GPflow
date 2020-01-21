@@ -291,8 +291,11 @@ def test_sample_conditional_mixedkernel():
     np.testing.assert_array_almost_equal(np.cov(value, rowvar=False), np.cov(value2, rowvar=False), decimal=1)
 
 
-@pytest.mark.parametrize('R', [1, 5])
-@pytest.mark.parametrize("func", [fully_correlated_conditional_repeat, fully_correlated_conditional])
+@pytest.mark.parametrize("func, R", [
+    (fully_correlated_conditional_repeat, 5),
+    (fully_correlated_conditional_repeat, 1),
+    (fully_correlated_conditional, 1)
+])
 def test_fully_correlated_conditional_repeat_shapes(func, R):
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
