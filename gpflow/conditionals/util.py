@@ -58,10 +58,9 @@ def base_conditional(Kmn: tf.Tensor,
         (f, ['M', 'R']),
     ]
     if q_sqrt is not None:
-        if q_sqrt.shape.ndims == 2:
-            shape_constraints.append((q_sqrt, ['M', 'R']))
-        else:
-            shape_constraints.append((q_sqrt, ['R', 'M', 'M']))
+        shape_constraints.append(
+            (q_sqrt, (['M', 'R'] if q_sqrt.shape.ndims == 2 else ['R', 'M', 'M'])
+        )
     tf.debugging.assert_shapes(shape_constraints)
 
     leading_dims = tf.shape(Kmn)[:-2]
