@@ -88,4 +88,12 @@ def multivariate_normal(x, mu, L):
     p = -0.5 * tf.reduce_sum(tf.square(alpha), 0)
     p -= 0.5 * num_dims * np.log(2 * np.pi)
     p -= tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
+
+    shape_constraints = [
+        (d, ['D', 'N']),
+        (L, ['D', 'D']),
+        (p, ['N']),
+    ]
+    tf.debugging.assert_shapes(shape_constraints)
+
     return p
