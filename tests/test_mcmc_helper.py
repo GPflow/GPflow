@@ -4,6 +4,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
+from gpflow import default_float
 from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
 
@@ -52,17 +53,30 @@ def test_mcmc_helper_target_function():
 
     target_log_prob_fn = hmc_helper.target_log_prob_fn
 
-    assert model.log_marginal_likelihood() == target_log_prob_fn()
+    def compute_jacobian_correction_term():
+        correction_term = tf.constant(0., dtype=default_float())
+        for param in model.trainable_parameters:
+            if param.transform is not None:
+                value = param.read_value()
+                log_det_jacobian = param.transform.forward_log_det_jacobian(value, value.shape.ndims)
+                correction_term += tf.reduce_sum(log_det_jacobian)
+        return correction_term
+
+    expected_log_prob = model.log_marginal_likelihood() + compute_jacobian_correction_term()
+
+    assert np.isclose(expected_log_prob.numpy(), target_log_prob_fn())
 
     model.likelihood.variance.assign(1)
+    expected_log_prob = model.log_marginal_likelihood() + compute_jacobian_correction_term()
 
-    assert model.log_marginal_likelihood() == target_log_prob_fn()
+    assert np.isclose(expected_log_prob.numpy(), target_log_prob_fn())
 
     # test the wrapped closure
     log_prob, grad_fn = target_log_prob_fn.__original_wrapped__()
-    grad, nones =  grad_fn(1, [None] * len(model.trainable_parameters))
+    grad, nones = grad_fn(1, [None] * len(model.trainable_parameters))
     assert len(grad) == len(model.trainable_parameters)
     assert nones == [None] * len(model.trainable_parameters)
+
 
 def test_mcmc_sampler_integration():
     data = build_data()

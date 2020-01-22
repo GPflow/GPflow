@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
+from gpflow.base import PriorOn
 from tensorflow_probability.python.distributions import Uniform
 from tensorflow_probability.python.bijectors import Exp
 
@@ -75,7 +76,7 @@ def test_log_prior_on_unconstrained():
     uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
     param = gpflow.Parameter(initial_value, transform=Exp(),
                              prior=uniform_prior,
-                             prior_on_constrained=False)
+                             prior_on=PriorOn.UNCONSTRAINED)
     low_value = param.log_prior().numpy()
     param.assign(scale_factor * initial_value)
     high_value = param.log_prior().numpy()
@@ -102,15 +103,6 @@ class DummyModel(gpflow.models.BayesianModel):
 
     def log_likelihood(self):
         return (self.theta + 5)**2
-
-
-def test_map_on_unconstrained_space():
-    m1 = DummyModel(with_transform=True)
-    m2 = DummyModel(with_transform=False)
-    assert np.allclose(m1.log_marginal_likelihood(evaluate_on_constrained=False).numpy(),
-                       m2.log_marginal_likelihood(evaluate_on_constrained=False).numpy()
-                       + m1.log_scale), \
-                       "Unconstrained MAP objective should differ by log|Jacobian| of the transform"
 
 
 def test_map_invariance_to_transform():
