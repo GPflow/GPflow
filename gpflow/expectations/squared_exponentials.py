@@ -35,7 +35,7 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
     # use only active dimensions
     Xcov = kernel.slice_cov(p.cov)
     Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
-    D = Xmu.shape[1]
+    D = tf.shape(Xmu)[1]
 
     lengthscale = kernel.lengthscale
     if not kernel.ard:
@@ -66,7 +66,7 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    D = Xmu.shape[1]
+    D = tf.shape(Xmu)[1]
 
     lengthscale = kernel.lengthscale
     if not kernel.ard:
@@ -101,7 +101,7 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Xmu, Xcov = p.mu, p.cov
 
-    D = Xmu.shape[1]
+    D = tf.shape(Xmu)[1]
     lengthscale = kernel.lengthscale
     if not kernel.ard:
         lengthscale = tf.zeros((D, ), dtype=lengthscale.dtype) + lengthscale
@@ -151,8 +151,8 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     Xcov = kernel.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
     Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
 
-    N = Xmu.shape[0]
-    D = Xmu.shape[1]
+    N = tf.shape(Xmu)[0]
+    D = tf.shape(Xmu)[1]
 
     squared_lengthscale = kernel.lengthscale**2
     if not kernel.ard:

@@ -64,8 +64,8 @@ def _E(p, linear_mean, _, kernel, inducing_variable, nghp=None):
 
     :return: NxQxM
     """
-    N = p.mu.shape[0]
-    D = p.mu.shape[1]
+    N = tf.shape(p.mu)[0]
+    D = tf.shape(p.mu)[1]
     exKxz = expectation(p, mfn.Identity(D), (kernel, inducing_variable), nghp=nghp)
     eKxz = expectation(p, (kernel, inducing_variable), nghp=nghp)
     eAxKxz = tf.linalg.matmul(tf.tile(linear_mean.A[None, :, :], (N, 1, 1)), exKxz, transpose_a=True)

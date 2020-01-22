@@ -50,24 +50,20 @@ def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
     # Multiscale must be equivalent to inducing points when variance is zero
     Xnew, Z = np.random.randn(N, D), np.random.randn(M, D)
     rbf = gpflow.kernels.SquaredExponential(1.3441, lengthscale=np.random.uniform(0.5, 3., D))
-    inducing_variable_zero_lengthscale = Multiscale(Z, scales=np.zeros(Z.shape))
+    inducing_variable_zero_lengthscale = Multiscale(Z, scales=np.zeros(Z.shape) + 1e-10)
     inducing_variable_inducing_point = InducingPoints(Z)
 
     multi_scale_Kuf = Kuf(inducing_variable_zero_lengthscale, rbf, Xnew)
     inducing_point_Kuf = Kuf(inducing_variable_inducing_point, rbf, Xnew)
 
-    deviation_percent_Kuf = np.max(
-        np.abs(multi_scale_Kuf - inducing_point_Kuf) / inducing_point_Kuf *
-        100)
-    assert deviation_percent_Kuf < 0.1
+    relative_error_Kuf = np.abs(multi_scale_Kuf - inducing_point_Kuf) / inducing_point_Kuf
+    assert np.max(relative_error_Kuf) < 0.1e-2  # 0.1 %
 
     multi_scale_Kuu = Kuu(inducing_variable_zero_lengthscale, rbf)
     inducing_point_Kuu = Kuu(inducing_variable_inducing_point, rbf)
 
-    deviation_percent_Kuu = np.max(
-        np.abs(multi_scale_Kuu - inducing_point_Kuu) / inducing_point_Kuu *
-        100)
-    assert deviation_percent_Kuu < 0.1
+    relative_error_Kuu = np.abs(multi_scale_Kuu - inducing_point_Kuu) / inducing_point_Kuu
+    assert np.max(relative_error_Kuu) < 0.1e-2  # 0.1 %
 
 
 _inducing_variables_and_kernels = [
