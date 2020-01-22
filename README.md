@@ -26,11 +26,11 @@ GPflow implements modern Gaussian process inference for composable kernels and l
 GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python ≥ 3.6.
 
 
-## Install GPflow
+## Install GPflow 2
 
 - From source
 
-  With the release of _TensorFlow 2.0_ and _Tensorflow Probability_ 0.8, you should
+  With the release of _TensorFlow_ 2.1 and _Tensorflow Probability_ 0.9, you should
   only need to run
 
   ```bash
@@ -39,11 +39,29 @@ GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computat
 
   in a check-out of the `develop` branch of the GPflow github repository.
 
-- Using `pip`
+- Using `pip`:
 
-  ```bash
-  pip install gpflow
-  ```
+  - latest `develop` version:
+    ```bash
+    pip install git+https://github.com/GPflow/GPflow.git@develop#egg=gpflow
+    ```
+    (this will automatically install all required dependencies).
+
+  - latest PyPI package: currently not recommended
+    (the latest version released on PyPI is 2.0.0rc1; this release candidate is missing several bugfixes and improvements, and does not support _TensorFlow_ 2.1)
+    but you can install it as follows:
+    ```bash
+    pip install gpflow==2.0.0rc1 tensorflow==2.0 tensorflow_probability==0.8
+    ```
+    (replace `tensorflow==2.0` with `tensorflow-gpu==2.0` for the GPU version)
+
+## Install GPflow 1.5.1 (last official release)
+
+Using `pip`:
+```bash
+pip install 'gpflow<2.0' 'tensorflow<2.0'
+```
+GPflow leaves installing tensorflow to the user so that you can choose whether you want the CPU-only or the GPU-support package. Replace `tensorflow<2.0` with `tensorflow-gpu<2.0` for the GPU version.
 
 
 ## Getting Started with GPflow 2.0
