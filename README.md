@@ -55,21 +55,27 @@ There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develo
   *We have stopped development and support for GPflow based on TensorFlow 1.0. We now accept only bug fixes to GPflow 1.0 in the **develop-1.0** branch. The latest available release is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1). [Documentation](https://gpflow.readthedocs.io/en/v1.5.1-docs/) and [tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb) will remain available.*
 
 
-## Getting help
+## The GPflow Community
 
-Please use GitHub issues to start discussion on the use of GPflow. Tagging enquiries `discussion` helps us distinguish them from bugs.
+### Getting help
 
-## Contributing
+**Bugs, feature requests, pain points:**
+Please use [GitHub issues](https://github.com/GPflow/GPflow/issues/) to flag up bugs/issues/pain points, suggest new features, and discuss anything else related to the use of GPflow that in some sense involves changing the GPflow code itself. Please make use of the labels such as `bug`, `discussion`, `feature`, etc.
+
+We aim to respond to issues promptly, but if you believe we may have forgotten about an issue, please feel free to add another comment to remind us.
+
+**How-to-use questions:**
+Please use [StackOverflow (gpflow tag)](https://stackoverflow.com/tags/gpflow) to ask questions that relate to "how to use GPflow", i.e. questions of understanding rather than issues that require changing GPflow code.
+
+### Slack workspace
+
+We have a public [GPflow slack workspace](https://gpflow.slack.com/). Please use this [invite link](https://join.slack.com/t/gpflow/shared_invite/enQtOTE5MDA0Nzg5NjA2LTYwZWI3MzhjYjNlZWI1MWExYzZjMGNhOWIwZWMzMGY0YjVkYzAyYjQ4NjgzNDUyZTgyNzcwYjAyY2QzMWRmYjE) if you'd like to join, whether to ask short informal questions or to be involved in the discussion and future development of GPflow.
+
+### Contributing
 
 All constructive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
 
-## Compatibility
-
-GPflow heavily depends on TensorFlow and as far as TensorFlow supports forward compatibility, GPflow should as well. The version of GPflow can give you a hint about backward compatibility. If the major version has changed then you need to check the release notes to find out how the API has been changed.
-
-Unfortunately, there is no such thing as backward compatibility for GPflow _models_, which means that a model implementation can change without changing interfaces. In other words, the TensorFlow graph can be different for the same models from different versions of GPflow.
-
-## Projects using GPflow
+### Projects using GPflow
 
 A few projects building on GPflow and demonstrating its usage are listed below.
 
@@ -88,6 +94,12 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 
 
 Let us know if you would like your project listed here.
+
+## Compatibility
+
+GPflow heavily depends on TensorFlow and as far as TensorFlow supports forward compatibility, GPflow should as well. The version of GPflow can give you a hint about backward compatibility. If the major version has changed then you need to check the release notes to find out how the API has been changed.
+
+Unfortunately, there is no such thing as backward compatibility for GPflow _models_, which means that a model implementation can change without changing interfaces. In other words, the TensorFlow graph can be different for the same models from different versions of GPflow.
 
 ## Citing GPflow
 
