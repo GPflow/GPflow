@@ -77,20 +77,18 @@ class Parameter(tf.Module):
         or log_prior scales as 1/value when evaluate_on_constrained is set to False.
         """
 
-        x = self._unconstrained
-        y = self.read_value()
-
         if self.prior is not None:
-            z = y if self.prior_on == PriorOn.CONSTRAINED else x
-            out = tf.reduce_sum(self.prior.log_prob(z))
+            y = self.read_value()
+            if self.prior_on == PriorOn.CONSTRAINED:
+                log_p = tf.reduce_sum(self.prior.log_prob(y))
+            else:
+                x = self._unconstrained
+                log_p = tf.reduce_sum(self.prior.log_prob(x))
+                if self.transform is not None:
+                    log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
+                    log_p += tf.reduce_sum(log_det_jacobian)
 
-            # If the prior is defined on the unconstrained variable, we need to make use of the
-            # Jacobian to compensate.
-            if self.transform is not None and self.prior_on == PriorOn.UNCONSTRAINED:
-                log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
-                out += tf.reduce_sum(log_det_jacobian)
-
-            return out
+            return log_p
         else:
             return tf.convert_to_tensor(0., dtype=self.dtype)
 
