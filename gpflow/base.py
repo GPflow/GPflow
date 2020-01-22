@@ -1,4 +1,5 @@
 import functools
+from enum import Enum
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -33,13 +34,18 @@ class Module(tf.Module):
         return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
 
+class PriorOn(Enum):
+     CONSTRAINED = 1
+     UNCONSTRAINED = 2
+
+
 class Parameter(tf.Module):
     def __init__(self,
                  value,
                  *,
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
-                 prior_on_constrained: bool = True,
+                 prior_on: PriorOn = PriorOn.CONSTRAINED,
                  trainable: bool = True,
                  dtype: Optional[DType] = None,
                  name: Optional[str] = None):
@@ -53,6 +59,8 @@ class Parameter(tf.Module):
         super().__init__()
 
         self._transform = transform
+        self.prior = prior
+        self.prior_on = prior_on
 
         if isinstance(value, tf.Variable):
             self._unconstrained = value
@@ -61,11 +69,7 @@ class Parameter(tf.Module):
             self._unconstrained = tf.Variable(unconstrained_value,
                                               dtype=dtype, name=name, trainable=trainable)
 
-        self.prior = prior
-        self.prior_on_constrained = prior_on_constrained
-        self._transform = transform
-
-    def log_prior(self, evaluate_on_constrained: bool = True):
+    def log_prior(self):
         """ Prior probability density.
         This can be evaluated either on the constrained or unconstrained variable.
         For example if we set transform = Exp(), prior = Uniform(), prior_on_constrained=True
@@ -77,20 +81,15 @@ class Parameter(tf.Module):
         y = self.read_value()
 
         if self.prior is not None:
-            z = y if self.prior_on_constrained else x
+            z = y if self.prior_on == PriorOn.CONSTRAINED else x
             out = tf.reduce_sum(self.prior.log_prob(z))
 
-            if self.transform is not None:
-                # If the requested prior probability density does not match the
-                # variable on which the prior is defined, we need to make use of the
-                # Jacobian to compensate.
-                if evaluate_on_constrained and not self.prior_on_constrained:
-                    log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
-                    out += tf.reduce_sum(log_det_jacobian)
-                if not evaluate_on_constrained and self.prior_on_constrained:
-                    # This is the original definition used by gpflow
-                    log_det_jacobian = self.transform.forward_log_det_jacobian(x, x.shape.ndims)
-                    out += tf.reduce_sum(log_det_jacobian)
+            # If the prior is defined on the unconstrained variable, we need to make use of the
+            # Jacobian to compensate.
+            if self.transform is not None and self.prior_on == PriorOn.UNCONSTRAINED:
+                log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
+                out += tf.reduce_sum(log_det_jacobian)
+
             return out
         else:
             return tf.convert_to_tensor(0., dtype=self.dtype)
