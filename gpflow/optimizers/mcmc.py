@@ -55,7 +55,7 @@ class SamplingHelper:
         assert all([isinstance(p, (Parameter, tf.Variable)) for p in model_parameters])
 
         self._model_parameters = model_parameters
-        self._target_log_prob_fn = lambda: target_log_prob_fn(evaluate_on_constrained=False)
+        self._target_log_prob_fn = target_log_prob_fn
 
         self._parameters = []
         self._unconstrained_variables = []
@@ -84,6 +84,13 @@ class SamplingHelper:
             with tf.GradientTape(watch_accessed_variables=False) as tape:
                 tape.watch(variables_list)
                 log_prob = self._target_log_prob_fn()
+                # Now need to correct for the fact that the prob fn is evaluated on the
+                # constrained space while we wish to evaluate it in the unconstrained space
+                for param in self._model_parameters:
+                    if isinstance(param, Parameter) and param.transform is not None:
+                        value = param.read_value()
+                        log_det_jacobian = param.transform.forward_log_det_jacobian(value, value.shape.ndims)
+                        log_prob += tf.reduce_sum(log_det_jacobian)
 
             @tf.function
             def grad_fn(dy, variables: Optional[tf.Tensor] = None):
