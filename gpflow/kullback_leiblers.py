@@ -134,4 +134,5 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         scale = 1.0 if batch else tf.cast(L, default_float())
         twoKL += scale * sum_log_sqdiag_Lp
 
+    tf.debugging.assert_shapes([(twoKL, ())])  # returns scalar
     return 0.5 * twoKL
