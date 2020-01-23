@@ -7,6 +7,7 @@ import gpflow
 from gpflow import default_float
 from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
+from tensorflow_probability.python.distributions import Uniform
 
 np.random.seed(1)
 
@@ -47,29 +48,32 @@ def test_mcmc_helper_target_function():
     data = build_data()
     model = build_model(data)
 
+    # Set up priors on the model parameters such that we can readily compute their expected values.
+    expected_log_prior = 0.
+    prior_width = 200
+
+    for param in model.trainable_parameters:
+        low_value = -100
+        high_value = low_value + prior_width
+        param.prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
+        param.prior_on = 'unconstrained'
+
+        prior_density = 1 / prior_width
+        expected_log_prior += np.log(prior_density)
+
     hmc_helper = gpflow.optimizers.SamplingHelper(
         model.trainable_parameters, model.log_marginal_likelihood
     )
 
     target_log_prob_fn = hmc_helper.target_log_prob_fn
+    expected_log_prob = model.log_likelihood().numpy() + expected_log_prior
 
-    def compute_jacobian_correction_term():
-        correction_term = tf.constant(0., dtype=default_float())
-        for param in model.trainable_parameters:
-            if param.transform is not None:
-                value = param.read_value()
-                log_det_jacobian = param.transform.forward_log_det_jacobian(value, value.shape.ndims)
-                correction_term += tf.reduce_sum(log_det_jacobian)
-        return correction_term
-
-    expected_log_prob = model.log_marginal_likelihood() + compute_jacobian_correction_term()
-
-    assert np.isclose(expected_log_prob.numpy(), target_log_prob_fn())
+    assert np.isclose(expected_log_prob, target_log_prob_fn())
 
     model.likelihood.variance.assign(1)
-    expected_log_prob = model.log_marginal_likelihood() + compute_jacobian_correction_term()
 
-    assert np.isclose(expected_log_prob.numpy(), target_log_prob_fn())
+    expected_log_prob = model.log_likelihood().numpy() + expected_log_prior
+    assert np.isclose(expected_log_prob, target_log_prob_fn())
 
     # test the wrapped closure
     log_prob, grad_fn = target_log_prob_fn.__original_wrapped__()
