@@ -51,8 +51,8 @@ def test_log_prior_with_no_prior():
 
 def test_log_prior_for_uniform_prior():
     """
-    A parameter with a uniform prior should have uniform log-prior,
-    even if it has a transform to constrain it.
+    If we assign a Uniform prior to a parameter, we should not expect the value of the prior density
+    to change with the parameter value, even if it has a transform associated with it.
     """
 
     uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
