@@ -68,7 +68,7 @@ def test_log_prior_for_uniform_prior():
 def test_log_prior_on_unconstrained():
     """
     A parameter with an Exp transform, and a uniform prior on its unconstrained, should have a
-    prior which scales as  1/value.
+    prior in the constrained space that scales as 1/value.
     """
 
     initial_value = 1.
