@@ -35,7 +35,7 @@ class Module(tf.Module):
 
 
 class PriorOn(Enum):
-     CONSTRAINED = 1
+     CONSTRAINED = 'constrained'
      UNCONSTRAINED = 2
 
 
