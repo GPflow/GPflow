@@ -60,7 +60,7 @@ class Parameter(tf.Module):
 
         self._transform = transform
         self.prior = prior
-        self.prior_on = prior_on
+        self.prior_on = PriorOn(prior_on)
 
         if isinstance(value, tf.Variable):
             self._unconstrained = value
