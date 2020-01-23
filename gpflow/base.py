@@ -35,8 +35,8 @@ class Module(tf.Module):
 
 
 class PriorOn(Enum):
-     CONSTRAINED = 1
-     UNCONSTRAINED = 2
+     CONSTRAINED = 'constrained'
+     UNCONSTRAINED = 'unconstrained'
 
 
 class Parameter(tf.Module):
@@ -51,10 +51,10 @@ class Parameter(tf.Module):
                  name: Optional[str] = None):
         """
         A parameter retains both constrained and unconstrained
-        representations, If no transforms is provided, these two values will be the same.
+        representations. If no transform is provided, these two values will be the same.
         It is often challenging to operate with unconstrained parameters. For example a variance cannot be negative,
         therefore we need a positive constraint and it is natural to use constrained values.
-        A prior can be imposed either on the constrained or unconstrained version of the parameter.
+        A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
         super().__init__()
 
