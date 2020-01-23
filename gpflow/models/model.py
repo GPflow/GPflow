@@ -46,7 +46,6 @@ class BayesianModel(Module):
 
     def log_prior(self) -> tf.Tensor:
         log_priors = [p.log_prior() for p in self.trainable_parameters]
-                      for p in self.trainable_parameters]
         if log_priors:
             return tf.add_n(log_priors)
         else:
