@@ -88,8 +88,9 @@ class SamplingHelper:
                 # constrained space while we wish to evaluate it in the unconstrained space
                 for param in self._model_parameters:
                     if isinstance(param, Parameter) and param.transform is not None:
-                        value = param.read_value()
-                        log_det_jacobian = param.transform.forward_log_det_jacobian(value, value.shape.ndims)
+                        x = param.unconstrained_variable
+                        log_det_jacobian = param.transform.forward_log_det_jacobian(x,
+                                                                                    x.shape.ndims)
                         log_prob += tf.reduce_sum(log_det_jacobian)
 
             @tf.function

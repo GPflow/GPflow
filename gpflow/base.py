@@ -70,12 +70,7 @@ class Parameter(tf.Module):
                                               dtype=dtype, name=name, trainable=trainable)
 
     def log_prior(self):
-        """ Prior probability density.
-        This can be evaluated either on the constrained or unconstrained variable.
-        For example if we set transform = Exp(), prior = Uniform(), prior_on_constrained=True
-        Then log_prior will either be uniform (when evaluate_on_constrained is True),
-        or log_prior scales as 1/value when evaluate_on_constrained is set to False.
-        """
+        """ Prior probability density of the constrained variable. """
 
         if self.prior is not None:
             y = self.read_value()
