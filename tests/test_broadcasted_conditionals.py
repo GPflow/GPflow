@@ -22,7 +22,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-import gpflow.inducing_variables.mo_inducing_variables as mf
+import gpflow.inducing_variables.multioutputs as mf
 import gpflow.kernels.mo_kernels as mk
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import mix_latent_gp, rollaxis_left, rollaxis_right

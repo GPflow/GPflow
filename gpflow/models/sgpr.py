@@ -21,7 +21,7 @@ from .model import MeanAndVariance, GPModel, Data
 from .util import inducingpoint_wrapper
 from .. import likelihoods
 from ..config import default_float, default_jitter
-from ..covariances.dispatch import Kuf, Kuu
+from ..covariances import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
 

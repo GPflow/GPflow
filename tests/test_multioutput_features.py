@@ -3,9 +3,9 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-import gpflow.inducing_variables.mo_inducing_variables as mf
+import gpflow.inducing_variables.multioutputs as mf
 import gpflow.kernels.mo_kernels as mk
-from gpflow.covariances import mo_kufs, mo_kuus
+from gpflow.covariances import Kuf, Kuu
 
 rng = np.random.RandomState(9911)
 
@@ -62,22 +62,22 @@ multioutput_kernel_list = [
 @pytest.mark.parametrize('inducing_variable', multioutput_inducing_variable_list)
 @pytest.mark.parametrize('kernel', multioutput_kernel_list)
 def test_kuu(inducing_variable, kernel):
-    Kuu = mo_kuus.Kuu(inducing_variable, kernel, jitter=1e-9)
-    tf.linalg.cholesky(Kuu)
+    K = Kuu(inducing_variable, kernel, jitter=1e-9)
+    _ = tf.linalg.cholesky(K)
 
 
 @pytest.mark.parametrize('inducing_variable', multioutput_inducing_variable_list)
 @pytest.mark.parametrize('kernel', multioutput_kernel_list)
 def test_kuf(inducing_variable, kernel):
-    Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
+    _ = Kuf(inducing_variable, kernel, Datum.Xnew)
 
 
-@pytest.mark.parametrize('fun', [mo_kuus.Kuu, mo_kufs.Kuf])
-def test_mixed_shared(fun):
+@pytest.mark.parametrize('func', [Kuu, Kuf])
+def test_mixed_shared(func):
     inducing_variable = mf.SharedIndependentInducingVariables(make_ip())
     kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
-    if fun is mo_kuus.Kuu:
-        t = tf.linalg.cholesky(fun(inducing_variable, kernel, jitter=1e-9))
+    if func is Kuu:
+        t = tf.linalg.cholesky(func(inducing_variable, kernel, jitter=1e-9))
     else:
-        t = fun(inducing_variable, kernel, Datum.Xnew)
+        t = func(inducing_variable, kernel, Datum.Xnew)
         print(t.shape)

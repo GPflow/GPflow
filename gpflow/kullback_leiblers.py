@@ -19,7 +19,7 @@ from .config import default_float
 from multipledispatch import Dispatcher
 from .inducing_variables import InducingVariables
 from .kernels import Kernel
-from .covariances.kuus import Kuu
+from .covariances import Kuu
 from .config import default_jitter
 
 prior_kl = Dispatcher('prior_kl')
