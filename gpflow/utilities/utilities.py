@@ -137,26 +137,37 @@ def print_summary(module: tf.Module, fmt: str = None):
 
 
 def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -> str:
-    column_names = ['name', 'class', 'transform', 'trainable', 'shape', 'dtype', 'value']
-
-    def get_name(v):
-        return v.__class__.__name__
-
-    def get_transform(v):
-        if hasattr(v, "transform") and v.transform is not None:
-            if isinstance(v.transform, tfp.bijectors.Chain):
-                return " + ".join(b.__class__.__name__ for b in v.transform.bijectors[::-1])
-            return v.transform.__class__.__name__
+    def get_transform(path, var):
+        if hasattr(var, 'transform') and var.transform is not None:
+            if isinstance(var.transform, tfp.bijectors.Chain):
+                return " + ".join(b.__class__.__name__ for b in var.transform.bijectors[::-1])
+            return var.transform.__class__.__name__
         return None
+
+    def get_prior(path, var):
+        if hasattr(var, 'prior') and var.prior is not None:
+            return var.prior.name
+        return None
+
+    # list of (column_name: str, column_getter: Callable[[tf.Variable], str]) tuples:
+    column_definition = [
+        ("name", lambda path, var: path),
+        ("class", lambda path, var: var.__class__.__name__),
+        ("transform", get_transform),
+        ("prior", get_prior),
+        ("trainable", lambda path, var: var.trainable),
+        ("shape", lambda path, var: var.shape),
+        ("dtype", lambda path, var: var.dtype.name),
+        ("value", lambda path, var: _str_tensor_value(var.numpy())),
+        ]
+    column_names, column_getters = zip(*column_definition)
 
     merged_leaf_components = _merge_leaf_components(leaf_components(module))
 
-    column_values = [[
-        path,
-        get_name(variable),
-        get_transform(variable), variable.trainable, variable.shape, variable.dtype.name,
-        _str_tensor_value(variable.numpy())
-    ] for path, variable in merged_leaf_components.items()]
+    column_values = [
+        [getter(path, variable) for getter in column_getters]
+        for path, variable in merged_leaf_components.items()
+    ]
     return tabulate(column_values, headers=column_names, tablefmt=tablefmt)
 
 

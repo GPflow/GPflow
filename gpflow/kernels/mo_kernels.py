@@ -45,13 +45,13 @@ class MultioutputKernel(Kernel):
         raise self._output_dim
 
     @abc.abstractmethod
-    def K(self, X, Y=None, full_output_cov=True, presliced=False):
+    def K(self, X, X2=None, full_output_cov=True, presliced=False):
         """
-        Returns the correlation of f(X) and f(Y), where f(.) can be multi-dimensional.
+        Returns the correlation of f(X) and f(X2), where f(.) can be multi-dimensional.
         :param X: data matrix, [N1, D]
-        :param Y: data matrix, [N2, D]
+        :param X2: data matrix, [N2, D]
         :param full_output_cov: calculate correlation between outputs.
-        :return: cov[f(X), f(Y)] with shape
+        :return: cov[f(X), f(X2)] with shape
         - [N1, P, N2, P] if `full_output_cov` = True
         - [P, N1, N2] if `full_output_cov` = False
         """
@@ -69,12 +69,12 @@ class MultioutputKernel(Kernel):
         """
         raise NotImplementedError
 
-    def __call__(self, X, Y=None, full=False, full_output_cov=True, presliced=False):
-        if not full and Y is not None:
+    def __call__(self, X, X2=None, full=False, full_output_cov=True, presliced=False):
+        if not full and X2 is not None:
             raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full:
             return self.K_diag(X, full_output_cov=full_output_cov)
-        return self.K(X, Y, full_output_cov=full_output_cov)
+        return self.K(X, X2, full_output_cov=full_output_cov)
 
 
 class SharedIndependent(MultioutputKernel):
@@ -89,8 +89,8 @@ class SharedIndependent(MultioutputKernel):
         self.kernel = kernel
 
 
-    def K(self, X, Y=None, full_output_cov=True, presliced=False):
-        K = self.kernel.K(X, Y)  # [N, N2]
+    def K(self, X, X2=None, full_output_cov=True, presliced=False):
+        K = self.kernel.K(X, X2)  # [N, N2]
         if full_output_cov:
             Ks = tf.tile(K[..., None], [1, 1, self.output_dim])  # [N, N2, P]
             return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # [N, P, N2, P]
@@ -112,12 +112,12 @@ class SeparateIndependent(MultioutputKernel, Combination):
         super().__init__(output_dim=len(kernels), kernels=kernels, name=name)
 
 
-    def K(self, X, Y=None, full_output_cov=True, presliced=False):
+    def K(self, X, X2=None, full_output_cov=True, presliced=False):
         if full_output_cov:
-            Kxxs = tf.stack([k.K(X, Y) for k in self.kernels], axis=2)  # [N, N2, P]
+            Kxxs = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)  # [N, N2, P]
             return tf.transpose(tf.linalg.diag(Kxxs), [0, 2, 1, 3])  # [N, P, N2, P]
         else:
-            return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [P, N, N2]
+            return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [P, N, N2]
 
     def K_diag(self, X, full_output_cov=False, presliced=False):
         stacked = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, P]
@@ -138,7 +138,7 @@ class IndependentLatent(MultioutputKernel):
     IndependentInducingVariables`.
     """
     @abc.abstractmethod
-    def Kgg(self, X, Y):
+    def Kgg(self, X, X2):
         raise NotImplementedError
 
 
@@ -150,11 +150,11 @@ class LinearCoregionalization(IndependentLatent, Combination):
         super().__init__(output_dim=len(kernels), kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
 
-    def Kgg(self, X, Y):
-        return tf.stack([k.K(X, Y) for k in self.kernels], axis=0)  # [L, N, N2]
+    def Kgg(self, X, X2):
+        return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
 
-    def K(self, X, Y=None, full_output_cov=True, presliced=False):
-        Kxx = self.Kgg(X, Y)  # [L, N, N2]
+    def K(self, X, X2=None, full_output_cov=True, presliced=False):
+        Kxx = self.Kgg(X, X2)  # [L, N, N2]
         KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # [P, L, N, N2]
         if full_output_cov:
             # return tf.einsum('lnm,kl,ql->nkmq', Kxx, self.W, self.W)
