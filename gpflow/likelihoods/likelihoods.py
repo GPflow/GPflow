@@ -677,7 +677,10 @@ class GaussianMC(MonteCarloLikelihood, Gaussian):
 
 class Softmax(MonteCarloLikelihood):
     """
-    The soft-max multi-class likelihood.
+    The soft-max multi-class likelihood.  It can only provide a stochastic
+    Monte-Carlo estimate of the variational expectations term, but this
+    added variance tends to be small compared to that due to mini-batching
+    (when using the SVGP model).
     """
 
     def __init__(self, num_classes, **kwargs):
