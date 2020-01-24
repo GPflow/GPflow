@@ -10,8 +10,10 @@ from ..mean_functions import Zero
 from ..utilities import ops, positive, triangular
 from .. import kullback_leiblers
 from ..base import Parameter
-from ..conditionals import conditional
+from ..conditionals import conditional, base_conditional
 from .util import inducingpoint_wrapper
+from ..utilities.ops import eye
+
 
 from gpflow.models import BayesianModel
 
@@ -36,7 +38,9 @@ class SVGPs(BayesianModel, metaclass=abc.ABCMeta):
                  whiten: bool = True,
                  num_data=None,
                  deterministic_optimisation=False,
-                 num_samples=10):
+                 num_samples=10,
+                 offsets_x=None,
+                 offsets_y=None):
         """
         - kernels, inducing_variables, mean_functions are appropriate
           lists of GPflow objects
@@ -72,8 +76,15 @@ class SVGPs(BayesianModel, metaclass=abc.ABCMeta):
 
         self.deterministic_optimisation = deterministic_optimisation
         self.num_samples = num_samples
+        self.num_inducings = num_inducings
 
         self._init_variational_parameters(num_inducings, q_mus, q_sqrts, q_diag)
+        if offsets_x is None:
+            offsets_x = [np.zeros((1, 1)) for _ in range(self.num_components)]
+        self.offsets_x = [Parameter(o) for o in offsets_x]
+        if offsets_y is None:
+            offsets_y = [np.zeros((1, 1)) for _ in range(self.num_components)]
+        self.offsets_y = [Parameter(o) for o in offsets_y]
 
     def _init_variational_parameters(self, num_inducings, q_mus, q_sqrts, q_diag):
         self.q_mus, self.q_sqrts = [], []
@@ -141,14 +152,37 @@ class SVGPs(BayesianModel, metaclass=abc.ABCMeta):
         return q_mu_, q_sqrt_
 
     def prior_kls(self):
-        return [kullback_leiblers.prior_kl(self.inducing_variables[c],
+        kls = []
+        q_mus = self.mu_corrections()
+        for c in range(self.num_components):
+            kls.append(kullback_leiblers.prior_kl(self.inducing_variables[c],
                                            self.kernels[c],
-                                           self.q_mus[c],
+                                           q_mus[c],
                                            self.q_sqrts[c],
-                                           whiten=self.whiten) for c in range(self.num_components)]
+                                           whiten=self.whiten))
+        return kls
 
     def prior_kl(self):
         return tf.reduce_sum(self.prior_kls())
+
+    def mu_corrections(self):
+
+        mus = []
+        for c in range(self.num_components):
+
+            Kmm = self.kernels[c](self.inducing_variables[c].Z) + \
+                  ops.eye(self.num_inducings[c], value=default_jitter(), dtype=default_float())
+            Kmn = self.kernels[c](self.inducing_variables[c].Z, self.offsets_x[c])
+            Knn = self.kernels[c](self.offsets_x[c], full=False)
+
+            mu0, var = base_conditional(Kmn, Kmm, Knn, self.q_mus[c],
+                                        full_cov=False, white=self.whiten, q_sqrt=self.q_sqrts[c])
+
+            n, _ = base_conditional(Kmn, Kmm, Knn, tf.ones_like(self.q_mus[c]),
+                                    full_cov=False, white=self.whiten, q_sqrt=self.q_sqrts[c])
+
+            mus.append(self.q_mus[c] - ((mu0 - self.offsets_y[c])/ n))
+        return mus
 
     def log_likelihood(self, data: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
         """
@@ -173,13 +207,16 @@ class SVGPs(BayesianModel, metaclass=abc.ABCMeta):
 
     def predict_fs(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
         mus, vars = [], []
+        q_mus = self.mu_corrections()
+
         for c in range(self.num_components):
             # hard coding ordering
             Xnew_c = Xnew[:, self.indices[c]]
+
             mu, var = conditional(Xnew_c,
                                   self.inducing_variables[c],
                                   self.kernels[c],
-                                  self.q_mus[c],
+                                  q_mus[c],
                                   q_sqrt=self.q_sqrts[c],
                                   full_cov=full_cov,
                                   white=self.whiten,
@@ -206,7 +243,6 @@ class SVGPs(BayesianModel, metaclass=abc.ABCMeta):
         p_samp = self.sample_predictor(Xnew, num_samples=self.num_samples)
         p_mean = tf.reduce_mean(p_samp, axis=0)
         return p_mean, tf.reduce_mean(tf.square(p_mean-p_samp), axis=0)
-
 
 
 
@@ -244,9 +280,11 @@ class Custom(SVGPs):
                  whiten: bool = True,
                  num_data=None,
                  deterministic_optimisation=False,
-                 num_samples=10):
+                 num_samples=10,
+                 offsets_x=None,
+                 offsets_y=None):
 
-        super().__init__(kernels,  likelihood, inducing_variables, indices,
+        super().__init__(kernels, likelihood, inducing_variables, indices,
                          mean_functions=mean_functions,
                          num_latent=num_latent,
                          q_diag=q_diag,
@@ -255,13 +293,13 @@ class Custom(SVGPs):
                          whiten=whiten,
                          num_data=num_data,
                          deterministic_optimisation=deterministic_optimisation,
-                         num_samples=num_samples)
+                         num_samples=num_samples,
+                         offsets_x=offsets_x,
+                         offsets_y=offsets_y)
 
-        self.offsets = Parameter(np.ones((2,)), name="offsets")
 
     def predictor(self, F: tf.Tensor):
-        o = self.offsets
-        return ( o[0] + F[..., 0] + (F[..., 1] + o[1]) * (F[...,2]))[..., None]
+        return (  F[..., 0] + (F[..., 1] ) * (F[...,2]))[..., None]
 
 
 

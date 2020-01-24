@@ -40,16 +40,38 @@ class InducingPointsBase(InducingVariables):
         :param Z: the initial positions of the inducing points, size [M, D]
         """
         super().__init__(name=name)
-        self.Z = Parameter(Z, dtype=default_float())
+        self._Z = Parameter(Z, dtype=default_float())
 
     def __len__(self):
         return self.Z.shape[0]
+
+    @property
+    def Z(self):
+        return self._Z
 
 
 class InducingPoints(InducingPointsBase):
     """
     Real-space inducing points
     """
+
+
+class ClampedInducingPoints(InducingPoints):
+
+    def __init__(self, Z, value=0., name=None):
+        """
+        :param Z: the initial positions of the inducing points, size [M, D]
+        """
+        super().__init__(Z, name=name)
+        self.mask = tf.one_hot(0, len(Z), dtype=default_float())[..., None]
+        self.value = value
+
+    def __len__(self):
+        return self._Z.shape[0]
+
+    @property
+    def Z(self):
+        return self._Z * (1.-self.mask) + self.mask * self.value
 
 
 class Multiscale(InducingPointsBase):
