@@ -16,11 +16,18 @@ class RobustMax(tf.Module):
 
     with
 
-    y_i = (1-eps)  i == argmax(f)
-          eps/(k-1)  otherwise.
+    y_i = (1-epsilon)  i == argmax(f)
+          epsilon/(k-1)  otherwise
+
+    where k is the number of classes.
     """
 
     def __init__(self, num_classes, epsilon=1e-3, **kwargs):
+        """
+        epsilon represents the fraction of 'errors' in the labels of the
+        dataset. This may be a hard parameter to optimize, so by default
+        it is set un-trainable, at a small value.
+        """
         super().__init__(**kwargs)
         transform = tfp.bijectors.Sigmoid()
         prior = tfp.distributions.Beta(to_default_float(0.2), to_default_float(5.))

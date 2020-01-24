@@ -363,9 +363,11 @@ class Beta(Likelihood):
 class MultiClass(Likelihood):
     def __init__(self, num_classes, invlink=None, **kwargs):
         """
-        A likelihood that can do multi-way classification.
-        Currently the only valid choice
-        of inverse-link function (invlink) is an instance of RobustMax.
+        A likelihood for multi-way classification.  Currently the only valid
+        choice of inverse-link function (invlink) is an instance of RobustMax.
+
+        For most problems, the stochastic `Softmax` likelihood may be more
+        appropriate (note that you then cannot use Scipy optimizer).
         """
         super().__init__(**kwargs)
         self.num_classes = num_classes
