@@ -24,7 +24,7 @@ class RobustMax(tf.Module):
 
     def __init__(self, num_classes, epsilon=1e-3, **kwargs):
         """
-        epsilon represents the fraction of 'errors' in the labels of the
+        `epsilon` represents the fraction of 'errors' in the labels of the
         dataset. This may be a hard parameter to optimize, so by default
         it is set un-trainable, at a small value.
         """
