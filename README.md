@@ -80,6 +80,7 @@ There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develo
 
 **Bugs, feature requests, pain points, annoying design quirks, etc:**
 Please use [GitHub issues](https://github.com/GPflow/GPflow/issues/) to flag up bugs/issues/pain points, suggest new features, and discuss anything else related to the use of GPflow that in some sense involves changing the GPflow code itself. Please make use of the labels such as `bug`, `discussion`, `feature`, `feedback`, etc.
+We positively welcome comments or concerns about usability, and suggestions for changes at any level of design.
 
 We aim to respond to issues promptly, but if you believe we may have forgotten about an issue, please feel free to add another comment to remind us.
 
