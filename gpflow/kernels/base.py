@@ -35,7 +35,8 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
                  active_dims: Optional[Union[slice, list]] = None,
                  name: Optional[str] = None):
         """
-        :param active_dims: active dimensions, has the slice type.
+        :param active_dims: active dimensions, either a slice or list of
+            indices into the columns of X.
         :param name: optional kernel name.
         """
         super().__init__(name=name)
