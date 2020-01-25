@@ -51,13 +51,20 @@ class Periodic(Kernel):
         self.period = Parameter(period, transform=positive())
         self.base._validate_ard_active_dims(self.period)
 
+    @property
+    def active_dims(self):
+        return self.base.active_dims
+
+    @active_dims.setter
+    def active_dims(self, value):
+        self.base.active_dims = value
+
     def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
         return self.base.K_diag(X)
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
         if not presliced:
-            # active_dims is specified in the base, so use base.slice
-            X, X2 = self.base.slice(X, X2)
+            X, X2 = self.slice(X, X2)
         if X2 is None:
             X2 = X
 
