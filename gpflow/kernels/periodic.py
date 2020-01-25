@@ -32,15 +32,16 @@ class Periodic(Kernel):
     γ is the period parameter.
 
     (note that usually we have a factor of 4 instead of 0.5 in front but this
-    is absorbed into lengthscale hyperparameter).
+    is absorbed into the lengthscale hyperparameter).
     """
 
     def __init__(self, base: Stationary, period: Union[float, List[float]] = 1.0):
         """
         :param base: the base kernel to make periodic; must inherit from Stationary
+            Note that active_dims should be specified in the base kernel.
         :param period: the period; to induce a different period per active dimention
-            this must be initialized with an array the same length as the the number
-            of active dimensions in the base e.g. [1., 1., 1.]
+            this must be initialized with an array the same length as the number
+            of active dimensions e.g. [1., 1., 1.]
         """
         if not isinstance(base, Stationary):
             raise TypeError("Periodic requires a Stationary kernel as the `base`")
