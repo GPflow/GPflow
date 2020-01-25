@@ -40,9 +40,15 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
         :param name: optional kernel name.
         """
         super().__init__(name=name)
-        if isinstance(active_dims, list):
-            active_dims = np.array(active_dims)
-        self._active_dims = active_dims
+        self._active_dims = self._normalize_active_dims(active_dims)
+
+    @staticmethod
+    def _normalize_active_dims(value):
+        if value is None:
+            value = slice(None, None, None)
+        if not isinstance(value, slice):
+            value = np.array(value, dtype=int)
+        return value
 
     @property
     def active_dims(self):
@@ -50,11 +56,7 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
 
     @active_dims.setter
     def active_dims(self, value):
-        if value is None:
-            value = slice(None, None, None)
-        if not isinstance(value, slice):
-            value = np.array(value, dtype=int)
-        self._active_dims = value
+        self._active_dims = self._normalize_active_dims(value)
 
     def on_separate_dims(self, other):
         """

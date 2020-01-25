@@ -51,7 +51,7 @@ class Periodic(Kernel):
             raise TypeError("Periodic requires a Stationary kernel as the `base`")
 
         if active_dims != _ACTIVE_DIMS_ON_BASE_KERNEL:
-            if active_dims != base.active_dims:
+            if self._normalize_active_dims(active_dims) != base.active_dims:
                 raise ValueError("active_dims must be consistent with base.active_dims")
 
         super().__init__()
