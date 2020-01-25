@@ -77,6 +77,7 @@ class Periodic(Kernel):
             X2 = X
 
         # Introduce dummy dimension so we can use broadcasting
+        # TODO: does not support kernel broadcasting
         f = tf.expand_dims(X, 1)  # now [N, 1, D]
         f2 = tf.expand_dims(X2, 0)  # now [1, M, D]
 
