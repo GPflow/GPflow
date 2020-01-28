@@ -16,6 +16,7 @@ __all__ = [
     "multiple_assign",
     "training_loop",
     "print_summary",
+    "tabulate_module_summary",
     "deepcopy_components",
     "leaf_components",
     "parameter_dict",
