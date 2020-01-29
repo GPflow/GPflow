@@ -145,7 +145,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def __call__(self, X, X2=None, full=True, presliced=False):
-        if (not full) and (X2 is not None):
+        if (not full) and (X2 is not None):  # pragma: no cover
             raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
 
         if not presliced:
@@ -220,9 +220,6 @@ class Combination(Kernel):
 
 class ReducingCombination(Combination):
     def __call__(self, X, X2=None, full=True, presliced=False):
-        if (not full) and (X2 is not None):
-            raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
-
         return self._reduce(
             [k(X, X2, full=full, presliced=presliced) for k in self.kernels]
         )
