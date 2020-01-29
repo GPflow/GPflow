@@ -532,3 +532,35 @@ def test_on_separate_dims(active_dims_1, active_dims_2, is_separate):
     assert kernel_2.on_separate_dims(kernel_1) == is_separate
     assert kernel_1.on_separate_dims(kernel_1) is False
     assert kernel_2.on_separate_dims(kernel_2) is False
+
+
+@pytest.mark.parametrize('kernel', kernel_setups_extended)
+def test_kernel_call_diag_and_X2_errors(kernel):
+    X = rng.randn(4, 1)
+    X2 = rng.randn(5, 1)
+
+    with pytest.raises(ValueError):
+        kernel(X, X2, diag=True)
+
+
+def test_periodic_active_dims_mismatch_check():
+    active_dims_1 = [0]
+    active_dims_2 = [1]
+    with pytest.raises(ValueError):
+        base = gpflow.kernels.SquaredExponential(active_dims=active_dims_1)
+        _ = gpflow.kernels.Periodic(base=base, active_dims=active_dims_2)
+
+def test_periodic_active_dims_matches():
+    active_dims = [1]
+    base = gpflow.kernels.SquaredExponential(active_dims=active_dims)
+    kernel = gpflow.kernels.Periodic(base=base, active_dims=active_dims)
+
+    assert kernel.active_dims == base.active_dims
+
+    kernel.active_dims = [2]
+
+    assert kernel.active_dims == base.active_dims
+
+    base.active_dims = [3]
+
+    assert kernel.active_dims == base.active_dims
