@@ -221,7 +221,7 @@ def test_periodic_diag(base_class):
     X = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
     base = base_class(lengthscale=2., variance=1.)
     kernel = gpflow.kernels.Periodic(base, period=6.)
-    assert_allclose(base(X, full=False), kernel(X, full=False))
+    assert_allclose(base(X, diag=True), kernel(X, diag=True))
 
 
 def test_periodic_non_stationary_base():
@@ -311,16 +311,16 @@ kernel_setups_extended = kernel_setups + [
 @pytest.mark.parametrize('N, dim', [[30, _dim]])
 def test_diags(kernel, N, dim):
     X = np.random.randn(N, dim)
-    kernel1 = tf.linalg.diag_part(kernel(X, full=True))
-    kernel2 = kernel(X, full=False)
+    kernel1 = tf.linalg.diag_part(kernel(X, diag=False))
+    kernel2 = kernel(X, diag=True)
     assert np.allclose(kernel1, kernel2)
 
 
 def test_conv_diag():
     kernel = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), [3, 3], [2, 2])
     X = np.random.randn(3, 9)
-    kernel_full = np.diagonal(kernel(X, full=True))
-    kernel_diag = kernel(X, full=False)
+    kernel_full = np.diagonal(kernel(X, diag=False))
+    kernel_diag = kernel(X, diag=True)
     assert np.allclose(kernel_full, kernel_diag)
 
 

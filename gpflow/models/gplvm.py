@@ -220,7 +220,7 @@ class BayesianGPLVM(GPModel):
             shape = tf.stack([1, 1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
-            var = self.kernel(predict_at, full=False) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(
+            var = self.kernel(predict_at, diag=True) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(
                 tf.square(tmp1), 0)
             shape = tf.stack([1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)

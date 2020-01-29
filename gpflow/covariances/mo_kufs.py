@@ -11,7 +11,7 @@ from .dispatch import Kuf
 
 @Kuf.register(InducingPoints, MultioutputKernel, object)
 def _Kuf(inducing_variable: InducingPoints, kernel: MultioutputKernel, Xnew: tf.Tensor):
-    return kernel(inducing_variable.Z, Xnew, full=True, full_output_cov=True)  # [M, P, N, P]
+    return kernel(inducing_variable.Z, Xnew, full_output_cov=True)  # [M, P, N, P]
 
 
 @Kuf.register(SharedIndependentInducingVariables, SharedIndependent, object)

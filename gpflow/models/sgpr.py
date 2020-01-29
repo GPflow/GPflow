@@ -60,7 +60,7 @@ class SGPRUpperMixin(GPModel):
         x_data, y_data = self.data
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
 
-        Kdiag = self.kernel(x_data, full=False)
+        Kdiag = self.kernel(x_data, diag=True)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
 
@@ -149,7 +149,7 @@ class SGPR(SGPRUpperMixin):
         output_dim = tf.cast(tf.shape(y_data)[1], default_float())
 
         err = y_data - self.mean_function(x_data)
-        Kdiag = self.kernel(x_data, full=False)
+        Kdiag = self.kernel(x_data, diag=True)
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
@@ -207,7 +207,7 @@ class SGPR(SGPRUpperMixin):
                   - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
             var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
         else:
-            var = self.kernel(X, full=False) + tf.reduce_sum(tf.square(tmp2), 0) \
+            var = self.kernel(X, diag=True) + tf.reduce_sum(tf.square(tmp2), 0) \
                   - tf.reduce_sum(tf.square(tmp1), 0)
             var = tf.tile(var[:, None], [1, self.num_latent])
         return mean + self.mean_function(X), var
@@ -287,7 +287,7 @@ class GPRFITC(SGPRUpperMixin):
         x_data, y_data = self.data
         num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)  # size [N, R]
-        Kdiag = self.kernel(x_data, full=False)
+        Kdiag = self.kernel(x_data, diag=True)
         kuf = Kuf(self.inducing_variable, self.kernel, x_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
@@ -376,7 +376,7 @@ class GPRFITC(SGPRUpperMixin):
                   + tf.linalg.matmul(intermediateA, intermediateA, transpose_a=True)
             var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
         else:
-            var = self.kernel(X, full=False) - tf.reduce_sum(tf.square(w), 0) \
+            var = self.kernel(X, diag=True) - tf.reduce_sum(tf.square(w), 0) \
                   + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,
             var = tf.tile(var[:, None], [1, self.num_latent])
 

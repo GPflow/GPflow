@@ -183,7 +183,7 @@ def test_kernel_mean_function_expectations(distribution, kernel, inducing_variab
 @pytest.mark.parametrize("kernel", kern_args1)
 def test_eKdiag_no_uncertainty(kernel):
     eKdiag = expectation(_distrs['dirac_diag'], kernel)
-    Kdiag = kernel(Xmu, full=False)
+    Kdiag = kernel(Xmu, diag=True)
     assert_allclose(eKdiag, Kdiag, rtol=RTOL)
 
 

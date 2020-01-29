@@ -60,12 +60,13 @@ class MultioutputKernel(Kernel):
         """
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, full=False, full_output_cov=True):
-        if not full and X2 is not None:
-            raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
-        if not full:
+    def __call__(self, X, X2=None, diag=False, full_output_cov=True):
+        if diag and (X2 is not None):
+            raise ValueError("Ambiguous inputs: `diag` and `X2` are not compatible.")
+        if diag:
             return self.K_diag(X, full_output_cov=full_output_cov)
-        return self.K(X, X2, full_output_cov=full_output_cov)
+        else:
+            return self.K(X, X2, full_output_cov=full_output_cov)
 
 
 class SharedIndependent(MultioutputKernel):

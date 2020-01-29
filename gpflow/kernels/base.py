@@ -142,14 +142,14 @@ class Kernel(Module, metaclass=abc.ABCMeta):
     def K_diag(self, X):
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, full=True, presliced=False):
-        if (not full) and (X2 is not None):
-            raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
+    def __call__(self, X, X2=None, diag=False, presliced=False):
+        if diag and (X2 is not None):
+            raise ValueError("Ambiguous inputs: `diag` and `X2` are not compatible.")
 
         if not presliced:
             X, X2 = self.slice(X, X2)
 
-        if not full:
+        if diag:
             assert X2 is None
             return self.K_diag(X)
 

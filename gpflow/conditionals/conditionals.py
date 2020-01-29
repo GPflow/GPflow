@@ -54,7 +54,7 @@ def _conditional(Xnew: tf.Tensor,
     """
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(inducing_variable, kernel, Xnew)  # [M, N]
-    Knn = kernel(Xnew, full=full_cov)
+    Knn = kernel(Xnew, diag=not full_cov)
     fmean, fvar = base_conditional(Kmn,
                                    Kmm,
                                    Knn,
@@ -111,7 +111,7 @@ def _conditional(Xnew: tf.Tensor,
     """
     Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)
     Kmn = kernel(X, Xnew)
-    Knn = kernel(Xnew, full=full_cov)
+    Knn = kernel(Xnew, diag=not full_cov)
     mean, var = base_conditional(Kmn,
                                  Kmm,
                                  Knn,
