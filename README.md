@@ -15,7 +15,7 @@ GPflow is a package for building Gaussian process models in python, using [Tenso
 The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is
 Alessandro Davide Ialongo, Alexander G. de G. Matthews, Alexis Boukouvalas, [Artem Artemev](http://github.com/awav/), Daniel Marthaler, David J. Harris, Eric Hambro, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, Sergio Pascual-Diaz, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani.
  
- *GPflow is an open source project, so if you feel you have some relevant skills and are interested in contributing then please do contact us (see ["The GPflow community" section](#the-gpflow-community) below).*
+ *GPflow is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The GPflow community" section](#the-gpflow-community) below).*
 
 
 ## What does GPflow do?
@@ -65,7 +65,7 @@ GPflow leaves installing tensorflow to the user so that you can choose whether y
 
 ## Getting Started with GPflow 2.0
 
-*Note that GPflow 2.0 has not yet had an official release and interfaces, function signatures, variable names etc. may still change. Likewise, we are open to suggestions for how to improve the design of gpflow2!*
+*Note that GPflow 2.0 has not yet had an official release and interfaces, function signatures, variable names etc. may still change. We welcome and are open to suggestions for how to improve the design of gpflow2!*
 
 There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/intro_to_gpflow2.ipynb) Jupyter notebook; check it out for details. To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/gpflow_2_upgrade/gpflow2_upgrade_guide.ipynb).
 
@@ -79,13 +79,14 @@ There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develo
 ### Getting help
 
 **Bugs, feature requests, pain points, annoying design quirks, etc:**
-Please use [GitHub issues](https://github.com/GPflow/GPflow/issues/) to flag up bugs/issues/pain points, suggest new features, and discuss anything else related to the use of GPflow that in some sense involves changing the GPflow code itself. Please make use of the labels such as `bug`, `discussion`, `feature`, `feedback`, etc.
+Please use [GitHub issues](https://github.com/GPflow/GPflow/issues/) to flag up bugs/issues/pain points, suggest new features, and discuss anything else related to the use of GPflow that in some sense involves changing the GPflow code itself.
+You can make use of the [labels](https://github.com/GPflow/GPflow/labels) such as [`bug`](https://github.com/GPflow/GPflow/labels/bug), [`discussion`](https://github.com/GPflow/GPflow/labels/discussion), [`feature`](https://github.com/GPflow/GPflow/labels/feature), [`feedback`](https://github.com/GPflow/GPflow/labels/feedback), etc.
 We positively welcome comments or concerns about usability, and suggestions for changes at any level of design.
 
 We aim to respond to issues promptly, but if you believe we may have forgotten about an issue, please feel free to add another comment to remind us.
 
 **"How-to-use" questions:**
-Please use [StackOverflow (gpflow tag)](https://stackoverflow.com/tags/gpflow) to ask questions that relate to "how to use GPflow", i.e. questions of understanding rather than issues that require changing GPflow code. (You can always open an issue, but we may ask you to move your question to stackoverflow.)
+Please use [Stack Overflow (gpflow tag)](https://stackoverflow.com/tags/gpflow) to ask questions that relate to "how to use GPflow", i.e. questions of understanding rather than issues that require changing GPflow code. (If you are unsure where to ask, you are always welcome to open a GitHub issue; we may then ask you to move your question to Stack Overflow.)
 
 ### Slack workspace
 
@@ -112,7 +113,7 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 | [VBPP](https://github.com/st--/vbpp) | Implementation of "Variational Bayes for Point Processes".|
 | [DGPs_with_IWVI](https://github.com/hughsalimbeni/DGPs_with_IWVI) | Deep Gaussian Processes with Importance-Weighted Variational Inference|
 
-If you would like your project listed here, let us know - or simply open a Pull Request that adds your project to the table above!
+If you would like your project listed here, let us know - or simply [open a pull request](https://github.com/GPflow/GPflow/compare) that adds your project to the table above!
 
 ## Compatibility
 
