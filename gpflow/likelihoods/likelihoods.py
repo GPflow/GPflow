@@ -56,7 +56,7 @@ import numpy as np
 import tensorflow as tf
 
 from .. import logdensities
-from ..base import Parameter
+from ..base import Module, Parameter
 from ..config import default_float, default_int
 from ..quadrature import hermgauss, ndiag_mc, ndiagquad
 from ..utilities import positive
@@ -69,7 +69,7 @@ def inv_probit(x):
         * (1 - 2 * jitter) + jitter
 
 
-class Likelihood(tf.Module):
+class Likelihood(Module):
     def __init__(self):
         super().__init__()
         self.num_gauss_hermite_points = 20
