@@ -540,7 +540,7 @@ def test_kernel_call_diag_and_X2_errors(kernel):
     X2 = rng.randn(5, 1)
 
     with pytest.raises(ValueError):
-        kernel(X, X2, diag=True)
+        kernel(X, X2, full=False)
 
 
 def test_periodic_active_dims_mismatch_check():
