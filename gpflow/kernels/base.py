@@ -217,22 +217,35 @@ class Combination(Kernel):
                         overlapping = True
             return not overlapping
 
+
+class ReducingCombination(Combination):
+    def __call__(self, X, X2=None, full=True, presliced=False):
+        if (not full) and (X2 is not None):
+            raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
+
+        return self._reduce(
+            [k(X, X2, full=full, presliced=presliced) for k in self.kernels]
+        )
+
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
-        res = [k.K(X, X2) for k in self.kernels]
-        return self._reduce(res)
+        return self._reduce([k.K(X, X2) for k in self.kernels])
 
     def K_diag(self, X: tf.Tensor) -> tf.Tensor:
-        res = [k.K_diag(X) for k in self.kernels]
-        return self._reduce(res)
+        return self._reduce([k.K_diag(X) for k in self.kernels])
 
-
-class Sum(Combination):
     @property
-    def _reduce(cls):
+    @abc.abstractmethod
+    def _reduce(self):
+        pass
+
+
+class Sum(ReducingCombination):
+    @property
+    def _reduce(self):
         return tf.add_n
 
 
-class Product(Combination):
+class Product(ReducingCombination):
     @property
-    def _reduce(cls):
+    def _reduce(self):
         return partial(reduce, tf.multiply)
