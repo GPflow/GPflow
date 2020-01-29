@@ -134,7 +134,6 @@ class Coregion(Kernel):
         self.kappa = Parameter(kappa, transform=positive())
 
     def K(self, X, X2=None):
-        X, X2 = self.slice(X, X2)
         X = tf.cast(X[:, 0], tf.int32)
         if X2 is None:
             X2 = X
@@ -144,7 +143,6 @@ class Coregion(Kernel):
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X):
-        X, _ = self.slice(X, None)
         X = tf.cast(X[:, 0], tf.int32)
         Bdiag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
         return tf.gather(Bdiag, X)
