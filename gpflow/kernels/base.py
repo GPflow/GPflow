@@ -219,12 +219,12 @@ class Combination(Kernel):
 
 
 class ReducingCombination(Combination):
-    def __call__(self, X, X2=None, full=True, presliced=False):
-        if (not full) and (X2 is not None):
+    def __call__(self, X, X2=None, diag=False, presliced=False):
+        if diag and (X2 is not None):
             raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
 
         return self._reduce(
-            [k(X, X2, full=full, presliced=presliced) for k in self.kernels]
+            [k(X, X2, diag=diag, presliced=presliced) for k in self.kernels]
         )
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
