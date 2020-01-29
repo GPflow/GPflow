@@ -145,7 +145,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def __call__(self, X, X2=None, full=True, presliced=False):
-        if (not full) and (X2 is not None):  # pragma: no cover
+        if (not full) and (X2 is not None):
             raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
 
         if not presliced:
@@ -180,8 +180,7 @@ class Combination(Kernel):
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
-            raise TypeError(
-                "can only combine Kernel instances")  # pragma: no cover
+            raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
         self._set_kernels(kernels)
 
