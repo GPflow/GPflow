@@ -135,20 +135,26 @@ class Kernel(Module, metaclass=abc.ABCMeta):
                              f"size of ard parameter ({ard_parameter.shape[0]})")
 
     @abc.abstractmethod
-    def K(self, X, X2=None, presliced=False):
+    def K(self, X, X2=None):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def K_diag(self, X, presliced=False):
+    def K_diag(self, X):
         raise NotImplementedError
 
     def __call__(self, X, X2=None, full=True, presliced=False):
-        if not full and X2 is not None:
-            raise ValueError(
-                "Ambiguous inputs: `diagonal` and `y` are not compatible.")
+        if (not full) and (X2 is not None):
+            raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
+
+        if not presliced:
+            X, X2 = self.slice(X, X2)
+
         if not full:
+            assert X2 is None
             return self.K_diag(X)
-        return self.K(X, X2)
+
+        else:
+            return self.K(X, X2)
 
     def __add__(self, other):
         return Sum([self, other])
@@ -209,12 +215,12 @@ class Combination(Kernel):
                         overlapping = True
             return not overlapping
 
-    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
-        res = [k.K(X, X2, presliced=presliced) for k in self.kernels]
+    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
+        res = [k.K(X, X2) for k in self.kernels]
         return self._reduce(res)
 
-    def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
-        res = [k.K_diag(X, presliced=presliced) for k in self.kernels]
+    def K_diag(self, X: tf.Tensor) -> tf.Tensor:
+        res = [k.K_diag(X) for k in self.kernels]
         return self._reduce(res)
 
 

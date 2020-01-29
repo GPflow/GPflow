@@ -62,7 +62,7 @@ class ChangePoints(Combination):
         # it is not clear how to flatten out nested change-points
         self.kernels = list(kernels)
 
-    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
+    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         sig_X = self._sigmoids(X)  # N x 1 x Ncp
         sig_X2 = self._sigmoids(X2) if X2 is not None else sig_X
 
@@ -82,7 +82,7 @@ class ChangePoints(Combination):
         kernel_stack = tf.stack([k(X, X2) for k in self.kernels], axis=2)
         return tf.reduce_sum(kernel_stack * starters * stoppers, axis=2)
 
-    def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
+    def K_diag(self, X: tf.Tensor) -> tf.Tensor:
         N = tf.shape(X)[0]
         sig_X = tf.reshape(self._sigmoids(X), (N, -1))  # N x Ncp
 

@@ -74,10 +74,7 @@ class ArcCosine(Kernel):
         elif self.order == 2:
             return 3. * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (1. + 2. * tf.cos(theta)**2)
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
-
+    def K(self, X, X2=None):
         X_denominator = tf.sqrt(self._weighted_product(X))
         if X2 is None:
             X2 = X
@@ -94,10 +91,7 @@ class ArcCosine(Kernel):
                X_denominator[:, None] ** self.order * \
                X2_denominator[None, :] ** self.order
 
-    def K_diag(self, X, presliced=False):
-        if not presliced:
-            X, _ = self.slice(X, None)
-
+    def K_diag(self, X):
         X_product = self._weighted_product(X)
         const = tf.cast((1. / np.pi) * self._J(0.), default_float())
         return self.variance * const * X_product**self.order
@@ -139,7 +133,7 @@ class Coregion(Kernel):
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())
 
-    def K(self, X, X2=None, presliced=False):
+    def K(self, X, X2=None):
         X, X2 = self.slice(X, X2)
         X = tf.cast(X[:, 0], tf.int32)
         if X2 is None:
@@ -149,7 +143,7 @@ class Coregion(Kernel):
         B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
-    def K_diag(self, X, presliced=False):
+    def K_diag(self, X):
         X, _ = self.slice(X, None)
         X = tf.cast(X[:, 0], tf.int32)
         Bdiag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
