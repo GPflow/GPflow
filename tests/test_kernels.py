@@ -328,7 +328,8 @@ def test_conv_diag():
 # the kernels separately.
 _kernel_setups_add = [
     gpflow.kernels.SquaredExponential(),
-    gpflow.kernels.Linear(), (gpflow.kernels.SquaredExponential() + gpflow.kernels.Linear())
+    gpflow.kernels.Linear(),
+    gpflow.kernels.SquaredExponential() + gpflow.kernels.Linear(),
 ]
 
 
@@ -398,7 +399,7 @@ def test_slice_asymmetric(kernel_triple, N, M, D):
 _kernel_setups_prod = [
     gpflow.kernels.Matern32(),
     gpflow.kernels.Matern52(lengthscale=0.3),
-    gpflow.kernels.Matern32() * gpflow.kernels.Matern52(lengthscale=0.3)
+    gpflow.kernels.Matern32() * gpflow.kernels.Matern52(lengthscale=0.3),
 ]
 
 
@@ -532,3 +533,12 @@ def test_on_separate_dims(active_dims_1, active_dims_2, is_separate):
     assert kernel_2.on_separate_dims(kernel_1) == is_separate
     assert kernel_1.on_separate_dims(kernel_1) is False
     assert kernel_2.on_separate_dims(kernel_2) is False
+
+
+@pytest.mark.parametrize('kernel', kernel_setups_extended)
+def test_kernel_call_diag_and_X2_errors(kernel):
+    X = rng.randn(4, 1)
+    X2 = rng.randn(5, 1)
+
+    with pytest.raises(ValueError):
+        kernel(X, X2, diag=True)

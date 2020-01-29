@@ -180,8 +180,7 @@ class Combination(Kernel):
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
-            raise TypeError(
-                "can only combine Kernel instances")  # pragma: no cover
+            raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
         self._set_kernels(kernels)
 
@@ -220,9 +219,6 @@ class Combination(Kernel):
 
 class ReducingCombination(Combination):
     def __call__(self, X, X2=None, diag=False, presliced=False):
-        if diag and (X2 is not None):
-            raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
-
         return self._reduce(
             [k(X, X2, diag=diag, presliced=presliced) for k in self.kernels]
         )
