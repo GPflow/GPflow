@@ -535,7 +535,8 @@ def test_on_separate_dims(active_dims_1, active_dims_2, is_separate):
     assert kernel_2.on_separate_dims(kernel_2) is False
 
 
-@pytest.mark.parametrize('kernel', kernel_setups_extended)
+@pytest.mark.parametrize('kernel', kernel_setups_extended
+    + [gpflow.kernels.mo_kernels.SharedIndependent(gpflow.kernels.SquaredExponential(), 2)])
 def test_kernel_call_diag_and_X2_errors(kernel):
     X = rng.randn(4, 1)
     X2 = rng.randn(5, 1)
