@@ -25,8 +25,9 @@ from typing import List, Optional, Union
 import numpy as np
 import tensorflow as tf
 
+from ..base import Module
 
-class Kernel(tf.Module, metaclass=abc.ABCMeta):
+class Kernel(Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.
     """
