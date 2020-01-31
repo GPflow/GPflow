@@ -51,13 +51,11 @@ class Stationary(Kernel):
         X2_scaled = X2 / self.lengthscale if X2 is not None else X2
         return square_distance(X_scaled, X2_scaled)
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
+    def K(self, X, X2=None):
         r2 = self.scaled_squared_euclid_dist(X, X2)
         return self.K_r2(r2)
 
-    def K_diag(self, X, presliced=False):
+    def K_diag(self, X):
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
     def K_r2(self, r2):
