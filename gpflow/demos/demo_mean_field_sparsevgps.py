@@ -32,7 +32,7 @@ xranges = [xrange1, xrange2, xrange3]
 C = 2
 #
 # --------------- observations
-n = 1000  # number of observations
+n = 100  # number of observations
 observations = 'poisson'
 assert observations in ['poisson', 'binomial', 'gaussian']
 # generate input variables (from uniform distribution in defined range)
@@ -40,7 +40,7 @@ X = np.zeros((n, C))
 for c in range(C):
     X[:, c] = xranges[c][0] + np.random.rand(n,) * np.diff(xranges[c])
 # generate predictor
-rho = (f1(X[:, 0]) + f2(X[:, 1]))[..., None] #+ f3(X[:, 2]))[..., None] # predictor
+rho = (f1(X[:, 0]) * f2(X[:, 1]) +  f3(X[:, 2]))[..., None] #+ f3(X[:, 2]))[..., None] # predictor
 # store individual contributions
 F = np.vstack([fs[c](X[:, c]) for c in range(C)]).T
 # generate observations
@@ -103,30 +103,29 @@ elif observations == 'gaussian':
     likelihood = gpflow.likelihoods.Gaussian(variance=.1)
 
 #
-# offsets_x = [
-#     np.zeros((1, 1)),
-#     np.zeros((1, 1)),
-#     np.zeros((1, 1))
-# ]
-# offsets_y = [
-#     np.ones((1, 1))*-.5,
-#     np.ones((1, 1))*0.,
-#     np.ones((1, 1))*0.
-# ]
+offsets_x = [
+    np.zeros((1, C)),
+#    np.zeros((1, 1)),
+    np.zeros((1, C))
+]
+offsets_y = [
+    np.ones((1, 1))*-.5,
+#    np.ones((1, 1))*0.,
+    np.ones((1, 1))*0.
+]
 
 N = n
 
 
-m = SparseVariationalCoupledGPs(kernels, likelihood, Zs, num_data=N, whiten=True,
-                                  #deterministic_optimisation=False,
-                                  mean_functions=mean_functions)#,
-# m = SparseVariationalMeanFieldGPs(kernels, likelihood, Zs, num_data=N,
-#                                    #deterministic_optimisation=False,
-#                                    mean_functions=mean_functions)#,
-                         #offsets_x=offsets_x,
-                         #offsets_y=offsets_y, num_samples=10)
-#for o in m.offsets_x:
-#    o.trainable = False
+
+m = SparseVariationalMeanFieldGPs(kernels, likelihood, Zs, num_data=N,
+                                   #deterministic_optimisation=False,
+                                   mean_functions=mean_functions,
+                         offsets_x=offsets_x,
+                         offsets_y=offsets_y, num_samples=10)
+#for q in m.q.qs:
+    #q.offset_x.trainable = False
+    #q.offset_y.trainable = False
 
 #m.kernels.trainable = False
 #for iv in m.q.inducing_variable:
@@ -142,8 +141,8 @@ m = SparseVariationalCoupledGPs(kernels, likelihood, Zs, num_data=N, whiten=True
 log_likelihood = tf.function(autograph=False)(m.log_likelihood)
 
 # We turn off training for inducing point locations
-#for q in m.qs.qs:
-#    gpflow.utilities.set_trainable(q.inducing_variable, False)
+for iv in m.q.inducing_variables:
+    gpflow.utilities.set_trainable(iv, False)
 
 
 @tf.function(autograph=False)
@@ -186,7 +185,7 @@ f_means, f_vars = m.q.predict_fs(X, full_output_cov=False)
 #p_mean, p_var = m.predict_predictor(X)
 
 f_means, f_vars = f_means.numpy(), f_vars.numpy()
-#f_stds = np.sqrt(f_vars)
+f_stds = np.sqrt(f_vars)
 
 fig, axarr = plt.subplots(3, 1, figsize= (5,15))
 axarr = axarr.flatten()
@@ -199,10 +198,10 @@ ax = axarr[1]
 for c in range(C):
     o = np.argsort(X[:, c])
     ax.plot(X[o, c], F[o, c], '--', color=cols[c], mew=2)
-    #ax.fill_between(X[o, c],
-    #                f_means[o, c] - 2. * f_stds[o, c],
-    #                f_means[o, c] + 2. * f_stds[o, c], alpha=.2, facecolor=cols[c])
-    ax.plot(X[o, c], f_means[o, c]*(-1)**c, '-', color=cols[c], mew=2)
+    ax.fill_between(X[o, c],
+                   f_means[o, c] - 2. * f_stds[o, c],
+                   f_means[o, c] + 2. * f_stds[o, c], alpha=.2, facecolor=cols[c])
+    ax.plot(X[o, c], f_means[o, c], '-', color=cols[c], mew=2)
 
 # print(m.inducing_variables[0].Z)
 

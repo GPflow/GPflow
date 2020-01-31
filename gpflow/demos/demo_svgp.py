@@ -28,11 +28,12 @@ Z = X[::50, :].copy()  # Initialize inducing locations to the first M inputs in 
 
 #m = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N)
 m = SparseVariationalGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N,
-                        offset=np.ones((2, 1)) * 2)
+                        offset=[np.ones((1, 1)) , np.ones((1, 1)) ])
 
 
 
-m.q.offset.trainable = False
+m.q.offset_x.trainable = False
+m.q.offset_y.trainable = False
 log_likelihood = tf.function(autograph=False)(m.log_likelihood)
 
 opt = gpflow.optimizers.Scipy()

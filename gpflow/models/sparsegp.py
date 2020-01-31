@@ -16,17 +16,17 @@ from typing import Tuple, TypeVar, List
 
 import numpy as np
 import tensorflow as tf
+
 from .util import inducingpoint_wrapper
 from .. import kullback_leiblers
 from ..base import Module
 from ..base import Parameter
+from ..conditionals import conditional, base_conditional
 from ..config import default_float, default_jitter
 from ..mean_functions import Zero
 from ..utilities import ops
 from ..utilities import positive, triangular
-from ..conditionals import conditional, base_conditional
 from ..utilities.ops import eye
-
 
 Data = TypeVar('Data', Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
 DataPoint = tf.Tensor
@@ -79,31 +79,32 @@ class SparseGP(Module):
         # init variational parameters
         self.num_inducing = len(self.inducing_variable)
         if offset is None:
-            self.offset = None
+            self.offset_x = None
+            self.offset_y = None
         else:
-            assert offset.shape == (2, 1)
-            self.offset = Parameter(offset)
+            # assert offset.shape == (2, 1)
+            self.offset_x = Parameter(offset[0])
+            self.offset_y = Parameter(offset[1])
 
         self._init_variational_parameters(self.num_inducing, q_mu, q_sqrt, q_diag)
 
 
     @property
     def q_mu(self):
-        if self.offset is None:
+        if self.offset_x is None:
             return self._q_mu
         else:
             Kmm = self.kernel(self.inducing_variable.Z) + \
                   ops.eye(self.num_inducing, value=default_jitter(), dtype=default_float())
-            Kmn = self.kernel(self.inducing_variable.Z, self.offset[0:1])
-            Knn = self.kernel(self.offset[1:2], full=False)
+            Kmn = self.kernel(self.inducing_variable.Z, self.offset_x)
+            Knn = self.kernel(self.offset_y, full=False)
 
             mu0, var = base_conditional(Kmn, Kmm, Knn, self._q_mu,
                                         full_cov=False, white=self.whiten, q_sqrt=self.q_sqrt)
 
             n, _ = base_conditional(Kmn, Kmm, Knn, tf.ones_like(self._q_mu),
                                     full_cov=False, white=self.whiten, q_sqrt=self.q_sqrt)
-            return self._q_mu - ((mu0 - self.offset[1:2]) / n)
-
+            return self._q_mu - ((mu0 - self.offset_y) / n)
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
         """
@@ -213,7 +214,8 @@ class MeanFieldSparseGPs(Module):
                  q_mus=None,
                  q_sqrts=None,
                  whiten: bool = True,
-                 offsets=None,
+                 offsets_x=None,
+                 offsets_y=None,
                  ):
 
         super().__init__()
@@ -236,10 +238,11 @@ class MeanFieldSparseGPs(Module):
         for c in range(self.num_components):
             q_mu = None if q_mus is None else q_mus[c]
             q_sqrt = None if q_sqrts is None else q_sqrts[c]
-            offset = None if offsets is None else offsets[c]
+            offset_x = None if offsets_x is None else offsets_x[c]
+            offset_y = None if offsets_y is None else offsets_y[c]
             qs.append(
                 SparseGP(self.kernels[c], inducing_variables[c],
-                         q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten, offset=offset))
+                         q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten, offset=[offset_x, offset_y]))
         self.qs = qs
 
     def predict_fs(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
@@ -264,6 +267,8 @@ class SparseCoupledGPs(Module):
                  q_mus=None,
                  q_sqrts=None,
                  whiten: bool = True,
+                 offsets_x=None,
+                 offsets_y=None,
                  ):
         """
         - kernel, likelihood, inducing_variables, mean_function are appropriate
@@ -295,12 +300,45 @@ class SparseCoupledGPs(Module):
         self.inducing_variables = inducing_variables
         # init variational parameters
         self._init_variational_parameters(self.num_inducing, q_mus, q_sqrts, q_diag=self.q_diag)
+        # initialize offsets
+
+        if offsets_x is None:
+            offsets_x = None
+            offsets_y = None
+
+        else:
+            for c in range(self.num_components):
+                offset_x = None if offsets_x is None else offsets_x[c]
+                offsets_x[c] = Parameter(offset_x)
+                offset_y = None if offsets_y is None else offsets_y[c]
+                offsets_y[c] = Parameter(offset_y)
+        # if offsets_y is None:
+        #     offsets_y = None
+        # else:
+        #     offsets_y = Parameter(offsets_y)
+
+
+
+
+        self.offsets_x = offsets_x
+        self._offsets_y = offsets_y
+
+
+
+    @property
+    def offsets_y(self):
+        return tf.concat([o.unconstrained_variable for o in self._offsets_y], axis=-1)
+
 
     @property
     def inducing_variable(self):
         return tf.concat([iv.Z for iv in self.inducing_variables], axis=0)
 
-    def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
+    @property
+    def q_mus(self):
+        return tf.concat(self._q_mus, axis=-1)
+
+    def _init_variational_parameters(self, num_inducing, q_mus, q_sqrt, q_diag):
         """
         Constructs the mean and cholesky of the covariance of the variational Gaussian posterior.
         If a user passes values for `q_mu` and `q_sqrt` the routine checks if they have consistent
@@ -328,8 +366,14 @@ class SparseCoupledGPs(Module):
             `q_sqrt` is two dimensional and only holds the square root of the
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
-        q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
-        self.q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
+
+        if q_mus is None:
+            self._q_mus = [
+                Parameter(
+                    np.zeros((self.num_inducings[c], self.num_latent)),
+                    dtype=default_float())
+                for c in range(self.num_components)
+            ]
 
         if q_sqrt is None:
             if self.q_diag:
@@ -381,10 +425,40 @@ class SparseCoupledGPs(Module):
                 K[-1].append(M)
         return tf.concat([tf.concat(row, axis=-3) for row in K], axis=-2)
 
+    @property
+    def q_mu(self):
+        if self.offsets_x is None:
+            return self._q_mu
+        else:
+            q_mus = []
+            for c in range(self.num_components):
+
+                kernel = self.kernels[c]
+                Z = self.inducing_variables[c].Z
+                offset_x = self.offsets_x[c]
+                offset_y = 0. # self.offsets_y[c]
+                num_inducing = self.num_inducings[c]
+                q_mu = self._q_mus[c]
+
+                Kmm = kernel(Z) + \
+                      ops.eye(num_inducing, value=default_jitter(), dtype=default_float())
+                Kmn = kernel(Z, offset_x)
+                Knn = kernel(offset_y, full=False)
+
+                mu0, _ = base_conditional(Kmn, Kmm, Knn, q_mu,
+                                            full_cov=False, white=self.whiten, q_sqrt=None)
+
+                n, _ = base_conditional(Kmn, Kmm, Knn, tf.ones_like(q_mu),
+                                        full_cov=False, white=self.whiten, q_sqrt=None)
+                q_mus.append( q_mu - ((mu0 - offset_y) / n) )
+
+            return tf.concat(q_mus, axis=0)
+
+
+
     def predict_fs(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=True) -> tf.Tensor:
 
         # build conditional statistics
-
         Z = self.inducing_variables
         Kmm = self.K1(Z).to_dense() + eye(self.num_inducing, value=default_jitter(), dtype=Xnew.dtype)
         Kmn = self.K2(Z, Xnew)
@@ -398,10 +472,34 @@ class SparseCoupledGPs(Module):
                                          white=self.whiten)
         mean, var = mean[..., 0], var[:, 0]
 
+        mean += self.offsets_y
+
         if full_output_cov:
             return mean, var
         else:
             return mean, tf.linalg.diag_part(var)
+
+    def sample_fs(self, Xnew, num_samples=10):
+
+        mean, var = self.predict_fs(Xnew)
+        L = tf.linalg.cholesky(var)
+        eps = tf.random.normal([num_samples]+mean.shape+[1], dtype=default_float())
+        return (L @ eps + mean[..., None])
+
+    def predict_means(self, Xnew: tf.Tensor) -> tf.Tensor:
+        mus = []
+        for c in range(self.num_components):
+            mu, var = conditional(Xnew,
+                              self.inducing_variables[c],
+                              self.kernels[c],
+                              self.q_mus[c],
+                              q_sqrt=None,
+                              full_cov=False,
+                              white=self.whiten,
+                              full_output_cov=False)
+
+            mus.append(mu + self.mean_functions[c](Xnew))
+        return tf.concat(mus, axis=-1)
 
 
 class SparseVariationalGP(GPModel):
@@ -512,7 +610,8 @@ class SparseVariationalMeanFieldGPs(BayesianModel):
                  q_sqrts=None,
                  whiten: bool = True,
                  num_data=None,
-                 offsets=None,
+                 offsets_x=None,
+                 offsets_y=None,
                  deterministic_optimisation=False,
                  num_samples=10
                  ):
@@ -542,8 +641,6 @@ class SparseVariationalMeanFieldGPs(BayesianModel):
         self.whiten = whiten
 
         # init variational parameters
-
-
         self.deterministic_optimisation = deterministic_optimisation
         self.num_samples = num_samples
 
@@ -554,7 +651,9 @@ class SparseVariationalMeanFieldGPs(BayesianModel):
                                     q_mus=q_mus,
                                     q_sqrts=q_sqrts,
                                     whiten=whiten,
-                                    offsets=offsets)
+                                    offsets_x=offsets_x,
+                                    offsets_y=offsets_y
+                                    )
 
     def prior_kls(self):
         kls = []
@@ -633,7 +732,8 @@ class SparseVariationalCoupledGPs(BayesianModel):
                  q_sqrts=None,
                  whiten: bool = True,
                  num_data=None,
-                 offsets=None,
+                 offsets_x=None,
+                 offsets_y=None,
                  deterministic_optimisation=False,
                  num_samples=10
                  ):
@@ -671,6 +771,8 @@ class SparseVariationalCoupledGPs(BayesianModel):
                  q_diag=q_diag,
                  q_mus=q_mus,
                  q_sqrts=q_sqrts,
+                 offsets_x=offsets_x,
+                 offsets_y=offsets_y,
                  whiten=whiten)
 
     def prior_kl(self):
@@ -687,13 +789,21 @@ class SparseVariationalCoupledGPs(BayesianModel):
         """
         X, Y = data
         kl = self.prior_kl()
-        f_means, f_vars = self.q.predict_fs(X, full_cov=False, full_output_cov=True)
 
-        # hard code additive
-        f_mean = tf.reduce_sum(f_means, axis=-1, keepdims=True)
-        f_var = tf.reduce_sum(f_vars, axis=[-1, -2])[..., None]
+        if self.deterministic_optimisation:
+            raise NotImplementedError()
+            f_means, f_vars = self.q.predict_fs(X, full_cov=False, full_output_cov=True)
 
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+            # hard code additive
+            f_mean = tf.reduce_prod(f_means, axis=-1, keepdims=True)
+            f_var = tf.reduce_prod(f_vars, axis=[-1, -2])[..., None]
+
+            var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+        else:
+            fs_samples = self.q.sample_fs(X)
+            pred = self.predictor(fs_samples)  # tf.reduce_prod(fs_samples, axis=-2)
+            var_exp = self.likelihood.log_prob(pred, Y)
+
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
             minibatch_size = tf.cast(tf.shape(X)[0], kl.dtype)
@@ -708,10 +818,13 @@ class SparseVariationalCoupledGPs(BayesianModel):
         """
         return self.log_marginal_likelihood(data)
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
-        f_means, f_vars = self.qs.predict_fs(Xnew, full_cov=full_cov,
-                                             full_output_cov=full_output_cov)
-        # hard coded additive
-        f_mean = tf.reduce_sum(f_means, axis=-1, keepdims=True)
-        f_var = tf.reduce_sum(f_vars, axis=-1, keepdims=True)
-        return f_mean, f_var
+    def predictor(self, F):
+        return F[..., 0, :] * F[..., 1, :] + F[..., 2, :]
+
+    # def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
+    #     f_means, f_vars = self.qs.predict_fs(Xnew, full_cov=full_cov,
+    #                                          full_output_cov=full_output_cov)
+    #     # hard coded additive
+    #     f_mean = tf.reduce_sum(f_means, axis=-1, keepdims=True)
+    #     f_var = tf.reduce_sum(f_vars, axis=-1, keepdims=True)
+    #     return f_mean, f_var

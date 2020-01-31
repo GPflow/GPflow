@@ -23,7 +23,7 @@ X = np.zeros((n, C))
 for c in range(3):
     X[:, c] = xranges[c][0] + np.random.rand(n,) * np.diff(xranges[c])
 # generate predictor
-rho = (f1(X[:, 0]) + f2(X[:, 1]) * f3(X[:, 2]))[..., None] # predictor
+rho = (f1(X[:, 0]) * f2(X[:, 1]) + f3(X[:, 2]))[..., None] # predictor
 # store individual contributions
 F = np.vstack([fs[c](X[:, c]) for c in range(C)]).T
 # generate observations
@@ -42,4 +42,4 @@ data = (X, Y)
 XFY = np.hstack([X, F, Y])
 print(XFY.shape)
 columns = ['X1','X2','X3']+['F1','F2','F3']+['Y']
-pd.DataFrame(XFY, columns=columns).to_csv("data.csv", index=False)
+pd.DataFrame(XFY, columns=columns).to_csv("/home/vincent.adam/git/GPflow/gpflow/experiments/data.csv", index=False)
