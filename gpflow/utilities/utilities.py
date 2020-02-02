@@ -228,7 +228,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     target_types = (tfp.bijectors.Bijector, )
     accumulator = ('', None)
 
-    def clear_cache(b: tfp.bijectors.Bijector):
+    def clear_cache(b):
         if isinstance(b, tfp.bijectors.Bijector):
             # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
             # in bijector class.
