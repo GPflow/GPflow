@@ -5,7 +5,7 @@ np.random.seed(0)
 # rho ~ f1(x1) + f2(x2) * f3(x3)
 # --------------- model
 xrange1 = [0, 2]
-f1 = lambda x: np.exp(x / 2) - 1.5
+f1 = lambda x: np.exp(x / 2)  -1.
 xrange2 = [0, np.pi]
 f2 = lambda x: 1 + np.cos(2.*x + np.pi / 3)
 xrange3 =[0, 2]

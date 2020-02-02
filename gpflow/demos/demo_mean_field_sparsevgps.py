@@ -32,7 +32,7 @@ xranges = [xrange1, xrange2, xrange3]
 C = 2
 #
 # --------------- observations
-n = 100  # number of observations
+n = 500  # number of observations
 observations = 'poisson'
 assert observations in ['poisson', 'binomial', 'gaussian']
 # generate input variables (from uniform distribution in defined range)
@@ -87,7 +87,7 @@ mean_functions = [Zero() for _ in range(C)]
 
 indices = [slice(c,c+1) for c in range(C)]
 
-M = 20
+M = 50
 Zs = [
     np.linspace(X[:, c].min(), X[:, 0].max(), M).reshape(-1, 1).copy() + np.zeros((1, C)) for c in range(C)
 ]

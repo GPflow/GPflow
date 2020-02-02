@@ -91,6 +91,7 @@ class SparseGP(Module):
 
     @property
     def q_mu(self):
+        offset_y = 0.
         if self.offset_x is None:
             return self._q_mu
         else:
@@ -104,7 +105,7 @@ class SparseGP(Module):
 
             n, _ = base_conditional(Kmn, Kmm, Knn, tf.ones_like(self._q_mu),
                                     full_cov=False, white=self.whiten, q_sqrt=self.q_sqrt)
-            return self._q_mu - ((mu0 - self.offset_y) / n)
+            return self._q_mu - (mu0 / n)
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
         """
@@ -134,7 +135,7 @@ class SparseGP(Module):
             `q_sqrt` is two dimensional and only holds the square root of the
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
-        q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
+        q_mu = np.ones((num_inducing, self.num_latent)) if q_mu is None else q_mu
         self._q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
 
         if q_sqrt is None:
@@ -181,7 +182,7 @@ class SparseGP(Module):
                               white=self.whiten,
                               full_output_cov=full_output_cov)
         # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
-        return mu + self.mean_function(Xnew), var
+        return mu + self.offset_y + self.mean_function(Xnew), var
 
     def predict_f_samples(self,
                           predict_at: DataPoint,
@@ -253,6 +254,11 @@ class MeanFieldSparseGPs(Module):
             vars.append(var)
 
         return tf.concat(mus, axis=-1), tf.concat(vars, axis=-1)
+
+    def sample_fs(self, Xnew, num_samples=10):
+        mean, var = self.predict_fs(Xnew)
+        eps = tf.random.normal([num_samples]+mean.shape, dtype=default_float())
+        return (tf.sqrt(var) * eps + mean)[..., None]
 
 
 class SparseCoupledGPs(Module):
@@ -486,6 +492,7 @@ class SparseCoupledGPs(Module):
         eps = tf.random.normal([num_samples]+mean.shape+[1], dtype=default_float())
         return (L @ eps + mean[..., None])
 
+
     def predict_means(self, Xnew: tf.Tensor) -> tf.Tensor:
         mus = []
         for c in range(self.num_components):
@@ -676,13 +683,32 @@ class SparseVariationalMeanFieldGPs(BayesianModel):
         """
         X, Y = data
         kl = self.prior_kl()
-        f_means, f_vars = self.q.predict_fs(X, full_cov=False, full_output_cov=False)
 
-        # hard code additive
-        f_mean = tf.reduce_sum(f_means, axis=-1, keepdims=True)
-        f_var = tf.reduce_sum(f_vars, axis=-1, keepdims=True)
 
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+        if self.deterministic_optimisation:
+            raise NotImplementedError()
+            f_means, f_vars = self.q.predict_fs(X, full_cov=False, full_output_cov=True)
+
+            # hard code additive
+            f_mean = tf.reduce_prod(f_means, axis=-1, keepdims=True)
+            f_var = tf.reduce_prod(f_vars, axis=[-1, -2])[..., None]
+
+            var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+        else:
+            fs_samples = self.q.sample_fs(X)
+            pred = self.predictor(fs_samples)  # tf.reduce_prod(fs_samples, axis=-2)
+            var_exp = self.likelihood.log_prob(pred, Y)
+            var_exp = tf.reduce_mean(var_exp, axis=0)
+
+        #
+        # f_means, f_vars = self.q.predict_fs(X, full_cov=False, full_output_cov=False)
+        #
+        # # hard code additive
+        # f_mean = tf.reduce_sum(f_means, axis=-1, keepdims=True)
+        # f_var = tf.reduce_sum(f_vars, axis=-1, keepdims=True)
+        #
+        # var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
             minibatch_size = tf.cast(tf.shape(X)[0], kl.dtype)
@@ -704,6 +730,18 @@ class SparseVariationalMeanFieldGPs(BayesianModel):
         f_mean = tf.reduce_sum(f_means, axis=-1, keepdims=True)
         f_var = tf.reduce_sum(f_vars, axis=-1, keepdims=True)
         return f_mean, f_var
+
+    def predictor(self, F):
+        return F[..., 0, :] * F[..., 1, :] + F[..., 2, :]
+
+    def sample_predictor(self, Xnew, num_samples=10):
+        fs_samples = self.q.sample_fs(Xnew, num_samples=num_samples)
+        return self.predictor(fs_samples)
+
+    def predict_predictor(self, Xnew, num_samples=10):
+        p_samples = self.sample_predictor(Xnew, num_samples=num_samples)
+        mu = tf.reduce_mean(p_samples, 0)
+        return mu, tf.reduce_mean(tf.square(p_samples-mu), 0)
 
 
 class SparseVariationalCoupledGPs(BayesianModel):
@@ -803,6 +841,7 @@ class SparseVariationalCoupledGPs(BayesianModel):
             fs_samples = self.q.sample_fs(X)
             pred = self.predictor(fs_samples)  # tf.reduce_prod(fs_samples, axis=-2)
             var_exp = self.likelihood.log_prob(pred, Y)
+            var_exp = tf.reduce_mean(var_exp, axis=0)
 
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
@@ -820,6 +859,15 @@ class SparseVariationalCoupledGPs(BayesianModel):
 
     def predictor(self, F):
         return F[..., 0, :] * F[..., 1, :] + F[..., 2, :]
+
+    def sample_predictor(self, Xnew, num_samples=10):
+        fs_samples = self.q.sample_fs(Xnew, num_samples=num_samples)
+        return self.predictor(fs_samples)
+
+    def predict_predictor(self, Xnew, num_samples=10):
+        p_samples = self.sample_predictor(Xnew, num_samples=num_samples)
+        mu = tf.reduce_mean(p_samples, 0)
+        return mu, tf.reduce_mean(tf.square(p_samples-mu), 0)
 
     # def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
     #     f_means, f_vars = self.qs.predict_fs(Xnew, full_cov=full_cov,
