@@ -67,12 +67,10 @@ class Periodic(Kernel):
     def active_dims(self, value):
         self.base.active_dims = value
 
-    def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
+    def K_diag(self, X: tf.Tensor) -> tf.Tensor:
         return self.base.K_diag(X)
 
-    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
-        if not presliced:
-            X, X2 = self.slice(X, X2)
+    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         if X2 is None:
             X2 = X
 

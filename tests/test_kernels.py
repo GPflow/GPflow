@@ -328,7 +328,8 @@ def test_conv_diag():
 # the kernels separately.
 _kernel_setups_add = [
     gpflow.kernels.SquaredExponential(),
-    gpflow.kernels.Linear(), (gpflow.kernels.SquaredExponential() + gpflow.kernels.Linear())
+    gpflow.kernels.Linear(),
+    gpflow.kernels.SquaredExponential() + gpflow.kernels.Linear(),
 ]
 
 
@@ -398,7 +399,7 @@ def test_slice_asymmetric(kernel_triple, N, M, D):
 _kernel_setups_prod = [
     gpflow.kernels.Matern32(),
     gpflow.kernels.Matern52(lengthscale=0.3),
-    gpflow.kernels.Matern32() * gpflow.kernels.Matern52(lengthscale=0.3)
+    gpflow.kernels.Matern32() * gpflow.kernels.Matern52(lengthscale=0.3),
 ]
 
 
@@ -549,6 +550,7 @@ def test_periodic_active_dims_mismatch_check():
     with pytest.raises(ValueError):
         base = gpflow.kernels.SquaredExponential(active_dims=active_dims_1)
         _ = gpflow.kernels.Periodic(base=base, active_dims=active_dims_2)
+
 
 def test_periodic_active_dims_matches():
     active_dims = [1]
