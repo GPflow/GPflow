@@ -66,7 +66,7 @@ plt.plot(x_grid, f_grid[:, 1], 'C0', linewidth=2);
 
 # %% [markdown]
 # __2. Squash them to $[0, 1]$:__ the samples of the GP are mapped to $[0, 1]$.
-# By default, GPflow uses using the standard normal cumulative distribution function (inverse probit function): $p(x) = \Phi(f(x)) = \frac{1}{2} (1 + \operatorname{erf}(x / \sqrt{2}))$.
+# By default, GPflow uses the standard normal cumulative distribution function (inverse probit function): $p(x) = \Phi(f(x)) = \frac{1}{2} (1 + \operatorname{erf}(x / \sqrt{2}))$.
 # (This choice has the advantage that predictive mean, variance and density can be computed analytically, but any choice of invlink is possible, e.g. the logit $p(x) = \frac{\exp(f(x))}{1 + \exp(f(x))}$.)
 
 # %%
