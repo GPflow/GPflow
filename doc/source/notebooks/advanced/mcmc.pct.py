@@ -36,6 +36,9 @@ gpflow.config.set_default_summary_fmt("notebook")
 # convert to float64 for tfp to play nicely with gpflow in 64
 f64 = gpflow.utilities.to_default_float
 
+tf.random.set_seed(123)
+
+
 # %matplotlib inline
 
 # %% [markdown]
@@ -64,9 +67,11 @@ f64 = gpflow.utilities.to_default_float
 # ### Data for a one-dimensional regression problem
 
 # %%
+rng = np.random.RandomState(42)
+
 N = 30
-X = np.random.rand(N,1)
-Y = np.sin(12*X) + 0.66*np.cos(25*X) + np.random.randn(N,1)*0.1 + 3
+X = rng.rand(N,1)
+Y = np.sin(12*X) + 0.66*np.cos(25*X) + rng.randn(N,1)*0.1 + 3
 data = (X, Y)
 
 plt.figure(figsize=(12,6))
@@ -268,11 +273,11 @@ plt.show()
 # %%
 # Generate data by sampling from RBF Kernel, and classifying with the argmax
 C, N = 3, 100
-X = np.random.rand(N, 1)
+X = rng.rand(N, 1)
 kernel = gpflow.kernels.RBF(lengthscale=0.1)
 K = kernel.K(X) + np.eye(N) * 1e-6
 
-f = np.random.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
+f = rng.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
 Y = np.argmax(f, 1).reshape(-1,).astype(int)
 # One-hot encoding
 Y_hot = np.zeros((N, C), dtype=bool)
@@ -415,7 +420,7 @@ plt.ylabel('hyper-parameter value');
 
 # %%
 X = np.linspace(-3,3,20)
-Y = np.random.exponential(np.sin(X)**2)
+Y = rng.exponential(np.sin(X)**2)
 
 plt.figure()
 plt.plot(X,Y,'x')
