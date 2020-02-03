@@ -28,11 +28,11 @@ parametric function.
 import numpy as np
 import tensorflow as tf
 
-from .base import Parameter
+from .base import Module, Parameter
 from .config import default_float
 
 
-class MeanFunction(tf.Module):
+class MeanFunction(Module):
     """
     The base mean function class.
     To implement a mean function, write the __call__ method. This takes a
