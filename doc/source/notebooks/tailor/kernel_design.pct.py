@@ -54,12 +54,12 @@ class Brownian(gpflow.kernels.Kernel):
         super().__init__(active_dims=[0])
         self.variance = gpflow.Parameter(1.0, transform=positive())
 
-    def K(self, X, X2=None, presliced=None):
+    def K(self, X, X2=None):
         if X2 is None:
             X2 = X
         return self.variance * tf.minimum(X, tf.transpose(X2)) # this returns a 2D tensor
 
-    def K_diag(self, X, presliced=None):
+    def K_diag(self, X):
         return self.variance * tf.reshape(X, (-1,))            # this returns a 1D tensor
     
 k_brownian = Brownian()
