@@ -242,7 +242,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
                 clear_cache(m)
         return state
 
-    traverse_module(input_module, accumulator, clear_bijector, target_types)
+    _ = traverse_module(input_module, accumulator, clear_bijector, target_types)
     return input_module
 
 
