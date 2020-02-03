@@ -52,7 +52,7 @@ class Parameter(tf.Module):
         """
         A parameter retains both constrained and unconstrained
         representations. If no transform is provided, these two values will be the same.
-        It is often challenging to operate with unconstrained parameters. For example a variance cannot be negative,
+        It is often challenging to operate with unconstrained parameters. For example, a variance cannot be negative,
         therefore we need a positive constraint and it is natural to use constrained values.
         A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
