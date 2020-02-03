@@ -59,8 +59,10 @@ x_grid = np.linspace(0, 6, 200).reshape(-1, 1)
 K = k(x_grid)
 
 # sample from a multivariate normal
+rng = np.random.RandomState(6)
+
 L = np.linalg.cholesky(K)
-f_grid = np.dot(L, np.random.RandomState(6).randn(200, 5))
+f_grid = np.dot(L, rng.randn(200, 5))
 plt.plot(x_grid, f_grid, 'C0', linewidth=1)
 plt.plot(x_grid, f_grid[:, 1], 'C0', linewidth=2);
 
@@ -82,12 +84,12 @@ plt.plot(x_grid, p_grid[:, 1], 'C1', linewidth=2);
 
 # %%
 # Select some input locations
-ind = np.random.randint(0, 200, (30,))
+ind = rng.randint(0, 200, (30,))
 X_gen = x_grid[ind]
 
 # evaluate probability and get Bernoulli draws
 p = p_grid[ind, 1:2]
-Y_gen = np.random.binomial(1, p)
+Y_gen = rng.binomial(1, p)
 
 # plot
 plt.plot(x_grid, p_grid[:, 1], 'C1', linewidth=2)
@@ -150,6 +152,7 @@ plt.fill_between(x_grid.flatten(),
                  alpha=0.3, color='C0')
     
 # plot samples
+tf.random.set_seed(6)
 samples = m.predict_f_samples(x_grid, 10).numpy().squeeze().T
 
 plt.plot(x_grid, samples, 'C0', lw=1)
