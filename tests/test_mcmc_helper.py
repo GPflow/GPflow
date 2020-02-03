@@ -83,7 +83,7 @@ def test_mcmc_helper_target_function():
         model.trainable_parameters, model.log_marginal_likelihood
     )
 
-    assert np.isclose(expected_log_prob, target_log_prob_fn())
+    np.testing.assert_allclose(expected_log_prob, target_log_prob_fn())
 
 
 def test_mcmc_helper_target_function_unconstrained():
