@@ -126,9 +126,8 @@ gpflow.utilities.print_summary(model)
 # We now sample from the posterior using HMC. 
 
 # %%
-hmc_helper =  gpflow.optimizers.SamplingHelper(
-    model.trainable_parameters, 
-    model.log_marginal_likelihood
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_marginal_likelihood, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -171,7 +170,7 @@ param_to_name = {param: name for name, param in
 def plot_samples(samples, y_axis_label):
 
     plt.figure(figsize=(8,4))
-    for val, param in zip(samples,  model.parameters):
+    for val, param in zip(samples, model.parameters):
         plt.plot(tf.squeeze(val), label=param_to_name[param])
     plt.legend(bbox_to_anchor=(1., 1.))
     plt.xlabel('hmc iteration')
@@ -342,8 +341,7 @@ thin = ci_niter(10)
 num_samples = 500
 
 hmc_helper =  gpflow.optimizers.SamplingHelper(
-    model.trainable_parameters, 
-    model.log_marginal_likelihood
+    model.log_marginal_likelihood, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -491,8 +489,7 @@ plt.ylabel('neg_log_marginal_likelihood');
 num_samples = 500
 
 hmc_helper =  gpflow.optimizers.SamplingHelper(
-    model.trainable_parameters, 
-    model.log_marginal_likelihood
+    model.log_marginal_likelihood, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(

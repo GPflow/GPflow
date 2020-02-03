@@ -32,7 +32,7 @@ def test_mcmc_helper_parameters():
     model = build_model(data)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
+        model.log_marginal_likelihood, model.trainable_parameters
     )
 
     for i in range(len(model.trainable_parameters)):
@@ -47,7 +47,7 @@ def test_mcmc_helper_target_function():
     model = build_model(data)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
+        model.log_marginal_likelihood, model.trainable_parameters
     )
 
     target_log_prob_fn = hmc_helper.target_log_prob_fn
@@ -69,7 +69,7 @@ def test_mcmc_sampler_integration():
     model = build_model(data)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
+        model.log_marginal_likelihood, model.trainable_parameters
     )
 
     hmc = tfp.mcmc.HamiltonianMonteCarlo(

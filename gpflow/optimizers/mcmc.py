@@ -31,7 +31,7 @@ class SamplingHelper:
 
     Example:
         model = <Create GPflow model>
-        hmc_helper = SamplingHelper(m.trainable_parameters, lambda: -model.neg_log_marginal_likelihood())
+        hmc_helper = SamplingHelper(model.log_marginal_likelihood, m.trainable_parameters)
 
         target_log_prob_fn = hmc_helper.target_log_prob_fn
         current_state = hmc_helper.current_state
@@ -47,11 +47,11 @@ class SamplingHelper:
         parameter_samples = hmc_helper.convert_samples_to_parameter_values(hmc_samples)
 
     Args:
-        parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
         target_log_prob_fn: Python callable which represents log-density under the target distribution.
+        model_parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
     """
 
-    def __init__(self, model_parameters: ModelParameters, target_log_prob_fn: LogProbabilityFunction):
+    def __init__(self, target_log_prob_fn: LogProbabilityFunction, model_parameters: ModelParameters):
         assert all([isinstance(p, (Parameter, tf.Variable)) for p in model_parameters])
 
         self._model_parameters = model_parameters
