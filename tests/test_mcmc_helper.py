@@ -82,7 +82,6 @@ def test_mcmc_helper_target_function():
     hmc_helper = gpflow.optimizers.SamplingHelper(
         model.trainable_parameters, model.log_marginal_likelihood
     )
-    print(hmc_helper.target_log_prob_fn())
 
     assert np.isclose(expected_log_prob, target_log_prob_fn())
 
