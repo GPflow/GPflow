@@ -9,9 +9,6 @@ from .base import Kernel
 from .stationaries import Stationary
 
 
-_ACTIVE_DIMS_ON_BASE_KERNEL = 'active_dims should be specified through the base kernel'
-
-
 class Periodic(Kernel):
     """
     The periodic family of kernels. Can be used to wrap any Stationary kernel
@@ -39,7 +36,7 @@ class Periodic(Kernel):
     """
 
     def __init__(self, base: Stationary, period: Union[float, List[float]] = 1.0,
-                 active_dims=_ACTIVE_DIMS_ON_BASE_KERNEL):
+                 **kwargs):
         """
         :param base: the base kernel to make periodic; must inherit from Stationary
             Note that active_dims should be specified in the base kernel.
@@ -50,8 +47,8 @@ class Periodic(Kernel):
         if not isinstance(base, Stationary):
             raise TypeError("Periodic requires a Stationary kernel as the `base`")
 
-        if active_dims != _ACTIVE_DIMS_ON_BASE_KERNEL:
-            if self._normalize_active_dims(active_dims) != base.active_dims:
+        if 'active_dims' in kwargs:
+            if self._normalize_active_dims(kwargs['active_dims']) != base.active_dims:
                 raise ValueError("active_dims must be consistent with base.active_dims")
 
         super().__init__()
