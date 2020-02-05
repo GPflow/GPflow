@@ -40,6 +40,15 @@ class Module(tf.Module):
     def trainable_parameters(self):
         return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
+    def _repr_html_(self):
+        from IPython.display import HTML
+        from .utilities import tabulate_module_summary
+        return HTML(tabulate_module_summary(self, tablefmt='html'))
+
+    def _repr_pretty_(self, p, cycle):
+        from .utilities import tabulate_module_summary
+        p.text(tabulate_module_summary(self, tablefmt=''))
+
 
 class Parameter(tf.Module):
     def __init__(self,

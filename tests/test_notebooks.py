@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import glob
+import itertools
 import os
 import sys
 import traceback
 
+import jupytext
 import nbformat
 import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
@@ -27,8 +29,6 @@ from nbconvert.preprocessors.execute import CellExecutionError
 # different directories with the same base name, they will all get blacklisted
 # (change the blacklisting check to something else in that case, if need be!)
 BLACKLISTED_NOTEBOOKS = [
-    "tips_and_tricks.ipynb",  # requires a big re-write but contains some useful
-    # sections such as saving&loading...
 ]
 
 
@@ -47,7 +47,9 @@ def get_notebooks():
         return os.path.basename(nb) in blacklisted_notebooks_basename
 
     # recursively traverse the notebook directory in search for ipython notebooks
-    all_notebooks = glob.iglob(os.path.join(_nbpath(), '**', '*.ipynb'), recursive=True)
+    all_py_notebooks = glob.iglob(os.path.join(_nbpath(), '**', '*.pct.py'), recursive=True)
+    all_md_notebooks = glob.iglob(os.path.join(_nbpath(), '**', '*.md'), recursive=True)
+    all_notebooks = itertools.chain(all_md_notebooks, all_py_notebooks)
     notebooks_to_test = [nb for nb in all_notebooks if not notebook_blacklisted(nb)]
     return notebooks_to_test
 
@@ -59,7 +61,7 @@ def _preproc():
 
 def _exec_notebook(notebook_filename):
     with open(notebook_filename) as notebook_file:
-        nb = nbformat.read(notebook_file, as_version=nbformat.current_nbformat)
+        nb = jupytext.read(notebook_file, as_version=nbformat.current_nbformat)
         try:
             meta_data = {'path': os.path.dirname(notebook_filename)}
             _preproc().preprocess(nb, {'metadata': meta_data})

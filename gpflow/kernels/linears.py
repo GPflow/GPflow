@@ -33,18 +33,13 @@ class Linear(Kernel):
         """
         return self.variance.shape.ndims > 0
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
-
+    def K(self, X, X2=None):
         if X2 is None:
-            return tf.linalg.matmul(X * self.variance, X, transpose_b=True)
+            X2 = X
 
         return tf.linalg.matmul(X * self.variance, X2, transpose_b=True)
 
-    def K_diag(self, X, presliced=False):
-        if not presliced:
-            X, _ = self.slice(X, None)
+    def K_diag(self, X):
         return tf.reduce_sum(tf.square(X) * self.variance, 1)
 
 
@@ -73,8 +68,8 @@ class Polynomial(Linear):
         self.degree = degree
         self.offset = Parameter(offset, transform=positive())
 
-    def K(self, X, X2=None, presliced=False):
-        return (super().K(X, X2, presliced=presliced) + self.offset)**self.degree
+    def K(self, X, X2=None):
+        return (super().K(X, X2) + self.offset)**self.degree
 
-    def K_diag(self, X, presliced=False):
-        return (super().K_diag(X, presliced=presliced) + self.offset)**self.degree
+    def K_diag(self, X):
+        return (super().K_diag(X) + self.offset)**self.degree
