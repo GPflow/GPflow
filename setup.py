@@ -16,11 +16,11 @@ requirements = [
     'numpy>=1.10.0',
     'scipy>=0.18.0',
     'multipledispatch>=0.4.9',
-    'tensorflow-probability>=0.9',
+    'tensorflow-probability>=0.8',
     'tabulate',
 ] + ([] if is_py37 else ["dataclasses"])
 
-min_tf_version = '2.1.0'
+min_tf_version = '2.0.0'
 tf_cpu = 'tensorflow'
 tf_gpu = 'tensorflow-gpu'
 
