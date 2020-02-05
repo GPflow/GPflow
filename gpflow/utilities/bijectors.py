@@ -25,7 +25,7 @@ def positive(lower: Optional[float] = None, base: Optional[str] = None) -> tfp.b
         lower = config.default_positive_minimum()
     if lower is not None:
         # Chain applies transformations in reverse order, so shift will be applied last
-        shift = tfp.bijectors.Shift(to_default_float(lower))
+        shift = tfp.bijectors.AffineScalar(shift=to_default_float(lower))
         bijector = tfp.bijectors.Chain([shift, bijector])
     return bijector
 
