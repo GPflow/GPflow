@@ -44,8 +44,8 @@ class Module(tf.Module):
 
 
 class PriorOn(Enum):
-     CONSTRAINED = 'constrained'
-     UNCONSTRAINED = 'unconstrained'
+     CONSTRAINED = "constrained"
+     UNCONSTRAINED = "unconstrained"
 
 
 class Parameter(tf.Module):
@@ -54,7 +54,7 @@ class Parameter(tf.Module):
                  *,
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
-                 prior_on: PriorOn = PriorOn.CONSTRAINED,
+                 prior_on: Union[str, PriorOn] = PriorOn.CONSTRAINED,
                  trainable: bool = True,
                  dtype: Optional[DType] = None,
                  name: Optional[str] = None):
