@@ -81,20 +81,21 @@ class Parameter(tf.Module):
     def log_prior(self):
         """ Prior probability density of the constrained variable. """
 
-        if self.prior is not None:
-            y = self.read_value()
-            if self.prior_on == PriorOn.CONSTRAINED:
-                log_p = tf.reduce_sum(self.prior.log_prob(y))
-            else:
-                x = self._unconstrained
-                log_p = tf.reduce_sum(self.prior.log_prob(x))
-                if self.transform is not None:
-                    log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
-                    log_p += tf.reduce_sum(log_det_jacobian)
-
-            return log_p
-        else:
+        if self.prior is None:
             return tf.convert_to_tensor(0., dtype=self.dtype)
+
+        y = self.read_value()
+
+        if self.prior_on == PriorOn.CONSTRAINED:
+            return tf.reduce_sum(self.prior.log_prob(y))
+
+        x = self._unconstrained
+        log_p = tf.reduce_sum(self.prior.log_prob(x))
+        if self.transform is not None:
+            log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
+            log_p += tf.reduce_sum(log_det_jacobian)
+
+        return log_p
 
     def value(self):
         return _to_constrained(self._unconstrained.value(), self.transform)
