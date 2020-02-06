@@ -80,9 +80,6 @@ def test_mcmc_helper_target_function():
     log_likelihood = model.log_likelihood().numpy()
     expected_log_prob = log_likelihood + expected_log_prior
 
-    hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
-    )
 
     np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
 
