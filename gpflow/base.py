@@ -87,15 +87,20 @@ class Parameter(tf.Module):
         y = self.read_value()
 
         if self.prior_on == PriorOn.CONSTRAINED:
+            # evaluation is in same space as prior
             return tf.reduce_sum(self.prior.log_prob(y))
 
-        x = self._unconstrained
-        log_p = tf.reduce_sum(self.prior.log_prob(x))
-        if self.transform is not None:
-            log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
-            log_p += tf.reduce_sum(log_det_jacobian)
+        else:
+            # prior on unconstrained, but evaluating log-prior in constrained space
+            x = self._unconstrained
+            log_p = tf.reduce_sum(self.prior.log_prob(x))
 
-        return log_p
+            if self.transform is not None:
+                # need to include log|Jacobian| to account for coordinate transform
+                log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
+                log_p += tf.reduce_sum(log_det_jacobian)
+
+            return log_p
 
     def value(self):
         return _to_constrained(self._unconstrained.value(), self.transform)
