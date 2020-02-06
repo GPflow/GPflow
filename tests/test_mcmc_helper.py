@@ -45,7 +45,7 @@ def test_mcmc_helper_parameters():
             assert model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
 
 
-def test_mcmc_helper_target_function():
+def test_mcmc_helper_target_function_constrained():
     """ Set up priors on the model parameters such that we can
     readily compute their expected values. """
     data = build_data()
