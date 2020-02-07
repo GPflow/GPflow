@@ -62,6 +62,7 @@ def test_mcmc_helper_target_function_constrained():
     expected_log_prior = 0.
     for param in model.trainable_parameters:
         if param.value() < 1e-3:
+            # Avoid values which would be pathological for the Exp transform
             param.assign(1.0)
 
         param.transform = Exp()
@@ -79,7 +80,6 @@ def test_mcmc_helper_target_function_constrained():
 
     log_likelihood = model.log_likelihood().numpy()
     expected_log_prob = log_likelihood + expected_log_prior
-
 
     np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
 
@@ -114,7 +114,7 @@ def test_mcmc_helper_target_function_unconstrained():
 
 
 @pytest.mark.parametrize("prior_on", ["constrained", "unconstrained"])
-def test_mcmc_helper_target_function_no_transforms():
+def test_mcmc_helper_target_function_no_transforms(prior_on):
     """ Verifies the objective for a set of priors where no transforms are set.
     """
     data = build_data()
