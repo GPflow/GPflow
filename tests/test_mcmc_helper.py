@@ -5,6 +5,7 @@ import tensorflow_probability as tfp
 
 import gpflow
 from gpflow import default_float
+from gpflow.base import PriorOn
 from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
 from tensorflow_probability.python.bijectors import Exp
@@ -71,7 +72,7 @@ def test_mcmc_helper_target_function_constrained():
         high_value = low_value + prior_width
 
         param.prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
-        param.prior_on = "constrained"
+        param.prior_on = PriorOn.CONSTRAINED
 
         prior_density_on_constrained = 1 / prior_width
         prior_density_on_unconstrained = prior_density_on_constrained * param.value()
