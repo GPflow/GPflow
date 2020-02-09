@@ -96,7 +96,7 @@ def test_mcmc_helper_target_function_unconstrained():
     prior_width = 200.0
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
+        model.log_marginal_likelihood, model.trainable_parameters
     )
 
     for param in model.trainable_parameters:
@@ -124,7 +124,7 @@ def test_mcmc_helper_target_function_no_transforms(prior_on):
     prior_width = 200.0
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
+        model.log_marginal_likelihood, model.trainable_parameters
     )
 
     for param in model.trainable_parameters:
