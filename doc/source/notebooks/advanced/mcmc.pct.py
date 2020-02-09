@@ -36,6 +36,9 @@ gpflow.config.set_default_summary_fmt("notebook")
 # convert to float64 for tfp to play nicely with gpflow in 64
 f64 = gpflow.utilities.to_default_float
 
+tf.random.set_seed(123)
+
+
 # %matplotlib inline
 
 # %% [markdown]
@@ -64,9 +67,11 @@ f64 = gpflow.utilities.to_default_float
 # ### Data for a one-dimensional regression problem
 
 # %%
+rng = np.random.RandomState(42)
+
 N = 30
-X = np.random.rand(N,1)
-Y = np.sin(12*X) + 0.66*np.cos(25*X) + np.random.randn(N,1)*0.1 + 3
+X = rng.rand(N,1)
+Y = np.sin(12*X) + 0.66*np.cos(25*X) + rng.randn(N,1)*0.1 + 3
 data = (X, Y)
 
 plt.figure(figsize=(12,6))
@@ -121,9 +126,8 @@ gpflow.utilities.print_summary(model)
 # We now sample from the posterior using HMC. 
 
 # %%
-hmc_helper =  gpflow.optimizers.SamplingHelper(
-    model.trainable_parameters, 
-    model.log_marginal_likelihood
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_marginal_likelihood, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -166,7 +170,7 @@ param_to_name = {param: name for name, param in
 def plot_samples(samples, y_axis_label):
 
     plt.figure(figsize=(8,4))
-    for val, param in zip(samples,  model.parameters):
+    for val, param in zip(samples, model.parameters):
         plt.plot(tf.squeeze(val), label=param_to_name[param])
     plt.legend(bbox_to_anchor=(1., 1.))
     plt.xlabel('hmc iteration')
@@ -268,11 +272,11 @@ plt.show()
 # %%
 # Generate data by sampling from RBF Kernel, and classifying with the argmax
 C, N = 3, 100
-X = np.random.rand(N, 1)
+X = rng.rand(N, 1)
 kernel = gpflow.kernels.RBF(lengthscale=0.1)
 K = kernel.K(X) + np.eye(N) * 1e-6
 
-f = np.random.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
+f = rng.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
 Y = np.argmax(f, 1).reshape(-1,).astype(int)
 # One-hot encoding
 Y_hot = np.zeros((N, C), dtype=bool)
@@ -337,8 +341,7 @@ thin = ci_niter(10)
 num_samples = 500
 
 hmc_helper =  gpflow.optimizers.SamplingHelper(
-    model.trainable_parameters, 
-    model.log_marginal_likelihood
+    model.log_marginal_likelihood, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -415,7 +418,7 @@ plt.ylabel('hyper-parameter value');
 
 # %%
 X = np.linspace(-3,3,20)
-Y = np.random.exponential(np.sin(X)**2)
+Y = rng.exponential(np.sin(X)**2)
 
 plt.figure()
 plt.plot(X,Y,'x')
@@ -486,8 +489,7 @@ plt.ylabel('neg_log_marginal_likelihood');
 num_samples = 500
 
 hmc_helper =  gpflow.optimizers.SamplingHelper(
-    model.trainable_parameters, 
-    model.log_marginal_likelihood
+    model.log_marginal_likelihood, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
