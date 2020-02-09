@@ -2,6 +2,9 @@ import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
+from gpflow.base import PriorOn
+from tensorflow_probability.python.distributions import Uniform
+from tensorflow_probability.python.bijectors import Exp
 
 import gpflow
 from gpflow.config import set_default_float
@@ -46,6 +49,41 @@ def test_log_prior_with_no_prior():
     assert param.log_prior().numpy() == 0.0
 
 
+def test_log_prior_for_uniform_prior():
+    """
+    If we assign a Uniform prior to a parameter, we should not expect the value of the prior density
+    to change with the parameter value, even if it has a transform associated with it.
+    """
+
+    uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
+    param = gpflow.Parameter(1., transform=gpflow.utilities.positive(),
+                             prior=uniform_prior)
+    low_value = param.log_prior().numpy()
+    param.assign(10.)
+    high_value = param.log_prior().numpy()
+
+    assert np.isclose(low_value, high_value)
+
+
+def test_log_prior_on_unconstrained():
+    """
+    A parameter with an Exp transform, and a uniform prior on its unconstrained, should have a
+    prior in the constrained space that scales as 1/value.
+    """
+
+    initial_value = 1.
+    scale_factor = 10.
+    uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
+    param = gpflow.Parameter(initial_value, transform=Exp(),
+                             prior=uniform_prior,
+                             prior_on=PriorOn.UNCONSTRAINED)
+    low_value = param.log_prior().numpy()
+    param.assign(scale_factor * initial_value)
+    high_value = param.log_prior().numpy()
+
+    assert np.isclose(low_value, high_value + np.log(scale_factor))
+
+
 class DummyModel(gpflow.models.BayesianModel):
     value = 3.3
     log_scale = 0.4
@@ -67,12 +105,12 @@ class DummyModel(gpflow.models.BayesianModel):
         return (self.theta + 5)**2
 
 
-def test_map_contains_log_det_jacobian():
+def test_map_invariance_to_transform():
     m1 = DummyModel(with_transform=True)
     m2 = DummyModel(with_transform=False)
     assert np.allclose(m1.log_marginal_likelihood().numpy(),
-                       m2.log_marginal_likelihood().numpy() + m1.log_scale), \
-                       "MAP objective should differ by log|Jacobian| of the transform"
+                       m2.log_marginal_likelihood().numpy()), \
+                       "MAP objective should not be affected by a transform"
 
 
 def get_gpmc_model_params():
