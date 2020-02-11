@@ -197,10 +197,10 @@ def test_q_sqrt_constraints(inducing_points, kernel, mu, white):
     kls = []
     for q_sqrt in [q_sqrt_constrained, q_sqrt_unconstrained]:
 
-        with tf.GradientTape() as g:
+        with tf.GradientTape() as tape:
             kl = prior_kl(inducing_points, kernel, mu, q_sqrt, whiten=white)
 
-        grad = g.gradient(kl, q_sqrt.unconstrained_variable)
+        grad = tape.gradient(kl, q_sqrt.unconstrained_variable)
         q_sqrt.unconstrained_variable.assign_sub(grad)
         kls.append(kl)
 

@@ -27,7 +27,7 @@ rng = np.random.RandomState(123)
 
 Ln = 2
 Nn = 10
-Mn = 50
+Mn = 20
 
 
 @pytest.fixture(scope='module')
@@ -149,7 +149,7 @@ def test_q_sqrt_constraints(Xdata, Xnew, kernel, mu, white):
     Fstars = []
     for q_sqrt in [q_sqrt_constrained, q_sqrt_unconstrained]:
 
-        with tf.GradientTape() as g:
+        with tf.GradientTape() as tape:
             _, Fstar_var = conditional(Xnew,
                                        Xdata,
                                        kernel,
@@ -157,7 +157,7 @@ def test_q_sqrt_constraints(Xdata, Xnew, kernel, mu, white):
                                        q_sqrt=q_sqrt,
                                        white=white)
 
-        grad = g.gradient(Fstar_var, q_sqrt.unconstrained_variable)
+        grad = tape.gradient(Fstar_var, q_sqrt.unconstrained_variable)
         q_sqrt.unconstrained_variable.assign_sub(grad)
         Fstars.append(Fstar_var)
 
