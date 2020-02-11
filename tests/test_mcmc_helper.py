@@ -4,8 +4,12 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
+from gpflow import default_float
+from gpflow.base import PriorOn
 from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
+from tensorflow_probability.python.bijectors import Exp
+from tensorflow_probability.python.distributions import Uniform
 
 np.random.seed(1)
 
@@ -32,7 +36,7 @@ def test_mcmc_helper_parameters():
     model = build_model(data)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
+        model.log_marginal_likelihood, model.trainable_parameters
     )
 
     for i in range(len(model.trainable_parameters)):
@@ -42,34 +46,116 @@ def test_mcmc_helper_parameters():
             assert model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
 
 
-def test_mcmc_helper_target_function():
+def test_mcmc_helper_target_function_constrained():
+    """ Set up priors on the model parameters such that we can
+    readily compute their expected values. """
     data = build_data()
     model = build_model(data)
 
-    hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
-    )
+    prior_width = 200.0
 
+    hmc_helper = gpflow.optimizers.SamplingHelper(
+        model.log_marginal_likelihood, model.trainable_parameters
+    )
     target_log_prob_fn = hmc_helper.target_log_prob_fn
 
-    assert model.log_marginal_likelihood() == target_log_prob_fn()
+    # Priors which are set on the constrained space
+    expected_log_prior = 0.
+    for param in model.trainable_parameters:
+        if param.value() < 1e-3:
+            # Avoid values which would be pathological for the Exp transform
+            param.assign(1.0)
 
-    model.likelihood.variance.assign(1)
+        param.transform = Exp()
 
-    assert model.log_marginal_likelihood() == target_log_prob_fn()
+        low_value = -100
+        high_value = low_value + prior_width
 
-    # test the wrapped closure
+        param.prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
+        param.prior_on = PriorOn.CONSTRAINED
+
+        prior_density_on_constrained = 1 / prior_width
+        prior_density_on_unconstrained = prior_density_on_constrained * param.value()
+
+        expected_log_prior += np.log(prior_density_on_unconstrained)
+
+    log_likelihood = model.log_likelihood().numpy()
+    expected_log_prob = log_likelihood + expected_log_prior
+
+    np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
+
+
+def test_mcmc_helper_target_function_unconstrained():
+    """ Verifies the objective for a set of priors which are defined on the unconstrained space.
+    """
+    data = build_data()
+    model = build_model(data)
+
+    # Set up priors on the model parameters such that we can readily compute their expected values.
+    expected_log_prior = 0.
+    prior_width = 200.0
+
+    hmc_helper = gpflow.optimizers.SamplingHelper(
+        model.log_marginal_likelihood, model.trainable_parameters
+    )
+
+    for param in model.trainable_parameters:
+        low_value = -100
+        high_value = low_value + prior_width
+        param.prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
+        param.prior_on = 'unconstrained'
+
+        prior_density = 1 / prior_width
+        expected_log_prior += np.log(prior_density)
+
+    target_log_prob_fn = hmc_helper.target_log_prob_fn
+    expected_log_prob = model.log_likelihood().numpy() + expected_log_prior
+
+    np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
+
+
+@pytest.mark.parametrize("prior_on", ["constrained", "unconstrained"])
+def test_mcmc_helper_target_function_no_transforms(prior_on):
+    """ Verifies the objective for a set of priors where no transforms are set.
+    """
+    data = build_data()
+    model = build_model(data)
+    expected_log_prior = 0.
+    prior_width = 200.0
+
+    hmc_helper = gpflow.optimizers.SamplingHelper(
+        model.log_marginal_likelihood, model.trainable_parameters
+    )
+
+    for param in model.trainable_parameters:
+        param.transform = None
+        low_value = -100
+        high_value = low_value + prior_width
+        param.prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
+        param.prior_on = prior_on
+
+        prior_density = 1 / prior_width
+        expected_log_prior += np.log(prior_density)
+
+    log_likelihood = model.log_likelihood().numpy()
+    expected_log_prob = log_likelihood + expected_log_prior
+    target_log_prob_fn = hmc_helper.target_log_prob_fn
+
+    np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
+
+    # Test the wrapped closure
     log_prob, grad_fn = target_log_prob_fn.__original_wrapped__()
-    grad, nones =  grad_fn(1, [None] * len(model.trainable_parameters))
+    grad, nones = grad_fn(1, [None] * len(model.trainable_parameters))
     assert len(grad) == len(model.trainable_parameters)
     assert nones == [None] * len(model.trainable_parameters)
+
 
 def test_mcmc_sampler_integration():
     data = build_data()
     model = build_model(data)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
-        model.trainable_parameters, model.log_marginal_likelihood
+        model.log_marginal_likelihood, model.trainable_parameters
     )
 
     hmc = tfp.mcmc.HamiltonianMonteCarlo(

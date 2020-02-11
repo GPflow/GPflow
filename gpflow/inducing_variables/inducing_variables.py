@@ -16,12 +16,12 @@ import abc
 
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Module, Parameter
 from ..config import default_float
 from ..utilities import positive
 
 
-class InducingVariables(tf.Module):
+class InducingVariables(Module):
     """
     Abstract base class for inducing variables.
     """

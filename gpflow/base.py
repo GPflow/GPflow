@@ -1,4 +1,5 @@
 import functools
+from enum import Enum
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -32,6 +33,20 @@ class Module(tf.Module):
     def trainable_parameters(self):
         return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
+    def _repr_html_(self):
+        from IPython.display import HTML
+        from .utilities import tabulate_module_summary
+        return HTML(tabulate_module_summary(self, tablefmt='html'))
+
+    def _repr_pretty_(self, p, cycle):
+        from .utilities import tabulate_module_summary
+        p.text(tabulate_module_summary(self, tablefmt=''))
+
+
+class PriorOn(Enum):
+     CONSTRAINED = "constrained"
+     UNCONSTRAINED = "unconstrained"
+
 
 class Parameter(tf.Module):
     def __init__(self,
@@ -39,19 +54,22 @@ class Parameter(tf.Module):
                  *,
                  transform: Optional[Transform] = None,
                  prior: Optional[Prior] = None,
+                 prior_on: Union[str, PriorOn] = PriorOn.CONSTRAINED,
                  trainable: bool = True,
                  dtype: Optional[DType] = None,
                  name: Optional[str] = None):
         """
-        Unconstrained parameter representation.
-        According to standard terminology `y` is always transformed representation or,
-        in other words, it is constrained version of the parameter. Normally, it is hard
-        to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
-        therefore we need positive constraint and it is natural to use constrained values.
+        A parameter retains both constrained and unconstrained
+        representations. If no transform is provided, these two values will be the same.
+        It is often challenging to operate with unconstrained parameters. For example, a variance cannot be negative,
+        therefore we need a positive constraint and it is natural to use constrained values.
+        A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
         super().__init__()
 
         self._transform = transform
+        self.prior = prior
+        self.prior_on = PriorOn(prior_on)
 
         if isinstance(value, tf.Variable):
             self._unconstrained = value
@@ -60,20 +78,29 @@ class Parameter(tf.Module):
             self._unconstrained = tf.Variable(unconstrained_value,
                                               dtype=dtype, name=name, trainable=trainable)
 
-        self.prior = prior
-
     def log_prior(self):
-        x = self.read_value()
-        y = self._unconstrained
+        """ Prior probability density of the constrained variable. """
 
-        if self.prior is not None:
-            out = tf.reduce_sum(self.prior.log_prob(x))
-            if self.transform is not None:
-                log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
-                out += tf.reduce_sum(log_det_jacobian)
-            return out
-        else:
+        if self.prior is None:
             return tf.convert_to_tensor(0., dtype=self.dtype)
+
+        y = self.read_value()
+
+        if self.prior_on == PriorOn.CONSTRAINED:
+            # evaluation is in same space as prior
+            return tf.reduce_sum(self.prior.log_prob(y))
+
+        else:
+            # prior on unconstrained, but evaluating log-prior in constrained space
+            x = self._unconstrained
+            log_p = tf.reduce_sum(self.prior.log_prob(x))
+
+            if self.transform is not None:
+                # need to include log|Jacobian| to account for coordinate transform
+                log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
+                log_p += tf.reduce_sum(log_det_jacobian)
+
+            return log_p
 
     def value(self):
         return _to_constrained(self._unconstrained.value(), self.transform)
@@ -197,13 +224,19 @@ class Parameter(tf.Module):
     def __repr__(self):
         unconstrained = self.unconstrained_variable
         constrained = self.read_value()
-        info = f"dtype={self.dtype.name} " \
-               f"unconstrained-shape={unconstrained.shape} " \
-               f"unconstrained-numpy={unconstrained.numpy()} " \
-               f"constrained-shape={constrained.shape} " \
-               f"constrained-numpy={constrained.numpy()}"
+        if tf.executing_eagerly():
+            info = f"unconstrained-shape={unconstrained.shape} " \
+                   f"unconstrained-value={unconstrained.numpy()} " \
+                   f"constrained-shape={constrained.shape} " \
+                   f"constrained-value={constrained.numpy()}"
+        else:
+            if unconstrained.shape == constrained.shape:
+                info = f"shape={constrained.shape}"
+            else:
+                info = f"unconstrained-shape={unconstrained.shape} " \
+                       f"constrained-shape={constrained.shape}"
 
-        return f"<gpflow.Parameter {self.name!r} {info}>"
+        return f"<gpflow.Parameter {self.name!r} dtype={self.dtype.name} {info}>"
 
     # Below
     # TensorFlow copy-paste code to make variable-like object to work
