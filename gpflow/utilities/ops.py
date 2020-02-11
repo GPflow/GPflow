@@ -2,9 +2,17 @@ import copy
 from typing import List, Optional, Union
 
 import tensorflow as tf
-import tensorflow_probability as tfp
 import numpy as np
-from ..base import cast
+
+
+def cast(
+    value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
+) -> tf.Tensor:
+    if not tf.is_tensor(value):
+        # TODO(awav): Release TF2.2 resolves this issue
+        # workaround for https://github.com/tensorflow/tensorflow/issues/35938
+        return tf.convert_to_tensor(value, dtype, name=name)
+    return tf.cast(value, dtype, name=name)
 
 
 def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tensor:
@@ -19,7 +27,9 @@ def add_to_diagonal(to_tensor: tf.Tensor, value: tf.Tensor):
     return tf.linalg.set_diag(to_tensor, new_diag)
 
 
-def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]], leading_dim: int = 0) -> tf.Tensor:
+def leading_transpose(
+    tensor: tf.Tensor, perm: List[Union[int, type(...)]], leading_dim: int = 0
+) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions. Leading dimensions in
     permutation list represented via ellipsis `...`.

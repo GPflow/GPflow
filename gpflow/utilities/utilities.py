@@ -8,7 +8,8 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tabulate import tabulate
 
-from ..base import cast, Parameter
+from .ops import cast
+from ..base import Parameter
 from ..config import default_summary_fmt, default_float, default_int
 
 __all__ = [

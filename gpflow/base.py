@@ -15,14 +15,6 @@ Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
 
-def cast(value, dtype):
-    if not tf.is_tensor(value):
-        # workaround for https://github.com/tensorflow/tensorflow/issues/35938
-        return tf.convert_to_tensor(value, dtype)
-    else:
-        return tf.cast(value, dtype)
-
-
 def _IS_PARAMETER(o):
     return isinstance(o, Parameter)
 
@@ -270,7 +262,11 @@ tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.rea
 def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:
     if dtype is None:
         dtype = default_float()
-    return cast(value, dtype)
+    if tf.is_tensor(value):
+        # TODO(awav) TF2.2 resolves issue with cast.
+        # `tf.cast` can be used alone instead this auxilary function.
+        return tf.cast(value, dtype)
+    return tf.convert_to_tensor(value, dtype=dtype)
 
 
 def _to_constrained(value: VariableData, transform: Transform) -> tf.Tensor:
