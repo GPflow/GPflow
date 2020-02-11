@@ -82,7 +82,7 @@ def base_conditional(Kmn: tf.Tensor,
         if q_sqrt_dims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
         elif q_sqrt_dims == 3:
-            L = q_sqrt
+            L =  tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [R, M, M]
             L_shape = tf.shape(L)
             L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
 
