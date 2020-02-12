@@ -40,7 +40,7 @@ class Periodic(Kernel):
         """
         :param base: the base kernel to make periodic; must inherit from Stationary
             Note that active_dims should be specified in the base kernel.
-        :param period: the period; to induce a different period per active dimention
+        :param period: the period; to induce a different period per active dimension
             this must be initialized with an array the same length as the number
             of active dimensions e.g. [1., 1., 1.]
         """
