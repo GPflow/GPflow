@@ -138,6 +138,14 @@ class Coregion(Kernel):
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())
 
+    def compute_B(self):
+        B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
+        return B
+
+    def compute_B_diag(self):
+        B_diag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
+        return B_diag
+
     def K(self, X, X2=None):
         shape_constraints = [
             (X, [..., 'N', 1]),
@@ -152,12 +160,11 @@ class Coregion(Kernel):
         else:
             X2 = tf.cast(X2[..., 0], tf.int32)
 
-        B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
+        B = self.compute_B()
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X):
         tf.debugging.assert_shapes([(X, [..., 'N', 1])])
-
-        X = tf.cast(X[:, 0], tf.int32)
-        Bdiag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
-        return tf.gather(Bdiag, X)
+        X = tf.cast(X[..., 0], tf.int32)
+        B_diag = self.compute_B_diag()
+        return tf.gather(B_diag, X)
