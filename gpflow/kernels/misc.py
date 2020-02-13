@@ -103,7 +103,7 @@ class Coregion(Kernel):
     cast them from floats as needed) which usually specify the *outputs* of a
     Coregionalization model.
 
-    The kernel function is an indexing of a positive-definite matrix, so
+    The kernel function is an indexing of a positive-definite matrix:
 
       K(x, y) = B[x, y] .
 
