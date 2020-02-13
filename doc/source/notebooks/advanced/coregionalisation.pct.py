@@ -58,11 +58,11 @@ np.random.seed(123)
 
 # %%
 # make a dataset with two outputs, correlated, heavy-tail noise. One has more noise than the other.
-X1 = np.random.rand(100, 1) # Observed locations for first output
-X2 = np.random.rand(50, 1) * 0.5 # Observed locations for second output
+X1 = np.random.rand(100, 1)  # Observed locations for first output
+X2 = np.random.rand(50, 1) * 0.5  # Observed locations for second output
 
 Y1 = np.sin(6*X1) + np.random.randn(*X1.shape) * 0.03
-Y2 = np.sin(6*X2+ 0.7) + np.random.randn(*X2.shape) * 0.1
+Y2 = np.sin(6*X2 + 0.7) + np.random.randn(*X2.shape) * 0.1
 
 plt.figure(figsize=(8, 4))
 plt.plot(X1, Y1, 'x', mew=2)
@@ -84,8 +84,8 @@ Y_augmented = np.vstack((np.hstack((Y1, np.zeros_like(Y1))), np.hstack((Y2, np.o
 # We build a coregionalization kernel with the Matern 3/2 kernel as the base kernel. This acts on the leading ([0]) data dimension of the augmented X values. The `Coregion` kernel indexes the outputs, and acts on the last ([1]) data dimension (indices) of the augmented X values. To specify these dimensions, we use the built-in `active_dims` argument in the kernel constructor. To construct the full multi-output kernel, we take the product of the two kernels (for a more in-depth tutorial on kernel combination, see [Manipulating kernels](./kernels.ipynb)).
 
 # %%
-output_dim = 2 # Number of outputs
-rank = 1 # Rank of W
+output_dim = 2  # Number of outputs
+rank = 1  # Rank of W
 
 # Base kernel
 k = gpflow.kernels.Matern32(active_dims=[0])
@@ -118,7 +118,8 @@ def objective_closure():
 
 # fit the covariance function parameters
 maxiter = ci_niter(10000)
-gpflow.optimizers.Scipy().minimize(objective_closure, m.trainable_variables, options=dict(maxiter=maxiter),
+gpflow.optimizers.Scipy().minimize(objective_closure, m.trainable_variables,
+                                   options=dict(maxiter=maxiter),
                                    method='L-BFGS-B')
 
 
@@ -135,7 +136,7 @@ def plot_gp(x, mu, var, color, label):
 
 def plot(m):
     plt.figure(figsize=(8, 4))
-    xtest = np.linspace(0, 1, 100)[:,None]
+    xtest = np.linspace(0, 1, 100)[:, None]
     line, = plt.plot(X1, Y1, 'x', mew=2)
     mu, var = m.predict_f(np.hstack((xtest, np.zeros_like(xtest))))
     plot_gp(xtest, mu, var, line.get_color(), 'Y1')
