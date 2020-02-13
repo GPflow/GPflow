@@ -31,6 +31,7 @@ class Scipy:
                 to be minimized.
             variables: The list (tuple) of variables to be optimized
                 (typically `model.trainable_variables`)
+            method: The type of solver to use in SciPy. Defaults to "L-BFGS-B".
             step_callback: If not None, a callable that gets called once after
                 each optimisation step. The callabe is passed the arguments
                 `step`, `variables`, and `values`. `step` is the optimisation
