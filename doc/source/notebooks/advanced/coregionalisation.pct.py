@@ -92,12 +92,12 @@ k = gpflow.kernels.Matern32(active_dims=[0])
 
 # Coregion kernel
 coreg = gpflow.kernels.Coregion(output_dim=output_dim, rank=rank, active_dims=[1])
-coreg.W.assign(np.random.rand(output_dim, rank))  # Initialize the W matrix to break symmetry
 
 kern = k * coreg
 
 # %% [markdown]
-# **Note:** By default, the `W` matrix is initialized with zeros; however, this is a saddle point in the objective, so the value of `W` is not optimized to fit the data. Hence, re-initializing the matrix to random entries should give a more accurate result.
+# **Note:** W = 0 is a saddle point in the objective, which would result in the value of `W` not being optimized to fit the data.
+# Hence, by default, the `W` matrix is initialized with 0.1. Alternatively, you could re-initialize the matrix to random entries.
 
 # %% [markdown]
 # ## Constructing the model
