@@ -62,6 +62,7 @@ def _prepare_models():
     kc.lengthscale.trainable = False
     kc.variance.trainable = False  # variance is handles by the coregion kernel
     coreg = gpflow.kernels.Coregion(output_dim=2, rank=1, active_dims=[2])
+    coreg.W.assign(np.zeros((2, 1)))  # zero correlation between outputs
     coreg.W.trainable = False
     lik = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(),
                                                  gpflow.likelihoods.Gaussian()]
