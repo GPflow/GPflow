@@ -133,7 +133,7 @@ class Coregion(Kernel):
 
         self.output_dim = output_dim
         self.rank = rank
-        W = np.ones((self.output_dim, self.rank))
+        W = 0.1 * np.ones((self.output_dim, self.rank))
         kappa = np.ones(self.output_dim)
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())
