@@ -133,23 +133,24 @@ class Coregion(Kernel):
 
         self.output_dim = output_dim
         self.rank = rank
-        W = np.random.randn((self.output_dim, self.rank))
+        W = np.ones((self.output_dim, self.rank))
         kappa = np.ones(self.output_dim)
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())
 
     def K(self, X, X2=None):
-        X = tf.cast(X[:, 0], tf.int32)
+        shape_constraints = [
+            (X, [..., 'N', 1]),
+        ]
+        if X2 is not None:
+            shape_constraints.append((X2, [..., 'M', 1]))
+        tf.debugging.assert_shapes(shape_constraints)
+
+        X = tf.cast(X[..., 0], tf.int32)
         if X2 is None:
             X2 = X
         else:
-            X2 = tf.cast(X2[:, 0], tf.int32)
-
-        shape_constraints = [
-            (X, [..., 'N', 1]),
-            (X2, [..., 'M', 1]),
-        ]
-        tf.debugging.assert_shapes(shape_constraints)
+            X2 = tf.cast(X2[..., 0], tf.int32)
 
         B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
