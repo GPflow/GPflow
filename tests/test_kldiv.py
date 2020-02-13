@@ -17,12 +17,39 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from numpy.testing import assert_almost_equal
+from numpy.testing import assert_allclose, assert_almost_equal
 
-from gpflow.kullback_leiblers import gauss_kl
-from gpflow import default_float, default_jitter
+import gpflow
+from gpflow import default_float, default_jitter, Parameter
+from gpflow.inducing_variables import InducingPoints
+from gpflow.kullback_leiblers import gauss_kl, prior_kl
+from gpflow.utilities.bijectors import triangular
 
 rng = np.random.RandomState(0)
+
+# ------------------------------------------
+# Fixtures
+# ------------------------------------------
+
+Ln = 2
+Nn = 10
+Mn = 50
+
+
+@pytest.fixture(scope='module')
+def kernel():
+    k = gpflow.kernels.Matern32() + gpflow.kernels.White()
+    k.kernels[1].variance.assign(0.01)
+    return k
+
+@pytest.fixture(scope='module')
+def inducing_points():
+    return InducingPoints(rng.randn(Nn, 1))
+
+@pytest.fixture(scope='module')
+def mu():
+    return Parameter(rng.randn(Nn, Ln))
+
 
 # ------------------------------------------
 # Helpers
@@ -150,3 +177,37 @@ def test_unknown_size_inputs():
     unknown_shape = gauss_kl(mu, sqrt)
 
     np.testing.assert_allclose(known_shape, unknown_shape)
+
+
+@pytest.mark.parametrize('white', [True, False])
+def test_q_sqrt_constraints(inducing_points, kernel, mu, white):
+    """ Test that sending in an unconstrained q_sqrt returns the same conditional
+    evaluation and gradients. This is important to match the behaviour of the KL, which
+    enforces q_sqrt is triangular.
+    """
+
+    tril = np.tril(rng.randn(Ln, Nn, Nn))
+
+    q_sqrt_constrained = Parameter(tril, transform=triangular())
+    q_sqrt_unconstrained = Parameter(tril)
+
+    diff_before_gradient_step = (q_sqrt_constrained - q_sqrt_unconstrained).numpy()
+    assert_allclose(diff_before_gradient_step, 0)
+
+    kls = []
+    for q_sqrt in [q_sqrt_constrained, q_sqrt_unconstrained]:
+
+        with tf.GradientTape() as tape:
+            kl = prior_kl(inducing_points, kernel, mu, q_sqrt, whiten=white)
+
+        grad = tape.gradient(kl, q_sqrt.unconstrained_variable)
+        q_sqrt.unconstrained_variable.assign_sub(grad)
+        kls.append(kl)
+
+
+    diff_kls_before_gradient_step = kls[0] - kls[1]
+
+    assert_allclose(diff_kls_before_gradient_step, 0)
+
+    diff_after_gradient_step = (q_sqrt_constrained - q_sqrt_unconstrained).numpy()
+    assert_allclose(diff_after_gradient_step, 0)
