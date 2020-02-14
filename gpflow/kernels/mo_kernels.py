@@ -84,7 +84,7 @@ class SharedIndependent(MultioutputKernel):
     """
     def __init__(self, kernel: Kernel, num_latents: int):
         super().__init__()
-        self.kernels = (kernel,)
+        self.kernel = kernel
         self._num_latents = num_latents
 
     @property
