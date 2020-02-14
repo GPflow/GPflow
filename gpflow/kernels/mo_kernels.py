@@ -36,13 +36,9 @@ class MultioutputKernel(Kernel):
     until the appropriate size is reached.
     """
 
-    def __init__(self, output_dim: int, **kwargs):
-        self._output_dim = output_dim
-        super().__init__(**kwargs)
-
     @property
     def output_dim(self):
-        return self._output_dim
+        raise NotImplementedError
 
     @abc.abstractmethod
     def K(self, X, X2=None, full_output_cov=True):
@@ -84,10 +80,14 @@ class SharedIndependent(MultioutputKernel):
     Note: this class is created only for testing and comparison purposes.
     Use `gpflow.kernels` instead for more efficient code.
     """
-    def __init__(self, kernel: Kernel, output_dim: int, name=None):
-        super().__init__(output_dim=output_dim, name=name)
+    def __init__(self, kernel: Kernel, output_dim: int):
+        super().__init__()
         self.kernel = kernel
+        self._output_dim
 
+    @property
+    def output_dim(self):
+        return self._output_dim
 
     def K(self, X, X2=None, full_output_cov=True):
         K = self.kernel.K(X, X2)  # [N, N2]
@@ -109,8 +109,12 @@ class SeparateIndependent(MultioutputKernel, Combination):
     - Independent: Latents are uncorrelated a priori.
     """
     def __init__(self, kernels, name=None):
-        super().__init__(output_dim=len(kernels), kernels=kernels, name=name)
+        super().__init__(kernels=kernels, name=name)
+        self._output_dim = len(kernels)
 
+    @property
+    def output_dim(self):
+        return self._output_dim
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
@@ -147,8 +151,13 @@ class LinearCoregionalization(IndependentLatent, Combination):
     Linear mixing of the latent GPs to form the output.
     """
     def __init__(self, kernels, W, name=None):
-        super().__init__(output_dim=len(kernels), kernels=kernels, name=name)
+        Combination.__init__(self, kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
+        self._output_dim = len(kernels)
+
+    @property
+    def output_dim(self):
+        return self._output_dim
 
     def Kgg(self, X, X2):
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
