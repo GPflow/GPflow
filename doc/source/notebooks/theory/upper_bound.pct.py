@@ -34,6 +34,8 @@ from gpflow.ci_utils import ci_niter
 import logging
 logging.disable(logging.WARNING)
 
+np.random.seed(1)
+
 from FITCvsVFE import getTrainingTestData
 
 # %%
