@@ -37,6 +37,7 @@ class MultioutputKernel(Kernel):
     """
 
     @property
+    @abc.abstractmethod
     def output_dim(self):
         raise NotImplementedError
 
@@ -155,7 +156,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
 
     @property
     def output_dim(self):
-        return len(self.kernels)
+        return self.W.shape[-1] # L
 
     def Kgg(self, X, X2):
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
