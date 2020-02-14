@@ -72,10 +72,10 @@ tf.random.set_seed(0)
 # %% [markdown]
 # ## Loading data using TensorFlow Datasets
 #
-# For this example, we create a synthetic dataset (noisy sine function): 
+# For this example, we create a synthetic dataset (noisy sine function):
 
 # %%
-def noisy_sin(x): 
+def noisy_sin(x):
     return tf.math.sin(x) + 0.1 * tf.random.normal(x.shape, dtype=default_float())
 
 num_train_data, num_test_data = 100, 500
@@ -117,7 +117,7 @@ print(f"num_batches_per_epoch={num_batches_per_epoch}")
 # %% [markdown]
 # ## Define a GP model
 #
-# In GPflow 2.0, we use `tf.Module` (or the very thin `gpflow.base.Module` wrapper) to build all our models, as well as their components (kernels, likelihoods, parameters, and so on). 
+# In GPflow 2.0, we use `tf.Module` (or the very thin `gpflow.base.Module` wrapper) to build all our models, as well as their components (kernels, likelihoods, parameters, and so on).
 
 # %%
 kernel = gpflow.kernels.SquaredExponential(variance=2.)
@@ -161,6 +161,12 @@ gpflow.config.set_default_summary_fmt("notebook")
 print_summary(model)  # same as print_summary(model, fmt="notebook")
 
 # %% [markdown]
+# Jupyter notebooks also format GPflow classes (that are subclasses of `gpflow.base.Module`) in the same nice way when at the end of a cell (this is independent of the `default_summary_fmt`):
+
+# %%
+model
+
+# %% [markdown]
 # ## Training using Gradient Tapes
 #
 # In TensorFlow 2, we can optimize (trainable) model parameters with TensorFlow optimizers using `tf.GradientTape`. In this simple example, we perform one gradient update of the Adam optimizer to minimize the negative marginal log likelihood (or ELBO) of our model.
@@ -172,7 +178,7 @@ with tf.GradientTape() as tape:
     tape.watch(model.trainable_variables)
     obj = - model.elbo(data)
     grads = tape.gradient(obj, model.trainable_variables)
-    
+
 optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
 
@@ -189,7 +195,7 @@ def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tens
 
 
 # %% [markdown]
-# We can use the functionality of TensorFlow Datasets to define a simple training loop that iterates over batches of the training dataset: 
+# We can use the functionality of TensorFlow Datasets to define a simple training loop that iterates over batches of the training dataset:
 
 # %%
 def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epoch_freq: int = 10):
@@ -208,7 +214,7 @@ def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epo
 simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 
 # %% [markdown]
-# ## Monitoring 
+# ## Monitoring
 #
 # We can monitor the training procedure using `tf.summary`. First we create a summary writer object through which we can write scalars and images.
 
@@ -217,7 +223,7 @@ from intro_to_gpflow2_plotting import plotting_regression, summary_matplotlib_im
 
 samples_input = tf.cast(np.linspace(0, 10, 100).reshape(100, 1), default_float())
 
-def monitored_training_loop(model: gpflow.models.SVGP, logdir: str, 
+def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
                             epochs: int = 1, logging_epoch_freq: int = 10,
                             num_samples: int = 10):
     summary_writer = tf.summary.create_file_writer(logdir)
@@ -236,7 +242,7 @@ def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
                 mean, var = model.predict_f(samples_input)
                 samples = model.predict_f_samples(samples_input, num_samples)
                 fig = plotting_regression(X, Y, samples_input, mean, var, samples)
-                
+
                 summary_matplotlib_image(dict(model_samples=fig), step=epoch)
                 tf.summary.scalar('elbo', data=model.elbo(data), step=epoch)
                 tf.summary.scalar('likelihood/variance', data=model.likelihood.variance, step=epoch)
@@ -304,7 +310,7 @@ def checkpointing_training_loop(model: gpflow.models.SVGP,
                                 step_var: Optional[tf.Variable] = None):
     tf_optimization_step = tf.function(optimization_step)
     batches = iter(train_dataset)
-    
+
     for epoch in range(epochs):
         for step in range(num_batches_per_epoch):
             tf_optimization_step(model, next(batches))
@@ -312,7 +318,7 @@ def checkpointing_training_loop(model: gpflow.models.SVGP,
                 step_var.assign(epoch * num_batches_per_epoch + step + 1)
         if epoch_var is not None:
             epoch_var.assign(epoch + 1)
-            
+
         epoch_id = epoch + 1
         if epoch_id % logging_epoch_freq == 0:
             ckpt_path = manager.save()
@@ -337,4 +343,22 @@ for i, recorded_checkpoint in enumerate(manager.checkpoints):
     ckpt.restore(recorded_checkpoint)
     print(f"{i} restored model from epoch {int(epoch_var)} [step:{int(step_var)}] : ELBO training set {model.elbo(data)}")
 
+# %% [markdown]
+# ## Copying (hyper)parameter values between models
+#
+# It is easy to interact with the set of all parameters of a model or a subcomponent programmatically.
+#
+# The following returns a dictionary of all parameters within
+
 # %%
+model = gpflow.models.SGPR(data, kernel=kernel, inducing_variable=inducing_variable)
+
+# %%
+gpflow.utilities.parameter_dict(model)
+
+# %% [markdown]
+# Such a dictionary can be assigned back to this model (or another model with the same tree of parameters) as follows:
+
+# %%
+params = gpflow.utilities.parameter_dict(model)
+gpflow.utilities.multiple_assign(model, params)
