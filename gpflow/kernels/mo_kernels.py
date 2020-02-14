@@ -83,7 +83,7 @@ class SharedIndependent(MultioutputKernel):
     def __init__(self, kernel: Kernel, output_dim: int):
         super().__init__()
         self.kernel = kernel
-        self._output_dim
+        self._output_dim = output_dim
 
     @property
     def output_dim(self):
@@ -110,11 +110,10 @@ class SeparateIndependent(MultioutputKernel, Combination):
     """
     def __init__(self, kernels, name=None):
         super().__init__(kernels=kernels, name=name)
-        self._output_dim = len(kernels)
 
     @property
     def output_dim(self):
-        return self._output_dim
+        return len(self.kernels)
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
@@ -153,11 +152,10 @@ class LinearCoregionalization(IndependentLatent, Combination):
     def __init__(self, kernels, W, name=None):
         Combination.__init__(self, kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
-        self._output_dim = len(kernels)
 
     @property
     def output_dim(self):
-        return self._output_dim
+        return len(self.kernels)
 
     def Kgg(self, X, X2):
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
