@@ -160,7 +160,7 @@ plot(m)
 # The covariance matrix between outputs is as follows:
 
 # %%
-B = coreg.compute_B().numpy()
+B = coreg.output_covariance().numpy()
 print('B =', B)
 plt.imshow(B);
 

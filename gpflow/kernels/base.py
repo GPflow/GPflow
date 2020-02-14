@@ -27,13 +27,15 @@ import tensorflow as tf
 
 from ..base import Module
 
+ActiveDims = Union[slice, list]
+
 class Kernel(Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.
     """
 
     def __init__(self,
-                 active_dims: Optional[Union[slice, list]] = None,
+                 active_dims: Optional[ActiveDims] = None,
                  name: Optional[str] = None):
         """
         :param active_dims: active dimensions, either a slice or list of
