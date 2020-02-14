@@ -34,7 +34,6 @@ class Module(tf.Module):
         return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
     def _repr_html_(self):
-        from IPython.display import HTML
         from .utilities import tabulate_module_summary
         return tabulate_module_summary(self, tablefmt='html')
 
