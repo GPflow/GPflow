@@ -36,7 +36,7 @@ class Module(tf.Module):
     def _repr_html_(self):
         from IPython.display import HTML
         from .utilities import tabulate_module_summary
-        return HTML(tabulate_module_summary(self, tablefmt='html'))
+        return tabulate_module_summary(self, tablefmt='html')
 
     def _repr_pretty_(self, p, cycle):
         from .utilities import tabulate_module_summary
