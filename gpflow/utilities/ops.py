@@ -47,7 +47,7 @@ def leading_transpose(
             # B is 2nd element and
             # C is 3rd element in
             # permutation list,
-            # leading dimentions are [1, 2, 3]
+            # leading dimensions are [1, 2, 3]
             # which are 0th element in permutation
             # list
         b = leading_transpose(a, [3, -3, ..., -2])  # [C, A, ..., B]

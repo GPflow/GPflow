@@ -542,3 +542,27 @@ def test_kernel_call_diag_and_X2_errors(kernel):
 
     with pytest.raises(ValueError):
         kernel(X, X2, full=False)
+
+
+def test_periodic_active_dims_mismatch_check():
+    active_dims_1 = [0]
+    active_dims_2 = [1]
+    with pytest.raises(ValueError):
+        base = gpflow.kernels.SquaredExponential(active_dims=active_dims_1)
+        _ = gpflow.kernels.Periodic(base=base, active_dims=active_dims_2)
+
+
+def test_periodic_active_dims_matches():
+    active_dims = [1]
+    base = gpflow.kernels.SquaredExponential(active_dims=active_dims)
+    kernel = gpflow.kernels.Periodic(base=base, active_dims=active_dims)
+
+    assert kernel.active_dims == base.active_dims
+
+    kernel.active_dims = [2]
+
+    assert kernel.active_dims == base.active_dims
+
+    base.active_dims = [3]
+
+    assert kernel.active_dims == base.active_dims
