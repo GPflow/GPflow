@@ -39,7 +39,7 @@ class MultioutputKernel(Kernel):
     @property
     @abc.abstractmethod
     def num_latents(self):
-        """The number of latent gps in the multioutput kernel"""
+        """The number of latent GPs in the multioutput kernel"""
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -87,16 +87,15 @@ class SharedIndependent(MultioutputKernel):
         self.kernel = kernel
         self.output_dim = output_dim
 
-
     @property
     def num_latents(self):
-        # In this case num of latent gps (L) == output_dim (P)
+        # In this case number of latent GPs (L) == output_dim (P)
         return self.output_dim
 
     def K(self, X, X2=None, full_output_cov=True):
         K = self.kernel.K(X, X2)  # [N, N2]
         if full_output_cov:
-            Ks = tf.tile(K[..., None], [1, 1, self.self.output_dim])  # [N, N2, P]
+            Ks = tf.tile(K[..., None], [1, 1, self.output_dim])  # [N, N2, P]
             return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # [N, P, N2, P]
         else:
             return tf.tile(K[None, ...], [self.output_dim, 1, 1])  # [P, N, N2]
