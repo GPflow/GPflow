@@ -17,7 +17,9 @@
 # # Basic (binary) GP classification model
 #
 #
-# This notebook shows how to build a GP classification model using variational inference. Here we consider binary (two-class, 0 vs. 1) classification only (there is a separate notebook on [multiclass classification](../advanced/multiclass_classification.ipynb)). We first look at a one-dimensional example, and then show how you can adapt this when the input space is two-dimensional.
+# This notebook shows how to build a GP classification model using variational inference.
+# Here we consider binary (two-class, 0 vs. 1) classification only (there is a separate notebook on [multiclass classification](../advanced/multiclass_classification.ipynb)).
+# We first look at a one-dimensional example, and then show how you can adapt this when the input space is two-dimensional.
 
 # %%
 import numpy as np
@@ -33,7 +35,8 @@ matplotlib.rcParams['figure.figsize'] = (8, 4)
 # %% [markdown]
 # ## One-dimensional example
 #
-# First of all, let's have a look at the data. `X` and `Y` denote the input and output values. **NOTE:** `X` and `Y` must be two-dimensional NumPy arrays, $N \times 1$ or $N \times D$, where $D$ is the number of input dimensions/features, with the same number of rows as $N$ (one for each data point):
+# First of all, let's have a look at the data. `X` and `Y` denote the input and output values.
+# **NOTE:** `X` and `Y` must be two-dimensional NumPy arrays, $N \times 1$ or $N \times D$, where $D$ is the number of input dimensions/features, with the same number of rows as $N$ (one for each data point):
 
 # %%
 X = np.genfromtxt('data/classif_1D_X.csv').reshape(-1, 1)
@@ -47,7 +50,7 @@ plt.plot(X, Y, 'C3x', ms=8, mew=2);
 #
 # For a binary classification model using GPs, we can simply use a `Bernoulli` likelihood. The details of the generative model are as follows:
 #
-# __1. Define the latent GP:__ we start from a Gaussian process $f \sim \mathcal{GP}(0, k(., .))$:
+# __1. Define the latent GP:__ we start from a Gaussian process $f \sim \mathcal{GP}(0, k(\cdot, \cdot'))$:
 
 # %%
 # build the kernel and covariance matrix
@@ -56,19 +59,23 @@ x_grid = np.linspace(0, 6, 200).reshape(-1, 1)
 K = k(x_grid)
 
 # sample from a multivariate normal
+rng = np.random.RandomState(6)
+
 L = np.linalg.cholesky(K)
-f_grid = np.dot(L, np.random.RandomState(6).randn(200, 5))
+f_grid = np.dot(L, rng.randn(200, 5))
 plt.plot(x_grid, f_grid, 'C0', linewidth=1)
 plt.plot(x_grid, f_grid[:, 1], 'C0', linewidth=2);
 
-
 # %% [markdown]
-# __2. Squash them to $[0, 1]$:__ the samples of the GP are mapped to $[0, 1]$ using the logistic inverse link function: $g(x) = \frac{\exp(f(x))}{1 + \exp(f(x))}$.
+# __2. Squash them to $[0, 1]$:__ the samples of the GP are mapped to $[0, 1]$.
+# By default, GPflow uses the standard normal cumulative distribution function (inverse probit function): $p(x) = \Phi(f(x)) = \frac{1}{2} (1 + \operatorname{erf}(x / \sqrt{2}))$.
+# (This choice has the advantage that predictive mean, variance and density can be computed analytically, but any choice of invlink is possible, e.g. the logit $p(x) = \frac{\exp(f(x))}{1 + \exp(f(x))}$. Simply pass another function as the `invlink` argument to the `Bernoulli` likelihood class.)
 
 # %%
-def logistic(f):
-    return np.exp(f) / (1 + np.exp(f))
-p_grid = logistic(f_grid)
+def invlink(f):
+    return gpflow.likelihoods.Bernoulli().invlink(f).numpy()
+
+p_grid = invlink(f_grid)
 plt.plot(x_grid, p_grid, 'C1', linewidth=1)
 plt.plot(x_grid, p_grid[:, 1], 'C1', linewidth=2);
 
@@ -77,12 +84,12 @@ plt.plot(x_grid, p_grid[:, 1], 'C1', linewidth=2);
 
 # %%
 # Select some input locations
-ind = np.random.randint(0, 200, (30,))
+ind = rng.randint(0, 200, (30,))
 X_gen = x_grid[ind]
 
 # evaluate probability and get Bernoulli draws
 p = p_grid[ind, 1:2]
-Y_gen = np.random.binomial(1, p)
+Y_gen = rng.binomial(1, p)
 
 # plot
 plt.plot(x_grid, p_grid[:, 1], 'C1', linewidth=2)
@@ -92,9 +99,14 @@ plt.plot(X_gen, Y_gen, 'C3x', ms=8, mew=2);
 # %% [markdown]
 # ### Implementation with GPflow
 #
-# For the model described above, the posterior $f(x)|Y$ (say $p$) is not Gaussian any more and does not have a closed-form expression. A common approach is then to look for the best approximation of this posterior by a tractable distribution (say $q$) such as a Gaussian distribution. In variational inference, the quality of an approximation is measured by the Kullback-Leibler divergence $\mathrm{KL}[q \| p]$. For more details on this model, see Nickisch and Rasmussen (2008).
+# For the model described above, the posterior $f(x)|Y$ (say $p$) is not Gaussian any more and does not have a closed-form expression.
+# A common approach is then to look for the best approximation of this posterior by a tractable distribution (say $q$) such as a Gaussian distribution.
+# In variational inference, the quality of an approximation is measured by the Kullback-Leibler divergence $\mathrm{KL}[q \| p]$.
+# For more details on this model, see Nickisch and Rasmussen (2008).
 #
-# The inference problem is thus turned into an optimization problem: finding the best parameters for $q$. In our case, we introduce $U \sim \mathcal{N}(q_\mu, q_\Sigma)$, and we choose $q$ to have the same distribution as $f | f(X) = U$. The parameters $q_\mu$ and $q_\Sigma$ can be seen as parameters of $q$, which can be optimized in order to minimise  $\mathrm{KL}[q \| p]$. 
+# The inference problem is thus turned into an optimization problem: finding the best parameters for $q$.
+# In our case, we introduce $U \sim \mathcal{N}(q_\mu, q_\Sigma)$, and we choose $q$ to have the same distribution as $f | f(X) = U$.
+# The parameters $q_\mu$ and $q_\Sigma$ can be seen as parameters of $q$, which can be optimized in order to minimise  $\mathrm{KL}[q \| p]$.
 #
 # This variational inference model is called `VGP` in GPflow:
 
@@ -117,14 +129,16 @@ o.minimize(objective, variables=m.trainable_variables)
 gpflow.utilities.print_summary(m, fmt='notebook')
 
 # %% [markdown]
-# In this table, the first two lines are associated with the kernel parameters, and the last two correspond to the variational parameters. **NOTE:** In practice, $q_\Sigma$ is actually parameterized by its lower-triangular square root $q_\Sigma = q_\text{sqrt} q_\text{sqrt}^T$ in order to ensure its positive-definiteness.
+# In this table, the first two lines are associated with the kernel parameters, and the last two correspond to the variational parameters.
+# **NOTE:** In practice, $q_\Sigma$ is actually parameterized by its lower-triangular square root $q_\Sigma = q_\text{sqrt} q_\text{sqrt}^T$ in order to ensure its positive-definiteness.
 #
 # For more details on how to handle models in GPflow (getting and setting parameters, fixing some of them during optimization, using priors, and so on), see [Manipulating GPflow models](../understanding/models.ipynb).
 
 # %% [markdown]
 # ### Predictions
 #
-# Finally, we will see how to use model predictions to plot the resulting model. We will replicate the figures of the generative model above, but using the approximate posterior distribution given by the model.
+# Finally, we will see how to use model predictions to plot the resulting model.
+# We will replicate the figures of the generative model above, but using the approximate posterior distribution given by the model.
 
 # %%
 plt.figure(figsize=(12, 8))
@@ -138,12 +152,13 @@ plt.fill_between(x_grid.flatten(),
                  alpha=0.3, color='C0')
     
 # plot samples
+tf.random.set_seed(6)
 samples = m.predict_f_samples(x_grid, 10).numpy().squeeze().T
 
 plt.plot(x_grid, samples, 'C0', lw=1)
     
 # plot p-samples
-p = logistic(samples)  # exp(samples) / (1 + exp(samples))
+p = invlink(samples)
 plt.plot(x_grid, p, 'C1', lw=1)
 
 # plot data
@@ -182,7 +197,9 @@ opt.minimize(objective,
 # in practice, the optimization needs around 250 iterations to converge
 
 # %% [markdown]
-# We can now plot the predicted decision boundary between the two classes. To do so, we can equivalently plot the contour lines $E[f(x)|Y]=0$, or $E[g(f(x))|Y]=0.5$. We will do the latter, because it allows us to introduce the `predict_y` function, which returns the mean and variance at test points:
+# We can now plot the predicted decision boundary between the two classes.
+# To do so, we can equivalently plot the contour lines $E[f(x)|Y]=0$, or $E[g(f(x))|Y]=0.5$.
+# We will do the latter, because it allows us to introduce the `predict_y` function, which returns the mean and variance at test points:
 
 # %%
 x_grid = np.linspace(-3, 3, 40)

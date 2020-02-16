@@ -20,9 +20,9 @@
 # %% [markdown]
 # This notebook shows how to construct a multi-output GP model using GPflow. We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X, f_1), \dots, (X, f_P)$, that is, we observe all the outputs for a particular input location (for cases where there are **not** fully observed outputs for each input, see [A simple demonstration of coregionalization](./coregionalisation.ipynb)).
 #
-# Here we assume a model of the form: 
+# Here we assume a model of the form:
 # $$f(x) = W g(x),$$
-# where $g(x) \in \mathbb{R}^L$, $f(x) \in \mathbb{R}^P$ and $W \in \mathbb{R}^{P \times L}$. We assume that the outputs of $g$ are uncorrelated, and that by *mixing* them with $W$ they become correlated. In this notebook, we show how to build this model using Sparse Variational Gaussian Process (SVGP) for $g$, which scales well with the numbers of data points and outputs. 
+# where $g(x) \in \mathbb{R}^L$, $f(x) \in \mathbb{R}^P$ and $W \in \mathbb{R}^{P \times L}$. We assume that the outputs of $g$ are uncorrelated, and that by *mixing* them with $W$ they become correlated. In this notebook, we show how to build this model using Sparse Variational Gaussian Process (SVGP) for $g$, which scales well with the numbers of data points and outputs.
 #
 # Here we have two options for $g$:
 # 1. The output dimensions of $g$ share the same kernel.
@@ -57,7 +57,7 @@
 # - $Y \in \RR^{N \times P}$ denotes the output
 # - $k_{1..L}$, $L$ are kernels on $\RR^{N \times D}$
 # - $g_{1..L}$, $L$ are independent $\GP$s  with $g_l \sim \GP(0,k_l)$
-# - $f_{1..P}$, $P$ are correlated  $\GP$s  with $\vf = \vW \vg$ 
+# - $f_{1..P}$, $P$ are correlated  $\GP$s  with $\vf = \vW \vg$
 
 # %%
 import numpy as np
@@ -94,7 +94,7 @@ def generate_data(N=100):
     W = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # L x P
     F = np.matmul(G, W)  # N x P
     Y = F + np.random.randn(*F.shape) * [0.2, 0.2, 0.2]
-    
+
     return X, Y
 
 
@@ -139,11 +139,11 @@ def plot_model(m, lower=-8.0, upper=8.0):
 
 # %%
 # create multi-output kernel
-kernel = gpf.kernels.SharedIndependent(gpf.kernels.RBF(1) + gpf.kernels.Linear(1), output_dimensionality=P) 
+kernel = gpf.kernels.SharedIndependent(gpf.kernels.RBF(1) + gpf.kernels.Linear(1), output_dim=P)
 # initialization of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
 # create multi-output inducing variables from Z
-iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z)) 
+iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z))
 
 # %%
 # create SVGP model as usual and optimize
@@ -188,7 +188,7 @@ kern_list = [gpf.kernels.RBF(D) + gpf.kernels.Linear(1) for _ in range(P)]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations (M random points from the training inputs)
-Z = Zinit.copy() 
+Z = Zinit.copy()
 # create multi-output inducing variables from Z
 iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z))
 
@@ -274,9 +274,9 @@ iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_vari
 
 # %%
 # initialize mean of variational posterior to be of shape MxL
-q_mu = np.zeros((M, L)) 
+q_mu = np.zeros((M, L))
 # initialize \sqrt(Σ) of variational posterior to be of shape LxMxM
-q_sqrt = np.repeat(np.eye(M)[None, ...], L, axis=0) * 1.0 
+q_sqrt = np.repeat(np.eye(M)[None, ...], L, axis=0) * 1.0
 
 # create SVGP model as usual and optimize
 m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, q_mu=q_mu, q_sqrt=q_sqrt)
@@ -354,26 +354,26 @@ def inspect_conditional(inducing_variable_type, kernel_type):
     Helper function returning the exact implementation called
     by the multiple dispatch `conditional` given the type of
     kernel and inducing variable.
-    
+
     :param inducing_variable_type:
         Type of the inducing variable
     :param kernel_type:
         Type of the kernel
-    
+
     :return: String
         Contains the name, the file and the linenumber of the
         implementation.
-    """    
+    """
     import inspect
     from gpflow.conditionals import conditional
-    
+
     implementation = conditional.dispatch(object, inducing_variable_type, kernel_type, object)
     info = dict(inspect.getmembers(implementation))
     return info["__code__"]
 
 # Example:
 inspect_conditional(
-    gpf.inducing_variables.SharedIndependentInducingVariables, 
+    gpf.inducing_variables.SharedIndependentInducingVariables,
     gpf.kernels.SharedIndependent
 )
 

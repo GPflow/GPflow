@@ -32,9 +32,9 @@ For example:
 
 ## Parameter and tf.Variable
 
-The `Parameter` class in GPflow 1 was a separate class from `tf.Variable`. The `params_as_tensors` decorator or the `params_as_tensors_for` context manager were required to turn them into a tensor that could be consumed by TensorFlow operations. 
+The `Parameter` class in GPflow 1 was a separate class from `tf.Variable`. The `params_as_tensors` decorator or the `params_as_tensors_for` context manager were required to turn them into a tensor that could be consumed by TensorFlow operations.
 
-In GPflow 2, `Parameter` is a subclass of `tf.Module` that wraps a `tf.Variable`, and can directly be used in place of a tensor, so no such conversion is necessary. 
+In GPflow 2, `Parameter` is a subclass of `tf.Module` that wraps a `tf.Variable`, and can directly be used in place of a tensor, so no such conversion is necessary.
 
 References to `params_as_tensors` and `params_as_tensors_for` can simply be removed.
 
@@ -59,12 +59,12 @@ Usage of GPflow’s Scipy optimizer has changed. It has been renamed from `gpflo
 
  * Instead of a GPflow model the method now takes a zero-argument function that returns the loss to be minimised (for example, the negative log marginal likelihood), as well as the variables to be optimised (typically `model.trainable_variables`).
  * The options (`disp`, `maxiter`) must now be passed in a dictionary.
- 
+
 For example:
- 
+
 <img src="files/scipy_optimizer.png">
 
-Any additional keyword arguments that are passed to the `minimize` method are passed directly through to the [SciPy optimizer's minimize method](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html). 
+Any additional keyword arguments that are passed to the `minimize` method are passed directly through to the [SciPy optimizer's minimize method](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html).
 
 
 # Model Initialisers
@@ -82,7 +82,7 @@ For example, for the `GPR` model:
 
 # SVGP Initialiser
 
-The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (`elbo`, `log_likelihood` etc). 
+The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (`elbo`, `log_likelihood` etc).
 
 In the [Introduction to GPflow 2 notebook](../intro_to_gpflow2.ipynb) there is an example of how to use SVGP with optimisation using mini-batches of data.
 
@@ -91,14 +91,14 @@ In addition, SVGP’s `Z` parameter has been removed. To pass-in inducing points
 
 # Autoflow
 
-The `@autoflow` decorator has been removed. Since eager execution is the default in TensorFlow 2 this is no longer necessary. 
+The `@autoflow` decorator has been removed. Since eager execution is the default in TensorFlow 2 this is no longer necessary.
 
 You may wish to consider wrapping functions that were previously wrapped in the `@autoflow` decorator in the `tf.function` decorator instead, to improve performance (but this is not necessary from a functionality point of view).
 
 
 # Use of tf.function
 
-Wrapping compute-heavy operations such as calculating a model objective or even the optimizer steps (such as `tf.optimizers.Adam().minimize()`) with `tf.function` is crucial for efficient computation. 
+Wrapping compute-heavy operations such as calculating a model objective or even the optimizer steps (such as `tf.optimizers.Adam().minimize()`) with `tf.function` is crucial for efficient computation.
 
 **Note**: you should ensure that functions wrapped in `tf.function` are only passed **tensors** (not numpy arrays or other data structures, with the exception of a small number of bool or enum-style flags), or the decorator will re-compile the graph each time the function is passed new objects as its arguments. See the [TensorFlow documentation on re-tracing](https://www.tensorflow.org/guide/function#re-tracing) for further details.
 
@@ -107,7 +107,7 @@ You can convert a numpy array to a tensor by using `tf.constant`. For example: `
 
 # Model Compilation
 
-Models no longer need to be compiled before use. Remove all calls to the `compile` method. 
+Models no longer need to be compiled before use. Remove all calls to the `compile` method.
 
 
 # Sessions and Graphs
@@ -150,7 +150,7 @@ The `Model` class has been removed. A suitable replacement, for those models tha
 
 # Periodic Base Kernel
 
-The base kernel for the `Periodic` kernel must now be specified explicitly. Previously the default was  `SquaredExponential`, so to maintain the same behaviour as before this must be passed-in to the `Periodic` kernel’s initialiser. 
+The base kernel for the `Periodic` kernel must now be specified explicitly. Previously the default was  `SquaredExponential`, so to maintain the same behaviour as before this must be passed-in to the `Periodic` kernel’s initialiser (note that `active_dims` is specified in the base kernel).
 
 For example:
 
