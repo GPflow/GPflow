@@ -27,6 +27,7 @@ import tensorflow as tf
 
 from ..base import Module
 
+
 class Kernel(Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.

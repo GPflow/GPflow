@@ -31,25 +31,22 @@ class Periodic(Kernel):
     σ² is the variance parameter,
     γ is the period parameter.
 
-    (note that usually we have a factor of 4 instead of 0.5 in front but this
-    is absorbed into the lengthscale hyperparameter).
+    NOTE: that usually we have a factor of 4 instead of 0.5 in front but this
+        is absorbed into the lengthscale hyperparameter.
+    NOTE: periodic kernel uses `active_dims` of a base kernel, therefore
+        the constructor doesn't have it as an argument.
     """
 
-    def __init__(self, base: Stationary, period: Union[float, List[float]] = 1.0,
-                 **kwargs):
+    def __init__(self, base: Stationary, period: Union[float, List[float]] = 1.0):
         """
         :param base: the base kernel to make periodic; must inherit from Stationary
-            Note that active_dims should be specified in the base kernel.
+            Note that `active_dims` should be specified in the base kernel.
         :param period: the period; to induce a different period per active dimension
             this must be initialized with an array the same length as the number
             of active dimensions e.g. [1., 1., 1.]
         """
         if not isinstance(base, Stationary):
             raise TypeError("Periodic requires a Stationary kernel as the `base`")
-
-        if 'active_dims' in kwargs:
-            if self._normalize_active_dims(kwargs['active_dims']) != base.active_dims:
-                raise ValueError("active_dims must be consistent with base.active_dims")
 
         super().__init__()
         self.base = base
