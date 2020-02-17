@@ -41,7 +41,7 @@ class _Values(enum.Enum):
     FLOAT = np.float64
     POSITIVE_BIJECTOR = "softplus"
     POSITIVE_MINIMUM = None
-    SUMMARY_FMT = None
+    SUMMARY_FMT = "fancy_grid"
     JITTER = 1e-6
 
     @property

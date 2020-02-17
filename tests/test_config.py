@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -23,6 +24,30 @@ from gpflow.config import (default_float, default_int, default_jitter, set_defau
                            default_summary_fmt, set_default_positive_bijector,
                            default_positive_bijector)
 from gpflow.utilities import to_default_float, to_default_int
+
+
+def test_env_variables():
+    os.environ["GPFLOW_INT"] = "int64"
+    os.environ["GPFLOW_FLOAT"] = "float32"
+    os.environ["GPFLOW_POSITIVE_BIJECTOR"] = "exp"
+    os.environ["GPFLOW_POSITIVE_MINIMUM"] = "1e-3"
+    os.environ["GPFLOW_SUMMARY_FMT"] = "simple"
+    os.environ["GPFLOW_JITTER"] = "1e-2"
+
+    config = gpflow.config.Config()
+    assert config.int == np.int64
+    assert config.float == np.float32
+    assert config.positive_bijector == "exp"
+    assert config.positive_minimum == 1e-3
+    assert config.summary_fmt == "simple"
+    assert config.jitter == 1e-2
+
+
+@pytest.mark.parametrize("key", ["INT", "FLOAT", "POSITIVE_BIJECTOR", "POSITIVE_MINIMUM", "JITTER"])
+def test_env_variables_failures(key):
+    os.environ[f"GPFLOW_{key}"] = "garbage"
+    with pytest.raises(TypeError):
+        gpflow.config.Config()
 
 
 @pytest.mark.parametrize('getter, setter, valid_type_1, valid_type_2', [
