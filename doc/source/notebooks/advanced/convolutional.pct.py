@@ -96,7 +96,7 @@ rbf_m = gpflow.models.SVGP(gpflow.kernels.SquaredExponential(), gpflow.likelihoo
 # %%
 rbf_m_log_likelihood = rbf_m.log_likelihood
 print("RBF elbo before training: %.4e" % rbf_m_log_likelihood(data))
-rbf_m_log_likelihood = tf.function(rbf_m_log_likelihood, autograph=False)
+rbf_m_log_likelihood = tf.function(rbf_m_log_likelihood)
 
 # %%
 gpflow.utilities.set_trainable(rbf_m.inducing_variable, False)
@@ -141,7 +141,7 @@ conv_m.kernel.weights.trainable = False
 # %%
 conv_m_log_likelihood = conv_m.log_likelihood
 print("conv elbo before training: %.4e" % conv_m_log_likelihood(data))
-conv_m_log_likelihood = tf.function(conv_m_log_likelihood, autograph=False)
+conv_m_log_likelihood = tf.function(conv_m_log_likelihood)
 
 # %%
 start_time = time.time()

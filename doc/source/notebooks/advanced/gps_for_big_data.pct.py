@@ -76,7 +76,7 @@ m = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N)
 # First we showcase the model's performance using the whole dataset to compute the ELBO.
 
 # %%
-log_likelihood = tf.function(autograph=False)(m.log_likelihood)
+log_likelihood = tf.function(m.log_likelihood)
 
 # %%
 # %%timeit
@@ -177,7 +177,7 @@ minibatch_size = 100
 # We turn off training for inducing point locations
 gpflow.utilities.set_trainable(m.inducing_variable, False)
 
-@tf.function(autograph=False)
+@tf.function()
 def optimization_step(optimizer, model: gpflow.models.SVGP, batch):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)

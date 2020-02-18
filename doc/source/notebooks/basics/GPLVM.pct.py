@@ -112,7 +112,7 @@ gplvm.likelihood.variance.assign(0.01)
 opt = gpflow.optimizers.Scipy()
 maxiter = ci_niter(1000)
 
-@tf.function(autograph=False)
+@tf.function()
 def optimization_step():
     return - gplvm.log_marginal_likelihood()
 
