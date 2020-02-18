@@ -21,9 +21,9 @@ class Dispatcher(GeneratorDispatcher):
         if types in self.funcs:
             return self.funcs[types]
 
-        return self.get_first_occurence(*types)
+        return self.get_first_occurrence(*types)
 
-    def get_first_occurence(self, *types):
+    def get_first_occurrence(self, *types):
         """ Returns the first occurrence of a mathcing function """
         n = len(types)
         for signature in self.ordering:
