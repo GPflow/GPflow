@@ -159,7 +159,7 @@ print_summary(m, fmt='notebook')
 # %%
 opt = gpflow.optimizers.Scipy()
 
-@tf.function()
+@tf.function
 def objective_closure():
     return - m.log_marginal_likelihood(data)
 

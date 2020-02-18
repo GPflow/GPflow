@@ -322,7 +322,7 @@ gpflow.utilities.print_summary(model)
 optimizer = gpflow.optimizers.Scipy()
 
 
-@tf.function()
+@tf.function
 def objective():
     return - model.log_marginal_likelihood()
 
@@ -455,7 +455,7 @@ gpflow.utilities.print_summary(model)
 # We initialize HMC at the maximum a posteriori parameter value.
 
 # %%
-@tf.function()
+@tf.function
 def optimization_step(optimizer, model):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)

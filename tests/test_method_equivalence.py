@@ -62,7 +62,7 @@ def _create_full_gp_model():
 
     opt = gpflow.optimizers.Scipy()
 
-    @tf.function()
+    @tf.function
     def full_gp_model_closure():
         return - full_gp_model.log_marginal_likelihood()
 
@@ -112,23 +112,23 @@ def _create_approximate_models():
 
     opt = gpflow.optimizers.Scipy()
 
-    @tf.function()
+    @tf.function
     def model_1_closure():
         return - model_1.log_marginal_likelihood()
 
-    @tf.function()
+    @tf.function
     def model_2_closure():
         return - model_2.elbo(Datum.data)
 
-    @tf.function()
+    @tf.function
     def model_3_closure():
         return - model_3.elbo(Datum.data)
 
-    @tf.function()
+    @tf.function
     def model_4_closure():
         return - model_4.log_marginal_likelihood()
 
-    @tf.function()
+    @tf.function
     def model_5_closure():
         return - model_5.log_marginal_likelihood()
 
@@ -264,7 +264,7 @@ def test_upper_bound_few_inducing_points():
                                    mean_function=Constant())
     opt = gpflow.optimizers.Scipy()
 
-    @tf.function()
+    @tf.function
     def model_vfe_closure():
         return - model_vfe.log_marginal_likelihood()
 

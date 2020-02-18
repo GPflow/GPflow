@@ -131,7 +131,7 @@ def build_model(data, mean_function):
 # %%
 def create_optimization_step(optimizer, model: gpflow.models.GPR):
     
-    @tf.function()
+    @tf.function
     def optimization_step():
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(model.trainable_variables)
