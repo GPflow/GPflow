@@ -80,15 +80,15 @@ def _prepare_models():
 
     opt = gpflow.optimizers.Scipy()
 
-    @tf.function(autograph=False)
+    @tf.function()
     def vgp0_closure():
         return - vgp0.log_marginal_likelihood()
 
-    @tf.function(autograph=False)
+    @tf.function()
     def vgp1_closure():
         return - vgp1.log_marginal_likelihood()
 
-    @tf.function(autograph=False)
+    @tf.function()
     def cvgp_closure():
         return - cvgp.log_marginal_likelihood()
 

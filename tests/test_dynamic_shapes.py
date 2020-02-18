@@ -54,11 +54,10 @@ def test_svgp(whiten, q_diag):
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
     elbo = tf.function(
         model.elbo,
-        autograph=False,
         input_signature=[(tensor_spec, tensor_spec)],
     )
 
-    @tf.function(autograph=False)
+    @tf.function()
     def model_closure():
         return - elbo(Datum.data)
 
@@ -82,11 +81,10 @@ def test_multiclass():
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
     elbo = tf.function(
         model.elbo,
-        autograph=False,
         input_signature=[(tensor_spec, tensor_spec)],
     )
 
-    @tf.function(autograph=False)
+    @tf.function()
     def model_closure():
         return - elbo(Datum.cdata)
 

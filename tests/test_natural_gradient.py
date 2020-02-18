@@ -71,7 +71,7 @@ def assert_gpr_vs_vgp(m1: tf.Module,
 
     assert m2_ll_before != m1_ll_before
 
-    @tf.function(autograph=False)
+    @tf.function()
     def loss_cb() -> tf.Tensor:
         return - m2.log_marginal_likelihood()
 
@@ -81,7 +81,7 @@ def assert_gpr_vs_vgp(m1: tf.Module,
 
     opt = NaturalGradient(gamma)
 
-    @tf.function(autograph=False)
+    @tf.function()
     def minimize_step():
         opt.minimize(loss_cb, var_list=[params])
 
@@ -102,7 +102,7 @@ def assert_sgpr_vs_svgp(m1: tf.Module, m2: tf.Module):
 
     assert m2_ll_before != m1_ll_before
 
-    @tf.function(autograph=False)
+    @tf.function()
     def loss_cb() -> tf.Tensor:
         return - m2.log_marginal_likelihood(data)
 
