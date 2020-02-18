@@ -13,41 +13,57 @@
 # limitations under the License.
 
 import os
+from unittest import mock
+
 import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
-from gpflow.config import (default_float, default_int, default_jitter, set_default_float,
-                           set_default_int, set_default_jitter, set_default_summary_fmt,
-                           default_summary_fmt, set_default_positive_bijector,
-                           default_positive_bijector)
+from gpflow.config import (
+    default_float,
+    default_int,
+    default_jitter,
+    default_positive_bijector,
+    default_summary_fmt,
+    set_default_float,
+    set_default_int,
+    set_default_jitter,
+    set_default_positive_bijector,
+    set_default_summary_fmt,
+)
 from gpflow.utilities import to_default_float, to_default_int
 
 
-def test_env_variables():
-    os.environ["GPFLOW_INT"] = "int64"
-    os.environ["GPFLOW_FLOAT"] = "float32"
-    os.environ["GPFLOW_POSITIVE_BIJECTOR"] = "exp"
-    os.environ["GPFLOW_POSITIVE_MINIMUM"] = "1e-3"
-    os.environ["GPFLOW_SUMMARY_FMT"] = "simple"
-    os.environ["GPFLOW_JITTER"] = "1e-2"
-
-    config = gpflow.config.Config()
-    assert config.int == np.int64
-    assert config.float == np.float32
-    assert config.positive_bijector == "exp"
-    assert config.positive_minimum == 1e-3
-    assert config.summary_fmt == "simple"
-    assert config.jitter == 1e-2
+_env_values = [
+    ("summary_fmt", "simple", "simple"),
+    ("int", "int16", np.int16),
+    ("int", "int64", np.int64),
+    ("float", "float16", np.float16),
+    ("float", "float32", np.float32),
+    ("positive_bijector", "exp", "exp"),
+    ("positive_bijector", "softplus", "softplus"),
+    ("positive_minimum", "1e-3", 1e-3),
+    ("jitter", "1e-2", 1e-2),
+]
 
 
-@pytest.mark.parametrize("key", ["INT", "FLOAT", "POSITIVE_BIJECTOR", "POSITIVE_MINIMUM", "JITTER"])
-def test_env_variables_failures(key):
-    os.environ[f"GPFLOW_{key}"] = "garbage"
-    with pytest.raises(TypeError):
-        gpflow.config.Config()
+@pytest.mark.parametrize("attr_name, value, expected_value", _env_values)
+def test_env_variables(attr_name, value, expected_value):
+    env_name = f"GPFLOW_{attr_name.upper()}"
+    with mock.patch.dict("os.environ", {env_name: value}):
+        assert os.environ[env_name] == value
+        config = gpflow.config.Config()
+        assert getattr(config, attr_name) == expected_value
+
+
+@pytest.mark.parametrize("attr_name", set(list(zip(*_env_values))[0][1:]))
+def test_env_variables_failures(attr_name):
+    env_name = f"GPFLOW_{attr_name.upper()}"
+    with mock.patch.dict("os.environ", {env_name: "garbage"}):
+        with pytest.raises(TypeError):
+            gpflow.config.Config()
 
 
 @pytest.mark.parametrize('getter, setter, valid_type_1, valid_type_2', [
