@@ -37,13 +37,13 @@ from gpflow.utilities import to_default_float, to_default_int
 
 
 _env_values = [
-    ("summary_fmt", "simple", "simple"),
     ("int", "int16", np.int16),
     ("int", "int64", np.int64),
     ("float", "float16", np.float16),
     ("float", "float32", np.float32),
     ("positive_bijector", "exp", "exp"),
     ("positive_bijector", "softplus", "softplus"),
+    ("summary_fmt", "simple", "simple"),
     ("positive_minimum", "1e-3", 1e-3),
     ("jitter", "1e-2", 1e-2),
 ]
@@ -58,8 +58,10 @@ def test_env_variables(attr_name, value, expected_value):
         assert getattr(config, attr_name) == expected_value
 
 
-@pytest.mark.parametrize("attr_name", set(list(zip(*_env_values))[0][1:]))
+@pytest.mark.parametrize("attr_name", set(list(zip(*_env_values))[0]))
 def test_env_variables_failures(attr_name):
+    if attr_name == "summary_fmt":
+        pytest.skip("The `summary_fmt` validation cannot be performed.")
     env_name = f"GPFLOW_{attr_name.upper()}"
     with mock.patch.dict("os.environ", {env_name: "garbage"}):
         with pytest.raises(TypeError):
