@@ -30,6 +30,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 # %matplotlib inline
 
+np.random.seed(1)  # for reproducibility of this notebook
+
 CMAP = plt.get_cmap('Blues')
 
 # %%
