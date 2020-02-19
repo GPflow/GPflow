@@ -77,6 +77,7 @@ x_var_init = tf.convert_to_tensor(np.ones((num_data, latent_dim)), dtype=default
 # Pick inducing inputs randomly from dataset initialization:
 
 # %%
+np.random.seed(1)  # for reproducibility
 inducing_variable = tf.convert_to_tensor(np.random.permutation(x_mean_init.numpy())[:num_inducing], dtype=default_float())
 
 # %% [markdown]
