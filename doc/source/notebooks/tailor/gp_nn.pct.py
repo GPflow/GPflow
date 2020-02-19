@@ -151,13 +151,13 @@ data_iterator = iter(dataset)
 adam_opt = tf.optimizers.Adam(0.001)
 
 
-@tf.function()
+@tf.function
 def loss_cb(batch: Tuple[tf.Tensor, tf.Tensor]):
     loss_value = -model.elbo(batch)
     return loss_value
 
 
-@tf.function()
+@tf.function
 def optimization_step():
     batch = next(data_iterator)
     func = lambda: loss_cb(batch)

@@ -57,7 +57,7 @@ def test_svgp(whiten, q_diag):
         input_signature=[(tensor_spec, tensor_spec)],
     )
 
-    @tf.function()
+    @tf.function
     def model_closure():
         return - elbo(Datum.data)
 
@@ -84,7 +84,7 @@ def test_multiclass():
         input_signature=[(tensor_spec, tensor_spec)],
     )
 
-    @tf.function()
+    @tf.function
     def model_closure():
         return - elbo(Datum.cdata)
 
