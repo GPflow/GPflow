@@ -442,7 +442,7 @@ model = gpflow.models.GPMC(data, kernel, likelihood)
 
 # %%
 model.kernel.kernels[0].lengthscale.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
-model.kernel.kernels[0].variance.prior =  tfp.distributions.Gamma(f64(1.), f64(1.))
+model.kernel.kernels[0].variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 model.kernel.kernels[1].variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 
 gpflow.utilities.print_summary(model)

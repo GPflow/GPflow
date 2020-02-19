@@ -36,6 +36,9 @@ from gpflow.base import Parameter
 
 from gpflow.ci_utils import ci_niter
 
+# for reproducibility of this notebook:
+np.random.seed(1)  
+tf.random.set_seed(2)
 # %matplotlib inline
 
 # %% [markdown]

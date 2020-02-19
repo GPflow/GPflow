@@ -23,7 +23,6 @@
 # %matplotlib inline
 import itertools
 import numpy as np
-import numpy.random as rnd
 import time
 import gpflow
 import tensorflow as tf
@@ -32,6 +31,9 @@ import matplotlib.pyplot as plt
 from gpflow.ci_utils import ci_niter
 plt.style.use('ggplot')
 
+# for reproducibility of this notebook:
+rng = np.random.RandomState(123)
+tf.random.set_seed(42)
 
 # %% [markdown]
 # ## Generating data
@@ -46,8 +48,8 @@ def func(x):
 
 N = 10000  # Number of training observations
 
-X = rnd.rand(N, 1) * 2 - 1  # X values
-Y = func(X) + 0.2 * rnd.randn(N, 1)  # Noisy Y values
+X = rng.rand(N, 1) * 2 - 1  # X values
+Y = func(X) + 0.2 * rng.randn(N, 1)  # Noisy Y values
 data = (X, Y)
 
 # %% [markdown]
