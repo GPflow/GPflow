@@ -35,6 +35,13 @@ class MultioutputKernel(Kernel):
     `full_output_cov` is set to True the covariance matrix will be filled with zeros
     until the appropriate size is reached.
     """
+
+    @property
+    @abc.abstractmethod
+    def num_latents(self):
+        """The number of latent GPs in the multioutput kernel"""
+        raise NotImplementedError
+
     @abc.abstractmethod
     def K(self, X, X2=None, full_output_cov=True):
         """
@@ -76,22 +83,27 @@ class SharedIndependent(MultioutputKernel):
     Note: this class is created only for testing and comparison purposes.
     Use `gpflow.kernels` instead for more efficient code.
     """
-    def __init__(self, kernel: Kernel, output_dimensionality: int):
+    def __init__(self, kernel: Kernel, output_dim: int):
         super().__init__()
         self.kernel = kernel
-        self.P = output_dimensionality
+        self.output_dim = output_dim
+
+    @property
+    def num_latents(self):
+        # In this case number of latent GPs (L) == output_dim (P)
+        return self.output_dim
 
     def K(self, X, X2=None, full_output_cov=True):
         K = self.kernel.K(X, X2)  # [N, N2]
         if full_output_cov:
-            Ks = tf.tile(K[..., None], [1, 1, self.P])  # [N, N2, P]
+            Ks = tf.tile(K[..., None], [1, 1, self.output_dim])  # [N, N2, P]
             return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # [N, P, N2, P]
         else:
-            return tf.tile(K[None, ...], [self.P, 1, 1])  # [P, N, N2]
+            return tf.tile(K[None, ...], [self.output_dim, 1, 1])  # [P, N, N2]
 
     def K_diag(self, X, full_output_cov=True):
         K = self.kernel.K_diag(X)  # N
-        Ks = tf.tile(K[:, None], [1, self.P])  # [N, P]
+        Ks = tf.tile(K[:, None], [1, self.output_dim])  # [N, P]
         return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
 
 
@@ -101,7 +113,11 @@ class SeparateIndependent(MultioutputKernel, Combination):
     - Independent: Latents are uncorrelated a priori.
     """
     def __init__(self, kernels, name=None):
-        Combination.__init__(self, kernels, name)
+        super().__init__(kernels=kernels, name=name)
+
+    @property
+    def num_latents(self):
+        return len(self.kernels)
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
@@ -138,8 +154,12 @@ class LinearCoregionalization(IndependentLatent, Combination):
     Linear mixing of the latent GPs to form the output.
     """
     def __init__(self, kernels, W, name=None):
-        Combination.__init__(self, kernels, name)
+        Combination.__init__(self, kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
+
+    @property
+    def num_latents(self):
+        return self.W.shape[-1]  # L
 
     def Kgg(self, X, X2):
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
