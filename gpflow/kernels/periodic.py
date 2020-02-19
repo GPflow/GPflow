@@ -31,7 +31,7 @@ class Periodic(Kernel):
     σ² is the variance parameter,
     γ is the period parameter.
 
-    NOTE: that usually we have a factor of 4 instead of 0.5 in front but this
+    NOTE: usually we have a factor of 4 instead of 0.5 in front but this
         is absorbed into the lengthscale hyperparameter.
     NOTE: periodic kernel uses `active_dims` of a base kernel, therefore
         the constructor doesn't have it as an argument.
