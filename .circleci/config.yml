@@ -33,6 +33,31 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
+  update-docs:
+    branches:
+      only:
+        - vincent/docs
+    docker:
+      - image: awav/tensorflow:2.0-preview
+        environment:
+            ORGANIZATION: GPflow
+            PROJECT: docs
+            CIRCLE_BRANCH: master
+
+    steps:
+      - run:
+          name: Trigger the Build Job in Docs
+          command: |
+            printf "Triggering an $PROJECT build on the $CIRCLE_BRANCH branch\n\n"
+
+            BUILD_INFO=$(curl -X POST -H -d \
+                "{}" \
+                "https://circleci.com/api/v1/project/$ORGANIZATION/$PROJECT/tree/$CIRCLE_BRANCH?circle-token=$DOCS_TOKEN")
+
+            printf "\n\nBuild triggered\n\n"
+            printf "Follow the progress of the build on \nhttps://circleci.com/gh/$ORGANIZATION/$PROJECT/tree/$CIRCLE_BRANCH"
+
+
 
   deploy:
     docker:
