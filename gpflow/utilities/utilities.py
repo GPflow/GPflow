@@ -1,6 +1,6 @@
 import re
 from copy import deepcopy
-from functools import lru_cache
+from functools import lru_cache, reduce
 from typing import Callable, Dict, List, Optional, Union, TypeVar, Any, Tuple
 
 import numpy as np
@@ -321,3 +321,22 @@ def _str_tensor_value(value: np.ndarray):
         out = f"{brackets}{out}..."
 
     return out
+
+
+# https://stackoverflow.com/a/31174427
+# getattr and setattr on nested subojectes
+def rsetattr(obj, attr, val):
+    pre, _, post = attr.rpartition('.')
+    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+
+
+def rgetattr(obj, attr, *args):
+    def _getattr(obj, attr):
+        return getattr(obj, attr, *args)
+    return reduce(_getattr, [obj] + attr.split('.'))
+
+
+def parameters_to_variables(model: tf.Module):
+    for k, v in parameter_dict(model).items():
+        if isinstance(v, Parameter):
+            rsetattr(model, k[1:], tf.Variable(v.numpy()))    
