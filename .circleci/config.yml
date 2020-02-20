@@ -33,7 +33,7 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
-  update-docs:
+  trigger-docs:
     docker:
       - image: awav/tensorflow:2.0-preview
         environment:
@@ -93,20 +93,23 @@ workflows:
   version: 2.1
   build_test_and_deploy:
     jobs:
-      - unit-test:
+    #   - unit-test:
+    #       filters:
+    #         tags:
+    #           only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+    #   - notebook-test:
+    #       filters:
+    #         tags:
+    #           only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - trigger-docs:
           filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - notebook-test:
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - deploy:
-          requires:
-            - unit-test
-            - notebook-test
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-            branches:
-              ignore: /.*/
+            branches: vincent/docs
+    #  - deploy:
+    #      requires:
+    #        - unit-test
+    #        - notebook-test
+    #      filters:
+    #        tags:
+    #          only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+    #        branches:
+    #          ignore: /.*/
