@@ -23,7 +23,7 @@ __all__ = [
     "read_values",
     "to_default_float",
     "to_default_int",
-    "parameters_to_variables"
+    "clone_and_freeze"
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -343,4 +343,3 @@ def clone_and_freeze(model: tf.Module) -> tf.Module:
         if isinstance(v, Parameter):
             rsetattr(frozen_model, k[1:], tf.Variable(v.numpy()))
     return frozen_model
-    
