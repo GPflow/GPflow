@@ -23,6 +23,7 @@ __all__ = [
     "read_values",
     "to_default_float",
     "to_default_int",
+    "parameters_to_variables"
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
