@@ -337,7 +337,10 @@ def rgetattr(obj, attr, *args):
     return reduce(_getattr, [obj] + attr.split('.'))
 
 
-def parameters_to_variables(model: tf.Module):
-    for k, v in parameter_dict(model).items():
+def clone_and_freeze(model: tf.Module) -> tf.Module:
+    frozen_model = deepcopy_components(model)
+    for k, v in parameter_dict(frozen_model).items():
         if isinstance(v, Parameter):
-            rsetattr(model, k[1:], tf.Variable(v.numpy()))    
+            rsetattr(frozen_model, k[1:], tf.Variable(v.numpy()))
+    return frozen_model
+    
