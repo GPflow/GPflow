@@ -32,6 +32,7 @@ import numpy as np
 import tensorflow as tf
 import gpflow
 from gpflow.ci_utils import ci_niter
+from gpflow.optimizers import NaturalGradient
 import matplotlib
 import matplotlib.pyplot as plt
 # %matplotlib inline
@@ -114,10 +115,12 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 def objective_closure():
     return - model.log_marginal_likelihood()
 
-opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure,
-             model.trainable_variables,
-             options=dict(maxiter=ci_niter(1000)))
+natgrad_opt = NaturalGradient(gamma=1.0)
+scipy_opt = gpflow.optimizers.Scipy()
+
+for _ in range(ci_niter(1000)):
+    scipy_opt.minimize(objective_closure, model.kernel.trainable_variables, options={'maxiter': 1})
+    natgrad_opt.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
 
 # %%
 # let's do some plotting!
@@ -132,7 +135,7 @@ plt.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
 
 plt.errorbar(X.squeeze(), Y.squeeze(), yerr=2*(np.sqrt(NoiseVar)).squeeze(),
              marker='x', lw=0, elinewidth=1., color='C1')
-plt.xlim(-5, 5);
+plt.xlim(-5, 5)
 
 # %% [markdown]
 # ### Questions for the reader
@@ -204,10 +207,8 @@ from gpflow.utilities import set_trainable
 set_trainable(model.kernel, False)
 set_trainable(model.likelihood, False)
 
-opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure,
-             model.trainable_variables,
-             options=dict(maxiter=ci_niter(1000)))
+for _ in range(ci_niter(1000)):
+    natgrad_opt.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
 
 # %% [markdown]
 # We've now fitted the VGP model to the data, but without optimizing over the hyperparameters. Plotting the data, we see that the fit is not terrible, but hasn't made use of our knowledge of the varying noise. 
@@ -224,7 +225,7 @@ ax.plot(xx, mu + 2*np.sqrt(var), 'C0', lw=0.5)
 ax.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
 
 ax.plot(X, Y, 'C1x', mew=2)
-ax.set_xlim(-5, 5);
+ax.set_xlim(-5, 5)
 
 # %% [markdown]
 # ### Optimizing the noise variances
@@ -240,9 +241,9 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 def objective_closure():
     return - model.log_marginal_likelihood()
 
-opt.minimize(objective_closure,
-             model.trainable_variables,
-             options=dict(maxiter=ci_niter(1000)))
+for _ in range(ci_niter(1000)):
+    scipy_opt.minimize(objective_closure, model.kernel.trainable_variables, options={'maxiter': 1})
+    natgrad_opt.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
 
 # %% [markdown]
 # ### Plotting the fitted model
@@ -265,7 +266,7 @@ ax.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
 
 ax.plot(X, Y, 'C1x', mew=2)
 ax.set_xlim(-5, 5)
-ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), 'C2--');
+ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), 'C2--')
 
 # %%
 from gpflow.utilities import print_summary
