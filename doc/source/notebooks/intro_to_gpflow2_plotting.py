@@ -15,8 +15,8 @@ def summary_matplotlib_image(figures, step, fmt="png"):
         tf.summary.image(name=name, data=image, step=step)
 
 
-def plotting_regression(X, Y, xx, mean, var, samples):
-    fig = plt.figure(figsize=(12, 6))
+def plotting_regression(X, Y, xx, mean, var, samples, fig=None):
+    fig = plt.figure(figsize=(12, 6)) if fig is None else fig
     ax = fig.add_subplot(111)
     ax.plot(xx, mean, 'C0', lw=2)
     ax.fill_between(xx[:, 0],

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.3.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -25,11 +25,12 @@
 
 # %%
 from typing import Tuple, Optional
-from pathlib import Path
 
 import datetime
 import io
+import os
 import matplotlib.pyplot as plt
+import tempfile
 
 import numpy as np
 import tensorflow as tf
@@ -45,17 +46,21 @@ warnings.filterwarnings('ignore')
 # Make `tensorboard` work inside notebook:
 
 # %%
-output_logdir = "/tmp/tensorboard"
+output_logdir = os.path.join(tempfile.gettempdir(),"tensorboard")
+try:
+    tf.io.gfile.rmtree(output_logdir)
+except tf.errors.NotFoundError:
+    pass
+tf.io.gfile.makedirs(output_logdir)
+tf.io.gfile.rmtree(output_logdir)
 
-# !rm -rf "{output_logdir}"
-# !mkdir "{output_logdir}"
-
+# %%
 # %load_ext tensorboard
 # %matplotlib inline
 
 
 def enumerated_logdir(_logdir_id: int = [0]):
-    logdir = Path(output_logdir, str(_logdir_id[0]))
+    logdir = os.path.join(output_logdir, str(_logdir_id[0]))
     _logdir_id[0] += 1
     return str(logdir)
 
@@ -231,6 +236,7 @@ def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
     batches = iter(train_dataset)
 
     with summary_writer.as_default():
+        fig = plt.figure(figsize=(12, 6)) 
         for epoch in range(epochs):
             for _ in range(num_batches_per_epoch):
                 tf_optimization_step(model, next(batches))
@@ -241,9 +247,10 @@ def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
 
                 mean, var = model.predict_f(samples_input)
                 samples = model.predict_f_samples(samples_input, num_samples)
-                fig = plotting_regression(X, Y, samples_input, mean, var, samples)
-
+                
+                plotting_regression(X, Y, samples_input, mean, var, samples, fig=fig)
                 summary_matplotlib_image(dict(model_samples=fig), step=epoch)
+                fig.clear()
                 tf.summary.scalar('elbo', data=model.elbo(data), step=epoch)
                 tf.summary.scalar('likelihood/variance', data=model.likelihood.variance, step=epoch)
                 tf.summary.scalar('kernel/lengthscale', data=model.kernel.lengthscale, step=epoch)
@@ -362,3 +369,35 @@ gpflow.utilities.parameter_dict(model)
 # %%
 params = gpflow.utilities.parameter_dict(model)
 gpflow.utilities.multiple_assign(model, params)
+
+# %% [markdown]
+# ## Exporting as tf.saved_model
+#
+# At present tensorflow does not support saving custom variables like instances of the `gpflow.base.Parameter` class, see [here](https://github.com/tensorflow/tensorflow/issues/34908).
+#
+# However, once trained completed, it is possible to clone the model and replace all Parameters with Variables holding the same value:
+
+# %%
+frozen_model = gpflow.utilities.clone_and_freeze(model)
+frozen_model
+
+# %% [markdown]
+# In order to save the model we need to define a `tf.Module` holding the `tf.function`'s that we wish to export, as well as a reference to the underlying model:
+
+# %%
+module = tf.Module()
+@tf.function(input_signature=[tf.TensorSpec(shape=[None,1], dtype=tf.float64)])
+def predict_f(x):
+    return frozen_model.predict_f(x,full_cov=False,full_output_cov=False)
+module.model = frozen_model
+module.predict_f = predict_f
+
+# %%
+save_dir = os.path.join(tempfile.gettempdir(),'saved_model')
+tf.saved_model.save(module, save_dir)
+
+# %%
+loaded_model = tf.saved_model.load(save_dir)
+
+# %%
+[np.testing.assert_array_almost_equal(x,y) for (x,y) in zip (model.predict_f(inducing_variable),loaded_model.predict_f(inducing_variable))]
