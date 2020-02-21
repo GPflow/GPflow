@@ -27,22 +27,30 @@ import tensorflow as tf
 
 from ..base import Module
 
+ActiveDims = Union[slice, list]
+
+
 class Kernel(Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.
     """
 
-    def __init__(self,
-                 active_dims: Optional[Union[slice, list]] = None,
-                 name: Optional[str] = None):
+    def __init__(self, active_dims: Optional[ActiveDims] = None, name: Optional[str] = None):
         """
-        :param active_dims: active dimensions, has the slice type.
+        :param active_dims: active dimensions, either a slice or list of
+            indices into the columns of X.
         :param name: optional kernel name.
         """
         super().__init__(name=name)
-        if isinstance(active_dims, list):
-            active_dims = np.array(active_dims)
-        self._active_dims = active_dims
+        self._active_dims = self._normalize_active_dims(active_dims)
+
+    @staticmethod
+    def _normalize_active_dims(value):
+        if value is None:
+            value = slice(None, None, None)
+        if not isinstance(value, slice):
+            value = np.array(value, dtype=int)
+        return value
 
     @property
     def active_dims(self):
@@ -50,11 +58,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
 
     @active_dims.setter
     def active_dims(self, value):
-        if value is None:
-            value = slice(None, None, None)
-        if not isinstance(value, slice):
-            value = np.array(value, dtype=int)
-        self._active_dims = value
+        self._active_dims = self._normalize_active_dims(value)
 
     def on_separate_dims(self, other):
         """

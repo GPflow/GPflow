@@ -18,6 +18,7 @@
 #
 import os
 import sys
+import types
 sys.path.insert(0, os.path.abspath('./ext'))
 
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
@@ -368,3 +369,19 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #
 # texinfo_no_detailmenu = False
+
+
+def setup(app):
+    """ Entry point to sphinx build customisation. """
+    app.connect("autodoc-skip-member", autodoc_skip_member_callback)
+
+
+def autodoc_skip_member_callback(app, what, name, obj, skip, options):
+    """
+    Only skip special methods and functions, including `__init__`, if they have no docstring.
+    """
+    if isinstance(obj, (types.FunctionType, types.MethodType)):
+        if getattr(obj, "__doc__", None) is not None:
+            return False  # never skip methods containing a docstring
+
+    return skip
