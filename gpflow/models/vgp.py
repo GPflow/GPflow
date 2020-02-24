@@ -105,17 +105,17 @@ class VGP(GPModel):
 
         return tf.reduce_sum(var_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
+    def predict_f(self, Xnew: InputData, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
-        x_data, _y_data = self.data
-        mu, var = conditional(predict_at,
-                              x_data,
+        X_data, _Y_data = self.data
+        mu, var = conditional(Xnew,
+                              X_data,
                               self.kernel,
                               self.q_mu,
                               q_sqrt=self.q_sqrt,
                               full_cov=full_cov,
                               white=True)
-        return mu + self.mean_function(predict_at), var
+        return mu + self.mean_function(Xnew), var
 
 
 class VGPOpperArchambeau(GPModel):
@@ -197,7 +197,7 @@ class VGPOpperArchambeau(GPModel):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, y_data)
         return tf.reduce_sum(v_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
         r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
@@ -212,11 +212,11 @@ class VGPOpperArchambeau(GPModel):
 
         x_data, _y_data = self.data
         # compute kernel things
-        Kx = self.kernel(x_data, predict_at)
+        Kx = self.kernel(x_data, Xnew)
         K = self.kernel(x_data)
 
         # predictive mean
-        f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(predict_at)
+        f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)
 
         # predictive var
         A = K + tf.linalg.diag(tf.transpose(1. / tf.square(self.q_lambda)))
@@ -224,7 +224,7 @@ class VGPOpperArchambeau(GPModel):
         Kx_tiled = tf.tile(Kx[None, ...], [self.num_latent, 1, 1])
         LiKx = tf.linalg.triangular_solve(L, Kx_tiled)
         if full_cov:
-            f_var = self.kernel(predict_at) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
+            f_var = self.kernel(Xnew) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
         else:
-            f_var = self.kernel(predict_at, full=False) - tf.reduce_sum(tf.square(LiKx), 1)
+            f_var = self.kernel(Xnew, full=False) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)

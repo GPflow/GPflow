@@ -212,7 +212,7 @@ def test_models_with_mean_functions_changes(model_class):
     mutliplication with one does not.
     """
     data = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, 1)
-    predict_at = rng.randn(Datum.Ntest, Datum.input_dim)
+    Xnew = rng.randn(Datum.Ntest, Datum.input_dim)
     inducing_variable = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
@@ -266,8 +266,8 @@ def test_models_with_mean_functions_changes(model_class):
     else:
         raise (NotImplementedError)
 
-    mu_zero, var_zero = model_zero_mean.predict_f(predict_at)
-    mu_non_zero, var_non_zero = model_non_zero_mean.predict_f(predict_at)
+    mu_zero, var_zero = model_zero_mean.predict_f(Xnew)
+    mu_non_zero, var_non_zero = model_non_zero_mean.predict_f(Xnew)
     # predictive variance remains unchanged after modifying mean function
     assert np.all(var_zero.numpy() == var_non_zero.numpy())
     # predictive mean changes after modifying mean function

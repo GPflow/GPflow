@@ -143,14 +143,15 @@ class SGPR(SGPRUpperMixin):
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
-        x_data, y_data = self.data
-        num_inducing = len(self.inducing_variable)
-        num_data = tf.cast(tf.shape(y_data)[0], default_float())
-        output_dim = tf.cast(tf.shape(y_data)[1], default_float())
+        X_data, Y_data = self.data
 
-        err = y_data - self.mean_function(x_data)
-        Kdiag = self.kernel(x_data, full=False)
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        num_inducing = len(self.inducing_variable)
+        num_data = tf.cast(tf.shape(Y_data)[0], default_float())
+        output_dim = tf.cast(tf.shape(Y_data)[1], default_float())
+
+        err = Y_data - self.mean_function(X_data)
+        Kdiag = self.kernel(X_data, full=False)
+        kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
         sigma = tf.sqrt(self.likelihood.variance)

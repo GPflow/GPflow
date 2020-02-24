@@ -98,19 +98,19 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @abc.abstractmethod
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
+    def predict_f(self, Xnew: InputData, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
         raise NotImplementedError
 
     def predict_f_samples(self,
-                          predict_at: DataPoint,
+                          Xnew: InputData,
                           num_samples: int = 1,
                           full_cov: bool = True,
                           full_output_cov: bool = False) -> tf.Tensor:
         """
         Produce samples from the posterior latent function(s) at the input points.
         """
-        mu, var = self.predict_f(predict_at, full_cov=full_cov)  # [N, P], [P, N, N]
+        mu, var = self.predict_f(Xnew, full_cov=full_cov)  # [N, P], [P, N, N]
         num_latent = var.shape[0]
         num_elems = tf.shape(var)[1]
         var_jitter = ops.add_to_diagonal(var, default_jitter())
@@ -120,18 +120,18 @@ class GPModel(BayesianModel):
         mu_t = tf.linalg.adjoint(mu)  # [P, N]
         return tf.transpose(mu_t[..., np.newaxis] + LV)  # [S, N, P]
 
-    def predict_y(self, predict_at: DataPoint, full_cov: bool = False,
+    def predict_y(self, Xnew: InputData, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.
         """
-        f_mean, f_var = self.predict_f(predict_at, full_cov=full_cov, full_output_cov=full_output_cov)
+        f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(self, data: Data, full_cov: bool = False, full_output_cov: bool = False):
         """
         Compute the log density of the data at the new data points.
         """
-        x, y = data
-        f_mean, f_var = self.predict_f(x, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_density(f_mean, f_var, y)
+        X, Y = data
+        f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
+        return self.likelihood.predict_density(f_mean, f_var, Y)

@@ -180,7 +180,7 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
@@ -188,7 +188,7 @@ class BayesianGPLVM(GPModel):
 
         Note: This model does not allow full output covariances.
 
-        :param predict_at: Point to predict at.
+        :param Xnew: points at which to predict
         """
         assert full_output_cov == False
         pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
@@ -200,7 +200,7 @@ class BayesianGPLVM(GPModel):
                                          (self.kernel, self.inducing_variable)),
                              axis=0)
         jitter = default_jitter()
-        Kus = covariances.Kuf(self.inducing_variable, self.kernel, predict_at)
+        Kus = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)
         sigma2 = self.likelihood.variance
         sigma = tf.sqrt(sigma2)
         L = tf.linalg.cholesky(covariances.Kuu(self.inducing_variable, self.kernel, jitter=jitter))
@@ -215,13 +215,13 @@ class BayesianGPLVM(GPModel):
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kernel(predict_at) + tf.linalg.matmul(tmp2, tmp2, transpose_a=True) \
+            var = self.kernel(Xnew) + tf.linalg.matmul(tmp2, tmp2, transpose_a=True) \
                   - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
             shape = tf.stack([1, 1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
-            var = self.kernel(predict_at, full=False) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(
+            var = self.kernel(Xnew, full=False) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(
                 tf.square(tmp1), 0)
             shape = tf.stack([1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
-        return mean + self.mean_function(predict_at), var
+        return mean + self.mean_function(Xnew), var
