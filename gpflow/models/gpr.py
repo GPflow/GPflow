@@ -17,12 +17,10 @@ from typing import Optional, Tuple
 import tensorflow as tf
 
 import gpflow
-from .model import GPModel
+from .model import RegressionData, GPModel
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
-
-Data = Tuple[tf.Tensor, tf.Tensor]
 
 
 class GPR(GPModel):
@@ -40,14 +38,21 @@ class GPR(GPModel):
             \mathcal N\left(\mathbf y\,|\, 0, \mathbf K + \sigma_n \mathbf I\right)
     """
 
-    def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None,
+    def __init__(self, data: RegressionData, kernel: Kernel, mean_function: Optional[MeanFunction] = None,
                  noise_variance: float = 1.0):
         likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, y_data = data
         super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
         self.data = data
 
-    def log_likelihood(self):
+    @property
+    def has_own_data(self):
+        True
+
+    def training_loss(self, data: Optional[RegressionData] = None):
+        return - (self.log_marginal_likelihood(data) + self.log_prior())
+
+    def log_marginal_likelihood(self, data: Optional[RegressionData] = None):
         r"""
         Computes the log likelihood.
 
@@ -55,17 +60,20 @@ class GPR(GPModel):
             \log p(Y | \theta).
 
         """
-        x, y = self.data
-        K = self.kernel(x)
-        num_data = x.shape[0]
+        if data is None:
+            data = self.data
+
+        X, Y = data
+        K = self.kernel(X)
+        num_data = X.shape[0]
         k_diag = tf.linalg.diag_part(K)
         s_diag = tf.fill([num_data], self.likelihood.variance)
         ks = tf.linalg.set_diag(K, k_diag + s_diag)
         L = tf.linalg.cholesky(ks)
-        m = self.mean_function(x)
+        m = self.mean_function(X)
 
         # [R,] log-likelihoods for each independent dimension of Y
-        log_prob = multivariate_normal(y, m, L)
+        log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
     def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):

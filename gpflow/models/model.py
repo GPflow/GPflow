@@ -14,7 +14,7 @@
 
 import abc
 import warnings
-from typing import Optional, Tuple, TypeVar
+from typing import Callable, Optional, Tuple, TypeVar
 
 import numpy as np
 import tensorflow as tf
@@ -26,23 +26,15 @@ from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops
 
-Data = TypeVar('Data', Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
-DataPoint = tf.Tensor
+InputData = tf.Tensor
+OutputData = tf.Tensor
+RegressionData = Tuple[InputData, OutputData]
+Data = TypeVar('Data', RegressionData, InputData)
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
 class BayesianModel(Module):
     """ Bayesian model. """
-
-    def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        msg = "`BayesianModel.neg_log_marginal_likelihood` is deprecated and " \
-              " and will be removed in a future release. Please update your code " \
-              " to use `BayesianModel.log_marginal_likelihood`."
-        warnings.warn(msg, category=DeprecationWarning)
-        return - self.log_marginal_likelihood(*args, **kwargs)
-
-    def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return self.log_likelihood(*args, **kwargs) + self.log_prior()
 
     def log_prior(self) -> tf.Tensor:
         log_priors = [p.log_prior() for p in self.trainable_parameters]
@@ -51,9 +43,20 @@ class BayesianModel(Module):
         else:
             return tf.convert_to_tensor(0., dtype=default_float())
 
+    @property
     @abc.abstractmethod
-    def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
+    def has_own_data(self) -> bool:
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def training_loss(self, data: Optional[Data] = None) -> tf.Tensor:
+        raise NotImplementedError
+
+    def training_loss_closure(self, data: Optional[Data] = None) -> Callable[[], tf.Tensor]:
+        def training_loss_closure():
+            return self.training_loss(data)
+
+        return training_loss_closure
 
 
 class GPModel(BayesianModel):
@@ -98,12 +101,12 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @abc.abstractmethod
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
+    def predict_f(self, predict_at: InputData, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
         raise NotImplementedError
 
     def predict_f_samples(self,
-                          predict_at: DataPoint,
+                          predict_at: InputData,
                           num_samples: int = 1,
                           full_cov: bool = True,
                           full_output_cov: bool = False) -> tf.Tensor:
@@ -120,7 +123,7 @@ class GPModel(BayesianModel):
         mu_t = tf.linalg.adjoint(mu)  # [P, N]
         return tf.transpose(mu_t[..., np.newaxis] + LV)  # [S, N, P]
 
-    def predict_y(self, predict_at: DataPoint, full_cov: bool = False,
+    def predict_y(self, predict_at: InputData, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.
@@ -128,7 +131,7 @@ class GPModel(BayesianModel):
         f_mean, f_var = self.predict_f(predict_at, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
-    def predict_log_density(self, data: Data, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_log_density(self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False):
         """
         Compute the log density of the data at the new data points.
         """

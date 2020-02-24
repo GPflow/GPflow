@@ -24,12 +24,12 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import Data, GPModel, MeanAndVariance
+from .model import RegressionData, GPModel, MeanAndVariance
 
 
 class GPMC(GPModel):
     def __init__(self,
-                 data: Data,
+                 data: RegressionData,
                  kernel: Kernel,
                  likelihood: Likelihood,
                  mean_function: Optional[MeanFunction] = None,
@@ -56,7 +56,17 @@ class GPMC(GPModel):
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
 
-    def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
+    @property
+    def has_own_data(self) -> bool:
+        return True
+
+    def training_loss(self, data: Optional[RegressionData] = None) -> tf.Tensor:
+        return - (self.log_likelihood(data) + self.log_prior())
+
+    def target_log_prob_fn(self):
+        return self.log_likelihood() + self.log_prior()
+
+    def log_likelihood(self, data: Optional[RegressionData] = None) -> tf.Tensor:
         r"""
         Construct a tf function to compute the likelihood of a general GP
         model.
@@ -64,7 +74,9 @@ class GPMC(GPModel):
             \log p(Y, V | theta).
 
         """
-        x_data, y_data = self.data
+        if data is None:
+            data = self.data
+        x_data, y_data = data
         K = self.kernel(x_data)
         L = tf.linalg.cholesky(K + tf.eye(tf.shape(x_data)[0], dtype=default_float()) * default_jitter())
         F = tf.linalg.matmul(L, self.V) + self.mean_function(x_data)

@@ -27,7 +27,7 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import GPModel
+from .model import InputData, GPModel
 from .util import inducingpoint_wrapper
 
 
@@ -36,7 +36,7 @@ class GPLVM(GPR):
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
     def __init__(self,
-                 data: tf.Tensor,
+                 data: InputData,
                  latent_dim: int,
                  x_data_mean: Optional[tf.Tensor] = None,
                  kernel: Optional[Kernel] = None,
@@ -73,7 +73,7 @@ class GPLVM(GPR):
 
 class BayesianGPLVM(GPModel):
     def __init__(self,
-                 data: tf.Tensor,
+                 data: InputData,
                  x_data_mean: tf.Tensor,
                  x_data_var: tf.Tensor,
                  kernel: Kernel,
@@ -133,14 +133,22 @@ class BayesianGPLVM(GPModel):
         assert self.x_prior_var.shape[0] == self.num_data
         assert self.x_prior_var.shape[1] == self.num_latent
 
-    def log_likelihood(self):
+    @property
+    def has_own_data(self):
+        return True
+
+    def training_loss(self, data: Optional[InputData] = None):
+        return - (self.elbo(data) + self.log_prior())
+
+    def elbo(self, data: Optional[InputData] = None):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
         """
+        y_data = data if data is not None else self.data
+
         pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
 
-        y_data = self.data
         num_inducing = len(self.inducing_variable)
         psi0 = tf.reduce_sum(expectation(pX, self.kernel))
         psi1 = expectation(pX, (self.kernel, self.inducing_variable))
@@ -225,3 +233,6 @@ class BayesianGPLVM(GPModel):
             shape = tf.stack([1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(predict_at), var
+
+    def predict_log_density(self, data: InputData):
+        raise NotImplementedError

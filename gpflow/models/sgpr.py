@@ -17,7 +17,7 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.kernels import Kernel
-from .model import MeanAndVariance, GPModel, Data
+from .model import MeanAndVariance, GPModel, RegressionData
 from .util import inducingpoint_wrapper
 from .. import likelihoods
 from ..config import default_float, default_jitter
@@ -113,7 +113,7 @@ class SGPR(SGPRUpperMixin):
     """
 
     def __init__(self,
-                 data: Data,
+                 data: RegressionData,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
                  inducing_variable: Optional[InducingPoints] = None,
@@ -137,13 +137,23 @@ class SGPR(SGPRUpperMixin):
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-    def log_likelihood(self):
+    @property
+    def has_own_data(self):
+        return True
+
+    def training_loss(self, data: Optional[RegressionData] = None):
+        return - (self.log_marginal_likelihood(data) + self.log_prior())
+
+    def log_marginal_likelihood(self, data: Optional[RegressionData] = None):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
-        x_data, y_data = self.data
+        if data is None:
+            data = self.data
+        x_data, y_data = data
+
         num_inducing = len(self.inducing_variable)
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
         output_dim = tf.cast(tf.shape(y_data)[1], default_float())
@@ -240,7 +250,7 @@ class SGPR(SGPRUpperMixin):
 
 class GPRFITC(SGPRUpperMixin):
     def __init__(self,
-                 data: Data,
+                 data: RegressionData,
                  kernel: Kernel,
                  mean_function: Optional[MeanFunction] = None,
                  inducing_variable: Optional[InducingPoints] = None,
@@ -283,8 +293,8 @@ class GPRFITC(SGPRUpperMixin):
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-    def common_terms(self):
-        x_data, y_data = self.data
+    def common_terms(self, data):
+        x_data, y_data = data
         num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)  # size [N, R]
         Kdiag = self.kernel(x_data, full=False)
@@ -308,7 +318,14 @@ class GPRFITC(SGPRUpperMixin):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def log_likelihood(self):
+    @property
+    def has_own_data(self):
+        return True
+
+    def training_loss(self, data: Optional[RegressionData] = None):
+        return - (self.fitc_log_marginal_likelihood(data) + self.log_prior())
+
+    def fitc_log_marginal_likelihood(self, data: Optional[RegressionData] = None):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -332,7 +349,10 @@ class GPRFITC(SGPRUpperMixin):
         # and let \alpha = V \beta
         # then Mahalanobis term = -0.5* ( \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha ) )
 
-        err, nu, Luu, L, alpha, beta, gamma = self.common_terms()
+        if data is None:
+            data = self.data
+
+        err, nu, Luu, L, alpha, beta, gamma = self.common_terms(data)
 
         mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) \
                           + 0.5 * tf.reduce_sum(tf.square(gamma))
@@ -361,7 +381,7 @@ class GPRFITC(SGPRUpperMixin):
         Compute the mean and variance of the latent function at some new points
         Xnew.
         """
-        _, _, Luu, L, _, _, gamma = self.common_terms()
+        _, _, Luu, L, _, _, gamma = self.common_terms(self.data)
         Kus = Kuf(self.inducing_variable, self.kernel, X)  # size  [M, X]new
 
         w = tf.linalg.triangular_solve(Luu, Kus, lower=True)  # size [M, X]new
