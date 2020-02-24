@@ -19,16 +19,14 @@ import os
 
 def is_continuous_integration():
     """
-    Returns `True` if notebooks are executed on CI system, otherwise `False`.
-    Also returns `False` is `DOCS` environment variable is set,
-    even when notebooks are executed on CI.
+    If the environment variable `DOCS` is set, always return False.
+    Otherwise, returns `True` if notebooks are executed on CI machine,
+    else `False`.
     """
-    ci = os.environ.get('CI', None)
-    docs = os.environ.get('DOCS', None)
-    if docs is not None:
+    if 'DOCS' in os.environ:
         return False
 
-    return (ci is not None)
+    return 'CI' in os.environ
 
 
 def ci_niter(n: int, test_n: int = 2):

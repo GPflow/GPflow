@@ -33,7 +33,7 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
-  trigger-docs:
+  trigger-docs-generation:
     docker:
       - image: awav/tensorflow:2.0-preview
         environment:
@@ -94,7 +94,7 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - trigger-docs:
+      - trigger-docs-generation:
           requires:
             - unit-test
             - notebook-test
