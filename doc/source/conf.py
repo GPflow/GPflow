@@ -41,8 +41,6 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # custom extension
-    'gpflow_api_ext',
     # builtin extansions
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
