@@ -228,5 +228,5 @@ class BayesianGPLVM(GPModel):
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(predict_at), var
 
-    def predict_log_density(self, data: InputData):
+    def predict_log_density(self, data: tf.Tensor):
         raise NotImplementedError
