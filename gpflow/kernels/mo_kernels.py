@@ -74,7 +74,6 @@ class MultioutputKernel(Kernel):
             return self.K_diag(X, full_output_cov=full_output_cov)
         return self.K(X, X2, full_output_cov=full_output_cov)
 
-
 class SharedIndependent(MultioutputKernel):
     """
     - Shared: we use the same kernel for each latent GP

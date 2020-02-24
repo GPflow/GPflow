@@ -21,13 +21,30 @@ in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
 import abc
 from functools import partial, reduce
 from typing import List, Optional, Union
+from enum import Enum, auto
 
 import numpy as np
 import tensorflow as tf
 
 from ..base import Module
 
+__all__ = ["Structure", "Kernel", "Combination", "ReducingCombination", "Sum", "Product"]
+
 ActiveDims = Union[slice, list]
+
+
+class Structure(Enum):
+    pass
+
+
+class KernelStructure(Structure):
+    full = "full"
+    diag = "diag"
+
+
+class MultioutputKernelStructure(Structure):
+    full = "full"
+    diag = "diag"
 
 
 class Kernel(Module, metaclass=abc.ABCMeta):
@@ -65,8 +82,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         Checks if the dimensions, over which the kernels are specified, overlap.
         Returns True if they are defined on different/separate dimensions and False otherwise.
         """
-        if isinstance(self.active_dims, slice) or isinstance(
-                other.active_dims, slice):
+        if isinstance(self.active_dims, slice) or isinstance(other.active_dims, slice):
             # Be very conservative for kernels defined over slices of dimensions
             return False
 
@@ -122,8 +138,9 @@ class Kernel(Module, metaclass=abc.ABCMeta):
             cov_reshaped = tf.reshape(cov, [-1, nlast, nlast])
             gather1 = tf.gather(tf.transpose(cov_reshaped, [2, 1, 0]), dims)
             gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), dims)
-            cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat([cov_shape[:-2], [ndims, ndims]], 0))
+            cov = tf.reshape(
+                tf.transpose(gather2, [2, 0, 1]), tf.concat([cov_shape[:-2], [ndims, ndims]], 0)
+            )
 
         return cov
 
@@ -137,8 +154,10 @@ class Kernel(Module, metaclass=abc.ABCMeta):
             return
 
         if ard_parameter.shape.rank > 0 and ard_parameter.shape[0] != len(self.active_dims):
-            raise ValueError(f"Size of `active_dims` {self.active_dims} does not match "
-                             f"size of ard parameter ({ard_parameter.shape[0]})")
+            raise ValueError(
+                f"Size of `active_dims` {self.active_dims} does not match "
+                f"size of ard parameter ({ard_parameter.shape[0]})"
+            )
 
     @abc.abstractmethod
     def K(self, X, X2=None):
@@ -148,18 +167,17 @@ class Kernel(Module, metaclass=abc.ABCMeta):
     def K_diag(self, X):
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, full=True, presliced=False):
-        if (not full) and (X2 is not None):
+    def __call__(self, X, X2=None, structure=Structure.full, presliced=False):
+        if structure == Structure.diagonal and (X2 is not None):
             raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
 
         if not presliced:
             X, X2 = self.slice(X, X2)
 
-        if not full:
+        if structure == Structure.diagonal:
             assert X2 is None
             return self.K_diag(X)
-
-        else:
+        elif structure == Structure.full:
             return self.K(X, X2)
 
     def __add__(self, other):
@@ -214,7 +232,7 @@ class Combination(Kernel):
             dimlist = [k.active_dims for k in self.kernels]
             overlapping = False
             for i, dims_i in enumerate(dimlist):
-                for dims_j in dimlist[i + 1:]:
+                for dims_j in dimlist[i + 1 :]:
                     print(f"dims_i = {type(dims_i)}")
                     if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
                         overlapping = True
@@ -223,9 +241,7 @@ class Combination(Kernel):
 
 class ReducingCombination(Combination):
     def __call__(self, X, X2=None, full=True, presliced=False):
-        return self._reduce(
-            [k(X, X2, full=full, presliced=presliced) for k in self.kernels]
-        )
+        return self._reduce([k(X, X2, full=full, presliced=presliced) for k in self.kernels])
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         return self._reduce([k.K(X, X2) for k in self.kernels])
