@@ -247,7 +247,10 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     return input_module
 
 
-def deepcopy_components(input_module: tf.Module) -> tf.Module:
+M = TypeVar('M', bound=tf.Module)
+
+
+def deepcopy_components(input_module: M) -> M:
     """
     Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
