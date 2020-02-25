@@ -20,7 +20,7 @@ import os
 def is_continuous_integration():
     """
     If the environment variable `DOCS` is set, always returns False.
-    Otherwise, returns `True` if notebooks are executed on CICD, else `False`.
+    Otherwise, returns `True` if notebooks are executed on CI, else `False`.
     """
     if 'DOCS' in os.environ:
         return False
@@ -38,4 +38,3 @@ def ci_range(n: int, test_n: int = 2):
 
 def ci_list(lst: list, test_n=2):
     return lst[:test_n] if is_continuous_integration() else lst
-
