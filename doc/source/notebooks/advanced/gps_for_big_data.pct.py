@@ -179,7 +179,7 @@ minibatch_size = 100
 # We turn off training for inducing point locations
 gpflow.utilities.set_trainable(m.inducing_variable, False)
 
-@tf.function()
+@tf.function
 def optimization_step(optimizer, model: gpflow.models.SVGP, batch):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
