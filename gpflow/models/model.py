@@ -98,12 +98,12 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @abc.abstractmethod
-    def predict_f(self, Xnew: InputData, full_cov: bool = False,
+    def predict_f(self, Xnew: DataPoint, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
         raise NotImplementedError
 
     def predict_f_samples(self,
-                          Xnew: InputData,
+                          Xnew: DataPoint,
                           num_samples: int = 1,
                           full_cov: bool = True,
                           full_output_cov: bool = False) -> tf.Tensor:
@@ -120,7 +120,7 @@ class GPModel(BayesianModel):
         mu_t = tf.linalg.adjoint(mu)  # [P, N]
         return tf.transpose(mu_t[..., np.newaxis] + LV)  # [S, N, P]
 
-    def predict_y(self, Xnew: InputData, full_cov: bool = False,
+    def predict_y(self, Xnew: DataPoint, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.

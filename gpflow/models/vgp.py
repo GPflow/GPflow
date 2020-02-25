@@ -105,7 +105,7 @@ class VGP(GPModel):
 
         return tf.reduce_sum(var_exp) - KL
 
-    def predict_f(self, Xnew: InputData, full_cov: bool = False,
+    def predict_f(self, Xnew: DataPoint, full_cov: bool = False,
                   full_output_cov: bool = False) -> MeanAndVariance:
         X_data, _Y_data = self.data
         mu, var = conditional(Xnew,
