@@ -1,6 +1,8 @@
 import warnings
 
 import multipledispatch
+import pytest
+import tensorflow as tf
 
 import gpflow
 
@@ -58,3 +60,26 @@ def test_our_multipledispatch():
         assert test_fn(A2(), B2()) == 'a2-b2'
 
         assert len(w) == 0
+
+
+@pytest.mark.parametrize("Dispatcher, gives_autograph_warning", [
+    (multipledispatch.Dispatcher, True),
+    (gpflow.utilities.Dispatcher, False),
+])
+def test_no_autograph_warnings(capsys, Dispatcher, gives_autograph_warning):
+    tf.autograph.set_verbosity(0, alsologtostdout=True)
+
+    test_fn = Dispatcher('test_fn')
+
+    @test_fn.register(gpflow.inducing_variables.InducingVariables)
+    def test_iv(x):
+        return tf.reduce_sum(x.Z)
+
+    test_fn_jit = tf.function(test_fn)
+
+    result = test_fn_jit(gpflow.inducing_variables.InducingPoints([1., 2.]))
+    assert result.numpy() == 3.0
+
+    captured = capsys.readouterr()
+    tf_warning = 'appears to be a generator function. It will not be converted by AutoGraph.'
+    assert (tf_warning in captured.out) is gives_autograph_warning
