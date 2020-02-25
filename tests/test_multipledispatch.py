@@ -66,7 +66,7 @@ def test_our_multipledispatch():
     (multipledispatch.Dispatcher, True),
     (gpflow.utilities.Dispatcher, False),
 ])
-def test_no_autograph_warnings(capsys, Dispatcher, gives_autograph_warning):
+def test_dispatcher_autograph_warnings(capsys, Dispatcher, gives_autograph_warning):
     tf.autograph.set_verbosity(0, alsologtostdout=True)
 
     test_fn = Dispatcher('test_fn')
