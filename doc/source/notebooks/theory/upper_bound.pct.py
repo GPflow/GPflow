@@ -125,7 +125,7 @@ for M in fMs:
 
     set_trainable(vfe.kernel, False)
     set_trainable(vfe.likelihood, False)
-    
+
     objective = tf.function(lambda: - vfe.log_marginal_likelihood())
     gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
                                        options=dict(disp=False, maxiter=ci_niter(1000)))
