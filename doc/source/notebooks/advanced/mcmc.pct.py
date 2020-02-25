@@ -102,7 +102,7 @@ model.likelihood.variance.assign(0.01)
 # %%
 optimizer = gpflow.optimizers.Scipy()
 
-@tf.function()
+@tf.function
 def objective():
     return - model.log_marginal_likelihood()
 optimizer.minimize(objective, variables=model.trainable_variables)
