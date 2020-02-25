@@ -18,7 +18,7 @@ class Dispatcher(GeneratorDispatcher):
 
     def dispatch(self, *types):
         """
-        Returns matching function for `types`, if not existins returns None.
+        Returns matching function for `types`; if not existing returns None.
         """
         if types in self.funcs:
             return self.funcs[types]
