@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 from ..config import default_float, default_jitter
+from ..utilities import assert_shapes
 from ..utilities.ops import leading_transpose
 
 
@@ -61,7 +62,7 @@ def base_conditional(Kmn: tf.Tensor,
         shape_constraints.append(
             (q_sqrt, (['M', 'R'] if q_sqrt.shape.ndims == 2 else ['R', 'M', 'M']))
         )
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     leading_dims = tf.shape(Kmn)[:-2]
     Lm = tf.linalg.cholesky(Kmm)  # [M, M]
@@ -118,7 +119,7 @@ def base_conditional(Kmn: tf.Tensor,
         (fmean, [..., 'N', 'R']),
         (fvar, [..., 'R', 'N', 'N'] if full_cov else [..., 'N', 'R']),
     ]
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     return fmean, fvar
 
@@ -140,7 +141,7 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         (mean, [..., 'N', 'D']),
         (cov, [..., 'N', 'D'] if cov_structure == 'diag' else [..., 'N', 'D', 'D']),
     ]
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     mean_shape = tf.shape(mean)
     S = num_samples if num_samples is not None else 1
@@ -167,7 +168,7 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         (mean, [..., 'N', 'D']),
         (samples, [..., 'S', 'N', 'D']),
     ]
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     if num_samples is None:
         return tf.squeeze(samples, axis=-3)  # [..., N, D]
@@ -292,7 +293,7 @@ def independent_interdomain_conditional(Kmn,
         (fmean, "NP"),
         (fvar, cov_shape),
     ])
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     return fmean, fvar
 
@@ -429,7 +430,7 @@ def fully_correlated_conditional_repeat(Kmn,
         (fmean, "RNP"),
         (fvar, "R"+cov_shape),
     ])
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     return fmean, fvar
 
@@ -503,6 +504,6 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
         (f_mean, "*NP"),
         (f_var, "*"+cov_shape),
     ])
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     return f_mean, f_var

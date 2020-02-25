@@ -15,6 +15,7 @@
 import tensorflow as tf
 import numpy as np
 from .config import default_float
+from .utilities import assert_shapes
 
 
 def gaussian(x, mu, var):
@@ -94,6 +95,6 @@ def multivariate_normal(x, mu, L):
         (L, ['D', 'D']),
         (p, ['N']),
     ]
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     return p

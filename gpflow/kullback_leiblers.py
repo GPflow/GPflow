@@ -21,6 +21,7 @@ from .inducing_variables import InducingVariables
 from .kernels import Kernel
 from .covariances.kuus import Kuu
 from .config import default_jitter
+from .utilities import assert_shapes
 
 prior_kl = Dispatcher('prior_kl')
 
@@ -69,7 +70,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         shape_constraints.append(
             (K, (['L', 'M', 'M'] if len(K.shape) == 3 else ['M', 'M']))
         )
-    tf.debugging.assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints)
 
     M, L = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
@@ -134,5 +135,5 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         scale = 1.0 if batch else tf.cast(L, default_float())
         twoKL += scale * sum_log_sqdiag_Lp
 
-    tf.debugging.assert_shapes([(twoKL, ())])  # returns scalar
+    assert_shapes([(twoKL, ())])  # returns scalar
     return 0.5 * twoKL
