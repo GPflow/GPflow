@@ -203,10 +203,6 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 def objective_closure():
     return - model.log_marginal_likelihood()
 
-from gpflow.utilities import set_trainable
-set_trainable(model.kernel, False)
-set_trainable(model.likelihood, False)
-
 for _ in range(ci_niter(1000)):
     natgrad_opt.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
 
