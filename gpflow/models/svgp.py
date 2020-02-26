@@ -21,7 +21,7 @@ from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from ..model import GPModel, RegressionData
+from .model import GPModel, RegressionData
 from .util import inducingpoint_wrapper
 
 
