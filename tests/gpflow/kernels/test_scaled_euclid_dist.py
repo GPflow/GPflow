@@ -32,29 +32,33 @@ kernel_list = [
     kernels.Matern32(),
     kernels.Matern52(),
     kernels.Exponential(),
-    kernels.Cosine()
+    kernels.Cosine(),
 ]
 
 
-@pytest.mark.parametrize('kernel', kernel_list)
+@pytest.mark.parametrize("kernel", kernel_list)
 def test_kernel_euclidean_distance(kernel):
-    '''
+    """
     Tests output & gradients of kernels that are a function of the (scaled) euclidean distance
     of the points. We test on a high dimensional space, which can generate very small distances
     causing the scaled_square_dist to generate some negative values.
-    '''
+    """
     K = kernel(Datum.X)
-    assert not np.isnan(
-        K).any(), 'NaNs in the output of the ' + kernel.__name__ + 'kernel.'
-    assert np.isfinite(
-        K).all(), 'Infs in the output of the ' + kernel.__name__ + ' kernel.'
+    assert not np.isnan(K).any(), (
+        "NaNs in the output of the " + kernel.__name__ + "kernel."
+    )
+    assert np.isfinite(K).all(), (
+        "Infs in the output of the " + kernel.__name__ + " kernel."
+    )
 
     X_as_param = tf.Variable(Datum.X)
     with tf.GradientTape() as tape:
         K_value = kernel(X_as_param, X_as_param)
         dK = tape.gradient(K_value, X_as_param)[0]
 
-    assert not np.isnan(dK).any(
-    ), 'NaNs in the gradient of the ' + kernel.__name__ + ' kernel.'
-    assert np.isfinite(
-        dK).all(), 'Infs in the output of the ' + kernel.__name__ + ' kernel.'
+    assert not np.isnan(dK).any(), (
+        "NaNs in the gradient of the " + kernel.__name__ + " kernel."
+    )
+    assert np.isfinite(dK).all(), (
+        "Infs in the output of the " + kernel.__name__ + " kernel."
+    )

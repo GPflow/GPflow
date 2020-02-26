@@ -10,8 +10,9 @@ def ref_rbf_kernel(X, lengthscale, signal_variance):
             vecB = X[column_index, :]
             delta = vecA - vecB
             distance_squared = np.dot(delta.T, delta)
-            kernel[row_index, column_index] = \
-                signal_variance * np.exp(-0.5 * distance_squared / lengthscale ** 2)
+            kernel[row_index, column_index] = signal_variance * np.exp(
+                -0.5 * distance_squared / lengthscale ** 2
+            )
     return kernel
 
 
@@ -25,24 +26,26 @@ def ref_arccosine_kernel(X, order, weight_variances, bias_variance, signal_varia
 
             numerator = (weight_variances * x).dot(y) + bias_variance
 
-            x_denominator = np.sqrt((weight_variances * x).dot(x) +
-                                    bias_variance)
-            y_denominator = np.sqrt((weight_variances * y).dot(y) +
-                                    bias_variance)
+            x_denominator = np.sqrt((weight_variances * x).dot(x) + bias_variance)
+            y_denominator = np.sqrt((weight_variances * y).dot(y) + bias_variance)
             denominator = x_denominator * y_denominator
 
-            theta = np.arccos(np.clip(numerator / denominator, -1., 1.))
+            theta = np.arccos(np.clip(numerator / denominator, -1.0, 1.0))
             if order == 0:
                 J = np.pi - theta
             elif order == 1:
                 J = np.sin(theta) + (np.pi - theta) * np.cos(theta)
             elif order == 2:
-                J = 3. * np.sin(theta) * np.cos(theta)
-                J += (np.pi - theta) * (1. + 2. * np.cos(theta) ** 2)
+                J = 3.0 * np.sin(theta) * np.cos(theta)
+                J += (np.pi - theta) * (1.0 + 2.0 * np.cos(theta) ** 2)
 
-            kernel[row, col] = signal_variance * (1. / np.pi) * J * \
-                               x_denominator ** order * \
-                               y_denominator ** order
+            kernel[row, col] = (
+                signal_variance
+                * (1.0 / np.pi)
+                * J
+                * x_denominator ** order
+                * y_denominator ** order
+            )
     return kernel
 
 

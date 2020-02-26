@@ -28,13 +28,12 @@ from nbconvert.preprocessors.execute import CellExecutionError
 # but without any directory component). If there are several notebooks in
 # different directories with the same base name, they will all get blacklisted
 # (change the blacklisting check to something else in that case, if need be!)
-BLACKLISTED_NOTEBOOKS = [
-]
+BLACKLISTED_NOTEBOOKS = []
 
 
 def _nbpath():
     this_dir = os.path.dirname(__file__)
-    return os.path.join(this_dir, '../doc/source/notebooks')
+    return os.path.join(this_dir, "../doc/source/notebooks")
 
 
 def get_notebooks():
@@ -47,31 +46,35 @@ def get_notebooks():
         return os.path.basename(nb) in blacklisted_notebooks_basename
 
     # recursively traverse the notebook directory in search for ipython notebooks
-    all_py_notebooks = glob.iglob(os.path.join(_nbpath(), '**', '*.pct.py'), recursive=True)
-    all_md_notebooks = glob.iglob(os.path.join(_nbpath(), '**', '*.md'), recursive=True)
+    all_py_notebooks = glob.iglob(
+        os.path.join(_nbpath(), "**", "*.pct.py"), recursive=True
+    )
+    all_md_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.md"), recursive=True)
     all_notebooks = itertools.chain(all_md_notebooks, all_py_notebooks)
     notebooks_to_test = [nb for nb in all_notebooks if not notebook_blacklisted(nb)]
     return notebooks_to_test
 
 
 def _preproc():
-    pythonkernel = 'python' + str(sys.version_info[0])
-    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True)
+    pythonkernel = "python" + str(sys.version_info[0])
+    return ExecutePreprocessor(
+        timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True
+    )
 
 
 def _exec_notebook(notebook_filename):
     with open(notebook_filename) as notebook_file:
         nb = jupytext.read(notebook_file, as_version=nbformat.current_nbformat)
         try:
-            meta_data = {'path': os.path.dirname(notebook_filename)}
-            _preproc().preprocess(nb, {'metadata': meta_data})
+            meta_data = {"path": os.path.dirname(notebook_filename)}
+            _preproc().preprocess(nb, {"metadata": meta_data})
         except CellExecutionError as cell_error:
             traceback.print_exc(file=sys.stdout)
-            msg = 'Error executing the notebook {0}. See above for error.\nCell error: {1}'
+            msg = "Error executing the notebook {0}. See above for error.\nCell error: {1}"
             pytest.fail(msg.format(notebook_filename, str(cell_error)))
 
 
 @pytest.mark.notebooks
-@pytest.mark.parametrize('notebook_file', get_notebooks())
+@pytest.mark.parametrize("notebook_file", get_notebooks())
 def test_notebook(notebook_file):
     _exec_notebook(notebook_file)

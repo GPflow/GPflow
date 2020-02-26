@@ -30,11 +30,15 @@ def test_sparse_mcmc_likelihoods_and_gradients():
     v_vals = rng.randn(10, 1)
 
     likelihood = gpflow.likelihoods.StudentT()
-    model_1 = gpflow.models.GPMC(data=(X, Y), kernel=gpflow.kernels.Exponential(), likelihood=likelihood)
-    model_2 = gpflow.models.SGPMC(data=(X, Y),
-                                  kernel=gpflow.kernels.Exponential(),
-                                  inducing_variable=X.copy(),
-                                  likelihood=likelihood)
+    model_1 = gpflow.models.GPMC(
+        data=(X, Y), kernel=gpflow.kernels.Exponential(), likelihood=likelihood
+    )
+    model_2 = gpflow.models.SGPMC(
+        data=(X, Y),
+        kernel=gpflow.kernels.Exponential(),
+        inducing_variable=X.copy(),
+        likelihood=likelihood,
+    )
     model_1.V = tf.convert_to_tensor(v_vals, dtype=default_float())
     model_2.V = tf.convert_to_tensor(v_vals, dtype=default_float())
     model_1.kernel.lengthscale.assign(0.8)
@@ -42,4 +46,6 @@ def test_sparse_mcmc_likelihoods_and_gradients():
     model_1.kernel.variance.assign(4.2)
     model_2.kernel.variance.assign(4.2)
 
-    assert_allclose(model_1.log_likelihood(), model_2.log_likelihood(), rtol=1e-5, atol=1e-5)
+    assert_allclose(
+        model_1.log_likelihood(), model_2.log_likelihood(), rtol=1e-5, atol=1e-5
+    )

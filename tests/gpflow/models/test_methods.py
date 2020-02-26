@@ -43,21 +43,39 @@ default_datum = Datum()
 
 
 _gp_models = [
-    gpflow.models.VGP((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
-    gpflow.models.GPMC((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
-    gpflow.models.SGPMC((default_datum.X, default_datum.Y),
-                        default_datum.kernel,
-                        default_datum.lik,
-                        inducing_variable=default_datum.Z),
-    gpflow.models.SGPR((default_datum.X, default_datum.Y), default_datum.kernel, inducing_variable=default_datum.Z),
+    gpflow.models.VGP(
+        (default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik
+    ),
+    gpflow.models.GPMC(
+        (default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik
+    ),
+    gpflow.models.SGPMC(
+        (default_datum.X, default_datum.Y),
+        default_datum.kernel,
+        default_datum.lik,
+        inducing_variable=default_datum.Z,
+    ),
+    gpflow.models.SGPR(
+        (default_datum.X, default_datum.Y),
+        default_datum.kernel,
+        inducing_variable=default_datum.Z,
+    ),
     gpflow.models.GPR((default_datum.X, default_datum.Y), default_datum.kernel),
-    gpflow.models.GPRFITC((default_datum.X, default_datum.Y), default_datum.kernel, inducing_variable=default_datum.Z)
+    gpflow.models.GPRFITC(
+        (default_datum.X, default_datum.Y),
+        default_datum.kernel,
+        inducing_variable=default_datum.Z,
+    ),
 ]
 
-_state_less_gp_models = [gpflow.models.SVGP(default_datum.kernel, default_datum.lik, inducing_variable=default_datum.Z)]
+_state_less_gp_models = [
+    gpflow.models.SVGP(
+        default_datum.kernel, default_datum.lik, inducing_variable=default_datum.Z
+    )
+]
 
 
-@pytest.mark.parametrize('model', _state_less_gp_models + _gp_models)
+@pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
 def test_methods_predict_f(model):
     mf, vf = model.predict_f(default_datum.Xs)
     assert_array_equal(mf.shape, vf.shape)
@@ -65,7 +83,7 @@ def test_methods_predict_f(model):
     assert_array_less(np.full_like(vf, -1e-6), vf)
 
 
-@pytest.mark.parametrize('model', _state_less_gp_models + _gp_models)
+@pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
 def test_methods_predict_y(model):
     mf, vf = model.predict_y(default_datum.Xs)
     assert_array_equal(mf.shape, vf.shape)
@@ -73,7 +91,7 @@ def test_methods_predict_y(model):
     assert_array_less(np.full_like(vf, -1e-6), vf)
 
 
-@pytest.mark.parametrize('model', _state_less_gp_models + _gp_models)
+@pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
 def test_methods_predict_log_density(model):
     rng = Datum().rng
     Ys = rng.randn(10, 1)

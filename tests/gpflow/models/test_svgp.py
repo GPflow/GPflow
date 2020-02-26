@@ -26,9 +26,9 @@ from gpflow.config import default_float
 class DatumSVGP:
     rng: np.random.RandomState = np.random.RandomState(0)
     X = rng.randn(20, 1)
-    Y = rng.randn(20, 2)**2
+    Y = rng.randn(20, 2) ** 2
     Z = rng.randn(3, 1)
-    qsqrt = (rng.randn(3, 2)**2) * 0.01
+    qsqrt = (rng.randn(3, 2) ** 2) * 0.01
     qmean = rng.randn(3, 2)
     lik = gpflow.likelihoods.Exponential()
     data = (X, Y)
@@ -42,12 +42,14 @@ def test_svgp_fixing_q_sqrt():
     In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
     """
     num_latent = default_datum_svgp.Y.shape[1]
-    model = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                               likelihood=default_datum_svgp.lik,
-                               q_diag=True,
-                               num_latent=num_latent,
-                               inducing_variable=default_datum_svgp.Z,
-                               whiten=False)
+    model = gpflow.models.SVGP(
+        kernel=gpflow.kernels.SquaredExponential(),
+        likelihood=default_datum_svgp.lik,
+        q_diag=True,
+        num_latent=num_latent,
+        inducing_variable=default_datum_svgp.Z,
+        whiten=False,
+    )
     default_num_trainable_variables = len(model.trainable_variables)
     model.q_sqrt.trainable = False
     assert len(model.trainable_variables) == default_num_trainable_variables - 1
@@ -59,23 +61,37 @@ def test_svgp_white():
     with and without diagonals when whitening.
     """
     num_latent = default_datum_svgp.Y.shape[1]
-    model_1 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=default_datum_svgp.lik,
-                                 q_diag=True,
-                                 num_latent=num_latent,
-                                 inducing_variable=default_datum_svgp.Z,
-                                 whiten=True)
-    model_2 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=default_datum_svgp.lik,
-                                 q_diag=False,
-                                 num_latent=num_latent,
-                                 inducing_variable=default_datum_svgp.Z,
-                                 whiten=True)
+    model_1 = gpflow.models.SVGP(
+        kernel=gpflow.kernels.SquaredExponential(),
+        likelihood=default_datum_svgp.lik,
+        q_diag=True,
+        num_latent=num_latent,
+        inducing_variable=default_datum_svgp.Z,
+        whiten=True,
+    )
+    model_2 = gpflow.models.SVGP(
+        kernel=gpflow.kernels.SquaredExponential(),
+        likelihood=default_datum_svgp.lik,
+        q_diag=False,
+        num_latent=num_latent,
+        inducing_variable=default_datum_svgp.Z,
+        whiten=True,
+    )
     model_1.q_sqrt.assign(default_datum_svgp.qsqrt)
     model_1.q_mu.assign(default_datum_svgp.qmean)
-    model_2.q_sqrt.assign(np.array([np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1])]))
+    model_2.q_sqrt.assign(
+        np.array(
+            [
+                np.diag(default_datum_svgp.qsqrt[:, 0]),
+                np.diag(default_datum_svgp.qsqrt[:, 1]),
+            ]
+        )
+    )
     model_2.q_mu.assign(default_datum_svgp.qmean)
-    assert_allclose(model_1.log_likelihood(default_datum_svgp.data), model_2.log_likelihood(default_datum_svgp.data))
+    assert_allclose(
+        model_1.log_likelihood(default_datum_svgp.data),
+        model_2.log_likelihood(default_datum_svgp.data),
+    )
 
 
 def test_svgp_non_white():
@@ -84,23 +100,37 @@ def test_svgp_non_white():
     with and without diagonals when whitening is not used.
     """
     num_latent = default_datum_svgp.Y.shape[1]
-    model_1 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=default_datum_svgp.lik,
-                                 q_diag=True,
-                                 num_latent=num_latent,
-                                 inducing_variable=default_datum_svgp.Z,
-                                 whiten=False)
-    model_2 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=default_datum_svgp.lik,
-                                 q_diag=False,
-                                 num_latent=num_latent,
-                                 inducing_variable=default_datum_svgp.Z,
-                                 whiten=False)
+    model_1 = gpflow.models.SVGP(
+        kernel=gpflow.kernels.SquaredExponential(),
+        likelihood=default_datum_svgp.lik,
+        q_diag=True,
+        num_latent=num_latent,
+        inducing_variable=default_datum_svgp.Z,
+        whiten=False,
+    )
+    model_2 = gpflow.models.SVGP(
+        kernel=gpflow.kernels.SquaredExponential(),
+        likelihood=default_datum_svgp.lik,
+        q_diag=False,
+        num_latent=num_latent,
+        inducing_variable=default_datum_svgp.Z,
+        whiten=False,
+    )
     model_1.q_sqrt.assign(default_datum_svgp.qsqrt)
     model_1.q_mu.assign(default_datum_svgp.qmean)
-    model_2.q_sqrt.assign(np.array([np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1])]))
+    model_2.q_sqrt.assign(
+        np.array(
+            [
+                np.diag(default_datum_svgp.qsqrt[:, 0]),
+                np.diag(default_datum_svgp.qsqrt[:, 1]),
+            ]
+        )
+    )
     model_2.q_mu.assign(default_datum_svgp.qmean)
-    assert_allclose(model_1.log_likelihood(default_datum_svgp.data), model_2.log_likelihood(default_datum_svgp.data))
+    assert_allclose(
+        model_1.log_likelihood(default_datum_svgp.data),
+        model_2.log_likelihood(default_datum_svgp.data),
+    )
 
 
 def _check_models_close(m1, m2, tolerance=1e-2):
@@ -111,16 +141,17 @@ def _check_models_close(m1, m2, tolerance=1e-2):
     for key in m1_params:
         p1 = m1_params[key]
         p2 = m2_params[key]
-        if not np.allclose(p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance):
+        if not np.allclose(
+            p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance
+        ):
             return False
     return True
 
 
-@pytest.mark.parametrize('indices_1, indices_2, num_data1, num_data2, max_iter', [
-    [[0, 1], [1, 0], 2, 2, 3],
-    [[0, 1], [0, 0], 1, 2, 1],
-    [[0, 0], [0, 1], 1, 1, 2],
-])
+@pytest.mark.parametrize(
+    "indices_1, indices_2, num_data1, num_data2, max_iter",
+    [[[0, 1], [1, 0], 2, 2, 3], [[0, 1], [0, 0], 1, 2, 1], [[0, 0], [0, 1], 1, 1, 2],],
+)
 def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_iter):
     """
     In response to bug #281, we need to make sure stochastic update
@@ -135,18 +166,20 @@ def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_it
     In this test we substitute a deterministic analogue of the batchs
     sampler for which we can predict the effects of different updates.
     """
-    X, Y = np.atleast_2d(np.array([0., 1.])).T, np.atleast_2d(np.array([-1., 3.])).T
+    X, Y = np.atleast_2d(np.array([0.0, 1.0])).T, np.atleast_2d(np.array([-1.0, 3.0])).T
     Z = np.atleast_2d(np.array([0.5]))
 
     def get_model(num_data):
-        return gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                  num_data=num_data,
-                                  likelihood=gpflow.likelihoods.Gaussian(),
-                                  inducing_variable=Z)
+        return gpflow.models.SVGP(
+            kernel=gpflow.kernels.SquaredExponential(),
+            num_data=num_data,
+            likelihood=gpflow.likelihoods.Gaussian(),
+            inducing_variable=Z,
+        )
 
     def training_loop(indices, num_data, max_iter):
         model = get_model(num_data)
-        opt = tf.optimizers.SGD(learning_rate=.001)
+        opt = tf.optimizers.SGD(learning_rate=0.001)
         data = X[indices], Y[indices]
         for _ in range(max_iter):
             with tf.GradientTape() as tape:
