@@ -38,20 +38,7 @@ class Datum:
     kernel = gpflow.kernels.Matern32()
 
 
-@dataclass(frozen=True)
-class DatumSVGP:
-    rng: np.random.RandomState = np.random.RandomState(0)
-    X = rng.randn(20, 1)
-    Y = rng.randn(20, 2)**2
-    Z = rng.randn(3, 1)
-    qsqrt = (rng.randn(3, 2)**2) * 0.01
-    qmean = rng.randn(3, 2)
-    lik = gpflow.likelihoods.Exponential()
-    data = (X, Y)
-
-
 default_datum = Datum()
-default_datum_svgp = DatumSVGP()
 
 
 def _check_models_close(m1, m2, tolerance=1e-2):
@@ -123,72 +110,6 @@ def test_sgpr_qu():
 
     np.testing.assert_allclose(qu_mean, f_at_Z_mean, rtol=1e-5, atol=1e-5)
     np.testing.assert_allclose(tf.reshape(qu_cov, (1, 20, 20)), f_at_Z_cov, rtol=1e-5, atol=1e-5)
-
-
-def test_svgp_white():
-    """
-    Tests that the SVGP bound on the likelihood is the same when using
-    with and without diagonals when whitening.
-    """
-    num_latent = default_datum_svgp.Y.shape[1]
-    model_1 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=default_datum_svgp.lik,
-                                 q_diag=True,
-                                 num_latent=num_latent,
-                                 inducing_variable=default_datum_svgp.Z,
-                                 whiten=True)
-    model_2 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=default_datum_svgp.lik,
-                                 q_diag=False,
-                                 num_latent=num_latent,
-                                 inducing_variable=default_datum_svgp.Z,
-                                 whiten=True)
-    model_1.q_sqrt.assign(default_datum_svgp.qsqrt)
-    model_1.q_mu.assign(default_datum_svgp.qmean)
-    model_2.q_sqrt.assign(np.array([np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1])]))
-    model_2.q_mu.assign(default_datum_svgp.qmean)
-    assert_allclose(model_1.log_likelihood(default_datum_svgp.data), model_2.log_likelihood(default_datum_svgp.data))
-
-
-def test_svgp_non_white():
-    """
-    Tests that the SVGP bound on the likelihood is the same when using
-    with and without diagonals when whitening is not used.
-    """
-    num_latent = default_datum_svgp.Y.shape[1]
-    model_1 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=default_datum_svgp.lik,
-                                 q_diag=True,
-                                 num_latent=num_latent,
-                                 inducing_variable=default_datum_svgp.Z,
-                                 whiten=False)
-    model_2 = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                                 likelihood=default_datum_svgp.lik,
-                                 q_diag=False,
-                                 num_latent=num_latent,
-                                 inducing_variable=default_datum_svgp.Z,
-                                 whiten=False)
-    model_1.q_sqrt.assign(default_datum_svgp.qsqrt)
-    model_1.q_mu.assign(default_datum_svgp.qmean)
-    model_2.q_sqrt.assign(np.array([np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1])]))
-    model_2.q_mu.assign(default_datum_svgp.qmean)
-    assert_allclose(model_1.log_likelihood(default_datum_svgp.data), model_2.log_likelihood(default_datum_svgp.data))
-
-
-def test_svgp_fixing_q_sqrt():
-    """
-    In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
-    """
-    num_latent = default_datum_svgp.Y.shape[1]
-    model = gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
-                               likelihood=default_datum_svgp.lik,
-                               q_diag=True,
-                               num_latent=num_latent,
-                               inducing_variable=default_datum_svgp.Z,
-                               whiten=False)
-    default_num_trainable_variables = len(model.trainable_variables)
-    model.q_sqrt.trainable = False
-    assert len(model.trainable_variables) == default_num_trainable_variables - 1
 
 
 @pytest.mark.parametrize('indices_1, indices_2, num_data1, num_data2, max_iter', [
